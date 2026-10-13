@@ -1,0 +1,62 @@
+{
+  "decomposition": "picks = (orders * items)",
+  "dependencies": [
+    {
+      "a": "orders",
+      "b": "items",
+      "reason": "bigger orders are rarer",
+      "rho": -0.6
+    }
+  ],
+  "dependency_effect": {
+    "interval_width_dependent": 2590.198102196789,
+    "interval_width_if_independent": 4018.255576092404,
+    "ratio": 0.6446076047546122
+  },
+  "dominant_uncertainty": "items",
+  "high": 4983.59830185558,
+  "inputs": [
+    {
+      "dist": "lognormal",
+      "high": 1500.0,
+      "low": 800.0,
+      "name": "orders",
+      "unit": "count/day"
+    },
+    {
+      "dist": "lognormal",
+      "high": 5.0,
+      "low": 2.0,
+      "name": "items",
+      "unit": "1"
+    }
+  ],
+  "interval": 0.9,
+  "low": 2393.400199658791,
+  "median": 3461.9806061496993,
+  "proof_class": "estimation",
+  "reference_class": {
+    "available": false,
+    "note": "no reference class supplied"
+  },
+  "samples": 20000,
+  "seed": 7,
+  "sensitivity": [
+    {
+      "rank_correlation": 0.7146,
+      "swing": 3286.3353450310337,
+      "variable": "items"
+    },
+    {
+      "rank_correlation": 0.0988,
+      "swing": 2213.5943621178913,
+      "variable": "orders"
+    }
+  ],
+  "units": {
+    "canonical": "count/day",
+    "dimension_check": "pass",
+    "result": "count/day",
+    "target": "count/day"
+  }
+}

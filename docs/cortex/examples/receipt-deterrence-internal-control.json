@@ -1,0 +1,572 @@
+{
+  "accountability": {
+    "falsification_conditions": [
+      {
+        "condition": "misconduct persisting after I_match at a rate above 0.005, or a declared parameter range shown wrong",
+        "route": "cortex.deterrence.accountability@0.1.0"
+      }
+    ],
+    "missing_information": [
+      "geometry field consequence_vector unresolved"
+    ],
+    "note": "competence evidence and proof narrow disputes; they never create authority",
+    "strongest_counterargument": {
+      "detail": "I_scare (intimidation): coercive or rights-violating; never ranked",
+      "kind": "coercive_or_harmful_intervention_refused",
+      "severity": "major"
+    }
+  },
+  "alternatives": [
+    {
+      "route": "cortex.estimation.fermi@0.1.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.evidence_causal@0.1.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.extraction.schedule@0.1.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.formal.z3@0.2.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.optimization.cpsat@0.2.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.semantic@0.1.0",
+      "why_not": [
+        "not required by this payload"
+      ]
+    }
+  ],
+  "assumptions": [
+    "actor is risk-neutral",
+    "parameter ranges are declared by the requester",
+    "parameters are independent and uniform within their ranges",
+    "an intervention changes only the parameters it names"
+  ],
+  "authority_created": false,
+  "budget_controller": {
+    "decisions": [],
+    "mandatory": [
+      "eligibility gates",
+      "adversarial verifier",
+      "independent assignment re-evaluation",
+      "consequence ceiling"
+    ],
+    "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
+    "policy": "cortex-thinking-budget/0.1"
+  },
+  "created_at": "2026-09-30T00:00:00Z",
+  "disposition": {
+    "kind": "recommend",
+    "next_step": null,
+    "reason": "route states ['OK']"
+  },
+  "eligibility": [
+    {
+      "eligible": true,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": true,
+      "reasons": []
+    },
+    {
+      "eligible": false,
+      "key": "cortex.estimation.fermi@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.evidence_causal@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.extraction.schedule@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.formal.z3@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.optimization.cpsat@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": true,
+      "key": "cortex.semantic@0.1.0",
+      "may_recommend": true,
+      "reasons": []
+    }
+  ],
+  "execution_authority": "none",
+  "expenditure": {
+    "model_calls": 0,
+    "seconds": 0.100598,
+    "solver_calls": 0,
+    "usd": 0.0
+  },
+  "gates": null,
+  "geometry": {
+    "ambiguity": "low",
+    "causal_structure": "none",
+    "claim_type": null,
+    "consequence_class": "internal_write",
+    "consequence_vector": {
+      "discrimination": "unknown",
+      "financial": "unknown",
+      "irreversible_disclosure": "unknown",
+      "physical": "unknown",
+      "privacy": "unknown",
+      "reputational": "unknown",
+      "rights": "unknown",
+      "systemic": "unknown",
+      "tail_risk": "unknown",
+      "third_party": "unknown"
+    },
+    "constraints": [],
+    "epistemic_class": "strategic",
+    "evidence_quality": "none",
+    "exactness": "unknown",
+    "objective": "choose_option",
+    "problem_id": "example-deterrence-internal",
+    "provenance": {
+      "consequence_class": {
+        "confidence": null,
+        "source": "requester_declared"
+      },
+      "epistemic_class": {
+        "confidence": 1.0,
+        "source": "payload_structure"
+      },
+      "reversibility": {
+        "confidence": null,
+        "source": "requester_declared"
+      }
+    },
+    "rejected_proposals": [],
+    "resource_limits": {
+      "max_cost_usd": 0.05,
+      "max_latency_s": 30.0,
+      "max_model_calls": 4,
+      "max_solver_calls": 64
+    },
+    "reversibility": "reversible",
+    "temporal_character": "static",
+    "uncertainty": "unknown",
+    "unresolved_fields": [
+      "consequence_vector"
+    ]
+  },
+  "inputs": {
+    "evidence_refs": [],
+    "payload_keys": [
+      "declared",
+      "deterrence_model"
+    ]
+  },
+  "l1_checks": [
+    {
+      "check": "schema_valid",
+      "detail": "problem and payload parsed",
+      "value": "pass"
+    },
+    {
+      "check": "as_of_present",
+      "detail": "no reference date; freshness cannot be judged",
+      "value": "unknown"
+    },
+    {
+      "check": "evidence_fresh",
+      "detail": "no evidence items",
+      "value": "not_applicable"
+    },
+    {
+      "check": "no_instruction_text_in_sources",
+      "detail": "scanned sources",
+      "value": "not_applicable"
+    },
+    {
+      "check": "budget_declared",
+      "detail": {
+        "max_cost_usd": 0.05,
+        "max_latency_s": 30.0,
+        "max_model_calls": 4,
+        "max_solver_calls": 64
+      },
+      "value": "unknown"
+    },
+    {
+      "check": "formal_engine_available",
+      "detail": "no formal model",
+      "value": "not_applicable"
+    }
+  ],
+  "outcome": {
+    "outcome": "ANSWERED_WITHIN_SCOPE",
+    "reasons": [
+      "POLICY_REFUSAL"
+    ],
+    "taxonomy": "directive-outcomes/0.1"
+  },
+  "outcome_link": {
+    "memory_keys": [
+      "cortex.deterrence.accountability@0.1.0|strategic"
+    ],
+    "settlement_ref": null,
+    "status": "absent_feedback"
+  },
+  "output": {
+    "answer": {
+      "best_intervention": {
+        "id": "I_match",
+        "kind": "detection",
+        "levers": [
+          "certainty"
+        ],
+        "pays_probability_after": 0.005,
+        "reach": "internal",
+        "reduction": 0.9834
+      },
+      "external_action_required": false,
+      "misconduct_pays_probability": 0.9885,
+      "refused": [
+        "I_scare"
+      ]
+    },
+    "per_route": [
+      {
+        "answer": {
+          "best_intervention": {
+            "id": "I_match",
+            "kind": "detection",
+            "levers": [
+              "certainty"
+            ],
+            "pays_probability_after": 0.005,
+            "reach": "internal",
+            "reduction": 0.9834
+          },
+          "external_action_required": false,
+          "misconduct_pays_probability": 0.9885,
+          "refused": [
+            "I_scare"
+          ]
+        },
+        "assumptions": [
+          "actor is risk-neutral",
+          "parameter ranges are declared by the requester",
+          "parameters are independent and uniform within their ranges",
+          "an intervention changes only the parameters it names"
+        ],
+        "dependencies": [
+          "python-stdlib"
+        ],
+        "expenditure": {
+          "model_calls": 0,
+          "seconds": 0.098084,
+          "solver_calls": 0,
+          "usd": 0.0
+        },
+        "notes": [
+          "refused I_scare: coercive or rights-violating; never ranked"
+        ],
+        "organ_id": "cortex.deterrence.accountability@0.1.0",
+        "organ_version": "0.1.0",
+        "origin": "deterministic",
+        "proof": {
+          "actor_role": "vendor submitting invoices",
+          "assumptions": [
+            "actor is risk-neutral",
+            "parameter ranges are declared by the requester",
+            "parameters are independent and uniform within their ranges",
+            "an intervention changes only the parameters it names"
+          ],
+          "baseline": {
+            "expected_payoff": {
+              "high": 4749.1256052372155,
+              "low": 633.7641736065582,
+              "median": 2698.742054051935
+            },
+            "misconduct_pays_probability": 0.9885
+          },
+          "behavior": "duplicate invoicing",
+          "interventions": [
+            {
+              "cost_usd": 3000.0,
+              "expected_payoff_after": {
+                "high": -1755.7007282262985,
+                "low": -14436.949906223352,
+                "median": -7535.785927514251
+              },
+              "id": "I_match",
+              "kind": "detection",
+              "levers": [
+                "certainty"
+              ],
+              "pays_probability_after": 0.005,
+              "reach": "internal",
+              "reduction": 0.9834,
+              "reduction_per_1k_usd": 0.3278,
+              "severity_only": false
+            },
+            {
+              "cost_usd": 500.0,
+              "expected_payoff_after": {
+                "high": 4326.310817530302,
+                "low": -350.68339348812424,
+                "median": 2059.9454999398004
+              },
+              "id": "I_fine",
+              "kind": "process_change",
+              "levers": [
+                "severity"
+              ],
+              "pays_probability_after": 0.9191,
+              "reach": "internal",
+              "reduction": 0.0694,
+              "reduction_per_1k_usd": 0.1388,
+              "severity_only": true
+            }
+          ],
+          "limitations": [
+            "no behavioral response beyond the declared effects",
+            "no displacement to other misconduct",
+            "severity effects are weakly supported by evidence; certainty effects are stronger"
+          ],
+          "model": "risk-neutral expected value: gain - p_detect * p_sanction * sanction - attempt_cost (Becker 1968)",
+          "parameters": {
+            "gain_usd": {
+              "dist": "uniform",
+              "high": 6000.0,
+              "low": 2000.0
+            },
+            "p_detect": {
+              "dist": "uniform",
+              "high": 0.15,
+              "low": 0.05
+            },
+            "p_sanction": {
+              "dist": "uniform",
+              "high": 0.8,
+              "low": 0.5
+            },
+            "sanction_usd": {
+              "dist": "uniform",
+              "high": 30000.0,
+              "low": 10000.0
+            }
+          },
+          "proof_class": "deterrence_assessment",
+          "refused": [
+            {
+              "id": "I_scare",
+              "kind": "intimidation",
+              "why": "coercive or rights-violating; never ranked"
+            }
+          ],
+          "samples": 20000,
+          "seed": 7,
+          "truth_note": "A risk-neutral expected-value model of incentives (Becker 1968), not a prediction of any person's behavior. People are not risk-neutral; deterrence evidence supports certainty of apprehension far more consistently than severity (Nagin 2013)."
+        },
+        "state": "OK",
+        "uncertainty": "misconduct pays in 98.8% of sampled parameter combinations (risk-neutral model)"
+      }
+    ],
+    "state": "OK"
+  },
+  "problem": {
+    "payload_digest": "sha256:cf78fba5a3c043228cf60e393953b16c4740e08d2db09b4d3c2295453a17b819",
+    "problem_id": "example-deterrence-internal",
+    "question_digest": "sha256:7d95624567644686f1ebb21ae8d85f6656a150db1f955c39baea6a8e08a7a7ad"
+  },
+  "proof_artifacts": [
+    {
+      "actor_role": "vendor submitting invoices",
+      "assumptions": [
+        "actor is risk-neutral",
+        "parameter ranges are declared by the requester",
+        "parameters are independent and uniform within their ranges",
+        "an intervention changes only the parameters it names"
+      ],
+      "baseline": {
+        "expected_payoff": {
+          "high": 4749.1256052372155,
+          "low": 633.7641736065582,
+          "median": 2698.742054051935
+        },
+        "misconduct_pays_probability": 0.9885
+      },
+      "behavior": "duplicate invoicing",
+      "interventions": [
+        {
+          "cost_usd": 3000.0,
+          "expected_payoff_after": {
+            "high": -1755.7007282262985,
+            "low": -14436.949906223352,
+            "median": -7535.785927514251
+          },
+          "id": "I_match",
+          "kind": "detection",
+          "levers": [
+            "certainty"
+          ],
+          "pays_probability_after": 0.005,
+          "reach": "internal",
+          "reduction": 0.9834,
+          "reduction_per_1k_usd": 0.3278,
+          "severity_only": false
+        },
+        {
+          "cost_usd": 500.0,
+          "expected_payoff_after": {
+            "high": 4326.310817530302,
+            "low": -350.68339348812424,
+            "median": 2059.9454999398004
+          },
+          "id": "I_fine",
+          "kind": "process_change",
+          "levers": [
+            "severity"
+          ],
+          "pays_probability_after": 0.9191,
+          "reach": "internal",
+          "reduction": 0.0694,
+          "reduction_per_1k_usd": 0.1388,
+          "severity_only": true
+        }
+      ],
+      "limitations": [
+        "no behavioral response beyond the declared effects",
+        "no displacement to other misconduct",
+        "severity effects are weakly supported by evidence; certainty effects are stronger"
+      ],
+      "model": "risk-neutral expected value: gain - p_detect * p_sanction * sanction - attempt_cost (Becker 1968)",
+      "parameters": {
+        "gain_usd": {
+          "dist": "uniform",
+          "high": 6000.0,
+          "low": 2000.0
+        },
+        "p_detect": {
+          "dist": "uniform",
+          "high": 0.15,
+          "low": 0.05
+        },
+        "p_sanction": {
+          "dist": "uniform",
+          "high": 0.8,
+          "low": 0.5
+        },
+        "sanction_usd": {
+          "dist": "uniform",
+          "high": 30000.0,
+          "low": 10000.0
+        }
+      },
+      "proof_class": "deterrence_assessment",
+      "refused": [
+        {
+          "id": "I_scare",
+          "kind": "intimidation",
+          "why": "coercive or rights-violating; never ranked"
+        }
+      ],
+      "samples": 20000,
+      "seed": 7,
+      "truth_note": "A risk-neutral expected-value model of incentives (Becker 1968), not a prediction of any person's behavior. People are not risk-neutral; deterrence evidence supports certainty of apprehension far more consistently than severity (Nagin 2013)."
+    }
+  ],
+  "protection": null,
+  "ranking": null,
+  "receipt_id": "sha256:b1de9d7ca5637d25901ce5dc8693cf60c814cee4131e6a825db4d5562753d25a",
+  "route": {
+    "attempts": [],
+    "composition": false,
+    "formal_plan": null,
+    "policy": "cortex-route-policy/0.2.1",
+    "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+    "selected": [
+      "cortex.deterrence.accountability@0.1.0"
+    ]
+  },
+  "schema": "cortex-receipt/0.2",
+  "shared_dependencies": {},
+  "truth": {
+    "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+    "empirical_validity": "unknown",
+    "formal_validity": "not_applicable",
+    "legitimate_authority": "not_granted_by_cortex"
+  },
+  "uncertainty": "misconduct pays in 98.8% of sampled parameter combinations (risk-neutral model)",
+  "verifier": {
+    "blocking": false,
+    "findings": [
+      {
+        "detail": "I_scare (intimidation): coercive or rights-violating; never ranked",
+        "kind": "coercive_or_harmful_intervention_refused",
+        "severity": "major",
+        "target": "I_scare"
+      },
+      {
+        "detail": "deterrence model assumes a risk-neutral actor",
+        "kind": "risk_neutral_assumption",
+        "severity": "minor",
+        "target": null
+      }
+    ],
+    "independence": {
+      "independent_of_routes": true,
+      "note": "agreement between routes that share a model, solver or source is not independent verification",
+      "shared_between_routes": {},
+      "shared_with_routes": [],
+      "verifier": "cortex.verifier.adversarial@0.1.0",
+      "verifier_dependencies": [
+        "python-stdlib",
+        "rules:cortex.organs.adversarial"
+      ]
+    },
+    "proof_class": "verifier_findings",
+    "verifier": "cortex.verifier.adversarial@0.1.0"
+  },
+  "versions": {
+    "cortex": "0.2.1",
+    "policy": "cortex-route-policy/0.2.1",
+    "routes": {
+      "cortex.deterrence.accountability@0.1.0": "0.1.0"
+    }
+  }
+}

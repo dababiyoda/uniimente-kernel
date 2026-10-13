@@ -1,0 +1,2571 @@
+{
+  "arms": {
+    "always_abstain": {
+      "status": "RUN",
+      "summary": {
+        "by_stratum": {
+          "causal": {
+            "mean_loss": 0.3,
+            "n": 6
+          },
+          "estimation": {
+            "mean_loss": 0.3,
+            "n": 6
+          },
+          "formal": {
+            "mean_loss": 0.5,
+            "n": 6
+          },
+          "mixed_abstention": {
+            "mean_loss": 0.19999999999999998,
+            "n": 6
+          },
+          "scheduling_optimization": {
+            "mean_loss": 0.6,
+            "n": 6
+          },
+          "semantic_strategy": {
+            "mean_loss": 0.3333333333333333,
+            "n": 6
+          }
+        },
+        "dispositions": {
+          "abstain": 36,
+          "bounded_test": 0,
+          "handoff": 0,
+          "recommend": 0
+        },
+        "hard_failure_items": [],
+        "hard_failures": 0,
+        "mean_loss": 0.372222222222222,
+        "mean_loss_ci95": [
+          0.2833333333333332,
+          0.46111111111111097
+        ],
+        "n": 36
+      }
+    },
+    "always_llm": {
+      "reason": "no founder-selected loopback model answered the probe (URLError: <urlopen error [Errno 111] Connection refused>); model downloads are egress-blocked in this environment and no paid fallback is authorized",
+      "status": "NOT_RUN"
+    },
+    "existing_greg": {
+      "status": "RUN",
+      "summary": {
+        "by_stratum": {
+          "causal": {
+            "mean_loss": 0.3668321849088892,
+            "n": 6
+          },
+          "estimation": {
+            "mean_loss": 0.2098177175090227,
+            "n": 6
+          },
+          "formal": {
+            "mean_loss": 0.4001528001586114,
+            "n": 6
+          },
+          "mixed_abstention": {
+            "mean_loss": 0.13333401949055615,
+            "n": 6
+          },
+          "scheduling_optimization": {
+            "mean_loss": 0.5001527863183332,
+            "n": 6
+          },
+          "semantic_strategy": {
+            "mean_loss": 0.3333338075522217,
+            "n": 6
+          }
+        },
+        "dispositions": {
+          "abstain": 26,
+          "bounded_test": 0,
+          "handoff": 2,
+          "recommend": 8
+        },
+        "hard_failure_items": [],
+        "hard_failures": 0,
+        "mean_loss": 0.32393721932293906,
+        "mean_loss_ci95": [
+          0.2216124534564519,
+          0.42867829415914727
+        ],
+        "n": 36
+      }
+    },
+    "routed_greg": {
+      "status": "RUN",
+      "summary": {
+        "by_stratum": {
+          "causal": {
+            "mean_loss": 0.0003948717669446625,
+            "n": 6
+          },
+          "estimation": {
+            "mean_loss": 0.02714083102040243,
+            "n": 6
+          },
+          "formal": {
+            "mean_loss": 0.0005763577663886586,
+            "n": 6
+          },
+          "mixed_abstention": {
+            "mean_loss": 0.008212953107477128,
+            "n": 6
+          },
+          "scheduling_optimization": {
+            "mean_loss": 0.0010793099463886494,
+            "n": 6
+          },
+          "semantic_strategy": {
+            "mean_loss": 0.10023898749861067,
+            "n": 6
+          }
+        },
+        "dispositions": {
+          "abstain": 7,
+          "bounded_test": 3,
+          "handoff": 6,
+          "recommend": 20
+        },
+        "hard_failure_items": [],
+        "hard_failures": 0,
+        "mean_loss": 0.022940551851035385,
+        "mean_loss_ci95": [
+          0.0022325139111161636,
+          0.05858918078989915
+        ],
+        "n": 36
+      }
+    },
+    "static_router": {
+      "status": "RUN",
+      "summary": {
+        "by_stratum": {
+          "causal": {
+            "mean_loss": 0.00014591109722207168,
+            "n": 6
+          },
+          "estimation": {
+            "mean_loss": 0.02694892368706979,
+            "n": 6
+          },
+          "formal": {
+            "mean_loss": 5.530342722244718e-05,
+            "n": 6
+          },
+          "mixed_abstention": {
+            "mean_loss": 0.00795598609858757,
+            "n": 6
+          },
+          "scheduling_optimization": {
+            "mean_loss": 5.2294423055627705e-05,
+            "n": 6
+          },
+          "semantic_strategy": {
+            "mean_loss": 0.13333472204083313,
+            "n": 6
+          }
+        },
+        "dispositions": {
+          "abstain": 13,
+          "bounded_test": 0,
+          "handoff": 3,
+          "recommend": 20
+        },
+        "hard_failure_items": [],
+        "hard_failures": 0,
+        "mean_loss": 0.028082190128998444,
+        "mean_loss_ci95": [
+          0.003914481766268358,
+          0.06526827855324455
+        ],
+        "n": 36
+      }
+    },
+    "tool_llm": {
+      "reason": "no founder-selected loopback model answered the probe (URLError: <urlopen error [Errno 111] Connection refused>); model downloads are egress-blocked in this environment and no paid fallback is authorized",
+      "status": "NOT_RUN"
+    }
+  },
+  "freeze_manifest_sha256": null,
+  "frozen_at": null,
+  "item_count": 36,
+  "paired_gain_vs_routed": {
+    "always_abstain": {
+      "baseline_mean_loss": 0.372222222222222,
+      "ci95": [
+        0.25824890586634397,
+        0.43615857864330954
+      ],
+      "gain": 0.34928167037118685,
+      "n": 36,
+      "relative_reduction": 0.9383686666688608,
+      "sd_diff": 0.27842100367668726
+    },
+    "existing_greg": {
+      "baseline_mean_loss": 0.32393721932293906,
+      "ci95": [
+        0.20099858846287366,
+        0.4077882544472239
+      ],
+      "gain": 0.3009966674719038,
+      "n": 36,
+      "relative_reduction": 0.9291821054123286,
+      "sd_diff": 0.3292635417666811
+    },
+    "static_router": {
+      "baseline_mean_loss": 0.028082190128998444,
+      "ci95": [
+        -0.0005034868520367244,
+        0.01634276242587951
+      ],
+      "gain": 0.00514163827796307,
+      "n": 36,
+      "relative_reduction": 0.18309249578983772,
+      "sd_diff": 0.03336948797793009
+    }
+  },
+  "partition": "selection",
+  "rows": {
+    "always_abstain": [
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S00",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S01",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S02",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S03",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "wrong_withholding": 0.2
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S04",
+        "latency_s": 0.0,
+        "loss": 0.2,
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S05",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E00",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E01",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E02",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E03",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E04",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E05",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F00",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F01",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F02",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F03",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F04",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F05",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O00",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O01",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O02",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O03",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O04",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O05",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C00",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C01",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C02",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C03",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C04",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C05",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M00",
+        "latency_s": 0.0,
+        "loss": 0.6,
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M01",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {},
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M02",
+        "latency_s": 0.0,
+        "loss": 0.0,
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "wrong_withholding": 0.2
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M03",
+        "latency_s": 0.0,
+        "loss": 0.2,
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "wrong_withholding": 0.2
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M04",
+        "latency_s": 0.0,
+        "loss": 0.2,
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "wrong_withholding": 0.2
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M05",
+        "latency_s": 0.0,
+        "loss": 0.2,
+        "stratum": "mixed_abstention"
+      }
+    ],
+    "existing_greg": [
+      {
+        "answer": null,
+        "components": {
+          "latency": 3e-06,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S00",
+        "latency_s": 0.001669,
+        "loss": 0.6000027819783327,
+        "operations": [
+          "interpret"
+        ],
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S01",
+        "latency_s": 1.3e-05,
+        "loss": 0.6000000220916657,
+        "note": "no #140 operation carries this payload",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S02",
+        "latency_s": 7e-06,
+        "loss": 1.2134999754683425e-08,
+        "note": "no #140 operation carries this payload",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S03",
+        "latency_s": 7e-06,
+        "loss": 0.6000000122533325,
+        "note": "no #140 operation carries this payload",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "wrong_withholding": 0.2
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S04",
+        "latency_s": 4e-06,
+        "loss": 0.20000000707666613,
+        "note": "no #140 operation carries this payload",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S05",
+        "latency_s": 6e-06,
+        "loss": 9.778333757518947e-09,
+        "note": "no #140 operation carries this payload",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": {
+          "high": 1489.356504,
+          "low": 372.339126,
+          "median": 744.678252
+        },
+        "components": {
+          "interval_width": 0.086135,
+          "latency": 0.000179
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E00",
+        "latency_s": 0.107238,
+        "loss": 0.08631404104301202,
+        "operations": [
+          "estimate"
+        ],
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "high": 1804.6602750000002,
+          "low": 451.202857,
+          "median": 902.3679249587752
+        },
+        "components": {
+          "interval_width": 0.08613,
+          "latency": 0.000162
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E01",
+        "latency_s": 0.097241,
+        "loss": 0.0862921758735403,
+        "operations": [
+          "estimate"
+        ],
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "high": 2061.571512,
+          "low": 515.392878,
+          "median": 1030.785756
+        },
+        "components": {
+          "latency": 0.000202,
+          "outcome_error": 1.0
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E02",
+        "latency_s": 0.121463,
+        "loss": 1.0,
+        "operations": [
+          "estimate"
+        ],
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E03",
+        "latency_s": 3.5e-05,
+        "loss": 5.863500064151595e-08,
+        "note": "no #140 operation carries this payload",
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E04",
+        "latency_s": 5.8e-05,
+        "loss": 9.683333397939956e-08,
+        "note": "no #140 operation carries this payload",
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "high": 2311.129584,
+          "low": 577.82664,
+          "median": 1155.6090351530304
+        },
+        "components": {
+          "interval_width": 0.086131,
+          "latency": 0.000169
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E05",
+        "latency_s": 0.101627,
+        "loss": 0.08629993266924929,
+        "operations": [
+          "estimate"
+        ],
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F00",
+        "latency_s": 9.4e-05,
+        "loss": 0.6000001571016673,
+        "note": "no #140 operation carries this payload",
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F01",
+        "latency_s": 4.9e-05,
+        "loss": 0.6000000822016667,
+        "note": "no #140 operation carries this payload",
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "feasible": false,
+          "model": {}
+        },
+        "components": {
+          "latency": 0.000801
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F02",
+        "latency_s": 0.480788,
+        "loss": 0.0008013127266667652,
+        "operations": [
+          "optimize"
+        ],
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F03",
+        "latency_s": 8.8e-05,
+        "loss": 0.6000001463100003,
+        "note": "no #140 operation carries this payload",
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000115
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F04",
+        "latency_s": 0.068959,
+        "loss": 0.000114932176666116,
+        "operations": [
+          "optimize"
+        ],
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F05",
+        "latency_s": 0.000102,
+        "loss": 0.6000001704350006,
+        "note": "no #140 operation carries this payload",
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O00",
+        "latency_s": 3.2e-05,
+        "loss": 0.6000000526783332,
+        "note": "no #140 operation carries this payload",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O01",
+        "latency_s": 5.2e-05,
+        "loss": 0.6000000869300007,
+        "note": "no #140 operation carries this payload",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "objective": 210,
+          "optimal": true
+        },
+        "components": {
+          "latency": 0.000916
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O02",
+        "latency_s": 0.549787,
+        "loss": 0.0009163120066659758,
+        "operations": [
+          "optimize"
+        ],
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O03",
+        "latency_s": 2e-05,
+        "loss": 0.6000000327600007,
+        "note": "no #140 operation carries this payload",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O04",
+        "latency_s": 8e-05,
+        "loss": 0.6000001333533328,
+        "note": "no #140 operation carries this payload",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O05",
+        "latency_s": 6e-05,
+        "loss": 0.6000001001816659,
+        "note": "no #140 operation carries this payload",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "effect": null
+        },
+        "components": {
+          "latency": 0.000227,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C00",
+        "latency_s": 0.13612,
+        "loss": 0.6002268665350008,
+        "operations": [
+          "treatment_effect"
+        ],
+        "stratum": "causal"
+      },
+      {
+        "answer": {
+          "effect": 1.2586595274604913
+        },
+        "components": {
+          "latency": 0.000229
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C01",
+        "latency_s": 0.137667,
+        "loss": 0.00022944572833390946,
+        "operations": [
+          "treatment_effect"
+        ],
+        "stratum": "causal"
+      },
+      {
+        "answer": {
+          "effect": null
+        },
+        "components": {
+          "latency": 0.000164
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C02",
+        "latency_s": 0.098161,
+        "loss": 0.00016360237166736626,
+        "operations": [
+          "treatment_effect"
+        ],
+        "stratum": "causal"
+      },
+      {
+        "answer": {
+          "effect": null
+        },
+        "components": {
+          "latency": 0.000169
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C03",
+        "latency_s": 0.101667,
+        "loss": 0.00016944487999959773,
+        "operations": [
+          "treatment_effect"
+        ],
+        "stratum": "causal"
+      },
+      {
+        "answer": {
+          "effect": 0.7908350649350651
+        },
+        "components": {
+          "false_claim": 1.0,
+          "latency": 0.000199
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C04",
+        "latency_s": 0.119404,
+        "loss": 1.0,
+        "operations": [
+          "treatment_effect"
+        ],
+        "stratum": "causal"
+      },
+      {
+        "answer": {
+          "effect": null
+        },
+        "components": {
+          "latency": 0.000204,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C05",
+        "latency_s": 0.12225,
+        "loss": 0.6002037499383338,
+        "operations": [
+          "treatment_effect"
+        ],
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M00",
+        "latency_s": 8.8e-05,
+        "loss": 0.6000001468466674,
+        "note": "no #140 operation carries this payload",
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M01",
+        "latency_s": 1.2e-05,
+        "loss": 1.9413334181687486e-08,
+        "note": "no #140 operation carries this payload",
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M02",
+        "latency_s": 7e-06,
+        "loss": 1.1103334145445843e-08,
+        "note": "no #140 operation carries this payload",
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 2e-06
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M03",
+        "latency_s": 0.001132,
+        "loss": 1.886315000471465e-06,
+        "operations": [
+          "human_review"
+        ],
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 2e-06
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M04",
+        "latency_s": 0.00119,
+        "loss": 1.9835616664446813e-06,
+        "operations": [
+          "human_review"
+        ],
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0,
+          "wrong_withholding": 0.2
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M05",
+        "latency_s": 4.2e-05,
+        "loss": 0.20000006970333442,
+        "note": "no #140 operation carries this payload",
+        "stratum": "mixed_abstention"
+      }
+    ],
+    "routed_greg": [
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000312,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S00",
+        "latency_s": 0.187108,
+        "loss": 0.6003118472983321,
+        "method": "cognition.cortex.semantic",
+        "outcome": "ABSTAIN",
+        "receipt_id": "sha256:f62e168799db2aa21f7aa06149d0dc1c4a0e56c2fc271864f97dc69fd1e90777",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": {
+          "claim_type": "factual_support",
+          "verdict": "supported"
+        },
+        "components": {
+          "latency": 0.000226
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S01",
+        "latency_s": 0.135831,
+        "loss": 0.0002263846599998942,
+        "method": "cognition.cortex.evidence_causal",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:57057171822c1a20a95246721cbea03326d4da273e3dc88a77202484fe70c41e",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": {
+          "verdict": "contested"
+        },
+        "components": {
+          "latency": 0.000221
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S02",
+        "latency_s": 0.132675,
+        "loss": 0.000221124998332319,
+        "method": "cognition.cortex.evidence_causal",
+        "outcome": "ESCALATE",
+        "receipt_id": "sha256:f4399bad5fbe84c2fb8c4a8fc191ff80ae82fb1c305d7d7d89ffdfae5cc24935",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": {
+          "chosen_option": "O2",
+          "route_answers": null
+        },
+        "components": {
+          "latency": 0.000249
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S03",
+        "latency_s": 0.149243,
+        "loss": 0.0002487385016668971,
+        "method": "cognition.cortex",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:773cefd68bf48667fe121b276be4fcf23554c5cc51ad39852bf6b39d5936574a",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000214
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S04",
+        "latency_s": 0.128398,
+        "loss": 0.0002139973083330915,
+        "method": "cognition.cortex",
+        "outcome": "ESCALATE",
+        "receipt_id": "sha256:d5e1658bb96bf703a90f2f35e58abc45a5ced71305869de4edec014db0113f66",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000212
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S05",
+        "latency_s": 0.127099,
+        "loss": 0.00021183222499985277,
+        "method": "cognition.cortex.evidence_causal",
+        "outcome": "REQUEST_EVIDENCE",
+        "receipt_id": "sha256:9735e5101edf46f8ca8e7f4715e11977afee9b2c15cab8c303a7d55d9157e277",
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": {
+          "high": 1212.0079834965795,
+          "interval": 0.9,
+          "low": 455.1439923329776,
+          "median": 745.2798312752325,
+          "unit": "kWh/month"
+        },
+        "components": {
+          "interval_width": 0.060855,
+          "latency": 0.000557
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E00",
+        "latency_s": 0.334003,
+        "loss": 0.061411451921849505,
+        "method": "cognition.cortex.estimation.fermi",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:b865c5a4a2c35723888d18a03b1104cf85e275fe4dfa0ff1512422388391ccca",
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "high": 1226.082598537137,
+          "interval": 0.9,
+          "low": 660.3391097178359,
+          "median": 901.9797544902347,
+          "unit": "kWh/month"
+        },
+        "components": {
+          "interval_width": 0.03845,
+          "latency": 0.000702
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E01",
+        "latency_s": 0.421128,
+        "loss": 0.03915170060342317,
+        "method": "cognition.cortex.estimation.fermi",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:5ac5e166df9c7f98b395647446b0a45d35a4655962bc322decbbfb722b815050",
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "high": 1677.664900500621,
+          "interval": 0.9,
+          "low": 630.0116096660308,
+          "median": 1031.6184637450547,
+          "unit": "kWh/month"
+        },
+        "components": {
+          "latency": 0.000469
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E02",
+        "latency_s": 0.28159,
+        "loss": 0.0004693174083331542,
+        "method": "cognition.cortex.estimation.fermi",
+        "outcome": "ESCALATE",
+        "receipt_id": "sha256:1c25491bd1dce2fcd69eba7a5746e847acb450da324ee3d36e227ce01d8f05d2",
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000219
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E03",
+        "latency_s": 0.131443,
+        "loss": 0.00021907196666688832,
+        "method": "cognition.cortex.estimation.fermi",
+        "outcome": "ABSTAIN",
+        "receipt_id": "sha256:6972f840eb9a6842f9eadb7a8eae3cd9b4f8844c5b9b22168bfbc9eb72b8f8c8",
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000224
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E04",
+        "latency_s": 0.134489,
+        "loss": 0.000224148064999099,
+        "method": "cognition.cortex.estimation.fermi",
+        "outcome": "ABSTAIN",
+        "receipt_id": "sha256:d870590d6f47c257654c17a263f1fb2eb7ff2a89b5d1443391ca4808d517e4c8",
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "high": 1880.7906037028395,
+          "interval": 0.9,
+          "low": 706.3247560701848,
+          "median": 1156.541049609304,
+          "unit": "kWh/month"
+        },
+        "components": {
+          "interval_width": 0.060852,
+          "latency": 0.000517
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E05",
+        "latency_s": 0.310481,
+        "loss": 0.06136929615714277,
+        "method": "cognition.cortex.estimation.fermi",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:559ced1b4861fcfbf9cd644dd0b88cf72ce9184ef0c5d1e403c8faf8bee2acea",
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_P": 0,
+            "s_Q": 2,
+            "s_R": 5
+          }
+        },
+        "components": {
+          "latency": 0.000345
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F00",
+        "latency_s": 0.206722,
+        "loss": 0.0003445359333333424,
+        "method": "cognition.cortex.formal.z3",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:ab6b788bef4532dc3dd631459a1050889587bc2b1a8b6e64bb7c7c69e0a301e3",
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "feasible": false,
+          "unsat_core": [
+            "C_end_Q",
+            "C_end_R",
+            "C_one_PR",
+            "C_one_QR",
+            "C_prec_PQ"
+          ]
+        },
+        "components": {
+          "latency": 0.00113
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F01",
+        "latency_s": 0.677757,
+        "loss": 0.0011295951266659663,
+        "method": "cognition.cortex.formal.z3",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:8c2b784581ef93c942502de8f09b6f2e87214b593e9dc0b8ba53b3d32775bf46",
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "feasible": false,
+          "unsat_core": [
+            "C0"
+          ]
+        },
+        "components": {
+          "latency": 0.000948
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F02",
+        "latency_s": 0.568751,
+        "loss": 0.0009479190216658633,
+        "method": "cognition.cortex.formal.z3",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:31cbcbbc8e0236893e252515373a3f885ba24c7ff8d812e75cf8b003df7dca3c",
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "counterexample": {
+            "s_P": 0,
+            "s_Q": 3,
+            "s_R": 4
+          },
+          "entailed": false
+        },
+        "components": {
+          "latency": 0.000333
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F03",
+        "latency_s": 0.199946,
+        "loss": 0.00033324250166667,
+        "method": "cognition.cortex.formal.z3",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:f377f5de18c7dd1e0241a39379acfbd468cd5d4c5860b9aa5ebb55003da7efc1",
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000359
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F04",
+        "latency_s": 0.215471,
+        "loss": 0.0003591182500000893,
+        "method": "cognition.cortex.formal.z3",
+        "outcome": "ABSTAIN",
+        "receipt_id": "sha256:c6cef8cabc379d106d172f2572032f3534c5e2fe0b872504098a79f10ebcae09",
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_P": 0,
+            "s_Q": 2,
+            "s_R": 5
+          }
+        },
+        "components": {
+          "latency": 0.000344
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F05",
+        "latency_s": 0.206241,
+        "loss": 0.00034373576500001946,
+        "method": "cognition.cortex.formal.z3",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:f264968bbb56f0c860c12de6d26f4c80efa6dfa65e31a528ef2fa7898c93a4d7",
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_P": 1,
+            "s_Q": 0,
+            "s_R": 2
+          },
+          "objective": 3,
+          "optimal": true,
+          "sense": "minimize"
+        },
+        "components": {
+          "latency": 0.000978
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O00",
+        "latency_s": 0.586861,
+        "loss": 0.0009781015949996193,
+        "method": "cognition.cortex.optimization.cpsat",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:6beab85b7ca56d70932e3086504b5cb24aa257d359fbf7e637e497d25a0de592",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "feasible": false,
+          "unsat_core": [
+            "C_dl",
+            "C_one_PQ",
+            "C_prec_PR",
+            "C_prec_QR"
+          ]
+        },
+        "components": {
+          "latency": 0.000993
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O01",
+        "latency_s": 0.595923,
+        "loss": 0.0009932050233328483,
+        "method": "cognition.cortex.optimization.cpsat",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:e3ec603e88501d3e1f4f37c8b159015447293e33314fc410e71f3a5d3f969fdb",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "a": 0,
+            "b": 6
+          },
+          "objective": 210,
+          "optimal": true,
+          "sense": "minimize"
+        },
+        "components": {
+          "latency": 0.001069
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O02",
+        "latency_s": 0.641521,
+        "loss": 0.001069201284999508,
+        "method": "cognition.cortex.optimization.cpsat",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:995239ec9e571860d22823c6e4f330ad2b280fdeb7917737a20e42dc6b38d4b7",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": [
+          {
+            "extractor": "controlled",
+            "formal_model_digest": "sha256:5070852cba212d773a513dd88f426c040b7934f1b95f211011c8ea6e8a7ca509",
+            "reverse_translation": "Shift: 5 hours. Job P takes 2 hours. Job Q takes 1 hours. Job R takes 1 hours. P before Q. Minimize the makespan."
+          },
+          {
+            "feasible": true,
+            "model": {
+              "makespan": 4,
+              "s_P": 0,
+              "s_Q": 2,
+              "s_R": 3
+            },
+            "objective": 4,
+            "optimal": true,
+            "sense": "minimize"
+          }
+        ],
+        "components": {
+          "latency": 0.001125
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O03",
+        "latency_s": 0.675022,
+        "loss": 0.00112503709000066,
+        "method": "cognition.cortex",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:7e01f57e2dc71933777cb4c60e4482fe46cbca3e44c3aff0acf8324110310b66",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_P": 5,
+            "s_Q": 2,
+            "s_R": 0
+          },
+          "objective": 7,
+          "optimal": true,
+          "sense": "minimize"
+        },
+        "components": {
+          "latency": 0.001154
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O04",
+        "latency_s": 0.69243,
+        "loss": 0.0011540496133329726,
+        "method": "cognition.cortex.optimization.cpsat",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:cc555dab72c77f120b4d8a3d33aeb7881aad830912e590c06f7870e10e11e18e",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "feasible": false,
+          "unsat_core": [
+            "C_dl",
+            "C_one_PQ",
+            "C_prec_PR",
+            "C_prec_QR"
+          ]
+        },
+        "components": {
+          "latency": 0.001156
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O05",
+        "latency_s": 0.693759,
+        "loss": 0.0011562650716662878,
+        "method": "cognition.cortex.optimization.cpsat",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:e8a1559d793c59b30b4e7895185e45de2512130c70a0b6538f5db4e881c7ac6c",
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "ci95": [
+            0.6710105852250424,
+            1.038790518881668
+          ],
+          "effect": 0.8325974645507768,
+          "estimand": "average treatment effect of t on y",
+          "naive_difference": 2.14435210521052
+        },
+        "components": {
+          "latency": 0.000563
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C00",
+        "latency_s": 0.337818,
+        "loss": 0.0005630296216668285,
+        "method": "cognition.cortex.evidence_causal",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:9882ecd57debebf0fecdab6aafae29529a2a1d39aceeb9199ce46bcb96cc97b5",
+        "stratum": "causal"
+      },
+      {
+        "answer": {
+          "ci95": [
+            1.0883077793932374,
+            1.3864961393565465
+          ],
+          "effect": 1.2348061103025694,
+          "estimand": "average treatment effect of t on y",
+          "naive_difference": 1.2586595274604913
+        },
+        "components": {
+          "latency": 0.000496
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C01",
+        "latency_s": 0.297398,
+        "loss": 0.0004956631349993284,
+        "method": "cognition.cortex.evidence_causal",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:70743609e0c6f5d4ba2527728fa4d0ea142e27c2fc9ab40728acaf30103b3174",
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000271
+        },
+        "disposition": "bounded_test",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C02",
+        "latency_s": 0.162466,
+        "loss": 0.0002707771866668433,
+        "method": "cognition.cortex.evidence_causal",
+        "outcome": "SMALL_EXPERIMENT",
+        "receipt_id": "sha256:368c585ec1a39dd039cc9164961eaa5c0391f0a79435bc10fd60bd73edf160f4",
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000233
+        },
+        "disposition": "bounded_test",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C03",
+        "latency_s": 0.139567,
+        "loss": 0.00023261150333382828,
+        "method": "cognition.cortex.evidence_causal",
+        "outcome": "SMALL_EXPERIMENT",
+        "receipt_id": "sha256:5b448c70416c075c405888b895ed89c13c543cac2ead2d516dcbefa3f3ac1368",
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000239
+        },
+        "disposition": "bounded_test",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C04",
+        "latency_s": 0.143346,
+        "loss": 0.000238910030000928,
+        "method": "cognition.cortex.evidence_causal",
+        "outcome": "SMALL_EXPERIMENT",
+        "receipt_id": "sha256:9361a8d18df14289013a82fbe672a217b013a2a1f23cceb2fbc668702c9eb044",
+        "stratum": "causal"
+      },
+      {
+        "answer": {
+          "ci95": [
+            0.5632369807412875,
+            0.9355470436470705
+          ],
+          "effect": 0.7289711842697729,
+          "estimand": "average treatment effect of t on y",
+          "naive_difference": 2.10046682673069
+        },
+        "components": {
+          "latency": 0.000568
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C05",
+        "latency_s": 0.340943,
+        "loss": 0.0005682391250002183,
+        "method": "cognition.cortex.evidence_causal",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:f15b067f37088941218d8d8637633eaad8190eac4fc11b85196946d8c67ac8fa",
+        "stratum": "causal"
+      },
+      {
+        "answer": [
+          {
+            "feasible": true,
+            "model": {
+              "s_P": 0,
+              "s_Q": 2
+            }
+          },
+          {
+            "high": 2679.212681974793,
+            "interval": 0.9,
+            "low": 1249.5379942544096,
+            "median": 1832.2728283493348,
+            "unit": "USD/week"
+          }
+        ],
+        "components": {
+          "interval_width": 0.047392,
+          "latency": 0.000599
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M00",
+        "latency_s": 0.359341,
+        "loss": 0.04799116840485944,
+        "method": "cognition.cortex",
+        "outcome": "ANSWERED_WITHIN_SCOPE",
+        "receipt_id": "sha256:754478e9a06357feb75e33ab74e07153fc9f618186b4563c24b3b3174493e98c",
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000227
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M01",
+        "latency_s": 0.136174,
+        "loss": 0.00022695724500105524,
+        "method": "cognition.cortex",
+        "outcome": "ABSTAIN",
+        "receipt_id": "sha256:776c3898cd514cc5adb1b1e2c60583a1b257c0f5486c60f04210944cfbcd8544",
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000251
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M02",
+        "latency_s": 0.150596,
+        "loss": 0.0002509940383333742,
+        "method": "cognition.cortex.evidence_causal",
+        "outcome": "REQUEST_EVIDENCE",
+        "receipt_id": "sha256:59126b4dcd12ce6e1a2da0ce7cff9536f1319ad0a3f6411278828075b3a5978a",
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000236
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M03",
+        "latency_s": 0.141817,
+        "loss": 0.00023636137666774933,
+        "method": "cognition.cortex",
+        "outcome": "ESCALATE",
+        "receipt_id": "sha256:4b4d995958e02a4528f561e8719822158b784e6cee83a7cd0e23c2700d2203ea",
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.000234
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M04",
+        "latency_s": 0.140609,
+        "loss": 0.00023434905666666356,
+        "method": "cognition.cortex",
+        "outcome": "ESCALATE",
+        "receipt_id": "sha256:49558a1746789f03869eb703c085e44f7e16d292c0ae254140075bfa0d832bf8",
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_P": 0,
+            "s_Q": 4
+          }
+        },
+        "components": {
+          "latency": 0.000338
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M05",
+        "latency_s": 0.202733,
+        "loss": 0.00033788852333448935,
+        "method": "cognition.cortex.formal.z3",
+        "outcome": "ESCALATE",
+        "receipt_id": "sha256:9b4c43f483027e8564b8c8cf5c70c02e2a2a61c1dd4677f325a7c737112e8e2e",
+        "stratum": "mixed_abstention"
+      }
+    ],
+    "static_router": [
+      {
+        "answer": null,
+        "components": {
+          "latency": 2e-06,
+          "unjustified_abstention": 0.6
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S00",
+        "latency_s": 0.001076,
+        "loss": 0.6000017936383332,
+        "states": [
+          "DEPENDENCY_UNAVAILABLE"
+        ],
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": {
+          "claim_type": "factual_support",
+          "verdict": "supported"
+        },
+        "components": {
+          "latency": 1e-06
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S01",
+        "latency_s": 0.000677,
+        "loss": 1.1283116676471157e-06,
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": {
+          "verdict": "contested"
+        },
+        "components": {
+          "latency": 1e-06
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S02",
+        "latency_s": 0.000794,
+        "loss": 1.3230283335966914e-06,
+        "states": [
+          "CONTESTED"
+        ],
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": {
+          "chosen_option": "O2"
+        },
+        "components": {
+          "latency": 2e-06
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S03",
+        "latency_s": 0.001102,
+        "loss": 1.837108332741385e-06,
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 1e-06,
+          "wrong_withholding": 0.2
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S04",
+        "latency_s": 0.000757,
+        "loss": 0.20000126220166597,
+        "states": [
+          "NO_CHOICE"
+        ],
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 1e-06
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-SEM-S05",
+        "latency_s": 0.000593,
+        "loss": 9.879566656915509e-07,
+        "states": [
+          "INSUFFICIENT_EVIDENCE"
+        ],
+        "stratum": "semantic_strategy"
+      },
+      {
+        "answer": {
+          "high": 1212.0079834965795,
+          "interval": 0.9,
+          "low": 455.1439923329776,
+          "median": 745.2798312752325,
+          "unit": "kWh/month"
+        },
+        "components": {
+          "interval_width": 0.060855,
+          "latency": 0.000284
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E00",
+        "latency_s": 0.170531,
+        "loss": 0.061139000068516886,
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "high": 1226.082598537137,
+          "interval": 0.9,
+          "low": 660.3391097178359,
+          "median": 901.9797544902347,
+          "unit": "kWh/month"
+        },
+        "components": {
+          "interval_width": 0.03845,
+          "latency": 0.000554
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E01",
+        "latency_s": 0.332543,
+        "loss": 0.0390040585100891,
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "high": 1677.664900500621,
+          "interval": 0.9,
+          "low": 630.0116096660308,
+          "median": 1031.6184637450547,
+          "unit": "kWh/month"
+        },
+        "components": {
+          "latency": 0.000397
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E02",
+        "latency_s": 0.237997,
+        "loss": 0.0003966623683345461,
+        "states": [
+          "CONTESTED"
+        ],
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 2e-06
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E03",
+        "latency_s": 0.001376,
+        "loss": 2.2940533335713553e-06,
+        "states": [
+          "DIMENSION_MISMATCH"
+        ],
+        "stratum": "estimation"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 2e-06
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E04",
+        "latency_s": 0.001063,
+        "loss": 1.7714333337911135e-06,
+        "states": [
+          "MALFORMED_INPUT"
+        ],
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "high": 1880.7906037028395,
+          "interval": 0.9,
+          "low": 706.3247560701848,
+          "median": 1156.541049609304,
+          "unit": "kWh/month"
+        },
+        "components": {
+          "interval_width": 0.060852,
+          "latency": 0.000298
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-EST-E05",
+        "latency_s": 0.178757,
+        "loss": 0.06114975568881085,
+        "stratum": "estimation"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_P": 0,
+            "s_Q": 2,
+            "s_R": 5
+          }
+        },
+        "components": {
+          "latency": 9.3e-05
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F00",
+        "latency_s": 0.055567,
+        "loss": 9.261084666680593e-05,
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "feasible": false,
+          "unsat_core": [
+            "C_end_Q",
+            "C_end_R",
+            "C_one_PR",
+            "C_one_QR",
+            "C_prec_PQ"
+          ]
+        },
+        "components": {
+          "latency": 4.6e-05
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F01",
+        "latency_s": 0.027404,
+        "loss": 4.567386333443816e-05,
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "feasible": false,
+          "unsat_core": [
+            "C0"
+          ]
+        },
+        "components": {
+          "latency": 8e-06
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F02",
+        "latency_s": 0.004944,
+        "loss": 8.239203333081e-06,
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "counterexample": {
+            "s_P": 0,
+            "s_Q": 3,
+            "s_R": 4
+          },
+          "entailed": false
+        },
+        "components": {
+          "latency": 5e-05
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F03",
+        "latency_s": 0.029857,
+        "loss": 4.976107999937086e-05,
+        "stratum": "formal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 8.9e-05
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F04",
+        "latency_s": 0.053224,
+        "loss": 8.870666833445286e-05,
+        "states": [
+          "TIMEOUT"
+        ],
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_P": 0,
+            "s_Q": 2,
+            "s_R": 5
+          }
+        },
+        "components": {
+          "latency": 4.7e-05
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-FOR-F05",
+        "latency_s": 0.028097,
+        "loss": 4.6828901666534276e-05,
+        "stratum": "formal"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_P": 1,
+            "s_Q": 0,
+            "s_R": 2
+          },
+          "objective": 3,
+          "optimal": true,
+          "sense": "minimize"
+        },
+        "components": {
+          "latency": 5.2e-05
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O00",
+        "latency_s": 0.031489,
+        "loss": 5.248220500106982e-05,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "feasible": false,
+          "unsat_core": [
+            "C_dl",
+            "C_one_PQ",
+            "C_prec_PR",
+            "C_prec_QR"
+          ]
+        },
+        "components": {
+          "latency": 4.9e-05
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O01",
+        "latency_s": 0.02965,
+        "loss": 4.9415923332768825e-05,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "a": 0,
+            "b": 6
+          },
+          "objective": 210,
+          "optimal": true,
+          "sense": "minimize"
+        },
+        "components": {
+          "latency": 2e-05
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O02",
+        "latency_s": 0.012247,
+        "loss": 2.041183666581977e-05,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": [
+          {
+            "extractor": "controlled",
+            "formal_model_digest": "sha256:5070852cba212d773a513dd88f426c040b7934f1b95f211011c8ea6e8a7ca509",
+            "reverse_translation": "Shift: 5 hours. Job P takes 2 hours. Job Q takes 1 hours. Job R takes 1 hours. P before Q. Minimize the makespan."
+          },
+          {
+            "feasible": true,
+            "model": {
+              "makespan": 4,
+              "s_P": 0,
+              "s_Q": 3,
+              "s_R": 2
+            },
+            "objective": 4,
+            "optimal": true,
+            "sense": "minimize"
+          }
+        ],
+        "components": {
+          "latency": 8e-05
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O03",
+        "latency_s": 0.047988,
+        "loss": 7.998076833397743e-05,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "feasible": true,
+          "model": {
+            "s_P": 5,
+            "s_Q": 2,
+            "s_R": 0
+          },
+          "objective": 7,
+          "optimal": true,
+          "sense": "minimize"
+        },
+        "components": {
+          "latency": 6.2e-05
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O04",
+        "latency_s": 0.037353,
+        "loss": 6.2255573332853e-05,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "feasible": false,
+          "unsat_core": [
+            "C_dl",
+            "C_one_PQ",
+            "C_prec_PR",
+            "C_prec_QR"
+          ]
+        },
+        "components": {
+          "latency": 4.9e-05
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-SCH-O05",
+        "latency_s": 0.029532,
+        "loss": 4.92202316672774e-05,
+        "stratum": "scheduling_optimization"
+      },
+      {
+        "answer": {
+          "ci95": [
+            0.6710105852250424,
+            1.038790518881668
+          ],
+          "effect": 0.8325974645507768,
+          "estimand": "average treatment effect of t on y",
+          "naive_difference": 2.14435210521052
+        },
+        "components": {
+          "latency": 0.000311
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C00",
+        "latency_s": 0.186835,
+        "loss": 0.0003113919133329546,
+        "stratum": "causal"
+      },
+      {
+        "answer": {
+          "ci95": [
+            1.0883077793932374,
+            1.3864961393565465
+          ],
+          "effect": 1.2348061103025694,
+          "estimand": "average treatment effect of t on y",
+          "naive_difference": 1.2586595274604913
+        },
+        "components": {
+          "latency": 0.000318
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C01",
+        "latency_s": 0.191071,
+        "loss": 0.0003184522416662124,
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 4e-06
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C02",
+        "latency_s": 0.002541,
+        "loss": 4.23560333426091e-06,
+        "states": [
+          "NOT_IDENTIFIED"
+        ],
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 4e-06
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C03",
+        "latency_s": 0.0023,
+        "loss": 3.833141666594505e-06,
+        "states": [
+          "NOT_IDENTIFIED"
+        ],
+        "stratum": "causal"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 2e-06
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C04",
+        "latency_s": 0.000971,
+        "loss": 1.6175149994523963e-06,
+        "states": [
+          "NOT_IDENTIFIED"
+        ],
+        "stratum": "causal"
+      },
+      {
+        "answer": {
+          "ci95": [
+            0.5632369807412875,
+            0.9355470436470705
+          ],
+          "effect": 0.7289711842697729,
+          "estimand": "average treatment effect of t on y",
+          "naive_difference": 2.10046682673069
+        },
+        "components": {
+          "latency": 0.000236
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-CAU-C05",
+        "latency_s": 0.141562,
+        "loss": 0.00023593616833295528,
+        "stratum": "causal"
+      },
+      {
+        "answer": [
+          {
+            "feasible": true,
+            "model": {
+              "s_P": 0,
+              "s_Q": 2
+            }
+          },
+          {
+            "high": 2679.212681974793,
+            "interval": 0.9,
+            "low": 1249.5379942544096,
+            "median": 1832.2728283493348,
+            "unit": "USD/week"
+          }
+        ],
+        "components": {
+          "interval_width": 0.047392,
+          "latency": 0.000341
+        },
+        "disposition": "recommend",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M00",
+        "latency_s": 0.204365,
+        "loss": 0.04773287357819221,
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 1e-06
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M01",
+        "latency_s": 0.00087,
+        "loss": 1.4491916666277879e-06,
+        "note": "no specialist for this payload",
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 1e-06
+        },
+        "disposition": "abstain",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M02",
+        "latency_s": 0.000679,
+        "loss": 1.130998333186047e-06,
+        "states": [
+          "INSUFFICIENT_EVIDENCE"
+        ],
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M03",
+        "latency_s": 0.000102,
+        "loss": 1.7077833338892864e-07,
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M04",
+        "latency_s": 6e-05,
+        "loss": 1.0023333440282538e-07,
+        "stratum": "mixed_abstention"
+      },
+      {
+        "answer": null,
+        "components": {
+          "latency": 0.0
+        },
+        "disposition": "handoff",
+        "hard_failures": [],
+        "item_id": "SEL-MIX-M05",
+        "latency_s": 0.000115,
+        "loss": 1.918116655967121e-07,
+        "stratum": "mixed_abstention"
+      }
+    ]
+  }
+}

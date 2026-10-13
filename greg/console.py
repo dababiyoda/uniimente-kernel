@@ -83,6 +83,8 @@ class Console:
                          "next_observe_at": m.next_observe_at, "actions_done": m.actions_done,
                          "intended_effect": m.spec["intended_effect"], "closure": m.spec["closure"]["kind"]}
                         for mid, m in sorted(book.missions.items())]
+            from greg.presentation import cognitive_summaries
+            cognitive = cognitive_summaries(journal)
             vepmc = metrics.vepmc(journal)
             recent = [{"type": e.type[len("greg."):], "at": e.occurred_at,
                        "mission_id": e.payload.get("mission_id"), "summary": _summary(e)}
@@ -92,7 +94,7 @@ class Console:
         if folder.is_dir():
             deliveries = [p.name for p in sorted(folder.glob("*.md"), key=lambda p: p.stat().st_mtime,
                                                    reverse=True)[:10]]
-        return {"status": state, "missions": missions, "vepmc": vepmc, "recent": recent, "deliveries": deliveries}
+        return {"status": state, "missions": missions, "vepmc": vepmc, "recent": recent, "deliveries": deliveries, "cognitive": cognitive}
 
     def deliver_root(self) -> Path:
         config = json.loads(self.layout.config.read_text())
@@ -144,6 +146,13 @@ class Console:
                 self.proposals.pop(old)
         return pid
 
+    def attach(self, request_id: str, capability_id: str) -> Path:
+        """Sign CAPABILITY_ATTACH only for a verified candidate that an open capability ask names."""
+        open_asks = {r["request_id"]: r for r in status(self.home)["decisions_required"]}
+        if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))}:
+            raise ValueError("that capability is not a verified candidate of an open capability ask")
+        return self.sign("CAPABILITY_ATTACH", {"capability_id": capability_id})
+
     def sign_proposal(self, pid: str) -> Path:
         self._refresh_transport()
         with self.lock:
@@ -189,10 +198,25 @@ def _ask_details(r: dict) -> str:
                                          for o in r["options"]) + "</table>")
     if r.get("uncertainty"):
         parts.append("<span class=muted>Uncertainty: " + _e(r["uncertainty"]) + "</span>")
+    for c in _attachable(r):
+        mech = c.get("mechanism") or {}
+        q = mech.get("qualification") or {}
+        source = (mech.get("upstream") or {}).get("source") or "upstream not declared"
+        parts.append(f"<br><b>Verified candidate {_e(c['capability_id'])}</b>"
+                     + (f": {_e(mech.get('distribution'))} {_e(mech.get('version'))}, license {_e(mech.get('license'))}, "
+                        f"{_e(source)}; qualified on {_e(q.get('cases'))} frozen cases with {_e(q.get('failures'))} "
+                        f"failures; {_e(mech.get('competence'))}" if mech else ""))
     if r.get("resource"):
         parts.append("<br><span class=muted>Authority needed: "
                      + _e("; ".join(f"{k}: {v}" for k, v in r["authority_requested"].items())) + "</span>")
     return "".join(parts)
+
+
+def _attachable(r: dict) -> list[dict]:
+    """Verified candidates a capability ask names; only these can be attached from this page."""
+    if r.get("kind") != "CAPABILITY_ATTACH":
+        return []
+    return [c for c in ((r.get("evidence") or {}).get("registered") or []) if c.get("state") == "VERIFIED"]
 
 
 def _form(console: Console, action: str, fields: dict, label: str, *, cls: str = "", disabled=False,
@@ -202,6 +226,78 @@ def _form(console: Console, action: str, fields: dict, label: str, *, cls: str =
     return (f"<form class=inline method=post action='{_e(action)}'{onsubmit}><input type=hidden name=csrf "
             f"value='{_e(console.csrf)}'>{hidden}<button class='{cls}'{' disabled' if disabled else ''}>"
             f"{_e(label)}</button></form>")
+
+
+
+
+def owned_pages(console: Console) -> list[dict]:
+    """Pages must be bound to successful canonical receipts, not filesystem presence."""
+    pages = {}
+    with observe(console.home, actor="spiffe://uniimente.internal/greg/owned-reader") as journal:
+        ledger = journal.ledger
+        ok, _ = ledger.verify_chain()
+        if not ok:
+            return []
+        witnesses = {r.payload["witness_id"]: r.payload["grant_id"] for r in ledger.by_type("witness")
+                     if r.payload.get("action_class") == "greg.foundry.apply"
+                     and r.payload.get("capability") == "foundry.apply"}
+        dispatched = {(r.payload.get("witness_id"), r.payload.get("grant_id"))
+                      for r in ledger.by_type("grant_dispatch")}
+        for event in journal.replay("mission.action"):
+            p = event.payload
+            if p.get("status") != "DONE" or p.get("capability") != "foundry.apply":
+                continue
+            receipt = ledger.find(p.get("receipt"))
+            if receipt is None:
+                continue
+            rp = receipt.payload
+            wid, gid = rp.get("witness_id"), rp.get("grant_id")
+            if not gid or witnesses.get(wid) != gid or (wid, gid) not in dispatched:
+                continue
+            result = rp.get("result", {})
+            output = result.get("output") or {}
+            if result.get("result_class") != "positive" or not isinstance(output, dict):
+                continue
+            page = output.get("result") if output.get("system") == 31 else (
+                (output.get("result") or {}).get("portal") if output.get("system") == 49 else None)
+            if isinstance(page, dict) and page.get("kind") == "owned-page":
+                item = {k: page.get(k) for k in ("name", "version", "address", "version_address", "title")}
+                item["mission_id"] = p["mission_id"]
+                pages[(p["mission_id"], item["name"], item["version"])] = item
+    return list(pages.values())
+
+
+def render_owned_index(console: Console) -> bytes:
+    links = []
+    for page in owned_pages(console):
+        url = "/owned/" + quote(page["mission_id"], safe="") + "/" + quote(page["name"], safe="")
+        links.append(f"<li><a href='{url}?version={page['version']}'>{_e(page['title'])}</a> "
+                     f"(version {_e(page['version'])})</li>")
+    return _page("Owned content", "<h1>Owned content</h1><p>Private pages produced by GREG. "
+                 "Public deployment requires its own authority.</p><ul>" + "".join(links) +
+                 "</ul><p><a href='/'>GREG</a></p>")
+
+
+def render_owned_page(console: Console, mission_id: str, name: str, version: int | None) -> bytes:
+    from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, SecretBroker
+    from greg import foundry_bridge
+    approved = [p for p in owned_pages(console) if p["mission_id"] == mission_id and p["name"] == name
+                and (version is None or p["version"] == version)]
+    if not approved:
+        raise FileNotFoundError("no canonical owned-page receipt")
+    wanted = max(approved, key=lambda p: p["version"])
+    root = (console.layout.workspace / mission_id.replace(":", "_")).resolve()
+    if console.layout.workspace.resolve() not in root.parents:
+        raise FileNotFoundError("owned mission outside workspace")
+    ctx = InvocationContext(root, (root,), SecretBroker(console.layout.secrets), BUILTINS["foundry.query"][0])
+    try:
+        output = foundry_bridge.query({"system": 31, "op": "retrieve", "args": {
+            "name": name, "version": wanted["version"]}}, ctx)["result"]
+    except CapabilityError as exc:
+        raise FileNotFoundError("owned content failed integrity checks") from exc
+    if (output["address"], output["version_address"]) != (wanted["address"], wanted["version_address"]):
+        raise FileNotFoundError("owned content lacks a matching canonical receipt")
+    return output["html"].encode()
 
 
 def render_home(console: Console) -> bytes:
@@ -245,6 +341,11 @@ def render_home(console: Console) -> bytes:
                              "It happened", disabled=not can) + " " +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_not_executed"},
                              "It did not happen", cls="secondary", disabled=not can))
+            actions += "".join(" " + _form(console, "/attach", {"request_id": r["request_id"],
+                                                                "capability_id": c["capability_id"]},
+                                           f"Attach {c['capability_id']}", disabled=not can,
+                                           confirm=f"Sign CAPABILITY_ATTACH for {c['capability_id']}?")
+                               for c in _attachable(r))
             rows.append(f"<tr><td><span class=pill>{_e(r['kind'])}</span></td><td>{_e(r['why_now'])}<br>"
                         f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r)}</td>"
                         f"<td>{actions}</td></tr>")
@@ -259,7 +360,7 @@ def render_home(console: Console) -> bytes:
                         f"</td><td>{accept}</td></tr>")
         out.append("<section><h2>Closures (VEPMC)</h2><table>" + "".join(rows) + "</table>"
                    "<p class=muted>A closure counts only when every condition holds, including your acceptance "
-                   "and a Mac body.</p></section>")
+                   "and a run on the body you designated as your first body.</p></section>")
     if snap["missions"]:
         rows = "".join(
             f"<tr><td>{_e(m['mission_id'])}<br><span class=muted>{_e(m['intended_effect'])}</span></td>"
@@ -268,13 +369,37 @@ def render_home(console: Console) -> bytes:
             f"<td>{m['actions_done']}</td></tr>" for m in snap["missions"])
         out.append("<section><h2>Missions</h2><table><tr><th>Mission</th><th>State</th><th>Blocker / next look"
                    "</th><th>Actions</th></tr>" + rows + "</table></section>")
+    cognitive = snap['status'].get('cognition', {}).get('receipts', [])
+    if cognitive:
+        rows = []
+        for r in cognitive:
+            methods = ', '.join(c['kind'] for c in r['claims'])
+            explanation = '; '.join(c['selection_rationale'] for c in r['claims'])
+            rows.append(f"<tr><td>{_e(r['problem_id'])}<br>{_e(methods)}</td>"
+                        f"<td>{'Checked conditional result' if r['answered'] else 'Needs evidence or review'}<br>"
+                        f"{_e(r['next_step'])}<details><summary>Evidence and limits</summary>"
+                        f"<p>{_e(explanation)}</p><pre>{_e(json.dumps(r['claims'], indent=2))}</pre>"
+                        f"<p>{_e(r['cost_limits'])}; {_e(r['elapsed_ms'])} ms</p></details></td></tr>")
+        out.append('<section><h2>Checked reasoning</h2><p>These results check computation and source binding. '
+                   'Real-world assumptions and consequential decisions still need review.</p><table>' + ''.join(rows) + '</table></section>')
+    if snap.get("cognitive"):
+        cards = []
+        for answer in snap["cognitive"]:
+            cards.append("<section><h2>" + _e(answer["problem_id"]) + "</h2><p>Method: " + _e(answer["method"]) +
+                         " · Result: " + _e(answer["outcome_state"]) + "</p><p>" + _e(answer["selection_rationale"]) +
+                         "</p><pre>" + _e(json.dumps(answer["output"], ensure_ascii=False)) + "</pre><p>Evidence: " +
+                         _e(answer["proof_class"]) + " · Receipt: " + _e(answer["receipt_id"]) + "</p><p>Uncertainty: " +
+                         _e(answer["uncertainty"]) + "</p><p>Time: " + _e(answer["latency"]) + " seconds · Cost: $" +
+                         _e(answer["money_cost"]) + "</p><p>Next permitted step: " +
+                         _e('; '.join(answer["missing_information"] or []) or "Review this scoped result; any effect still requires the existing authority path.") + "</p></section>")
+        out.extend(cards)
     if snap["deliveries"]:
         links = "".join(f"<li><a href='/delivery/{quote(n)}'>{_e(n)}</a></li>" for n in snap["deliveries"])
         out.append(f"<section><h2>Deliveries</h2><ul>{links}</ul></section>")
     out.append("<section><h2>Recent history</h2><table>" + "".join(
         f"<tr><td class=muted>{_e(r['at'][11:19])}</td><td>{_e(r['type'])}</td><td>{_e(r['mission_id'] or '')}</td>"
         f"<td>{_e(r['summary'])}</td></tr>" for r in snap["recent"]) + "</table>"
-        "<p><a href=/morning>Morning report</a> · <a href=/api/state>JSON state</a></p></section>")
+        "<p><a href=/morning>Morning report</a> · <a href=/api/state>JSON state</a> · <a href=/owned>Owned content</a></p></section>")
     out.append("<section><h2>Stop</h2><p class=muted>Shutdown always wins. A signed stop is recorded as your "
                "command; the local stop file works even without a key.</p>" +
                _form(console, "/stop", {"mode": "signed"}, "Stop GREG (signed)", cls="danger", disabled=not can,
@@ -376,6 +501,19 @@ def make_handler(console: Console):
                 if path.startswith("/delivery/"):
                     from urllib.parse import unquote
                     return self._send(200, render_delivery(console, unquote(path.split("/", 2)[2])))
+                if path == "/owned":
+                    return self._send(200, render_owned_index(console))
+                if path.startswith("/owned/"):
+                    from urllib.parse import unquote
+                    parts = path.split("/")
+                    if len(parts) != 4:
+                        return self._send(404, b"not found")
+                    query = parse_qs(urlsplit(self.path).query)
+                    try:
+                        version = int(query["version"][0]) if "version" in query else None
+                    except ValueError:
+                        return self._send(400, b"invalid page version")
+                    return self._send(200, render_owned_page(console, unquote(parts[2]), unquote(parts[3]), version))
                 if path == "/morning":
                     return self._send(200, render_morning(console))
                 if path == "/api/state":
@@ -411,6 +549,9 @@ def make_handler(console: Console):
                     target = console.sign("DECISION", {"request_id": form["request_id"], "answer": form["answer"],
                                                        "reason": "decided in the GREG console"})
                     console.flash.append(f"Decision signed: {target.name}")
+                elif path == "/attach":
+                    target = console.attach(form.get("request_id", ""), form.get("capability_id", ""))
+                    console.flash.append(f"Attach signed: {target.name}")
                 elif path == "/accept":
                     console.sign("CRITIQUE", {"target_event_id": form["event_id"], "verdict": "accept",
                                               "evidence_type": "founder_judgment",

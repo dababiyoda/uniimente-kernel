@@ -23,7 +23,7 @@ signed files dropped into the body inbox, so any interface can close at any time
 from __future__ import annotations
 
 import argparse
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 import getpass
 import json
 import os
@@ -163,6 +163,17 @@ def main(argv=None) -> int:
                                                         choices=["ollama", "anthropic", "openai", "claude-code"])
     select.add_argument("--local-model"); select.add_argument("--off", action="store_true")
     select.add_argument("--key", required=True); select.add_argument("--no-passphrase", action="store_true")
+    cs = sub.add_parser("cognition", help="typed cognitive capabilities on the existing GREG mission path")
+    css = cs.add_subparsers(dest="cognition_cmd", required=True)
+    css.add_parser("inventory")
+    css.add_parser("knowledge")
+    cm = css.add_parser("mission")
+    cm.add_argument("--request", required=True, help="bounded cognition request JSON")
+    cm.add_argument("--id", required=True, help="durable mission identity")
+    cm.add_argument("--field", default="abstention_state")
+    cm.add_argument("--equals", default="NONE", help="expected JSON value (or a plain string)")
+    cm.add_argument("--key"); cm.add_argument("--no-passphrase", action="store_true")
+    cm.add_argument("--print-only", action="store_true")
 
     for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
                  "accept"):
@@ -205,6 +216,7 @@ def main(argv=None) -> int:
             q.add_argument("--statement", default="statement.csv",
                            help="business-case: file name of the payment statement you export into the case folder")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
+            q.add_argument("--problem", help="cognition: bounded problem JSON to review and sign")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
         if name == "decide":
@@ -280,6 +292,11 @@ def main(argv=None) -> int:
     for q in (sor, sou):
         q.add_argument("--key"); q.add_argument("--no-passphrase", action="store_true")
         q.add_argument("--ttl-hours", type=int, default=24)
+    sub.add_parser("resilience", help="read-only: failure/recovery episodes, antifragility evidence, common causes, "
+                                       "dependency concentration and organ-vs-system decoupling warnings")
+    gv = sub.add_parser("gravity", help="one read-only Goal Gravity turn: Backcast GPS, Lawful Leverage Foundry, "
+                                         "Gate proposals and at most one prepared founder ask")
+    gv.add_argument("--situation", required=True, help="typed situation JSON (sensing evidence, never authority)")
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
@@ -342,6 +359,10 @@ def main(argv=None) -> int:
                     note = Layout(home).workspace / "m_first-note" / "note.txt"
                     spec = templates.workspace_note(text=args.text, must_contain=args.must_contain,
                                                     workspace_file=note)
+                elif args.target == "schedule-in-words":
+                    if not args.text:
+                        raise BodyError("schedule-in-words needs --text with the schedule in the controlled language")
+                    spec = templates.schedule_in_words(text=args.text)
                 elif args.target == "verify-download":
                     spec = templates.verify_download(file=Path(args.file), sha256=args.sha256,
                                                      workspace_root=Layout(home).workspace)
@@ -356,6 +377,10 @@ def main(argv=None) -> int:
                                                    price=args.price, currency=args.currency,
                                                    acceptance=args.acceptance, statement=args.statement,
                                                    workspace_root=Layout(home).workspace)
+                elif args.target == "cognition":
+                    if not args.problem:
+                        raise BodyError('cognition needs --problem')
+                    spec = templates.cognitive_problem(json.loads(Path(args.problem).read_text()))
                 elif args.target == "human-work":
                     if not (args.function and args.purpose):
                         raise BodyError("human-work needs --function and --purpose")
@@ -398,6 +423,51 @@ def main(argv=None) -> int:
                                                   **({"ollama_model": args.local_model}
                                                      if args.local_model is not None else {})})
             print(_drop(home, "MODEL_ROUTE_SET", selection, args))
+        elif args.cmd == "cognition":
+            from greg.cognition.cortex import compile_problem, registry_view
+            if args.cognition_cmd == "inventory":
+                if Layout(home).ledger.exists():
+                    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                        registry = registry_view(journal)
+                else:
+                    registry = registry_view()
+                data = [{**m.to_dict(), "attached": registry.usable(cid)[0]} for cid, m in registry.manifests.items()
+                        if cid.startswith("cognition.")]
+            elif args.cognition_cmd == "knowledge":
+                from greg.cognition.settlement import competence
+                from greg.cognition.cells import cells
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    registry = registry_view(journal)
+                    data = {"competence": [{"method": k[0], "version": k[1], "geometry_key": k[2], **v}
+                                           for k, v in competence(journal).items()],
+                            "cells": cells(journal, registry), "authority_created": False}
+            else:
+                request = json.loads(Path(args.request).read_text())
+                if "problem" in request:          # cortex contract: validated by the bridge, same entry
+                    from greg.cognition.bridge import _validate
+                    _validate(request)
+                else:
+                    compile_problem(request)
+                try:
+                    expected = json.loads(args.equals)
+                except ValueError:
+                    expected = args.equals
+                target = "cognition:" + request["problem_id"]
+                step = {"capability": "cognition.solve", "target": target, "params": request}
+                data = {"mission_id": args.id, "founder_expression": "Solve the supplied bounded cognitive problem with typed evidence",
+                        "intended_effect": "Reobserved computation satisfying the founder's stated predicate; no external consequence",
+                        "closure": {"kind": "bounded"}, "priority": 50,
+                        "success_checks": [{"check_id": "cognitive-answer", "description": "typed answer satisfies the requested predicate",
+                                            "sensor": step, "predicate": {"op": "equals", "field": args.field, "value": expected}}],
+                        "strategies": [{**step, "action_id": "recompute", "advances": ["cognitive-answer"], "rationale": "bounded recomputation"}],
+                        "light_cone": {"capabilities": ["cognition.solve"], "targets": [target], "max_consequence_class": "read_only",
+                                       "budget_usd": 0, "horizon": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()}}
+                if not args.print_only:
+                    if not args.key:
+                        raise BodyError("cognitive mission needs --key or --print-only")
+                    print(_drop(home, "MISSION", data, args))
+                    return 0
+            print(json.dumps(data, indent=2))
         elif args.cmd in ("vepmc", "routing"):
             from greg import metrics, routing
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
@@ -413,6 +483,23 @@ def main(argv=None) -> int:
             print(json.dumps(data, indent=1))
         elif args.cmd == "sop":
             print(json.dumps(_sop(home, args), indent=1))
+        elif args.cmd == "resilience":
+            from greg import resilience
+            if Layout(home).ledger.exists():
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = resilience.summary(journal)
+            else:
+                data = {"reality_status": "NO_BODY_LEDGER", "note": "measure on the body"}
+            print(json.dumps(data, indent=1, default=str))
+        elif args.cmd == "gravity":
+            from greg import gravity
+            situation = json.loads(Path(args.situation).read_text())
+            if Layout(home).ledger.exists():
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = gravity.step(situation, journal=journal)
+            else:
+                data = gravity.step(situation)
+            print(json.dumps(data, indent=1))
         elif args.cmd == "presence":
             from datetime import datetime, timezone
             from greg import presence
@@ -457,7 +544,6 @@ def main(argv=None) -> int:
                         raise BodyError(f"no graph node for event {args.event_id}")
                     print(json.dumps({"node": node, "causes": g.why(node), "effects": g.impact(node)}, indent=1))
                 else:
-                    from datetime import datetime, timezone
                     now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
                     print(json.dumps(reputation.score(reputation.from_greg(events), now=now), indent=1))
         elif args.cmd == "decide":
@@ -514,7 +600,6 @@ def main(argv=None) -> int:
             finally:
                 server.server_close()
         elif args.cmd == "device" and args.device_cmd == "enroll":
-            from datetime import datetime, timezone
             expires = datetime.now(timezone.utc) + timedelta(days=args.days)
             print(_drop(home, "DEVICE_ENROLL", {"public_key": args.pubkey, "label": args.label,
                                                 "kinds": [k.strip() for k in args.kinds.split(",") if k.strip()],

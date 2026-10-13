@@ -1,0 +1,95 @@
+{
+  "actor_role": "vendor submitting invoices",
+  "assumptions": [
+    "actor is risk-neutral",
+    "parameter ranges are declared by the requester",
+    "parameters are independent and uniform within their ranges",
+    "an intervention changes only the parameters it names"
+  ],
+  "baseline": {
+    "expected_payoff": {
+      "high": 4749.1256052372155,
+      "low": 633.7641736065582,
+      "median": 2698.742054051935
+    },
+    "misconduct_pays_probability": 0.9885
+  },
+  "behavior": "duplicate invoicing",
+  "interventions": [
+    {
+      "cost_usd": 3000.0,
+      "expected_payoff_after": {
+        "high": -1755.7007282262985,
+        "low": -14436.949906223352,
+        "median": -7535.785927514251
+      },
+      "id": "I_match",
+      "kind": "detection",
+      "levers": [
+        "certainty"
+      ],
+      "pays_probability_after": 0.005,
+      "reach": "internal",
+      "reduction": 0.9834,
+      "reduction_per_1k_usd": 0.3278,
+      "severity_only": false
+    },
+    {
+      "cost_usd": 500.0,
+      "expected_payoff_after": {
+        "high": 4326.310817530302,
+        "low": -350.68339348812424,
+        "median": 2059.9454999398004
+      },
+      "id": "I_fine",
+      "kind": "process_change",
+      "levers": [
+        "severity"
+      ],
+      "pays_probability_after": 0.9191,
+      "reach": "internal",
+      "reduction": 0.0694,
+      "reduction_per_1k_usd": 0.1388,
+      "severity_only": true
+    }
+  ],
+  "limitations": [
+    "no behavioral response beyond the declared effects",
+    "no displacement to other misconduct",
+    "severity effects are weakly supported by evidence; certainty effects are stronger"
+  ],
+  "model": "risk-neutral expected value: gain - p_detect * p_sanction * sanction - attempt_cost (Becker 1968)",
+  "parameters": {
+    "gain_usd": {
+      "dist": "uniform",
+      "high": 6000.0,
+      "low": 2000.0
+    },
+    "p_detect": {
+      "dist": "uniform",
+      "high": 0.15,
+      "low": 0.05
+    },
+    "p_sanction": {
+      "dist": "uniform",
+      "high": 0.8,
+      "low": 0.5
+    },
+    "sanction_usd": {
+      "dist": "uniform",
+      "high": 30000.0,
+      "low": 10000.0
+    }
+  },
+  "proof_class": "deterrence_assessment",
+  "refused": [
+    {
+      "id": "I_scare",
+      "kind": "intimidation",
+      "why": "coercive or rights-violating; never ranked"
+    }
+  ],
+  "samples": 20000,
+  "seed": 7,
+  "truth_note": "A risk-neutral expected-value model of incentives (Becker 1968), not a prediction of any person's behavior. People are not risk-neutral; deterrence evidence supports certainty of apprehension far more consistently than severity (Nagin 2013)."
+}

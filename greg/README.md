@@ -1,5 +1,7 @@
 # GREG — the persistent, founder-sovereign operating layer (first-body candidate)
 
+Current bounded product integration: [Seed Genome on the canonical GREG path](../docs/cortex/GREG_SEED_GENOME.md). The older sandbox experiment and its frozen results remain historical evidence.
+
 > **Founder-effect rule (INTENT-0030, INTENT-2026-09-25-EGREGORE-ECOLOGY):** the egregore is built
 > as real, running mechanisms. The *effects* (persistence, self-direction inside scope,
 > self-healing, capability genesis, continuity, community influence, Jarvis-like integration)
@@ -38,6 +40,22 @@ Constitution and one Gate — not from a hierarchy of personas.
 | Preconditions and N2 without a model | A strategy may `requires` checks that must be observed passing before it acts; the separate-process appraiser independently confirms it (`preconditions_honored`). Two plain-words, no-model missions need a capability GREG lacks: "Verify <file> against sha256 <hex>" (`verify-download`) and "Confirm <file> is at most N words" (`word-limit`); genesis acquires and verifies the tool, filing the record asks first, and a mismatch is never recorded as verified | `test_greg_verify_download.py` (11 tests; 7 mutations caught), `test_greg_chromebook_rehearsal.py` (N1 -> N2 -> N3 on one body) |
 | Human work (§60: a licensed professional, a human worker) | A step whose function is `professional.<field>` or `human.<task>` is never searched for, built or attached: the engine raises ONE `HUMAN_WORK` ask (resource `professional` or `human_worker`) with the check that will observe the deliverable, costed options (you, a person you choose at their unknown fee, revise, abandon), no spend and no contact. An answer is not the work; the ask is withdrawn and the mission continues when the deliverable exists. GREG checks that it exists, never its professional quality. Where an answer is only a record (this ask, and account access), the console, phone and status say so beside the buttons. `greg mission new human-work --function professional.legal_review --purpose ...` | `test_greg_human_work.py` (10 tests), `test_greg_phone_asks.py`; 10 mutations caught |
 | One business case (node N3) | `greg mission new business-case`: a founder-signed case fixes buyer, price and acceptance terms, then runs in the Kernel's commercial order (`business/commercial_loop.py`). GREG drafts the offer and writes the settlement; people send, collect, deliver and confirm through costed `HUMAN_WORK` asks. `business.reconcile` counts payment only for exactly one statement posting of the signed amount and currency carrying the case reference, to the cent; the settlement waits for payment, delivery and confirmation. `business_loop_closed` measures N3 and needs your acceptance | `test_greg_business_case.py` (20 tests; 10 mutations caught) |
+
+## Hands: workers, computer use, DALEOBANKS (execution fabric)
+
+GREG commissions temporary workers and operates a browser through the same signed-mission -> grant -> Gate path.
+Workers never inherit GREG's authority, never judge their own work, never push or merge.
+
+| Capability | Consequence | What it does |
+|---|---|---|
+| `worker.commission` | internal_write, signed spend cap | One WorkOrder: a real tool-using worker (Claude Code CLI; Codex/Aider by argv template) edits a private clone (`repository`) or writes a deliverable from read-only inputs (`document`); GREG collects the diff, runs acceptance with no network, commits on `greg/<order>` (`greg/workers.py`) |
+| `worker.appraise` | read_only sensor | Independent verdict: fresh clone at the recorded base, retained patch re-applied, scope + protected surfaces, acceptance re-run; protected surface -> `NEEDS_FOUNDER_DECISION`, never acceptance |
+| `browser.session` / `browser.trace` | internal_write / read_only | Disposable real Chromium via Playwright: goto/fill/type/select/click/press/scroll/extract/download/mouse with per-step screenshots; stops at `consequential` steps, unprovisioned credentials and bot challenges; only signed hosts reachable (`greg/computer.py`) |
+| `daleobanks.verify` / `daleobanks.publish` / `daleobanks.outcome` | read_only / external_contact / read_only | DALEOBANKS's own EthicsGuard/Critic/PromptFirewall and its publishing gate (ledger, LIVE kill switch, rate governor) in DALEOBANKS's interpreter; a dry-run is reported as a block (`greg/daleobanks_bridge.py`) |
+
+Plain words: `Improve GREG: <objective>` routes to `templates.code_change` (planner `template:code-change`);
+`templates.browser_task` and `templates.daleobanks_post` build the other missions. End-to-end runner and real
+evidence: `scripts/greg_hands_proof.py`, `docs/evidence/greg-hands/2026-10-02/`.
 
 ## Spider-Web compounding (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING)
 
@@ -297,3 +315,17 @@ physical first-body designation and acceptance remain untested. Self-repair and 
 isolated interpreters; model SDKs faked, no live key used); a live OpenAI/Anthropic API route awaits Alfonso's own keys.
 Human work fabric and business runtime are PROPOSED. Presence accounting and open-source-first routing are
 UNIT/INTEGRATION TESTED in a Linux container (2026-09-30), not observed on the founder's Chromebook.
+
+### Bounded cognition seed (2026-10-01)
+
+The signed mission path supports bounded source extraction, scenario estimation,
+SMT feasibility, integer optimization, evidence binding and randomized two-arm
+computation with typed receipts and separate-process checks. See
+[cognition operator instructions](cognition/README.md), the
+[seed decision and limits](../docs/collaboration/COGNITION-SEED-20261001.md), and
+[retained test evidence](../tests/evidence/cognition-seed-20261001/).
+The existing console and authenticated phone status view show scoped cognitive
+results. This is a consequence-inert experiment; real founder-device acceptance
+and comparative superiority remain separate gates.
+
+The controlling [full-machine correction](../docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json) fixes Body + Organs + Mind as the completion boundary. After each proved integration, continue the next unblocked parent requirement. Seed and VEPMC are sequencing/evidence units; pending founder use does not stop achievable machinery.

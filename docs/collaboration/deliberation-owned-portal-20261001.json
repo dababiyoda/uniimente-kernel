@@ -1,0 +1,355 @@
+{
+  "decision_id": "FM-OWNED-PORTAL-20261001",
+  "title": "Serve canonical versioned owned pages through existing GREG console",
+  "problem": "The machine can produce assets but cannot yet serve canonical versioned owned pages; successful component proofs must continue into an integrated private serving path.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-27-FOUNDRY-55"
+  ],
+  "baseline": "Guarded Foundry, media, portable community, journeys and actual packaging at PR147; serving is founder console only.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Reuse GREG console, ArtifactStore, #3 versions and guarded query for private receipt-bound owned pages.",
+      "advantages": [
+        "Integrates actual HTTP serving without another server or authority."
+      ],
+      "disadvantages": [
+        "Public deployment and customer portal operations remain unfinished."
+      ],
+      "revival_evidence": "Demanded public deployment/portal functions and available authorized host."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Owned Discourse/Ghost/FastAPI instance behind a separately governed deployment.",
+      "advantages": [
+        "Mature public/community features."
+      ],
+      "disadvantages": [
+        "No owned instance or deployment authority is connected; duplicating the founder console would drift."
+      ],
+      "revival_evidence": "Authorized deployment target, operational requirements and verified authority integration."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Actual loopback HTTP serving of a signed GREG mission, hostile Host refusal, unsigned-file exclusion and corruption refusal in CI.",
+      "advantages": [
+        "Measures executable serving and receipt binding."
+      ],
+      "disadvantages": [
+        "Private fixture HTTP does not prove public adoption or legal rights."
+      ],
+      "revival_evidence": "Later authorized public operation without leaving buildable private machinery unfinished."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Leave native production disconnected from the owned serving path.",
+    "advantages": [
+      "No extra HTTP routes."
+    ],
+    "disadvantages": [
+      "System31 remains unnecessarily unimplemented."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Connect production to actual owned serving, then automatically continue the full machine. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Filesystem presence could be mistaken for approved owned content."
+      ],
+      "evidence_refs": [
+        "greg/console.py",
+        "foundry/systems/portal.py",
+        "tests/unit/test_greg_owned_portal.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse existing console, byte store and version mechanism; add no second kernel or authority. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Serving could create a second authority path or expose content publicly."
+      ],
+      "evidence_refs": [
+        "greg/console.py",
+        "foundry/systems/portal.py",
+        "tests/unit/test_greg_owned_portal.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Unreceipted files, corrupt bytes and hostile Host requests must be refused. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Edited content, version links or source declarations could break provenance."
+      ],
+      "evidence_refs": [
+        "greg/console.py",
+        "foundry/systems/portal.py",
+        "tests/unit/test_greg_owned_portal.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Keep serving read-only, bounded, version-aware and scoped to known missions. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Source input could execute browser code or cause path traversal."
+      ],
+      "evidence_refs": [
+        "greg/console.py",
+        "foundry/systems/portal.py",
+        "tests/unit/test_greg_owned_portal.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Private HTTP, declarations and test acceptance cannot establish public operation, rights or real demand; expose dependency/skip limits. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Dependency skips could conceal technically achievable solver machinery."
+      ],
+      "evidence_refs": [
+        "greg/console.py",
+        "foundry/systems/portal.py",
+        "tests/unit/test_greg_owned_portal.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Owned community and journey predecessor integrated",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36931905363",
+      "finding": "All six CI jobs passed atca8465b6; full suite1578 passed/74 skipped; V1–V5 passed. This does not validate the new serving delta."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Passing private serving establishes public deployment or machine completion",
+      "tier": "other",
+      "reference": "foundry/completion.yaml",
+      "finding": "It does not. Public deployment, authentication/collection, broader portal operations and every other unfinished machine requirement remain open."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Serve retained canonical owned content from the one existing private GREG console, then continue the parent machine objective.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Actual serving",
+        "amplified_value": "A signed mission produces pages that the existing HTTP server can return."
+      },
+      {
+        "id": "A2",
+        "statement": "Receipt-bound content",
+        "amplified_value": "Approved bytes, not arbitrary filesystem presence, enter the index."
+      },
+      {
+        "id": "A3",
+        "statement": "Canonical version reuse",
+        "amplified_value": "Corrections keep previous content and provenance without parallel versioning."
+      },
+      {
+        "id": "A4",
+        "statement": "Reobserved integrity",
+        "amplified_value": "Every page open independently checks immutable bytes and receipt addresses."
+      },
+      {
+        "id": "A5",
+        "statement": "Complete dependency verification",
+        "amplified_value": "Existing optional solvers run in full-suite CI instead of silently skipping feasible mechanisms."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Filesystem presence could be mistaken for approved owned content.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Serve only versions named in successful canonical foundry.apply receipts, with witness/grant-dispatch and mission binding; unsigned files never enter the index."
+      },
+      {
+        "id": "D2",
+        "statement": "Serving could create a second authority path or expose content publicly.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Reuse the existing console and its loopback/Host protections. Production still crosses GREG Authority Office/Gate; add no public bind or activation."
+      },
+      {
+        "id": "D3",
+        "statement": "Edited content, version links or source declarations could break provenance.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Re-read guarded staged stores, verify immutable addresses and version chain, and compare served page/version addresses with the retained receipt."
+      },
+      {
+        "id": "D4",
+        "statement": "Source input could execute browser code or cause path traversal.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Render bounded canon as escaped text; reject invalid object names and scope reads to known mission workspaces. Preserve Host/CSP controls."
+      },
+      {
+        "id": "D5",
+        "statement": "Dependency skips could conceal technically achievable solver machinery.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Install existing cognition requirements in the complete-suite CI job, record optional runtime dependency versions in the build manifest, and keep actual skip counts explicit."
+      }
+    ],
+    "comparisons": {
+      "baseline": "Guarded Foundry, media, portable community, journeys and actual packaging at PR147; serving is founder console only.",
+      "do_nothing": "Leave native production disconnected from the owned serving path.",
+      "simplest_viable_alternative": "Reuse GREG console, ArtifactStore, #3 versions and guarded query for private receipt-bound owned pages.",
+      "strongest_competing_architecture": "Owned Discourse/Ghost/FastAPI instance behind a separately governed deployment.",
+      "reversible_experiment": "Actual loopback HTTP serving of a signed GREG mission, hostile Host refusal, unsigned-file exclusion and corruption refusal in CI."
+    }
+  },
+  "pass_2": {
+    "attack_summary": "Attack unreceipted source admission, parallel authority/public exposure, stale or corrupt provenance, script/path injection and dependency-skipped proofs; strengthen all five before implementation.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "gaming",
+        "statement": "Filesystem presence could be mistaken for approved owned content.",
+        "strengthening_response": "Serve only versions named in successful canonical foundry.apply receipts, with witness/grant-dispatch and mission binding; unsigned files never enter the index."
+      },
+      {
+        "id": "N2",
+        "category": "centralization",
+        "statement": "Serving could create a second authority path or expose content publicly.",
+        "strengthening_response": "Reuse the existing console and its loopback/Host protections. Production still crosses GREG Authority Office/Gate; add no public bind or activation."
+      },
+      {
+        "id": "N3",
+        "category": "dependency",
+        "statement": "Edited content, version links or source declarations could break provenance.",
+        "strengthening_response": "Re-read guarded staged stores, verify immutable addresses and version chain, and compare served page/version addresses with the retained receipt."
+      },
+      {
+        "id": "N4",
+        "category": "gaming",
+        "statement": "Source input could execute browser code or cause path traversal.",
+        "strengthening_response": "Render bounded canon as escaped text; reject invalid object names and scope reads to known mission workspaces. Preserve Host/CSP controls."
+      },
+      {
+        "id": "N5",
+        "category": "overfit",
+        "statement": "Dependency skips could conceal technically achievable solver machinery.",
+        "strengthening_response": "Install existing cognition requirements in the complete-suite CI job, record optional runtime dependency versions in the build manifest, and keep actual skip counts explicit."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Filesystem presence could be mistaken for approved owned content. Serve only versions named in successful canonical foundry.apply receipts, with witness/grant-dispatch and mission binding; unsigned files never enter the index.",
+        "owner": "GREG/owned-content maintainers",
+        "review_trigger": "Any serving, authority, content format, dependency or completion claim change."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Serving could create a second authority path or expose content publicly. Reuse the existing console and its loopback/Host protections. Production still crosses GREG Authority Office/Gate; add no public bind or activation.",
+        "owner": "GREG/owned-content maintainers",
+        "review_trigger": "Any serving, authority, content format, dependency or completion claim change."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Edited content, version links or source declarations could break provenance. Re-read guarded staged stores, verify immutable addresses and version chain, and compare served page/version addresses with the retained receipt.",
+        "owner": "GREG/owned-content maintainers",
+        "review_trigger": "Any serving, authority, content format, dependency or completion claim change."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Source input could execute browser code or cause path traversal. Render bounded canon as escaped text; reject invalid object names and scope reads to known mission workspaces. Preserve Host/CSP controls.",
+        "owner": "GREG/owned-content maintainers",
+        "review_trigger": "Any serving, authority, content format, dependency or completion claim change."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Dependency skips could conceal technically achievable solver machinery. Install existing cognition requirements in the complete-suite CI job, record optional runtime dependency versions in the build manifest, and keep actual skip counts explicit.",
+        "owner": "GREG/owned-content maintainers",
+        "review_trigger": "Any serving, authority, content format, dependency or completion claim change."
+      }
+    ],
+    "final_design": "Versioned immutable pages, retained canonical receipt index, guarded byte/version revalidation and existing protected loopback HTTP server; full-suite solver dependencies installed and recorded.",
+    "residual_risks": [
+      {
+        "risk": "Filesystem presence could be mistaken for approved owned content.",
+        "mitigation": "Serve only versions named in successful canonical foundry.apply receipts, with witness/grant-dispatch and mission binding; unsigned files never enter the index.",
+        "owner": "GREG/owned-content maintainers",
+        "review_trigger": "Next integration or changed serving/dependency environment."
+      },
+      {
+        "risk": "Serving could create a second authority path or expose content publicly.",
+        "mitigation": "Reuse the existing console and its loopback/Host protections. Production still crosses GREG Authority Office/Gate; add no public bind or activation.",
+        "owner": "GREG/owned-content maintainers",
+        "review_trigger": "Next integration or changed serving/dependency environment."
+      },
+      {
+        "risk": "Edited content, version links or source declarations could break provenance.",
+        "mitigation": "Re-read guarded staged stores, verify immutable addresses and version chain, and compare served page/version addresses with the retained receipt.",
+        "owner": "GREG/owned-content maintainers",
+        "review_trigger": "Next integration or changed serving/dependency environment."
+      },
+      {
+        "risk": "Source input could execute browser code or cause path traversal.",
+        "mitigation": "Render bounded canon as escaped text; reject invalid object names and scope reads to known mission workspaces. Preserve Host/CSP controls.",
+        "owner": "GREG/owned-content maintainers",
+        "review_trigger": "Next integration or changed serving/dependency environment."
+      },
+      {
+        "risk": "Dependency skips could conceal technically achievable solver machinery.",
+        "mitigation": "Install existing cognition requirements in the complete-suite CI job, record optional runtime dependency versions in the build manifest, and keep actual skip counts explicit.",
+        "owner": "GREG/owned-content maintainers",
+        "review_trigger": "Next integration or changed serving/dependency environment."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved rather than represented as independent consensus.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Private HTTP and source declarations are not public deployment, rights verification or full-machine acceptance.",
+        "rationale": "External host/activation and independent real-world evidence remain absent.",
+        "evidence_threshold": "Authorized owned deployment, actual rights/operation evidence and requirement-specific checks.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any stronger serving/rights/completion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Add system31 and /owned routes on PR147, refresh published source inventory, and reuse existing CI jobs with complete solver dependencies. No merge or activation.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert private serving delta while preserving page exports and immutable version histories.",
+      "Leave canonical console protections and Gate/authority unchanged."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Unreceipted or corrupt content served.",
+    "External bind or new effect authority introduced.",
+    "Source input executes browser code or escapes its mission scope."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Fresh CI, any changed recipe, and every successful increment; automatically resume parent Body + Organs + Mind objective."
+}

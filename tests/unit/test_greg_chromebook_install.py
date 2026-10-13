@@ -88,3 +88,13 @@ def test_it_stops_with_the_fix_when_no_python_311_exists(tmp_path):
     out = subprocess.run([str(fake_bin / "bash"), str(SCRIPT), "--allow-other-linux", "--no-service"],
                          capture_output=True, text=True, env=env, timeout=60)
     assert out.returncode == 11 and "sudo apt install -y python3 python3-venv git" in out.stderr
+
+
+def test_engines_are_best_effort_and_can_be_skipped(tmp_path):
+    usage = run(["--help"], tmp_path)
+    assert "--no-engines" in usage.stdout
+    text = SCRIPT.read_text()
+    assert "--only-binary=:all:" in text and "Body 1 continues" in text     # never compiles; never blocks Body 1
+    done = run(dev_args(tmp_path) + ["--no-engines"], tmp_path)
+    assert done.returncode == 0, done.stdout[-3000:] + done.stderr[-3000:]
+    assert "Reasoning engines present:" in done.stdout

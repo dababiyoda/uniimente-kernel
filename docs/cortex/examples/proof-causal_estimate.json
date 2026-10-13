@@ -1,0 +1,82 @@
+{
+  "adjustment_set": [
+    "z"
+  ],
+  "ci95_bootstrap": [
+    1.7894413709111396,
+    2.1590794719145205
+  ],
+  "estimand": "average treatment effect of t on y",
+  "estimate": 1.9649018006827108,
+  "evidence_assessment": {
+    "as_of": "2026-09-30",
+    "available": [],
+    "claim": {
+      "id": "C",
+      "statement": "the onboarding call raises spend",
+      "type": "intervention"
+    },
+    "contradiction_weight": 0,
+    "contradictions": [],
+    "excluded": [],
+    "missing_observations": [
+      {
+        "description": "an explicit estimand",
+        "tag": "estimand"
+      },
+      {
+        "description": "identification assumptions",
+        "tag": "identification_assumptions"
+      },
+      {
+        "description": "treatment, outcome and confounder data (or an experiment)",
+        "tag": "treatment_outcome_confounder_data"
+      }
+    ],
+    "provenance": [],
+    "stale": [],
+    "support_weight": 0
+  },
+  "identification_assumptions": [
+    "z blocks every backdoor path from t to y",
+    "no unmeasured confounding",
+    "positivity within strata of z"
+  ],
+  "identification_basis": {
+    "origin": "declared_by_domain_expert",
+    "ref": "domain review 2026-09"
+  },
+  "limitations": [
+    "observational data",
+    "single period"
+  ],
+  "method": "stratified",
+  "n": 600,
+  "naive_difference": 3.14197321214276,
+  "outcome": "y",
+  "positivity": {
+    "dropped_fraction": 0.0,
+    "strata": 3
+  },
+  "proof_class": "causal_estimate",
+  "refutations": [
+    {
+      "estimate": -0.012219575573566314,
+      "name": "placebo_treatment",
+      "passed": true
+    },
+    {
+      "estimates": [
+        1.8268750119231076,
+        1.7914404845070528,
+        2.0655001060330047,
+        1.8829210703770642,
+        1.9901477738982207
+      ],
+      "name": "data_subset_stability",
+      "passed": true
+    }
+  ],
+  "treatment": "t",
+  "truth_note": "refutation checks passing does not prove causal truth; estimate holds only under the stated identification assumptions"
+}

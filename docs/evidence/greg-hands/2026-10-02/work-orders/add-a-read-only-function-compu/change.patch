@@ -1,0 +1,73 @@
+diff --git a/greg/computer.py b/greg/computer.py
+index 78b2acd..28a5ace 100644
+--- a/greg/computer.py
++++ b/greg/computer.py
+@@ -66,6 +66,26 @@ def chromium() -> str:
+     raise CapabilityError("no Chromium installed on this body")
+ 
+ 
++def computer_use_ready() -> dict:
++    """Report, read-only, whether this body has what ``browser.session`` needs.
++
++    Checks the Playwright package, a Chromium binary and certutil without importing
++    Playwright's driver, launching a browser or running any subprocess.
++    """
++    import importlib.util
++    try:
++        playwright = importlib.util.find_spec("playwright") is not None
++    except (ImportError, ValueError):
++        playwright = False
++    try:
++        chromium_path = chromium()
++    except CapabilityError:
++        chromium_path = None
++    certutil = os.access("/usr/bin/certutil", os.X_OK)
++    return {"ready": playwright and chromium_path is not None and certutil,
++            "playwright": playwright, "chromium": chromium_path, "certutil": certutil}
++
++
+ def _trust_profile(home: Path) -> int:
+     """Import an operator-configured CA bundle into this session's NSS store.
+ 
+diff --git a/tests/unit/test_computer_use_ready.py b/tests/unit/test_computer_use_ready.py
+new file mode 100644
+index 0000000..7183288
+--- /dev/null
++++ b/tests/unit/test_computer_use_ready.py
+@@ -0,0 +1,36 @@
++from greg import computer
++from greg.capabilities import CapabilityError
++
++
++def _patch(monkeypatch, playwright, chromium, certutil):
++    import importlib.util
++    monkeypatch.setattr(importlib.util, "find_spec", lambda name: object() if playwright else None)
++
++    def fake_chromium():
++        if chromium is None:
++            raise CapabilityError("none")
++        return chromium
++    monkeypatch.setattr(computer, "chromium", fake_chromium)
++    monkeypatch.setattr(computer.os, "access", lambda path, mode: certutil)
++
++
++def test_all_present(monkeypatch):
++    _patch(monkeypatch, True, "/x/chrome", True)
++    assert computer.computer_use_ready() == {
++        "ready": True, "playwright": True, "chromium": "/x/chrome", "certutil": True}
++
++
++def test_each_missing_piece_blocks_ready(monkeypatch):
++    for pw, ch, ce in [(False, "/x", True), (True, None, True), (True, "/x", False)]:
++        _patch(monkeypatch, pw, ch, ce)
++        report = computer.computer_use_ready()
++        assert report["ready"] is False
++        assert (report["playwright"], report["chromium"], report["certutil"]) == (pw, ch, ce)
++
++
++def test_does_not_launch_anything(monkeypatch):
++    def boom(*a, **k):
++        raise AssertionError("must not spawn processes")
++    monkeypatch.setattr(computer.subprocess, "run", boom)
++    monkeypatch.setattr(computer.subprocess, "Popen", boom)
++    assert isinstance(computer.computer_use_ready()["ready"], bool)

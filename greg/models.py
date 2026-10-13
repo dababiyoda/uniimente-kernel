@@ -241,7 +241,7 @@ class OllamaRoute:
     provider = "ollama"
     MAX_RESPONSE_BYTES = 1 << 20
 
-    def __init__(self, model: str, *, port: int = 11434):
+    def __init__(self, model: str, *, port: int = 11434, timeout_seconds: float = 120, max_tokens: int = 8192, json_output: bool = False, response_schema: dict | None = None):
         if not isinstance(model, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}", model):
             raise ValueError("an explicit Ollama model name is required")
         if model.endswith(":cloud") or model.endswith("-cloud"):
@@ -249,11 +249,16 @@ class OllamaRoute:
         if type(port) is not int or not 1 <= port <= 65535:
             raise ValueError("invalid Ollama loopback port")
         self.model, self.name, self.port = model, f"ollama:{model}", port
+        if not 0 < timeout_seconds <= 120 or type(max_tokens) is not int or not 1 <= max_tokens <= 8192:
+            raise ValueError("invalid local inference resource ceiling")
+        self.timeout_seconds, self.max_tokens = timeout_seconds, max_tokens
+        self.json_output = json_output
+        self.response_schema = response_schema
 
     def _request(self, method: str, path: str, data=None) -> dict:
         # HTTPConnection uses a fixed numeric loopback address: no DNS, redirects,
         # proxy environment, remote base URL or inherited credentials.
-        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=120 if data is not None else 5)
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=min(self.timeout_seconds, 120 if data is not None else 5))
         try:
             conn.request(method, path, body=json.dumps(data) if data is not None else None,
                          headers={"Content-Type": "application/json"} if data is not None else {})
@@ -300,13 +305,16 @@ class OllamaRoute:
         if not isinstance(digest, str) or not re.fullmatch(r"[a-fA-F0-9]{64}", digest):
             raise RouteError("local model has no valid artifact digest", kind=BAD_OUTPUT)
         answer = self._request("POST", "/api/chat", {
-            "model": self.model, "stream": False,
+            "model": self.model, "stream": False, "think": False,
+            **({"format": self.response_schema or "json"} if self.json_output else {}),
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-            "options": {"num_predict": 8192}})
+            "options": {"num_predict": self.max_tokens}})
         served = answer.get("model")
         if served != self.model:
             raise RouteError("Ollama served a different model than requested", kind=BAD_OUTPUT)
         message = answer.get("message")
+        if isinstance(message, dict) and message.get("refusal"):
+            raise Refusal("local model declined; no fallback is permitted")
         content = message.get("content") if isinstance(message, dict) else None
         if not answer.get("done") or not isinstance(content, str) or not content.strip():
             raise RouteError("Ollama returned no completed text answer", kind=BAD_OUTPUT)

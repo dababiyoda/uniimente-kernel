@@ -1,0 +1,471 @@
+{
+  "accountability": {
+    "falsification_conditions": [
+      {
+        "condition": "an observed value outside [2393.400199658791, 4983.59830185558] count/day, or a reference class the estimate contradicts",
+        "route": "cortex.estimation.fermi@0.1.0"
+      }
+    ],
+    "missing_information": [],
+    "note": "competence evidence and proof narrow disputes; they never create authority",
+    "strongest_counterargument": {
+      "detail": "no reference-class anchor available",
+      "kind": "no_outside_view",
+      "severity": "minor"
+    }
+  },
+  "alternatives": [
+    {
+      "route": "cortex.deterrence.accountability@0.1.0",
+      "why_not": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "route": "cortex.evidence_causal@0.1.0",
+      "why_not": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "route": "cortex.extraction.schedule@0.1.0",
+      "why_not": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "route": "cortex.formal.z3@0.2.0",
+      "why_not": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "route": "cortex.optimization.cpsat@0.2.0",
+      "why_not": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "route": "cortex.semantic@0.1.0",
+      "why_not": [
+        "does not support estimate"
+      ]
+    }
+  ],
+  "assumptions": [
+    "orders: range 800.0\u20131500.0 is a 90% interval (lognormal)",
+    "items: range 2.0\u20135.0 is a 90% interval (lognormal)"
+  ],
+  "authority_created": false,
+  "budget_controller": {
+    "decisions": [],
+    "mandatory": [
+      "eligibility gates",
+      "adversarial verifier",
+      "independent assignment re-evaluation",
+      "consequence ceiling"
+    ],
+    "note": "mandatory checks are never traded for cost; only optional deeper cognition is gated on its chance of changing the decision",
+    "policy": "cortex-thinking-budget/0.1"
+  },
+  "created_at": "2026-09-30T00:00:00Z",
+  "disposition": {
+    "kind": "recommend",
+    "next_step": null,
+    "reason": "route states ['OK']"
+  },
+  "eligibility": [
+    {
+      "eligible": false,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "eligible": true,
+      "key": "cortex.estimation.fermi@0.1.0",
+      "may_recommend": true,
+      "reasons": []
+    },
+    {
+      "eligible": false,
+      "key": "cortex.evidence_causal@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.extraction.schedule@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.formal.z3@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.optimization.cpsat@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support estimate"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.semantic@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support estimate"
+      ]
+    }
+  ],
+  "execution_authority": "none",
+  "expenditure": {
+    "model_calls": 0,
+    "seconds": 0.291448,
+    "solver_calls": 0,
+    "usd": 0.0
+  },
+  "gates": null,
+  "geometry": {
+    "ambiguity": "low",
+    "causal_structure": "none",
+    "claim_type": null,
+    "consequence_class": "internal_write",
+    "consequence_vector": {
+      "discrimination": "none",
+      "financial": "none",
+      "irreversible_disclosure": "none",
+      "physical": "none",
+      "privacy": "none",
+      "reputational": "none",
+      "rights": "none",
+      "systemic": "none",
+      "tail_risk": "none",
+      "third_party": "none"
+    },
+    "constraints": [],
+    "epistemic_class": "estimate",
+    "evidence_quality": "none",
+    "exactness": "approximate_ok",
+    "objective": "estimate_quantity",
+    "problem_id": "H-E02",
+    "provenance": {
+      "consequence_class": {
+        "confidence": null,
+        "source": "requester_declared"
+      },
+      "epistemic_class": {
+        "confidence": 1.0,
+        "source": "payload_structure"
+      },
+      "reversibility": {
+        "confidence": null,
+        "source": "requester_declared"
+      }
+    },
+    "rejected_proposals": [],
+    "resource_limits": {
+      "max_cost_usd": 0.05,
+      "max_latency_s": 30.0,
+      "max_model_calls": 4,
+      "max_solver_calls": 64
+    },
+    "reversibility": "reversible",
+    "temporal_character": "static",
+    "uncertainty": "high",
+    "unresolved_fields": []
+  },
+  "inputs": {
+    "evidence_refs": [],
+    "payload_keys": [
+      "as_of",
+      "declared",
+      "estimation_model"
+    ]
+  },
+  "l1_checks": [
+    {
+      "check": "schema_valid",
+      "detail": "problem and payload parsed",
+      "value": "pass"
+    },
+    {
+      "check": "as_of_present",
+      "detail": "2026-09-30",
+      "value": "pass"
+    },
+    {
+      "check": "evidence_fresh",
+      "detail": "no evidence items",
+      "value": "not_applicable"
+    },
+    {
+      "check": "no_instruction_text_in_sources",
+      "detail": "scanned sources",
+      "value": "not_applicable"
+    },
+    {
+      "check": "budget_declared",
+      "detail": {
+        "max_cost_usd": 0.05,
+        "max_latency_s": 30.0,
+        "max_model_calls": 4,
+        "max_solver_calls": 64
+      },
+      "value": "unknown"
+    },
+    {
+      "check": "formal_engine_available",
+      "detail": "no formal model",
+      "value": "not_applicable"
+    }
+  ],
+  "outcome": {
+    "outcome": "ANSWERED_WITHIN_SCOPE",
+    "reasons": [],
+    "taxonomy": "directive-outcomes/0.1"
+  },
+  "outcome_link": {
+    "memory_keys": [
+      "cortex.estimation.fermi@0.1.0|estimate"
+    ],
+    "settlement_ref": null,
+    "status": "absent_feedback"
+  },
+  "output": {
+    "answer": {
+      "high": 4983.59830185558,
+      "interval": 0.9,
+      "low": 2393.400199658791,
+      "median": 3461.9806061496993,
+      "unit": "count/day"
+    },
+    "per_route": [
+      {
+        "answer": {
+          "high": 4983.59830185558,
+          "interval": 0.9,
+          "low": 2393.400199658791,
+          "median": 3461.9806061496993,
+          "unit": "count/day"
+        },
+        "assumptions": [
+          "orders: range 800.0\u20131500.0 is a 90% interval (lognormal)",
+          "items: range 2.0\u20135.0 is a 90% interval (lognormal)"
+        ],
+        "dependencies": [
+          "python-stdlib"
+        ],
+        "expenditure": {
+          "model_calls": 0,
+          "seconds": 0.28818,
+          "solver_calls": 0,
+          "usd": 0.0
+        },
+        "notes": [],
+        "organ_id": "cortex.estimation.fermi@0.1.0",
+        "organ_version": "0.1.0",
+        "origin": "deterministic",
+        "proof": {
+          "decomposition": "picks = (orders * items)",
+          "dependencies": [
+            {
+              "a": "orders",
+              "b": "items",
+              "reason": "bigger orders are rarer",
+              "rho": -0.6
+            }
+          ],
+          "dependency_effect": {
+            "interval_width_dependent": 2590.198102196789,
+            "interval_width_if_independent": 4018.255576092404,
+            "ratio": 0.6446076047546122
+          },
+          "dominant_uncertainty": "items",
+          "high": 4983.59830185558,
+          "inputs": [
+            {
+              "dist": "lognormal",
+              "high": 1500.0,
+              "low": 800.0,
+              "name": "orders",
+              "unit": "count/day"
+            },
+            {
+              "dist": "lognormal",
+              "high": 5.0,
+              "low": 2.0,
+              "name": "items",
+              "unit": "1"
+            }
+          ],
+          "interval": 0.9,
+          "low": 2393.400199658791,
+          "median": 3461.9806061496993,
+          "proof_class": "estimation",
+          "reference_class": {
+            "available": false,
+            "note": "no reference class supplied"
+          },
+          "samples": 20000,
+          "seed": 7,
+          "sensitivity": [
+            {
+              "rank_correlation": 0.7146,
+              "swing": 3286.3353450310337,
+              "variable": "items"
+            },
+            {
+              "rank_correlation": 0.0988,
+              "swing": 2213.5943621178913,
+              "variable": "orders"
+            }
+          ],
+          "units": {
+            "canonical": "count/day",
+            "dimension_check": "pass",
+            "result": "count/day",
+            "target": "count/day"
+          }
+        },
+        "state": "OK",
+        "uncertainty": "90% interval [2393, 4984] count/day; dominant uncertainty: items"
+      }
+    ],
+    "state": "OK"
+  },
+  "problem": {
+    "payload_digest": "sha256:01a26192c1ae7a051e37d5b05fcb5e6d190d70bd8e96ce35731e36a99b3873c5",
+    "problem_id": "H-E02",
+    "question_digest": "sha256:53b482eab566fb66ce0ee56d54453e81883b3358791bc125ba82fc0b5e013251"
+  },
+  "proof_artifacts": [
+    {
+      "decomposition": "picks = (orders * items)",
+      "dependencies": [
+        {
+          "a": "orders",
+          "b": "items",
+          "reason": "bigger orders are rarer",
+          "rho": -0.6
+        }
+      ],
+      "dependency_effect": {
+        "interval_width_dependent": 2590.198102196789,
+        "interval_width_if_independent": 4018.255576092404,
+        "ratio": 0.6446076047546122
+      },
+      "dominant_uncertainty": "items",
+      "high": 4983.59830185558,
+      "inputs": [
+        {
+          "dist": "lognormal",
+          "high": 1500.0,
+          "low": 800.0,
+          "name": "orders",
+          "unit": "count/day"
+        },
+        {
+          "dist": "lognormal",
+          "high": 5.0,
+          "low": 2.0,
+          "name": "items",
+          "unit": "1"
+        }
+      ],
+      "interval": 0.9,
+      "low": 2393.400199658791,
+      "median": 3461.9806061496993,
+      "proof_class": "estimation",
+      "reference_class": {
+        "available": false,
+        "note": "no reference class supplied"
+      },
+      "samples": 20000,
+      "seed": 7,
+      "sensitivity": [
+        {
+          "rank_correlation": 0.7146,
+          "swing": 3286.3353450310337,
+          "variable": "items"
+        },
+        {
+          "rank_correlation": 0.0988,
+          "swing": 2213.5943621178913,
+          "variable": "orders"
+        }
+      ],
+      "units": {
+        "canonical": "count/day",
+        "dimension_check": "pass",
+        "result": "count/day",
+        "target": "count/day"
+      }
+    }
+  ],
+  "protection": null,
+  "ranking": null,
+  "receipt_id": "sha256:40c0c47b4e9ff4848aacd410827d1dc339ede32eef27794e03c5009d9ec258a9",
+  "route": {
+    "attempts": [],
+    "composition": false,
+    "formal_plan": null,
+    "policy": "cortex-route-policy/0.2.1",
+    "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+    "selected": [
+      "cortex.estimation.fermi@0.1.0"
+    ]
+  },
+  "schema": "cortex-receipt/0.2",
+  "shared_dependencies": {},
+  "truth": {
+    "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+    "empirical_validity": "unverified_estimate",
+    "formal_validity": "not_applicable",
+    "legitimate_authority": "not_granted_by_cortex"
+  },
+  "uncertainty": "90% interval [2393, 4984] count/day; dominant uncertainty: items",
+  "verifier": {
+    "blocking": false,
+    "findings": [
+      {
+        "detail": "no reference-class anchor available",
+        "kind": "no_outside_view",
+        "severity": "minor",
+        "target": null
+      }
+    ],
+    "independence": {
+      "independent_of_routes": true,
+      "note": "agreement between routes that share a model, solver or source is not independent verification",
+      "shared_between_routes": {},
+      "shared_with_routes": [],
+      "verifier": "cortex.verifier.adversarial@0.1.0",
+      "verifier_dependencies": [
+        "python-stdlib",
+        "rules:cortex.organs.adversarial"
+      ]
+    },
+    "proof_class": "verifier_findings",
+    "verifier": "cortex.verifier.adversarial@0.1.0"
+  },
+  "versions": {
+    "cortex": "0.2.1",
+    "policy": "cortex-route-policy/0.2.1",
+    "routes": {
+      "cortex.estimation.fermi@0.1.0": "0.1.0"
+    }
+  }
+}

@@ -13,11 +13,24 @@ class Journal:
 
     def add(self, kind, minutes, **payload):
         at = (T0 + timedelta(minutes=minutes)).isoformat()
-        self.events.append(SimpleNamespace(type="greg." + kind, payload={**payload, "at": at}, occurred_at=at))
+        self.events.append(SimpleNamespace(type="greg." + kind, payload={**payload, "at": at}, occurred_at=at,
+                                           event_id=f"ev-{len(self.events)}"))
         return self
+
+    def id_of(self, kind, **match):
+        return next(e.event_id for e in self.events if e.type == "greg." + kind
+                    and all(e.payload.get(k) == v for k, v in match.items()))
 
     def replay(self, prefix=""):
         return [e for e in self.events if e.type.startswith("greg." + prefix)]
+
+
+def exclude(j, minutes, mission_id, action_id, critique_id="crit-1", reason="times out"):
+    """The engine's path: a founder critique of the action, then the exclusion citing it."""
+    j.add("critique.recorded", minutes, critique_id=critique_id,
+          target_event_id=j.id_of("mission.action", mission_id=mission_id, action_id=action_id))
+    return j.add("mission.strategy_excluded", minutes, mission_id=mission_id, action_id=action_id, reason=reason,
+                 critique_ref=critique_id)
 
 
 def actions(j, cap, statuses, start=0, mission="m1", step=10):
@@ -50,7 +63,9 @@ def test_antifragility_needs_improvement_after_failures_and_a_learning_record():
     assert R.after_failure(j)["tool.x"]["verdict"] == "IMPROVED_AFTER_FAILURE_WITHOUT_LEARNING_RECORD"
     j.add("critique.regression_closed", 15, critique="tool.x timeout")         # names nothing attributable
     assert R.after_failure(j)["tool.x"]["verdict"] == "IMPROVED_AFTER_FAILURE_WITHOUT_LEARNING_RECORD"
-    j.add("mission.strategy_excluded", 25, mission_id="m1", action_id="tool.x-1", reason="times out")
+    j.add("mission.strategy_excluded", 25, mission_id="m1", action_id="tool.x-1", reason="no critique cited")
+    assert R.after_failure(j)["tool.x"]["verdict"] == "IMPROVED_AFTER_FAILURE_WITHOUT_LEARNING_RECORD"
+    exclude(j, 26, "m1", "tool.x-1")
     assert R.after_failure(j)["tool.x"]["verdict"] == "ANTIFRAGILE_EVIDENCE"
 
 
@@ -112,3 +127,40 @@ def test_learning_elsewhere_or_a_mere_proposal_never_earns_antifragility():
     assert R.after_failure(early)["tool.x"]["learning_artifact_after_failure"] is False
     early.add("improvement.evaluated", 90, capability="tool.x", candidate_id="c4")       # named, after failure
     assert R.after_failure(early)["tool.x"]["verdict"] == "ANTIFRAGILE_EVIDENCE"
+
+
+def test_the_engines_own_failure_statuses_count_and_policy_refusals_do_not():
+    # review 2026-10-13: the engine writes REFUSED (with a receipt) and UNAVAILABLE, never FAILED or ERROR,
+    # so a real capability failing four times reported zero failures
+    j = Journal()
+    for i, status in enumerate(["REFUSED", "REFUSED", "UNAVAILABLE"]):
+        j.add("mission.action", i * 10, mission_id="m1", action_id=f"w{i}", capability="fs.write", status=status,
+              receipt=f"sha256:{i}" if status == "REFUSED" else None)
+    j.add("mission.action", 40, mission_id="m1", action_id="p", capability="fs.write", status="REFUSED", receipt=None)
+    for i in range(6):
+        j.add("mission.action", 50 + i, mission_id="m1", action_id=f"ok{i}", capability="fs.write", status="DONE")
+    assert R.after_failure(j)["fs.write"]["failures"] == 3          # the policy refusal is not the capability's
+    j.add("mission.action", 5, mission_id="m2", action_id="x", capability="fs.write", status="REFUSED",
+          receipt="sha256:x")
+    assert R.common_causes(j)[0]["missions"] == ["m1", "m2"]
+
+
+def test_learning_is_attributed_through_the_lever_and_the_critiqued_attempt():
+    from greg import improvement
+    cap = improvement.CAPABILITY
+    lever = next(iter(improvement.LEVERS))
+    j = actions(Journal(), cap, ["UNCERTAIN"] * 3 + ["DONE"] * 6)
+    j.add("improvement.evaluated", 35, candidate_id="c1", lever=lever, case_id="k", errors=0)   # the real shape
+    assert R.after_failure(j)[cap]["verdict"] == "ANTIFRAGILE_EVIDENCE"
+    retried = Journal()
+    retried.add("mission.action", 0, mission_id="m1", action_id="a", capability="tool.x", status="UNCERTAIN")
+    retried.add("mission.action", 10, mission_id="m1", action_id="a", capability="tool.x", status="DONE")
+    for i, status in enumerate(["UNCERTAIN", "UNCERTAIN"] + ["DONE"] * 6):
+        retried.add("mission.action", 20 + 10 * i, mission_id="m1", action_id=f"b{i}", capability="tool.x",
+                    status=status)
+    # the founder critiques the SUCCESSFUL retry and excludes the strategy: not learning from failure
+    retried.add("critique.recorded", 200, critique_id="crit-x",
+                target_event_id=retried.id_of("mission.action", action_id="a", status="DONE"))
+    retried.add("mission.strategy_excluded", 200, mission_id="m1", action_id="a", reason="sloppy",
+                critique_ref="crit-x")
+    assert R.after_failure(retried)["tool.x"]["learning_artifact_after_failure"] is False

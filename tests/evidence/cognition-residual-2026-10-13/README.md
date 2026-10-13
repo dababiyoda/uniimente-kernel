@@ -26,9 +26,13 @@ attaching it remains the founder's decision.
   - **INFEASIBLE:** Z3 is asked for any feasible assignment.
   - **Unsat cores:** a fresh Z3 solver re-checks the core and tests minimality by deletion.
 
-  Each result is `sat`, `unsat` or `None`. `None` means the engine is missing, has timed out,
-  or the model is not integral, and it is listed under `inconclusive` with a dissent line; it
-  is never counted as a pass. The verifier also discloses its limits:
+  Each result is `sat`, `unsat` or `None`. `None` means the engine is missing, has run out of
+  budget, or the model is not integral, and it is listed under `inconclusive` with a dissent
+  line; it is never counted as a pass.
+
+  The verifier runs inside the cognition worker under the request's latency limit (5 s by
+  default), so the second engine gets **1.5 s per verification**. Cores with more than 16
+  members are re-checked but not tested for minimality. The verifier also discloses its limits:
   - two engines agreeing is corroboration, not a proof certificate;
   - the core re-check uses the same engine as the solver;
   - a valid but non-minimal core is called out;
@@ -53,11 +57,12 @@ attaching it remains the founder's decision.
 
 ## Tests and attacks
 
-- `tests/unit/test_cognition_residual_safeguards.py`: 8 tests covering:
+- `tests/unit/test_cognition_residual_safeguards.py`: 9 tests covering:
   - the three lies;
   - core minimality;
   - shared-engine disclosure;
   - a missing engine reported as inconclusive and never a pass, with no integer truncation;
+  - an exhausted budget, and the minimality cap;
   - the bare assertion blocked;
   - records that unblock, prohibitions that still block, and expiry;
   - typed records, where context never settles a gate.
@@ -65,9 +70,25 @@ attaching it remains the founder's decision.
   Each one disables a single safeguard in an isolated copy and requires a targeted test to
   fail. The existing `check_greg_cognition_mutants.py` still catches 6 of 6.
 - `.github/workflows/canonical-ci.yml`: one step runs both of the above.
-- `full-suite.log`: the whole frontier suite on the final tree.
-- `frozen-comparison.json`: the Seed Genome 120-case frozen comparison, run with and without
-  this change at the same base commit. It compares the timing-independent fields.
+- `full-suite.log`: the whole frontier suite at `5a38e0d`: **2706 passed, 6 failed, 16 skipped**.
+  - One failure was this change's: the packaging inventory did not list `legitimacy.py`. It was
+    fixed with `scripts/refresh_owned_source.py`, and `inventory-fix.log` shows the test passing.
+    The inventory is the confined Foundry worker's read allowance, so this adds exactly one
+    reviewed source file to it.
+  - The other five fail identically at the untouched base `0f4bc52` with the same interpreter
+    (`environment-failures-at-base.log`). In each, a confined child hits `PermissionError` in
+    `site.py`. They are environmental, not this change.
+- `frozen-comparison.json`: the Seed Genome 240-row frozen comparison, run once at the base
+  `0f4bc52` and once at `5a38e0d`, one after the other.
+  - **Identical on every timing-independent field**: expectation matched, hard failure, loss
+    components, receipt status and verifier verdict. Both have 0 hard failures and exit
+    `INCONCLUSIVE`, because the model baselines are blocked.
+  - **Cost:** optimization p50 latency is about 52–55 ms higher (about 9%) and formal 11–22 ms
+    higher, where the new Z3 calls run. This is one run per side, so the magnitudes are
+    approximate.
+- **Frozen inputs:** `greg/cognition/verification.py` is pinned by
+  `cortex/evaluation/composition_lift/freeze-v2.json` (P6 v2). At this head that run refuses with
+  `FROZEN_INPUT_CHANGED`, as designed, and it stays reproducible at its freeze commit.
 
 ## Not claimed
 

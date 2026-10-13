@@ -332,6 +332,7 @@
     "greg/cognition/genomes/solvers_b.py",
     "greg/cognition/genomes/solvers_c.py",
     "greg/cognition/learned_routing.py",
+    "greg/cognition/legitimacy.py",
     "greg/cognition/linear.py",
     "greg/cognition/network.py",
     "greg/cognition/protection.py",

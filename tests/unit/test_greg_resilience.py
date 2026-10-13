@@ -48,7 +48,9 @@ def test_episodes_measure_recovery_recurrence_and_founder_intervention():
 def test_antifragility_needs_improvement_after_failures_and_a_learning_record():
     j = actions(Journal(), "tool.x", ["FAILED", "FAILED", "FAILED"] + ["DONE"] * 6)
     assert R.after_failure(j)["tool.x"]["verdict"] == "IMPROVED_AFTER_FAILURE_WITHOUT_LEARNING_RECORD"
-    j.add("critique.regression_closed", 15, critique="tool.x timeout")
+    j.add("critique.regression_closed", 15, critique="tool.x timeout")         # names nothing attributable
+    assert R.after_failure(j)["tool.x"]["verdict"] == "IMPROVED_AFTER_FAILURE_WITHOUT_LEARNING_RECORD"
+    j.add("mission.strategy_excluded", 25, mission_id="m1", action_id="tool.x-1", reason="times out")
     assert R.after_failure(j)["tool.x"]["verdict"] == "ANTIFRAGILE_EVIDENCE"
 
 
@@ -97,3 +99,16 @@ def test_cli_without_a_body_reports_no_ledger(tmp_path, capsys):
     from greg import cli
     assert cli.main(["--home", str(tmp_path / "none"), "resilience"]) == 0
     assert json.loads(capsys.readouterr().out)["reality_status"] == "NO_BODY_LEDGER"
+
+
+def test_learning_elsewhere_or_a_mere_proposal_never_earns_antifragility():
+    j = actions(Journal(), "tool.x", ["FAILED", "FAILED", "FAILED"] + ["DONE"] * 6)
+    j.add("improvement.proposed", 15, capability="tool.x", candidate_id="c1")            # a proposal, not learning
+    j.add("mission.strategy_excluded", 15, mission_id="m9", action_id="other", reason="x")  # another mission
+    j.add("improvement.evaluated", 15, capability="tool.y", candidate_id="c2")            # another capability
+    assert R.after_failure(j)["tool.x"]["verdict"] == "IMPROVED_AFTER_FAILURE_WITHOUT_LEARNING_RECORD"
+    early = actions(Journal(), "tool.x", ["FAILED", "FAILED", "FAILED"] + ["DONE"] * 6, start=60)
+    early.add("improvement.evaluated", 0, capability="tool.x", candidate_id="c3")        # before any failure
+    assert R.after_failure(early)["tool.x"]["learning_artifact_after_failure"] is False
+    early.add("improvement.evaluated", 90, capability="tool.x", candidate_id="c4")       # named, after failure
+    assert R.after_failure(early)["tool.x"]["verdict"] == "ANTIFRAGILE_EVIDENCE"

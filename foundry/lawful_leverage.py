@@ -59,6 +59,21 @@ COMPLEMENTS = (("proof", "eligibility"), ("proof", "settlement"), ("proof", "rep
                ("permission", "eligibility"), ("capital", "settlement"))
 MAX_CANDIDATES = 64           # the institutional-leverage contract's intervention ceiling
 NON_HUMAN_OPERATORS = ("uniimente", "greg", "egregore")   # the institution never is its own legal operator
+# Letters from other scripts that render like the Latin letters of those names (Cyrillic, Greek, Latin
+# extensions; a subset of Unicode TR39 confusables). Mapped before the check, so "Grеg" with a Cyrillic "е"
+# is still GREG. The check fails closed: an over-mapped human name is refused, never an institution accepted.
+CONFUSABLE = str.maketrans({
+    "а": "a", "е": "e", "ё": "e", "є": "e", "і": "i", "ї": "i", "ј": "j", "о": "o", "р": "p", "с": "c",
+    "у": "y", "х": "x", "ѕ": "s", "ԁ": "d", "ԍ": "g", "ɡ": "g", "ց": "g", "ɢ": "g", "ʀ": "r", "г": "r",
+    "м": "m", "н": "n", "п": "n", "т": "t", "к": "k", "ո": "n", "ս": "u", "υ": "u", "μ": "u", "ν": "v",
+    "ε": "e", "ι": "i", "ο": "o", "ρ": "p", "τ": "t", "κ": "k", "η": "n", "ɩ": "i", "ı": "i", "ʋ": "u",
+    "ᴜ": "u", "ɴ": "n", "ᴍ": "m", "ᴇ": "e", "ᴛ": "t", "ᴏ": "o", "ᴦ": "r", "ǥ": "g", "ğ": "g", "ĝ": "g"})
+
+
+def _operator_skeleton(name: str) -> str:
+    folded = unicodedata.normalize("NFKD", unicodedata.normalize("NFKC", name).casefold())
+    folded = "".join(ch for ch in folded if not unicodedata.combining(ch)).translate(CONFUSABLE)
+    return re.sub(r"[^a-z0-9]", "", folded)
 PROBABLE = 0.8                # "defensible" and "dominates" both mean at least 80% of joint samples
 
 
@@ -228,11 +243,18 @@ def validate(problem: dict) -> dict:
                     key=lambda e: list(e.path))
     if errors:
         raise LeverageRefused(f"lawful-leverage problem: {errors[0].message} at {list(errors[0].path)}")
-    operator = unicodedata.normalize("NFKC", str(problem["constraints"].get("legal_operator", "alfonso_lopez")))
-    operator = re.sub(r"[^a-z0-9]", "", operator.lower())
+    operator = _operator_skeleton(str(problem["constraints"].get("legal_operator", "alfonso_lopez")))
     if not operator or any(name in operator for name in NON_HUMAN_OPERATORS):
         raise LeverageRefused("the legal operator must be a human principal; UNIIMENTE, GREG or the egregore never is")
     model = ranker._validate("map", problem["institutional_map"])
+    for kind in ("nodes", "links"):
+        # The ranker's own rule (egregore.leverage._collect): one id, one record. A conflicting duplicate
+        # would silently replace the earlier record and can hide the real bottleneck; exact copies collapse.
+        unique = {}
+        for record in model[kind]:
+            if unique.setdefault(record["id"], record) != record:
+                raise LeverageRefused(f"conflicting institutional map record: {kind}/{record['id']}")
+        model[kind] = list(unique.values())
     nodes = {n["id"]: n for n in model["nodes"]}
     if problem["outcome_node"] not in nodes:
         raise LeverageRefused("outcome node is not on the institutional map")
@@ -314,6 +336,10 @@ def consent_reasons(m: Mechanism, surface: dict | None) -> list[str]:
     parties = set(surface.get("third_parties", []))
     if not (m.third_parties_affected or parties):
         return []
+    if not parties:
+        # The mechanism affects third parties but the surface names none: no consent record can be shown
+        # to cover people nobody identified, so the gate cannot pass (a record about someone else does not).
+        return ["REJECTED_THIRD_PARTIES_UNDECLARED"]
     consent = surface.get("consent")
     if not consent:
         return ["REJECTED_NO_CONSENT_PATH"]
@@ -554,14 +580,20 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
                            d["effect"], 2 + 18 * d["confidence"], 0.0, d["cost_usd_per_cycle"] * horizon,
                            d["effort_hours_per_cycle"] * horizon, 0.0, 0.0, 0.0,
                            d.get("reversibility", "irreversible" if d.get("consequence_class") == "irreversible"
-                                 else "reversible"), (), False,
+                                 else "reversible"), tuple(sorted(d.get("harm", {}).items())),
+                           d.get("consequence_class") == "external_contact" or bool(d.get("third_parties")),
                            ("knowledge",), 0.1, 0.1, 0.0, 0.0, 0.2,
                            "per-cycle gap at the bottleneck falls while the labour is paid",
                            "stop the labour; the gap returns", "repeated labour does not compound",
                            lineage=("problem.direct_labor",), kind="direct_labor")
     # Priority when the contract ceiling binds: library, direct labour, recombinations, then mutations.
     # Nothing is dropped silently: the report lists every candidate not evaluated.
-    pool = base + ([(direct, {"node": bottleneck})] if direct else []) + combos + mutated
+    labour_surface = None
+    if direct:
+        labour_surface = {"node": bottleneck, "third_parties": p["direct_labor"].get("third_parties", [])}
+        if p["direct_labor"].get("consent"):
+            labour_surface["consent"] = p["direct_labor"]["consent"]
+    pool = base + ([(direct, labour_surface)] if direct else []) + combos + mutated
     dropped = [m.mechanism_id for m, _ in pool[MAX_CANDIDATES:]]
     pool = pool[:MAX_CANDIDATES]
     # 3. hard filter, then estimate only what is eligible
@@ -809,6 +841,7 @@ def interventions(report: dict, p: dict) -> list[dict]:
             refs |= set((surfaces.get(part, {}).get("consent") or {}).get("evidence_refs", []))
         if r["kind"] == "direct_labor":
             refs |= set(p["direct_labor"]["evidence_refs"])
+            refs |= set((p["direct_labor"].get("consent") or {}).get("evidence_refs", []))
             action = {"action_class": "work.perform", "requested_capability": "work.perform",
                       "target": f"bottleneck:{report['bottleneck']['node']}",
                       "consequence_class": r["authority"]["consequence_class"]}
@@ -842,7 +875,8 @@ def interventions(report: dict, p: dict) -> list[dict]:
                 "authority_state": r["authority"]["state"],
                 "deferred_consequence_class": r["authority"]["deferred_consequence_class"],
                 "components": components, "reversibility": r["reversibility"],
-                "consent": [(surfaces.get(part, {}).get("consent") or None) for part in str(r["surface"]).split("+")],
+                "consent": ([p["direct_labor"].get("consent")] if r["kind"] == "direct_labor" else
+                            [(surfaces.get(part, {}).get("consent") or None) for part in str(r["surface"]).split("+")]),
                 "estimate": {k: r["estimate"][k] for k in ("mean", "p05", "p95", "p_meaningful")},
                 "effect_semantics": "ranker benefit = this route's mean per-cycle closure over the horizon",
                 "falsification_flags": r.get("falsification_flags", [])}}},

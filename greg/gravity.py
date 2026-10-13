@@ -32,6 +32,7 @@ from greg import asks
 from greg import path as backcast
 
 SCHEMA = "greg-goal-gravity/0.1"
+DEFAULT_MAX_AGE = 7 * 86400
 SITUATION_FIELDS = {"situation_id", "goal", "source", "observed_at", "leverage_problem", "max_evidence_age_seconds"}
 
 
@@ -64,6 +65,12 @@ def validate(situation: dict) -> dict:
     observed, as_of = _instant(situation["observed_at"]), _instant(situation["leverage_problem"].get("as_of", ""))
     if observed > as_of:
         raise GravityError("a situation cannot be observed after the decision time it informs")
+    max_age = situation.get("max_evidence_age_seconds", DEFAULT_MAX_AGE)
+    if type(max_age) is not int or not 0 < max_age <= 366 * 86400:
+        raise GravityError("situation.max_evidence_age_seconds is a positive integer of at most a year")
+    if (as_of - observed).total_seconds() > max_age:
+        # The ranker refuses stale evidence; the founder must not be asked to decide on it either.
+        raise GravityError("the situation is older than max_evidence_age_seconds at the decision time; sense again")
     return situation
 
 
@@ -94,11 +101,21 @@ CLASS_ORDER = lawful_leverage.CONSEQUENCE
 UNSIGNED_HELD = ("read_only",)   # without a founder-signed mission, a sensed situation holds no more than reading
 
 
-def signed_authority(journal, mission_id: str | None) -> dict:
-    """The authority a founder signed for this goal: the named mission's light cone, or read-only."""
+def signed_authority(journal, mission_id: str | None, at: str | None = None) -> dict:
+    """The authority a founder signed for this goal: the named mission's light cone, or read-only.
+
+    A paused mission lends nothing (the pause is the founder's decision), and neither does a cone whose
+    horizon has passed at the decision time ``at`` (the same expiry rule as ``LightCone.admits``)."""
     if journal is not None and mission_id:
         from greg.missions import MissionBook
         m = MissionBook(journal).missions.get(mission_id)
+        if m is not None and m.status == "ACTIVE" and m.paused:
+            return {"source": f"mission {mission_id} is paused: read-only", "held": list(UNSIGNED_HELD),
+                    "budget_usd": 0.0}
+        if (m is not None and m.status == "ACTIVE" and at is not None
+                and _instant(at) >= _instant(m.spec["light_cone"]["horizon"])):
+            return {"source": f"mission {mission_id} light cone expired: read-only", "held": list(UNSIGNED_HELD),
+                    "budget_usd": 0.0}
         if m is not None and m.status == "ACTIVE":
             cone = m.spec["light_cone"]
             ceiling = CLASS_ORDER.index(cone["max_consequence_class"])
@@ -140,7 +157,7 @@ def _rank(situation: dict, report: dict) -> dict:
     problem = situation["leverage_problem"]
     context = {"institutional_leverage": {
         "objective": problem["objective"], "outcome_node": problem["outcome_node"], "as_of": problem["as_of"],
-        "max_evidence_age_seconds": int(situation.get("max_evidence_age_seconds", 7 * 86400)),
+        "max_evidence_age_seconds": situation.get("max_evidence_age_seconds", DEFAULT_MAX_AGE),
         "budget_usd": problem["constraints"]["budget_usd"], "max_candidates": 3}}
     try:
         proposals = propose_institutional_leverage((_signal(situation, report),), context)
@@ -200,7 +217,7 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
     """One Goal Gravity turn. Read-only: returns a report and, where needed, one prepared founder ask."""
     situation = validate(situation)
     position = backcast.position(journal, path_data)
-    signed = signed_authority(journal, situation["goal"].get("mission_id"))
+    signed = signed_authority(journal, situation["goal"].get("mission_id"), situation["leverage_problem"]["as_of"])
     problem = _clamped(situation["leverage_problem"], signed)
     report = lawful_leverage.compile(problem)
     ranked = _rank({**situation, "leverage_problem": problem}, report)

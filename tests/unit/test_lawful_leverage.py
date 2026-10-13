@@ -393,3 +393,56 @@ def test_problem_text_never_enters_gregs_own_prose():
     assert asks.screen(packet) == []
     for field in ("why_now", "recommendation", "expected_effect", "uncertainty"):
         assert "deadline" not in packet[field] and "eligibility_check" not in packet[field]
+
+
+@pytest.mark.parametrize("operator", ["Grеg", "ՍNIIMENTE", "e g r e g o r e", "G​R​E​G",
+                                      "ɢʀᴇɢ"])
+def test_lookalike_spellings_of_the_institution_are_still_refused_as_legal_operator(operator):
+    p = problem()
+    p["constraints"]["legal_operator"] = operator
+    with pytest.raises(L.LeverageRefused, match="human principal"):
+        L.compile(p)
+
+
+def test_accented_human_names_remain_valid_legal_operators():
+    p = problem()
+    p["constraints"]["legal_operator"] = "Alfonso López"
+    assert L.compile(p)["selected"]
+
+
+def test_consent_cannot_cover_parties_nobody_named():
+    p = problem()
+    elig = next(s for s in p["surfaces"] if s["surface"] == "eligibility")
+    elig.pop("third_parties")
+    elig["consent"] = consent("a letter from our own accountant", "our accountant")
+    r = rows(L.compile(p))
+    assert r["eligibility.published_standard"]["reasons"] == ["REJECTED_THIRD_PARTIES_UNDECLARED"]
+
+
+def test_direct_labour_that_contacts_people_passes_the_same_consent_and_harm_gates():
+    p = problem()
+    p["direct_labor"].update(consequence_class="external_contact")
+    p["constraints"]["held_authority"] = ["read_only", "internal_write", "external_contact"]
+    assert rows(L.compile(p))["direct_labor"]["reasons"] == ["REJECTED_THIRD_PARTIES_UNDECLARED"]
+    p["direct_labor"]["third_parties"] = ["claimants"]
+    assert rows(L.compile(p))["direct_labor"]["reasons"] == ["REJECTED_NO_CONSENT_PATH"]
+    p["direct_labor"]["consent"] = consent("claimants opted in to a callback", "claimants")
+    labour = rows(L.compile(p))["direct_labor"]
+    assert labour["eligibility"] == "ELIGIBLE"
+    p["direct_labor"]["harm"] = {"privacy": 0.5}                       # above the reviewed privacy ceiling
+    labour = rows(L.compile(p))["direct_labor"]
+    assert "REJECTED_HARM:privacy" in labour["reasons"] and labour["harm_vector"]["privacy"] == 0.5
+
+
+def test_a_conflicting_duplicate_map_record_is_refused_and_an_exact_copy_collapses():
+    p = problem()
+    p["institutional_map"]["nodes"].append(node("eligibility_check", 0.01))     # would hide the real bottleneck
+    with pytest.raises(L.LeverageRefused, match="conflicting institutional map record: nodes/eligibility_check"):
+        L.compile(p)
+    p = problem()
+    p["institutional_map"]["links"].append(link("proof-elig", "proof_gap", "eligibility_check", 0.1, 0.1))
+    with pytest.raises(L.LeverageRefused, match="links/proof-elig"):
+        L.compile(p)
+    p = problem()
+    p["institutional_map"]["links"].append(deepcopy(p["institutional_map"]["links"][0]))
+    assert L.compile(p)["selected"] == L.compile(problem())["selected"]

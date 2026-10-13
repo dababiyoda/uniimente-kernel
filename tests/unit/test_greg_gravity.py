@@ -79,6 +79,9 @@ def test_the_ask_carries_the_named_mission():
     (lambda s: s.__setitem__("observed_at", "2026-10-09T00:00:00Z"), "after the decision time"),
     (lambda s: s["goal"].__setitem__("statement", " "), "statement"),
     (lambda s: s.__setitem__("observed_at", "2026-10-08T11:00:00"), "timezone"),
+    (lambda s: s.__setitem__("observed_at", "2020-01-01T00:00:00Z"), "older than max_evidence_age"),
+    (lambda s: s.__setitem__("max_evidence_age_seconds", "abc"), "positive integer"),
+    (lambda s: s.__setitem__("max_evidence_age_seconds", -5), "positive integer"),
 ])
 def test_malformed_situations_are_refused(change, needle):
     s = situation()
@@ -130,3 +133,17 @@ def test_signed_mission_authority_is_the_ceiling(tmp_path):
     signed = gravity.signed_authority(journal, "m:claims")
     assert signed["held"] == ["read_only", "internal_write"] and signed["source"].startswith("signed mission")
     assert gravity.signed_authority(journal, "m:other")["held"] == ["read_only"]
+
+
+def test_a_paused_or_expired_mission_lends_no_authority(tmp_path):
+    spec = mission("m:claims", checks=[note_check("c", tmp_path / "c.txt", "ok")],
+                   strategies=[write_strategy("w", "c.txt", "ok", ["c"])], capabilities=["fs.read", "fs.write"])
+    registered = ("greg.mission.registered", {"mission_id": "m:claims", "spec": spec,
+                                              "command_digest": "sha256:" + "c" * 64})
+    paused = FakeJournal([registered, ("greg.mission.lifecycle", {"mission_id": "m:claims", "state": "PAUSED"})])
+    signed = gravity.signed_authority(paused, "m:claims")
+    assert signed["held"] == ["read_only"] and "paused" in signed["source"]
+    live = FakeJournal([registered])
+    assert gravity.signed_authority(live, "m:claims", "2026-10-08T12:00:00Z")["held"] == ["read_only", "internal_write"]
+    expired = gravity.signed_authority(live, "m:claims", spec["light_cone"]["horizon"])     # at the horizon itself
+    assert expired["held"] == ["read_only"] and "expired" in expired["source"]

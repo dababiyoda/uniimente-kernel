@@ -155,6 +155,39 @@
             "partially_reversible",
             "irreversible"
           ]
+        },
+        "third_parties": {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/text"
+          },
+          "description": "Parties the labour affects or contacts; external_contact labour must name them."
+        },
+        "consent": {
+          "$ref": "#/properties/surfaces/items/properties/consent"
+        },
+        "harm": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "third_party": {
+              "$ref": "#/$defs/unit"
+            },
+            "privacy": {
+              "$ref": "#/$defs/unit"
+            },
+            "dependency_capture": {
+              "$ref": "#/$defs/unit"
+            },
+            "tail": {
+              "$ref": "#/$defs/unit"
+            },
+            "participant_burden": {
+              "$ref": "#/$defs/unit"
+            }
+          },
+          "description": "Declared harm vector of the labour itself (defaults to zero in every dimension)."
         }
       }
     },

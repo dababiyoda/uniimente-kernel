@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import re
+import unicodedata
 
 from greg.journal import Journal, iso, utcnow
 
@@ -73,7 +74,11 @@ _KINDS = {k: re.compile(v, re.IGNORECASE) for k, v in SIGNAL_KINDS.items()}
 
 
 def _normal(text: str) -> str:
-    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", " ", text.lower())).strip()
+    """Clustering key: NFKC, case-folded, punctuation and spacing collapsed, in every script (an ASCII-only key
+    merged all non-Latin text into one cluster). Text with no word characters keys on itself."""
+    folded = unicodedata.normalize("NFKC", text).casefold()
+    words = re.sub(r"[\W_]+", " ", folded).strip()
+    return words or folded.strip()
 
 
 def community_evidence(journal: Journal, channel: str, *, campaign_sources: int = 3) -> dict:
@@ -81,7 +86,9 @@ def community_evidence(journal: Journal, channel: str, *, campaign_sources: int 
 
     * one source carries one unit of weight per claim, whatever its volume (brigading by repetition fails);
     * identical normalised text from ``campaign_sources`` or more sources is flagged as a possible
-      coordinated campaign and its cluster counts as one unit;
+      coordinated campaign and its cluster counts as ``campaign_sources - 1`` units: no more than an
+      unflagged cluster can reach (sybils gain nothing over two identities), and never less (more
+      independent agreement can never lower a claim's support or demote it to a minority report);
     * per kind, every distinct claim is kept with its support; claims below the most-supported one are the
       minority reports, listed explicitly;
     * classification is a keyword heuristic, labelled as such.
@@ -98,10 +105,10 @@ def community_evidence(journal: Journal, channel: str, *, campaign_sources: int 
     flagged = []
     for key, c in sorted(clusters.items()):
         campaign = len(c["sources"]) >= campaign_sources
-        weight = 1 if campaign else len(c["sources"])
+        weight = min(len(c["sources"]), max(1, campaign_sources - 1))
         if campaign:
             flagged.append({"claim": c["text"][:200], "sources": len(c["sources"]),
-                            "flag": "COORDINATED_CAMPAIGN_SUSPECTED", "counted_as": 1})
+                            "flag": "COORDINATED_CAMPAIGN_SUSPECTED", "counted_as": weight})
         record = {"claim": c["text"], "support_sources": weight, "raw_sources": len(c["sources"]),
                   "first_at": c["first_at"], "cluster": key[:16], "campaign_suspected": campaign}
         for kind in c["kinds"] or ["unclassified"]:

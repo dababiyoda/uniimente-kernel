@@ -9,9 +9,10 @@ Founder directive 2026-10-07, sections 21-22. Read-only projections over retaine
 * dependency concentration over completed actions (Herfindahl index and top share);
 * performance after failure per capability (completion rate of the next actions vs the previous ones);
 * an honest per-capability verdict. ANTIFRAGILE_EVIDENCE requires repeated failures, measurably better
-  operation afterwards AND a recorded learning artifact (a closed critique regression, an evaluated
-  improvement, an excluded strategy). Ordinary redundancy (several strategies) is reported as recovery
-  diversity and never earns the label;
+  operation afterwards AND a learning artifact attributable to THAT capability, recorded after its first
+  failure: a strategy exclusion for one of its failed actions, or a closed critique regression / evaluated
+  improvement that names the capability. Learning recorded elsewhere, and mere proposals, do not count.
+  Ordinary redundancy (several strategies) is reported as recovery diversity and never earns the label;
 * decoupling: a local metric improving while the whole-system outcome degrades (a capability's
   completion rate rising while the share of passing success checks falls) is a critical warning.
 
@@ -25,8 +26,7 @@ from datetime import datetime, timedelta
 import statistics
 
 FAILED_ACTIONS = ("FAILED", "ERROR", "UNCERTAIN")
-LEARNING_EVENTS = ("critique.regression_closed", "improvement.evaluated", "improvement.proposed",
-                   "mission.strategy_excluded")
+LEARNING_EVENTS = ("critique.regression_closed", "improvement.evaluated", "mission.strategy_excluded")
 MIN_FAILURES = 3
 MATERIAL = 0.1
 WINDOW = 5
@@ -111,16 +111,24 @@ def after_failure(journal) -> dict:
     for e in _events(journal, "mission.action"):
         status = e.payload.get("status")
         if status == "DONE" or status in FAILED_ACTIONS:
-            by_cap[e.payload.get("capability", "?")].append((_at(e), status == "DONE"))
-    learned_at = [_at(e) for kind in LEARNING_EVENTS for e in journal.replay(kind)]
+            by_cap[e.payload.get("capability", "?")].append(
+                (_at(e), status == "DONE", (e.payload.get("mission_id"), e.payload.get("action_id"))))
+    learned = [(_at(e), kind, e.payload or {}) for kind in LEARNING_EVENTS for e in journal.replay(kind)]
     out = {}
     for cap, seq in sorted(by_cap.items()):
-        failures = [i for i, (_, ok) in enumerate(seq) if not ok]
-        before = [ok for i in failures for _, ok in seq[max(0, i - WINDOW):i]]
-        after = [ok for i in failures for _, ok in seq[i + 1:i + 1 + WINDOW]]
+        failures = [i for i, (_, ok, _) in enumerate(seq) if not ok]
+        before = [ok for i in failures for _, ok, _ in seq[max(0, i - WINDOW):i]]
+        after = [ok for i in failures for _, ok, _ in seq[i + 1:i + 1 + WINDOW]]
         pre = statistics.fmean(before) if before else None
         post = statistics.fmean(after) if after else None
-        learning = bool(failures) and any(t >= seq[failures[0]][0] for t in learned_at)
+        failed_actions = {seq[i][2] for i in failures}
+
+        def attributable(kind, payload):
+            if kind == "mission.strategy_excluded":
+                return (payload.get("mission_id"), payload.get("action_id")) in failed_actions
+            return payload.get("capability") == cap
+        learning = bool(failures) and any(t >= seq[failures[0]][0] and attributable(kind, payload)
+                                          for t, kind, payload in learned)
         if len(failures) < MIN_FAILURES or pre is None or post is None:
             verdict = "INSUFFICIENT_EVIDENCE"
         elif post >= pre + MATERIAL and learning:
@@ -192,7 +200,9 @@ def summary(journal) -> dict:
         "after_failure": after_failure(journal),
         "decoupling": decoupling_from_journal(journal),
         "rule": "redundancy is recovery diversity, not antifragility; ANTIFRAGILE_EVIDENCE needs >= 3 failures, "
-                "completion after failures >= 0.1 above before, and a recorded learning artifact",
+                "completion after failures >= 0.1 above before, and a learning artifact attributable to that "
+                "capability (an excluded strategy for one of its failed actions, or an evaluated improvement or "
+                "closed regression naming it)",
         "induces_failures": False, "writes": 0,
     }
     report["warnings"] = ([f"decoupling: {d['capability']} improves while system checks degrade"

@@ -209,3 +209,20 @@ def test_preposterior_verify_binds_the_act_now_decision_and_refutes_malformed_sc
     assert decision.verify(data, flipped, {})["act_now_is_the_prior_best_decision"] is False
     assert decision.verify(data, dict(o, posterior_scenarios=[{"probability": 1.0}]), {}) == {
         "scenarios_well_formed": False}
+
+
+def test_a_genome_abstention_through_the_canonical_path_is_an_abstention_receipt_not_an_error():
+    """Found by the 2026-10-13-v1 admission smoke: an abstaining genome used to carry its certificate as a
+    proof artifact without an output, and the receipt rejected it (CognitionError)."""
+    from greg.cognition.cortex import reason, registry_view
+    item = library.executables()["collective_flock"]
+    data, _ = item.instance(1)
+    data["steps"] = 10                                   # too short for local rules: an honest abstention
+    assert item.solve(data, {"latency_s": 5.0})["status"] == "ABSTAIN"
+    registry = registry_view()
+    registry.set_state("cognition.collective_flock", "ATTACHED")
+    r = reason({"problem_id": "flock-abstain", "operation": item.genome.operation, "data": data,
+                "geometry": {"latency_limit": 30}}, registry=registry)
+    assert r["abstention_state"] == "ABSTAIN" and r["output"] is None
+    assert r["proof_type"] is None and r["proof_artifact"] is None
+    assert "short of their goals" in r["missing_information"][0] and r["authority_created"] is False

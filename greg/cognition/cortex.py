@@ -226,6 +226,7 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
     if missing and "POLICY_REFUSAL" in missing[0]:
         reason_code = "POLICY_REFUSAL"
     dissent = evaluator.get("dissent", [])
+    answered = bool(answer) and answer.get("output") is not None
     receipt = CognitiveReceipt(
         problem_id=params["problem_id"], geometry=asdict(geometry), consequence_class=geometry.consequence_class,
         consequence_vector=asdict(consequences), method=chosen["method"] if chosen else "none", method_version=chosen["version"] if chosen else "none",
@@ -233,7 +234,10 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         assumptions=params.get("assumptions", []) + ["Input and model validity are not established by computation"],
         excluded_variables=params.get("excluded_variables", []), output=answer.get("output") if answer else None,
         uncertainty={"conditional_on_input": True, "world_confidence": None},
-        proof_type=chosen["proof_class"] if answer else None, proof_artifact=answer.get("proof") if answer else None,
+        # A proof artifact accompanies an output and only an output: an abstention without one (a genome that
+        # declined) carries its reasons in missing_information. Attaching the certificate to no output made the
+        # receipt reject an honest abstention; a native non-answer that does return an output keeps its proof.
+        proof_type=chosen["proof_class"] if answered else None, proof_artifact=answer.get("proof") if answered else None,
         alternative_methods_considered=rows, method_selection_reason="eligible operation/epistemic class; outcome competence, cost, latency, stable tie-break",
         strongest_counterargument="; ".join(dissent) or "Missing or incomplete evidence prevents a stronger conclusion.",
         falsification_condition="independent recomputation, invalid assumptions, counterexample or observed outcome contradicts this receipt",

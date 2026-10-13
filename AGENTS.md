@@ -56,3 +56,15 @@ OMNIMORPH is an optional organization-design/composition mechanism, not the mean
 - Preserve failures, dissent, historical branches, and counterevidence.
 
 For any material PR, explicitly state the target effect, metaphor/literal split, simplest viable mechanism, existing mechanisms searched, residual CapabilityDeficit, verification plan, and why added complexity is warranted.
+
+## Open-source-first models and software
+
+Current founder direction (2026-09-30): use locally served, freely licensed AI
+models and mature free software across egregore and its connected organs.
+Read `docs/OPEN_SOURCE_STACK.md` and
+`docs/intent/INTENT-20260930-open-source-first.json` before adding model/tool
+dependencies. Normal AI routing must not select a paid provider merely because
+an API key exists. Search popular repositories, then verify the actual license,
+maintainer activity, hardware fit and whether examples call paid backends.
+Local model weights do not make rented hardware or exclusive data free.
+This changes implementation selection, not Kernel consequence authority.

@@ -29,8 +29,8 @@ The invariant is simple:
 ## Detachable parts (`parts.py`, `model_parts.py`)
 
 Every proposer and evaluator sits in a named slot (`proposer:<role>`,
-`evaluator:<role>`). Any implementation (rules, a local open-weight model, a
-hosted model, whatever comes next) is a registered *part* for a slot.
+`evaluator:<role>`). Any implementation (rules, a local open-weight model, whatever comes
+next) is a registered *part* for a slot.
 
 | Operation | Effect | Authority |
 |---|---|---|
@@ -47,23 +47,17 @@ cannot be replayed after the slot moves. Code is never stored in the
 ledger: after a restart, bound parts must be registered again or the board
 reports them as unresolved instead of guessing.
 
-`openai_compatible_proposer` turns any OpenAI-compatible chat endpoint
-(Ollama, llama.cpp, vLLM, LM Studio, Groq, OpenRouter, Together, Gemini's
-compatibility endpoint) into a proposer part. The model drafts objective,
-outcome, payload and cited signals; action class, capability, target and
-consequence class are fixed by the code that builds the part. Model
-confidence is capped (default 0.5); the raw value is kept in the payload.
+`local_draft_part` wraps the local-only `LocalDraftProposer` (below) as a
+part, so a newer or larger local open-weight model is a new part rather than
+new code: register it, shadow it against the current one, then bind it or roll
+back. Endpoint rules and proposal scope come from `local_model.py`: loopback
+only, no redirects, fixed internal draft scope, zero confidence. Hosted models
+are deliberately not offered as parts (see `docs/OPEN_SOURCE_STACK.md`).
 
 ```python
 board = PartsBoard(ledger=ledger)
-spec, fn = openai_compatible_proposer(
-    role="strategist", base_url="http://localhost:11434/v1", model="qwen3.6",
-    envelope=Envelope(action_class="community_update",
-                      requested_capability="social.publish.draft",
-                      target="discord://community/main",
-                      consequence_class="external_contact"),
-    open_weights=True,
-)
+spec, fn = local_draft_part(role="strategist",
+                            config=LocalModelConfig(model="qwen3.6:27b"))
 part = board.register(spec, fn)
 grant = issuer.issue_single_action(
     proposal=board.change_proposal(actor=actor, slot=spec.slot, part_id=part, mode="shadow"),
@@ -115,3 +109,21 @@ active-inference organ must declare a generative probabilistic model, latent
 states, observations, preferences, posterior approximation, and a testable
 free-energy objective. Until then, this implementation is accurately described
 as bounded deliberation.
+
+## Local open-source draft model
+
+`egregore.local_model.LocalDraftProposer` supplies an optional local Qwen
+proposer through the existing constructor's proposer mapping. It uses Ollama,
+llama.cpp, vLLM or LocalAI's loopback /v1 protocol, rejects hosted URLs and
+redirects, and makes no paid fallback calls. A legacy OpenAI key is ignored.
+
+The model supplies only draft objective/text; source/evidence references and
+fixed internal proposal scope come from the adapter. Confidence is zero pending
+the existing required evaluators. Call limits, suspension, idempotent replay and
+the Consequence Gate remain owned by the existing runtime.
+
+See [the researched stack and setup](../docs/OPEN_SOURCE_STACK.md).
+Use a positive existing resource cost ceiling even for zero-token-fee local
+inference: a zero ceiling means hibernation in ResourceGovernor. Hardware and
+electricity are real costs; zero provider token fees are not unlimited resources.
+No server, scheduler or production activity starts by importing this adapter.

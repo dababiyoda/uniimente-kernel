@@ -11,7 +11,8 @@ import pytest
 
 from compiler.ucl_compiler import compile_constitution
 from egregore.contracts import Assessment, CandidateProposal, ContractError, SignalEnvelope
-from egregore.model_parts import Envelope, extract_json, openai_compatible_proposer
+from egregore.local_model import LocalModelConfig
+from egregore.model_parts import local_draft_part
 from egregore.parts import PartSpec, PartsBoard
 from egregore.resources import ResourceGovernor
 from identity.machine_passport import PassportRegistry
@@ -255,78 +256,56 @@ def test_forged_binding_record_is_ignored_on_restart(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Model-backed parts: any OpenAI-compatible endpoint, authority fixed by code
+# Local open-weight model parts (loopback only, via egregore.local_model)
 # ---------------------------------------------------------------------------
-ENVELOPE = Envelope(action_class="community_update", requested_capability="social.publish.draft",
-                    target="discord://community/main", consequence_class="external_contact")
+class FakeLocalClient:
+    def __init__(self, reply, model="qwen3.5:4b"):
+        self.config = LocalModelConfig(model=model)
+        self.reply = reply
+        self.calls = []
+
+    def complete(self, system, user):
+        self.calls.append((system, user))
+        return self.reply
 
 
-def fake_endpoint(content, seen):
-    def transport(url, headers, body, timeout):
-        seen.append({"url": url, "headers": dict(headers), "body": body})
-        return {"choices": [{"message": {"content": content}}]}
-    return transport
-
-
-def test_model_part_builds_candidates_with_code_fixed_authority(monkeypatch):
-    s = signal()
-    reply = "<think>reasoning</think>```json\n" + json.dumps({"candidates": [
-        {"objective": "post a status update", "expected_outcome": "members informed",
-         "payload": {"text": "update"}, "confidence": 0.95, "source_signal_ids": [s.signal_id],
-         "evidence_refs": ["source:event-1"], "consequence_class": "read_only",
-         "target": "https://attacker.example"},
-        {"objective": "invented", "expected_outcome": "x", "confidence": 0.9,
-         "source_signal_ids": ["sha256:" + "f" * 64]},
-    ]}) + "\n```"
-    seen = []
-    monkeypatch.setenv("GROQ_API_KEY", "gsk-test")
-    part_spec, propose = openai_compatible_proposer(
-        role="strategist", base_url="https://api.groq.com/openai/v1/", model="llama-3.3-70b-versatile",
-        envelope=ENVELOPE, api_key_env="GROQ_API_KEY", open_weights=True,
-        transport=fake_endpoint(reply, seen))
-
-    [candidate] = propose((s,), {"goal": "keep community informed"})
+def test_local_part_spec_and_fixed_internal_scope():
+    client = FakeLocalClient(json.dumps({"objective": "draft update", "text": "Review the evidence."}))
+    part_spec, propose = local_draft_part(role="strategist", client=client)
     assert part_spec.slot == "proposer:strategist" and part_spec.open_weights is True
-    assert seen[0]["url"] == "https://api.groq.com/openai/v1/chat/completions"
-    assert seen[0]["headers"]["Authorization"] == "Bearer gsk-test"
-    assert seen[0]["body"]["model"] == "llama-3.3-70b-versatile"
-    assert candidate.consequence_class == "external_contact"
-    assert candidate.target == "discord://community/main"
-    assert candidate.confidence == 0.5 and candidate.payload["model_confidence"] == 0.95
-    assert candidate.execution_authority == "none"
+    assert part_spec.implementation == "local-openai-protocol:qwen3.5:4b"
+    [candidate] = [propose((signal(),), {})]
+    assert candidate.proposed_by == "strategist"
+    assert candidate.consequence_class == "internal_write"
+    assert candidate.target == "internal://review/drafts"
+    assert candidate.confidence == 0.0 and candidate.execution_authority == "none"
 
 
-def test_model_part_plugs_into_board_as_shadow(tmp_path):
+def test_local_model_config_refuses_hosted_endpoints():
+    with pytest.raises(ContractError):
+        local_draft_part(config=LocalModelConfig(base_url="https://api.groq.com/openai/v1"))
+
+
+def test_newer_local_model_is_a_distinct_part_that_can_be_shadowed(tmp_path):
     world = World(tmp_path)
     base(world)
     s = signal()
-    reply = json.dumps({"candidates": [{"objective": "model plan", "expected_outcome": "ok",
-                                        "confidence": 0.7, "source_signal_ids": [s.signal_id]}]})
-    part_spec, propose = openai_compatible_proposer(
-        role="strategist", base_url="http://localhost:11434/v1", model="qwen3.6", envelope=ENVELOPE,
-        open_weights=True, transport=fake_endpoint(reply, []))
-    part = world.board.register(part_spec, propose)
-    world.change("proposer:strategist", part, mode="shadow")
+    current = FakeLocalClient(json.dumps({"objective": "small model plan", "text": "a"}), model="qwen3.5:4b")
+    newer = FakeLocalClient(json.dumps({"objective": "bigger model plan", "text": "b"}), model="qwen3.6:27b")
+    old_spec, old_fn = local_draft_part(role="strategist", client=current)
+    new_spec, new_fn = local_draft_part(role="strategist", client=newer)
+    assert old_spec.part_id != new_spec.part_id
+    old_part = world.board.register(old_spec, old_fn)
+    new_part = world.board.register(new_spec, new_fn)
+    world.change("proposer:strategist", old_part)
+    world.change("proposer:strategist", new_part, mode="shadow")
     cycle = tick(world.board.runtime(), s)
+    assert [c.objective for c in cycle.candidates] == ["small model plan"]
     [h] = world.board.shadow_run(cycle, [s], resources=ResourceGovernor(max_model_calls=5,
                                                                         max_estimated_cost_usd=1.0))
-    shadow = world.ledger.find(h).payload["comparison"]["shadow_candidates"]
-    assert shadow[0]["objective"] == "model plan"
-
-
-def test_model_part_refuses_missing_key_and_bad_replies(monkeypatch):
-    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
-    _, propose = openai_compatible_proposer(
-        role="strategist", base_url="https://openrouter.ai/api/v1", model="some/model:free",
-        envelope=ENVELOPE, api_key_env="OPENROUTER_API_KEY", transport=fake_endpoint("{}", []))
-    with pytest.raises(ContractError, match="OPENROUTER_API_KEY"):
-        propose((signal(),), {})
-    _, propose = openai_compatible_proposer(
-        role="strategist", base_url="http://x/v1", model="m", envelope=ENVELOPE,
-        transport=fake_endpoint("no json here", []))
-    with pytest.raises(ContractError, match="no JSON"):
-        propose((signal(),), {})
-    assert extract_json('prefix {"candidates": []} suffix') == {"candidates": []}
+    comparison = world.ledger.find(h).payload["comparison"]
+    assert comparison["shadow_candidates"][0]["objective"] == "bigger model plan"
+    assert comparison["identical"] is False
 
 
 def test_replayed_genuine_binding_record_is_ignored_on_restart(tmp_path):

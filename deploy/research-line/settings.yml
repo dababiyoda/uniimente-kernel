@@ -1,0 +1,10 @@
+use_default_settings: true
+server:
+  # Local-only search configuration. Use a private random key before sharing this service.
+  secret_key: "egregore-local-only-search-not-a-production-credential"
+  limiter: false
+  image_proxy: false
+search:
+  formats:
+    - html
+    - json

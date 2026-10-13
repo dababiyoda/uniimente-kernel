@@ -1,0 +1,195 @@
+{
+  "observed_on": "2026-09-30",
+  "evidence_type": "GitHub API metadata and source license inspection; stars are popularity, not verification",
+  "repositories": [
+    {
+      "repo": "sindresorhus/awesome",
+      "stars": 512621,
+      "license": "CC0-1.0",
+      "archived": false,
+      "pushed_at": "2026-09-02T02:10:47Z",
+      "branch": "main",
+      "description": "😎 Awesome lists about all kinds of interesting topics [NOTE: Pull requests are temporarily disabled until I have a chance to catch up with the existing ones]"
+    },
+    {
+      "repo": "awesome-selfhosted/awesome-selfhosted",
+      "stars": 322816,
+      "license": "CC-BY-SA-3.0",
+      "archived": false,
+      "pushed_at": "2026-09-29T10:54:43Z",
+      "branch": "master",
+      "description": "A list of Free Software network services and web applications which can be hosted on your own servers"
+    },
+    {
+      "repo": "Shubhamsaboo/awesome-llm-apps",
+      "stars": 140306,
+      "license": "Apache-2.0",
+      "archived": false,
+      "pushed_at": "2026-09-29T04:56:53Z",
+      "branch": "main",
+      "description": "100+ AI Agents, Agent Skills and RAG Apps - Free and Open Source."
+    },
+    {
+      "repo": "ollama/ollama",
+      "stars": 181941,
+      "license": "MIT",
+      "archived": false,
+      "pushed_at": "2026-09-30T02:33:25Z",
+      "branch": "main",
+      "description": "Get up and running with Kimi, GLM, MiniMax, DeepSeek, gpt-oss, Qwen, Gemma and other models."
+    },
+    {
+      "repo": "ggml-org/llama.cpp",
+      "stars": 129939,
+      "license": "MIT",
+      "archived": false,
+      "pushed_at": "2026-09-30T08:29:12Z",
+      "branch": "master",
+      "description": "LLM inference in C/C++"
+    },
+    {
+      "repo": "vllm-project/vllm",
+      "stars": 92981,
+      "license": "Apache-2.0",
+      "archived": false,
+      "pushed_at": "2026-09-30T08:57:22Z",
+      "branch": "main",
+      "description": "A high-throughput and memory-efficient inference and serving engine for LLMs"
+    },
+    {
+      "repo": "mudler/LocalAI",
+      "stars": 49336,
+      "license": "MIT",
+      "archived": false,
+      "pushed_at": "2026-09-30T08:06:15Z",
+      "branch": "master",
+      "description": "LocalAI is the open-source AI engine. Run any model - LLMs, vision, voice, image, video - on any hardware. No GPU required."
+    },
+    {
+      "repo": "QwenLM/Qwen3",
+      "stars": 27667,
+      "archived": false,
+      "pushed_at": "2026-01-09T03:05:47Z",
+      "branch": "main",
+      "description": "Qwen3 is the large language model series developed by Qwen team, Alibaba Cloud.",
+      "license": "verify each model card; Qwen3.5-4B Apache-2.0 verified separately"
+    },
+    {
+      "repo": "QwenLM/Qwen3.8",
+      "stars": 4203,
+      "license": "Apache-2.0",
+      "archived": false,
+      "pushed_at": "2026-08-17T05:17:40Z",
+      "branch": "main",
+      "description": "Qwen3.8 is the large language model series developed by Qwen team, Alibaba Group."
+    },
+    {
+      "repo": "SYSTRAN/faster-whisper",
+      "stars": 25633,
+      "license": "MIT",
+      "archived": false,
+      "pushed_at": "2025-11-19T14:40:46Z",
+      "branch": "master",
+      "description": "Faster Whisper transcription with CTranslate2"
+    },
+    {
+      "repo": "hexgrad/kokoro",
+      "stars": 9086,
+      "license": "Apache-2.0",
+      "archived": false,
+      "pushed_at": "2025-08-06T22:28:53Z",
+      "branch": "main",
+      "description": "https://hf.co/hexgrad/Kokoro-82M"
+    },
+    {
+      "repo": "qdrant/qdrant",
+      "stars": 34885,
+      "license": "Apache-2.0",
+      "archived": false,
+      "pushed_at": "2026-09-30T08:44:16Z",
+      "branch": "master",
+      "description": "Qdrant - High-performance, massive-scale Vector Database and Vector Search Engine for the next generation of AI. Also available in the cloud https://cloud.qdrant.io/"
+    },
+    {
+      "repo": "searxng/searxng",
+      "stars": 37790,
+      "license": "AGPL-3.0",
+      "archived": false,
+      "pushed_at": "2026-09-30T05:42:37Z",
+      "branch": "master",
+      "description": "SearXNG is a free internet metasearch engine which aggregates results from various search services and databases. Users are neither tracked nor profiled."
+    },
+    {
+      "repo": "microsoft/playwright",
+      "stars": 96905,
+      "license": "Apache-2.0",
+      "archived": false,
+      "pushed_at": "2026-09-30T01:39:31Z",
+      "branch": "main",
+      "description": "Playwright is a framework for Web Testing and Automation. It allows testing Chromium, Firefox and WebKit with a single API. "
+    },
+    {
+      "repo": "langchain-ai/langgraph",
+      "stars": 42502,
+      "license": "MIT",
+      "archived": false,
+      "pushed_at": "2026-09-29T16:44:15Z",
+      "branch": "main",
+      "description": "Build resilient agents."
+    },
+    {
+      "repo": "Comfy-Org/ComfyUI",
+      "stars": 135563,
+      "license": "GPL-3.0",
+      "archived": false,
+      "pushed_at": "2026-09-30T08:00:52Z",
+      "branch": "master",
+      "description": "The most powerful and modular diffusion model GUI, api and backend with a graph/nodes interface. The fastest local inference engine in the world."
+    },
+    {
+      "repo": "temporalio/temporal",
+      "stars": 23381,
+      "license": "MIT",
+      "archived": false,
+      "pushed_at": "2026-09-30T03:50:57Z",
+      "branch": "main",
+      "description": "Temporal service"
+    },
+    {
+      "repo": "activepieces/activepieces",
+      "stars": 24801,
+      "license": "MIT community core; enterprise directories excluded",
+      "archived": false,
+      "pushed_at": "2026-09-30T08:48:46Z",
+      "branch": "main",
+      "description": "AI Agents & MCPs & AI Workflow Automation • (~400 MCP servers for AI agents) • AI Automation / AI Agent with MCPs • AI Workflows & AI Agents • MCPs for AI Agents"
+    },
+    {
+      "repo": "n8n-io/n8n",
+      "stars": 206325,
+      "license": "Sustainable Use License; not unrestricted open source",
+      "archived": false,
+      "pushed_at": "2026-09-30T08:56:25Z",
+      "branch": "master",
+      "description": "Fair-code workflow automation platform with native AI capabilities. Combine visual building with custom code, self-host or cloud, 400+ integrations."
+    },
+    {
+      "repo": "open-webui/open-webui",
+      "stars": 153599,
+      "license": "custom branding condition; evaluate deployment restrictions",
+      "archived": false,
+      "pushed_at": "2026-09-29T16:25:29Z",
+      "branch": "main",
+      "description": "User-friendly AI Interface (Supports Ollama, OpenAI API, ...)"
+    },
+    {
+      "repo": "huggingface/sentence-transformers",
+      "stars": 19138,
+      "license": "Apache-2.0",
+      "archived": false,
+      "pushed_at": "2026-09-24T10:38:10Z",
+      "branch": "main",
+      "description": "State-of-the-Art Embeddings, Retrieval, and Reranking"
+    }
+  ]
+}

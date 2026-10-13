@@ -1,4 +1,6 @@
 """Goal Gravity (directive 2026-10-07, section 19): one read-only turn over GREG's existing paths."""
+from datetime import datetime, timezone
+import json
 from types import SimpleNamespace
 
 import pytest
@@ -7,6 +9,15 @@ from greg import asks, gravity
 from greg.cognition.cortex import registry_view
 from tests.greg_fixtures import mission, note_check, write_strategy
 from tests.unit.test_lawful_leverage import favourable, problem
+
+
+TRUSTED_NOW = datetime(2026, 10, 8, 12, 30, tzinfo=timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def trusted_clock(monkeypatch):
+    """Freshness and expiry follow the trusted clock, so the tests pin it rather than depend on the day run."""
+    monkeypatch.setattr(gravity, "_utcnow", lambda: TRUSTED_NOW)
 
 
 def situation(p=None, **goal):
@@ -80,8 +91,13 @@ def test_the_ask_carries_the_named_mission():
     (lambda s: s["goal"].__setitem__("statement", " "), "statement"),
     (lambda s: s.__setitem__("observed_at", "2026-10-08T11:00:00"), "timezone"),
     (lambda s: s.__setitem__("observed_at", "2020-01-01T00:00:00Z"), "older than max_evidence_age"),
-    (lambda s: s.__setitem__("max_evidence_age_seconds", "abc"), "positive integer"),
-    (lambda s: s.__setitem__("max_evidence_age_seconds", -5), "positive integer"),
+    (lambda s: s.__setitem__("max_evidence_age_seconds", "abc"), "positive whole number"),
+    (lambda s: s.__setitem__("max_evidence_age_seconds", -5), "positive whole number"),
+    (lambda s: s.__setitem__("max_evidence_age_seconds", 31_536_001), "at most 365 days"),
+    (lambda s: s.__setitem__("max_evidence_age_seconds", 86400.5), "positive whole number"),
+    (lambda s: (s.__setitem__("observed_at", "2026-10-08T13:00:00Z"),
+                s.__setitem__("leverage_problem", {**s["leverage_problem"], "as_of": "2026-10-09T00:00:00Z"})),
+     "in the future of the trusted clock"),
 ])
 def test_malformed_situations_are_refused(change, needle):
     s = situation()
@@ -147,3 +163,43 @@ def test_a_paused_or_expired_mission_lends_no_authority(tmp_path):
     assert gravity.signed_authority(live, "m:claims", "2026-10-08T12:00:00Z")["held"] == ["read_only", "internal_write"]
     expired = gravity.signed_authority(live, "m:claims", spec["light_cone"]["horizon"])     # at the horizon itself
     assert expired["held"] == ["read_only"] and "expired" in expired["source"]
+
+
+def test_a_backdated_situation_neither_revives_an_expired_cone_nor_passes_as_fresh(tmp_path, monkeypatch):
+    # review 2026-10-13: expiry and freshness were judged at the situation's own as_of, so a situation
+    # backdated before the horizon kept a lapsed light cone's authority and old evidence counted as fresh
+    spec = mission("m:claims", checks=[note_check("c", tmp_path / "c.txt", "ok")],
+                   strategies=[write_strategy("w", "c.txt", "ok", ["c"])], capabilities=["fs.read", "fs.write"])
+    spec["light_cone"]["horizon"] = "2026-10-10T00:00:00Z"
+    journal = FakeJournal([("greg.mission.registered", {"mission_id": "m:claims", "spec": spec,
+                                                        "command_digest": "sha256:" + "c" * 64})])
+    monkeypatch.setattr(gravity, "_utcnow", lambda: datetime(2026, 10, 13, 19, tzinfo=timezone.utc))
+    s = situation(mission_id="m:claims")
+    s["max_evidence_age_seconds"] = 30 * 86400                    # fresh enough; only the cone has lapsed
+    monkeypatch.setattr(gravity.backcast, "position", lambda journal, path_data=None: {})
+    monkeypatch.setattr(gravity, "_immune", lambda journal: {"warnings": []})
+    report = gravity.step(s, journal=journal)
+    assert "expired" in report["authority"]["source"] and report["authority"]["held_effective"] == ["read_only"]
+    assert gravity.signed_authority(journal, "m:claims")["held"] == ["read_only"]       # default at = now
+    old = situation()
+    old["observed_at"] = "2025-01-01T00:00:00Z"
+    old["leverage_problem"] = {**old["leverage_problem"], "as_of": "2025-01-01T01:00:00Z"}
+    with pytest.raises(gravity.GravityError, match="older than max_evidence_age"):
+        gravity.step(old)
+
+
+def test_an_integral_float_age_is_accepted_and_passed_on_as_an_integer():
+    s = situation()
+    s["max_evidence_age_seconds"] = 86400.0
+    assert gravity.validate(s)["max_evidence_age_seconds"] == 86400
+    assert type(gravity.validate(s)["max_evidence_age_seconds"]) is int
+
+
+def test_the_cli_reports_a_refused_situation_instead_of_crashing(tmp_path, capsys):
+    from greg.cli import main
+    stale = situation()
+    stale["observed_at"] = "2020-01-01T00:00:00Z"
+    path = tmp_path / "stale.json"
+    path.write_text(json.dumps(stale))
+    assert main(["--home", str(tmp_path / "nohome"), "gravity", "--situation", str(path)]) == 2
+    assert "gravity refused the situation" in capsys.readouterr().err

@@ -23,7 +23,7 @@ ledger event, executes nothing, contacts no one, spends nothing and creates no a
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from egregore.contracts import ContractError, SignalEnvelope, digest
 from egregore.leverage import propose_institutional_leverage
@@ -33,6 +33,8 @@ from greg import path as backcast
 
 SCHEMA = "greg-goal-gravity/0.1"
 DEFAULT_MAX_AGE = 7 * 86400
+MAX_AGE_CEILING = 31_536_000          # the institutional-leverage ranker's own bound (365 days)
+CLOCK_SKEW = timedelta(minutes=5)
 SITUATION_FIELDS = {"situation_id", "goal", "source", "observed_at", "leverage_problem", "max_evidence_age_seconds"}
 
 
@@ -50,7 +52,18 @@ def _instant(value: str) -> datetime:
     return moment
 
 
-def validate(situation: dict) -> dict:
+def _utcnow() -> datetime:
+    """The trusted clock. A situation's own timestamps are sensed input and never decide expiry or freshness."""
+    return datetime.now(timezone.utc)
+
+
+def decision_instant(situation: dict, now: datetime | None = None) -> datetime:
+    """When the decision is judged: the later of the trusted clock and the situation's declared as_of, so a
+    backdated situation can neither revive an expired light cone nor make old evidence look fresh."""
+    return max(now or _utcnow(), _instant(situation["leverage_problem"]["as_of"]))
+
+
+def validate(situation: dict, now: datetime | None = None) -> dict:
     if not isinstance(situation, dict) or set(situation) - SITUATION_FIELDS:
         raise GravityError(f"a situation takes only {sorted(SITUATION_FIELDS)}")
     for key in ("situation_id", "source", "observed_at"):
@@ -65,10 +78,16 @@ def validate(situation: dict) -> dict:
     observed, as_of = _instant(situation["observed_at"]), _instant(situation["leverage_problem"].get("as_of", ""))
     if observed > as_of:
         raise GravityError("a situation cannot be observed after the decision time it informs")
+    clock = now or _utcnow()
+    if observed > clock + CLOCK_SKEW:
+        raise GravityError("a situation cannot be observed in the future of the trusted clock")
     max_age = situation.get("max_evidence_age_seconds", DEFAULT_MAX_AGE)
-    if type(max_age) is not int or not 0 < max_age <= 366 * 86400:
-        raise GravityError("situation.max_evidence_age_seconds is a positive integer of at most a year")
-    if (as_of - observed).total_seconds() > max_age:
+    if isinstance(max_age, bool) or not isinstance(max_age, (int, float)) or not float(max_age).is_integer() \
+            or not 0 < max_age <= MAX_AGE_CEILING:
+        raise GravityError("situation.max_evidence_age_seconds is a positive whole number of seconds, at most 365 days")
+    situation = {**situation, "max_evidence_age_seconds": int(max_age)} if "max_evidence_age_seconds" in situation \
+        else situation
+    if (decision_instant(situation, clock) - observed).total_seconds() > max_age:
         # The ranker refuses stale evidence; the founder must not be asked to decide on it either.
         raise GravityError("the situation is older than max_evidence_age_seconds at the decision time; sense again")
     return situation
@@ -105,15 +124,16 @@ def signed_authority(journal, mission_id: str | None, at: str | None = None) -> 
     """The authority a founder signed for this goal: the named mission's light cone, or read-only.
 
     A paused mission lends nothing (the pause is the founder's decision), and neither does a cone whose
-    horizon has passed at the decision time ``at`` (the same expiry rule as ``LightCone.admits``)."""
+    horizon has passed at the decision time ``at``; omitted, ``at`` is the trusted clock now, as in
+    ``LightCone.admits``."""
     if journal is not None and mission_id:
         from greg.missions import MissionBook
         m = MissionBook(journal).missions.get(mission_id)
         if m is not None and m.status == "ACTIVE" and m.paused:
             return {"source": f"mission {mission_id} is paused: read-only", "held": list(UNSIGNED_HELD),
                     "budget_usd": 0.0}
-        if (m is not None and m.status == "ACTIVE" and at is not None
-                and _instant(at) >= _instant(m.spec["light_cone"]["horizon"])):
+        moment = _instant(at) if at is not None else _utcnow()
+        if m is not None and m.status == "ACTIVE" and moment >= _instant(m.spec["light_cone"]["horizon"]):
             return {"source": f"mission {mission_id} light cone expired: read-only", "held": list(UNSIGNED_HELD),
                     "budget_usd": 0.0}
         if m is not None and m.status == "ACTIVE":
@@ -213,11 +233,14 @@ def _immune(journal) -> dict:
     return {"source": "greg.resilience over the canonical journal", "warnings": resilience.summary(journal)["warnings"]}
 
 
-def step(situation: dict, *, journal=None, registry=None, path_data: dict | None = None) -> dict:
+def step(situation: dict, *, journal=None, registry=None, path_data: dict | None = None,
+         now: datetime | None = None) -> dict:
     """One Goal Gravity turn. Read-only: returns a report and, where needed, one prepared founder ask."""
-    situation = validate(situation)
+    now = now or _utcnow()
+    situation = validate(situation, now)
     position = backcast.position(journal, path_data)
-    signed = signed_authority(journal, situation["goal"].get("mission_id"), situation["leverage_problem"]["as_of"])
+    signed = signed_authority(journal, situation["goal"].get("mission_id"),
+                              decision_instant(situation, now).isoformat())
     problem = _clamped(situation["leverage_problem"], signed)
     report = lawful_leverage.compile(problem)
     ranked = _rank({**situation, "leverage_problem": problem}, report)

@@ -57,7 +57,7 @@ def problem(**changes):
         ],
         direct_labor=dict(description="contract reviewer clears the eligibility queue each week", effect=0.35,
                           confidence=0.8, cost_usd_per_cycle=600, effort_hours_per_cycle=2,
-                          consequence_class="financial", evidence_refs=[H]),
+                          consequence_class="financial", third_parties=[], evidence_refs=[H]),
         evidence={"proof.verifiable_receipts": dict(successes=7, trials=10, refs=[H])},
         constraints=dict(budget_usd=8000, founder_attention_hours=10, held_authority=["read_only", "internal_write"],
                          value_per_unit_gap_usd=2000),
@@ -446,3 +446,32 @@ def test_a_conflicting_duplicate_map_record_is_refused_and_an_exact_copy_collaps
     p = problem()
     p["institutional_map"]["links"].append(deepcopy(p["institutional_map"]["links"][0]))
     assert L.compile(p)["selected"] == L.compile(problem())["selected"]
+
+
+@pytest.mark.parametrize("name", ["GREᏀ", "ᏀREG", "Gⲅeg", "Gꭇeg", "Grҽg", "UNɪɪMENTE",
+                                  "UNlIMENTE", "UNIIrnENTE", "Greg", "G R E G", "the egregore", "GREG-bot"])
+def test_lookalikes_of_the_institution_are_refused_as_legal_operator(name):
+    # review 2026-10-13: unmapped lookalike letters were deleted (fail open) and ASCII l/rn passed
+    with pytest.raises(L.LeverageRefused):
+        L.compile(problem(constraints={**problem()["constraints"], "legal_operator": name}))
+
+
+@pytest.mark.parametrize("name", ["Grégoire Dupont", "Grégory Coupet", "Gregory Peck", "Ewan McGregor",
+                                  "Alfonso López", "alfonso_lopez"])
+def test_human_names_containing_greg_still_pass(name):
+    L.compile(problem(constraints={**problem()["constraints"], "legal_operator": name}))
+
+
+def test_the_foundry_principal_is_the_bodys_registered_principal():
+    from greg.authority import PRINCIPAL
+    assert L.PRINCIPAL == PRINCIPAL
+
+
+def test_direct_labour_must_declare_its_class_and_parties():
+    # review 2026-10-13: an omitted class defaulted to internal_write and skipped the third-party gate that
+    # the honest external_contact declaration triggered
+    for key in ("consequence_class", "third_parties"):
+        p = problem()
+        p["direct_labor"].pop(key)
+        with pytest.raises(L.LeverageRefused, match=key):
+            L.compile(p)

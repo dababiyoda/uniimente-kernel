@@ -13,7 +13,7 @@ import importlib
 SYSTEMS = {1: "compiler", 2: "dsl", 3: "versions", 4: "datamodel", 5: "event_sourcing", 6: "proofs", 7: "pki", 8: "capsec", 11: "wasm",
            12: "registry", 13: "linking", 14: "shell", 15: "workflows", 16: "promotion", 17: "search",
            18: "graph", 19: "next_test", 20: "emulator", 21: "snapshots", 22: "scenarios", 23: "distributed",
-           24: "queue", 25: "cognitive_router", 27: "discovery", 28: "mcp_gateway", 29: "embassy_wire", 30: "gate", 31: "webserver", 34: "attribution", 36: "cas", 37: "marketplace", 38: "payments", 39: "accounting", 40: "mechanism",
+           24: "queue", 25: "cognitive_router", 27: "discovery", 28: "mcp_gateway", 29: "embassy_wire", 30: "gate", 31: "webserver", 33: "federation", 34: "attribution", 36: "cas", 37: "marketplace", 38: "payments", 39: "accounting", 40: "mechanism",
            41: "reputation", 42: "twin", 43: "model_check", 44: "observability", 45: "siem", 46: "seed", 50: "rabbit_hole", 47: "business_compiler", 48: "teams", 51: "commissioning", 52: "repair", 53: "build", 54: "agent_commerce",
            55: "treasury"}
 

@@ -917,3 +917,37 @@ def test_commissioning_freezes_contracts_isolates_branches_and_proposes_only_gre
     assert listing["result"]["commissions"] == []
     with pytest.raises(CapabilityError, match="no apply op"):
         foundry_bridge.apply({"system": 51, "op": "run", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): an owned instance on the fediverse ------------------------------------------
+
+from foundry.systems import federation
+
+
+def test_federation_owns_actors_verifies_signatures_and_moves_accounts_with_followers(tmp_path):
+    result = federation.exercise(tmp_path)
+    assert result["webfinger"] == {"status": 200, "self_link_is_actor": True, "unknown": 404}
+    assert result["follow"] == {"delivered": True, "alpha_followers": 1, "beta_following_confirmed": True}
+    pub = result["publish"]
+    assert pub["delivered_to_reader"] and pub["remote_outbox_items"] == 1 and pub["inbox_verified_signer"]
+    assert pub["dead_inbox_dead_lettered"] and pub["dead_letters"] == 1, "a dead follower is dead-lettered, not dropped"
+    assert result["refusals"] == {"unsigned": 401, "digest_mismatch": 401, "forged_key_claim": 401, "create_from_unfollowed_actor": 403,
+                                  "replayed_after_window": 401, "unfetchable_key": 401}
+    port = result["portability"]
+    assert port["export_verifies"] and port["tampered_export_rejected"] and port["forged_import"].startswith("export bundle signature")
+    assert port["move_without_alias"].startswith("the new actor does not name this one")
+    assert port["new_actor_also_known_as_old"] and port["old_actor_moved_to_new"] and port["move_delivered_to_follower"]
+    assert port["follower_now_follows_new"] and port["new_instance_followers"] == [True] and port["old_instance_lost_follower"]
+    assert port["publish_after_move_refused"] and port["post_from_new_instance_reached_follower"]
+    assert "dead_lettered" in result["alpha_journal_kinds"] and result["private_key_in_export"] is False
+    # the digest and signature helpers stand alone
+    assert federation._digest(b"x") == "SHA-256=" + __import__("base64").b64encode(__import__("hashlib").sha256(b"x").digest()).decode()
+    inst = federation.Instance(tmp_path / "solo", clock=lambda: "2026-10-13T15:00:00Z")
+    ok, why, _ = inst.verify_request("POST", "/users/a/inbox", {}, b"{}")
+    assert not ok and why == "unsigned"
+    ok, why, _ = inst.verify_request("POST", "/users/a/inbox", {"Signature": "garbage"}, b"{}")
+    assert not ok and "malformed" in why
+    actors = foundry_bridge.query({"system": 33, "op": "actors", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert actors["result"]["actors"] == []
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 33, "op": "publish", "args": {}}, _ctx(tmp_path, "foundry.apply"))

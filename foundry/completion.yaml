@@ -596,10 +596,29 @@
   adopt:
   - self-hosted Mastodon/GoToSocial
   - AT Protocol PDS
-  existing:
-  - DALEOBANKS:services/mastodon_client.py
-  gap: Publishes to ActivityPub through a client; no owned instance, portable identity or follower export.
-  state: PARTIAL
+  evidence: foundry/evidence/system-33.json
+  implementation:
+  - foundry/systems/federation.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: Instance.create_actor|follow|publish|read_remote_outbox|inbox_stream|export_account|import_account|move
+    on a served instance (WebFinger, actor documents, inbox/outbox/followers collections over HTTP); foundry.query
+    actors|journal|dead_letters (system 33). Publishing and following are external acts on an operated instance.
+  limitations: 'An owned ActivityPub instance implemented on the protocol''s primitives (WebFinger, actor documents with
+    RSA keys, HTTP Signatures over (request-target) host date digest, Follow/Accept/Undo/Create/Move, OrderedCollections,
+    alsoKnownAs/movedTo migration) and federated only with its own kind on loopback: no interoperability test against
+    Mastodon or GoToSocial has been run, no public hostname or TLS exists, and HTTP Signature draft/RFC 9421 variants
+    that other servers may require are not negotiated. DALEOBANKS still publishes through its client stub; pointing it
+    at this instance is the next integration. AT Protocol (PDS, DID-based identity) is not implemented; portable
+    identity here is the ActivityPub Move flow plus a self-signed export bundle. The exported bundle carries the public
+    key only.'
+  recovery: 'Every inbound refusal and every delivery is journaled; a dead inbox is retried and dead-lettered with its
+    last error, never dropped; state is reloaded after each network round trip so a handler writing concurrently is not
+    clobbered (the first implementation lost the Accept this way and is recorded as negative evidence); the follower
+    list survives a move because the new actor and the old one must confirm each other before any follower switches.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 34:
   acceptance:
   - Maps which content sequences produced subscribers/customers from observed events

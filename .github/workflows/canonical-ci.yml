@@ -64,6 +64,8 @@ jobs:
           retention-days: 90
       - name: Institutional verifier V1-V5
         run: python verifier/v2/verify.py
+      - name: Canonical WorkOrder and reobservation mutations
+        run: python scripts/ci/check_worker_appraisal_mutants.py
 
   contracts:
     name: "2 · Contract schema references resolve"

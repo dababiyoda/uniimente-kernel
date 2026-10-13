@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from .contracts import CognitiveReceipt, ProblemGeometry, digest
+from .contracts import RECEIPT_V01_FIELDS, CognitiveReceipt, ProblemGeometry, digest
 
 
 def _valid_receipt(value):
@@ -12,7 +12,9 @@ def _valid_receipt(value):
     copy = dict(value)
     identity = copy.pop("receipt_id", None)
     try:
-        if identity != digest(copy) or set(copy) != set(CognitiveReceipt.__dataclass_fields__):
+        # Both receipt versions settle: v0.1 with its original field set, v0.2 with every field.
+        if identity != digest(copy) or set(copy) not in (set(RECEIPT_V01_FIELDS),
+                                                         set(CognitiveReceipt.__dataclass_fields__)):
             return False
         CognitiveReceipt(**copy)
     except (TypeError, ValueError, KeyError):
@@ -82,12 +84,29 @@ def competence(journal):
     return dict(rows)
 
 
+def _logical(outcome):
+    """One settlement per logical outcome: the same mission, input, method and version."""
+    return digest({k: outcome[k] for k in ("mission_id", "cognitive_receipt", "method", "method_version")})
+
+
 def reconcile(journal):
-    retained = {e.payload["observation_event"] for e in journal.replay("cognition.settled")}
+    # Idempotent: a duplicated delivery of the same outcome settles nothing new. A changed
+    # outcome (a later failure or appraisal) appends a record that supersedes the last one;
+    # nothing earlier is rewritten.
+    latest = {}
+    for event in journal.replay("cognition.settled"):
+        payload = event.payload
+        key = payload.get("settlement_key") or _logical(payload)
+        latest[key] = (event.event_id, payload)
     for outcome in measured_outcomes(journal):
-        if outcome["observation_event"] not in retained:
-            journal.record("cognition.settled", outcome, key=outcome["observation_event"],
-                           causal_parent=outcome["observation_event"])
+        key = _logical(outcome)
+        previous = latest.get(key)
+        if previous and previous[1].get("correct") == outcome["correct"]:
+            continue
+        record = {**outcome, "settlement_key": key, "supersedes": previous[0] if previous else None}
+        event = journal.record("cognition.settled", record, key=key + ":" + outcome["observation_event"],
+                               causal_parent=outcome["observation_event"])
+        latest[key] = (getattr(event, "event_id", None), record)
 
 
 def outcome_calibration(journal):

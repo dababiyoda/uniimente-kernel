@@ -105,6 +105,9 @@ def main(argv=None) -> int:
     css = cs.add_subparsers(dest="cognition_cmd", required=True)
     css.add_parser("inventory")
     css.add_parser("knowledge")
+    ce = css.add_parser("explain", help="run a request read-only and explain the receipt in plain words")
+    ce.add_argument("--request", required=True)
+    ce.add_argument("--json", action="store_true", help="print the full receipt instead")
     cm = css.add_parser("mission")
     cm.add_argument("--request", required=True, help="bounded cognition request JSON")
     cm.add_argument("--id", required=True, help="durable mission identity")
@@ -112,6 +115,8 @@ def main(argv=None) -> int:
     cm.add_argument("--equals", default="NONE", help="expected JSON value (or a plain string)")
     cm.add_argument("--key"); cm.add_argument("--no-passphrase", action="store_true")
     cm.add_argument("--print-only", action="store_true")
+    cm.add_argument("--capability", choices=["solve", "pipeline", "compose"], default="solve",
+                    help="which cognition capability the signed mission invokes")
 
     for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
                  "accept"):
@@ -308,8 +313,20 @@ def main(argv=None) -> int:
                         registry = registry_view(journal)
                 else:
                     registry = registry_view()
-                data = [{**m.to_dict(), "attached": registry.usable(cid)[0]} for cid, m in registry.manifests.items()
+                from greg.cognition.outcomes import availability
+                data = [{**m.to_dict(), "attached": registry.usable(cid)[0],
+                         "availability": availability(cid, m, registry)} for cid, m in registry.manifests.items()
                         if cid.startswith("cognition.")]
+            elif args.cognition_cmd == "explain":
+                from greg.cognition.cortex import reason
+                from greg.cognition.outcomes import summary
+                request = json.loads(Path(args.request).read_text())
+                receipt = reason(request, registry=registry_view())
+                if args.json:
+                    data = receipt
+                else:
+                    print("\n".join(summary(receipt)))
+                    return 0
             elif args.cognition_cmd == "knowledge":
                 from greg.cognition.settlement import competence
                 from greg.cognition.cells import cells
@@ -320,20 +337,32 @@ def main(argv=None) -> int:
                             "cells": cells(journal, registry), "authority_created": False}
             else:
                 request = json.loads(Path(args.request).read_text())
-                compile_problem(request)
+                capability = "cognition." + args.capability
+                if args.capability == "solve":
+                    compile_problem(request)
+                elif args.capability == "pipeline":
+                    from greg.cognition.pipeline import PIPELINES
+                    if request.get("pipeline") not in PIPELINES or "problem_id" not in request:
+                        raise BodyError("pipeline request needs a known pipeline and a problem_id")
+                else:
+                    for item in request.get("requests", []):
+                        compile_problem(item)
+                    request.setdefault("problem_id", "compose:" + args.id)
                 try:
                     expected = json.loads(args.equals)
                 except ValueError:
                     expected = args.equals
                 target = "cognition:" + request["problem_id"]
-                step = {"capability": "cognition.solve", "target": target, "params": request}
+                if args.capability == "compose":
+                    request = {k: v for k, v in request.items() if k != "problem_id"}
+                step = {"capability": capability, "target": target, "params": request}
                 data = {"mission_id": args.id, "founder_expression": "Solve the supplied bounded cognitive problem with typed evidence",
                         "intended_effect": "Reobserved computation satisfying the founder's stated predicate; no external consequence",
                         "closure": {"kind": "bounded"}, "priority": 50,
                         "success_checks": [{"check_id": "cognitive-answer", "description": "typed answer satisfies the requested predicate",
                                             "sensor": step, "predicate": {"op": "equals", "field": args.field, "value": expected}}],
                         "strategies": [{**step, "action_id": "recompute", "advances": ["cognitive-answer"], "rationale": "bounded recomputation"}],
-                        "light_cone": {"capabilities": ["cognition.solve"], "targets": [target], "max_consequence_class": "read_only",
+                        "light_cone": {"capabilities": [capability], "targets": [target], "max_consequence_class": "read_only",
                                        "budget_usd": 0, "horizon": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()}}
                 if not args.print_only:
                     if not args.key:

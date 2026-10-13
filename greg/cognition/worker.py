@@ -10,7 +10,7 @@ import sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from greg.cognition.contracts import CognitionError, canonical  # noqa: E402
+from greg.cognition.contracts import BudgetError, CognitionError, canonical  # noqa: E402
 from greg.cognition.solvers import SOLVERS  # noqa: E402
 
 
@@ -27,6 +27,8 @@ def main():
         if len(text.encode()) > 256 * 1024:
             raise CognitionError("solver output exceeds 256 KiB")
         print(text)
+    except BudgetError as exc:
+        print(canonical({"error": "BUDGET_EXHAUSTED", "detail": str(exc)[:300]}))
     except (CognitionError, ValueError, TypeError, KeyError, ZeroDivisionError, SyntaxError) as exc:
         print(canonical({"error": "MODEL_INVALID", "detail": str(exc)[:300]}))
     except ImportError as exc:

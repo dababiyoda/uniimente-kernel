@@ -1208,7 +1208,7 @@
           "id": "P5",
           "title": "Demand-led repertoire expansion",
           "maps_to": "N2",
-          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required",
+          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow, graph.spanning_tree, lp.optimize, assignment.optimize and flow.min_cost from installed open-source engines (NetworkX, SciPy, OR-Tools); VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "a mission that needs a family the seed lacks (orders the queue; since 2026-10-02 it does not gate building)",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1219,11 +1219,12 @@
           "evidence_refs": [
             "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
             "tests/unit/test_greg_open_source_genesis.py",
-            "tests/unit/test_greg_linear_genesis.py"
+            "tests/unit/test_greg_linear_genesis.py",
+            "tests/evidence/greg-open-source-genesis-2026-10-13/"
           ],
           "completion": {
             "class": "BUILDABLE_NOW",
-            "build_now": "further certified families from installed open-source engines (assignment, min-cost flow, spanning tree, integer programs); a mission's demand orders the queue, it does not gate building"
+            "build_now": "further certified families from installed open-source engines (integer programs with a proved bound, symbolic algebra with a substitution check); a mission's demand orders the queue, it does not gate building"
           }
         },
         {

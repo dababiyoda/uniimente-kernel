@@ -45,7 +45,16 @@ QUOTED = re.compile(r"[\"“']([^\"”']{1,400})[\"”']")
 SCHEDULE = re.compile(r"\b(?:shift|window)\s*:?\s*(?:is\s+)?\d{1,5}\s*(?:h|hours?)\b.*\btakes\s+\d", re.I | re.S)
 NETWORK = re.compile(r"\b(?:(?:shortest|cheapest|fastest|quickest)\s+(?:route|path|way)|(?:maximum|max|most)\s+"
                      r"(?:flow|units|throughput|capacity))\s+from\s+\w+\s+to\s+\w+", re.I)
+NETWORK_TREE = re.compile(r"\b(?:cheapest|lowest[- ]cost|minimum|shortest)\s+(?:network|links|wiring|cabling|roads|"
+                          r"pipes)\s+(?:connecting|joining|to\s+connect|that\s+connects)\b", re.I)
 NETWORK_LINK = re.compile(r"\b\w+\s+(?:to|and)\s+\w+\s*[:,]?\s*\d", re.I)
+ASSIGN = re.compile(r"(?:^|[.!?\n]\s*)(?:(?:cheapest|lowest[- ]cost|least[- ]cost|minimum[- ]cost|fastest|quickest|"
+                    r"most\s+valuable|highest[- ]value|maximum[- ]value|best[- ]scoring)\s+assignment|"
+                    r"(?:minimi[sz]e|maximi[sz]e)\s+(?:the\s+)?total\b)", re.I)
+ASSIGN_PAIR = re.compile(r"\b\w+\s+(?:on|for|to)\s+\w+\s*[:,]\s*-?\d", re.I)
+DELIVER = re.compile(r"\b\w+\s+(?:sends|supplies|has|ships|makes)\s+\d+.*\b\w+\s+(?:needs|wants|requires|takes)\s+"
+                     r"\d+", re.I | re.S)
+DELIVER_ARC = re.compile(r"\b\w+\s+to\s+\w+\s*[:,]?\s*(?:\d+(?:\s+[A-Za-z]+)?\s+)?at\s+\$?-?\d", re.I)
 PLAN = re.compile(r"(?:^|[.!?\n]\s*)(?:maximi[sz]e|minimi[sz]e)\s+\S", re.I)
 PLAN_LIMIT = re.compile(r"(?:<=|>=|≤|≥|\bat most\b|\bat least\b|\bbetween\b|=)\s*-?\d", re.I)
 
@@ -164,7 +173,20 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
             "the controlled language is read without a model; a sentence it cannot read stops the plan",
             "availability taken from your words" if stated else
             "no availability statement: the answer stays conditional (add 'The machine is free all shift.')"])
-    if NETWORK.search(text) and NETWORK_LINK.search(text):   # a route or flow question in controlled words
+    if DELIVER.search(text) and DELIVER_ARC.search(text):     # least-cost delivery in controlled words
+        try:
+            spec = templates.delivery_in_words(text=text)
+        except ValueError as exc:
+            return {"status": "NEEDS_INPUT", "origin": "template:delivery-in-words", "questions": [str(exc)]}
+        return _proposal(spec, "template:delivery-in-words", notes=[
+            "read-only: GREG computes and shows the plan; it ships nothing",
+            "the controlled language is read without a model; a sentence it cannot read stops the plan",
+            "a route with no stated limit can carry everything",
+            "GREG has no built-in min-cost-flow engine: it looks for an installed open-source one (NetworkX, "
+            "OR-Tools), qualifies it, and asks you to attach it, showing its version and license",
+            "the plan counts only if GREG's own certificate proves no rerouting is cheaper; if no plan meets every "
+            "demand, GREG proves that and names the sites whose supply cannot get out"])
+    if (NETWORK.search(text) or NETWORK_TREE.search(text)) and NETWORK_LINK.search(text):   # a route or flow question in controlled words
         try:
             spec = templates.network_in_words(text=text)
         except ValueError as exc:
@@ -176,6 +198,19 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
             f"GREG has no built-in {function}: it looks for an installed open-source engine (NetworkX, SciPy), "
             "qualifies it, and asks you to attach it, showing its version and license",
             "every answer is accepted only on GREG's own certificate, not on the engine's word"])
+    if ASSIGN.search(text) and ASSIGN_PAIR.search(text) and not PLAN_LIMIT.search(text):   # who does which job
+        try:
+            spec = templates.assignment_in_words(text=text)
+        except ValueError as exc:
+            return {"status": "NEEDS_INPUT", "origin": "template:assignment-in-words", "questions": [str(exc)]}
+        return _proposal(spec, "template:assignment-in-words", notes=[
+            "read-only: GREG computes and shows the assignment; it assigns nobody",
+            "the controlled language is read without a model; a sentence it cannot read stops the plan",
+            "a pair you never stated is taken as not allowed",
+            "GREG has no built-in assignment engine: it looks for an installed open-source one (SciPy, OR-Tools), "
+            "qualifies it, and asks you to attach it, showing its version and license",
+            "the assignment counts only if GREG's own certificate proves no exchange of jobs does better; if no "
+            "full assignment exists, GREG proves that and names who is short of jobs"])
     if PLAN.search(text) and PLAN_LIMIT.search(text):          # a linear plan in controlled words
         try:
             spec = templates.plan_in_words(text=text)

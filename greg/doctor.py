@@ -24,9 +24,10 @@ def is_crostini(markers=CROSTINI_MARKERS) -> bool:
 # Engines are not prerequisites for N1: a missing one makes its functions abstain and GREG asks.
 ENGINE_USES = {
     "z3-solver": ["cognition.solve: cortex formal engine and schedules", "#140 formal operations"],
-    "ortools": ["cognition.solve: cortex CP-SAT engine and schedules", "lp.optimize (GLOP)"],
-    "scipy": ["graph.shortest_path", "graph.max_flow", "lp.optimize (HiGHS)", "#140 game and evolutionary"],
-    "networkx": ["graph.shortest_path", "graph.max_flow", "#140 graph operations"],
+    "ortools": ["cognition.solve: cortex CP-SAT engine and schedules", "lp.optimize (GLOP)", "assignment.optimize", "flow.min_cost"],
+    "scipy": ["graph.shortest_path", "graph.max_flow", "graph.spanning_tree", "lp.optimize (HiGHS)", "assignment.optimize",
+              "#140 game and evolutionary"],
+    "networkx": ["graph.shortest_path", "graph.max_flow", "graph.spanning_tree", "flow.min_cost", "#140 graph operations"],
     "sympy": ["#140 exact arithmetic and polynomials"],
 }
 

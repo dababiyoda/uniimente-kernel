@@ -49,7 +49,7 @@ from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationCo
                                run_isolated)
 from greg.artifacts import ArtifactStore
 from greg import builders, mechanisms
-from greg.cognition import linear, network
+from greg.cognition import assignment, flow, linear, network, spanning
 from greg.journal import Journal, iso
 from greg.mechanisms import PackageCandidate
 from provenance.ledger import sha256_json
@@ -174,6 +174,74 @@ CATALOG["lp.optimize"] = {
                          ("ortools/__init__.py", "ortools/linear_solver/"),
                          "GLOP primal and dual simplex (ortools.linear_solver)",
                          "at most 500 variables and 2,000 constraints; coefficients up to 1e9",
+                         ("numpy", "protobuf"))),
+}
+CATALOG["assignment.optimize"] = {
+    "kind": "package", "description": "Give every row (person, vehicle, machine) its own column (job, route, slot) "
+                                      "at the lowest or highest total, with an exchange-optimality certificate",
+    "oracle": assignment.oracle_assignment, "oracle_kind": "brute force over every assignment (GREG)",
+    "output_field": "certified", "normalize": assignment.normalize_assignment,
+    "certify": assignment.certify_assignment, "certificate_error": assignment.CertificateError,
+    "runners": assignment.RUNNERS, "judge": assignment.judge_assignment, "probe": assignment.probe_assignment,
+    "size": assignment.size, "inputs": {"costs": "list"},
+    "baseline": ("local Hungarian method (plain Python)", assignment.local_hungarian, "total"),
+    "project": [("cognition.optimization", "PR #140 op: a CP-SAT integer model could encode it, but returns no "
+                                           "exchange certificate and no proof that no full assignment exists"),
+                ("cognition.cortex.optimization.cpsat", "cortex organ: same; integer models only")],
+    "candidates": (
+        PackageCandidate("scipy", "scipy.optimize", "scipy.assignment",
+                         ("scipy/__init__.py", "scipy/optimize/_lsap", "scipy/optimize/__init__.py"),
+                         "compiled shortest augmenting path (scipy.optimize.linear_sum_assignment)",
+                         "at most 120 rows and 120 columns; GREG scales costs to exact integers", ("numpy",)),
+        PackageCandidate("ortools", "ortools.graph.python.linear_sum_assignment", "ortools.assignment",
+                         ("ortools/__init__.py", "ortools/graph/"),
+                         "cost-scaling push-relabel assignment (OR-Tools SimpleLinearSumAssignment)",
+                         "integer costs only (GREG scales); a perfect matching, so GREG pads free columns with "
+                         "zero-cost rows", ("numpy", "protobuf"))),
+}
+CATALOG["graph.spanning_tree"] = {
+    "kind": "package", "description": "The cheapest set of links connecting every site of an undirected network "
+                                      "(a minimum spanning forest), with a cycle-property certificate",
+    "oracle": spanning.oracle_spanning, "oracle_kind": "brute force over every edge subset (GREG)",
+    "output_field": "certified", "normalize": spanning.normalize_spanning, "certify": spanning.certify_spanning,
+    "certificate_error": spanning.CertificateError, "runners": spanning.RUNNERS, "judge": spanning.judge_spanning,
+    "probe": spanning.probe_spanning, "size": spanning.size, "inputs": {"edges": "list"},
+    "baseline": ("local Kruskal with union-find (plain Python)", spanning.local_kruskal, "total"),
+    "project": [("cognition.graph", "PR #140 op: shortest paths only; no spanning forest")],
+    "candidates": (
+        PackageCandidate("networkx", "networkx", "networkx.spanning_tree",
+                         ("networkx/__init__.py", "networkx/classes/", "networkx/algorithms/tree/",
+                          "networkx/utils/", "networkx/exception.py"),
+                         "Kruskal minimum spanning forest (networkx.minimum_spanning_tree)",
+                         "at most 2,000 sites and 20,000 links; GREG keeps the lightest of parallel links"),
+        PackageCandidate("scipy", "scipy.sparse.csgraph", "scipy.spanning_tree",
+                         ("scipy/__init__.py", "scipy/sparse/csgraph/"),
+                         "compiled Kruskal on a sparse matrix (scipy.sparse.csgraph.minimum_spanning_tree)",
+                         "csgraph reads 0 as no link, so the runner shifts every weight by one constant (a tree's "
+                         "edge count is fixed, so the optimum is unchanged)", ("numpy",))),
+}
+CATALOG["flow.min_cost"] = {
+    "kind": "package", "description": "Send stated supplies to stated demands over capacitated arcs at the least "
+                                      "total cost, with a no-cheaper-rerouting certificate",
+    "oracle": flow.oracle_min_cost, "oracle_kind": "brute force over every whole-number flow (GREG)",
+    "output_field": "certified", "normalize": flow.normalize_min_cost, "certify": flow.certify_min_cost,
+    "certificate_error": flow.CertificateError, "runners": flow.RUNNERS, "judge": flow.judge_min_cost,
+    "probe": flow.probe_min_cost, "size": flow.size, "inputs": {"arcs": "list", "supplies": "dict"},
+    "baseline": ("local successive shortest paths (plain Python)", flow.local_successive_shortest_paths,
+                 "total_cost"),
+    "project": [("lp.optimize", "formed function: a transport LP has the same optimum, but GREG would certify a "
+                                "continuous plan; whole-number shipments need the network certificate"),
+                ("graph.max_flow", "formed function: moves the most, not the cheapest")],
+    "candidates": (
+        PackageCandidate("networkx", "networkx", "networkx.min_cost",
+                         ("networkx/__init__.py", "networkx/classes/", "networkx/algorithms/flow/",
+                          "networkx/utils/", "networkx/exception.py"),
+                         "primal network simplex (networkx.network_simplex)",
+                         "at most 1,000 sites and 5,000 arcs; whole-number supplies and capacities"),
+        PackageCandidate("ortools", "ortools.graph.python.min_cost_flow", "ortools.min_cost",
+                         ("ortools/__init__.py", "ortools/graph/"),
+                         "cost-scaling push-relabel (OR-Tools SimpleMinCostFlow)",
+                         "integer costs (GREG scales decimals once); whole-number supplies and capacities",
                          ("numpy", "protobuf"))),
 }
 for _spec in CATALOG.values():

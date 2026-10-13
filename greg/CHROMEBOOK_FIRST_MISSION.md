@@ -182,6 +182,34 @@ accepted by you. Your acceptance is what attests the buyer is real; the ledger c
 What no build session can supply: a real buyer and their consent, the legal operator, and your
 payment account.
 
+## The fourth node (N4): a procedure you ratify stops costing you attention
+
+After GREG closes the same kind of mission three times (for example three `word-limit` checks),
+it proposes a standard procedure. Nothing changes until you ratify it.
+
+```bash
+greg sop list                                   # proposals waiting for you, and their inputs
+greg sop show <procedure-id>                    # the evidence, the workflow, what may be pre-approved
+greg sop ratify <procedure-id> --pre-approve file-record --key ~/greg-founder.pem
+greg sop run <procedure-id> --set path="$HOME/drafts/essay.md" --set words=500 --key ~/greg-founder.pem
+greg sop trend                                  # before and after, per verified outcome
+```
+
+- **The workflow is learned only from what you signed.** It is rebuilt from the verified runs:
+  - anything that differed between them becomes an input (above, the file and the limit);
+  - checks, capabilities and the light cone must have matched in every run, or no procedure is
+    proposed.
+- **A run uses no model, and you still sign every run.**
+- **`--pre-approve` is limited.** It applies only to steps you approved in every one of those
+  runs, internal at most and free:
+  - the step then sits inside the cone you sign for each run, so it does not stop to ask you;
+  - contact with the outside world and any spend always ask.
+- **`greg path` measures N4 from the ledger.** It is met when three runs of the ratified
+  procedure:
+  - closed on this body, each appraised VERIFIED, none rejected or abandoned;
+  - asked you less per verified outcome than the runs that taught it;
+  - used no more model spend.
+
 ## 3. What "persistent" means on this Chromebook
 
 ChromeOS stops the Linux environment when you sign out and, by Google's design,

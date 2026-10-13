@@ -357,9 +357,13 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
     prompt = _prompt(text, ctx)
     origin = f"model:{transport.name}"
     attempts = []
+    calls, spent = 0, 0.0           # every round costs, including drafts that are then repaired
     for round_number in range(repair_rounds + 1):
         try:
+            calls += 1
             reply, author, tried, served = _complete(transport, SYSTEM, prompt)
+            cost = (getattr(transport, "last", None) or {}).get("cost_usd")
+            spent = None if cost is None or spent is None else spent + float(cost)
             draft = _first_json_object(reply)
         except models.Refusal as exc:   # a decline is final; the router never re-asks another vendor
             return {"status": "REFUSED", "origin": origin, "why": str(exc)[:400], "refusal_class": exc.kind,
@@ -368,8 +372,10 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
             return {"status": "FAILED", "origin": origin, "why": f"{type(exc).__name__}: {exc}"[:400],
                     "attempts": attempts}
         origin = f"model:{author}"   # the route that actually wrote this draft
-        extra = {"model": author, "rounds": round_number + 1,
+        extra = {"model": author, "rounds": round_number + 1, "model_calls": calls,
                  "prompt_sha256": "sha256:" + hashlib.sha256((SYSTEM + "\n" + prompt).encode()).hexdigest()}
+        if spent is not None:       # absent, not zero, when a route did not report its cost
+            extra["model_cost_usd"] = round(spent, 6)
         if tried:
             extra["routes_tried"] = tried
         if served:

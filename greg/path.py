@@ -162,8 +162,41 @@ def business_loop_closed(journal: Journal) -> dict:
                        "is a real customer is attested by Alfonso's acceptance, not provable here"}
 
 
+N4_CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
+                 "appraised_verified", "founder_body")
+
+
+def sop_compounding(journal: Journal) -> dict:
+    """A ratified SOP whose own runs on the body cut founder interventions and model cost per outcome.
+
+    The procedure was proposed from at least three verified closures and ratified by Alfonso; at
+    least three later missions are exact runs of its workflow, each founder-signed, hosted on the
+    designated body, receipted and appraised VERIFIED; none failed appraisal, was rejected or was
+    abandoned; and founder interventions per verified outcome fell while GREG's model cost per
+    outcome did not rise (and fell, if it was ever above zero). Approval boundaries a run no longer
+    meets were moved into the founder's signature on that run, never inherited.
+    """
+    from greg import sop
+    rows = {r["mission_id"]: r for r in metrics.vepmc(journal)["missions"]}
+    met, incomplete = [], []
+    for p in sop.trend(journal)["procedures"]:
+        runs = [r["mission_id"] for r in p.get("sop_runs", {}).get("missions", [])]
+        off_body = sorted({c for mid in runs for c in N4_CONDITIONS if not rows.get(mid, {}).get(c)})
+        missing = list(p.get("why_not", [])) + [f"sop_run_not_{c}" for c in off_body]
+        summary = {"procedure_id": p["procedure_id"], "state": p["state"],
+                   "before": {k: v for k, v in p["baseline"].items() if k != "missions"},
+                   **({"after": {k: v for k, v in p["sop_runs"].items() if k != "missions"}}
+                      if "sop_runs" in p else {})}
+        (incomplete if missing else met).append({**summary, **({"missing": missing} if missing else {})})
+    return {"met": bool(met), "value": len(met), "procedures": met, "incomplete": incomplete,
+            **({} if met or incomplete else {"missing": ["no SOP proposed yet: three verified closures of one "
+                                                         "procedure come first"]}),
+            "reality": "interventions, model cost and appraisal are measured from the ledger; whether the "
+                       "outcomes mattered in the world is the founder's critique, not provable here"}
+
+
 PREDICATES = {"vepmc_at_least_one": vepmc_at_least_one, "genesis_closure": genesis_closure,
-              "business_loop_closed": business_loop_closed}
+              "business_loop_closed": business_loop_closed, "sop_compounding": sop_compounding}
 
 
 def position(journal: Journal | None, data: dict | None = None) -> dict:

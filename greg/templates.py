@@ -307,9 +307,109 @@ def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable
     }
 
 
+def business_case(*, case: str, buyer: str, offer: str, price: str, currency: str, acceptance: str,
+                  workspace_root: Path, statement: str = "statement.csv", columns: dict | None = None,
+                  minor_units: bool = False, horizon_days: float = 45) -> dict:
+    """One customer case through the Kernel's commercial order, as a founder-signed mission (node N3).
+
+    problem -> buyer -> offer -> payment -> delivery -> customer outcome (business/commercial_loop.py).
+    GREG drafts the offer and writes the settlement record inside its workspace; every act that
+    reaches a person outside the body is ``human.*`` work (one costed ask each, no contact, no
+    spend). Payment counts only when ``business.reconcile`` finds exactly one posting of the signed
+    amount and currency carrying the case reference in the statement Alfonso exports. Each stage
+    ``requires`` the one before it, and the settlement record requires payment, delivery and the
+    buyer's confirmation, so nothing is recorded as settled out of order.
+    """
+    amount = business_loop_amount(price)
+    currency = currency.strip().upper()
+    if not re.fullmatch(r"[A-Z]{3}", currency):
+        raise ValueError("currency is a three-letter code such as USD")
+    for name, value in (("buyer", buyer), ("offer", offer), ("acceptance", acceptance)):
+        if not str(value).strip():
+            raise ValueError(f"{name} must be stated before the case is signed")
+    if Path(statement).name != statement or statement.startswith("."):
+        raise ValueError("statement is a plain file name in this mission's folder")
+    slug = re.sub(r"[^a-z0-9]+", "-", case.lower()).strip("-")[:40]
+    if len(slug) < 3:
+        raise ValueError("case needs a short name of at least 3 letters or digits")
+    mission_id = f"m:case-{slug}"
+    ref = f"CASE-{slug.upper()}"
+    folder = Path(workspace_root) / mission_id.replace(":", "_")
+
+    def evidence(check_id, name, description):
+        path = folder / name
+        return {"check_id": check_id, "description": description,
+                "sensor": {"capability": "fs.read", "params": {"path": str(path)}, "target": f"fs:{name}"},
+                "predicate": {"op": "contains", "field": "text", "value": ref}}
+
+    offer_text = (f"# Offer {ref}\n\nFor: {buyer}\nOffer: {offer}\nPrice: {amount} {currency}\n"
+                  f"Accepted when: {acceptance}\nPay with the reference {ref} so the payment can be reconciled.\n")
+    settlement = (f"{ref} settled: {amount} {currency} from {buyer}, reconciled against {statement}; "
+                  "delivered and confirmed by the buyer\n")
+    return {
+        "mission_id": mission_id,
+        "founder_expression": (f"Run case {ref}: offer {offer} to {buyer} at {amount} {currency}; "
+                               f"accepted when {acceptance}."),
+        "intended_effect": (f"{buyer} receives {offer}, confirms it met the acceptance terms, and {amount} {currency} "
+                            "is reconciled to the cent; GREG itself contacts, charges and pays no one"),
+        "priority": 70, "closure": {"kind": "bounded", "cadence_seconds": 3600},
+        "success_checks": [
+            evidence("offer_drafted", "offer.md", "the offer names buyer, price and the precommitted acceptance terms"),
+            evidence("buyer_accepted", "acceptance.txt", f"{buyer}'s written acceptance, carrying {ref}"),
+            {"check_id": "paid", "description": f"exactly one posting of {amount} {currency} carrying {ref}",
+             "sensor": {"capability": "business.reconcile",
+                        "params": {"path": str(folder / statement), "amount": str(amount), "currency": currency,
+                                   "reference": ref, **({"columns": columns} if columns else {}),
+                                   **({"minor_units": True} if minor_units else {})},
+                        "target": f"fs:{statement}"},
+             "predicate": {"op": "equals", "field": "matched", "value": True}},
+            evidence("delivered", "delivery.txt", f"a delivery record for {ref}"),
+            evidence("outcome_confirmed", "outcome.txt", f"{buyer}'s confirmation that the acceptance terms were met"),
+            evidence("settled", "settlement.md", "GREG's settlement record, written only after the stages above"),
+        ],
+        "strategies": [
+            {"action_id": "draft-offer", "capability": "fs.write", "target": "workspace:offer.md",
+             "params": {"relative_path": "offer.md", "content": offer_text}, "advances": ["offer_drafted"],
+             "rationale": "draft the offer inside the workspace; sending it is a person's act"},
+            {"action_id": "send-offer", "function": "human.send_offer", "target": "person:human.send_offer",
+             "requires": ["offer_drafted"], "advances": ["buyer_accepted"],
+             "rationale": f"you send offer.md to {buyer} and save their written acceptance as acceptance.txt"},
+            {"action_id": "collect-payment", "function": "human.collect_payment",
+             "target": "person:human.collect_payment", "requires": ["buyer_accepted"], "advances": ["paid"],
+             "rationale": f"{buyer} pays with the reference {ref}; you export the statement as {statement}"},
+            {"action_id": "deliver", "function": "human.deliver", "target": "person:human.deliver",
+             "requires": ["paid"], "advances": ["delivered"],
+             "rationale": f"deliver {offer} and save a delivery record carrying {ref} as delivery.txt"},
+            {"action_id": "confirm-outcome", "function": "human.confirm_outcome",
+             "target": "person:human.confirm_outcome", "requires": ["delivered"], "advances": ["outcome_confirmed"],
+             "rationale": f"{buyer} confirms the acceptance terms were met; save it carrying {ref} as outcome.txt"},
+            {"action_id": "record-settlement", "capability": "fs.write", "target": "workspace:settlement.md",
+             "params": {"relative_path": "settlement.md", "content": settlement},
+             "requires": ["paid", "delivered", "outcome_confirmed"], "advances": ["settled"],
+             "rationale": "record the settlement only after payment, delivery and confirmation are all observed"},
+        ],
+        "light_cone": {"capabilities": ["fs.read", "fs.write", "business.reconcile"],
+                       "targets": ["fs:*", "workspace:*", "person:*"], "max_consequence_class": "internal_write",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+def business_loop_amount(price) -> str:
+    """A signed price as a plain decimal string with at most two places, never a float."""
+    from decimal import Decimal, InvalidOperation
+    try:
+        value = Decimal(str(price).strip())
+    except InvalidOperation:
+        raise ValueError("price must be a number such as 250 or 249.99") from None
+    if not value.is_finite() or value <= 0 or value.as_tuple().exponent < -2:
+        raise ValueError("price must be positive with at most two decimal places")
+    return f"{value:.2f}"
+
+
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
              "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
-             "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work}
+             "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work,
+             "business-case": business_case}
 
 
 AVAILABILITY = re.compile(r"(?:^|(?<=[.!?\n]))\s*((?:the\s+)?machine\s+is\s+(?:free|available)\s+(?:all|the\s+whole)\s+"

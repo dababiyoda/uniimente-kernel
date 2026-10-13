@@ -158,6 +158,42 @@ GREG finds the installed LP engine, shows its version and license, and waits for
 It then returns the plan with the price of each limit, accepted only on its own duality
 certificate.
 
+## The third node (N3): one business case, with you doing every outward act
+
+GREG can now carry one customer case through the Kernel's commercial order (offer, acceptance,
+payment, delivery, the buyer's confirmation, settlement) as a mission you sign. Before anything
+runs, the signed mission fixes the buyer, the price and the acceptance terms:
+
+```bash
+greg mission new business-case --case "lease review 01" --buyer "Acme Property LLC" \
+  --offer "a reviewed lease summary" --price 250 --currency USD \
+  --acceptance "summary delivered within 5 business days"
+```
+
+- GREG drafts `offer.md` in the case folder (`greg status` shows the path). It carries a case
+  reference, for example `CASE-LEASE-REVIEW-01`, which the buyer puts on the payment.
+- **You** send the offer, collect payment, deliver, and ask the buyer to confirm. Each step is
+  one costed ask in the console and on your phone. GREG contacts, charges and pays no one; an
+  answer to these asks is only a record.
+- You save the evidence into the case folder:
+  - `acceptance.txt`: the buyer's written acceptance;
+  - `statement.csv`: an export from your payment account. Its columns default to
+    `description,amount,currency`; a different export can be mapped in the signed mission.
+  - `delivery.txt`: the delivery record;
+  - `outcome.txt`: the buyer's confirmation.
+
+  Each file carries the reference.
+- **Payment counts only when exactly one posting matches the signed amount and currency to the
+  cent and carries the reference.** A short or duplicate payment never counts.
+- The settlement record is written only after payment, delivery and the buyer's confirmation
+  are all observed. The separate appraiser re-checks that order.
+
+`greg path` measures N3 from the ledger: a founder-signed case on this body, payment reconciled,
+every outward step done by a person, GREG's own actions internal only, appraised VERIFIED and
+accepted by you. Your acceptance is what attests the buyer is real; the ledger cannot prove it.
+What no build session can supply: a real buyer and their consent, the legal operator, and your
+payment account.
+
 ## 3. What "persistent" means on this Chromebook
 
 ChromeOS stops the Linux environment when you sign out and, by Google's design,

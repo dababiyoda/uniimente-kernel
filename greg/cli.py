@@ -145,6 +145,14 @@ def main(argv=None) -> int:
             q.add_argument("--purpose", help="human-work: what the work is for, in your words")
             q.add_argument("--deliverable", default="deliverable.pdf",
                            help="human-work: file name the person's deliverable is saved as in the mission folder")
+            q.add_argument("--case", help="business-case: a short case name (becomes the payment reference)")
+            q.add_argument("--buyer", help="business-case: the named buyer or stakeholder")
+            q.add_argument("--offer", help="business-case: what is offered")
+            q.add_argument("--price", help="business-case: price, e.g. 250 or 249.99")
+            q.add_argument("--currency", default="USD", help="business-case: three-letter currency code")
+            q.add_argument("--acceptance", help="business-case: the acceptance terms, fixed before anything runs")
+            q.add_argument("--statement", default="statement.csv",
+                           help="business-case: file name of the payment statement you export into the case folder")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
         if name == "accept":
             q.add_argument("event_id"); q.add_argument("--text", default="accepted after morning review")
@@ -262,6 +270,14 @@ def main(argv=None) -> int:
                 elif args.target == "word-limit":
                     spec = templates.word_limit(file=Path(args.file), max_words=args.max_words,
                                                 workspace_root=Layout(home).workspace)
+                elif args.target == "business-case":
+                    missing = [f for f in ("case", "buyer", "offer", "price", "acceptance") if not getattr(args, f)]
+                    if missing:
+                        raise BodyError("business-case needs " + ", ".join("--" + f for f in missing))
+                    spec = templates.business_case(case=args.case, buyer=args.buyer, offer=args.offer,
+                                                   price=args.price, currency=args.currency,
+                                                   acceptance=args.acceptance, statement=args.statement,
+                                                   workspace_root=Layout(home).workspace)
                 elif args.target == "human-work":
                     if not (args.function and args.purpose):
                         raise BodyError("human-work needs --function and --purpose")

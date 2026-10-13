@@ -111,7 +111,59 @@ def genesis_closure(journal: Journal) -> dict:
             "generality": "unproven until a second closure on an unrelated function"}
 
 
-PREDICATES = {"vepmc_at_least_one": vepmc_at_least_one, "genesis_closure": genesis_closure}
+# A business case need not stop for an approval or survive a deliberate interruption to be real;
+# it must be the founder's, on his body, appraised and accepted (N3, PR #68 node 4 definition).
+N3_CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
+                 "appraised_verified", "founder_accepted", "founder_body")
+INTERNAL_CLASSES = ("read_only", "internal_write")
+
+
+def business_loop_closed(journal: Journal) -> dict:
+    """One customer case closed in commercial order with GREG taking no external action.
+
+    The ledger proves: the founder-signed mission named the buyer, price and acceptance terms
+    before anything ran; payment was reconciled to the cent by ``business.reconcile``; every act
+    that reached a person outside the body was ``human.*`` work whose ask closed only when its
+    evidence was observed; GREG's own actions stayed read-only or internal; the separate appraiser
+    verified the closure and Alfonso accepted it. That the buyer is a real customer is attested by
+    that acceptance, not provable from the ledger.
+    """
+    from greg.capabilities import BUILTINS
+    specs = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
+    rows = {r["mission_id"]: r for r in metrics.vepmc(journal)["missions"]}
+    withdrawn = {e.payload["request_id"] for e in journal.replay("decision.withdrawn")}
+    cases, incomplete = [], []
+    for mid, spec in specs.items():
+        paid = [c["check_id"] for c in spec.get("success_checks", [])
+                if c["sensor"].get("capability") == "business.reconcile"]
+        if not paid or mid not in rows:
+            continue
+        missing = [c for c in N3_CONDITIONS if not rows[mid][c]]
+        observed = [e.payload for e in journal.replay("mission.observed")
+                    if e.payload["mission_id"] == mid and e.payload["check_id"] in paid]
+        if not (observed and observed[-1]["passed"]):
+            missing.append("payment_reconciled")
+        external = sorted({a.payload.get("capability") for a in journal.replay("mission.action")
+                           if a.payload["mission_id"] == mid and a.payload.get("status") == "DONE"
+                           and (a.payload.get("capability") not in BUILTINS
+                                or BUILTINS[a.payload["capability"]][0].consequence_class not in INTERNAL_CLASSES)})
+        if external:
+            missing.append(f"greg_external_action:{','.join(map(str, external))}")
+        human = [e.payload for e in journal.replay("decision.requested")
+                 if e.payload["mission_id"] == mid and e.payload["kind"] == "HUMAN_WORK"]
+        if not human:
+            missing.append("no_person_did_the_outward_work")
+        if [h["request_id"] for h in human if h["request_id"] not in withdrawn]:
+            missing.append("human_work_not_observed")
+        (incomplete if missing else cases).append({"mission_id": mid, **({"missing": missing} if missing else {}),
+                                                   "human_steps": len(human)})
+    return {"met": bool(cases), "value": len(cases), "cases": cases, "incomplete": incomplete,
+            "reality": "order, reconciliation and GREG's own effects are proven from the ledger; that the buyer "
+                       "is a real customer is attested by Alfonso's acceptance, not provable here"}
+
+
+PREDICATES = {"vepmc_at_least_one": vepmc_at_least_one, "genesis_closure": genesis_closure,
+              "business_loop_closed": business_loop_closed}
 
 
 def position(journal: Journal | None, data: dict | None = None) -> dict:

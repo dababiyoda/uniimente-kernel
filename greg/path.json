@@ -110,17 +110,28 @@
         "name": "clean verified business outcomes",
         "baseline": 0,
         "target": 1,
-        "measured_by": null
+        "measured_by": "greg.path.business_loop_closed"
       },
       "exit_evidence": [
         "named buyer or stakeholder, precommitted acceptance, external evidence, delivery and reconciliation, zero unauthorized effects (PR #68 node 4 definition)"
       ],
       "evidence_source": "ledger",
-      "predicate": null,
-      "evidence_status": "unresolved",
-      "evidence_refs": [],
+      "predicate": "business_loop_closed",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/unit/test_greg_business_case.py",
+        "greg/business_loop.py"
+      ],
       "pivot_condition": "If publication authority is withheld, pick a wedge whose first external effect Alfonso does authorize",
-      "kill_condition": "Engagement or revenue obtained through deception or without consent"
+      "kill_condition": "Engagement or revenue obtained through deception or without consent",
+      "components": [
+        "founder-signed business case naming buyer, price and acceptance terms before anything runs (greg/templates.py business_case)",
+        "people do every outward act through costed HUMAN_WORK asks; GREG contacts, charges and pays no one (greg/missions.py)",
+        "payment reconciled to the cent against an exported statement (business.reconcile, greg/business_loop.py)",
+        "commercial order enforced by strategy preconditions and re-checked by the separate appraiser",
+        "founder acceptance attests that the buyer is real"
+      ],
+      "smallest_next_build": "done agent-side (2026-10-01, full-machine correction): `greg mission new business-case` runs one customer case in commercial order on the body; tests/unit/test_greg_business_case.py closes it end to end and the predicate is met only after founder acceptance. Remains founder-only: a real buyer and their consent, the legal operator, and the payment account whose statement GREG reconciles"
     },
     {
       "id": "N4",

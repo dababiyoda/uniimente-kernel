@@ -1,8 +1,131 @@
 {
- "genomes": {},
- "missing_sources": [
-  "docs/evidence/greg-genome-admission/*/results.json (no frozen held-out admission run yet)"
- ],
+ "genomes": {
+  "basal_bandit": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.basal_bandit",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "basal_breaker": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.basal_breaker",
+   "status": "NICHE_CAPABILITY"
+  },
+  "basal_hysteresis": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.basal_hysteresis",
+   "status": "NICHE_CAPABILITY"
+  },
+  "basal_kalman": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.basal_kalman",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "basal_pid": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.basal_pid",
+   "status": "NICHE_CAPABILITY"
+  },
+  "bayes_interval": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.bayes_interval",
+   "status": "NICHE_CAPABILITY"
+  },
+  "causal_backdoor": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.causal_backdoor",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "collective_aco": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_aco",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "collective_flock": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_flock",
+   "status": "SUPERSEDED"
+  },
+  "collective_immune": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_immune",
+   "status": "EXPERIMENTAL"
+  },
+  "collective_market": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_market",
+   "status": "SUPERSEDED"
+  },
+  "collective_physarum": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_physarum",
+   "status": "NICHE_CAPABILITY"
+  },
+  "collective_quorum": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_quorum",
+   "status": "EXPERIMENTAL"
+  },
+  "control_mpc": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.control_mpc",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "decision_preposterior": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.decision_preposterior",
+   "status": "COMPOSITION_ONLY"
+  },
+  "develop_constraint_release": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.develop_constraint_release",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "develop_repair": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.develop_repair",
+   "status": "NICHE_CAPABILITY"
+  },
+  "dp_knapsack": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.dp_knapsack",
+   "status": "SUPERSEDED"
+  },
+  "flow_capacity_plan": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.flow_capacity_plan",
+   "status": "COMPOSITION_ONLY"
+  },
+  "flow_maxflow": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.flow_maxflow",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "flow_reinforce_greedy": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.flow_reinforce_greedy",
+   "status": "SUPERSEDED"
+  },
+  "forecast_quantile": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.forecast_quantile",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "game_minimax": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.game_minimax",
+   "status": "SUPERSEDED"
+  },
+  "info_experiment": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.info_experiment",
+   "status": "NICHE_CAPABILITY"
+  },
+  "mc_importance": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.mc_importance",
+   "status": "NICHE_CAPABILITY"
+  },
+  "mech_vcg": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.mech_vcg",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "newsvendor_compile": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.newsvendor_compile",
+   "status": "COMPOSITION_ONLY"
+  },
+  "queue_erlang": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.queue_erlang",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "search_astar": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.search_astar",
+   "status": "SUPERSEDED"
+  },
+  "synth_cegis": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.synth_cegis",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "verify_modelcheck": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.verify_modelcheck",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  }
+ },
+ "missing_sources": [],
  "recipes": {
   "bayes_then_voi": {
    "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F4",
@@ -85,6 +208,11 @@
    "path": "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json",
    "sha256": "sha256:245faa9f3c3306aa15bf9c4ba725886bd1af53ef1ce369ad7d3524321c3fed26",
    "source_commit": "5475f75ae7d47b090e0cb8a1eb55fe909fe4c580"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json",
+   "sha256": "sha256:d4609673ca6f62ca83e750c794255cbe66a4cee9cc3b6e183fdcb29eeea3059c",
+   "source_commit": "496c85b2bd5111960fa5f055da91b9736252979e"
   }
  ]
 }

@@ -108,12 +108,12 @@ jobs:
         run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py tests/unit/test_cortex_replay.py tests/unit/test_cortex_proposer.py tests/unit/test_seed_genome_founder_expression.py
       - name: Mutation check (every safeguard-removing mutant must be caught)
         run: python scripts/ci/check_cortex_mutants.py
-      - name: Held-out run against the freeze manifest (refuses if frozen inputs changed)
-        run: python -m cortex.evaluation.run --partition heldout --out cortex-heldout-results.json
+      - name: Held-out drift guard (refuses if frozen inputs changed; LLM arms are NOT_RUN in CI, so this is never a reported run)
+        run: python -m cortex.evaluation.run --partition heldout --out cortex-heldout-driftguard.json
       - uses: actions/upload-artifact@v4
         with:
-          name: cortex-heldout-results
-          path: cortex-heldout-results.json
+          name: cortex-heldout-driftguard
+          path: cortex-heldout-driftguard.json
           retention-days: 30
 
   research_line:

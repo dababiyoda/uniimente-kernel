@@ -103,6 +103,36 @@ shared-boundary allowlist):
 Regenerate with `python -m cortex.examples --out docs/cortex/examples`. Receipts carry measured expenditure, so
 their ids change between runs; states and dispositions do not.
 
+## 0.1.6 additions
+
+**Standing-runtime binding.** `egregore/cortex_proposer.py` attaches the cortex to `StandingCognitionRuntime`'s
+existing proposer slot. Every call ledgers one `cortex.receipt`; `recommend` becomes a `draft.prepare` review
+candidate, `handoff` a `human.adjudicate` candidate, both `internal_write` with `execution_authority: none`;
+`abstain` and `bounded_test` propose nothing (the receipt names what is missing). The semantic organ's model budget
+is clamped to the proposer's ceiling (default 0).
+
+```python
+from cortex.routing import Cortex
+from egregore.cortex_proposer import CortexProposer, REQUEST_KEY
+proposer = CortexProposer(Cortex(), ledger)                       # consequence-inert
+runtime = StandingCognitionRuntime(ledger=ledger, proposers={proposer.name: proposer}, evaluators=...)
+runtime.tick(trigger_id=..., signal_ids=..., resources=..., context={REQUEST_KEY: {"problem": problem_dict}})
+```
+
+**Replayed baseline arms.** When no model is reachable from the evaluation process, the declared arms can be run
+from a transcript of replies produced elsewhere, keyed by `sha256(system + NUL + user)`; a missing reply is an
+error on that item, never a guess; the frozen inputs are untouched; the model's provenance replaces the
+local-model disclosure on the results. A second transcript may serve the routed seed's semantic organ with the same
+model, as the frozen disclosure pre-registers.
+
+```bash
+python -m cortex.evaluation.replay --answers transcript.json --semantic-answers semantic.json \
+    --provenance provenance.json --partition heldout --out heldout-results.json
+```
+
+**Defect fixes.** See the 0.1.6 row of the version table in `SEED_EXPERIMENT_REPORT.md` and
+`tests/unit/test_cortex_defect_fixes.py`.
+
 ## Reproduce the benchmark
 
 ```bash

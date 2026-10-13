@@ -32,7 +32,8 @@ from greg.missions import evaluate_predicate
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
-                "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query", "pipeline.inspect"}
+                "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query", "pipeline.inspect",
+                "worker.appraise"}
 REOBSERVABLE.update(cid for cid in BUILTINS if cid.startswith("cognition.") and
                     cid not in ("cognition.semantic", "cognition.compose", "cognition.knowledge"))
 DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
@@ -122,7 +123,7 @@ def appraise(request: dict) -> dict:
                                         deliver_root=Path(request["deliver_root"])
                                         if request.get("deliver_root") else None,
                                         mission_id=mid,
-                                        journal=journal if cap in ("memory.precedents", "artifact.inspect") or cap.startswith(("cognition.", "pipeline.")) else None,
+                                        journal=journal if cap in ("memory.precedents", "artifact.inspect", "worker.appraise") or cap.startswith(("cognition.", "pipeline.")) else None,
                                         artifact_root=Path(request["artifact_root"])
                                         if request.get("artifact_root") else None,
                                         target=check["sensor"].get("target", ""))

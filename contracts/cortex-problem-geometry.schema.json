@@ -310,7 +310,8 @@
               "payload_structure",
               "requester_declared",
               "semantic_proposal_validated",
-              "default_unknown"
+              "default_unknown",
+              "raised_by_declared_harm"
             ]
           },
           "confidence": {

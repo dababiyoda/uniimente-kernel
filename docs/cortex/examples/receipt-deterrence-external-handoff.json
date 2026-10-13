@@ -97,7 +97,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.040081,
+    "seconds": 0.051275,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -211,7 +211,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.038245,
+          "seconds": 0.049386,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -376,7 +376,7 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:adda3610bfcd7476fbc118134e2ea5956a6d6976fe6ca3d4938d00b5c1c94fa2",
+  "receipt_id": "sha256:76cda8e3fd6bd0ba0cfe3f89c73aed56fb058fdd1bcc90e0c93942a032fa8e63",
   "route": {
     "composition": false,
     "dropped_by_cap": [],

@@ -157,7 +157,7 @@ OBJECTIVES = ("decide_feasibility", "decide_entailment", "optimize_objective", "
 # Where a geometry value came from. Semantic proposals never count as
 # established unless validated against the structured payload.
 FIELD_SOURCES = ("payload_structure", "requester_declared", "semantic_proposal_validated",
-                 "default_unknown")
+                 "default_unknown", "raised_by_declared_harm")
 
 
 def _enum(name: str, value: Any, allowed: tuple) -> str:

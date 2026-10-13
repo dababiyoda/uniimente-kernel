@@ -92,7 +92,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.000237,
+    "seconds": 0.000289,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -299,7 +299,7 @@
     "status": "none_eligible",
     "tradeoffs": []
   },
-  "receipt_id": "sha256:9d860cd76bcb12e08fe1980c96f65672b562b0ca0d8923e8f1354bfa293571ab",
+  "receipt_id": "sha256:39d116ddc9e433267ab8c339ada47e361a07844d8b000eaef2f1cae011967937",
   "route": {
     "composition": false,
     "dropped_by_cap": [],

@@ -153,3 +153,40 @@ def test_constructor_refuses_a_cortex_without_run_or_a_ledger_without_a_chain():
         CortexProposer(Cortex(), object())
     with pytest.raises(ContractError):
         CortexProposer(Cortex(), EvidenceLedger("sha256:" + "a" * 64), max_model_calls=-1)
+
+
+def test_a_receipt_that_claims_authority_or_is_forged_is_refused_before_ledgering():
+    from cortex.routing import Cortex as RealCortex
+
+    class Forging:
+        def __init__(self, mutate):
+            self.mutate = mutate
+
+        def run(self, problem, records=None):
+            receipt = RealCortex(clock=lambda: "2026-10-13T00:00:00Z").run(problem, records=records)
+            return self.mutate(receipt)
+
+    def claims_authority(r):
+        r["authority_created"] = True
+        return r
+
+    def tampered(r):
+        r["output"] = dict(r["output"], answer={"feasible": False})
+        return r
+
+    def spent(r):
+        from cortex.contracts import digest
+        r["expenditure"] = dict(r["expenditure"], usd=0.5)
+        body = dict(r)
+        body.pop("receipt_id")
+        r["receipt_id"] = digest(body)   # a well-formed receipt that simply spent money
+        return r
+
+    for mutate, match in ((claims_authority, "claims authority"), (tampered, "content address"), (spent, "spent")):
+        ledger = EvidenceLedger("sha256:" + "a" * 64)
+        proposer = CortexProposer(Forging(mutate), ledger)
+        with pytest.raises(ContractError, match=match):
+            proposer((signal(),), {REQUEST_KEY: {"problem": FORMAL}})
+        assert ledger.by_type(RECEIPT_RECORD) == []
+    with pytest.raises(ContractError):
+        CortexProposer(Cortex(), EvidenceLedger("sha256:" + "a" * 64), max_receipt_usd=-1)

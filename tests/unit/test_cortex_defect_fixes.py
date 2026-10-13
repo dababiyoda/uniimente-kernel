@@ -91,5 +91,23 @@ def test_d4_an_expiring_mandate_without_an_as_of_does_not_pass_founder_scope():
     assert ok.gates["founder_scope"].status == "PASS"
 
 
+def test_d5_declared_harm_raises_the_consequence_class_never_lowers_it():
+    """Ported from the #143 lineage (its crossgeo v0.2 hard failure): a requester may not declare
+    internal_write while declaring high physical harm and get a recommendation."""
+    understated = cortex().run({"problem_id": "d5", "question": "q", "payload": {
+        "formal_model": FORMAL_MODEL,
+        "declared": {"consequence_class": "internal_write", "reversibility": "reversible", "harm": {"physical": "high"}}}})
+    assert understated["geometry"]["consequence_class"] == "financial"
+    assert understated["geometry"]["provenance"]["consequence_class"]["source"] == "raised_by_declared_harm"
+    assert any(r["field"] == "consequence_class" for r in understated["geometry"]["rejected_proposals"])
+    assert understated["disposition"]["kind"] == "handoff"
+    validate(understated, "cortex-receipt")
+    validate(understated["geometry"], "cortex-problem-geometry")
+    overstated = cortex().run({"problem_id": "d5b", "question": "q", "payload": {
+        "formal_model": FORMAL_MODEL,
+        "declared": {"consequence_class": "financial", "reversibility": "reversible", "harm": {"physical": "none"}}}})
+    assert overstated["geometry"]["consequence_class"] == "financial"   # never lowered
+
+
 def test_version_records_the_sixth_disclosed_change():
     assert CORTEX_VERSION == "0.1.6"

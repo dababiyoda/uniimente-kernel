@@ -24,7 +24,10 @@ What this binding does and does not do:
 * the semantic organ gets at most the model calls this proposer was configured
   with (default 0), so the runtime's resource accounting stays truthful;
 * the cortex never sees the Consequence Gate, grants or adapters, and the
-  candidate's ``execution_authority`` is ``"none"`` by contract.
+  candidate's ``execution_authority`` is ``"none"`` by contract;
+* a receipt is accepted only if it validates against its contract, matches its
+  own content address, claims no authority and spent nothing beyond the
+  proposer's ceiling (guard recombined from PR #143's bridge).
 
 Competence estimates live in ``cortex.memory.CompetenceLedger`` and settle only
 on verified outcomes; a candidate's ``confidence`` is 0.0 until that exists.
@@ -49,6 +52,7 @@ class CortexProposer:
     """Attach the Seed Cortex to ``StandingCognitionRuntime(proposers={name: proposer})``."""
 
     def __init__(self, cortex: Any, ledger: Any, *, name: str = "seed_cortex", max_model_calls: int = 0,
+                 max_receipt_usd: float = 0.0,
                  records_provider: Callable[[Mapping[str, Any]], Sequence[Mapping[str, Any]]] | None = None):
         if not hasattr(cortex, "run"):
             raise ContractError("cortex must expose run(problem, records=...)")
@@ -58,10 +62,13 @@ class CortexProposer:
             raise ContractError("proposer name required")
         if not isinstance(max_model_calls, int) or isinstance(max_model_calls, bool) or max_model_calls < 0:
             raise ContractError("max_model_calls must be a non-negative integer")
+        if isinstance(max_receipt_usd, bool) or not isinstance(max_receipt_usd, (int, float)) or max_receipt_usd < 0:
+            raise ContractError("max_receipt_usd must be a non-negative number")
         self.cortex = cortex
         self.ledger = ledger
         self.name = name
         self.max_model_calls = max_model_calls
+        self.max_receipt_usd = float(max_receipt_usd)
         self.records_provider = records_provider
 
     @property
@@ -82,7 +89,7 @@ class CortexProposer:
         records = list(request.get("authority_records") or [])
         if self.records_provider is not None:
             records.extend(self.records_provider(request))
-        receipt = self.cortex.run(problem, records=records or None)
+        receipt = self._checked(self.cortex.run(problem, records=records or None))
         record = self.ledger.append(RECEIPT_RECORD, {
             "proposer": self.name, "receipt": receipt, "execution_authority": "none",
             "source_signal_ids": [s.signal_id for s in signals],
@@ -118,6 +125,28 @@ class CortexProposer:
         )
 
     # ------------------------------------------------------------------ helpers
+    def _checked(self, receipt: Mapping[str, Any]) -> dict:
+        """Accept a receipt only if it satisfies its contract and its own content address, claims no
+        authority, and spent nothing beyond the proposer's ceiling (mechanism from PR #143's bridge
+        ``check_receipt``). A receipt that fails is never ledgered as a receipt; the runtime records
+        the failure for this proposer and the other organs' trace is unaffected."""
+        if not isinstance(receipt, Mapping):
+            raise ContractError("cortex returned a non-mapping receipt")
+        receipt = dict(receipt)
+        if receipt.get("authority_created") is not False or receipt.get("execution_authority") != "none":
+            raise ContractError("cortex receipt claims authority; refused")
+        from cortex.contracts import digest as cortex_digest
+        from cortex.schemas import validate as validate_cortex
+        validate_cortex(receipt, "cortex-receipt")
+        body = dict(receipt)
+        identity = body.pop("receipt_id")
+        if identity != cortex_digest(body):
+            raise ContractError("cortex receipt content address mismatch; refused")
+        usd = float((receipt.get("expenditure") or {}).get("usd", 0.0))
+        if usd > self.max_receipt_usd:
+            raise ContractError(f"cortex receipt spent {usd} USD; proposer ceiling is {self.max_receipt_usd}")
+        return receipt
+
     def _bounded_problem(self, problem: Mapping[str, Any]) -> dict:
         """Clamp the semantic organ's model budget to what this proposer may spend."""
         problem = canonical_copy(dict(problem))

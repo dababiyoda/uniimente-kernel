@@ -14,9 +14,10 @@
       "section": 1,
       "status": "active",
       "implementation_refs": [
-        "greg/path.json"
+        "greg/path.json",
+        "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSUE-2026-10-13-source.md"
       ],
-      "unresolved": "Kernel and PR137/141 inspected. Organs, raw Project originals and real devices not refreshed."
+      "unresolved": "Kernel and PR137/141 inspected. Organs, raw Project originals and real devices not refreshed. Re-issued byte-identically on 2026-10-13 with one new opening line; position refreshed against #158 at 5c8dd23 and #161."
     },
     {
       "section": 2,
@@ -50,9 +51,11 @@
       "implementation_refs": [
         "cortex/seed/contracts.py",
         "cortex/seed/projections.py",
-        "capabilities/genome.py"
+        "capabilities/genome.py",
+        "greg/cognition/characterize.py",
+        "tests/unit/test_cognition_characterize.py"
       ],
-      "unresolved": "Strict wire/profile extensions and canonical rich geometry projections exist. Missing harm likelihood, parties and calibration stay unknown; independent assessment remains unavailable."
+      "unresolved": "Strict wire/profile extensions and canonical rich geometry projections exist. The characterization harness measures responsiveness, error correction against self-consistent corruptions, a problem-space size ladder and rename/reorder invariance per family on synthetic native workloads, with Wilson intervals and verifier-independence evidence read from receipts; memory depth, persistence, prediction horizon, adaptability, cooperation and higher-scale coherence are declared not applicable with pointers. Missing harm likelihood, parties and calibration stay unknown; independent assessment remains unavailable."
     },
     {
       "section": 6,
@@ -83,9 +86,11 @@
       "status": "active",
       "implementation_refs": [
         "cortex/seed/verify.py",
-        "greg/cognition/seed_path.py"
+        "greg/cognition/seed_path.py",
+        "greg/cognition/disclosure.py",
+        "tests/unit/test_cognition_disclosure.py"
       ],
-      "unresolved": "Rich typed computation receipts carry evidence, geometry, assumptions, uncertainty, calibration limits and contribution. External acceptance/appeal and unimplemented proof jurisdictions remain partial."
+      "unresolved": "Rich typed computation receipts carry evidence, geometry, assumptions, uncertainty, calibration limits and contribution. Selective-disclosure evidence packages (RFC 9901 salted-hash disclosures, same-input completeness, custody statement, real action references, appended institutional responses) are built from retained receipts and exported read-only by `greg cognition package`; none was sent and no external acceptance is claimed. Unimplemented proof jurisdictions remain partial."
     },
     {
       "section": 10,
@@ -111,7 +116,7 @@
       "implementation_refs": [
         "greg/cognition/seed_path.py"
       ],
-      "unresolved": "Wall deadline and mandatory verifier reserve implemented; decision-specific VOI and measured energy are not implemented."
+      "unresolved": "Wall deadline and mandatory verifier reserve implemented. budget.optional_step (range-based, verifier reserve kept) exists but no runtime path calls it: wiring a deeper optional step means changing cortex.py, which the frozen evaluations pin, so it waits for the next freeze. Value of information exists as the information-family method and a Competency Compiler operator. Measured energy is not implemented."
     },
     {
       "section": 13,
@@ -135,9 +140,10 @@
       "status": "active",
       "implementation_refs": [
         "cortex/evaluation/seed_genome/freeze-v3.json",
-        "docs/cortex/evidence/seed-genome/results-v3.json"
+        "docs/cortex/evidence/seed-genome/results-v3.json",
+        "tests/unit/test_cortex_crossgeo.py"
       ],
-      "unresolved": "120 structured engineering cases frozen/run; semantic availability only, all model quality baselines unavailable; negative static-equivalent gain."
+      "unresolved": "120 structured engineering cases frozen/run; semantic availability only, all model quality baselines unavailable; negative static-equivalent gain. The directive's mandatory adversarial list is covered by 17 suite families plus 6 system-level tests, each now resolved to its test node."
     },
     {
       "section": 16,

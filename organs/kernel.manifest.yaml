@@ -53,6 +53,12 @@ capabilities:
     consumes: [evidence]
     produces: [decision]
     lifecycle: ACTIVE
+  - capability_id: kernel.cortex_seed
+    description: Polyintelligence Cortex seed 0.1.6 - geometry routing to typed-proof organs with an adversarial verifier; receipts create no authority; bound to standing cognition as a proposer
+    implementation_path: cortex/
+    consumes: [evidence]
+    produces: []
+    lifecycle: SANDBOXED
   - capability_id: kernel.autonomy_ladder
     description: 9-dimension autonomy licenses; promotion needs evidence, never self-grant
     implementation_path: autonomy/levels.py

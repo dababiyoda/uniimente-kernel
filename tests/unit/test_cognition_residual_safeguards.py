@@ -113,6 +113,22 @@ def test_a_missing_second_engine_is_inconclusive_and_said_so_never_a_pass(regist
     assert any("rests on CP-SAT's report" in d for d in checked["dissent"])
 
 
+def test_the_second_engine_stays_inside_the_verifier_budget():
+    # verify() runs in the cognition worker under the request's latency limit; an exhausted budget is
+    # undecided, and a large core is re-checked without spending one solve per member.
+    from greg.cognition.verification import MINIMALITY_CAP, _z3_core_check, _z3_integer_check
+    assert _z3_integer_check(MODEL, budget_s=0) is None
+    model = {"variables": {"x": [0, 10]},
+             "constraints": [{"coefficients": {"x": 1}, "op": ">=", "rhs": 8},
+                             {"coefficients": {"x": 1}, "op": "<=", "rhs": 3}]
+             + [{"coefficients": {"x": 1}, "op": ">=", "rhs": 0}] * MINIMALITY_CAP}
+    core = [f"constraint_{i}" for i in range(len(model["constraints"]))]
+    assert _z3_core_check(model, core, budget_s=0)["core_unsat"] is None
+    large = _z3_core_check(model, core)
+    assert large["core_unsat"] is True and large["minimal"] is None and "not tested" in large["status"]
+    assert _z3_core_check(model, core[:2])["minimal"] is True
+
+
 # ------------------------------------------------------------------ legitimacy is evidence, not assertion
 BASE = {"exploit_payoff": 10, "opportunity": .5, "detection_probability": .5, "evidence_durability": .9,
         "accountability_probability": .5, "restitution_cost": 10}

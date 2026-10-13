@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 import math
+import time
 
 from .contracts import CognitionError, ProofArtifact, digest
 
@@ -211,8 +212,20 @@ def verify(family, data, answer, proof_class):
                              "external evaluator")}
 
 
-def _z3_integer_check(data, *, strictly_better_than=None, timeout_ms=4000):
+# The verifier runs inside the cognition worker under the request's latency limit (5 s by default), so the
+# second engine gets a fixed share of it. Running out of budget is "undecided", never a pass or a refutation.
+CROSS_CHECK_BUDGET_S = 1.5
+MINIMALITY_CAP = 16  # cores larger than this are re-checked but not tested for minimality
+
+
+def _remaining_ms(deadline):
+    left = int((deadline - time.monotonic()) * 1000)
+    return left if left >= 50 else None
+
+
+def _z3_integer_check(data, *, strictly_better_than=None, budget_s=CROSS_CHECK_BUDGET_S):
     """'sat' | 'unsat' | None (engine unavailable or undecided). Integer model, as CP-SAT solved it."""
+    deadline = time.monotonic() + budget_s
     try:
         import z3
     except ImportError:
@@ -225,7 +238,6 @@ def _z3_integer_check(data, *, strictly_better_than=None, timeout_ms=4000):
         return int(value)
 
     solver = z3.Solver()
-    solver.set(timeout=timeout_ms)
     vs = {n: z3.Int(n) for n in data["variables"]}
     try:
         for n, (lo, hi) in data["variables"].items():
@@ -241,19 +253,27 @@ def _z3_integer_check(data, *, strictly_better_than=None, timeout_ms=4000):
             solver.add(expr < bound if objective["sense"] == "min" else expr > bound)
     except (ValueError, TypeError, ArithmeticError):
         return None  # not the integer model CP-SAT accepts; the second engine stays silent rather than truncate
+    left = _remaining_ms(deadline)
+    if left is None:
+        return None
+    solver.set(timeout=left)
     return _status(z3, solver.check())
 
 
-def _z3_core_check(data, core, timeout_ms=4000):
+def _z3_core_check(data, core, budget_s=CROSS_CHECK_BUDGET_S):
     """Re-check a reported unsat core with a fresh solver, then test it for minimality."""
+    deadline = time.monotonic() + budget_s
     try:
         import z3
     except ImportError:
         return {"core_unsat": None, "minimal": None, "status": "engine unavailable"}
 
     def check(indices):
+        left = _remaining_ms(deadline)
+        if left is None:
+            return None
         solver = z3.Solver()
-        solver.set(timeout=timeout_ms)
+        solver.set(timeout=left)
         vs = {n: z3.Real(n) for n in data["variables"]}
         for n, (lo, hi) in data["variables"].items():
             solver.add(vs[n] >= z3.RealVal(str(lo)), vs[n] <= z3.RealVal(str(hi)))
@@ -266,7 +286,7 @@ def _z3_core_check(data, core, timeout_ms=4000):
         return _status(z3, solver.check())
 
     try:
-        indices = [int(str(name).removeprefix("constraint_")) for name in core]
+        indices = sorted({int(str(name).removeprefix("constraint_")) for name in core})
     except ValueError:
         return {"core_unsat": False, "minimal": None, "status": "core names do not identify constraints"}
     if not indices or any(not 0 <= i < len(data["constraints"]) for i in indices):
@@ -275,8 +295,15 @@ def _z3_core_check(data, core, timeout_ms=4000):
     if whole != "unsat":
         return {"core_unsat": None if whole is None else False, "minimal": None,
                 "status": "core re-check undecided" if whole is None else "the reported core is satisfiable"}
-    drops = [check([j for j in indices if j != i]) for i in indices]
-    minimal = None if None in drops else all(d == "sat" for d in drops)
+    if len(indices) > MINIMALITY_CAP:
+        return {"core_unsat": True, "minimal": None,
+                "status": f"re-checked; minimality not tested (core of {len(indices)} exceeds {MINIMALITY_CAP})"}
+    drops = []
+    for i in indices:
+        drops.append(check([j for j in indices if j != i]))
+        if drops[-1] == "unsat":
+            break  # one removable member already proves a smaller core exists
+    minimal = False if "unsat" in drops else None if None in drops else True
     return {"core_unsat": True, "minimal": minimal,
             "status": ("re-checked; minimal" if minimal else "re-checked; minimality undecided" if minimal is None
                        else "re-checked; not minimal (a smaller core exists)")}

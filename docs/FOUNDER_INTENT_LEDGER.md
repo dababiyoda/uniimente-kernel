@@ -2,6 +2,21 @@
 
 # Founder Intent Ledger
 
+## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
+
+`INTENT-20261013-FRONTIER-LEAP-RECOMBINE` ([record](intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json), [full directive, verbatim](intent/sources/FRONTIER-LEAP-DIRECTIVE-2026-10-13-source.md)): stop treating Capability Genesis as part replacement and make it construct new, integrated capabilities from harvested mechanisms, on GREG's one path. Founder instructions A-D are preserved verbatim in the record's `founder_quotations` and in the source file. They are read under INTENT-0030. "Meniscus", "impermeable shield" and "systemic dominance" keep the 2026-10-07 executable interpretation. They authorize no crossing of legal boundaries, no coercion and no immunity from shutdown.
+
+What was built:
+
+- **Construction route.** `greg/recombine.py` adds certificate-carrying reductions. `greg/genesis.py` gains a `constructed` rung between `verified_detached` and `builder`. A function with no catalog entry is reduced onto an engine GREG already qualifies (maximum flow, LP). The engine is itself acquired by the same ladder when missing. Every answer is re-proved in the original problem's terms.
+- **First functions.** `assignment.staffing` (with a Hall/Koenig bottleneck), `assignment.matching` (chained through staffing) and `project.crash` (time-cost LP; an impossible deadline is proved without any engine).
+- **Mechanism Cards.** Every reduction carries a card with all twenty directive fields, searchable and deduplicated by content digest.
+- **Authority.** Constructions are read-only. They attach only by founder command or a signed read-only `auto_attach`. They stop when their engine is detached or quarantined, are quarantined when their reduction code changes, and are re-formed over a different engine when the engine lies.
+
+Reconciliation: no third mission engine, router or genesis was created. Kernel PR #129's `egregore/genesis.py` is the standing-cognition-slot loop (proposer/evaluator parts). `greg/genesis.py` stays the canonical mission-capability genesis. Convergence of the two is recorded as open work, and nothing was deleted.
+
+Evidence: [README](evidence/greg-recombine/2026-10-13/README.md). State: active. Authority delta: none. VEPMC: 0.
+
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
 
 `INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.

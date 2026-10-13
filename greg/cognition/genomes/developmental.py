@@ -46,6 +46,7 @@ import hashlib
 import json
 import math
 import random
+import re
 
 from .contract import Executable, GenomeError, IntelligenceGenome, answer, bounded_int, finite
 
@@ -400,6 +401,10 @@ def repair_verify(data, output, certificate):
     actions_ok = (isinstance(trace, list) and len(trace) == inp["steps"] and type(output.get("actions")) is int
                   and all(type(m) is int and m >= 0 for m in trace) and sum(trace) == output["actions"])
     return {"pointers_are_lattice_edges": lattice_ok,
+            "steps_match_input": type(output.get("steps")) is int and output["steps"] == inp["steps"]
+            and isinstance(certificate, dict) and certificate.get("steps") == inp["steps"],
+            "claims_match_certificate_count": isinstance(certificate, dict)
+            and certificate.get("vouched_sources") == len(claimed),
             "no_pointer_into_removed_unit_or_blocked_link": pointers_ok,
             "claims_are_distinct_sources": claims_are_sources,
             "every_claimed_source_delivers_on_realized_topology": claims_deliver,
@@ -847,10 +852,14 @@ def _validate_and_retain(search, validation, original):
     return (best[0] if retained else original), retained, orig_val, (best[1] if retained else orig_val), measured
 
 
+CR_AUTHORITY = "none: a configuration is a proposal, never an installed or activated capability"
+ROOT_NOTE = "original pipeline (validated, fixed order)"
+
+
 def _cr_output(config, retained, val_u, orig_val_u, lineage, evaluations):
     return {"configuration": list(config), "retained": retained, "validation_utility": val_u,
             "original_validation_utility": orig_val_u, "lineage": lineage, "evaluations": evaluations,
-            "authority": "none: a configuration is a proposal, never an installed or activated capability"}
+            "authority": CR_AUTHORITY}
 
 
 def constraint_release_solve(data, budget):
@@ -868,7 +877,7 @@ def constraint_release_solve(data, budget):
                       missing=[f"more than {CR_NATIVE_JOBS} jobs per case: outside the validated toy size"])
     rng = random.Random(f"constraint_release:{seed}")
     search = _Search(train, eval_budget)
-    individuals = {original: {"id": 0, "parents": [], "mutations": ["original pipeline (validated, fixed order)"]}}
+    individuals = {original: {"id": 0, "parents": [], "mutations": [ROOT_NOTE]}}
     search.evaluate(original)
     population = [original]
     generations, stall = [], 0
@@ -947,8 +956,95 @@ def _is_permutation(seq, n):
     return isinstance(seq, list) and sorted(seq) == list(range(n)) and all(type(j) is int for j in seq)
 
 
+def _derive(config, note):
+    """Every configuration one declared mutation note can produce from ``config`` (empty if inapplicable).
+
+    The verifier's own reading of the note grammar: an index the note omits (drop, duplicate, rule) is
+    enumerated over every position holding the named operator."""
+    head, imps = config[0], list(config[1:])
+    m = isinstance(note, str) and re.fullmatch(r"(reorder|drop|add|duplicate|rule|constructor)\((.+)\)", note)
+    if not m:
+        return set()
+    kind, arg = m.groups()
+    out = set()
+    if kind == "reorder":
+        ij = re.fullmatch(r"([0-9]+),([0-9]+)", arg)
+        if ij and int(ij[1]) != int(ij[2]) and max(int(ij[1]), int(ij[2])) < len(imps):
+            new = imps[:]
+            new[int(ij[1])], new[int(ij[2])] = new[int(ij[2])], new[int(ij[1])]
+            out.add((head, *new))
+    elif kind == "drop":
+        out = {(head, *imps[:i], *imps[i + 1:]) for i, op in enumerate(imps) if op == arg}
+    elif kind == "add":
+        op, _, at = arg.rpartition("@")
+        if (op in IMPROVERS and re.fullmatch(r"[0-9]+", at) and int(at) <= len(imps)
+                and len(imps) < MAX_PIPELINE - 1):
+            out.add((head, *imps[:int(at)], op, *imps[int(at):]))
+    elif kind == "duplicate":
+        if len(imps) < MAX_PIPELINE - 1:
+            out = {(head, *imps[:i], op, *imps[i:]) for i, op in enumerate(imps) if op == arg}
+    elif kind == "rule":
+        old, sep, new = arg.partition("->")
+        if sep and old in IMPROVERS and new in IMPROVERS and new != old and (
+                new.split(":")[0] == old.split(":")[0] or new.split(":")[2] == old.split(":")[2]):
+            out = {(head, *imps[:i], new, *imps[i + 1:]) for i, op in enumerate(imps) if op == old}
+    else:
+        old, sep, new = arg.partition("->")
+        if sep and old == head and new in CONSTRUCTORS and new != old:
+            out.add((new, *imps))
+    return out
+
+
+def _recombined(a, b, note):
+    cut = isinstance(note, str) and re.fullmatch(r"recombine\(a\[:([0-9]+)\]\+b\[([0-9]+):\]\)", note)
+    if not cut or int(cut[1]) > len(a) - 1 or int(cut[2]) > len(b) - 1:
+        return set()
+    imps = (list(a[1:int(cut[1]) + 1]) + list(b[1 + int(cut[2]):]))[:MAX_PIPELINE - 1]
+    return {(a[0], *imps), (b[0], *imps)}
+
+
+def _lineage_replays(lineage, original, train, util):
+    """Root = the original; each later entry is derivable from its earlier parents by its own notes, and its
+    training utility is recomputed with the verifier's objective."""
+    if not isinstance(lineage, list) or not lineage:
+        return False
+    by_id = {}
+    for k, entry in enumerate(lineage):
+        if not isinstance(entry, dict) or set(entry) != {"id", "config", "parents", "mutations", "train_utility"}:
+            return False
+        ident, parents, notes = entry["id"], entry["parents"], entry["mutations"]
+        try:
+            config = _check_config(entry["config"])
+        except GenomeError:
+            return False
+        if (type(ident) is not int or ident in by_id or (by_id and ident <= max(by_id))
+                or not isinstance(entry["config"], list) or config in by_id.values()
+                or not isinstance(parents, list) or not isinstance(notes, list)
+                or not all(type(q) is int and q in by_id for q in parents)
+                or not isinstance(entry["train_utility"], (int, float))
+                or not math.isclose(entry["train_utility"], util([run_pipeline(config, c) for c in train], train),
+                                    rel_tol=1e-9, abs_tol=1e-12)):
+            return False
+        if k == 0:
+            if ident != 0 or parents or notes != [ROOT_NOTE] or config != original:
+                return False
+        else:
+            if not 1 <= len(parents) <= 2 or not 1 <= len(notes) <= 2:
+                return False
+            if len(parents) == 2:
+                reachable = _recombined(by_id[parents[0]], by_id[parents[1]], notes[0])
+            else:
+                reachable = _derive(by_id[parents[0]], notes[0])
+            if len(notes) == 2:
+                reachable = set().union(*(_derive(c, notes[1]) for c in reachable)) if reachable else set()
+            if config not in reachable:
+                return False
+        by_id[ident] = config
+    return True
+
+
 def constraint_release_verify(data, output, certificate):
-    train, validation, _, _, original = _cr_inputs(data)
+    train, validation, eval_budget, _, original = _cr_inputs(data)
     if not isinstance(output, dict):
         return {"output_shape": False}
     try:
@@ -958,9 +1054,9 @@ def constraint_release_verify(data, output, certificate):
     schedules = [run_pipeline(config, c) for c in validation]       # replay the returned configuration
     perms = all(_is_permutation(s, len(c[0])) for s, c in zip(schedules, validation))
 
-    def util(scheds):
+    def util(scheds, cases=validation):
         return sum(_tardiness_check(s, c) / sum(a * b for a, b in zip(c[0], c[1]))
-                   for s, c in zip(scheds, validation)) / len(validation)
+                   for s, c in zip(scheds, cases)) / len(cases)
 
     val_u = util(schedules)
     orig_u = util([run_pipeline(original, c) for c in validation])
@@ -971,28 +1067,21 @@ def constraint_release_verify(data, output, certificate):
     retained = output.get("retained")
     rule_ok = retained is (val_u < orig_u * (1 - RETAIN_MARGIN)) and (retained or config == original)
     lineage = output.get("lineage")
-    lineage_ok = isinstance(lineage, list) and bool(lineage)
-    if lineage_ok:
-        ids = set()
-        for entry in lineage:
-            if (not isinstance(entry, dict) or type(entry.get("id")) is not int
-                    or not isinstance(entry.get("parents"), list)
-                    or any(type(p) is not int or p not in ids for p in entry["parents"])):
-                lineage_ok = False
-                break
-            ids.add(entry["id"])
-        lineage_ok = (lineage_ok and lineage[0].get("parents") == [] and lineage[0].get("config") == list(original)
-                      and lineage[-1].get("config") == list(config))
+    lineage_ok = (_lineage_replays(lineage, original, train, util) and lineage[-1]["config"] == list(config))
+    evaluations = output.get("evaluations")
+    evaluations_ok = (type(evaluations) is int and isinstance(certificate, dict)
+                      and certificate.get("evaluations") == evaluations and evaluations <= eval_budget
+                      and lineage_ok and len(lineage) <= evaluations and lineage[-1]["id"] < evaluations)
     cert_scheds = certificate.get("validation_schedules") if isinstance(certificate, dict) else None
     cert_ok = (isinstance(cert_scheds, list) and len(cert_scheds) == len(validation)
                and all(_is_permutation(s, len(c[0])) for s, c in zip(cert_scheds, validation))
                and math.isclose(util(cert_scheds), val_u, rel_tol=1e-9, abs_tol=1e-12))
     return {"configuration_well_formed": True, "schedules_are_permutations": perms,
             "validation_claims_recomputed": claims_ok, "retain_or_extinct_rule_obeyed": rule_ok,
-            "lineage_roots_at_original_and_ends_at_output": lineage_ok,
+            "lineage_replays_from_original_to_output": lineage_ok,
+            "evaluations_within_budget_and_consistent": evaluations_ok,
             "certificate_schedules_match_objective": cert_ok,
-            "no_authority_claimed": isinstance(output.get("authority"), str)
-            and output["authority"].startswith("none")}
+            "no_authority_claimed": output.get("authority") == CR_AUTHORITY}
 
 
 def _twt_optimum(case):
@@ -1116,7 +1205,7 @@ def constraint_release_instance(seed):
 
 # ============================================================================ genomes
 def _genome(**kw):
-    return IntelligenceGenome(layer=4, buildability="BUILDABLE_NOW", lineage=LINEAGE, version="1.0.0", **kw)
+    return IntelligenceGenome(layer=4, buildability="BUILDABLE_NOW", lineage=LINEAGE, version="1.1.0", **kw)
 
 
 FRONTIER = ("frontier NOT achieved: robust unscripted organ formation",

@@ -18,13 +18,15 @@ half the regression drift; M3 winner, a strong M4 benchmark) with the same empir
 """
 from __future__ import annotations
 
+from collections import Counter
 import gzip
 import json
 import math
 from functools import lru_cache
 from pathlib import Path
 
-from .contract import Executable, GenomeError, IntelligenceGenome, answer, bounded_int, finite
+from .contract import (Executable, GenomeError, IntelligenceGenome, answer, bounded_int, canonical_model, finite,
+                       model_optimum)
 
 DATA = Path(__file__).resolve().parents[3] / "cortex" / "evaluation" / "data" / "m4_weekly.json.gz"
 LINEAGE = ("INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION", "INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT")
@@ -176,23 +178,77 @@ def solve(data, budget):
     return solve_with(DEFAULT_CONFIG, data)
 
 
-def verify(data, output, certificate):
-    y, horizon, levels = _series(data)
-    p = (certificate["alpha"], certificate["beta"], certificate["phi"])
-    # Independent recursion in error-correction form (algebraically equal to the smoother above).
-    window = y[-int(certificate.get("fit_window", FIT_WINDOW)):]
-    level, trend = window[0], window[1] - window[0]
-    for v in window[1:]:
+def _verify_point(prefix, p, window, horizon):
+    """The verifier's own damped-trend recursion (error-correction form, algebraically equal to the solver's
+    smoother) on the last ``window`` values of ``prefix``; floored at 1e-9 like the published forecast."""
+    w = prefix[-window:]
+    level, trend = w[0], (w[1] - w[0]) if len(w) > 1 else 0.0
+    for v in w[1:]:
         e = v - (level + p[2] * trend)
         level, trend = level + p[2] * trend + p[0] * e, p[2] * trend + p[0] * p[1] * e
-    point = [level + sum(p[2] ** j for j in range(1, h + 1)) * trend for h in range(1, horizon + 1)]
-    ordered = all(output["quantiles"][f"{a:g}"][h] <= output["quantiles"][f"{b:g}"][h] + 1e-9
-                  for a, b in zip(levels, levels[1:]) for h in range(horizon))
-    return {"point_recomputed": all(math.isclose(max(a, 1e-9), b, rel_tol=1e-6, abs_tol=1e-6)
-                                    for a, b in zip(point, output["point"])),
-            "quantiles_monotone_in_level": ordered,
-            "positive_and_finite": all(math.isfinite(v) and v > 0 for q in output["quantiles"].values() for v in q),
-            "shape": len(output["point"]) == horizon and set(output["quantiles"]) == {f"{q:g}" for q in levels}}
+    return [max(level + sum(p[2] ** j for j in range(1, h + 1)) * trend, 1e-9) for h in range(1, horizon + 1)]
+
+
+def _verify_quantile(values, q):
+    ordered = sorted(values)
+    pos = (len(ordered) - 1) * q
+    below = int(pos)
+    above = min(below + 1, len(ordered) - 1)
+    return ordered[below] + (ordered[above] - ordered[below]) * (pos - below)
+
+
+def verify(data, output, certificate):
+    """Point path and every published quantile recomputed: the rolling-origin errors of the declared method,
+    their empirical quantiles and the interval scale, all from the certificate's declared configuration
+    (which must lie in the reviewed CONFIG_SPACE) with the verifier's own recursion."""
+    y, horizon, levels = _series(data)
+    cert = certificate if isinstance(certificate, dict) else {}
+    out = output if isinstance(output, dict) else {}
+    keys = [f"{q:g}" for q in levels]
+    quantiles, point = out.get("quantiles"), out.get("point")
+    if (not isinstance(quantiles, dict) or set(quantiles) != set(keys) or not isinstance(point, list)
+            or len(point) != horizon or not all(isinstance(quantiles[k], list) and len(quantiles[k]) == horizon
+                                                for k in keys)
+            or not all(type(v) in (int, float) and math.isfinite(v) for v in point + [v for k in keys
+                                                                                      for v in quantiles[k]])):
+        return {"shape": False}
+    p = tuple(cert.get(k) for k in ("alpha", "beta", "phi"))
+    window, origins, scale = cert.get("fit_window"), cert.get("rolling_origins"), cert.get("interval_scale")
+    error_model = next((m for m in CONFIG_SPACE["error_model"][1]
+                        if cert.get("error_model") == f"empirical {m} quantiles per horizon"), None)
+    n = len(y)
+    first = n - horizon + 1 - origins if type(origins) is int else None
+    config_ok = (p[0] in [a / 10 for a in range(1, 10)]
+                 and p[1] in {b for c in CONFIG_SPACE["beta_set"][1] for b in c}
+                 and p[2] in {f for c in CONFIG_SPACE["phi_set"][1] for f in c}
+                 and window in CONFIG_SPACE["fit_window"][1] and error_model is not None
+                 and type(scale) in (int, float) and CONFIG_SPACE["interval_scale"][1][0] <= scale
+                 <= CONFIG_SPACE["interval_scale"][1][1] and type(origins) is int and origins >= 8
+                 and first in {max(MIN_HISTORY - 20, n - o - horizon) for o in CONFIG_SPACE["origins"][1]})
+    checks = {"shape": True, "levels_as_requested": out.get("levels") == levels,
+              "declared_configuration_in_reviewed_space": config_ok,
+              "quantiles_monotone_in_level": all(quantiles[a][h] <= quantiles[b][h] + 1e-9
+                                                 for a, b in zip(keys, keys[1:]) for h in range(horizon)),
+              "positive_and_finite": all(v > 0 for k in keys for v in quantiles[k])}
+    if not config_ok:
+        return checks
+    path = _verify_point(y, p, window, horizon)
+    checks["point_recomputed"] = all(math.isclose(a, b, rel_tol=1e-6, abs_tol=1e-6) for a, b in zip(path, point))
+    errors = [[] for _ in range(horizon)]
+    for o in range(first, n - horizon + 1):
+        f = _verify_point(y[:o], p, window, horizon)
+        for h in range(horizon):
+            errors[h].append(math.log(y[o + h] / f[h]) if error_model == "log_ratio"
+                             else (y[o + h] - f[h]) / max(y[o - 1], 1e-9))
+    expected = {k: [] for k in keys}
+    for h in range(horizon):
+        mid = _verify_quantile(errors[h], 0.5)
+        for q, k in zip(levels, keys):
+            e = mid + (_verify_quantile(errors[h], q) - mid) * scale
+            expected[k].append(path[h] * math.exp(e) if error_model == "log_ratio" else max(path[h] + e * y[-1], 1e-9))
+    checks["quantiles_recomputed"] = all(math.isclose(a, b, rel_tol=1e-6, abs_tol=2e-6)
+                                         for k in keys for a, b in zip(expected[k], quantiles[k]))
+    return checks
 
 
 # ------------------------------------------------------------------ benchmark
@@ -290,14 +346,52 @@ def compile_newsvendor(data, budget):
 
 
 def compile_verify(data, output, certificate):
+    """The model must be exactly the declared sample-average newsvendor (q_i order, o_i_j overage and u_i_j
+    underage per scenario), re-derived here from the products and compared in canonical form; variable bounds
+    must be non-negative and never cut a feasible order."""
     products, capacity = _products(data)
-    model = output["model"]
-    rows = {c["requirement_id"] for c in model["constraints"]}
-    want = {f"{k}:{i}:{j}" for i, p in enumerate(products) for j in range(len(p["scenarios"])) for k in ("over", "under")}
-    return {"one_over_and_under_row_per_scenario": want | {"capacity"} == rows,
-            "capacity_row": any(c["requirement_id"] == "capacity" and c["rhs"] == capacity for c in model["constraints"]),
-            "minimise": model["objective"]["sense"] == "min",
-            "decode": set(output["decode"]) == {f"q{i}" for i in range(len(products))}}
+    canon = canonical_model(output.get("model")) if isinstance(output, dict) else None
+    decode = output.get("decode") if isinstance(output, dict) else None
+    if canon is None or not isinstance(decode, dict):
+        return {"model_well_formed": False}
+    bounds, rows, (objective, sense) = canon
+    want_vars, want, want_obj, bounds_ok = set(), Counter(), set(), True
+    for i, p in enumerate(products):
+        q = f"q{i}"
+        want_vars.add(q)
+        bounds_ok &= q in bounds and bounds[q][0] == 0 and bounds[q][1] >= min(capacity, max(p["scenarios"]))
+        for j, d in enumerate(p["scenarios"]):
+            o, u = f"o{i}_{j}", f"u{i}_{j}"
+            want_vars |= {o, u}
+            want[(frozenset({(o, 1), (q, -1)}), ">=", -d, f"over:{i}:{j}")] += 1        # o >= q - d
+            want[(frozenset({(u, 1), (q, 1)}), ">=", d, f"under:{i}:{j}")] += 1         # u >= d - q
+            want_obj |= {(o, p["over"]), (u, p["under"])}
+            bounds_ok &= (o in bounds and u in bounds and bounds[o][0] == bounds[u][0] == 0
+                          and bounds[o][1] >= capacity - d and bounds[u][1] >= d)
+    want[(frozenset((f"q{i}", 1) for i in range(len(products))), "<=", capacity, "capacity")] += 1
+    return {"model_well_formed": True,
+            "variables_are_orders_overages_and_underages": set(bounds) == want_vars,
+            "bounds_nonnegative_and_not_cutting": bounds_ok,
+            "rows_are_exactly_over_under_and_capacity": rows == want,
+            "objective_minimises_sample_average_cost": objective == frozenset(want_obj) and sense == "min",
+            "decode_maps_each_order_to_its_product": decode == {f"q{i}": p["name"] for i, p in enumerate(products)}}
+
+
+def newsvendor_optimum(data):
+    """Evaluation-side truth by a different method: each product's scenario cost is convex in an integer
+    order, so allocating capacity one unit at a time to the largest marginal saving is exactly optimal."""
+    products, capacity = _products(data)
+
+    def cost(p, q):
+        return sum(p["over"] * max(q - d, 0) + p["under"] * max(d - q, 0) for d in p["scenarios"])
+    q = [0] * len(products)
+    for _ in range(capacity):
+        gains = [cost(p, q[i]) - cost(p, q[i] + 1) for i, p in enumerate(products)]
+        best = max(range(len(products)), key=lambda i: (gains[i], -i))
+        if gains[best] <= 0:
+            break
+        q[best] += 1
+    return sum(cost(p, q[i]) for i, p in enumerate(products))
 
 
 def newsvendor_instance(seed):
@@ -306,13 +400,18 @@ def newsvendor_instance(seed):
     products = [{"name": f"p{i}", "scenarios": sorted(r.randint(50, 150) for _ in range(6)),
                  "over_cost": 2, "under_cost": r.choice((3, 6, 18))} for i in range(3)]
     data = {"products": products, "capacity": 300}
-    return data, {}
+    return data, {"optimum": newsvendor_optimum(data)}
 
 
 def newsvendor_score(data, truth, output):
+    """Semantic, evaluation side: the compiled model, solved exactly (SciPy HiGHS), must reach the independent
+    marginal-allocation optimum."""
     if not isinstance(output, dict) or "model" not in output:
         return {"quality": 0.0, "category": "abstain"}
-    ok = all(compile_verify(data, output, {}).values())
+    if not all(compile_verify(data, output, {}).values()):
+        return {"quality": -1.0, "category": "wrong"}
+    optimum = model_optimum(output["model"])
+    ok = optimum is not None and abs(optimum - truth["optimum"]) <= 1e-6
     return {"quality": 1.0 if ok else -1.0, "category": "correct" if ok else "wrong"}
 
 
@@ -328,7 +427,7 @@ def _genome(**kw):
 INTELLIGENCES = [
     Executable(
         genome=_genome(
-            intelligence_id="solver.forecast.damped_trend_quantiles", version="1.0.0", family="forecast_quantile",
+            intelligence_id="solver.forecast.damped_trend_quantiles", version="1.0.1", family="forecast_quantile",
             layer=3, operation="forecast_distribution", epistemic_class="prediction",
             subgeometry="univariate positive time series, horizon 1-26",
             native_representation="ordered history of positive values",
@@ -355,7 +454,7 @@ INTELLIGENCES = [
         competitor=theta_empirical, tolerance=1e-9),
     Executable(
         genome=_genome(
-            intelligence_id="solver.or.newsvendor_saa_compiler", version="1.0.0", family="newsvendor_compile",
+            intelligence_id="solver.or.newsvendor_saa_compiler", version="1.0.1", family="newsvendor_compile",
             layer=3, operation="compile_newsvendor", epistemic_class="optimization",
             subgeometry="capacity-coupled newsvendor -> integer SAA model",
             native_representation="demand scenarios + overage/underage costs + shared capacity",

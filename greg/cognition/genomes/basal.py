@@ -414,7 +414,10 @@ def _pid_eig_radius(p, ctrl):
 def pid_verify(data, output, certificate):
     """Independent replay (deque dead time) + state-space eigenvalues + the declared tuning rule."""
     p = _pid_inputs(data)
-    ctrl = _pid_controller(output)
+    try:
+        ctrl = _pid_controller(output)
+    except GenomeError:
+        return {"controller_well_formed": False}
     sim = _pid_judge(p, ctrl)
     cert = certificate if isinstance(certificate, dict) else {}
     checks = {"iae_recomputed": _close(sim["iae"], cert.get("iae")),
@@ -435,7 +438,9 @@ def pid_verify(data, output, certificate):
         checks["declared_rule"] = (_close(_num(cert.get("tau_c")), tc)
                                    and _close(ctrl["kc"] * p["gain"] * lam, p["tau"], rel=1e-9)
                                    and _close(ctrl["ti"], p["tau"] if p["tau"] <= 4.0 * lam else 4.0 * lam, rel=1e-9)
-                                   and ctrl["td"] == 0.0 and ctrl["b"] == 1.0)
+                                   and ctrl["td"] == 0.0 and ctrl["tf"] == 0.0 and ctrl["b"] == 1.0
+                                   and output.get("rule") == ("SIMC PI, tau_c = theta" if p["tau_c"] is None
+                                                              else "SIMC PI, declared tau_c"))
     # overshoot and settling time of every step, recomputed from the replayed trace
     sched, dt, n, ys = p["schedule"], p["dt"], p["steps"], sim["y"]
     over, settle = cert.get("overshoot"), cert.get("settling_time")
@@ -1605,14 +1610,14 @@ def breaker_subregion(data):
 
 
 # ======================================================================== genomes
-def _genome(**kw):
-    return IntelligenceGenome(layer=1, buildability="BUILDABLE_NOW", lineage=LINEAGE, version="1.0.0", **kw)
+def _genome(version="1.0.0", **kw):
+    return IntelligenceGenome(layer=1, buildability="BUILDABLE_NOW", lineage=LINEAGE, version=version, **kw)
 
 
 INTELLIGENCES = [
     Executable(
         genome=_genome(
-            intelligence_id="basal.control.simc_pi", family="basal_pid", operation="pid_track",
+            intelligence_id="basal.control.simc_pi", version="1.0.1", family="basal_pid", operation="pid_track",
             epistemic_class="physical",
             subgeometry="setpoint tracking and load rejection of a declared first-order-plus-dead-time plant",
             source_provenance="Skogestad (2003) SIMC rules; Astrom & Hagglund (2004) AMIGO; Ziegler & Nichols (1942); "

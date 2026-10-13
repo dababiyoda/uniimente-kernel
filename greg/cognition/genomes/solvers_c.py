@@ -206,10 +206,13 @@ def vcg_verify(data, output, certificate):
     welfare = math.fsum(own)
     claimed, revenue = output.get("welfare"), output.get("revenue")
     ext = [_np_welfare(values, k, skip=i) - (opt - own[i]) for i in range(len(values))]
+    optimal = welfare >= opt - tol
     return {"allocation_and_payments_well_formed": True,
+            "mechanism_is_vcg": output.get("mechanism") == "vcg",
+            "efficiency_claim_matches_independent_optimum": output.get("efficient") is optimal,
             "welfare_recomputed": _is_num(claimed) and abs(claimed - welfare) <= tol,
             "revenue_recomputed": revenue is None or (_is_num(revenue) and abs(revenue - math.fsum(pay)) <= tol),
-            "allocatively_optimal_by_independent_dp": welfare >= opt - tol,
+            "allocatively_optimal_by_independent_dp": optimal,
             "payments_equal_clarke_externalities": all(abs(p - e) <= tol for p, e in zip(pay, ext)),
             "individually_rational": all(p <= o + tol for p, o in zip(pay, own)),
             "no_subsidy": all(p >= -tol for p in pay)}
@@ -790,6 +793,7 @@ def _mc_replay(sysm, output):
             break
         s = tuple(nxt)
     return {"trace_well_formed": True, "initial_state_allowed": allowed, "trace_replays": replays,
+            "depth_is_trace_length": type(output.get("depth")) is int and output["depth"] == len(commands),
             "final_state_matches": replays and isinstance(final, list) and list(s) == final,
             "ends_in_violation": replays and not _mc_eval(sysm["invariant"], dict(zip(sysm["names"], s)))}
 
@@ -1924,6 +1928,7 @@ def causal_verify(data, output, certificate):
     if any(v not in g["cols"] for v in declared):
         return {"estimate_well_formed": True, "adjustment_columns_present": False}
     checks = {"estimate_well_formed": True, "adjustment_set_is_declared": z == declared,
+              "identified_by_backdoor_criterion": output.get("identified_by") == "backdoor criterion",
               "backdoor_criterion_by_independent_bayes_ball": isinstance(z, list) and _ca_backdoor_ball(g, declared)}
     t, y, n = g["cols"][g["t"]], g["cols"][g["y"]], len(g["cols"][g["t"]])
     discrete = all(g["info"][v]["type"] != "continuous" for v in declared)
@@ -1940,22 +1945,36 @@ def causal_verify(data, output, certificate):
             else:
                 a[2] += 1
                 a[3] += y[i]
-        if any(a[0] == 0 or a[2] == 0 for a in acc.values()):
+        if any(a[0] < 2 or a[2] < 2 for a in acc.values()):
             checks["estimate_recomputed"] = False
             return checks
         est = sum((a[0] + a[2]) / n * (a[1] / a[0] - a[3] / a[2]) for a in acc.values())
+        groups = {}                                    # second pass: per-stratum, per-arm outcome lists
+        for i in range(n):
+            groups.setdefault((tuple(g["cols"][v][i] for v in declared), t[i] == 1), []).append(y[i])
+        se = math.sqrt(math.fsum(((a[0] + a[2]) / n) ** 2 * (statistics.variance(groups[key, True]) / a[0]
+                                                         + statistics.variance(groups[key, False]) / a[2])
+                                 for key, a in acc.items()))
     else:                                              # normal equations instead of least squares
         import numpy as np
         Z = _ca_design(g, declared)
         Zc = Z - Z.mean(axis=0)
         tt = np.asarray(t, dtype=float)
         X = np.hstack([np.ones((n, 1)), tt[:, None], Zc, tt[:, None] * Zc])
+        yy = np.asarray(y, dtype=float)
         try:
-            est = float(np.linalg.solve(X.T @ X, X.T @ np.asarray(y, dtype=float))[1])
+            est = float(np.linalg.solve(X.T @ X, X.T @ yy)[1])
+            # Frisch-Waugh-Lovell: the HC0 variance of the treatment coefficient is
+            # sum(r^2 e^2) / (r'r)^2, with r the treatment column residualised on the other columns.
+            others = np.delete(X, 1, axis=1)
+            r = tt - others @ np.linalg.solve(others.T @ others, others.T @ tt)
+            e = yy - X @ np.linalg.solve(X.T @ X, X.T @ yy)
+            se = math.sqrt(float(np.sum(r * r * e * e)) / float(r @ r) ** 2)
         except np.linalg.LinAlgError:
             checks["estimate_recomputed"] = False
             return checks
     checks["estimate_recomputed"] = abs(est - output["ate"]) <= 1e-6 * (1 + abs(est))
+    checks["standard_error_recomputed"] = _is_num(output.get("se")) and abs(se - output["se"]) <= 1e-6 * (1 + se)
     return checks
 
 
@@ -1984,8 +2003,8 @@ def causal_naive(data):
     return {"ate": sum(y1) / len(y1) - sum(y0) / len(y0), "adjustment_set": [], "estimator": "difference_in_means"}
 
 
-def causal_ipw(data):
-    """Competitor: backdoor gate (NetworkX d-separation) + Hajek IPW with a logistic propensity (IRLS)."""
+def _ca_gate_and_propensity(data):
+    """NetworkX backdoor gate plus a logistic propensity (IRLS): shared by the IPW and AIPW arms."""
     import networkx as nx
     import numpy as np
     g = _ca(data)
@@ -2017,9 +2036,41 @@ def causal_ipw(data):
         if np.abs(step).max() < 1e-10:
             break
     e = np.clip(1.0 / (1.0 + np.exp(-np.clip(X @ beta, -30, 30))), 0.01, 0.99)
+    return g, z, t, y, e
+
+
+def causal_ipw(data):
+    """Backdoor gate (NetworkX d-separation) + Hajek IPW with a logistic propensity (IRLS)."""
+    gated = _ca_gate_and_propensity(data)
+    if gated is None:
+        return None
+    g, z, t, y, e = gated
     w1, w0 = t / e, (1 - t) / (1 - e)
     ate = float((w1 * y).sum() / w1.sum() - (w0 * y).sum() / w0.sum())
     return {"ate": ate, "adjustment_set": z, "estimator": "ipw_hajek_logistic"}
+
+
+def causal_aipw(data):
+    """Competitor: doubly robust AIPW. The same NetworkX backdoor gate and logistic propensity as IPW, plus a
+    separate least-squares outcome model per treatment arm; consistent if either model is right."""
+    import numpy as np
+    gated = _ca_gate_and_propensity(data)
+    if gated is None:
+        return None
+    g, z, t, y, e = gated
+    Z = _ca_design(g, z)
+    X = np.column_stack([np.ones(len(t)), Z])
+    mu = {}
+    for arm in (0, 1):
+        m = t == arm
+        if m.sum() <= X.shape[1]:
+            return None
+        coef, _, rank, _ = np.linalg.lstsq(X[m], y[m], rcond=None)
+        if rank < X.shape[1]:
+            return None
+        mu[arm] = X @ coef
+    psi = mu[1] - mu[0] + t * (y - mu[1]) / e - (1 - t) * (y - mu[0]) / (1 - e)
+    return {"ate": float(psi.mean()), "adjustment_set": z, "estimator": "aipw_logistic_ols"}
 
 
 def _ca_round(xs, digits=3):
@@ -2398,9 +2449,40 @@ def ie_random(data):
     return {"sequence": seq}
 
 
+def _bayes_gain(post, P):
+    """Expected posterior mass on the true hypothesis after one test: sum over outcomes of sum_h joint^2 / pred."""
+    import numpy as np
+    joint = post[:, None] * P
+    pred = joint.sum(axis=0)
+    ok = pred > 1e-15
+    return float(((joint[:, ok] ** 2).sum(axis=0) / pred[ok]).sum())
+
+
+def _two_step(post, P, length, depth):
+    """Two-step lookahead on the declared objective (expected posterior on truth), exact over outcomes."""
+    import numpy as np
+    if depth + 1 >= length:
+        return int(np.argmax([_bayes_gain(post, p) for p in P]))
+    best, arg = -1.0, 0
+    for t, p in enumerate(P):
+        joint = post[:, None] * p
+        pred = joint.sum(axis=0)
+        total = 0.0
+        for o in range(p.shape[1]):
+            if pred[o] <= 1e-15:
+                continue
+            nxt = joint[:, o] / pred[o]
+            total += pred[o] * max(_bayes_gain(nxt, q) for q in P)
+        if total > best + 1e-12:
+            best, arg = total, t
+    return arg
+
+
 def ie_competitor(data):
-    """Competitor: the better (exact expected posterior on truth) of adaptive uncertainty sampling and a
-    fixed expert order (tests ranked once by information gain under the prior, cycled)."""
+    """Competitor: the best (exact expected posterior on truth) of four adaptive or fixed policies:
+    uncertainty sampling, a fixed expert order (tests ranked once by information gain under the prior,
+    cycled), one-step greedy on the declared objective (Bayes-risk value of information), and a two-step
+    lookahead on that objective. The last two optimise the score directly; EIG only proxies it."""
     import numpy as np
     prior, tables, length = _ie(data)
     if _ie_worst_nodes(tables, length) > IE_MAX_NODES:
@@ -2417,8 +2499,15 @@ def ie_competitor(data):
 
     def expert_pick(post, P, depth):
         return order[depth % len(order)]
+
+    def objective_pick(post, P, depth):
+        return int(np.argmax([_bayes_gain(post, p) for p in P]))
+
+    def lookahead_pick(post, P, depth):
+        return _two_step(post, P, length, depth)
     best = None
-    for name, chooser in (("uncertainty_sampling", entropy_pick), ("fixed_expert_order", expert_pick)):
+    for name, chooser in (("uncertainty_sampling", entropy_pick), ("fixed_expert_order", expert_pick),
+                          ("objective_greedy", objective_pick), ("objective_two_step", lookahead_pick)):
         tree = _ie_build(prior, tables, length, chooser)
         value = _ie_value(tree, prior, tables)
         if best is None or value > best["expected_posterior_on_truth"] + 1e-12:
@@ -2430,7 +2519,7 @@ def ie_competitor(data):
 INTELLIGENCES = [
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.mechanism.vcg_multiunit", version="1.0.0", family="mech_vcg", layer=3,
+            intelligence_id="solver.mechanism.vcg_multiunit", version="1.1.0", family="mech_vcg", layer=3,
             operation="vcg_allocate_units", epistemic_class="strategic",
             subgeometry="identical-unit allocation; private values; quasi-linear bidders",
             source_provenance="Vickrey (1961), Clarke (1971), Groves (1973): Clarke-pivot VCG",
@@ -2475,7 +2564,7 @@ INTELLIGENCES = [
         notes={"purpose": "welfare-compatible truthful allocation rules; the score is allocative efficiency"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.verification.explicit_state_bfs", version="1.0.0", family="verify_modelcheck",
+            intelligence_id="solver.verification.explicit_state_bfs", version="1.1.0", family="verify_modelcheck",
             layer=3, operation="model_check_safety", epistemic_class="deductive",
             subgeometry="finite guarded-command transition systems; safety invariants",
             source_provenance="explicit-state model checking (Clarke, Emerson, Sifakis; Holzmann's SPIN lineage)",
@@ -2580,7 +2669,7 @@ INTELLIGENCES = [
         competitor=cegis_full_domain, subregion=cegis_subregion, tolerance=1e-9),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.causal.backdoor_adjustment", version="1.0.0", family="causal_backdoor", layer=3,
+            intelligence_id="solver.causal.backdoor_adjustment", version="1.1.0", family="causal_backdoor", layer=3,
             operation="backdoor_ate", epistemic_class="causal",
             subgeometry="average treatment effect of a binary treatment from observational data and a declared DAG",
             source_provenance="Pearl (1993, 2009) backdoor criterion; Robins g-formula; regression adjustment",
@@ -2612,13 +2701,14 @@ INTELLIGENCES = [
                             "nonlinear outcomes, M-bias colliders, mediators and latent confounders in the declared "
                             "set; truth from the generating structural model; seeds 0-9 dev / 1000-1029 held out",
             baseline="naive difference in means (no adjustment, no identification check)",
-            competitor="backdoor gate (NetworkX d-separation) + Hajek IPW with a logistic propensity (IRLS)",
+            competitor="backdoor gate (NetworkX d-separation) + doubly robust AIPW: logistic propensity (IRLS) "
+                       "and a least-squares outcome model per arm (the IPW-only arm is kept as causal_ipw)",
             **_common()),
         solve=causal_solve, verify=causal_verify, instance=causal_instance, score=causal_score,
-        baseline=causal_naive, competitor=causal_ipw, subregion=causal_subregion, tolerance=1e-6),
+        baseline=causal_naive, competitor=causal_aipw, subregion=causal_subregion, tolerance=1e-6),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.experiment.greedy_eig_policy", version="1.0.0", family="info_experiment",
+            intelligence_id="solver.experiment.greedy_eig_policy", version="1.1.0", family="info_experiment",
             layer=3, operation="design_test_sequence", epistemic_class="strategic",
             subgeometry="sequential test selection over a discrete hypothesis space with known likelihoods",
             source_provenance="Lindley (1956) expected information; greedy adaptive Bayesian experimental design",
@@ -2642,8 +2732,9 @@ INTELLIGENCES = [
             benchmark_suite="8-24 hypotheses, 8-14 tests (partition, near-uniform trap and sharp tests), length "
                             "3-5; 2000 seeded truth scenarios per instance; seeds 0-9 dev / 1000-1029 held out",
             baseline="random test order (open loop)",
-            competitor="better of adaptive uncertainty sampling (max outcome entropy) and a fixed expert order "
-                       "(tests ranked once by prior information gain), chosen by exact expected value",
+            competitor="best, by exact expected value, of adaptive uncertainty sampling, a fixed expert order, "
+                       "one-step greedy on the declared objective (Bayes-risk value of information) and a two-step "
+                       "lookahead on that objective",
             **_common()),
         solve=ie_solve, verify=ie_verify, instance=ie_instance, score=ie_score, baseline=ie_random,
         competitor=ie_competitor, subregion=ie_subregion, tolerance=1e-9),

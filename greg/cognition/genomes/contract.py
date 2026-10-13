@@ -148,3 +148,72 @@ def bounded_int(value, *, low=0, high=10_000, name="value") -> int:
     if type(value) is not int or not low <= value <= high:
         raise GenomeError(f"{name}: integer in [{low}, {high}] required")
     return value
+
+
+def canonical_model(model):
+    """A compiled integer model (the ``optimize`` family's format) in canonical form, or None if malformed.
+
+    Returns ``(bounds, rows, objective)``: bounds ``{name: (low, high)}``; rows a Counter of
+    ``(frozenset(nonzero coefficients), op, rhs, requirement_id)`` (row order carries no meaning);
+    objective ``(frozenset(nonzero coefficients), sense)``. Verifiers compare it with the model the problem
+    statement implies, derived on their own."""
+    from collections import Counter
+    if not isinstance(model, dict) or set(model) != {"variables", "constraints", "objective"}:
+        return None
+    variables, constraints, objective = model["variables"], model["constraints"], model["objective"]
+
+    def num(v):
+        return type(v) in (int, float) and math.isfinite(v)
+    if not isinstance(variables, dict) or not all(
+            isinstance(k, str) and isinstance(b, list) and len(b) == 2 and num(b[0]) and num(b[1]) and b[0] <= b[1]
+            for k, b in variables.items()):
+        return None
+
+    def coefficients(c):
+        if not isinstance(c, dict) or not all(k in variables and num(v) for k, v in c.items()):
+            return None
+        return frozenset((k, v) for k, v in c.items() if v != 0)
+    if not isinstance(constraints, list):
+        return None
+    rows = Counter()
+    for row in constraints:
+        if (not isinstance(row, dict) or set(row) != {"coefficients", "op", "rhs", "requirement_id"}
+                or row["op"] not in ("<=", ">=", "==") or not num(row["rhs"])
+                or not isinstance(row["requirement_id"], str)):
+            return None
+        c = coefficients(row["coefficients"])
+        if c is None:
+            return None
+        rows[(c, row["op"], row["rhs"], row["requirement_id"])] += 1
+    if (not isinstance(objective, dict) or set(objective) != {"coefficients", "sense"}
+            or objective["sense"] not in ("min", "max")):
+        return None
+    obj = coefficients(objective["coefficients"])
+    if obj is None:
+        return None
+    return {k: (b[0], b[1]) for k, b in variables.items()}, rows, (obj, objective["sense"])
+
+
+def model_optimum(model):
+    """Evaluation side only (``score``; never ``solve`` or ``verify``): the exact optimum of a small compiled
+    integer model by SciPy HiGHS branch-and-bound, or None when it is infeasible or unsolved."""
+    import numpy as np
+    from scipy.optimize import Bounds, LinearConstraint, milp
+    names = sorted(model["variables"])
+    index = {n: i for i, n in enumerate(names)}
+    sign = -1.0 if model["objective"]["sense"] == "max" else 1.0
+    c = np.zeros(len(names))
+    for k, v in model["objective"]["coefficients"].items():
+        c[index[k]] = sign * v
+    rows, low, high = [], [], []
+    for row in model["constraints"]:
+        a = np.zeros(len(names))
+        for k, v in row["coefficients"].items():
+            a[index[k]] = v
+        rows.append(a)
+        low.append(row["rhs"] if row["op"] in (">=", "==") else -np.inf)
+        high.append(row["rhs"] if row["op"] in ("<=", "==") else np.inf)
+    res = milp(c, constraints=[LinearConstraint(np.array(rows), low, high)] if rows else (),
+               bounds=Bounds([model["variables"][n][0] for n in names], [model["variables"][n][1] for n in names]),
+               integrality=np.ones(len(names)))
+    return float(sign * res.fun) if res.success else None

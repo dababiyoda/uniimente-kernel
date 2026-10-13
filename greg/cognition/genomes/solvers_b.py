@@ -384,7 +384,10 @@ def astar_verify(data, output, certificate):
     if not output["reachable"]:
         return {"output_shape": True, "unreachable_confirmed_by_dijkstra": optimum is None}
     cost = _walk(cells, rows, cols, s, t, output.get("moves"))
+    moves = output.get("moves")
     return {"output_shape": True, "path_valid": cost is not None, "cost_recomputed": cost == output.get("cost"),
+            "steps_are_move_count": isinstance(moves, str) and type(output.get("steps")) is int
+            and output["steps"] == len(moves),
             "optimal_by_independent_dijkstra": cost is not None and cost == optimum}
 
 
@@ -780,12 +783,15 @@ def erlang_verify(data, output, certificate):
     c = output.get("agents") if isinstance(output, dict) else None
     if type(c) is not int or not load < c <= Q_MAX_AGENTS:
         return {"stable_staffing": False}
-    p = _p_exceed(_erlang_c_logsum(c, load), c, lam, aht, target)
+    erlang_c = _erlang_c_logsum(c, load)
+    p = _p_exceed(erlang_c, c, lam, aht, target)
     below = c - 1
     minimal = below <= load or _p_exceed(_erlang_c_logsum(below, load), below, lam, aht, target) > alpha
-    claimed = output.get("p_wait_exceeds_target")
+    claimed, claimed_c, occupancy = (output.get(k) for k in ("p_wait_exceeds_target", "erlang_c", "occupancy"))
     return {"stable_staffing": True, "meets_target": p <= alpha * (1 + 1e-9), "minimal": minimal,
             "probability_recomputed": type(claimed) is float and abs(claimed - p) <= 1e-9 + 1e-6 * p,
+            "erlang_c_recomputed": type(claimed_c) is float and abs(claimed_c - erlang_c) <= 1e-9 + 1e-6 * erlang_c,
+            "occupancy_recomputed": type(occupancy) is float and abs(occupancy - load / c) <= 1e-12,
             # an M/M/c answer to a question the model does not cover is not verified (the solver abstains there)
             "model_preconditions_hold": abandonment == 0.0 and abs(cv - 1.0) <= 0.25}
 
@@ -906,6 +912,8 @@ def jeffreys_verify(data, output, certificate):
             "upper_is_posterior_quantile": hi == 1.0 if k == n else abs(cdf_hi - (1.0 - tail)) <= 1e-7,
             "posterior_mass_at_least_level": cdf_hi - cdf_lo >= level - 1e-7,
             "posterior_parameters": certificate.get("posterior") == [a, b],
+            "posterior_mean_recomputed": type(output.get("posterior_mean")) is float
+            and abs(output["posterior_mean"] - (2 * k + 1) / (2 * n + 2)) <= 1e-12,
             "level_as_requested": output.get("level") == level,
             "binomial_model_applies": independent}
 
@@ -1219,7 +1227,7 @@ INTELLIGENCES = [
                          "relabelled exact_calculation; verifier bounded; LP bound checked against the optimum"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.search.astar_grid", version="1.0.1", family="search_astar", layer=3,
+            intelligence_id="solver.search.astar_grid", version="1.0.2", family="search_astar", layer=3,
             operation="grid_astar_route", epistemic_class="optimization",
             subgeometry="single-pair shortest path on a weighted 4-connected grid",
             source_provenance="Hart, Nilsson and Raphael (1968) A*; stdlib heapq",
@@ -1301,7 +1309,7 @@ INTELLIGENCES = [
                          "an inflated self-reported SE cannot widen its agreement tolerance"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.queue.erlang_c_staffing", version="1.0.1", family="queue_erlang", layer=3,
+            intelligence_id="solver.queue.erlang_c_staffing", version="1.0.2", family="queue_erlang", layer=3,
             operation="erlang_c_staffing", epistemic_class="prediction",
             subgeometry="M/M/c minimum staffing for a waiting-time service level",
             source_provenance="Erlang (1917) delay formula; Erlang-B recursion (textbook queueing theory)",
@@ -1335,7 +1343,7 @@ INTELLIGENCES = [
                          "non-object input raises GenomeError"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.bayes.jeffreys_interval", version="1.0.1", family="bayes_interval", layer=3,
+            intelligence_id="solver.bayes.jeffreys_interval", version="1.0.2", family="bayes_interval", layer=3,
             operation="jeffreys_credible_interval", epistemic_class="estimate",
             subgeometry="binomial proportion, small samples, including counts at or near 0 or n",
             source_provenance="Jeffreys prior; Brown, Cai and DasGupta (2001) interval comparison",

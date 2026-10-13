@@ -1471,6 +1471,7 @@ def immune_verify(data, output, certificate):
             if not witnessed:
                 break
     return {"flag_indices_valid": idx_ok, "standardisation_recomputed": std_ok,
+            "witnesses_match_flags": idx_ok and set(witnesses) == {str(i) for i in flagged},
             "calibration_arithmetic": calibration_ok,
             "self_radius_consistent": radius_ok, "every_flag_witnessed": witnessed}
 
@@ -1687,8 +1688,9 @@ def market_solve(data, budget):
             rationed += extra
     price = lo if rationed else hi
     return answer({"allocation": allocation, "clearing_price": round(price, 12),
-                   "payments": {tid: round(price * x, 9) for tid, x in allocation.items()}, "rounds": rounds},
-                  {"bracket": [round(lo, 12), round(hi, 12)], "demand_at_bracket": [total(lo), total(hi)],
+                   "payments": {tid: round(price * x, 9) for tid, x in allocation.items()}},
+                  {"rounds": rounds, "bracket": [round(lo, 12), round(hi, 12)],
+                   "demand_at_bracket": [total(lo), total(hi)],
                    "rationed_units_in_bracket": rationed, "capacity": cap, "reserve": reserve,
                    "price_trace": trace[:150],
                    "certificate": "uniform clearing price = dual variable of capacity; competitive equilibrium "
@@ -1722,7 +1724,7 @@ def market_verify(data, output, certificate):
         unallocated_ok = all(vals[k] <= price + eps for tid, vals in tasks for k in range(x[tid], len(vals)))
         slack_ok = price <= reserve + eps or sum(x.values()) == cap
         pay = output.get("payments")
-        payments_ok = isinstance(pay, dict) and all(
+        payments_ok = isinstance(pay, dict) and set(pay) <= set(x) and all(
             type(pay.get(tid)) in (int, float) and math.isclose(pay[tid], price * x[tid], rel_tol=1e-7, abs_tol=1e-7)
             for tid in x)
     return {"capacity_and_requests_respected": x is not None, "price_at_least_reserve": ok_price,
@@ -1951,6 +1953,7 @@ def flock_verify(data, output, certificate):
     return {"trajectories_well_formed": True, "starts_match": audit["starts"], "goals_reached": audit["goals"],
             "speed_limit_respected": audit["speed"], "within_step_budget": audit["within_budget"],
             "continuous_clearance": audit["clear"],
+            "rule_declared": output.get("rule") == "local_rules",
             "makespan_reported": type(output.get("makespan")) is int and output["makespan"] == audit["makespan"],
             "arrival_steps_reported": isinstance(arrivals, list) and arrivals == [
                 len(flat) // 2 - 1 for flat in output["trajectories"]]}
@@ -2214,7 +2217,7 @@ INTELLIGENCES = [
                                          "its KMB trees lost to the candidate's in the low-fault regime"}),
     Executable(
         genome=IntelligenceGenome(**_common(
-            intelligence_id="collective.immune.negative_selection", version="1.0.1", family="collective_immune",
+            intelligence_id="collective.immune.negative_selection", version="1.0.2", family="collective_immune",
             layer=2, operation="negative_selection_detect", epistemic_class="prediction",
             subgeometry="flag non-self points given only self samples, under a false-alarm tolerance",
             source_provenance="Forrest et al. (1994) negative selection; Ji & Dasgupta (2004) V-detector",
@@ -2264,7 +2267,7 @@ INTELLIGENCES = [
                                          "which is why the candidate's mean once looked higher"}),
     Executable(
         genome=IntelligenceGenome(**_common(
-            intelligence_id="collective.market.clock_auction", version="1.0.0", family="collective_market",
+            intelligence_id="collective.market.clock_auction", version="1.1.0", family="collective_market",
             layer=2, operation="clock_auction_allocate", epistemic_class="optimization",
             subgeometry="allocate a divisible-in-units compute/attention capacity across tasks with private, "
                         "non-increasing marginal values",
@@ -2272,8 +2275,7 @@ INTELLIGENCES = [
                               "for concave valuations (LP duality)",
             native_representation="capacity + reserve price + per-task marginal values (queried only as demand)",
             required_inputs=("capacity", "reserve", "tasks"),
-            output_contract={"allocation": "{task: units}", "clearing_price": "float", "payments": "{task: float}",
-                             "rounds": "int"},
+            output_contract={"allocation": "{task: units}", "clearing_price": "float", "payments": "{task: float}"},
             algorithm_or_runtime="ascending price clock from the reserve (accelerating every 50 rounds), bisection "
                                  "of the final bracket, tie-band rationing at the lower bracket price",
             parameters={"increment": "from data", "max_rounds": 5000},
@@ -2303,7 +2305,7 @@ INTELLIGENCES = [
                "information_asymmetry": "the competitor reads private values; the market only queries demand"}),
     Executable(
         genome=IntelligenceGenome(**_common(
-            intelligence_id="collective.flock.local_rules", version="1.0.1", family="collective_flock",
+            intelligence_id="collective.flock.local_rules", version="1.0.2", family="collective_flock",
             layer=2, operation="flock_navigate", epistemic_class="physical",
             subgeometry="2-10 discs (radius 0.5, speed <= 1) move to goals in the open plane without contact",
             source_provenance="Reynolds (1987) boids (separation + goal seeking); social-force / sampled-velocity "

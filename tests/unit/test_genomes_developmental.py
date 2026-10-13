@@ -113,7 +113,7 @@ def test_library_registers_developmental_families_without_collisions():
 def test_module_top_level_imports_are_stdlib_or_contract_and_touch_nothing():
     source = Path(developmental.__file__).read_text()
     tree = ast.parse(source)
-    allowed = {"__future__", "collections", "hashlib", "json", "math", "random"}
+    allowed = {"__future__", "collections", "hashlib", "json", "math", "random", "re"}
     for node in tree.body:
         if isinstance(node, ast.Import):
             assert {a.name.split(".")[0] for a in node.names} <= allowed
@@ -231,17 +231,101 @@ def test_constraint_release_verify_refutes_corrupted_outputs():
     rootless = copy.deepcopy(out)                   # lineage that does not start at the original pipeline
     rootless["output"]["lineage"] = rootless["output"]["lineage"][1:]
     assert x.verify(data, rootless["output"], rootless["certificate"])[
-        "lineage_roots_at_original_and_ends_at_output"] is False
+        "lineage_replays_from_original_to_output"] is False
 
     garbage = copy.deepcopy(out)                    # malformed lineage / authority are refuted, never raised
     garbage["output"]["lineage"][-1]["parents"] = [["unhashable"]]
     garbage["output"]["authority"] = None
     checks = x.verify(data, garbage["output"], garbage["certificate"])
-    assert checks["lineage_roots_at_original_and_ends_at_output"] is False and checks["no_authority_claimed"] is False
+    assert checks["lineage_replays_from_original_to_output"] is False and checks["no_authority_claimed"] is False
 
     unknown = copy.deepcopy(out)
     unknown["output"]["configuration"] = ["atc:2", "teleport:all:best"]
     assert x.verify(data, unknown["output"], unknown["certificate"]) == {"configuration_well_formed": False}
+
+
+def _leaf_mutants(value, path=()):
+    """Every single-leaf corruption: flip a bool, shift a number, drop a list's last element, suffix a string."""
+    if isinstance(value, dict):
+        for k, v in value.items():
+            yield from _leaf_mutants(v, path + (k,))
+    elif isinstance(value, list):
+        if value and all(not isinstance(v, (dict, list)) for v in value):
+            yield path, value[:-1]
+        for i, v in enumerate(value[:3]):
+            yield from _leaf_mutants(v, path + (i,))
+    elif type(value) is bool:
+        yield path, not value
+    elif isinstance(value, (int, float)):
+        yield path, value * 1.37 + 1 if isinstance(value, float) else value + 1
+    elif isinstance(value, str):
+        yield path, value + "_x"
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_every_single_leaf_corruption_of_an_answer_is_refuted(family):
+    for seed in (0, 1):
+        data, _, out = solved(family, seed)
+        if out["status"] != "ANSWER":
+            continue
+        survivors = []
+        for path, value in _leaf_mutants(out["output"]):
+            forged = copy.deepcopy(out["output"])
+            target = forged
+            for k in path[:-1]:
+                target = target[k]
+            target[path[-1]] = value
+            if not _refuted(family, data, forged, out["certificate"]):
+                survivors.append(path)
+        assert not survivors, (family, seed, survivors)
+
+
+def test_repair_verify_binds_steps_and_the_claim_count_to_input_and_certificate():
+    data, _, out = solved("develop_repair", 0)
+    x = item("develop_repair")
+    longer = dict(out["output"], steps=out["output"]["steps"] + 1)
+    assert x.verify(data, longer, out["certificate"])["steps_match_input"] is False
+    assert out["output"]["claimed"], "dev seed 0 vouches for at least one source"
+    fewer = dict(out["output"], claimed=out["output"]["claimed"][:-1])
+    assert x.verify(data, fewer, out["certificate"])["claims_match_certificate_count"] is False
+
+
+def test_constraint_release_lineage_is_replayed_derivation_by_derivation():
+    data, _, out = solved("develop_constraint_release", 0)
+    x = item("develop_constraint_release")
+    key = "lineage_replays_from_original_to_output"
+    lineage = out["output"]["lineage"]
+    assert len(lineage) >= 3 and all(x.verify(data, out["output"], out["certificate"]).values())
+
+    def forged(edit):
+        o = copy.deepcopy(out["output"])
+        edit(o["lineage"])
+        return x.verify(data, o, out["certificate"])
+
+    # a well-formed note that does not produce the child from its parent
+    assert forged(lambda L: L[1].__setitem__("mutations", ["constructor(edd->wspt)"]))[key] is False
+    # an orphan: a non-root entry without parents
+    assert forged(lambda L: L[-1].__setitem__("parents", []))[key] is False
+    # an understated training utility
+    assert forged(lambda L: L[-1].__setitem__("train_utility", L[-1]["train_utility"] * 0.9))[key] is False
+    # an invented operator inside an ancestor configuration
+    assert forged(lambda L: L[1].__setitem__("config", ["atc:2", "teleport:all:best"]))[key] is False
+    # a duplicated individual
+    assert forged(lambda L: L.insert(1, copy.deepcopy(L[0]) | {"id": 0}))[key] is False
+
+
+def test_constraint_release_evaluations_and_authority_are_exact():
+    data, _, out = solved("develop_constraint_release", 0)
+    x = item("develop_constraint_release")
+    over = dict(out["output"], evaluations=data["budget"] + 1)
+    cert = dict(out["certificate"], evaluations=data["budget"] + 1)
+    assert x.verify(data, over, cert)["evaluations_within_budget_and_consistent"] is False
+    split = dict(out["output"], evaluations=out["output"]["evaluations"] - 1)
+    assert x.verify(data, split, out["certificate"])["evaluations_within_budget_and_consistent"] is False
+    for claim in ("none; but may spend", "none", "NONE: proposal"):
+        assert x.verify(data, dict(out["output"], authority=claim), out["certificate"])["no_authority_claimed"] \
+            is False
+    assert out["output"]["authority"] == developmental.CR_AUTHORITY
 
 
 def test_constraint_release_keeps_the_original_when_nothing_beats_it():

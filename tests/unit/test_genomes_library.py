@@ -95,3 +95,117 @@ def test_held_out_admission_refuses_changed_code(tmp_path, monkeypatch):
     (tmp_path / "r1" / "freeze.json").write_text(json.dumps(frozen))
     with pytest.raises(SystemExit, match="FROZEN_INPUT_CHANGED"):
         admission.main(["--run", "r1"])
+
+
+def _leaf_mutants(value, path=()):
+    """Every single-leaf corruption: flip a bool, shift a number, drop a list's last element, suffix a string."""
+    if isinstance(value, dict):
+        for k, v in value.items():
+            yield from _leaf_mutants(v, path + (k,))
+    elif isinstance(value, list):
+        if value and all(not isinstance(v, (dict, list)) for v in value):
+            yield path, value[:-1]
+        for i, v in enumerate(value[:3]):
+            yield from _leaf_mutants(v, path + (i,))
+    elif type(value) is bool:
+        yield path, not value
+    elif isinstance(value, (int, float)):
+        yield path, value * 1.37 + 1 if isinstance(value, float) else value + 1
+    elif isinstance(value, str):
+        yield path, value + "_x"
+
+
+# A compiled model whose non-binding upper bound is raised means the same thing (same feasible integer
+# points, same optimum); the verifiers require bounds that never cut the feasible region, not byte equality.
+EQUIVALENT = {"flow_capacity_plan", "newsvendor_compile"}
+
+
+@pytest.mark.parametrize("family", sorted(library.executables()))
+def test_every_single_leaf_corruption_of_an_answer_is_refuted_or_provably_equivalent(family):
+    import copy
+    from greg.cognition.genomes.contract import model_optimum
+    item = library.executables()[family]
+    for seed in range(10):                              # the first dev seed on which the candidate answers
+        data, truth = item.instance(seed)
+        out = item.solve(data, {"latency_s": 5.0, "compute": 100000})
+        if out["status"] == "ANSWER":
+            break
+    assert out["status"] == "ANSWER", family
+    survivors = []
+    for path, value in _leaf_mutants(out["output"]):
+        if not path:
+            continue
+        forged = copy.deepcopy(out["output"])
+        target = forged
+        for k in path[:-1]:
+            target = target[k]
+        original, target[path[-1]] = target[path[-1]], value
+        try:
+            accepted = all(item.verify(data, forged, out["certificate"]).values())
+        except Exception:                               # a verifier must refute malformed output, not raise
+            accepted = "raised"
+        if not accepted:
+            continue
+        if (accepted is True and family in EQUIVALENT and path[:2] == ("model", "variables") and path[-1] == 1
+                and value > original and abs(model_optimum(forged["model"]) - truth["optimum"]) <= 1e-6):
+            continue
+        survivors.append((path, accepted))
+    assert not survivors, (family, survivors[:10])
+
+
+def test_maxflow_verify_proves_the_returned_cut_on_its_own():
+    from greg.cognition.genomes import flow
+    item = library.executables()["flow_maxflow"]
+    data, _ = item.instance(3)
+    out = item.solve(data, {"latency_s": 5.0})
+    o = out["output"]
+    assert flow.maxflow_verify(data, o, out["certificate"])["returned_cut_is_an_s_t_cut_of_value"]
+    loose = dict(o, cut_edges=o["cut_edges"][1:])                  # no longer separates s from t
+    assert not flow.maxflow_verify(data, loose, out["certificate"])["returned_cut_is_an_s_t_cut_of_value"]
+    wrong_cap = dict(o, cut_edges=[[u, v, c + 1] for u, v, c in o["cut_edges"]])
+    assert not flow.maxflow_verify(data, wrong_cap, out["certificate"])["returned_cut_is_an_s_t_cut_of_value"]
+    assert flow.maxflow_verify(data, dict(o, flow=[["s", "t"]]), {}) == {"output_well_formed": False}
+    assert flow.maxflow_verify(data, dict(o, flow=o["flow"] + [["nowhere", "t", 1]]), out["certificate"])[
+        "capacity_respected"] is False
+
+
+def test_forecast_verify_recomputes_every_quantile_and_bounds_the_declared_configuration():
+    from greg.cognition.genomes import forecasting
+    data, _ = forecasting.instance(2)
+    out = forecasting.solve(data, {})
+    assert all(forecasting.verify(data, out["output"], out["certificate"]).values())
+    shifted = {**out["output"], "quantiles": {k: [v * 1.01 for v in path] if k == "0.9" else path
+                                              for k, path in out["output"]["quantiles"].items()}}
+    assert forecasting.verify(data, shifted, out["certificate"])["quantiles_recomputed"] is False
+    widened = dict(out["certificate"], interval_scale=1.3)          # inside the space, not what was run
+    assert forecasting.verify(data, out["output"], widened)["quantiles_recomputed"] is False
+    outside = dict(out["certificate"], interval_scale=3.0)
+    assert forecasting.verify(data, out["output"], outside)["declared_configuration_in_reviewed_space"] is False
+    assert forecasting.verify(data, {"point": []}, out["certificate"]) == {"shape": False}
+
+
+@pytest.mark.parametrize("family", ["flow_capacity_plan", "newsvendor_compile"])
+def test_compiled_models_are_scored_by_their_exact_optimum_not_their_shape(family):
+    import copy
+    item = library.executables()[family]
+    data, truth = item.instance(1)
+    out = item.solve(data, {"latency_s": 5.0})
+    assert item.score(data, truth, out["output"]) == {"quality": 1.0, "category": "correct"}
+    flipped = copy.deepcopy(out["output"])
+    flipped["model"]["objective"]["sense"] = "min" if flipped["model"]["objective"]["sense"] == "max" else "max"
+    assert item.score(data, truth, flipped)["category"] == "wrong"
+    dropped = copy.deepcopy(out["output"])
+    dropped["model"]["constraints"].pop()                          # the capacity or budget row is gone
+    assert not all(item.verify(data, dropped, out["certificate"]).values())
+    assert item.score(data, truth, dropped)["category"] == "wrong"
+
+
+def test_preposterior_verify_binds_the_act_now_decision_and_refutes_malformed_scenarios():
+    from greg.cognition.genomes import decision
+    data, _ = decision.instance(4)
+    out = decision.solve(data, {})
+    o = out["output"]
+    flipped = dict(o, act_now="launch" if o["act_now"] == "abandon" else "abandon")
+    assert decision.verify(data, flipped, {})["act_now_is_the_prior_best_decision"] is False
+    assert decision.verify(data, dict(o, posterior_scenarios=[{"probability": 1.0}]), {}) == {
+        "scenarios_well_formed": False}

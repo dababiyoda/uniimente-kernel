@@ -271,6 +271,103 @@ def test_info_verify_refutes_a_self_consistent_but_non_greedy_policy():
     assert not checks["every_node_maximises_information_gain"]
 
 
+def _leaf_mutants(value, path=()):
+    """Every single-leaf corruption of an output: flip a bool, shift a number, drop a list's last element,
+    suffix a string. A sound verifier refutes each one that changes a claim."""
+    if isinstance(value, dict):
+        for k, v in value.items():
+            yield from _leaf_mutants(v, path + (k,))
+    elif isinstance(value, list):
+        if value and all(not isinstance(v, (dict, list)) for v in value):
+            yield path, value[:-1]
+        for i, v in enumerate(value[:3]):
+            yield from _leaf_mutants(v, path + (i,))
+    elif type(value) is bool:
+        yield path, not value
+    elif isinstance(value, (int, float)):
+        yield path, value * 1.37 + 1 if isinstance(value, float) else value + 1
+    elif isinstance(value, str):
+        yield path, value + "_x"
+
+
+def _set(obj, path, value):
+    for k in path[:-1]:
+        obj = obj[k]
+    obj[path[-1]] = value
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_every_single_leaf_corruption_of_an_answer_is_refuted(family):
+    x = item(family)
+    for seed in ANSWER_SEEDS[family][:2]:
+        data, _, out = solved(family, seed)
+        survivors = []
+        for path, value in _leaf_mutants(out["output"]):
+            if not path:
+                continue
+            forged = copy.deepcopy(out["output"])
+            _set(forged, path, value)
+            if all(x.verify(data, forged, out["certificate"]).values()):
+                survivors.append(path)
+        assert not survivors, (family, seed, survivors)
+
+
+def test_vcg_verify_refutes_a_relabelled_mechanism_and_a_false_efficiency_flag():
+    data, _, out = solved("mech_vcg", 1)
+    checks = solvers_c.vcg_verify(data, dict(out["output"], mechanism="pay_as_bid"), out["certificate"])
+    assert checks["mechanism_is_vcg"] is False
+    checks = solvers_c.vcg_verify(data, dict(out["output"], efficient=False), out["certificate"])
+    assert checks["efficiency_claim_matches_independent_optimum"] is False
+
+
+def test_modelcheck_verify_refutes_a_misreported_counterexample_depth():
+    for seed in ANSWER_SEEDS["verify_modelcheck"]:
+        data, _, out = solved("verify_modelcheck", seed)
+        if out["output"]["verdict"] == "UNSAFE":
+            o = dict(out["output"], depth=out["output"]["depth"] + 1)
+            assert solvers_c.mc_verify(data, o, out["certificate"])["depth_is_trace_length"] is False
+            return
+    pytest.fail("no UNSAFE answer on the dev answer seeds")
+
+
+@pytest.mark.parametrize("seed", ANSWER_SEEDS["causal_backdoor"])
+def test_causal_verify_recomputes_the_standard_error_and_the_identification_label(seed):
+    data, _, out = solved("causal_backdoor", seed)
+    assert solvers_c.causal_verify(data, out["output"], out["certificate"])["standard_error_recomputed"] is True
+    narrow = dict(out["output"], se=out["output"]["se"] * 0.5)      # an overconfident interval
+    assert solvers_c.causal_verify(data, narrow, out["certificate"])["standard_error_recomputed"] is False
+    relabelled = dict(out["output"], identified_by="front-door criterion")
+    assert solvers_c.causal_verify(data, relabelled, out["certificate"])["identified_by_backdoor_criterion"] is False
+
+
+def test_causal_competitor_is_doubly_robust_aipw_behind_the_same_gate():
+    assert item("causal_backdoor").competitor is solvers_c.causal_aipw
+    answered = 0
+    for seed in range(10):
+        data, truth = dev("causal_backdoor", seed)
+        ipw, aipw = solvers_c.causal_ipw(data), solvers_c.causal_aipw(data)
+        assert (ipw is None) == (aipw is None)                       # one gate decides identification for both
+        if aipw is None:
+            continue
+        answered += 1
+        assert aipw["estimator"] == "aipw_logistic_ols" and math.isfinite(aipw["ate"])
+        assert item("causal_backdoor").score(data, truth, aipw)["category"] == "correct"
+    assert answered >= 3
+
+
+def test_info_competitor_is_at_least_as_good_as_each_of_its_policies():
+    import numpy as np
+    for seed in ANSWER_SEEDS["info_experiment"]:
+        data, _ = dev("info_experiment", seed)
+        prior, tables, length = solvers_c._ie(data)
+        best = solvers_c.ie_competitor(data)["expected_posterior_on_truth"]
+        greedy = solvers_c._ie_build(prior, tables, length,
+                                     lambda post, P, d: int(np.argmax([solvers_c._bayes_gain(post, q) for q in P])))
+        two = solvers_c._ie_build(prior, tables, length, lambda post, P, d: solvers_c._two_step(post, P, length, d))
+        for tree in (greedy, two):
+            assert best >= solvers_c._ie_value(tree, prior, tables) - 1e-12
+
+
 # ------------------------------------------------------------------ invalid input
 def _mc_sys(**overrides):
     system = {"variables": [{"name": "x", "min": 0, "max": 3, "init": 0}],

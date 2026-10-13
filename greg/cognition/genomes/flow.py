@@ -17,10 +17,11 @@ Independent verification never reuses NetworkX: flows are checked by arithmetic,
 """
 from __future__ import annotations
 
-from collections import deque
+from collections import Counter, deque
 import random
 
-from .contract import Executable, GenomeError, IntelligenceGenome, answer, bounded_int, finite
+from .contract import (Executable, GenomeError, IntelligenceGenome, answer, bounded_int, canonical_model, finite,
+                       model_optimum)
 
 LINEAGE = ("INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION", "INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT",
            "greg/cognition/network.py (GREG's own graph code)")
@@ -126,24 +127,64 @@ def maxflow_solve(data, budget):
                    "duality": "max-flow value equals the capacity of the returned s-t cut"})
 
 
+def _triples(value):
+    """[[from, to, int >= 0], ...] as a list of tuples, or None when malformed."""
+    if not isinstance(value, list):
+        return None
+    out = []
+    for e in value:
+        if (not isinstance(e, list) or len(e) != 3 or not all(isinstance(n, str) for n in e[:2])
+                or type(e[2]) is not int or e[2] < 0):
+            return None
+        out.append(tuple(e))
+    return out
+
+
+def _cut_disconnects(cap, removed, s, t):
+    """True when t is unreachable from s along edges of positive capacity once ``removed`` is deleted."""
+    adj = {}
+    for (u, v), c in cap.items():
+        if c > 0 and (u, v) not in removed:
+            adj.setdefault(u, []).append(v)
+    seen, queue = {s}, deque([s])
+    while queue:
+        for v in adj.get(queue.popleft(), ()):
+            if v not in seen:
+                seen.add(v)
+                queue.append(v)
+    return t not in seen
+
+
 def maxflow_verify(data, output, certificate):
     edges, s, t = _graph(data)
     cap = _merged(edges)
+    triples = _triples(output.get("flow")) if isinstance(output, dict) else None
+    cut = _triples(output.get("cut_edges")) if isinstance(output, dict) else None
+    if triples is None or cut is None or type(output.get("value")) is not int:
+        return {"output_well_formed": False}
+    certificate = certificate if isinstance(certificate, dict) else {}
     flow = {}
-    for u, v, f in output.get("flow", []):
+    for u, v, f in triples:
         flow[(u, v)] = flow.get((u, v), 0) + f
     bounded = all(0 <= f <= cap.get(k, -1) for k, f in flow.items())
     nodes = {n for k in cap for n in k}
     balance = {n: 0 for n in nodes}
     for (u, v), f in flow.items():
-        balance[u] -= f
-        balance[v] += f
-    conserved = all(balance[n] == 0 for n in nodes if n not in (s, t))
+        balance[u] = balance.get(u, 0) - f
+        balance[v] = balance.get(v, 0) + f
+    conserved = all(balance[n] == 0 for n in balance if n not in (s, t))
     value_ok = balance.get(t, 0) == output["value"] == -balance.get(s, 0)
-    side = set(certificate.get("source_side", []))
+    side = certificate.get("source_side")
+    side = {n for n in side if isinstance(n, str)} if isinstance(side, list) else set()
     cut_cap = sum(c for (u, v), c in cap.items() if u in side and v not in side)
     reach = _reach(cap, flow, s)
-    return {"capacity_respected": bounded, "conservation": conserved, "value_matches_flow": value_ok,
+    cut_keys = [(u, v) for u, v, _ in cut]
+    # the returned cut, on its own: real edges at their capacities, removing them separates s from t, and its
+    # capacity equals the flow value (weak duality then certifies both as optimal)
+    cut_ok = (len(set(cut_keys)) == len(cut_keys) and all(cap.get((u, v)) == c for u, v, c in cut)
+              and sum(c for *_, c in cut) == output["value"] and _cut_disconnects(cap, set(cut_keys), s, t))
+    return {"output_well_formed": True, "returned_cut_is_an_s_t_cut_of_value": cut_ok,
+            "capacity_respected": bounded, "conservation": conserved, "value_matches_flow": value_ok,
             "cut_separates": s in side and t not in side, "cut_capacity_equals_value": cut_cap == output["value"],
             "no_augmenting_path": t not in reach}
 
@@ -410,22 +451,44 @@ def compile_solve(data, budget):
 
 
 def compile_verify(data, output, certificate):
+    """The model must be exactly the declared translation of this network (f_i flow and x_i increment on edge
+    i), re-derived here row by row from the problem statement and compared in canonical form."""
     edges, s, t, unit, inc, budget = _expansion(data)
-    model = output["model"]
-    relays = {n for e in edges for n in e[:2]} - {s, t}
-    conservation = [c for c in model["constraints"] if c["requirement_id"].startswith("conservation:")]
-    capacity = [c for c in model["constraints"] if c["requirement_id"].startswith("capacity:")]
-    return {"one_capacity_row_per_edge": len(capacity) == len(edges),
-            "one_conservation_row_per_relay": {c["requirement_id"][13:] for c in conservation} == relays,
-            "budget_row": any(c["requirement_id"] == "budget" and c["rhs"] == budget for c in model["constraints"]),
-            "decode_covers_every_increment": set(output["decode"]) == {k for k in model["variables"] if k.startswith("x")},
-            "maximise": model["objective"]["sense"] == "max"}
+    canon = canonical_model(output.get("model")) if isinstance(output, dict) else None
+    decode = output.get("decode") if isinstance(output, dict) else None
+    if canon is None or not isinstance(decode, dict):
+        return {"model_well_formed": False}
+    bounds, rows, (objective, sense) = canon
+    f, x = [f"f{i}" for i in range(len(edges))], [f"x{i}" for i in range(len(edges))]
+    want = Counter()
+    for i, (u, v, c) in enumerate(edges):                              # f_i - x_i <= c_i
+        want[(frozenset({(f[i], 1), (x[i], -1)}), "<=", c, f"capacity:{u}->{v}")] += 1
+    for n in sorted({n for e in edges for n in e[:2]} - {s, t}):        # inflow - outflow == 0 at each relay
+        net = {f[i]: (v == n) - (u == n) for i, (u, v, _) in enumerate(edges)}
+        want[(frozenset((k, w) for k, w in net.items() if w), "==", 0, f"conservation:{n}")] += 1
+    want[(frozenset((x[i], unit[(u, v)]) for i, (u, v, _) in enumerate(edges) if unit[(u, v)]), "<=", budget,
+          "budget")] += 1
+    source_net = frozenset((f[i], (u == s) - (v == s)) for i, (u, v, _) in enumerate(edges) if (u == s) != (v == s))
+    return {"model_well_formed": True,
+            "one_flow_and_one_increment_variable_per_edge": set(bounds) == set(f) | set(x),
+            "increments_bounded_by_max_increment": all(bounds.get(k) == (0, inc) for k in x),
+            "flow_bounds_do_not_cut_the_feasible_region": all(
+                k in bounds and bounds[k][0] == 0 and bounds[k][1] >= c + inc for k, (_, _, c) in zip(f, edges)),
+            "rows_are_exactly_capacity_conservation_and_budget": rows == want,
+            "objective_maximises_net_source_outflow": objective == source_net and sense == "max",
+            "decode_maps_each_increment_to_its_edge": decode == {x[i]: f"{u}->{v}"
+                                                                 for i, (u, v, _) in enumerate(edges)}}
 
 
 def compile_score(data, truth, output):
+    """Semantic, evaluation side: the compiled model, solved exactly (SciPy HiGHS), must reach the optimum the
+    independent min-cost-flow truth found; a model that verifies but means something else is wrong."""
     if not isinstance(output, dict) or "model" not in output:
         return {"quality": 0.0, "category": "abstain"}
-    ok = all(compile_verify(data, output, {}).values())
+    if not all(compile_verify(data, output, {}).values()):
+        return {"quality": -1.0, "category": "wrong"}
+    optimum = model_optimum(output["model"])
+    ok = optimum is not None and abs(optimum - truth["optimum"]) <= 1e-6
     return {"quality": 1.0 if ok else -1.0, "category": "correct" if ok else "wrong"}
 
 
@@ -439,7 +502,7 @@ def _common(**kw):
 INTELLIGENCES = [
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.graph.max_flow", version="1.0.0", family="flow_maxflow", layer=3,
+            intelligence_id="solver.graph.max_flow", version="1.0.1", family="flow_maxflow", layer=3,
             operation="max_flow", epistemic_class="optimization", subgeometry="s-t max flow / min cut",
             native_representation="directed capacitated graph", required_inputs=("edges", "source", "sink"),
             output_contract={"value": "int", "cut_edges": "[[u, v, capacity]]", "flow": "[[u, v, flow]]"},
@@ -478,7 +541,7 @@ INTELLIGENCES = [
         baseline=uniform_spread, competitor=lambda data: _composed_expansion(data)),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.graph.capacity_expansion_compiler", version="1.0.0", family="flow_capacity_plan",
+            intelligence_id="solver.graph.capacity_expansion_compiler", version="1.0.1", family="flow_capacity_plan",
             layer=3, operation="compile_capacity_expansion", epistemic_class="optimization",
             subgeometry="graph -> integer program translation", native_representation="graph + unit costs + budget",
             required_inputs=("edges", "source", "sink", "unit_cost", "max_increment", "budget"),

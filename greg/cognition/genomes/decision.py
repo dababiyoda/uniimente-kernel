@@ -72,16 +72,25 @@ def verify(data, output, certificate):
         for k in range(n + 1):
             probs.append(p)
             p *= (n - k) / (k + 1) * (a + k) / (b + n - k - 1) if k < n else 1
-    got = [s["probability"] for s in output["posterior_scenarios"]]
+    scenarios = output.get("posterior_scenarios") if isinstance(output, dict) else None
+    if (not isinstance(scenarios, list) or len(scenarios) != n + 1
+            or not all(isinstance(s, dict) and set(s) == {"probability", "best_value"}
+                       and all(type(v) in (int, float) and math.isfinite(v) for v in s.values()) for s in scenarios)
+            or type(output.get("prior_best_value")) not in (int, float)):
+        return {"scenarios_well_formed": False}
     gain = customers * value
     best = [max(0.0, gain * (a + k) / (a + b + n) - fixed) for k in range(n + 1)]
-    return {"probabilities_recomputed": len(got) == n + 1 and all(math.isclose(x, y, rel_tol=1e-6, abs_tol=1e-12)
-                                                                  for x, y in zip(got, probs)),
+    prior_margin = gain * a / (a + b) - fixed
+    return {"scenarios_well_formed": True,
+            "probabilities_recomputed": all(math.isclose(s["probability"], y, rel_tol=1e-6, abs_tol=1e-12)
+                                            for s, y in zip(scenarios, probs)),
             "best_values_recomputed": all(math.isclose(s["best_value"], v, rel_tol=1e-9, abs_tol=1e-9)
-                                          for s, v in zip(output["posterior_scenarios"], best)),
-            "prior_value": math.isclose(output["prior_best_value"], max(0.0, gain * a / (a + b) - fixed),
+                                          for s, v in zip(scenarios, best)),
+            "prior_value": math.isclose(output["prior_best_value"], max(0.0, prior_margin),
                                         rel_tol=1e-9, abs_tol=1e-9),
-            "cost_passed_through": output["cost"] == cost}
+            "act_now_is_the_prior_best_decision": output.get("act_now") == ("launch" if prior_margin > 0
+                                                                            else "abandon"),
+            "cost_passed_through": output.get("cost") == cost}
 
 
 def instance(seed):
@@ -101,7 +110,7 @@ def score(data, truth, output):
 INTELLIGENCES = [
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.decision.preposterior", version="1.0.0", family="decision_preposterior",
+            intelligence_id="solver.decision.preposterior", version="1.0.1", family="decision_preposterior",
             layer=3, operation="preposterior_scenarios", epistemic_class="strategic",
             subgeometry="go/no-go with a Beta posterior and an optional binomial pilot",
             native_representation="Beta(a, b) posterior + linear payoff + pilot size and cost",

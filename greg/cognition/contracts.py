@@ -231,6 +231,17 @@ class ProblemGeometry:
         number(self.time_horizon, low=0)
         number(self.latency_limit, low=.01, high=30)
         number(self.financial_limit, low=0, high=0)  # these implementations never purchase cognition
+        number(self.attention_ceiling_seconds, low=0, high=86400)
+        if self.deadline is not None:
+            from datetime import datetime
+            if not isinstance(self.deadline, str) or len(self.deadline) > 128:
+                raise CognitionError("bounded offset-aware deadline required")
+            try:
+                instant = datetime.fromisoformat(self.deadline.replace("Z", "+00:00"))
+            except ValueError as exc:
+                raise CognitionError("invalid cognition deadline") from exc
+            if instant.tzinfo is None:
+                raise CognitionError("offset-aware deadline required")
         integer(self.compute_limit, low=1, high=100000)
         integer(self.search_space_size, high=1000000000)
         integer(self.data_volume, high=1000000)
@@ -424,6 +435,10 @@ class CognitiveReceipt:
             raise CognitionError("a cognitive receipt cannot create authority")
         if self.empirical_validity != "WORLD_UNVERIFIED":
             raise CognitionError("these bounded solvers cannot certify world validity")
+        if self.authority_refs is not None:
+            strict_data(self.authority_refs)
+            if not isinstance(self.authority_refs, dict) or self.authority_refs.get("new_authority") is not False:
+                raise CognitionError("budget projection cannot create authority")
         from .learned_routing import check_summary
         check_summary(self.routing)
         cortex_method = isinstance(self.method, str) and (self.method == "cognition.cortex"
@@ -487,5 +502,8 @@ class CognitiveReceipt:
 
     def to_dict(self):
         value = asdict(self)
+        for name in ("authority_refs", "reason_code", "stopping_reason"):
+            if value[name] is None:
+                value.pop(name)
         value["receipt_id"] = digest(value)
         return value

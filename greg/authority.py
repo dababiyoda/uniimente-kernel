@@ -22,7 +22,7 @@ import urllib.parse
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 
-from greg.capabilities import CapabilityError, CapabilityManifest, InvocationContext
+from greg.capabilities import CapabilityError, CapabilityManifest, InvocationContext, InvocationBudgetWindow
 from greg.lightcone import LightCone
 from policy.consequence_gate import ConsequenceGate, GrantIssuer
 from policy.engine import Proposal, Verdict, evaluate
@@ -133,9 +133,23 @@ class AuthorityOffice:
 
         def execute(p):
             try:
+                # Limits are projected from the current canonical dispatch. The
+                # projection is not a grant and cannot replenish reserved spend.
+                window = None
+                if manifest.capability_id.startswith("cognition."):
+                    dispatch, _ = self._prior(proposal_id)
+                    window = InvocationBudgetWindow(
+                        horizon=cone.horizon, grant_expires_at=grant["expires_at"],
+                        remaining_money_usd=max(0.0, cone.budget_usd - spent_usd - cost_usd),
+                        authority_ref=command_digest, grant_id=grant["grant_id"],
+                        grant_digest=sha256_json(grant), mission_id=mission_id,
+                        scope_digest=scope, proposal_id=proposal_id,
+                        witness_id=dispatch.payload.get("witness_id") if dispatch else None,
+                        dispatch_effect_digest=dispatch.payload.get("effect_digest") if dispatch else None)
                 output = adapter(params, replace(ctx, target=target, mission_id=mission_id,
                                                 authority_ref=command_digest, grant_id=grant['grant_id'],
-                                                policy_version=self.compiled.constitution_version))
+                                                policy_version=self.compiled.constitution_version,
+                                                cognition_budget=window))
             except CapabilityError as exc:
                 return {"observed_outcome": "capability refused: " + str(exc)[:300], "result_class": "negative",
                         "output": None, "validation_status": "self_reported"}

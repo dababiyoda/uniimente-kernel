@@ -224,7 +224,14 @@
       "simplest_viable_alternative": "One fixed first-party read-only MCP child over existing canonical staged stores.",
       "strongest_competing_architecture": "General providers in a container/microVM; unavailable here, preserved as a requirement.",
       "reversible_experiment": "Real SDK/stdio state query, tool enumeration, write refusal and substitution tests in CI."
-    }
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not selected for this bounded increment: First-party proof does not supply general-provider confinement. The intended wider capability remains binding; this disposition is not permanent removal.",
+        "revival_evidence": "Changed host, requirements or stronger measured interoperability evidence."
+      }
+    ]
   },
   "pass_2": {
     "attack_summary": "Attack substitution, widened/nested state, write-through queries, surviving descendants and narrowing; strengthen every disadvantage.",

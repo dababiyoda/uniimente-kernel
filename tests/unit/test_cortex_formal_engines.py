@@ -344,13 +344,20 @@ class TestLatencyBudget:
                    if c["result"] == "skipped: latency budget"]
         assert skipped, "diagnostics must yield to the budget"
 
-    def test_the_greg_worker_is_never_killed_by_a_tight_budget(self):
+    def test_the_greg_worker_does_not_outlive_a_tight_enclosing_budget(self):
+        import time
         from greg.cognition.cortex import reason, registry_view
         p = self.pigeonhole()
+        started = time.monotonic()
         r = reason({"problem_id": p["problem_id"], "problem": {"question": p["question"], "payload": p["payload"]}},
                    registry=registry_view())
-        assert r["proof_type"] == "cortex_receipt", r.get("missing_information")
+        assert time.monotonic() - started < 1.5
         assert r["outcome"]["outcome"] in ("WAIT", "ABSTAIN", "ANSWERED_WITHIN_SCOPE")
+        if r["proof_type"] is None:
+            assert r["output"] is None and r["reason_code"] in ("TIMEOUT", "BUDGET_EXHAUSTED")
+            assert r["evaluator_result"]["verdict"] == "NOT_RUN"
+        else:
+            assert r["proof_type"] == "cortex_receipt"
 
 
 class TestMisclassifiedConsequence:

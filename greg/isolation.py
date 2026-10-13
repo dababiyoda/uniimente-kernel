@@ -11,10 +11,25 @@ import ctypes
 import os
 from pathlib import Path
 import platform
+import stat
 import sys
 
 READ_FILE, READ_DIR = 1 << 2, 1 << 3
 GLIBC_RUNTIME = ("libc", "libm", "librt", "libdl", "libpthread", "libutil")
+
+
+def _trusted_shared_object(path: Path) -> bool:
+    """A regular, root-owned, non-group/world-writable, world-readable ELF file (never a directory)."""
+    try:
+        resolved = path.resolve(strict=True)
+        metadata = resolved.stat()
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != 0 or metadata.st_mode & 0o022 \
+                or not metadata.st_mode & 0o004:
+            return False
+        with resolved.open("rb") as stream:
+            return stream.read(4) == b"\x7fELF"
+    except OSError:
+        return False
 WRITE_FILE, EXECUTE, TRUNCATE = 1 << 1, 1, 1 << 14
 ALL_FS = (1 << 15) - 1
 
@@ -98,10 +113,11 @@ def confine(root, public_files):
                     grants[path.resolve()] = READ_FILE | EXECUTE
             # Core glibc runtime libraries a later extension import may dlopen (librt.so.1 is the one
             # MCP needed on GitHub runners): public loader-adjacent files, read-only, never directories.
+            # Each candidate must be a root-owned, non-writable, world-readable ELF object (#156/#159).
             for arch in ("", "x86_64-linux-gnu/", "aarch64-linux-gnu/"):
                 for name in GLIBC_RUNTIME:
                     for path in base.glob(f"{arch}{name}.so.*"):
-                        if path.is_file():
+                        if _trusted_shared_object(path):
                             grants[path.resolve()] = grants.get(path.resolve(), 0) | READ_FILE
     # The interpreter's own site-packages (Debian installs them outside sys.prefix/lib, e.g.
     # /usr/local/lib/python3.X/dist-packages). Installed runtime code only: user-site and arbitrary

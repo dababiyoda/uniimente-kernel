@@ -219,7 +219,14 @@
       "strongest_competing_architecture": "OCI plus microVM/gVisor backend for general generated code/providers.",
       "do_nothing": "Ignore usable ABI7 and retain unnecessarily weak reviewed-code-only filesystem protection.",
       "reversible_experiment": "Raw native private-file escape probes and actual GREG/child/MCP integration under required Landlock in CI."
-    }
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not selected for this bounded increment: Requires an implemented pinned runner/image and its actual escape/revocation/resource tests; ordinary Docker or observed availability alone is insufficient. The intended wider capability remains binding; this disposition is not permanent removal.",
+        "revival_evidence": "Built and proved runner/image on the available CI host."
+      }
+    ]
   },
   "pass_2": {
     "attack_summary": "Second pass attacks false universal-blocker assumptions, partial installation, native syscalls/symlinks/truncation, inherited child regressions and claims of microVM/general-source completion.",

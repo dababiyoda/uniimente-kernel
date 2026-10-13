@@ -110,3 +110,42 @@ def test_a_cognition_deficit_opens_capability_genesis_then_asks_the_founder_once
         assert [a["kind"] for a in asks] == ["CAPABILITY_ATTACH"]
         done = [e.payload for e in body.journal.replay("mission.action") if e.payload["mission_id"] == "m:residual"]
         assert len(done) == 1 and done[0]["status"] == "DONE"
+
+
+def test_recombined_native_game_uses_same_gate_appraisal_and_learning_after_restart(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "qualified:game", "operation": "minimax",
+              "data": {"payoffs": [[1, -1], [-1, 1]]}}
+    spec = mission("m:native-game", checks=[{
+        "check_id": "value", "description": "check encoded minimax value",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:game", "params": params},
+        "predicate": {"op": "equals", "field": "output.value", "value": 0}}],
+        strategies=[{"action_id": "recompute", "capability": "cognition.solve", "target": "cognition:game",
+                     "params": params, "advances": ["value"], "rationale": "bounded numeric minimax"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    with Body(home) as body:
+        # Non-seed families start withheld (VERIFIED) on every body; the founder attaches them.
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.game"}))
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        # The converged engine acts in one tick and books the achieved closure on the next.
+        for _ in range(2):
+            body.tick()
+        assert body.engine.book.missions["m:native-game"].status == "ACHIEVED"
+        cognitive = next(r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
+                         if isinstance(r.payload["result"].get("output"), dict)
+                         and r.payload["result"]["output"].get("problem_id") == "qualified:game")
+        assert cognitive["method"] == "cognition.game" and cognitive["method_version"] == "0.3.0"
+        assert cognitive["evaluator"] == "greg.cognition.verification/0.3.0"
+        assert cognitive["evaluator_result"]["checks"]["independent_minimax_primal_dual"]
+        assert cognitive["authority_created"] is False and cognitive["empirical_validity"] == "WORLD_UNVERIFIED"
+        assert body.journal.replay("mission.appraised")[-1].payload["verdict"] == "VERIFIED"
+        count = len(body.ledger.by_type("receipt"))
+    with Body(home) as body:
+        body.boot()
+        body.tick()
+        assert len(body.ledger.by_type("receipt")) == count
+        history = competence(body.journal)
+        assert len(history) == 1
+        assert next(iter(history))[:2] == ("cognition.game", "0.3.0")

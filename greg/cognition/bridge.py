@@ -56,12 +56,14 @@ import json
 from pathlib import Path
 import sys
 import time
+import subprocess
 
 from cortex.contracts import CORTEX_VERSION, digest as cortex_digest
 from cortex.schemas import validate as validate_cortex
 
 from .contracts import (CognitionError, CognitiveReceipt, ConsequenceVector, ProblemGeometry, canonical, digest,
-                        retained_data, strict_data)
+                        retained_data, strict_data, number, integer)
+from .budget import ThinkingBudget
 
 ROOT = Path(__file__).resolve().parents[2]
 ROUTER = "cognition.cortex"
@@ -141,9 +143,11 @@ def _semantic_model(model_config, problem) -> dict | None:
 
 
 def run_worker(problem: dict, records: list, *, withheld_organs: dict, semantic_model: dict | None,
-               cpu_seconds: float, created_at: str, memory_records: list | None = None) -> dict:
+               cpu_seconds: float, created_at: str, memory_records: list | None = None,
+               timeout_seconds: float | None = None) -> dict:
     """``memory_records`` (signed learned mode only) travel on stdin: content-addressed
-    routing-memory records the worker rebuilds and checks before the router may use them."""
+    routing-memory records the worker rebuilds and checks before the router may use them.
+    ``timeout_seconds`` is the enclosing thinking-budget deadline (#156/#159)."""
     from greg.capabilities import CapabilityError, run_isolated
     request = {"problem": problem, "records": records, "withheld": withheld_organs,
                "semantic_model": semantic_model, "cpu_seconds": cpu_seconds, "created_at": created_at,
@@ -151,7 +155,7 @@ def run_worker(problem: dict, records: list, *, withheld_organs: dict, semantic_
     try:
         proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), "__cortex__",
                              canonical(request)], cwd=ROOT, isolate_network=semantic_model is None,
-                            timeout=int(cpu_seconds) + 20,
+                            timeout=timeout_seconds if timeout_seconds is not None else int(cpu_seconds) + 20,
                             extra_env={"OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1",
                                        "MKL_NUM_THREADS": "1"},
                             input_bytes=None if memory_records is None else canonical(memory_records).encode())
@@ -288,29 +292,86 @@ def _failure(params: dict, why: str, started: float, *, state: str = "ABSTAIN") 
         outcome=classify_greg(state, has_output=False)).to_dict()
 
 
-def reason_cortex(params, *, registry, journal=None, model_config=None, forced=None) -> dict:
+def reason_cortex(params, *, registry, journal=None, model_config=None, forced=None,
+                  caller_window=None, shared_deadline=None, shared_compute_limit=None) -> dict:
     started = time.monotonic()
     pid, problem, records = _validate(params)
     ok, why = registry.usable(ROUTER) if ROUTER in registry.manifests else (False, "not registered")
     if not ok:
         return _failure(params, f"{ROUTER} unavailable: {why}", started, state="CAPABILITY_DEFICIT")
-    limits = (problem["payload"].get("resources") or {})
-    cpu = min(60.0, max(5.0, float(limits.get("max_latency_s", 30.0)) + 5.0))
     from . import learned_routing
     mode = params.get("routing", learned_routing.DEFAULT_MODE)
+    budget, model = None, None
     try:
-        # Competence is recomputed from GREG's own settled claims for every request.
+        limits = problem["payload"].get("resources") or {}
+        if not isinstance(limits, dict):
+            raise CognitionError("bounded resource map required")
+        # The requester's max_latency_s is the SOLVER's budget inside the worker. The thinking budget is
+        # the route ceiling (30 s), narrowed by any enclosing grant window or shared composition deadline.
+        limit = min(30.0, number(limits.get("max_latency_s", 30.0), low=.01))
+        geometry = ProblemGeometry(epistemic_class="unresolved", latency_limit=30.0)
+        budget = ThinkingBudget(geometry, family="cortex", started=started, caller_window=caller_window,
+                                shared_deadline=shared_deadline, shared_compute_limit=shared_compute_limit)
+        seconds = min(limit, budget.before_execution())
+        # Narrow only serving input. The signed request remains the receipt's
+        # input_digest; retained Cortex proof discloses its actual resource map.
+        resources = {**limits, "max_latency_s": seconds, "max_cost_usd": 0.0,
+                     "max_solver_calls": min(integer(limits.get("max_solver_calls", 64), high=100000), budget.compute_limit),
+                     "max_model_calls": min(integer(limits.get("max_model_calls", 4), high=100000), 1)}
+        serving = {**problem, "payload": {**problem["payload"], "resources": resources}}
+        model = _semantic_model(model_config, problem)
+        if model:
+            model = {**model, "timeout_seconds": seconds, "max_tokens": min(model["max_tokens"], budget.compute_limit)}
+        # Competence is recomputed from GREG's own settled claims for every request (P4 learned routing).
         memory = learned_routing.ledger(journal) if mode != "static" else learned_routing.CompetenceLedger()
-        receipt = run_worker(problem, records, withheld_organs=withheld(registry, forced=forced),
-                             semantic_model=_semantic_model(model_config, problem), cpu_seconds=cpu,
+        # The worker is a subprocess: interpreter and solver imports are startup, not solving. The
+        # #148/#155 allowance (+5 s CPU, +20 s wall) stays, clipped to the enclosing deadline so an
+        # overrun becomes an honest BUDGET_EXHAUSTED receipt, never a silently stretched window.
+        cpu = min(60.0, max(5.0, seconds + 5.0))
+        wall = max(.01, min(budget.remaining(), cpu + 20.0))
+        receipt = run_worker(serving, records, withheld_organs=withheld(registry, forced=forced),
+                             semantic_model=model, cpu_seconds=cpu, timeout_seconds=wall,
                              created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                              memory_records=[r.to_dict() for r in memory.records()] if mode == "learned" else None)
+        budget.before_verification()
         check_receipt(receipt)
         if receipt["versions"]["cortex"] != CORTEX_VERSION:
             raise CognitionError(f"worker ran cortex {receipt['versions']['cortex']}, body expects {CORTEX_VERSION}")
         out = to_cognitive_receipt(params, receipt, started,
                                    learned_routing.summary(mode, memory, receipt, problem["payload"]))
+        if budget.remaining() <= 0:
+            raise CognitionError("BUDGET_EXHAUSTED: enclosing Cortex deadline exceeded")
+        plan = budget.snapshot(registry)
+        plan["model_calls_attempted"] = receipt["expenditure"].get("model_calls")
+        plan["model_call_measurement"] = "worker reported; independent provider observation unavailable"
+        out["compute_cost"]["budget_plan"] = plan
+        out["compute_cost"]["model_calls"] = plan["model_calls_attempted"]
+        out["authority_refs"] = {"live_grant": caller_window is not None, "new_authority": False,
+                                 "problem_id": pid, **plan["authority_refs"],
+                                 "limits": "budget projection is not a grant"}
+        identity = dict(out)
+        identity.pop("receipt_id")
+        out["receipt_id"] = digest(identity)
         retained_data(out)
         return out
-    except (CognitionError, ValueError, TypeError, KeyError, OSError) as exc:
-        return _failure(params, f"{type(exc).__name__}: {str(exc)[:400]}", started)
+    except (CognitionError, ValueError, TypeError, KeyError, OSError, subprocess.TimeoutExpired) as exc:
+        timeout = isinstance(exc, subprocess.TimeoutExpired)
+        why = "TIMEOUT: Cortex worker exceeded its bounded serving deadline" if timeout else f"{type(exc).__name__}: {str(exc)[:400]}"
+        out = _failure(params, why, started)
+        out["reason_code"] = "TIMEOUT" if timeout else "BUDGET_EXHAUSTED" if "BUDGET_EXHAUSTED" in why else "ABSTAIN"
+        out["stopping_reason"] = why
+        if budget is not None:
+            budget.stop_reason = why
+            plan = budget.snapshot(registry)
+            plan["model_calls_attempted"] = None if budget.invoked and model else 0
+            plan["model_call_measurement"] = "unknown interrupted worker" if budget.invoked else "worker not invoked"
+            out["compute_cost"].update(budget_plan=plan, model_calls=plan["model_calls_attempted"],
+                                       solver_calls=None if budget.invoked else 0, actual_compute_operations=None)
+            out["authority_refs"] = {"live_grant": caller_window is not None, "new_authority": False,
+                                     "problem_id": pid, **plan["authority_refs"],
+                                     "limits": "budget projection is not a grant"}
+            out["assumptions"] = ["no completed cognition result retained; partial worker execution is unknown"] if budget.invoked else ["worker not invoked"]
+        if timeout:
+            out["outcome"]["reasons"] = ["TIMEOUT"]
+        out["receipt_id"] = digest({k: v for k, v in out.items() if k != "receipt_id"})
+        return out

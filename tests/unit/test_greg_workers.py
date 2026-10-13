@@ -97,9 +97,17 @@ def test_accepted_work_is_committed_on_a_greg_branch_in_a_private_clone_and_the_
     assert lease["push_rights"] is False and lease["grant_id"].startswith(("grant", "g")) or lease["grant_id"]
 
 
-def test_a_change_to_a_protected_surface_is_never_accepted(tmp_path, monkeypatch):
-    edits = {**GOOD, "policy/rules.py": "ALLOW = True\n"}
-    _, _, _, events, observed = run_mission(tmp_path, monkeypatch, edits, allowed=("pkg/*", "tests/*", "policy/*"))
+@pytest.mark.parametrize('protected_path', [
+    'policy/rules.py', 'greg/pipeline.py', 'greg/isolation.py',
+    'greg/cognition/verification.py', 'greg/cognition/contracts.py',
+    'greg/cognition/budget.py', 'greg/cognition/cortex.py', 'greg/cognition/bridge.py',
+    'greg/cognition/seed_compat.py',
+    'cortex/seed/verify.py', 'cortex/organs/adversarial.py', 'cortex/evaluation/run.py',
+])
+def test_a_change_to_a_protected_surface_is_never_accepted(tmp_path, monkeypatch, protected_path):
+    edits = {**GOOD, protected_path: "ALLOW = True\n"}
+    _, _, _, events, observed = run_mission(tmp_path, monkeypatch, edits,
+                                         allowed=("pkg/*", "tests/*", "policy/*", "greg/*", "cortex/*"))
     assert "greg.mission.achieved" not in events
     verdicts = [o for o in observed if o["check_id"] == "work_accepted"]
     assert verdicts and not any(o["passed"] for o in verdicts)
@@ -137,6 +145,24 @@ def test_appraisal_rejects_a_tampered_patch(tmp_path, monkeypatch):
     assert result["verdict"] == "REJECTED" and "digest" in result["findings"][0]
 
 
+@pytest.mark.parametrize("raw", [float("nan"), float("inf"), -1, True, "nan", "-1", {}, []])
+def test_invalid_spend_reserves_cap_without_fabricating_zero(raw):
+    spend = workers.worker_spend(raw, 1)
+    assert spend["status"] == "invalid" and spend["reported_usd"] is None
+    assert spend["reserved_usd"] == spend["charge_usd"] == 1
+    json.dumps(spend, allow_nan=False)
+
+
+def test_unknown_reported_zero_and_overcap_spend_remain_distinct():
+    missing = workers.worker_spend(None, 1)
+    assert missing["status"] == "unknown" and missing["reported_usd"] is None
+    assert missing["reserved_usd"] == 1
+    zero = workers.worker_spend(0, 1)
+    assert zero["status"] == "reported" and zero["reported_usd"] == 0
+    assert zero["reserved_usd"] == 0
+    assert workers.worker_spend(2, 1)["status"] == "over_cap"
+
+
 def test_claude_worker_argv_is_bounded():
     order = workers.WorkOrder(order="x", mission_id="m:x", grant_id="g", authority_ref="a", mode="repository",
                               objective="o", acceptance={"tests": [["python", "-m", "pytest"]]},
@@ -148,6 +174,32 @@ def test_claude_worker_argv_is_bounded():
     assert {"WebFetch", "WebSearch", "Bash(git push:*)", "Bash(git commit:*)"} <= set(denied)
     assert "--strict-mcp-config" in argv and "--no-session-persistence" in argv
     assert not any(a == "Bash" for a in argv[argv.index("--allowedTools") + 1:argv.index("--disallowedTools")])
+
+
+@pytest.mark.parametrize("readdress", [False, True])
+def test_appraisal_binds_acceptance_to_the_original_commission(tmp_path, monkeypatch, readdress):
+    home, _, _, _, _ = run_mission(tmp_path, monkeypatch, GOOD)
+    root = Layout(home).workspace / "m_work-add-sub" / "work-orders" / "add-sub"
+    evidence_path = root / "evidence.json"
+    evidence = json.loads(evidence_path.read_text())
+    evidence["order"]["acceptance"]["tests"] = [["python", "-c", "pass"]]
+    if readdress:
+        forged = workers.WorkOrder(**evidence["order"]).digest()
+        evidence["order_digest"] = forged
+        evidence["summary"]["order_digest"] = forged
+    evidence_path.write_text(json.dumps(evidence))
+    config = json.loads(Layout(home).config.read_text())
+    from greg.capabilities import BUILTINS, InvocationContext
+    with Body(home) as body:
+        ctx = InvocationContext(workspace=root.parents[1], read_roots=tuple(Path(r) for r in config["read_roots"]),
+                                secrets=None, manifest=BUILTINS["worker.appraise"][0], journal=body.journal,
+                                mission_id="m:work-add-sub")
+        result = workers.appraise({"order": "add-sub"}, ctx)
+        appraisal = body.appraise("m:work-add-sub")
+    assert result["verdict"] == "REJECTED", result
+    assert any("digest" in f or "canonical" in f for f in result["findings"])
+    assert appraisal["verdict"] == "REFUTED", appraisal
+    assert appraisal["checks"]["world_reobserved"] is False
 
 
 @pytest.mark.parametrize("params, message", [
@@ -221,3 +273,14 @@ def test_metered_spend_never_books_less_than_a_trustworthy_report(output, booked
 def test_capabilities_without_a_meter_book_the_signed_cap():
     from greg.missions import metered_spend
     assert metered_spend("browser.session", {"worker": {"cost_usd": 0.0}}, 1.5)["cost_usd"] == 1.5
+
+
+def test_worker_environment_does_not_inherit_keys_home_or_proxy(tmp_path, monkeypatch):
+    for key in ('OPENAI_API_KEY','ANTHROPIC_API_KEY','AWS_SECRET_ACCESS_KEY','GITHUB_TOKEN',
+                'GREG_SIGNING_KEY','HOME','HTTPS_PROXY','PYTHONPATH','NODE_OPTIONS'):
+        monkeypatch.setenv(key, 'unrelated-host-secret-or-configuration')
+    env=workers._worker_env(tmp_path)
+    assert env['HOME']==str(tmp_path)
+    assert env['TMPDIR']==str(tmp_path)
+    assert not set(env) & {'OPENAI_API_KEY','ANTHROPIC_API_KEY','AWS_SECRET_ACCESS_KEY','GITHUB_TOKEN',
+                          'GREG_SIGNING_KEY','HTTPS_PROXY','PYTHONPATH','NODE_OPTIONS'}

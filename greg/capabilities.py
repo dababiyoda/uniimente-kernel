@@ -217,6 +217,24 @@ class SecretBroker:
 
 # -- invocation context and adapters ---------------------------------------------
 
+@dataclass(frozen=True)
+class InvocationBudgetWindow:
+    """Read-only limits projected by AuthorityOffice; this is not a grant."""
+    horizon: str
+    grant_expires_at: str
+    remaining_money_usd: float
+    authority_ref: str
+    grant_id: str
+    grant_digest: str | None = None
+    mission_id: str | None = None
+    scope_digest: str | None = None
+    proposal_id: str | None = None
+    witness_id: str | None = None
+    dispatch_effect_digest: str | None = None
+    latency_ceiling_seconds: float = 30.0
+    compute_ceiling_operations: int = 100000
+
+
 @dataclass
 class InvocationContext:
     workspace: Path                    # the only place internal writes may land
@@ -235,6 +253,7 @@ class InvocationContext:
     stop_check: object | None = None
     capability_registry: object | None = None  # read-only view for consequence-inert solver eligibility
     cognition_model: dict | None = None       # effective founder-selected local model; never a paid fallback
+    cognition_budget: InvocationBudgetWindow | None = None
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -802,6 +821,14 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                     tests=("tests/unit/test_greg_daleobanks_bridge.py",)),
                            _lazy("greg.daleobanks_bridge", "publish_status")),
 }
+
+STRENGTHENS["pipeline.inspect"] = ("routing", "proof", "settlement")
+BUILTINS["pipeline.inspect"] = (_builtin("pipeline.inspect", "pipeline.inspect",
+    "Inspect typed output of a successful action in this signed mission", "internal", "read_only",
+    "pipeline:", {"action_id": "str", "field": "str", "type": "str"},
+    {"available": "bool", "value": "typed data", "bindings": "list"}, retry_safe=True,
+    strengthens=("routing", "proof", "settlement"), tests=("tests/integration/test_greg_pipeline.py",)),
+    _lazy("greg.pipeline", "inspect"))
 
 # Cognitive families are the SAME capability manifests/genomes, lazily executed.
 # No second intelligence registry, event store, runtime, policy or model router.

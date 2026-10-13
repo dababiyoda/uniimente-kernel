@@ -463,7 +463,7 @@ class MissionEngine:
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
+                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
                                  cognition_model=getattr(self, "cognition_model", None))
@@ -686,9 +686,17 @@ class MissionEngine:
             attempt = sum(1 for e in self.journal.replay("mission.observed")
                           if e.payload.get("mission_id") == m.mission_id
                           and e.payload.get("check_id") == check["check_id"])
+            from greg.pipeline import resolve, PendingInput, BindingError
+            try:
+                bound_params, input_bindings = resolve(sensor.get("params", {}), self.journal, m.mission_id)
+            except (PendingInput, BindingError) as exc:
+                failing.add(check["check_id"])
+                self.journal.record("mission.input_wait", {"mission_id": m.mission_id,
+                    "check_id": check["check_id"], "why": str(exc)}, key=[m.mission_id, check["check_id"], str(exc)])
+                continue
             outcome = self.office.act(
                 mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-                adapter=adapter, ctx=self._context(m, manifest), params=sensor.get("params", {}),
+                adapter=adapter, ctx=self._context(m, manifest), params=bound_params,
                 target=sensor["target"], cost_usd=0.0, expected_outcome="observation captured",
                 evidence_refs=[], attempt=f"{attempt}@{iso(now)}", spent_usd=m.spent_usd,
                 approved_scopes=m.approved_scopes)
@@ -1016,9 +1024,18 @@ class MissionEngine:
         aid = s["action_id"]
         attempt = m.attempts.get(aid, 0)
         params, bindings, sources = bound.get(aid, (s.get("params", {}), [], []))
+        # Two typed-handoff syntaxes, one resolver order: signed ``bind`` edges (above) first, then
+        # inline ``$from_action`` references (#156/#159 pipeline). Both read only retained Gate
+        # receipts of this mission; neither can touch capability, target, cost or scope.
+        from greg.pipeline import resolve, BindingError
+        try:
+            bound_params, input_bindings = resolve(params, self.journal, m.mission_id)
+        except BindingError as exc:
+            self._block(m, {"type": "no_strategy", "why": "pipeline input unavailable: " + str(exc)})
+            return {"state": "BLOCKED", "blocker": m.blocker}
         outcome = self.office.act(
             mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-            adapter=adapter, ctx=self._context(m, manifest), params=params, target=s["target"],
+            adapter=adapter, ctx=self._context(m, manifest), params=bound_params, target=s["target"],
             cost_usd=float(s.get("cost_usd", 0.0)), expected_outcome=s.get("expected_outcome", "strategy executed"),
             evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
             spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
@@ -1027,7 +1044,8 @@ class MissionEngine:
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,
                   "cost_usd": outcome.cost_usd if outcome.status == "DONE" else 0.0,
-                  "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now)}
+                  "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now),
+                  "input_bindings": input_bindings}
         if outcome.status == "DONE" and float(s.get("cost_usd", 0.0)) > 0:
             record.update(metered_spend(manifest.capability_id, outcome.output, outcome.cost_usd))
         if bindings:

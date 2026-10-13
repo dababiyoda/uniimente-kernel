@@ -88,6 +88,20 @@ class TestOneRegistry:
 
 
 class TestOneReceipt:
+    def test_interrupted_worker_does_not_report_unknown_work_as_zero(self, monkeypatch):
+        import subprocess
+        def interrupted(*args, **kwargs):
+            raise subprocess.TimeoutExpired("bounded fixture worker", .01)
+        monkeypatch.setattr(bridge, "run_worker", interrupted)
+        r = reason(request({"sources": [{"text": "untrusted fixture"}]}), registry=registry_view(),
+                   model_config={"order": ["ollama"], "ollama_model": "fixture"})
+        assert r["output"] is None and r["reason_code"] == "TIMEOUT"
+        assert r["compute_cost"]["model_calls"] is None
+        assert r["compute_cost"]["solver_calls"] is None
+        assert r["compute_cost"]["actual_compute_operations"] is None
+        assert r["authority_refs"]["new_authority"] is False
+        assert _valid_receipt(r)
+
     def test_receipt_is_the_greg_envelope_with_the_cortex_receipt_as_typed_artifact(self):
         r = reason(request({"formal_model": opt_model()}), registry=registry_view())
         assert r["proof_type"] == "cortex_receipt" and r["proof_artifact"]["schema"] == "cortex-receipt/0.2"

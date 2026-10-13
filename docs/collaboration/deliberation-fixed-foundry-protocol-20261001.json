@@ -118,7 +118,7 @@
       "claim": "Prior integrated checkpoint passes",
       "tier": "sandbox_execution",
       "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36927752813",
-      "finding": "All six job conclusions success at bbc0ec61; local full suite 1678 passed/10 skipped and verifier V1–V5 passed. This evidence does not validate this new delta."
+      "finding": "All six job conclusions success at bbc0ec61; local full suite 1678 passed/10 skipped and verifier V1\u2013V5 passed. This evidence does not validate this new delta."
     },
     {
       "claim": "Exact recipe reaches ratification",
@@ -213,7 +213,14 @@
       "strongest_competing_architecture": "Container or microVM execution of general providers.",
       "do_nothing": "System16 remains unnecessarily unreachable despite restricted DSL implementation.",
       "reversible_experiment": "Run exact-recipe verification and five hostile substitution probes through CI."
-    }
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not selected for this bounded increment: Local host probes failed; no supported host facility is currently available. The intended wider capability remains binding; this disposition is not permanent removal.",
+        "revival_evidence": "Working isolation host and escape/resource/revocation tests."
+      }
+    ]
   },
   "pass_2": {
     "attack_summary": "Attack guard loss, substituted interpreter/module/scope/environment, descendant survival, approval confusion and allowlist drift. Strengthen every first-pass concern.",

@@ -48,12 +48,23 @@ def initial_state(capability_id):
     family = capability_id.removeprefix("cognition.")
     return "VERIFIED" if capability_id.startswith("cognition.") and family in FAMILIES and family not in SEED_FAMILIES else "ATTACHED"
 
+# Qualified bounded mechanisms recombined from PR #145 at 680a0d438e94.
+# Version separation prevents older, shape-only appraisal history from training
+# the replacement. This does not create a permission or external-action grant.
+NATIVE_QUALIFIED = frozenset({"micro", "probabilistic", "control", "information",
+                            "simulation", "game", "pattern", "sequential", "human",
+                            "collective", "evolutionary"})
+
 
 def profile(family):
     layer, operations, classes, proof, _ = FAMILIES[family]
     return CognitiveCapabilityProfile(family=family, layer=layer, operations=operations,
                                      epistemic_classes=classes, proof_class=proof,
                                      deterministic=family not in ("semantic",),
+                                     falsification_tests=("tests/unit/test_greg_native_reconciliation.py",)
+                                         if family in NATIVE_QUALIFIED else ("tests/unit/test_greg_cognition.py",),
+                                     lineage=("INTENT-20260930-polyintelligence", "PR #145 680a0d438e94")
+                                         if family in NATIVE_QUALIFIED else ("INTENT-20260930-polyintelligence",),
                                      latency_estimate_seconds=1.0 if family in ("formal", "optimization", "game", "evolutionary", "semantic") else .1)
 
 
@@ -104,7 +115,8 @@ def builtin_entries(manifest_type, lazy):
     for family in (*FAMILIES, "solve", "compose", "knowledge"):
         computational = family not in ("knowledge",)
         entries["cognition." + family] = (manifest_type(
-            capability_id="cognition." + family, version="0.2.0", provider="greg-builtin",
+            capability_id="cognition." + family,
+            version="0.3.0" if family in NATIVE_QUALIFIED else "0.2.0", provider="greg-builtin",
             function="cognition." + family, description="Bounded " + family + " cognition with typed evidence and abstention",
             route="internal", consequence_class="read_only", target_prefix="cognition:",
             inputs={"problem_id": "str", "operation": "str", "data": "bounded dict"} if computational else {"none": "no parameters"},
@@ -115,7 +127,12 @@ def builtin_entries(manifest_type, lazy):
             network="egress-allowlist" if family in ("semantic", "solve", "compose") else "none",
             egress_allowlist=("127.0.0.1",) if family in ("semantic", "solve", "compose") else (),
             cognitive_profile=asdict(profile(family)) if family in FAMILIES else {}),
-            lazy("greg.cognition.cortex", "compose" if family == "compose" else "knowledge" if family == "knowledge" else "solve"))
+            # ``cognition.solve`` is the one schema-routed entry (#156/#159): a ``cognition/1`` problem reaches the
+            # seed path, every other request the cortex bridge. ``cognition.seed.solve`` (#155/#158) stays the
+            # explicit seed id. Both are read_only; neither adds authority.
+            lazy("greg.cognition.cortex", "compose") if family == "compose" else
+            lazy("greg.cognition.cortex", "knowledge") if family == "knowledge" else
+            lazy("greg.cognition", "solve") if family == "solve" else lazy("greg.cognition.cortex", "solve"))
     for cid, (version, _, _, network, description) in CORTEX_ENTRIES.items():
         entries[cid] = (manifest_type(
             capability_id=cid, version=version, provider="greg-builtin", function=cid, description=description,

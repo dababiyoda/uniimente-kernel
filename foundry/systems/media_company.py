@@ -85,7 +85,7 @@ def assemble(root, spec, expected_spec=None):
                                 "company native delivery offer") for offer in spec["offers"]]
     # Initialize real executable community/journey substrates without creating
     # any fake people or outcomes. Signed/observed records arrive separately.
-    community.ingest(stores / "system-32", charter.community, [])
+    members = community.ingest(stores / "system-32", charter.community, [])
     journeys.ingest(stores / "system-34", [])
     books = root / "fixture-books"
     for account, kind in (("fixture_consideration", "asset"), ("fixture_receipts", "revenue")):
@@ -94,7 +94,7 @@ def assemble(root, spec, expected_spec=None):
         raise ValueError("this company's fixture book requires a single currency")
     output = {"version": VERSION, "company": charter.name, "charter": version["address"],
               "charter_hash": charter.hash(), "territory_hash": graph.hash(),
-              "media": produced, "portal": page, "offers": published,
+              "media": produced, "portal": page, "offers": published, "community": members,
               "operational_ratification": False, "public_activation": False, "authority_created": False}
     root.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({"spec": spec, "spec_hash": digest, "output": output,

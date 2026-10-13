@@ -138,7 +138,10 @@ def test_section_33_acceptance_chain():
         # Without a grant, both candidate moves are prepared and one compressed founder decision per move is opened.
         assert all(d["decision"] == "PREPARE_FOR_FOUNDER" for d in summary["decisions"])
         first_asks = woke.routing["immediate"] + woke.routing["batched"]
-        assert {a["kind"] for a in first_asks} == {"decision"} and all(any(o["cost"] == "none" for o in a["options"]) for a in first_asks)
+        # The favorable intersection itself is surfaced as a no-cost information item, never as an ask for action.
+        assert {a["kind"] for a in first_asks} == {"decision", "information"}
+        assert all(any(o["cost"] == "none" for o in a["options"]) for a in first_asks)
+        assert all(a["goal_id"] == goal_id for a in first_asks)
         ledger.close()
 
         # 7. GREG performs useful work without another prompt, through the Gate under a pre-existing grant,

@@ -90,7 +90,7 @@ capabilities:
     produces: []
     lifecycle: TESTED
   - capability_id: kernel.goal_gravity
-    description: Persistent authorized goals as attractors; wake/sleep, Backcast GPS adapter, intervention classification, experience integration, favorable intersections, asymmetry retention, founder attention routing; Gate-only execution
+    description: Persistent authorized goals as attractors; wake/sleep, Backcast GPS adapter, intervention classification, experience integration, favorable intersections (threats subtract), asymmetry retention, founder attention routing; deliberation through the standing-cognition tick when attached; Gate-only execution; reconciliation from Gate records; independent outcome verification; records validated by contract on write
     implementation_path: egregore/gravity.py
     consumes: [event, evidence, capability-grant]
     produces: [event]

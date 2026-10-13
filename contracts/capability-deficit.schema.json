@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/capability-deficit.schema.json",
+  "title": "Capability Deficit",
+  "description": "A verified gap between a goal's active gate and the registered capability repertoire (egregore/interventions.py). It opens the resourcefulness ladder and keeps the original goal blocked, never closed. Lifecycle vocabulary follows UNIIMENTE_FINAL_BUILD_ORDER section 4.3. Carries no authority: a deficit never authorizes acquisition, installation or activation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "deficit_id",
+    "goal_id",
+    "active_node_id",
+    "missing_capabilities",
+    "founder_intent",
+    "resolution_order",
+    "lifecycle",
+    "disposition",
+    "detected_at",
+    "resume"
+  ],
+  "properties": {
+    "deficit_id": {
+      "$ref": "#/$defs/hash"
+    },
+    "goal_id": {
+      "$ref": "#/$defs/hash"
+    },
+    "active_node_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "missing_capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[^@]+@[^@]+$"
+      }
+    },
+    "founder_intent": {
+      "type": "string",
+      "minLength": 1
+    },
+    "resolution_order": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "lifecycle": {
+      "enum": [
+        "DISCOVERED",
+        "SPECIFIED",
+        "WRAPPED",
+        "TESTED",
+        "SANDBOXED",
+        "SHADOW",
+        "CANARY",
+        "ACTIVE",
+        "SPECIALIZED",
+        "FALLBACK",
+        "SUPERSEDED",
+        "HISTORICAL",
+        "QUARANTINED"
+      ]
+    },
+    "disposition": {
+      "enum": [
+        "goal_blocked_not_closed",
+        "resolved_resume_original_goal"
+      ]
+    },
+    "detected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolved_by": {
+      "type": "string"
+    },
+    "resume": {
+      "const": "original_goal"
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

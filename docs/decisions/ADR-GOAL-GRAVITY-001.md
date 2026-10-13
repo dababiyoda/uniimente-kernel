@@ -42,6 +42,7 @@ decision.
 | Section-25 scenarios pass | implementation | unit_test | `tests/unit/test_goal_gravity.py` | 20 passed | deterministic, model-free |
 | Section-33 chain passes | implementation | sandbox_execution | `tests/integration/test_goal_gravity_acceptance.py` | 1 passed; executor called once; outreach prepared, never executed; capability retained; later goal unblocked | JSONL ledger, test passport, development witness key |
 | Suite and verifier green after change | implementation | unit_test / deterministic_fixture | `tests/evidence/goal-gravity-20261013/` | 647 passed; verifier V1–V5 PASS incl. `egregore-goal-gravity` closures | synthetic |
+| Second increment green | implementation | unit_test | `tests/unit/test_goal_gravity_seams.py` + the above (`tests/evidence/goal-gravity-20261013/pytest-full-suite-increment-2.log`) | seam, deficits, reconciliation, verification, controls, attention pass; full suite and verifier rerun recorded | synthetic; test-minted grants |
 | External effect through this loop | unresolved_claim | other | none | zero; CMC/VEPMC unchanged at 0 | not claimed |
 
 ## Alternatives
@@ -60,9 +61,11 @@ decision.
 | Durable, restart-safe goal state | `provenance.ledger.EvidenceLedger`; `StandingCognitionRuntime._hydrate` pattern | goal/world/turn records hydrate from `ledger.records` |
 | Signals | `egregore.contracts.SignalEnvelope` | typed observations ride in `payload["observations"]`; text stays data |
 | Idempotent turns | cognition `trigger_id` + request hash + conflict record | `GoalGravityLoop.turn` |
+| Deliberation | `StandingCognitionRuntime.tick` (proposers, guardian/treasury evaluators, selection with dissent, metered calls) | `egregore/cognition_seam.py`; per-goal governor carved from the turn budget |
+| Record contracts | JSON Schema 2020-12 via `jsonschema` with `rfc3339-validator` | `egregore/contract_check.py` on every goal/state/experience/deficit write |
 | Policy verdicts | `policy.engine.evaluate` | `InterventionClassifier.classify` |
 | Execution | `policy.consequence_gate.ConsequenceGate.run` with a caller-supplied pre-existing grant | at most one move per goal per turn |
-| No duplicate consequential action | durable `attempted` intervention record + the Gate's `grant_dispatch` claim | `_already_attempted` |
+| No duplicate consequential action | durable `attempted` intervention record + the Gate's `grant_dispatch` claim | `_already_attempted` (latest record per route); `reconcile()` reads the Gate's `action.*` events; re-dispatch only after reconciliation under an attempt-numbered proposal id |
 | SBM gap arithmetic | `morphogenesis.contracts.MetricTarget` / `MorphogeneticEngine._error` | `gps.metric_error` |
 | Reusable capabilities | `capabilities.genome.GenomeRegistry` | `AsymmetryRetention.retain` registers bounded genomes |
 | Drift visibility | the Gate's own `action.committed` events | proposal-id prefix `egregore:goal:<goal23>:<route23>` |
@@ -102,10 +105,56 @@ decision.
 - Residual risks: permanent duplication; narrow sensorium; ledger growth. Owners and triggers recorded.
 - Recommendation: NEEDS_FOUNDER_DECISION (adoption into `main`).
 
+## Second increment (same day, after the completeness critique)
+
+The independent critique (`docs/collaboration/goal-gravity-completeness-critique-2026-10-13.md`) and a 53-finding review
+of the first commit were triaged; the dispositions are tabled at the top of the critique. What changed in the design:
+
+- **Deliberation seam.** `egregore/cognition_seam.py` registers a `GoalProposer` with `StandingCognitionRuntime`; when a
+  runtime is attached, every awake goal's candidates come out of its `tick` (guardian/treasury vetoes honored, a
+  vetoed or unselected move is prepared, never executed), metered by a per-goal `ResourceGovernor` carved out of the
+  turn's budget. Without a runtime the loop runs in declared-move mode and says so in every record.
+- **Deviation recorded.** `GoalGravityLoop.turn` accepts `gate` and `executor` for one turn, whereas
+  `StandingCognitionRuntime.tick` must never accept an executor (asserted on `main`). The runtime proposes; the loop is
+  the accountable projection that submits one selected, policy-allowed move to the Gate and retains none of gate,
+  executor or grant between turns (`goal_gravity_closures.authority`; seam test on `vars(loop)`). The Gate must write
+  to the same ledger the loop reads.
+- **Evidence is real.** Policy sees ledger hashes (the goal's authorization record, experience records relevant to the
+  goal, receipts) and a confidence that is the world model's relevance-weighted belief confidence capped by the
+  caller's attestation; with no world evidence the caller's value stands alone and is labelled `caller_attested_only`.
+- **Contracts enforced.** goal-record, goal-state, experience-event and capability-deficit records are validated on
+  every write (`egregore/contract_check.py`, JSON Schema 2020-12, fail-closed formats). They stay outside the pinned
+  boundary-package allowlist on purpose; the intent record's wording was corrected accordingly.
+- **Every deficit class (section 21).** capability, resource (conserve deferrals, goal budget, grant limit),
+  relationship (`PlanNode.requires_relationships`) and proof (evidence floor, unmet goal dependencies) deficits are
+  recorded; the goal stays blocked, never closed.
+- **Reconciliation and verification.** `reconcile()` closes `attempted`/`unknown` moves from the Gate's own
+  `action.*` events (executed/failed) or from an accountable resolution recorded with its author; the Gate's dispatch
+  claim is keyed on the proposal id, so a re-dispatch after reconciliation carries an attempt suffix and is never a
+  replay. `externally_verified` is never the executor's own claim: `verify_outcome()` requires a verifier other than
+  the executing actor and at least one evidence reference.
+- **Attention (section 13).** Quiet hours batch everything but emergencies; `defer` re-surfaces after the goal's review
+  cadence; `accept` is recorded as not-a-grant; the preference is written before the answer record; information items
+  cover favorable intersections (on the transition), drift, a contradicted bottleneck metric, unknown outcomes
+  (emergency when external) and outcome discrepancies.
+- **Founder controls (section 20).** `change_goal` pauses and `supersede()` replaces with lineage; `ask_before`,
+  `forget_route`, `revoke_capability` and a foreign legal principal are enforced before policy.
+- **Measurement (section 19).** `measures()` reports persistent identity, agency, intelligence ("not measured here")
+  and the experiential surface separately; subjective consciousness stays unresolved and unclaimed.
+
+Evidence tier after the increment is unchanged: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED on synthetic ledgers
+with test passports, the development witness key and grants minted by the tests from the loop's own proposals
+(`docs/founder-loop-entry-gate.json` forbidden shortcut 4). No external effect. Nothing activates.
+
 ## Dissent
 
 - Adversarial Reviewer: "a third goal/mission lineage; the directive forbids a parallel GREG". Threshold: if #137 or #158 merges, reconcile through the adapters above within one release or regress this loop. Owner: Alfonso. Trigger: ruling on the PR graph.
+- Adversarial Reviewer (second increment): after the seam the loop is still a second trigger-keyed engine consuming the first's candidates, not a stage of `tick`. Threshold: a scheduler driving both with separate clocks, or the two conflict records disagreeing. Owner: Alfonso. Trigger: first durable scheduler integration.
 - Systems Architect: grant supply should become a typed request to the existing issuer rather than a caller mapping. Threshold: first scheduler integration with ambiguous grant provenance. Owner: kernel maintainers.
+- Systems Architect (second increment): four parallel-plane risks stay open and are connected by convention, not adapters: `WorldModel` beside `CausalMemory`/`StateObservation`; `PlanNode` beside `StrategyBranch`/`ExperimentSpec`; goal refusals not consulted by the Gate or the Ratifier; deficit lifecycle vocabulary beside #137's and the genome registry's. Owner: kernel maintainers. Trigger: first organ-fed observation adapter; first Gate proposal whose effect digest matches a refused route.
+- Evidence Guardian: every EXISTING status is synthetic; test-minted grants; CMC/VDM/VEPMC remain 0. Threshold: one real consequence under a founder-issued grant, verified by `verify_outcome()` from an independent party.
+- Constitutional Reviewer: the `executor` deviation at the loop boundary must stay visible and verified. Threshold: the closure authority check and the seam test keep proving nothing retains an executor, gate or grant; a scheduler holding a long-lived executor for the loop is a violation.
+- Operator: #137 remains the only lineage with kill -9 and torn-tail tests, a Genesis builder with frozen oracles and a single ask writer; end-to-end Capability Genesis on `main` stays open until the founder rules on #137. Owner: Alfonso.
 
 ## Authority impact
 

@@ -339,7 +339,8 @@ def test_restart_continuity_without_duplicate_consequential_action(stack):
     fix = loop3.gps.fix(spec_b, loop3.registry.state(goal_b), now=T2, record=False)
     classification = loop3.classifier.classify(spec_b, loop3.registry.state(goal_b), pending, fix=fix, grant=None,
                                                evidence_refs=["x"], evidence_confidence=0.9, now=T2, record=False)
-    loop3._record_intervention(goal_b, pending, classification, evidence_state="attempted", now=T2)
+    loop3._record_intervention(goal_b, pending, classification_id=classification.classification_id,
+                               decision=classification.decision, evidence_state="attempted", now=T2)
     loop4 = make_loop(stack)
     loop4.registry.wake(goal_b, reason="test", now=T3)
     grants4 = {"research.brief": grant_for(loop4, gate, spec_b, pending)}
@@ -388,15 +389,30 @@ def test_evidence_integrity_distinguishes_every_state(stack):
              if i.payload["goal_id"] == goal_b and i.payload["intervention"]["intervention_id"] == "compile-brief"]
     assert seq_b[-2:] == ["attempted", "unknown"]
     assert any("reconciliation" in b for b in loop_b.registry.state(goal_b).blockers)
-    # executed and externally_verified
+    # executed: the executor's own "externally_verified" claim is retained as a claim, never as the state
     loop_c = make_loop(stack)
     spec_c = robotics_goal(second_node=False, wake_threshold=0.25)
     goal_c = loop_c.registry.authorize(spec_c, now=T0)
     loop_c.registry.wake(goal_c, reason="test", now=T2)
-    verified = lambda p: {"observed_outcome": p.expected_outcome, "result_class": "positive", "validation_status": "externally_verified"}
-    turn_c = loop_c.turn(trigger_id="t3", now=T2, resources=governor(), gate=gate, executor=verified,
+    self_certified = lambda p: {"observed_outcome": p.expected_outcome, "result_class": "positive", "validation_status": "externally_verified"}
+    turn_c = loop_c.turn(trigger_id="t3", now=T2, resources=governor(), gate=gate, executor=self_certified,
                          grants={"research.brief": grant_for(loop_c, gate, spec_c, brief_move())}, evidence_confidence=0.9)
-    assert turn_c.executed[0]["evidence_state"] == "externally_verified"
+    assert turn_c.executed[0]["evidence_state"] == "executed"
+    assert turn_c.executed[0]["executor_claimed_validation"] == "externally_verified"
+    route_c = brief_move().route_hash
+    # externally_verified is earned from an independent party citing evidence; the executing actor cannot self-verify
+    with pytest.raises(Exception):
+        loop_c.verify_outcome(goal_c, route_c, verifier=actor.passport_id, evidence_refs=["audit:1"], note="self", now=T3)
+    with pytest.raises(Exception):
+        loop_c.verify_outcome(goal_c, route_c, verifier="auditor:external", evidence_refs=[], note="no evidence", now=T3)
+    verified = loop_c.verify_outcome(goal_c, route_c, verifier="auditor:external", evidence_refs=["audit:brief-2026-10-15"],
+                                     note="brief inspected against the source observations", now=T3)
+    assert verified["evidence_state"] == "externally_verified" and verified["detail"]["verifier"] == "auditor:external"
+    assert loop_c.status(goal_c, now=T3)["evidence_state"][route_c] == "externally_verified"
+    assert "audit:brief-2026-10-15" in loop_c.registry.state(goal_c).evidence_refs
+    # a planned/failed route cannot be verified
+    with pytest.raises(Exception):
+        loop.verify_outcome(goal_id, route_c, verifier="auditor:external", evidence_refs=["audit:x"], note="n", now=T3)
     ok, msg = ledger.verify_chain()
     assert ok, msg
 
@@ -599,9 +615,10 @@ def test_status_compresses_section_27_fields(stack):
     loop.turn(trigger_id="t1", now=T1, resources=governor(), evidence_confidence=0.9,
               signals=[signal("e1", domain="hardware", tags=["robotics"], observations=[obs("actuator", "cost_usd", 420)])])
     status = loop.status(goal_id, now=T1)
-    for key in ("desired_state", "current_position", "active_node", "active_gate", "single_bottleneck_metric",
-                "relevant_environmental_signals", "available_capabilities", "missing_capabilities",
-                "next_autonomous_work", "prepared_work", "founder_required_decisions", "evidence_state", "review_trigger"):
+    for key in ("desired_state", "current_position", "critical_assumptions", "active_node", "active_gate",
+                "single_bottleneck_metric", "relevant_environmental_signals", "available_capabilities",
+                "missing_capabilities", "next_autonomous_work", "prepared_work", "founder_required_decisions",
+                "evidence_state", "review_trigger"):   # the fourteen section-27 fields
         assert key in status
     assert set(status["prepared_work"]) == {"compile-brief", "contact-engineers"}
     assert len(status["founder_required_decisions"]) == 2 and status["active_node"] == "N1"

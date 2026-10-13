@@ -41,7 +41,7 @@ def _metric_crosses(direction: str, threshold: float, value: Any) -> bool:
 
 def score_signal(spec: GoalSpec, signal: SignalEnvelope, observations: Sequence[Observation]) -> tuple[float, tuple[str, ...]]:
     tags = signal.payload.get("tags", ())
-    tags = set(tags) if isinstance(tags, (list, tuple)) else set()
+    tags = {t for t in tags if isinstance(t, str)} if isinstance(tags, (list, tuple)) else set()
     domain = signal.payload.get("domain")
     subjects = {o.subject for o in observations}
     by_key = {o.key: o for o in observations}

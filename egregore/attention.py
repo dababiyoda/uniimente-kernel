@@ -6,11 +6,24 @@ Every ask carries a no-cost option, evidence references, options and an
 effort estimate; an ask without a no-cost option is suppressed as a
 manipulation guard. Answers are recorded; a refusal updates the goal's
 preferences so the same unchanged route is never re-proposed.
+
+Answer semantics (what each answer does, and what it never does):
+
+* ``accept``: recorded. It is not a grant; execution still needs a
+  pre-existing Consequence Gate grant supplied by the accountable service.
+* ``refuse``: the route is written to the goal's refused routes before the
+  answer is recorded; the unchanged route is never re-proposed.
+* ``never_use_tactic``: the tactic is written to the goal's preferences before
+  the answer is recorded.
+* ``defer``: the ask leaves the open set and re-surfaces only after the goal's
+  review cadence has elapsed since the answer.
+* ``change``: recorded; the spec is immutable, so a replacement goal must be
+  authorized (``GoalRegistry.supersede``).
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Mapping, Sequence
 
 from .contracts import canonical_copy, digest, require_text
@@ -75,15 +88,28 @@ class AttentionItem:
                 "options": [canonical_copy(o) for o in self.options], "recommendation": self.recommendation,
                 "evidence_refs": list(self.evidence_refs), "effort_estimate": self.effort_estimate,
                 "category": self.category, "route_hash": self.route_hash, "tactic": self.tactic,
-                "created_at": self.created_at, "manufactured_urgency": False, "execution_authority": "none"}
+                "created_at": self.created_at, "execution_authority": "none"}
 
 
 @dataclass(frozen=True)
 class AttentionPolicy:
+    """Interruptibility model: value thresholds, a per-turn cap, and quiet hours (UTC).
+
+    During quiet hours only ``emergency`` items interrupt; everything else that would have been
+    immediate is batched. ``quiet_hours_utc=(22, 7)`` means 22:00 through 06:59 UTC.
+    """
     immediate_value_threshold: float = 0.8
     batch_value_threshold: float = 0.3
     max_immediate_per_turn: int = 3
     require_no_cost_option: bool = True
+    quiet_hours_utc: tuple[int, int] | None = None
+
+    def is_quiet(self, now: datetime | str) -> bool:
+        if self.quiet_hours_utc is None:
+            return False
+        start, end = self.quiet_hours_utc
+        hour = parse_time(now).hour
+        return (start <= hour < end) if start <= end else (hour >= start or hour < end)
 
 
 @dataclass(frozen=True)
@@ -128,6 +154,7 @@ class FounderAttentionRouter:
 
     def route(self, items: Sequence[AttentionItem], *, now: datetime | str, channel: str = "immediate") -> Routing:
         routed_at = iso(parse_time(now))
+        quiet = self.policy.is_quiet(now)
         immediate: list[AttentionItem] = []
         batched: list[AttentionItem] = []
         suppressed: list[tuple[str, str]] = []
@@ -137,15 +164,22 @@ class FounderAttentionRouter:
             if item.item_id in seen or item.item_id in self._open:
                 suppressed.append((item.item_id, "duplicate of an open or already-routed ask"))
                 continue
-            if item.item_id in self._answers:
-                suppressed.append((item.item_id, "already answered by founder"))
-                continue
+            answer = self._answers.get(item.item_id)
+            if answer is not None:
+                if answer["decision"] != "defer":
+                    suppressed.append((item.item_id, "already answered by founder"))
+                    continue
+                if parse_time(now) < parse_time(answer["resurface_after"]):
+                    suppressed.append((item.item_id, f"deferred by founder until {answer['resurface_after']}"))
+                    continue
             if self.policy.require_no_cost_option and not item.has_no_cost_option:
                 suppressed.append((item.item_id, "manipulation guard: no no-cost option offered"))
                 continue
             seen.add(item.item_id)
             if item.urgency == "emergency":
                 immediate.append(item)
+            elif quiet and item.marginal_value >= self.policy.batch_value_threshold:
+                batched.append(item)   # quiet hours: hold for the next window
             elif item.marginal_value >= self.policy.immediate_value_threshold and len(immediate) < self.policy.max_immediate_per_turn:
                 immediate.append(item)
             elif item.marginal_value >= self.policy.batch_value_threshold or item.urgency == "high":
@@ -154,7 +188,7 @@ class FounderAttentionRouter:
                 suppressed.append((item.item_id, "below attention value threshold; retained in ledger only"))
         for item, lane in [(i, "immediate") for i in immediate] + [(i, "batched") for i in batched]:
             payload = {"source": self.source, "item": item.to_dict(), "lane": lane, "routed_at": routed_at,
-                       "disposition": "pending_founder; no external channel contacted"}
+                       "quiet_hours": quiet, "disposition": "pending_founder; no external channel contacted"}
             self.ledger.append(self.ASK_RECORD, payload)
             self._open[item.item_id] = item.to_dict()
         return Routing(tuple(immediate), tuple(batched), tuple(suppressed), routed_at)
@@ -167,15 +201,31 @@ class FounderAttentionRouter:
         if item is None:
             raise ValueError("unknown or already answered ask")
         answered_at = iso(parse_time(now))
-        payload = {"source": self.source, "item_id": item_id, "goal_id": item["goal_id"], "decision": decision,
-                   "actor": require_text("actor", actor), "note": require_text("note", note),
-                   "answered_at": answered_at, "authority_note": "answer recorded; grants nothing by itself"}
-        self.ledger.append(self.ANSWER_RECORD, payload)
-        self._answers[item_id] = payload
-        self._open.pop(item_id, None)
+        actor = require_text("actor", actor)
+        note = require_text("note", note)
+        # The durable effect is written first: a crash between the two writes leaves the preference in
+        # force and the ask still open, never an answer whose effect was lost.
+        effect = "recorded; grants nothing by itself"
         if decision == "refuse" and item.get("route_hash"):
             self.registry.record_refusal(item["goal_id"], route_hash=item["route_hash"], actor=actor, reason=note, now=now)
+            effect = "route refused; the unchanged route is never re-proposed"
         elif decision == "never_use_tactic" and item.get("tactic"):
             self.registry.record_preference(item["goal_id"], kind="never_use_tactic", value=item["tactic"],
                                             actor=actor, reason=note, now=now)
+            effect = f"tactic {item['tactic']!r} forbidden for this goal"
+        elif decision == "accept":
+            effect = "accepted; not a grant: execution still requires a pre-existing Consequence Gate grant"
+        elif decision == "defer":
+            effect = "deferred; re-surfaces after the goal's review cadence"
+        elif decision == "change":
+            effect = "change requested; the spec is immutable, a replacement goal must supersede it"
+        payload = {"source": self.source, "item_id": item_id, "goal_id": item["goal_id"], "decision": decision,
+                   "actor": actor, "note": note, "answered_at": answered_at, "effect": effect,
+                   "authority_note": "answer recorded; grants nothing by itself"}
+        if decision == "defer":
+            cadence = self.registry.get(item["goal_id"]).review_cadence_seconds
+            payload["resurface_after"] = iso(parse_time(now) + timedelta(seconds=cadence))
+        self.ledger.append(self.ANSWER_RECORD, payload)
+        self._answers[item_id] = payload
+        self._open.pop(item_id, None)
         return canonical_copy(payload)

@@ -671,3 +671,33 @@ def test_owned_site_serves_provable_pages_and_guards_portals(tmp_path):
     rendered = foundry_bridge.query({"system": 31, "op": "render", "args": {"path": "/missing", "now": 0}},
                                     _ctx(tmp_path, "foundry.query"))
     assert rendered["result"]["status"] == 404
+
+
+# -- increment 8 (part): cognitive router -------------------------------------------------
+
+from foundry.systems import cognitive_router
+
+
+def test_cognitive_router_ranks_by_verified_evidence_and_keeps_governance(tmp_path):
+    result = cognitive_router.exercise(tmp_path)
+    assert result["by_quality"][0] == "anthropic:opus" and result["by_cost"][0] == "local:llama"
+    assert result["local_only"] == ["local:llama"], "a local-only request never reaches a contracted vendor"
+    assert result["after_provider_loss"] == ["openai:gpt", "local:llama"] and result["memory_kept_after_loss"]
+    assert result["failover_answered_by"] == "openai:gpt" and result["failover_tried"] == ["failed", "ok"]
+    assert result["refusals"]["refusal_is_terminal"] == "Refusal", "a declined request is never re-asked elsewhere"
+    assert "nothing_fits_budget_and_privacy" in result["refusals"]
+    # dominance: a route worse on every axis never leads the order even under its favourable priority
+    r = tmp_path / "dom"
+    cognitive_router.declare(r, "a", provider="p", privacy="public", price_per_call_usd=0.01)
+    cognitive_router.declare(r, "b", provider="p", privacy="public", price_per_call_usd=0.02)
+    now = "2026-10-13T00:00:00Z"
+    for n in range(6):
+        cognitive_router.observe(r, "a", task="t", verdict="VERIFIED", cost_usd=0.01, latency_s=1.0, at=now, evidence=f"a{n}")
+        cognitive_router.observe(r, "b", task="t", verdict="VERIFIED" if n < 2 else "REFUTED", cost_usd=0.02, latency_s=3.0,
+                                 at=now, evidence=f"b{n}")
+    d = cognitive_router.choose(r, task="t", privacy="public", priority="cost", now=now)
+    assert d["order"] == ["a", "b"] and d["dominated"] == ["b"]
+    with pytest.raises(cognitive_router.RouterPolicyError):
+        cognitive_router.declare(r, "c", provider="p", privacy="secret")
+    out = foundry_bridge.query({"system": 25, "op": "routes", "args": {"now": now}}, _ctx(tmp_path, "foundry.query"))
+    assert out["result"] == {}, "a fresh mission workspace has no routes until declared"

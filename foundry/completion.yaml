@@ -441,11 +441,24 @@
   acceptance:
   - Router selects model/implementation by verified quality, price, privacy and latency
   - Provider loss fails over without losing memory or governance
-  adopt:
-  - LiteLLM
-  - OpenRouter
-  gap: No multi-provider cognitive router; the DALEOBANKS LLM adapter is single-provider.
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-25.json
+  implementation:
+  - foundry/systems/cognitive_router.py
+  - greg/models.py
+  - foundry/systems/reputation.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: foundry.query choose|routes; foundry.apply declare|observe|mark (system 25); PolicyRouter over greg.models.ModelRouter
+  limitations: 'Quality is the #41 lower-bound reputation of recorded judgments per (route, task); it is only as
+    good as the judgments fed to it. Prices and latencies are observed EWMAs, or the configured price when unobserved.
+    Privacy classes are declared by the operator, not verified against vendor terms. Exercise uses scripted routes;
+    live routes are GREG''s Anthropic/OpenAI/Claude Code routes and need the founder''s credentials.'
+  recovery: Route loss excludes the route from selection while its history is kept; GREG's ModelRouter still demotes
+    failing routes and never re-asks another vendor after a refusal; every decision is recorded with the axis values
+    used so a wrong choice can be audited against its outcome.
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 26:
   acceptance:
   - Egress and inter-organ traffic are allowlisted per identity

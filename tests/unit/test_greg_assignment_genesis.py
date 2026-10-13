@@ -101,6 +101,11 @@ def test_a_free_job_that_is_cheaper_is_an_improving_exchange():
     req = assignment.normalize_assignment({"costs": [[5, 1, 9], [1, 9, 9]]})
     with pytest.raises(assignment.CertificateError, match="cheaper exchange"):
         assignment.certify_assignment(req, {"status": "optimal", "pairs": [[0, 0], [1, 1]]})   # 14; best is 2
+    # Only a move to the free job improves this one; no exchange between assigned rows exists.
+    lone = assignment.normalize_assignment({"costs": [[5, 1]]})
+    with pytest.raises(assignment.CertificateError, match="cheaper exchange"):
+        assignment.certify_assignment(lone, {"status": "optimal", "pairs": [[0, 0]]})
+    assert assignment.certify_assignment(lone, {"status": "optimal", "pairs": [[0, 1]]})["free_columns"] == ["column1"]
 
 
 @pytest.mark.parametrize("seed", range(4))

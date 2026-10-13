@@ -30,6 +30,21 @@ checked computation:
   solved by an installed linear-programming engine (SciPy's HiGHS or OR-Tools GLOP) and accepted only
   on GREG's duality certificate: the plan is feasible, and a set of prices proves no plan does better.
   The answer carries those prices: what one more unit of each limit is worth.
+- **who does which job, the cheapest connecting network, the least-cost delivery**, each in controlled
+  words ("Ana on Painting: 4. ... Cheapest assignment.", "... Cheapest network connecting all sites.",
+  "Plant sends 30. Store needs 20. Plant to Store: 40 at 4. Cheapest delivery."), each from installed
+  engines (SciPy, OR-Tools, NetworkX) and each accepted only on GREG's own exact certificate: no
+  improving exchange of jobs; the cycle property; no cheaper rerouting. "No full assignment" and "no
+  delivery plan" are proved (Hall's and Gale's conditions) and name who is short of jobs or whose
+  supply cannot get out. 12 of 12 engine/function pairs qualified
+  (`tests/evidence/greg-open-source-genesis-2026-10-13/`).
+- **a venture memo whose revenue line is the Mind's, not the engine's** (directive section 16, the
+  venture case). When a signal carries economics, the mission first asks `cognition.solve` for a
+  revenue range and for causal support, and the memo renders only those receipts: a range with its
+  dominant uncertainty, and either an identified (randomized) effect or the sentence that no causal
+  support is identified, so no revenue conclusion is drawn. The appraiser re-derives the section and
+  requires every receipt to exist on the canonical ledger. A revenue figure may not outrun its causal
+  support, as a score may not outrun missing evidence.
 
 The receipt creates no authority. It settles competence exactly once, across `kill -9` and restart,
 and only from appraised, re-observed outcomes. Before this branch, GREG's own cognition path could
@@ -193,7 +208,17 @@ cognition work continues.
 Done after the correction:
 
 - #140's `cognition.graph` check now refutes a longer route and a false "no route" with GREG's own
-  Dijkstra, and its solver no longer drops a cheaper parallel road.
+  Dijkstra, and its solver no longer drops a cheaper parallel road. Its game values are proved from
+  both sides (row and column strategies) and its posteriors recomputed exactly; a wrong value is
+  refuted.
+- `greg doctor --chromebook` counts an engine present only when the isolated interpreter GREG's
+  workers use can import it (a rebuilt container showed OR-Tools installed but unusable).
+- The 2026-10-02 full-machine correction (#152) is on this stack; every cortex node carries a
+  completion class; `greg path` lists what is buildable now and what each wait is on
+  (`tests/unit/test_full_machine_guidance.py`).
+- Three more certified functions (assignment, spanning tree, least-cost delivery) and the venture
+  case above; the One Mind reconciliation (#154) audited with its engines present
+  (`tests/evidence/one-mind-reconciliation-audit-2026-10-07/`).
 - Linear programs (`lp.optimize`, template `plan-in-words`): two installed engines, a duality
   certificate, shadow prices.
 - **"No plan exists" is proved, not relayed.** When an engine reports infeasible, GREG solves the

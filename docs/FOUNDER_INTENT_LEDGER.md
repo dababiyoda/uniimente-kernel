@@ -121,6 +121,7 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
 ## INTENT-0031 — Capability Genesis Loop (2026-10-13)
 
 Machine-readable record: `docs/intent/INTENT-0031-capability-genesis-loop.json`

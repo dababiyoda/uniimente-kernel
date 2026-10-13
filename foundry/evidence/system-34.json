@@ -1,0 +1,49 @@
+{
+ "command": "python -m foundry.completion --run 34",
+ "name": "Recommendation-graph observability",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "attribution_sums_to_conversions": true,
+  "by_source": {
+   "direct": {
+    "converted": 2,
+    "mean_depth": 2.5,
+    "rate_lower_bound": 0.3424,
+    "sessions": 2
+   },
+   "owned-newsletter": {
+    "converted": 6,
+    "mean_depth": 4.0,
+    "rate_lower_bound": 0.4093,
+    "sessions": 8
+   },
+   "platform-x": {
+    "converted": 2,
+    "mean_depth": 2.29,
+    "rate_lower_bound": 0.0401,
+    "sessions": 14
+   }
+  },
+  "conversions": 10,
+  "disputes_attracts_but_does_not_convert": true,
+  "removal_attribution": {
+   "audit-kit": 2.328,
+   "disputes": 0.291,
+   "offer": 2.037,
+   "pod-basics": 2.62,
+   "why-proof": 2.723
+  },
+  "sessions": 24,
+  "single_session_path_lower_bound": 0.2065,
+  "top_path": [
+   "why-proof",
+   "pod-basics",
+   "audit-kit",
+   "offer"
+  ],
+  "top_path_lower_bound": 0.4526,
+  "top_path_rate": 0.7778
+ },
+ "result_sha256": "sha256:872ed9a75aa5067272bf919f2220b07a4c9a272e1314f46541cea34e68221499",
+ "system": 34
+}

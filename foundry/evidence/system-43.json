@@ -1,0 +1,17 @@
+{
+ "command": "python -m foundry.completion --run 43",
+ "name": "Formal methods",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "approval_boundary_holds": true,
+  "bug_caught": true,
+  "counterexample": [
+   "raise_request",
+   "execute_on_pending"
+  ],
+  "malformed_refused": true,
+  "states_explored": 10
+ },
+ "result_sha256": "sha256:2159d7f8ff2850957c7305a75873fdb737878415eafa44ef1218f2c89dd1ac63",
+ "system": 43
+}

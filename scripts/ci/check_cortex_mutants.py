@@ -217,6 +217,23 @@ OSS_MUTANTS = [
      "if False:"),
 ]
 
+# Each open-source mutant is run against the test files that own its safeguard (by mutated file), so
+# the check stays inside CI's budget as families grow and shows which tests carry each gate.
+OSS_TESTS_BY_FILE = {
+    "greg/cognition/network.py": ["tests/unit/test_greg_open_source_genesis.py"],
+    "greg/mechanisms.py": ["tests/unit/test_greg_open_source_genesis.py"],
+    "greg/console.py": ["tests/unit/test_greg_open_source_genesis.py"],
+    "greg/cognition/verification.py": ["tests/unit/test_greg_cognition.py"],
+    "greg/cognition/linear.py": ["tests/unit/test_greg_linear_genesis.py"],
+    "greg/doctor.py": ["tests/unit/test_greg_chromebook_doctor.py"],
+    "greg/cognition/assignment.py": ["tests/unit/test_greg_assignment_genesis.py"],
+    "greg/cognition/spanning.py": ["tests/unit/test_greg_spanning_genesis.py"],
+    "greg/cognition/flow.py": ["tests/unit/test_greg_flow_genesis.py"],
+    "greg/genesis.py": ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_linear_genesis.py"],
+}
+assert all(any(m[1] == rel for m in OSS_MUTANTS) for rel in OSS_TESTS_BY_FILE)
+assert set(t for ts in OSS_TESTS_BY_FILE.values() for t in ts) <= set(OSS_TESTS)
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS)]
 
@@ -228,6 +245,8 @@ def main() -> int:
         shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
         for group, tests, name, rel, old, new in [(g, t, *m) for g, t, ms in GROUPS for m in ms]:
             total += 1
+            if group == "open-source genesis":
+                tests = OSS_TESTS_BY_FILE.get(rel, tests)
             path = work / rel
             source = path.read_text(encoding="utf-8")
             if source.count(old) != 1:

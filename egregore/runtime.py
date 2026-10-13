@@ -403,10 +403,13 @@ class StandingCognitionRuntime:
 
     @staticmethod
     def _failure(component: str, exc: Exception, **extra: Any) -> dict[str, Any]:
+        from .failures import classify_exception  # typed by exception class, never by message
+
         return {
             "component": component,
             "error_type": type(exc).__name__,
             "error": str(exc),
+            "failure_class": classify_exception(exc),
             "disposition": extra.pop("disposition", "isolated_and_retained"),
             **extra,
         }

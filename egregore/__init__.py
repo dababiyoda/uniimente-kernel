@@ -17,12 +17,14 @@ from .resources import ResourceExhausted, ResourceGovernor, ResourceMode
 from .runtime import CognitionCycle, CycleStatus, StandingCognitionRuntime
 from .parts import PartSpec, PartsBoard
 from .model_parts import local_draft_part
-from .genesis import CapabilityDeficit, CapabilityGenesis, CaseState, DeficitDetector, LADDER
+from .genesis import CapabilityDeficit, CapabilityGenesis, CaseState, DeficitDetector, LADDER, diagnose
+from .failures import CapabilityMissing, DoctrinalRefusal
 
 __all__ = [
     "Assessment",
     "CandidateProposal",
     "CapabilityDeficit",
+    "CapabilityMissing",
     "CapabilityGenesis",
     "CaseState",
     "ChangeProposal",
@@ -30,6 +32,7 @@ __all__ = [
     "ContractError",
     "CycleStatus",
     "DeficitDetector",
+    "DoctrinalRefusal",
     "IntegrityConflict",
     "LADDER",
     "PartSpec",
@@ -39,5 +42,6 @@ __all__ = [
     "ResourceMode",
     "SignalEnvelope",
     "StandingCognitionRuntime",
+    "diagnose",
     "local_draft_part",
 ]

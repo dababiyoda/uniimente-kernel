@@ -24,26 +24,30 @@
       "Market-level spider-web hegemony needs a governing external transaction and a named venture cell, which remain a founder decision (SR-INTENT-3 boundary)"
     ],
     "evidence_refs": [
-      "tests/unit/test_egregore_genesis.py (10 tests; each guard mutation-checked)",
-      "tests/unit/test_egregore_parts.py (14 tests)",
-      "docs/CAPABILITY_GENESIS_LOOP.md (invention dossier, internal spider-web mapping, ADR)",
-      "docs/collaboration/deliberation-genesis-2026-10-13.json (validator exit 0)"
+      "tests/unit/test_egregore_genesis.py (23 tests; guards mutation-checked)",
+      "tests/unit/test_egregore_parts.py (19 tests incl. artifact identity, grant-free shadow stop, typed failures)",
+      "docs/CAPABILITY_GENESIS_LOOP.md (invention dossier, internal spider-web mapping, ADR, correction increment)",
+      "docs/collaboration/deliberation-genesis-2026-10-13.json and deliberation-genesis-002-2026-10-13.json (validator exit 0)",
+      "External review 2026-10-13 reproduced four defects at 00765bc; each is now a regression test"
     ],
     "implementation_refs": [
       "egregore/genesis.py",
       "egregore/parts.py",
+      "egregore/artifact.py",
+      "egregore/failures.py",
       "egregore/model_parts.py",
+      "capabilities/genome.py (GenomeRegistry.matching, read-only)",
       "dababiyoda/uniimente-kernel PR #129"
     ],
     "owner": "Alfonso Lopez; Claude Code session implements as draft",
     "next_review_trigger": "First real deficit case run against a live local model in shadow on real signals, or founder designation of the first venture cell's governing transaction (whichever comes first)",
     "unresolved_questions": [
-      "Which venture transaction becomes the external spider-web wedge; without it market hegemony stays Stage-gate",
-      "Whether model-backed evaluators (Guardian/Treasury) may ever be candidates; currently proposer slots only in practice",
-      "Whether detector thresholds (3 of 10 cycles) should be founder-ratified configuration rather than constructor defaults",
-      "Whether a detached shadow part should be removable without a grant (stop should be free); today detaching uses the same grant path"
+      "Which venture transaction becomes the external spider-web wedge; docs/EXTERNAL_WEDGE_OPTIONS.md lists evidence-backed options; selection is a founder decision",
+      "Whether model-backed evaluators (Guardian/Treasury) may ever be candidates; the diagnosis gate now refuses evaluator replacement when vetoes are legitimate, but the policy question remains",
+      "Whether detector thresholds (3 of 10 cycles) and the diagnosis rules should be founder-ratified configuration",
+      "Reconciliation with the goal records of open PR #160 (goal_id lineage; unblock on genome registration) once a goal runtime lands on main"
     ],
     "created_at": "2026-10-13T14:30:00Z",
-    "updated_at": "2026-10-13T14:30:00Z"
+    "updated_at": "2026-10-13T16:30:00Z"
   }
 ]

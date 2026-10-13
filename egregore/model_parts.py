@@ -28,12 +28,15 @@ def local_draft_part(
     config: LocalModelConfig | None = None,
     client: Any = None,
     provenance: str = "egregore.local_model.LocalDraftProposer",
+    model_digest: str | None = None,
 ) -> tuple[PartSpec, Callable]:
     """Build a (spec, proposer) pair for a local model in ``proposer:<role>``.
 
     ``client`` defaults to a ``LocalModelClient`` for ``config`` (or the
     LLM_BASE_URL/LLM_MODEL environment); tests may inject a fake client
-    exposing ``config`` and ``complete(system, user)``.
+    exposing ``config`` and ``complete(system, user)``. ``model_digest`` is the
+    sha256 of the model manifest or weights when known (e.g. from the local
+    server's model listing); it becomes part of the part's identity.
     """
     role = require_text("role", role)
     client = client or LocalModelClient(config)
@@ -46,5 +49,6 @@ def local_draft_part(
         provenance=require_text("provenance", provenance),
         open_weights=True,
         notes="loopback only; fixed internal draft scope; confidence 0",
+        model_digest=model_digest,
     )
     return spec, proposer

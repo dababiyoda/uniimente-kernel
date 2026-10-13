@@ -72,19 +72,24 @@ Canonical morphogenesis (INTENT-0030): capability formation in response to a
 
 | Stage | Mechanism | Grant needed |
 |---|---|---|
-| Observe | `DeficitDetector.scan(cycles)` turns repeated component failures, budget refusals and refusal/silence/veto streaks into content-addressed `CapabilityDeficit`s; `observe()` opens or recurs a case | none |
-| Propose | `propose()` admits candidates only in resourcefulness-ladder order: a rung may hold a candidate only when every cheaper rung records `candidate`, `searched_none` or `not_applicable`; `new_architecture` only when no cheaper rung holds a candidate | none |
-| Trial | `shadow()` binds the candidate as a shadow via the parts board; `record_trials()` aggregates `shadow_result` records (samples, agreement, consequence classes, failure classes) | Gate + grant (shadow) |
-| Dossier | `dossier()` renders the Capability Genesis contract fields with a content hash | none |
-| Ratify | `ratify()` with an `evolution.capsule.VerifierRecord`: hypothesis-only tiers cannot retain; retain needs the minimum samples, no `doctrinal_refusal` in trial, the reviewed dossier hash, and a whole-body closure that is not FALSELY_CLOSED; it then binds through the board and registers a `CapabilityGenome` | Gate + grant (active) |
-| Reuse | `reuse_candidates(slot)` offers retained parts as rung-1 candidates for later deficits | none |
-| Stop | `ratify(decision="regress"|"kill")` and `close()` | none |
+| Observe | `DeficitDetector.scan(cycles)` → content-addressed `CapabilityDeficit`s; `observe(deficit, mission=...)` opens or recurs a case and pauses (never closes) the goal it blocks | none |
+| Diagnose | `diagnose_case()` attributes the deficit (proposal, evidence, permission, infrastructure, resources, policy, evaluator, component, missing slot); a legitimate refusal is not a broken evaluator; replacement needs a warrant or an evidence-bearing override | none |
+| Discover | `discover()` gathers leads cheapest rung first (retained genomes, described parts, open-source catalog, optional search, commissioning route) and records the search | none |
+| Propose | `propose()` admits candidates in ladder order; `searched_none` must cite a discovery that found nothing; a later rung may be preferred through a recorded exception with evidence | none |
+| Commission | `commission(case, ChangeProposal)` → `runtime.propose_change` (no self-apply) | none |
+| Trial | `shadow()` binds via the parts board; `record_trials()` counts attempts, successes, distinct cycles, restorations and typed failure classes apart | Gate + grant (shadow) |
+| Dossier | `dossier()` renders the Capability Genesis contract with a content hash and the narrow-scope statement | none |
+| Ratify | `ratify()` with an `evolution.capsule.VerifierRecord`: retain needs successful evaluations on distinct cycles, target evidence (or a strong verifier when it is not mechanical), no `doctrinal_refusal`, the reviewed hash and whole-body closure; binds through the board and registers a genome | Gate + grant (active) |
+| Stop | regress, kill, `close()` stop the case's shadows via `PartsBoard.stop_shadow` and resume the paused goal with the outcome | none |
+| Verify | `verify_outcome()` re-scans later cycles for the same deficit (internal re-observation, labelled) | none |
+| Reuse | `reuse_candidates(slot)` and the genome registry make retained parts rung-1 leads | none |
 
+Part identity is bound to the executable artifact (`PartSpec.artifact_digest`, computed at
+registration) and, where applicable, a `model_digest`; different code never shares an id.
+Failures are typed by exception class (`egregore/failures.py`), never by message.
 Case states: `open → trialing → ready_for_ratification → retained | regressed | killed | lapsed`.
-Cases rebuild from the ledger; a retained label is applied only when the ledger
-holds the authorized binding it names, so forged decision records change nothing.
 Design record: `docs/CAPABILITY_GENESIS_LOOP.md`, `docs/intent/INTENT-0031-*.json`,
-`docs/collaboration/deliberation-genesis-2026-10-13.json`.
+`docs/collaboration/deliberation-genesis-*.json`.
 
 ## What is intentionally absent
 

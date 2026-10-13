@@ -175,9 +175,9 @@ self-reported ladder outcomes (dissent recorded, owner named, trigger: first
 
 | Claim | Tier | Reference | Finding |
 |---|---|---|---|
-| Loop retains only through a Gate-granted binding and registers a genome | unit test (real Gate, grants, passports, ledger; fake proposers) | `test_full_genesis_retains_binds_registers_genome_and_compounds` | pass |
-| Guards are load-bearing | sandbox execution | mutation run 2026-10-13 (8 guards) | each removal fails a test |
-| No kernel regression | unit tests | `python -m pytest` 2026-10-13 | 648 passed, 4 skipped, 2 failed; the 2 (`test_migration_spec_frozen`, `test_repair_spec_frozen`) fail identically on `main` in this shallow clone and passed in GitHub CI on the prior head |
+| Loop retains only through a Gate-granted binding and registers a genome; a second mission reuses it | unit test (real Gate, grants, passports, ledger; fake proposers) | `test_mission_pauses_capability_forms_mission_resumes_and_second_case_reuses_it` | pass |
+| Guards are load-bearing | sandbox execution | mutation runs 2026-10-13 (8 original + 11 correction guards) | each removal fails a test; one equivalent mutant removed as dead code |
+| No kernel regression | unit tests | `python -m pytest` 2026-10-13 (after correction) | 666 passed, 4 skipped, 2 failed; the 2 (`test_migration_spec_frozen`, `test_repair_spec_frozen`) fail identically on `main` in this shallow clone and passed in GitHub CI on the prior head |
 | The loop achieves the founder's destination in reality | **none** | no live case | unproven |
 
 ## 11. Build path and kill test
@@ -193,9 +193,55 @@ self-reported ladder outcomes (dissent recorded, owner named, trigger: first
    record changes live state after restart, or the first live case shows the loop changed
    no decision a human would have made anyway, kill the loop and keep the record.
 
+## 11a. Correction increment (external review, 2026-10-13)
+
+A reviewer reproduced four defects at head `00765bc` with isolated synthetic
+dependencies. Each is now a regression test; each guard was removed in turn and a test
+failed (one surviving mutant was an equivalent mutant and the dead clause was removed).
+
+| Reproduced defect | Correction | Regression test |
+|---|---|---|
+| The same part id accepted a different callable | `PartSpec.artifact_digest` is computed from the callable's bytecode, constants, defaults, closure and public state (`egregore/artifact.py`) and is part of `part_id`; `register` refuses code that does not match a bound spec, before and after restart; `model_digest` joins identity | `test_same_description_with_different_code_is_a_different_part`, `test_registering_mismatched_code_under_a_bound_identity_is_refused`, `test_model_digest_is_part_of_identity` |
+| Three timeouts produced "ready for ratification" | Attempts, successes and typed failure classes are counted apart; readiness needs successful evaluations on distinct cycles **and** the deficit's target evidence (restorations where the active part produced nothing); non-mechanical targets need a strong verifier tier | `test_three_timeouts_never_make_a_case_ready_or_retainable`, `test_three_successes_on_one_cycle_are_one_evaluation`, `test_successes_without_restoration_do_not_meet_a_restoration_target`, `test_non_mechanical_target_needs_a_strong_verifier` |
+| Killing a case left its shadow running | `PartsBoard.stop_shadow` is a ledgered, grant-free stop direction mirroring `suspend` (never touches active parts); regress, kill and close call it; `shadow_run` then has nothing to run | `test_stop_shadow_is_grant_free_effective_and_leaves_active_safeguards`, `test_kill_and_close_stop_shadow_execution_and_keep_safeguards` |
+| "connection refused" became `doctrinal_refusal` | `egregore/failures.py`: classification by exception type only (`DoctrinalRefusal`, `CapabilityMissing`, `ResourceExhausted`, transport errors → `transient`); runtime and shadow failures carry `failure_class`; messages are never consulted | `test_shadow_failures_are_typed_by_exception_not_message`, `test_component_failure_is_attributed_by_typed_class_not_message` |
+
+The two larger gaps:
+
+- **Legitimate refusal vs functional failure.** `diagnose()` attributes a deficit to the
+  proposal, evidence, permission, infrastructure, resources, policy, evaluator, component or a
+  missing slot before anyone may propose a replacement. A Guardian vetoing with objections is
+  working (`responsible: proposal`, `legitimate_refusal: true`); replacing it is refused
+  unless the human records an evidence-bearing override. Unexplained vetoes against peer
+  approval point at the evaluator. The diagnosis is deterministic rules over cited cycles and
+  is labelled a prior for the human, not a verdict.
+- **Candidate discovery.** `discover()` gathers leads cheapest rung first from retained
+  genomes and the genome registry, parts already described for the slot (incl. rollback
+  target), the audited open-source catalog (license, stars, archived, pushed_at) plus an
+  optional search service, and the existing commissioning path (`ChangeProposal` through
+  `runtime.propose_change`). The search itself is a ledger record. `searched_none` must cite a
+  discovery record of the case that consulted that rung and found nothing; if discovery found
+  leads, `searched_none` is refused. The ladder is a decision prior: a later rung may hold a
+  candidate alongside a cheaper one, and `new_architecture` may be admitted over a cheaper
+  candidate, through a recorded exception with evidence.
+- **Missions.** A deficit may carry the goal it blocks (`goal_id`, `objective`,
+  `parent_trigger_id`); the goal is paused, not closed (`egregore.mission_paused_for_deficit`)
+  and resumes with the outcome and genome key when the case ends
+  (`egregore.mission_resumed`). `verify_outcome()` re-scans later cycles for the same deficit
+  and records an internally verified outcome, labelled as not externally verified. This is a
+  seam for the goal records in open PR #160 (which block on `missing_capabilities` and unblock
+  on genome registration); no mission engine was added.
+
+**Measured reuse** (`test_mission_pauses_capability_forms_mission_resumes_and_second_case_reuses_it`):
+mission A adopts a drafter from the open-source rung (ladder depth 3, one new part
+registration, 3/3 trial successes); after a rollback recreates the deficit, mission B finds the
+retained part as a rung-1 lead (depth 0, zero new registrations, 3/3 successes, no more ledger
+records than A). Measured: search depth and registration effort fall at equal reliability.
+Wall-clock time and compute cost were not measured in the sandbox.
+
 ## 12. Final decisions
 
-- Foundry: **EXPERIMENT**. Next action: first live shadow case. Measurable: one case
+- Foundry: **EXPERIMENT** (unchanged after the correction increment). Next action: first live shadow case. Measurable: one case
   reaches a terminal state with a read dossier. Evidence: ledger records + founder
   ratification. Stage gate: before any claim beyond sandbox. Termination: kill test above.
 - Spider-web: **Stage-gate** (internal control complete; external wedge needs a founder

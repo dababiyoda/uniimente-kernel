@@ -38,8 +38,11 @@ from .contracts import (
     SignalEnvelope,
     canonical_copy,
     digest,
+    require_hash,
     require_text,
 )
+from .artifact import implementation_digest
+from .failures import failure_record
 from .resources import ResourceExhausted, ResourceGovernor
 from .runtime import CognitionCycle, StandingCognitionRuntime
 
@@ -66,6 +69,8 @@ class PartSpec:
     provenance: str
     open_weights: bool | None = None
     notes: str = ""
+    artifact_digest: str | None = None   # sha256 of the executable implementation (set by register)
+    model_digest: str | None = None      # digest of external model weights/manifest when applicable
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "slot", _slot(self.slot))
@@ -75,6 +80,21 @@ class PartSpec:
             raise ContractError("open_weights must be true, false or null")
         if not isinstance(self.notes, str):
             raise ContractError("notes must be text")
+        for name in ("artifact_digest", "model_digest"):
+            value = getattr(self, name)
+            if value is not None:
+                object.__setattr__(self, name, require_hash(name, value))
+
+    @property
+    def bound(self) -> bool:
+        return self.artifact_digest is not None
+
+    def with_artifact(self, artifact_digest: str) -> "PartSpec":
+        """The same description bound to one executable artifact."""
+        return PartSpec(slot=self.slot, implementation=self.implementation, version=self.version,
+                        provenance=self.provenance, open_weights=self.open_weights, notes=self.notes,
+                        artifact_digest=require_hash("artifact_digest", artifact_digest),
+                        model_digest=self.model_digest)
 
     @property
     def kind(self) -> str:
@@ -96,6 +116,8 @@ class PartSpec:
             "provenance": self.provenance,
             "open_weights": self.open_weights,
             "notes": self.notes,
+            "artifact_digest": self.artifact_digest,
+            "model_digest": self.model_digest,
         }
         if include_id:
             body["part_id"] = self.part_id
@@ -110,6 +132,8 @@ class PartSpec:
             provenance=value["provenance"],
             open_weights=value.get("open_weights"),
             notes=value.get("notes", ""),
+            artifact_digest=value.get("artifact_digest"),
+            model_digest=value.get("model_digest"),
         )
         if "part_id" in value and value["part_id"] != spec.part_id:
             raise ContractError("persisted part_id does not match its spec")
@@ -122,6 +146,7 @@ class PartsBoard:
     REGISTER_RECORD = "egregore.part_registered"
     BINDING_RECORD = "egregore.part_binding"
     SHADOW_RESULT_RECORD = "egregore.shadow_result"
+    SHADOW_STOP_RECORD = "egregore.shadow_stopped"
     ACTION_CLASS = "cognition.rebind"
 
     def __init__(
@@ -149,22 +174,30 @@ class PartsBoard:
 
     # -- persistence -----------------------------------------------------
     def _hydrate(self) -> None:
-        for record in self.ledger.by_type(self.REGISTER_RECORD):
-            if record.payload.get("source") != self.source:
-                continue
-            spec = PartSpec.from_dict(record.payload["part"])
-            self._specs[spec.part_id] = spec
-        for record in self.ledger.by_type(self.BINDING_RECORD):
+        for record in getattr(self.ledger, "records", ()):
             payload = record.payload
             if payload.get("source") != self.source:
                 continue
-            try:
-                authorized = self._authorized(record, payload)
-            except (KeyError, TypeError, ContractError):
-                authorized = False
-            if not authorized:
-                continue  # retained as history, never treated as authority
-            self._apply(payload["slot"], payload["mode"], payload.get("part_id"), record.hash)
+            if record.record_type == self.REGISTER_RECORD:
+                try:
+                    spec = PartSpec.from_dict(payload["part"])
+                except (KeyError, TypeError, ContractError):
+                    continue
+                self._specs[spec.part_id] = spec
+            elif record.record_type == self.BINDING_RECORD:
+                try:
+                    authorized = self._authorized(record, payload)
+                except (KeyError, TypeError, ContractError):
+                    authorized = False
+                if not authorized:
+                    continue  # retained as history, never treated as authority
+                self._apply(payload["slot"], payload["mode"], payload.get("part_id"), record.hash)
+            elif record.record_type == self.SHADOW_STOP_RECORD:
+                # Stopping a shadow is a stop direction, like suspend: no grant, always applied.
+                try:
+                    self._apply(_slot(payload["slot"]), SHADOW, None, record.hash)
+                except (KeyError, TypeError, ContractError):
+                    continue
 
     def _authorized(self, record: Any, payload: Mapping[str, Any]) -> bool:
         receipt = self.ledger.find(payload.get("authorization_hash"))
@@ -201,6 +234,12 @@ class PartsBoard:
             raise ContractError("register requires a PartSpec")
         if not callable(implementation):
             raise ContractError("implementation must be callable")
+        fingerprint = implementation_digest(implementation)
+        if spec.artifact_digest is None:
+            spec = spec.with_artifact(fingerprint)
+        elif spec.artifact_digest != fingerprint:
+            raise ContractError("implementation does not match the part's recorded artifact digest; "
+                                "different executable behavior needs a new part")
         part_id = spec.part_id
         if part_id not in self._specs:
             self.ledger.append(
@@ -213,6 +252,28 @@ class PartsBoard:
 
     def spec(self, part_id: str) -> PartSpec | None:
         return self._specs.get(part_id)
+
+    def specs_for(self, slot: str) -> list[PartSpec]:
+        """Every part ever described for ``slot`` (bound or not), oldest first."""
+        slot = _slot(slot)
+        return [spec for spec in self._specs.values() if spec.slot == slot]
+
+    def stop_shadow(self, slot: str, *, actor: str, reason: str) -> str | None:
+        """Clear a slot's shadow binding. A stop direction: ledgered, no grant needed.
+
+        Never touches the active part, so required safeguards stay in place.
+        Returns the record hash, or None when the slot had no shadow.
+        """
+        slot = _slot(slot)
+        if self._bindings.get(slot, {}).get(SHADOW) is None:
+            return None
+        record = self.ledger.append(self.SHADOW_STOP_RECORD, {
+            "source": self.source, "slot": slot, "actor": require_text("actor", actor),
+            "reason": require_text("reason", reason), "stopped_part_id": self._bindings[slot][SHADOW],
+            "authentication": "stop direction; no grant required; active binding unchanged",
+        })
+        self._apply(slot, SHADOW, None, record.hash)
+        return record.hash
 
     def resolved(self, part_id: str) -> bool:
         """True when the part's code is registered in this process (specs persist; code does not)."""
@@ -390,11 +451,9 @@ class PartsBoard:
                     comparison = self._compare_evaluator(slot, part_id, cycle, cycle_signals, clean_context)
                 error = None
             except ResourceExhausted as exc:
-                comparison, error = {}, {"error_type": type(exc).__name__, "error": str(exc),
-                                         "disposition": "budget_refusal"}
+                comparison, error = {}, failure_record(exc, disposition="budget_refusal")
             except Exception as exc:  # a failing trial is evidence, not an outage
-                comparison, error = {}, {"error_type": type(exc).__name__, "error": str(exc),
-                                         "disposition": "isolated_and_retained"}
+                comparison, error = {}, failure_record(exc, disposition="isolated_and_retained")
             record = self.ledger.append(self.SHADOW_RESULT_RECORD, {
                 "source": self.source,
                 "cycle_id": cycle.cycle_id,

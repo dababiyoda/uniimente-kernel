@@ -317,3 +317,79 @@ def test_replayed_genuine_binding_record_is_ignored_on_restart(tmp_path):
     world.ledger.append(PartsBoard.BINDING_RECORD, dict(genuine))  # copy the old approved change
     world.reopen()
     assert world.board.bindings()["proposer:strategist"]["active"] == ids["old"]
+
+
+# ---------------------------------------------------------------------------
+# Review 2026-10-13: identity bound to the artifact; stop is effective; failures typed
+# ---------------------------------------------------------------------------
+def test_same_description_with_different_code_is_a_different_part(tmp_path):
+    world = World(tmp_path)
+    described = spec("proposer:strategist", "rules/strategist")
+    first = world.board.register(described, rule_proposer("plan A"))
+    second = world.board.register(described, rule_proposer("plan B"))
+    assert first != second, "different executable behavior must not share an identity"
+    assert world.board.spec(first).artifact_digest != world.board.spec(second).artifact_digest
+    again = world.board.register(described, rule_proposer("plan A"))
+    assert again == first  # same code, same identity
+
+
+def test_registering_mismatched_code_under_a_bound_identity_is_refused(tmp_path):
+    world = World(tmp_path)
+    part = world.board.register(spec("proposer:strategist", "rules/strategist"), rule_proposer("plan A"))
+    bound = world.board.spec(part)
+    with pytest.raises(ContractError, match="artifact digest"):
+        world.board.register(bound, rule_proposer("plan B"))
+    world.reopen()  # after restart the bound spec is hydrated; wrong code still cannot claim it
+    with pytest.raises(ContractError, match="artifact digest"):
+        world.board.register(world.board.spec(part), rule_proposer("plan B"))
+    assert world.board.register(world.board.spec(part), rule_proposer("plan A")) == part
+
+
+def test_model_digest_is_part_of_identity(tmp_path):
+    world = World(tmp_path)
+    client = FakeLocalClient(json.dumps({"objective": "o", "text": "t"}))
+    a_spec, a_fn = local_draft_part(role="strategist", client=client, model_digest="sha256:" + "1" * 64)
+    b_spec, b_fn = local_draft_part(role="strategist", client=client, model_digest="sha256:" + "2" * 64)
+    assert world.board.register(a_spec, a_fn) != world.board.register(b_spec, b_fn)
+
+
+def test_stop_shadow_is_grant_free_effective_and_leaves_active_safeguards(tmp_path):
+    world = World(tmp_path)
+    base(world)
+    trial = world.board.register(spec("proposer:strategist", "llm/trial"), rule_proposer("trial plan"))
+    world.change("proposer:strategist", trial, mode="shadow")
+    head_before = world.board.stop_shadow("proposer:strategist", actor=world.actor, reason="case killed")
+    assert head_before is not None
+    assert world.board.bindings()["proposer:strategist"]["shadow"] is None
+    assert world.board.bindings()["evaluator:guardian"]["active"] is not None
+    s = signal()
+    cycle = tick(world.board.runtime(), s)
+    assert world.board.shadow_run(cycle, [s], resources=ResourceGovernor(max_model_calls=5,
+                                                                         max_estimated_cost_usd=1.0)) == []
+    assert world.board.stop_shadow("proposer:strategist", actor=world.actor, reason="again") is None
+    world.reopen()
+    assert world.board.bindings()["proposer:strategist"]["shadow"] is None
+
+
+def test_shadow_failures_are_typed_by_exception_not_message(tmp_path):
+    from egregore.failures import DoctrinalRefusal
+
+    world = World(tmp_path)
+    base(world)
+
+    def refused_by_network(signals, context):
+        raise ConnectionRefusedError("connection refused")
+
+    def refused_by_policy(signals, context):
+        raise DoctrinalRefusal("policy refused this proposal class")
+
+    net = world.board.register(spec("proposer:strategist", "llm/net"), refused_by_network)
+    world.change("proposer:strategist", net, mode="shadow")
+    s = signal()
+    cycle = tick(world.board.runtime(), s)
+    [h] = world.board.shadow_run(cycle, [s], resources=ResourceGovernor(max_model_calls=5, max_estimated_cost_usd=1.0))
+    assert world.ledger.find(h).payload["failure"]["failure_class"] == "transient"
+    pol = world.board.register(spec("proposer:strategist", "llm/pol"), refused_by_policy)
+    world.change("proposer:strategist", pol, mode="shadow")
+    [h] = world.board.shadow_run(cycle, [s], resources=ResourceGovernor(max_model_calls=5, max_estimated_cost_usd=1.0))
+    assert world.ledger.find(h).payload["failure"]["failure_class"] == "doctrinal_refusal"

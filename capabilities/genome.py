@@ -96,6 +96,10 @@ class GenomeRegistry:
     def get(self, name: str, version: str) -> CapabilityGenome | None:
         return self._genomes.get(f"{name}@{version}")
 
+    def matching(self, name_prefix: str) -> list[CapabilityGenome]:
+        """Registered genomes whose name starts with ``name_prefix`` (discovery, read-only)."""
+        return [g for key, g in sorted(self._genomes.items()) if g.name.startswith(name_prefix)]
+
     def may_instantiate(self, name: str, version: str, *,
                         requested_class: str, requested_budget_usd: float) -> tuple[bool, str]:
         """Bounded-authority check: the request must fit INSIDE the envelope."""

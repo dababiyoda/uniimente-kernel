@@ -106,7 +106,7 @@ production activation. Who can ratify: Alfonso.
 
 Tests and mutation checks:
 
-- `tests/unit/test_greg_recombine.py`: 14 passed.
+- `tests/unit/test_greg_recombine.py`: 16 passed.
 - Five targeted mutants were each killed by a test:
   - the engine quarantine in `repair` removed;
   - the founder-detach check removed;
@@ -126,16 +126,19 @@ not installed.
 | project.crash | SciPy LP (HiGHS) | 600 | 184 | 416 | 0 | 0 |
 | project.crash | OR-Tools LP (GLOP) | not installed | | | | |
 
-Reuse, measured on one engine:
+Reuse, measured on one engine (`results.json`):
 
-- Qualifying the max-flow engine took 0.23 s: 12 oracle cases plus a scale probe of 300 nodes and 2,942 arcs, all in one isolated batch.
-- Constructing staffing over that attached engine took 2.09 s for 10 cases. Constructing matching took 1.94 s for 9 cases.
+- Qualifying the max-flow engine took 0.23 s: 12 oracle cases plus a scale probe of 300 nodes and 2,942 arcs, in one isolated batch.
+- Constructing staffing over that attached engine took 0.22 s for 10 cases. Constructing matching took 0.23 s for 9 cases.
 - Neither construction re-qualified the engine. Neither added solver code.
 
-**Negative result.** Reuse saved re-qualification and new solver code. It did not save wall
-time. Each composed oracle case calls the engine through its service adapter, which starts one
-isolated interpreter per call (about 0.2 s each). Package qualification instead batches every case into one
-run. A batch path for composed qualification is a buildable next step.
+**Negative result, then fixed.** The first version (`results-v1-per-call.json`) took 2.09 s and
+1.94 s, so reuse saved re-qualification and solver code but not wall time: each composed
+oracle case started its own isolated interpreter. Engine adapters for installed packages now offer
+`batch`, which runs one isolated batch under the same pin check and certifies every answer separately.
+Composed adapters use it, both in qualification and in service, so a batch of one is the
+single call. A test pins qualification to one engine run, and a malformed request in a batch is
+refused alone.
 
 Negative results (kept):
 
@@ -167,7 +170,7 @@ and reduction library as a rung once the greg lineage lands on main. That is ope
 
 ## Continuation (buildable next)
 
-1. Batch composed qualification through one isolated engine run. This is the measured wall-time cost above.
+1. ~~Batch composed qualification~~ (done; see above).
 2. Let the Competency Compiler's `CAPABILITY_DEFICIT` name a constructible function, so reductions are found from problem geometry and not only from a mission's explicit function.
 3. Add reductions that pay for themselves on real missions. Candidates: interval scheduling via LP; minimum-cost assignment via min-cost flow, which first needs a qualified min-cost-flow engine; project selection via min-cut (Picard and Queyranne).
 4. Write words templates for staffing and crashing, like `network-in-words`.

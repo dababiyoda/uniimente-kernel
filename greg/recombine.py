@@ -792,72 +792,122 @@ def library(query: str = "", reductions: dict | None = None) -> list[dict]:
 
 # == the composed adapter and its qualification ==============================================
 
-def composed_adapter(path, registry):
-    """Run a reduction chain over the engine pinned in the manifest; every level re-certifies."""
+def _engine_fault(engine_id: str, exc: CapabilityError) -> CapabilityError:
+    if str(exc).startswith("capability refused:"):
+        return CapabilityError(f"capability refused: composed engine {engine_id} faulted: {str(exc)[20:220]}")
+    return exc
 
-    def adapter(params, ctx: InvocationContext):
+
+def composed_adapter(path, registry):
+    """Run a reduction chain over the engine pinned in the manifest; every level re-certifies.
+
+    ``adapter.batch`` answers many requests with one isolated engine run when the engine's
+    adapter offers ``batch`` (installed packages do), else one call each. The single-call
+    adapter is the same code path with a batch of one."""
+
+    def batch(params_list, ctx: InvocationContext) -> list:
         prov = ctx.manifest.provenance
         if chain_digest(path) != prov["chain_digest"]:
             raise CapabilityError("capability refused: composed capability's reduction code changed since "
                                   "qualification; quarantine required")
-        levels, current, answer = [], params, None
-        for r in path:
-            problem = r.normalize(current)
-            levels.append((r, problem))
-            shortcut = r.direct(problem) if r.direct else None
-            if shortcut is not None:
-                answer = shortcut
-                break
-            current = r.encode(problem)
-        engine_label = None
-        try:
-            if answer is None:
-                engine_id = prov["target_capability_id"]
-                ok, why = registry.usable(engine_id)
-                if not ok:
-                    raise CapabilityError(f"capability refused: composed capability's engine {engine_id} is not "
-                                          f"usable ({why})")
+        descended = []
+        for params in params_list:                      # descend: request errors stay per request
+            levels, current, shortcut = [], params, None
+            try:
+                for r in path:
+                    problem = r.normalize(current)
+                    levels.append((r, problem))
+                    shortcut = r.direct(problem) if r.direct else None
+                    if shortcut is not None:
+                        break
+                    current = r.encode(problem)
+                descended.append((levels, current, shortcut))
+            except CapabilityError as exc:
+                descended.append(exc)
+        pending = [i for i, d in enumerate(descended) if not isinstance(d, Exception) and d[2] is None]
+        engine_answers = {}
+        if pending:
+            engine_id = prov["target_capability_id"]
+            ok, why = registry.usable(engine_id)
+            if not ok:
+                raise CapabilityError(f"capability refused: composed capability's engine {engine_id} is not "
+                                      f"usable ({why})")
+            engine, engine_ctx = registry.adapters[engine_id], replace(ctx, manifest=registry.manifests[engine_id])
+            requests = [descended[i][1] for i in pending]
+            if hasattr(engine, "batch"):
                 try:
-                    answer = registry.adapters[engine_id](current, replace(ctx, manifest=registry.manifests[engine_id]))
+                    results = engine.batch(requests, engine_ctx)
                 except CapabilityError as exc:
-                    if str(exc).startswith("capability refused:"):
-                        raise CapabilityError(f"capability refused: composed engine {engine_id} faulted: "
-                                              f"{str(exc)[20:220]}") from exc
-                    raise
-                engine_label = answer.get("engine")
-                r, problem = levels[-1]
-                answer = r.certify(problem, r.decode(problem, answer))
-                remaining = levels[:-1]
+                    raise _engine_fault(engine_id, exc) from exc
             else:
-                r, problem = levels[-1]
-                answer = r.certify(problem, answer)
-                remaining = levels[:-1]
-            for r, problem in reversed(remaining):
-                answer = r.certify(problem, r.decode(problem, answer))
-        except ReductionError as exc:
-            raise CapabilityError(f"capability refused: composed capability failed its certificate: {exc}") from exc
-        return {**answer, "composed_of": [r.reduction_id for r in path], "engine": engine_label or "none needed",
-                "authority_created": False}
+                results = []
+                for request in requests:
+                    try:
+                        results.append(engine(request, engine_ctx))
+                    except CapabilityError as exc:
+                        results.append(exc)
+            for i, result in zip(pending, results):
+                engine_answers[i] = _engine_fault(engine_id, result) if isinstance(result, CapabilityError) \
+                    else result
+        out = []
+        for i, d in enumerate(descended):               # ascend: every level re-certifies
+            if isinstance(d, Exception):
+                out.append(d)
+                continue
+            levels, _, shortcut = d
+            try:
+                if shortcut is None:
+                    answer = engine_answers[i]
+                    if isinstance(answer, Exception):
+                        out.append(answer)
+                        continue
+                    engine_label = answer.get("engine")
+                    r, problem = levels[-1]
+                    answer = r.certify(problem, r.decode(problem, answer))
+                else:
+                    engine_label = None
+                    r, problem = levels[-1]
+                    answer = r.certify(problem, shortcut)
+                for r, problem in reversed(levels[:-1]):
+                    answer = r.certify(problem, r.decode(problem, answer))
+            except ReductionError as exc:
+                out.append(CapabilityError(f"capability refused: composed capability failed its certificate: "
+                                           f"{exc}"))
+                continue
+            out.append({**answer, "composed_of": [r.reduction_id for r in path],
+                        "engine": engine_label or "none needed", "authority_created": False})
+        return out
+
+    def adapter(params, ctx: InvocationContext):
+        [answer] = batch([params], ctx)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    adapter.batch = batch
     return adapter
 
 
 def qualify(path, adapter, manifest, seed: int) -> tuple[bool, dict]:
-    """The constructed function's own frozen brute-force oracle, run through the real engine."""
+    """The constructed function's own frozen brute-force oracle, run through the real engine in one batch."""
     head = path[0]
     cases = head.oracle(seed)
     report = {"cases": len(cases), "failures": [], "oracle": f"brute force for {head.function} (GREG)",
-              "through": "the attached engine, exactly as in service", "chain": [r.reduction_id for r in path]}
+              "through": "the attached engine, exactly as in service (one isolated batch)",
+              "chain": [r.reduction_id for r in path]}
     with tempfile.TemporaryDirectory(prefix="greg-recombine-") as tmp:
         ctx = InvocationContext(workspace=Path(tmp), read_roots=(Path(tmp),), secrets=None, manifest=manifest)
-        engine_calls = 0
-        for case in cases:
-            try:
-                answer = adapter(case["input"], ctx)
-            except CapabilityError as exc:
-                report["failures"].append({"case": case["name"], "error": str(exc)[:200]})
-                continue
-            engine_calls += answer.get("engine") != "none needed"
-            if not head.judge(answer, case["expected"]):
-                report["failures"].append({"case": case["name"], "expected": str(case["expected"])[:120]})
-        report["engine_calls"] = engine_calls
+        try:
+            answers = adapter.batch([case["input"] for case in cases], ctx)
+        except CapabilityError as exc:
+            answers = [exc] * len(cases)
+    engine_calls = 0
+    for case, answer in zip(cases, answers):
+        if isinstance(answer, Exception):
+            report["failures"].append({"case": case["name"], "error": str(answer)[:200]})
+            continue
+        engine_calls += answer.get("engine") != "none needed"
+        if not head.judge(answer, case["expected"]):
+            report["failures"].append({"case": case["name"], "expected": str(case["expected"])[:120]})
+    report["engine_calls"] = engine_calls
     return not report["failures"], report

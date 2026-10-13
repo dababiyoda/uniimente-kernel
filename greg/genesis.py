@@ -183,18 +183,21 @@ for _spec in CATALOG.values():
 
 
 def package_adapter(function: str, candidate: PackageCandidate):
-    """Adapter bound to one qualified package; re-pinned and certificate-checked on every call."""
+    """Adapter bound to one qualified package; re-pinned and certificate-checked on every call.
+
+    ``adapter.batch`` answers many requests in one isolated run under the same pin check, and
+    certifies each answer separately; a refused answer is returned in its place, never hidden."""
     spec = CATALOG[function]
 
-    def adapter(params, ctx: InvocationContext):
-        request = spec["normalize"](params)          # competence is enforced before the engine sees anything
+    def pinned(ctx):
         prov = ctx.manifest.provenance
         dist = mechanisms.installed(candidate.distribution)
         if dist is None or dist.version != prov["version"] \
                 or mechanisms.digest(dist, candidate.digest_paths)[0] != prov["package_digest"]:
             raise CapabilityError("capability refused: package changed since qualification; quarantine required")
-        [claim] = mechanisms.run(candidate, spec["runners"][candidate.runner], [request],
-                                 location=prov["location"], version=prov["version"])
+        return prov
+
+    def settle(request, claim, prov):
         if "error" in claim:
             raise CapabilityError(f"capability refused: package {candidate.distribution} raised "
                                   f"{claim['error'][:200]}")
@@ -213,6 +216,37 @@ def package_adapter(function: str, candidate: PackageCandidate):
         answer.pop("follow_up", None)
         return {**answer, "engine": f"{candidate.distribution} {prov['version']}", "license": prov["license"],
                 "authority_created": False}
+
+    def adapter(params, ctx: InvocationContext):
+        request = spec["normalize"](params)          # competence is enforced before the engine sees anything
+        prov = pinned(ctx)
+        [claim] = mechanisms.run(candidate, spec["runners"][candidate.runner], [request],
+                                 location=prov["location"], version=prov["version"])
+        return settle(request, claim, prov)
+
+    def batch(params_list, ctx: InvocationContext) -> list:
+        requests = []
+        for params in params_list:
+            try:
+                requests.append(spec["normalize"](params))
+            except CapabilityError as exc:
+                requests.append(exc)
+        prov = pinned(ctx)
+        valid = [r for r in requests if not isinstance(r, Exception)]
+        claims = iter(mechanisms.run(candidate, spec["runners"][candidate.runner], valid, location=prov["location"],
+                                     version=prov["version"], cpu_seconds=60) if valid else [])
+        out = []
+        for request in requests:
+            if isinstance(request, Exception):
+                out.append(request)
+                continue
+            try:
+                out.append(settle(request, next(claims), prov))
+            except CapabilityError as exc:
+                out.append(exc)
+        return out
+
+    adapter.batch = batch
     return adapter
 
 

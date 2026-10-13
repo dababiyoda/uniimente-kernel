@@ -27,6 +27,25 @@ documents are proposals/aspirations. Repetition creates no additional authority.
 | implementation_refs | Shared events/, provenance/, adapters/, contracts/, policy/consequence_gate.py; linked organ shims | Existing anatomy retained; no new whole-machine runtime | Refusal paths and draft-only handoff |
 
 
+## INTENT-20261013-GOAL-GRAVITY — 2026-10-13
+
+Goal Gravity + Experiential Intelligence + Asymmetry Production Line. The founder's
+2026-10-13 directive (verbatim: `docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md`)
+compiles to one behavioral property of the canonical standing runtime: an authorized
+persistent goal is an attractor for relevant perception, backcasting, preparation,
+capability formation and Gate-governed action. Record: `docs/intent/INTENT-20261013-GOAL-GRAVITY.md`
+(machine-readable `.json` validates against the skill schema). State: **active**,
+`active_requirement`, consequence class `material`. Implementation: `egregore/gravity.py`
+and its sibling modules on `main`'s runtime; decision record
+`docs/decisions/ADR-GOAL-GRAVITY-001.md`; deliberation
+`docs/collaboration/deliberation-goal-gravity-2026-10-13.json`. Evidence tier at
+recording: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED on synthetic ledgers; not
+externally verified, not founder-accepted. The dated identifier is used because the
+numeric `INTENT-00NN` series (0029–0037) is allocated across unmerged draft branches.
+Overlapping unmerged mechanisms (#158 `greg/gravity.py`, #114/#137 `greg/missions.py`,
+#93/#97/#109 Goal Chase) are preserved as substrate; their reconciliation is a founder
+merge decision, never a silent replacement.
+
 UNIIMENTE must never silently lose a founder intention, contributor objection, negative result, or superseded design.
 
 Every material intention discovered in chats, documents, issues, pull requests, repositories, or operating evidence must be normalized into an Intent Record and assigned exactly one lifecycle state:

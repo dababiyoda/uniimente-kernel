@@ -15,9 +15,24 @@ from .contracts import (
 )
 from .resources import ResourceExhausted, ResourceGovernor, ResourceMode
 from .runtime import CognitionCycle, CycleStatus, StandingCognitionRuntime
+from .goals import GoalRegistry, GoalSpec, GoalState, InterventionSpec, OpportunityFactor, PlanNode, WakeCondition
+from .experience import ExperienceEvent, Observation, WorldModel
+from .gravity import GoalGravityLoop, GravityTurn
 
 __all__ = [
     "Assessment",
+    "ExperienceEvent",
+    "GoalGravityLoop",
+    "GoalRegistry",
+    "GoalSpec",
+    "GoalState",
+    "GravityTurn",
+    "InterventionSpec",
+    "Observation",
+    "OpportunityFactor",
+    "PlanNode",
+    "WakeCondition",
+    "WorldModel",
     "CandidateProposal",
     "ChangeProposal",
     "CognitionCycle",

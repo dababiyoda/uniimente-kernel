@@ -1212,7 +1212,7 @@
           "id": "P5",
           "title": "Demand-led repertoire expansion",
           "maps_to": "N2",
-          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required",
+          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required; 2026-10-13: 31 executable genomes across L1-L4 admitted on held-out seeds 1000-1029 (frozen 496c85b): 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED; all registered VERIFIED (withheld); attaching any is the founder's decision",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "a mission that needs a family the seed lacks",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1223,7 +1223,8 @@
           "evidence_refs": [
             "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
             "tests/unit/test_greg_open_source_genesis.py",
-            "tests/unit/test_greg_linear_genesis.py"
+            "tests/unit/test_greg_linear_genesis.py",
+            "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json"
           ]
         },
         {
@@ -1279,7 +1280,7 @@
           "id": "P9",
           "title": "Constraint-release discovery",
           "maps_to": "N10",
-          "status": "HORIZON",
+          "status": "HORIZON; precursor measured 2026-10-13: operator-pipeline recombination with retain-or-extinct validation (develop_constraint_release) is DEFAULT_FOR_GEOMETRY on held-out scheduling instances by the admission rule but does not beat random restart (8-13, not significant); the exit (an unlisted organization that beats the baseline and replicates) is not met",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P6 and P8",
           "budget_ceiling": "research budget set by Alfonso",
@@ -1287,13 +1288,15 @@
           "falsification": "nothing beats the baseline or nothing replicates",
           "smallest_next_experiment": "one alternative communication topology for the composition, replicated twice",
           "exit": "a previously unlisted organization beats the baseline and survives independent replication",
-          "evidence_refs": []
+          "evidence_refs": [
+            "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json"
+          ]
         },
         {
           "id": "P10",
           "title": "Functional morphogenesis",
           "maps_to": "N2",
-          "status": "HORIZON; partial precursor only: a lying engine is quarantined and the function restored by a different qualified package (scripted candidate set, not unscripted recovery)",
+          "status": "HORIZON; partial precursor only: a lying engine is quarantined and the function restored by a different qualified package (scripted candidate set, not unscripted recovery); precursor measured 2026-10-13: sequenced local-gradient repair (develop_repair) is NICHE_CAPABILITY: it beats no repair 30-0 but loses to the centralized replanner 12-18 (not significant), the baseline the exit requires beating",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P7, P9 and developmental research (Track B)",
           "budget_ceiling": "research budget set by Alfonso",
@@ -1302,7 +1305,8 @@
           "smallest_next_experiment": "inject an unseen organ loss in a sandbox and measure Unscripted Functional Recovery Rate",
           "exit": "scoped Unscripted Functional Recovery Rate against a strong centralized adaptive baseline",
           "evidence_refs": [
-            "tests/unit/test_greg_open_source_genesis.py"
+            "tests/unit/test_greg_open_source_genesis.py",
+            "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json"
           ]
         },
         {

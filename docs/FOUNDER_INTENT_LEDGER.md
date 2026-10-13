@@ -18,6 +18,16 @@ Progress 2026-10-08 (measured, frozen, negative results kept):
   - Goal Gravity (`greg gravity`).
 - **Backcast GPS:** nine frontier backcasts added.
 
+Progress 2026-10-13 (measured, frozen, negative results kept):
+
+- **P8 cycle 2** (negative-selection detector): REJECT on a genuine scarce-sample fragility.
+- **Genome admission** ([evidence](evidence/greg-genome-admission/2026-10-13-v1/README.md)): 31 executable genomes across L1-L4 on held-out seeds, pre-registered at `496c85b`:
+  - 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED;
+  - none attached; attaching any is the founder's decision.
+- **Verifiers hardened before the freeze:** a mutation audit found over 1,000 accepted or crashing corruptions of valid answers; all were closed.
+- **Second Foundry/Gravity/resilience review:** 8 defects plus a cortex abstention crash, fixed with regression tests. They included a consent gap, a hidden-bottleneck map, a lookalike legal operator, paused-mission authority and stale asks.
+- **Next gate:** P6 v3, VPL re-measured with the admitted genomes on a new natural family.
+
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 
 `INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT` ([record](intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json), [verbatim source](intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md)): founder review of PR #155. P4 learned routing and P6 typed composition are Layer 5 substrate, not the Polyintelligence Mind; all five layers (basal, collective, solver, developmental, meta) remain obligations. Metric: held-out problem families where geometry routing or composition beats the strongest single available intelligence, net of cost/latency, with no added false answers or unauthorized effects; 0 means "a sophisticated router". Sequence: P6 cognitive composition lift → P4 conditional competence memory (hierarchical fallback) → P8 protected evolutionary cognition → IntelligenceGenome library expansion, each family admitted only when it beats simpler baselines on its native geometry. State: active. VPL: 0. Authority delta: none.

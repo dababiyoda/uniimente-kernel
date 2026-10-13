@@ -5,8 +5,10 @@ geometry, checks which cognitive organs are eligible for it, runs the eligible o
 their output with an independent verifier, and returns a recommendation, abstention, bounded test or handoff
 together with a content-addressed receipt.
 
-**Status:** cortex 0.1.5 · six seed organs `SANDBOXED` · 28 reserved families registered and disabled ·
-frozen held-out result `INCONCLUSIVE` · **not promoted**. See [`SEED_EXPERIMENT_REPORT.md`](SEED_EXPERIMENT_REPORT.md).
+**Status:** cortex 0.1.6 · six seed organs `SANDBOXED` · 28 reserved families registered and disabled ·
+0.1.5 held-out result `INCONCLUSIVE` (declared baselines `NOT_RUN`) · 0.1.6 held-out result: see
+[`SEED_EXPERIMENT_REPORT.md`](SEED_EXPERIMENT_REPORT.md) § 0.1.6 · **not promoted**.
+Convergence with the other cognition lineages and the standing-runtime binding: [`CONVERGENCE_2026-10-13.md`](CONVERGENCE_2026-10-13.md).
 
 Source of requirements: the verbatim build prompt in
 [`docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md`](../intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md).

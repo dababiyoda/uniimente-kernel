@@ -196,7 +196,10 @@ def _in_scope(scope: Mapping[str, Any], option: Option, as_of: str | None) -> tu
     if ceiling not in CONSEQUENCE_CLASSES or consequence_rank(option.consequence_class) > consequence_rank(ceiling):
         return False, f"{option.consequence_class} exceeds mandate ceiling {ceiling}"
     expires = scope.get("expires_at")
-    if expires and as_of:
+    if expires:
+        if not as_of:
+            # 0.1.6: a mandate with an expiry cannot be confirmed current without a reference instant.
+            return False, "mandate has an expiry but the problem declares no as_of; validity unverifiable"
         if _instant(as_of) >= _instant(expires):
             return False, "mandate expired"
     return True, "within mandate"

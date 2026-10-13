@@ -140,8 +140,14 @@ class CompetenceLedger:
             raise CortexError("a settling outcome must attribute a role to the method being updated")
         geometry = receipt["geometry"]["epistemic_class"] or "unresolved"
         selected = receipt["route"]["selected"]
-        if f"{method}@{method_version}" not in selected and method not in [s.split("@")[0] for s in selected]:
-            raise CortexError("a receipt can only settle a method it actually selected")
+        key = f"{method}@{method_version}"
+        if key not in selected:
+            raise CortexError(f"a receipt can only settle a method and version it actually selected; "
+                              f"{key!r} is not among {list(selected)}")
+        # 0.1.6: a composed route settles under the geometry of the payload part it served,
+        # not under the receipt's first structural class.
+        part_geometries = receipt["route"].get("part_geometries") or {}
+        geometry = part_geometries.get(key) or geometry
         weight = VALIDATION_WEIGHT.get(provenance.get("validation_status"), 0.0) if outcome_status in SETTLING else 0.0
         weight = min(weight, 1.0)  # bounded update
         before = self.estimate(method, method_version, geometry, conditions)

@@ -301,13 +301,21 @@ class Cortex:
             rows = {e.key: e for e in self.registry.eligibility(replace(geometry, epistemic_class=part_class))}
             if key in rows:
                 part_eligibility[key] = rows[key]
-        selected = [k for k, _ in parts if k in part_eligibility and part_eligibility[k].eligible][:MAX_COMPOSITION]
+        eligible_parts = [k for k, _ in parts if k in part_eligibility and part_eligibility[k].eligible]
+        selected = eligible_parts[:MAX_COMPOSITION]
+        # 0.1.6: a route the cap drops is disclosed as dropped, never as "not required".
+        dropped_by_cap = eligible_parts[MAX_COMPOSITION:]
+        part_geometries = {k: c for k, c in parts if k in selected}
         by_key = {e.key: e for e in eligibility}
         by_key.update(part_eligibility)
         eligibility = [by_key[k] for k in sorted(by_key)]
         if self.memory is not None and len(selected) > 1:
             selected = self.memory.reorder(selected, geometry)
-        alternatives = [{"route": e.key, "why_not": list(e.reasons) or ["not required by this payload"]}
+        alternatives = [{"route": e.key,
+                         "why_not": ([f"eligible for this payload but not run: composition is capped at "
+                                      f"{MAX_COMPOSITION} routes in cortex {CORTEX_VERSION}; its part of the "
+                                      f"question is unanswered"] if e.key in dropped_by_cap
+                                     else list(e.reasons) or ["not required by this payload"])}
                         for e in eligibility if e.key not in selected]
 
         # budget: refuse before spending, never after
@@ -381,7 +389,8 @@ class Cortex:
             next_step = "resolve the findings before relying on this result"
         spent = spent.plus(Expenditure(seconds=time.perf_counter() - started - spent.seconds))
         return self._receipt(problem, geometry, eligibility, selected, alternatives, results, verifier,
-                             gate_reports, ranking, state, disposition, reason, next_step, spent, protection)
+                             gate_reports, ranking, state, disposition, reason, next_step, spent, protection,
+                             part_geometries=part_geometries, dropped_by_cap=dropped_by_cap)
 
     # ------------------------------------------------------------------ disposition
     def _dispose(self, geometry, selected, eligibility, results, budget_problem, ranking, gate_reports, options):
@@ -470,7 +479,7 @@ class Cortex:
                 "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate"}
 
     def _receipt(self, problem, geometry, eligibility, selected, alternatives, results, verifier, gate_reports,
-                 ranking, state, disposition, reason, next_step, spent, protection=None) -> dict:
+                 ranking, state, disposition, reason, next_step, spent, protection=None, *, part_geometries=None, dropped_by_cap=()) -> dict:
         payload = problem.payload
         refs = sorted({s.get("id") for s in payload.get("sources", []) if s.get("id")} |
                       {e.get("id") for e in payload.get("evidence", []) if e.get("id")})
@@ -499,12 +508,17 @@ class Cortex:
             "eligibility": [e.to_dict() for e in eligibility],
             "route": {"policy": POLICY_VERSION, "selected": list(selected),
                       "composition": len(selected) > 1,
+                      "part_geometries": {k: (part_geometries or {}).get(k) or geometry.epistemic_class
+                                          for k in selected},
+                      "dropped_by_cap": list(dropped_by_cap),
                       "rationale": "structured payload fields select routes by the fixed policy table; "
                                    "eligibility and budget filter first"},
             "alternatives": alternatives,
             "assumptions": [a for r in results for a in r.assumptions],
             "output": {"state": state, "answer": answer, "per_route": [r.to_dict() for r in results]},
             "uncertainty": "; ".join(r.uncertainty for r in results) or "no route executed",
+            "coverage": ("complete" if not dropped_by_cap else
+                         f"incomplete: {list(dropped_by_cap)} eligible but not run (composition cap)"),
             "proof_artifacts": [dict(r.proof) for r in results],
             "verifier": verifier,
             "gates": {k: v.to_dict() for k, v in gate_reports.items()} or None,
@@ -519,7 +533,8 @@ class Cortex:
                 "human_led_actions": [a for a in protection.ordered_actions if a in HUMAN_LED_PROTECTION]},
             "accountability": _accountability(geometry, results, verifier, gate_reports, protection),
             "outcome_link": {"status": "absent_feedback", "settlement_ref": None,
-                             "memory_keys": [f"{k}|{geometry.epistemic_class}" for k in selected]},
+                             "memory_keys": [f"{k}|{(part_geometries or {}).get(k) or geometry.epistemic_class}"
+                                             for k in selected]},
             "authority_created": False,
             "execution_authority": "none",
         }
@@ -536,10 +551,11 @@ class Cortex:
             "versions": {"cortex": CORTEX_VERSION, "policy": POLICY_VERSION, "routes": {}},
             "geometry": geometry.to_dict() if geometry else None,
             "eligibility": [], "route": {"policy": POLICY_VERSION, "selected": [], "composition": False,
+                                         "part_geometries": {}, "dropped_by_cap": [],
                                          "rationale": "input rejected before routing"},
             "alternatives": [], "assumptions": [],
             "output": {"state": "MALFORMED_INPUT", "answer": None, "per_route": []},
-            "uncertainty": "no route executed", "proof_artifacts": [],
+            "uncertainty": "no route executed", "coverage": "none: malformed input", "proof_artifacts": [],
             "verifier": {"proof_class": "verifier_findings", "verifier": adversarial.VERIFIER_ID,
                          "findings": [{"severity": "major", "kind": "malformed_input", "detail": why,
                                        "target": None}], "blocking": False,

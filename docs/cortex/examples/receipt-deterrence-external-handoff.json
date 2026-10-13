@@ -49,6 +49,7 @@
     "an intervention changes only the parameters it names"
   ],
   "authority_created": false,
+  "coverage": "complete",
   "created_at": "2026-09-30T00:00:00Z",
   "disposition": {
     "kind": "handoff",
@@ -96,7 +97,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.078493,
+    "seconds": 0.040081,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -210,7 +211,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.074627,
+          "seconds": 0.038245,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -375,9 +376,13 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:3b7387ccab48ad4c0b1fa6a0159c49f65414c04ab1947f885cd3d477042bceb5",
+  "receipt_id": "sha256:adda3610bfcd7476fbc118134e2ea5956a6d6976fe6ca3d4938d00b5c1c94fa2",
   "route": {
     "composition": false,
+    "dropped_by_cap": [],
+    "part_geometries": {
+      "cortex.deterrence.accountability@0.1.0": "strategic"
+    },
     "policy": "cortex-route-policy/0.1",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
@@ -418,7 +423,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.5",
+    "cortex": "0.1.6",
     "policy": "cortex-route-policy/0.1",
     "routes": {
       "cortex.deterrence.accountability@0.1.0": "0.1.0"

@@ -2,7 +2,7 @@
   "accountability": {
     "falsification_conditions": [
       {
-        "condition": "a better-identified estimate (e.g. randomized) outside [1.7894413709111396, 2.1590794719145205], a failed refutation, or an identification assumption shown false",
+        "condition": "a better-identified estimate (e.g. randomized) outside [1.78944137091114, 2.159079471914521], a failed refutation, or an identification assumption shown false",
         "route": "cortex.evidence_causal@0.1.0"
       }
     ],
@@ -50,6 +50,7 @@
     "positivity within strata of z"
   ],
   "authority_created": false,
+  "coverage": "complete",
   "created_at": "2026-09-30T00:00:00Z",
   "disposition": {
     "kind": "recommend",
@@ -99,7 +100,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.119012,
+    "seconds": 0.076839,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -172,23 +173,23 @@
   "output": {
     "answer": {
       "ci95": [
-        1.7894413709111396,
-        2.1590794719145205
+        1.78944137091114,
+        2.159079471914521
       ],
-      "effect": 1.9649018006827108,
+      "effect": 1.9649018006827104,
       "estimand": "average treatment effect of t on y",
-      "naive_difference": 3.14197321214276
+      "naive_difference": 3.1419732121427613
     },
     "per_route": [
       {
         "answer": {
           "ci95": [
-            1.7894413709111396,
-            2.1590794719145205
+            1.78944137091114,
+            2.159079471914521
           ],
-          "effect": 1.9649018006827108,
+          "effect": 1.9649018006827104,
           "estimand": "average treatment effect of t on y",
-          "naive_difference": 3.14197321214276
+          "naive_difference": 3.1419732121427613
         },
         "assumptions": [
           "z blocks every backdoor path from t to y",
@@ -200,7 +201,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.117184,
+          "seconds": 0.075598,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -213,11 +214,11 @@
             "z"
           ],
           "ci95_bootstrap": [
-            1.7894413709111396,
-            2.1590794719145205
+            1.78944137091114,
+            2.159079471914521
           ],
           "estimand": "average treatment effect of t on y",
-          "estimate": 1.9649018006827108,
+          "estimate": 1.9649018006827104,
           "evidence_assessment": {
             "as_of": "2026-09-30",
             "available": [],
@@ -262,7 +263,7 @@
           ],
           "method": "stratified",
           "n": 600,
-          "naive_difference": 3.14197321214276,
+          "naive_difference": 3.1419732121427613,
           "outcome": "y",
           "positivity": {
             "dropped_fraction": 0.0,
@@ -271,17 +272,17 @@
           "proof_class": "causal_estimate",
           "refutations": [
             {
-              "estimate": -0.012219575573566314,
+              "estimate": -0.012219575573566177,
               "name": "placebo_treatment",
               "passed": true
             },
             {
               "estimates": [
-                1.8268750119231076,
+                1.8268750119231065,
                 1.7914404845070528,
-                2.0655001060330047,
-                1.8829210703770642,
-                1.9901477738982207
+                2.065500106033005,
+                1.882921070377065,
+                1.9901477738982198
               ],
               "name": "data_subset_stability",
               "passed": true
@@ -307,11 +308,11 @@
         "z"
       ],
       "ci95_bootstrap": [
-        1.7894413709111396,
-        2.1590794719145205
+        1.78944137091114,
+        2.159079471914521
       ],
       "estimand": "average treatment effect of t on y",
-      "estimate": 1.9649018006827108,
+      "estimate": 1.9649018006827104,
       "evidence_assessment": {
         "as_of": "2026-09-30",
         "available": [],
@@ -356,7 +357,7 @@
       ],
       "method": "stratified",
       "n": 600,
-      "naive_difference": 3.14197321214276,
+      "naive_difference": 3.1419732121427613,
       "outcome": "y",
       "positivity": {
         "dropped_fraction": 0.0,
@@ -365,17 +366,17 @@
       "proof_class": "causal_estimate",
       "refutations": [
         {
-          "estimate": -0.012219575573566314,
+          "estimate": -0.012219575573566177,
           "name": "placebo_treatment",
           "passed": true
         },
         {
           "estimates": [
-            1.8268750119231076,
+            1.8268750119231065,
             1.7914404845070528,
-            2.0655001060330047,
-            1.8829210703770642,
-            1.9901477738982207
+            2.065500106033005,
+            1.882921070377065,
+            1.9901477738982198
           ],
           "name": "data_subset_stability",
           "passed": true
@@ -387,9 +388,13 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:a15cc8cd2e973265c1108b467943472ac4d20d02942b52971353b69dd260f5b3",
+  "receipt_id": "sha256:df0627740281e2ef0ab69ed34fb261c01fb9d3d70786a09ebb4421e78a22d7c0",
   "route": {
     "composition": false,
+    "dropped_by_cap": [],
+    "part_geometries": {
+      "cortex.evidence_causal@0.1.0": "causal"
+    },
     "policy": "cortex-route-policy/0.1",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
@@ -430,7 +435,7 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.1.5",
+    "cortex": "0.1.6",
     "policy": "cortex-route-policy/0.1",
     "routes": {
       "cortex.evidence_causal@0.1.0": "0.1.0"

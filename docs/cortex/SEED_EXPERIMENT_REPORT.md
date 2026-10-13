@@ -3,6 +3,11 @@
 Cortex version 0.1.5 · branch `claude/polyintelligence-cortex-primitives-20260930` · base `main` @ `19fa33c`
 · 2026-10-01
 
+> **0.1.6 addendum (2026-10-13).** The 0.1.5 report below is preserved as written. Cortex 0.1.6 (branch
+> `claude/polyintelligence-seed-genome-v0.1-20261013`) fixes four verified defects, binds the cortex to the
+> standing cognition runtime, and re-runs the frozen held-out comparison with the declared baselines served
+> from a recorded frontier-model transcript. Its result and limits are in § 0.1.6 at the end of this file.
+
 **Decision: EXPERIMENT — retain, unpromoted.** The seed routes, gates, receipts and outcome-conditional learning
 are implemented and tested. The exit condition, *verified cross-geometry routing gain*, was **not reached**:
 the two declared LLM baselines could not run in this environment, so the frozen held-out result is
@@ -95,6 +100,7 @@ refuses if any input changed. Six versions were frozen and run; all manifests an
 | 0.1.3 | Exit rule tightened to the prompt's wording: *cross-geometry* gain (no geometry group worse, gain on ≥ 2), cost and p95 latency within declared ratios; a verified gain only makes promotion proposable, founder ratification promotes. Done before any declared baseline ran | traceability audit against item 11 |
 | 0.1.4 | Review-pass-2 primitives the seed lacked: Formal 0.2.0 certified optimization; receipt accountability (strongest counterargument, falsifiers, missing information); victim-protection situation (unknown harm is a gap that forces handoff; identity-free receipts); four reserved families | verbatim register of review passes 1–2 |
 | 0.1.5 | Lawful deterrence organ for the founder's "maximize … deterrence": Becker condition over declared ranges, closed lawful vocabulary, coercive and hard-harm interventions refused, certainty vs severity labelled (Nagin 2013), external actions handed off | goal review: deterrence was the one lawful clause not yet built |
+| 0.1.6 | Four defects found by an independent read of 0.1.5, each reproduced before the fix: (D1) `CompetenceLedger.settle` accepted a method *version* that never ran whenever the method name matched; now the exact `method@version` must be among the selected routes. (D2) a composed route settled under the receipt's first structural class; receipts now carry `route.part_geometries` and `outcome_link.memory_keys` per part, and settlement uses the part's geometry. (D3) a third eligible route was dropped by `MAX_COMPOSITION` and listed as "not required by this payload"; receipts now disclose `route.dropped_by_cap` and a top-level `coverage` field. (D4) a founder mandate with `expires_at` passed `founder_scope` when the problem declared no `as_of`; validity is now unverifiable without a reference instant and the gate fails closed. Also: the frozen baseline arms can be run from a recorded transcript (`cortex/evaluation/replay.py`) with the model's provenance replacing the local-model disclosure, and the cortex is bound to the standing cognition runtime as a consequence-inert proposer (`egregore/cortex_proposer.py`) | independent code read (2026-10-13), see `docs/cortex/CONVERGENCE_2026-10-13.md` |
 
 Held-out results were **identical item for item** across all six versions: no held-out item exercises the
 changed paths, and the exit change only matters once baselines run. That is a coverage gap, recorded under limitations; the paths are covered by unit and mutation tests.

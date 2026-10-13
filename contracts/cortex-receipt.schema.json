@@ -31,7 +31,8 @@
     "accountability",
     "outcome_link",
     "authority_created",
-    "execution_authority"
+    "execution_authority",
+    "coverage"
   ],
   "properties": {
     "receipt_id": {
@@ -99,11 +100,32 @@
     "route": {
       "type": "object",
       "required": [
-        "policy",
-        "selected",
         "composition",
-        "rationale"
-      ]
+        "dropped_by_cap",
+        "part_geometries",
+        "policy",
+        "rationale",
+        "selected"
+      ],
+      "properties": {
+        "part_geometries": {
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": "0.1.6: the epistemic class of the payload part each selected route served; the key competence settles under"
+        },
+        "dropped_by_cap": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "0.1.6: eligible routes not run because of MAX_COMPOSITION; disclosed, never described as not required"
+        }
+      }
     },
     "alternatives": {
       "type": "array"
@@ -533,6 +555,10 @@
           "const": "competence evidence and proof narrow disputes; they never create authority"
         }
       }
+    },
+    "coverage": {
+      "type": "string",
+      "description": "0.1.6: whether every eligible route for the payload ran; names routes the composition cap dropped"
     }
   }
 }

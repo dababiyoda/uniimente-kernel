@@ -588,8 +588,30 @@
   adopt:
   - Discourse
   - Ghost memberships
-  gap: No owned or federated community; DALEOBANKS distributes through rented platforms.
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-32.json
+  implementation:
+  - foundry/systems/community.py
+  - foundry/systems/federation.py
+  - foundry/systems/webserver.py
+  - foundry/systems/reputation.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: Community.join|link_actor|post|react|report|moderate|grant_tier|standing|publish_feed|export_member|export_all|import_followers_csv
+    (signed member and operator acts); foundry.query members|feed|moderation (system 32)
+  limitations: 'Members are Ed25519 keys the members hold; there is no password or email account layer, so a hosted
+    front end (Discourse, Ghost) would sit on this substrate rather than replace it, and none is wired. Standing counts
+    only helpful marks from other members (#41 lower bound); it is not a trust score for anything beyond this community.
+    Tiers are granted only against a settled charge read from the #38 rail store; recurring billing and lapse are not
+    modelled. The Mastodon follower CSV import creates invitations with claim codes, not members. Substrate noted from
+    RESEARCH-IN apps/community: a JWT-authenticated comment service weighting voices by verified ORCID; its shared
+    development secret as the identity root is the pattern this design avoids by giving each member a key. No real
+    member has joined.'
+  recovery: 'Every write is a signed message kept with its signature, so the history is re-verifiable; removal is a
+    tombstone that keeps the content hash and lineage; the full and per-member exports are signed by the community key
+    and carry no private material, so the community can be rebuilt elsewhere from its own export.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 33:
   acceptance:
   - Publishes and reads through a federated protocol (ActivityPub/AT) with portable identity

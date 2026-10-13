@@ -951,3 +951,33 @@ def test_federation_owns_actors_verifies_signatures_and_moves_accounts_with_foll
     assert actors["result"]["actors"] == []
     with pytest.raises(CapabilityError, match="no apply op"):
         foundry_bridge.apply({"system": 33, "op": "publish", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): the owned community -----------------------------------------------------------
+
+from foundry.systems import community
+
+
+def test_community_holds_identity_history_and_exports_under_signed_rules(tmp_path):
+    result = community.exercise(tmp_path)
+    assert result["members"] == 5 and result["linked_actor_verified"] and result["posts"] == 9 and result["rate_limit_resets"]
+    assert result["reports"] == [1, 2, 3] and result["held_at_third_report"] and result["released_can_post"] and result["tombstone_keeps_hash"]
+    assert result["alice_rated_by_four_helpful_marks"] and result["supporter_tier_from_settled_charge"] and result["feed_served_with_provenance"]
+    assert result["member_export"] == {"verifies": True, "posts": 6, "received": 3, "reports_made": 1}, "exported before the fourth mark"
+    full = result["full_export"]
+    assert full["verifies"] and full["tampered_rejected"] and full["members"] == 4 and full["posts"] == 9 and full["private_keys_absent"]
+    assert result["platform_import"] == {"invitations_added": 2, "invitations_total": 2, "invited_member_claimed": True}
+    assert set(result["refusals"]) >= {"join_twice", "join_forged", "link_actor_without_alias", "rate_limit", "reply_to_unknown", "non_member_post",
+                                       "forged_member_signature", "self_mark", "duplicate_reaction", "post_while_held", "moderate_without_role",
+                                       "moderator_cannot_promote", "react_to_tombstone", "tier_on_declined_charge", "tier_on_claimed_charge"}
+    assert all(result["refusals"].values())
+    # a bad platform export is refused, and a fresh community has only its owner
+    key = Ed25519PrivateKey.from_private_bytes(bytes(32 * [7]))
+    c = community.Community(tmp_path / "fresh", name="x", key_seed=bytes(32 * [8]), owner_public_hex=public_bytes(key.public_key()).hex())
+    with pytest.raises(community.CommunityError, match="Account address"):
+        c.import_followers_csv("name,url\nx,y\n", source="other", now="2026-10-13T15:00:00Z")
+    assert [m["role"] for m in c._state()["members"].values()] == ["owner"]
+    members = foundry_bridge.query({"system": 32, "op": "members", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert members["result"]["members"] == []
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 32, "op": "post", "args": {}}, _ctx(tmp_path, "foundry.apply"))

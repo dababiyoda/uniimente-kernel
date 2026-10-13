@@ -747,3 +747,30 @@ def test_attribution_measures_paths_and_refuses_small_sample_stories(tmp_path):
     measured = foundry_bridge.query({"system": 34, "op": "report_territory", "args": {}}, _ctx(tmp_path, "foundry.query"))
     assert measured["result"]["sessions"] == 3 and measured["result"]["conversions"] == 2
     assert attribution.wilson_lower(0, 0) == 0.0 and attribution.report([])["removal"]["attribution"] == {}
+
+
+# -- increment 8 (part): payments on the rail's own SDK -----------------------------------------
+
+from foundry.systems import payments
+
+
+def test_payments_trace_every_charge_to_delivery_and_grant_and_reconcile_to_the_cent(tmp_path):
+    result = payments.exercise(tmp_path)
+    assert result["settled"] == "settled" and result["idempotent_retry_same_intent"]
+    assert result["declined"]["status"] == "declined" and result["metered_settled"] == "settled" and result["usage_billed"]
+    assert result["reconciled_to_processor"] and result["books_balance"]
+    assert result["reserve_after_refund_cents"] < result["reserve_cents"] + 7000, "a refund draws the dispute reserve first"
+    assert set(result["refusals"]) == {"live_key", "no_delivery_receipt", "no_grant", "grant_for_other_case",
+                                       "double_charge_same_case", "metered_mismatch", "refund_over_charge", "refund_without_reason"}
+    assert all(result["refusals"].values())
+    # the emulator itself refuses a non-test key and an idempotency key reused for a different request
+    server, emu = payments.start_emulator()
+    try:
+        status, body = emu.handle("POST", "/v1/payment_intents", {"amount": "100", "confirm": "true"}, "k1")
+        assert status == 200
+        assert emu.handle("POST", "/v1/refunds", {"payment_intent": body["id"]}, "k1")[0] == 400
+        assert emu.handle("POST", "/v1/payment_intents", {"amount": "0"}, None)[0] == 400
+    finally:
+        server.shutdown(); server.server_close()
+    books = foundry_bridge.query({"system": 38, "op": "books", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert books["result"]["balances"] == {}, "a fresh workspace has empty books; charging is never a free op"

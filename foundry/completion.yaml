@@ -634,17 +634,27 @@
   acceptance:
   - Billing, metering, refunds and reserves integrated with a real payment rail in test mode
   - Every charge traces to delivered, verified work
-  adopt:
-  - Stripe
-  - x402 for machine buyers
-  existing:
+  evidence: foundry/evidence/system-38.json
+  implementation:
+  - foundry/systems/payments.py
+  - foundry/systems/accounting.py
   - business/commercial_loop.py
-  - foundry/outcome_bridge.py
-  - tests/unit/test_business.py
-  - tests/unit/test_outcome_bridge_v1.py
-  - DALEOBANKS:tests/test_revenue.py
-  gap: Payment records are modeled and reconciled; no live processor integration.
-  state: PARTIAL
+  - policy/consequence_gate.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: Rail.charge|meter|refund|reconcile (gate-executed, financial consequence); foundry.query books (system
+    38)
+  limitations: 'Sandbox evidence runs Stripe''s official SDK against a local Stripe-API-shaped emulator (PaymentIntents,
+    Refunds, idempotency keys, test-card declines). Live test mode uses the same code with the founder''s sk_test_
+    key and Stripe''s real base address and has not been run: no key is read from the environment. Live keys (sk_live_)
+    are refused in code. Card networks, payouts, disputes and webhooks are not modelled; the reserve is a bookkeeping
+    tier, not a bank account.'
+  recovery: 'Charge creation is idempotent on the rail (retry after timeout returns the same intent); a case can
+    be charged once and only refunds move money back; every movement is a balanced #39 entry, so the books reconcile
+    to the processor balance to the cent or the discrepancy is visible.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 39:
   acceptance:
   - Balanced double-entry journal in integer minor units; unbalanced, unknown-account, foreign-currency and fractional

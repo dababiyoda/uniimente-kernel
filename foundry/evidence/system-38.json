@@ -1,0 +1,47 @@
+{
+ "command": "python -m foundry.completion --run 38",
+ "name": "Payment systems",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "books_balance": true,
+  "books_vs_processor": {
+   "books": {
+    "fees_cents": 4845,
+    "gross_cents": 165000,
+    "net_cents": 130155,
+    "refunds_cents": 30000
+   },
+   "processor": {
+    "fees_cents": 4845,
+    "gross_cents": 165000,
+    "net_cents": 130155,
+    "refunds_cents": 30000
+   }
+  },
+  "declined": {
+   "decline_code": "card_declined",
+   "status": "declined"
+  },
+  "fee_cents": 2640,
+  "idempotent_retry_same_intent": true,
+  "metered_settled": "settled",
+  "reconciled_to_processor": true,
+  "refund": 30000,
+  "refusals": {
+   "double_charge_same_case": "case c1 is already charged; refunds are the only way back",
+   "grant_for_other_case": "a charge needs a Consequence Gate grant issued for this exact case",
+   "live_key": "only a test-mode key (sk_test_...) may be used here; live mode is a fo",
+   "metered_mismatch": "metered amount 75000 does not match charge 1",
+   "no_delivery_receipt": "a charge needs the delivery receipt hash it bills for",
+   "no_grant": "a charge needs a Consequence Gate grant issued for this exact case",
+   "refund_over_charge": "rail refused the refund: charge_already_refunded",
+   "refund_without_reason": "a refund needs a recorded reason"
+  },
+  "reserve_after_refund_cents": 7280,
+  "reserve_cents": 8736,
+  "settled": "settled",
+  "usage_billed": true
+ },
+ "result_sha256": "sha256:7e3e2c2803cf36d8ec2dd69357a16e2b43b27585b16b09eb6bb915b477eea77b",
+ "system": 38
+}

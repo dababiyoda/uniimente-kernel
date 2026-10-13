@@ -668,7 +668,7 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 "signal manifest; deliver one decision memo whose verdict may not outrun the "
                                 "evidence", "cli", "internal_write", "deliver:",
                                 {"railscout_root": "path", "wmi_root": "path", "manifest": "path",
-                                 "source_root": "path"},
+                                 "source_root": "path", "cognition": "dict?"},
                                 {"path": "str", "sha256": "str", "verdict": "str", "railscout_status": "str",
                                  "engine_verdict": "str", "inputs": "dict", "inputs_digest": "str"},
                                 filesystem="deliver-write", binaries=(sys.executable,),

@@ -341,8 +341,10 @@ class MissionEngine:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
+                                 # read-only ledger access: memory, artifacts, cognition, and the organ bridge
+                                 # that renders the Mind's receipts into a memo (it never writes the ledger)
+                                 journal=self.journal if manifest.capability_id in ("memory.precedents", "venture.assess")
+                                 or manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
                                  artifact_root=self.artifact_root,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
                                  cognition_model=getattr(self, "cognition_model", None))

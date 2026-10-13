@@ -28,7 +28,7 @@
       "engine_cases": 600,
       "wrong": 0,
       "refused": 0,
-      "batch_seconds": 0.31
+      "batch_seconds": 0.3
     },
     {
       "function": "assignment.staffing",
@@ -41,7 +41,7 @@
       "engine_cases": 600,
       "wrong": 0,
       "refused": 0,
-      "batch_seconds": 0.57
+      "batch_seconds": 0.61
     },
     {
       "function": "project.crash",
@@ -54,7 +54,7 @@
       "engine_cases": 416,
       "wrong": 0,
       "refused": 0,
-      "batch_seconds": 1.24
+      "batch_seconds": 1.23
     },
     {
       "function": "project.crash",
@@ -74,11 +74,11 @@
       "scale_probe": {
         "nodes": 300,
         "edges": 2942,
-        "package_solve_seconds": 0.0256,
-        "package_run_seconds_with_interpreter": 0.213,
+        "package_solve_seconds": 0.0219,
+        "package_run_seconds_with_interpreter": 0.215,
         "certified": true,
         "simplest_local_alternative": "local Edmonds-Karp (plain Python)",
-        "local_seconds": 0.0028,
+        "local_seconds": 0.0054,
         "agrees_with_local": true
       }
     },
@@ -89,7 +89,7 @@
           "staffing-via-maxflow"
         ],
         "qualified": true,
-        "seconds": 2.09,
+        "seconds": 0.22,
         "oracle_cases": 10,
         "engine_calls": 10,
         "engine_requalified": false,
@@ -102,7 +102,7 @@
           "staffing-via-maxflow"
         ],
         "qualified": true,
-        "seconds": 1.94,
+        "seconds": 0.23,
         "oracle_cases": 9,
         "engine_calls": 9,
         "engine_requalified": false,

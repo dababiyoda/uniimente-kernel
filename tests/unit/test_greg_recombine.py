@@ -314,3 +314,42 @@ def test_every_reduction_carries_a_complete_mechanism_card():
         assert set(recombine.CARD_FIELDS) <= set(r.card), r.reduction_id
         assert all(r.card[f] for f in recombine.CARD_FIELDS), r.reduction_id
         assert r.card["classification"] == "BUILDABLE" and r.baseline
+
+
+def _attached_engine(registry):
+    from greg import mechanisms
+    from greg.genesis import Genesis, CATALOG, package_adapter
+    candidate = next(c for c in CATALOG["graph.max_flow"]["candidates"] if c.distribution == "networkx")
+    card = mechanisms.card(candidate, "graph.max_flow", mechanisms.installed("networkx"))
+    g = Genesis.__new__(Genesis)
+    manifest = g._package_manifest("graph.max_flow", candidate, card, "deficit-test")
+    registry.register(manifest, package_adapter("graph.max_flow", candidate), state="ATTACHED")
+    return g, manifest
+
+
+def test_qualification_runs_every_oracle_case_in_one_isolated_engine_run(monkeypatch):
+    from greg import mechanisms
+    from greg.capabilities import CapabilityRegistry
+    registry = CapabilityRegistry()
+    g, engine = _attached_engine(registry)
+    path, _ = recombine.chain("assignment.staffing", genesis_mod.CATALOG)
+    composed = g._composed_manifest("assignment.staffing", path, engine, "deficit-test")
+    runs = []
+    real = mechanisms.run
+    monkeypatch.setattr(mechanisms, "run", lambda *a, **k: runs.append(len(a[2])) or real(*a, **k))
+    ok, report = recombine.qualify(path, recombine.composed_adapter(path, registry), composed, 3)
+    assert ok and report["engine_calls"] == report["cases"] == 10
+    assert runs == [10]                                       # one isolated run, not one per case
+
+
+def test_a_malformed_request_in_a_batch_is_refused_alone(tmp_path):
+    from greg.capabilities import CapabilityError, CapabilityRegistry, InvocationContext
+    registry = CapabilityRegistry()
+    g, engine = _attached_engine(registry)
+    path, _ = recombine.chain("assignment.staffing", genesis_mod.CATALOG)
+    composed = g._composed_manifest("assignment.staffing", path, engine, "deficit-test")
+    ctx = InvocationContext(workspace=tmp_path, read_roots=(tmp_path,), secrets=None, manifest=composed)
+    bad = {"workers": [{"id": "A", "capacity": -1}], "orders": [{"id": "X", "demand": 1}]}
+    answers = recombine.composed_adapter(path, registry).batch([STAFFING, bad, STAFFING], ctx)
+    assert answers[0]["staffed"] == answers[2]["staffed"] == 8
+    assert isinstance(answers[1], CapabilityError) and "constructed request invalid" in str(answers[1])

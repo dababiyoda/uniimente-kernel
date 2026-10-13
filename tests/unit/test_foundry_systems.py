@@ -981,3 +981,36 @@ def test_community_holds_identity_history_and_exports_under_signed_rules(tmp_pat
     assert members["result"]["members"] == []
     with pytest.raises(CapabilityError, match="no apply op"):
         foundry_bridge.apply({"system": 32, "op": "post", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): the media engine -----------------------------------------------------------
+
+from foundry.systems import media
+
+
+def test_media_engine_renders_from_canon_with_disclosure_and_signed_provenance(tmp_path):
+    result = media.exercise(tmp_path)
+    assert result["image"]["width"] == 640 and result["image"]["format"] == "PNG" and result["image_bg_is_canon_bg"] and result["image_mark_is_canon_accent"]
+    assert result["audio"] == {"duration_s": 3.0, "sample_rate": 22050, "channels": 1, "peak": 19660}
+    assert result["video"] == {"width": 320, "height": 180, "frames": 36, "has_audio": True, "video_codec": "h264"}, "decoded, not assumed"
+    assert result["video_first_frame_near_canon_bg"]
+    assert result["interactive"] == {"self_contained": True, "has_disclosure": True, "interactive_steps": 3}
+    assert result["every_manifest_discloses"] and result["ingredients_trace_to_canon"] and result["assets_indexed"] == 4
+    assert result["verify_image"] == {"hash_matches": True, "signature_ok": True, "disclosed": True}
+    assert result["verify_substituted_bytes"]["hash_matches"] is False and result["verify_tampered_manifest"]["signature_ok"] is False
+    assert set(result["refusals"]) == {"canon_without_disclosure_rule", "canon_without_palette", "brief_without_title", "brief_omitting_disclosure",
+                                       "unknown_kind", "unknown_note", "odd_video_dimensions"} and all(result["refusals"].values())
+    # the engine's own checks and the bridge
+    engine = media.Engine(tmp_path / "ws" / "foundry" / "system-35" / "engine", key_seed=bytes(32 * [3]), clock=lambda: "t",
+                          canon=media.canon_from_persona(media.demo_persona(), palette={"bg": "#000000", "fg": "#ffffff", "accent": "#ff0000"},
+                                                         mark="X", editorial_rules=list(media.REQUIRED_EDITORIAL_RULES)))
+    png = engine.render_image({"title": "t", "size": (64, 32)})
+    assert engine.inspect("image", png)["bg_pixel"] == [0, 0, 0]
+    produced = engine.produce("interactive", {"title": "t", "lines": ["a"]})
+    verified = foundry_bridge.query({"system": 35, "op": "verify", "args": {"asset": produced["asset"], "manifest": produced["manifest_address"]}},
+                                    _ctx(tmp_path, "foundry.query"))
+    assert verified["result"] == {"hash_matches": True, "signature_ok": True, "disclosed": True}, "GREG can verify an asset through the bridge"
+    assets = foundry_bridge.query({"system": 35, "op": "assets", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert [a["kind"] for a in assets["result"]["assets"]] == ["interactive"]
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 35, "op": "produce", "args": {}}, _ctx(tmp_path, "foundry.apply"))

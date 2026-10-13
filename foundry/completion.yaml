@@ -667,8 +667,29 @@
   - FFmpeg
   - Remotion
   - Godot
-  gap: No graphics, audio, video or game production pipeline.
-  state: OUTSTANDING
+  evidence: foundry/evidence/system-35.json
+  implementation:
+  - foundry/systems/media.py
+  - foundry/company.py
+  - foundry/systems/cas.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: Engine.produce(kind, brief) for image|audio|video|interactive under a canon that must carry the editorial
+    constitution; Engine.verify(bytes, manifest); canon_from_persona; foundry.query assets|manifest|verify (system 35)
+  limitations: 'Engines adopted: Pillow (stills and frames) and FFmpeg 7 via the imageio-ffmpeg static build (libx264 +
+    AAC in MP4; GIF and WAV muxers available); audio is synthesized PCM from note names, not speech or music generation;
+    the interactive asset is a self-contained HTML/SVG reveal, not a Remotion composition or a Godot scene (those remain
+    the adopted routes for motion design and interactive worlds and are not wired). Provenance is a C2PA-shaped manifest
+    signed with the engine''s Ed25519 key and stored beside the asset in #36; it is not embedded in the file containers
+    and is not a C2PA conformance claim. The disclosure is drawn in-frame on visual assets and shown on the page; audio
+    carries it in the manifest only. Encoded video bytes are not asserted identical across builds; the evidence checks
+    decoded frame count, resolution, codec, audio presence and a sampled pixel instead.'
+  recovery: 'Assets and manifests are content-addressed, so a substituted file or an edited manifest fails verify();
+    every asset traces to its canon hash and brief hash and can be re-rendered from them; the engine refuses a canon
+    without the required editorial rules before anything is produced.'
+  state: COMPLETE
+  tests:
+  - tests/unit/test_foundry_systems.py
 36:
   acceptance:
   - Artifacts are addressed by SHA-256 of content; writes are atomic and deduplicated

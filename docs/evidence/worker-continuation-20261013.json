@@ -1,0 +1,28 @@
+{
+  "repository": "dababiyoda/uniimente-kernel",
+  "branch": "codex/full-machine-continuation-20261013",
+  "remote_head": "dd23e29eca05e3ac6b05e1d47280a76a73097b61",
+  "tested_tree": "c24267a76bf79d21952f11aabfd4bc2a74c240ab",
+  "parent": "62d625c4bc39e717cd8844f67641cb8b6dd59dc3",
+  "pr": "https://github.com/dababiyoda/uniimente-kernel/pull/159",
+  "verification": {
+    "command": "timeout 720 python -m pytest -q -o faulthandler_timeout=60",
+    "exit_code": 0,
+    "passed": 2166,
+    "skipped": 17,
+    "warnings": 3,
+    "duration_seconds": 382.1,
+    "focused_passed": 36,
+    "mutants_caught": 3
+  },
+  "negative_evidence": {
+    "acceptance_tampering_before_fix": "Two cases returned ACCEPTED, including recomputed local hashes.",
+    "incomplete_whole_run": "Stopped with exit 130 before extending source; not counted as a pass.",
+    "setup": "Initial test command before dependency installation completed could not import pytest; rerun after installation."
+  },
+  "reality": "VERIFIED_IN_TESTED_ENVIRONMENT; scripted worker, signed test-key Body missions; not founder-device or real billing outcome",
+  "authority_changed": false,
+  "main_merged": false,
+  "remaining": "No claim of full machine or safe-work exhaustion. General Mind-to-Hands planning, composition/competence integration, confinement and Foundry obligations remain.",
+  "next_action": "Reconcile #157 prepare_worker with explicit credential references and credential-empty fail-closed dispatch, retaining #156 permission/evidence guards; then integrate complementary composition/competence."
+}

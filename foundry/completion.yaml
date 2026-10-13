@@ -163,8 +163,14 @@
   - Docker
   - Podman
   existing:
+  - foundry/systems/containers.py
   - WealthMachineIntelligence:Dockerfile
-  gap: One organ ships a Dockerfile; the kernel and capabilities are not packaged as reproducible containers.
+  gap: 'Implementation exists (pinned base by digest with mirror failover and digest verification, deterministic
+    capability layer, OCI layout, securejoin unpacking, runc and gVisor runtime specs). In-session runs on 2026-09-30
+    before the pause: identical image digest across builds and identical output under runc and gVisor. Not registered
+    or CI-exercised. Execution paused 2026-09-30: running privileged OCI runtimes (runc/runsc as root) and sandbox
+    escape probes in the development container was denied by the session''s safety classifier (containment escape).
+    Resuming needs Alfonso''s explicit authorization for where these may run (e.g. CI only, or a dedicated VM).'
   state: PARTIAL
 10:
   acceptance:
@@ -174,8 +180,19 @@
   - Firecracker
   - gVisor
   - E2B-style sandboxes
-  gap: No stronger isolation for generated code or third-party packages.
-  state: OUTSTANDING
+  existing:
+  - foundry/systems/sandbox.py
+  - foundry/systems/containers.py
+  gap: 'Implementation exists (gVisor runsc, read-only image root, no network, no capabilities, non-root, clean
+    env, wall-clock kill, hash-chained journal, SIEM-shaped denials). In-session run on 2026-09-30 before the pause:
+    7 of 7 escape probes denied inside gVisor. Negative evidence: that run''s host control attempted a direct connection
+    to 1.1.1.1:443 and privileged setuid/mount as root in the development container; the external connection succeeded,
+    bypassing the configured egress proxy. The probe set was then redesigned (host control limited to self-created
+    resources; network probe targets RFC 5737 TEST-NET) and has not been re-run. Execution paused 2026-09-30: running
+    privileged OCI runtimes (runc/runsc as root) and sandbox escape probes in the development container was denied
+    by the session''s safety classifier (containment escape). Resuming needs Alfonso''s explicit authorization for
+    where these may run (e.g. CI only, or a dedicated VM).'
+  state: PARTIAL
 11:
   acceptance:
   - A narrow capability compiles to a WebAssembly component with declared imports/exports
@@ -439,7 +456,9 @@
   existing:
   - adapters/bridge_transport.py
   - tests/unit/test_shared_recovery.py
-  gap: Inter-organ messages are authenticated and replay-protected; no network-level segmentation or egress policy.
+  gap: 'Inter-organ messages are authenticated and replay-protected; no network-level segmentation or egress policy.
+    Planned mechanism (network namespace + governed proxy over a UNIX socket) is in the same privileged-isolation
+    family as #9/#10 and waits on the same authorization.'
   state: PARTIAL
 27:
   acceptance:

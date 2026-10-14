@@ -434,9 +434,167 @@ def test_welfare_milp_confirms_exact_answers_near_the_payoff_bound(top, gain):
     assert o["selection"] == "max_welfare_nash" and o["welfare"] == 2.0     # the unique equilibrium
     checks = strategic.nash_verify(data, o, out["certificate"])
     assert all(checks.values()), checks
-    assert checks["welfare_maximal_over_all_equilibria_by_independent_milp"]
-    assert strategic._nash_milp(data["row_payoffs"], data["column_payoffs"], "max")[0] == pytest.approx(2.0, abs=1e-5)
+    assert checks["welfare_maximal_over_all_equilibria_by_exact_vertex_enumeration"]
+    a, b = data["row_payoffs"], data["column_payoffs"]
+    # the MILP, which decides beyond the enumeration's size, confirms it too (incumbent and dual bound)
+    assert strategic._welfare_maximality_by_milp(a, b, 2.0) == {
+        "welfare_maximal_over_all_equilibria_by_independent_milp": True}
+    milp = strategic._nash_milp(a, b, "max")
+    assert milp[0] == pytest.approx(2.0, abs=1e-5) and milp[3] == pytest.approx(2.0, abs=1e-5)
     assert o["correlated"]["welfare"] == 2.0                                # its dual repaired exactly
+
+
+def _pure_claim(a, b, i):
+    """Pure profile (i, i) claimed as the maximal-welfare equilibrium, with its exact certificate."""
+    k = len(a)
+    x = [0.0] * k
+    x[i] = 1.0
+    out = {"row_strategy": x, "column_strategy": list(x), "row_payoff": a[i][i], "column_payoff": b[i][i],
+           "welfare": a[i][i] + b[i][i], "selection": "max_welfare_nash", "correlated": None}
+    cert = {"exact": {"row_strategy": [str(int(v)) for v in x], "column_strategy": [str(int(v)) for v in x],
+                      "row_payoff": str(Fraction(a[i][i])), "column_payoff": str(Fraction(b[i][i]))}}
+    return out, cert
+
+
+def _near_tie_game(seed):
+    """A k x k game, k in {7, 8} (past the exact enumeration's size), whose best two pure equilibria differ in
+    welfare by 1.05 to 1.95 units on a 1e6 scale: just above the 1e-6 tolerance."""
+    import random
+    r = random.Random(seed)
+    k, d = r.choice([7, 8]), r.uniform(1.05, 1.95)
+    best = r.randrange(k)
+    second = (best + 1) % k
+    da = [float(round(1e6 - 5 - 50 * r.random(), 3)) for _ in range(k)]
+    db = [float(round(1e6 - 5 - 50 * r.random(), 3)) for _ in range(k)]
+    da[best], db[best] = 1e6 - 1, 1e6 - 1
+    da[second], db[second] = 1e6 - 1 - round(d / 2, 3), 1e6 - 1 - round(d / 2, 3)
+    a = [[da[i] if i == j else float(round(-1e6 + r.random() * 10, 3)) for j in range(k)] for i in range(k)]
+    b = [[db[i] if i == j else float(round(-1e6 + r.random() * 10, 3)) for j in range(k)] for i in range(k)]
+    return a, b, best, second
+
+
+def test_welfare_claim_is_confirmed_only_against_a_proven_bound():
+    # review: the MILP's value is its incumbent, not a bound; with HiGHS's default absolute gap (1e-6 of the
+    # range-normalised objective) it stopped at the second-best equilibrium, and agreement with that incumbent
+    # confirmed a claim 1.56 short of the maximum (tolerance 1.0) without the exact enumeration ever running
+    a = [[999957, -999996, -999994], [-999992, 999999, -999993], [-999997, -999992, 999998.21875]]
+    b = [[999985, -999994, -999999], [-999997, 999999, -999999], [-999993, -999999, 999998.21875]]
+    data = {"row_payoffs": a, "column_payoffs": b}
+    assert strategic._nash_extreme_welfare(a, b) == 1999998
+    forged, cert = _pure_claim(a, b, 2)                                 # welfare 1999996.4375, an equilibrium
+    checks = strategic.nash_verify(data, forged, cert)
+    assert checks["exact_certificate_is_an_exact_equilibrium"]
+    assert not all(checks.values())                                     # the false maximality claim is refuted
+    assert checks["welfare_maximal_over_all_equilibria_by_exact_vertex_enumeration"] is False
+    assert strategic.nash_score(data, {"max_welfare": 1999998.0, "min_welfare": 0.0}, forged)["category"] == "wrong"
+    milp = strategic._nash_milp(a, b, "max")                             # zero gaps: optimum and bound agree
+    assert milp[0] == pytest.approx(1999998.0, abs=1e-3) and milp[3] >= 1999998.0 - 1e-3
+    assert strategic._welfare_maximality_by_milp(a, b, forged["welfare"]) == {
+        "welfare_maximal_over_all_equilibria_by_independent_milp": False}
+    # past the enumeration's size the MILP decides alone: it confirms only against its dual bound
+    a, b, best, second = _near_tie_game(5)
+    assert math.comb(2 * len(a), len(a)) > strategic.NASH_MAX_PAIRS + 1
+    data = {"row_payoffs": a, "column_payoffs": b}
+    forged, cert = _pure_claim(a, b, second)
+    checks = strategic.nash_verify(data, forged, cert)
+    assert checks["exact_certificate_is_an_exact_equilibrium"]
+    assert not all(checks.values())
+    assert checks["welfare_maximal_over_all_equilibria_by_independent_milp"] is False
+    honest, cert = _pure_claim(a, b, best)
+    assert all(strategic.nash_verify(data, honest, cert).values())
+
+
+def test_payoff_scales_below_the_float_resolution_are_refused_and_tiny_normal_ones_verify():
+    # review: subnormal payoffs (legal before: finite, |v| <= 1e6) made every tolerance underflow to 0, so
+    # correct exact answers were refuted on float rounding; below 1e-300 no float answer can meet a 1e-9
+    # relative tolerance, so such games are refused as input, by the solver and the verifier alike
+    data, _ = dev("bimatrix_nash", 5)
+    for unit in (2.0 ** -1060, 2.0 ** -1068, 1e-303):
+        game = {"row_payoffs": [[v * unit for v in r] for r in data["row_payoffs"]],
+                "column_payoffs": [[v * unit for v in r] for r in data["column_payoffs"]]}
+        with pytest.raises(GenomeError, match="payoff scale"):
+            item("bimatrix_nash").solve(copy.deepcopy(game), BUDGET)
+        with pytest.raises(GenomeError, match="payoff scale"):
+            item("bimatrix_nash").verify(copy.deepcopy(game), {}, {})
+    for seed in (1, 2, 5):                                              # at the floor every check still holds
+        data, _ = dev("bimatrix_nash", seed)
+        game = {"row_payoffs": [[v * 1e-300 for v in r] for r in data["row_payoffs"]],
+                "column_payoffs": [[v * 1e-300 for v in r] for r in data["column_payoffs"]]}
+        out = strategic.nash_solve(game, BUDGET)
+        assert out["output"]["correlated"] is not None
+        assert all(strategic.nash_verify(game, out["output"], out["certificate"]).values()), seed
+    zero = {"row_payoffs": [[0, 0], [0, 0]], "column_payoffs": [[0, 0], [0, 0]]}  # scale 0 stays legal
+    out = strategic.nash_solve(zero, BUDGET)
+    assert all(strategic.nash_verify(zero, out["output"], out["certificate"]).values())
+
+
+_CE_HARD = [  # review games: one LP setting fails on each (an unrecognised HiGHS status 15; float multipliers
+    # too coarse even after the exact repair; HiGHS dropping the 1e-12 coefficients and so returning a plan
+    # 0.27 short of the optimum), yet another setting's plan and dual certify exactly
+    ([[8.496909778495409e-07, 551625.5032816485, 2.816960109846516e-07, -3, -1.3856429773869295e-07, -2, 2],
+      [-1, 1, 1.141944508027104e-07, 0, 3.67617401615383e-07, 435094.63665141235, -141510.78161409148],
+      [-3.483720221258324e-07, -3, -843664.1324209624, 1, 0, 3.29336544941504e-07, 7.753087358960584e-07],
+      [352877.3187022479, -3, -1.141128296169338e-07, -463255.1074127988, -2, 1, 3],
+      [-578561.7128316804, -4.5077387375052887e-07, 3, 569678.2249339533, -1, 0, 3]],
+     [[1, 1, -4.331811986759597e-07, 2, 0, -3, 8.206083299246309e-07],
+      [2, -983559.7766565185, 0, 214226.17179347458, -9.493989296147884e-07, 1, -3],
+      [3988.3388263302622, 131174.3426213914, 4.12594707906182e-08, 403162.0518097186, 1, -2.4603703868718084e-07, -3],
+      [0, 766269.5510941544, -6.642163988223806e-07, -1, 2, 340792.0346567456, 2],
+      [1, 987696.6283332375, 938302.8662865963, -3, -1.9631128787077335e-07, 7.789286970609423e-07,
+       -2.7120371259592454e-07]]),
+    ([[-2.2141273597920928e-07, 0, -3, 3, -314689.36038375774, 2],
+      [-2.991646555304814e-07, -782528.0020149614, 326441.9257176374, -855423.4517684893, -3.793381957771309e-07, -3],
+      [2, -130611.15544532577, -245130.63473491243, -211478.43780727405, -8.306190486506026e-08,
+       2.410111873343803e-07],
+      [0, 278772.3683676503, 1, 7.471439279617475e-07, 3.76911453997246e-07, 312829.27786674583],
+      [-179483.45339604584, 7.682724456464768e-07, -9.357962598605824e-07, -3, -6.730198237933389e-07,
+       844862.9492893182],
+      [-4.649478113924579e-07, -1, 732521.3675897934, 2, 575330.7021003698, -168343.4246853066]],
+     [[2, -3.836426800084285e-07, 425945.7175446239, -9.972792939213473e-07, -47463.55929120467, 7.125957613250158e-07],
+      [-2, -2.4258628718147166e-07, 0, -54109.942990401294, -1.243691533461997e-07, -694345.2246108302],
+      [1.600971084646563e-08, -4.250017857936758e-07, 4.611772432153127e-07, -7.693882600312045e-07, -3,
+       -379683.84587868815],
+      [-510714.04649128625, -828010.952865952, -1, -3, 3.440267074284464e-08, -1.024366067085669e-07],
+      [770634.2203772005, -4.478977011067229e-07, 521527.98104876233, -2.7022674243830645e-08, 4.075404185307043e-07,
+       1.6029822265675886e-07],
+      [2, 2.706050409835188e-07, -518408.445743231, 0, 0, -683862.2775740993]]),
+    ([[-485744.774670785, 4.372171062903527e-07, -9.166233094574815e-07],
+      [7.984265889072091e-07, -745570.9486104716, 6.675204701717809e-07], [2, -7.534984170495587e-07, 1]],
+     [[3, 2, 930040.8917912645], [-2, -5.780803569100441e-07, 0], [-1, -3.870323941720608e-07, -305680.2890481391]]),
+]
+
+
+def test_correlated_plan_is_certified_when_one_lp_setting_fails():
+    # review: the tighter HiGHS tolerances withheld plans that the default-tolerance solve certifies exactly
+    # (one LP even returned status 15 on a program that is always feasible); the solver now tries several
+    # settings, on plain and row-scaled rows, and pairs the best plan with the lowest exact bound
+    for a, b in _CE_HARD:
+        ce, dual = strategic._correlated(a, b)
+        assert ce is not None, dual
+        assert all(strategic._correlated_checks(a, b, ce, dual).values())
+    assert ce["welfare"] > 0.7686                                       # the optimum, not the 0.4947 plan
+    data = {"row_payoffs": _CE_HARD[1][0], "column_payoffs": _CE_HARD[1][1]}
+    out = strategic.nash_solve(data, BUDGET)
+    assert out["output"]["correlated"] is not None
+    assert all(strategic.nash_verify(data, out["output"], out["certificate"]).values())
+
+
+def test_correlated_bound_is_tested_after_rounding(monkeypatch):
+    # review: the solver tested its exact bound against welfare + slack, then stated the bound rounded up, so
+    # when the slack is below one ulp of the bound (subnormal payoffs did this) its own certificate was refuted
+    monkeypatch.setattr(strategic, "NASH_CE_TOL", 1e-17)
+    games = [([[8, -7, -2, 3], [5, -6, 9, -8], [3, -7, 8, -6], [6, -8, 7, -2]],
+              [[-9, -9, 0, 5], [-1, 4, -4, -5], [8, 1, 8, 5], [7, 4, 8, -4]]),
+             ([[-9, -3, -6, -5], [-2, 2, 7, -1], [-5, -4, -2, -7], [0, 9, 7, 7]],
+              [[8, 8, 4, 5], [9, 7, 6, -4], [7, 2, -3, 4], [-7, -1, -3, -2]]),
+             ([[2, 0], [0, 1]], [[1, 0], [0, 2]])]
+    stated = 0
+    for a, b in games:
+        ce, dual = strategic._correlated(a, b)
+        if ce is not None:                                              # withholding is honest; a claim must verify
+            stated += 1
+            assert strategic._correlated_checks(a, b, ce, dual)["correlated_welfare_optimal_by_dual_certificate"]
+    assert stated >= 1
 
 
 def test_nash_withholds_the_welfare_claim_when_equilibria_lie_off_equal_supports():

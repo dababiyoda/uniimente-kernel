@@ -7,12 +7,12 @@ how its output is checked.
 
 * ``bimatrix_nash`` (``bimatrix_nash_equilibrium``): every Nash equilibrium with equal-size supports of a
   general-sum two-player game by support enumeration in exact rational arithmetic, returning the one with
-  the highest total payoff, plus a welfare-maximal correlated equilibrium from one SciPy HiGHS linear
-  program. The maximal-welfare claim is made only when an exact test shows the game nondegenerate. Verified
-  by an epsilon-Nash check written independently, an exact re-check of the rational certificate, an
-  independent mixed-integer program over all equilibria for the welfare claim (an exact vertex enumeration
-  decides any disagreement), the correlated equilibrium's incentive constraints and an LP dual certificate
-  for its welfare, checked in exact rationals.
+  the highest total payoff, plus a welfare-maximal correlated equilibrium from SciPy HiGHS linear programs.
+  The maximal-welfare claim is made only when an exact test shows the game nondegenerate. Verified by an
+  epsilon-Nash check written independently, an exact re-check of the rational certificate, an exact vertex
+  enumeration of every extreme equilibrium for the welfare claim (an independent mixed-integer program,
+  judged by its dual bound, beyond the enumeration's size), the correlated equilibrium's incentive
+  constraints and an LP dual certificate for its welfare, checked in exact rationals.
 * ``mechanism_check`` (``mechanism_ic_ir_check``): dominant-strategy incentive compatibility and ex-post
   individual rationality of a declared direct mechanism (allocation and payment tables over a finite type
   space), by exhaustive enumeration in exact rational arithmetic. It reports the largest profitable
@@ -86,11 +86,17 @@ def _is_int(x):
 NASH_MAX_ACTIONS, NASH_MAX_ABS = 8, 1e6
 NASH_MAX_PAIRS = 1000                    # equal-size support pairs C(m + n, m) - 1; a 6 x 6 game has 923
 NASH_EPS = 1e-9                          # epsilon-Nash tolerance, relative to the payoff scale
-NASH_WELFARE_TOL = 1e-6                  # MILP welfare comparison tolerance, relative to the payoff scale
+NASH_MIN_SCALE = 1e-300                  # smallest nonzero payoff scale; see _bimatrix
+NASH_WELFARE_TOL = 1e-6                  # welfare-maximality tolerance, relative to the payoff scale
 NASH_CE_TOL = 1e-7                       # correlated incentive and dual-optimality tolerance, relative to the scale
-NASH_MILP_TOL = 1e-9                     # HiGHS feasibility and integrality tolerance in the welfare MILP
+NASH_MILP_TOL = 1e-9                     # HiGHS primal, dual and integrality tolerance in the welfare MILP
 NASH_EXACT_CHARS = 4000                  # longest exact rational string the verifier parses
 CE_REPAIR_ROUNDS = 4                     # active-set rounds of the exact dual repair (each drops one multiplier)
+CE_LP_RUNS = tuple((rows, method, dict(options, small_matrix_value=1e-12) if rows else options)   # see _correlated
+                   for method, options in (("highs", {"primal_feasibility_tolerance": 1e-10,
+                                                      "dual_feasibility_tolerance": 1e-10}),
+                                           ("highs", {}), ("highs-ipm", {}), ("highs-ds", {"presolve": False}))
+                   for rows in (False, True))
 NASH_IBR_CHECKPOINTS, NASH_POLISH = (100, 400, 1500, 4000), 0.02
 SELECTIONS = ("max_welfare_nash", "nash")
 _RATIONAL = re.compile(r"-?[0-9]+(/[0-9]+)?")
@@ -108,12 +114,21 @@ def _bimatrix(data):
             raise GenomeError(f"{name}: rectangular, the shape of row_payoffs")
     a = [[finite(x, low=-NASH_MAX_ABS, high=NASH_MAX_ABS, name="row payoff") for x in r] for r in a]
     b = [[finite(x, low=-NASH_MAX_ABS, high=NASH_MAX_ABS, name="column payoff") for x in r] for r in b]
+    # Every tolerance is relative to the scale. Below 1e-300 the smallest of them (1e-9 of the scale) would sink
+    # toward the float resolution (2^-1074, about 4.9e-324): subnormal payoffs carry fewer than 53 bits, so no
+    # float answer could state an equilibrium to it, nor any float check confirm one. At or above it every
+    # tolerance is at least 1e-309, some 1e14 resolution steps, so the rounding of any check stays negligible.
+    top = max(abs(v) for mat in (a, b) for r in mat for v in r)
+    if 0 < top < NASH_MIN_SCALE:
+        raise GenomeError(f"payoff scale: the largest |payoff| must be 0 or at least {NASH_MIN_SCALE:g} (below it "
+                          "the relative tolerances fall toward the float resolution)")
     return a, b
 
 
 def _scale(a, b):
     """The payoff magnitude every normalisation and tolerance is relative to: the largest absolute payoff (1 only
-    when every payoff is zero). There is no floor at 1, so a game stated in small units keeps relative tolerances."""
+    when every payoff is zero). There is no floor at 1, so a game stated in small units keeps relative tolerances;
+    _bimatrix refuses a nonzero scale below NASH_MIN_SCALE, where they would sink toward the float resolution."""
     return max(abs(v) for mat in (a, b) for r in mat for v in r) or 1.0
 
 
@@ -186,17 +201,27 @@ def _support_equilibria(A, B, deadline):
 
 
 def _correlated(a, b):
-    """Welfare-maximal correlated equilibrium: one HiGHS LP over the joint distribution p.
+    """Welfare-maximal correlated equilibrium by HiGHS linear programs over the joint distribution p.
 
     max sum p (A + B) s.t. sum_j p_ij (A_ij - A_kj) >= 0 for every row pair, sum_i p_ij (B_ij - B_il) >= 0
     for every column pair, sum p = 1, p >= 0. Payoffs are divided by their scale first. Returns (output,
     dual certificate): multipliers alpha, beta >= 0 from the LP marginals (zero on the diagonal, where no
-    constraint exists) and the smallest bound mu with mu - (G' alpha)_ij >= (A + B)_ij in every cell, computed
-    exactly from the stated float multipliers and rounded up, so weak duality caps every correlated
-    equilibrium's welfare at mu (checked by the verifier with its own exact arithmetic). When HiGHS's float
+    constraint exists) and a bound at or above mu = max over cells of (A + B)_ij + (G' alpha)_ij, computed
+    exactly from the stated float multipliers and rounded up to a float, so weak duality caps every correlated
+    equilibrium's welfare at it (checked by the verifier with its own exact arithmetic). When HiGHS's float
     multipliers are too coarse for that bound to meet the plan's welfare (near-degenerate incentive constraints
-    need multipliers of 1e14 and more), an exact active-set solve repairs them; if the bound still misses, the
-    correlated plan is withheld (output None) rather than claimed optimal without a certificate.
+    need multipliers of 1e14 and more), an exact active-set solve repairs them.
+
+    One solve can fail numerically on a program that is always feasible and bounded: a status without a
+    solution, multipliers too coarse even after the repair, or, in a game mixing 1e6 and 1e-7 payoffs,
+    coefficients that HiGHS drops as zeros (below its small_matrix_value, 1e-9 by default), so that it solves a
+    different program. So the solves of CE_LP_RUNS (four HiGHS settings, each on the plain rows and on rows
+    divided by their own largest coefficient with small_matrix_value at its floor of 1e-12; a homogeneous row
+    keeps its feasible set when scaled) run in turn until the best plan found so far, whose incentive constraints
+    hold exactly within the verifier's tolerance, is certified by the lowest bound found so far: weak duality
+    makes any run's multipliers a cap on every run's plan. The test is the verifier's own, applied to the rounded
+    bound. If no combination certifies, the correlated plan is withheld (output None) rather than claimed
+    optimal without a certificate.
     """
     import numpy as np
     from scipy.optimize import linprog
@@ -217,46 +242,86 @@ def _correlated(a, b):
                 g[:, j] = B[:, j] - B[:, l]
                 G.append(g.ravel())
     w = (A + B).ravel()
-    extra = {"A_ub": -np.array(G), "b_ub": np.zeros(len(G))} if G else {}
-    res = linprog(-w, A_eq=np.ones((1, m * n)), b_eq=[1.0], bounds=[(0, None)] * (m * n), method="highs",
-                  options={"primal_feasibility_tolerance": 1e-10, "dual_feasibility_tolerance": 1e-10}, **extra)
-    if res.status != 0:
-        return None, {"reason": f"correlated-equilibrium LP: {res.message}"}
-    p = np.clip(res.x, 0.0, None)
-    p = p / p.sum()
-    lam = np.clip(-np.asarray(res.ineqlin.marginals, dtype=float), 0.0, None) if G else np.zeros(0)
-    alpha, beta, z = [[0.0] * m for _ in range(m)], [[0.0] * n for _ in range(n)], 0
-    for i in range(m):
-        for k in range(m):
-            if k != i:
-                alpha[i][k] = float(lam[z])
-                z += 1
-    for j in range(n):
-        for l in range(n):
-            if l != j:
-                beta[j][l] = float(lam[z])
-                z += 1
-    dist = [[float(p[i * n + j]) for j in range(n)] for i in range(m)]
-    welfare = math.fsum(dist[i][j] * (a[i][j] + b[i][j]) for i in range(m) for j in range(n))
+    G = np.array(G).reshape(len(G), m * n)
+    rowscale = np.abs(G).max(axis=1) if len(G) else np.zeros(0)
+    rowscale[rowscale == 0] = 1.0
     fa, fb = [[Fraction(v) for v in r] for r in a], [[Fraction(v) for v in r] for r in b]
-    exact_welfare = sum(Fraction(dist[i][j]) * (fa[i][j] + fb[i][j]) for i in range(m) for j in range(n))
     slack = Fraction(NASH_CE_TOL) * Fraction(S)
-    mu = _ce_cells(fa, fb, alpha, beta)
-    if max(mu.values()) > exact_welfare + slack / 10:
-        repaired = _ce_exact_dual(fa, fb, alpha, beta, exact_welfare)
-        if repaired is not None:
-            mu2 = _ce_cells(fa, fb, *repaired)
-            if max(mu2.values()) < max(mu.values()):
-                (alpha, beta), mu = repaired, mu2
-    top = max(mu.values())
-    if top > exact_welfare + slack:
-        return None, {"reason": "correlated equilibrium withheld: the LP's dual multipliers do not certify its "
-                                "welfare exactly (near-degenerate incentive constraints)"}
-    bound = float(top)
-    if Fraction(bound) < top:                               # round up: the stated bound stays a valid cap
+    margin = slack - slack / 2 ** 20                       # the verifier's float sums never round past slack
+    plan, cap, failures = None, None, []                   # plan: (exact welfare, dist); cap: (bound, alpha, beta)
+    for rows, method, options in CE_LP_RUNS:
+        divide = rowscale if rows else np.ones(len(G))      # scaled rows: their multipliers are divided back
+        extra = {"A_ub": -(G / divide[:, None]), "b_ub": np.zeros(len(G))} if len(G) else {}
+        with warnings.catch_warnings():                      # SciPy warns that small_matrix_value passes through
+            warnings.filterwarnings("ignore", message="Unrecognized options")
+            res = linprog(-w, A_eq=np.ones((1, m * n)), b_eq=[1.0], bounds=[(0, None)] * (m * n), method=method,
+                          options=options, **extra)
+        if res.status != 0 or res.x is None or not np.all(np.isfinite(res.x)):
+            failures.append(f"{method} {options or 'defaults'}{', rows scaled' if rows else ''}: {res.message}")
+            continue
+        p = np.clip(res.x, 0.0, None)
+        if not p.sum() > 0:
+            continue
+        p = p / p.sum()
+        dist = [[float(p[i * n + j]) for j in range(n)] for i in range(m)]
+        own = sum(Fraction(dist[i][j]) * (fa[i][j] + fb[i][j]) for i in range(m) for j in range(n))
+        if _ce_incentives_hold(fa, fb, dist, margin) and (plan is None or own > plan[0]):
+            plan = (own, dist)
+        lam = np.clip(-np.asarray(res.ineqlin.marginals, dtype=float), 0.0, None) / divide if len(G) else np.zeros(0)
+        if np.all(np.isfinite(lam)):
+            alpha, beta, z = [[0.0] * m for _ in range(m)], [[0.0] * n for _ in range(n)], 0
+            for i in range(m):
+                for k in range(m):
+                    if k != i:
+                        alpha[i][k] = float(lam[z])
+                        z += 1
+            for j in range(n):
+                for l in range(n):
+                    if l != j:
+                        beta[j][l] = float(lam[z])
+                        z += 1
+            target = plan[0] if plan is not None else own
+            top = max(_ce_cells(fa, fb, alpha, beta).values())
+            if top > target + slack / 10:
+                repaired = _ce_exact_dual(fa, fb, alpha, beta, target)
+                if repaired is not None:
+                    top2 = max(_ce_cells(fa, fb, *repaired).values())
+                    if top2 < top:
+                        (alpha, beta), top = repaired, top2
+            bound = _round_up(top)
+            if bound is not None and (cap is None or bound < cap[0]):
+                cap = (bound, alpha, beta)
+        if plan is not None and cap is not None and plan[0] >= Fraction(cap[0]) - slack:
+            dist = plan[1]
+            welfare = math.fsum(dist[i][j] * (a[i][j] + b[i][j]) for i in range(m) for j in range(n))
+            return ({"distribution": dist, "welfare": welfare, "objective": "max_welfare"},
+                    {"row_multipliers": cap[1], "column_multipliers": cap[2], "bound": cap[0]})
+    if plan is None and cap is None:
+        return None, {"reason": "correlated-equilibrium LP: " + "; ".join(failures)}
+    return None, {"reason": "correlated equilibrium withheld: no LP solve's dual multipliers certify the best "
+                            "plan's welfare exactly (near-degenerate incentive constraints)"}
+
+
+def _round_up(top):
+    """The smallest float at or above the exact rational ``top`` (a bound stays a valid cap), or None when it
+    overflows the float range."""
+    try:
+        bound = float(top)
+    except OverflowError:
+        return None
+    if math.isfinite(bound) and Fraction(bound) < top:
         bound = math.nextafter(bound, math.inf)
-    return ({"distribution": dist, "welfare": welfare, "objective": "max_welfare"},
-            {"row_multipliers": alpha, "column_multipliers": beta, "bound": bound})
+    return bound if math.isfinite(bound) else None
+
+
+def _ce_incentives_hold(fa, fb, dist, margin):
+    """The plan's incentive constraints, exactly over the stated floats, to within ``margin``."""
+    m, n = len(fa), len(fa[0])
+    P = [[Fraction(p) for p in r] for r in dist]
+    return (all(sum(P[i][j] * (fa[i][j] - fa[k][j]) for j in range(n)) >= -margin
+                for i in range(m) for k in range(m) if k != i)
+            and all(sum(P[i][j] * (fb[i][j] - fb[i][l]) for i in range(m)) >= -margin
+                    for j in range(n) for l in range(n) if l != j))
 
 
 def _ce_cells(fa, fb, alpha, beta):
@@ -356,7 +421,8 @@ def nash_solve(data, budget):
            "welfare": float(best["u"] + best["v"]), "selection": "max_welfare_nash" if complete else "nash",
            "correlated": ce}
     cert = {"method": "support enumeration over every equal-size support pair, exact rational arithmetic; "
-                      "highest-welfare equilibrium selected; correlated equilibrium by one HiGHS LP",
+                      "highest-welfare equilibrium selected; correlated equilibrium by HiGHS LPs, certified by "
+                      "an exact dual bound",
             "support_pairs": examined, "equilibria_found": len(found),
             "degeneracy_symptoms": {"extra_pure_best_responses": degenerate,
                                     "even_equilibrium_count": len(found) % 2 == 0},
@@ -409,9 +475,11 @@ def _nash_milp(a, b, sense="max"):
     (2005) solved by SciPy HiGHS: regrets r_i = u - (A y)_i >= 0, s_j = v - (x B)_j >= 0, binary b_i with
     x_i <= 1 - b_i and r_i <= M b_i (a played strategy has zero regret). Each player's payoffs are mapped
     affinely onto [0, 1] (the equilibria are unchanged and the objective keeps each player's true weight), and
-    HiGHS runs with feasibility and integrality tolerances of 1e-9, so a regret above about 1e-9 of a player's
-    payoff range is never read as zero. Returns (welfare, x, y) with the optimal profile, or None if HiGHS does
-    not finish."""
+    HiGHS runs with primal, dual and integrality tolerances of 1e-9, so a regret above about 1e-9 of a player's
+    payoff range is never read as zero. Both MIP gaps are zero, so the incumbent is optimal, and HiGHS's dual
+    bound is returned as well: only the bound is a proof (an upper bound for "max", a lower bound for "min"),
+    while the incumbent is merely the best equilibrium found. Returns (welfare, x, y, bound) with the optimal
+    profile, or None if HiGHS does not finish or states no finite bound."""
     import numpy as np
     from scipy.optimize import Bounds, LinearConstraint, milp
     A0, B0 = np.array(a, dtype=float), np.array(b, dtype=float)
@@ -453,12 +521,15 @@ def _nash_milp(a, b, sense="max"):
         warnings.simplefilter("ignore")
         res = milp(c, constraints=LinearConstraint(np.array(rows), lo, hi),
                    integrality=[0] * (2 * m + 2 * n + 2) + [1] * (m + n), bounds=Bounds(lb, ub),
-                   options={"mip_rel_gap": 0.0, "time_limit": 20.0, "mip_feasibility_tolerance": NASH_MILP_TOL,
-                            "primal_feasibility_tolerance": NASH_MILP_TOL})
-    if res.status != 0 or res.x is None:
+                   options={"mip_rel_gap": 0.0, "mip_abs_gap": 0.0, "time_limit": 20.0,
+                            "mip_feasibility_tolerance": NASH_MILP_TOL, "primal_feasibility_tolerance": NASH_MILP_TOL,
+                            "dual_feasibility_tolerance": NASH_MILP_TOL})
+    dual = getattr(res, "mip_dual_bound", None)
+    if res.status != 0 or res.x is None or dual is None or not math.isfinite(dual):
         return None
     welfare = sign * res.fun * R + lo_a + lo_b
-    return welfare, [float(t) for t in res.x[:m]], [float(t) for t in res.x[m:m + n]]
+    bound = sign * dual * R + lo_a + lo_b
+    return welfare, [float(t) for t in res.x[:m]], [float(t) for t in res.x[m:m + n]], bound
 
 
 def _exact_rational(s):
@@ -588,27 +659,38 @@ def _nash_extreme_welfare(a, b):
 
 
 def _welfare_maximality(a, b, welfare):
-    """The claim that ``welfare`` (a verified equilibrium's) is maximal over all equilibria. The MILP confirms
-    it when the two agree within the tolerance; its optimum is an upper bound, so agreement is sound. When they
-    disagree the MILP may have read a near-equilibrium as an equilibrium, or missed one, so the exact vertex
-    enumeration decides; beyond its size the MILP's refutation stands only if its own optimal profile is an
-    equilibrium of the original game, and otherwise the check is reported infeasible."""
-    tol = NASH_WELFARE_TOL * _scale(a, b)
-    milp = _nash_milp(a, b, "max")
-    if milp is not None and abs(milp[0] - welfare) <= tol:
-        return {"welfare_maximal_over_all_equilibria_by_independent_milp": True}
+    """The claim that ``welfare`` (a verified equilibrium's) is maximal over all equilibria. Within its size, which
+    covers every game the solver answers, the exact vertex enumeration decides: exact, and independent of the
+    solver and of HiGHS. Beyond it, the MILP decides (``_welfare_maximality_by_milp``)."""
     exact = _nash_extreme_welfare(a, b)
     if exact is not None:
+        tol = NASH_WELFARE_TOL * _scale(a, b)
         return {"welfare_maximal_over_all_equilibria_by_exact_vertex_enumeration": welfare >= float(exact) - tol}
-    if milp is not None and milp[0] > welfare + tol:
-        x, y = [max(t, 0.0) for t in milp[1]], [max(t, 0.0) for t in milp[2]]
+    return _welfare_maximality_by_milp(a, b, welfare)
+
+
+def _welfare_maximality_by_milp(a, b, welfare):
+    """The MILP's verdict on the maximality claim. It confirms only when the claim lies within the tolerance of
+    HiGHS's dual bound, a proven cap on every equilibrium's welfare; the incumbent is only the best equilibrium
+    HiGHS found and proves nothing about the maximum. It refutes only when its own optimal profile is an
+    epsilon-Nash equilibrium of the original game whose welfare beats the claim (HiGHS may read a
+    near-equilibrium as an equilibrium). Anything else, a bound below the claim included, is infeasible."""
+    S = _scale(a, b)
+    tol = NASH_WELFARE_TOL * S
+    milp = _nash_milp(a, b, "max")
+    if milp is None:
+        return {"welfare_maximality_check_feasible": False}
+    _, xs, ys, upper = milp
+    if abs(upper - welfare) <= tol:
+        return {"welfare_maximal_over_all_equilibria_by_independent_milp": True}
+    if upper > welfare + tol:
+        x, y = [max(t, 0.0) for t in xs], [max(t, 0.0) for t in ys]
         sx, sy = math.fsum(x), math.fsum(y)
         if sx > 0 and sy > 0:
-            profile = {"row_strategy": [t / sx for t in x], "column_strategy": [t / sy for t in y]}
-            got = _nash_values(a, b, profile)
+            got = _nash_values(a, b, {"row_strategy": [t / sx for t in x], "column_strategy": [t / sy for t in y]})
             if got is not None:
                 u, v = got[4], got[5]
-                eps = NASH_EPS * _scale(a, b)
+                eps = NASH_EPS * S
                 if max(got[2]) - u <= eps and max(got[3]) - v <= eps and u + v > welfare + tol:
                     return {"welfare_maximal_over_all_equilibria_by_independent_milp": False}
     return {"welfare_maximality_check_feasible": False}
@@ -2197,23 +2279,26 @@ INTELLIGENCES = [
                              "column_payoff": "float", "welfare": "float", "selection": "max_welfare_nash | nash",
                              "correlated": "{distribution, welfare, objective} | null"},
             algorithm_or_runtime="exact rational Gauss-Jordan on every equal-size support pair; highest-welfare "
-                                 "equilibrium; one HiGHS LP for the welfare-maximal correlated equilibrium",
+                                 "equilibrium; HiGHS LPs for the welfare-maximal correlated equilibrium (four "
+                                 "settings, plain and row-scaled, until an exact dual bound certifies a plan)",
             parameters={"max_actions": NASH_MAX_ACTIONS, "max_support_pairs": NASH_MAX_PAIRS, "epsilon": NASH_EPS},
             composition_inputs=("payoff model",), composition_outputs=("equilibrium profile", "correlated plan"),
             evidence_type="exact_calculation",
             verification_method="independent epsilon-Nash check (distributions; each payoff equals the best pure "
                                 "response within 1e-9 of the scale); exact re-check of the rational certificate; "
-                                "an independent HiGHS MILP over ALL equilibria for the maximal-welfare claim, with "
-                                "an exact vertex enumeration of every extreme equilibrium deciding when the two "
-                                "disagree; the correlated equilibrium's incentive constraints and an LP dual "
+                                "an exact vertex enumeration of every extreme equilibrium for the maximal-welfare "
+                                "claim, or beyond its size an independent HiGHS MILP over ALL equilibria that "
+                                "confirms only against its dual bound and refutes only with an equilibrium of its "
+                                "own; the correlated equilibrium's incentive constraints and an LP dual "
                                 "certificate whose weak duality is checked in exact rationals",
             confidence_semantics="the equilibrium is exact for the declared payoffs; the maximal-welfare claim is "
                                  "made only when an exact test finds the game nondegenerate and is confirmed to "
                                  "1e-6 of the scale; the correlated equilibrium meets its incentive constraints to "
                                  "1e-7 of the scale (floats) and its welfare is within 1e-7 of the scale of a bound "
                                  "proven exactly by its LP dual, or the plan is withheld; every tolerance is "
-                                 "relative to the largest payoff, with no floor; nothing here predicts what real "
-                                 "players will do",
+                                 "relative to the largest payoff, with no floor, and a nonzero largest payoff "
+                                 "below 1e-300 is refused as input; nothing here predicts what real players will "
+                                 "do",
             resource_profile="C(m + n, m) - 1 support pairs, each two (k+1)-square rational solves",
             latency_profile="milliseconds at 4 x 4; about 0.2 s at 6 x 6",
             known_strengths=("finds every equilibrium of a nondegenerate game, so it can select the welfare-best",
@@ -2223,7 +2308,8 @@ INTELLIGENCES = [
                                  "degenerate games: equal-size supports can miss equilibria; then the welfare "
                                  "claim is withheld, and a missed better equilibrium is caught by the verifier",
                                  "near-degenerate incentive constraints can leave the correlated plan without an "
-                                 "exact dual certificate; it is then withheld",
+                                 "exact dual certificate; it is then withheld (seen when an incentive row mixes "
+                                 "coefficients more than 1e12 apart, below what HiGHS can hold)",
                                  "equilibrium selection by total payoff is one normative choice among several"),
             counterindications=("large games (use Lemke-Howson or an MILP)", "games with more than two players",
                                 "settings where players do not play equilibrium (behavioural data first)"),

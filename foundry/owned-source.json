@@ -397,6 +397,7 @@
     "greg/foundry_state.py",
     "greg/foundry_worker.py",
     "greg/genesis.py",
+    "greg/goal_gravity.py",
     "greg/gravity.py",
     "greg/improvement.py",
     "greg/isolation.py",

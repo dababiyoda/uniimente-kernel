@@ -443,6 +443,87 @@ class MissionEngine:
                             key=[mission_id, action_id, critique_ref])
         self.book.rebuild()
 
+    # -- timing and asks for a persistent goal bound to signed missions (greg/goal_gravity.py) ---
+    def observe_now(self, mission_id: str, now: datetime, *, cause: str) -> bool:
+        """Pull a mission's next read-only observation forward (a goal bound to it woke).
+
+        Timing only: scope, light cone, budget and strategies are unchanged, and the observation
+        still goes through the Gate. A paused or terminal mission is the founder's and is never
+        touched; a mission already due needs no pull."""
+        self.book.rebuild()
+        m = self.book.missions.get(mission_id)
+        if m is None or m.status in TERMINAL or m.paused or not m.next_observe_at or \
+                datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")) <= now:
+            return False
+        self.journal.record("mission.schedule", {"mission_id": mission_id, "next_observe_at": iso(now),
+                                                 "cause": str(cause)[:300]},
+                            key=[mission_id, "observe-now", str(cause)[:300]])
+        self.book.rebuild()
+        return True
+
+    def strategy_scope(self, mission_id: str, action_id: str, *, now: datetime) -> dict:
+        """The exact Gate scope of one founder-signed static strategy, and why it lies outside the cone.
+
+        The digest is the one ``AuthorityOffice.act`` derives for the same strategy (consequence class
+        from the capability manifest, never from the caller), so an approve of it is the approval the
+        mission itself would ask for. Strategies bound to another action's output have no exact scope
+        before they run and are refused here."""
+        m = self.book.missions.get(mission_id)
+        s = next((x for x in (m.spec["strategies"] if m else []) if x["action_id"] == action_id), None)
+        if s is None or "capability" not in s or s.get("bind") or "$from_action" in json.dumps(s.get("params", {})):
+            raise MissionError("only a static, capability-bound strategy of a registered mission has an exact scope")
+        manifest = self.registry.manifests.get(s["capability"])
+        if manifest is None:
+            raise MissionError(f"capability {s['capability']} is not registered on this body")
+        cost = float(s.get("cost_usd", 0.0))
+        scope = AuthorityOffice.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id,
+                                             params=s.get("params", {}), target=s["target"],
+                                             consequence_class=manifest.consequence_class, cost_usd=cost)
+        outside = m.cone.admits(capability=manifest.capability_id, target=s["target"],
+                                consequence_class=manifest.consequence_class, cost_usd=cost,
+                                spent_usd=m.spent_usd, at=now)
+        return {"mission_id": mission_id, "action_id": action_id, "capability": manifest.capability_id,
+                "target": s["target"], "consequence_class": manifest.consequence_class, "cost_usd": cost,
+                "scope_digest": scope, "outside_cone": outside, "strategy": s}
+
+    def request_decision(self, mission_id: str, action_id: str, *, why: str, recommendation: str, now: datetime,
+                         evidence: dict | None = None, quoted: tuple = ()) -> str:
+        """Ask the founder ahead of time about one signed strategy whose exact scope is outside the cone.
+
+        This is the engine's own APPROVAL ask: the same deterministic request id (mission, APPROVAL,
+        exact scope), the same contract and the same one-ask-per-scope rule, so when the mission's
+        loop later reaches the strategy it finds this request instead of asking again. Asking grants
+        nothing and executes nothing; an approve adds exactly this scope to the mission's approved
+        scopes, used only when the mission's own feedback loop selects the strategy."""
+        self.book.rebuild()
+        m = self.book.missions.get(mission_id)
+        if m is None or m.status in TERMINAL or m.paused:
+            raise MissionError(f"mission {mission_id} is unknown, closed or paused: nothing to ask for it")
+        scope = self.strategy_scope(mission_id, action_id, now=now)
+        if not scope["outside_cone"]:
+            raise MissionError(f"{action_id} is inside the mission's light cone: it needs no founder decision")
+        if scope["scope_digest"] in m.rejected_scopes:
+            raise MissionError("the founder already rejected this exact scope")
+        s, cost = scope["strategy"], scope["cost_usd"]
+        resource = None
+        if cost > 0:
+            from types import SimpleNamespace
+            records = routing.track_record(self.journal)
+            routing_decision = {"chosen": action_id, "reliability": routing.reliability(records.get(scope["capability"])),
+                                "asked_ahead_of_the_mission_loop": True}
+            resource = self._spend_ask(m, s, SimpleNamespace(reasons=scope["outside_cone"]), routing_decision)
+            if evidence:
+                resource = {**resource, "evidence": {**resource["evidence"], **evidence}}
+        return self._request(
+            m, kind="APPROVAL", scope_digest=scope["scope_digest"], action_id=action_id,
+            why=(why or "; ".join(scope["outside_cone"]))[:400], recommendation=recommendation[:400],
+            alternatives=[x["action_id"] for x in m.spec["strategies"] if x["action_id"] != action_id][:5]
+            + ["reject: the mission will try alternatives or ask again"],
+            requested={"capability": scope["capability"], "target": scope["target"],
+                       "consequence_class": scope["consequence_class"], "cost_usd": s.get("cost_usd", 0.0),
+                       **({"spend": f"${cost:.2f} for this one action"} if cost > 0 else {})},
+            now=now, resource=resource, evidence=evidence, quoted=quoted)
+
     # -- the loop ---------------------------------------------------------------
     def tick(self, now: datetime, *, should_stop=None) -> list[dict]:
         """One turn per mission. ``should_stop`` is consulted before every mission step:
@@ -470,7 +551,7 @@ class MissionEngine:
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
-                 resource: dict | None = None, evidence: dict | None = None) -> str:
+                 resource: dict | None = None, evidence: dict | None = None, quoted: tuple = ()) -> str:
         """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
 
         ``resource`` makes it a section-60 resource ask: evidence, costed options with their
@@ -498,7 +579,7 @@ class MissionEngine:
             message["alternatives"] = [o["option"] for o in resource["options"]]
         founder_words = [a.get("reason", "") for a in self.book.answers.values() if a.get("mission_id") == m.mission_id]
         asks.record(self.journal, message, quoted=asks.founder_text([m.spec, m.mission_id, founder_words,
-                                                                     list(m.excluded.values())]))
+                                                                     list(m.excluded.values()), list(quoted)]))
         return rid
 
     def _block(self, m: MissionState, blocker: dict):

@@ -237,7 +237,7 @@ def test_guardrail_repository_metabolism_is_classified_without_destroying_histor
 
 def test_guardrail_a_phone_is_a_remote_interface_never_a_second_founder():
     from greg.founder import COMMAND_KINDS, DEVICE_KINDS
-    founder_only = {"MISSION", "CAPABILITY_ATTACH", "CAPABILITY_DETACH", "NODE_ENROLL", "SOP_RATIFY",
+    founder_only = {"MISSION", "GOAL", "CAPABILITY_ATTACH", "CAPABILITY_DETACH", "NODE_ENROLL", "SOP_RATIFY",
                     "ROTATE_FOUNDER_KEY", "DEVICE_ENROLL", "DEVICE_REVOKE"}
     assert founder_only <= set(COMMAND_KINDS) and not founder_only & set(DEVICE_KINDS)
     assert "BODY_STOP" in DEVICE_KINDS  # stopping from the phone must always be possible

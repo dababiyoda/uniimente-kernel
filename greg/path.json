@@ -1334,7 +1334,7 @@
         "intent_ref": "docs/intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json",
         "previous": "Verified Cross-Geometry Routing Gain"
       },
-      "current": "VPL = 4 distinct families with lift (P6 v1 F1; P6 v2 F2b, X1, X2). P4 conditional memory: v3 NO_GAIN (111 = 111 of 130) - not currently worth its complexity; shadow mode retained for real-mission evidence. Seed Genome v5: INCONCLUSIVE, gain 0.0.",
+      "current": "VPL = 5 distinct families with lift (F1; F2/F2b; X1; X2; F3 derived chain), all constructed or agent-authored, none natural; the strongest single intelligence for X2 (a local language model) NOT_RUN. P4 conditional memory: v3 NO_GAIN - not currently worth its complexity. P8: REJECT (no headroom). Admission: Dawid-Skene and PSO admitted; DE superseded by multistart L-BFGS-B. Layer 4 sweep: PARITY. Seed Genome v5: INCONCLUSIVE.",
       "nodes": [
         {
           "id": "P0",
@@ -1478,18 +1478,20 @@
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "F2 with more held-out items or larger samples; add families (Bayesian -> value of information, graph cut -> allocation, counterexample -> verifier -> repair); correlated-failure analysis across stages",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:571",
-          "reality": "typed receipt-to-param edges (missions) and geometry-routed cognitive composition (cognition.solve `chain`) IMPLEMENTED, INTEGRATED, TESTED; frozen held-out lift: F1 lift, F2 not lift (p=0.0625)",
+          "reality": "typed receipt-to-param edges (missions) and geometry-routed cognitive composition (cognition.solve `chain`) IMPLEMENTED, INTEGRATED, TESTED; frozen held-out lift: F1 lift, F2 not lift (p=0.0625); P6 v2: F2b, X1, X2 lift; P6 v3: dataflow-derived estimate+identify->optimize (no recipe lists it) lifts over the best single intelligence 41/0 but not over the best fixed recipe (4/2, p = 0.34)",
           "exit_met": "partial: one family with measured net lift on constructed complementary families",
           "implementation_refs": [
             "contracts/greg-mission.schema.json",
             "cortex/evaluation/composition_lift/run.py",
+            "cortex/evaluation/composition_lift/run_v2.py",
+            "cortex/evaluation/composition_lift/run_v3.py",
             "greg/cognition/composition.py",
             "greg/missions.py",
             "greg/templates.py",
             "tests/integration/test_greg_cognitive_composition.py",
             "tests/unit/test_greg_bindings.py"
           ],
-          "evidence": "docs/evidence/greg-composition/2026-10-07/README.md: one signed mission, browser -> edge -> worker -> DALEOBANKS, manual relays 1 -> 0; docs/evidence/greg-composition-lift/2026-10-07/README.md: VPL = 1 of 2"
+          "evidence": "docs/evidence/greg-composition-lift/2026-10-07/README.md; docs/evidence/greg-composition-lift/2026-10-14/README.md"
         },
         {
           "id": "P7",

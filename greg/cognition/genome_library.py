@@ -172,10 +172,7 @@ def _acquired() -> list[GenomeEntry]:
                     "P4 conditional memory; shadow by default; v1 and v2 INCONCLUSIVE (v3 decides)", (P4_V2,)),
         GenomeEntry("mechanism.protected_evolution", "mechanism", 5, True, False, "BUILDABLE_NOW", "EXPERIMENTAL",
                     "P8 routing-genome search against a hash-pinned evaluator; not attached to runtime routing"),
-        GenomeEntry("composition.derived", "composition_recipe", 5, True, True, "BUILDABLE_NOW",
-                    "DEFAULT_FOR_GEOMETRY" if _p6v3_lift() else "EXPERIMENTAL",
-                    "chains absent from RECIPES derived by typed dataflow (estimate + identify -> optimize); "
-                    + ("P6 v3 lift" if _p6v3_lift() else "P6 v3 not yet run or no lift"),
+        GenomeEntry("composition.derived", "composition_recipe", 5, True, True, "BUILDABLE_NOW", *_p6v3_status(),
                     (P6_V3,) if (ROOT / P6_V3).exists() else ()),
         GenomeEntry("mechanism.advantage_compiler", "mechanism", 5, True, False, "BUILDABLE_NOW", "EXPERIMENTAL",
                     "mental models as typed operators at evidenced bottlenecks; lawful-means gate; generates "
@@ -188,10 +185,18 @@ def _acquired() -> list[GenomeEntry]:
     return out
 
 
-def _p6v3_lift() -> bool:
+def _p6v3_status() -> tuple[str, str]:
+    """DEFAULT only if the derived chain also beats the best fixed recipe; beating singles alone is a niche."""
+    base = "chains absent from RECIPES derived by typed dataflow (estimate + identify -> optimize); "
     if not (ROOT / P6_V3).exists():
-        return False
-    return bool(json.loads((ROOT / P6_V3).read_text())["summary"]["vs_best_single"]["lift"])
+        return "EXPERIMENTAL", base + "P6 v3 not yet run"
+    summary = json.loads((ROOT / P6_V3).read_text())["summary"]
+    single, fixed = summary["vs_best_single"], summary["vs_best_fixed_recipe"]
+    detail = (base + f"P6 v3: vs best single {single['wins']}/{single['losses']} (lift {single['lift']}), "
+              f"vs best fixed recipe {fixed['wins']}/{fixed['losses']} (lift {fixed['lift']})")
+    if fixed["lift"]:
+        return "DEFAULT_FOR_GEOMETRY", detail
+    return ("NICHE_CAPABILITY" if single["lift"] else "EXPERIMENTAL"), detail
 
 
 def inventory() -> list[GenomeEntry]:

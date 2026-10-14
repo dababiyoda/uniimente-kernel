@@ -28,3 +28,34 @@ X1, X2. The v1 F2 result is kept as recorded.
 - **Not a natural task distribution**: X1/X2 were authored by the agent that built the router (for the
   cross-geometry evaluation, frozen in `freeze-crossgeo-v0.3.json`) before this module existed. Natural-task
   evidence needs founder-used missions (VEPMC = 0).
+
+## P6 v3: a chain no recipe lists, derived by dataflow (2026-10-14)
+
+Runner `cortex/evaluation/composition_lift/run_v3.py`; freeze `freeze-v3.json` committed before the run
+(`b99daba`); results `results-v3.json`. Mechanism: `greg/cognition/composition.py` `derive()` - when no single
+recipe fits, every `$param` root in the formal template must be produced by a stage whose input the payload
+carries, so a template needing `estimate.low` and `effect.*` yields estimate + identify -> optimize, a chain in
+no recipe list. Family F3 (48 held-out items, seeds 101-148): fund two confounded programs within a money
+budget and within volunteer-hour capacity available with 95 % probability. wrong = commits hours above the
+true 5th percentile; correct = within capacity and >= 0.95 x the true optimum; else suboptimal.
+
+| Arm | correct | wrong | suboptimal | no decision | median s |
+|---|---:|---:|---:|---:|---:|
+| estimate alone | 0 | 0 | 0 | 48 | 0.52 |
+| identify alone | 0 | 0 | 0 | 48 | 0.58 |
+| optimiser on raw association at median capacity (best single) | 4 | **44** | 0 | 0 | 0.85 |
+| fixed recipe estimate_then_optimize (association effects) | 43 | 0 | 5 | 0 | 1.38 |
+| fixed recipe identify_then_optimize (median capacity) | 5 | **40** | 0 | 3 | 1.44 |
+| **routed: derived estimate + identify -> optimize** | **45** | **0** | 0 | 3 | 1.98 |
+
+**Verdicts (frozen):**
+- vs the strongest single intelligence: **lift** (41 wins / 0 losses, p < 1e-12). F3 is the fifth distinct
+  VPL family (F1, F2/F2b, X1, X2, F3).
+- vs the best fixed recipe: **no lift** (4 wins / 2 losses, p = 0.34). The derived chain removed the fixed
+  recipe's 5 suboptimal plans but abstained on 3 items where causal identification abstained
+  (`STAGE_ABSTAINED`); the fixed recipe answered 2 of those correctly by trusting raw association.
+
+Reading: dataflow derivation works (every routed item took the derived chain, zero wrong answers), and it
+beats every single intelligence decisively; whether it beats the simpler fixed recipe is not shown on this
+family, so `composition.derived` is NICHE_CAPABILITY in the genome library, not DEFAULT. F3 is constructed to
+need both stages; it is not a natural task distribution.

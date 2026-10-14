@@ -10,6 +10,15 @@ from .cortex import reason, registry_view
 
 
 SUITE = Path(__file__).resolve().parents[2] / "examples" / "cognition" / "frozen-suite.json"
+# Frozen expectations contradicted by a later canonical rule. The suite file stays byte-identical; each
+# reconciliation is reported with the frozen expectation, the rule that replaced it and where it is enforced.
+RECONCILED = {
+    "unknown:capability-deficit": {
+        "expected": {"method": "none", "state": "ABSTAIN"},
+        "rule": "an operation GREG cannot classify abstains as UNKNOWN_GEOMETRY (cortex seed activation rules, "
+                "#145, converged in 4baf534) instead of reporting a capability deficit",
+        "enforced_by": "tests/unit/test_greg_cognition.py::test_missing_model_detached_solver_and_unknown_geometry_are_deficits"},
+}
 
 
 def score(receipt, case, *, require_method=True):
@@ -39,8 +48,11 @@ def assess(*, suite=SUITE, baselines=None):
     baseline_rows = {name: [] for name in (baselines or {})}
     for case in raw["cases"]:
         receipt = reason(case["request"], registry=registry)
-        rows.append({"id": case["id"], "correct": score(receipt, case), "method": receipt["method"],
-                     "state": receipt["abstention_state"], "latency": receipt["latency"], "cost_usd": receipt["money_cost"]})
+        judged = {**case, "expected": RECONCILED[case["id"]]["expected"]} if case["id"] in RECONCILED else case
+        rows.append({"id": case["id"], "correct": score(receipt, judged), "method": receipt["method"],
+                     "state": receipt["abstention_state"], "latency": receipt["latency"], "cost_usd": receipt["money_cost"],
+                     **({"reconciled": {"frozen_expected": case["expected"], **RECONCILED[case["id"]]}}
+                        if case["id"] in RECONCILED else {})})
         for name, baseline in (baselines or {}).items():
             started = time.monotonic()
             try:

@@ -36,6 +36,10 @@ HUMAN_ROLES = ("founder", "operator", "domain_expert", "affected_participant", "
 STATUS_RANK = {"DEFAULT_FOR_GEOMETRY": 0, "NICHE_CAPABILITY": 1, "UNEVALUATED": 2, "EXPERIMENTAL": 3, "NO_LIFT": 8,
                "COMPOSITION_ONLY": 9, "SUPERSEDED": 9, "REJECTED": 9, "FRONTIER_HORIZON": 9}
 EXCLUDED = ("SUPERSEDED", "REJECTED", "FRONTIER_HORIZON", "COMPOSITION_ONLY")
+# Statuses that are not positive evidence: they persist through a version bump until a re-admission replaces
+# them (a version change never turns a negative or inconclusive result into UNEVALUATED).
+NOT_POSITIVE = EXCLUDED + ("EXPERIMENTAL",)
+HIGH_CONSEQUENCE = ("external_contact", "financial", "irreversible")
 # Inputs that identify an existing (pre-genome) family's native geometry.
 NATIVE_INPUTS = {
     "estimate": ("factors",), "constraints": ("variables", "constraints"),
@@ -362,7 +366,7 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                 status = record.get("status", "UNEVALUATED")
                 standalone = genomes[family].genome.standalone_decision
                 measured, current = record.get("version"), genomes[family].genome.version
-                if measured and measured != current and status not in EXCLUDED:
+                if measured and measured != current and status not in NOT_POSITIVE:
                     # positive evidence binds the version measured; negative evidence persists until a
                     # re-admission replaces it
                     stale = f"{status} was measured at version {measured}; version {current} needs re-admission"
@@ -383,10 +387,16 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             row = {"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
                    "epistemic_classes": list(classes), "rejected": reason,
                    **({"stale_evidence": stale} if stale else {})}
-            if family in genomes:
+            if family in genomes and not stale:
+                # subregion verdicts bind the version they were measured at, like the status they refine
                 measured = _subregion_evidence(genomes[family], data, evidence["genomes"].get(family, {}))
                 if measured:
                     row["subregion"] = measured
+            if family in genomes and status == "SUPERSEDED":
+                item = genomes[family]
+                row["superseded_by"] = {"mechanism": item.genome.competitor,
+                                        "deployable": bool(getattr(item, "competitor_deployable", True)),
+                                        "evidence": evidence["genomes"].get(family, {}).get("evidence")}
             rows.append(row)
     recipe = route(data)
     if recipe:
@@ -451,10 +461,19 @@ def invert_claim(claim: dict) -> dict:
             or not isinstance(claim.get("constraints"), list)):
         raise CognitionError("a claim takes variables, constraints and one linear property")
     prop = claim["property"]
-    if set(prop) != {"coefficients", "op", "rhs"} or prop["op"] not in NEGATION:
+    if (set(prop) != {"coefficients", "op", "rhs"} or not isinstance(prop["op"], str) or prop["op"] not in NEGATION
+            or not isinstance(prop["coefficients"], dict) or isinstance(prop["rhs"], bool)
+            or not isinstance(prop["rhs"], (int, float, str))):
         raise CognitionError("the property is one linear comparison {coefficients, op, rhs}")
+    if not all(isinstance(c, dict) for c in claim["constraints"]):
+        raise CognitionError("every constraint is a linear comparison mapping")
     return {"variables": claim["variables"],
             "constraints": list(claim["constraints"]) + [{**prop, "op": NEGATION[prop["op"]]}]}
+
+
+def premises(claim: dict) -> dict:
+    """The claim's constraints alone: if they are unsatisfiable, every property 'holds' vacuously."""
+    return {"variables": claim["variables"], "constraints": list(claim["constraints"])}
 
 
 def claim_verdict(output: dict) -> dict:
@@ -470,16 +489,41 @@ def claim_verdict(output: dict) -> dict:
     return {"claim": "UNDECIDED", "basis": f"solver status {status}"}
 
 
+def _operation_usable(registry, operation: str) -> bool:
+    """Some attached, available capability on the registry declares this cognitive operation."""
+    for cid, manifest in getattr(registry, "manifests", {}).items():
+        profile = getattr(manifest, "cognitive_profile", None) or {}
+        if operation in (profile.get("operations") or ()):
+            try:
+                if registry.usable(cid)[0]:
+                    return True
+            except Exception:
+                continue
+    return False
+
+
 def _usable(registry, row: dict) -> tuple[bool, str]:
-    """Whether the row can run now: an operation's capability must be attached; a composition's stages are
-    checked stage by stage on the canonical path."""
+    """Whether the row can run now: an operation's capability must be attached; a composition needs an
+    attached capability for every operation stage it declares (problem-path stages are routed on the canonical
+    path and checked there)."""
     if row["kind"] != "operation":
-        return True, "composition: stages checked on the canonical path"
+        from .composition import RECIPES
+        missing = [op for op in RECIPES[row["operation"]].get("operations", ()) if not _operation_usable(registry, op)]
+        if missing:
+            return False, f"composition stages without an attached capability: {missing}"
+        return True, "composition: every declared operation stage has an attached capability"
     try:
         ok, why = registry.usable(row["method"])
     except Exception as exc:
         return False, f"registry: {type(exc).__name__}"
     return bool(ok), str(why)
+
+
+def _state(registry, method: str) -> str | None:
+    try:
+        return registry.state.get(method)
+    except Exception:
+        return None
 
 
 def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> dict:
@@ -494,8 +538,9 @@ def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> d
                                   "subregion": best.get("subregion"), "current_state": best["usable_why"]}.items()
                 if v is not None}
     served = fallback["method"] if fallback else "no attached method"
+    measured["registered"] = [{"capability_id": best["method"], "state": "VERIFIED"}]
     packet = asks.resource_request(
-        request_id=f"attach-{digest({'pid': pid, 'method': best['method']})[7:23]}", kind="RESOURCE",
+        request_id=f"attach-{digest({'pid': pid, 'method': best['method']})[7:23]}", kind="CAPABILITY_ATTACH",
         resource="capability",
         why_now=f"the best-fitting method for request {pid} by frozen evidence, {best['method']}, is registered "
                 f"but not attached",
@@ -512,11 +557,30 @@ def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> d
         consequence_of_no_response=f"requests of this geometry are served by {served}; nothing else changes",
         created_at=datetime.now(timezone.utc).isoformat())
     asks.validate(packet)
-    violations = asks.screen(packet)
+    violations = asks.screen(packet, quoted=(pid,))      # the caller's problem id is data, not GREG's wording
     if violations:
         raise CognitionError(f"the attach ask failed the ask screen: {violations}")
     return {**packet, "state": "PREPARED_NOT_RECORDED",
             "record_with": "greg.asks.record on the body (the one path for decision.requested)"}
+
+
+def _judgment_ask(pid: str, request_id: str, scope: str, packet: dict, journal) -> dict:
+    """Record the question as a founder ask through greg.asks (the one path for decision.requested), once, when
+    a canonical journal is present; otherwise return it prepared. Recording asks; it decides and grants nothing."""
+    from datetime import datetime, timezone
+    from greg import asks
+    from .human import judgment_ask
+    existing = None if journal is None else next(
+        (e.payload for e in journal.replay("decision.requested") if e.payload.get("request_id") == request_id), None)
+    if existing is not None:
+        return {"request_id": request_id, "state": "RECORDED", "scope_digest": existing.get("scope_digest")}
+    message = judgment_ask(pid, request_id, scope, packet, datetime.now(timezone.utc).isoformat())
+    if journal is None or not callable(getattr(journal, "record", None)):
+        asks.validate(message)
+        return {**message, "state": "PREPARED_NOT_RECORDED",
+                "record_with": "greg.asks.record on the body (the one path for decision.requested)"}
+    shown = asks.record(journal, message, quoted=(pid,))
+    return {"request_id": request_id, "state": "RECORDED", "scope_digest": shown["scope_digest"]}
 
 
 def _settled_competence(journal, geometry_class) -> dict:
@@ -602,22 +666,28 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     if g.human_judgment_required or g.legal_content or g.rights_impact or g.geometry in HUMAN_CLASSES:
         receipt["method_or_composition_selected"] = "human:qualified_judgment"
         receipt["selection_level"] = "constitutional_route"
-        packet = human_packet(g, body)
+        # the question's identity: what the founder's signed answer must be bound to (judgments excluded,
+        # so views arriving later address the same question)
+        scope = digest({"problem_id": pid, "geometry": body.get("geometry", {}), "data": data,
+                        "consequence": consequence})
+        request_id = f"judgment-{scope[7:23]}"
+        packet = {**human_packet(g, body), "request_id": request_id, "scope_digest": scope}
         judgments = (body.get("human") or {}).get("judgments")
-        if judgments is None:
-            return finish("HUMAN_JUDGMENT_REQUIRED", packet)
-        # the return path: typed judgments are evidence; only the founder's signed answer decides
+        # the return path: typed judgments are evidence; only the founder's signed answer to THIS request decides
         from .human import adjudicate
-        adjudicated = adjudicate(judgments, journal)
-        receipt["human_judgments"] = adjudicated
+        adjudicated = adjudicate(judgments, journal, request_id=request_id, scope_digest=scope)
+        if judgments is not None or adjudicated["decision"] is not None:
+            receipt["human_judgments"] = adjudicated
         for j in adjudicated["judgments"]:
             if j["verdict"] != (adjudicated["decision"] or {}).get("verdict"):
                 receipt["dissent"].append(f"{j['role']} {j['participant_ref']} ({j['competence_domain']}): "
                                           f"{j['verdict']}: {j['rationale'][:200]}")
         receipt["dissent"] += adjudicated["provenance_conflicts"]
         if adjudicated["decision"] is None:
+            ask = _judgment_ask(pid, request_id, scope, packet, journal)
             return finish("HUMAN_JUDGMENT_REQUIRED", {**packet, "judgments_received": len(adjudicated["judgments"]),
-                                                       "awaiting": "the founder's signed answer"})
+                                                       "awaiting": "the founder's signed answer to " + request_id,
+                                                       "founder_ask": ask})
         return finish("HUMAN_JUDGMENT_RECORDED", {"decision": adjudicated["decision"],
                                                   "acts": "nothing: a recorded human decision still reaches the "
                                                           "world only through the Gate"})
@@ -644,7 +714,15 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     receipt["methods_rejected"] = [{"method": r["method"], "why": r["rejected"]} for r in rows if r["rejected"]]
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible = [r for r in rows if not r["rejected"]]
+    superseding = [{"mechanism": r["superseded_by"]["mechanism"], "supersedes": r["method"],
+                    "evidence": r["superseded_by"]["evidence"],
+                    "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority",
+                    "authority": "none: a candidate to acquire, never an attached method"}
+                   for r in rows if r.get("superseded_by", {}).get("deployable")]
     if not eligible:
+        if superseding:
+            # the method that fits was superseded on frozen held-out evidence by a deployable mechanism: name it
+            receipt["acquisition_candidates"] = superseding
         receipt["capability_deficit"] = {
             "function": f"cognition.{g.geometry or 'unknown'}:{g.subgeometry or 'unspecified'}",
             "purpose": g.objective or g.epistemic_question or "cognitive request",
@@ -668,7 +746,18 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                         "status": best["status"], "served_by": runnable[0]["method"] if runnable
                                         else None, **({"subregion": best["subregion"]} if best.get("subregion")
                                                       else {})}
-        receipt["founder_attach_ask"] = attach_ask(pid, best, runnable[0] if runnable else None, evidence)
+        state = _state(registry, best["method"])
+        if best["kind"] != "operation" or state != "VERIFIED":
+            # only a verified, withheld capability is attachable by the founder's attach command; a quarantined,
+            # detached or attached-but-unavailable one is not asked about here
+            receipt["founder_attach_ask"] = {"state": "NOT_PREPARED",
+                                             "why": f"{best['method']} is {best['usable_why']}; only a VERIFIED "
+                                                    f"capability can be attached"}
+        else:
+            try:
+                receipt["founder_attach_ask"] = attach_ask(pid, best, runnable[0] if runnable else None, evidence)
+            except Exception as exc:      # the optional ask never aborts routing; its failure is recorded
+                receipt["founder_attach_ask"] = {"state": "NOT_PREPARED", "why": f"{type(exc).__name__}: {exc}"[:300]}
     if not runnable:
         receipt["capability_deficit"] = {
             "function": f"cognition.{g.geometry or 'unknown'}:{g.subgeometry or 'unspecified'}",
@@ -708,8 +797,15 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         "no settled outcomes in this journal; admission evidence and cost decide"
     if body.get("execute") is False:
         return finish("PLANNED")
-    # 4. execute through the same canonical reason
+    # 4. execute through the same canonical reason. High consequence raises the proof requirement on this path
+    # exactly as on the direct canonical path (FORMALIZATION_INCOMPLETE for formal/optimisation methods).
+    high = g.consequence_class in HIGH_CONSEQUENCE or bool(consequence.get("high"))
     if chosen["kind"] == "composition":
+        from .composition import RECIPES
+        if high and "optimize" in RECIPES[chosen["operation"]]["stages"] and data.get("formalization_complete") is not True:
+            receipt["abstentions"].append("FORMALIZATION_INCOMPLETE: complete formal model plus independently "
+                                          "verified world assumptions")
+            return finish("FORMALIZATION_INCOMPLETE")
         inner = reason({"problem_id": pid, "chain": {"question": g.objective or "compiled", "payload": data}},
                        registry=registry, journal=journal, model_config=model_config)
         receipt["intermediate_receipts"] = [s["receipt_id"] for s in inner["stages"]]
@@ -721,7 +817,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             receipt["abstentions"].append(f"{inner['state']}: {inner['reason']}")
             return finish(inner["state"])
         return finish("ANSWERED", inner["answer"])
-    geometry_hint = {"latency_limit": min(30.0, float(g.latency_budget or 20.0))}
+    geometry_hint = {"latency_limit": min(30.0, float(g.latency_budget or 20.0)),
+                     **({"consequence_class": g.consequence_class} if g.consequence_class else {})}
     inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint},
                    registry=registry, journal=journal, model_config=model_config)
     receipt["intermediate_receipts"] = [inner["receipt_id"]]
@@ -732,15 +829,48 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     receipt["uncertainty"] = inner.get("uncertainty")
     receipt["dissent"].append(inner.get("strongest_counterargument", ""))
     receipt["resource_use"]["stages"] = 1
+    conditional = inner["abstention_state"] == "WORLD_UNVERIFIED" and _has_answer(inner)
     if inner["abstention_state"] != "NONE":
         receipt["abstentions"].append(f"{inner['abstention_state']}: {inner['missing_information']}")
-        return finish(inner["abstention_state"])
+        if not conditional:
+            return finish(inner["abstention_state"])
+    # a high-consequence answer is a conditional result (WORLD_UNVERIFIED), never ANSWERED: the answer is kept,
+    # evaluated (sensitivity, premises) and labelled; world assumptions and consequence authority stay separate
+    done = "WORLD_UNVERIFIED" if conditional else "ANSWERED"
     if inverted is not None:
-        return finish("ANSWERED", claim_verdict(inner["output"]))
+        verdict = claim_verdict(inner["output"])
+        if verdict["claim"] == "HOLDS_WITHIN_MODEL":
+            verdict = _premises_check(pid, chosen["operation"], body["data"]["claim"], geometry_hint, verdict,
+                                      registry, journal, model_config, receipt)
+        return finish(done, verdict)
     if "sensitivity" in plan["evaluate"]:
         receipt["sensitivity"] = _sensitivity_runs(pid, chosen["operation"], data, inner["output"], geometry_hint,
                                                    registry, journal, model_config, receipt)
-    return finish("ANSWERED", inner["output"])
+    return finish(done, inner["output"])
+
+
+def _has_answer(inner: dict) -> bool:
+    """An answer the path may use: NONE, or the conditional WORLD_UNVERIFIED a high-consequence geometry gets.
+    A refuted or timed-out receipt keeps its output for audit, never for use."""
+    return inner["abstention_state"] in ("NONE", "WORLD_UNVERIFIED") and isinstance(inner.get("output"), dict)
+
+
+def _premises_check(pid, operation, claim, hint, verdict, registry, journal, model_config, receipt) -> dict:
+    """An UNSAT negation proves the claim only if the constraints are satisfiable on their own; otherwise every
+    property 'holds' vacuously and the claim is PREMISES_INCONSISTENT."""
+    from .cortex import reason
+    if not claim["constraints"]:
+        return {**verdict, "premises": "SATISFIABLE (no constraints)"}
+    check = reason({"problem_id": f"{pid}/premises"[:96], "operation": operation, "data": premises(claim),
+                    "geometry": hint}, registry=registry, journal=journal, model_config=model_config)
+    receipt["intermediate_receipts"].append(check["receipt_id"])
+    status = check["output"].get("solver_status") if _has_answer(check) else None
+    if status == "UNSAT":
+        return {"claim": "PREMISES_INCONSISTENT",
+                "basis": "the constraints alone are unsatisfiable, so the property holds only vacuously"}
+    if status == "SAT":
+        return {**verdict, "premises": "SATISFIABLE"}
+    return {**verdict, "premises": f"UNDECIDED ({status or check['abstention_state']}): the claim may hold vacuously"}
 
 
 def _numbers(value):
@@ -778,7 +908,7 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
         out = reason({"problem_id": f"{pid}/sens/{key}"[:128], "operation": operation, "data": varied,
                       "geometry": hint}, registry=registry, journal=journal, model_config=model_config)
         receipt["intermediate_receipts"].append(out["receipt_id"])
-        if out["abstention_state"] != "NONE":
+        if not _has_answer(out):
             rows[key] = {"state": out["abstention_state"]}
             continue
         now = _numbers(out["output"])

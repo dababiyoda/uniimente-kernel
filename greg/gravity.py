@@ -213,7 +213,10 @@ def _voi(report: dict, registry, journal) -> dict:
     out = {"state": receipt["state"], "method": receipt["method_or_composition_selected"],
            "receipt_id": receipt["receipt_id"], "result": receipt["result"],
            "requirements": receipt["requirements"], "abstentions": receipt["abstentions"]}
-    if receipt["state"] == "ANSWERED":
+    if receipt["state"] in ("ANSWERED", "WORLD_UNVERIFIED") and isinstance(receipt["result"], dict):
+        # WORLD_UNVERIFIED is the canonical path's conditional result for a high-consequence geometry: the
+        # arithmetic is checked; the world assumptions and the consequence authority are not
+        out["conditional"] = receipt["state"] == "WORLD_UNVERIFIED"
         out["recomputation"] = {
             "consistent": bool(receipt["result"]["acquire"]) == bool(voi["test_may_pay"]),
             "nature": "the same EVPI arithmetic re-computed on a stride subsample through the canonical cognition "

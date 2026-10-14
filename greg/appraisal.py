@@ -53,6 +53,16 @@ def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:
     return keys
 
 
+def _formed_registry(journal: Journal, workspace) -> object:
+    """The body's registry as retained: built-ins plus every capability Genesis formed (constructed,
+    acquired, built), re-pinned and re-checked as at restart, with nothing written to the ledger."""
+    from greg.cognition.cortex import registry_view
+    from greg.genesis import Genesis
+    registry = registry_view(journal)
+    Genesis(journal=journal, registry=registry, workspace_root=Path(workspace)).restore(record=False)
+    return registry
+
+
 def appraise(request: dict) -> dict:
     ledger = EvidenceLedger(request["constitution"], request["ledger"], read_only=True,
                             expected_head=request["head"], tail="ignore")
@@ -126,7 +136,9 @@ def appraise(request: dict) -> dict:
                                         mission_id=mid,
                                         artifact_root=Path(request["artifact_root"])
                                         if request.get("artifact_root") else None,
-                                        target=check["sensor"].get("target", ""))
+                                        target=check["sensor"].get("target", ""),
+                                        capability_registry=_formed_registry(journal, request["workspace"])
+                                        if cap.startswith("cognition.") else None)
                 try:
                     from greg.pipeline import resolve
                     bound_params, _ = resolve(check["sensor"].get("params", {}), journal, mid)

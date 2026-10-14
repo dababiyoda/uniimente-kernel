@@ -433,6 +433,18 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
             row["status"] = "NO_LIFT"
             row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
                               f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
+        lacking = _stage_lacks(data, recipe, g, evidence)
+        if lacking:
+            # the stage that reads the part would abstain on it: the recipe is not a fit. When the part carries
+            # inputs only this recipe (or a fuller method) reads, it asks the recipe's question and the request
+            # ends asking for what it lacks, never in an attach ask, Genesis or a stage abstention; otherwise the
+            # part asks a simpler question that the methods it fully supplies answer
+            row["rejected"] = (f"its {lacking['stage']} stage ({lacking['stage_method']}) reads part "
+                               f"{lacking['part']!r}, which lacks {lacking['missing_inputs']}")
+            if lacking["carried"]:
+                row["rejected"] += f" (the part carries {lacking['carried']}, which no method it fully supplies reads)"
+                row["missing_inputs"] = [{"method": row["method"], "part": lacking["part"],
+                                          "missing_inputs": lacking["missing_inputs"]}]
         rows.append(row)
         if parts:
             rows += _part_rows(data, recipe, g, evidence)
@@ -457,6 +469,38 @@ def _part_rows(data: dict, recipe: str, g: CompetencyGeometry, evidence: dict) -
 PART_FLAGS = ("formalization_complete",)        # request-level flags a part-addressed method reads with its part
 
 
+def _stage_lacks(data: dict, recipe: str, g: CompetencyGeometry, evidence: dict) -> dict | None:
+    """For a recipe of one part, the inputs its first stage needs that the part does not carry, else None.
+
+    The first stage of a one-part recipe reads the part whole (graph_then_allocate compiles
+    ``capacity_network`` with compile_capacity_expansion), so the part must carry that operation's native inputs;
+    without them the stage abstains and the composition cannot answer. ``carried`` lists the stage inputs the part
+    does carry that no method whose native inputs the part fully supplies reads (budget and unit_cost beside a
+    max-flow network): then the part asks this recipe's question with information missing, as the relaxation
+    rule decides for a flat request. A part that carries none (a plain max-flow network) asks a simpler question.
+    A recipe of several parts feeds its stages from several places and is not judged here."""
+    from .catalog import FAMILIES
+    from .composition import RECIPES
+    from .genomes import library
+    spec = RECIPES[recipe]
+    if len(spec["requires"]) != 1 or not spec.get("operations") or not isinstance(data.get(spec["requires"][0]), dict):
+        return None
+    part, operation = spec["requires"][0], spec["operations"][0]
+    genomes = library.executables()
+    for family, (_, ops, *_rest) in FAMILIES.items():
+        if operation in ops:
+            need = set(genomes[family].genome.required_inputs if family in genomes else NATIVE_INPUTS.get(operation)
+                       or ())
+            missing = sorted(need - set(data[part]))
+            if not missing:
+                return None
+            served = {i for r in candidates(_part_data(data, part), g, evidence, parts=False)
+                      if r["kind"] == "operation" for i in r["inputs"]}
+            return {"part": part, "stage": spec["stages"][0], "stage_method": f"cognition.{family}",
+                    "missing_inputs": missing, "carried": sorted((need & set(data[part])) - served)}
+    return None
+
+
 def _part_data(data: dict, part: str) -> dict:
     """What a part-addressed method reads: the part, with the request-level flags (``formalization_complete``)."""
     return {**data[part], **{k: data[k] for k in PART_FLAGS if k in data}}
@@ -468,12 +512,26 @@ def _same_decision(row: dict, fuller: dict) -> bool:
     return row["outputs"] is not None and fuller["outputs"] is not None and set(fuller["outputs"]) <= set(row["outputs"])
 
 
+def _missing_information(rows: list[dict]) -> list[dict]:
+    """What the request lacks, once per (method, part, inputs): the fuller methods a relaxation was rejected for
+    (``missing_for_fuller``) and the recipes whose reading stage the part cannot feed (``missing_inputs``). An
+    entry from a part-addressed row names that part."""
+    out = []
+    for r in rows:
+        for m in r.get("missing_for_fuller", []) + r.get("missing_inputs", []):
+            entry = {**m, **({"part": r["part"]} if r.get("part") else {})}
+            if entry not in out:
+                out.append(entry)
+    return out
+
+
 def _lacks(missing: list[dict]) -> str:
-    """'[inputs] for [methods]', once per distinct set of missing inputs."""
+    """'[inputs] (in part p) for [methods]', once per distinct set of missing inputs and part."""
     grouped = {}
     for m in missing:
-        grouped.setdefault(tuple(m["missing_inputs"]), set()).add(m["method"])
-    return "; ".join(f"{list(inputs)} for {sorted(methods)}" for inputs, methods in sorted(grouped.items()))
+        grouped.setdefault((tuple(m["missing_inputs"]), m.get("part") or ""), set()).add(m["method"])
+    return "; ".join(f"{list(inputs)}{f' in part {part!r}' if part else ''} for {sorted(methods)}"
+                     for (inputs, part), methods in sorted(grouped.items()))
 
 
 def _reject_relaxations(rows: list[dict], unfit: list[dict], keys: set, geometry: str | None) -> None:
@@ -949,7 +1007,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         formed = _formed(registry, data, g, body, high, receipt)
         if formed is not None:
             return finish(*formed)
-        missing = [m for r in rows for m in r.get("missing_for_fuller", [])]
+        missing = _missing_information(rows)
         if missing:
             # the method that answers the question asked exists; the request lacks some of its inputs. That is
             # missing information, not a capability deficit: Capability Genesis is not asked to build it again

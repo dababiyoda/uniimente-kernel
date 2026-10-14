@@ -112,7 +112,9 @@ def test_every_cited_verdict_matches_the_source_it_cites():
         cited = _cite(row["evidence"], listed, problems)
         if cited is not None and cited.get("verdict") != row["verdict"]:
             problems.append(f"routing {name}: index {row['verdict']} but source {cited.get('verdict')}")
-    assert not problems, problems
+    # a str message, one problem per line: pytest shortens a non-str message to about 240 characters, which
+    # can elide the problem that failed
+    assert not problems, "\n".join(problems)
 
 
 def test_every_source_names_a_commit_present_in_this_repository():
@@ -149,20 +151,47 @@ VERDICTS = test_every_cited_verdict_matches_the_source_it_cites
 COMMITS = test_every_source_names_a_commit_present_in_this_repository
 
 
-@pytest.mark.parametrize("corrupt, check, needle", [
+CORRUPTIONS = [
     (lambda i: i["sources"][0].update(sha256="sha256:" + "0" * 64), DIGESTS, "changed"),
     (lambda i: i["sources"][0].update(path="docs/evidence/nowhere.json"), DIGESTS, "absent"),
     (_flip_genome_status, VERDICTS, "but source"),
     (lambda i: next(iter(i["recipes"].values())).update(wins=10 ** 6), VERDICTS, "but source"),
     (lambda i: i["sources"].pop(), VERDICTS, "not a listed"),
     (lambda i: i["sources"][0].pop("source_commit"), COMMITS, "without a source commit"),
-])
-def test_the_checks_fail_on_a_corrupted_index(tmp_path, monkeypatch, corrupt, check, needle):
-    """Each check is falsifiable: a corrupted copy of the real index must fail it."""
-    index = _index()
+]
+
+
+def _fails(index, tmp_path, monkeypatch, corrupt, check, needle):
     corrupt(index)
     fake = tmp_path / "index.json"
     fake.write_text(json.dumps(index))
     monkeypatch.setitem(globals(), "INDEX", fake)
     with pytest.raises(AssertionError, match=needle):
         check()
+
+
+@pytest.mark.parametrize("corrupt, check, needle", CORRUPTIONS)
+def test_the_checks_fail_on_a_corrupted_index(tmp_path, monkeypatch, corrupt, check, needle):
+    """Each check is falsifiable: a corrupted copy of the real index must fail it."""
+    _fails(_index(), tmp_path, monkeypatch, corrupt, check, needle)
+
+
+def _rebuilt_index() -> dict:
+    """The index scripts/build_mind_evidence_index.py builds from the current sources, in memory. It is only the
+    input a corruption is applied to; no check above reads the builder."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_build_mind_evidence_index",
+                                                  ROOT / "scripts" / "build_mind_evidence_index.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.build()
+
+
+@pytest.mark.parametrize("corrupt, check, needle", CORRUPTIONS)
+def test_the_checks_fail_on_a_corrupted_rebuilt_index(tmp_path, monkeypatch, corrupt, check, needle):
+    """Review 2026-10-14 (round 2): rebuilding the index, as the exact-p fix prescribes, made one falsifiability
+    case fail. The check still fired, but its problems were reported as a list, which pytest shortens to about 240
+    characters; the longer rebuilt recipe rows (an exact p beside the recorded one) pushed the problem into the
+    elided middle. A check's message must carry every problem, on the index the builder writes as on the
+    committed one."""
+    _fails(_rebuilt_index(), tmp_path, monkeypatch, corrupt, check, needle)

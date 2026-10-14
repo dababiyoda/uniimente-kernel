@@ -542,6 +542,61 @@ def test_a_request_that_omits_one_input_of_the_fuller_method_is_not_answered_by_
     assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.flow_maxflow"
 
 
+def test_a_one_part_composition_request_that_omits_an_input_asks_for_it(no_index):
+    """Review 2026-10-14 (round 2): the capacity-expansion request without max_increment ends ABSTAIN asking for it
+    when flat, but in the graph_then_allocate shape ({capacity_network: {...}}) it ended in a CAPABILITY_DEFICIT
+    routed to an attach ask or Genesis (mcf attached, the recipe's stages withheld), or in STAGE_ABSTAINED once the
+    stages were attached. The recipe's compile stage reads the part and needs max_increment: the composition is
+    not a fit for a part that lacks its stage's inputs, and the request asks for what it lacks, whatever is
+    attached and whatever the evidence index ranks first."""
+    from greg.cognition.genomes import library
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)
+    partial = {"capacity_network": {k: v for k, v in data.items() if k != "max_increment"}}
+    only_mcf = registry_view()
+    only_mcf.set_state("cognition.flow_expansion_mcf", "ATTACHED")
+    stages = registry_view()
+    for cid in ("cognition.flow_expansion_mcf", "cognition.flow_capacity_plan", "cognition.optimization",
+                "cognition.flow_maxflow"):
+        stages.set_state(cid, "ATTACHED")
+    lifted = json.dumps({"genomes": {}, "routing": {},
+                         "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}})
+    for index in (None, lifted):
+        if index:
+            no_index.write_text(index)
+        for name, registry in (("mcf only", only_mcf), ("stages attached", stages)):
+            r = reason({"problem_id": "partial-shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                                   "data": partial}}, registry=registry)
+            where = (name, bool(index))
+            assert r["state"] == "ABSTAIN" and r["capability_deficit"] is None and r["result"] is None, where
+            assert r["method_or_composition_selected"] is None and not r["intermediate_receipts"], where
+            assert {"method": "composition:graph_then_allocate", "part": "capacity_network",
+                    "missing_inputs": ["max_increment"]} in r["missing_information"], where
+            assert {"method": "cognition.flow_expansion_mcf", "part": "capacity_network",
+                    "missing_inputs": ["max_increment"]} in r["missing_information"], where
+            why = {m["method"]: m["why"] for m in r["methods_rejected"]}
+            assert "max_increment" in why["composition:graph_then_allocate"], where
+            assert any("max_increment" in a for a in r["abstentions"]), where
+    # a part that carries every input of the compile stage keeps the recipe a fit, and a lifted recipe ranks first
+    full = reason({"problem_id": "full-shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                           "data": {"capacity_network": data}, "execute": False}},
+                  registry=stages)
+    assert full["method_or_composition_selected"] == "composition:graph_then_allocate"
+    assert not any(m["method"] == "composition:graph_then_allocate" for m in full["methods_rejected"])
+    # a plain max-flow part asks the max-flow question: answered by max_flow, the recipe is not a fit for it
+    plain = {"capacity_network": {k: data[k] for k in ("edges", "source", "sink")}}
+    r = reason({"problem_id": "plain-shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                         "data": plain}}, registry=stages)
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.flow_maxflow"
+    assert r["payload_part"] == "capacity_network"
+    assert "missing_information" not in r
+    # it asks nothing of the recipe: with max_flow excluded by the declaration, shaped ends like flat, in a deficit
+    for d in (plain, plain["capacity_network"]):
+        r = reason({"problem_id": "plain-arith", "compile": {"geometry": {"geometry": "arithmetic",
+                                                                          "consequence_class": "read_only"},
+                                                             "data": d}}, registry=stages)
+        assert r["state"] == "CAPABILITY_DEFICIT" and "missing_information" not in r, sorted(d)
+
+
 def test_a_one_part_composition_request_reaches_the_single_method_that_answers_its_part(no_index):
     """Review 2026-10-14: a request in the graph_then_allocate shape ({capacity_network: {...}}) never reached
     flow_expansion_mcf; with mcf attached and the recipe's stages withheld it ended in a deficit saying no method

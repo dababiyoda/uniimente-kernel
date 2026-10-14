@@ -440,6 +440,36 @@ def _rank(row: dict, prefer: list, competence: dict) -> tuple:
             0 if row["kind"] == "operation" else 1, row["method"])
 
 
+NEGATION = {"<=": ">", ">=": "<", "<": ">=", ">": "<=", "==": "!=", "!=": "=="}
+
+
+def invert_claim(claim: dict) -> dict:
+    """Inversion as an executable representation change: 'these constraints imply this property' holds exactly
+    when 'constraints AND NOT property' is unsatisfiable, so the claim becomes a formal feasibility instance.
+    The negation is exact over the reals (strict comparisons), never an epsilon approximation."""
+    if (set(claim) - {"variables", "constraints", "property"} or not isinstance(claim.get("property"), dict)
+            or not isinstance(claim.get("constraints"), list)):
+        raise CognitionError("a claim takes variables, constraints and one linear property")
+    prop = claim["property"]
+    if set(prop) != {"coefficients", "op", "rhs"} or prop["op"] not in NEGATION:
+        raise CognitionError("the property is one linear comparison {coefficients, op, rhs}")
+    return {"variables": claim["variables"],
+            "constraints": list(claim["constraints"]) + [{**prop, "op": NEGATION[prop["op"]]}]}
+
+
+def claim_verdict(output: dict) -> dict:
+    """SAT: a counterexample to the claim (the verifier re-substituted it exactly). UNSAT: the property holds
+    for every assignment the encoded constraints allow (a solver report, conditional on the model)."""
+    status = output.get("solver_status")
+    if status == "SAT":
+        return {"claim": "REFUTED", "counterexample": output["solution"],
+                "basis": "an assignment satisfying every constraint and violating the property"}
+    if status == "UNSAT":
+        return {"claim": "HOLDS_WITHIN_MODEL",
+                "basis": "constraints AND NOT property is unsatisfiable (solver report; conditional on the model)"}
+    return {"claim": "UNDECIDED", "basis": f"solver status {status}"}
+
+
 def _usable(registry, row: dict) -> tuple[bool, str]:
     """Whether the row can run now: an operation's capability must be attached; a composition's stages are
     checked stage by stage on the canonical path."""
@@ -598,6 +628,16 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             receipt["transformations"].append({"operator_id": op.operator_id, "transformation": op.transformation,
                                                "effect_kind": op.effect_kind, "evidence_type": op.evidence_type,
                                                "benchmark": op.benchmark})
+    # 2b. representation operators rewrite the problem itself, so a different intelligence can solve it
+    inverted = None
+    if isinstance(data.get("claim"), dict):
+        inverted = invert_claim(data["claim"])
+        receipt["transformations"].append({
+            "operator_id": "inversion", "effect_kind": "representation",
+            "transformation": "claim 'constraints imply property' -> satisfiability of constraints AND NOT property",
+            "input_digest": digest(data["claim"]), "output_digest": digest(inverted),
+            "evidence_type": "exact_negation", "benchmark": "tests/unit/test_greg_inversion_operator.py"})
+        data = inverted
     # 3. candidates by native geometry and inputs; frozen negative evidence excludes
     rows = candidates(data, g, evidence)
     receipt["methods_considered"] = [r["method"] for r in rows]
@@ -695,6 +735,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     if inner["abstention_state"] != "NONE":
         receipt["abstentions"].append(f"{inner['abstention_state']}: {inner['missing_information']}")
         return finish(inner["abstention_state"])
+    if inverted is not None:
+        return finish("ANSWERED", claim_verdict(inner["output"]))
     if "sensitivity" in plan["evaluate"]:
         receipt["sensitivity"] = _sensitivity_runs(pid, chosen["operation"], data, inner["output"], geometry_hint,
                                                    registry, journal, model_config, receipt)

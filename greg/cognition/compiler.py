@@ -26,7 +26,7 @@ import time
 
 from .contracts import CognitionError, canonical, digest, strict_data
 
-SCHEMA = "greg-competency-compilation/0.1"
+SCHEMA = "greg-competency-compilation/0.2"   # 0.2: selected_receipt (the executed method's own receipt)
 ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE_INDEX = ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json"
 HIGH_CONSEQUENCE = ("external_contact", "financial", "irreversible")
@@ -741,7 +741,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                "resource_use": {"stages": 0}, "translation_checks": [], "verification_method": None,
                "result": None, "confidence_type": None, "requirements": [],
                "authority_state": "EXISTING_KERNEL_GATE_REQUIRED", "authority_created": False,
-               "outcome_link": None, "later_appraisal": None, "state": None, "capability_deficit": None}
+               "outcome_link": None, "later_appraisal": None, "state": None, "capability_deficit": None,
+               "selected_receipt": None}
 
     def finish(state, result=None):
         receipt["state"], receipt["result"] = state, result
@@ -925,6 +926,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                                        "payload": data}},
                        registry=registry, journal=journal, model_config=model_config)
         receipt["intermediate_receipts"] = [inner["receipt_id"]]
+        receipt["selected_receipt"] = inner
         receipt["proof_artifacts"] = [{"type": inner.get("proof_type"),
                                        "evidence_type": (inner.get("proof_artifact") or {}).get("evidence_type")}]
         receipt["verification_method"] = (inner.get("evaluator_result") or {}).get("independence") or \
@@ -961,6 +963,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint,
                     **extra}, registry=registry, journal=journal, model_config=model_config)
     receipt["intermediate_receipts"] = [inner["receipt_id"]]
+    # the executed method's own receipt, whole: settlement credits that method through this compilation
+    # (greg.cognition.settlement), and the compile receipt is the link back from the outcome
+    receipt["selected_receipt"] = inner
     receipt["proof_artifacts"] = [{"type": inner["proof_type"],
                                    "evidence_type": (inner.get("proof_artifact") or {}).get("evidence_type")}]
     receipt["verification_method"] = (inner.get("evaluator_result") or {}).get("independence")

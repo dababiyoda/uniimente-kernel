@@ -44,6 +44,24 @@ def _valid_receipt(value):
     return True
 
 
+COMPILE_SCHEMAS = ("greg-competency-compilation/0.2",)
+
+
+def _compiled(value):
+    """A retained compile receipt whose selected method answered, or None. Its identity digest must hold, it creates
+    no authority, and the method it executed is credited through its own receipt (``selected_receipt``), never
+    through the compiler's label. Compositions and abstentions settle nothing here."""
+    if not isinstance(value, dict) or value.get("schema") not in COMPILE_SCHEMAS:
+        return None
+    copy = dict(value)
+    identity = copy.pop("receipt_id", None)
+    if (identity != digest(copy) or value.get("authority_created") is not False or value.get("state") != "ANSWERED"
+            or not isinstance(value.get("selected_receipt"), dict)
+            or value["selected_receipt"].get("receipt_id") not in value.get("intermediate_receipts", [])):
+        return None
+    return value
+
+
 def measured_outcomes(journal):
     if journal is None:
         return []
@@ -67,6 +85,9 @@ def measured_outcomes(journal):
         if record is None or record.record_type != "receipt":
             continue
         receipt = record.payload.get("result", {}).get("output")
+        compiled = _compiled(receipt)
+        if compiled is not None:
+            receipt = compiled["selected_receipt"]
         if (not _valid_receipt(receipt) or receipt["abstention_state"] != "NONE" or
                 receipt["evaluator_result"].get("verdict") != "STRUCTURALLY_VERIFIED"):
             continue
@@ -79,7 +100,8 @@ def measured_outcomes(journal):
         if (method is None or not method.cognitive_profile or method.version != receipt["method_version"] or
                 producer not in ("cognition.solve", receipt["method"]) or not check or
                 check["sensor"].get("capability") != producer or
-                digest(check["sensor"].get("params", {})) != receipt["input_digest"]):
+                digest(check["sensor"].get("params", {})) != (compiled or receipt)[
+                    "inputs_digest" if compiled else "input_digest"]):
             continue  # an arbitrary adapter's self-labelled receipt is not cognitive competence
         outcome = {**_claim_fields(registration, check, receipt), "receipt": data["receipt"],
                              "cognitive_receipt": receipt["receipt_id"], "method": receipt["method"],
@@ -89,7 +111,9 @@ def measured_outcomes(journal):
                              "cost_usd": receipt["money_cost"], "latency": receipt["latency"],
                              "causal_credit": receipt["causal_credit"],
                              "evidence_tier": "locally reobserved and appraised computation; external outcome unproven",
-                             "authority_created": False}
+                             "authority_created": False,
+                             **({"compile_receipt": compiled["receipt_id"],
+                                 "selected_by": "competency_compiler"} if compiled else {})}
         # Reobservations revise this signed claim; another check/input is not its duplicate.
         observations[_outcome_identity(outcome)] = outcome
     return list(observations.values())
@@ -157,6 +181,24 @@ def reconcile(journal):
             revision = {**prior.payload, "invalidated": True, "supersedes": prior.event_id,
                         "reason": "current appraisal no longer supports competence; history retained"}
             journal.record("cognition.settled", revision, key=[identity, "invalidate", prior.event_id], causal_parent=prior.event_id)
+
+
+def receipt_links(journal) -> dict:
+    """outcome_link and later_appraisal for every settled receipt, as a projection of the canonical journal.
+
+    A receipt is immutable once its identity digest is taken, so its own ``outcome_link`` / ``later_appraisal``
+    fields stay as issued; the link lives here, keyed by the cognitive receipt and, for a compiled request, by the
+    compile receipt too. The latest settlement decides; an invalidated one links its invalidation."""
+    links = {}
+    for event in journal.replay("cognition.settled"):
+        data = event.payload
+        link = {"outcome_link": event.event_id, "later_appraisal": data.get("appraisal_event"),
+                "correct": data.get("correct"), "invalidated": bool(data.get("invalidated")),
+                "method": data.get("method"), "method_version": data.get("method_version")}
+        for key in (data.get("cognitive_receipt"), data.get("compile_receipt")):
+            if key:
+                links[key] = link
+    return links
 
 
 REALIZATION_SOURCES = ("sensor_observation", "external_record", "founder_reported")

@@ -63,8 +63,9 @@ def test_the_mind_prices_the_test_through_the_one_cognition_path():
     registry.set_state("cognition.information", "ATTACHED")    # evaluation-only view; the body is unchanged
     attached = gravity.step(situation(p), registry=registry)
     voi = attached["mind"]["value_of_information"]
-    assert voi["state"] == "ANSWERED" and voi["method"] == "cognition.information"
-    assert voi["recomputation"]["consistent"] is True
+    # the pilot's consequence class is high, so the canonical path returns a conditional result, never ANSWERED
+    assert voi["state"] == "WORLD_UNVERIFIED" and voi["method"] == "cognition.information"
+    assert voi["recomputation"]["consistent"] is True and voi["conditional"] is True
 
 
 def test_dormant_goals_wake_only_as_a_founder_proposal(tmp_path):

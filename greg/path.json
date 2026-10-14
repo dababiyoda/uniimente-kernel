@@ -1280,7 +1280,7 @@
           "id": "P9",
           "title": "Constraint-release discovery",
           "maps_to": "N10",
-          "status": "HORIZON; precursor measured 2026-10-13: operator-pipeline recombination with retain-or-extinct validation (develop_constraint_release) is DEFAULT_FOR_GEOMETRY on held-out scheduling instances by the admission rule but does not beat random restart (8-13, not significant); the exit (an unlisted organization that beats the baseline and replicates) is not met",
+          "status": "HORIZON; precursor measured 2026-10-13: operator-pipeline recombination with retain-or-extinct validation (develop_constraint_release) is DEFAULT_FOR_GEOMETRY on held-out scheduling instances by the admission rule but does not beat random restart (8-13, not significant); re-measured 2026-10-14 on fresh seeds at version 1.1.1: random restart is significantly better (5-15, p_worse 0.021), status NICHE_CAPABILITY; the exit (an unlisted organization that beats the baseline and replicates) is not met",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P6 and P8",
           "budget_ceiling": "research budget set by Alfonso",
@@ -1289,14 +1289,15 @@
           "smallest_next_experiment": "one alternative communication topology for the composition, replicated twice",
           "exit": "a previously unlisted organization beats the baseline and survives independent replication",
           "evidence_refs": [
-            "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json"
+            "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json",
+            "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json"
           ]
         },
         {
           "id": "P10",
           "title": "Functional morphogenesis",
           "maps_to": "N2",
-          "status": "HORIZON; partial precursor only: a lying engine is quarantined and the function restored by a different qualified package (scripted candidate set, not unscripted recovery); precursor measured 2026-10-13: sequenced local-gradient repair (develop_repair) is NICHE_CAPABILITY: it beats no repair 30-0 and is 12-18 against the centralized replanner (not significant), the baseline the exit requires beating: it loses 0-15 with a reliable controller and wins 12-3 with an unreliable one (the replanner gave 5 wrong answers, repair 0)",
+          "status": "HORIZON; partial precursor only: a lying engine is quarantined and the function restored by a different qualified package (scripted candidate set, not unscripted recovery); precursor measured 2026-10-13: sequenced local-gradient repair (develop_repair) is NICHE_CAPABILITY: it beats no repair 30-0 and is 12-18 against the centralized replanner (not significant), the baseline the exit requires beating: it loses 0-15 with a reliable controller and wins 12-3 with an unreliable one (the replanner gave 5 wrong answers, repair 0); re-measured 2026-10-14 on fresh seeds at version 1.1.1: NICHE_CAPABILITY, 7-23 against the replanner (significant), 0-15 with a reliable controller and 7-8 with an unreliable one, so the v1 unreliable-controller win did not replicate",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P7, P9 and developmental research (Track B)",
           "budget_ceiling": "research budget set by Alfonso",
@@ -1363,7 +1364,7 @@
         "intent_ref": "docs/intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json",
         "previous": "Verified Cross-Geometry Routing Gain"
       },
-      "current": "VPL = 3 of 4 held-out families in P6 v2 (F2R, F3, F4 lift; natural M4 family F5 not significant); across v1 and v2 four constructed geometries lift. P4 decisive retest: REGRESSION (timing noise, identical orders), conditional routing demoted, shadow default. P8 cycle 1: REJECT (overfit caught). Competency Compiler, Lawful Leverage Foundry and Goal Gravity integrated and unit-tested; genome library admission pending. N1/VEPMC remains primary.",
+      "current": "VPL = 3 of 4 held-out families in P6 v2 (F2R, F3, F4 lift; natural M4 family F5 not significant); P6 v3 (2026-10-14): the natural call-centre family F6 (real bank arrivals, forecast quantile -> Erlang C) lifts, 74-16 against the best constituent, 6.1% cheaper, so natural families are 1 of 2; the lift is composition, not routing (routed = static on all 90 days), and the weekly-mean practitioner pipeline is not beaten on day count (40-50). P4 decisive retest: REGRESSION (timing noise, identical orders), conditional routing demoted, shadow default. P8 cycles 1 and 2: REJECT. Genome admission v1 (31 genomes) and v2 (10 re-measured on fresh seeds; forecast_quantile's seeds redrew P8 series, recorded): 21 admitted of 32, basal_bayes_filter stale at 1.0.1. Competency Compiler, Lawful Leverage Foundry and Goal Gravity integrated; independent review defects fixed. No genome attached. N1/VEPMC remains primary.",
       "nodes": [
         {
           "id": "P0",
@@ -1739,7 +1740,7 @@
         "sealed developmental laboratory"
       ],
       "single_bottleneck_metric": "scoped Unscripted Functional Recovery Rate",
-      "nearest_falsifiable_experiment": "admission of develop_repair on held-out seeds 1000-1029, split by reliable and unreliable controller sub-region",
+      "nearest_falsifiable_experiment": "measured twice (v1 seeds 1000-1029: 12-3 under an unreliable controller; v2 seeds 1100-1129: 7-8, not replicated); next: a predeclared unreliable-controller-only admission with a larger held-out set",
       "buildability_status": "EXPERIMENTAL_NOW",
       "risk": "claiming biological equivalence; repair loops that mask real failures",
       "authority_implications": "none: repair restores function inside existing authority and never widens it",

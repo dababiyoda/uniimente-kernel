@@ -138,7 +138,9 @@ def test_every_directive_mental_model_is_an_operator_or_names_its_mechanism():
 def test_sensitivity_analysis_actually_reruns_the_method(registry):
     r = compile_(registry, {"geometry": "optimization", "graph_structure": True, "consequence_class": "financial",
                             "deterministic_or_stochastic": "stochastic"}, maxflow_instance(3)[0])
-    assert r["state"] == "ANSWERED"
+    # a financial geometry gets the canonical path's conditional result, never ANSWERED (review finding 7: the
+    # compiled path used to drop the consequence class); the answer is kept and still evaluated
+    assert r["state"] == "WORLD_UNVERIFIED" and isinstance(r["result"], dict)
     sens = r["sensitivity"]
     assert sens["inputs"] and len(r["intermediate_receipts"]) == 1 + len(sens["inputs"])
     for v in sens["inputs"].values():
@@ -199,6 +201,41 @@ def test_measured_subregion_evidence_reaches_the_receipt_and_names_an_acquisitio
     assert favoured["subregion_evidence"]["verdict"] == "FAVOURED" and "acquisition_candidates" not in favoured
 
 
+def test_stale_subregion_evidence_never_steers_and_stale_negative_evidence_persists(registry, no_index):
+    """Review finding 10: a version bump left old subregion verdicts ordering fits, adding dissent and naming
+    acquisitions, and promoted a stale EXPERIMENTAL status to UNEVALUATED (ranked higher)."""
+    from greg.cognition.genomes import library
+    item = library.executables()["develop_repair"]
+    table = {"reliable_controller": {"n": 15, "wins": 0, "losses": 15, "ties": 0, "p_better": 1.0, "p_worse": 3.1e-05}}
+    no_index.write_text(json.dumps({"genomes": {"develop_repair": {
+        "status": "NICHE_CAPABILITY", "version": "0.0.1", "evidence": "results.json#develop_repair",
+        "competitor": item.genome.competitor, "subregions_vs_competitor": table}}, "recipes": {}, "routing": {}}))
+    registry.set_state("cognition.develop_repair", "ATTACHED")
+    r = compile_(registry, {"geometry": item.genome.epistemic_class}, item.instance(0)[0], execute=False)
+    assert r["selection_level"] == "unevaluated_at_current_version"
+    assert "subregion_evidence" not in r and "acquisition_candidates" not in r
+    assert not any("lost 15-0" in d for d in r["dissent"])
+    rows = compiler.candidates(item.instance(0)[0], compiler.CompetencyGeometry.parse(
+        {"geometry": item.genome.epistemic_class}), {"genomes": {"develop_repair": {
+            "status": "EXPERIMENTAL", "version": "0.0.1"}}, "recipes": {}, "routing": {}})
+    assert {r["status"] for r in rows if r["method"] == "cognition.develop_repair"} == {"EXPERIMENTAL"}
+
+
+def test_a_superseded_fit_names_the_deployable_mechanism_that_superseded_it(registry, no_index):
+    """Admission v2: basal_pid was superseded 0-30 by the simulation-optimised PI. A request only it fits is a
+    capability deficit, and the receipt names that mechanism for Genesis instead of leaving the deficit blank."""
+    from greg.cognition.genomes import library
+    item = library.executables()["basal_pid"]
+    no_index.write_text(json.dumps({"genomes": {"basal_pid": {
+        "status": "SUPERSEDED", "version": item.genome.version, "evidence": "v2/results.json#genomes.basal_pid"}},
+        "recipes": {}, "routing": {}}))
+    r = compile_(registry, {"geometry": item.genome.epistemic_class}, item.instance(0)[0], execute=False)
+    assert r["state"] == "CAPABILITY_DEFICIT"
+    [candidate] = [c for c in r["acquisition_candidates"] if c["supersedes"] == "cognition.basal_pid"]
+    assert candidate["mechanism"] == item.genome.competitor and candidate["authority"].startswith("none")
+    assert candidate["evidence"] == "v2/results.json#genomes.basal_pid"
+
+
 def test_an_oracle_competitor_is_never_proposed_for_acquisition(registry, no_index):
     from greg.cognition.genomes import library
     item = library.executables()["collective_market"]
@@ -236,9 +273,25 @@ def test_a_withheld_best_fit_prepares_one_screened_founder_attach_ask(registry, 
     assert asks.screen(ask) == []
 
 
-def test_an_attached_fit_serves_while_a_better_withheld_one_is_asked_for(registry, no_index):
-    # a payload both the max-flow genome and the graph -> allocate recipe fit: with the admitted genome
-    # withheld, the usable composition serves the request and the attach ask names the better fit
+def test_a_composition_with_a_withheld_stage_never_displaces_an_attached_operation(registry, no_index):
+    """Review finding 12: graph -> allocate ranked first on its lift and was 'usable' although its compile stage
+    was withheld, so the attached max-flow genome never served."""
+    both = {**R.f3(3)["payload"], **maxflow_instance(3)[0]}
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "NICHE_CAPABILITY"}},
+                                    "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}},
+                                    "routing": {}}))
+    geometry = {"geometry": "optimization", "graph_structure": True}
+    registry.set_state("cognition.flow_capacity_plan", "VERIFIED")             # a stage withheld
+    r = compile_(registry, geometry, both, execute=False)
+    assert r["state"] == "PLANNED" and r["method_or_composition_selected"] == "cognition.flow_maxflow"
+    registry.set_state("cognition.flow_capacity_plan", "ATTACHED")
+    served = compile_(registry, geometry, both, execute=False)
+    assert served["method_or_composition_selected"] == "composition:graph_then_allocate"
+
+
+def test_a_withheld_best_fit_is_asked_for_on_the_attach_contract(registry, no_index):
+    from greg import asks
+    from greg.console import _attachable
     both = {**R.f3(3)["payload"], **maxflow_instance(3)[0]}
     no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"}},
                                     "recipes": {}, "routing": {}}))
@@ -248,8 +301,37 @@ def test_an_attached_fit_serves_while_a_better_withheld_one_is_asked_for(registr
     assert "withheld_best_fit" not in attached and "founder_attach_ask" not in attached
     registry.set_state("cognition.flow_maxflow", "VERIFIED")                   # withhold the best fit
     r = compile_(registry, geometry, both, execute=False)
-    assert r["state"] == "PLANNED"
-    assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
+    # the recipe's cross-check stage is the withheld max-flow genome itself, so nothing usable remains
+    assert r["state"] == "CAPABILITY_DEFICIT"
     assert r["withheld_best_fit"] == {"method": "cognition.flow_maxflow", "state": "state VERIFIED",
-                                      "status": "DEFAULT_FOR_GEOMETRY", "served_by": "composition:graph_then_allocate"}
-    assert r["founder_attach_ask"]["authority_requested"]["attach"] == "cognition.flow_maxflow"
+                                      "status": "DEFAULT_FOR_GEOMETRY", "served_by": None}
+    ask = r["founder_attach_ask"]
+    assert ask["kind"] == "CAPABILITY_ATTACH" and ask["authority_requested"]["attach"] == "cognition.flow_maxflow"
+    assert ask["evidence"]["registered"] == [{"capability_id": "cognition.flow_maxflow", "state": "VERIFIED"}]
+    assert [c["capability_id"] for c in _attachable(ask)] == ["cognition.flow_maxflow"]   # the Attach button exists
+    assert asks.surface(ask)["answer_effect"].startswith("Approve or Reject only records")
+
+
+@pytest.mark.parametrize("state", ["QUARANTINED", "DETACHED"])
+def test_no_attach_ask_for_a_capability_the_founder_cannot_attach(registry, no_index, state):
+    """Review finding 11: quarantined and detached capabilities were asked about as if attachable."""
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"}},
+                                    "recipes": {}, "routing": {}}))
+    registry.set_state("cognition.flow_maxflow", state)
+    r = compile_(registry, {"geometry": "optimization", "graph_structure": True}, maxflow_instance(3)[0],
+                 execute=False)
+    assert r["state"] == "CAPABILITY_DEFICIT" and r["founder_attach_ask"]["state"] == "NOT_PREPARED"
+
+
+def test_an_urgent_sounding_problem_id_never_aborts_routing(registry, no_index):
+    """Review finding 2: 'deadline' in the caller's problem id failed the ask screen and crashed the compile."""
+    from greg import asks
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"}},
+                                    "recipes": {}, "routing": {}}))
+    registry.set_state("cognition.flow_maxflow", "VERIFIED")
+    r = reason({"problem_id": "deadline-urgent-allocation-7", "compile": {
+        "geometry": {"geometry": "optimization", "graph_structure": True}, "data": maxflow_instance(3)[0],
+        "execute": False}}, registry=registry)
+    assert r["state"] == "CAPABILITY_DEFICIT"
+    assert r["founder_attach_ask"]["kind"] == "CAPABILITY_ATTACH"
+    assert asks.screen(r["founder_attach_ask"], quoted=("deadline-urgent-allocation-7",)) == []

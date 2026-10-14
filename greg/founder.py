@@ -50,6 +50,7 @@ COMMAND_KINDS = (
     "DEVICE_ENROLL",      # delegate a narrow, expiring subset of kinds to a phone/remote device key
     "DEVICE_REVOKE",
     "ANCHOR_CONFIGURE",   # enable/disable RFC 3161 anchoring of the ledger head at a pinned TSA
+    "REALIZATION",        # bind observed values to one retained forecast receipt: evidence only, no consequence
 )
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only

@@ -6,7 +6,8 @@ future routing (directive 2026-10-07, section 31 item 13):
 * recipes   P6 composition-lift verdicts per recipe; the latest frozen run for a family wins. A recipe
             without lift names the constituent it lost to, and the compiler prefers that constituent.
 * routing   P4 conditional-competence verdicts and their predeclared consequence.
-* genomes   IntelligenceGenome admission statuses from frozen held-out admission runs.
+* genomes   IntelligenceGenome admission statuses from frozen held-out admission runs; the latest run's
+            status decides, and ``history`` keeps every run's status and version.
 
 Only frozen, committed result files are read; a missing source is listed, never invented. Run:
     PYTHONPATH=. python scripts/build_mind_evidence_index.py
@@ -26,6 +27,7 @@ P6_RUNS = (
     ("docs/evidence/greg-composition-lift/2026-10-08/results-v2.json",
      {"F2R": "identify_then_optimize", "F3": "graph_then_allocate", "F4": "bayes_then_voi",
       "F5": "forecast_then_allocate"}),
+    ("docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json", {"F6": "forecast_then_staff"}),
 )
 P4_RUNS = ("docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
            "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json")
@@ -80,9 +82,13 @@ def build() -> dict:
         # The admission harness (greg/cognition/genomes/admission.py) writes one entry per family under "genomes".
         for family, row in (data.get("genomes") or {}).items():
             if row.get("status"):
+                # every frozen run's status, oldest first: a status that changed between independent held-out
+                # runs is a sample near a rule boundary, and routing and the founder should see that
+                history = (index["genomes"].get(family) or {}).get("history", []) + [
+                    {"run": path.parent.name, "status": row["status"], "version": row.get("version")}]
                 # the version the status was measured at: a later code change needs re-admission
                 index["genomes"][family] = {"status": row["status"], "evidence": f"{rel}#genomes.{family}",
-                                            "version": row.get("version")}
+                                            "version": row.get("version"), "history": history}
                 subs = {name: {"n": sub["n"], **{k: sub["vs_competitor"][k]
                                                  for k in ("wins", "losses", "ties", "p_better", "p_worse")}}
                         for name, sub in (row.get("subregions") or {}).items()}

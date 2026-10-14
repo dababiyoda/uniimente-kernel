@@ -30,6 +30,26 @@ Progress 2026-10-13 (measured, frozen, negative results kept):
 - **Independent review (2026-10-13):** five lenses by separate agents found verifier, Gravity, Foundry, resilience, community-evidence and cortex defects, each reproduced and fixed with a regression test that fails on the old code (`4d99fb0`, `ed0f00b`, `9a799ed`). The evidence lens confirmed the admission evidence and corrected its prose (erratum in the admission README).
 - **Next gate:** P6 v3, VPL re-measured with the admitted genomes on a new natural family.
 
+Progress 2026-10-14 (measured, frozen, negative results kept):
+
+- **P6 v3** ([evidence](evidence/greg-composition-lift/2026-10-14-v3/README.md)): the natural call-centre family F6 (real bank arrivals, forecast quantile -> Erlang C staffing) **lifts**: 74-16 against the best constituent, 6.1% cheaper, no infeasible plan. Natural families are now 1 of 2.
+  - The lift is composition, not routing: the router chose the static recipe on all 90 days.
+  - Composition does not beat the weekly-mean practitioner pipeline on day count (40-50).
+- **Genome admission v2** ([evidence](evidence/greg-genome-admission/2026-10-14-v2/README.md)): ten families re-measured on fresh seeds 1100-1129. Six replicated.
+  - `basal_pid` is SUPERSEDED (0-30); `develop_constraint_release` fell to NICHE (5-15 against random restart).
+  - New: `basal_bayes_filter` is DEFAULT (13-1-2 under high noise).
+  - `forecast_quantile`'s held-out series had been used by P8. The seeds were fresh, the data were not; this is recorded in an erratum, and the harness now checks data identity.
+  - 21 of 32 genomes are admitted. None is attached.
+- **Independent review of `bb65d6f..8e37cd8`:** 15 reproduced defects, all fixed with regression tests.
+  - High severity: any signed founder answer to any request decided a human-judgment question. Human judgment is now bound to its own recorded question, and only the founder's signed answer to that request decides.
+  - The "miscalibrated" forecast claim was a multiple-testing artefact; it is corrected.
+- **Product delta:** forecast calibration is live through a founder-signed `greg realize`, and `greg cognition calibration` reports it.
+- **Next gate:**
+  - re-admit `basal_bayes_filter` 1.0.1;
+  - a composition family that uses an admitted Layer 1 genome;
+  - P8 cycle 3;
+  - new data before any further forecast admission.
+
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 
 `INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT` ([record](intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json), [verbatim source](intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md)): founder review of PR #155. P4 learned routing and P6 typed composition are Layer 5 substrate, not the Polyintelligence Mind; all five layers (basal, collective, solver, developmental, meta) remain obligations. Metric: held-out problem families where geometry routing or composition beats the strongest single available intelligence, net of cost/latency, with no added false answers or unauthorized effects; 0 means "a sophisticated router". Sequence: P6 cognitive composition lift → P4 conditional competence memory (hierarchical fallback) → P8 protected evolutionary cognition → IntelligenceGenome library expansion, each family admitted only when it beats simpler baselines on its native geometry. State: active. VPL: 0. Authority delta: none.

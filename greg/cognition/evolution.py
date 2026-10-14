@@ -285,11 +285,20 @@ def sign_test(wins: int, losses: int) -> float:
 
 
 # ------------------------------------------------------------------ the forecasting cycle
-def forecasting_split(seed: int = 808) -> tuple[dict, dict, list[str]]:
-    """M4 weekly series reserved for P8: not Micro/Industry (P6 F5) and not any admission instance."""
+# Seeds whose series each completed forecasting cycle excluded, as that cycle ran (its evidence is pinned by its
+# source commit). Replaying a cycle's split names the series it used, so a later admission can refuse them.
+COMPLETED_FORECAST_CYCLES = {"2026-10-08/cycle-forecast-1": {"seed": 808, "excluded_seeds": (*range(0, 10),
+                                                                                              *range(1000, 1030))}}
+
+
+def forecasting_split(seed: int = 808, excluded_seeds=None) -> tuple[dict, dict, list[str]]:
+    """M4 weekly series reserved for P8: not Micro/Industry (P6 F5) and not any admission instance: the
+    development seeds and the held-out seeds of every admission freeze (compared as series, not seed numbers)."""
     from .genomes import admission, forecasting
     pool = forecasting.admission_series()
-    used = {forecasting.instance(s)[0]["series_id"] for s in (*admission.DEV_SEEDS, *admission.HELDOUT_SEEDS)}
+    if excluded_seeds is None:
+        excluded_seeds = (*admission.DEV_SEEDS, *admission.HELDOUT_SEEDS, *sorted(admission.spent_seeds()))
+    used = {forecasting.instance_key(s) for s in excluded_seeds}
     free = sorted((s for s in pool if s["id"] not in used), key=lambda s: int(s["id"][1:]))
     random.Random(seed).shuffle(free)
     half = len(free) // 2
@@ -298,6 +307,17 @@ def forecasting_split(seed: int = 808) -> tuple[dict, dict, list[str]]:
         return {"data": {"history": s["train"], "horizon": 13, "levels": list(forecasting.LEVELS),
                          "series_id": s["id"]}, "truth": {"actual": s["test"]}, "category": s["category"]}
     return ({s["id"]: item(s) for s in free[:half]}, {s["id"]: item(s) for s in free[half:]}, sorted(used))
+
+
+def used_instance_keys(family: str) -> set[str]:
+    """Data identities a completed P8 cycle trained or was evaluated on, for genomes that sample a finite pool."""
+    if family != "forecast_quantile":
+        return set()
+    used = set()
+    for cycle in COMPLETED_FORECAST_CYCLES.values():
+        train, held, _ = forecasting_split(cycle["seed"], cycle["excluded_seeds"])
+        used |= set(train) | set(held)
+    return used
 
 
 def _stress(items: dict) -> dict:

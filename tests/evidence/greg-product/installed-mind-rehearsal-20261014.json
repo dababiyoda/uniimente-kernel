@@ -171,5 +171,39 @@
  "ledger": {
   "events": 229,
   "sha256": "92abf501e55d047e3686d2b67a25e4c0bcfd57e07d1e4cac1fbd7649b31e777b"
+ },
+ "N3_business_case": {
+  "mission": "m:case-lease-review-01 (business_case template, signed in the console; fictitious buyer 'Acme Property LLC', 250.00 USD)",
+  "before_fix_on_1ce0323": {
+   "observed": "HUMAN_WORK ask human.send_offer opened at 04:50:40Z with next_observe_at 05:50:40Z; acceptance.txt was written into the case folder seconds later and the body had not observed it after 15 minutes of driver time (no withdrawal, no next ask)",
+   "cause": "a mission blocked on human work re-observed only at its cadence (3600 s), so each of the four human steps could cost up to an hour"
+  },
+  "fix": "924bede: MissionEngine._deliverable_arrived stats (metadata only) the fs.read paths the signed mission declares for the waited-on checks and declined_if; a newer file triggers the governed observation at once, and an early withdrawal reschedules the next step to now",
+  "after_fix_on_924bede": {
+   "body_restarted_on_new_code": "05:20:32Z",
+   "remaining_steps_driven": [
+    "statement.csv (collect_payment)",
+    "delivery.txt (deliver)",
+    "kill -9 of the body while it waited on confirm_outcome",
+    "outcome.txt (confirm_outcome)"
+   ],
+   "wall_time_to_achieved": "1 min 47 s for the three remaining steps plus the kill and automatic restart",
+   "founder_acceptance": "console /accept on mission.achieved d9dbc2a9-514b-5633-807a-2008ef9d474c -> 303",
+   "greg.path.business_loop_closed": {
+    "met": true,
+    "value": 1,
+    "cases": [
+     {
+      "mission_id": "m:case-lease-review-01",
+      "human_steps": 4
+     }
+    ]
+   }
+  },
+  "negative_evidence": [
+   "the first measurement script opened the running body's ledger with Body(...).open() and got WriterConflict; the read-only greg.body.observe reader is the correct tool, and the accept was posted only after that",
+   "greg path still reports N2 active: path nodes are sequential and this rehearsal did not kill -9 during an N2 genesis mission, so N3 is measured directly, not claimed as a node"
+  ],
+  "reality": "LOCAL-REAL rehearsal, test key, fictitious buyer, no money moved. Never counts as N3 for Alfonso and never as VEPMC."
  }
 }

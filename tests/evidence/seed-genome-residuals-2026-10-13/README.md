@@ -142,6 +142,15 @@ three re-runs ran. Timings come from this container and vary by machine; the tes
   - at `5362d13`, after the second: 2849 passed, 6 failed, 16 skipped.
   - at `86096ac`, with §12: 2886 passed, 5 failed, 16 skipped.
   - **The failures:** five are the environmental Landlock tests named in `full-suite.log`. The sixth, in `test_greg_competency_compiler.py`, fails identically at the pristine frontier `d5bb5cb` and fails the frontier's own CI there. The frontier fixed it by `5287303`, which is merged here.
+- **Cold first solve (2026-10-14, `cold-start.log`):** two thinking-budget tests failed on the first run after a
+  container restore and passed on rerun. Each inner run's latency limit is a real solver deadline, while the
+  tests' budget clock is fake. With a 5 s or 10 s limit the solver got 2.25 s or 4.5 s, and the first solve
+  after the restore did not finish in time; the cortex correctly reported UNKNOWN (TIMEOUT).
+  - **Reproduction:** a temporary 2.5 s or 5 s delay on the first worker start reproduces both failure signatures
+    on the old tests. The hardened tests give every inner run a real limit of 20 s or more and pass under both.
+  - **Not measured:** the restore-time slowness itself; it was gone when looked for.
+  - **Possibly related:** the unexplained focused run disclosed on #161 also came right after a merge. Its output
+    was not captured, so it stays unexplained.
 - **Frozen inputs:** §9 and §5 changed no pinned file. §12 changes `cortex.py` and `compiler.py`, which the P6
   freezes hash as part of the `greg/cognition` closure. No recorded result changes: the #158 lineage's P6 v1 to
   v3 ran at their freeze commits, and its P6 v4 (frozen at `14ec7a6`, held-out arm not yet run at the time of

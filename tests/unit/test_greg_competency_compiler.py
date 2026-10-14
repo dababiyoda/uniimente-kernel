@@ -280,10 +280,12 @@ def test_a_composition_with_a_withheld_stage_never_displaces_an_attached_operati
     no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "NICHE_CAPABILITY"}},
                                     "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}},
                                     "routing": {}}))
-    geometry = {"geometry": "optimization", "graph_structure": True}
+    geometry = {"geometry": "optimization"}           # no graph_structure operator: the recipe's lift ranks it first
     registry.set_state("cognition.flow_capacity_plan", "VERIFIED")             # a stage withheld
     r = compile_(registry, geometry, both, execute=False)
     assert r["state"] == "PLANNED" and r["method_or_composition_selected"] == "cognition.flow_maxflow"
+    assert "compile_capacity_expansion" in r["withheld_best_fit"]["state"]
+    assert r["founder_attach_ask"]["state"] == "NOT_PREPARED"                 # a recipe is not attachable
     registry.set_state("cognition.flow_capacity_plan", "ATTACHED")
     served = compile_(registry, geometry, both, execute=False)
     assert served["method_or_composition_selected"] == "composition:graph_then_allocate"
@@ -335,3 +337,60 @@ def test_an_urgent_sounding_problem_id_never_aborts_routing(registry, no_index):
     assert r["state"] == "CAPABILITY_DEFICIT"
     assert r["founder_attach_ask"]["kind"] == "CAPABILITY_ATTACH"
     assert asks.screen(r["founder_attach_ask"], quoted=("deadline-urgent-allocation-7",)) == []
+
+
+def test_a_formal_model_reaches_the_cortex_formal_organ_through_the_canonical_problem_path(registry):
+    """Audit 2026-10-14: no compile request could reach the Z3 / CP-SAT, Fermi or causal organs; a formal model
+    produced zero candidates. The cortex's own route policy now names the organ."""
+    from cortex.examples import STAFFING
+    r = compile_(registry, {"geometry": "optimization"}, STAFFING["payload"])
+    assert r["method_or_composition_selected"] == "cognition.cortex.formal.z3"
+    assert r["state"] in ("ANSWERED", "WORLD_UNVERIFIED") and r["intermediate_receipts"]
+    assert r["consequence_class"] == "undeclared"               # never asserted read_only when nobody declared it
+    high = compile_(registry, {"geometry": "optimization", "consequence_class": "financial"}, STAFFING["payload"])
+    assert high["state"] == "FORMALIZATION_INCOMPLETE"
+
+
+def test_the_consequence_vector_is_parsed_strictly_and_raises_the_proof_requirement(registry):
+    from greg.cognition.contracts import CognitionError
+    data = maxflow_instance(3)[0]
+    assert compile_(registry, {"geometry": "optimization"}, data, consequence={"discrimination": 0.2})["state"] == \
+        "PROHIBITED"
+    harmed = compile_(registry, {"geometry": "optimization"}, data, consequence={"financial": 0.8})
+    assert harmed["state"] == "WORLD_UNVERIFIED" and isinstance(harmed["result"], dict)
+    with pytest.raises(CognitionError, match="ConsequenceVector"):
+        compile_(registry, {"geometry": "optimization"}, data, consequence={"high": True})
+
+
+def test_measured_held_out_latency_breaks_ties_within_one_status():
+    fast = {"method": "cognition.a", "operation": "x", "kind": "operation", "status": "DEFAULT_FOR_GEOMETRY",
+            "median_seconds": 0.001}
+    slow = {**fast, "method": "cognition.b", "median_seconds": 0.5}
+    unmeasured = {k: v for k, v in {**fast, "method": "cognition.c"}.items() if k != "median_seconds"}
+    ranked = sorted([unmeasured, slow, fast], key=lambda r: compiler._rank(r, [], {}))
+    assert [r["method"] for r in ranked] == ["cognition.a", "cognition.b", "cognition.c"]
+    niche = {**fast, "method": "cognition.d", "status": "NICHE_CAPABILITY", "median_seconds": 0.0001}
+    assert sorted([niche, slow], key=lambda r: compiler._rank(r, [], {}))[0]["method"] == "cognition.b"
+
+
+def test_on_the_body_a_withheld_best_fit_is_asked_for_once_per_method_and_the_founder_can_attach_it(tmp_path,
+                                                                                                    no_index):
+    """Audit 2026-10-14: the compiler prepared attach asks that nothing recorded. With a canonical journal it
+    records one CAPABILITY_ATTACH ask per method and measured version, however many requests need it."""
+    from greg.body import Body
+    from greg.console import _attachable
+    from tests.greg_fixtures import make_body
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY", "version": "x"}},
+                                    "recipes": {}, "routing": {}}))
+    home, _, _, _ = make_body(tmp_path)
+    with Body(home) as b:
+        registry = registry_view(b.journal)
+        assert registry.state["cognition.flow_maxflow"] == "VERIFIED"           # withheld on a fresh body
+        for pid in ("first", "second"):
+            r = reason({"problem_id": pid, "compile": {"geometry": {"geometry": "optimization"},
+                                                       "data": maxflow_instance(3)[0], "execute": False}},
+                       registry=registry, journal=b.journal)
+            assert r["founder_attach_ask"]["state"] == "RECORDED"
+        requested = [e.payload for e in b.journal.replay("decision.requested")]
+    assert len(requested) == 1 and requested[0]["kind"] == "CAPABILITY_ATTACH"
+    assert [c["capability_id"] for c in _attachable(requested[0])] == ["cognition.flow_maxflow"]

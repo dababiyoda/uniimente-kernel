@@ -28,6 +28,7 @@ P6_RUNS = (
      {"F2R": "identify_then_optimize", "F3": "graph_then_allocate", "F4": "bayes_then_voi",
       "F5": "forecast_then_allocate"}),
     ("docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json", {"F6": "forecast_then_staff"}),
+    ("docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json", {"F7": "graph_then_allocate"}),
 )
 P4_RUNS = ("docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
            "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json")
@@ -55,11 +56,15 @@ def build() -> dict:
             if row is None:
                 continue
             lift = bool(row["lift"])
+            prior = index["recipes"].get(recipe)
             index["recipes"][recipe] = {
                 "lift": lift, "status": "VPL_LIFT" if lift else "NO_LIFT", "family": family,
                 "prefer": None if lift else row["best_constituent"],
                 "wins": row["routed_wins"], "losses": row["routed_losses"],
                 "p_one_sided": row["sign_test_p_one_sided"], "evidence": f"{rel}#summary.{family}"}
+            if prior:
+                # the latest family measured for a recipe decides its routing; earlier verdicts stay visible
+                index["recipes"][recipe]["history"] = [*prior.pop("history", []), prior]
     for rel in P4_RUNS:
         path = ROOT / rel
         if not path.exists():

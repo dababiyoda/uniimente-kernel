@@ -45,3 +45,17 @@ def test_a_later_run_decides_and_every_run_stays_in_the_history(tmp_path, monkey
     assert (row["status"], row["version"]) == ("NICHE_CAPABILITY", "1.0.1")
     assert [(h["run"], h["status"], h["version"]) for h in row["history"]] == [
         ("2026-01-01-v1", "DEFAULT_FOR_GEOMETRY", "1.0.0"), ("2026-01-02-v2", "NICHE_CAPABILITY", "1.0.1")]
+
+
+def test_a_later_family_decides_a_recipe_and_earlier_verdicts_stay_in_its_history(tmp_path, monkeypatch):
+    runs = (("a.json", {"F3": "graph_then_allocate"}, True, 11), ("b.json", {"F7": "graph_then_allocate"}, False, 3))
+    for name, families, lift, wins in runs:
+        family = next(iter(families))
+        (tmp_path / name).write_text(json.dumps({"source_commit": name, "summary": {family: {
+            "lift": lift, "best_constituent": "greedy", "routed_wins": wins, "routed_losses": 0,
+            "sign_test_p_one_sided": 0.01}}}))
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(B, "P6_RUNS", tuple((name, families) for name, families, _, _ in runs))
+    row = B.build()["recipes"]["graph_then_allocate"]
+    assert (row["family"], row["status"], row["prefer"]) == ("F7", "NO_LIFT", "greedy")
+    assert [(h["family"], h["status"], h["wins"]) for h in row["history"]] == [("F3", "VPL_LIFT", 11)]

@@ -1159,18 +1159,42 @@
    "wins": 74
   },
   "graph_then_allocate": {
-   "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F3",
-   "family": "F3",
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json#summary.F7",
+   "family": "F7",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F3",
+     "family": "F3",
+     "lift": true,
+     "losses": 0,
+     "p_one_sided": 0.000488,
+     "prefer": null,
+     "status": "VPL_LIFT",
+     "wins": 11
+    }
+   ],
    "lift": true,
    "losses": 0,
-   "p_one_sided": 0.000488,
+   "p_one_sided": 0.0,
    "prefer": null,
    "status": "VPL_LIFT",
-   "wins": 11
+   "wins": 92
   },
   "identify_then_optimize": {
    "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F2R",
    "family": "F2R",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-composition-lift/2026-10-07/results.json#summary.F2",
+     "family": "F2",
+     "lift": false,
+     "losses": 0,
+     "p_one_sided": 0.0625,
+     "prefer": "optimize_on_association",
+     "status": "NO_LIFT",
+     "wins": 4
+    }
+   ],
    "lift": true,
    "losses": 4,
    "p_one_sided": 0.024521,
@@ -1204,6 +1228,11 @@
    "path": "docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json",
    "sha256": "sha256:35aa07f76b897ae3fcbbb2de9d0498cef5da779aa3c0a3e7e9e9e57628d6305a",
    "source_commit": "5acda2c4e226d34a2d305a12c9c182a2ea45d79a"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json",
+   "sha256": "sha256:43e7469c3eb2230439979b7ef1570d29658151aa86449a60c4640240c31e545c",
+   "source_commit": "14ec7a697b827978a67f42db56936d05e5e6f23b"
   },
   {
    "path": "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",

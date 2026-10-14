@@ -31,6 +31,24 @@ binary changed, or it raises on live input) is quarantined with the failure as
 evidence, and the same search runs again as a new deficit generation. A rebuilt
 candidate must pass the same frozen oracle *and* run cleanly on the live input
 that broke its predecessor (replayed locally in isolation; never sent to a model).
+
+Cognition deficits (directive 2026-10-07 section 24; section 31 item 14): when the
+Competency Compiler finds no method for a geometry it reports ``cognition.<class>:<sub>``
+with the inputs the request carries. Genesis then searches, simplest first:
+
+    1. an ATTACHED capability with that function
+    2. the registered repertoire (catalog families and the executable genome library) for
+       a family whose native class and inputs fit; a registered, withheld one is reported
+       as an attach candidate under frozen admission evidence, never attached
+    3. installed open-source mechanisms whose declared geometry serves the residual
+       (``signature``), qualified like any package: Mechanism Card, frozen oracle drawn from
+       admission instance generators on development seeds only, GREG's certificate
+    4. a builder against a founder-signed contract, then the founder
+
+Nothing found for a cognition deficit is ever attached by GREG, not even under a
+mission's ``auto_attach``: the mission engine records one founder ask (greg/asks.py)
+naming the candidates. After the founder's attach, the compiler routes the geometry to
+the formed mechanism and accepts each answer only on GREG's certificate.
 """
 from __future__ import annotations
 
@@ -49,7 +67,7 @@ from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationCo
                                run_isolated)
 from greg.artifacts import ArtifactStore
 from greg import builders, mechanisms
-from greg.cognition import linear, network
+from greg.cognition import assignment, linear, network
 from greg.journal import Journal, iso
 from greg.mechanisms import PackageCandidate
 from provenance.ledger import sha256_json
@@ -176,10 +194,105 @@ CATALOG["lp.optimize"] = {
                          "at most 500 variables and 2,000 constraints; coefficients up to 1e9",
                          ("numpy", "protobuf"))),
 }
+# Cognition mechanisms (directive 2026-10-07 section 24): installed engines Genesis forms for a residual geometry
+# the Competency Compiler reports. ``signature`` is the geometry each serves; nothing else routes to it.
+CATALOG[assignment.FUNCTION] = {
+    "kind": "package", "signature": assignment.SIGNATURE, "evidence_type": "optimality_certificate",
+    "description": "Least-cost (or greatest-value) assignment of the rows of a cost matrix to distinct columns, with "
+                   "a linear-programming dual certificate",
+    "oracle": assignment.oracle_assignment,
+    "oracle_kind": "brute force over every injective map in exact integers, on fixed cases and on flock admission "
+                   "instances from development seeds only (GREG)",
+    "output_field": "certified", "normalize": assignment.normalize_assignment,
+    "certify": assignment.certify_assignment, "certificate_error": assignment.CertificateError,
+    "runners": assignment.RUNNERS, "judge": assignment.judge_assignment, "probe": assignment.probe_assignment,
+    "size": assignment.size, "inputs": {"costs": "list", "maximize": "bool"},
+    "baseline": ("local Hungarian algorithm (plain Python)", assignment.local_hungarian, "total"),
+    "project": [("cognition.optimization", "integer CP-SAT models: an assignment must first be written as a formal "
+                                           "model, and no dual certificate is returned")],
+    "same_engine": [("networkx", "bipartite.minimum_weight_full_matching defers to SciPy's linear_sum_assignment: "
+                                 "the same engine, not an alternative")],
+    "candidates": (
+        PackageCandidate("scipy", "scipy.optimize", "scipy.assignment",
+                         ("scipy/__init__.py", "scipy/optimize/__init__.py", "scipy/optimize/_lsap"),
+                         "shortest augmenting path assignment in compiled code (scipy.optimize.linear_sum_assignment)",
+                         "rectangular matrices up to 200 x 200; finite costs up to 1e12 in magnitude, solved in "
+                         "float64; GREG's certificate is exact", ("numpy",)),
+        PackageCandidate("ortools", "ortools.graph.python.linear_sum_assignment", "ortools.assignment",
+                         ("ortools/__init__.py", "ortools/graph/python/__init__.py",
+                          "ortools/graph/python/linear_sum_assignment"),
+                         "cost-scaling assignment (OR-Tools SimpleLinearSumAssignment)",
+                         "integer costs only: GREG's runner refuses non-integer costs, so it cannot qualify where the "
+                         "frozen oracle has real-valued costs; rectangular matrices padded with zero-cost rows")),
+}
 for _spec in CATALOG.values():
     if _spec.get("kind") == "package":
         _spec.setdefault("certificate_error", network.CertificateError)
         _spec.setdefault("runners", network.RUNNERS)
+
+COGNITION_SEARCH = ["attached", "verified_detached", "genome_library", "installed_package", "builder", "founder"]
+CONTROL_INPUTS = ("formalization_complete",)        # compiler-level flags carried in data; no method reads them
+
+
+def is_cognition_deficit(function: str) -> bool:
+    """A residual geometry the Competency Compiler reported (``cognition.<class>:<sub>``), as opposed to a
+    capability's own function (``cognition.exact``) or a catalogued mechanism function."""
+    return function.startswith("cognition.") and ":" in function and function not in CATALOG
+
+
+def cognition_record(function: str, deficit: dict | None = None) -> dict:
+    """The residual geometry Genesis searches for: the epistemic class and the inputs the request carries.
+
+    Built from the compiler's ``capability_deficit`` when the mission engine passes it; otherwise from the
+    function name alone, with no inputs (nothing then matches by inputs, so the search ends with the founder)."""
+    from greg.cognition.genomes.contract import EPISTEMIC_CLASSES
+    head, _, sub = function.removeprefix("cognition.").partition(":")
+    raw = deficit if isinstance(deficit, dict) else {}
+    geometry = raw.get("geometry") if isinstance(raw.get("geometry"), dict) else {}
+    declared = geometry.get("geometry", head)
+    inputs = raw.get("required_inputs") if isinstance(raw.get("required_inputs"), list) else []
+    named = raw.get("acquisition_candidates") if isinstance(raw.get("acquisition_candidates"), list) else []
+    return {"geometry": declared if declared in EPISTEMIC_CLASSES else None,
+            "subgeometry": str(geometry.get("subgeometry") or sub or "")[:120] or None,
+            "required_inputs": sorted({x for x in inputs if isinstance(x, str) and 0 < len(x) <= 64})[:64],
+            "inputs_known": isinstance(raw.get("required_inputs"), list),
+            "named_by_compiler": [{"mechanism": str(c.get("mechanism"))[:200],
+                                   "supersedes": str(c.get("supersedes") or c.get("subregion") or "")[:120]}
+                                  for c in named[:5] if isinstance(c, dict)]}
+
+
+def cognition_mechanisms(inputs, geometry: str | None) -> list[str]:
+    """Catalogued installed mechanisms whose declared geometry serves this residual: the same epistemic class (or
+    none declared), every required input present, and no input the mechanism would not read."""
+    provided = set(inputs) - set(CONTROL_INPUTS)
+    out = []
+    for function, spec in CATALOG.items():
+        signature = spec.get("signature")
+        if not signature or (geometry and geometry not in signature["classes"]):
+            continue
+        if set(signature["required"]) <= provided <= set(signature["required"]) | set(signature["optional"]):
+            out.append(function)
+    return out
+
+
+def formed_cognition(registry, data: dict, geometry: str | None) -> list:
+    """(manifest, adapter) for every usable capability Genesis formed for this geometry. Usable means ATTACHED,
+    which only the founder's command does for these."""
+    out = []
+    for function in cognition_mechanisms(data, geometry):
+        for manifest in registry.by_function(function):
+            if is_formed(manifest) and registry.usable(manifest.capability_id)[0]:
+                out.append((manifest, registry.adapters[manifest.capability_id]))
+    return out
+
+
+def run_formed(manifest, adapter, data: dict) -> dict:
+    """One call of a formed cognition mechanism on the inputs its signature reads; the adapter re-pins the package
+    and accepts the engine's claim only on GREG's certificate (CapabilityError otherwise)."""
+    signature = CATALOG[manifest.function]["signature"]
+    params = {k: data[k] for k in (*signature["required"], *signature["optional"]) if k in data}
+    with tempfile.TemporaryDirectory(prefix="greg-formed-") as tmp:
+        return adapter(params, InvocationContext(workspace=Path(tmp), read_roots=(), secrets=None, manifest=manifest))
 
 
 def package_adapter(function: str, candidate: PackageCandidate):
@@ -441,10 +554,27 @@ class Genesis:
                             repair={"capability_id": capability_id, "failure": failure[:300],
                                     "replay_path": params.get("path")})
 
-    def resolve(self, *, mission, function: str, purpose: str, now, repair: dict | None = None):
+    def attach_candidates(self, mission_id: str, function: str) -> list[str]:
+        """Capabilities the latest deficit for a cognition (mission, function) found registered and still withheld
+        (VERIFIED). They carry other function names than the deficit, so the mission's blocker and founder ask name
+        them. One already attached is no longer a decision to ask for (and must not unblock a deficit it caused)."""
+        if not is_cognition_deficit(function):
+            return []
+        opened = [e.payload["deficit_id"] for e in self.journal.replay("deficit.opened")
+                  if e.payload["mission_id"] == mission_id and e.payload["function"] == function]
+        if not opened:
+            return []
+        return list(dict.fromkeys(e.payload["capability_id"] for e in self.journal.replay("deficit.awaiting_attach")
+                                  if e.payload["deficit_id"] == opened[-1]
+                                  and self.registry.state.get(e.payload["capability_id"]) == "VERIFIED"))
+
+    def resolve(self, *, mission, function: str, purpose: str, now, repair: dict | None = None,
+                deficit: dict | None = None):
         found = self.find_attached(function)
         if found:
             return found
+        if is_cognition_deficit(function):
+            return self._resolve_cognition(mission, function, purpose, now, repair, deficit)
         deficit_id, existing = self._deficit_for(mission.mission_id, function)
         if existing is not None:
             repair = existing.get("repair") or repair
@@ -533,6 +663,127 @@ class Genesis:
             return self._attach(mission, manifest, deficit_id, now)
         return self._builder_route(mission, function, deficit_id, now, contract, repair)
 
+    def _resolve_cognition(self, mission, function, purpose, now, repair, deficit):
+        """A residual geometry from the Competency Compiler: the registered repertoire, then installed open-source
+        mechanisms, then a builder and the founder. Whatever is found waits for the founder's attach."""
+        deficit_id, existing = self._deficit_for(mission.mission_id, function)
+        record = (existing or {}).get("cognition") or cognition_record(function, deficit)
+        if existing is not None:
+            repair = existing.get("repair") or repair
+        mechanisms = cognition_mechanisms(record["required_inputs"], record["geometry"])
+        contract = next((c for c in mission.spec.get("capability_specs", []) if c["function"] == function), None)
+        seed = int(sha256_json({"deficit": deficit_id})[7:15], 16)
+        if existing is None:
+            examined = [{"capability_id": m.capability_id, "state": self.registry.state[m.capability_id],
+                         "why_not": self.registry.usable(m.capability_id)[1]} for m in self.registry.by_function(function)]
+            failed = ((deficit or {}).get("verification") or {}).get("failed") if isinstance(deficit, dict) else None
+            opened = {"deficit_id": deficit_id, "mission_id": mission.mission_id, "function": function,
+                      "purpose": purpose, "at": iso(now), "search_order": COGNITION_SEARCH, "cognition": record,
+                      "acceptance": {"oracle": {f: CATALOG[f]["oracle_kind"] for f in mechanisms} or None,
+                                     "seed": seed,
+                                     "vector_digest": sha256_json({f: CATALOG[f]["oracle"](seed) for f in mechanisms})
+                                     if mechanisms else None},
+                      "verification": {"required_by": {"mission_id": mission.mission_id, "purpose": purpose},
+                                       "failed": str(failed or f"no ATTACHED, usable implementation of {function!r} "
+                                                                "resolved")[:300],
+                                       "unserviceable": examined or "no registered implementation of this function",
+                                       "verified": True}}
+            if repair is not None:
+                opened["repair"] = repair
+            self.journal.record("deficit.opened", opened, key=deficit_id)
+        for named in record["named_by_compiler"]:
+            self._route(deficit_id, "frozen_evidence", f"the compiler names {named['mechanism']} (in place of "
+                                                       f"{named['supersedes']}) from frozen held-out evidence", None)
+        # 2. registered for this exact function and withheld: the founder attaches it
+        for manifest in self.registry.by_function(function):
+            if self.registry.state[manifest.capability_id] == "VERIFIED":
+                self._route(deficit_id, "verified_detached", "found", manifest.capability_id)
+                return self._attach(mission, manifest, deficit_id, now)
+        self._route(deficit_id, "verified_detached", "none", None)
+        # 3. the registered repertoire: the simplest route is a family GREG already has
+        if self._genome_library(deficit_id, record):
+            self._route(deficit_id, "installed_package", "not searched: a registered intelligence fits this geometry; "
+                                                         "attaching it is the simpler route", None)
+            self._route(deficit_id, "founder", "escalated", None)
+            return None
+        # 4. installed open-source mechanisms that declare this geometry (DEPEND)
+        if not record["inputs_known"]:
+            self._route(deficit_id, "installed_package", "the deficit names no inputs, so no mechanism can be matched "
+                                                         "to it", None)
+        elif not mechanisms:
+            self._route(deficit_id, "installed_package", "no catalogued open-source mechanism serves this geometry "
+                                                         f"with inputs {record['required_inputs'][:12]}", None)
+        for mechanism in mechanisms:              # formed for an earlier deficit and still awaiting the founder
+            for manifest in self.registry.by_function(mechanism):
+                if is_formed(manifest) and self.registry.state[manifest.capability_id] == "VERIFIED":
+                    self._route(deficit_id, "installed_package", "qualified earlier; awaiting the founder's attach",
+                                manifest.capability_id)
+                    return self._attach(mission, manifest, deficit_id, now)
+        for mechanism in mechanisms:
+            found = self._package_route(mission, mechanism, CATALOG[mechanism], deficit_id, seed, repair, now)
+            if found is not False:
+                return found
+        return self._builder_route(mission, function, deficit_id, now, contract, repair)
+
+    def _genome_library(self, deficit_id: str, record: dict) -> list[str]:
+        """Registered intelligences whose native geometry and inputs fit the residual; returns attach candidates.
+
+        The fit rule is the Competency Compiler's (native epistemic class; every native input present), and so is
+        its frozen negative evidence: an excluded admission status or a composition-only stage is never a
+        candidate. A registered, withheld (VERIFIED) family is reported for the founder to attach; GREG never
+        attaches it. Detached, quarantined or unregistered families are reported, not offered."""
+        from greg.cognition import catalog, compiler
+        from greg.cognition.genomes import library
+        provided, declared = set(record["required_inputs"]), record["geometry"]
+        evidence, genomes = compiler.evidence_index(), library.executables()
+        found, near, noted = [], [], False
+        for family, (_, operations, classes, _, _) in sorted(catalog.FAMILIES.items()):
+            if declared and declared not in classes:
+                continue
+            cid = "cognition." + family
+            if family in genomes:
+                genome = genomes[family].genome
+                needs, standalone = [tuple(genome.required_inputs)], genome.standalone_decision
+                measured = evidence.get("genomes", {}).get(family, {})
+                status = measured.get("status", "UNEVALUATED")
+                if measured.get("version") and measured["version"] != genome.version \
+                        and status not in compiler.NOT_POSITIVE:
+                    status = "UNEVALUATED"         # positive evidence binds the version measured
+            else:
+                needs = [compiler.NATIVE_INPUTS[op] for op in operations if op in compiler.NATIVE_INPUTS]
+                standalone, status = True, "UNEVALUATED"
+            fit = next((need for need in needs if set(need) <= provided), None)
+            if fit is None:
+                close = next((need for need in needs if set(need) & provided), None)
+                if declared and close:
+                    near.append((cid, sorted(set(close) - provided)))
+                continue
+            state = self.registry.state.get(cid)
+            why = ("composition stage only (no standalone decision)" if not standalone
+                   else f"frozen admission status {status}" if status in compiler.EXCLUDED
+                   else "not registered on this body" if state is None
+                   else "founder-detached; explicit attach required" if state == "DETACHED"
+                   else f"attached ({self.registry.usable(cid)[1]})" if state == "ATTACHED"
+                   else f"state {state}" if state != "VERIFIED" else None)
+            if why:
+                self._route(deficit_id, "genome_library", f"{cid} fits but is not a candidate: {why}", cid)
+                noted = True
+                continue
+            found.append(cid)
+            self._route(deficit_id, "genome_library", f"attach candidate: {cid} ({status}) fits by native class and "
+                                                      f"inputs {sorted(fit)}; registered and withheld; GREG does "
+                                                      "not attach it", cid)
+            self.journal.record("deficit.awaiting_attach", {
+                "deficit_id": deficit_id, "capability_id": cid, "admission_status": status,
+                "why": "a registered, withheld intelligence fits the residual geometry; attaching it is the "
+                       "founder's decision"}, key=[deficit_id, "await", cid, status])
+        for cid, missing in near[:5]:
+            self._route(deficit_id, "genome_library", f"{cid} has this geometry but also needs inputs {missing}", cid)
+        if not found and not noted and not near:
+            self._route(deficit_id, "genome_library", "no registered intelligence has this geometry and these inputs",
+                        None)
+        return found
+
     def _package_route(self, mission, function, spec, deficit_id, seed, repair, now):
         """Existing project mechanisms first, then installed open-source packages (DEPEND).
 
@@ -540,6 +791,8 @@ class Genesis:
         when no package qualified (the caller continues to the builder route)."""
         for cid, why_not in spec.get("project", ()):
             self._route(deficit_id, "existing_project", f"{cid}: {why_not}", cid)
+        for name, why in spec.get("same_engine", ()):
+            self._route(deficit_id, "installed_package", f"{name}: {why}", None)
         for candidate in spec["candidates"]:
             dist = mechanisms.installed(candidate.distribution)
             if dist is None:
@@ -555,6 +808,13 @@ class Genesis:
             manifest = self._package_manifest(function, candidate, card, deficit_id)
             if self.registry.state.get(manifest.capability_id) == "DETACHED":
                 self._route(deficit_id, "installed_package", "founder-detached; explicit attach required",
+                            manifest.capability_id)
+                continue
+            if "signature" in spec and self.registry.state.get(manifest.capability_id) == "ATTACHED":
+                # a cognition deficit despite this attached mechanism: the compiler's receipt says why; a
+                # re-qualification here would silently withdraw the founder's attach
+                self._route(deficit_id, "installed_package", "attached, yet the compiler obtained no certified answer "
+                                                             "from it (its receipt records why)",
                             manifest.capability_id)
                 continue
             if repair and repair.get("capability_id") == manifest.capability_id:
@@ -782,14 +1042,17 @@ class Genesis:
                                "platform": sys.platform})
 
     def _attach(self, mission, manifest: CapabilityManifest, deficit_id: str, now):
-        # Founder-signed pre-authorization only: read-only, and inside the cone.
-        allowed = (mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
+        # Founder-signed pre-authorization only: read-only, and inside the cone. A capability formed for cognition
+        # (directive section 24) is attached only by the founder's own command, never under a mission scope.
+        cognition = manifest.function.startswith("cognition.")
+        allowed = (not cognition and mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"
                    and mission.cone._capability_inside(manifest.capability_id))
         if not allowed:
+            why = ("a capability formed for cognition is attached only by the founder's own command" if cognition
+                   else "mission scope does not pre-authorize this attach")
             self.journal.record("deficit.awaiting_attach", {"deficit_id": deficit_id,
-                                                            "capability_id": manifest.capability_id,
-                                                            "why": "mission scope does not pre-authorize this attach"},
+                                                            "capability_id": manifest.capability_id, "why": why},
                                 key=[deficit_id, "await", manifest.capability_id])
             return None
         self.registry.set_state(manifest.capability_id, "ATTACHED")

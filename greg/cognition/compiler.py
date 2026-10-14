@@ -40,6 +40,8 @@ EXCLUDED = ("SUPERSEDED", "REJECTED", "FRONTIER_HORIZON", "COMPOSITION_ONLY")
 # them (a version change never turns a negative or inconclusive result into UNEVALUATED).
 NOT_POSITIVE = EXCLUDED + ("EXPERIMENTAL",)
 HIGH_CONSEQUENCE = ("external_contact", "financial", "irreversible")
+# The order in which Capability Genesis searches a cognition deficit (greg.genesis.COGNITION_SEARCH).
+GENESIS_SEARCH = ("attached", "verified_detached", "genome_library", "installed_package", "builder", "founder")
 # Inputs that identify an existing (pre-genome) family's native geometry.
 NATIVE_INPUTS = {
     "estimate": ("factors",), "constraints": ("variables", "constraints"),
@@ -599,6 +601,49 @@ def _state(registry, method: str) -> str | None:
         return None
 
 
+def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool, receipt: dict):
+    """Directive section 24, after the founder's attach: a mechanism Capability Genesis formed for a residual
+    geometry (an installed open-source engine qualified on GREG's frozen oracle; ``greg.genesis``) serves it.
+
+    Reached only when no catalogued method fits or can run. The founder's attach is the only way such a mechanism
+    becomes usable; every answer is accepted only on GREG's own certificate, which shares no code with the engine.
+    A refusal (input outside competence, a changed package, a failed certificate) is recorded and the deficit
+    stands. Returns ``(state, result)`` or None."""
+    try:
+        from greg import genesis
+        formed = genesis.formed_cognition(registry, data, g.geometry)
+    except Exception as exc:          # a registry object without the views Genesis reads: recorded, not fatal
+        receipt["dissent"].append(f"formed mechanisms not consulted: {type(exc).__name__}: {exc}"[:300])
+        return None
+    for manifest, adapter in formed:
+        cid, spec = manifest.capability_id, genesis.CATALOG[manifest.function]
+        receipt["methods_considered"].append(cid)
+        receipt["method_or_composition_selected"], receipt["selection_level"] = cid, "formed_by_capability_genesis"
+        if high and data.get("formalization_complete") is not True:
+            receipt["abstentions"].append("FORMALIZATION_INCOMPLETE: complete formal model plus independently "
+                                          "verified world assumptions")
+            return "FORMALIZATION_INCOMPLETE", None
+        if body.get("execute") is False:
+            return "PLANNED", None
+        try:
+            answer = genesis.run_formed(manifest, adapter, data)
+        except Exception as exc:
+            receipt["abstentions"].append(f"{cid} refused: {exc}"[:300])
+            receipt["method_or_composition_selected"] = receipt["selection_level"] = None
+            continue
+        receipt.update(proof_artifacts=[{"type": "genesis_mechanism_certificate",
+                                         "evidence_type": spec["evidence_type"]}],
+                       verification_method=f"GREG-owned certificate sharing no code with {answer.get('engine')}: "
+                                           f"{answer['certificate']['kind']}",
+                       confidence_type=spec["evidence_type"],
+                       uncertainty="exact for the declared inputs; whether they describe the world is not verified")
+        receipt["resource_use"]["stages"] = 1
+        if receipt.get("withheld_best_fit"):
+            receipt["withheld_best_fit"]["served_by"] = cid
+        return ("WORLD_UNVERIFIED" if high else "ANSWERED"), answer
+    return None
+
+
 def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> dict:
     """A founder ask to attach a withheld capability, on the one asks contract and its screen. Prepared here and
     returned for the body to record through greg.asks; attaching stays the founder's decision."""
@@ -845,7 +890,11 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                     "authority": "none: a candidate to acquire, never an attached method"}
                    for r in rows if r.get("superseded_by", {}).get("deployable")
                    and not r["superseded_by"].get("promoted_as")]
+    high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
     if not eligible:
+        formed = _formed(registry, data, g, body, high, receipt)
+        if formed is not None:
+            return finish(*formed)
         if superseding:
             # the method that fits was superseded on frozen held-out evidence by a deployable mechanism: name it
             receipt["acquisition_candidates"] = superseding
@@ -856,7 +905,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             "verification": {"failed": "no catalogued, admitted, attached-or-attachable method fits this geometry",
                              "unserviceable": receipt["methods_rejected"] or "no method declares these inputs",
                              "verified": True},
-            "search_order": ["attached", "verified_detached", "installed_software", "builder", "founder"],
+            "search_order": list(GENESIS_SEARCH),
             "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority"}
         return finish("CAPABILITY_DEFICIT")
     competence = _settled_competence(journal, g.geometry)
@@ -893,6 +942,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             except Exception as exc:      # the optional ask never aborts routing; its failure is recorded
                 receipt["founder_attach_ask"] = {"state": "NOT_PREPARED", "why": f"{type(exc).__name__}: {exc}"[:300]}
     if not runnable:
+        formed = _formed(registry, data, g, body, high, receipt)
+        if formed is not None:
+            return finish(*formed)
         receipt["capability_deficit"] = {
             "function": f"cognition.{g.geometry or 'unknown'}:{g.subgeometry or 'unspecified'}",
             "purpose": g.objective or g.epistemic_question or "cognitive request",
@@ -900,7 +952,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             "verification": {"failed": "every fitting method is registered but not attached",
                              "unserviceable": [{"method": r["method"], "why": r["usable_why"]} for r in eligible],
                              "verified": True},
-            "search_order": ["attached", "verified_detached", "installed_software", "builder", "founder"],
+            "search_order": list(GENESIS_SEARCH),
             "route": "founder attach of the prepared ask, or greg.genesis under the enclosing mission's authority"}
         return finish("CAPABILITY_DEFICIT")
     chosen = runnable[0]

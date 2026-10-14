@@ -319,6 +319,7 @@
     "greg/cli.py",
     "greg/cognition/README.md",
     "greg/cognition/__init__.py",
+    "greg/cognition/assignment.py",
     "greg/cognition/benchmark.py",
     "greg/cognition/bridge.py",
     "greg/cognition/budget.py",

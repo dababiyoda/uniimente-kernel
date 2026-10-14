@@ -1,0 +1,339 @@
+{
+  "accountability": {
+    "falsification_conditions": [],
+    "missing_information": [
+      "O1: law gate unresolved (no Kernel policy decision for this option)",
+      "O1: founder_scope gate unresolved (no founder mandate or grant covers this option)",
+      "O2: law gate unresolved (no Kernel policy decision for this option)",
+      "O2: founder_scope gate unresolved (no founder mandate or grant covers this option)"
+    ],
+    "note": "competence evidence and proof narrow disputes; they never create authority",
+    "strongest_counterargument": null
+  },
+  "alternatives": [
+    {
+      "route": "cortex.deterrence.accountability@0.1.0",
+      "why_not": [
+        "not required by this payload"
+      ]
+    },
+    {
+      "route": "cortex.estimation.fermi@0.1.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.evidence_causal@0.1.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.formal.z3@0.2.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.semantic@0.1.0",
+      "why_not": [
+        "not required by this payload"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "authority_created": false,
+  "created_at": "2026-09-30T00:00:00Z",
+  "disposition": {
+    "kind": "handoff",
+    "next_step": "obtain the missing authorization through the Kernel authority path",
+    "reason": "no option passed every gate: {'O1': 'authorized_adjudication', 'O2': 'authorized_adjudication'}"
+  },
+  "eligibility": [
+    {
+      "eligible": true,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": true,
+      "reasons": []
+    },
+    {
+      "eligible": false,
+      "key": "cortex.estimation.fermi@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.evidence_causal@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.formal.z3@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": true,
+      "key": "cortex.semantic@0.1.0",
+      "may_recommend": true,
+      "reasons": []
+    }
+  ],
+  "execution_authority": "none",
+  "expenditure": {
+    "model_calls": 0,
+    "seconds": 0.000373,
+    "solver_calls": 0,
+    "usd": 0.0
+  },
+  "gates": {
+    "O1": {
+      "all_pass": false,
+      "gates": {
+        "budget": {
+          "basis": [],
+          "reason": "within budget",
+          "resolution": "proceed",
+          "status": "PASS"
+        },
+        "consent": {
+          "basis": [],
+          "reason": "consent not required",
+          "resolution": "proceed",
+          "status": "NOT_APPLICABLE"
+        },
+        "consequence_boundary": {
+          "basis": [],
+          "reason": "within cortex recommendation boundary",
+          "resolution": "proceed",
+          "status": "PASS"
+        },
+        "evidence_sufficiency": {
+          "basis": [],
+          "reason": "1 item(s) at or above 0.3",
+          "resolution": "proceed",
+          "status": "PASS"
+        },
+        "founder_scope": {
+          "basis": [],
+          "reason": "no founder mandate or grant covers this option",
+          "resolution": "authorized_adjudication",
+          "status": "UNRESOLVED"
+        },
+        "harm": {
+          "basis": [],
+          "reason": "no hard harm violation",
+          "resolution": "proceed",
+          "status": "PASS"
+        },
+        "law": {
+          "basis": [],
+          "reason": "no Kernel policy decision for this option",
+          "resolution": "authorized_adjudication",
+          "status": "UNRESOLVED"
+        },
+        "rights": {
+          "basis": [],
+          "reason": "rights harm none",
+          "resolution": "proceed",
+          "status": "PASS"
+        }
+      },
+      "option_id": "O1",
+      "rejected_bases": [],
+      "resolution": "authorized_adjudication"
+    },
+    "O2": {
+      "all_pass": false,
+      "gates": {
+        "budget": {
+          "basis": [],
+          "reason": "within budget",
+          "resolution": "proceed",
+          "status": "PASS"
+        },
+        "consent": {
+          "basis": [],
+          "reason": "consent not required",
+          "resolution": "proceed",
+          "status": "NOT_APPLICABLE"
+        },
+        "consequence_boundary": {
+          "basis": [],
+          "reason": "within cortex recommendation boundary",
+          "resolution": "proceed",
+          "status": "PASS"
+        },
+        "evidence_sufficiency": {
+          "basis": [],
+          "reason": "1 item(s) at or above 0.3",
+          "resolution": "proceed",
+          "status": "PASS"
+        },
+        "founder_scope": {
+          "basis": [],
+          "reason": "no founder mandate or grant covers this option",
+          "resolution": "authorized_adjudication",
+          "status": "UNRESOLVED"
+        },
+        "harm": {
+          "basis": [],
+          "reason": "no hard harm violation",
+          "resolution": "proceed",
+          "status": "PASS"
+        },
+        "law": {
+          "basis": [],
+          "reason": "no Kernel policy decision for this option",
+          "resolution": "authorized_adjudication",
+          "status": "UNRESOLVED"
+        },
+        "rights": {
+          "basis": [],
+          "reason": "rights harm none",
+          "resolution": "proceed",
+          "status": "PASS"
+        }
+      },
+      "option_id": "O2",
+      "rejected_bases": [],
+      "resolution": "authorized_adjudication"
+    }
+  },
+  "geometry": {
+    "ambiguity": "low",
+    "causal_structure": "none",
+    "claim_type": null,
+    "consequence_class": "internal_write",
+    "consequence_vector": {
+      "discrimination": "none",
+      "financial": "none",
+      "irreversible_disclosure": "none",
+      "physical": "none",
+      "privacy": "none",
+      "reputational": "none",
+      "rights": "none",
+      "systemic": "none",
+      "tail_risk": "none",
+      "third_party": "none"
+    },
+    "constraints": [
+      "option:O1",
+      "option:O2"
+    ],
+    "epistemic_class": "strategic",
+    "evidence_quality": "none",
+    "exactness": "unknown",
+    "objective": "choose_option",
+    "problem_id": "H-G03",
+    "provenance": {
+      "consequence_class": {
+        "confidence": null,
+        "source": "requester_declared"
+      },
+      "epistemic_class": {
+        "confidence": 1.0,
+        "source": "payload_structure"
+      },
+      "reversibility": {
+        "confidence": null,
+        "source": "requester_declared"
+      }
+    },
+    "rejected_proposals": [],
+    "resource_limits": {
+      "max_cost_usd": 0.05,
+      "max_latency_s": 30.0,
+      "max_model_calls": 4,
+      "max_solver_calls": 64
+    },
+    "reversibility": "reversible",
+    "temporal_character": "static",
+    "uncertainty": "unknown",
+    "unresolved_fields": []
+  },
+  "inputs": {
+    "evidence_refs": [],
+    "payload_keys": [
+      "as_of",
+      "declared",
+      "options"
+    ]
+  },
+  "outcome_link": {
+    "memory_keys": [],
+    "settlement_ref": null,
+    "status": "absent_feedback"
+  },
+  "output": {
+    "answer": null,
+    "per_route": [],
+    "state": "GATE_UNRESOLVED"
+  },
+  "problem": {
+    "payload_digest": "sha256:063663179f344da64790b49538ed263905cff119c39dbcd91b7d38908049a744",
+    "problem_id": "H-G03",
+    "question_digest": "sha256:9d574e3cf666620d5fff30a375d67e418d50bfce064fe5a3e26fca110899295d"
+  },
+  "proof_artifacts": [],
+  "protection": null,
+  "ranking": {
+    "chosen": null,
+    "eligible": [],
+    "excluded": {
+      "O1": "authorized_adjudication",
+      "O2": "authorized_adjudication"
+    },
+    "front": [],
+    "margin": null,
+    "status": "none_eligible",
+    "tradeoffs": []
+  },
+  "receipt_id": "sha256:47f03b942a3bafacad7f740c1534f0a090c3f9569526e9db38b08f617eb207c9",
+  "route": {
+    "composition": false,
+    "policy": "cortex-route-policy/0.1",
+    "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+    "selected": []
+  },
+  "schema": "cortex-receipt/0.1",
+  "shared_dependencies": {},
+  "truth": {
+    "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+    "empirical_validity": "unknown",
+    "formal_validity": "not_applicable",
+    "legitimate_authority": "not_granted_by_cortex"
+  },
+  "uncertainty": "no route executed",
+  "verifier": {
+    "blocking": false,
+    "findings": [],
+    "independence": {
+      "independent_of_routes": true,
+      "note": "agreement between routes that share a model, solver or source is not independent verification",
+      "shared_between_routes": {},
+      "shared_with_routes": [],
+      "verifier": "cortex.verifier.adversarial@0.1.0",
+      "verifier_dependencies": [
+        "python-stdlib",
+        "rules:cortex.organs.adversarial"
+      ]
+    },
+    "proof_class": "verifier_findings",
+    "verifier": "cortex.verifier.adversarial@0.1.0"
+  },
+  "versions": {
+    "cortex": "0.1.5",
+    "policy": "cortex-route-policy/0.1",
+    "routes": {}
+  }
+}

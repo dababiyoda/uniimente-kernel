@@ -1,0 +1,538 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.example/contracts/cortex-receipt.schema.json",
+  "title": "Cortex CognitiveReceipt v0.1",
+  "description": "Content-addressed record of one cortex decision. Separates formal validity, empirical validity and legitimate authority. Cognitive results create no authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "receipt_id",
+    "schema",
+    "created_at",
+    "problem",
+    "inputs",
+    "versions",
+    "geometry",
+    "eligibility",
+    "route",
+    "alternatives",
+    "assumptions",
+    "output",
+    "uncertainty",
+    "proof_artifacts",
+    "verifier",
+    "gates",
+    "ranking",
+    "shared_dependencies",
+    "expenditure",
+    "disposition",
+    "truth",
+    "protection",
+    "accountability",
+    "outcome_link",
+    "authority_created",
+    "execution_authority"
+  ],
+  "properties": {
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "schema": {
+      "const": "cortex-receipt/0.1"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "problem": {
+      "type": "object",
+      "required": [
+        "problem_id",
+        "question_digest",
+        "payload_digest"
+      ],
+      "properties": {
+        "question_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "payload_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "required": [
+        "evidence_refs",
+        "payload_keys"
+      ]
+    },
+    "versions": {
+      "type": "object",
+      "required": [
+        "cortex",
+        "policy",
+        "routes"
+      ]
+    },
+    "geometry": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "eligibility": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "eligible",
+          "may_recommend",
+          "reasons"
+        ]
+      }
+    },
+    "route": {
+      "type": "object",
+      "required": [
+        "policy",
+        "selected",
+        "composition",
+        "rationale"
+      ]
+    },
+    "alternatives": {
+      "type": "array"
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": [
+        "state",
+        "answer",
+        "per_route"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "OK",
+            "FORMALIZATION_INCOMPLETE",
+            "WORLD_UNVERIFIED",
+            "DEPENDENCY_UNAVAILABLE",
+            "TIMEOUT",
+            "INCONCLUSIVE",
+            "BUDGET_EXHAUSTED",
+            "NOT_IDENTIFIED",
+            "INSUFFICIENT_EVIDENCE",
+            "CONTESTED",
+            "MALFORMED_INPUT",
+            "DIMENSION_MISMATCH",
+            "UNSUPPORTED_GEOMETRY",
+            "NO_ELIGIBLE_METHOD",
+            "GATE_FAILED",
+            "GATE_UNRESOLVED",
+            "REQUIRES_HUMAN_AUTHORITY"
+          ]
+        }
+      }
+    },
+    "uncertainty": {
+      "type": "string"
+    },
+    "proof_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "proof_class"
+        ],
+        "properties": {
+          "proof_class": {
+            "enum": [
+              "semantic_sourced",
+              "estimation",
+              "formal",
+              "evidence_assessment",
+              "causal_estimate",
+              "gate_report",
+              "verifier_findings",
+              "deterrence_assessment",
+              "optimization",
+              "bayesian",
+              "simulation",
+              "human_adjudication",
+              "measurement",
+              "institutional_observation"
+            ]
+          }
+        }
+      }
+    },
+    "verifier": {
+      "type": "object",
+      "required": [
+        "proof_class",
+        "verifier",
+        "findings",
+        "blocking",
+        "independence"
+      ],
+      "properties": {
+        "proof_class": {
+          "const": "verifier_findings"
+        }
+      }
+    },
+    "gates": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "ranking": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "shared_dependencies": {
+      "type": "object"
+    },
+    "expenditure": {
+      "type": "object",
+      "required": [
+        "usd",
+        "seconds",
+        "model_calls",
+        "solver_calls"
+      ]
+    },
+    "disposition": {
+      "type": "object",
+      "required": [
+        "kind",
+        "reason",
+        "next_step"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "recommend",
+            "abstain",
+            "bounded_test",
+            "handoff"
+          ]
+        }
+      }
+    },
+    "truth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "formal_validity",
+        "empirical_validity",
+        "legitimate_authority",
+        "authority_path"
+      ],
+      "properties": {
+        "formal_validity": {
+          "enum": [
+            "valid_given_encoding",
+            "not_established",
+            "not_applicable"
+          ]
+        },
+        "empirical_validity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "legitimate_authority": {
+          "const": "not_granted_by_cortex"
+        },
+        "authority_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "outcome_link": {
+      "type": "object",
+      "required": [
+        "status",
+        "settlement_ref",
+        "memory_keys"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "verified_success",
+            "observed_failure",
+            "unresolved",
+            "absent_feedback"
+          ]
+        }
+      }
+    },
+    "authority_created": {
+      "const": false
+    },
+    "execution_authority": {
+      "const": "none"
+    },
+    "protection": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "relevant",
+            "required_actions",
+            "evidence_access",
+            "disclosure_controls",
+            "evidence_handling",
+            "human_led_actions",
+            "ordered_actions",
+            "immediate_harm",
+            "continuing_harm",
+            "retaliation_risk",
+            "privacy_risk",
+            "evidence_at_risk",
+            "affected_party",
+            "safe_contact_channel",
+            "required_authority",
+            "notification_obligations",
+            "gaps"
+          ],
+          "properties": {
+            "relevant": {
+              "const": true
+            },
+            "required_actions": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "immediate_protection",
+                  "containment",
+                  "evidence_preservation",
+                  "safe_contact",
+                  "escalation",
+                  "restitution",
+                  "recurrence_prevention"
+                ]
+              }
+            },
+            "evidence_access": {
+              "enum": [
+                "restricted",
+                "need_to_know",
+                "internal",
+                "unknown"
+              ]
+            },
+            "disclosure_controls": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "evidence_handling": {
+              "const": "receipt carries evidence identifiers and digests only, never content"
+            },
+            "human_led_actions": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "immediate_protection",
+                  "safe_contact",
+                  "escalation"
+                ]
+              }
+            },
+            "ordered_actions": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "immediate_protection",
+                  "containment",
+                  "evidence_preservation",
+                  "safe_contact",
+                  "escalation",
+                  "restitution",
+                  "recurrence_prevention"
+                ]
+              }
+            },
+            "immediate_harm": {
+              "enum": [
+                "none",
+                "low",
+                "medium",
+                "high",
+                "unknown"
+              ]
+            },
+            "continuing_harm": {
+              "enum": [
+                "none",
+                "low",
+                "medium",
+                "high",
+                "unknown"
+              ]
+            },
+            "retaliation_risk": {
+              "enum": [
+                "none",
+                "low",
+                "medium",
+                "high",
+                "unknown"
+              ]
+            },
+            "privacy_risk": {
+              "enum": [
+                "none",
+                "low",
+                "medium",
+                "high",
+                "unknown"
+              ]
+            },
+            "evidence_at_risk": {
+              "enum": [
+                "yes",
+                "no",
+                "unknown"
+              ]
+            },
+            "affected_party": {
+              "enum": [
+                "declared",
+                "absent"
+              ]
+            },
+            "safe_contact_channel": {
+              "enum": [
+                "declared",
+                "absent"
+              ]
+            },
+            "required_authority": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "string",
+                  "minLength": 1
+                }
+              ]
+            },
+            "notification_obligations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "gaps": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "accountability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strongest_counterargument",
+        "falsification_conditions",
+        "missing_information",
+        "note"
+      ],
+      "properties": {
+        "strongest_counterargument": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "severity",
+                "kind",
+                "detail"
+              ],
+              "properties": {
+                "severity": {
+                  "enum": [
+                    "critical",
+                    "major",
+                    "minor"
+                  ]
+                },
+                "kind": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "detail": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "falsification_conditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "route",
+              "condition"
+            ],
+            "properties": {
+              "route": {
+                "type": "string",
+                "minLength": 1
+              },
+              "condition": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "missing_information": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "note": {
+          "const": "competence evidence and proof narrow disputes; they never create authority"
+        }
+      }
+    }
+  }
+}

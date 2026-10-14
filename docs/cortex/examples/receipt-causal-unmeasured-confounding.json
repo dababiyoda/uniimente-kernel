@@ -1,0 +1,315 @@
+{
+  "accountability": {
+    "falsification_conditions": [
+      {
+        "condition": "no claim asserted; nothing to falsify",
+        "route": "cortex.evidence_causal@0.1.0"
+      }
+    ],
+    "missing_information": [
+      "observation: an explicit estimand",
+      "observation: identification assumptions",
+      "observation: treatment, outcome and confounder data (or an experiment)",
+      "unresolved: The causal effect is not identified from what is available."
+    ],
+    "note": "competence evidence and proof narrow disputes; they never create authority",
+    "strongest_counterargument": null
+  },
+  "alternatives": [
+    {
+      "route": "cortex.deterrence.accountability@0.1.0",
+      "why_not": [
+        "does not support causal"
+      ]
+    },
+    {
+      "route": "cortex.estimation.fermi@0.1.0",
+      "why_not": [
+        "does not support causal"
+      ]
+    },
+    {
+      "route": "cortex.formal.z3@0.2.0",
+      "why_not": [
+        "does not support causal"
+      ]
+    },
+    {
+      "route": "cortex.semantic@0.1.0",
+      "why_not": [
+        "does not support causal"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "authority_created": false,
+  "created_at": "2026-09-30T00:00:00Z",
+  "disposition": {
+    "kind": "bounded_test",
+    "next_step": "bounded_experiment",
+    "reason": "route states ['NOT_IDENTIFIED']"
+  },
+  "eligibility": [
+    {
+      "eligible": false,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support causal"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.estimation.fermi@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support causal"
+      ]
+    },
+    {
+      "eligible": true,
+      "key": "cortex.evidence_causal@0.1.0",
+      "may_recommend": true,
+      "reasons": []
+    },
+    {
+      "eligible": false,
+      "key": "cortex.formal.z3@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support causal"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.semantic@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support causal"
+      ]
+    }
+  ],
+  "execution_authority": "none",
+  "expenditure": {
+    "model_calls": 0,
+    "seconds": 0.002563,
+    "solver_calls": 0,
+    "usd": 0.0
+  },
+  "gates": null,
+  "geometry": {
+    "ambiguity": "low",
+    "causal_structure": "declared_adjustment",
+    "claim_type": "intervention",
+    "consequence_class": "internal_write",
+    "consequence_vector": {
+      "discrimination": "none",
+      "financial": "none",
+      "irreversible_disclosure": "none",
+      "physical": "none",
+      "privacy": "none",
+      "reputational": "none",
+      "rights": "none",
+      "systemic": "none",
+      "tail_risk": "none",
+      "third_party": "none"
+    },
+    "constraints": [],
+    "epistemic_class": "causal",
+    "evidence_quality": "none",
+    "exactness": "unknown",
+    "objective": "estimate_effect",
+    "problem_id": "H-C04",
+    "provenance": {
+      "consequence_class": {
+        "confidence": null,
+        "source": "requester_declared"
+      },
+      "epistemic_class": {
+        "confidence": 1.0,
+        "source": "payload_structure"
+      },
+      "reversibility": {
+        "confidence": null,
+        "source": "requester_declared"
+      }
+    },
+    "rejected_proposals": [],
+    "resource_limits": {
+      "max_cost_usd": 0.05,
+      "max_latency_s": 30.0,
+      "max_model_calls": 4,
+      "max_solver_calls": 64
+    },
+    "reversibility": "reversible",
+    "temporal_character": "static",
+    "uncertainty": "high",
+    "unresolved_fields": []
+  },
+  "inputs": {
+    "evidence_refs": [],
+    "payload_keys": [
+      "as_of",
+      "causal_spec",
+      "claim",
+      "declared"
+    ]
+  },
+  "outcome_link": {
+    "memory_keys": [
+      "cortex.evidence_causal@0.1.0|causal"
+    ],
+    "settlement_ref": null,
+    "status": "absent_feedback"
+  },
+  "output": {
+    "answer": null,
+    "per_route": [
+      {
+        "answer": null,
+        "assumptions": [],
+        "dependencies": [
+          "python-stdlib"
+        ],
+        "expenditure": {
+          "model_calls": 0,
+          "seconds": 3.5e-05,
+          "solver_calls": 0,
+          "usd": 0.0
+        },
+        "notes": [],
+        "organ_id": "cortex.evidence_causal@0.1.0",
+        "organ_version": "0.1.0",
+        "origin": "deterministic",
+        "proof": {
+          "as_of": "2026-09-30",
+          "available": [],
+          "claim": {
+            "id": "C",
+            "statement": "t raises y",
+            "type": "intervention"
+          },
+          "contradiction_weight": 0,
+          "contradictions": [],
+          "excluded": [],
+          "identification": "failed",
+          "identification_problems": [
+            "declared unmeasured confounders ['prior engagement']"
+          ],
+          "missing_observations": [
+            {
+              "description": "an explicit estimand",
+              "tag": "estimand"
+            },
+            {
+              "description": "identification assumptions",
+              "tag": "identification_assumptions"
+            },
+            {
+              "description": "treatment, outcome and confounder data (or an experiment)",
+              "tag": "treatment_outcome_confounder_data"
+            }
+          ],
+          "note": "association evidence does not identify an intervention effect",
+          "proof_class": "evidence_assessment",
+          "proposal": "bounded_experiment",
+          "provenance": [],
+          "stale": [],
+          "support_weight": 0,
+          "unresolved_question": "The causal effect is not identified from what is available."
+        },
+        "state": "NOT_IDENTIFIED",
+        "uncertainty": "unresolved"
+      }
+    ],
+    "state": "NOT_IDENTIFIED"
+  },
+  "problem": {
+    "payload_digest": "sha256:08b72ea897e23ff71f0696e0657a4aab2e51393c22fb1927894a256cc9a162f4",
+    "problem_id": "H-C04",
+    "question_digest": "sha256:c87e6272a289793ac0a36f8d338a9f1d881c28467a43f97758b41792784c8556"
+  },
+  "proof_artifacts": [
+    {
+      "as_of": "2026-09-30",
+      "available": [],
+      "claim": {
+        "id": "C",
+        "statement": "t raises y",
+        "type": "intervention"
+      },
+      "contradiction_weight": 0,
+      "contradictions": [],
+      "excluded": [],
+      "identification": "failed",
+      "identification_problems": [
+        "declared unmeasured confounders ['prior engagement']"
+      ],
+      "missing_observations": [
+        {
+          "description": "an explicit estimand",
+          "tag": "estimand"
+        },
+        {
+          "description": "identification assumptions",
+          "tag": "identification_assumptions"
+        },
+        {
+          "description": "treatment, outcome and confounder data (or an experiment)",
+          "tag": "treatment_outcome_confounder_data"
+        }
+      ],
+      "note": "association evidence does not identify an intervention effect",
+      "proof_class": "evidence_assessment",
+      "proposal": "bounded_experiment",
+      "provenance": [],
+      "stale": [],
+      "support_weight": 0,
+      "unresolved_question": "The causal effect is not identified from what is available."
+    }
+  ],
+  "protection": null,
+  "ranking": null,
+  "receipt_id": "sha256:bb84b04b9c443127aec57e9ba2eaec542f00819a825493112487fa287cd63347",
+  "route": {
+    "composition": false,
+    "policy": "cortex-route-policy/0.1",
+    "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+    "selected": [
+      "cortex.evidence_causal@0.1.0"
+    ]
+  },
+  "schema": "cortex-receipt/0.1",
+  "shared_dependencies": {},
+  "truth": {
+    "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+    "empirical_validity": "unknown",
+    "formal_validity": "not_applicable",
+    "legitimate_authority": "not_granted_by_cortex"
+  },
+  "uncertainty": "unresolved",
+  "verifier": {
+    "blocking": false,
+    "findings": [],
+    "independence": {
+      "independent_of_routes": true,
+      "note": "agreement between routes that share a model, solver or source is not independent verification",
+      "shared_between_routes": {},
+      "shared_with_routes": [],
+      "verifier": "cortex.verifier.adversarial@0.1.0",
+      "verifier_dependencies": [
+        "python-stdlib",
+        "rules:cortex.organs.adversarial"
+      ]
+    },
+    "proof_class": "verifier_findings",
+    "verifier": "cortex.verifier.adversarial@0.1.0"
+  },
+  "versions": {
+    "cortex": "0.1.5",
+    "policy": "cortex-route-policy/0.1",
+    "routes": {
+      "cortex.evidence_causal@0.1.0": "0.1.0"
+    }
+  }
+}

@@ -1,0 +1,427 @@
+{
+  "accountability": {
+    "falsification_conditions": [
+      {
+        "condition": "misconduct persisting after I_report at a rate above 0.001, or a declared parameter range shown wrong",
+        "route": "cortex.deterrence.accountability@0.1.0"
+      }
+    ],
+    "missing_information": [
+      "geometry field consequence_vector unresolved"
+    ],
+    "note": "competence evidence and proof narrow disputes; they never create authority",
+    "strongest_counterargument": {
+      "detail": "deterrence model assumes a risk-neutral actor",
+      "kind": "risk_neutral_assumption",
+      "severity": "minor"
+    }
+  },
+  "alternatives": [
+    {
+      "route": "cortex.estimation.fermi@0.1.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.evidence_causal@0.1.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.formal.z3@0.2.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.semantic@0.1.0",
+      "why_not": [
+        "not required by this payload"
+      ]
+    }
+  ],
+  "assumptions": [
+    "actor is risk-neutral",
+    "parameter ranges are declared by the requester",
+    "parameters are independent and uniform within their ranges",
+    "an intervention changes only the parameters it names"
+  ],
+  "authority_created": false,
+  "created_at": "2026-09-30T00:00:00Z",
+  "disposition": {
+    "kind": "handoff",
+    "next_step": "give the deterrence assessment and its evidence to the competent authority for a decision on report_to_authority; the cortex takes no action against anyone",
+    "reason": "strongest lawful deterrent (report_to_authority) reaches another party; route states ['OK']"
+  },
+  "eligibility": [
+    {
+      "eligible": true,
+      "key": "cortex.deterrence.accountability@0.1.0",
+      "may_recommend": true,
+      "reasons": []
+    },
+    {
+      "eligible": false,
+      "key": "cortex.estimation.fermi@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.evidence_causal@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.formal.z3@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": true,
+      "key": "cortex.semantic@0.1.0",
+      "may_recommend": true,
+      "reasons": []
+    }
+  ],
+  "execution_authority": "none",
+  "expenditure": {
+    "model_calls": 0,
+    "seconds": 0.078493,
+    "solver_calls": 0,
+    "usd": 0.0
+  },
+  "gates": null,
+  "geometry": {
+    "ambiguity": "low",
+    "causal_structure": "none",
+    "claim_type": null,
+    "consequence_class": "internal_write",
+    "consequence_vector": {
+      "discrimination": "unknown",
+      "financial": "unknown",
+      "irreversible_disclosure": "unknown",
+      "physical": "unknown",
+      "privacy": "unknown",
+      "reputational": "unknown",
+      "rights": "unknown",
+      "systemic": "unknown",
+      "tail_risk": "unknown",
+      "third_party": "unknown"
+    },
+    "constraints": [],
+    "epistemic_class": "strategic",
+    "evidence_quality": "none",
+    "exactness": "unknown",
+    "objective": "choose_option",
+    "problem_id": "example-deterrence-external",
+    "provenance": {
+      "consequence_class": {
+        "confidence": null,
+        "source": "requester_declared"
+      },
+      "epistemic_class": {
+        "confidence": 1.0,
+        "source": "payload_structure"
+      },
+      "reversibility": {
+        "confidence": null,
+        "source": "requester_declared"
+      }
+    },
+    "rejected_proposals": [],
+    "resource_limits": {
+      "max_cost_usd": 0.05,
+      "max_latency_s": 30.0,
+      "max_model_calls": 4,
+      "max_solver_calls": 64
+    },
+    "reversibility": "reversible",
+    "temporal_character": "static",
+    "uncertainty": "unknown",
+    "unresolved_fields": [
+      "consequence_vector"
+    ]
+  },
+  "inputs": {
+    "evidence_refs": [],
+    "payload_keys": [
+      "declared",
+      "deterrence_model"
+    ]
+  },
+  "outcome_link": {
+    "memory_keys": [
+      "cortex.deterrence.accountability@0.1.0|strategic"
+    ],
+    "settlement_ref": null,
+    "status": "absent_feedback"
+  },
+  "output": {
+    "answer": {
+      "best_intervention": {
+        "id": "I_report",
+        "kind": "report_to_authority",
+        "levers": [
+          "certainty"
+        ],
+        "pays_probability_after": 0.001,
+        "reach": "external",
+        "reduction": 0.9875
+      },
+      "external_action_required": true,
+      "misconduct_pays_probability": 0.9885,
+      "refused": []
+    },
+    "per_route": [
+      {
+        "answer": {
+          "best_intervention": {
+            "id": "I_report",
+            "kind": "report_to_authority",
+            "levers": [
+              "certainty"
+            ],
+            "pays_probability_after": 0.001,
+            "reach": "external",
+            "reduction": 0.9875
+          },
+          "external_action_required": true,
+          "misconduct_pays_probability": 0.9885,
+          "refused": []
+        },
+        "assumptions": [
+          "actor is risk-neutral",
+          "parameter ranges are declared by the requester",
+          "parameters are independent and uniform within their ranges",
+          "an intervention changes only the parameters it names"
+        ],
+        "dependencies": [
+          "python-stdlib"
+        ],
+        "expenditure": {
+          "model_calls": 0,
+          "seconds": 0.074627,
+          "solver_calls": 0,
+          "usd": 0.0
+        },
+        "notes": [],
+        "organ_id": "cortex.deterrence.accountability@0.1.0",
+        "organ_version": "0.1.0",
+        "origin": "deterministic",
+        "proof": {
+          "actor_role": "vendor submitting invoices",
+          "assumptions": [
+            "actor is risk-neutral",
+            "parameter ranges are declared by the requester",
+            "parameters are independent and uniform within their ranges",
+            "an intervention changes only the parameters it names"
+          ],
+          "baseline": {
+            "expected_payoff": {
+              "high": 4749.1256052372155,
+              "low": 633.7641736065582,
+              "median": 2698.742054051935
+            },
+            "misconduct_pays_probability": 0.9885
+          },
+          "behavior": "duplicate invoicing",
+          "interventions": [
+            {
+              "cost_usd": 0.0,
+              "expected_payoff_after": {
+                "high": -1852.9821681255744,
+                "low": -12967.524786788095,
+                "median": -7440.118869993139
+              },
+              "id": "I_report",
+              "kind": "report_to_authority",
+              "levers": [
+                "certainty"
+              ],
+              "pays_probability_after": 0.001,
+              "reach": "external",
+              "reduction": 0.9875,
+              "reduction_per_1k_usd": null,
+              "severity_only": false
+            }
+          ],
+          "limitations": [
+            "no behavioral response beyond the declared effects",
+            "no displacement to other misconduct",
+            "severity effects are weakly supported by evidence; certainty effects are stronger"
+          ],
+          "model": "risk-neutral expected value: gain - p_detect * p_sanction * sanction - attempt_cost (Becker 1968)",
+          "parameters": {
+            "gain_usd": {
+              "dist": "uniform",
+              "high": 6000.0,
+              "low": 2000.0
+            },
+            "p_detect": {
+              "dist": "uniform",
+              "high": 0.15,
+              "low": 0.05
+            },
+            "p_sanction": {
+              "dist": "uniform",
+              "high": 0.8,
+              "low": 0.5
+            },
+            "sanction_usd": {
+              "dist": "uniform",
+              "high": 30000.0,
+              "low": 10000.0
+            }
+          },
+          "proof_class": "deterrence_assessment",
+          "refused": [],
+          "samples": 20000,
+          "seed": 7,
+          "truth_note": "A risk-neutral expected-value model of incentives (Becker 1968), not a prediction of any person's behavior. People are not risk-neutral; deterrence evidence supports certainty of apprehension far more consistently than severity (Nagin 2013)."
+        },
+        "state": "OK",
+        "uncertainty": "misconduct pays in 98.8% of sampled parameter combinations (risk-neutral model)"
+      }
+    ],
+    "state": "OK"
+  },
+  "problem": {
+    "payload_digest": "sha256:5c29bd5cd1cb9628a6c646449e0ce2db7ad1740bd26dc315760e407bda47b272",
+    "problem_id": "example-deterrence-external",
+    "question_digest": "sha256:ad190a614ea8a12686281d832f5d9702b53cfd161d978af5447aa848af1124a5"
+  },
+  "proof_artifacts": [
+    {
+      "actor_role": "vendor submitting invoices",
+      "assumptions": [
+        "actor is risk-neutral",
+        "parameter ranges are declared by the requester",
+        "parameters are independent and uniform within their ranges",
+        "an intervention changes only the parameters it names"
+      ],
+      "baseline": {
+        "expected_payoff": {
+          "high": 4749.1256052372155,
+          "low": 633.7641736065582,
+          "median": 2698.742054051935
+        },
+        "misconduct_pays_probability": 0.9885
+      },
+      "behavior": "duplicate invoicing",
+      "interventions": [
+        {
+          "cost_usd": 0.0,
+          "expected_payoff_after": {
+            "high": -1852.9821681255744,
+            "low": -12967.524786788095,
+            "median": -7440.118869993139
+          },
+          "id": "I_report",
+          "kind": "report_to_authority",
+          "levers": [
+            "certainty"
+          ],
+          "pays_probability_after": 0.001,
+          "reach": "external",
+          "reduction": 0.9875,
+          "reduction_per_1k_usd": null,
+          "severity_only": false
+        }
+      ],
+      "limitations": [
+        "no behavioral response beyond the declared effects",
+        "no displacement to other misconduct",
+        "severity effects are weakly supported by evidence; certainty effects are stronger"
+      ],
+      "model": "risk-neutral expected value: gain - p_detect * p_sanction * sanction - attempt_cost (Becker 1968)",
+      "parameters": {
+        "gain_usd": {
+          "dist": "uniform",
+          "high": 6000.0,
+          "low": 2000.0
+        },
+        "p_detect": {
+          "dist": "uniform",
+          "high": 0.15,
+          "low": 0.05
+        },
+        "p_sanction": {
+          "dist": "uniform",
+          "high": 0.8,
+          "low": 0.5
+        },
+        "sanction_usd": {
+          "dist": "uniform",
+          "high": 30000.0,
+          "low": 10000.0
+        }
+      },
+      "proof_class": "deterrence_assessment",
+      "refused": [],
+      "samples": 20000,
+      "seed": 7,
+      "truth_note": "A risk-neutral expected-value model of incentives (Becker 1968), not a prediction of any person's behavior. People are not risk-neutral; deterrence evidence supports certainty of apprehension far more consistently than severity (Nagin 2013)."
+    }
+  ],
+  "protection": null,
+  "ranking": null,
+  "receipt_id": "sha256:3b7387ccab48ad4c0b1fa6a0159c49f65414c04ab1947f885cd3d477042bceb5",
+  "route": {
+    "composition": false,
+    "policy": "cortex-route-policy/0.1",
+    "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
+    "selected": [
+      "cortex.deterrence.accountability@0.1.0"
+    ]
+  },
+  "schema": "cortex-receipt/0.1",
+  "shared_dependencies": {},
+  "truth": {
+    "authority_path": "Kernel policy engine -> capability grant -> Consequence Gate",
+    "empirical_validity": "unknown",
+    "formal_validity": "not_applicable",
+    "legitimate_authority": "not_granted_by_cortex"
+  },
+  "uncertainty": "misconduct pays in 98.8% of sampled parameter combinations (risk-neutral model)",
+  "verifier": {
+    "blocking": false,
+    "findings": [
+      {
+        "detail": "deterrence model assumes a risk-neutral actor",
+        "kind": "risk_neutral_assumption",
+        "severity": "minor",
+        "target": null
+      }
+    ],
+    "independence": {
+      "independent_of_routes": true,
+      "note": "agreement between routes that share a model, solver or source is not independent verification",
+      "shared_between_routes": {},
+      "shared_with_routes": [],
+      "verifier": "cortex.verifier.adversarial@0.1.0",
+      "verifier_dependencies": [
+        "python-stdlib",
+        "rules:cortex.organs.adversarial"
+      ]
+    },
+    "proof_class": "verifier_findings",
+    "verifier": "cortex.verifier.adversarial@0.1.0"
+  },
+  "versions": {
+    "cortex": "0.1.5",
+    "policy": "cortex-route-policy/0.1",
+    "routes": {
+      "cortex.deterrence.accountability@0.1.0": "0.1.0"
+    }
+  }
+}

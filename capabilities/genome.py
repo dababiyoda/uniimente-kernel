@@ -16,6 +16,10 @@ KNOWN_CONTRACTS = (
     "capability-grant", "context-packet", "decision", "event", "evidence",
     "opportunity-packet", "outcome", "venture-assessment", "venture-cell-charter",
     "organ-manifest", "wire-opportunity-packet", "wire-venture-assessment",
+    # Polyintelligence Cortex seed v0.1 (cortex/): cognition contracts. They
+    # carry recommendations and evidence only; none of them carries authority.
+    "cortex-problem-geometry", "cortex-intelligence-genome", "cortex-proof-artifact",
+    "cortex-receipt", "cortex-routing-memory",
 )
 CONSEQUENCE_CLASSES = ("read_only", "internal_write", "external_contact",
                        "financial", "irreversible")

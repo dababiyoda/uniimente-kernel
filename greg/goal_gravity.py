@@ -9,9 +9,12 @@
         guard       every signed closure (revoke, supersede), stop or change, narrowing preference and priority
                     floor is restored if an unsigned record widened it
         sense       Gate receipts of each check's own sensor read (check predicate recomputed), separate-process
-                    appraisals, greg.path, non-quarantined intake (untrusted): only new or changed evidence
+                    appraisals, greg.path, non-quarantined intake (untrusted, judged by what its content names):
+                    only new or changed evidence
+        reopen      a completed goal whose plan node an attributed observation shows regressed is dormant again
         loop        egregore GoalGravityLoop.turn in body mode: no gate, no executor, no grant
-                      awake goal  -> MissionEngine.observe_now for its signed missions (timing only)
+                      awake goal  -> MissionEngine.observe_now for its signed missions (timing only; a mission
+                                     awaiting an APPROVAL then prepares in cone while the decision stays open)
                       decision    -> MissionEngine.request_decision (the engine's own APPROVAL, exact scope)
                       information -> greg.goal.notice
         settle      a signature-verified DECISION reject becomes a goal route refusal (both lineages)

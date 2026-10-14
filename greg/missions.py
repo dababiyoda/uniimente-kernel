@@ -526,9 +526,9 @@ class MissionEngine:
         Timing only: scope, light cone, budget and strategies are unchanged, and the observation
         still goes through the Gate. A paused or terminal mission is the founder's and is never
         touched; a mission already due needs no pull. A mission waiting on the founder's answer to
-        an APPROVAL may be pulled once per wait cycle: it then re-observes and repairs its other
-        checks inside its cone while the decision stays open (``_prepare``); the asked scope itself
-        still runs only after a signed approve."""
+        an APPROVAL may be pulled, one pull pending at a time: it then re-observes and repairs its
+        other checks inside its cone while the decision stays open (``_prepare``); the asked scope
+        itself still runs only after a signed approve."""
         self.book.rebuild()
         m = self.book.missions.get(mission_id)
         if m is None or m.status in TERMINAL or m.paused:

@@ -23,7 +23,7 @@ state. Process completion never closes a mission: only re-observed evidence does
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 
@@ -42,6 +42,7 @@ MISSION_SCHEMA = json.loads((ROOT / "contracts/greg-mission.schema.json").read_t
 TERMINAL = {"ACHIEVED", "ABANDONED", "SUPERSEDED"}
 LIFECYCLE_STATES = {"ACTIVE", "PAUSED", "ABANDONED", "SUPERSEDED"}
 DECISION_ANSWERS = {"approve", "reject", "reconcile_executed", "reconcile_not_executed"}
+EPOCH = datetime.min.replace(tzinfo=timezone.utc)
 
 
 class MissionError(ValueError):
@@ -72,6 +73,10 @@ def validate_mission(spec: dict) -> dict:
         if requires & set(strategy["advances"]):
             raise MissionError(f"strategy {strategy['action_id']} cannot require a check it advances")
         _validate_bindings(strategy, set(actions))
+        outside = compensation_outside(cone, strategy["compensate"]) if "compensate" in strategy else []
+        if outside:
+            raise MissionError(f"strategy {strategy['action_id']} compensation outside the light cone: "
+                               + "; ".join(outside))
     _acyclic_bindings(spec["strategies"])
     ladder = spec["closure"].get("ladder", [])
     for rung in ladder:
@@ -86,6 +91,15 @@ def validate_mission(spec: dict) -> dict:
         raise MissionError("capability build budgets exceed the mission budget")
     del cone
     return spec
+
+
+def compensation_outside(cone: LightCone, compensate: dict, consequence_class: str = "read_only") -> list[str]:
+    """Why a signed compensating action falls outside its mission's light cone (empty = inside).
+
+    Judged at signing, so not against the horizon: compensation runs after the mission ends, and the
+    Gate re-checks the whole cone when it runs (outside it, the founder decides an exact-scope APPROVAL)."""
+    return cone.admits(capability=compensate["capability"], target=compensate["target"],
+                       consequence_class=consequence_class, cost_usd=0.0, at=EPOCH)
 
 
 BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "boolean": (bool,),
@@ -459,6 +473,13 @@ class MissionEngine:
             if existing.command_digest == command_digest or existing.spec == spec:
                 return mid
             raise MissionError("mission id already bound to different founder intent; supersede explicitly")
+        cone = LightCone.from_dict(spec["light_cone"])
+        for s in (s for s in spec["strategies"] if "compensate" in s):   # its class is the manifest's, never claimed
+            manifest = self.registry.manifests.get(s["compensate"]["capability"])
+            outside = compensation_outside(cone, s["compensate"], manifest.consequence_class) if manifest \
+                else ["its capability is not registered, so its consequence class is unknown"]
+            if outside:
+                raise MissionError(f"strategy {s['action_id']} compensation: " + "; ".join(outside))
         self.journal.record("mission.registered", {"mission_id": mid, "spec": spec,
                                                    "command_digest": command_digest}, key=mid)
         self.book.rebuild()
@@ -533,7 +554,8 @@ class MissionEngine:
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
-                 resource: dict | None = None, evidence: dict | None = None) -> str:
+                 resource: dict | None = None, evidence: dict | None = None,
+                 consequence: str = "the mission waits; no action is taken") -> str:
         """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
 
         ``resource`` makes it a section-60 resource ask: evidence, costed options with their
@@ -552,7 +574,7 @@ class MissionEngine:
         message = {"request_id": rid, "mission_id": m.mission_id, "kind": kind, "action_id": action_id,
                    "scope_digest": scope_digest, "why_now": why, "recommendation": recommendation,
                    "alternatives": alternatives, "authority_requested": requested,
-                   "consequence_of_no_response": "the mission waits; no action is taken",
+                   "consequence_of_no_response": consequence,
                    "created_at": iso(now), "reality_status": "RECORDED_LOCAL_MESSAGE"}
         if evidence is not None:
             message["evidence"] = evidence
@@ -614,7 +636,7 @@ class MissionEngine:
 
     def _step(self, m: MissionState, now: datetime) -> dict:
         if m.status in TERMINAL:
-            return {"state": m.status}
+            return {"state": m.status, **(self._compensate(m, now) if m.status != "ACHIEVED" else {})}
         if m.paused:
             return {"state": "PAUSED"}
         if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now:
@@ -633,8 +655,7 @@ class MissionEngine:
                                "expected_effect": "the mission resumes with the scope and budget you sign"},
                               {"option": "renew with narrower scope", "cost": "none in money; your signature",
                                "expected_effect": "the mission resumes with less authority"},
-                              {"option": "abandon", "cost": "none",
-                               "expected_effect": "the mission ends; nothing further runs for it"}]}),
+                              self._abandon_option(m)]}),
                 "why": "mandate expired", "reconsider": "founder renews or abandons"})
             return {"state": "BLOCKED", "blocker": m.blocker}
         if m.blocker and m.blocker.get("failing_checks") and not self._blocker_resolved(m)[0]:
@@ -1024,14 +1045,134 @@ class MissionEngine:
                      "expected_effect": "observed at the next check; the ask is withdrawn and the mission continues"},
                     {"option": "revise the mission so this step is not needed", "cost": "none",
                      "expected_effect": "a new signed MISSION replaces this one; nothing runs for this step"},
-                    {"option": "abandon", "cost": "none",
-                     "expected_effect": "the mission ends; nothing further runs for it"}]})
+                    self._abandon_option(m)]})
         self._block(m, {"type": "human_work", "request_id": rid, "function": function, "resource": resource,
                         "why": f"{function} is work only {who} may do",
                         **({"failing_checks": watched} if watched else {}),
                         "reconsider": "the deliverable is observed by the mission's own checks, or you revise or "
                                       "abandon the mission"})
         return None
+
+    def _executed(self, m: MissionState) -> list[tuple[dict, str]]:
+        """(latest DONE record, consequence class) of each executed strategy that is not read-only, in execution
+        order. A capability this body no longer knows has an unknown class, never a presumed harmless one."""
+        latest = {}
+        for e in self.journal.replay("mission.action"):
+            if e.payload.get("mission_id") == m.mission_id and e.payload.get("status") == "DONE":
+                latest.pop(e.payload["action_id"], None)
+                latest[e.payload["action_id"]] = e.payload
+        classes = {a: getattr(self.registry.manifests.get(d.get("capability")), "consequence_class", "unknown")
+                   for a, d in latest.items()}
+        return [(d, classes[a]) for a, d in latest.items() if classes[a] != "read_only"]
+
+    def _abandon_option(self, m: MissionState) -> dict:
+        """Abandoning costs no money, but an executed effect does not end with the mission (Defect 7)."""
+        executed = len(self._executed(m))
+        if not executed:
+            return {"option": "abandon", "cost": "none",
+                    "expected_effect": "the mission ends; nothing further runs for it"}
+        return {"option": "abandon",
+                "cost": f"none in money; {executed} executed effect(s) do not end with the mission",
+                "expected_effect": "the mission ends; each executed effect is compensated through the Gate where a "
+                                   "compensating action was signed, otherwise put to you as a COMPENSATION decision "
+                                   "(external effects) or recorded as an open compensation obligation (workspace "
+                                   "writes)"}
+
+    def _compensate(self, m: MissionState, now: datetime) -> dict:
+        """An abandoned or superseded mission leaves no executed effect unaccounted for (Defect 7).
+
+        Each executed, non-read-only strategy gets one compensation_required fact. A compensation signed with the
+        strategy runs once, through this office and the Gate like any action, bound to the original receipt.
+        With none signed, an external, financial, irreversible or unknown effect becomes one COMPENSATION
+        decision and nothing runs; a workspace write stays recorded as an open obligation. Never blind-retried,
+        never repeated after a restart (the fact keys and the Gate's retained receipt make it idempotent)."""
+        mid = m.mission_id
+        required = {e.payload["action_id"] for e in self.journal.replay("mission.compensation_required")
+                    if e.payload["mission_id"] == mid}
+        closed = {e.payload["action_id"] for e in self.journal.replay("mission.compensated")
+                  if e.payload["mission_id"] == mid}
+        strategies = {s["action_id"]: s for s in m.spec["strategies"]}
+        rows = []
+        for action, klass in reversed(self._executed(m)):           # undo in reverse order of execution
+            aid = action["action_id"]
+            if aid in closed:
+                continue
+            declared = strategies.get(aid, {}).get("compensate")
+            if aid not in required:
+                reason = "compensation declared" if declared else "no compensation declared" + (
+                    "" if klass == "internal_write" else "; founder decision required")
+                self.journal.record("mission.compensation_required", {
+                    "mission_id": mid, "action_id": aid, "capability": action.get("capability"),
+                    "consequence_class": klass, "original_receipt": action.get("receipt"), "compensate": declared,
+                    "lifecycle": m.status, "reason": reason, "at": iso(now)}, key=[mid, aid, "compensate"])
+            if declared is None:
+                if klass != "internal_write":
+                    self._compensation_ask(m, action, klass, now)
+                rows.append({"action_id": aid, "state": "COMPENSATION_REQUIRED"})
+            else:
+                rows.append({"action_id": aid, "state": self._run_compensation(m, action, klass, declared, now)})
+        return {"compensation": rows} if rows else {}
+
+    def _run_compensation(self, m: MissionState, action: dict, klass: str, declared: dict, now: datetime) -> str:
+        mid, aid, original = m.mission_id, action["action_id"], action.get("receipt")
+        manifest, adapter, missing = self._resolve(declared)
+        if manifest is None:
+            self._compensation_ask(m, action, klass, now, failure=[f"compensating capability {missing} is not usable"])
+            return "ESCALATED"
+        params, target = declared.get("params", {}), declared["target"]
+        scope = self.office.scope_digest(mission_id=mid, capability_id=manifest.capability_id, params=params,
+                                         target=target, consequence_class=manifest.consequence_class, cost_usd=0.0)
+        if any(r["kind"] == "APPROVAL" and r["scope_digest"] == scope for r in self.book.open_requests()):
+            return "WAITING"                    # the founder decides this exact scope; no re-evaluation meanwhile
+        record = {"mission_id": mid, "action_id": aid, "capability": manifest.capability_id, "target": target,
+                  "original_receipt": original, "scope_digest": scope}
+        if scope in m.rejected_scopes:
+            self.journal.record("mission.compensated", {**record, "status": "DECLINED", "receipt": None, "at": iso(now),
+                                                        "reasons": ["founder rejected this compensating action"]},
+                                key=[mid, aid, "compensated"])
+            return "DECLINED"
+        outcome = self.office.act(
+            mission_id=mid, cone=m.cone, command_digest=m.command_digest, manifest=manifest, adapter=adapter,
+            ctx=self._context(m, manifest), params=params, target=target, cost_usd=0.0,
+            expected_outcome=f"compensation of {aid}", evidence_refs=[original] if original else [],
+            attempt=f"compensate:{aid}:{original}", spent_usd=m.spent_usd, approved_scopes=m.approved_scopes)
+        if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
+            self._request(m, kind="APPROVAL", scope_digest=outcome.scope_digest, action_id=aid,
+                          why=f"compensation of {aid}: " + "; ".join(outcome.reasons)[:400],
+                          recommendation=f"approve the compensating action signed with {aid} "
+                                         f"({manifest.capability_id} on {target})",
+                          alternatives=["reject: the executed effect stands; nothing is run for it"],
+                          requested={"capability": manifest.capability_id, "target": target,
+                                     "consequence_class": manifest.consequence_class, "cost_usd": 0.0}, now=now,
+                          evidence={"original_receipt": original, "lifecycle": m.status},
+                          consequence="the executed effect stands; nothing is run for it")
+            return "WAITING"
+        self.journal.record("mission.compensated", {**record, "status": outcome.status, "receipt": outcome.receipt_hash,
+                                                    "reasons": [str(r)[:300] for r in outcome.reasons], "at": iso(now)},
+                            key=[mid, aid, "compensated"])
+        if outcome.status != "DONE":            # refused, unavailable or uncertain: never blind-retried
+            self._compensation_ask(m, action, klass, now, failure=outcome.reasons)
+        return outcome.status
+
+    def _compensation_ask(self, m: MissionState, action: dict, klass: str, now: datetime, *, failure=None) -> str:
+        """One founder decision for an executed effect GREG does not undo: none was signed, or the signed
+        compensation did not complete. The answer is only recorded; nothing is executed for it."""
+        aid, original = action["action_id"], action.get("receipt")
+        strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), {})
+        evidence = {"original_receipt": original, "capability": action.get("capability"),
+                    "target": strategy.get("target"), "consequence_class": klass, "lifecycle": m.status,
+                    "executed_at": action.get("at"),
+                    **({"compensation_failed": [str(r)[:300] for r in failure]} if failure else {})}
+        return self._request(
+            m, kind="COMPENSATION", scope_digest=sha256_json({"compensate": aid, "receipt": original}), action_id=aid,
+            why=f"{aid} executed a {klass} effect through {action.get('capability')} before the mission ended "
+                f"({m.status}); " + ("its signed compensation did not complete" if failure
+                                     else "the mission signed no compensating action for it"),
+            recommendation="inspect the retained receipt, then undo or accept the effect yourself",
+            alternatives=["approve: record that you have handled this effect", "reject: record that the effect stands"],
+            requested={"action_id": aid, "consequence_class": klass, "spend": "none",
+                       "execution": "none: GREG runs no compensation that was not signed with the strategy"},
+            now=now, evidence=evidence, consequence="the effect stays recorded as compensation required; nothing runs")
 
     def _capability_ask(self, m: MissionState, function: str, purpose: str) -> dict:
         """Section 60 for a missing capability: what was searched, what each route costs."""
@@ -1071,8 +1212,7 @@ class MissionEngine:
                      "expected_effect": "a built capability attaches only after it passes the held-out cases"},
                     {"option": "revise the strategy", "cost": "none",
                      "expected_effect": "the mission continues on strategies that do not need this function"},
-                    {"option": "abandon", "cost": "none",
-                     "expected_effect": "the mission ends; nothing further runs for it"}]}
+                    self._abandon_option(m)]}
 
     def _access_ask(self, m: MissionState, aid: str, manifest, gap: dict, now: datetime) -> str | None:
         """Section 60, "I need access to this account to answer reliably": the action worked,

@@ -21,13 +21,18 @@ Proposal → identity → legal principal → evidence → policy
   `workflows/approval-lifecycle.yaml`, `GrantIssuer` (single-action grants,
   contract-exact), `BudgetOffice` (explicit reservations, released on every
   failure path), commit-time revalidation (grant fresh/unrevoked/unused,
-  effect hash bound, identity still valid, policy still allows, witness
+  effect hash and granted authority bound, proposal unchanged since
+  admission, identity still valid, policy still ALLOWs or a human approval
+  held for this exact proposal covers its REQUIRE_HUMAN reasons, witness
   signature verifies).
 
 ## Hard rules (enforced in tests)
 
 - expired grant / revoked grant / stale evidence at commit → fail closed
 - effect mismatch at commit → hard refusal + incident on the ledger
+- consequence class (or any authority-relevant field) changed between
+  admission and commit, or REQUIRE_HUMAN at commit without a matching
+  approval → hard refusal; authority mismatches raise an incident (#55)
 - missing outcome record → blocks autonomy promotion
 - any executor exception → `failed`, budget released, evidence preserved
 - models recommend; this code authorizes
@@ -40,7 +45,7 @@ Proposal → identity → legal principal → evidence → policy
 - **Available dependencies**: Python 3 stdlib + kernel modules (compiler, identity, provenance).
 - **Security model**: every effect revalidated at the durability boundary; witnesses HMAC-signed; key from environment (`UNIIMENTE_WITNESS_KEY`), dev fallback only under `UNIIMENTE_ENV=development`.
 - **Failure modes**: refused, denied, expired, revoked, failed — all terminal non-executing states, all ledgered.
-- **Acceptance tests**: `tests/unit/test_consequence_gate.py` (happy path + 12 adversarial cases).
+- **Acceptance tests**: `tests/unit/test_consequence_gate.py` (happy path + adversarial cases).
 - **Recovery path**: every failure path releases the budget reservation and records the refusal; replay from ledger.
 - **Resource ceiling**: grants expire in 15 minutes; approvals in 72 hours; single-use grants consumed once.
 - **Operating cost**: two policy evaluations + one HMAC per action; measurable and constant.

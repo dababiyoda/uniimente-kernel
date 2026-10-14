@@ -284,3 +284,97 @@ def test_tampering_an_old_retained_record_refuses_the_next_commit(stack):
                        executor=lambda p: calls.append(p) or GOOD(p))
     assert calls == []                                      # the executor never ran
     assert len(ledger.by_type("grant_dispatch")) == dispatched and not ledger.verify_chain()[0]
+
+
+# ---------- #55 CASE 27: escalation inside the commit window ----------
+# Ported from refs/remotes/pr/55:docs/integration/harness/verify_main_holes.py
+# CASE 27, adapted to the canonical path: the grant is issued by the Gate's own
+# GrantIssuer and supplied as standing_grant, so admission succeeds and the
+# escalation is what the commit-time check must catch.
+
+def _counting(calls):
+    def execute(p):
+        calls.append(p.consequence_class)
+        return {"observed_outcome": "draft queued", "result_class": "positive"}
+    return execute
+
+
+def test_case27_consequence_class_escalated_in_commit_window_is_refused(stack):
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id)
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    sign = gate.signer.sign
+
+    def escalate(witness):
+        p.consequence_class = "irreversible"      # escalate in the commit window
+        return sign(witness)
+
+    gate.signer.sign = escalate
+    calls = []
+    rec = gate.run(p, executor=_counting(calls), standing_grant=grant,
+                   approver=lambda pr, why: (True, "approved as external_contact"))
+    assert rec.state == "refused" and calls == []
+    assert "executing" not in [t["state"] for t in rec.trajectory]
+    assert not ledger.by_type("receipt") and not ledger.by_type("grant_dispatch")
+    assert any("human approval this run does not hold" in r for r in rec.refusal_reasons)
+    assert any("authority" in r and "mismatch" in r for r in rec.refusal_reasons)
+    assert rec.incident == "authority_mismatch_at_commit"
+    assert gate.grants.get_meta(grant["grant_id"])["used"] is False
+
+
+def test_require_human_raised_only_at_commit_refuses_without_approval(stack):
+    """Law changed in the commit window: the action was ALLOW at admission and is
+    reserved at commit. No human approved it, so it must not execute."""
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id)
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    sign = gate.signer.sign
+
+    def reserve(witness):
+        gate.compiled.reserved_matters["draft.publish"] = ["alfonso"]
+        return sign(witness)
+
+    gate.signer.sign = reserve
+    calls = []
+    rec = gate.run(p, executor=_counting(calls), standing_grant=grant)
+    assert rec.state == "refused" and calls == []
+    assert any("reserved" in r and "does not hold" in r for r in rec.refusal_reasons)
+
+
+def test_grant_does_not_cover_a_class_escalated_before_run(stack):
+    """A grant minted for external_contact cannot carry an irreversible effect,
+    even when a human approves the irreversible class during the run."""
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id)
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    p.consequence_class = "irreversible"
+    calls = []
+    rec = gate.run(p, executor=_counting(calls), standing_grant=grant,
+                   approver=lambda pr, why: (True, "synthetic approval; not founder authentication"))
+    assert rec.state == "refused" and calls == []
+    assert any("authority binding mismatch" in r for r in rec.refusal_reasons)
+
+
+def test_proposal_changed_during_approval_is_refused(stack):
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id, action_class="material_debt")
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+
+    def approver(pr, why):
+        pr.evidence_refs = ["sha256:" + "b" * 64]  # changed while a human looked at it
+        return True, "synthetic approval; not founder authentication"
+
+    calls = []
+    rec = gate.run(p, executor=_counting(calls), standing_grant=grant, approver=approver)
+    assert rec.state == "refused" and calls == []
+    assert any("changed during human approval" in r for r in rec.refusal_reasons)
+
+
+def test_human_approval_held_for_this_proposal_survives_commit(stack):
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id, consequence_class="irreversible", evidence_confidence=0.95)
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    calls = []
+    rec = gate.run(p, executor=_counting(calls), standing_grant=grant,
+                   approver=lambda pr, why: (True, "synthetic approval; not founder authentication"))
+    assert rec.state == "recorded" and calls == ["irreversible"]

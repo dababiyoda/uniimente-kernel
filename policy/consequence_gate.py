@@ -16,6 +16,9 @@ Hard rules:
     revoked grant at commit        -> fail closed
     stale evidence at commit       -> fail closed and refresh
     effect mismatch at commit      -> hard refusal and incident
+    authority change at commit     -> hard refusal and incident: only ALLOW, or
+                                      REQUIRE_HUMAN covered by a human approval
+                                      held for this exact proposal, executes
     missing outcome record         -> blocks autonomy promotion
     any failure                    -> fails toward silence, never toward
                                       uncontrolled external action
@@ -40,6 +43,23 @@ from provenance.commit_witness import WitnessSigner, new_witness, sha256_obj
 TERMINAL_STATES = {"recorded", "refused", "denied", "expired", "revoked", "failed"}
 APPROVAL_TTL = timedelta(hours=72)          # pending_human expires after 72 hours
 GRANT_TTL = timedelta(minutes=15)           # single-action grants are short-lived
+
+# Who may do what, under which principal, at which consequence class. A grant
+# is minted for exactly these; the effect itself (payload, target, action_class)
+# is bound separately by bound_effect_hash.
+GRANT_AUTHORITY_FIELDS = ("actor", "legal_principal", "objective", "action_class",
+                          "consequence_class", "requested_capability")
+# Everything policy read when this run admitted the proposal. Proposal is a
+# mutable dataclass, so the run snapshots these at admission and refuses at
+# commit if any changed in between (#55, CASE 27: an escalation in the commit
+# window must not execute on an earlier evaluation).
+COMMIT_WINDOW_FIELDS = GRANT_AUTHORITY_FIELDS + (
+    "payload", "target", "estimated_cost_usd", "evidence_confidence", "evidence_refs",
+    "expected_outcome", "context")
+
+
+def _authority_digest(proposal: Proposal, fields: tuple[str, ...]) -> str:
+    return sha256_obj({name: getattr(proposal, name) for name in fields})
 
 
 def _now() -> datetime:
@@ -144,6 +164,7 @@ class GrantIssuer:
             "used": False,
             "bound_effect_hash": sha256_obj({"payload": proposal.payload, "target": proposal.target,
                                              "action_class": proposal.action_class}),
+            "bound_authority_hash": _authority_digest(proposal, GRANT_AUTHORITY_FIELDS),
         }
         return grant
 
@@ -231,10 +252,16 @@ class ConsequenceGate:
                         or managed['objective'] != proposal.objective
                         or proposal.target not in managed.get('counterparties', [])):
                     raise ValueError('grant actor/objective/target mismatch')
+                if (self.grants.get_meta(managed['grant_id']).get('bound_authority_hash')
+                        != _authority_digest(proposal, GRANT_AUTHORITY_FIELDS)):
+                    raise ValueError('grant authority binding mismatch: consequence class, '
+                                     'capability or principal differs from what was granted')
             except (ValueError, KeyError, TypeError) as exc:
                 return self._refuse(rec, 'refused', [f'grant: {exc}'])
 
         # 3-5. legal principal + evidence + policy -----------------------
+        admitted = _authority_digest(proposal, COMMIT_WINDOW_FIELDS)
+        approval: dict | None = None
         eval_grant = self._eval_view(standing_grant) if standing_grant else None
         decision = evaluate(self.compiled, proposal, identity_ok=ok, grant=eval_grant, thresholds=self.evidence_thresholds)
         if decision.verdict == Verdict.DENY:
@@ -248,6 +275,11 @@ class ConsequenceGate:
             approved, why = approver(proposal, decision.reasons)
             if not approved:
                 return self._refuse(rec, "denied", [f"human decision: {why}"])
+            if _authority_digest(proposal, COMMIT_WINDOW_FIELDS) != admitted:
+                return self._refuse(rec, "refused", ["proposal changed during human approval; "
+                                                     "the approval covers only the evaluated proposal"])
+            # The approval covers exactly these reasons for exactly this proposal.
+            approval = {"authority_digest": admitted, "reasons": list(decision.reasons)}
             self._transition(rec, "evaluating", {"step": "policy_recheck_after_approval"})
             decision = evaluate(self.compiled, proposal, identity_ok=True, grant=eval_grant, thresholds=self.evidence_thresholds)
             if decision.verdict == Verdict.DENY:
@@ -285,13 +317,18 @@ class ConsequenceGate:
         self.ledger.append("witness", asdict(witness))
 
         # 10. commit-time revalidation ---------------------------------------
-        problem = self._reauthorize_at_commit(proposal, grant, witness)
+        problem = self._reauthorize_at_commit(proposal, grant, witness,
+                                              admitted=admitted, approval=approval)
         if problem is not None:
             self.budget.release(reservation["reservation_id"])
             state, reasons = problem
-            if state == "refused" and any("mismatch" in r for r in reasons):
+            if state == "refused" and any("effect mismatch" in r for r in reasons):
                 rec.incident = "effect_mismatch_at_commit"
                 self.ledger.append("event", {"type": "incident.effect_mismatch",
+                                             "action_id": rec.action_id, "reasons": reasons})
+            elif state == "refused" and any("authority" in r and "mismatch" in r for r in reasons):
+                rec.incident = "authority_mismatch_at_commit"
+                self.ledger.append("event", {"type": "incident.authority_mismatch",
                                              "action_id": rec.action_id, "reasons": reasons})
             return self._refuse(rec, state, reasons)
 
@@ -353,9 +390,21 @@ class ConsequenceGate:
                                            "reconciled": reconciled})
         return rec
 
-    def _reauthorize_at_commit(self, proposal: Proposal, grant: dict, witness) -> tuple[str, list[str]] | None:
-        """Authority is ALWAYS revalidated at the durability boundary."""
+    def _reauthorize_at_commit(self, proposal: Proposal, grant: dict, witness, *,
+                               admitted: str | None = None,
+                               approval: dict | None = None) -> tuple[str, list[str]] | None:
+        """Authority is ALWAYS revalidated at the durability boundary.
+
+        Only ALLOW passes. REQUIRE_HUMAN passes only when this run holds a human
+        approval given for this exact proposal and for every reason now raised;
+        anything else (DENY, an unapproved REQUIRE_HUMAN, an unknown verdict)
+        refuses. The proposal must still equal what was admitted and granted.
+        """
         reasons: list[str] = []
+        current = _authority_digest(proposal, COMMIT_WINDOW_FIELDS)
+        if admitted is None or current != admitted:
+            reasons.append("authority mismatch at commit: proposal changed after admission "
+                           "(consequence class, cost, evidence, effect or context)")
         # witness signature must verify
         if not self.signer.verify(witness):
             reasons.append("witness signature invalid")
@@ -376,6 +425,9 @@ class ConsequenceGate:
                 {"payload": proposal.payload, "target": proposal.target,
                  "action_class": proposal.action_class}):
             reasons.append("effect mismatch at commit: payload/target diverged from authorized effect")
+        if meta.get("bound_authority_hash") != _authority_digest(proposal, GRANT_AUTHORITY_FIELDS):
+            reasons.append("authority binding mismatch at commit: consequence class, capability or "
+                           "principal diverged from the granted authority")
         # identity must still be valid
         ok, why = self.passports.verify(proposal.actor)
         if not ok:
@@ -386,6 +438,14 @@ class ConsequenceGate:
         decision = evaluate(self.compiled, proposal, identity_ok=True, grant=self._eval_view(g), thresholds=self.evidence_thresholds)
         if decision.verdict == Verdict.DENY:
             reasons.extend(f"commit-time policy refusal: {r}" for r in decision.reasons)
+        elif decision.verdict == Verdict.REQUIRE_HUMAN:
+            held = (approval is not None and approval.get("authority_digest") == current
+                    and set(decision.reasons) <= set(approval.get("reasons", ())))
+            if not held:
+                reasons.extend(f"commit-time policy requires a human approval this run does not hold: {r}"
+                               for r in decision.reasons)
+        elif decision.verdict != Verdict.ALLOW:
+            reasons.append(f"commit-time policy verdict {decision.verdict!r} is not allow")
         if reasons:
             state = "revoked" if any("revoked" in r for r in reasons) else "refused"
             return state, reasons

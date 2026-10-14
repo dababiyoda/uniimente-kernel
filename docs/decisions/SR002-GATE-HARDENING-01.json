@@ -1,0 +1,50 @@
+{
+ "record_id": "SR002-GATE-HARDENING-01",
+ "kind": "continuity divergence record: not a subject binding, not an amendment, not authority",
+ "status": "RECORDED_PENDING_FOUNDER_RATIFICATION",
+ "subject_id": "sr002-0.1.0",
+ "subject_source_commit": "07af5758197501662df81ff05e2b34ce8224a322",
+ "artifact": "policy/consequence_gate.py",
+ "pinned_sha256": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e",
+ "hardened_sha256": "15bee53b28928c585827556175af1b4caae399b9ec562f626305b77f2f0885a0",
+ "hardening": [
+  {
+   "port": "#55 commit-window escalation",
+   "effect": "refuse at commit unless policy is ALLOW, or REQUIRE_HUMAN covered by a human approval held for this exact proposal; bind consequence class, capability and principal into the grant; refuse any authority-relevant proposal change after admission",
+   "sha256_after": "15bee53b28928c585827556175af1b4caae399b9ec562f626305b77f2f0885a0"
+  }
+ ],
+ "direction": "subtractive only: every change refuses more and authorizes nothing new",
+ "why_the_pin_is_left": [
+  "evolution/repair/subjects.py: subject bindings are reviewed source commitments, not fingerprints measured from running code; tests/unit/test_shared_compatibility.py::test_changed_source_fails_instead_of_learning_a_new_fingerprint",
+  "SR-002 succession (b6bb71f lineage) cited a founder ruling; constitution/amendment-policy.ucl reserves ratification to alfonso and forbids agent or workflow amendment",
+  "docs/decisions/SR001-COMPAT-01.json rejects recomputed seals as laundering drift into acceptance",
+  "FOUNDER_INTENT_LEDGER SR-INTENT-3: chat or workflow text never authenticates Alfonso; this record was produced by an agent workflow and carries no founder authority"
+ ],
+ "observable_effect": [
+  "SR002.matches(repository root) is False; FROZEN and SR001 were already non-matching",
+  "evolution.repair ReplacementExperiment(subject=SR002) reports gates.continuity_unchanged False and continuity.unchanged False instead of certifying continuity",
+  "the 13 dependent tests below fail by design: they are the tripwire that a reviewed continuity artifact changed, and they are neither re-pinned nor marked expected-to-fail"
+ ],
+ "dependent_tests": [
+  "tests/unit/test_repair_adapters.py::test_identity_authority_and_shutdown_survive_the_component_being_absent",
+  "tests/unit/test_repair_harness.py::test_governance_and_continuity_held_while_the_function_was_absent",
+  "tests/unit/test_repair_harness.py::test_continuity_is_unchanged_before_during_and_after",
+  "tests/unit/test_repair_harness.py::test_selection_reports_the_two_questions_separately",
+  "tests/unit/test_repair_harness.py::test_installation_is_verified_by_the_blind_detector",
+  "tests/unit/test_repair_harness.py::test_installation_scope_is_stated_and_the_live_path_is_untouched",
+  "tests/unit/test_repair_harness.py::test_rollback_restores_the_original_and_the_original_survived",
+  "tests/unit/test_repair_harness.py::test_the_capsule_records_the_whole_cycle",
+  "tests/unit/test_repair_harness.py::test_the_ledger_chain_verifies_and_is_append_only",
+  "tests/unit/test_repair_harness.py::test_the_r3_prediction_is_recorded_as_wrong",
+  "tests/unit/test_repair_harness.py::test_module_entry_point_emits_a_valid_record_and_exits_zero",
+  "tests/unit/test_shared_compatibility.py::test_current_binding_does_not_revalidate_the_old_subject",
+  "tests/unit/test_shared_compatibility.py::test_changed_source_fails_instead_of_learning_a_new_fingerprint"
+ ],
+ "other_pins_moved": [
+  "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json and cortex/evaluation/composition_lift/freeze-v3.json hash policy/consequence_gate.py in their frozen inputs; a later --run of those freezes reports FROZEN_INPUT_CHANGED by design. Their documented path is a new run id, not an edit of the freeze."
+ ],
+ "resolution": "Alfonso ratifies (signed decision) a successor subject binding SR-003 recorded on the successor with predecessor sr002-0.1.0, exact source commit and per-artifact digests, as SR-002 was; or rejects the hardening and the gate returns to the pinned bytes. Until then the dependent tests stay red and say so.",
+ "kill_condition": "any SR002 artifact other than policy/consequence_gate.py drifts, or the gate drifts from hardened_sha256 without this record changing in the same commit",
+ "authority_note": "This record changes no continuity reference and grants nothing. SR002 is unchanged."
+}

@@ -25,6 +25,15 @@ Rules every adapter here follows (Final Build Order §8):
 Modules:
 
 - `bridge_transport.py` — canonical exact-context HMAC and nonce verification.
+  Shared key (`WEALTHMACHINE_SIGNING_KEY`): messages are byte-compatible with
+  the transport the organs pin (`4999acff`) and report `identity_isolated:
+  "false"`. Per-organ keys (`UNIIMENTE_BRIDGE_KEY_<ORGAN>`): signed under a
+  `key-scope:identity` context bound into the signature. They report
+  `identity_isolated: "true"` only when the key collides with neither the shared
+  key nor another organ's key, and `require_isolated_identity=True` refuses
+  everything else, which defeats scope downgrade. Rollout order: upgrade
+  verifiers first. Pinned verifiers refuse per-organ messages; they don't misread
+  them.
   Transport protocol 2 is distinct from wire schema 1.1. Durable application
   idempotency belongs to `events/bridge_state.py`, not the transport nonce.
   Historical mirrors remain in Git; active consumers use thin re-exports.

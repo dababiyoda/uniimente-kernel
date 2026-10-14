@@ -1,0 +1,99 @@
+{
+  "decision_id": "ADR-GENESIS-002",
+  "title": "Correction increment for the Capability Genesis Loop after external review",
+  "problem": "Observation: an external review reproduced four defects at PR #129 head 00765bc with isolated synthetic dependencies: a part id accepted a different callable; three timeouts produced ready_for_ratification; killing a case left its shadow bound; 'connection refused' was classified as a doctrinal refusal. The review also named two gaps: candidates were supplied by the caller with no discovery step, and the ladder was rigid while accepting unsupported 'searched_none' declarations. Proposal: correct all six inside the existing draft, under existing developmental authority, linked to ADR-GENESIS-001.",
+  "founder_intent_refs": ["INTENT-0031", "INTENT-0030", "INTENT-20260930-open-source-first", "INTENT-0028", "ADR-GENESIS-001 (docs/collaboration/deliberation-genesis-2026-10-13.json)"],
+  "baseline": "PR #129 head 00765bc: parts board with metadata-only identity; genesis loop counting every shadow attempt as a sample; close() leaving shadows bound; evolution.failure_analysis.classify matching error strings; propose() requiring pre-registered parts and accepting bare 'searched_none'.",
+  "alternatives": [
+    {"name": "Keep metadata identity, add a warning when a callable changes", "description": "Log a mismatch instead of binding identity to the artifact.", "advantages": ["no API change"], "disadvantages": ["the dossier would still describe one thing and bind another", "a warning is not a refusal"], "revival_evidence": "none; the review's requirement is a bound identity"},
+    {"name": "Hash source text with inspect.getsource only", "description": "Fingerprint the function's source string.", "advantages": ["human-readable basis"], "disadvantages": ["closures with the same source but different captured values collide (rule_proposer('A') vs rule_proposer('B'))", "fails for callables without retrievable source"], "revival_evidence": "a deployment where every part is a module-level function with no closure state"},
+    {"name": "Learned diagnosis (model classifies responsibility)", "description": "Use a local model to attribute deficits.", "advantages": ["could read nuance in objections"], "disadvantages": ["model output is not evidence (verifier tiers 6-7)", "non-deterministic record", "a model judging whether to replace a model"], "revival_evidence": "a frozen evaluation where learned attribution beats the deterministic rules on held-out cycles with a strong verifier"}
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The loop would keep promoting on attempts, keep a killed case's shadow consuming budget, misread transport errors as constitutional refusals, and let a bare declaration unlock new architecture.",
+    "advantages": ["none beyond avoided work"],
+    "disadvantages": ["every reproduced defect stays live", "the anti-literalization gate stays nominal"]
+  },
+  "roles": [
+    {"role": "Founder-Intent Steward", "position": "The corrections move the loop toward the founder's effect: capability actually forms (discovery, commissioning) and only proven capability is retained. 'Searched_none' now means a recorded search; the ladder stays a prior with documented exceptions, matching FOUNDER_EFFECT_COMPILER.md.", "material_concerns": ["Market ambition must stay explicit and separate from internal governance; docs/EXTERNAL_WEDGE_OPTIONS.md carries it"], "evidence_refs": ["docs/FOUNDER_EFFECT_COMPILER.md resourcefulness ladder", "docs/EXTERNAL_WEDGE_OPTIONS.md"], "recommendation": "EXPERIMENT"},
+    {"role": "Systems Architect", "position": "Identity is bound at registration by an implementation digest included in part_id; stop reuses the suspend pattern as a ledgered stop record applied without a grant; failures are typed at the raising site; discovery sources are a small protocol with four defaults; missions are a seam (lineage on the deficit, pause/resume records, unblock on genome) rather than a third mission plane next to #160/#137.", "material_concerns": ["The fingerprint covers code and public state at registration, not external weights; model_digest is declared, not computed", "Hydration of specs and bindings is now one ordered pass so stops replay in sequence"], "evidence_refs": ["egregore/artifact.py", "egregore/parts.py", "egregore/failures.py"], "recommendation": "EXPERIMENT"},
+    {"role": "Adversarial Reviewer", "position": "Nineteen guards were removed one at a time; each removal failed at least one test after four tests were added. One mutant survived and was equivalent (successes >= min is implied by distinct success cycles >= min); the dead clause was removed rather than tested around.", "material_concerns": ["A proposer can still record a false override or exception; both are attributed and need evidence refs, which the ratifier sees", "Diagnosis rules can misattribute novel patterns; they return 'unknown' and block replacement rather than guessing"], "evidence_refs": ["tests/unit/test_egregore_genesis.py", "mutation runs in session log 2026-10-13"], "recommendation": "EXPERIMENT"},
+    {"role": "Operator and Maintainer", "position": "Stopping is now effective and free; re-registering changed code after restart fails loudly instead of silently taking over an identity; discovery reads a local catalog file and an optional search object, no network by default.", "material_concerns": ["Detector thresholds and diagnosis rules are code defaults, not ratified configuration"], "evidence_refs": ["egregore/genesis.py DeficitDetector, diagnose"], "recommendation": "EXPERIMENT"},
+    {"role": "Evidence and Welfare Guardian", "position": "All evidence remains sandbox tier. Victim protection improved: a working Guardian cannot be replaced on the strength of its vetoes; failures never count as successes; a killed case cannot keep executing. The two-mission test measures reuse by search depth and registrations, not time or cost.", "material_concerns": ["No live case; no external verification; verify_outcome is internal re-observation and says so"], "evidence_refs": ["test_mission_pauses_capability_forms_mission_resumes_and_second_case_reuses_it"], "recommendation": "EXPERIMENT"}
+  ],
+  "evidence": [
+    {"claim": "Each reproduced defect is now refused and regression-tested", "tier": "unit_test", "reference": "tests/unit/test_egregore_parts.py (5 new), tests/unit/test_egregore_genesis.py (23)", "finding": "pass"},
+    {"claim": "Guards are load-bearing", "tier": "sandbox_execution", "reference": "mutation runs 2026-10-13", "finding": "19 guards removed one at a time; each fails a test; one equivalent mutant removed as dead code"},
+    {"claim": "No kernel regression", "tier": "unit_test", "reference": "python -m pytest at kernel root, 2026-10-13", "finding": "666 passed, 4 skipped, 2 failed; the 2 fail identically on main (shallow clone); main baseline 624 passed"},
+    {"claim": "Reuse lowers effort at equal reliability", "tier": "deterministic_fixture", "reference": "two-mission test", "finding": "ladder depth 3 -> 0, new registrations 1 -> 0, trial successes 3/3 both; time and cost not measured"}
+  ],
+  "counterevidence": [
+    {"claim": "The loop creates and retains better capabilities in reality", "tier": "other", "reference": "no live case", "finding": "unproven; sandbox only"},
+    {"claim": "The fingerprint proves semantic identity", "tier": "other", "reference": "egregore/artifact.py docstring", "finding": "it is a stable approximation over code and public state at registration; not weights, not later mutation"}
+  ],
+  "pass_1": {
+    "intended_outcome": "Only proven, identity-bound capability is retained; stopping is effective; failures are typed; candidates are discovered with evidence; the ladder stays a prior.",
+    "advantages": [
+      {"id": "A1", "statement": "Artifact-bound identity", "amplified_value": "Dossiers, genomes and bindings now name one executable thing; provenance becomes auditable across restarts."},
+      {"id": "A2", "statement": "Success-based readiness with target evidence", "amplified_value": "Retention claims become falsifiable: the dossier states what was restored and what was not measured."},
+      {"id": "A3", "statement": "Discovery as a ledger record", "amplified_value": "Every 'we searched' is a record a later contributor can inspect; the anti-literalization gate has teeth."},
+      {"id": "A4", "statement": "Diagnosis before replacement", "amplified_value": "Working safeguards are protected from being optimized away; replacement effort goes where the fault is."}
+    ],
+    "disadvantages": [
+      {"id": "D1", "statement": "Fingerprint is an approximation", "severity": "medium", "response_type": "evidence", "redesigned_response": "Documented limits; model_digest declared separately; refusal on mismatch rather than silent acceptance."},
+      {"id": "D2", "statement": "Diagnosis rules are hand-written heuristics", "severity": "medium", "response_type": "governance", "redesigned_response": "Deterministic, recorded, labelled a prior; 'unknown' blocks replacement; human override with evidence."},
+      {"id": "D3", "statement": "More records and states per case", "severity": "low", "response_type": "protective", "redesigned_response": "Each record is the evidence the review asked for; states are the minimum for restart safety."},
+      {"id": "D4", "statement": "Reuse metric omits time and cost", "severity": "low", "response_type": "evidence", "redesigned_response": "Named in the doc; the first live case adds wall-clock and resource-governor cost."}
+    ],
+    "comparisons": {
+      "baseline": "00765bc: all six review findings live.",
+      "do_nothing": "Defects stay live; nothing compounds safely.",
+      "simplest_viable_alternative": "Fix only the four reproduced defects without discovery or diagnosis. Rejected: the review's two larger gaps are what make formation real.",
+      "strongest_competing_architecture": "Learned diagnosis and learned candidate ranking. Rejected now: model output is not evidence; revival on a frozen evaluation win.",
+      "reversible_experiment": "This increment in the same draft PR; revert restores 00765bc."
+    },
+    "rejected_alternatives": [
+      {"name": "Source-text fingerprint", "rejection_reason": "closure collisions", "revival_evidence": "module-level-only parts"},
+      {"name": "Learned diagnosis", "rejection_reason": "model output is not evidence", "revival_evidence": "frozen eval win with strong verifier"}
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attacked the corrected loop: equivalent and surviving mutants, false overrides, false exceptions, fingerprint evasion by mutating state after registration, forged stop records, and the temptation to call internal re-observation 'verification'.",
+    "new_weaknesses": [
+      {"id": "W1", "category": "gaming", "statement": "An override or exception with any evidence string passes", "strengthening_response": "Attributed and visible in the dossier; follow-up may require evidence refs to resolve to ledger records or URLs."},
+      {"id": "W2", "category": "fragility", "statement": "Fingerprint ignores state mutated after registration", "strengthening_response": "Documented; parts are expected to be pure callables; a later increment may re-fingerprint at bind time."},
+      {"id": "W3", "category": "comprehensibility", "statement": "Three records (diagnosis, discovery, candidates) before a trial", "strengthening_response": "Each answers one review question; README table lists them in order."}
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {"disadvantage_id": "D1", "outcome": "accepted", "rationale": "approximation is stated and refusal is fail-closed", "owner": "kernel maintainers", "review_trigger": "a collision or evasion is demonstrated"},
+      {"disadvantage_id": "D2", "outcome": "experiment", "rationale": "rules are the baseline a learned method must beat", "owner": "alfonso_lopez", "review_trigger": "first live case with a disputed attribution"},
+      {"disadvantage_id": "D3", "outcome": "accepted", "rationale": "records are the requested evidence", "owner": "kernel maintainers", "review_trigger": "ratifiers report friction"},
+      {"disadvantage_id": "D4", "outcome": "deferred", "rationale": "needs a live run to measure", "owner": "alfonso_lopez", "review_trigger": "first live case"}
+    ],
+    "final_design": "As implemented at this increment: artifact-bound PartSpec identity; grant-free shadow stop; typed failures; diagnosis gate; discovery sources with recorded leads; evidence-bearing ladder with documented exceptions; success- and target-based readiness; strong-verifier rule for non-mechanical targets; mission pause/resume seam; internal outcome verification; measured reuse.",
+    "residual_risks": [
+      {"risk": "Sandbox evidence mistaken for live capability", "mitigation": "EXPERIMENT decision; labels in docs and dossier scope statement", "owner": "alfonso_lopez", "review_trigger": "any completion claim without a live case"},
+      {"risk": "Divergence from the goal records in open PR #160", "mitigation": "seam uses goal_id lineage and genome registration, the two points #160 names", "owner": "kernel maintainers", "review_trigger": "#160 or a mission engine lands on main"}
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved; does not block a draft experiment.",
+    "entries": [
+      {"role": "Adversarial Reviewer", "position": "Override and exception evidence is free text", "rationale": "Any non-empty string satisfies the requirement", "evidence_threshold": "Evidence refs must resolve to ledger records, discovery leads or URLs before an exception admits new_architecture", "owner": "kernel maintainers", "review_trigger": "first new_architecture exception recorded"}
+    ]
+  },
+  "authority_impact": {"level": "standard", "changes_authority": false, "requires_authorized_human": false, "approval_status": "not_required", "approver": null},
+  "migration_plan": "Additive within PR #129: PartSpec gains optional artifact_digest/model_digest (unbound specs are bound at registration, so existing callers keep working); one new record type (egregore.shadow_stopped); genesis gains diagnose/discover/commission/verify stages. Merge follows founder review; live use needs Gate grants.",
+  "rollback_plan": {"possible": true, "steps": ["revert the correction commit", "ledgers keep the new records as history; old code ignores unknown record types"], "reason_impossible": null},
+  "kill_criteria": [
+    "A part with different code is ever resolved under an existing part_id",
+    "A case reaches ready_for_ratification with zero successful evaluations",
+    "A terminal case's shadow produces a shadow_result after the stop record",
+    "A transport error is ever classified as doctrinal_refusal"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "First live case, or founder review of PR #129"
+}

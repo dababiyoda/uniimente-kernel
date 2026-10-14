@@ -121,3 +121,11 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
+## INTENT-0031 — Capability Genesis Loop (2026-10-13)
+
+Machine-readable record: `docs/intent/INTENT-0031-capability-genesis-loop.json`
+(validator exit 0). Deliberation: `docs/collaboration/deliberation-genesis-2026-10-13.json`.
+Design and evidence: `docs/CAPABILITY_GENESIS_LOOP.md`. State `active`; decision
+`EXPERIMENT`; the external spider-web wedge, model-backed evaluators and grant-free
+shadow detach are recorded as unresolved founder questions, not resolved by inference.

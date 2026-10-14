@@ -1,0 +1,374 @@
+{
+  "decision_id": "ADR-GENESIS-001",
+  "title": "Capability Genesis Loop over the Egregore parts board",
+  "problem": "Observation: every piece of a capability-formation cycle exists in the kernel (parts board with shadow/bind/rollback, 11-rung strategy tree, spider-web audit, 7-tier verifier capsule, genome registry, whole-body closure) but nothing connects standing cognition's own recorded failures to a governed formation cycle; candidate sets are fixed by code. Inference: this is the residual CapabilityDeficit INTENT-0030 names. Proposal: egregore/genesis.py connects them with no new authority.",
+  "founder_intent_refs": [
+    "INTENT-0031",
+    "INTENT-0030",
+    "INTENT-20260930-open-source-first",
+    "INTENT-0028",
+    "UNIIMENTE_FINAL_BUILD_ORDER \u00a74.4 \u00a74.13 \u00a79 \u00a713"
+  ],
+  "baseline": "PR #129 head 8c62616: PartsBoard (register/shadow/bind/detach/rollback through Gate) and local_draft_part; swapping a part is a human-driven act with no deficit trigger, no ladder record, no aggregated trial evidence, no genome handoff.",
+  "alternatives": [
+    {
+      "name": "Reuse evolution.ClosureLoop directly for part changes",
+      "description": "Treat each candidate part as a StrategyBranch and run ClosureLoop.run_cycle with a spider-web audit and compiled experiment.",
+      "advantages": [
+        "zero new module",
+        "capsule format already canonical"
+      ],
+      "disadvantages": [
+        "ClosureLoop requires a complete eight-side SpiderWebAudit per cycle, built for venture architectures, so every part swap would need fabricated market sides",
+        "no notion of slots, shadow bindings or grant-bound dossiers"
+      ],
+      "revival_evidence": "If a future ClosureLoop variant accepts internal-change audits, genesis decisions should emit EvolutionCapsules through it."
+    },
+    {
+      "name": "Literal developmental substrate (MICA/CDPE cells and fields) as the formation mechanism",
+      "description": "Grow replacement parts through local-rule developmental programs in developmental/.",
+      "advantages": [
+        "matches the founder's vocabulary",
+        "existing research lineage"
+      ],
+      "disadvantages": [
+        "INTENT-0030 regressed the literal framing",
+        "no evidence it beats shadow trial plus human ratification for choosing between concrete implementations",
+        "adds a simulation the Gate cannot verify"
+      ],
+      "revival_evidence": "A benchmark where a local-rule mechanism selects or repairs a cognition part better than ladder-ordered shadow trials on a strong baseline."
+    },
+    {
+      "name": "External workflow engine or feature-flag service (LaunchDarkly-style) for part rollout",
+      "description": "Use a commodity flag/canary service to stage parts.",
+      "advantages": [
+        "mature canary and rollback tooling"
+      ],
+      "disadvantages": [
+        "bindings would then be authorized outside the Consequence Gate",
+        "no ledger lineage; cloud dependency conflicts with open-source-first"
+      ],
+      "revival_evidence": "A self-hosted flag service with signed, ledger-anchored decisions that the Gate can consume as evidence."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Parts remain swappable by hand (PR #129). Deficits are noticed by humans reading cycles; no ladder discipline is enforced; retained parts are not reusable genomes; nothing compounds.",
+    "advantages": [
+      "no new surface",
+      "no new records to hydrate"
+    ],
+    "disadvantages": [
+      "founder goal (adaptive, compounding capability formation) unmet",
+      "anti-literalization gate stays prose instead of an executable check"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The request is metaphor-dense; compiled effects are preserved (formation on verified deficit, ladder-first resourcefulness, compounding reuse, lawful leverage). 'Dominance' and 'substrate' are translated, not literalized, and the translation is recorded in INTENT-0031 conflicts.",
+      "material_concerns": [
+        "Market-level spider-web hegemony cannot be claimed without a venture transaction",
+        "Must not silently shrink the destination: the external wedge is recorded as open"
+      ],
+      "evidence_refs": [
+        "docs/intent/INTENT-0030-effect-not-metaphor.md",
+        "docs/intent/INTENT-0031-capability-genesis-loop.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "The loop composes existing contracts (PartsBoard, VerifierRecord, failure classes, GenomeRegistry, WholeBodyClosureController) and owns only case state. One new public method on PartsBoard (resolved). No contract changed.",
+      "material_concerns": [
+        "Dossier hash includes rollback_target, so unrelated board changes invalidate a review; acceptable because it forces re-reading",
+        "Genome version is a part-id slice; collisions improbable but not impossible"
+      ],
+      "evidence_refs": [
+        "egregore/genesis.py",
+        "egregore/parts.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Attacks run: forged retained decision, stale dossier, hypothesis-only verifier, thin trial, doctrinal refusal in trial, foreign shadow results, new_architecture with cheaper candidate, missing cheaper rungs. Each guard was removed in turn and a test failed each time.",
+      "material_concerns": [
+        "A human can still record a false ladder ('searched_none' without searching); the loop records who said so but cannot verify the search",
+        "A proposer that produces plausible but wrong content passes trial if evaluators agree; bounded by required Guardian/Treasury, not by this loop"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_egregore_genesis.py",
+        "mutation run in session log 2026-10-13"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Cases rebuild from the ledger; code must be re-registered after restart and unresolved parts are reported, not guessed. Detector thresholds are constructor arguments.",
+      "material_concerns": [
+        "Detaching a stale shadow still needs a grant",
+        "Thresholds should probably become ratified configuration"
+      ],
+      "evidence_refs": [
+        "egregore/genesis.py DeficitDetector",
+        "test_regress_kill_and_lapse_need_no_grant_and_cases_become_terminal"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "All evidence is sandbox tier (unit tests with real Gate, ledger, passports; fake proposers). No real model, no real signals, no external effect. Victim protection compiles to: required evaluators cannot be emptied, doctrinal refusal blocks retain, shadows have no influence, rollback exists, every transition names an actor.",
+      "material_concerns": [
+        "Underlying-effect verification (a real deficit resolved by a real local model) has not happened",
+        "License field in the dossier is 'unresolved' by design and must be filled before any external use"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_egregore_genesis.py",
+        "docs/CAPABILITY_GENESIS_LOOP.md \u00a7Evidence"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Genesis loop retains a candidate only through a Gate-granted binding and registers a genome",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_egregore_genesis.py::test_full_genesis_retains_binds_registers_genome_and_compounds",
+      "finding": "passes; binding record present, genome registered, case RETAINED survives restart"
+    },
+    {
+      "claim": "Each guard is load-bearing",
+      "tier": "sandbox_execution",
+      "reference": "mutation run: 8 guards removed one at a time",
+      "finding": "each removal failed at least one test; restored file passes 10/10"
+    },
+    {
+      "claim": "No regression in the kernel suite",
+      "tier": "unit_test",
+      "reference": "python -m pytest (kernel root), 2026-10-13",
+      "finding": "see docs/CAPABILITY_GENESIS_LOOP.md \u00a7Evidence for counts; the two continuity tests fail identically on main in this shallow clone"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The loop achieves the founder's destination (adaptive, compounding capability formation in reality)",
+      "tier": "other",
+      "reference": "no live run exists",
+      "finding": "unproven: no real deficit has been resolved by a real local model; this is a sandbox-tier mechanism"
+    },
+    {
+      "claim": "Spider-web hegemony is achieved",
+      "tier": "other",
+      "reference": "docs/CAPABILITY_GENESIS_LOOP.md \u00a7Spider-web checksum",
+      "finding": "not achieved: items 2, 6, 8, 9, 11, 15, 17 unresolved at market level; internal mapping only"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Standing cognition's verified failures become governed, evidence-bearing formation cases whose retained outcomes are reusable, without any software gaining authority.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Anti-literalization gate becomes executable (ladder admission)",
+        "amplified_value": "Every future capability in the Egregore carries a machine-checked record that cheaper real mechanisms were considered first; this is institutional memory that compounds and deters framework sprawl."
+      },
+      {
+        "id": "A2",
+        "statement": "Dossier is content-addressed and bound to the grant review",
+        "amplified_value": "What a human approved is exactly what binds; this is the proof-to-settlement link inside the institution."
+      },
+      {
+        "id": "A3",
+        "statement": "Retained parts become genomes and rung-1 candidates",
+        "amplified_value": "Each genesis lowers the cost of the next; formation history becomes a portable asset for other organs."
+      },
+      {
+        "id": "A4",
+        "statement": "All stop directions are grant-free",
+        "amplified_value": "Stopping always succeeds; deterrence against runaway formation is structural."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Ladder outcomes are self-reported by the proposer",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "Record proposed_by on the case and in the ledger; the dossier shows the ladder to the ratifying human; future work can attach search evidence per rung."
+      },
+      {
+        "id": "D2",
+        "statement": "No real-world validation yet",
+        "severity": "high",
+        "response_type": "do_not_proceed",
+        "redesigned_response": "Decision is EXPERIMENT, not RETAIN: the first live shadow case against a real local model is the gate before any claim."
+      },
+      {
+        "id": "D3",
+        "statement": "Detector thresholds hard-coded as defaults",
+        "severity": "low",
+        "response_type": "governance",
+        "redesigned_response": "Expose as constructor arguments now; propose ratified configuration in a follow-up."
+      },
+      {
+        "id": "D4",
+        "statement": "Shadow detach requires a grant, so a stale shadow costs budget until a human acts",
+        "severity": "low",
+        "response_type": "protective",
+        "redesigned_response": "Shadow budget is bounded by its own ResourceGovernor; recorded as unresolved question in INTENT-0031."
+      },
+      {
+        "id": "D5",
+        "statement": "Dossier hash sensitivity to unrelated board changes",
+        "severity": "low",
+        "response_type": "protective",
+        "redesigned_response": "Kept: forces re-reading; cheap for the human, expensive for a replay attacker."
+      }
+    ],
+    "comparisons": {
+      "baseline": "PR #129 parts board alone: manual swaps, no trigger, no ladder, no reuse.",
+      "do_nothing": "Founder goal unmet; anti-literalization stays prose.",
+      "simplest_viable_alternative": "A deficit detector that only writes ledger records for humans to read; no case lifecycle. Rejected because retained parts would still not be bound to reviewed evidence or become genomes.",
+      "strongest_competing_architecture": "Route every part change through evolution.ClosureLoop. Rejected for now because it demands a full eight-side market audit per internal change.",
+      "reversible_experiment": "This PR as draft; first live case runs in shadow only; revert removes genesis.py and one PartsBoard method."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Literal MICA/CDPE developmental substrate",
+        "rejection_reason": "INTENT-0030 regressed literal framing; no evidence of advantage over shadow trial for choosing implementations",
+        "revival_evidence": "benchmark win over ladder-ordered shadow trials on a strong baseline"
+      },
+      {
+        "name": "Commodity feature-flag service",
+        "rejection_reason": "authority would leave the Gate; cloud dependency",
+        "revival_evidence": "self-hosted, ledger-anchored flag decisions consumable by the Gate"
+      },
+      {
+        "name": "Automatic promotion from shadow scores",
+        "rejection_reason": "SR-INTENT-3 and constitutional invariants: no component may authorize its own promotion",
+        "revival_evidence": "none within current authority; would require an explicit founder ruling"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attacked the strengthened design as if deployed: forged and replayed records, hypothesis-only verifiers, false ladders, thin trials, foreign evidence, unrelated-change hash churn, restart with missing code, and the temptation to claim market hegemony.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "bureaucracy",
+        "statement": "Three ledger records and two grants per formation",
+        "strengthening_response": "Accepted: the grants are the self-promotion bound; stop directions and observation need none."
+      },
+      {
+        "id": "W2",
+        "category": "gaming",
+        "statement": "A proposer may mark rungs 'searched_none' without searching",
+        "strengthening_response": "Actor recorded; dossier exposes it to the ratifier; follow-up may require per-rung evidence refs."
+      },
+      {
+        "id": "W3",
+        "category": "comprehensibility",
+        "statement": "Case state machine adds vocabulary (open/trialing/ready/retained/regressed/killed/lapsed)",
+        "strengthening_response": "Documented in egregore/README with one table; states are the minimum for restart-safe lifecycle."
+      },
+      {
+        "id": "W4",
+        "category": "overfit",
+        "statement": "Detector tuned to this runtime's failure dict shape",
+        "strengthening_response": "Shape is the runtime's own contract (CognitionCycle.failures); tests pin it."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Human ratifier sees the ladder and who recorded it; verification of search is a follow-up",
+        "owner": "alfonso_lopez",
+        "review_trigger": "first live case"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "experiment",
+        "rationale": "First live shadow case against a real local model decides retain/regress of the loop itself",
+        "owner": "alfonso_lopez",
+        "review_trigger": "first live case"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "deferred",
+        "rationale": "Constructor arguments suffice for sandbox; ratified configuration later",
+        "owner": "kernel maintainers",
+        "review_trigger": "second organ adopts the loop"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Bounded by shadow ResourceGovernor; stop-should-be-free question recorded",
+        "owner": "alfonso_lopez",
+        "review_trigger": "a stale shadow consumes a material budget"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Integrity over convenience",
+        "owner": "kernel maintainers",
+        "review_trigger": "ratifiers report friction"
+      }
+    ],
+    "final_design": "egregore/genesis.py as implemented: DeficitDetector over recorded cycles; CapabilityGenesis cases with ladder-ordered admission, Gate-granted shadow and bind via PartsBoard, trial aggregation from shadow_result records, content-addressed dossier, verifier-tier ratification with doctrinal-refusal and whole-body checks, genome registration and rung-1 reuse. One added PartsBoard.resolved(). No change to runtime, Gate, grants or contracts.",
+    "residual_risks": [
+      {
+        "risk": "Sandbox-only evidence mistaken for achieved capability",
+        "mitigation": "Decision is EXPERIMENT; PR body and docs label reality status",
+        "owner": "alfonso_lopez",
+        "review_trigger": "any claim of completion without a live case"
+      },
+      {
+        "risk": "Founder reads 'dominance' translation as dilution",
+        "mitigation": "INTENT-0031 records the exact wording, the translation and the open external wedge as NEEDS_FOUNDER_DECISION",
+        "owner": "alfonso_lopez",
+        "review_trigger": "founder feedback on PR #129"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved; does not block a draft experiment.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Self-reported ladder outcomes weaken the anti-literalization gate",
+        "rationale": "An unverified 'searched_none' satisfies admission",
+        "evidence_threshold": "Per-rung evidence references required and checked before a new_architecture candidate is admissible",
+        "owner": "kernel maintainers",
+        "review_trigger": "first new_architecture candidate proposed"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Additive: new module, new tests, one new PartsBoard method, docs. No existing record types change. This record authorizes only the reversible sandbox experiment in draft PR #129. Merge follows normal founder review of the PR; any live case needs Gate grants for shadow and active bindings; neither is granted by this record.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "revert the genesis commit",
+      "ledgers keep genesis records as history; PartsBoard ignores them",
+      "PartsBoard.resolved() is harmless to leave"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "A retained binding occurs without a Gate receipt",
+    "A forged or replayed decision record changes live state after restart",
+    "First live case shows the loop adds cost without changing any retain/regress decision a human would have made",
+    "Founder rules that formation cases must run through evolution.ClosureLoop instead"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "First live shadow case against a real local model on real signals, or founder review of PR #129"
+}

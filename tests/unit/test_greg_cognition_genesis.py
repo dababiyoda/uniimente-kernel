@@ -410,10 +410,11 @@ def test_without_the_compiler_genesis_alone_names_the_withheld_genome_in_the_one
 
 # -- review fixes: asks, candidates, the authority guard, the residual record, settlement -------------
 
-def test_a_body_level_ask_the_founder_already_answered_is_never_shared(tmp_path, index):
-    """An answered or withdrawn body-level ask is closed. A mission sharing it would wait on a closed request that no
+def test_a_body_level_ask_the_founder_already_rejected_is_never_shared(tmp_path, index):
+    """A rejected or withdrawn body-level ask is closed. A mission sharing it would wait on a closed request that no
     open ask names, so the founder would never be asked about its deficit: it asks on its own instead. A mission that
-    shared the ask before the founder answered it takes the answer as its own and is not asked again (section 60)."""
+    shared the ask before the founder answered it takes the answer as its own for what the ask named, and is not asked
+    again about it (section 60). An approved ask awaiting its attach is shared (see the approve test below)."""
     item = library.executables()["queue_erlang"]
     index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "DEFAULT_FOR_GEOMETRY",
                                                                "version": item.genome.version}},
@@ -586,7 +587,8 @@ def test_an_extra_input_of_any_name_never_stops_the_compilers_withheld_genome_be
 def test_the_founders_answer_to_a_shared_ask_is_never_followed_by_another_ask(tmp_path, index, answer):
     """asks.py: approving only records the answer, and attaching is its own signed command. A mission that shares the
     compiler's ask takes the founder's answer as its own, as for its own ask: after an approve it waits for the attach,
-    after a reject it is not asked again (section 60). Only an ask withdrawn unanswered is asked about again."""
+    after a reject it is not asked again about what the ask named (section 60). Here the ask names the mission's only
+    candidate, so nothing is left to ask about."""
     item = library.executables()["queue_erlang"]
     index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "DEFAULT_FOR_GEOMETRY",
                                                                "version": item.genome.version}},
@@ -634,6 +636,128 @@ def test_a_shared_ask_withdrawn_unanswered_is_asked_about_on_the_missions_own(tm
         assert "shared_ask" not in blocker and blocker["attach_candidates"] == ["cognition.queue_erlang"]
         assert [r["mission_id"] for r in body.engine.book.open_requests()] == ["m:staff"]
         assert [a["mission_id"] for a in attach_asks(body)] == [None, "m:staff"]
+
+
+@pytest.mark.parametrize("answer", ["approve", "reject"])
+def test_a_rejected_shared_ask_decides_only_what_it_named_and_the_rest_is_asked_about_once(tmp_path, index, answer):
+    """The compiler's ask names only its best fit, while the mission's blocker keeps every candidate Genesis found.
+    The founder's reject decides exactly what that ask named: none of it is asked about again for this need (section
+    60), and the candidates it did not name, never put to the founder, are asked about once on the mission's own ask.
+    The founder's answer to that ask is final in turn: an approve waits for the attach, a reject is not followed by
+    another ask."""
+    from greg.console import _attachable
+    data, _ = library.executables()["dp_knapsack"].instance(2)               # development seed
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission("m:pack", {"geometry": "optimization"}, data)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 3)
+        blocker = body.engine.book.missions["m:pack"].blocker
+        [shared] = attach_asks(body)
+        assert blocker["shared_ask"] and blocker["request_id"] == shared["request_id"]
+        named = shared["authority_requested"]["attach"]
+        assert [c["capability_id"] for c in _attachable(shared)] == [named]
+        [other] = [c for c in blocker["attach_candidates"] if c != named]
+        body.apply(signed(key, body_id, "DECISION", {"request_id": shared["request_id"], "answer": "reject",
+                                                      "reason": "keep it withheld"}))
+        ticks(body, clock, 2)
+        book = body.engine.book
+        [own] = book.open_requests()
+        assert own["mission_id"] == "m:pack" and own["kind"] == "CAPABILITY_ATTACH"
+        assert [c["capability_id"] for c in _attachable(own)] == [other]   # never the candidate just rejected
+        assert own["evidence"]["already_answered"] == [{"capability_id": named, "request_id": shared["request_id"],
+                                                        "answer": "reject"}]
+        blocker = book.missions["m:pack"].blocker
+        assert "shared_ask" not in blocker and blocker["request_id"] == own["request_id"]
+        assert sorted(blocker["attach_candidates"]) == sorted([named, other])   # an attach of either resolves it
+        body.apply(signed(key, body_id, "DECISION", {"request_id": own["request_id"], "answer": answer,
+                                                      "reason": "the founder's answer"}))
+        assert [s["state"] for s in ticks(body, clock, 3)] == ["WAITING"] * 3
+        assert len(attach_asks(body)) == 2 and body.engine.book.open_requests() == []
+        if answer == "approve":
+            body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": other}))
+            assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+            assert len(attach_asks(body)) == 2
+
+
+def test_an_approved_ask_awaiting_its_attach_is_shared_by_a_mission_that_arrives_after_the_approve(tmp_path, index):
+    """An approve is the founder's yes to the attach it names; the signed attach then resolves every mission waiting on
+    it. A mission with the same need that arrives between the approve and the attach waits on that ask too, instead of
+    asking the founder about the attach just approved. A rejected ask is still never shared."""
+    item = library.executables()["queue_erlang"]
+    index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "DEFAULT_FOR_GEOMETRY",
+                                                               "version": item.genome.version}},
+                                 "recipes": {}, "routing": {}}))
+    home, key, body_id, _ = make_body(tmp_path)
+    geometry = {"geometry": item.genome.epistemic_class, "subgeometry": "staffing"}
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:first", geometry, item.instance(2)[0])))
+        ticks(body, clock, 2)
+        [ask] = attach_asks(body)
+        body.apply(signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "approve",
+                                                      "reason": "yes, attach it"}))
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:second", geometry, item.instance(3)[0])))
+        for _ in range(3):
+            body.tick()
+            clock.advance(31)
+        book = body.engine.book
+        second = book.missions["m:second"].blocker
+        assert second["shared_ask"] and second["request_id"] == ask["request_id"]
+        assert second["attach_candidates"] == ["cognition.queue_erlang"]
+        assert len(attach_asks(body)) == 1 and book.open_requests() == []
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.queue_erlang"}))
+        states = {}
+        for _ in range(3):
+            states.update({s["mission_id"]: s["state"] for s in body.tick()["missions"]})
+            clock.advance(31)
+        assert states == {"m:first": "ACHIEVED", "m:second": "ACHIEVED"}
+        assert len(attach_asks(body)) == 1 and not list(body.journal.replay("decision.withdrawn"))
+
+
+@pytest.mark.parametrize("answer", ["approve", "reject"])
+def test_a_founder_detach_decides_a_candidate_and_an_approve_stands_only_while_its_candidate_is_withheld(
+        tmp_path, index, answer):
+    """A founder detach of a withheld candidate is a decision against it, as a reject is. After a reject of the shared
+    ask and a detach of the other candidate, nothing is left undecided: the mission waits and is never asked again
+    (section 60). An approve stands only while the candidate it named can still be attached by it: once the founder
+    detaches that candidate instead, the candidate never put to the founder is asked about once, alone, and an attach
+    of the detached one still resolves the mission."""
+    from greg.console import _attachable
+    data, _ = library.executables()["dp_knapsack"].instance(2)               # development seed
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission("m:pack", {"geometry": "optimization"}, data)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 3)
+        [shared] = attach_asks(body)
+        named = shared["authority_requested"]["attach"]
+        [other] = [c for c in body.engine.book.missions["m:pack"].blocker["attach_candidates"] if c != named]
+        body.apply(signed(key, body_id, "DECISION", {"request_id": shared["request_id"], "answer": answer,
+                                                      "reason": "the founder's answer"}))
+        detached = named if answer == "approve" else other
+        body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": detached}))
+        ticks(body, clock, 3)
+    with Body(home, clock=clock) as body:                                    # the decision survives a restart
+        body.boot()
+        assert [s["state"] for s in ticks(body, clock, 2)] == ["WAITING"] * 2
+        book = body.engine.book
+        if answer == "reject":
+            assert len(attach_asks(body)) == 1 and book.open_requests() == []
+            assert book.missions["m:pack"].blocker["request_id"] == shared["request_id"]
+            return
+        [own] = book.open_requests()
+        assert own["mission_id"] == "m:pack" and [c["capability_id"] for c in _attachable(own)] == [other]
+        assert len(attach_asks(body)) == 2
+        blocker = book.missions["m:pack"].blocker
+        assert blocker["request_id"] == own["request_id"]
+        assert sorted(blocker["attach_candidates"]) == sorted([named, other])
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": named}))   # the founder relents
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+        assert [e.payload["request_id"] for e in body.journal.replay("decision.withdrawn")] == [own["request_id"]]
 
 
 def test_several_withheld_genomes_fit_and_the_founder_is_asked_once(tmp_path, index):

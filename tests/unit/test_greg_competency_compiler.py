@@ -419,3 +419,12 @@ def test_an_executed_composition_keeps_each_stages_counterargument_as_dissent(re
     assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
     stages = [d for d in r["dissent"] if d.startswith("stage ")]
     assert len(stages) == len(r["intermediate_receipts"]) >= 2
+
+
+def test_the_geometry_the_inputs_imply_is_recorded_and_a_contradicting_declaration_is_dissent(registry):
+    """Audit 2026-10-14 (section 31 item 3a): geometry was only ever declared, never derived from the data."""
+    agree = compile_(registry, {"geometry": "optimization"}, maxflow_instance(3)[0], execute=False)
+    assert agree["derived_geometry"]["agrees"] is True and "optimization" in agree["derived_geometry"]["fits_by_inputs"]
+    wrong = compile_(registry, {"geometry": "causal"}, maxflow_instance(3)[0], execute=False)
+    assert wrong["derived_geometry"]["agrees"] is False and wrong["state"] == "CAPABILITY_DEFICIT"
+    assert any("declared geometry 'causal'" in d for d in wrong["dissent"])

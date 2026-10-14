@@ -779,6 +779,15 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         data = inverted
     # 3. candidates by native geometry and inputs; frozen negative evidence excludes
     rows = candidates(data, g, evidence)
+    # the geometry the inputs themselves imply (methods whose native inputs they carry), against the declaration
+    from dataclasses import replace
+    implied = sorted({c for r in candidates(data, replace(g, geometry=None), evidence)
+                      for c in r.get("epistemic_classes", [])})
+    receipt["derived_geometry"] = {"declared": g.geometry, "fits_by_inputs": implied,
+                                   "agrees": not g.geometry or not implied or g.geometry in implied}
+    if not receipt["derived_geometry"]["agrees"]:
+        receipt["dissent"].append(f"declared geometry {g.geometry!r} but the inputs fit methods of {implied}: the "
+                                  f"declaration excludes them (check the declaration before trusting a deficit)")
     receipt["methods_considered"] = [r["method"] for r in rows]
     receipt["methods_rejected"] = [{"method": r["method"], "why": r["rejected"]} for r in rows if r["rejected"]]
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]

@@ -20,13 +20,17 @@ What routing never does:
 * **Let the provider pick the model.** No request sends server-side ``fallbacks: "default"``
   (which re-runs a refused request on a provider-chosen model and keeps the conversation
   there for about an hour). Substitution is possible only through an explicit, priced
-  ``anthropic_fallback_models`` list in the founder's configuration; every answer carries
-  ``requested_model``, ``served_model`` and ``substituted``, and an answer from any other
-  model is withheld as ``model_substitution`` (terminal, like a refusal).
+  ``anthropic_fallback_models`` list in the founder's configuration. An Anthropic answer
+  carries ``requested_model``, the provider-reported ``served_model`` and ``substituted``
+  (``None`` when the provider names no model); an answer from a model outside that list is
+  withheld as ``model_substitution`` (terminal, like a refusal). Routes that do not check
+  model identity (OpenAI, Claude Code) report ``substituted`` as ``None`` (not checked), never
+  as ``False``.
 * **Spend without a bound.** For spending contexts (Capability Genesis builds) each
   API route computes the largest output it may generate so that its worst-case cost
-  fits the remaining founder-signed budget; a route whose price is unknown cannot be
-  bounded and is skipped. The CLI route enforces its own ``--max-budget-usd``.
+  (across every attempt of a configured fallback chain) fits the remaining founder-signed
+  budget; a route whose price is unknown cannot be bounded and is skipped. The CLI route
+  enforces its own ``--max-budget-usd``.
 * **Take credentials from the environment.** Keys come only from declared credential
   handles (``anthropic_api_key``, ``openai_api_key``); base URLs are pinned.
 * **Select a paid route by default.** Open-source-first (INTENT-20260930-open-source-first):
@@ -148,6 +152,8 @@ class Unbounded(RouteError):
 ANTHROPIC_PRICES = {"claude-opus-5": (5.0, 25.0), "claude-opus-5-5": (4.0, 20.0), "claude-sonnet-5": (2.0, 10.0),
                     "claude-sonnet-5-5": (2.0, 10.0), "claude-opus-4-8": (5.0, 25.0),
                     "claude-fable-5-1": (10.0, 50.0), "claude-haiku-4-5": (1.0, 5.0), "claude-haiku-5-5": (0.10, 0.50)}
+# Long-prompt rate cards: above this many prompt tokens the whole request bills at the upper price.
+ANTHROPIC_LONG_PROMPT_PRICES = {"claude-haiku-5-5": (100_000, (0.50, 2.50))}
 MAX_OUTPUT_TOKENS = 16000
 
 
@@ -160,6 +166,18 @@ def _price(value):
     ok = all(0 < v < 10_000 for v in (price_in, price_out))
     return (price_in, price_out) if ok else None
 MIN_OUTPUT_TOKENS = 1024
+
+
+def _dearest(*prices):
+    """Per-component maximum of (input, output) prices: a bound or a booking that is never under."""
+    prices = [p for p in prices if p]
+    return (max(p[0] for p in prices), max(p[1] for p in prices)) if prices else None
+
+
+def _tiered(model: str, price, prompt_tokens: int):
+    """A model's price for a prompt of this size (some models bill a long prompt on a higher rate card)."""
+    tier = ANTHROPIC_LONG_PROMPT_PRICES.get(model)
+    return _dearest(price, tier[1]) if price and tier and prompt_tokens > tier[0] else price
 
 
 def _estimate_tokens(text: str) -> int:
@@ -188,10 +206,12 @@ class AnthropicRoute:
     instead of being re-run on a provider-selected substitute (which would be refusal
     shopping by another name). Substitution exists only as an explicit, priced allowlist
     (``fallback_models``), sent in the array form so the provider cannot pick the model; the
-    spend bound then uses the most expensive listed model, and every answer records
-    requested, served and substituted. An answer served by any model outside
+    spend bound then covers the whole chain (every permitted model may run as its own attempt)
+    at the most expensive listed model, the cost is every billed attempt, and every answer
+    records requested, served and substituted. An answer served by any model outside
     {requested} ∪ allowlist is withheld (``ModelSubstitution``), never returned as the
-    requested model's work.
+    requested model's work; a response that names no model is reported as unknown, never as
+    the requested one.
     """
     provider = "anthropic"
     FALLBACK_BETA = "server-side-fallback-2026-06-01"   # the array form; the "default" scalar form is never sent
@@ -203,10 +223,13 @@ class AnthropicRoute:
         # snapshot without a code change. A malformed configured price is not silently replaced by the
         # (possibly stale) snapshot: the route has no price, so a spending context skips it (Unbounded).
         self.price = _price(price) if price is not None else ANTHROPIC_PRICES.get(model)
-        if isinstance(fallback_models, str) or not all(isinstance(m, str) and m for m in fallback_models):
+        listed = isinstance(fallback_models, (list, tuple))   # a bare string (e.g. "default") is not a list
+        if not listed or not all(isinstance(m, str) and m for m in fallback_models):
             raise ValueError("fallback_models must be an explicit list of model ids (the 'default' form is refused)")
         if model in fallback_models or len(set(fallback_models)) != len(fallback_models):
             raise ValueError("fallback_models must be distinct and must not repeat the requested model")
+        if fallback_prices is not None and not isinstance(fallback_prices, dict):   # never silently the snapshot
+            raise ValueError("fallback_prices must map each fallback model id to its (input, output) price")
         fallback_prices = fallback_prices or {}
         self.fallback_models = tuple(fallback_models)
         self.fallback_price = {m: (_price(fallback_prices[m]) if m in fallback_prices else ANTHROPIC_PRICES.get(m))
@@ -219,12 +242,14 @@ class AnthropicRoute:
             client = anthropic.Anthropic(api_key=api_key, base_url="https://api.anthropic.com", max_retries=2)
         self.client = client
 
-    def _bound_price(self):
-        """The worst-case per-token price across every model that may answer this request."""
+    def _price_of(self, model: str, prompt_tokens: int = 0):
+        return _tiered(model, self.price if model == self.model else self.fallback_price[model], prompt_tokens)
+
+    def _bound_price(self, prompt_tokens: int = 0):
+        """The worst-case per-token price across every model that may answer a prompt of this size."""
         if self.price is None:
             return None
-        prices = [self.price, *self.fallback_price.values()]
-        return (max(p[0] for p in prices), max(p[1] for p in prices))
+        return _dearest(*(self._price_of(m, prompt_tokens) for m in (self.model, *self.fallback_models)))
 
     def _same_model(self, served: str, wanted: str) -> bool:
         # the API may report a dated snapshot of the alias that was requested
@@ -232,12 +257,21 @@ class AnthropicRoute:
 
     @staticmethod
     def _cost(usage, price):
+        """Every attempt the provider may bill: ``usage.iterations`` is the per-attempt source of truth (top-level
+        usage covers only the attempt that produced the message, and a declined attempt can be billed);
+        top-level usage is used only when the response reports no iterations."""
         if usage is None or not price:
             return None
-        return (usage.input_tokens * price[0] + usage.output_tokens * price[1]) / 1e6
+        attempts = list(getattr(usage, "iterations", None) or []) or [usage]
+        return sum(a.input_tokens * price[0] + a.output_tokens * price[1] for a in attempts) / 1e6
 
     def complete(self, system: str, user: str, *, budget_usd=None) -> dict:
-        max_tokens = _output_bound(self._bound_price(), system, user, budget_usd)
+        prompt_tokens = _estimate_tokens(system + user)
+        # The server-side chain may run every permitted model as its own attempt, each re-reading the prompt
+        # and inheriting this max_tokens, so the signed budget is divided across the whole chain.
+        attempts = 1 + len(self.fallback_models)
+        max_tokens = _output_bound(self._bound_price(prompt_tokens), system, user,
+                                   None if budget_usd is None else budget_usd / attempts)
         request = dict(model=self.model, max_tokens=max_tokens, system=system,
                        messages=[{"role": "user", "content": user}],
                        thinking={"type": "adaptive"}, output_config={"effort": "high"})
@@ -250,28 +284,44 @@ class AnthropicRoute:
         if response.stop_reason == "refusal":
             category = getattr(getattr(response, "stop_details", None), "category", None)
             raise Refusal(f"model declined (refusal: {category})", kind=SAFETY_REFUSAL)
-        served = getattr(response, "model", None) or self.model
+        served = getattr(response, "model", None) or None   # the provider's report; never filled in by us
         usage = getattr(response, "usage", None)
         iterations = list(getattr(usage, "iterations", None) or [])
         fell_back = any(getattr(i, "type", None) == "fallback_message" for i in iterations)
-        if self._same_model(served, self.model) and not fell_back:
-            answered_by, price = self.model, self.price
+        billed_prompt = max([a.input_tokens for a in (iterations or [usage]) if a is not None], default=0)
+        withheld = False
+        if served is None and (self.fallback_models or not fell_back):
+            # No served model reported: unknown, not proof that the requested model answered. The request
+            # permitted only {requested} ∪ allowlist, so it is billed at the dearest of those.
+            answered_by, price = None, self._bound_price(billed_prompt)
+        elif self._same_model(served, self.model) and not fell_back:
+            answered_by, price = self.model, self._price_of(self.model, billed_prompt)
         else:
             answered_by = next((m for m in self.fallback_models if self._same_model(served, m)), None)
-            if answered_by is None:
+            if answered_by is not None:
+                price = self._price_of(answered_by, billed_prompt)
+            else:
                 # Billed at the served model's list price when known, else at the dearest known price:
                 # an unknown substitute is over-booked, never under-booked.
-                known = next((p for m, p in ANTHROPIC_PRICES.items() if self._same_model(served, m)), None)
-                worst = max([p for p in (self._bound_price(), *ANTHROPIC_PRICES.values()) if p], key=lambda p: p[1])
-                raise ModelSubstitution(f"requested {self.model}, served {served}: outside the founder's model "
-                                        f"policy; the answer is withheld", requested=self.model, served=served,
-                                        cost_usd=self._cost(usage, known or worst))
-            price = self.fallback_price[answered_by]
-        text = "".join(block.text for block in response.content if block.type == "text")
+                known = next((m for m in ANTHROPIC_PRICES if self._same_model(served, m)), None)
+                price = (_tiered(known, ANTHROPIC_PRICES[known], billed_prompt) if known else
+                         _dearest(self._bound_price(billed_prompt), *ANTHROPIC_PRICES.values()))
+                withheld = True
+        if len(iterations) > 1:
+            # Conservative and simple: an iteration does not reliably name the model that ran it (a declined
+            # attempt is a plain "message"), so every attempt of a multi-attempt answer is priced at the
+            # dearest of the answer's price and every permitted model's price: over-booked, never under.
+            price = _dearest(price, self._bound_price(billed_prompt))
         cost = self._cost(usage, price)
-        # the provider's own report of the model that answered, next to the one we asked for
+        if withheld:
+            raise ModelSubstitution(f"requested {self.model}, served {served}: outside the founder's model "
+                                    f"policy; the answer is withheld", requested=self.model, served=served,
+                                    cost_usd=cost)
+        text = "".join(block.text for block in response.content if block.type == "text")
+        # the provider's own report of the model that answered, next to the one we asked for; unknown stays None
+        substituted = (True if fell_back else None) if answered_by is None else answered_by != self.model
         return {"text": text, "cost_usd": cost, "served_model": served, "requested_model": self.model,
-                "substituted": answered_by != self.model, "fallback_policy": list(self.fallback_models)}
+                "substituted": substituted, "fallback_policy": list(self.fallback_models)}
 
 
 class OpenAIRoute:
@@ -512,7 +562,7 @@ class ModelRouter:
             return {"text": result["text"], "route": route.name, "served_model": served, "cost_usd": spent,
                     "tried": tried, "model_digest": result.get("model_digest"),
                     "requested_model": result.get("requested_model"),
-                    "substituted": bool(result.get("substituted"))}
+                    "substituted": result.get("substituted")}   # None = the route did not (or could not) check
         self.last = {"route": None, "tried": tried, "cost_usd": spent}
         raise RouteError("every model route failed: " + "; ".join(f"{t['route']}: {t.get('why', '')}"
                                                                   for t in tried)[:600])
@@ -541,7 +591,7 @@ def available_routes(secrets=None, *, config: dict | None = None, claude_budget_
         "anthropic": lambda: AnthropicRoute(secrets.resolve("anthropic_api_key", declared=("anthropic_api_key",)),
                                             model=config.get("anthropic_model", "claude-opus-5"),
                                             price=config.get("anthropic_price_per_mtok"),
-                                            fallback_models=tuple(config.get("anthropic_fallback_models", ())),
+                                            fallback_models=config.get("anthropic_fallback_models", ()),
                                             fallback_prices=config.get("anthropic_fallback_prices_per_mtok")),
         "openai": lambda: OpenAIRoute(secrets.resolve("openai_api_key", declared=("openai_api_key",)),
                                       model=config.get("openai_model", "gpt-5.5"),

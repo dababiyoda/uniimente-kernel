@@ -83,6 +83,32 @@ Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSU
 
 Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
 
+## Master build directive and current gate repair — 2026-09-30
+
+The two September 30 master-directive records (this one and the next) describe complementary scopes of the same intended destination: gate-proof repairs and resource requests. Neither creates a second authority or goal owner; their original source lineages remain distinct.
+
+`INTENT-20260930-MASTER-BUILD-GATE` preserves the current session's full
+effect horizon and extends the existing convergence/inheritance records. It
+does not replace the 34 horizons in `greg/path.json`, the 55 Foundry obligations,
+or the founder's authority. [Normalized record](intent/INTENT-20260930-MASTER-BUILD-GATE.json),
+[source coverage](collaboration/SOURCE-COVERAGE-20260930-PROOF-INTEGRITY.json),
+and [build/evidence report](collaboration/GREG-GATE-REPAIR-20260930.md).
+
+The independent appraiser's earlier VERIFIED claim is falsified for a signed
+mission with no observations and a missing required file. Its intended effect
+remains active; the current repair requires complete, correctly bound closure
+evidence. The installer's earlier success claim is falsified when a public
+companion file names a different key from the actual signer. The current repair
+checks correspondence and active enrollment, including signed key rotation.
+
+These are implementation/evidence corrections, not destination changes. Exactly
+one operational node remains primary: N1, externally verified VEPMC 0 -> 1.
+The Chromebook is the candidate under the preserved September 26 hardware
+correction; actual Linux availability, founder key custody, installation and
+acceptance still require a real run. No local test increments that milestone. The latest Claude rehearsal nonetheless advanced `greg path` to N2 on a container/test-key structural closure. This implementation assumption is superseded: retain the structural candidate and all later horizons, but keep N1 primary until external exit evidence is represented through an authenticated contract. That contract is not implemented; no boolean flag or local count substitutes for it. (#138, b8a0ccd and 673726a, PR-author record.)
+
+**Port onto the installed-body line (2026-10-14).** The appraisal repair (closure-bound evidence, re-expressed for pipeline-resolved parameters) and the signer-enrollment repair are ported as #138 built them. The N1/N2 structural-candidate gate is ported onto the one founder-tier rule that already gates N3, N4, N6 and N7 (`greg/metrics.py` `founder_tier`), not as a hardcoded `met=False`: a closure signed with a test key, a fixture's key or a `--no-passphrase` rehearsal stays `STRUCTURAL_CANDIDATE` and never moves `greg path`; one signed by the enrolled founder key after it attested passphrase custody moves it. Reason: the hardcoded gate meant no evidence, not even Alfonso's genuine Body-1 run, could ever clear N1 (both #138 verifiers flagged it as a founder decision). The founder tier is not the authenticated external contract #138 asked for: trust on first use remains (whoever controls the body's filesystem enrolls the key), and the ledger still cannot prove whose machine or key it is. **Founder decision open:** whether a founder-tier closure plus Alfonso's own signed acceptance suffices for N1, or N1 waits for an external-verification contract. Authority delta: none; the tier grants nothing.
+
 ## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
 
 `INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE` ([record](intent/INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE.json), [verbatim sections](intent/sources/MASTER-BUILD-DIRECTIVE-2026-09-30-source.md)): GREG may ask for resources (an account, compute, software, a build, a licensed professional, a human worker), and every ask carries evidence, alternatives, costs, expected effect, uncertainty and authority requirements, with no emotional manipulation, no manufactured urgency and no framing of denial as harm to GREG (section 60; **implemented** as the one path `greg/asks.py`). Business grows one verified loop before a second venture (61); new organizations only for recurring bottlenecks (62); regenerative advantage without dependency or exploitation (63); external reality is the final judge (64). Section 76 lets an obsolete implementation leave the active tree when a placement justifies it, with its intent kept on `greg/path.json` and its history in git; this reconciles, and is recorded against, the Final Build Order's preservation rule. State: active. Authority delta: none; asking grants nothing.

@@ -45,7 +45,11 @@ FOUNDER_HORIZONS = [
 # Every kernel PR open on 2026-09-30 except this one (#137), read from the GitHub API with pagination.
 # Negative evidence: the first pass read one page and missed the 30 July PRs (#11-#62); they were
 # found and placed later the same day (placements kernel_sdk_extraction_11_16 ... pr58_62_developmental_substrate).
-OPEN_KERNEL_PRS = {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 35, 44, 46, 51,
+# #138 (b8a0ccd) independently derived the open set from its API snapshot, LINEAGE-AUDIT-20260930 (81 PRs,
+# #137 included); it is snapshot coverage, not a live API claim. Both enumerations are kept: the union.
+LINEAGE_AUDIT = ROOT / "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+AUDITED_OPEN_KERNEL_PRS = {pr["number"] for pr in json.loads(LINEAGE_AUDIT.read_text())["prs"]}
+OPEN_KERNEL_PRS = AUDITED_OPEN_KERNEL_PRS | {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 35, 44, 46, 51,
                    52, 53, 54, 55, 56, 57, 58, 59, 60, 62, 63, 64, 66, 68, 70, 71, 72, 73, 76, 77,
                    78, 79, 81, 83, 85, 86, 87, 88, 90, 92, 93, 94, 95, 97, 101, 102, 105, 108, 109, 110,
                    111, 113, 114, 115, 118, 119, 120, 121, 122, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134}

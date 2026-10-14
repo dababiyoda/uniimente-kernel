@@ -6,6 +6,7 @@ Development seeds 0-9 and review seeds 3000-3999 only; held-out admission seeds 
 from __future__ import annotations
 
 import copy
+from fractions import Fraction
 import json
 import math
 import sys
@@ -243,6 +244,57 @@ def test_every_single_leaf_corruption_of_an_answer_is_refuted(family):
         assert not survivors, (family, seed, survivors)
 
 
+JUNK = [None, "x", [], {}, [1], float("inf"), float("nan"), -1, 10 ** 30, 10 ** 400, 1e308, -1e308, True, "1/0"]
+
+
+def _paths(value, path=()):
+    if isinstance(value, dict):
+        for k, v in value.items():
+            yield path + (k,)
+            yield from _paths(v, path + (k,))
+    elif isinstance(value, list):
+        for i, v in enumerate(value[:3]):
+            yield path + (i,)
+            yield from _paths(v, path + (i,))
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_certificate_and_output_junk_is_refuted_never_raised(family):
+    # review: Fraction(inf) raised OverflowError and a non-dict correlated_dual raised AttributeError; the
+    # existing leaf test only corrupted outputs, and only with plausible values
+    x = item(family)
+    for seed in ANSWER_SEEDS[family][:2]:
+        data, _, out = solved(family, seed)
+        if family == "bimatrix_nash":         # an honest answer without the welfare claim: no MILP per case
+            out["output"]["selection"] = "nash"
+            assert all(x.verify(data, out["output"], out["certificate"]).values())
+        for part in ("certificate", "output"):
+            for path in _paths(out[part]):
+                for junk in JUNK:
+                    o, c = copy.deepcopy(out["output"]), copy.deepcopy(out["certificate"])
+                    _set(o if part == "output" else c, path, junk)
+                    try:
+                        checks = x.verify(data, o, c)
+                    except Exception as exc:                       # a verifier refutes, it never raises
+                        pytest.fail(f"{family} {part} {path} <- {junk!r}: {type(exc).__name__}: {exc}")
+                    if part == "certificate" and path[0] == "exact":
+                        assert not all(checks.values()), (path, junk)
+
+
+def test_exact_strings_are_parsed_only_in_the_solvers_own_format():
+    # review: Fraction("1e999999999") builds a billion-digit integer before any check
+    for bad in ("1e999999999", "1E5", "inf", "nan", "0x10", "1.5", " 1", "1/2/3", "+1", "1" * 5000):
+        with pytest.raises(ValueError):
+            strategic._exact_rational(bad)
+    assert strategic._exact_rational("-3/4") == Fraction(-3, 4) and strategic._exact_rational("7") == 7
+    data, _, out = solved("bimatrix_nash", 2)
+    cert = copy.deepcopy(out["certificate"])
+    cert["exact"]["row_payoff"] = "1e999999999"
+    started = time.perf_counter()
+    assert strategic.nash_verify(data, out["output"], cert)["exact_certificate_is_an_exact_equilibrium"] is False
+    assert time.perf_counter() - started < 5.0
+
+
 # ------------------------------------------------------------------ bimatrix Nash
 def _pure_profile(data, i, j):
     a, b = data["row_payoffs"], data["column_payoffs"]
@@ -266,7 +318,9 @@ def test_nash_verify_refutes_a_lower_welfare_equilibrium_that_claims_to_be_maxim
     checks = strategic.nash_verify(data, claimed, cert)
     assert checks["row_payoff_equals_best_pure_response"] and checks["column_payoff_equals_best_pure_response"]
     assert checks["exact_certificate_is_an_exact_equilibrium"]
-    assert checks["welfare_maximal_over_all_equilibria_by_independent_milp"] is False
+    # the MILP disagrees with the claim, so the exact vertex enumeration decides, and refutes it
+    assert "welfare_maximal_over_all_equilibria_by_independent_milp" not in checks
+    assert checks["welfare_maximal_over_all_equilibria_by_exact_vertex_enumeration"] is False
     assert strategic.nash_score(data, truth, claimed)["category"] == "wrong"
     honest = dict(claimed, selection="nash")                            # an equilibrium, no welfare claim
     assert all(strategic.nash_verify(data, honest, cert).values())
@@ -287,25 +341,151 @@ def test_nash_verify_refutes_a_mixed_profile_that_is_not_an_equilibrium():
     assert not (checks["row_payoff_equals_best_pure_response"] and checks["column_payoff_equals_best_pure_response"])
 
 
-def test_correlated_equilibrium_is_certified_by_its_dual_and_a_suboptimal_one_is_refuted():
-    data, _, out = solved("bimatrix_nash", 3)
-    ce, dual = out["output"]["correlated"], out["certificate"]["correlated_dual"]
-    assert ce["welfare"] >= out["output"]["welfare"] - 1e-9                # every Nash equilibrium is correlated
+def _product_plan(data, out):
+    """The Nash profile as a correlated plan: a correlated equilibrium, often a worse one."""
     product = [[p * q for q in out["output"]["column_strategy"]] for p in out["output"]["row_strategy"]]
     a, b = data["row_payoffs"], data["column_payoffs"]
-    welfare = sum(product[i][j] * (a[i][j] + b[i][j]) for i in range(len(a)) for j in range(len(a[0])))
-    if welfare < ce["welfare"] - 1e-6:                                     # the product plan is a worse CE
-        forged = dict(out["output"], correlated={"distribution": product, "welfare": welfare,
-                                                 "objective": "max_welfare"})
-        checks = strategic.nash_verify(data, forged, out["certificate"])
-        assert checks["correlated_incentive_constraints_hold"]
-        assert checks["correlated_welfare_optimal_by_dual_certificate"] is False
+    welfare = math.fsum(product[i][j] * (a[i][j] + b[i][j]) for i in range(len(a)) for j in range(len(a[0])))
+    return product, welfare
+
+
+def test_correlated_equilibrium_is_certified_by_its_dual_and_a_suboptimal_one_is_refuted():
+    data, _, out = solved("bimatrix_nash", 3014)        # review seed: the product plan is strictly worse here
+    ce, dual = out["output"]["correlated"], out["certificate"]["correlated_dual"]
+    assert ce["welfare"] >= out["output"]["welfare"] - 1e-9                # every Nash equilibrium is correlated
+    product, welfare = _product_plan(data, out)
+    assert welfare < ce["welfare"] - 0.1                                   # the refutation branch always runs
+    forged = dict(out["output"], correlated={"distribution": product, "welfare": welfare,
+                                             "objective": "max_welfare"})
+    checks = strategic.nash_verify(data, forged, out["certificate"])
+    assert checks["correlated_incentive_constraints_hold"]
+    assert checks["correlated_welfare_optimal_by_dual_certificate"] is False
     lowered = dict(out["certificate"], correlated_dual=dict(dual, bound=dual["bound"] - 1.0))
     checks = strategic.nash_verify(data, out["output"], lowered)
     assert checks["correlated_welfare_optimal_by_dual_certificate"] is False
     inflated = copy.deepcopy(out["output"])
     inflated["correlated"]["welfare"] += 0.5
     assert strategic.nash_verify(data, inflated, out["certificate"])["correlated_welfare_recomputed"] is False
+
+
+def test_correlated_dual_cannot_be_forged_by_a_diagonal_or_a_huge_multiplier():
+    # review: the slack grew with the multipliers, so alpha[0][0] = 1e15 (no constraint at all) or a huge
+    # multiplier on a dominated row pair certified any incentive-compatible plan as welfare-optimal
+    data, _, out = solved("bimatrix_nash", 3014)
+    a, b = data["row_payoffs"], data["column_payoffs"]
+    m, n = len(a), len(a[0])
+    product, welfare = _product_plan(data, out)
+    forged = dict(out["output"], correlated={"distribution": product, "welfare": welfare, "objective": "max_welfare"})
+    dominated = next((i, k) for i in range(m) for k in range(m)
+                     if i != k and all(a[i][j] <= a[k][j] for j in range(n)))
+    result = library.run("bimatrix_nash", data, {"latency_limit": 10})          # the canonical adapters
+    assert all(library.check("bimatrix_nash", data, result["output"], result["proof"]).values())
+    for i, k, size in ((0, 0, 1e15), (*dominated, 1e15), (*dominated, 1e300)):
+        alpha = [[0.0] * m for _ in range(m)]
+        alpha[i][k] = size
+        dual = {"row_multipliers": alpha, "column_multipliers": [[0.0] * n for _ in range(n)], "bound": welfare}
+        checks = strategic.nash_verify(data, forged, dict(out["certificate"], correlated_dual=dual))
+        assert checks["correlated_incentive_constraints_hold"]
+        assert checks["correlated_welfare_optimal_by_dual_certificate"] is False, (i, k, size)
+        proof = copy.deepcopy(result["proof"])
+        proof["certificate"]["correlated_dual"] = dual
+        assert not all(library.check("bimatrix_nash", data, forged, proof).values())
+    # the honest certificate states zero diagonals and a bound proven exactly from its own multipliers
+    dual = out["certificate"]["correlated_dual"]
+    assert all(dual["row_multipliers"][i][i] == 0 for i in range(m))
+    assert all(dual["column_multipliers"][j][j] == 0 for j in range(n))
+    assert out["output"]["correlated"]["welfare"] >= dual["bound"] - strategic.NASH_CE_TOL * strategic._scale(a, b)
+
+
+def test_nash_tolerances_are_relative_to_the_payoffs_not_floored_at_one():
+    # review: payoffs of order 1e-8 left every tolerance at 1e-6 or 1e-7 absolute, so the worst equilibrium
+    # passed as 'max_welfare_nash' and the MILP reported a maximum below a known equilibrium
+    data, _ = dev("bimatrix_nash", 1)
+    small = {"row_payoffs": [[v * 1e-8 for v in r] for r in data["row_payoffs"]],
+             "column_payoffs": [[v * 1e-8 for v in r] for r in data["column_payoffs"]]}
+    a, b = small["row_payoffs"], small["column_payoffs"]
+    pure = strategic._pure_equilibria(a, b)
+    worst, best = (f(pure, key=lambda ij: a[ij[0]][ij[1]] + b[ij[0]][ij[1]]) for f in (min, max))
+    profile = _pure_profile(small, *worst)
+    claim = dict(profile, selection="max_welfare_nash", correlated=None)
+    cert = {"exact": {"row_strategy": [str(int(p)) for p in profile["row_strategy"]],
+                      "column_strategy": [str(int(q)) for q in profile["column_strategy"]],
+                      "row_payoff": str(Fraction(a[worst[0]][worst[1]])),
+                      "column_payoff": str(Fraction(b[worst[0]][worst[1]]))}}
+    checks = strategic.nash_verify(small, claim, cert)
+    assert checks["exact_certificate_is_an_exact_equilibrium"] and not all(checks.values())
+    assert strategic._nash_milp(a, b, "max")[0] == pytest.approx(a[best[0]][best[1]] + b[best[0]][best[1]],
+                                                                 rel=1e-6)
+    out = strategic.nash_solve(small, BUDGET)                           # the honest answer still verifies
+    assert all(strategic.nash_verify(small, out["output"], out["certificate"]).values())
+    uniform = [[1.0 / (len(a) * len(a[0]))] * len(a[0]) for _ in a]    # not a correlated equilibrium
+    w = math.fsum(uniform[i][j] * (a[i][j] + b[i][j]) for i in range(len(a)) for j in range(len(a[0])))
+    forged = dict(out["output"], correlated={"distribution": uniform, "welfare": w, "objective": "max_welfare"})
+    assert strategic.nash_verify(small, forged, out["certificate"])["correlated_incentive_constraints_hold"] is False
+
+
+@pytest.mark.parametrize("top,gain", [(1e6, 3.0), (1e6, 1.0), (1e6, 0.5), (1e6, 0.01), (1e6, 0.001)])
+def test_welfare_milp_confirms_exact_answers_near_the_payoff_bound(top, gain):
+    # review: HiGHS's default 1e-6 integrality tolerance read a profitable deviation of up to about 3 units as an
+    # equilibrium, so the solver's exact and correct maximal-welfare answer was refuted
+    data = {"row_payoffs": [[top - gain, 0], [top, 1]], "column_payoffs": [[top, 0], [0, 1]]}
+    out = strategic.nash_solve(data, BUDGET)
+    o = out["output"]
+    assert o["selection"] == "max_welfare_nash" and o["welfare"] == 2.0     # the unique equilibrium
+    checks = strategic.nash_verify(data, o, out["certificate"])
+    assert all(checks.values()), checks
+    assert checks["welfare_maximal_over_all_equilibria_by_independent_milp"]
+    assert strategic._nash_milp(data["row_payoffs"], data["column_payoffs"], "max")[0] == pytest.approx(2.0, abs=1e-5)
+    assert o["correlated"]["welfare"] == 2.0                                # its dual repaired exactly
+
+
+def test_nash_withholds_the_welfare_claim_when_equilibria_lie_off_equal_supports():
+    # review: one strict equilibrium was found (odd count, no ties at it) while a continuum of better
+    # equilibria with unequal supports existed; the 'maximal' claim was then refuted
+    data = {"row_payoffs": [[1, 1], [2, -2], [-2, 2]], "column_payoffs": [[10, 10], [1, 0], [1, 0]]}
+    out = strategic.nash_solve(data, BUDGET)
+    assert out["output"]["selection"] == "nash" and out["certificate"]["equilibria_found"] == 1
+    assert out["certificate"]["degeneracy_symptoms"]["extra_pure_best_responses"]
+    checks = strategic.nash_verify(data, out["output"], out["certificate"])
+    assert all(checks.values()) and "welfare_maximal_over_all_equilibria_by_independent_milp" not in checks
+    assert strategic._nash_extreme_welfare(data["row_payoffs"], data["column_payoffs"]) == 11
+    # degeneracy at a mixed vertex only (every pure strategy has a unique best response) is caught too
+    for seed in (3069, 3119):
+        game, _ = dev("bimatrix_nash", seed)
+        a, b = game["row_payoffs"], game["column_payoffs"]
+        assert all(b[i].count(max(b[i])) == 1 for i in range(len(a)))
+        assert all([a[i][j] for i in range(len(a))].count(max(a[i][j] for i in range(len(a)))) == 1
+                   for j in range(len(a[0])))
+        out = strategic.nash_solve(game, BUDGET)
+        assert out["output"]["selection"] == "nash", seed
+        assert out["certificate"]["degeneracy_symptoms"]["extra_pure_best_responses"]
+
+
+def test_degeneracy_flag_matches_an_independent_vertex_label_count():
+    """The solver withholds the welfare claim exactly when some vertex of a best-response polytope has an extra
+    label (the definition of a degenerate game), checked by the verifier's independent vertex enumeration."""
+    import random
+    r = random.Random(3501)
+    seen = set()
+    for _ in range(120):
+        m, n, hi = r.randint(1, 4), r.randint(1, 4), r.choice([1, 2, 20])
+        a = [[r.randint(-hi, hi) for _ in range(n)] for _ in range(m)]
+        b = [[r.randint(-hi, hi) for _ in range(n)] for _ in range(m)]
+        out = strategic.nash_solve({"row_payoffs": a, "column_payoffs": b}, BUDGET)
+        if out["status"] != "ANSWER":
+            continue
+        sa, sb = 1 - min(min(row) for row in a), 1 - min(min(row) for row in b)
+        P = strategic._polytope_vertices([[b[i][j] + sb for i in range(m)] for j in range(n)],
+                                         list(range(m)), [m + j for j in range(n)])
+        Q = strategic._polytope_vertices([[a[i][j] + sa for j in range(n)] for i in range(m)],
+                                         [m + j for j in range(n)], list(range(m)))
+        extra = any(bin(lab).count("1") > m for lab, _ in P.values()) or \
+            any(bin(lab).count("1") > n for lab, _ in Q.values())
+        assert out["certificate"]["degeneracy_symptoms"]["extra_pure_best_responses"] is extra, (a, b)
+        seen.add(extra)
+        if out["output"]["selection"] == "max_welfare_nash":
+            assert out["output"]["welfare"] == float(strategic._nash_extreme_welfare(a, b))
+    assert seen == {True, False}
 
 
 def test_nash_withholds_the_welfare_claim_on_a_degenerate_game():
@@ -415,6 +595,53 @@ def test_mechanism_milp_competitor_agrees_with_exhaustive_enumeration():
         assert abs(milp["dsic"]["max_gain"] - out["output"]["dsic"]["max_gain"]) <= 1e-6
         assert abs(milp["ir"]["min_slack"] - out["output"]["ir"]["min_slack"]) <= 1e-6
         assert strategic.mech_score(data, truth, milp)["category"] == "correct"
+
+
+def _first_price(unit):
+    data = _auction("first")
+    data["agents"] = [{"values": [[v * unit for v in row] for row in ag["values"]]} for ag in data["agents"]]
+    data["payments"] = [[p * unit for p in row] for row in data["payments"]]
+    return data
+
+
+def test_mechanism_magnitudes_are_checked_relative_to_their_exact_values():
+    # review: the tolerance 1e-9 x max(1, |values|) is 1e-9 absolute for small units, so a gain inflated 100-fold
+    # passed in a first-price auction stated in 1e-12 units
+    for unit in (1e-12, 1.0, 1e5):
+        data = _first_price(unit)
+        out = strategic.mech_solve(data, BUDGET)
+        assert all(strategic.mech_verify(data, out["output"], out["certificate"]).values())
+        for path in (("dsic", "max_gain"), ("dsic", "witness", "gain")):
+            forged = copy.deepcopy(out["output"])
+            _set(forged, path, forged[path[0]][path[1]] * 100 if len(path) == 2
+                 else forged["dsic"]["witness"]["gain"] * 100)
+            assert not all(strategic.mech_verify(data, forged, out["certificate"]).values()), (unit, path)
+        forged = copy.deepcopy(out["output"])
+        forged["ir"]["min_slack"] = forged["ir"]["min_slack"] * 1.01 + 1e-15 * unit
+        assert not all(strategic.mech_verify(data, forged, out["certificate"]).values()), unit
+
+
+def test_mechanism_truth_is_exact_like_the_solver_and_verifier():
+    # review: the truth decided DSIC with a 1e-9 x scale tolerance, so a genuine 0.0005 gain on a 1e6 mechanism
+    # made the exact solver's verified VIOLATION 'wrong' and the sampler's HOLDS 'correct'
+    data = {"agents": [{"values": [[0, 1e6], [0, 1e6]]}], "outcomes": ["no", "yes"], "allocation": [1, 1],
+            "payments": [[0.0005], [0.0]]}
+    truth = strategic._mech_truth(strategic._mech(data))
+    assert truth["dsic_holds"] is False and truth["profitable_misreports"] == 1
+    assert truth["dsic_max_gain"] == float(Fraction(0.0005))
+    out = strategic.mech_solve(data, BUDGET)
+    assert out["output"]["verdict"] == "VIOLATION" and all(
+        strategic.mech_verify(data, out["output"], out["certificate"]).values())
+    assert strategic.mech_score(data, truth, out["output"]) == {"quality": 1.0, "category": "correct"}
+    sampled = strategic.mech_sampled(data)
+    assert sampled["verdict"] == "HOLDS" and strategic.mech_score(data, truth, sampled)["category"] == "wrong"
+    for seed in range(10):                       # integer tables: the exact truth agrees with the float magnitudes
+        _, truth = dev("mechanism_check", seed)
+        _, _, out = solved("mechanism_check", seed)
+        assert truth["dsic_holds"] == out["output"]["dsic"]["holds"]
+        assert truth["dsic_max_gain"] == out["output"]["dsic"]["max_gain"]
+        assert truth["ir_min_slack"] == out["output"]["ir"]["min_slack"]
+        assert truth["profitable_misreports"] == out["certificate"]["profitable_misreports"]
 
 
 def test_clarke_public_project_is_truthful_but_can_fail_participation():
@@ -530,6 +757,56 @@ def test_weak_fairness_cannot_force_an_intermittently_enabled_entry():
     o = strategic.live_solve(data, BUDGET)["output"]
     assert o["verdict"] == "VIOLATED" and all(strategic.live_verify(data, o, {}).values())
     assert strategic.live_solve(dict(data, fairness="strong"), BUDGET)["status"] == "ABSTAIN"
+
+
+def test_liveness_verify_and_score_refuse_answers_to_out_of_scope_requests():
+    # review: the verifier ignored the declared fairness, so a weakly fair lasso was accepted (and scored correct)
+    # as VIOLATED for a strong-fairness request, where it starves p0_enter and the property in fact holds
+    from greg.cognition.genomes.strategic import _lv_livelock
+    import random
+    for seed in range(200):
+        system, goal, fair, label = _lv_livelock(random.Random(seed))
+        if label.endswith("priority_weak"):
+            break
+    weak = {"system": system, "goal": goal, "fair": fair}
+    lasso = strategic.live_solve(weak, BUDGET)["output"]
+    assert all(strategic.live_verify(weak, lasso, {}).values())
+    for request in (dict(weak, fairness="strong"), dict(weak, property="safety")):
+        assert strategic.live_solve(request, BUDGET)["status"] == "ABSTAIN"
+        checks = strategic.live_verify(request, lasso, {})
+        assert checks == {"request_in_scope": False}
+        assert strategic.live_score(request, {"holds": True}, lasso)["category"] == "wrong"
+        assert strategic.live_score(request, {"holds": True}, {"verdict": "HOLDS"})["category"] == "wrong"
+        assert strategic.live_score(request, {"holds": True}, None)["category"] == "abstain"
+
+
+def test_liveness_holds_is_verified_when_declared_ranges_overflow_int64_codes():
+    # review: a radix product of declared ranges >= 2^62 made the verifier give up, refuting every correct HOLDS
+    wide = {"name": "w", "min": -100000, "max": 100000, "init": 0}
+    data = {"system": {"variables": [{"name": n, **{k: v for k, v in wide.items() if k != "name"}}
+                                     for n in ("x", "y", "z", "w")],
+                       "commands": [{"name": "inc", "guard": ["<", "x", 3], "update": {"x": ["+", "x", 1]}}]},
+            "goal": ["==", "x", 3]}
+    out = strategic.live_solve(data, BUDGET)
+    assert out["output"] == {"verdict": "HOLDS", "region_states": 3}
+    assert all(strategic.live_verify(data, out["output"], out["certificate"]).values())
+    # the byte-key path numbers states as the radix codes do: widening unused variables changes nothing else
+    narrow = _counter("stutter")
+    widened = copy.deepcopy(narrow)
+    widened["system"]["variables"] += [{"name": f"pad{i}", "min": -100000, "max": 100000, "init": 0}
+                                       for i in range(4)]
+    sysm_n, fair_n = strategic._live(narrow)
+    sysm_w, fair_w = strategic._live(widened)
+    rn, rw = strategic._live_region(sysm_n, 10 ** 5), strategic._live_region(sysm_w, 10 ** 5)
+    assert rw is not None and rn["count"] == rw["count"] == 24
+    assert rw["states"][:, :2].tolist() == rn["states"].tolist() and not rw["states"][:, 2:].any()
+    assert all((rw[k] == rn[k]).all() for k in ("enabled", "src", "cmd", "dst"))
+    out = strategic.live_solve(widened, BUDGET)
+    assert out["output"] == {"verdict": "HOLDS", "region_states": 24}
+    assert all(strategic.live_verify(widened, out["output"], out["certificate"]).values())
+    forged = {"verdict": "HOLDS", "region_states": 24}
+    unfair = dict(widened, fair=["tick"])                             # inc no longer weakly fair: VIOLATED
+    assert strategic.live_verify(unfair, forged, out["certificate"])["no_weakly_fair_goal_avoiding_component"] is False
 
 
 def test_tarjan_matches_networkx_on_random_graphs():

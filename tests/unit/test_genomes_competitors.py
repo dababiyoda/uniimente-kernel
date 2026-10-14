@@ -664,6 +664,72 @@ def test_game_solve_never_states_a_value_its_verifier_refutes_when_payoffs_agree
     assert answered and unknown
 
 
+SUBNORMAL_GAME = [[-3.999995e-318, -4.999994e-318, -2.999996e-318, 1e-318],
+                  [-3.999995e-318, -1e-318, 1.999997e-318, 2.999996e-318],
+                  [3.999995e-318, 3.999995e-318, 1.999997e-318, 2.999996e-318],
+                  [4.999994e-318, -3.999995e-318, 3.999995e-318, 1e-318],
+                  [2.999996e-318, -3.999995e-318, -4.999994e-318, -3.999995e-318],
+                  [-4.999994e-318, 1.999997e-318, 1e-318, -1.999997e-318]]
+
+
+def test_game_solve_answers_unknown_when_subnormal_rounding_exceeds_the_verification_tolerance():
+    """Payoff differences of about 1e-318 are subnormal floats, which the input contract accepts. The self-check
+    on the rescaled game passed, the stated-error guard measured 0 in subnormal arithmetic against a threshold
+    that underflowed to 0, and the verifier, whose 1e-7 x range tolerance is about one subnormal step, refuted the
+    answer (9 of 30 games at 1e-318, 7 at 1e-320). The solver now answers only while that tolerance covers the
+    verifier's worst rounding drift on the game's shape twice, (m + n + 2) steps of 2^-1074, and says why
+    otherwise; it keeps answering where the drift fits (every game at 1e-300-1e-314 and most at 1e-316)."""
+    out = competitors.game_lp_dual_solve({"payoffs": SUBNORMAL_GAME}, BUDGET)
+    assert out["status"] == "UNKNOWN" and out["output"] is None and "subnormal" in out["missing"][0]
+    assert 0 < out["certificate"]["payoff_range"] < out["certificate"]["range_floor"]
+    answered = {}
+    for unit in (1e-300, 1e-305, 1e-308, 1e-310, 1e-312, 1e-314, 1e-316, 1e-318, 1e-320):
+        r, answered[unit] = random.Random(3500), 0           # a review seed
+        for _ in range(30):
+            m, n = r.randint(1, 6), r.randint(1, 6)
+            data = {"payoffs": [[r.randint(-5, 5) * unit for _ in range(n)] for _ in range(m)]}
+            out = competitors.game_lp_dual_solve(data, BUDGET)
+            if out["status"] == "ANSWER":
+                answered[unit] += 1
+                assert all(competitors.game_lp_dual_verify(data, out["output"], out["certificate"]).values())
+                assert solvers_b.game_score(data, None, out["output"])["category"] == "correct"
+            else:
+                assert out["status"] == "UNKNOWN" and out["output"] is None and "subnormal" in out["missing"][0]
+    assert all(answered[unit] == 30 for unit in (1e-300, 1e-305, 1e-308, 1e-310, 1e-312, 1e-314)), answered
+    assert answered[1e-316] >= 20 and answered[1e-318] < 30, answered
+
+
+def _near_degenerate_games():
+    """k/8 payoffs plus noise of up to 3e-8 (review seeds 3000-3099), and one offset game -1e6 + k/800."""
+    games = [[[-999999.99625, -999999.99875, -999999.9925, -999999.99625, -999999.99625],
+              [-999999.9975, -999999.99375, -999999.99, -999999.995, -999999.99125],
+              [-999999.99625, -999999.9975, -999999.99875, -999999.99625, -999999.9975]]]
+    for seed in range(3000, 3100):
+        r = random.Random(seed)
+        for eps in (0.0, 1e-9, 1e-8, 3e-8):
+            m, n = r.randint(3, 8), r.randint(3, 8)
+            games.append([[r.randint(0, 8) / 8 + r.uniform(-eps, eps) for _ in range(n)] for _ in range(m)])
+    return games
+
+
+@pytest.mark.parametrize("glop", (True, False))
+def test_game_solve_answers_near_degenerate_games_its_engines_can_solve(glop, monkeypatch):
+    """The self-check demands a duality gap of at most 1e-9 of the range, but both engines ran at their default
+    feasibility tolerances (GLOP 1e-8, HiGHS 1e-7): on near-degenerate games both returned the same vertex with a
+    gap of 1.2-2.5e-9, and the solver answered UNKNOWN on 7 of these 401 games, where the superseded game_minimax
+    answered and both verifiers accepted. Each engine (GLOP, or HiGHS alone as the fallback) now runs at
+    feasibility tolerances a tenth of the self-check's gap."""
+    if not glop:
+        monkeypatch.setattr(competitors, "_gl_glop", lambda b: None)
+    for payoffs in _near_degenerate_games():
+        data = {"payoffs": payoffs}
+        out = competitors.game_lp_dual_solve(data, BUDGET)
+        assert out["status"] == "ANSWER", (payoffs, out["missing"])
+        assert out["certificate"]["engine"] == ("OR-Tools GLOP" if glop else "SciPy HiGHS")
+        assert all(competitors.game_lp_dual_verify(data, out["output"], out["certificate"]).values())
+        assert solvers_b.game_score(data, None, out["output"])["category"] == "correct"
+
+
 @pytest.mark.parametrize("payoffs", ([[3.0]], [[1, 2, 3]], [[1], [2], [3]], [[5, 5], [5, 5]]))
 def test_game_degenerate_shapes_verify(payoffs):
     out = competitors.game_lp_dual_solve({"payoffs": payoffs}, BUDGET)

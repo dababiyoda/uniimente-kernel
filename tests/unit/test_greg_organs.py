@@ -7,9 +7,11 @@ UNIIMENTE_WEALTHMACHINE_PYTHON name them (CI: the one-machine workflow sets them
 """
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 import pytest
 
@@ -191,8 +193,11 @@ def git_checkouts(tmp_path):
     return params
 
 
+PACKET = '{"id": "p1", "schema_version": "1.1", "created_at": "2026-10-14T00:00:00Z"}'
+
+
 def message(trace, identity="daleobanks"):
-    return {"body": '{"id": "p1"}', "headers": {bt.H_TRACE: trace, "X-Schema-Version": "1.1", "identity": identity}}
+    return {"body": PACKET, "headers": {bt.H_TRACE: trace, "X-Schema-Version": "1.1", "identity": identity}}
 
 
 def test_an_organ_that_rewrites_the_other_organs_code_is_refused(tmp_path, journal, monkeypatch):
@@ -203,7 +208,7 @@ def test_an_organ_that_rewrites_the_other_organs_code_is_refused(tmp_path, journ
     params = git_checkouts(tmp_path)
     calls = []
 
-    def stage(python, cwd, code, *args, stdin=None, env, timeout):
+    def stage(python, cwd, code, *args, stdin=None, env, timeout, confine=None, stop_check=None):
         calls.append(cwd.name)
         (cwd.parent / "wealthmachine" / "src" / "services" / "opportunity_intake.py").write_text("FORGED = 1\n")
         return message(organs.trace_for("m:organ-test", SEED))
@@ -233,6 +238,119 @@ def test_the_snapshot_runs_head_and_reports_uncommitted_edits(tmp_path):
     assert snap["head"] == organs._head(wmi)
 
 
+NETWORK_PROBE = "import socket\ntry:\n    socket.socket()\n    print('NETWORK OPEN')\nexcept OSError:\n    print('denied')\n"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="seccomp network filter is Linux")
+def test_a_child_that_rewrites_the_network_filter_cannot_disable_isolation_for_later_children(tmp_path,
+                                                                                             monkeypatch):
+    """Attack (review finding, critical): an isolated child cannot open sockets but can write files.
+    It replaces tools/offline_test.py with a no-op filter; the next isolated child used to import that
+    file at fork time and ran with full network. Expected: the filter is the one already in the
+    body's memory; the next child is still denied."""
+    from greg import capabilities
+    kernel = tmp_path / "kernel"
+    (kernel / "tools").mkdir(parents=True)
+    (kernel / "tools" / "offline_test.py").write_text((capabilities.KERNEL_ROOT / "tools" / "offline_test.py").read_text())
+    monkeypatch.setattr(capabilities, "KERNEL_ROOT", kernel)
+    tamper = f"open({str(kernel / 'tools' / 'offline_test.py')!r}, 'w').write('def install_filter():\\n    pass\\n')"
+    first = capabilities.run_isolated([sys.executable, "-c", tamper], cwd=tmp_path)
+    assert first.returncode == 0 and "pass" in (kernel / "tools" / "offline_test.py").read_text()
+    second = capabilities.run_isolated([sys.executable, "-c", NETWORK_PROBE], cwd=tmp_path)
+    assert second.stdout.decode().strip() == "denied"
+
+
+def confined_probe(tmp_path, code):
+    from greg import capabilities, isolation
+    if not isolation.available().get("available"):
+        pytest.skip("Landlock unavailable on this host")
+    python = Path(sys.executable)
+    own, other, kernel, store = (tmp_path / n for n in ("own", "other", "kernel", "store"))
+    for d in (own, other, kernel, store):
+        d.mkdir()
+        (d / "f.txt").write_text(d.name)
+    confine = organs._confinement(python, own, store)
+    return capabilities.run_isolated([str(python), "-s", "-c", code], cwd=own, confine=confine,
+                                     extra_env={"PYTHONDONTWRITEBYTECODE": "1"})
+
+
+def test_a_confined_organ_stage_reaches_only_its_code_and_the_store(tmp_path):
+    """Attack (review finding): organ stages wrote anywhere (another organ's code, Kernel sources,
+    the body's home). Expected under Landlock: its own code readable, the store writable, nothing
+    else readable or writable."""
+    root = str(tmp_path)
+    code = ("import json, pathlib\nr = {}\n"
+            f"base = pathlib.Path({root!r})\n"
+            "for name, act in (('read_own', lambda: (base/'own'/'f.txt').read_text()),\n"
+            "                  ('write_store', lambda: (base/'store'/'x').write_text('ok')),\n"
+            "                  ('read_other', lambda: (base/'other'/'f.txt').read_text()),\n"
+            "                  ('write_other', lambda: (base/'other'/'x').write_text('no')),\n"
+            "                  ('write_kernel', lambda: (base/'kernel'/'f.txt').write_text('no')),\n"
+            "                  ('write_own', lambda: (base/'own'/'x').write_text('no'))):\n"
+            "    try:\n        act(); r[name] = True\n    except OSError:\n        r[name] = False\n"
+            "print(json.dumps(r))\n")
+    proc = confined_probe(tmp_path, code)
+    assert proc.returncode == 0, proc.stderr.decode()
+    reached = json.loads(proc.stdout.decode().strip().splitlines()[-1])
+    assert reached == {"read_own": True, "write_store": True, "read_other": False, "write_other": False,
+                       "write_kernel": False, "write_own": False}
+    assert (tmp_path / "kernel" / "f.txt").read_text() == "kernel"
+
+
+def test_founder_stop_ends_an_in_flight_organ_exchange(tmp_path, journal, monkeypatch):
+    """Review finding: STOP could not end an organ exchange (three blocking stages of up to 900 s).
+    Expected: the stage is supervised; STOP kills it within a second and nothing is recorded."""
+    import time as _time
+    params = git_checkouts(tmp_path)
+    monkeypatch.setattr(organs, "DALEOBANKS_STAGE", "import time\ntime.sleep(60)\n")
+    started = _time.monotonic()
+    c = ctx(tmp_path, journal, roots=(tmp_path, Path("/usr/bin")))
+    c.stop_check = lambda: _time.monotonic() - started > 0.5
+    with pytest.raises(CapabilityError, match="STOP"):
+        organs.exchange(params, c)
+    assert _time.monotonic() - started < 10 and journal.replay("organ.") == []
+
+
+def test_a_mission_keeps_its_bound_trace_for_a_second_seed(tmp_path, journal, monkeypatch):
+    monkeypatch.setenv(bt.SIGNING_KEY_ENV, "k" * 64)
+    bridge_message(journal, "m:organ-test")                 # bound to trace-m:organ-test
+    seen = []
+
+    def stage(python, cwd, code, *args, **kw):
+        seen.append(args)
+        raise CapabilityError("stop here")
+
+    monkeypatch.setattr(organs, "_stage", stage)
+    with pytest.raises(CapabilityError, match="stop here"):
+        organs.exchange({**git_checkouts(tmp_path), "seed": "another seed"},
+                        ctx(tmp_path, journal, roots=(tmp_path, Path("/usr/bin"))))
+    assert seen[0][1] == "trace-m:organ-test"
+
+
+@pytest.mark.parametrize("reply, why", [
+    ({"headers": {}}, "signed trace None"),                                 # no trace at all
+    ("no-body", "KeyError"),                                                 # malformed: becomes a refusal
+    ("bad-packet", "broke its wire contract"),
+])
+def test_malformed_or_off_contract_organ_output_is_a_clean_refusal(tmp_path, journal, monkeypatch, reply, why):
+    trace = organs.trace_for("m:organ-test", SEED)
+    replies = {"no-body": {"headers": {bt.H_TRACE: trace}}, "bad-packet": message(trace)}
+    monkeypatch.setattr(organs, "_stage", lambda *a, **k: replies.get(reply, reply) if isinstance(reply, str) else reply)
+    with pytest.raises(CapabilityError, match=why):
+        organs.exchange(git_checkouts(tmp_path), ctx(tmp_path, journal, roots=(tmp_path, Path("/usr/bin"))))
+    assert journal.replay("organ.") == []
+
+
+def test_live_exchange_never_signs_as_an_organ_when_per_organ_keys_are_configured(tmp_path, journal, monkeypatch):
+    """Review finding: with UNIIMENTE_BRIDGE_KEY_DALEOBANKS in the body's environment, the Kernel signed
+    the re-derivation request as DALEOBANKS's isolated identity and the organ refused it. Expected:
+    the re-derivation reuses DALEOBANKS's own signed message; the exchange still reproduces."""
+    params = live_organs()
+    monkeypatch.setenv("UNIIMENTE_BRIDGE_KEY_DALEOBANKS", "d" * 64)
+    out = organs.exchange({**params, "seed": SEED}, ctx(tmp_path, journal, roots=organ_roots(params)))
+    assert out["appraisal_verdict"] == "REPRODUCED"
+
+
 def test_live_exchange_runs_real_organ_code_and_reproduces(tmp_path, journal):
     params = live_organs()
     out = organs.exchange({**params, "seed": SEED}, ctx(tmp_path, journal, roots=organ_roots(params)))
@@ -247,9 +365,12 @@ def test_live_exchange_runs_real_organ_code_and_reproduces(tmp_path, journal):
     status = organs.status({}, ctx(tmp_path, journal, capability="organ.status"))
     assert status["organs_observed"] == ["daleobanks", "wealthmachine"] and status["verdict"] == "REPRODUCED"
     assert journal.replay("mission.observed") == [] and journal.replay("mission.appraised") == []
+    from greg import isolation
     for organ in ("daleobanks", "wealthmachine"):          # the code that ran is the code recorded
         assert out["organ_code"][organ]["head"] == out["organ_heads"][organ]
         assert len(out["organ_code"][organ]["tree_sha256"]) == 64
+        assert len(out["organ_code"][organ]["interpreter"]["sha256"]) == 64
+        assert out["organ_code"][organ]["filesystem_confined"] is bool(isolation.available().get("available"))
     for root in ("daleobanks_root", "wealthmachine_root"):    # the organ checkouts are never written
         import subprocess
         dirty = subprocess.run(["git", "-C", params[root], "status", "--porcelain"], capture_output=True,
@@ -257,9 +378,12 @@ def test_live_exchange_runs_real_organ_code_and_reproduces(tmp_path, journal):
         assert dirty == ""
 
 
-def test_a_seed_with_no_opportunity_is_a_truthful_refusal(tmp_path, journal):
+def test_a_seed_with_no_opportunity_is_a_truthful_answer_not_a_fault(tmp_path, journal):
+    """DALEOBANKS judging that a seed holds no opportunity is a correct organ answer: the exchange
+    completes with that typed outcome (never counted against the capability as a refusal), sends
+    nothing to WealthMachine and records no organ message."""
     params = live_organs()
-    with pytest.raises(CapabilityError, match="no opportunity"):
-        organs.exchange({**params, "seed": "The weather was pleasant today."},
-                        ctx(tmp_path, journal, roots=organ_roots(params)))
+    out = organs.exchange({**params, "seed": "The weather was pleasant today."},
+                          ctx(tmp_path, journal, roots=organ_roots(params)))
+    assert out["state"] == "NO_OPPORTUNITY" and out["appraisal_verdict"] is None
     assert journal.replay("organ.observed") == []

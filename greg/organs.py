@@ -47,11 +47,14 @@ from pathlib import Path
 import secrets as _secrets
 import subprocess
 import tempfile
+import time
 
 from adapters import bridge_transport as bt
-from greg import organ_bridge
+from greg import isolation, organ_bridge
+from adapters.contract_validation import validate_contract
 from greg.capabilities import CapabilityError, InvocationContext, _inside, run_isolated
-from greg.workers import _tree_digest
+from events.spine import EventError
+from greg.workers import WorkerInterrupted, _tree_digest
 
 PAIR = "daleobanks-wealthmachine"
 TARGET = "organ:" + PAIR
@@ -171,13 +174,32 @@ def _unchanged(snapshot: dict, why: str) -> None:
         raise CapabilityError(f"the {snapshot['path'].name} snapshot changed {why}; the exchange was refused")
 
 
-def _stage(python: Path, cwd: Path, code: str, *args, stdin=None, env: dict, timeout: int) -> dict:
+def _confinement(python: Path, code_dir: Path, store: Path) -> dict | None:
+    """Landlock grants for one organ stage: its own code snapshot and interpreter read-only, the
+    system runtime read-only, writes only to the mission's organ store. Another organ's code, the
+    Kernel's sources and the body's home are unreachable. None where Landlock is unavailable."""
+    if not isolation.available().get("available"):
+        return None
+    runtime = Path(os.path.realpath(python)).parents[1]          # e.g. /usr for /usr/bin/python3.13
+    return {"read": [code_dir, "/etc", "/dev/urandom"],
+            "read_exec": [python.parent.parent, runtime, "/usr", "/lib", "/lib64", "/bin"],
+            "write": [store, "/dev/null"]}
+
+
+def _stage(python: Path, cwd: Path, code: str, *args, stdin=None, env: dict, timeout: float,
+           confine: dict | None = None, stop_check=None) -> dict:
+    if timeout <= 0:
+        raise CapabilityError("the organ exchange exceeded its time bound")
     try:
         proc = run_isolated([str(python), "-s", "-c", code, *args], cwd=cwd, isolate_network=True,
-                            timeout=timeout, extra_env=env,
+                            timeout=timeout, extra_env=env, confine=confine,
+                            stop_check=stop_check or (lambda: False),
                             input_bytes=json.dumps(stdin).encode() if stdin is not None else None)
+    except WorkerInterrupted:
+        # Nothing an interrupted exchange recorded counts without a receipt (organ_bridge.bound_facts).
+        raise CapabilityError("founder STOP ended the organ exchange; its organ processes were killed") from None
     except subprocess.TimeoutExpired:
-        raise CapabilityError(f"organ stage in {cwd.name} exceeded {timeout}s") from None
+        raise CapabilityError(f"organ stage in {cwd.name} exceeded the exchange's time bound") from None
     if proc.returncode:
         raise CapabilityError(f"organ stage in {cwd.name} failed: "
                               + proc.stderr.decode("utf-8", "replace")[-600:])
@@ -189,43 +211,87 @@ def _stage(python: Path, cwd: Path, code: str, *args, stdin=None, env: dict, tim
 
 def exchange(params: dict, ctx: InvocationContext) -> dict:
     seed = params.get("seed")
-    if not isinstance(seed, str) or not 1 <= len(seed) <= MAX_SEED:
-        raise CapabilityError(f"seed must be 1..{MAX_SEED} characters")
+    if not isinstance(seed, str) or not 1 <= len(seed) <= MAX_SEED or "\0" in seed:
+        raise CapabilityError(f"seed must be 1..{MAX_SEED} characters of text")
     if not ctx.mission_id:
         raise CapabilityError("an organ exchange belongs to exactly one mission")
     roots = _roots(params, ctx)
-    timeout = int(params.get("timeout_seconds", 300))
-    if not 30 <= timeout <= 900:
-        raise CapabilityError("timeout_seconds must be in [30, 900]")
+    timeout = params.get("timeout_seconds", 300)
+    if not isinstance(timeout, int) or isinstance(timeout, bool) or not 30 <= timeout <= 900:
+        raise CapabilityError("timeout_seconds must be an integer in [30, 900] (the whole exchange's bound)")
     store = ctx.workspace / "organs" / PAIR
-    store.mkdir(parents=True, exist_ok=True)
+    (store / "tmp").mkdir(parents=True, exist_ok=True)
     key = _secrets.token_hex(32)          # per invocation, only in the children's environment, never written
-    env = {bt.SIGNING_KEY_ENV: key, "HOME": str(store), "PERSIST_STORE": "false",
+    env = {bt.SIGNING_KEY_ENV: key, "HOME": str(store), "TMPDIR": str(store / "tmp"), "PERSIST_STORE": "false",
            "LEDGER_PATH": str(store / "daleobanks-decision-ledger.jsonl"),
            "DB_SNAPSHOT_PATH": str(store / "daleobanks-store.jsonl"), "PYTHONDONTWRITEBYTECODE": "1"}
-    trace = trace_for(ctx.mission_id, seed)
-    with tempfile.TemporaryDirectory(prefix="snapshots-", dir=store) as tmp:
+    # One trace per mission: a mission already bound to a trace (an earlier seed or an older ledger)
+    # keeps it, so a second exchange never runs both organs only to fail the binding afterwards.
+    bound = [e.payload["trace_id"] for e in (ctx.journal.replay("organ.observed") if ctx.journal else [])
+             if e.payload.get("mission_id") == ctx.mission_id and e.payload.get("trace_id")]
+    trace = bound[0] if bound else trace_for(ctx.mission_id, seed)
+    # Code snapshots live beside the writable store, never inside it.
+    (ctx.workspace / "organs" / "code").mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=PAIR + "-", dir=ctx.workspace / "organs" / "code") as tmp:
         code = {organ: _snapshot(roots[organ], Path(tmp) / organ) for organ in ("daleobanks", "wealthmachine")}
-        return _exchange(ctx, roots, code, env, seed, trace, key, timeout)
+        for organ, snap in code.items():
+            snap["confine"] = _confinement(roots[organ + "_python"], snap["path"], store)
+            snap["interpreter"] = _interpreter_record(roots[organ + "_python"])
+        deadline = time.monotonic() + timeout
+        try:
+            return _exchange(ctx, roots, code, env, seed, trace, deadline)
+        except (bt.BridgeSecurityError, organ_bridge.MissionBindingError, EventError, KeyError, ValueError,
+                TypeError) as exc:
+            # A forged, misbound or malformed exchange is a receipted refusal, never an "uncertain
+            # external effect" for the founder to reconcile: nothing here touches the outside world.
+            raise CapabilityError(f"organ exchange refused: {type(exc).__name__}: {str(exc)[:300]}") from None
 
 
-def _exchange(ctx, roots, code, env, seed, trace, key, timeout) -> dict:
+def _interpreter_record(python: Path) -> dict:
+    """What actually runs for an organ: the declared path, its resolved target and that file's digest."""
+    real = Path(os.path.realpath(python))
+    return {"declared": str(python), "realpath": str(real), "sha256": hashlib.sha256(real.read_bytes()).hexdigest()}
+
+
+def _wire(payload: dict, contract: str, who: str) -> dict:
+    try:
+        return validate_contract(payload, contract)
+    except ValueError as exc:
+        raise CapabilityError(f"{who} broke its wire contract ({contract}): {str(exc)[:200]}") from None
+
+
+def _assigned(message: dict, trace: str, who: str) -> None:
+    """The organs sign the trace they were given. One that names another trace is refused before
+    anything is recorded, so the receipt and the journal never disagree about the binding."""
+    signed = (message.get("headers") or {}).get(bt.H_TRACE)
+    if signed != trace:
+        raise CapabilityError(f"{who} signed trace {signed!r}, not the assigned {trace}")
+
+
+def _exchange(ctx, roots, code, env, seed, trace, deadline) -> dict:
     dale, wmi = code["daleobanks"], code["wealthmachine"]
-    d = _stage(roots["daleobanks_python"], dale["path"], DALEOBANKS_STAGE, seed, trace, env=env, timeout=timeout)
+    left = lambda: deadline - time.monotonic()                                      # noqa: E731
+    d = _stage(roots["daleobanks_python"], dale["path"], DALEOBANKS_STAGE, seed, trace, env=env, timeout=left(),
+               confine=dale["confine"], stop_check=ctx.stop_check)
     if d.get("no_opportunity"):
-        # Truthful refusal: DALEOBANKS found nothing to evaluate. No message exists, so none is recorded.
-        raise CapabilityError("DALEOBANKS found no opportunity in the seed; nothing was sent to WealthMachine")
+        # DALEOBANKS's own judgment: nothing to evaluate. A correct organ answer, not a capability
+        # fault, so it completes (no message exists and none is recorded); the mission's check
+        # stays failing, truthfully.
+        return {"state": "NO_OPPORTUNITY", "pair": PAIR, "trace_id": trace, "refined": d.get("refined"),
+                "appraisal_verdict": None, "transport_verified": False,
+                "organ_heads": {organ: snap["head"] for organ, snap in code.items()},
+                "recorded_in_journal": False, "external_effects": None, "spend_usd": 0.0, "authority_created": False}
     _unchanged(wmi, "while DALEOBANKS ran")
-    w = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=d, env=env, timeout=timeout)
-    # The organs sign the trace they were given; one that names another trace is refused before
-    # anything is recorded, so the receipt and the journal can never disagree about the binding.
-    signed = {d.get("headers", {}).get(bt.H_TRACE), w.get("headers", {}).get(bt.H_TRACE)}
-    if signed != {trace}:
-        raise CapabilityError(f"an organ signed trace {sorted(map(str, signed))}, not the assigned {trace}")
+    _assigned(d, trace, "DALEOBANKS")
+    _wire(json.loads(d["body"]), "wire-opportunity-packet", "DALEOBANKS")
+    w = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=d, env=env, timeout=left(),
+               confine=wmi["confine"], stop_check=ctx.stop_check)
+    _assigned(w, trace, "WealthMachine")
+    _wire(json.loads(w["body"]), "wire-venture-assessment", "WealthMachine")
     request_body, answer_body = d["body"].encode(), w["body"].encode()
     # Kernel-side verification under the same key; a forged or replayed message raises here.
     previous = os.environ.get(bt.SIGNING_KEY_ENV)
-    os.environ[bt.SIGNING_KEY_ENV] = key
+    os.environ[bt.SIGNING_KEY_ENV] = env[bt.SIGNING_KEY_ENV]
     try:
         cache = bt.NonceCache()
         if ctx.journal is not None:
@@ -242,22 +308,24 @@ def _exchange(ctx, roots, code, env, seed, trace, key, timeout) -> dict:
                     bt.verify_headers(w["headers"], answer_body, nonce_cache=cache, expected_sender="wealthmachine",
                                       expected_recipient="kernel", expected_operation="assessment.report",
                                       request_digest=bt.body_digest(request_body))]
-        # A non-producer re-derivation: a fresh WealthMachine process, the same packet, a fresh signature.
-        redo_request = {"body": d["body"], "headers": bt.build_headers(
-            request_body, identity="daleobanks", schema_version=d["headers"]["X-Schema-Version"],
-            idempotency_key=json.loads(d["body"])["id"], trace_id=trace)}
     finally:
         if previous is None:
             os.environ.pop(bt.SIGNING_KEY_ENV, None)
         else:
             os.environ[bt.SIGNING_KEY_ENV] = previous
     _unchanged(wmi, "between the WealthMachine runs")
-    redo = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=redo_request,
-                  env=env, timeout=timeout)
-    packet, original, again = json.loads(d["body"]), json.loads(w["body"]), json.loads(redo["body"])
-    reproduced = {k: again.get(k) == original.get(k) for k in REPRODUCIBLE}
+    # The re-derivation: a fresh WealthMachine process given DALEOBANKS's own signed message (its
+    # replay cache is its own). The Kernel never signs as an organ: with per-organ keys configured
+    # in the body, building headers here would forge DALEOBANKS's isolated identity.
+    redo = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=d,
+                  env=env, timeout=left(), confine=wmi["confine"], stop_check=ctx.stop_check)
+    packet, original = json.loads(d["body"]), json.loads(w["body"])
+    again = _wire(json.loads(redo["body"]), "wire-venture-assessment", "WealthMachine (re-derivation)")
+    # A field both runs omit is not "reproduced": absence on both sides proves nothing.
+    reproduced = {k: original.get(k) is not None and again.get(k) == original.get(k) for k in REPRODUCIBLE}
     invariants = {"human_approval_required": original.get("requires_human_approval") is True,
                   "answers_this_packet": original.get("opportunity_packet_id") == packet.get("id"),
+                  "redo_answers_this_packet": again.get("opportunity_packet_id") == packet.get("id"),
                   "finance_flag_forces_review": "finance_education_only" not in packet.get("risk_flags", [])
                                                 or original.get("legal_readiness") == "review_required"}
     judged = {"trace_id": trace, "packet_sha256": hashlib.sha256(request_body).hexdigest(),
@@ -279,10 +347,17 @@ def _exchange(ctx, roots, code, env, seed, trace, key, timeout) -> dict:
             "sender_identity_isolated": all(bool(s.get("identity_isolated") in (True, "true")) or
                                             bool(s.get("sender_identity_isolated")) for s in seen),
             "organ_heads": {organ: snap["head"] for organ, snap in code.items()},
-            "organ_code": {organ: {k: snap[k] for k in ("head", "tree_sha256", "uncommitted_changes_ignored")}
+            "organ_code": {organ: {**{k: snap[k] for k in ("head", "tree_sha256", "uncommitted_changes_ignored",
+                                                           "interpreter")},
+                                   "filesystem_confined": snap["confine"] is not None}
                            for organ, snap in code.items()},
-            "independence": "separate processes from committed snapshots, same host, UID and filesystem; "
-                            "the WealthMachine snapshot digest was re-checked before each WealthMachine run",
+            "independence": ("separate processes from committed snapshots, each confined (Landlock) to its own "
+                             "code, its interpreter and the mission's organ store; same host and UID"
+                             if all(snap["confine"] for snap in code.values()) else
+                             "separate processes from committed snapshots, NOT filesystem-confined on this host "
+                             "(same UID and filesystem); the WealthMachine snapshot digest was re-checked before "
+                             "each WealthMachine run")
+                            + "; the re-derivation shows same-code determinism, not an independent party",
             "recorded_in_journal": ctx.journal is not None, "external_effects": None, "spend_usd": 0.0,
             "authority_created": False}
 

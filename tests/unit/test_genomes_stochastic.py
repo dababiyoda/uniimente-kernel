@@ -861,3 +861,198 @@ def test_dev_seeds_run_within_budget(family):
         started = time.perf_counter()
         assert all(x.verify(data, out["output"], out["certificate"]).values())
         assert time.perf_counter() - started < 3.0, (family, seed)
+
+
+# ------------------------------------------------------------------ second review: scale, rounding and channel defects
+@pytest.mark.parametrize("statistic", ["mean", "median"])
+def test_bootstrap_is_scale_invariant_down_to_subnormal_samples(statistic):
+    # second review: the solver's jackknife cubed deviations in double precision, which underflow for a valid sample
+    # near 1e-108: it answered with a wrong acceleration that its own verifier refuted (mean), or divided by zero once
+    # sum(d^2)^1.5 underflowed (median at 1e-108; both at 1e-110). A power-of-two scaling must change nothing but the
+    # scale of the interval, and a sample of any magnitude down to subnormal must answer and verify.
+    import random
+    r = random.Random(3000)
+    base = [r.lognormvariate(0.0, 1.0) for _ in range(40)]
+    data = {"sample": base, "statistic": statistic, "level": 0.9, "resamples": 2000, "seed": 3000}
+    ref = stochastic.boot_solve(data, BUDGET)
+    assert ref["status"] == "ANSWER"
+    for k in (360, 366, 700):                                  # about 1e-108, 1e-110 and 1e-211
+        scaled = dict(data, sample=[math.ldexp(v, -k) for v in base])
+        out = stochastic.boot_solve(scaled, BUDGET)
+        assert out["status"] == "ANSWER", (k, out["missing"])
+        assert all(stochastic.boot_verify(scaled, out["output"], out["certificate"]).values()), k
+        assert [out["output"][key] for key in ("lower", "estimate", "upper")] == [
+            math.ldexp(ref["output"][key], -k) for key in ("lower", "estimate", "upper")]
+        assert out["certificate"]["acceleration"] == ref["certificate"]["acceleration"]
+    for mag in (1e-108, 1e-110, 1e-200, 1e-310):              # the last is a subnormal sample
+        scaled = dict(data, sample=[mag * v for v in base])
+        out = stochastic.boot_solve(scaled, BUDGET)
+        assert out["status"] == "ANSWER", (mag, out["missing"])
+        assert all(stochastic.boot_verify(scaled, out["output"], out["certificate"]).values()), mag
+    # found while fixing: a coarse subnormal sample (about 2^21 units of the smallest subnormal, odd size) whose
+    # leave-one-out midpoints round at its own scale; computed after lifting they did not, and the acceleration
+    # disagreed with the verifier's
+    r = random.Random(3100)
+    coarse = [5e-324 * int(2 ** 21 * r.betavariate(0.5, 3.0)) for _ in range(40)] + [5e-324 * 2 ** 21]
+    coarse_data = dict(data, sample=coarse)
+    out = stochastic.boot_solve(coarse_data, BUDGET)
+    assert out["status"] == "ANSWER", out["missing"]
+    assert all(stochastic.boot_verify(coarse_data, out["output"], out["certificate"]).values())
+
+
+def _mc_overflow_window(level_low=0.5, level_high=0.999):
+    """An exp_linear instance whose honest estimate and standard error are finite while est + z se overflows at the
+    higher level: searched over distances below ln(DBL_MAX), so it adapts to the standard-error floor in force."""
+    ln_max = math.log(1.7976931348623157e308)
+    z_high = stochastic._N.inv_cdf(0.5 + level_high / 2.0)
+    for k in range(80):
+        m = (ln_max - 1e-13 * 1.5 ** k) / 50.0
+        data = {"coordinates": [{"distribution": "uniform", "low": m, "high": math.nextafter(m, math.inf)}],
+                "function": {"family": "exp_linear", "weights": [50.0]}, "evaluations": 2048, "seed": 3,
+                "level": level_low}
+        out = stochastic.mc_solve(data, BUDGET)
+        if out["status"] == "ANSWER":
+            est, se = out["output"]["estimate"], out["output"]["std_error"]
+            if not math.isfinite(est + z_high * se):
+                return dict(data, level=level_high), out
+    raise AssertionError("no instance in the overflow window")
+
+
+def test_mc_interval_check_is_not_vacated_when_the_interval_overflows():
+    # second review: the interval tolerance 4 ulp(|est| + half) became infinite once |est| + half overflowed, so any
+    # endpoints with lo < est < hi verified. The estimate, standard error and fit below are the honest ones (the
+    # solver's at a lower level, which none of them depends on); est + z se is not representable at the requested level
+    data, low = _mc_overflow_window()
+    est = low["output"]["estimate"]
+    forged = {**low["output"], "level": data["level"],
+              "interval": [math.nextafter(est, -math.inf), 1.7976931348623157e308]}
+    checks = stochastic.mc_verify(data, forged, low["certificate"])
+    assert checks["interval_is_estimate_plus_minus_z_std_error"] is False, checks
+    assert all(v for key, v in checks.items() if key != "interval_is_estimate_plus_minus_z_std_error"), checks
+    out = stochastic.mc_solve(data, BUDGET)                    # the honest solver does not answer there
+    assert out["status"] == "UNKNOWN"
+
+
+@pytest.mark.parametrize("mean,sd", [(-14.3, 1e-6), (-14.5, 1e-3), (-14.9, 0.05)])
+def test_mc_mean_abs_f_near_underflow_is_unknown_and_refuted(mean, sd):
+    # second review: f = exp(50 x) near the smallest normal double; the solver answered subnormal estimates and standard
+    # errors (3e-323) that carry far less precision than the checks need, and its own verifier refuted them
+    data = {"coordinates": [{"distribution": "normal", "mean": mean, "sd": sd}],
+            "function": {"family": "exp_linear", "weights": [50.0]}, "evaluations": 4096, "seed": 0}
+    out = stochastic.mc_solve(data, BUDGET)
+    assert out["status"] == "UNKNOWN" and "underflow" in out["missing"][0]
+    # any answer on these draws fails the verifier's own precondition (a certificate bound to the same stream)
+    template = stochastic.mc_solve(dict(data, coordinates=[{"distribution": "normal", "mean": 0.0, "sd": sd}]), BUDGET)
+    forged = {"estimate": 3e-311, "interval": [2e-311, 4e-311], "std_error": 5e-312, "level": 0.95,
+              "evaluations": 4096}
+    checks = stochastic.mc_verify(data, forged, template["certificate"])
+    assert checks.get("mean_abs_f_above_underflow") is False, checks
+
+
+@pytest.mark.parametrize("data", [
+    # control variates leave only rounding noise while w . x cancels terms near 5e4: BLAS and fsum differ in f by
+    # thousands of units in its last place (the second review's instance)
+    {"coordinates": [{"distribution": "uniform", "low": 999.9999999, "high": 1000.0}] * 4,
+     "function": {"family": "exp_linear", "weights": [50.0, -50.0, 50.0, -50.0]}, "evaluations": 8192, "seed": 0},
+    {"coordinates": [{"distribution": "normal", "mean": 1e3, "sd": 1e-6}] * 4,
+     "function": {"family": "call_on_sum", "weights": [13.7, -13.7, 13.7, -13.7], "strike": -1.0},
+     "evaluations": 8192, "seed": 1},
+    {"coordinates": [{"distribution": "normal", "mean": 1e3, "sd": 1e-6}] * 8,
+     "function": {"family": "exp_linear", "weights": [13.7, -13.7] * 4}, "evaluations": 8192, "seed": 1},
+    {"coordinates": [{"distribution": "uniform", "low": 999.9999999, "high": 1000.0}] * 2,           # kink at 0
+     "function": {"family": "call_on_sum", "weights": [50.0, -50.0], "strike": 0.0}, "evaluations": 8192,
+     "seed": 3000},
+    # two points' w . x round to opposite sides of the threshold in BLAS and in fsum: the hit counts differed by 2
+    {"coordinates": [{"distribution": "uniform", "low": 999.9999999, "high": 1000.0}] * 2,
+     "function": {"family": "indicator_sum", "weights": [50.0, -50.0], "threshold": 0.0}, "evaluations": 8192,
+     "seed": 3031}])
+def test_mc_honest_answers_verify_when_f_is_ill_conditioned(data):
+    # second review: the verifier assumed f recomputes to about 1e-14 of itself; with large cancelling terms in w . x
+    # two faithful evaluations differ far more, so honest answers were refuted (57 of 135 in the reviewer's sweep).
+    # Each side now bounds the rounding of every evaluation, the standard error is never below the estimate's own
+    # rounding noise, and points within the rounding bound of a discontinuity are evaluated by the reference arithmetic
+    out = stochastic.mc_solve(data, BUDGET)
+    assert out["status"] == "ANSWER"
+    assert all(stochastic.mc_verify(data, out["output"], out["certificate"]).values())
+    assert out["certificate"]["standard_error_floor"] >= stochastic.MC_SE_FLOOR
+
+
+def test_mc_rounding_floor_keeps_forgeries_inside_a_percent_of_a_standard_error():
+    # the floor is what the rounding bound buys; the tolerances stay fractions of the (floored) standard error
+    data = {"coordinates": [{"distribution": "uniform", "low": 999.9999999, "high": 1000.0}] * 4,
+            "function": {"family": "exp_linear", "weights": [50.0, -50.0, 50.0, -50.0]}, "evaluations": 8192, "seed": 0}
+    out = stochastic.mc_solve(data, BUDGET)
+    se = out["output"]["std_error"]
+    for shift in (0.05 * se, -0.05 * se):
+        checks = stochastic.mc_verify(data, _mc_shifted(out, data, shift=shift), out["certificate"])
+        assert checks["estimate_is_the_main_block_adjusted_mean"] is False, checks
+    for factor in (0.95, 1.05):
+        checks = stochastic.mc_verify(data, _mc_shifted(out, data, se_factor=factor), out["certificate"])
+        assert checks["std_error_recomputed"] is False, (factor, checks)
+
+
+_STRAY_DRIVER = r'''
+import ctypes, json, os, sys
+sys.path.insert(0, sys.argv[1])
+from greg.cognition import worker
+
+
+def stray():
+    """What HiGHS does: native writes to file descriptor 1, one immediate and one through buffered C stdio."""
+    os.write(1, b"native write to descriptor 1\n")
+    ctypes.CDLL(None).printf(b"HighsMipSolverData::transformNewIntegerFeasibleSolution tmpSolver.run();\n")
+    print("python print")
+
+
+def probe(data, geometry):
+    stray()
+    return {"output": {"probe": 1}, "proof": {}, "status": "ANSWER", "formal_validity": "NOT_APPLICABLE",
+            "missing_information": [], "empirical_validity": "WORLD_UNVERIFIED"}
+
+
+mode = sys.argv[2]
+if mode == "__probe__":
+    worker.SOLVERS["__probe__"] = probe
+    request = {"data": {}, "geometry": {"latency_limit": 10}}
+elif mode == "verify":
+    import greg.cognition.verification as verification
+    verification.verify = lambda *a: (stray(), {"verdict": "STRUCTURALLY_VERIFIED"})[1]
+    request = {"family": "x", "data": {}, "answer": {}, "proof_class": "x", "geometry": {"latency_limit": 10}}
+else:
+    import cortex.routing
+    cortex.routing.Cortex.run = lambda self, problem, records=None: (stray(), {"probe": 2})[1]
+    request = {"problem": {}, "records": [], "withheld": {}, "semantic_model": None, "cpu_seconds": 10,
+               "created_at": "2026-10-01T00:00:00Z"}
+sys.argv = ["worker.py", mode, json.dumps(request)]
+worker.main()
+'''
+
+
+@pytest.mark.parametrize("mode,expected", [("__probe__", {"probe": 1}), ("verify", "STRUCTURALLY_VERIFIED"),
+                                           ("__cortex__", {"probe": 2})])
+def test_the_worker_result_survives_native_writes_to_stdout(mode, expected):
+    # second review: HiGHS printed a debug line to C-level stdout on some knapsacks; the worker returns its JSON on
+    # stdout, so the caller read 'Extra data' and abstained on a valid model. The driver runs the real worker under the
+    # cortex's own isolation, with a solver (or verifier, or cortex) that writes natively to descriptor 1.
+    import sys
+    from pathlib import Path
+    from greg.capabilities import run_isolated
+    root = Path(stochastic.__file__).resolve().parents[3]
+    proc = run_isolated([sys.executable, "-I", "-c", _STRAY_DRIVER, str(root), mode], cwd=root, timeout=60)
+    assert proc.returncode == 0, proc.stderr.decode()[-2000:]
+    result = json.loads(proc.stdout)                         # exactly one JSON document, nothing else
+    assert (result["output"] if mode == "__probe__" else result["verdict"] if mode == "verify" else result) == expected
+    assert b"tmpSolver.run();" in proc.stderr and b"native write to descriptor 1" in proc.stderr
+
+
+@pytest.mark.parametrize("trial", [3002, 3051])
+def test_milp_through_the_cortex_is_not_abstained_by_a_solver_debug_line(trial):
+    # second review: these knapsacks make HiGHS print a debug line to C-level stdout; the cortex returned ABSTAIN /
+    # NOT_RUN ('Extra data') for a valid model
+    from greg.cognition.cortex import reason, registry_view
+    registry = registry_view()
+    registry.set_state("cognition.milp_optimize", "ATTACHED")
+    r = reason({"problem_id": f"pack-b-stray-{trial}", "operation": "milp_integer_optimize",
+                "data": _gap_knapsack(trial), "geometry": {"latency_limit": 30}}, registry=registry)
+    assert r["abstention_state"] == "NONE", r.get("missing_information")
+    assert r["evaluator_result"]["verdict"] == "STRUCTURALLY_VERIFIED"

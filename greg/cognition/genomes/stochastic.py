@@ -9,9 +9,10 @@ where it is natively competent, what it is compared against and what its verifie
   variates (pair-averaged centred moments whose means are known exactly), their coefficients fitted on a
   pilot block and applied to the independent main block (unbiased), and an iid CLT interval. Verified by
   recomputing, in pure Python from the declared uniform stream, every inverse-CDF transform, f value and
-  control; the pilot's least-squares normal equations at the certificate's coefficients; the main block's
-  adjusted mean and its standard error (each to a small fraction of the recomputed standard error, all in units
-  of mean |f|) and the interval arithmetic. The verifier cannot certify that the
+  control with its own bound on each value's rounding; the pilot's least-squares normal equations at the
+  certificate's coefficients; the main block's adjusted mean and its standard error (each to a small fraction of
+  the recomputed standard error, which is never below the estimate's own rounding noise, all in units of mean |f|)
+  and the interval arithmetic. The verifier cannot certify that the
   interval covers the true expectation: that coverage is asymptotic and is measured against analytic truth
   only by ``score``.
 * ``bootstrap_ci`` (``bca_bootstrap_interval``): bias-corrected and accelerated bootstrap interval for the
@@ -38,6 +39,7 @@ import math
 import random
 import statistics
 from statistics import NormalDist
+import sys
 
 from .contract import Executable, GenomeError, IntelligenceGenome, answer, bounded_int, finite
 
@@ -87,6 +89,13 @@ MC_U_FLOOR = 2.0 ** -53                # uniforms are floored so 0 never reaches
 # Floating-point floor on the standard error, relative to mean |f|: the pairs of an odd f cancel to rounding
 # noise, so |pair mean| is no scale for it.
 MC_SE_FLOOR = 1e-12
+# Rounding bound on one evaluation of f, in units of 2^-53 times the magnitudes it is computed from: how far two
+# faithful double-precision evaluations of the declared formula at one point can differ (BLAS or exactly rounded
+# sums, scipy's ndtri or NormalDist.inv_cdf, numpy's or libm's exp and log1p). The worst case is about 29 units
+# (eight summands, ndtri against inv_cdf measured to 11 units of |z|); 64 keeps a factor of two.
+MC_NOISE_C = 64.0
+_EPS = 2.0 ** -53
+_LN_MAX = math.log(sys.float_info.max)   # exp(s) overflows above this
 MC_POWER_MAX = 6
 # Everything after the draws is computed in units of mean |f|, so no square or sum overflows. A certificate's
 # intercept and control coefficients are bounded in those units before any arithmetic: an honest pilot fit is
@@ -97,6 +106,12 @@ MC_COEF_MAX = 1e12
 # when the floor sets the standard error; the solver and this verifier differed by at most 3.3e-4 (estimate) and
 # 1.3e-7 (standard error) of a standard error over dev seeds, review seeds 3000-3999 and fuzzed inputs.
 MC_EST_TOL, MC_SE_TOL = 1e-2, 1e-4
+# The standard error is never below MC_NOISE_SE times the bound on the estimate's own rounding noise (the mean, over
+# the main block, of the per-pair evaluation bounds): an interval cannot be narrower than the arithmetic that
+# produced it, and the 1%-of-a-standard-error estimate check then covers two faithful evaluations of f with a factor
+# of two. When control variates leave only rounding noise (f nearly a quadratic in the base coordinates, large
+# cancelling terms in w . x) this, not MC_SE_FLOOR, sets the standard error.
+MC_NOISE_SE = 2.0 / MC_EST_TOL
 
 
 def _mc(data):
@@ -208,6 +223,79 @@ def _mc_f_np(family, params, x):
         return (s > params["threshold"]).astype(float)
 
 
+def _mc_sum_np(params, x):
+    import numpy as np
+    return x @ np.array(params["weights"])
+
+
+def _mc_mags_np(coords, base, x):
+    """The magnitude each coordinate value is computed from: |a| + |b z| for a normal coordinate (the inverse CDF's
+    own error scales with |b z|, not with a possibly cancelled |a + b z|), |x| otherwise."""
+    import numpy as np
+    mags = np.abs(x)
+    for j, (kind, a, b) in enumerate(coords):
+        if kind == "normal":
+            mags[:, j] = abs(a) + abs(b) * np.abs(base[:, j])
+    return mags
+
+
+def _mc_rounding_np(family, params, x, mags, f):
+    """Per evaluation, a bound on how far two faithful double-precision evaluations of f at that point can differ
+    (absolute; MC_NOISE_C units of 2^-53 times the magnitudes f is computed from). Continuous in the point, so two
+    independent computations of the bound agree to rounding. An indicator is exact (0 or 1) once its threshold
+    decisions agree, which the reference evaluation guarantees."""
+    import numpy as np
+    unit = MC_NOISE_C * _EPS
+    with np.errstate(over="ignore", invalid="ignore"):
+        if family == "indicator_sum":
+            return np.zeros(len(f))
+        if family == "cos_product":
+            phases = sum(map(abs, params["phases"]))
+            return unit * (mags @ np.abs(np.array(params["frequencies"])) + phases + mags.shape[1])
+        if family == "power_product":
+            # sum_j k_j |x_j|^(k_j - 1) mags_j prod_{l != j} |x_l|^k_l = |f| sum_j k_j mags_j / |x_j| where no x_j
+            # under a positive power is zero; those few rows take the product form
+            k = params["powers"]
+            ax = np.abs(x)
+            with np.errstate(divide="ignore"):
+                ratio = np.where(np.array(k) > 0, np.array(k, dtype=float) * mags / ax, 0.0)
+            total = np.abs(f) * ratio.sum(axis=1)
+            for i in np.flatnonzero(~np.isfinite(total)).tolist():
+                row, g = ax[i].tolist(), mags[i].tolist()
+                total[i] = sum(kj * row[j] ** (kj - 1) * g[j]
+                               * math.prod(row[l] ** kl for l, kl in enumerate(k) if l != j)
+                               for j, kj in enumerate(k) if kj)
+            return unit * (total + len(k) * np.abs(f))
+        spread = mags @ np.abs(np.array(params["weights"]))
+        if family == "exp_linear":
+            return unit * np.abs(f) * (spread + 1.0)
+        return unit * (spread + abs(params["strike"]))
+
+
+def _mc_reference_f(coords, family, params, v):
+    """f at one uniform vector by the declared reference arithmetic: NormalDist's inverse CDF, rounded products, an
+    exactly rounded sum (math.fsum) and math.exp. It decides the points where two faithful evaluations may land on
+    different sides of a discontinuity of the declared computation: an indicator's threshold, the sign of a call's
+    payoff, exp's overflow."""
+    x = []
+    for (kind, a, b), vi in zip(coords, v):
+        if kind == "normal":
+            x.append(a + b * _N.inv_cdf(vi))
+        elif kind == "uniform":
+            x.append(a + (b - a) * vi)
+        else:
+            x.append(-math.log1p(-vi) / a)
+    s = math.fsum(w * xi for w, xi in zip(params["weights"], x))
+    if family == "indicator_sum":
+        return 1.0 if s > params["threshold"] else 0.0
+    if family == "call_on_sum":
+        return max(s - params["strike"], 0.0)
+    try:
+        return math.exp(s)
+    except OverflowError:
+        return math.inf
+
+
 def _mc_controls_np(coords, base, base_a):
     """Pair-averaged centred moments of the base coordinates, each with an exactly known mean of zero. The
     linear moment of a normal or uniform coordinate is odd under u -> 1 - u, so its pair average is constant
@@ -250,9 +338,20 @@ def mc_solve(data, budget):
         return _abstain(heavy)
     m = evaluations // 2
     u = np.maximum(np.random.default_rng(seed).random((m, d)), MC_U_FLOOR)
+    ua = 1.0 - u
     base, x = _mc_base_np(coords, u)
-    base_a, xa = _mc_base_np(coords, 1.0 - u)
+    base_a, xa = _mc_base_np(coords, ua)
     fx, fa = _mc_f_np(family, params, x), _mc_f_np(family, params, xa)
+    mags, mags_a = _mc_mags_np(coords, base, x), _mc_mags_np(coords, base_a, xa)
+    if family in ("indicator_sum", "call_on_sum", "exp_linear"):
+        # A point whose w . x lies within the rounding bound of the threshold, the strike or exp's overflow is
+        # evaluated by the reference arithmetic, so no two faithful evaluations disagree on which side it falls.
+        edge = {"indicator_sum": params.get("threshold"), "call_on_sum": params.get("strike")}.get(family, _LN_MAX)
+        absw = np.abs(np.array(params["weights"]))
+        for uu, xx, gg, ff in ((u, x, mags, fx), (ua, xa, mags_a, fa)):
+            near = np.abs(_mc_sum_np(params, xx) - edge) <= MC_NOISE_C * _EPS * (gg @ absw + abs(edge))
+            for i in np.flatnonzero(near).tolist():
+                ff[i] = _mc_reference_f(coords, family, params, uu[i].tolist())
     if not (np.all(np.isfinite(fx)) and np.all(np.isfinite(fa))):
         return _unknown("f overflowed double precision on the declared draws", seed=seed)
     if family == "indicator_sum":
@@ -271,6 +370,13 @@ def mc_solve(data, budget):
     if peak == 0.0:
         return _unknown("f is zero on every declared draw: the sample has no spread to put an interval on")
     scale = peak * float((fabs / peak).mean())
+    if scale * MC_SE_FLOOR < 2.0 * sys.float_info.min:
+        # the standard error's floor would be subnormal: it, and the estimate's last places, would carry far less
+        # precision than the recomputation needs (the verifier refutes below half this margin)
+        return _unknown("mean |f| is too close to the underflow threshold for a standard error in double precision",
+                        mean_abs_f=scale)
+    noise = 0.5 * (_mc_rounding_np(family, params, x, mags, fx)
+                   + _mc_rounding_np(family, params, xa, mags_a, fa)) / scale
     y = (0.5 * fx + 0.5 * fa) / scale
     names, controls = _mc_controls_np(coords, base, base_a)
     pilot = _mc_pilot(m, len(names))
@@ -278,27 +384,32 @@ def mc_solve(data, budget):
     # unbiased and its interval an iid CLT interval (fitting on the same draws biases it by O(1/n); on development
     # and review seeds that bias reached -0.28 standard errors on cos_product).
     coef = np.linalg.lstsq(np.column_stack([np.ones(pilot), controls[:pilot]]), y[:pilot], rcond=None)[0]
-    if not np.all(np.abs(coef) <= MC_COEF_MAX):
+    if not np.all(np.abs(coef) <= 0.5 * MC_COEF_MAX):    # half the verifier's bound: its mean |f| is its own
         return _unknown("the pilot least-squares fit is degenerate (a coefficient beyond the certifiable bound)")
     beta = coef[1:]
     adjusted = y[pilot:] - controls[pilot:] @ beta
     main = m - pilot
     est_s, s_s = float(adjusted.mean()), float(adjusted.std(ddof=1))
     est, s = est_s * scale, s_s * scale
-    se = math.hypot(s_s / math.sqrt(main), MC_SE_FLOOR) * scale
+    floor = max(MC_SE_FLOOR, MC_NOISE_SE * float(noise.sum()) / main)
+    se = math.hypot(s_s / math.sqrt(main), floor) * scale
     z = float(ndtri(0.5 + level / 2.0))
-    interval = [est - z * se, est + z * se]
+    half = z * se
+    interval = [est - half, est + half]
     alpha, beta = float(coef[0]) * scale, [float(b) * scale for b in beta]
-    if not (se > 0.0 and all(math.isfinite(v) for v in (est, s, se, *interval, alpha, *beta))):
+    # twice the half-width must stay finite: the verifier's own z may round a unit higher
+    reported = (est, s, se, abs(est) + 2.0 * half, *interval, alpha, *beta)
+    if not (se > 0.0 and all(math.isfinite(v) for v in reported)):
         return _unknown("the estimate, its interval or the fitted coefficients exceed double precision")
     return answer({"estimate": est, "interval": interval, "std_error": se, "level": level, "evaluations": 2 * m},
                   {"method": "antithetic pairs (u, 1 - u) through inverse CDFs; control coefficients by OLS of the "
                              "pilot block's pair means on pair-averaged centred moment controls; estimate = mean of "
-                             "the main block's control-adjusted pair means",
+                             "the main block's control-adjusted pair means; standard error floored at "
+                             "max(1e-12, 200 x the mean per-pair rounding bound) of mean |f|",
                    "rng": "numpy default_rng(seed).random((pairs, dimension)), floored at 2^-53",
                    "seed": seed, "pairs": m, "pilot_pairs": pilot, "controls": names,
                    "pilot_intercept": alpha, "control_coefficients": beta,
-                   "main_sd": s, "z": z, "truth_certified": False,
+                   "main_sd": s, "z": z, "standard_error_floor": floor, "truth_certified": False,
                    "coverage": "asymptotic (CLT) at the stated level under the declared model; not a guarantee",
                    "model": "independent coordinates with the declared distributions; not established here"})
 
@@ -332,6 +443,32 @@ def _mc_f_py(family, params, x):
     return 1.0 if s > params["threshold"] else 0.0
 
 
+def _mc_rounding_py(family, params, x, mags, f):
+    """Verifier's own bound on how far two faithful double-precision evaluations of f at one point can differ:
+    MC_NOISE_C units of 2^-53 times the magnitudes f is computed from (mags: |a| + |b z| for a normal coordinate,
+    |x| otherwise)."""
+    unit = MC_NOISE_C * _EPS
+    if family == "indicator_sum":
+        return 0.0
+    if family == "cos_product":
+        return unit * (math.fsum(abs(w) * g + abs(p) for w, p, g in zip(params["frequencies"], params["phases"], mags))
+                       + len(x))
+    if family == "power_product":
+        k, total = params["powers"], 0.0
+        for j, kj in enumerate(k):
+            if kj:
+                term = kj * abs(x[j]) ** (kj - 1) * mags[j]
+                for i, ki in enumerate(k):
+                    if i != j:
+                        term *= abs(x[i]) ** ki
+                total += term
+        return unit * (total + len(x) * abs(f))
+    spread = math.fsum(abs(w) * g for w, g in zip(params["weights"], mags))
+    if family == "exp_linear":
+        return unit * abs(f) * (spread + 1.0)
+    return unit * (spread + abs(params["strike"]))
+
+
 def mc_verify(data, output, certificate):
     """Recompute the estimate on the declared draws with independent code. Certifies the arithmetic, the
     least-squares fit and the interval's construction; it cannot certify that the interval covers the truth."""
@@ -361,9 +498,9 @@ def mc_verify(data, output, certificate):
               "claims_no_truth_certificate": certificate.get("truth_certified") is False}
     if not (bound and native):
         return checks
-    ys, ctrl, fs = [], [], []
+    ctrl, fs, rounding = [], [], []
     for row in np.random.default_rng(seed).random((m, d)).tolist():
-        x, xa, c = [], [], []
+        x, xa, c, g, ga = [], [], [], [], []
         for (kind, a, b), v in zip(coords, row):
             v = v if v > MC_U_FLOOR else MC_U_FLOOR
             va = 1.0 - v
@@ -371,6 +508,8 @@ def mc_verify(data, output, certificate):
                 z, za = _N.inv_cdf(v), _N.inv_cdf(va)
                 x.append(a + b * z)
                 xa.append(a + b * za)
+                g.append(abs(a) + abs(b * z))
+                ga.append(abs(a) + abs(b * za))
                 c.append(0.5 * (z * z + za * za) - 1.0)
             elif kind == "uniform":
                 x.append(a + (b - a) * v)
@@ -382,9 +521,15 @@ def mc_verify(data, output, certificate):
                 x.append(e / a)
                 xa.append(ea / a)
                 c += [0.5 * (e + ea) - 1.0, 0.5 * ((e - 1.0) ** 2 + (ea - 1.0) ** 2) - 1.0]
+            if kind != "normal":
+                g.append(abs(x[-1]))
+                ga.append(abs(xa[-1]))
         f, fa = _mc_f_py(family, params, x), _mc_f_py(family, params, xa)
         fs.append((f, fa))
         ctrl.append(c)
+        if math.isfinite(f) and math.isfinite(fa):
+            rounding.append(0.5 * _mc_rounding_py(family, params, x, g, f)
+                            + 0.5 * _mc_rounding_py(family, params, xa, ga, fa))
     if not all(math.isfinite(f) and math.isfinite(fa) for f, fa in fs):
         return {**checks, "values_finite": False}
     # an indicator needs hits and misses, a call positive payoffs: with fewer the CLT interval is meaningless
@@ -398,8 +543,12 @@ def mc_verify(data, output, certificate):
     if peak == 0.0:
         return {**checks, "f_not_identically_zero": False}
     scale = peak * (math.fsum(v / peak for v in fabs) / m)
+    if scale * MC_SE_FLOOR < sys.float_info.min:
+        # a subnormal standard error floor: the reported numbers cannot carry the precision these checks need
+        return {**checks, "mean_abs_f_above_underflow": False}
     est, se = output["estimate"], output["std_error"]
     pilot = certificate["pilot_pairs"]
+    rounding = [r / scale for r in rounding]                  # per pair, in units of mean |f|
     alpha, beta = certificate["pilot_intercept"] / scale, [b / scale for b in beta]
     if not all(math.isfinite(v) and abs(v) <= MC_COEF_MAX for v in (alpha, *beta)):
         return {**checks, "coefficients_within_bound": False}
@@ -408,27 +557,36 @@ def mc_verify(data, output, certificate):
     # rounding noise scales with the evaluations, not with their (possibly cancelling) pair means
     fsq = [0.5 * ((f / scale) * (f / scale) + (fa / scale) * (fa / scale)) for f, fa in fs[:pilot]]
     slack = math.sqrt(math.fsum(e * e for e in resid)) + 1e-7 * math.sqrt(math.fsum(fsq))
+    # two faithful evaluations of the pilot's f may differ by up to its rounding bound: Cauchy-Schwarz bounds what that
+    # moves each normal equation by
+    wobble = math.sqrt(math.fsum(r * r for r in rounding[:pilot]))
     # least-squares normal equations on the pilot block: its residual is orthogonal to the intercept and each control
-    fitted = abs(math.fsum(resid)) <= 1e-7 * math.sqrt(pilot) * slack
+    fitted = abs(math.fsum(resid)) <= math.sqrt(pilot) * (1e-7 * slack + wobble)
     for j in range(len(names)):
         col = [c[j] for c in ctrl[:pilot]]
         fitted = fitted and abs(math.fsum(e * v for e, v in zip(resid, col))) <= (
-            1e-7 * math.sqrt(math.fsum(v * v for v in col)) * slack)
+            math.sqrt(math.fsum(v * v for v in col)) * (1e-7 * slack + wobble))
     adjusted = [y - math.fsum(bj * cj for bj, cj in zip(beta, c)) for y, c in zip(ys[pilot:], ctrl[pilot:])]
     main = m - pilot
     est_v = math.fsum(adjusted) / main
     s = math.sqrt(math.fsum((w - est_v) * (w - est_v) for w in adjusted) / (main - 1))
-    se_v = math.hypot(s / math.sqrt(main), MC_SE_FLOOR)          # >= the floor, so every tolerance below is real
+    # the estimate's own rounding noise bounds how far an honest estimate, and its standard error, can sit from these
+    noise = math.fsum(rounding) / main
+    # >= the floors, so every tolerance below is real and the estimate's (1% of it) covers the rounding noise twice
+    se_v = math.hypot(s / math.sqrt(main), max(MC_SE_FLOOR, MC_NOISE_SE * noise))
     half = _N.inv_cdf(0.5 + level / 2.0) * se
     lo, hi = output["interval"]
-    # the solver's interval is est -+ z se rounded once: a few units in the last place, never a share of |est|
-    width_tol = 1e-9 * half + 4.0 * math.ulp(abs(est) + half)
-    return {**checks, "coefficients_within_bound": True,
+    # est -+ z se must be representable (the solver returns UNKNOWN otherwise); the solver's interval is it rounded
+    # once: a few units in the last place, never a share of |est|, and always a finite tolerance
+    elo, ehi = est - half, est + half
+    representable = math.isfinite(half) and math.isfinite(elo) and math.isfinite(ehi)
+    width_tol = 1e-9 * half + 4.0 * math.ulp(max(abs(est), half)) if representable else 0.0
+    return {**checks, "mean_abs_f_above_underflow": True, "coefficients_within_bound": True,
             "pilot_least_squares_normal_equations_hold": fitted,
             "estimate_is_the_main_block_adjusted_mean": abs(est / scale - est_v) <= MC_EST_TOL * se_v,
-            "std_error_recomputed": abs(se / scale - se_v) <= MC_SE_TOL * se_v,
-            "interval_is_estimate_plus_minus_z_std_error": lo < est < hi
-            and abs(lo - (est - half)) <= width_tol and abs(hi - (est + half)) <= width_tol}
+            "std_error_recomputed": abs(se / scale - se_v) <= MC_SE_TOL * se_v + 2.0 * noise,
+            "interval_is_estimate_plus_minus_z_std_error": representable and lo < est < hi
+            and abs(lo - elo) <= width_tol and abs(hi - ehi) <= width_tol}
 
 
 def _moment(coord, k):
@@ -651,6 +809,15 @@ def boot_solve(data, budget):
     if float(arr.max() - arr.min()) < BOOT_RESOLUTION * math.ulp(float(np.abs(arr).max())):
         return _abstain(f"the sample's range is below {BOOT_RESOLUTION} units in the last place of its largest value: "
                         "double precision cannot resolve it")
+    # Scale invariance: a sample of small magnitude is first multiplied by a power of two (exact) so that its largest
+    # value lies in [1/2, 1), and every reported number is scaled back once at the end. Squares and cubes of the
+    # jackknife deviations then never underflow (at 1e-108 they did, giving a wrong acceleration or a division by
+    # zero), and a subnormal sample is computed with full relative precision.
+    lift = max(0, -math.frexp(float(np.abs(arr).max()))[1])
+    arr = np.ldexp(arr, lift)
+
+    def back(v):
+        return math.ldexp(float(v), -lift)
     # scipy.stats.bootstrap's resampling scheme and BCa formulas, computed here so that floating point never
     # decides them: scipy rounds every replicate at the scale of the values (a common offset of 1e9 costs it about
     # 1e-7) before comparing it with the estimate and before its jackknife subtracts nearly equal numbers.
@@ -666,7 +833,7 @@ def boot_solve(data, budget):
         bound = 4.0 * (n + 2) * 2.0 ** -53 * (mag[rows].mean(axis=1) + float(mag.mean()))
         unsure = np.flatnonzero(np.abs(values - centre_c) <= bound)
         if unsure.size:
-            total = sum(map(Fraction, x))
+            total = sum(map(Fraction, arr.tolist()))
             for j in unsure.tolist():
                 side[j] = _sign(sum(map(Fraction, arr[rows[j]].tolist())) - total)
         dev = cen - centre_c
@@ -680,7 +847,10 @@ def boot_solve(data, budget):
             for j in np.flatnonzero(values == theta).tolist():
                 pair = np.partition(arr[rows[j]], (k - 1, k))[k - 1:k + 1].tolist()
                 side[j] = _sign(Fraction(pair[0]) + Fraction(pair[1]) - Fraction(middle[0]) - Fraction(middle[1]))
-        loo = np.array([np.median(np.delete(arr, i)) for i in range(n)])
+        # the leave-one-out medians are the statistic in double precision at the sample's own scale (a subnormal
+        # midpoint rounds there, exactly as the verifier computes it), then lifted
+        given = np.asarray(x, dtype=float)
+        loo = np.ldexp(np.array([np.median(np.delete(given, i)) for i in range(n)]), lift)
         w = loo - loo[n // 2]
         dev = -(w - w.mean())                  # (n - 1)(mean of leave-one-out medians - each), up to a positive factor
     share = (2 * np.count_nonzero(side < 0) + np.count_nonzero(side == 0)) / (2 * resamples)
@@ -688,9 +858,11 @@ def boot_solve(data, budget):
         return _unknown("the bootstrap distribution lies entirely on one side of the estimate: the bias correction "
                         "is infinite", seed=seed)
     z0 = float(ndtri(share))
-    s2 = float(np.sum(dev * dev))
-    if s2 == 0.0:
+    spread = float(np.abs(dev).max())
+    if spread == 0.0:
         return _unknown("every leave-one-out statistic is equal: the jackknife acceleration is undefined")
+    dev = dev / spread                         # the acceleration is scale-free; in these units s2 >= 1
+    s2 = float(np.sum(dev * dev))
     accel = float(np.sum(dev * dev * dev)) / (6.0 * s2 ** 1.5)
     zq = float(ndtri((1.0 - level) / 2.0))
     adjusted = []
@@ -702,17 +874,18 @@ def boot_solve(data, budget):
     if min(adjusted) * resamples < 1.0 or (1.0 - max(adjusted)) * resamples < 1.0:
         return _unknown("an adjusted BCa level falls beyond the resample range: more resamples are needed",
                         adjusted_levels=adjusted)
-    lower, upper = (offset + float(v) for v in np.quantile(values, adjusted, method="linear"))
-    return answer({"lower": lower, "upper": upper, "level": level, "statistic": statistic, "estimate": theta,
+    lower, upper = (back(offset + float(v)) for v in np.quantile(values, adjusted, method="linear"))
+    return answer({"lower": lower, "upper": upper, "level": level, "statistic": statistic, "estimate": back(theta),
                    "resamples": resamples, "method": "BCa"},
                   {"implementation": "scipy.stats.bootstrap's BCa (resampling scheme, bias correction, jackknife "
-                                     "acceleration, adjusted type-7 percentiles), with exact side-of-estimate counts "
-                                     "and the mean's replicates and jackknife centred on an observation",
+                                     "acceleration, adjusted type-7 percentiles), with exact side-of-estimate counts, "
+                                     "the mean's replicates and jackknife centred on an observation, and a small "
+                                     "sample scaled by a power of two",
                    "seed": seed, "resamples": resamples,
                    "resample_indices": "numpy default_rng(seed).integers(0, n, (resamples, n))",
                    "bias_correction_z0": z0, "acceleration": accel, "adjusted_levels": adjusted,
                    "percentiles": "linear interpolation between order statistics (Hyndman-Fan type 7)",
-                   "bootstrap_standard_error": float(np.std(values, ddof=1)), "truth_certified": False,
+                   "bootstrap_standard_error": back(np.std(values, ddof=1)), "truth_certified": False,
                    "coverage": "second-order accurate as n grows, not exact; with skewed small samples it is "
                                "typically a few points below nominal",
                    "model": "independent, identically distributed observations; not established here"})
@@ -1423,10 +1596,15 @@ INTELLIGENCES = [
             algorithm_or_runtime="antithetic pairs (u, 1 - u) through inverse CDFs; control coefficients by OLS of "
                                  "a pilot block's pair means (max(1/8, 8 per parameter) of the pairs) on "
                                  "pair-averaged centred moment controls with known zero means; the estimate is the "
-                                 "mean of the remaining pairs' control-adjusted values; iid CLT interval",
+                                 "mean of the remaining pairs' control-adjusted values; iid CLT interval whose "
+                                 "standard error is floored at the evaluation rounding noise; points within rounding "
+                                 "of an indicator's threshold, a call's strike or exp's overflow are evaluated by the "
+                                 "reference arithmetic (NormalDist, math.fsum, math.exp)",
             parameters={"native_dimension": MC_NATIVE_DIM, "native_evaluations": list(MC_NATIVE_EVALUATIONS),
                         "pilot": "max(pairs // 8, 8 (controls + 1)) pairs", "min_indicator_hits": MC_MIN_HITS,
                         "min_positive_call_payoffs": MC_MIN_HITS, "standard_error_floor": MC_SE_FLOOR,
+                        "evaluation_rounding_bound_units_of_2^-53": MC_NOISE_C,
+                        "standard_error_floor_over_rounding_noise": MC_NOISE_SE,
                         "coefficient_bound_in_mean_abs_f": MC_COEF_MAX,
                         "recomputation_tolerance_in_standard_errors": {"estimate": MC_EST_TOL,
                                                                        "std_error": MC_SE_TOL}},
@@ -1434,12 +1612,14 @@ INTELLIGENCES = [
             composition_outputs=("estimate", "interval"),
             evidence_type="statistical_estimate",
             verification_method="pure-Python recomputation from the declared uniform stream (regenerated from the "
-                                "seed): NormalDist inverse CDFs, every f value and control, then in units of its own "
-                                "mean |f| the pilot block's least-squares normal equations at the certificate's "
-                                "(bounded) coefficients, the main block's adjusted mean (to 1% of the recomputed "
-                                "standard error) and standard error (to 0.01%), z from its own quantile and the "
-                                "interval arithmetic (to a few units in the last place); the moment and rare-event "
-                                "preconditions",
+                                "seed): NormalDist inverse CDFs, every f value and control and its own bound on that "
+                                "value's rounding, then in units of its own mean |f| the pilot block's least-squares "
+                                "normal equations at the certificate's (bounded) coefficients (to the rounding bound), "
+                                "the main block's adjusted mean (to 1% of the recomputed standard error, which is "
+                                "never below 200 times the estimate's rounding noise) and standard error (to 0.01% "
+                                "plus twice that noise), z from its own quantile and the interval arithmetic (a "
+                                "representable est -+ z se, to a few units in the last place); the moment, "
+                                "rare-event and underflow preconditions",
             confidence_semantics="an asymptotic (CLT) interval at the stated level under the declared model; the "
                                  "verifier certifies the arithmetic and the fit on the declared draws, never that "
                                  "the interval covers the true expectation (about 1 - level of honest intervals "
@@ -1452,9 +1632,9 @@ INTELLIGENCES = [
                              "every number is recomputable from the declared stream"),
             known_failure_modes=("the CLT interval undercovers for heavy-tailed f at small budgets",
                                  "scrambled Sobol points at the same budget usually reach a smaller error on this "
-                                 "benchmark (review seeds 3000-3119: 23 candidate wins, 95 losses), at about five to "
-                                 "nine times the candidate's solve latency (verification excluded, as the admission "
-                                 "harness measures it)",
+                                 "benchmark (review seeds 3000-3119: 23 candidate wins, 95 losses), at about two to "
+                                 "seven times the candidate's solve latency, median about four on dev seeds "
+                                 "(verification excluded, as the admission harness measures it)",
                                  "rare events (indicators with few hits or misses, calls with few positive payoffs) "
                                  "make the interval meaningless (it returns UNKNOWN)"),
             counterindications=("rare events (use mc_importance)", "infinite-variance functions",
@@ -1464,7 +1644,8 @@ INTELLIGENCES = [
                                    "exp(w x) of an exponential coordinate with 4 w >= rate (no finite fourth moment)",
                                    f"fewer than {MC_MIN_HITS} indicator hits or misses (UNKNOWN)",
                                    f"fewer than {MC_MIN_HITS} positive call payoffs (UNKNOWN)",
-                                   "an estimate, interval or coefficient beyond double precision (UNKNOWN)"),
+                                   "an estimate, interval or coefficient beyond double precision (UNKNOWN)",
+                                   "mean |f| so small that the standard error's floor would be subnormal (UNKNOWN)"),
             benchmark_suite="exp_linear, cos_product, power_product (mixed normal/uniform/exponential coordinates), "
                             "call_on_sum and indicator_sum (normal coordinates); dimension 1-8; 8192 evaluations; "
                             "analytic truth; seeds 0-9 dev / held-out seeds frozen by the admission harness",
@@ -1493,8 +1674,10 @@ INTELLIGENCES = [
             algorithm_or_runtime="scipy.stats.bootstrap's BCa computed in numpy: resample indices from the seeded "
                                  "generator, bias correction from the share of replicates below the estimate (each "
                                  "replicate's side decided exactly: rational sums inside the rounding bound), "
-                                 "jackknife acceleration (the mean's centred on an observation), adjusted type-7 "
-                                 "percentiles",
+                                 "jackknife acceleration (the mean's centred on an observation, both in units of the "
+                                 "largest deviation), adjusted type-7 percentiles; a sample below 1/2 in magnitude is "
+                                 "first scaled by a power of two, so the answer is scale-invariant down to subnormal "
+                                 "samples",
             parameters={"native_min_observations": BOOT_NATIVE_MIN_N, "min_resamples": BOOT_NATIVE_MIN_RESAMPLES,
                         "verifier_work_bound": BOOT_MAX_WORK, "min_range_in_ulps_of_largest_value": BOOT_RESOLUTION},
             composition_inputs=("observed outcomes",), composition_outputs=("lower", "upper"),

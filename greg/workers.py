@@ -78,9 +78,11 @@ SUPERVISION = {"process": "own session; parent-death SIGKILL (Linux); process gr
                "environment": "scrubbed: no ambient keys, home, proxies or SDK configuration",
                "filesystem": "NOT OS-confined: same UID as the body (see #157 worker_isolation)",
                "network": "NOT isolated for the worker process (a remote provider needs it)",
-               "git_metadata": "restored from a trusted copy (digest held in memory) before GREG runs git in the "
-                               "clone; GREG's git runs with hooks, fsmonitor and attributes files disabled. "
-                               "A worker daemon that outlives the worker is NOT prevented (no PID namespace)"}
+               "git_metadata": "restored from a trusted copy (digest held in memory, re-checked after the restore "
+                               "and after GREG's acceptance run; any change refuses the commit). GREG's git runs "
+                               "with hooks, fsmonitor, attributes files and signing disabled. A worker daemon that "
+                               "outlives the worker is NOT prevented (no PID namespace), so a race between a check "
+                               "and a git call remains possible until #157 confinement"}
 ORDER_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]{0,60}$")
 REPORT_MARK = "WORK_REPORT:"
 
@@ -468,7 +470,8 @@ PROVIDERS: dict[str, object] = {
 
 # Defense in depth for every git command GREG runs in a worker's clone: no hooks, no fsmonitor,
 # no attributes file outside the tree (repository config is also restored before collection).
-_GIT_HARDENING = ("-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "core.attributesFile=/dev/null")
+_GIT_HARDENING = ("-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "core.attributesFile=/dev/null",
+                  "-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false")
 
 
 def _tree_digest(root: Path) -> str:
@@ -622,10 +625,18 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     elif metadata.exists():
         shutil.rmtree(metadata)
     shutil.copytree(trusted_metadata, metadata, symlinks=True)
+    if _tree_digest(metadata) != trusted_digest:      # a process that outlived the worker raced the restore
+        raise WorkerError("the clone's git metadata changed during GREG's restore; nothing was collected")
     names, patch = collect_changes(work, base_commit)
     findings = scope_findings(names, order.allowed_paths, order.acceptance.get("max_changed_files"))
     commands = acceptance_commands(order.acceptance, names) if order.mode == "repository" else []
+    collected = _tree_digest(metadata)
     tests = run_tests(commands, work, timeout=min(order.timeout_seconds, 1200)) if names and commands else []
+    # GREG's acceptance run executes the worker's test code (filesystem not OS-confined). If that
+    # code rewrote the clone's .git (config, hooks, gpg program), GREG's next git commands would run
+    # it, so a changed .git refuses the commit instead.
+    if _tree_digest(metadata) != collected:
+        raise WorkerError("the acceptance run changed the clone's git metadata; GREG did not commit")
     output_file = None
     if order.mode == "document":
         target = work / order.acceptance["output"]

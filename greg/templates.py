@@ -963,6 +963,7 @@ def one_machine(*, problem_id: str, data: dict, sandbox_repo: str, organs: dict,
     ``wealthmachine_python``, all inside the body's read roots. Nothing is sent, published, merged
     or paid; the worker's signed cap is the only spend bound and a local worker spends nothing.
     """
+    from greg.cognition.compiler import CERTIFIED
     from greg.genesis import CATALOG
     from greg.organs import TARGET
     from greg.recombine import chain, fits
@@ -1001,9 +1002,12 @@ def one_machine(*, problem_id: str, data: dict, sandbox_repo: str, organs: dict,
                         "the worker never pushes, merges or commits; GREG commits on a greg/ branch in a private clone",
                         "organ messages are evidence about organ computation, not Kernel consequences"],
         "success_checks": [
-            {"check_id": "answered", "description": "a competent method answered with its certificate",
+            # The label the worker is handed ("CERTIFIED_PLAN_JSON") must be what this gate guarantees:
+            # the compiler sets this confidence type only for an ANSWER that carries a problem-level
+            # certificate GREG checked, never for a composition, an estimate or a model-backed trace.
+            {"check_id": "answered", "description": "a constructed method answered with a problem-level certificate",
              "sensor": {"capability": "cognition.solve", "target": f"cognition:{problem_id}", "params": compile_params},
-             "predicate": {"op": "equals", "field": "state", "value": "ANSWERED"}},
+             "predicate": {"op": "equals", "field": "confidence_type", "value": CERTIFIED}},
             {"check_id": "organs-reproduced",
              "description": "both organ messages verified at the kernel and a second process reproduced the answer",
              "sensor": {"capability": "organ.status", "target": TARGET, "params": {}},

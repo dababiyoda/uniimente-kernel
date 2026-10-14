@@ -19,6 +19,7 @@ Fixture results are structural tests, never external VEPMC evidence.
 """
 from __future__ import annotations
 
+from greg import organ_bridge
 from greg.journal import Journal
 
 CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
@@ -85,8 +86,12 @@ def sandbox_whole_machine(journal: Journal) -> dict:
       founder_signed_via_inbox      appraiser re-verified the signature; the mission came through the inbox
       mind_certified_without_model  a Competency Compiler receipt ANSWERED with a certified result, 0 model calls
       capability_formed             Genesis opened, verified and resolved a deficit for this mission
-      organs_reproduced             two organs observed, transport-verified, organ.appraised REPRODUCED
-      worker_accepted               worker.appraise observed ACCEPTED for this mission
+      organs_reproduced             two organs observed, transport-verified, organ.appraised REPRODUCED,
+                                    counting only facts a DONE organ.exchange receipt stands behind
+      worker_accepted               a passing check whose sensor is worker.appraise observed ACCEPTED
+
+    Each stage is read from the observation of the capability it names (resolved through the
+    registered spec), so another sensor's output that happens to look alike never counts.
       interruption_reconciled       a body recovery between registration and closure, and a founder
                                     reconciliation answered for this mission (no blind retry)
       appraised_verified            the separate-process closure appraisal returned VERIFIED
@@ -102,6 +107,10 @@ def sandbox_whole_machine(journal: Journal) -> dict:
                 if e.payload.get("answer", "").startswith("reconcile_")}
     requested_for = {e.payload["request_id"]: e.payload.get("mission_id") for e in journal.replay("decision.requested")}
     rows = []
+    sensors = {}
+    for e in journal.replay("mission.registered"):
+        for check in e.payload.get("spec", {}).get("success_checks", []):
+            sensors[(e.payload["mission_id"], check["check_id"])] = check.get("sensor", {}).get("capability", "")
     for event in journal.replay("mission.achieved"):
         mid, done = event.payload["mission_id"], seq[event.event_id]
         checks = (appraised.get(mid) or {}).get("checks", {})
@@ -110,25 +119,28 @@ def sandbox_whole_machine(journal: Journal) -> dict:
         for o in observed:
             record = ledger.find(o.get("receipt") or "") if o.get("receipt") else None
             if record is not None and record.record_type == "receipt":
-                outputs.append((o, record.payload.get("result", {}).get("output")))
-        organs = [e.payload for e in journal.replay("organ.observed") if e.payload.get("mission_id") == mid]
-        organ_verdicts = [e.payload["verdict"] for e in journal.replay("organ.appraised")
-                          if e.payload.get("mission_id") == mid]
+                outputs.append((o, sensors.get((mid, o.get("check_id")), ""),
+                                record.payload.get("result", {}).get("output")))
+        organ_facts = organ_bridge.bound_facts(journal, mid)
+        organs = organ_facts["observed"]
+        organ_verdicts = [a["verdict"] for a in organ_facts["appraisals"]]
         deficits = {e.payload["deficit_id"] for e in journal.replay("deficit.opened") if e.payload.get("mission_id") == mid}
         resolved = {e.payload["deficit_id"] for e in journal.replay("deficit.resolved") if e.payload.get("mission_id") == mid}
         verified = {e.payload["deficit_id"] for e in journal.replay("genesis.verified") if e.payload.get("passed")}
         row = {
             "founder_signed_via_inbox": bool(checks.get("founder_signature_verified")) and bool(checks.get("arrived_via_inbox")),
             "mind_certified_without_model": any(
-                isinstance(out, dict) and out.get("schema") == "greg-competency-compilation/0.1"
+                o.get("passed") and sensor.startswith("cognition.") and isinstance(out, dict)
+                and out.get("schema") == "greg-competency-compilation/0.1"
                 and out.get("state") == "ANSWERED" and str(out.get("confidence_type", "")).startswith("certified")
-                and (out.get("cost") or {}).get("model_calls") == 0 for _, out in outputs),
+                and (out.get("cost") or {}).get("model_calls") == 0 for o, sensor, out in outputs),
             "capability_formed": bool(deficits & resolved & verified),
             "organs_reproduced": {o.get("organ") for o in organs} >= {"daleobanks", "wealthmachine"}
                                  and all(o.get("transport_verified") for o in organs)
                                  and bool(organ_verdicts) and organ_verdicts[-1] == "REPRODUCED",
-            "worker_accepted": any(isinstance(out, dict) and out.get("verdict") == "ACCEPTED" and o.get("passed")
-                                   for o, out in outputs if o.get("check_id")),
+            "worker_accepted": any(sensor == "worker.appraise" and isinstance(out, dict)
+                                   and out.get("verdict") == "ACCEPTED" and o.get("passed")
+                                   for o, sensor, out in outputs),
             "interruption_reconciled": any(registered.get(mid, 1 << 60) < r < done for r in recoveries)
                                        and any(requested_for.get(rid) == mid for rid in reconciliations & answered),
             "appraised_verified": (appraised.get(mid) or {}).get("verdict") == "VERIFIED",

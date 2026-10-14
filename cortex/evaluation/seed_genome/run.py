@@ -112,11 +112,13 @@ def main():
     ap.add_argument('--freeze', action='store_true')
     ap.add_argument('--out', type=Path)
     args = ap.parse_args()
-    # v6 = the 2026-10-14 convergence tree: greg/cognition/seed_path.py gained the #159 ThinkingBudget
-    # enclosure when the Codex and Mind lines were merged (the only frozen input that changed); v5 =
-    # the committed converged Mind tree (v4 was written before the final greg/models.py merge and the
-    # protobuf pin in the same commit, so CI refused it); v1-v5 kept.
-    manifest = HERE / 'freeze-v6.json'
+    # v7 = the 2026-10-14 one-machine trunk: greg/models.py gained the founder's model-identity policy
+    # (no silent provider-side substitution; every attempt of a fallback chain bounded and booked) - the
+    # only frozen input that changed; scoring, labels and solvers unchanged. v6 = the convergence tree:
+    # greg/cognition/seed_path.py gained the #159 ThinkingBudget enclosure when the Codex and Mind lines
+    # were merged; v5 = the committed converged Mind tree (v4 was written before the final
+    # greg/models.py merge and the protobuf pin in the same commit, so CI refused it); v1-v6 kept.
+    manifest = HERE / 'freeze-v7.json'
     frozen = inputs()
     if args.freeze:
         if manifest.exists():

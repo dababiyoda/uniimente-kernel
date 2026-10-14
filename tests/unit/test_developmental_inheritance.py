@@ -194,7 +194,7 @@ def test_an_archive_without_its_lineage_is_refused(mutate, message):
 def test_evidence_without_refs_is_unresolved_and_later_horizons_name_prerequisites():
     data = devpath.load()
     bad = copy.deepcopy(data)
-    bad["nodes"][3]["evidence_status"] = "verified_by_execution"          # N3 has no refs
+    bad["nodes"][3]["evidence_refs"] = []                                  # verified N3 stripped of its refs
     with pytest.raises(devpath.PathError, match="unresolved"):
         devpath.validate(bad)
     bad = copy.deepcopy(data)
@@ -235,7 +235,8 @@ def test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence(tmp_path,
         journal.record("mission.achieved", {"mission_id": "m:genesis"}, key=["m:genesis", "achieved"])
         where = devpath.position(journal)
         assert where["achieved"] == ["N0", "N1", "N2"] and where["active"]["id"] == "N3"
-        assert where["active"]["measurement"]["not_yet_measurable"]          # never counted as passed
+        assert where["active"]["measurement"]["met"] is False                # N3 now measured: no case closed yet
+    assert where["active"]["measurement"]["value"] == 0
 
 
 def test_an_availability_decision_opens_a_pull_forward_seam_without_changing_the_primary_node(tmp_path):

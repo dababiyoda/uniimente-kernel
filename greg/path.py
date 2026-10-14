@@ -125,7 +125,184 @@ def genesis_closure(journal: Journal) -> dict:
             "generality": "unproven until a second closure on an unrelated function"}
 
 
-PREDICATES = {"vepmc_at_least_one": vepmc_at_least_one, "genesis_closure": genesis_closure}
+# A business case need not stop for an approval or survive a deliberate interruption to be real;
+# it must be the founder's, on his body, appraised and accepted (N3, PR #68 node 4 definition).
+N3_CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
+                 "appraised_verified", "founder_accepted", "founder_body")
+INTERNAL_CLASSES = ("read_only", "internal_write")
+
+
+def business_loop_closed(journal: Journal) -> dict:
+    """One customer case closed in commercial order with GREG taking no external action.
+
+    The ledger proves: the founder-signed mission named the buyer, price and acceptance terms
+    before anything ran; payment was reconciled to the cent by ``business.reconcile``; every act
+    that reached a person outside the body was ``human.*`` work whose ask closed only when its
+    evidence was observed; GREG's own actions stayed read-only or internal; the separate appraiser
+    verified the closure and Alfonso accepted it. That the buyer is a real customer is attested by
+    that acceptance, not provable from the ledger.
+    """
+    from greg.capabilities import BUILTINS
+    specs = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
+    rows = {r["mission_id"]: r for r in metrics.vepmc(journal)["missions"]}
+    withdrawn = {e.payload["request_id"] for e in journal.replay("decision.withdrawn")}
+    cases, incomplete = [], []
+    for mid, spec in specs.items():
+        paid = [c["check_id"] for c in spec.get("success_checks", [])
+                if c["sensor"].get("capability") == "business.reconcile"]
+        if not paid or mid not in rows:
+            continue
+        missing = [c for c in N3_CONDITIONS if not rows[mid][c]]
+        observed = [e.payload for e in journal.replay("mission.observed")
+                    if e.payload["mission_id"] == mid and e.payload["check_id"] in paid]
+        if not (observed and observed[-1]["passed"]):
+            missing.append("payment_reconciled")
+        external = sorted({a.payload.get("capability") for a in journal.replay("mission.action")
+                           if a.payload["mission_id"] == mid and a.payload.get("status") == "DONE"
+                           and (a.payload.get("capability") not in BUILTINS
+                                or BUILTINS[a.payload["capability"]][0].consequence_class not in INTERNAL_CLASSES)})
+        if external:
+            missing.append(f"greg_external_action:{','.join(map(str, external))}")
+        human = [e.payload for e in journal.replay("decision.requested")
+                 if e.payload["mission_id"] == mid and e.payload["kind"] == "HUMAN_WORK"]
+        if not human:
+            missing.append("no_person_did_the_outward_work")
+        if [h["request_id"] for h in human if h["request_id"] not in withdrawn]:
+            missing.append("human_work_not_observed")
+        (incomplete if missing else cases).append({"mission_id": mid, **({"missing": missing} if missing else {}),
+                                                   "human_steps": len(human)})
+    return {"met": bool(cases), "value": len(cases), "cases": cases, "incomplete": incomplete,
+            "reality": "order, reconciliation and GREG's own effects are proven from the ledger; that the buyer "
+                       "is a real customer is attested by Alfonso's acceptance, not provable here"}
+
+
+N4_CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
+                 "appraised_verified", "founder_body")
+
+
+def sop_compounding(journal: Journal) -> dict:
+    """A ratified SOP whose own runs on the body cut founder interventions and model cost per outcome.
+
+    The procedure was proposed from at least three verified closures and ratified by Alfonso; at
+    least three later missions are exact runs of its workflow, each founder-signed, hosted on the
+    designated body, receipted and appraised VERIFIED; none failed appraisal, was rejected or was
+    abandoned; and founder interventions per verified outcome fell while GREG's model cost per
+    outcome did not rise (and fell, if it was ever above zero). Approval boundaries a run no longer
+    meets were moved into the founder's signature on that run, never inherited.
+    """
+    from greg import sop
+    rows = {r["mission_id"]: r for r in metrics.vepmc(journal)["missions"]}
+    met, incomplete = [], []
+    for p in sop.trend(journal)["procedures"]:
+        runs = [r["mission_id"] for r in p.get("sop_runs", {}).get("missions", [])]
+        off_body = sorted({c for mid in runs for c in N4_CONDITIONS if not rows.get(mid, {}).get(c)})
+        missing = list(p.get("why_not", [])) + [f"sop_run_not_{c}" for c in off_body]
+        summary = {"procedure_id": p["procedure_id"], "state": p["state"],
+                   "before": {k: v for k, v in p["baseline"].items() if k != "missions"},
+                   **({"after": {k: v for k, v in p["sop_runs"].items() if k != "missions"}}
+                      if "sop_runs" in p else {})}
+        (incomplete if missing else met).append({**summary, **({"missing": missing} if missing else {})})
+    return {"met": bool(met), "value": len(met), "procedures": met, "incomplete": incomplete,
+            **({} if met or incomplete else {"missing": ["no SOP proposed yet: three verified closures of one "
+                                                         "procedure come first"]}),
+            "reality": "interventions, model cost and appraisal are measured from the ledger; whether the "
+                       "outcomes mattered in the world is the founder's critique, not provable here"}
+
+
+OBSERVED = "the deliverable is observed"
+
+
+def human_work_shared(journal: Journal) -> dict:
+    """Alfonso, GREG and a named person closed one piece of work together.
+
+    The ledger proves: the founder-signed mission named the person, the relationship and the
+    acceptance terms; GREG wrote the handoff before any person was asked anything; each of the
+    person's steps (those they may decline) closed because its evidence was observed, never
+    by an answer; Alfonso's own review closed the same way; GREG's actions stayed read-only or
+    internal; the separate appraiser verified the closure and Alfonso accepted it. A refusal is
+    honored when GREG asked that step nothing more afterwards; a declined case is not a
+    completed one. That the person is real and the relationship lawful is attested by
+    Alfonso's acceptance, not provable here.
+    """
+    from greg.capabilities import BUILTINS
+    seq = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
+    specs = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
+    rows = {r["mission_id"]: r for r in metrics.vepmc(journal)["missions"]}
+    withdrawn = {e.payload["request_id"]: e.payload["why"] for e in journal.replay("decision.withdrawn")}
+    refusals = [e for e in journal.replay("human.refusal_honored")]
+    cases, incomplete = [], []
+    for mid, spec in specs.items():
+        person = [s for s in spec.get("strategies", []) if "declined_if" in s]
+        if not person:
+            continue
+        missing = [c for c in N3_CONDITIONS if not rows.get(mid, {}).get(c)]
+        asked = [e for e in journal.replay("decision.requested")
+                 if e.payload["mission_id"] == mid and e.payload["kind"] == "HUMAN_WORK"]
+        by_step = {}
+        for e in asked:
+            by_step.setdefault(e.payload.get("action_id"), []).append(e)
+        reviews = [s["action_id"] for s in spec["strategies"] if s.get("function") == "human.founder_review"]
+        for step in [s["action_id"] for s in person] + reviews:
+            if not any(withdrawn.get(e.payload["request_id"], "").startswith(OBSERVED) for e in by_step.get(step, [])):
+                missing.append(f"{'founder_review' if step in reviews else 'person_step'}_not_observed:{step}")
+        for refusal in (r for r in refusals if r.payload["mission_id"] == mid):
+            missing.append(f"person_declined:{refusal.payload['action_id']}")
+            if any(seq.get(e.event_id, 0) > seq.get(refusal.event_id, 0)
+                   for e in by_step.get(refusal.payload["action_id"], [])):
+                missing.append(f"refusal_not_honored:{refusal.payload['action_id']}")
+        writes = [seq.get(a.event_id, 0) for a in journal.replay("mission.action")
+                  if a.payload["mission_id"] == mid and a.payload.get("status") == "DONE"]
+        if asked and not (writes and min(writes) < min(seq.get(e.event_id, 0) for e in asked)):
+            missing.append("handoff_not_before_asks")
+        external = sorted({a.payload.get("capability") for a in journal.replay("mission.action")
+                           if a.payload["mission_id"] == mid and a.payload.get("status") == "DONE"
+                           and (a.payload.get("capability") not in BUILTINS
+                                or BUILTINS[a.payload["capability"]][0].consequence_class not in INTERNAL_CLASSES)})
+        if external:
+            missing.append(f"greg_external_action:{','.join(map(str, external))}")
+        (incomplete if missing else cases).append({"mission_id": mid, **({"missing": missing} if missing else {}),
+                                                   "person_steps": len(person)})
+    return {"met": bool(cases), "value": len(cases), "cases": cases, "incomplete": incomplete,
+            "reality": "handoff order, observed evidence, honored refusals and GREG's own effects are proven from the "
+                       "ledger; that the person is real and the relationship lawful is attested by Alfonso's "
+                       "acceptance, not provable here"}
+
+
+def venture_compounding(journal: Journal) -> dict:
+    """A capability proven in one venture made a second venture faster or cheaper, and the second
+    venture's verified revenue funds every obligation and reserve with surplus left to reinvest.
+
+    The transplant is a ratified SOP taught by one venture's verified cases and run, at least
+    twice, as closed N3 cases in another venture, with fewer founder interventions, less model
+    spend or less time per outcome and no quality failure. The books run that venture's reconciled
+    revenue through capital/allocation-policy.yaml against the amounts Alfonso signed; GREG moves
+    and allocates no money. Whether a second venture could stand alone is Alfonso's judgment.
+    """
+    from greg import venture_books
+    moved = venture_books.transfers(journal)
+    proven = [t for t in moved if t["faster_or_cheaper"]]
+    ledgers = venture_books.books(journal)
+    funded = [b for b in ledgers if b["venture"] in {t["to_venture"] for t in proven}
+              and venture_books.reinvestable(b)]
+    missing = []
+    if not moved:
+        missing.append("no ratified procedure from one venture has run in another")
+    elif not proven:
+        missing.append("no transplant was faster or cheaper: " + "; ".join(
+            f"{t['procedure_id']} {t['from_venture']}->{t['to_venture']}: {', '.join(t.get('why_not', []))}"
+            for t in moved))
+    if proven and not funded:
+        missing.append("the second venture's verified revenue leaves no surplus after signed obligations and "
+                       "reserves (or none were signed)")
+    return {"met": not missing, "value": len(funded), "transfers": moved, "books": ledgers,
+            **({"missing": missing} if missing else {}),
+            "reality": "transfer, reconciliation and the waterfall are computed from the ledger; GREG moves no money; "
+                       "whether the second venture could stand alone is Alfonso's judgment"}
+
+
+PREDICATES = {"vepmc_at_least_one": vepmc_at_least_one, "genesis_closure": genesis_closure,
+              "business_loop_closed": business_loop_closed, "sop_compounding": sop_compounding,
+              "human_work_shared": human_work_shared, "venture_compounding": venture_compounding}
 
 
 def position(journal: Journal | None, data: dict | None = None) -> dict:

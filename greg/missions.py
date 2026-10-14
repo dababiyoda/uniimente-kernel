@@ -22,6 +22,8 @@ state. Process completion never closes a mission: only re-observed evidence does
 """
 from __future__ import annotations
 
+import os
+
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import json
@@ -71,6 +73,9 @@ def validate_mission(spec: dict) -> dict:
             raise MissionError(f"strategy {strategy['action_id']} requires unknown checks {sorted(requires - checks)}")
         if requires & set(strategy["advances"]):
             raise MissionError(f"strategy {strategy['action_id']} cannot require a check it advances")
+        if "declined_if" in strategy and not asks.human_work(strategy.get("function")):
+            raise MissionError(f"strategy {strategy['action_id']}: declined_if applies only to a person's step "
+                               "(human.* or professional.*)")
         _validate_bindings(strategy, set(actions))
     _acyclic_bindings(spec["strategies"])
     ladder = spec["closure"].get("ladder", [])
@@ -804,7 +809,8 @@ class MissionEngine:
         """No strategy is not blindness: keep re-observing at cadence. If the world heals
         without GREG acting, the escalation is withdrawn as moot (a body event, never a
         founder answer) and the mission resumes; otherwise it keeps waiting, silently."""
-        if m.next_observe_at and now < datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")):
+        if m.next_observe_at and now < datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")) \
+                and not self._deliverable_arrived(m):
             return {"state": "WAITING", "blocker": m.blocker, "until": m.next_observe_at}
         failing, evidence = self._observe(m, now)
         if failing is None:
@@ -817,6 +823,10 @@ class MissionEngine:
                 return repaired
         human = m.blocker["type"] == "human_work"   # it waits only on the checks the person's work advances
         waiting_on = failing & set(m.blocker["failing_checks"]) if human else failing
+        if waiting_on and human:
+            declined = self._declined(m, now)
+            if declined is not None:
+                return self._honor_refusal(m, now, *declined)
         if waiting_on:
             self._schedule(m, now, m.spec["closure"].get("cadence_seconds", 3600))
             return {"state": "WAITING", "blocker": m.blocker, "still_failing": sorted(failing)}
@@ -828,8 +838,88 @@ class MissionEngine:
         self._unblock(m, why)
         self.book.rebuild()
         if failing:                                  # other checks remain: pursue them from the next step
+            resumed = self.book.missions[m.mission_id]
+            if resumed.next_observe_at and now < datetime.fromisoformat(resumed.next_observe_at.replace("Z", "+00:00")):
+                self._schedule(resumed, now, 0)      # observed early: the next step must not wait out the old slot
             return {"state": "RESUMED", "still_failing": sorted(failing)}
         return self._setpoint_reached(self.book.missions[m.mission_id], now, evidence)
+
+    def _deliverable_arrived(self, m: MissionState) -> bool:
+        """A person's work landed since GREG last looked: observe now, not at the next cadence slot.
+
+        Only for a human_work blocker, only the file paths the founder-signed mission's own fs.read
+        sensors name (the checks this work advances, and its declined_if), and only their metadata:
+        no content is read, no grant is issued and nothing is recorded until the governed
+        observation runs. ctime counts as well as mtime, because a downloaded or copied file keeps
+        an old mtime but gets a new ctime when it lands. Without this, an hourly cadence left each
+        of a business case's four human steps unnoticed for up to an hour.
+        """
+        if m.blocker.get("type") != "human_work" or not m.next_observe_at:
+            return False
+        last = datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")) - timedelta(
+            seconds=m.spec["closure"].get("cadence_seconds", 3600))
+        waiting = set(m.blocker.get("failing_checks", []))
+        sensors = [c["sensor"] for c in m.spec["success_checks"] if c["check_id"] in waiting]
+        strategy = next((s for s in m.spec["strategies"] if s["action_id"] == m.blocker.get("action_id")), None)
+        if strategy and strategy.get("declined_if"):
+            sensors.append(strategy["declined_if"]["sensor"])
+        for sensor in sensors:
+            path = (sensor.get("params") or {}).get("path")
+            if sensor.get("capability") != "fs.read" or not isinstance(path, str):
+                continue
+            try:
+                st = os.stat(path)
+            except OSError:
+                continue
+            if max(st.st_mtime, st.st_ctime) > last.timestamp():
+                return True
+        return False
+
+    def _declined(self, m: MissionState, now: datetime):
+        """(detail, receipt) when the person this step waits on is observed to have declined, else None."""
+        strategy = next((s for s in m.spec["strategies"] if s["action_id"] == m.blocker.get("action_id")), None)
+        watch = (strategy or {}).get("declined_if")
+        if not watch:
+            return None
+        manifest, adapter, _ = self._resolve(watch["sensor"])
+        if manifest is None or manifest.consequence_class != "read_only":
+            return None                              # an unreadable refusal is never assumed
+        attempt = sum(1 for e in self.journal.replay("human.refusal_observed")
+                      if e.payload["mission_id"] == m.mission_id)
+        outcome = self.office.act(
+            mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
+            adapter=adapter, ctx=self._context(m, manifest), params=watch["sensor"].get("params", {}),
+            target=watch["sensor"]["target"], cost_usd=0.0, expected_outcome="observation captured",
+            evidence_refs=[], attempt=f"declined:{attempt}@{iso(now)}", spent_usd=m.spent_usd,
+            approved_scopes=m.approved_scopes)
+        if outcome.status != "DONE":
+            return None
+        passed, detail = evaluate_predicate(watch["predicate"], outcome.output)
+        self.journal.record("human.refusal_observed", {"mission_id": m.mission_id, "action_id": strategy["action_id"],
+                                                       "declined": passed, "detail": detail[:300],
+                                                       "receipt": outcome.receipt_hash, "at": iso(now)},
+                            key=[m.mission_id, strategy["action_id"], outcome.proposal_id])
+        return (detail, outcome.receipt_hash) if passed else None
+
+    def _honor_refusal(self, m: MissionState, now: datetime, detail: str, receipt: str | None) -> dict:
+        """A person may say no. GREG records it as legitimate, stops asking for that step for good,
+        and leaves the next move to Alfonso; it never re-asks, argues or routes around the person."""
+        aid, rid, function = m.blocker["action_id"], m.blocker["request_id"], m.blocker["function"]
+        why = "the person declined; the refusal is legitimate, and GREG asks nothing more of them in this mission"
+        evidence = [receipt] if receipt else []
+        self.journal.record("human.refusal_honored", {"mission_id": m.mission_id, "action_id": aid,
+                                                      "function": function, "request_id": rid, "evidence": evidence,
+                                                      "detail": detail[:300], "at": iso(now)},
+                            key=[m.mission_id, aid, "refusal"])
+        self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                   "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
+        self.journal.record("mission.strategy_excluded", {"mission_id": m.mission_id, "action_id": aid,
+                                                          "reason": "declined by the person: " + detail[:200],
+                                                          "critique_ref": "refusal:" + (receipt or rid)},
+                            key=[m.mission_id, aid, "refusal"])
+        self._unblock(m, why)
+        self.book.rebuild()
+        return {"state": "REFUSAL_HONORED", "action": aid}
 
     def _setpoint_reached(self, m: MissionState, now: datetime, evidence: list) -> dict:
         closure = m.spec["closure"]
@@ -912,7 +1002,8 @@ class MissionEngine:
                    "observed_by": c["sensor"].get("capability") or c["sensor"].get("function"),
                    "params": c["sensor"].get("params", {})} for c in m.spec["success_checks"] if c["check_id"] in watched]
         rid = self._request(
-            m, kind="HUMAN_WORK", scope_digest=sha256_json({"function": function, "purpose": purpose}), action_id=None,
+            m, kind="HUMAN_WORK", scope_digest=sha256_json({"function": function, "purpose": purpose}),
+            action_id=spec.get("action_id"),
             why=f"{purpose} needs {function}, which only {who} may do; GREG will not substitute software for it",
             recommendation=(f"arrange {function} yourself or through {who} you choose, and put the deliverable where "
                             "the mission's check reads it; GREG closes this ask when it observes it"),
@@ -941,6 +1032,7 @@ class MissionEngine:
                     {"option": "abandon", "cost": "none",
                      "expected_effect": "the mission ends; nothing further runs for it"}]})
         self._block(m, {"type": "human_work", "request_id": rid, "function": function, "resource": resource,
+                        "action_id": spec.get("action_id"),
                         "why": f"{function} is work only {who} may do",
                         **({"failing_checks": watched} if watched else {}),
                         "reconsider": "the deliverable is observed by the mission's own checks, or you revise or "
@@ -1067,13 +1159,21 @@ class MissionEngine:
             candidates.append((-expected, route, index, s, estimate))
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
+            declined = sorted(a for a, r in m.excluded.items() if r.startswith("declined by the person"))
             rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None,
-                                why=("the remaining strategies wait on checks that observation says fail: "
-                                     + ", ".join(sorted({c for cs in held.values() for c in cs})))
+                                why=(f"the person declined {', '.join(declined)}; that refusal stands, and GREG asks "
+                                     "nothing more of them") if declined else
+                                ("the remaining strategies wait on checks that observation says fail: "
+                                 + ", ".join(sorted({c for cs in held.values() for c in cs})))
                                 if held else "every strategy for the failing checks is exhausted, refused or excluded",
-                                recommendation="add or revise strategies, widen scope, or abandon the mission",
-                                alternatives=["add or revise strategies for the failing checks", "widen the scope",
-                                              "abandon the mission"],
+                                recommendation=("ask someone else in a new signed mission, do the work yourself, "
+                                                "or abandon") if declined else
+                                "add or revise strategies, widen scope, or abandon the mission",
+                                alternatives=["sign a new mission naming someone else",
+                                              "do the work yourself and place the deliverable where the check reads it",
+                                              "abandon the mission"] if declined else
+                                ["add or revise strategies for the failing checks", "widen the scope",
+                                 "abandon the mission"],
                                 requested={"failing_checks": sorted(failing)}, now=now,
                                 evidence={"failing_checks": sorted(failing), "failed": dict(sorted(m.failed.items())),
                                           "excluded": dict(sorted(m.excluded.items())),

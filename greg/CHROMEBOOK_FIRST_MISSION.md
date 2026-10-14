@@ -158,6 +158,140 @@ GREG finds the installed LP engine, shows its version and license, and waits for
 It then returns the plan with the price of each limit, accepted only on its own duality
 certificate.
 
+## The third node (N3): one business case, with you doing every outward act
+
+GREG can now carry one customer case through the Kernel's commercial order (offer, acceptance,
+payment, delivery, the buyer's confirmation, settlement) as a mission you sign. Before anything
+runs, the signed mission fixes the buyer, the price and the acceptance terms:
+
+```bash
+greg mission new business-case --case "lease review 01" --buyer "Acme Property LLC" \
+  --offer "a reviewed lease summary" --price 250 --currency USD \
+  --acceptance "summary delivered within 5 business days"
+```
+
+- GREG drafts `offer.md` in the case folder (`greg status` shows the path). It carries a case
+  reference, for example `CASE-LEASE-REVIEW-01`, which the buyer puts on the payment.
+- **You** send the offer, collect payment, deliver, and ask the buyer to confirm. Each step is
+  one costed ask in the console and on your phone. GREG contacts, charges and pays no one; an
+  answer to these asks is only a record.
+- You save the evidence into the case folder:
+  - `acceptance.txt`: the buyer's written acceptance;
+  - `statement.csv`: an export from your payment account. Its columns default to
+    `description,amount,currency`; a different export can be mapped in the signed mission.
+  - `delivery.txt`: the delivery record;
+  - `outcome.txt`: the buyer's confirmation.
+
+  Each file carries the reference.
+- **Payment counts only when exactly one posting matches the signed amount and currency to the
+  cent and carries the reference.** A short or duplicate payment never counts.
+- The settlement record is written only after payment, delivery and the buyer's confirmation
+  are all observed. The separate appraiser re-checks that order.
+
+`greg path` measures N3 from the ledger: a founder-signed case on this body, payment reconciled,
+every outward step done by a person, GREG's own actions internal only, appraised VERIFIED and
+accepted by you. Your acceptance is what attests the buyer is real; the ledger cannot prove it.
+What no build session can supply: a real buyer and their consent, the legal operator, and your
+payment account.
+
+## The fourth node (N4): a procedure you ratify stops costing you attention
+
+After GREG closes the same kind of mission three times (for example three `word-limit` checks),
+it proposes a standard procedure. Nothing changes until you ratify it.
+
+```bash
+greg sop list                                   # proposals waiting for you, and their inputs
+greg sop show <procedure-id>                    # the evidence, the workflow, what may be pre-approved
+greg sop ratify <procedure-id> --pre-approve file-record --key ~/greg-founder.pem
+greg sop run <procedure-id> --set path="$HOME/drafts/essay.md" --set words=500 --key ~/greg-founder.pem
+greg sop trend                                  # before and after, per verified outcome
+```
+
+- **The workflow is learned only from what you signed.** It is rebuilt from the verified runs:
+  - anything that differed between them becomes an input (above, the file and the limit);
+  - checks, capabilities and the light cone must have matched in every run, or no procedure is
+    proposed.
+- **A run uses no model, and you still sign every run.**
+- **`--pre-approve` is limited.** It applies only to steps you approved in every one of those
+  runs, internal at most and free:
+  - the step then sits inside the cone you sign for each run, so it does not stop to ask you;
+  - contact with the outside world and any spend always ask.
+- **`greg path` measures N4 from the ledger.** It is met when three runs of the ratified
+  procedure:
+  - closed on this body, each appraised VERIFIED, none rejected or abandoned;
+  - asked you less per verified outcome than the runs that taught it;
+  - used no more model spend.
+
+## The seventh node (N7): a second venture, and books that pay obligations first
+
+Name the venture on each case. If you want to approve GREG's own writes in a new business, add
+`--approve-writes`:
+
+```bash
+greg mission new business-case --venture leases --approve-writes --case "lease review 01" ...
+```
+
+After three verified cases, ratify the procedure GREG proposes, pre-approving its two writes. Then
+run it for a second venture:
+
+```bash
+greg sop ratify <procedure-id> --pre-approve draft-offer --pre-approve record-settlement --key ~/greg-founder.pem
+greg sop run <procedure-id> --venture audits --set reference=CASE-AUDIT-01 --set buyer="..." \
+  --set offer="..." --set price=300.00 --set acceptance="..." --key ~/greg-founder.pem
+```
+
+Sign what each venture owes before any surplus counts. Tier names come from
+`capital/allocation-policy.yaml`:
+
+```bash
+greg treasury set --venture audits --currency USD \
+  --tier taxes_and_binding_legal_obligations=120 \
+  --tier emergency_liquidity_and_operating_reserves=80 --key ~/greg-founder.pem
+greg treasury books
+```
+
+- **Revenue counts only from cases that closed N3:** paid to the cent, people did every outward
+  act, appraised VERIFIED and accepted by you.
+- **Surplus is what remains** after every tier above reinvestment is fully funded.
+- **GREG moves and allocates no money;** these are books.
+- **`greg path` measures N7.** It is met when a procedure taught by one venture made at least two
+  closed cases in another cheaper or faster per outcome, and that venture's books show surplus.
+- **Your judgment remains:** whether the second venture could stand alone.
+
+## The sixth node (N6): one piece of work with a named person
+
+When work needs a person (a designer, a bookkeeper, a lawyer), sign a mission that names them, the
+relationship you arrange and pay yourself (`contract` or `employment`), the deliverable and the
+acceptance terms:
+
+```bash
+greg mission new shared-work --task "Design the GREG logo" --person "Dana Reyes" \
+  --relationship contract --function human.design_logo --deliverable logo.png \
+  --acceptance "a square PNG, 1024 px, two colors"
+```
+
+- GREG writes `handoff.md` first, with the task, the terms, a reference such as
+  `WORK-DESIGN-THE-GREG-LOGO` and the person's right to decline. **You** send it; GREG contacts,
+  hires and pays no one.
+- You save into the case folder, in order:
+  - `consent.txt`: their written agreement, carrying the reference;
+  - their deliverable;
+  - `review.txt`: `ACCEPT <reference>`, or what to revise (the mission waits).
+
+  GREG then writes `outcome.md`.
+- **A refusal is honored.** If they decline, save `declined.txt` with the reference:
+  - GREG withdraws its ask and never asks that step again;
+  - it asks you to choose: name someone else in a new mission, do it yourself, or abandon.
+
+`greg path` measures N6 from the ledger. It needs:
+
+- the handoff written before anything was asked;
+- every step of the person's, and your review, observed;
+- GREG's own actions internal only;
+- the closure appraised VERIFIED and accepted by you.
+
+Your acceptance is what attests that the person is real and the relationship lawful.
+
 ## 3. What "persistent" means on this Chromebook
 
 ChromeOS stops the Linux environment when you sign out and, by Google's design,

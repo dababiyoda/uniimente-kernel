@@ -323,7 +323,7 @@
       ],
       "intended_effect": "All 55 Foundry systems as usable, composable GREG capabilities (INTENT-2026-09-27-FOUNDRY-55)",
       "intended_effect_status": "active",
-      "classification": "NEXT_NODE_INPUT",
+      "classification": "CURRENT_NODE_IMPLEMENTATION",
       "node": "N2",
       "changed_axes": [
         "sequence"
@@ -331,8 +331,8 @@
       "surviving_mechanisms": [
         "branch claude/foundry-55"
       ],
-      "adaptation": "Stacks on the converged base with two additive conflicts (greg/capabilities.py: foundry.query/apply beside venture.assess/status; greg/cli.py: the foundry subcommand beside path/presence/doctor); keep both sides. Its systems attach when a mission pulls them; not merged ahead of VEPMC per its own body",
-      "activation_evidence": "Stack trial 2026-09-30 of #132 head da3d4ac (39/55) onto 6e0533f (N2 reached agent-side): `python -m foundry.completion --audit` PASS 39/55, 0 problems; 75 foundry tests pass; every GREG unit and integration suite passes on the stack (380 passed, 8 skipped). Earlier trial at 31/55: 47/47. Merging stays a founder decision after VEPMC"
+      "adaptation": "Integrated into the converged branch on 2026-10-13 per the founder's 2026-10-02 sequencing correction ('stack #132 after VEPMC no longer gates reversible Foundry integration'): merge of #132 head 5255774 (44/55); the two conflicts were additive (greg/capabilities.py foundry.query/apply beside venture.* and business.reconcile; greg/cli.py the foundry subcommand beside path/presence/doctor) and both sides were kept. Merging to main remains a founder decision; the 11 unbuilt systems remain obligations",
+      "activation_evidence": "On the merged tree: `python -m foundry.completion --audit` PASS 44/55, 0 problems; full suite 1279 passed, 6 skipped (requires the pinned dev dependencies wasmtime, mcp and stripe from requirements-dev.txt). Earlier trials: 31/55 (47/47 foundry tests), 39/55 (75 foundry tests, 380 GREG tests)"
     },
     {
       "id": "pr121_correction_loop",

@@ -136,6 +136,47 @@ def test_a_paid_action_reconciled_as_executed_books_its_signed_cap_against_the_b
         assert row["booked_usd"] == row["unknown_at_cap_usd"] == 0.6 and row["measured_usd"] == 0.0
 
 
+def reconciled_done(mission_id, action_id, attempt, capability):
+    """Exactly the record the engine writes when the founder answers reconcile_executed."""
+    return {"mission_id": mission_id, "action_id": action_id, "attempt": attempt, "status": "DONE",
+            "capability": capability, "route": "founder_reconciliation", "dispatch_route": "api", "receipt": None,
+            "at": "2026-10-14T12:00:00Z", "reasons": ["founder reconciliation: reconcile_executed"], "cost_usd": 0.0}
+
+
+def test_a_signed_binding_never_falls_back_past_a_reconciled_execution(tmp_path):
+    from tests.unit.test_greg_bindings import composed, run as run_composed
+    home, key, body_id, _ = make_body(tmp_path)
+    spec, _ = composed(home)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    assert run_composed(home)[0][-1] == "ACHIEVED"
+    with Body(home) as body:
+        consumer = next(s for s in spec["strategies"] if s["action_id"] == "write-b")
+        assert body.engine._bind(body.engine.book.missions["m:composed"], consumer)[2]   # bound from a receipt
+        # write-a ran again; that run died mid-dispatch and the founder said it executed: its output is unknown
+        body.journal.record("mission.action", reconciled_done("m:composed", "write-a", 1, "fs.write"),
+                            key=["m:composed", "write-a", "reconciled", "test"])
+        body.engine.book.rebuild()
+        with pytest.raises(Unbound, match="write-a's latest execution was reconciled without a retained receipt"):
+            body.engine._bind(body.engine.book.missions["m:composed"], consumer)
+
+
+def test_a_pipeline_input_never_falls_back_past_a_reconciled_execution(tmp_path):
+    from greg.pipeline import BindingError, resolve
+    from tests.integration.test_greg_pipeline import binding, build_mission
+    home, key, body_id, data = make_body(tmp_path)
+    (data / "source.txt").write_text("Evidence 42\n")
+    drop(home, signed(key, body_id, "MISSION", build_mission(home, data / "source.txt")))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 1)
+        assert [a["status"] for a in actions(body)] == ["DONE"]
+        assert resolve({"content": binding()}, body.journal, "m:pipeline")[0] == {"content": "Evidence 42\n"}
+        body.journal.record("mission.action", reconciled_done("m:pipeline", "read", 1, "fs.read"),
+                            key=["m:pipeline", "read", "reconciled", "test"])
+        with pytest.raises(BindingError, match="read's latest execution was reconciled without a retained receipt"):
+            resolve({"content": binding()}, body.journal, "m:pipeline")
+
+
 class Journal:
     """A retained journal as readers see it: append-only payloads, some written before 2026-10-14."""
 

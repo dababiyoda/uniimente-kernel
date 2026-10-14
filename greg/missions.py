@@ -724,11 +724,11 @@ class MissionEngine:
         The source is the latest DONE action of the named strategy; its output is read from
         the canonical ledger, never from a cache or the adapter's memory. Only param values
         change: capability, target, cost and consequence class stay exactly as signed."""
-        latest = {}
+        latest = {}   # action_id -> receipt of its latest DONE; None when the founder reconciled it unreceipted
         for event in self.journal.replay("mission.action"):
             data = event.payload
-            if data.get("mission_id") == m.mission_id and data.get("status") == "DONE" and data.get("receipt"):
-                latest[data["action_id"]] = data["receipt"]
+            if data.get("mission_id") == m.mission_id and data.get("status") == "DONE":
+                latest[data["action_id"]] = data.get("receipt")
         params = json.loads(json.dumps(s.get("params", {})))
         bindings, sources = [], []
         for edge in s["bind"]:
@@ -742,9 +742,12 @@ class MissionEngine:
                     raise Unbound(f"check {source} has no passing observation yet")
             else:
                 source = edge["from"]["action_id"]
-                receipt = latest.get(source)
-                if receipt is None:
+                if source not in latest:
                     raise Unbound(f"{source} has no completed action yet")
+                receipt = latest[source]
+                if receipt is None:     # never an older receipt: that output is not the latest execution's
+                    raise Unbound(f"{source}'s latest execution was reconciled without a retained receipt; "
+                                  "its output is unknown")
             record = self.office.ledger.find(receipt)
             if record is None or record.record_type != "receipt":
                 raise Unbound(f"{source} receipt {receipt[:19]} is not on the ledger")

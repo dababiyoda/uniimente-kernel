@@ -12,6 +12,24 @@
 
 State: active. Authority delta: none.
 
+Track B execution, 2026-10-14 (draft PR from `claude/greg-mind-lineage-convergence` into #155's head; record:
+[reconciliation](collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md), [map](collaboration/MIND-LINEAGE-RECONCILIATION-MAP-2026-10-14.json)):
+
+- **Scope:** #155 `ef5f078` and #158 `047549f` merged. Every one of the 185 changed files has a disposition, and
+  the eight frozen-path collisions are archived byte-identical in both versions.
+- **Canonical by evidence:** #158's evolution controller, frozen benchmark and Lawful Leverage Foundry; one
+  Landlock grant path; one evidence index that both the compiler and the inventory read.
+- **Retained, isolated:** #155's routing-genome evolution and its operator library.
+- **Negative evidence now routes:** #155's held-out REJECTED and SUPERSEDED verdicts change compiler routing.
+- **Replications across lineages:** P4 no gain twice; F2 lift twice; four P8 REJECTs; no replicated Layer 4
+  advantage.
+- **F7 independently audited:** CONFIRMED (200 of 200), and parametric min-cost flow ties F7. Recommended:
+  `flow_expansion_mcf` becomes canonical for capacity expansion once admitted at its exact version.
+- **Horizon added:** `immune_function`.
+- **Release blocker:** third-party data rights (SNDlib, M4, fpp3) are uncleared in a public repository.
+
+Authority delta: none.
+
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
 
 `INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.

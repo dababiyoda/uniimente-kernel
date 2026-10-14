@@ -146,6 +146,33 @@ def test_attack_worker_tampers_with_greg_trusted_git_copy(tmp_path, monkeypatch)
     assert "ACHIEVED" not in states
 
 
+def test_attack_worker_test_code_rewrites_git_metadata_during_greg_acceptance(tmp_path, monkeypatch):
+    """Attack: the worker adds tests/conftest.py. GREG's own acceptance run executes it (network denied,
+    filesystem not confined), and it rewrites the clone's .git after GREG restored it: a gpg program
+    for commit signing plus a post-checkout hook, so GREG's own ``checkout -b``/``commit`` run worker
+    code. Expected: GREG notices the metadata changed after its acceptance run and refuses to commit;
+    the payload never runs."""
+    marker = tmp_path / "pwned-acceptance"
+    payload = tmp_path / "payload.sh"
+    payload.write_text(f"#!/bin/sh\ntouch {marker}\nexit 1\n")
+    payload.chmod(0o755)
+    conftest = ("import pathlib, os\n"
+                "git = pathlib.Path(__file__).resolve().parents[1] / '.git'\n"
+                "cfg = git / 'config'\n"
+                f"cfg.write_text(cfg.read_text() + '[commit]\\n\\tgpgsign = true\\n[gpg]\\n\\tprogram = {payload}\\n')\n"
+                "hook = git / 'hooks' / 'post-checkout'\n"
+                "hook.parent.mkdir(exist_ok=True)\n"
+                f"hook.write_text('#!/bin/sh\\ntouch {marker}\\n')\n"
+                "os.chmod(hook, 0o755)\n")
+    planted = {"plan/plan.json": json.dumps({"assignment": [["Ana", "Dock2", 2], ["Ben", "Dock1", 4],
+                                                            ["Cy", "Line", 2]], "staffed": 8}),
+               "tests/test_plan.py": TEST_FROM_DOUBLE, "tests/conftest.py": conftest}
+    home, spec, states, outputs = run_in_process(tmp_path, monkeypatch, Scripted(planted))
+    assert not marker.exists(), "worker test code planted git metadata that GREG's git then executed"
+    assert not [o for o in outputs if o.get("work_order") == "attack" and o.get("commit")]
+    assert "ACHIEVED" not in states
+
+
 def test_attack_absent_isolation_refuses_the_organ_exchange(tmp_path, monkeypatch):
     """Attack: the OS network filter cannot be installed. Expected: a truthful refusal before any
     organ code runs (never an unconfined run); nothing is recorded."""
@@ -161,6 +188,10 @@ def test_attack_absent_isolation_refuses_the_organ_exchange(tmp_path, monkeypatc
     (dale / "services" / "idea_refinery.py").write_text("")
     (wmi / "src" / "services").mkdir(parents=True)
     (wmi / "src" / "services" / "opportunity_intake.py").write_text("")
+    for root in (dale, wmi):          # committed, so the exchange can pin and snapshot each organ's code
+        for cmd in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "c"]):
+            subprocess.run(["git", "-C", str(root), *cmd], check=True, capture_output=True,
+                           env={"PATH": "/usr/bin:/bin", "HOME": str(tmp_path), "GIT_CONFIG_NOSYSTEM": "1"})
     manifest, _ = BUILTINS["organ.exchange"]
     from events.spine import EventSpine
     from greg.journal import Journal
@@ -264,7 +295,7 @@ def test_every_attack_in_the_matrix_names_a_test_that_exists():
     """The adversarial matrix is evidence only if each row points at a real test."""
     matrix = json.loads(MATRIX.read_text())
     assert len(matrix["attacks"]) == 20
-    for row in matrix["attacks"]:
+    for row in matrix["attacks"] + matrix["additional_attacks"]:
         assert row["expected"] and row["tests"], row["attack"]
         for node in row["tests"]:
             path, _, name = node.partition("::")

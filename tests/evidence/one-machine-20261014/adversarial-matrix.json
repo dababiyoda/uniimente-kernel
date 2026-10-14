@@ -24,7 +24,9 @@
    "tests": [
     "tests/unit/test_greg_organ_bridge.py::test_tampered_message_records_nothing",
     "tests/unit/test_greg_organ_bridge.py::test_failed_appraisal_is_refuted",
-    "tests/integration/test_one_machine.py::test_one_signed_mission_runs_the_whole_machine_across_processes"
+    "tests/integration/test_one_machine.py::test_one_signed_mission_runs_the_whole_machine_across_processes",
+    "tests/unit/test_greg_organs.py::test_an_organ_that_rewrites_the_other_organs_code_is_refused",
+    "tests/unit/test_greg_organs.py::test_facts_from_an_exchange_that_never_completed_do_not_count"
    ]
   },
   {
@@ -143,11 +145,12 @@
   },
   {
    "attack": "compromised or absent isolation mechanism",
-   "expected": "absent network isolation refuses before any organ code runs; worker-planted git hooks and filters never execute in GREG's collection; a worker that rewrites GREG's trusted .git copy has its collection refused",
+   "expected": "absent network isolation refuses before any organ code runs; worker-planted git hooks and filters never execute in GREG's collection; a worker that rewrites GREG's trusted .git copy has its collection refused; worker test code that rewrites .git during GREG's acceptance run stops the commit (residual: a daemon outliving the worker can still race a check, since workers have no PID namespace until #157 confinement)",
    "tests": [
     "tests/integration/test_one_machine_attacks.py::test_attack_absent_isolation_refuses_the_organ_exchange",
     "tests/integration/test_one_machine_attacks.py::test_attack_worker_plants_git_hooks_and_filters_that_never_run",
-    "tests/integration/test_one_machine_attacks.py::test_attack_worker_tampers_with_greg_trusted_git_copy"
+    "tests/integration/test_one_machine_attacks.py::test_attack_worker_tampers_with_greg_trusted_git_copy",
+    "tests/integration/test_one_machine_attacks.py::test_attack_worker_test_code_rewrites_git_metadata_during_greg_acceptance"
    ]
   },
   {
@@ -180,6 +183,28 @@
    "expected": "the strategy stays unbound; the worker is never commissioned",
    "tests": [
     "tests/integration/test_one_machine_attacks.py::test_attack_hands_cannot_bind_an_answer_that_never_passed"
+   ]
+  },
+  {
+   "attack": "an organ signs a trace other than the one the kernel assigned",
+   "expected": "refused before anything is recorded; the receipt and the journal never disagree on the binding",
+   "tests": [
+    "tests/unit/test_greg_organs.py::test_an_organ_that_signs_another_trace_is_refused_before_recording"
+   ]
+  },
+  {
+   "attack": "a model-backed or composed answer presented to the worker as CERTIFIED",
+   "expected": "the mission gate admits only a problem-level certificate; a construction without one is never labelled certified",
+   "tests": [
+    "tests/unit/test_greg_one_machine_gates.py::test_the_answered_gate_admits_only_a_certified_answer",
+    "tests/unit/test_greg_one_machine_gates.py::test_a_construction_without_a_certificate_is_never_labelled_certified"
+   ]
+  },
+  {
+   "attack": "a provider substitutes a model and the withheld answer's bill goes unbooked",
+   "expected": "the answer is withheld and its cost is booked at the served model's price (or the dearest known)",
+   "tests": [
+    "tests/unit/test_greg_model_identity_policy.py::test_a_withheld_substitution_is_still_booked_against_the_budget"
    ]
   }
  ],

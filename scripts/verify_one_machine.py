@@ -16,7 +16,9 @@ What it re-derives, and from what (the producer's claims are inputs to check, ne
    patch re-applied (its digest must match the receipt), and the patch's own test re-run.
 4. The organs' answer: the DALEOBANKS packet retained in the ledger is re-evaluated by
    WealthMachine's own code in its own interpreter (no signature involved) and compared with the
-   retained WealthMachine answer; every organ message must be transport-verified on one trace.
+   retained WealthMachine answer; both organs' messages must be transport-verified on one trace,
+   bound to a DONE exchange receipt, and judged REPRODUCED. Without a WealthMachine checkout the
+   verdict is NOT_REDERIVED: a skipped re-derivation is never a pass.
 5. Exactly one DONE commission and one worker commit, despite the interruption.
 6. VEPMC stays 0: this is sandbox integration proof, not a founder-accepted closure.
 
@@ -38,7 +40,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from greg import metrics  # noqa: E402
+from greg import metrics, organ_bridge  # noqa: E402
 from greg.body import Layout, observe  # noqa: E402
 
 SUMMARY = ("go_no_go", "opportunity_score", "market_alignment", "risk_level", "legal_readiness",
@@ -133,10 +135,15 @@ def main(argv=None) -> int:
         receipt = ledger.find(done[0]["receipt"]).payload["result"]["output"] if done else {}
         work = strategies["commission"]["params"]
 
-        # 4. organs: transport-verified on one trace, and WealthMachine re-evaluates the retained packet
-        organs = [e.payload for e in journal.replay("organ.observed") if e.payload.get("mission_id") == a.mission]
-        checks["organ_messages_transport_verified"] = len(organs) >= 2 and all(o["transport_verified"] for o in organs)
+        # 4. organs: both organs, transport-verified on one trace, bound to a DONE exchange receipt, judged
+        #    REPRODUCED; and WealthMachine re-evaluates the retained packet here
+        bound = organ_bridge.bound_facts(journal, a.mission)
+        organs = bound["observed"]
+        checks["organ_messages_transport_verified"] = ({o["organ"] for o in organs} >= {"daleobanks", "wealthmachine"}
+                                                      and all(o["transport_verified"] for o in organs))
         checks["organ_messages_one_trace"] = len({o["trace_id"] for o in organs}) == 1
+        checks["organ_appraisal_reproduced"] = bool(bound["appraisals"]) and \
+            bound["appraisals"][-1]["verdict"] == "REPRODUCED"
         retained = {e.payload["content_sha256"]: e.payload["content"] for e in journal.replay("external.ingested")}
         by_organ = {o["organ"]: retained.get(o["content_sha256"]) for o in organs}
         if a.wealthmachine_root and a.wealthmachine_python and by_organ.get("daleobanks") and by_organ.get("wealthmachine"):
@@ -151,8 +158,8 @@ def main(argv=None) -> int:
                 checks["organ_answer_rederived"] = not diff
                 if diff:
                     findings.append(f"WealthMachine re-evaluation differs on {diff}")
-        else:
-            checks["organ_answer_rederived"] = None
+        else:   # skipping a re-derivation is never a pass
+            checks["organ_answer_rederived"] = False
             findings.append("organ re-derivation not run (no WealthMachine checkout given or bodies not retained)")
 
         # 1. GREG's own appraiser, as a separate process over the same head

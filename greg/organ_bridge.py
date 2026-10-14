@@ -84,15 +84,76 @@ def record_exchange(journal: Journal, *, mission_id: str, headers: dict, body: b
 
 
 def record_appraisal(journal: Journal, *, mission_id: str, reproduced: dict, invariants: dict,
-                     appraiser: str) -> dict:
-    """Record a non-producer appraisal. Never VERIFIED: agreement is not acceptance."""
+                     appraiser: str, exchange: dict | None = None) -> dict:
+    """Record a non-producer appraisal. Never VERIFIED: agreement is not acceptance.
+
+    ``exchange`` names what was judged (trace id and the request, answer and re-derivation
+    digests). It is part of the fact's identity, so two exchanges never collapse into one
+    appraisal and a reader can tie the verdict to the exchange a receipt stands behind."""
     passed = all(reproduced.values()) and all(invariants.values())
     data = {"mission_id": mission_id, "verdict": APPRAISAL_VERDICT if passed else "REFUTED",
             "appraiser": appraiser, "checks": {**{f"reproduced:{k}": v for k, v in reproduced.items()},
                                                **{f"invariant:{k}": v for k, v in invariants.items()}},
             "tier": "multi-process reproduction + invariant check; not external acceptance"}
-    journal.record("organ.appraised", data, key=[mission_id, "organ-bridge-appraisal", data["verdict"]])
+    key = [mission_id, "organ-bridge-appraisal", data["verdict"]]
+    if exchange is not None:
+        data["exchange"] = {k: exchange[k] for k in ("trace_id", "packet_sha256", "assessment_sha256", "redo_sha256")}
+        key = [mission_id, "organ-bridge-appraisal", *(data["exchange"][k] for k in
+                                                       ("packet_sha256", "assessment_sha256", "redo_sha256"))]
+    journal.record("organ.appraised", data, key=key)
     return data
 
 
-__all__ = ["APPRAISAL_VERDICT", "MissionBindingError", "record_appraisal", "record_exchange"]
+def bound_facts(journal: Journal, mission_id: str, *, capability: str = "organ.exchange") -> dict:
+    """This mission's organ facts that a completed exchange stands behind.
+
+    The adapter records its facts before the Gate writes the receipt. A crash between the two
+    leaves facts that no receipt vouches for; if the founder then reconciles that dispatch as not
+    executed, those facts must not satisfy the mission. A fact counts only when its digest appears
+    in the output of a DONE receipt of one of this mission's ``capability`` strategies, or when it
+    was recorded before a founder reconciliation that declared such a dispatch executed."""
+    ledger = journal.ledger
+    seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
+    action_ids = {s["action_id"] for e in journal.replay("mission.registered") if e.payload.get("mission_id") == mission_id
+                  for s in e.payload.get("spec", {}).get("strategies", []) if s.get("capability") == capability}
+    digests, receipts, founder_cut = set(), [], None
+    for event in journal.replay("mission.action"):
+        p = event.payload
+        if p.get("mission_id") != mission_id or p.get("action_id") not in action_ids or p.get("status") != "DONE":
+            continue
+        if p.get("receipt"):
+            record = ledger.find(p["receipt"])
+            output = record.payload["result"].get("output") if record is not None and \
+                record.record_type == "receipt" else None
+            if isinstance(output, dict) and output.get("packet_sha256") and output.get("assessment_sha256"):
+                digests |= {output["packet_sha256"], output["assessment_sha256"]}
+                receipts.append(p["receipt"])
+        elif p.get("route") == "founder_reconciliation":
+            founder_cut = max(founder_cut or 0, seq.get(event.event_id, 0))
+
+    def before_cut(event) -> bool:
+        return founder_cut is not None and seq.get(event.event_id, founder_cut) < founder_cut
+
+    observed, appraisals, unbound = [], [], 0
+    for event in journal.replay("organ.observed"):
+        p = event.payload
+        if p.get("mission_id") != mission_id or not p.get("operation"):
+            continue
+        if p.get("content_sha256") in digests or before_cut(event):
+            observed.append(p)
+        else:
+            unbound += 1
+    for event in journal.replay("organ.appraised"):
+        p = event.payload
+        if p.get("mission_id") != mission_id:
+            continue
+        judged = p.get("exchange") or {}
+        if {judged.get("packet_sha256"), judged.get("assessment_sha256")} <= digests or before_cut(event):
+            appraisals.append(p)
+        else:
+            unbound += 1
+    return {"observed": observed, "appraisals": appraisals, "receipts": receipts,
+            "founder_reconciled": founder_cut is not None, "unbound": unbound}
+
+
+__all__ = ["APPRAISAL_VERDICT", "MissionBindingError", "bound_facts", "record_appraisal", "record_exchange"]

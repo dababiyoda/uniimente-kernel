@@ -12,8 +12,15 @@ two governed capabilities; it adds no transport, no ledger and no authority:
        answers with a signed VentureAssessment bound to the request digest.
     3. GREG verifies both messages at the kernel, retains each body as untrusted content
        and binds both to this mission's one trace (``greg.organ_bridge``).
-    4. A second, independent WealthMachine process re-derives the assessment from the same
-       packet; agreement is recorded as ``organ.appraised: REPRODUCED``, never VERIFIED.
+    4. A second WealthMachine process re-derives the assessment from the same packet;
+       agreement is recorded as ``organ.appraised: REPRODUCED``, never VERIFIED.
+
+    Each organ runs from a snapshot of its committed HEAD (``git archive``), so the recorded
+    head is the code that ran; uncommitted edits in a founder checkout are reported, never used.
+    The organ processes share the body's UID and filesystem (no OS confinement beyond network
+    denial), so DALEOBANKS could rewrite WealthMachine's code: the WealthMachine snapshot's
+    digest is taken before DALEOBANKS runs and re-checked before each WealthMachine stage. The
+    re-derivation is a separate process, not an independent organization or machine.
 
     Both organ processes run with a scrubbed environment and the OS network denial used for
     every other GREG subprocess (``run_isolated``); their stores live in the mission
@@ -24,7 +31,9 @@ two governed capabilities; it adds no transport, no ledger and no authority:
 
 ``organ.status`` (read_only sensor, retry-safe)
     Re-reads this mission's organ facts from the journal: which organs were observed, whether
-    every message was transport-verified, and the latest organ appraisal verdict.
+    every message was transport-verified, and the latest organ appraisal verdict. Only facts a
+    DONE ``organ.exchange`` receipt (or a founder reconciliation) stands behind count
+    (``organ_bridge.bound_facts``); facts left by a dispatch that never completed do not.
 
 Nothing here contacts anyone, publishes, spends or decides. A signed organ message is
 evidence about an organ's computation; it is not a Kernel consequence and grants nothing.
@@ -37,10 +46,12 @@ import os
 from pathlib import Path
 import secrets as _secrets
 import subprocess
+import tempfile
 
 from adapters import bridge_transport as bt
 from greg import organ_bridge
 from greg.capabilities import CapabilityError, InvocationContext, _inside, run_isolated
+from greg.workers import _tree_digest
 
 PAIR = "daleobanks-wealthmachine"
 TARGET = "organ:" + PAIR
@@ -134,6 +145,32 @@ def _head(path: Path) -> str | None:
         return None
 
 
+def _snapshot(root: Path, dest: Path) -> dict:
+    """The organ's committed HEAD extracted to ``dest``: what runs is exactly what is recorded."""
+    git_env = {"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1", "HOME": str(dest.parent)}
+    head = _head(root)
+    if head is None:
+        raise CapabilityError(f"{root.name} is not a git checkout with a commit; its code cannot be pinned")
+    dest.mkdir(parents=True)
+    archive = subprocess.run(["git", "-c", "core.hooksPath=/dev/null", "-C", str(root), "archive", "--format=tar",
+                              head], capture_output=True, timeout=120, env=git_env)
+    if archive.returncode:
+        raise CapabilityError(f"could not snapshot {root.name}: " + archive.stderr.decode("utf-8", "replace")[-300:])
+    untar = subprocess.run(["tar", "-x", "-f", "-", "-C", str(dest)], input=archive.stdout, capture_output=True,
+                           timeout=120, env={"PATH": "/usr/bin:/bin"})
+    if untar.returncode:
+        raise CapabilityError(f"could not extract the {root.name} snapshot")
+    dirty = subprocess.run(["git", "-C", str(root), "status", "--porcelain", "--untracked-files=no"],
+                           capture_output=True, text=True, timeout=60, env=git_env).stdout.strip()
+    return {"path": dest, "head": head, "tree_sha256": _tree_digest(dest),
+            "uncommitted_changes_ignored": bool(dirty)}
+
+
+def _unchanged(snapshot: dict, why: str) -> None:
+    if _tree_digest(snapshot["path"]) != snapshot["tree_sha256"]:
+        raise CapabilityError(f"the {snapshot['path'].name} snapshot changed {why}; the exchange was refused")
+
+
 def _stage(python: Path, cwd: Path, code: str, *args, stdin=None, env: dict, timeout: int) -> dict:
     try:
         proc = run_isolated([str(python), "-s", "-c", code, *args], cwd=cwd, isolate_network=True,
@@ -167,13 +204,24 @@ def exchange(params: dict, ctx: InvocationContext) -> dict:
            "LEDGER_PATH": str(store / "daleobanks-decision-ledger.jsonl"),
            "DB_SNAPSHOT_PATH": str(store / "daleobanks-store.jsonl"), "PYTHONDONTWRITEBYTECODE": "1"}
     trace = trace_for(ctx.mission_id, seed)
-    d = _stage(roots["daleobanks_python"], roots["daleobanks"], DALEOBANKS_STAGE, seed, trace, env=env,
-               timeout=timeout)
+    with tempfile.TemporaryDirectory(prefix="snapshots-", dir=store) as tmp:
+        code = {organ: _snapshot(roots[organ], Path(tmp) / organ) for organ in ("daleobanks", "wealthmachine")}
+        return _exchange(ctx, roots, code, env, seed, trace, key, timeout)
+
+
+def _exchange(ctx, roots, code, env, seed, trace, key, timeout) -> dict:
+    dale, wmi = code["daleobanks"], code["wealthmachine"]
+    d = _stage(roots["daleobanks_python"], dale["path"], DALEOBANKS_STAGE, seed, trace, env=env, timeout=timeout)
     if d.get("no_opportunity"):
         # Truthful refusal: DALEOBANKS found nothing to evaluate. No message exists, so none is recorded.
         raise CapabilityError("DALEOBANKS found no opportunity in the seed; nothing was sent to WealthMachine")
-    w = _stage(roots["wealthmachine_python"], roots["wealthmachine"], WEALTHMACHINE_STAGE, stdin=d, env=env,
-               timeout=timeout)
+    _unchanged(wmi, "while DALEOBANKS ran")
+    w = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=d, env=env, timeout=timeout)
+    # The organs sign the trace they were given; one that names another trace is refused before
+    # anything is recorded, so the receipt and the journal can never disagree about the binding.
+    signed = {d.get("headers", {}).get(bt.H_TRACE), w.get("headers", {}).get(bt.H_TRACE)}
+    if signed != {trace}:
+        raise CapabilityError(f"an organ signed trace {sorted(map(str, signed))}, not the assigned {trace}")
     request_body, answer_body = d["body"].encode(), w["body"].encode()
     # Kernel-side verification under the same key; a forged or replayed message raises here.
     previous = os.environ.get(bt.SIGNING_KEY_ENV)
@@ -203,7 +251,8 @@ def exchange(params: dict, ctx: InvocationContext) -> dict:
             os.environ.pop(bt.SIGNING_KEY_ENV, None)
         else:
             os.environ[bt.SIGNING_KEY_ENV] = previous
-    redo = _stage(roots["wealthmachine_python"], roots["wealthmachine"], WEALTHMACHINE_STAGE, stdin=redo_request,
+    _unchanged(wmi, "between the WealthMachine runs")
+    redo = _stage(roots["wealthmachine_python"], wmi["path"], WEALTHMACHINE_STAGE, stdin=redo_request,
                   env=env, timeout=timeout)
     packet, original, again = json.loads(d["body"]), json.loads(w["body"]), json.loads(redo["body"])
     reproduced = {k: again.get(k) == original.get(k) for k in REPRODUCIBLE}
@@ -211,22 +260,29 @@ def exchange(params: dict, ctx: InvocationContext) -> dict:
                   "answers_this_packet": original.get("opportunity_packet_id") == packet.get("id"),
                   "finance_flag_forces_review": "finance_education_only" not in packet.get("risk_flags", [])
                                                 or original.get("legal_readiness") == "review_required"}
+    judged = {"trace_id": trace, "packet_sha256": hashlib.sha256(request_body).hexdigest(),
+              "assessment_sha256": hashlib.sha256(answer_body).hexdigest(),
+              "redo_sha256": hashlib.sha256(redo["body"].encode()).hexdigest()}
     if ctx.journal is not None:
         appraisal = organ_bridge.record_appraisal(ctx.journal, mission_id=ctx.mission_id,
                                                   appraiser="kernel-organ-appraiser", reproduced=reproduced,
-                                                  invariants=invariants)
+                                                  invariants=invariants, exchange=judged)
     else:
         passed = all(reproduced.values()) and all(invariants.values())
         appraisal = {"verdict": organ_bridge.APPRAISAL_VERDICT if passed else "REFUTED",
                      "checks": {**reproduced, **invariants}}
     return {"pair": PAIR, "trace_id": trace, "packet_id": packet.get("id"),
-            "packet_sha256": hashlib.sha256(request_body).hexdigest(),
-            "assessment_sha256": hashlib.sha256(answer_body).hexdigest(),
+            "packet_sha256": judged["packet_sha256"], "assessment_sha256": judged["assessment_sha256"],
+            "redo_sha256": judged["redo_sha256"],
             "assessment": {k: original.get(k) for k in SUMMARY},
             "appraisal_verdict": appraisal["verdict"], "transport_verified": True,
             "sender_identity_isolated": all(bool(s.get("identity_isolated") in (True, "true")) or
                                             bool(s.get("sender_identity_isolated")) for s in seen),
-            "organ_heads": {"daleobanks": _head(roots["daleobanks"]), "wealthmachine": _head(roots["wealthmachine"])},
+            "organ_heads": {organ: snap["head"] for organ, snap in code.items()},
+            "organ_code": {organ: {k: snap[k] for k in ("head", "tree_sha256", "uncommitted_changes_ignored")}
+                           for organ, snap in code.items()},
+            "independence": "separate processes from committed snapshots, same host, UID and filesystem; "
+                            "the WealthMachine snapshot digest was re-checked before each WealthMachine run",
             "recorded_in_journal": ctx.journal is not None, "external_effects": None, "spend_usd": 0.0,
             "authority_created": False}
 
@@ -235,16 +291,15 @@ def status(params: dict, ctx: InvocationContext) -> dict:
     """Read-only: this mission's organ facts as retained in the journal."""
     if ctx.journal is None or not ctx.mission_id:
         raise CapabilityError("organ.status reads one mission's journal facts")
-    observed = [e.payload for e in ctx.journal.replay("organ.observed")
-                if e.payload.get("mission_id") == ctx.mission_id and e.payload.get("operation")]
-    appraisals = [e.payload for e in ctx.journal.replay("organ.appraised")
-                  if e.payload.get("mission_id") == ctx.mission_id]
+    facts = organ_bridge.bound_facts(ctx.journal, ctx.mission_id)
+    observed, appraisals = facts["observed"], facts["appraisals"]
     traces = sorted({o.get("trace_id") for o in observed if o.get("trace_id")})
     return {"organs_observed": sorted({o["organ"] for o in observed}),
             "messages": len(observed), "transport_verified": bool(observed) and all(o.get("transport_verified")
                                                                                     for o in observed),
             "trace_ids": traces, "verdict": appraisals[-1]["verdict"] if appraisals else None,
-            "appraisals": len(appraisals)}
+            "appraisals": len(appraisals), "bound_to_receipts": facts["receipts"],
+            "founder_reconciled": facts["founder_reconciled"], "unbound_facts_ignored": facts["unbound"]}
 
 
 __all__ = ["DALEOBANKS_STAGE", "PAIR", "REPRODUCIBLE", "TARGET", "WEALTHMACHINE_STAGE", "exchange", "status",

@@ -392,3 +392,19 @@ While writing this, a sensor on `foundry.query` system 34 `report` failed with `
 dispatch rule working as designed: the canonical attribution module (#132) serves its own `report`, and the journey
 store's `report` must be named with an explicit implementation. It is recorded here because the name collision is
 easy to hit.
+
+### #26: GitHub reads behind the relay
+
+On a body with `--confined-egress`, `github.pulls` and `brief.engineering` now read GitHub from a component with no
+socket of its own, through the relay and the mandated proxy, exactly as `http.get` does.
+
+- **The token.** It reaches only GitHub's request header: it is passed on the confined child's standard input,
+  never in argv, the environment, the egress journal or a receipt.
+- **Robustness.** Chunked responses are decoded. Header injection (CR/LF, `Host`, `Transfer-Encoding`, malformed
+  names) is refused before any connection is requested. A relay or proxy refusal becomes a gap in the brief, not
+  an uncertain effect.
+- **Evidence.** `test_github_reads_run_confined_with_the_token_only_on_the_wire` uses a loopback stand-in for
+  api.github.com that answers in two chunks, behind a fake CONNECT proxy, with a real `github.pulls` mission.
+  `test_a_confined_fetch_refuses_header_injection_before_launch` covers the refusals.
+- **Still PARTIAL.** The browser capabilities still run unconfined. Coding workers run in bubblewrap but keep host
+  networking for their provider instead of the relay. Confined egress is still opt-in.

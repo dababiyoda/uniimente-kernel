@@ -69,7 +69,7 @@ class Seen(list):
     down = page = None
 
 
-def fake_proxy(target_port, *, refuse=False, down=None):
+def fake_proxy(target_port, *, refuse=False, down=None, host="service.test"):
     """A CONNECT proxy that tunnels service.test:443 to the loopback TLS server and records every request head.
     ``down`` is a mutable flag: while ``down["now"]`` is true the upstream is unreachable (the network is lost)."""
     listener = socket.create_server(("127.0.0.1", 0))
@@ -103,7 +103,7 @@ def fake_proxy(target_port, *, refuse=False, down=None):
                     break
                 head += chunk
             seen.append(head.decode("latin-1"))
-            if refuse or not head.startswith(b"CONNECT service.test:443 "):
+            if refuse or not head.startswith(f"CONNECT {host}:443 ".encode()):
                 conn.sendall(b"HTTP/1.1 403 Forbidden\r\n\r\n")
                 conn.close()
                 continue
@@ -275,3 +275,76 @@ def test_a_malicious_page_fetched_by_a_mission_stays_data(tmp_path, network):
     assert not asked and acted <= {"http.get"}
     journal = [json.loads(line) for line in (home / "egress-journal.jsonl").read_text().splitlines()]
     assert {e["host"] for e in journal} == {"service.test"}                 # attacker.test was never contacted
+
+
+def github_server(cert_path, key_path):
+    """A loopback stand-in for api.github.com: chunked JSON replies, every request head recorded."""
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain(cert_path, key_path)
+    listener = socket.create_server(("127.0.0.1", 0))
+    heads = []
+    pulls = [{"number": 7, "title": "Confine GitHub reads", "draft": False, "user": {"login": "founder"},
+              "created_at": "2026-10-14T09:00:00Z", "updated_at": "2026-10-14T10:00:00Z",
+              "head": {"sha": "a" * 40}, "base": {"ref": "main"}}]
+    checks = {"check_runs": [{"status": "completed", "conclusion": "success", "name": "tests"}]}
+
+    def serve():
+        while True:
+            try:
+                conn, _ = listener.accept()
+            except OSError:
+                return
+            try:
+                with context.wrap_socket(conn, server_side=True) as tls:
+                    head = b""
+                    while b"\r\n\r\n" not in head:
+                        chunk = tls.recv(65536)
+                        if not chunk:
+                            break
+                        head += chunk
+                    heads.append(head.decode("latin-1"))
+                    path = head.split(b" ", 2)[1].decode()
+                    body = json.dumps(pulls if "/pulls?" in path else checks).encode()
+                    middle = len(body) // 2           # two chunks, so the decoder is actually exercised
+                    chunks = b"".join(b"%x\r\n%s\r\n" % (len(part), part) for part in (body[:middle], body[middle:]))
+                    tls.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n"
+                                b"Connection: close\r\n\r\n" + chunks + b"0\r\n\r\n")
+            except (OSError, ssl.SSLError):
+                pass
+    threading.Thread(target=serve, daemon=True).start()
+    return listener, heads
+
+
+def test_github_reads_run_confined_with_the_token_only_on_the_wire(tmp_path, monkeypatch):
+    """#26 for github.pulls: the read is made from a component with no socket of its own, through the relay and
+    the mandated proxy. The credential reaches GitHub's request header and nowhere else: not argv, not the
+    environment, not the egress journal, not the receipts."""
+    from greg.body import Layout
+    from greg.capabilities import SecretBroker
+    cert, key = certificate(tmp_path, "api.github.com")
+    server, heads = github_server(cert, key)
+    proxy, seen = fake_proxy(server.getsockname()[1], host="api.github.com")
+    monkeypatch.setenv("HTTPS_PROXY", f"http://127.0.0.1:{proxy.getsockname()[1]}")
+    monkeypatch.setenv("GREG_EGRESS_CAFILE", str(cert))
+    home, founder, body_id = body_with_confined_egress(tmp_path)
+    token = "ghp_fixtureTokenNeverJournaled0123456789"
+    SecretBroker(Layout(home).secrets).put("github_token", token)
+    check = {"check_id": "pulls", "description": "open pull requests were read",
+             "sensor": {"capability": "github.pulls", "params": {"github": ["acme/kernel"]}, "target": "github:acme/kernel"},
+             "predicate": {"op": "equals", "field": "repos.acme/kernel.open", "value": 1}}
+    spec = mission("m:confined-github", checks=[check], strategies=[], capabilities=["github.pulls"],
+                   targets=("github:*",), ceiling="read_only")
+    drop(home, signed(founder, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        out = body.tick()["missions"][0]
+        receipts = json.dumps([r.payload for r in body.ledger.by_type("receipt")])
+    assert out["state"] == "ACHIEVED", out
+    assert any(f"Authorization: Bearer {token}" in h for h in heads)          # the credential was on the wire
+    assert all(h.startswith("CONNECT api.github.com:443 ") for h in seen)       # only through the proxy tunnel
+    journal_text = (home / "egress-journal.jsonl").read_text()
+    entries = [json.loads(line) for line in journal_text.splitlines()]
+    assert entries and all(e["identity"] == "github.pulls" and e["host"] == "api.github.com" for e in entries)
+    assert token not in journal_text and token not in receipts               # and nowhere it would be retained
+    server.close()
+    proxy.close()

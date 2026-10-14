@@ -458,8 +458,11 @@
     (HTTPS_PROXY; credentials never journaled), the 2026-09-30 negative evidence being that a direct connection bypassed
     the configured proxy. http.get runs as a confined component behind the body relay when the body is initialized with
     --confined-egress (TLS verified inside the confined child; tests/integration/test_greg_confined_egress.py, loopback
-    fake proxy and TLS server only). Not COMPLETE: github.pulls, browser capabilities and coding workers still run
-    unconfined, and confined egress is opt-in, so the second criterion does not hold machine-wide. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
+    fake proxy and TLS server only). github.pulls and brief.engineering read GitHub the same way (the credential travels
+    on the stdin of the confined child only, never in argv, environment, journal or receipt; chunked replies decoded;
+    header injection refused). Not COMPLETE: the browser capabilities still run unconfined; coding workers run in
+    bubblewrap namespaces but keep host networking for their provider instead of the relay; and confined egress is
+    opt-in, so the second criterion does not hold machine-wide. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
   implementation:
   - foundry/systems/segmentation.py
   - tools/offline_test.py

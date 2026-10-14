@@ -76,3 +76,17 @@ def test_fail_closed_without_confinement(tmp_path, monkeypatch):
 def test_registered_on_the_foundry_with_read_only_ops():
     mod = module(26)
     assert set(mod.QUERY_OPS) == {"policy", "journal"} and mod.APPLY_OPS == {}
+
+
+def test_a_confined_fetch_refuses_header_injection_before_launch(tmp_path):
+    from foundry.systems.segmentation import Journal, Relay, SegmentationError, confined_fetch
+    relay = Relay({"github.pulls": {"allow": [["api.github.com", 443]], "external": True}}, Journal(tmp_path / "j"))
+    for headers in ({"Authorization": "Bearer x\r\nX-Evil: 1"}, {"Host": "elsewhere.test"},
+                    {"Bad Name": "x"}, {"Transfer-Encoding": "chunked"}):
+        try:
+            confined_fetch("https://api.github.com/x", identity="github.pulls", relay=relay, cwd=tmp_path,
+                           max_bytes=100, headers=headers)
+            raise AssertionError(f"header accepted: {headers}")
+        except SegmentationError as exc:
+            assert "refused" in str(exc)
+    assert Journal(tmp_path / "j").read() == []                 # refused before any connection was asked for

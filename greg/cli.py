@@ -122,7 +122,7 @@ def _sop(home: str, args) -> dict:
     declared = record.get("workflow", {}).get("slots", {})
     try:
         spec = sop.instantiate(record, dict(_slot_value(declared, a) for a in args.set),
-                               horizon_days=args.horizon_days)
+                               horizon_days=args.horizon_days, venture=args.venture)
     except sop.SopError as exc:
         raise BodyError(str(exc)) from None
     summary = authority_summary(spec, [{"capability_id": cid, "consequence_class": m.consequence_class}
@@ -214,6 +214,9 @@ def main(argv=None) -> int:
             q.add_argument("--price", help="business-case: price, e.g. 250 or 249.99")
             q.add_argument("--currency", default="USD", help="business-case: three-letter currency code")
             q.add_argument("--acceptance", help="business-case: the acceptance terms, fixed before anything runs")
+            q.add_argument("--venture", help="business-case: the venture this case serves (short lowercase name)")
+            q.add_argument("--approve-writes", action="store_true",
+                           help="business-case: ask before GREG drafts the offer or writes the settlement")
             q.add_argument("--task", help="shared-work: the work, in your words")
             q.add_argument("--person", help="shared-work: the named person who will do it")
             q.add_argument("--relationship", choices=["contract", "employment"],
@@ -278,6 +281,15 @@ def main(argv=None) -> int:
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
     sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
+    tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
+    trs = tr.add_subparsers(dest="treasury_cmd", required=True)
+    trs.add_parser("books", help="per venture: verified revenue, obligations and reserves, reinvestable surplus, transfers")
+    trset = trs.add_parser("set", help="founder-signed: per-tier amounts for one venture and currency")
+    trset.add_argument("--venture", required=True); trset.add_argument("--currency", default="USD")
+    trset.add_argument("--tier", action="append", default=[], metavar="TIER=AMOUNT",
+                       help="a tier of capital/allocation-policy.yaml and its amount, e.g. taxes_and_binding_legal_obligations=300")
+    trset.add_argument("--key", required=True); trset.add_argument("--no-passphrase", action="store_true")
+    trset.add_argument("--ttl-hours", type=int, default=24)
     so = sub.add_parser("sop", help="standard operating procedures learned from verified closures (node N4)")
     sos = so.add_subparsers(dest="sop_cmd", required=True)
     sos.add_parser("list", help="proposed and ratified procedures, and whether each is compounding")
@@ -292,6 +304,7 @@ def main(argv=None) -> int:
     sou.add_argument("procedure_id")
     sou.add_argument("--set", action="append", default=[], metavar="SLOT=VALUE", help="a value for one slot")
     sou.add_argument("--horizon-days", type=float, default=None)
+    sou.add_argument("--venture", help="run the procedure for another venture (a capability transplant)")
     sou.add_argument("--print-only", action="store_true", help="show the mission without signing")
     for q in (sor, sou):
         q.add_argument("--key"); q.add_argument("--no-passphrase", action="store_true")
@@ -375,7 +388,8 @@ def main(argv=None) -> int:
                     spec = templates.business_case(case=args.case, buyer=args.buyer, offer=args.offer,
                                                    price=args.price, currency=args.currency,
                                                    acceptance=args.acceptance, statement=args.statement,
-                                                   workspace_root=Layout(home).workspace)
+                                                   workspace_root=Layout(home).workspace, venture=args.venture,
+                                                   approve_writes=args.approve_writes)
                 elif args.target == "shared-work":
                     missing = [f for f in ("task", "person", "relationship", "function", "acceptance")
                                if not getattr(args, f)]
@@ -488,6 +502,23 @@ def main(argv=None) -> int:
             else:
                 data = devpath.position(None)
             print(json.dumps(data, indent=1))
+        elif args.cmd == "treasury":
+            from greg import venture_books
+            if args.treasury_cmd == "books":
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    print(json.dumps({"books": venture_books.books(journal),
+                                      "transfers": venture_books.transfers(journal)}, indent=1))
+            else:
+                pairs = [t.partition("=") for t in args.tier]
+                if not pairs or any(not sep for _, sep, _ in pairs):
+                    raise BodyError("name each tier as --tier TIER=AMOUNT")
+                try:
+                    body = venture_books.validate_requirements({"venture": args.venture,
+                                                                "currency": args.currency.upper(),
+                                                                "requirements": {k: v for k, _, v in pairs}})
+                except venture_books.BooksError as exc:
+                    raise BodyError(str(exc)) from None
+                print(_drop(home, "TREASURY_REQUIREMENTS", body, args))
         elif args.cmd == "sop":
             print(json.dumps(_sop(home, args), indent=1))
         elif args.cmd == "presence":

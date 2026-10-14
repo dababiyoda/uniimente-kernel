@@ -324,6 +324,11 @@ class Body:
             return compute.enroll_node(self.journal, body, digest)
         if kind == "SOP_RATIFY":
             return sop.ratify(self.journal, body, digest)
+        if kind == "TREASURY_REQUIREMENTS":      # founder key only (DEVICE_KINDS excludes it)
+            from greg.venture_books import validate_requirements
+            declared = validate_requirements(body)
+            self.journal.record("treasury.requirements", {**declared, "command_digest": digest}, key=digest)
+            return {**declared, "money_moved": False, "authority_changed": False}
         if kind == "MODEL_ROUTE_SET":
             selection = models.validate_route_selection(body)
             self.journal.record("model.configured", {"selection": selection, "command_digest": digest}, key=digest)

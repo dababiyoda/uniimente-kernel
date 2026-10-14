@@ -324,6 +324,11 @@
       "maximum": 1000000,
       "description": "Founder-stated value of closing one failing check, used only to rank strategies against spend."
     },
+    "venture": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,40}$",
+      "description": "The venture this mission serves (a short name). Books and capability transfer are measured per venture (greg/venture_books.py); it grants nothing."
+    },
     "provenance": {
       "type": "object",
       "additionalProperties": false,
@@ -377,6 +382,19 @@
           "minLength": 1,
           "maxLength": 200,
           "description": "Digest of the founder-signed SOP_RATIFY command whose workflow produced this mission."
+        },
+        "inputs": {
+          "type": "object",
+          "maxProperties": 30,
+          "description": "The normalized inputs a template built this mission from; attribution that lets a ratified procedure ask only for them (greg/sop.py).",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "integer",
+              "number",
+              "boolean"
+            ]
+          }
         },
         "slots": {
           "type": "object",

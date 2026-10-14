@@ -112,9 +112,11 @@ def main():
     ap.add_argument('--freeze', action='store_true')
     ap.add_argument('--out', type=Path)
     args = ap.parse_args()
-    # v5 = the committed converged tree (v4 was written before the final greg/models.py merge and the
-    # protobuf pin in the same commit, so CI refused it); v1-v4 kept.
-    manifest = HERE / 'freeze-v5.json'
+    # v6 = the 2026-10-14 convergence tree: greg/cognition/seed_path.py gained the #159 ThinkingBudget
+    # enclosure when the Codex and Mind lines were merged (the only frozen input that changed); v5 =
+    # the committed converged Mind tree (v4 was written before the final greg/models.py merge and the
+    # protobuf pin in the same commit, so CI refused it); v1-v5 kept.
+    manifest = HERE / 'freeze-v6.json'
     frozen = inputs()
     if args.freeze:
         if manifest.exists():

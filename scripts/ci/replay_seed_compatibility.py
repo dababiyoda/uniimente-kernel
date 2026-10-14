@@ -20,17 +20,38 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+# sha256 of the loss() source segment in the run.py sealed by freeze-v3 (blob 7977b01).
+LOSS_V3_SHA256 = '80299c49024e58afa9d449763646c75be4d8e7bfc2b62e6a6eb966c1b412973a'
+
+
+def _sealed_loss_sha256(text):
+    import ast
+    for node in ast.parse(text).body:
+        if isinstance(node, ast.FunctionDef) and node.name == 'loss':
+            return hashlib.sha256(ast.get_source_segment(text, node).encode()).hexdigest()
+    return None
+
+
 def replay(root=ROOT):
     manifest = root / 'cortex/evaluation/seed_genome/freeze-v3.json'
     if digest(manifest) != '2d3037bc5c89a5117b448241a8869fde72ed5b1d96a89e4e7892a559ae6f8bcd':
         raise ValueError('FROZEN_EVALUATION_CHANGED: original manifest')
     frozen = json.loads(manifest.read_text())['inputs']
-    # The labels, scoring implementation and case generator remain sealed.
+    # The labels, scoring implementation and case generator remain sealed. The labels and the
+    # generator are sealed by file digest. run.py is sealed by what the replay relies on, its
+    # scoring: the SPEC must equal the sealed spec and loss() must be the v3 function byte for
+    # byte. Its import path, file list and freeze pointer changed when the seed module was renamed
+    # (greg/cognition.py -> greg/cognition/seed_path.py) and the runner was re-frozen (v4-v6).
     for name in ('cortex/evaluation/seed_genome/suite.json',
-                 'cortex/evaluation/seed_genome/run.py',
                  'cortex/evaluation/seed_genome/build.py'):
         if digest(root / name) != frozen['files'][name]:
             raise ValueError('FROZEN_EVALUATION_CHANGED: ' + name)
+    runner_text = (root / 'cortex/evaluation/seed_genome/run.py').read_text()
+    if _sealed_loss_sha256(runner_text) != LOSS_V3_SHA256:
+        raise ValueError('FROZEN_EVALUATION_CHANGED: cortex/evaluation/seed_genome/run.py loss()')
+    from cortex.evaluation.seed_genome.run import SPEC
+    if SPEC != frozen['scoring']:
+        raise ValueError('FROZEN_EVALUATION_CHANGED: cortex/evaluation/seed_genome/run.py SPEC')
     source_delta = {p: {'frozen': expected,
                        'current': digest(root/p) if (root/p).is_file() else None}
                     for p,expected in frozen['files'].items()

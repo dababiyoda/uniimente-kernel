@@ -40,8 +40,10 @@ import os
 from pathlib import Path
 import re
 import shutil
+import signal
 import subprocess
 import sys
+import tempfile
 import time
 
 from greg.capabilities import CapabilityError, InvocationContext, _inside, run_isolated
@@ -65,12 +67,83 @@ PROTECTED_SURFACES = (
 MODES = ("repository", "document")
 MAX_PATCH = 512 * 1024
 MAX_TAIL = 4000
+MAX_PROCESS_OUTPUT = 1024 * 1024
+# What this trunk applies to a worker process, stated so no receipt overstates it (Defect 6).
+# The OS confinement envelope from #157 (greg/worker_isolation.py: bubblewrap PID/user/IPC/UTS
+# namespaces, read-only root, private HOME, rlimits, no-new-privs) is not yet ported: it refuses
+# every worker on hosts without bubblewrap (including macOS), a tradeoff reserved for the founder.
+SUPERVISION = {"process": "own session; parent-death SIGKILL (Linux); process group killed on stop/timeout",
+               "cancellation": "founder STOP / SIGTERM stops the worker mid-run (polled every 50 ms)",
+               "output": f"stdout/stderr file-backed and capped at {1024 * 1024} bytes",
+               "environment": "scrubbed: no ambient keys, home, proxies or SDK configuration",
+               "filesystem": "NOT OS-confined: same UID as the body (see #157 worker_isolation)",
+               "network": "NOT isolated for the worker process (a remote provider needs it)",
+               "git_metadata": "restored from a trusted copy before GREG runs git in the clone"}
 ORDER_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]{0,60}$")
 REPORT_MARK = "WORK_REPORT:"
 
 
 class WorkerError(CapabilityError):
     pass
+
+
+class WorkerInterrupted(RuntimeError):
+    """A founder STOP (or SIGTERM) ended the worker mid-run. Deliberately NOT a CapabilityError:
+    partial work may exist, so the Gate records the dispatch as uncertain and the founder
+    reconciles; a refusal would let the mission try an alternative as if nothing had run."""
+
+
+def _kill_process_group(proc):
+    """Terminate the worker and its descendants (port of #157)."""
+    try:
+        group = os.getpgid(proc.pid)
+        if group != os.getpgrp():
+            os.killpg(group, signal.SIGKILL)
+        else:
+            proc.kill()
+    except ProcessLookupError:
+        pass
+    proc.wait()
+
+
+def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout, cwd, env,
+                   preexec_fn=None, close_fds=True, stop_check=None):
+    """Cancellable child supervision with file-backed, bounded stdout/stderr (port of #157).
+
+    ``subprocess.run`` with pipes and a blocking wait lets a worker exhaust the body's memory
+    and makes a founder STOP wait for the worker's own timeout (up to an hour). Here STOP is
+    polled every 50 ms and kills the worker's whole process group.
+    """
+    if stop_check is not None and stop_check():
+        raise WorkerInterrupted("stop requested before worker invocation; no worker process started")
+    with tempfile.TemporaryFile() as incoming, tempfile.TemporaryFile() as outgoing, \
+            tempfile.TemporaryFile() as errors:
+        if input is not None:
+            incoming.write(input.encode() if isinstance(input, str) else input)
+        incoming.seek(0)
+        proc = subprocess.Popen(argv, stdin=incoming, stdout=outgoing, stderr=errors, cwd=cwd, env=env,
+                                preexec_fn=preexec_fn, close_fds=close_fds, start_new_session=True)
+        deadline = time.monotonic() + timeout
+        try:
+            while proc.poll() is None:
+                if stop_check is not None and stop_check():
+                    raise WorkerInterrupted("stop requested; the worker's process group was terminated")
+                if time.monotonic() >= deadline:
+                    raise subprocess.TimeoutExpired(argv, timeout)
+                if max(os.fstat(outgoing.fileno()).st_size, os.fstat(errors.fileno()).st_size) > MAX_PROCESS_OUTPUT:
+                    raise WorkerError("worker exceeded the bounded stdout/stderr ceiling and was stopped")
+                time.sleep(0.05)
+            output = []
+            for stream in (outgoing, errors):
+                stream.seek(0)
+                value = stream.read(MAX_PROCESS_OUTPUT + 1)
+                if len(value) > MAX_PROCESS_OUTPUT:
+                    raise WorkerError("worker exceeded the bounded stdout/stderr ceiling and was stopped")
+                output.append(value.decode("utf-8", "replace") if text else value)
+            return subprocess.CompletedProcess(argv, proc.returncode, output[0], output[1])
+        finally:
+            if proc.poll() is None:
+                _kill_process_group(proc)
 
 
 def _sha(data: bytes) -> str:
@@ -251,7 +324,10 @@ def _die_with_body():
     macOS has no parent-death signal; there the stale lease plus reconciliation still prevent reuse of an
     unfinished run, but an orphan can continue until its own budget or timeout ends (stated limit).
     """
-    os.setsid()
+    try:
+        os.setsid()
+    except PermissionError:   # already a session leader (supervised_run starts a new session)
+        pass
     if sys.platform.startswith("linux"):
         import ctypes
         ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, 9)   # PR_SET_PDEATHSIG = 1, SIGKILL = 9
@@ -269,6 +345,20 @@ def _worker_env(workspace: Path) -> dict:
             "GIT_TERMINAL_PROMPT": "0", "PYTHONDONTWRITEBYTECODE": "1"}
 
 
+def _stop_kw(runner, stop_check) -> dict:
+    """Only the supervised runner takes ``stop_check``; an injected runner keeps its signature."""
+    return {"stop_check": stop_check} if runner is supervised_run else {}
+
+
+def _provider_run(provider, order, work, stop_check):
+    import inspect
+    try:
+        takes_stop = "stop_check" in inspect.signature(provider.run).parameters
+    except (TypeError, ValueError):
+        takes_stop = False
+    return provider.run(order, work, stop_check=stop_check) if takes_stop else provider.run(order, work)
+
+
 class ClaudeCodeWorker:
     """The Claude Code CLI as a headless, tool-using coding/research worker.
 
@@ -283,7 +373,7 @@ class ClaudeCodeWorker:
     DOC_TOOLS = ("Read", "Write", "Glob", "Grep")
     DENIED = ("WebFetch", "WebSearch", "Bash(git push:*)", "Bash(git commit:*)", "Bash(curl:*)", "Bash(wget:*)")
 
-    def __init__(self, binary: str | None = None, *, model: str | None = None, runner=subprocess.run):
+    def __init__(self, binary: str | None = None, *, model: str | None = None, runner=supervised_run):
         self.binary = binary or shutil.which("claude")
         self.model, self.runner = model, runner
 
@@ -301,14 +391,14 @@ class ClaudeCodeWorker:
             argv += ["--model", self.model]
         return argv
 
-    def run(self, order: WorkOrder, cwd: Path) -> WorkerReport:
+    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None) -> WorkerReport:
         if not self.binary:
             raise WorkerError("Claude Code CLI is not installed on this body")
         started = time.monotonic()
         try:
             proc = self.runner(self.argv(order), input=worker_prompt(order), capture_output=True, text=True,
                                timeout=order.timeout_seconds, cwd=cwd, env=_worker_env(cwd),
-                               preexec_fn=_die_with_body)
+                               preexec_fn=_die_with_body, **_stop_kw(self.runner, stop_check))
         except subprocess.TimeoutExpired:
             return WorkerReport(self.name, "claude-code", -1, time.monotonic() - started, None,
                                 error=f"worker exceeded {order.timeout_seconds}s and was stopped")
@@ -336,14 +426,14 @@ class CliAgentWorker:
     other worker's: a claim, never acceptance.
     """
 
-    def __init__(self, name: str, argv: list[str], *, stdin: bool = True, runner=subprocess.run):
+    def __init__(self, name: str, argv: list[str], *, stdin: bool = True, runner=supervised_run):
         self.name, self.template, self.stdin, self.runner = name, argv, stdin, runner
         self.binary = shutil.which(argv[0])
 
     def available(self) -> tuple[bool, str]:
         return (True, "") if self.binary else (False, f"{self.template[0]} is not installed on this body")
 
-    def run(self, order: WorkOrder, cwd: Path) -> WorkerReport:
+    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None) -> WorkerReport:
         if not self.binary:
             raise WorkerError(f"{self.template[0]} is not installed on this body")
         prompt = worker_prompt(order)
@@ -353,7 +443,8 @@ class CliAgentWorker:
         started = time.monotonic()
         try:
             proc = self.runner(argv, input=prompt if self.stdin else None, capture_output=True, text=True,
-                               timeout=order.timeout_seconds, cwd=cwd, env=_worker_env(cwd), preexec_fn=_die_with_body)
+                               timeout=order.timeout_seconds, cwd=cwd, env=_worker_env(cwd), preexec_fn=_die_with_body,
+                               **_stop_kw(self.runner, stop_check))
         except subprocess.TimeoutExpired:
             return WorkerReport(self.name, self.name, -1, time.monotonic() - started, None,
                                 error=f"worker exceeded {order.timeout_seconds}s and was stopped")
@@ -484,7 +575,24 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
              "commit", "--quiet", "--allow-empty", "-m", "inputs")
         base_commit = _git(work, "rev-parse", "HEAD").stdout.strip()
 
-    report = provider.run(order, work)
+    # The worker can write the clone's .git (hooks, config filters, fsmonitor). GREG runs git there
+    # next, so it restores the metadata it created before any worker code ran (port of #157).
+    trusted_metadata = root / "base.git"
+    shutil.copytree(work / ".git", trusted_metadata)
+    try:
+        report = _provider_run(provider, order, work, ctx.stop_check)
+    except WorkerInterrupted:
+        _note_interrupted(root, order)
+        raise
+    if ctx.stop_check is not None and ctx.stop_check():
+        _note_interrupted(root, order)
+        raise WorkerInterrupted("stop requested while the worker ran; its changes were not collected")
+    metadata = work / ".git"
+    if metadata.is_symlink() or metadata.is_file():
+        metadata.unlink()
+    elif metadata.exists():
+        shutil.rmtree(metadata)
+    shutil.copytree(trusted_metadata, metadata)
     names, patch = collect_changes(work, base_commit)
     findings = scope_findings(names, order.allowed_paths, order.acceptance.get("max_changed_files"))
     commands = acceptance_commands(order.acceptance, names) if order.mode == "repository" else []
@@ -526,7 +634,7 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
                    "cost_usd": spend["reported_usd"], "provider_cost_raw": spend["raw_provider_value"],
                    "duration_s": report.duration_s, "turns": report.turns,
                    "exit_code": report.exit_code, "error": report.error,
-                   "permission_denials": report.permission_denials},
+                   "permission_denials": report.permission_denials, "supervision": SUPERVISION},
         "spend": spend,
         "worker_claim": report.claim, "worker_summary_tail": report.summary[-1500:],
         "evidence_path": str(evidence_path), "acceptance_owner": "worker.appraise (independent)",
@@ -535,6 +643,13 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     evidence = {"order_digest": order.digest(), "status": status, "order": asdict(order), "summary": summary}
     evidence_path.write_text(json.dumps(evidence, indent=2, sort_keys=True, default=list))
     return summary
+
+
+def _note_interrupted(root: Path, order: WorkOrder) -> None:
+    """Retain what is known about an interrupted run; never an evidence.json (that means it finished)."""
+    (root / "interrupted.json").write_text(json.dumps({"order": order.order, "order_digest": order.digest(),
+                                                       "status": "INTERRUPTED", "changes_collected": False,
+                                                       "supervision": SUPERVISION}, indent=2, sort_keys=True))
 
 
 # -- independent appraisal ----------------------------------------------------------------

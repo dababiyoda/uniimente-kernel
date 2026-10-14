@@ -129,6 +129,11 @@ three re-runs ran. Timings come from this container and vary by machine; the tes
 - `budget.optional_step`, the value-priced variant, has no runtime caller. No optional step yet states its
   decision value in the unit of its cost.
 - The 30 s per-run ceiling and the 20 s default are design constants, not measured optima.
+- **On the convergence branch only:** a founder-attached Capability Genesis mechanism is now a required step on
+  the same budget. It is refused below the minimum step before its engine starts, its spend is measured, and an
+  overrun is reported as dissent. Its engine's wall limit is still set by the Genesis runner (`mechanisms.run`:
+  the CPU limit plus 20 s per call), not by what remains, so an overrun is disclosed rather than prevented.
+  Capping it needs a deadline on the runner contract that the Genesis lineage owns.
 
 ## Verification
 
@@ -159,5 +164,37 @@ three re-runs ran. Timings come from this container and vary by machine; the tes
   the #158 Mind lineage, and its CI is evidence for that lineage only. Run names such as "P6 v3" are cited here
   with their lineage and freeze commit, because the #155 lineage froze different evaluations under the same names
   and paths. None of this work renames, regenerates or supersedes a frozen artifact of either lineage.
+
+## Port onto the Track B convergence (2026-10-14)
+
+- **Where:** branch `claude/greg-mind-residuals-on-convergence-20261014`, stacked on #179
+  (`claude/greg-mind-lineage-convergence`, head `ccd38a2`). #179 converges the #155 and #158 Mind lineages on
+  #155's head, as the founder decided on 2026-10-14 (`INTENT-20261014-MIND-LINEAGE-CONVERGENCE`).
+- **Why:** #179 merged #158 at `047549f` but none of #161 or #163, so the converged Mind lacked these
+  capabilities. The founder's decision retains every useful distinct capability of both lineages.
+- **What was carried:** `git diff aaaeb94 81133d3`, the delta of #161 and #163 over the #158 commit both last
+  merged. `aaaeb94` is an ancestor of `ccd38a2`, so the patch carries only this work.
+- **Conflicts:** two, both additive, both resolved by keeping both sides:
+  - `greg/cli.py`: #179's `genomes`, `advantage` and `destinations` subcommands beside `package` and
+    `verify-package`. Both sides were run after the merge.
+  - `greg/cognition/verification.py`: the imports (`statistics` from #179, `time` from this work).
+- **A gap only the converged code has:** #179 carries #158's Capability Genesis route (`153232e`), in which a
+  founder-attached formed mechanism serves a residual geometry. Its engine ran outside the thinking budget:
+  never refused on a spent budget, never measured, never reported. It is now a required step on the same budget.
+  - **Reproduction:** the new test, `test_a_formed_mechanism_is_a_required_step_on_the_same_budget`, run on the
+    carried compiler before the fix, finds no budget record for the formed run (`ValueError: not enough values
+    to unpack (expected 1, got 0)`).
+  - **Test route:** the test drives the real founder-attached SciPy assignment mechanism.
+  - **Limit:** the engine's wall limit stays the Genesis runner's (see §12, Still open).
+  - **For #163:** the same gap appears once #163 merges the #158 frontier past `153232e`; the same change applies.
+- **Checks on this branch:**
+  - owned-source inventory: the refresh check reports nothing added or removed;
+  - focused tests: 188 passed, 3 skipped, plus the new formed-route test;
+  - `test_greg_mind_convergence.py`: 11 passed. The reconciliation map's coverage test diffs fixed lineage heads,
+    so carried files do not enter it;
+  - mutants (`port-mutants.log`): 24 of 24 caught. That is the 21 from #163 plus 3 for the formed-route gate.
+- **Lineage:** results on this branch are evidence for the converged branch at the cited commit only. Run names
+  are cited with their lineage and freeze commit. No frozen artifact of either lineage is renamed, regenerated or
+  superseded.
 
 Nothing was sent, attached, activated or merged. Authority delta: none. VEPMC: 0.

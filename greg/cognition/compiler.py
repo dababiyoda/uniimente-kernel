@@ -621,14 +621,18 @@ def _state(registry, method: str) -> str | None:
         return None
 
 
-def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool, receipt: dict):
+def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool, receipt: dict, budget):
     """Directive section 24, after the founder's attach: a mechanism Capability Genesis formed for a residual
     geometry (an installed open-source engine qualified on GREG's frozen oracle; ``greg.genesis``) serves it.
 
     Reached only when no catalogued method fits or can run. The founder's attach is the only way such a mechanism
     becomes usable; every answer is accepted only on GREG's own certificate, which shares no code with the engine.
     A refusal (input outside competence, a changed package, a failed certificate) is recorded and the deficit
-    stands. Returns ``(state, result)`` or None."""
+    stands. Returns ``(state, result)`` or None.
+
+    Each call is a required step on the decision's thinking budget: refused below the minimum step, measured, and
+    any overrun reported. The engine's own wall limit is set by the Genesis runner (``mechanisms.run``: its CPU
+    limit plus 20 s per call), not by the remaining budget, so an overrun is disclosed rather than prevented."""
     try:
         from greg import genesis
         formed = genesis.formed_cognition(registry, data, g.geometry)
@@ -645,12 +649,24 @@ def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool,
             return "FORMALIZATION_INCOMPLETE", None
         if body.get("execute") is False:
             return "PLANNED", None
+        step = f"formed:{cid}"
+        limit = budget.allot(step, required=True)
+        if limit is None:
+            receipt["abstentions"].append(budget.stops()[-1]["reason"])
+            receipt["method_or_composition_selected"] = receipt["selection_level"] = None
+            return "ABSTAIN", None
         try:
             answer = genesis.run_formed(manifest, adapter, data)
         except Exception as exc:
             receipt["abstentions"].append(f"{cid} refused: {exc}"[:300])
             receipt["method_or_composition_selected"] = receipt["selection_level"] = None
             continue
+        finally:
+            budget.done(step)
+            spent = budget.ledger[-1]["spent_s"]
+            if spent > limit:
+                receipt["dissent"].append(f"{cid} overran the thinking budget: {spent:.3g}s spent of {limit:.3g}s "
+                                          "allotted; the Genesis runner, not the budget, bounds its engine")
         receipt.update(proof_artifacts=[{"type": "genesis_mechanism_certificate",
                                          "evidence_type": spec["evidence_type"]}],
                        verification_method=f"GREG-owned certificate sharing no code with {answer.get('engine')}: "
@@ -918,7 +934,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                    and not r["superseded_by"].get("promoted_as")]
     high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
     if not eligible:
-        formed = _formed(registry, data, g, body, high, receipt)
+        formed = _formed(registry, data, g, body, high, receipt, budget)
         if formed is not None:
             return finish(*formed)
         if superseding:
@@ -968,7 +984,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             except Exception as exc:      # the optional ask never aborts routing; its failure is recorded
                 receipt["founder_attach_ask"] = {"state": "NOT_PREPARED", "why": f"{type(exc).__name__}: {exc}"[:300]}
     if not runnable:
-        formed = _formed(registry, data, g, body, high, receipt)
+        formed = _formed(registry, data, g, body, high, receipt, budget)
         if formed is not None:
             return finish(*formed)
         receipt["capability_deficit"] = {

@@ -145,3 +145,45 @@ def test_local_compute_is_measured_not_assumed_free(registry, monkeypatch):
     budget = compiled["resource_use"]["budget"]
     assert budget["total_source"].startswith("default") and budget["total_s"] == compiler.DEFAULT_BUDGET_S
     assert budget["cpu_s"] > 0 and budget["measured_step_s"]["count"] == compiled["resource_use"]["stages"] == 1
+
+
+def test_a_formed_mechanism_is_a_required_step_on_the_same_budget(tmp_path, monkeypatch):
+    # The Capability Genesis route (a founder-attached formed mechanism) runs an installed engine. It used to run
+    # outside the thinking budget: never refused when the budget was spent, never measured, never reported.
+    pytest.importorskip("scipy")
+    from greg import genesis as G
+    from greg import mechanisms
+    from greg.cognition import assignment as A
+    (tmp_path / "index.json").write_text('{"genomes": {}, "recipes": {}, "routing": {}}')
+    registry = cortex.registry_view()
+    c = next(c for c in G.CATALOG[A.FUNCTION]["candidates"] if c.distribution == "scipy")
+    card = mechanisms.card(c, A.FUNCTION, mechanisms.installed("scipy"))
+    manifest = G.Genesis(journal=None, registry=registry, workspace_root=tmp_path / "ws")._package_manifest(
+        A.FUNCTION, c, card, "budget-test")
+    registry.register(manifest, G.package_adapter(A.FUNCTION, c), state="ATTACHED")
+    step = f"formed:{manifest.capability_id}"
+    costs = [[7, 3, 9, 4], [2, 8, 6, 5], [6, 4, 3, 8]]
+
+    def assign(budget):
+        return compile_(registry, {"geometry": "optimization", "latency_budget": budget}, {"costs": costs})
+
+    r = assign(40)
+    assert r["state"] == "ANSWERED" and r["selection_level"] == "formed_by_capability_genesis"
+    [run] = r["resource_use"]["budget"]["steps"]
+    assert run["step"] == step and run["decision"] == "RUN" and run["spent_s"] > 0 and run["limit_s"] == 30
+    real, started = G.run_formed, []
+    monkeypatch.setattr(G, "run_formed", lambda *a, **k: started.append(a) or real(*a, **k))
+    spent = assign(MIN_STEP_SECONDS / 2)
+    assert spent["state"] == "ABSTAIN" and spent["result"] is None and started == []   # refused before the engine
+    assert spent["abstentions"][-1].startswith("BUDGET_EXHAUSTED")
+    clock = Clock()
+    monkeypatch.setattr(compiler, "CLOCK", clock)
+
+    def slow(*a, **k):
+        out = real(*a, **k)
+        clock.now += 50
+        return out
+    monkeypatch.setattr(G, "run_formed", slow)
+    late = assign(40)
+    assert late["state"] == "ANSWERED" and late["resource_use"]["budget"]["spent_s"] == 50
+    assert any("overran the thinking budget" in d for d in late["dissent"])            # disclosed, not hidden

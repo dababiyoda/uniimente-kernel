@@ -82,6 +82,19 @@ MUTANTS = [
  ('local compute recorded as free', 'greg/cognition/cortex.py',
   '"cpu_seconds": _cpu_delta(cpu_started),', '"cpu_seconds": 0.0,',
   'test_local_compute_is_measured_not_assumed_free', BUDGET),
+ # The Capability Genesis route on the convergence branch: a formed engine is a required step on the same budget.
+ ('a formed engine starts on a spent budget', 'greg/cognition/compiler.py',
+  '            receipt["method_or_composition_selected"] = receipt["selection_level"] = None\n'
+  '            return "ABSTAIN", None',
+  '            limit, budget._open = 0.0, {"step": step, "required": True, "decision": "RUN", "_at": budget.clock()}',
+  'test_a_formed_mechanism_is_a_required_step_on_the_same_budget', BUDGET),
+ ('a formed engine\'s spend goes unrecorded', 'greg/cognition/compiler.py',
+  '            budget.done(step)\n            spent = budget.ledger[-1]["spent_s"]',
+  '            budget._open = None\n            spent = 0.0',
+  'test_a_formed_mechanism_is_a_required_step_on_the_same_budget', BUDGET),
+ ('a formed engine\'s overrun is hidden', 'greg/cognition/compiler.py',
+  '            if spent > limit:', '            if False:',
+  'test_a_formed_mechanism_is_a_required_step_on_the_same_budget', BUDGET),
 ]
 
 

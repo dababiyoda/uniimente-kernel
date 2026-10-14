@@ -717,10 +717,10 @@ def test_game_solve_answers_near_degenerate_games_its_engines_can_solve(glop, mo
     """The self-check demands a duality gap of at most 1e-9 of the range, but both engines ran at their default
     feasibility tolerances (GLOP 1e-8, HiGHS 1e-7): on near-degenerate games both returned the same vertex with a
     gap of 1.2-2.5e-9, and the solver answered UNKNOWN on 7 of these 401 games, where the superseded game_minimax
-    answered and both verifiers accepted. Each engine (GLOP, or HiGHS alone as the fallback) now runs at
-    feasibility tolerances a tenth of the self-check's gap."""
+    answered and both verifiers accepted. Each engine's first attempt (GLOP, or HiGHS alone as the fallback) runs
+    at feasibility tolerances of 1e-10 and reaches the 1e-9 precision target on all of them."""
     if not glop:
-        monkeypatch.setattr(competitors, "_gl_glop", lambda b: None)
+        monkeypatch.setattr(competitors, "_gl_glop", lambda b, tolerance=None: None)
     for payoffs in _near_degenerate_games():
         data = {"payoffs": payoffs}
         out = competitors.game_lp_dual_solve(data, BUDGET)
@@ -728,6 +728,62 @@ def test_game_solve_answers_near_degenerate_games_its_engines_can_solve(glop, mo
         assert out["certificate"]["engine"] == ("OR-Tools GLOP" if glop else "SciPy HiGHS")
         assert all(competitors.game_lp_dual_verify(data, out["output"], out["certificate"]).values())
         assert solvers_b.game_score(data, None, out["output"])["category"] == "correct"
+
+
+def _tiny_entry_game(r, eps, size):
+    """Most payoffs within eps of 0, about one in ten uniform in [-1, 1]: near-degenerate after rescaling."""
+    m, n = r.randint(*size), r.randint(*size)
+    return [[(r.uniform(-1, 1) if r.random() < 0.1 else r.uniform(-eps, eps)) for _ in range(n)] for _ in range(m)]
+
+
+# Review seeds only: the 11 such games on which df122d0 answered UNKNOWN (seed 3415 drawn with salt 7; the others
+# with salts 0, 1 and 3 for eps 1e-9, 1e-8 and 1e-9 on 20-60 actions a side). 3415 and 3165 were answered before
+# df122d0 moved both engines to tight tolerances only.
+TINY_ENTRY_GAMES = [(341507, 1e-9, (2, 15))] + [
+    (seed * 1000 + salt, eps, size) for seed, salt, eps, size in
+    ((3025, 0, 1e-9, (2, 15)), (3053, 1, 1e-8, (2, 15)), (3074, 1, 1e-8, (2, 15)), (3096, 1, 1e-8, (2, 15)),
+     (3116, 1, 1e-8, (2, 15)), (3118, 1, 1e-8, (2, 15)), (3136, 0, 1e-9, (2, 15)), (3165, 3, 1e-9, (20, 60)),
+     (3242, 1, 1e-8, (2, 15)), (3308, 1, 1e-8, (2, 15)))]
+
+
+@pytest.mark.parametrize("seed,eps,size", TINY_ENTRY_GAMES)
+def test_game_solve_answers_every_near_degenerate_game_whose_engine_answers_the_verifier_accepts(seed, eps, size):
+    """A self-check gap of 1e-9 of the range, a hundredth of the verifier's tolerance, refused these games: every
+    engine left a gap of 1.0e-9 to 1e-8 (feasibility tolerances apply to the engines' scaled problems and bound
+    neither the gap nor success: at 1e-10 GLOP's gap grew on 3415 and 3165 and HiGHS failed outright), while the
+    superseded game_minimax, with no self-check, answered each one and every verifier accepted. The self-check is
+    now the verifier's own conditions at half their tolerances, each engine is tried at tight and then at default
+    tolerances, and 1e-9 is a precision target that picks among passing attempts, never a refusal threshold."""
+    data = {"payoffs": _tiny_entry_game(random.Random(seed), eps, size)}
+    superseded = solvers_b.game_solve(data, BUDGET)
+    assert superseded["status"] == "ANSWER"
+    assert all(competitors.game_lp_dual_verify(data, superseded["output"], superseded["certificate"]).values())
+    out = competitors.game_lp_dual_solve(data, BUDGET)
+    assert out["status"] == "ANSWER", out["missing"]
+    assert all(competitors.game_lp_dual_verify(data, out["output"], out["certificate"]).values())
+    assert all(solvers_b.game_verify(data, out["output"], out["certificate"]).values())
+    assert solvers_b.game_score(data, None, out["output"])["category"] == "correct"
+    payoffs = [p for row in data["payoffs"] for p in row]
+    spread = max(payoffs) - min(payoffs)
+    assert out["certificate"]["duality_gap"] <= competitors.GL_MARGIN * competitors.GL_TOL * spread
+
+
+def test_game_solve_never_answers_an_attempt_whose_supported_action_the_verifier_refutes(monkeypatch):
+    """The self-check covered only the duality gap. An attempt that plays a strictly worse row with probability
+    2e-6 (at least the verifier's support threshold) keeps the gap at 5e-10 of the range, within the old 1e-9
+    check, and was answered; the verifier refuted it (that row concedes 2.5e-4 less than the best response). The
+    self-check now applies every verifier condition, so the attempt is rejected and the next engine answers."""
+    data = {"payoffs": [[1.0, 0.0], [0.0, 1.0], [0.49975, 0.49975]]}
+    monkeypatch.setattr(competitors, "_gl_glop",
+                        lambda b, tolerance=None: ([0.5 - 1e-6, 0.5 - 1e-6, 2e-6], [0.5, 0.5]))
+    out = competitors.game_lp_dual_solve(data, BUDGET)
+    assert out["status"] == "ANSWER" and out["certificate"]["engine"] == "SciPy HiGHS"
+    assert out["certificate"]["engines_failed"] == ["OR-Tools GLOP"]
+    assert all(competitors.game_lp_dual_verify(data, out["output"], out["certificate"]).values())
+    monkeypatch.setattr(competitors, "_gl_highs", lambda b, tolerance=None: None)
+    out = competitors.game_lp_dual_solve(data, BUDGET)
+    assert out["status"] == "UNKNOWN" and out["output"] is None
+    assert "row action" in out["certificate"]["failures"]["OR-Tools GLOP"]
 
 
 @pytest.mark.parametrize("payoffs", ([[3.0]], [[1, 2, 3]], [[1], [2], [3]], [[5, 5], [5, 5]]))
@@ -739,12 +795,12 @@ def test_game_degenerate_shapes_verify(payoffs):
 
 def test_game_falls_back_to_highs_and_reports_unknown_when_no_engine_answers(monkeypatch):
     data, truth = dev("game_lp_dual", 3)
-    monkeypatch.setattr(competitors, "_gl_glop", lambda b: None)
+    monkeypatch.setattr(competitors, "_gl_glop", lambda b, tolerance=None: None)
     out = competitors.game_lp_dual_solve(data, BUDGET)
     assert out["certificate"]["engine"] == "SciPy HiGHS" and out["certificate"]["engines_failed"] == ["OR-Tools GLOP"]
     assert all(competitors.game_lp_dual_verify(data, out["output"], out["certificate"]).values())
     assert solvers_b.game_score(data, truth, out["output"])["category"] == "correct"
-    monkeypatch.setattr(competitors, "_gl_highs", lambda b: None)
+    monkeypatch.setattr(competitors, "_gl_highs", lambda b, tolerance=None: None)
     out = competitors.game_lp_dual_solve(data, BUDGET)
     assert out["status"] == "UNKNOWN" and out["output"] is None and out["missing"]
 

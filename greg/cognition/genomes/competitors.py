@@ -22,9 +22,9 @@ with code that shares nothing with the solver it checks.
   dual certificate: one potential per cell. The verifier checks the potential is feasible on every edge and
   tight on the route (LP duality for shortest paths); it never searches.
 * ``game_lp_dual`` (``zero_sum_lp_dual_equilibrium``): one LP (OR-Tools GLOP) whose dual values are the column
-  player's strategy, SciPy HiGHS as a fallback, both at feasibility tolerances tighter than the solver's own
-  duality-gap self-check. Verified by exact best responses: both strategies guarantee the same value and every
-  supported action is a best response.
+  player's strategy, SciPy HiGHS as a fallback, each at tight and then at its default feasibility tolerances. An
+  attempt is answered only when it passes the verifier's own conditions at half their tolerances. Verified by exact
+  best responses: both strategies guarantee the same value and every supported action is a best response.
 * ``pid_simopt`` (``pi_simopt_track``): PI gains by simulation-optimisation on the declared model (Nelder-Mead
   from AMIGO, then a compass polish that makes the answer locally optimal at a declared log step). Verified by
   an independent closed-loop simulator and state-space stability check: the declared-scenario cost and
@@ -309,15 +309,25 @@ def grid_networkx_bidirectional(data):
 
 
 # =================================================================== 3. zero-sum matrix game: one LP and its duals
-GL_GAP = 1e-9            # solver self-check before answering (fraction of the payoff range)
 GL_TOL = 1e-7            # verifier tolerance on bounds and equilibrium gap (fraction of the payoff range)
-GL_STATED = 0.5 * GL_TOL  # the stated value and bounds must carry the LP's to within this fraction of the range
 GL_SUPPORT = 1e-6        # an action with at least this probability must be a best response ...
 GL_SLACK = 1e-6          # ... to within this fraction of the payoff range
-# Both engines' primal and dual feasibility tolerances (absolute, on the game rescaled to [0, 1]). Their defaults
-# (GLOP 1e-8, HiGHS 1e-7) are looser than the self-check: on near-degenerate games both returned the same vertex
-# with a duality gap of 1.2-2.5e-9 of the range, and the solver answered UNKNOWN on games it can solve. A tenth of
-# the self-check's gap closes it.
+# The self-check before answering is the verifier's own conditions (duality gap, supported actions are best
+# responses, stated value and bounds) at GL_MARGIN of the verifier's tolerances, evaluated on the rescaled game. The
+# other half covers the difference between this arithmetic and the verifier's: rounding of order (m + n) x eps of
+# the range for normal floats, and the subnormal floor below. A fixed gap a hundredth of the verifier's (1e-9 before)
+# refused near-degenerate games whose engine answers the verifier accepts, while the superseded game_minimax, which
+# has no self-check, answered them.
+GL_MARGIN = 0.5
+GL_STATED = GL_MARGIN * GL_TOL  # the stated value and bounds must carry the LP's to within this fraction of the range
+# Precision target (fraction of the range), not a refusal threshold: the first attempt that passes the self-check
+# within it is answered at once; otherwise the passing attempt with the smallest gap is answered.
+GL_GAP = 1e-9
+# Tight primal and dual feasibility tolerances (absolute, on the game rescaled to [0, 1]) for each engine's first
+# attempt. They usually shrink the gap but bound neither the gap nor success, because the engines apply them to
+# their internally scaled problems: on some near-degenerate games GLOP's gap grows (6.3e-10 at its default, 1.08e-9
+# at 1e-10) and HiGHS fails outright (status 4). Each engine is then tried at its own defaults too, so a tight
+# attempt adds a candidate and never replaces the default one.
 GL_FEASIBILITY = 1e-10
 # Below sys.float_info.min floats are subnormal and rounding is absolute: every product or sum lands on a grid of
 # step 2^-1074 (about 4.9e-324), off by up to half a step whatever its size. A best response sums at most max(m, n)
@@ -327,15 +337,17 @@ GL_FEASIBILITY = 1e-10
 GL_GRID = 2.0 ** -1074
 
 
-def _gl_glop(b):
-    """Solver side: maximise v s.t. x B >= v, sum x = 1, x >= 0 (OR-Tools GLOP); y from the dual values."""
+def _gl_glop(b, tolerance=GL_FEASIBILITY):
+    """Solver side: maximise v s.t. x B >= v, sum x = 1, x >= 0 (OR-Tools GLOP); y from the dual values. Primal
+    and dual feasibility tolerances are ``tolerance``, or GLOP's own defaults when it is None."""
     from ortools.linear_solver import pywraplp
     m, n = b.shape
     lp = pywraplp.Solver.CreateSolver("GLOP")
     if lp is None:
         return None
-    lp.SetSolverSpecificParametersAsString(f"primal_feasibility_tolerance:{GL_FEASIBILITY:g} "
-                                           f"dual_feasibility_tolerance:{GL_FEASIBILITY:g}")
+    if tolerance is not None:
+        lp.SetSolverSpecificParametersAsString(f"primal_feasibility_tolerance:{tolerance:g} "
+                                               f"dual_feasibility_tolerance:{tolerance:g}")
     x = [lp.NumVar(0.0, lp.infinity(), f"x{i}") for i in range(m)]
     v = lp.NumVar(-lp.infinity(), lp.infinity(), "v")
     columns = []
@@ -355,15 +367,17 @@ def _gl_glop(b):
     return [xi.solution_value() for xi in x], [-row.dual_value() for row in columns]
 
 
-def _gl_highs(b):
-    """Solver-side fallback: the same LP in SciPy HiGHS, y from the inequality marginals."""
+def _gl_highs(b, tolerance=GL_FEASIBILITY):
+    """Solver-side fallback: the same LP in SciPy HiGHS, y from the inequality marginals; tolerances as for
+    ``_gl_glop``."""
     import numpy as np
     from scipy.optimize import linprog
     m, n = b.shape
+    options = {} if tolerance is None else {"primal_feasibility_tolerance": tolerance,
+                                            "dual_feasibility_tolerance": tolerance}
     res = linprog(np.r_[np.zeros(m), -1.0], A_ub=np.column_stack((-b.T, np.ones(n))), b_ub=np.zeros(n),
                   A_eq=np.r_[np.ones(m), 0.0][None, :], b_eq=[1.0], bounds=[(0, None)] * m + [(None, None)],
-                  method="highs", options={"primal_feasibility_tolerance": GL_FEASIBILITY,
-                                           "dual_feasibility_tolerance": GL_FEASIBILITY})
+                  method="highs", options=options)
     if not res.success:
         return None
     return list(res.x[:m]), [-q for q in res.ineqlin.marginals]
@@ -373,6 +387,24 @@ def _gl_distribution(vector):
     clipped = [max(0.0, float(p)) for p in vector]
     total = sum(clipped)
     return [p / total for p in clipped] if total > 0 else None
+
+
+def _gl_check(b, x, y):
+    """The verifier's best-response conditions on B (range 1) at GL_MARGIN of its tolerances. Returns the two
+    guarantees and the first condition that fails (None when all pass); the stated value is checked by the caller."""
+    import numpy as np
+    guaranteed, conceded = np.array(x) @ b, b @ np.array(y)
+    lower_b, upper_b = float(guaranteed.min()), float(conceded.max())
+    slack = GL_MARGIN * GL_SLACK
+    if upper_b - lower_b > GL_MARGIN * GL_TOL:
+        failed = "duality gap"
+    elif any(conceded[i] < upper_b - slack for i, p in enumerate(x) if p >= GL_SUPPORT):
+        failed = "a supported row action is not a best response"
+    elif any(guaranteed[j] > lower_b + slack for j, q in enumerate(y) if q >= GL_SUPPORT):
+        failed = "a supported column action is not a best response"
+    else:
+        failed = None
+    return lower_b, upper_b, failed
 
 
 def game_lp_dual_solve(data, budget):
@@ -396,16 +428,20 @@ def game_lp_dual_solve(data, budget):
     # runs on B too: on A, (x A).min() and (A y).max() carry rounding of order max|A| x eps rather than range x eps,
     # so a large common offset failed exact equilibria. Bounds and value are stated on A as min A + range x (on B).
     B = (A - low) / scale
-    tried, unstated = [], []
-    for name, engine in (("OR-Tools GLOP", _gl_glop), ("SciPy HiGHS", _gl_highs)):
-        solved = engine(B)
+    attempts = (("OR-Tools GLOP", _gl_glop, GL_FEASIBILITY), ("SciPy HiGHS", _gl_highs, GL_FEASIBILITY),
+                ("OR-Tools GLOP at its default tolerances", _gl_glop, None),
+                ("SciPy HiGHS at its default tolerances", _gl_highs, None))
+    tried, unstated, failures, best = [], [], {}, None
+    for name, engine, tolerance in attempts:
+        tried.append(name)
+        solved = engine(B, tolerance)
         x, y = (_gl_distribution(solved[0]), _gl_distribution(solved[1])) if solved else (None, None)
         if x is None or y is None:
-            tried.append(name)
+            failures[name] = "no strategies"
             continue
-        lower_b, upper_b = float((np.array(x) @ B).min()), float((B @ np.array(y)).max())
-        if upper_b - lower_b > GL_GAP:
-            tried.append(name)
+        lower_b, upper_b, failed = _gl_check(B, x, y)
+        if failed:
+            failures[name] = f"{failed} (gap {upper_b - lower_b:.3g} of the range)"
             continue
         middle_b = 0.5 * (lower_b + upper_b)
         lower, upper, value = low + scale * lower_b, low + scale * upper_b, low + scale * middle_b
@@ -414,14 +450,20 @@ def game_lp_dual_solve(data, budget):
         # declared verification tolerance.
         stated = max(abs((s - low) - scale * t) for s, t in ((lower, lower_b), (upper, upper_b), (value, middle_b)))
         if stated > GL_STATED * scale:
-            tried.append(name)
+            failures[name] = "value or bounds cannot be stated"
             unstated.append(stated / scale)
             continue
+        if best is None or upper_b - lower_b < best[0]:
+            best = (upper_b - lower_b, name, x, y, lower, upper, value)
+        if upper_b - lower_b <= GL_GAP:
+            break
+    if best is not None:
+        gap_b, name, x, y, lower, upper, value = best
         return answer({"row_strategy": x, "column_strategy": y, "value": value},
                       {"method": "one LP (row player's maximin) on the game rescaled to [0, 1]; the column "
                                  "player's strategy is the LP's dual solution", "engine": name,
-                       "engines_failed": tried, "lower_bound": lower, "upper_bound": upper,
-                       "duality_gap": scale * (upper_b - lower_b),
+                       "engines_failed": [t for t in tried if t != name], "lower_bound": lower, "upper_bound": upper,
+                       "duality_gap": scale * gap_b,
                        "row_support": [i for i, p in enumerate(x) if p > 1e-12],
                        "column_support": [j for j, q in enumerate(y) if q > 1e-12],
                        "model": "two-player finite zero-sum game; payoff validity is unverified"})
@@ -430,8 +472,9 @@ def game_lp_dual_solve(data, budget):
                              "payoff_minimum": low, "payoff_range": spread}, status="UNKNOWN",
                       missing=[f"the payoffs' common offset is so large against their range that no floating-point "
                                f"value or bound can be stated within {GL_STATED:g} of the range"])
-    return answer(None, {"engines_failed": tried}, status="UNKNOWN",
-                  missing=["no LP engine returned strategies within the duality-gap tolerance"])
+    return answer(None, {"engines_failed": tried, "failures": failures}, status="UNKNOWN",
+                  missing=[(f"no LP attempt returned strategies that pass the verifier's checks at {GL_MARGIN:g} of "
+                            "its tolerances")])
 
 
 def game_lp_dual_verify(data, output, certificate):
@@ -855,10 +898,13 @@ INTELLIGENCES = [
             native_representation="row player's payoff matrix", required_inputs=("payoffs",),
             output_contract={"row_strategy": "[float]", "column_strategy": "[float]", "value": "float"},
             algorithm_or_runtime="one LP (maximise v s.t. x B >= v, sum x = 1) on the matrix rescaled to [0, 1]; "
-                                 "column strategy = its dual solution; GLOP first, HiGHS if GLOP fails its own "
-                                 "duality-gap self-check; both engines run at feasibility tolerances a tenth of "
-                                 "that gap",
-            parameters={"self_check_gap": GL_GAP, "stated_tolerance": GL_STATED, "verify_tolerance": GL_TOL,
+                                 "column strategy = its dual solution; GLOP, then HiGHS, each at feasibility "
+                                 "tolerances of 1e-10 and then at its defaults; an attempt is answerable when it "
+                                 "passes the verifier's conditions at half their tolerances, and the first within "
+                                 "the precision target (or else the answerable one with the smallest gap) is "
+                                 "answered",
+            parameters={"precision_target_gap": GL_GAP, "self_check_margin": GL_MARGIN,
+                        "stated_tolerance": GL_STATED, "verify_tolerance": GL_TOL,
                         "support": GL_SUPPORT, "feasibility_tolerance": GL_FEASIBILITY,
                         "range_floor": "(m + n + 2) x 2^-1074 / verify_tolerance (about 5e-317 x (m + n + 2))"},
             composition_inputs=("payoff model",), composition_outputs=("row_strategy", "column_strategy", "value"),
@@ -871,10 +917,12 @@ INTELLIGENCES = [
             latency_profile="about 0.5 ms at the benchmark size on development seeds",
             known_strengths=("both players' strategies from one solve",
                              "scale- and offset-free (rescaled before the LP; self-checked on the rescaled game)",
-                             "an engine fallback before any UNKNOWN"),
+                             "four LP attempts (two engines, tight then default tolerances) before any UNKNOWN"),
             known_failure_modes=("payoffs supplied by the caller may be wrong", "assumes a strictly adversarial "
                                  "opponent; overly conservative against a non-adversary",
                                  "degenerate games have many equilibria; one is returned",
+                                 ("on near-degenerate games no attempt may reach the 1e-9 precision target; the "
+                                  "answered duality gap is then up to half the verification tolerance"),
                                  "UNKNOWN when payoffs agree to about nine significant figures (a float value cannot "
                                  "be stated within half the verification tolerance)",
                                  "UNKNOWN when the payoff range is below (m + n + 2) x 5e-317 (subnormal payoff "

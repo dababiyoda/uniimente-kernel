@@ -10,6 +10,7 @@ import copy
 import json
 import math
 from pathlib import Path
+import random
 import sys
 
 import pytest
@@ -123,6 +124,25 @@ def test_a_promotion_that_would_not_answer_the_promoted_familys_requests_is_refu
         library.check_promotions({**lib, "dp_knapsack": oracle})
 
 
+def test_a_promotion_the_compiler_would_not_route_is_refused():
+    """check_promotions accepted a composition-only promoted genome, and one reading a strict subset of the former's
+    inputs without producing its decision; the compiler then rejected the promoted row ('composition stage only',
+    'answers a relaxation') while the former still pointed at it, so the request ended in a bare deficit."""
+    import dataclasses
+    lib = dict(library.executables())
+    pid = lib["pid_simopt"]
+    fewer = tuple(k for k in pid.genome.required_inputs if k != "u0")
+    for bad in (dataclasses.replace(pid.genome, standalone_decision=False),
+                dataclasses.replace(pid.genome, required_inputs=fewer, output_contract={"gains": "dict"}),
+                dataclasses.replace(pid.genome, output_contract={k: v for k, v in pid.genome.output_contract.items()
+                                                                 if k != "kc"})):
+        with pytest.raises(GenomeError, match="invalid promotion"):
+            library.check_promotions({**lib, "pid_simopt": dataclasses.replace(pid, genome=bad)})
+    # fewer inputs and every former output: the same decision from less side information, which competes
+    library.check_promotions({**lib, "pid_simopt": dataclasses.replace(
+        pid, genome=dataclasses.replace(pid.genome, required_inputs=fewer))})
+
+
 def test_the_frozen_evidence_records_the_four_supersessions_this_module_answers():
     for family, path in FROZEN.items():
         results = json.loads((ROOT / path).read_text())["genomes"][family]
@@ -194,6 +214,17 @@ def test_competitors_answer_in_contract(family):
     data, truth = dev(family, 3)
     result = item(family).competitor(copy.deepcopy(data))
     assert item(family).score(data, truth, result)["category"] == "correct"
+
+
+@pytest.mark.parametrize("data", ({"grid": [[1, 0, 1]], "start": [0, 0], "goal": [0, 2]},
+                                  {"grid": [[1, 0, 1]], "start": [0, 2], "goal": [0, 0]}))
+def test_the_grid_competitor_reports_an_isolated_endpoint_unreachable(data):
+    """NetworkX's bidirectional Dijkstra raised NodeNotFound for an endpoint with no passable neighbour (it had no
+    edge, so it was never added), which an admission arm does not catch."""
+    result = competitors.grid_networkx_bidirectional(copy.deepcopy(data))
+    assert result == {"reachable": False, "moves": None, "cost": None}
+    assert solvers_b.astar_score(data, {"cost": None}, result)["category"] == "correct"
+    assert competitors.grid_dijkstra_solve(data, BUDGET)["output"]["reachable"] is False
 
 
 def test_solves_are_deterministic():
@@ -400,6 +431,38 @@ def test_a_game_strategy_with_mass_off_the_best_responses_is_refuted():
     assert not checks["row_support_are_best_responses"] and not checks["equilibrium_gap_zero"]
 
 
+# matching pennies at a common offset: (payoffs, exact value)
+OFFSET_GAMES = {"dollars": ([[1_000_000.01, 999_999.99], [999_999.99, 1_000_000.01]], 1_000_000.0),
+                "billion": ([[1e9, 1e9 - 2], [1e9 - 2, 1e9]], 1e9 - 1)}
+
+
+def _offset_forgery(payoffs):
+    """Both strategies scaled by 1 + 0.99e-9 (inside the accepted |sum - 1| <= 1e-9), value and bounds recomputed
+    on the raw payoffs: every guarantee moves by 0.99e-9 x the common offset, not by 0.99e-9 x the range."""
+    stretch, m, n = 1 + 0.99e-9, len(payoffs), len(payoffs[0])
+    x, y = [stretch / m] * m, [stretch / n] * n
+    lower = min(math.fsum(x[i] * payoffs[i][j] for i in range(m)) for j in range(n))
+    upper = max(math.fsum(payoffs[i][j] * y[j] for j in range(n)) for i in range(m))
+    return {"row_strategy": x, "column_strategy": y, "value": upper}, {"lower_bound": lower, "upper_bound": upper}
+
+
+@pytest.mark.parametrize("game", sorted(OFFSET_GAMES))
+def test_a_false_value_carried_by_a_common_payoff_offset_is_refuted(game):
+    payoffs, value = OFFSET_GAMES[game]
+    data, span = {"payoffs": payoffs}, max(map(max, payoffs)) - min(map(min, payoffs))
+    forged, certificate = _offset_forgery(payoffs)
+    assert abs(forged["value"] - value) >= 0.04 * span            # 4.95% (dollars), 49.5% (billion) of the range
+    checks = competitors.game_lp_dual_verify(data, forged, certificate)
+    assert checks["mixed_strategies"] and checks["equilibrium_gap_zero"]
+    assert not checks["value_between_bounds"] and not checks["certificate_bounds"], checks
+    run = library.run("game_lp_dual", data, {"latency_limit": 10})
+    assert not all(library.check("game_lp_dual", data, forged, {**run["proof"], "certificate": certificate}).values())
+    assert solvers_b.game_score(data, {"value": value}, forged)["category"] == "wrong"
+    assert run["status"] == "ANSWER" and abs(run["output"]["value"] - value) <= 1e-7 * span
+    assert all(library.check("game_lp_dual", data, run["output"], run["proof"]).values())
+    assert solvers_b.game_score(data, {"value": value}, run["output"])["category"] == "correct"
+
+
 # ------------------------------------------------------------------ invalid input, abstention, edge behaviour
 INVALID = {
     "knapsack_bnb": [{"values": [1, 2], "weights": [1], "capacity": 5}, {"values": [1], "weights": [-1], "capacity": 5},
@@ -551,12 +614,54 @@ def test_grid_answers_up_to_one_hundred_cells_a_side_within_the_worker_output_bo
     _json_clean(out["certificate"])
 
 
-@pytest.mark.parametrize("scale", (1e-9, 1e8))
-def test_game_solve_verifies_at_any_payoff_magnitude(scale):
-    payoffs = [[((3 * i + 5 * j) % 7 - 3) * scale for j in range(6)] for i in range(5)]
+@pytest.mark.parametrize("scale,offset", ((1e-9, 0.0), (1e8, 0.0), (1.0, 999_999_000.0), (0.01, 1e6),
+                                          (1.0, -999_999_000.0)))
+def test_game_solve_verifies_at_any_payoff_magnitude(scale, offset):
+    payoffs = [[((3 * i + 5 * j) % 7 - 3) * scale + offset for j in range(6)] for i in range(5)]
     out = competitors.game_lp_dual_solve({"payoffs": payoffs}, BUDGET)
     assert out["status"] == "ANSWER"
     assert all(competitors.game_lp_dual_verify({"payoffs": payoffs}, out["output"], out["certificate"]).values())
+
+
+def _offset_games(seed, payoff, count=60):
+    r, games = random.Random(seed), []                       # review seeds (3000-3999), never admission seeds
+    for _ in range(count):
+        m, n = r.randint(3, 10), r.randint(3, 10)
+        games.append([[payoff(r) for _ in range(n)] for _ in range(m)])
+    return games
+
+
+OFFSETS = {"cents_around_a_million": (3004, lambda r: 1_000_000.0 + r.randint(-1, 1) / 100),
+           "integers_near_a_billion": (3001, lambda r: 999_999_000.0 + r.randint(-10, 10))}
+
+
+@pytest.mark.parametrize("name", sorted(OFFSETS))
+def test_game_solve_answers_exact_equilibria_under_a_large_common_payoff_offset(name):
+    """The duality-gap self-check ran on the raw payoffs, whose rounding scales with the offset rather than the
+    range, and answered UNKNOWN on 37-44 of 200 such games although the LP on the rescaled game was exact."""
+    for payoffs in _offset_games(*OFFSETS[name]):
+        data = {"payoffs": payoffs}
+        out = competitors.game_lp_dual_solve(data, BUDGET)
+        assert out["status"] == "ANSWER", out["missing"]
+        assert all(competitors.game_lp_dual_verify(data, out["output"], out["certificate"]).values())
+        assert solvers_b.game_score(data, None, out["output"])["category"] == "correct"
+
+
+def test_game_solve_never_states_a_value_its_verifier_refutes_when_payoffs_agree_to_nine_figures():
+    """Payoffs 1e9 - k/8: a float near 1e9 holds about 1.2e-7, more than the verifier's 1e-7 x range allows; the
+    solver states only what it can carry and answers UNKNOWN, with the reason, otherwise."""
+    answered = unknown = 0
+    for payoffs in _offset_games(3012, lambda r: 1e9 - r.randint(0, 3) * 0.125):
+        data = {"payoffs": payoffs}
+        out = competitors.game_lp_dual_solve(data, BUDGET)
+        if out["status"] == "ANSWER":
+            answered += 1
+            assert all(competitors.game_lp_dual_verify(data, out["output"], out["certificate"]).values())
+        else:
+            unknown += 1
+            assert out["status"] == "UNKNOWN" and out["output"] is None and "offset" in out["missing"][0]
+            assert out["certificate"]["stated_error_over_range"] > competitors.GL_STATED
+    assert answered and unknown
 
 
 @pytest.mark.parametrize("payoffs", ([[3.0]], [[1, 2, 3]], [[1], [2], [3]], [[5, 5], [5, 5]]))
@@ -641,6 +746,25 @@ def test_a_withheld_promoted_genome_is_asked_for_on_the_attach_contract(supersed
     assert ask["authority_requested"]["consequence_class"] == "read_only" and asks.screen(ask) == []
     assert ask["evidence"]["promotes"]["superseded_method"] == "cognition.dp_knapsack"
     assert ask["evidence"]["promotes"]["supersession_evidence"] == f"{competitors.V1}#genomes.dp_knapsack"
+
+
+def test_a_promoted_genome_that_cannot_answer_leaves_the_mechanism_an_acquisition_candidate(superseded_index):
+    """The superseded row named its promoted genome (promoted_as) even when that row was itself rejected, which
+    removed the Genesis acquisition candidate and left a bare deficit. Here the promoted genome carries a
+    hypothetical frozen REJECTED status of its own."""
+    index = json.loads(superseded_index.read_text())
+    index["genomes"]["knapsack_bnb"] = {"status": "REJECTED", "version": library.genome("knapsack_bnb").version,
+                                        "evidence": "hypothetical"}
+    superseded_index.write_text(json.dumps(index))
+    data, _ = dev("knapsack_bnb", 1)
+    r = reason({"problem_id": "promoted-rejected", "compile": {"geometry": {"geometry": "optimization"}, "data": data,
+                                                               "execute": False}}, registry=registry_view())
+    rejected = {"method": "cognition.knapsack_bnb", "why": "frozen admission status REJECTED"}
+    assert r["state"] == "CAPABILITY_DEFICIT" and rejected in r["methods_rejected"]
+    [candidate] = [c for c in r["acquisition_candidates"] if c["supersedes"] == "cognition.dp_knapsack"]
+    assert candidate["mechanism"] == library.genome("dp_knapsack").competitor
+    assert candidate["promoted_genome_rejected"] == rejected
+    assert candidate["authority"].startswith("none")
 
 
 def test_operators_that_named_the_superseded_genomes_also_prefer_their_promotions():

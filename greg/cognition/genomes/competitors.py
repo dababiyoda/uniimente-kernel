@@ -295,7 +295,7 @@ def grid_networkx_bidirectional(data):
     import networkx as nx
     cells, rows, cols, s, t = solvers_b._grid(data)
     g = nx.DiGraph()
-    g.add_node(s)
+    g.add_nodes_from((s, t))          # an endpoint with no passable neighbour has no edge: unreachable, not absent
     g.add_weighted_edges_from((u, v, cells[v]) for u in range(len(cells)) if cells[u]
                               for v in solvers_b._neighbors(u, rows, cols) if cells[v])
     try:
@@ -310,6 +310,7 @@ def grid_networkx_bidirectional(data):
 # =================================================================== 3. zero-sum matrix game: one LP and its duals
 GL_GAP = 1e-9            # solver self-check before answering (fraction of the payoff range)
 GL_TOL = 1e-7            # verifier tolerance on bounds and equilibrium gap (fraction of the payoff range)
+GL_STATED = 0.5 * GL_TOL  # the stated value and bounds must carry the LP's to within this fraction of the range
 GL_SUPPORT = 1e-6        # an action with at least this probability must be a best response ...
 GL_SLACK = 1e-6          # ... to within this fraction of the payoff range
 
@@ -367,27 +368,45 @@ def game_lp_dual_solve(data, budget):
     A = np.array(a, dtype=float)
     low, spread = float(A.min()), float(A.max() - A.min())
     scale = spread if spread > 0 else 1.0
-    # B = (A - min A) / range lies in [0, 1]: strategies are invariant, and payoffs of any magnitude reach the LP
-    # with the same conditioning (GLOP's feasibility tolerances are absolute).
+    # B = (A - min A) / range lies in [0, 1]: strategies are invariant, and payoffs of any magnitude or common
+    # offset reach the LP with the same conditioning (GLOP's feasibility tolerances are absolute). The self-check
+    # runs on B too: on A, (x A).min() and (A y).max() carry rounding of order max|A| x eps rather than range x eps,
+    # so a large common offset failed exact equilibria. Bounds and value are stated on A as min A + range x (on B).
     B = (A - low) / scale
-    tried = []
+    tried, unstated = [], []
     for name, engine in (("OR-Tools GLOP", _gl_glop), ("SciPy HiGHS", _gl_highs)):
         solved = engine(B)
         x, y = (_gl_distribution(solved[0]), _gl_distribution(solved[1])) if solved else (None, None)
         if x is None or y is None:
             tried.append(name)
             continue
-        lower, upper = float((np.array(x) @ A).min()), float((A @ np.array(y)).max())
-        if upper - lower <= GL_GAP * scale:
-            return answer({"row_strategy": x, "column_strategy": y, "value": 0.5 * (lower + upper)},
-                          {"method": "one LP (row player's maximin) on the game rescaled to [0, 1]; the column "
-                                     "player's strategy is the LP's dual solution", "engine": name,
-                           "engines_failed": tried, "lower_bound": lower, "upper_bound": upper,
-                           "duality_gap": upper - lower,
-                           "row_support": [i for i, p in enumerate(x) if p > 1e-12],
-                           "column_support": [j for j, q in enumerate(y) if q > 1e-12],
-                           "model": "two-player finite zero-sum game; payoff validity is unverified"})
-        tried.append(name)
+        lower_b, upper_b = float((np.array(x) @ B).min()), float((B @ np.array(y)).max())
+        if upper_b - lower_b > GL_GAP:
+            tried.append(name)
+            continue
+        middle_b = 0.5 * (lower_b + upper_b)
+        lower, upper, value = low + scale * lower_b, low + scale * upper_b, low + scale * middle_b
+        # When the payoffs agree to about nine significant figures, a float near their offset holds fewer digits
+        # than their range needs: never state a value or bound that misses the LP's by a material part of the
+        # declared verification tolerance.
+        stated = max(abs((s - low) - scale * t) for s, t in ((lower, lower_b), (upper, upper_b), (value, middle_b)))
+        if stated > GL_STATED * scale:
+            tried.append(name)
+            unstated.append(stated / scale)
+            continue
+        return answer({"row_strategy": x, "column_strategy": y, "value": value},
+                      {"method": "one LP (row player's maximin) on the game rescaled to [0, 1]; the column "
+                                 "player's strategy is the LP's dual solution", "engine": name,
+                       "engines_failed": tried, "lower_bound": lower, "upper_bound": upper,
+                       "duality_gap": scale * (upper_b - lower_b),
+                       "row_support": [i for i, p in enumerate(x) if p > 1e-12],
+                       "column_support": [j for j, q in enumerate(y) if q > 1e-12],
+                       "model": "two-player finite zero-sum game; payoff validity is unverified"})
+    if unstated:
+        return answer(None, {"engines_failed": tried, "stated_error_over_range": max(unstated),
+                             "payoff_minimum": low, "payoff_range": spread}, status="UNKNOWN",
+                      missing=[f"the payoffs' common offset is so large against their range that no floating-point "
+                               f"value or bound can be stated within {GL_STATED:g} of the range"])
     return answer(None, {"engines_failed": tried}, status="UNKNOWN",
                   missing=["no LP engine returned strategies within the duality-gap tolerance"])
 
@@ -397,6 +416,9 @@ def game_lp_dual_verify(data, output, certificate):
     row strategy guarantees min_j (x A)_j, the column strategy concedes at most max_i (A y)_i; the two must meet
     (zero duality gap), bracket the claimed value and match the certificate, and every action played with
     probability >= 1e-6 must be a best response to the opponent's strategy (complementary slackness).
+    Every guarantee, and every claimed value and bound, is measured above the smallest payoff (on A - min A): a
+    strategy whose mass is off 1 by d (|d| <= 1e-9 is accepted) then moves a guarantee by at most d x the payoff
+    range, never by d x the payoffs' common offset, which could carry a false value through every check.
     Not verified: that the payoff matrix describes the real interaction, or that the opponent is adversarial."""
     a, general = solvers_b._game(data)
     certificate = _cert(certificate)
@@ -410,18 +432,25 @@ def game_lp_dual_verify(data, output, certificate):
                 or abs(math.fsum(vec) - 1.0) > 1e-9):
             return {"mixed_strategies": False}
     flat = [p for row in a for p in row]
-    span = (max(flat) - min(flat)) or 1.0
-    guaranteed = [math.fsum(x[i] * a[i][j] for i in range(m)) for j in range(n)]     # column best responses
-    conceded = [math.fsum(a[i][j] * y[j] for j in range(n)) for i in range(m)]       # row best responses
+    low = min(flat)
+    span = (max(flat) - low) or 1.0
+    above = [[p - low for p in row] for row in a]
+    guaranteed = [math.fsum(x[i] * above[i][j] for i in range(m)) for j in range(n)]     # column best responses
+    conceded = [math.fsum(above[i][j] * y[j] for j in range(n)) for i in range(m)]       # row best responses
     lower, upper = min(guaranteed), max(conceded)
     tol = GL_TOL * span
     value = output.get("value")
 
-    def near(claim, actual):
-        return type(claim) in (int, float) and math.isfinite(claim) and abs(claim - actual) <= tol
+    def claimed(number):
+        """A claimed payoff measured above the smallest payoff, or None if it is not a finite number."""
+        return number - low if type(number) in (int, float) and math.isfinite(number) else None
+
+    def near(number, actual):
+        stated = claimed(number)
+        return stated is not None and abs(stated - actual) <= tol
+    stated_value = claimed(value)
     return {"mixed_strategies": True, "equilibrium_gap_zero": upper - lower <= tol,
-            "value_between_bounds": type(value) in (int, float) and math.isfinite(value)
-            and lower - tol <= value <= upper + tol,
+            "value_between_bounds": stated_value is not None and lower - tol <= stated_value <= upper + tol,
             "row_support_are_best_responses": all(conceded[i] >= upper - GL_SLACK * span
                                                   for i in range(m) if x[i] >= GL_SUPPORT),
             "column_support_are_best_responses": all(guaranteed[j] <= lower + GL_SLACK * span
@@ -805,20 +834,24 @@ INTELLIGENCES = [
             algorithm_or_runtime="one LP (maximise v s.t. x B >= v, sum x = 1) on the matrix rescaled to [0, 1]; "
                                  "column strategy = its dual solution; GLOP first, HiGHS if GLOP fails its own "
                                  "duality-gap self-check",
-            parameters={"self_check_gap": GL_GAP, "verify_tolerance": GL_TOL, "support": GL_SUPPORT},
+            parameters={"self_check_gap": GL_GAP, "stated_tolerance": GL_STATED, "verify_tolerance": GL_TOL,
+                        "support": GL_SUPPORT},
             composition_inputs=("payoff model",), composition_outputs=("row_strategy", "column_strategy", "value"),
             evidence_type="optimality_certificate",
-            verification_method="exact best responses with compensated sums: zero duality gap between the two "
-                                "strategies' guarantees, value bracketed, every supported action a best response, "
-                                "certificate bounds recomputed",
+            verification_method="exact best responses with compensated sums, measured above the smallest payoff: "
+                                "zero duality gap between the two strategies' guarantees, value bracketed, every "
+                                "supported action a best response, certificate bounds recomputed",
             confidence_semantics="exact equilibrium of the supplied matrix (floating point, relative tolerance 1e-7)",
             resource_profile="one LP with m + 1 variables and n + 1 rows (m, n <= 100)",
             latency_profile="about 0.5 ms at the benchmark size on development seeds",
-            known_strengths=("both players' strategies from one solve", "scale-free (rescaled before the LP)",
+            known_strengths=("both players' strategies from one solve",
+                             "scale- and offset-free (rescaled before the LP; self-checked on the rescaled game)",
                              "an engine fallback before any UNKNOWN"),
             known_failure_modes=("payoffs supplied by the caller may be wrong", "assumes a strictly adversarial "
                                  "opponent; overly conservative against a non-adversary",
-                                 "degenerate games have many equilibria; one is returned"),
+                                 "degenerate games have many equilibria; one is returned",
+                                 "UNKNOWN when payoffs agree to about nine significant figures (a float value cannot "
+                                 "be stated within half the verification tolerance)"),
             counterindications=("general-sum games", "sequential games with private information"),
             abstention_conditions=("column_payoffs differ from the negated payoffs",),
             benchmark_suite="game_minimax's suite: random, cyclic (RPS-like) and planted-saddle integer games up to "

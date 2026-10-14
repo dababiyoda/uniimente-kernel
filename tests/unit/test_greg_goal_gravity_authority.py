@@ -379,3 +379,35 @@ def test_a_foreign_receipt_never_makes_a_forged_observation_evidence(world, fast
         c = loop.world.belief(MID, "c")                       # a genuine read stays attributed evidence
         assert c.value is True and c.trust_level == "attributed"
     assert world.registry().state(gid).active_node_id == "ship"
+
+
+# -- founder surfaces say who stopped a goal ----------------------------------------------------------------
+
+def test_only_a_signed_stop_is_shown_as_stopped_by_you(world, fast):
+    from greg.console import Console, render_home
+    gid, _ = world.start()
+    world.tick(2)
+    with world.body() as b:                                  # an unsigned, in-process stop: narrowing, not the founder
+        gg.binding_for(b).loop.registry.record_preference(gid, kind="stop_pushing", value=True, now=world.clock.now,
+                                                          actor="some in-process module", reason="unsigned")
+    world.tick(2)
+    row = status(world.home)["gravity"]["goals"][0]
+    assert row["status"] == "paused" and row["stopped_by_founder"] is False
+    assert row["stop_label"] == "stopped by an unsigned record, not by you"
+    page = render_home(Console(world.home)).decode()
+    assert "stopped by you" not in page and "stopped by an unsigned record" in page
+    world.submit("GOAL_CONTROL", {"goal_id": gid, "kind": "stop_pushing", "value": True, "reason": "quiet"})
+    world.tick()
+    row = status(world.home)["gravity"]["goals"][0]
+    assert row["stopped_by_founder"] is True and row["stop_label"] == "stopped by you"
+    assert "stopped by you" in render_home(Console(world.home)).decode()
+
+
+def test_a_quarantined_goal_is_labelled_as_quarantine_not_as_your_stop(world, fast):
+    world.start()
+    body = GOAL(intent="signed for a different body")
+    env = sign_command(world.key, "GOAL", body, body_id="some-other-body", now=world.clock.now)
+    sid = _smuggle_acceptance(world, env)
+    world.tick(2)
+    row = next(g for g in world.projection()["unadmitted"] if g["goal_id"] == sid)
+    assert row["stopped_by_founder"] is False and row["stop_label"].startswith("quarantined by admission")

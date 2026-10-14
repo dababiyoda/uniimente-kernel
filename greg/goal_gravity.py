@@ -924,6 +924,21 @@ def _goal_requests(book: MissionBook, gid: str, spec: GoalSpec) -> list[str]:
             or (r.get("kind") == "APPROVAL" and (r.get("mission_id"), r.get("action_id")) in links)]
 
 
+def _stop_label(facts: FounderFacts, gid: str, status: str) -> str | None:
+    """Who stopped a paused goal, as the founder surfaces say it. Only a signed GOAL_CONTROL is "you"."""
+    if status != "paused":
+        return None
+    if gid not in facts.admitted:
+        return "quarantined by admission (no founder-signed GOAL admits it here)"
+    stop = facts.stopped(gid)
+    if stop is None:
+        return "stopped by an unsigned record, not by you"
+    if stop["kind"] == "change_goal":
+        return "paused by you for a change"
+    return "stopped by you" if stop["principal"] == "founder" else \
+        f"stopped by your device ({stop['principal'].split(':', 1)[-1]})"
+
+
 def projection(journal, *, closure: bool = True) -> dict:
     """Every goal on this body, read-only (safe while the body runs). Labels say what is and is not claimed."""
     reg = GoalRegistry(ledger=journal.ledger, quarantine_unhydratable=True)
@@ -933,9 +948,11 @@ def projection(journal, *, closure: bool = True) -> dict:
     goals, unadmitted = [], []
     for gid in reg.goals():
         spec, state = reg.get(gid), reg.state(gid)
+        stop = facts.stopped(gid) if state.status == "paused" else None
         row = {"goal_id": gid, "founder_intent": spec.founder_intent, "desired_state": spec.desired_state,
                "priority": reg.effective_priority(gid), "status": state.status,
-               "stopped_by_founder": bool(state.preferences.get("stop_pushing")) and gid in ok,
+               "stopped_by_founder": stop is not None, "stop_label": _stop_label(facts, gid, state.status),
+               "stop_command": stop["by"] if stop else None,
                "active_node": state.active_node_id, "active_gate": state.active_gate, "sbm": state.sbm,
                "blockers": list(state.blockers), "last_woken_at": state.last_woken_at, "wake_reason": state.wake_reason,
                "missions": _mission_rows(book, spec.authority.get("missions", [])),
@@ -975,9 +992,9 @@ def status_summary(journal) -> dict:
         return {"label": label, "goals": [], "unadmitted": 0, "execution_authority": "none"}
     view = projection(journal, closure=False)
     return {"label": label, "execution_authority": "none", "completion_tier": view["completion_tier"],
-            "goals": [{k: g[k] for k in ("goal_id", "desired_state", "status", "stopped_by_founder", "active_gate",
-                                         "open_requests")} | {"missions": [m["mission_id"] for m in g["missions"]]}
-                      for g in view["goals"]],
+            "goals": [{k: g[k] for k in ("goal_id", "desired_state", "status", "stopped_by_founder", "stop_label",
+                                         "active_gate", "open_requests")}
+                      | {"missions": [m["mission_id"] for m in g["missions"]]} for g in view["goals"]],
             "unadmitted": len(view["unadmitted"]), "faults": len(view["faults"])}
 
 

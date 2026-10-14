@@ -453,7 +453,7 @@ def home_parts(console: Console) -> dict:
     if gravity:
         rows = "".join(
             f"<tr><td>{_e(g['desired_state'])}<br><span class=muted>{_e(g['goal_id'][:23])}</span></td>"
-            f"<td>{'stopped by you' if g['stopped_by_founder'] else _e(g['status'])}</td>"
+            f"<td>{_e(g.get('stop_label') or g['status'])}</td>"
             f"<td>{_e(g['active_gate'] or '')}</td><td>{_e(', '.join(g['missions']))}</td>"
             f"<td>{len(g['open_requests'])}</td></tr>" for g in gravity)
         add("gravity", "<section><h2>Persistent goals</h2><table><tr><th>Goal</th><th>State</th><th>Active gate</th>"

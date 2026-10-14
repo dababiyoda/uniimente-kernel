@@ -80,7 +80,7 @@ async function refresh() {
     $("goals").replaceChildren(...(status.missions || status.goals).map((g) => el("li", `${g.mission_id}: ${g.achieved ? "achieved" : g.closure}`)));
     // Persistent Goal Gravity goals (founder-signed GOAL commands): read-only here; the missions act.
     $("gravity").replaceChildren(...(status.gravity?.goals || []).map((g) =>
-      el("li", `${g.desired_state} — ${g.stopped_by_founder ? "stopped by you" : g.status}` +
+      el("li", `${g.desired_state} — ${g.stop_label || g.status}` +
         (g.open_requests.length ? ` · ${g.open_requests.length} decision(s) above` : "") +
         ` · missions ${g.missions.join(", ")}`)));
     $("cognition").replaceChildren(...(status.cognition?.receipts || []).map((r) => {

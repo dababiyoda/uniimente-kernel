@@ -76,7 +76,9 @@ def test_dormant_goals_wake_only_as_a_founder_proposal(tmp_path):
     goals = gravity._goals(journal, "m:claims")
     assert [g["mission_id"] for g in goals["paused"]] == ["m:claims"] and not goals["active"]
     assert goals["dormant"] == goals["paused"]          # legacy alias kept for older readers (ADR-GOAL-GRAVITY-002)
-    assert goals["wake"]["automatic_resume"] is False and goals["wake"]["was"] == "paused"
+    assert goals["wake"]["automatic_resume"] is False and goals["wake"]["was"] == "dormant"   # #158 contract
+    assert goals["wake"]["was_label"] == "paused" and goals["named_mission_state"] == "dormant"
+    assert goals["named_mission_label"] == "paused"
     assert gravity._goals(journal, "m:unknown")["named_mission_state"] == "UNKNOWN_TO_THIS_LEDGER"
     assert gravity._goals(None, "m:claims")["wake"] is None
 

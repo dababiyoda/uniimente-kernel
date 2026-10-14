@@ -16,7 +16,7 @@ Founder directive 2026-10-07, section 19. The loop it implements toward:
            HOLD                  no defensible route: retain the current state
       -> receipt; the asset the cycle should leave; the next bottleneck.
 
-Paused goals stay preserved: a situation naming a founder-paused or blocked mission yields a wake proposal
+Dormant (founder-paused) goals stay preserved: a situation naming a paused or blocked mission yields a wake proposal
 (the founder's lifecycle decision), never an automatic resume. The objective is option density (earlier
 sight, prepared resources, lawful timing), never a claim of controlling luck. This module writes no
 ledger event, executes nothing, contacts no one, spends nothing and creates no authority.
@@ -94,15 +94,20 @@ def validate(situation: dict, now: datetime | None = None) -> dict:
 
 
 LABELS = {"paused": "founder-paused missions (a signed LIFECYCLE pause); only the founder resumes them",
-          "dormant": "legacy alias of 'paused' kept for older readers; in egregore Goal Gravity 'dormant' means "
-                     "a sleeping, wakeable goal, which a founder-paused mission is not"}
+          "dormant": "the #158 contract's name for the same founder-paused missions, preserved for existing "
+                     "readers in the 'dormant' list, wake.was and named_mission_state; 'paused' (wake.was_label, "
+                     "named_mission_label) is the unambiguous label, because in egregore Goal Gravity 'dormant' "
+                     "means a sleeping, wakeable goal, which a founder-paused mission is not"}
+LEGACY = {"paused": "dormant"}   # label -> the preserved #158 value
 
 
 def _goals(journal, mission_id: str | None) -> dict:
     """Active, founder-paused and blocked missions from the canonical journal; read-only.
 
-    Founder-paused missions are reported as ``paused``; ``dormant`` is kept as a legacy alias of the same
-    list, because in egregore Goal Gravity ``dormant`` means a sleeping goal that evidence may wake."""
+    The #158 contract is preserved: founder-paused missions are listed under ``dormant`` and reported as
+    ``dormant`` in ``wake.was`` and ``named_mission_state``. The label ``paused`` is added alongside (the
+    ``paused`` list, ``wake.was_label``, ``named_mission_label``), because in egregore Goal Gravity
+    ``dormant`` means a sleeping goal that evidence may wake."""
     if journal is None:
         return {"source": "no body ledger here", "active": [], "paused": [], "dormant": [], "blocked": [],
                 "wake": None, "labels": LABELS}
@@ -118,10 +123,11 @@ def _goals(journal, mission_id: str | None) -> dict:
     if mission_id:
         state = next((k for k, v in rows.items() for r in v if r["mission_id"] == mission_id), None)
         if state in ("paused", "blocked"):
-            wake = {"mission_id": mission_id, "was": state,
+            wake = {"mission_id": mission_id, "was": LEGACY.get(state, state), "was_label": state,
                     "proposal": "the situation bears on this goal; resuming it is the founder's signed lifecycle "
                                 "decision", "automatic_resume": False}
-        rows["named_mission_state"] = state or "UNKNOWN_TO_THIS_LEDGER"
+        rows["named_mission_state"] = LEGACY.get(state, state) if state else "UNKNOWN_TO_THIS_LEDGER"
+        rows["named_mission_label"] = state or "UNKNOWN_TO_THIS_LEDGER"
     return {"source": "greg.missions.MissionBook projection", **rows, "dormant": rows["paused"], "wake": wake,
             "labels": LABELS}
 

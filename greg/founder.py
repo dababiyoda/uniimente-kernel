@@ -70,6 +70,28 @@ class FounderAuthError(ValueError):
     """Unauthenticated, replayed, expired or malformed founder interaction."""
 
 
+def spent_nonce(event_type: str, payload) -> str | None:
+    """The nonce one retained command record spends: the one predicate ``Body`` (replay refusal) and the
+    goal tick (``greg.goal_gravity.founder_facts``) share.
+
+    An accepted command spends its own top-level ``nonce``; a verified-then-rejected command spends its
+    ``consumed`` nonce. A nonce named anywhere else in a record (an ``envelope`` field, say) spends
+    nothing. ``Body`` counts every such record (fail closed: a forged record can only make it refuse a
+    command, which the founder sees as REJECTED); the goal tick counts an accepted record's nonce only
+    when that record verified at its ledger position, so a forged record can never hide a signed
+    command the body applied."""
+    if not isinstance(payload, dict):
+        return None
+    if event_type == "greg.command.accepted":
+        nonce = payload.get("nonce")
+    elif event_type == "greg.command.rejected":
+        consumed = payload.get("consumed")
+        nonce = consumed.get("nonce") if isinstance(consumed, dict) else None
+    else:
+        return None
+    return nonce if isinstance(nonce, str) else None
+
+
 def stamp(value: datetime) -> str:
     if value.tzinfo is None:
         raise FounderAuthError("timezone-aware clock required")

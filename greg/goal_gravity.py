@@ -48,9 +48,10 @@ from events.spine import EventError
 from greg import asks, dataplane, path as devpath
 from greg.authority import PRINCIPAL, AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityManifest
-from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes
+from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes, spent_nonce
 from greg.journal import SOURCE, iso
-from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, pursued_checks, strategy_scope
+from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, pursued_checks, \
+    strategy_scope
 from provenance.ledger import sha256_json
 
 SCHEMA = "greg-goal-gravity-binding/1"
@@ -74,6 +75,11 @@ CLOSED = ("paused", "revoked", "superseded", "completed")
 ADMISSION_ACTOR = "greg goal-gravity admission check"
 PULL_MIN_INTERVAL = timedelta(seconds=60)   # a goal pulls one mission's observation at most once a minute
 PATH_EVENTS = ("greg.mission.achieved", "greg.mission.appraised", "greg.deficit.resolved")
+# What an approve of a goal's ask means (the mission engine's own APPROVAL semantics, unchanged by the binding).
+APPROVE_MEANS = ("standing approval of this exact scope for the mission's lifetime: the mission runs it whenever "
+                 "its own loop selects it again (for example after the check regresses), with no new ask, until the "
+                 "mission closes or its signed horizon passes; to end it sooner, exclude the strategy with a signed "
+                 "critique or pause or abandon the mission. It is not a one-time execution")
 
 
 class _Genomes:
@@ -148,8 +154,8 @@ class FounderFacts:
     """What founder-signed commands bound to this body establish, each judged at its own ledger position.
 
     ``signed`` holds commands whose envelope verifies under the key valid at that position, addressed to
-    this body, with a nonce no earlier accepted (or verified-then-rejected GOAL / GOAL_CONTROL) command
-    used, accepted inside its signed validity. GOAL and GOAL_CONTROL commands must also pass the command
+    this body, with a nonce no earlier verified accepted command (or verified-then-rejected GOAL /
+    GOAL_CONTROL) spent (``greg.founder.spent_nonce``), accepted inside its signed validity. GOAL and GOAL_CONTROL commands must also pass the command
     path's own validators (``check_goal`` / ``check_control``) against the mission book, the capability
     manifests and these facts as they stood at that position. Everything else is retained data only:
     goal-registry state records never feed these facts, so an unsigned record can neither admit, re-open,
@@ -164,6 +170,7 @@ class FounderFacts:
     stop: dict = field(default_factory=dict)            # goal_id -> last signed stop / resume / change
     narrowing: dict = field(default_factory=dict)       # goal_id -> {state preference key: [values]}
     floor: dict = field(default_factory=dict)           # goal_id -> lowest priority signed (never above the spec's)
+    controlled_at: dict = field(default_factory=dict)   # goal_id -> issued_at (instant) of its latest counted control
     authorizations: dict = field(default_factory=dict)  # goal_id -> first egregore.goal_authorized payload
     book: Any = None                                    # MissionBook folded to the end of the ledger
     manifests: dict = field(default_factory=dict)       # capability id -> manifest, at the end of the ledger
@@ -221,9 +228,9 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
                     facts.body_id = str(p.get("body_id") or "")   # no body named: nothing verifies (fail closed)
             continue
         if kind == "greg.command.rejected":
-            consumed = p.get("consumed")
-            if isinstance(consumed, dict) and isinstance(consumed.get("nonce"), str):
-                seen_nonces.add(consumed["nonce"])
+            nonce = spent_nonce(kind, p)          # the body's rule exactly (it refused the command there)
+            if nonce is not None:
+                seen_nonces.add(nonce)
             continue
         if kind == "greg.capability.registered":
             try:
@@ -235,25 +242,24 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
         if kind != "greg.command.accepted":
             book.fold(kind[len("greg."):], p)
             continue
-        nonce = p.get("nonce")
-        try:
-            _accepted(facts, p, founders, devices, seen_nonces)
-        finally:
-            if isinstance(nonce, str):
-                seen_nonces.add(nonce)
-            env = p.get("envelope")
-            if isinstance(env, dict) and isinstance(env.get("nonce"), str):
-                seen_nonces.add(env["nonce"])
+        # Only a record that verified at its position, carrying its own envelope's nonce, spends that nonce
+        # here (``spent_nonce``, the body's per-record rule); an unverified record spends nothing, so it can
+        # never hide a later signed command the body applied (it can only make the body refuse one).
+        if _accepted(facts, p, founders, devices, seen_nonces) is not None:
+            seen_nonces.add(spent_nonce(kind, p))
     return facts
 
 
-def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_nonces: set) -> None:
+def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_nonces: set) -> str | None:
+    """Judge one retained ``command.accepted`` at its ledger position.
+
+    Returns the principal when its envelope verifies there under a key valid at that position and the record
+    carries that envelope's nonce (the record then spends it), else None. Every kind's envelope is checked
+    for that; only VERIFIED_KINDS and KEY_KINDS go on to become founder facts."""
     ckind, digest_ = p.get("kind"), p.get("digest")
-    if ckind not in VERIFIED_KINDS and ckind not in KEY_KINDS:
-        return
     env = p.get("envelope")
     if not isinstance(env, dict):
-        return
+        return None
     accepted_at = _when(p.get("accepted_at"))
     auth = None
     if ckind == "GOAL" and accepted_at is None:    # older records: the goal record carries the body clock
@@ -264,10 +270,25 @@ def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_
         accepted_at = _when((auth or {}).get("authorized_at"))
     principal = _verify_envelope(p, founders, devices, facts.body_id, accepted_at)
     if principal is None:
-        return
-    if env.get("nonce") in seen_nonces or p.get("nonce") != env.get("nonce"):
+        return None
+    if not isinstance(p.get("nonce"), str) or p.get("nonce") != env.get("nonce"):
+        if ckind in VERIFIED_KINDS or ckind in KEY_KINDS:
+            facts.refused[digest_] = ("its record's nonce is not its signed envelope's: not a record Body.apply "
+                                      "wrote; it spends no nonce and counts for nothing")
+        return None
+    if ckind not in VERIFIED_KINDS and ckind not in KEY_KINDS:
+        return principal
+    if env["nonce"] in seen_nonces:
         facts.refused[digest_] = "replayed nonce: an earlier accepted or verified-then-rejected command used it"
-        return
+        return principal
+    _founder_fact(facts, p, env, ckind, digest_, principal, accepted_at, founders, devices)
+    return principal
+
+
+def _founder_fact(facts: FounderFacts, p: dict, env: dict, ckind: str, digest_: str, principal: str,
+                  accepted_at: datetime | None, founders: dict, devices: dict) -> None:
+    """One verified, fresh-nonce command at its position: a key change, or a founder fact (MISSION, DECISION,
+    GOAL, GOAL_CONTROL) judged with the command path's own validators."""
     stale = _fresh(env, accepted_at)
     if stale is None and accepted_at is None and ckind in ("GOAL", "GOAL_CONTROL"):
         stale = "no acceptance time on the ledger"
@@ -327,6 +348,8 @@ def _close_intent(facts: FounderFacts, goal_id: str, issued_at: str) -> None:
 
 def _apply_control(facts: FounderFacts, gid: str, ck: str, value: Any, digest_: str, principal: str,
                    issued_at: str) -> None:
+    at = instant(issued_at)
+    facts.controlled_at[gid] = max(at, facts.controlled_at.get(gid, at))
     if ck == "revoke":
         facts.closed[gid] = {"status": "revoked", "by": digest_, "issued_at": issued_at, "principal": principal}
         _close_intent(facts, gid, issued_at)
@@ -434,6 +457,7 @@ def check_goal(facts: FounderFacts, payload: Any, digest_: str, *, signer: str, 
         m = book.missions.get(mid)
         if m is None or m.status in TERMINAL:
             raise MissionError(f"goal binds unknown or closed mission {mid}")
+        signed_mission(facts, mid, book=book)
         cones.append(CONSEQUENCE_CLASSES.index(m.cone.max_consequence_class))
     if CONSEQUENCE_CLASSES.index(spec.authority["max_consequence_class"]) > max(cones, default=0):
         raise MissionError("a goal cannot declare more authority than its missions' signed light cones")
@@ -464,7 +488,34 @@ def check_goal(facts: FounderFacts, payload: Any, digest_: str, *, signer: str, 
                            "new GOAL to authorize it again")
     if spec.supersedes and spec.supersedes not in open_goals:
         raise MissionError("a goal may supersede only an admitted, open goal")
+    controlled = facts.controlled_at.get(spec.supersedes) if spec.supersedes else None
+    if controlled is not None and controlled > instant(issued_at):
+        # A replacement signed before your latest control of the goal it replaces would silently undo that
+        # control (a stop, a mute, a lower priority): the newest signed instruction about the lineage wins.
+        raise MissionError("a later-signed control on the goal it replaces is in force; sign a new GOAL")
     return spec
+
+
+def signed_mission(facts: FounderFacts, mission_id: str, *, book: MissionBook | None = None):
+    """The mission state of ``mission_id`` when its registration is a founder-signed MISSION verified on this
+    body for exactly that spec (mission id included), else MissionError.
+
+    ``MissionBook`` folds any ``greg.mission.registered`` record (mission-side P2), so every goal-side claim of
+    "your signed mission" (admission, the light cones a goal is judged against, ``authorize --from-mission``)
+    checks the registration against the retained, verified envelope first."""
+    m = (book or facts.book).missions.get(mission_id)
+    cmd = facts.signed.get(m.command_digest) if m is not None else None
+    body = ((cmd or {}).get("envelope") or {}).get("body")
+    if m is None or cmd is None or cmd.get("kind") != "MISSION" or cmd.get("principal") != "founder" \
+            or not isinstance(body, dict) or body.get("mission_id") != mission_id or body != m.spec:
+        raise MissionError(f"mission {mission_id} is not founder-signed on this body: its registration cites no "
+                           "verified founder MISSION for exactly this mission and spec")
+    return m
+
+
+def signed_mission_spec(journal, mission_id: str) -> dict:
+    """The founder-signed spec of one registered mission (``greg gravity authorize --from-mission``)."""
+    return signed_mission(founder_facts(journal.ledger), mission_id).spec
 
 
 def check_control(facts: FounderFacts, payload: Any, *, signer: str, issued_at: str) -> tuple[str, str, Any]:
@@ -625,7 +676,7 @@ class BodyAttentionStore:
                     ref["mission_id"], ref["action_id"], why=item.question, recommendation=item.recommendation,
                     now=datetime.fromisoformat(str(payload.get("routed_at", iso(self.body.clock()))).replace("Z", "+00:00")),
                     evidence={"goal_id": item.goal_id, "goal_item_id": item.item_id, "lane": lane,
-                              "evidence_refs": list(item.evidence_refs)},
+                              "evidence_refs": list(item.evidence_refs), "approve_means": APPROVE_MEANS},
                     quoted=tuple(asks.founder_text([spec.founder_intent, spec.desired_state, move.description,
                                                     move.intervention_id, move.expected_outcome,
                                                     [n.gate for n in spec.plan], [n.outcome for n in spec.plan]])))
@@ -820,21 +871,57 @@ def _restore(reg: GoalRegistry, facts: FounderFacts, gid: str, at: datetime) -> 
             else:
                 reg.supersede(gid, reg.get(closed["superseded_by"]), actor=actor, reason="signed supersede", now=at)
         return
-    if state.status in ("revoked", "superseded", "completed"):
+    if state.status in ("revoked", "superseded"):
         return                       # closed by no signed command: narrowing, preserved, labelled in the views
     stop = facts.stopped(gid)
-    if stop is not None and state.status not in CLOSED:
+    missing = [(NARROWING_KIND[key], value) for key, values in facts.narrowing.get(gid, {}).items()
+               for value in values if value not in state.preferences.get(key, [])]
+    floor = facts.floor.get(gid)
+    low = floor is not None and reg.effective_priority(gid) < floor
+    if state.status == "completed":
+        # Observation-tier completion is not a closure: a completed goal still carries every signed stop and
+        # narrowing (a later regression reopens it, ``_reopen``), so one an unsigned record widened is restored
+        # as the command path records a control on a completed goal (reopen to record, then completed again;
+        # a signed stop leaves it paused, as the command path does).
+        if stop is None and not missing and not low:
+            return
+        reg.transition(gid, status="dormant", now=at, reason="reopened to restore signed founder controls")
+    if stop is not None and reg.state(gid).status not in CLOSED:
         reg.record_preference(gid, kind="stop_pushing", value=True, reason="signed stop", now=at,
                               actor=f"restoring signed {stop['principal']} control {stop['by'][7:19]}")
-    for key, values in facts.narrowing.get(gid, {}).items():
-        for value in values:
-            if value not in reg.state(gid).preferences.get(key, []):
-                reg.record_preference(gid, kind=NARROWING_KIND[key], value=value, reason="signed narrowing", now=at,
-                                      actor="restoring a signed founder narrowing")
-    floor = facts.floor.get(gid)
-    if floor is not None and reg.effective_priority(gid) < floor:
+    for kind, value in missing:
+        if reg.state(gid).status not in ("revoked", "superseded", "completed"):
+            reg.record_preference(gid, kind=kind, value=value, reason="signed narrowing", now=at,
+                                  actor="restoring a signed founder narrowing")
+    if low and reg.effective_priority(gid) < floor:
         reg.record_preference(gid, kind="lower_priority", value=floor, reason="signed priority", now=at,
                               actor="restoring the signed priority ceiling")
+    if state.status == "completed" and reg.state(gid).status == "dormant":
+        reg.transition(gid, status="completed", now=at,     # a stop keeps it paused; otherwise still completed
+                       reason="still completed (observation-tier) after restoring signed founder controls")
+
+
+def _release_pulls(body, reg: GoalRegistry, facts: FounderFacts, at: datetime) -> list[str]:
+    """A goal's pull lives only while a goal binding that mission is admitted, open and not stopped.
+
+    Once the founder revokes, supersedes or stops every goal that binds a mission (or an unsigned record
+    narrows it), a still-pending pull is released unserved through the engine (``release_pull``): the
+    mission waiting on an APPROVAL goes back to only waiting, as a mission no goal is bound to does.
+    Runs after the guard (signed facts restored) and before any turn, so it holds in the very tick the
+    control is applied."""
+    live: set[str] = set()
+    goals = set(reg.goals())
+    for gid in facts.admitted:
+        if gid in facts.closed or facts.stopped(gid) is not None or gid not in goals \
+                or reg.state(gid).status in CLOSED:
+            continue
+        live |= set(facts.specs[gid].authority.get("missions", []))
+    released = []
+    for mid, m in sorted(body.engine.book.missions.items()):
+        if m.pull is not None and mid not in live and body.engine.release_pull(
+                mid, at, why="no admitted, open, unstopped goal binds this mission any more"):
+            released.append(mid)
+    return released
 
 
 def _settle(body, reg: GoalRegistry, facts: FounderFacts, at: datetime) -> list[str]:
@@ -876,8 +963,9 @@ def _reopen(reg: GoalRegistry, facts: FounderFacts, signals: list, at: datetime)
                 readings[f"{o['subject']}.{o['attribute']}"] = o["value"]
     reopened = []
     for gid in facts.admitted:
-        if gid in facts.closed or gid not in reg.goals() or reg.state(gid).status != "completed":
-            continue
+        if gid in facts.closed or facts.stopped(gid) is not None or gid not in reg.goals() \
+                or reg.state(gid).status != "completed":
+            continue                  # a signed stop stays in force: a stopped goal is never reopened to wake
         for node in reg.get(gid).plan:
             gap = metric_error(node.sbm_direction, node.sbm_target, readings[node.sbm]) if node.sbm in readings else None
             if gap is not None and gap > 0:
@@ -1018,7 +1106,15 @@ def tick(body, now: datetime) -> dict | None:
             body.journal.record("goal_gravity.fault", {"why": why, "first_at": iso(now),
                                                        "missions": "unaffected: they keep their own loop"},
                                 key=[why])
-        return {"state": "FAULT", "why": why}
+        # Fail closed: a turn that could not re-derive which goals are open serves no goal pull. Every pending
+        # pull is released, so a waiting mission only waits (as a goal-less one does) until a sound turn pulls.
+        try:
+            body.engine.book.rebuild()
+            released = [mid for mid, m in sorted(body.engine.book.missions.items()) if m.pull is not None
+                        and body.engine.release_pull(mid, now, why="goal gravity faulted this turn: " + why)]
+        except CONTAINED:            # the mission book itself is unreadable: the engine's own tick reports it
+            released = []
+        return {"state": "FAULT", "why": why, **({"pulls_released": released} if released else {})}
 
 
 def _tick(body, now: datetime) -> dict:
@@ -1032,12 +1128,14 @@ def _tick(body, now: datetime) -> dict:
     facts = founder_facts(body.ledger, body_id=body.config["body_id"])
     held.store.begin(facts.signed, at)
     quarantined = _guard(body, reg, facts, at)
+    released = _release_pulls(body, reg, facts, at)
+    extra = {"pulls_released": released} if released else {}
     refusals = _settle(body, reg, facts, at)
     signals, end = _sense(body, loop, held.cursor)
     reopened = _reopen(reg, facts, signals, at)
     if not (signals or reg.due_for_review(at) or reg.by_status("awake")):
         held.cursor = end
-        return {"state": "DORMANT", "quarantined": quarantined, "refusals_mirrored": refusals}
+        return {"state": "DORMANT", "quarantined": quarantined, "refusals_mirrored": refusals, **extra}
     turn = loop.turn(trigger_id=f"greg:{iso(at)}:{body.ledger.head[7:23]}", now=at, signals=signals,
                      resources=ResourceGovernor(max_model_calls=1, max_estimated_cost_usd=0.01),
                      evidence_confidence=1.0)   # an upper bound only: body mode derives it from world evidence
@@ -1045,7 +1143,7 @@ def _tick(body, now: datetime) -> dict:
     pulled = _activate(body, held, turn, at)
     return {"state": turn.status, "turn_id": turn.turn_id, "woken": list(turn.woken), "missions_pulled": pulled,
             "asked": list(held.store.asked), "wake_refused": [w["goal_id"] for w in turn.wake_refused],
-            "quarantined": quarantined, "refusals_mirrored": refusals, "reopened": reopened}
+            "quarantined": quarantined, "refusals_mirrored": refusals, "reopened": reopened, **extra}
 
 
 # -- read-only projections (CLI, status, morning report, console, closures) ---------------------------
@@ -1133,6 +1231,7 @@ def projection(journal, *, closure: bool = True) -> dict:
         "how_it_acts": "an awake goal pulls its signed missions' next observation forward (a mission waiting on "
                        "your decision then re-observes and repairs its other checks inside its cone); the missions "
                        "do all execution through the AuthorityOffice and the Consequence Gate",
+        "approve_means": APPROVE_MEANS,
         "completion_tier": "observation: attributed ledger observations recomputed from Gate receipts and "
                            "separate-process appraisals; not external verification",
     }
@@ -1200,7 +1299,8 @@ def evidence(journal, goal_id: str) -> dict:
         "experiences": WorldModel(ledger=ledger).evidence_for_goal(gid)[0],
         "asks": [{"request_id": rid, "answer": (book.answers.get(rid) or {}).get("answer"),
                   "answer_command": (book.answers.get(rid) or {}).get("command_digest"),
-                  "answer_signature_verified": signed_answer(signed, rid, book.answers.get(rid)) is not None}
+                  "answer_signature_verified": signed_answer(signed, rid, book.answers.get(rid)) is not None,
+                  "approve_means": APPROVE_MEANS}
                  for rid in requests],
         "mission_receipts": sorted({e.payload["receipt"] for e in journal.replay("mission.")
                                     if e.type in ("greg.mission.action", "greg.mission.observed")
@@ -1221,17 +1321,31 @@ def ledger_closure(journal, *, signed: dict | None = None) -> dict:
     (the mission fold still trusts the record itself, ADR-GOAL-GRAVITY-002 P2: this closure detects it)."""
     ledger = journal.ledger
     signed = signed if signed is not None else signed_commands(journal, *VERIFIED_KINDS)
-    missions = {d for d, c in signed.items() if c["kind"] == "MISSION" and c["principal"] == "founder"}
+    missions = {d: c["envelope"]["body"] for d, c in signed.items()
+                if c["kind"] == "MISSION" and c["principal"] == "founder"}
     issued = {r.payload.get("grant_id"): r.payload for r in ledger.by_type("event")
               if r.payload.get("type") == "greg.authority.grant_issued"}
+    # grant -> the missions whose recorded actions / observations cite its receipt (the proposal's mission)
+    receipt_grant = {r.hash: r.payload.get("grant_id") for r in ledger.by_type("receipt")}
+    acted_for: dict[str, set] = {}
+    for e in journal.replay("mission."):
+        if e.type in ("greg.mission.action", "greg.mission.observed") and e.payload.get("receipt") in receipt_grant:
+            acted_for.setdefault(receipt_grant[e.payload["receipt"]], set()).add(e.payload.get("mission_id"))
     problems = []
     dispatches = ledger.by_type("grant_dispatch")
     for r in dispatches:
         grant = issued.get(r.payload.get("grant_id"))
+        body = missions.get((grant or {}).get("authority_ref"))
         if grant is None:
             problems.append({"record": r.hash, "problem": "grant_dispatch without greg.authority.grant_issued"})
-        elif grant.get("authority_ref") not in missions:
+        elif body is None:
             problems.append({"record": r.hash, "problem": "grant authority_ref is not a verified founder MISSION digest"})
+        elif grant.get("cone") != _signed_cone(body):
+            problems.append({"record": r.hash, "problem": "grant cone is not the light cone of the founder MISSION it "
+                                                          "cites: authority borrowed from another mission's signature"})
+        elif acted_for.get(grant.get("grant_id"), set()) - {body.get("mission_id")}:
+            problems.append({"record": r.hash, "problem": "grant was used for a mission other than the one its founder "
+                                                          "MISSION signs"})
     answers = ledger.by_type("egregore.founder_answer")
     for r in answers:   # a digest alone binds nothing to the item it answers: none may exist on a body
         problems.append({"record": r.hash, "problem": "egregore.founder_answer without a signature-verified DECISION "
@@ -1248,6 +1362,14 @@ def ledger_closure(journal, *, signed: dict | None = None) -> dict:
             "unsigned_answers": unsigned}
 
 
+def _signed_cone(body: dict) -> dict | None:
+    try:
+        from greg.lightcone import LightCone
+        return LightCone.from_dict(body["light_cone"]).to_dict()
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 # -- founder operation without code: a GOAL derived from a signed mission ----------------------------
 
 def _band(priority: int) -> int:
@@ -1261,9 +1383,10 @@ def goal_from_mission(spec: dict, manifests: dict) -> dict:
     Plan nodes are the mission's checks (ladder order first), each with the check as its bottleneck
     metric; the wake condition is the mission id; the ceiling is the mission's light-cone ceiling; the
     only declared moves are the mission's static strategies whose exact scope lies outside its cone
-    (these are what the goal may ask about ahead of time). ``manifests`` maps capability id -> manifest
-    (consequence class); strategies on capabilities absent there, or advancing no check the mission's loop
-    pursues, are left out and listed.
+    (these are what the goal may ask about ahead of time), one per check: the strategy the mission's own
+    selection ranks first for it. ``manifests`` maps capability id -> manifest (consequence class);
+    strategies on capabilities absent there, or advancing no check the mission's loop pursues, are left out
+    and listed; alternatives the mission would not run first are listed under ``alternatives_not_declared``.
 
     The wake condition is the mission id: intake that names the mission or its targets wakes the goal on any
     channel (``BodyRelevanceRouter``), and so does any changed observation of its checks."""
@@ -1274,7 +1397,11 @@ def goal_from_mission(spec: dict, manifests: dict) -> dict:
     order = list(dict.fromkeys(ladder + [c["check_id"] for c in spec["success_checks"]]))
     checks = {c["check_id"]: c for c in spec["success_checks"]}
     pursued = pursued_checks(spec)
-    moves, skipped = {}, []
+    # One move per check: only the strategy the mission's own selection ranks first for a check (no track
+    # record yet; the ask path re-ranks live and refuses any other) may be declared, so one decision is one ask.
+    first = {cid: first_choice(spec, {cid}, manifest_for=lambda s: manifests.get(s.get("capability")), records={})
+             for cid in sorted(pursued)}
+    moves, skipped, alternatives = {}, [], []
     for s in spec["strategies"]:
         manifest = manifests.get(s.get("capability"))
         if "capability" not in s or s.get("bind") or "$from_action" in json.dumps(s.get("params", {})):
@@ -1288,14 +1415,17 @@ def goal_from_mission(spec: dict, manifests: dict) -> dict:
                                at=instant(cone["horizon"]) - timedelta(seconds=1))
         if not outside:
             continue
+        mine = [c for c in order if first.get(c) == s["action_id"]]
+        if not mine:                      # an alternative: the mission runs (or asks for) another one first
+            alternatives.append(s["action_id"])
+            continue
         move = InterventionSpec.build(
             intervention_id=s["action_id"], description=s.get("rationale") or f"{s['capability']} on {s['target']}",
             action_class="greg." + s["capability"], requested_capability=s["capability"],
             consequence_class=manifest.consequence_class, target=s["target"],
             expected_outcome=s.get("expected_outcome") or f"advances {', '.join(s['advances'])}",
             payload={"mission_id": mid, "action_id": s["action_id"]}, estimated_cost_usd=cost)
-        node = next((c for c in order if c in s["advances"]), order[0])
-        moves.setdefault(node, []).append(move)
+        moves.setdefault(mine[0], []).append(move)
     plan = [PlanNode.build(node_id=cid, outcome=checks[cid]["description"], gate=f"mission {mid} check {cid}",
                            sbm=f"{mid}.{cid}", sbm_direction="eq", sbm_target=True,
                            interventions=tuple(moves.get(cid, ()))) for cid in order]
@@ -1310,5 +1440,6 @@ def goal_from_mission(spec: dict, manifests: dict) -> dict:
     body = {k: v for k, v in goal.to_dict().items() if k not in DERIVED_GOAL_FIELDS}
     return {"goal_command": {"goal": body, "missions": [mid], "max_consequence_class": cone["max_consequence_class"]},
             "strategies_left_out": skipped,
+            **({"alternatives_not_declared": alternatives} if alternatives else {}),
             "note": "derived deterministically from your signed mission; signing it as a GOAL authorizes no new "
                     "action: the mission's light cone and Gate still decide every execution"}

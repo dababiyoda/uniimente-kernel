@@ -314,6 +314,36 @@ def pursued_checks(spec: dict) -> set:
     return {c["check_id"] for c in spec["success_checks"]}
 
 
+def rank_key(s: dict, index: int, failing: set, manifest, record: dict | None, value_per_check_usd: float) -> tuple:
+    """(-expected value, route rank, signed order, reliability): the order ``MissionEngine._pursue`` selects
+    candidates in (most expected discrepancy closed per cost, structured routes before visual ones, then the
+    order Alfonso signed). One rule for the mission's own selection and for what a goal may ask about ahead."""
+    gain = len(set(s["advances"]) & failing)
+    route = ROUTES.index(manifest.route) if manifest else len(ROUTES)
+    estimate = routing.reliability(record)
+    expected = routing.score(gain=gain, reliability_estimate=estimate, cost_usd=float(s.get("cost_usd", 0.0)),
+                             value_per_check_usd=value_per_check_usd)
+    return -expected, route, index, estimate
+
+
+def first_choice(spec: dict, failing: set, *, manifest_for, records: dict, failed=(), excluded=()) -> str | None:
+    """The strategy the mission's own selection ranks first for these failing checks, or None.
+
+    The candidates are ``_pursue``'s: strategies advancing a failing check, not failed, not excluded, whose
+    signed preconditions (``requires``) are not among the failing checks. Bound inputs are not resolved here:
+    a bound strategy ranked first that cannot bind yet is held back at run time, never promoted past."""
+    value = float(spec.get("value_per_check_usd", 1.0))
+    ranked = []
+    for index, s in enumerate(spec["strategies"]):
+        if not set(s["advances"]) & failing or s["action_id"] in failed or s["action_id"] in excluded \
+                or set(s.get("requires", [])) & failing:
+            continue
+        manifest = manifest_for(s)
+        key = rank_key(s, index, failing, manifest, records.get(manifest.capability_id) if manifest else None, value)
+        ranked.append((*key[:3], s["action_id"]))
+    return min(ranked)[3] if ranked else None
+
+
 def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *, now: datetime) -> dict:
     """The exact Gate scope of one static strategy of mission ``m`` and the reasons it lies outside its cone.
 
@@ -372,6 +402,8 @@ class MissionBook:
             return
         elif kind == "mission.lifecycle":
             m.paused = data["state"] == "PAUSED"
+            if m.paused:              # a founder pause ends any goal pull; a later wake pulls afresh
+                m.pull = None
             if data["state"] in ("ABANDONED", "SUPERSEDED"):
                 m.status = data["state"]
         elif kind == "mission.observed":
@@ -425,6 +457,8 @@ class MissionBook:
                 m.pull = data["next_observe_at"]
         elif kind == "mission.prepared":
             m.pull = None             # the pull was served while the mission waited on the founder
+        elif kind == "mission.pull_released":
+            m.pull = None             # released unserved: no open, unstopped goal binds the mission any more
         elif kind == "mission.strategy_excluded":
             m.excluded[data["action_id"]] = data["reason"]
         elif kind == "decision.requested":
@@ -544,6 +578,20 @@ class MissionEngine:
         self.book.rebuild()
         return True
 
+    def release_pull(self, mission_id: str, now: datetime, *, why: str) -> bool:
+        """Release a goal's pending pull unserved (greg/goal_gravity.py: no open, admitted, unstopped goal binds
+        the mission any more, e.g. the founder revoked or stopped it). The mission returns to its own loop:
+        while it waits on an APPROVAL it only waits, as a mission no goal is bound to does."""
+        self.book.rebuild()
+        m = self.book.missions.get(mission_id)
+        if m is None or m.pull is None:
+            return False
+        self.journal.record("mission.pull_released", {"mission_id": mission_id, "pull": m.pull,
+                                                      "why": str(why)[:300], "at": iso(now)},
+                            key=[mission_id, "pull-released", m.pull])
+        self.book.rebuild()
+        return True
+
     def strategy_scope(self, mission_id: str, action_id: str, *, now: datetime) -> dict:
         """The exact Gate scope of one founder-signed static strategy, and why it lies outside the cone.
 
@@ -552,6 +600,13 @@ class MissionEngine:
         mission itself would ask for. Strategies bound to another action's output have no exact scope
         before they run and are refused here."""
         return strategy_scope(self.book.missions.get(mission_id), self.registry.manifests, action_id, now=now)
+
+    def _manifest_for(self, s: dict):
+        """A strategy's capability manifest: the signed capability, else one Genesis attached for its function."""
+        manifest = self.registry.manifests.get(s.get("capability"))
+        if manifest is None and s.get("function") and self.genesis is not None:
+            manifest = self.genesis.find_attached(s["function"])
+        return manifest
 
     def _askable(self, m: "MissionState | None", mission_id: str, action_id: str, *, now: datetime) -> dict:
         """The exact scope of a strategy the founder may be asked about ahead of the mission's loop, or
@@ -571,9 +626,25 @@ class MissionEngine:
         if action_id in m.failed:
             raise MissionError(f"{action_id} is not selectable now: {m.failed[action_id]}"[:400])
         pursued = pursued_checks(m.spec)
-        if not set(scope["strategy"].get("advances", [])) & pursued:
+        checks = set(scope["strategy"].get("advances", [])) & pursued
+        if not checks:
             raise MissionError(f"{action_id} advances {sorted(scope['strategy'].get('advances', []))}, none of which "
                                f"the mission's loop pursues ({sorted(pursued)}): it would never run it")
+        # Only the move the mission's own selection would run next for these checks may be asked about ahead:
+        # one consequential decision is one ask, and its approve is what the mission then runs.
+        first = first_choice(m.spec, checks, manifest_for=self._manifest_for,
+                             records=routing.track_record(self.journal), failed=m.failed, excluded=m.excluded)
+        if first != action_id:
+            raise MissionError(f"for {', '.join(sorted(checks))} the mission's own selection runs {first} first, not "
+                               f"{action_id}: it would ask for (or run) {first}, so an approve of {action_id} could "
+                               "change nothing")
+        for rid, r in self.book.requests.items():
+            other = next((x for x in m.spec["strategies"] if x["action_id"] == r.get("action_id")), None)
+            if r.get("kind") == "APPROVAL" and r.get("mission_id") == mission_id and other is not None \
+                    and r.get("scope_digest") != scope["scope_digest"] and rid not in self.book.answers \
+                    and rid not in self.book.withdrawn and set(other["advances"]) & checks:
+                raise MissionError(f"an open APPROVAL ({rid}, {other['action_id']}) already asks about "
+                                   f"{', '.join(sorted(set(other['advances']) & checks))}: one decision, one ask")
         return scope
 
     def ask_refusal(self, mission_id: str, action_id: str, *, now: datetime) -> str | None:
@@ -742,6 +813,20 @@ class MissionEngine:
         m = self.book.missions[m.mission_id]
         self._record_routing_outcomes(m)
         awaited = next((set(s["advances"]) for s in m.spec["strategies"] if s["action_id"] == pending), set())
+        observed = {c["check_id"] for c in m.current_checks()}
+        if awaited and awaited <= observed and not awaited & failing:
+            # The world already satisfies what the awaited move would do (no GREG action): the ask is moot.
+            # Withdrawn as _watch_while_blocked withdraws one (a body event, never a founder answer); the
+            # awaited move never runs on it, and the same scope returning later is a new escalation.
+            why = ("world re-observed while preparing: every check the awaited move advances now passes without "
+                   "any GREG action")
+            self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                       "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
+            self._unblock(m, why)
+            self.book.rebuild()
+            if failing:
+                return {"state": "RESUMED", "withdrawn": rid, "still_failing": sorted(failing)}
+            return self._setpoint_reached(self.book.missions[m.mission_id], now, evidence)
         other = failing - awaited - set(self.sensor_errors)
         if other:
             done = self._pursue(m, now, other, evidence, prepare_for=pending)
@@ -1255,14 +1340,10 @@ class MissionEngine:
                 except Unbound as why:
                     held[s["action_id"]] = [f"input: {why}"]
                     continue
-            manifest = self.registry.manifests.get(s.get("capability"))
-            if manifest is None and s.get("function") and self.genesis is not None:
-                manifest = self.genesis.find_attached(s["function"])
-            route = ROUTES.index(manifest.route) if manifest else len(ROUTES)
-            estimate = routing.reliability(records.get(manifest.capability_id) if manifest else None)
-            expected = routing.score(gain=gain, reliability_estimate=estimate,
-                                     cost_usd=float(s.get("cost_usd", 0.0)), value_per_check_usd=value)
-            candidates.append((-expected, route, index, s, estimate))
+            manifest = self._manifest_for(s)
+            neg_expected, route, _, estimate = rank_key(
+                s, index, failing, manifest, records.get(manifest.capability_id) if manifest else None, value)
+            candidates.append((neg_expected, route, index, s, estimate))
         if not candidates and prepare_for is not None:
             return {"state": "NOTHING_TO_PREPARE"}
         if not candidates:

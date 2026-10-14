@@ -37,7 +37,7 @@ from events.spine import EventSpine
 from greg import anchor, asks, compute, dataplane, doctor, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
-from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
+from greg.founder import FounderAuthError, FounderVerifier, key_id, spent_nonce, validate_device_grant
 from greg.genesis import Genesis
 from greg.journal import Journal, iso, utcnow
 from greg.missions import MissionEngine, MissionError
@@ -73,12 +73,13 @@ NONCE_CONSUMED_ON_REJECT = ("GOAL", "GOAL_CONTROL")
 
 def consumed_nonces(journal: Journal) -> set[str]:
     """Nonces a command may not reuse: every accepted command's, and every verified-then-rejected
-    GOAL / GOAL_CONTROL's (``command.rejected`` carrying ``consumed``)."""
-    out = {e.payload["nonce"] for e in journal.replay("command.accepted")}
-    for e in journal.replay("command.rejected"):
-        consumed = e.payload.get("consumed")
-        if isinstance(consumed, dict) and isinstance(consumed.get("nonce"), str):
-            out.add(consumed["nonce"])
+    GOAL / GOAL_CONTROL's (``command.rejected`` carrying ``consumed``). ``spent_nonce`` is the per-record
+    rule, shared with the goal tick's re-derivation (greg/goal_gravity.py ``founder_facts``)."""
+    out = set()
+    for e in journal.replay("command.accepted") + journal.replay("command.rejected"):
+        nonce = spent_nonce(e.type, e.payload)
+        if nonce is not None:
+            out.add(nonce)
     return out
 
 

@@ -115,12 +115,14 @@ def _gravity_action(home: str, args) -> None:
         notes = {}
         if args.from_mission:
             from greg.capabilities import BUILTINS
-            from greg.missions import MissionBook
+            if not Layout(home).ledger.exists():
+                raise BodyError("this body has no ledger yet")
             with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
-                m = MissionBook(journal).missions.get(args.from_mission)
-            if m is None:
-                raise BodyError(f"no signed mission {args.from_mission} on this body")
-            derived = goal_gravity.goal_from_mission(m.spec, {mf.capability_id: mf for mf, _ in BUILTINS.values()})
+                try:   # only a registration a verified founder MISSION signs, for exactly that spec
+                    spec = goal_gravity.signed_mission_spec(journal, args.from_mission)
+                except MissionError as exc:
+                    raise BodyError(f"no signed mission {args.from_mission} on this body: {exc}") from exc
+            derived = goal_gravity.goal_from_mission(spec, {mf.capability_id: mf for mf, _ in BUILTINS.values()})
             body = derived.pop("goal_command")
             notes = derived
         elif args.target:

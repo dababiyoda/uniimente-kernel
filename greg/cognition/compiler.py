@@ -380,9 +380,14 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                 reason = "composition stage only (no standalone decision)"
             elif status in EXCLUDED:
                 reason = f"frozen admission status {status}"
-            rows.append({"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
-                         "epistemic_classes": list(classes), "rejected": reason,
-                         **({"stale_evidence": stale} if stale else {})})
+            row = {"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
+                   "epistemic_classes": list(classes), "rejected": reason,
+                   **({"stale_evidence": stale} if stale else {})}
+            if family in genomes:
+                measured = _subregion_evidence(genomes[family], data, evidence["genomes"].get(family, {}))
+                if measured:
+                    row["subregion"] = measured
+            rows.append(row)
     recipe = route(data)
     if recipe:
         verdict = evidence["recipes"].get(recipe, {})
@@ -400,13 +405,39 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     return rows
 
 
+SUBREGION_RANK = {"FAVOURED": 0, "NEUTRAL": 1, "DOMINATED": 2}
+
+
+def _subregion_evidence(item, data: dict, record: dict) -> dict | None:
+    """This request's native subregion and the frozen held-out verdict there against the genome's competitor.
+
+    FAVOURED / DOMINATED need a one-sided exact sign test p < 0.05 within the subregion; anything else is
+    NEUTRAL. Measured evidence, reported and used to order fits; it is never a status and never authority."""
+    table = record.get("subregions_vs_competitor") or {}
+    if item.subregion is None or not table:
+        return None
+    try:
+        name = item.subregion(data)
+    except Exception:            # an input the subregion function cannot place is simply unplaced
+        return None
+    measured = table.get(name)
+    if measured is None:
+        return {"name": name, "verdict": "UNMEASURED"}
+    verdict = ("FAVOURED" if measured["p_better"] < 0.05 else "DOMINATED" if measured["p_worse"] < 0.05
+               else "NEUTRAL")
+    return {"name": name, "verdict": verdict, "vs_competitor": measured, "competitor": record.get("competitor"),
+            "competitor_deployable": item.competitor_deployable, "evidence": record.get("evidence")}
+
+
 def _rank(row: dict, prefer: list, competence: dict) -> tuple:
     status = 0 if row["status"] == "VPL_LIFT" else STATUS_RANK.get(row["status"], 5)
     preferred = 0 if (row["operation"] in prefer or row["method"] in prefer) else 1
     settled = -competence.get(row["method"], 0.5)
-    # Frozen negative evidence outranks an operator's preference: evidence over heuristics.
-    return (1 if row.get("demoted") else 0, preferred, status, settled, 0 if row["kind"] == "operation" else 1,
-            row["method"])
+    region = SUBREGION_RANK.get((row.get("subregion") or {}).get("verdict"), 1)
+    # Frozen negative evidence outranks an operator's preference: evidence over heuristics. Within one status,
+    # the measured subregion verdict orders fits before settled competence.
+    return (1 if row.get("demoted") else 0, preferred, status, region, settled,
+            0 if row["kind"] == "operation" else 1, row["method"])
 
 
 def _settled_competence(journal, geometry_class) -> dict:
@@ -529,6 +560,20 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     if chosen.get("stale_evidence"):
         receipt["selection_level"] = "unevaluated_at_current_version"
         receipt["dissent"].append(f"stale admission evidence: {chosen['stale_evidence']}")
+    region = chosen.get("subregion")
+    if region:
+        receipt["subregion_evidence"] = region
+        if region["verdict"] == "DOMINATED":
+            m = region["vs_competitor"]
+            receipt["dissent"].append(
+                f"in subregion {region['name']} this method lost {m['losses']}-{m['wins']} to its competitor on "
+                f"frozen held-out instances (p = {m['p_worse']}): {region['competitor']}")
+            if region["competitor_deployable"]:
+                # measured insufficiency of the repertoire here: a named mechanism for Capability Genesis
+                receipt["acquisition_candidates"] = [{
+                    "mechanism": region["competitor"], "subregion": region["name"], "evidence": region["evidence"],
+                    "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority",
+                    "authority": "none: a candidate to acquire, never an attached method"}]
     receipt["conditional_competence_basis"] = {m: round(v, 4) for m, v in competence.items()} or \
         "no settled outcomes in this journal; admission evidence and cost decide"
     if body.get("execute") is False:

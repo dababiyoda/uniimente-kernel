@@ -173,3 +173,39 @@ def test_positive_admission_evidence_binds_the_version_it_measured(registry, no_
     no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "REJECTED", "version": "0.0.1"}},
                                     "recipes": {}, "routing": {}}))
     assert compile_(registry, {"geometry": "optimization"}, data)["state"] == "CAPABILITY_DEFICIT"
+
+
+def test_measured_subregion_evidence_reaches_the_receipt_and_names_an_acquisition(registry, no_index):
+    # develop_repair on frozen held-out instances: dominated 0-15 by the centralized replanner with a
+    # reliable controller, favoured 12-3 with an unreliable one. The receipt carries the verdict for the
+    # request's own subregion; a dominated route names the competitor for Capability Genesis (no authority).
+    from greg.cognition.genomes import library
+    item = library.executables()["develop_repair"]
+    table = {"reliable_controller": {"n": 15, "wins": 0, "losses": 15, "ties": 0, "p_better": 1.0, "p_worse": 3.1e-05},
+             "unreliable_controller": {"n": 15, "wins": 12, "losses": 3, "ties": 0, "p_better": 0.017578,
+                                       "p_worse": 0.996307}}
+    no_index.write_text(json.dumps({"genomes": {"develop_repair": {
+        "status": "NICHE_CAPABILITY", "version": item.genome.version, "evidence": "results.json#develop_repair",
+        "competitor": item.genome.competitor, "subregions_vs_competitor": table}}, "recipes": {}, "routing": {}}))
+    geometry = {"geometry": item.genome.epistemic_class}
+    dominated = compile_(registry, geometry, item.instance(0)[0], execute=False)
+    assert dominated["subregion_evidence"]["name"] == "reliable_controller"
+    assert dominated["subregion_evidence"]["verdict"] == "DOMINATED"
+    assert any("lost 15-0" in d for d in dominated["dissent"])
+    assert dominated["acquisition_candidates"][0]["mechanism"] == item.genome.competitor
+    assert dominated["acquisition_candidates"][0]["authority"].startswith("none")
+    favoured = compile_(registry, geometry, item.instance(1)[0], execute=False)
+    assert favoured["subregion_evidence"]["verdict"] == "FAVOURED" and "acquisition_candidates" not in favoured
+
+
+def test_an_oracle_competitor_is_never_proposed_for_acquisition(registry, no_index):
+    from greg.cognition.genomes import library
+    item = library.executables()["collective_market"]
+    data = item.instance(0)[0]
+    name = item.subregion(data)
+    no_index.write_text(json.dumps({"genomes": {"collective_market": {
+        "status": "DEFAULT_FOR_GEOMETRY", "version": item.genome.version, "competitor": item.genome.competitor,
+        "subregions_vs_competitor": {name: {"n": 10, "wins": 0, "losses": 10, "ties": 0, "p_better": 1.0,
+                                            "p_worse": 0.001}}}}, "recipes": {}, "routing": {}}))
+    r = compile_(registry, {"geometry": item.genome.epistemic_class}, data, execute=False)
+    assert r["subregion_evidence"]["verdict"] == "DOMINATED" and "acquisition_candidates" not in r

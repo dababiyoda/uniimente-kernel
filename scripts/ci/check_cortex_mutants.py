@@ -139,7 +139,8 @@ OSS_MUTANTS = [
      'if mechanisms.digest(dist, candidate.digest_paths)[0] != manifest.provenance.get("package_digest"):',
      "if False:"),
     ("repair re-admits the package that failed in service", "greg/genesis.py",
-     'if repair and repair.get("capability_id") == manifest.capability_id:', "if False:"),
+     '            if repair and repair.get("capability_id") == manifest.capability_id:',
+     "            if False:"),
     ("engine imported from an unqualified location", "greg/mechanisms.py",
      "if root not in module_file.parents:", "if False:"),
     ("#140 graph verifier accepts a longer route", "greg/cognition/verification.py",
@@ -170,8 +171,36 @@ OSS_MUTANTS = [
      "if False:"),
 ]
 
+# Frontier leap 2026-10-13 (RECOMBINE, #164): a construction is controlled by its own certificate and lifecycle.
+RECOMBINE_TESTS = ["tests/unit/test_greg_recombine.py"]
+RECOMBINE_MUTANTS = [
+    ("repair re-admits the construction that failed in service", "greg/genesis.py",
+     'if repair and repair.get("capability_id") == manifest.capability_id:\n            self._route(deficit_id, "constructed"',
+     'if False:\n            self._route(deficit_id, "constructed"'),
+    ("a founder-detached construction is re-attached", "greg/genesis.py",
+     'if self.registry.state.get(manifest.capability_id) == "DETACHED":\n            self._route(deficit_id, "constructed"',
+     'if False:\n            self._route(deficit_id, "constructed"'),
+    ("a construction that fails its oracle is registered", "greg/genesis.py",
+     'if not passed:\n            self._route(deficit_id, "constructed", "failed qualification"',
+     'if False:\n            self._route(deficit_id, "constructed", "failed qualification"'),
+    ("an engine fault through a construction leaves the engine attached", "greg/genesis.py",
+     'and self.registry.state.get(engine_id) == "ATTACHED":', "and False:"),
+    ("changed reduction code survives restart", "greg/genesis.py",
+     'elif recombine.chain_digest(found[0]) != origin["chain_digest"]:', "elif False:"),
+    ("a construction outlives its engine's attach", "greg/recombine.py",
+     "            if not ok:\n                raise CapabilityError(f\"capability refused: composed capability's engine",
+     "            if False:\n                raise CapabilityError(f\"capability refused: composed capability's engine"),
+    ("staffing certificate skips the deficiency bound", "greg/recombine.py", "    if staffed != bound:", "    if False:"),
+    ("matching certificate skips the deficiency bound", "greg/recombine.py",
+     'if size != len(p["right"]) - (len(U) - len(N)):', "if False:"),
+    ("crash plan cost is not checked against the certified optimum", "greg/recombine.py",
+     "if abs(Fraction(cost) - target) > Fraction(1, 10**6) * max(1, abs(cost)):", "if False:"),
+    ("an infeasibility chain is not checked", "greg/recombine.py",
+     "if not chain or any([a, b] not in p[\"precedences\"] for a, b in zip(chain, chain[1:])):", "if False:"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
-          ("open-source genesis", OSS_TESTS, OSS_MUTANTS)]
+          ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS)]
 
 
 def main() -> int:

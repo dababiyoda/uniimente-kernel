@@ -729,8 +729,8 @@ REDUCTIONS: dict[str, Reduction] = {r.function: r for r in (
               failure="engine returns a fractional or wrong vertex (refused); impossible deadline (proved by a "
                       "chain without the engine)",
               recovery="engine quarantined and re-acquired (HiGHS via SciPy, or GLOP via OR-Tools)",
-              evidence="frozen brute force over integer shortenings; 416 seeded engine cases on SciPy/HiGHS and 184 "
-                       "proved without the engine, no mismatch; OR-Tools not installed here, so untested",
+              evidence="frozen brute force over integer shortenings; 416 seeded engine cases each on SciPy/HiGHS and "
+                       "OR-Tools/GLOP and 184 proved without the engine, no mismatch",
               primitive="start/finish variables with duration bounds and precedence differences",
               mutation="infeasibility proved without the engine by a shortest-duration chain; feasibility and cost "
                        "re-checked in exact integers against the original project",

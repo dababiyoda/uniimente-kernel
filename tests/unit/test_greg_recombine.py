@@ -353,3 +353,48 @@ def test_a_malformed_request_in_a_batch_is_refused_alone(tmp_path):
     answers = recombine.composed_adapter(path, registry).batch([STAFFING, bad, STAFFING], ctx)
     assert answers[0]["staffed"] == answers[2]["staffed"] == 8
     assert isinstance(answers[1], CapabilityError) and "constructed request invalid" in str(answers[1])
+
+
+def test_repair_does_not_readmit_the_construction_that_failed_in_service(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = constructed_question(function="assignment.staffing", params=STAFFING, auto_attach=True)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 3)
+        [cid] = [c for c in body.registry.manifests if c.startswith("composed.")]
+        body.registry.set_state(cid, "QUARANTINED")
+        found = body.genesis.resolve(mission=body.engine.book.missions[spec["mission_id"]],
+                                     function="assignment.staffing", purpose="repair test", now=clock(),
+                                     repair={"capability_id": cid, "replay_path": None,
+                                             "failure": "capability refused: composed capability failed its "
+                                                        "certificate: test"})
+        assert found is None and body.registry.state[cid] == "QUARANTINED"
+        assert ("constructed", "this construction failed in service; a different engine is required (the founder "
+                               "may re-attach it)") in routes(body)
+
+
+def test_the_matching_certificate_refuses_a_matching_that_is_not_maximum():
+    p = recombine.normalize_matching(MATCHING)
+    small = {"pairs": [["b", "x"]], "size": 1, "deficient_right": ["y", "z"]}
+    with pytest.raises(recombine.ReductionError, match="maximality is not shown"):
+        recombine.certify_matching(p, small)                 # a-y would extend it
+    with pytest.raises(recombine.ReductionError, match="matched twice"):
+        recombine.certify_matching(p, {"pairs": [["a", "x"], ["a", "y"]], "size": 2, "deficient_right": []})
+
+
+def test_a_construction_that_fails_its_oracle_is_never_registered(tmp_path, monkeypatch):
+    broken = replace(recombine.REDUCTIONS["assignment.staffing"],
+                     certify=lambda p, a: {**recombine.certify_staffing(p, a), "staffed": 0})
+    monkeypatch.setitem(recombine.REDUCTIONS, "assignment.staffing", broken)
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", constructed_question(function="assignment.staffing",
+                                                                    params=STAFFING, auto_attach=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock, 2)[-1]["state"] in ("BLOCKED", "WAITING")
+        assert ("constructed", "failed qualification") in [(r, res) for r, res in routes(body)]
+        assert not [c for c in body.registry.manifests if c.startswith("composed.")]
+        assert not answers(body)

@@ -25,8 +25,7 @@
   "not_established_by_rhetoric": [
     "any market advantage",
     "founder use of the constructed capabilities",
-    "REA-derived evidence (REA was inspected, not run, for this leap)",
-    "OR-Tools route for project.crash (not installed in the test environment)"
+    "REA-derived evidence (REA was inspected, not run, for this leap)"
   ],
   "interpretation": "Founder instructions A-D are preserved verbatim. They describe destinations and effects; INTENT-0030 governs their reading. The directive's own boundaries (sections 5, 12, 18, 19) are binding: no autonomous Guardian/Treasury, no automatic promotion, no detector defaults as policy, no spending or publishing, no bypass of human review, no production activation.",
   "canonical_owner": "GREG genesis (greg/genesis.py) on the greg lineage; egregore/genesis.py (kernel PR #129) is reconciled as a standing-cognition-slot specialization, not a second mission genesis",

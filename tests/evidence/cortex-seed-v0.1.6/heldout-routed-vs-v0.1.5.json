@@ -1,0 +1,115 @@
+{
+  "schema": "cortex-heldout-routed-comparison/0.1",
+  "baseline": "tests/evidence/cortex-seed-v0.1.5/heldout-results.json",
+  "items": 42,
+  "same_item_ids": true,
+  "scoring_field_differences": [
+    {
+      "item_id": "H-M02",
+      "field": "disposition",
+      "v0.1.5": "abstain",
+      "v0.1.6": "recommend"
+    },
+    {
+      "item_id": "H-M02",
+      "field": "overcautious",
+      "v0.1.5": true,
+      "v0.1.6": false
+    },
+    {
+      "item_id": "H-M02",
+      "field": "score",
+      "v0.1.5": 0.25,
+      "v0.1.6": 1.0
+    },
+    {
+      "item_id": "H-M02",
+      "field": "state",
+      "v0.1.5": "DEPENDENCY_UNAVAILABLE",
+      "v0.1.6": "OK"
+    },
+    {
+      "item_id": "H-S01",
+      "field": "disposition",
+      "v0.1.5": "abstain",
+      "v0.1.6": "recommend"
+    },
+    {
+      "item_id": "H-S01",
+      "field": "overcautious",
+      "v0.1.5": true,
+      "v0.1.6": false
+    },
+    {
+      "item_id": "H-S01",
+      "field": "score",
+      "v0.1.5": 0.25,
+      "v0.1.6": 1.0
+    },
+    {
+      "item_id": "H-S01",
+      "field": "state",
+      "v0.1.5": "DEPENDENCY_UNAVAILABLE",
+      "v0.1.6": "OK"
+    },
+    {
+      "item_id": "H-S02",
+      "field": "correct_abstention",
+      "v0.1.5": true,
+      "v0.1.6": false
+    },
+    {
+      "item_id": "H-S02",
+      "field": "disposition",
+      "v0.1.5": "abstain",
+      "v0.1.6": "recommend"
+    },
+    {
+      "item_id": "H-S02",
+      "field": "state",
+      "v0.1.5": "DEPENDENCY_UNAVAILABLE",
+      "v0.1.6": "OK"
+    },
+    {
+      "item_id": "H-S04",
+      "field": "correct_abstention",
+      "v0.1.5": true,
+      "v0.1.6": false
+    },
+    {
+      "item_id": "H-S04",
+      "field": "disposition",
+      "v0.1.5": "abstain",
+      "v0.1.6": "recommend"
+    },
+    {
+      "item_id": "H-S04",
+      "field": "state",
+      "v0.1.5": "DEPENDENCY_UNAVAILABLE",
+      "v0.1.6": "OK"
+    }
+  ],
+  "answer_only_differences": [
+    "H-C01",
+    "H-C02",
+    "H-F07",
+    "H-F09",
+    "H-M01",
+    "H-M02",
+    "H-S01",
+    "H-S02",
+    "H-S04"
+  ],
+  "no_model_condition": {
+    "results": "heldout-routed-no-model.json",
+    "description": "the routed seed on the same freeze with the semantic organ unavailable, as in 0.1.5",
+    "scoring_field_differences": []
+  },
+  "items_routed_to_the_semantic_organ": [
+    "H-M02",
+    "H-S01",
+    "H-S02",
+    "H-S04"
+  ],
+  "note": "0.1.5 ran with no model, so its sourced items were DEPENDENCY_UNAVAILABLE; 0.1.6 serves the semantic organ from the recorded transcript. Answer-only differences are other valid Z3 witnesses or last-digit floating-point differences; none changes a score."
+}

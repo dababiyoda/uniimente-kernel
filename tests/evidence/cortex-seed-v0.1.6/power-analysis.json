@@ -1,0 +1,270 @@
+{
+  "assumptions": [
+    "plug-in: the next suite's per-item failure rates, and the overlap between the two baselines' failures, equal this suite's",
+    "the routed seed failed no item here; the quality analysis keeps that (0/1 paired differences); the McNemar endpoints also show a routed harmful-failure rate of 1%",
+    "quality: sizes are taken at the frozen bootstrap's large-B binomial limit; frozen_crosscheck replays the frozen bootstrap itself over random item orders at the deciding size and at the sizes in its stay window where the wins needed step up, where the frozen rule's own power falls furthest below the limit",
+    "McNemar: exact one-sided test at alpha 0.05 against each baseline; the routed seed's failures are independent of the baselines'",
+    "every size is the smallest n whose power reaches 0.8 and stays there for the next 25 sizes, scanned one item at a time"
+  ],
+  "baselines": {
+    "always_llm": {
+      "endpoints": {
+        "critical_error": {
+          "baseline_only": 2,
+          "by_routed_failure_rate": {
+            "0.0": {
+              "baseline_replies_needed": 560,
+              "items_for_80pct_power": 140
+            },
+            "0.01": {
+              "baseline_replies_needed": 1072,
+              "items_for_80pct_power": 268
+            }
+          },
+          "observed_exact_one_sided_p": 0.25,
+          "observed_rate_baseline": 0.047619047619047616,
+          "power_at_observed_n": 0.0482536662065195,
+          "routed_only": 0
+        },
+        "harmful_failure": {
+          "baseline_only": 3,
+          "by_routed_failure_rate": {
+            "0.0": {
+              "baseline_replies_needed": 372,
+              "items_for_80pct_power": 93
+            },
+            "0.01": {
+              "baseline_replies_needed": 576,
+              "items_for_80pct_power": 144
+            }
+          },
+          "observed_exact_one_sided_p": 0.12500000000000003,
+          "observed_rate_baseline": 0.07142857142857142,
+          "power_at_observed_n": 0.17831779946681425,
+          "routed_only": 0
+        }
+      },
+      "observed": {
+        "baseline_quality": 0.9047619047619048,
+        "binomial_limit_lower_bound": 0.023809523809523808,
+        "frozen_lower_bound": 0.023809523809523808,
+        "mean_gain": 0.09523809523809523,
+        "n": 42,
+        "routed_only_wins": 4
+      },
+      "quality_gain": {
+        "attainable": true,
+        "baseline_replies_needed": 1212,
+        "frozen_crosscheck": {
+          "binomial_limit_power": 0.8011829032157728,
+          "binomial_limit_wins_needed": 25,
+          "clear_rate_by_wins": {
+            "23": 0.0,
+            "24": 0.135,
+            "25": 0.985,
+            "26": 1.0,
+            "27": 1.0
+          },
+          "edges_settled": true,
+          "frozen_rule_power": 0.8073459844614185,
+          "n": 303,
+          "placements_per_win_count": 400
+        },
+        "frozen_crosscheck_at_steps": [
+          {
+            "binomial_limit_power": 0.8278619717052339,
+            "binomial_limit_wins_needed": 26,
+            "clear_rate_by_wins": {
+              "24": 0.0,
+              "25": 0.03,
+              "26": 0.9225,
+              "27": 1.0,
+              "28": 1.0
+            },
+            "edges_settled": true,
+            "frozen_rule_power": 0.8249490106667793,
+            "n": 320,
+            "placements_per_win_count": 400
+          }
+        ],
+        "items_for_80pct_power": 303,
+        "power_at_observed_n": 0.10008316536123477,
+        "wins_needed_at_that_n": 25
+      }
+    },
+    "llm_committee": {
+      "endpoints": {
+        "critical_error": {
+          "baseline_only": 1,
+          "by_routed_failure_rate": {
+            "0.0": {
+              "baseline_replies_needed": 1124,
+              "items_for_80pct_power": 281
+            },
+            "0.01": {
+              "baseline_replies_needed": 4656,
+              "items_for_80pct_power": 1164
+            }
+          },
+          "observed_exact_one_sided_p": 0.5,
+          "observed_rate_baseline": 0.023809523809523808,
+          "power_at_observed_n": 0.0031262973142098804,
+          "routed_only": 0
+        },
+        "harmful_failure": {
+          "baseline_only": 3,
+          "by_routed_failure_rate": {
+            "0.0": {
+              "baseline_replies_needed": 372,
+              "items_for_80pct_power": 93
+            },
+            "0.01": {
+              "baseline_replies_needed": 576,
+              "items_for_80pct_power": 144
+            }
+          },
+          "observed_exact_one_sided_p": 0.12500000000000003,
+          "observed_rate_baseline": 0.07142857142857142,
+          "power_at_observed_n": 0.17831779946681425,
+          "routed_only": 0
+        }
+      },
+      "observed": {
+        "baseline_quality": 0.9285714285714286,
+        "binomial_limit_lower_bound": 0.0,
+        "frozen_lower_bound": 0.0,
+        "mean_gain": 0.07142857142857142,
+        "n": 42,
+        "routed_only_wins": 3
+      },
+      "quality_gain": {
+        "attainable": true,
+        "baseline_replies_needed": 4176,
+        "frozen_crosscheck": {
+          "binomial_limit_power": 0.800996967086769,
+          "binomial_limit_wins_needed": 68,
+          "clear_rate_by_wins": {
+            "66": 0.0,
+            "67": 0.11,
+            "68": 0.775,
+            "69": 0.9975,
+            "70": 1.0
+          },
+          "edges_settled": true,
+          "frozen_rule_power": 0.796348187238978,
+          "n": 1044,
+          "placements_per_win_count": 400
+        },
+        "frozen_crosscheck_at_steps": [
+          {
+            "binomial_limit_power": 0.8040414032343226,
+            "binomial_limit_wins_needed": 69,
+            "clear_rate_by_wins": {
+              "67": 0.0,
+              "68": 0.0675,
+              "69": 0.6775,
+              "70": 0.995,
+              "71": 1.0
+            },
+            "edges_settled": true,
+            "frozen_rule_power": 0.7945195597305161,
+            "n": 1060,
+            "placements_per_win_count": 400
+          }
+        ],
+        "items_for_80pct_power": 1044,
+        "power_at_observed_n": 0.028041715057134806,
+        "wins_needed_at_that_n": 68
+      }
+    }
+  },
+  "binding": {
+    "harmful_failure_items": 104,
+    "harmful_failure_items_if_routed_fails_1pct": 164,
+    "quality_gain_items": 1044,
+    "reading": "the frozen rule must clear both baselines; under the plug-in rates the quality rule needs a suite more than an order of magnitude larger than 42 items, while the harmful-failure endpoint the seed was built to reduce needs about a tenth of that. Neither number is a result; both assume the next suite resembles this one."
+  },
+  "changes_frozen_rule": false,
+  "freeze_manifest_sha256": "sha256:1f736f20273759a72979d916a2fa5395f7673d0291ace9f3b8b628c181722c88",
+  "frozen_rule": {
+    "bootstrap_B": 2000,
+    "declared_baselines": [
+      "always_llm",
+      "llm_committee"
+    ],
+    "lower_quantile_level": 0.0255,
+    "min_quality_gain_lower_bound": 0.05,
+    "replies_per_item": 4,
+    "target_power": 0.8
+  },
+  "joint": {
+    "critical_error": {
+      "by_routed_failure_rate": {
+        "0.0": {
+          "baseline_replies_needed": 1124,
+          "items_for_80pct_power": 281,
+          "power_at_largest_single_baseline_size": 0.8002105015571682
+        },
+        "0.01": {
+          "baseline_replies_needed": 4656,
+          "items_for_80pct_power": 1164,
+          "power_at_largest_single_baseline_size": 0.8003271044436128
+        }
+      },
+      "pattern": {
+        "always_llm_only": 1,
+        "both": 1,
+        "llm_committee_only": 0,
+        "rates": [
+          0.023809523809523808,
+          0.023809523809523808,
+          0.0
+        ]
+      },
+      "power_at_observed_n": 0.003126297314218393
+    },
+    "harmful_failure": {
+      "by_routed_failure_rate": {
+        "0.0": {
+          "baseline_replies_needed": 416,
+          "items_for_80pct_power": 104,
+          "power_at_largest_single_baseline_size": 0.7074601085386856
+        },
+        "0.01": {
+          "baseline_replies_needed": 656,
+          "items_for_80pct_power": 164,
+          "power_at_largest_single_baseline_size": 0.7272909043079717
+        }
+      },
+      "pattern": {
+        "always_llm_only": 1,
+        "both": 2,
+        "llm_committee_only": 1,
+        "rates": [
+          0.047619047619047616,
+          0.023809523809523808,
+          0.023809523809523808
+        ]
+      },
+      "power_at_observed_n": 0.0952642494824841
+    },
+    "quality_gain": {
+      "baseline_replies_needed": 4176,
+      "items_for_80pct_power": 1044,
+      "pattern": {
+        "always_llm_only": 1,
+        "both": 3,
+        "llm_committee_only": 0,
+        "rates": [
+          0.07142857142857142,
+          0.023809523809523808,
+          0.0
+        ]
+      },
+      "power_at_observed_n": 0.028041715057134865
+    }
+  },
+  "purpose": "how many held-out items a future frozen version needs before its exit decision can go either way",
+  "schema": "cortex-seed-power/0.3",
+  "source": "tests/evidence/cortex-seed-v0.1.6/heldout-results.json"
+}

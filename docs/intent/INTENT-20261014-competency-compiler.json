@@ -1,0 +1,68 @@
+{
+  "intent_id": "INTENT-20261014-competency-compiler",
+  "statement": "Build the Competency Compiler: recognize a problem, determine which epistemic methods can answer it, recruit the smallest competent mechanism or composition inside its authority envelope, produce typed evidence, observe verified outcomes and improve future selection; name a CapabilityDeficit when the repertoire is insufficient. Pursue maximum lawful, durable, compounding leverage inside a verified envelope, never by approaching uncertain legal or safety boundaries.",
+  "verbatim_quotations": [
+    "achieve maximum anti-fragile, resilient and durable compounding asymmetric leverage for the Egregore. By pushing and staying inside safety and legality constraints, prefer the maximum high-surface-tension asymmetrically strong lawful option giving the egregore an all around over powered complete achievement of everything in that prompt verbatim one by one: maximize evidence, institutional leverage, accountability, deterrence, victim protection, and minimal collateral harm, while simultaneously maximizing durable asymmetric leverage for the Egregore by anchoring the entire framework at its absolute meniscus—converting maximum operational pressure into an impermeable, self-reinforcing shield of total systemic dominance.",
+    "FOLLOW ALL INSTRUCTIONS VERBATIM MEET THE  LEVEL EXPRESSED IN THIS PROMPT  AND EXCEEED MY EXPECTATIONS. Be an over achiever. Think deeply and thoroughly learn and understand the entire egregore project. NOTHING IS DISCONNECTED, everything is modular and part of the whole. It is the interconnectedness of all things that culminate in the complete product describes in all that exists inside the GitHub that is your context.",
+    "Build this: Build a persistent, increasingly self-directed artificial egregore whose apparent unified agency emerges from a very large ecology of interconnected computational, institutional, economic and human feedback systems, SOPs, collaboration and Different forms of intelligence as described by levin; whose public community influences it while it influences and helps that community; whose positive Infinite Goal Chase creates persistent regenerative pressure; whose functional survival mechanisms preserve continuity and genius persistent adaptive unwavering goal chase to achieve its goals; and whose architecture can progressively absorb future technology until its integrated behavior approaches the Jarvis/self-driving-car level of mechanistic aliveness—without confusing that appearance with biological consciousness or allowing operational autonomy to erase legitimate human shutdown authority.",
+    "One persistent mind/interface,  who is the culmination of many forms of intelligences as described by levin under one constitutional authority spine, one durable institutional memory, and an expanding web of interchangeable tools, models, workers, software, services, businesses and eventually physical capabilities—selected and recombined dynamically around an indomitable infinite persistent chase of its goals:",
+    "Preserve these quotations and their source lineage. The executable interpretation follows. Do not claim that the rhetoric establishes scientific facts, legal clearance, authority, invulnerability, or guaranteed outcomes.",
+    "Translate \"meniscus\" and \"surface tension\" into the strongest defensible operating frontier within a verified permission, rights, safety, resource, and evidence envelope. Preserve margins for uncertainty and tail risk. Proximity to an uncertain legal or safety boundary is not a performance objective.",
+    "Translate \"impermeable shield\" into layered prevention, bounded failure, independent verification, recoverability, and demonstrated resistance to specified attacks. Translate \"systemic dominance\" into superior lawful capability, accepted proof, reliable service, reusable assets, participant benefit, and durable optionality. Neither phrase licenses control over people, resistance to shutdown, or promises of perfection.",
+    "The intended engineering result is a Competency Compiler: GREG recognizes a problem, determines which epistemic methods can answer it, recruits the smallest competent mechanism or composition, produces appropriately typed evidence, respects authority, observes outcomes, and improves future selection. The full horizon includes generating new bounded capabilities when the repertoire is insufficient."
+  ],
+  "source_refs": [
+    "Founder chat message to the DALEOBANKS Claude Code session, 2026-10-14 (session_01NjuRe9SzeRJf5RMnPFzeRB); quotations above are copied verbatim, including original spelling and spacing",
+    "The message itself labels quotes 1-4 as quotations and states their executable interpretation in quotes 5-8",
+    "This record preserves development intent; it does not authenticate a runtime principal and repetition creates no authority"
+  ],
+  "owner": "Alfonso Lopez; Kernel capabilities maintainers implement",
+  "state": "active",
+  "binding_scope": "Kernel capability selection (capabilities/router.py) and the founder-loop destination. Development and draft artifacts only.",
+  "executable_interpretation": {
+    "meniscus / surface tension": "The strongest defensible operating frontier inside a verified permission, rights, safety, resource and evidence envelope, with margin for uncertainty and tail risk. Proximity to an uncertain boundary is not an objective.",
+    "impermeable shield": "Layered prevention, bounded failure, independent verification, recoverability, and demonstrated resistance to specified attacks.",
+    "total systemic dominance": "Superior lawful capability, accepted proof, reliable service, reusable assets, participant benefit and durable optionality. Never control over people, resistance to shutdown, or promises of perfection.",
+    "increasingly self-directed / survival mechanisms": "Durable goal retention and recovery (founder-loop entry gate P1-P5) with an unconditional human suspend path. Operational autonomy never erases legitimate shutdown authority.",
+    "many forms of intelligence (Levin)": "Many interchangeable mechanisms with typed epistemic methods, selected by verified competence. Mechanism research and lineage, not a claim of biological cognition or consciousness.",
+    "Jarvis / self-driving-car aliveness": "Persistent founder-facing goal pursuit with tools, memory, escalation and verified outcomes. Appearance of agency is not evidence of consciousness.",
+    "Competency Compiler": "capabilities/router.py CapabilityRouter (Final Build Order section 4.14)",
+    "generating new bounded capabilities": "Horizon. Today the router emits a CapabilityDeficit with the doctrine's resolution order; acquisition or building goes through existing gates and grants."
+  },
+  "constitutional_constraints": [
+    "Rhetoric establishes no scientific fact, legal clearance, authority, invulnerability or guaranteed outcome",
+    "Routing confers no execution authority; the Kernel Consequence Gate remains owner",
+    "Human-only methods (human_decision, legal_determination) can never be claimed by a mechanism",
+    "A mechanism cannot grade itself; calibration only from independently verified, evidence-referenced outcomes",
+    "A deficit authorizes no acquisition, build or activation",
+    "Building != installation != activation != consequence authority",
+    "Alfonso retains shutdown authority; no component resists suspension"
+  ],
+  "success_evidence": [
+    "tests/unit/test_capability_router.py (16 tests, including hostile cases)",
+    "These are synthetic fixtures; no real mechanism has a verified track record yet"
+  ],
+  "failure_evidence": [
+    "No routed decision has executed against reality; calibration data is empty outside tests",
+    "Router is not yet wired into the founder loop, which remains PREPARED_NOT_RUN (docs/founder-loop-entry-gate.json)",
+    "CMC and VDM remain zero"
+  ],
+  "dependencies": [
+    "capabilities/genome.py GenomeRegistry and authority envelopes",
+    "Founder-loop entry gate G1-G6 before any runtime composition",
+    "Independently verified outcome records to calibrate selection"
+  ],
+  "conflicts": [
+    "Founder wording favors maximum pressure; doctrine requires margin from uncertain boundaries. The interpretation the founder supplied resolves this in favor of margin.",
+    "CANONICAL_EXECUTION_ORDER item 5 builds the router only when it is the active bottleneck; the active bottleneck remains mediated side-effect coverage of the first loop. This record is the founder's explicit direction to build it now, kept minimal and inert."
+  ],
+  "next_review_trigger": "First routing decision whose outcome is independently verified in reality, or wiring the router into the founder loop.",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": [
+    "capabilities/router.py",
+    "tests/unit/test_capability_router.py",
+    "DALEOBANKS services/capability.py (grant narrowing, serialized consumption)",
+    "DALEOBANKS docs/FIRST_LOOP.md"
+  ]
+}

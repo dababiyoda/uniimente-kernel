@@ -316,8 +316,10 @@ AppArmor setting is not changed, because that would weaken an execution-environm
 ### Not extracted yet from #157, in priority order
 
 1. **Console owner authentication** — done in increment 5, below.
-2. **BODY_STOP during a running worker.** Authenticate pending STOP commands while a worker is supervised. The STOP
-   *file* already interrupts it.
+2. **BODY_STOP during a running worker** — done in increment 5. While a worker is supervised, only pending
+   founder-signed STOP commands are authenticated. A signed STOP from the console or the phone kills the running
+   child and is persisted, with no other command applied. A forged STOP is rejected and cannot stop the body
+   (#157's `test_greg_inflight_stop.py`, ported).
 3. **Paid-attempt scope binding.** Approval of one paid attempt must not approve another after spend changed the
    remaining mandate.
 4. `greg/dataflow.py` duplicates this branch's typed bind edges, so its disposition is RETAIN_AS_EVIDENCE. The other

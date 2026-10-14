@@ -71,12 +71,12 @@ class _Genomes:
 
 # -- founder authentication, re-derived from retained signed envelopes ---------------------------------
 
-def _verify_envelope(payload: dict, founders: dict, devices: dict, body_id: str | None) -> str | None:
+def _verify_envelope(payload: dict, founders: dict, devices: dict, body_id: str) -> str | None:
     """Principal of a retained command.accepted whose envelope verifies under a key valid at its position."""
     env = payload.get("envelope")
     if not isinstance(env, dict) or env.get("kind") != payload.get("kind") or sha256_json(env) != payload.get("digest"):
         return None
-    if body_id is not None and env.get("body_id") != body_id:
+    if env.get("body_id") != body_id:
         return None
     kid = env.get("founder_key_id")
     try:
@@ -103,10 +103,15 @@ def signed_commands(journal, *kinds: str, body_id: str | None = None) -> dict[st
     enrollment is the root; later founder keys, device delegations and revocations count only when
     they arrive as founder-signed ROTATE_FOUNDER_KEY / DEVICE_ENROLL / DEVICE_REVOKE commands that
     themselves verify at their position. A record written by any other route (an in-process
-    ``command.accepted`` or ``device.enrolled``) authenticates nothing."""
+    ``command.accepted`` or ``device.enrolled``) authenticates nothing.
+
+    Every envelope must be addressed to this body: ``body_id`` defaults to the one the root enrollment
+    names, so the tick and every founder view (projection, status, morning report, evidence, closure)
+    agree that a command the same key signed for another body authenticates nothing here."""
     founders: dict[str, str] = {}
     devices: dict[str, dict] = {}
     rooted = False
+    bound = body_id
     out: dict[str, dict] = {}
     for event in journal.replay():
         kind, p = event.type, event.payload
@@ -114,13 +119,15 @@ def signed_commands(journal, *kinds: str, body_id: str | None = None) -> dict[st
             if not rooted:
                 founders[p["key_id"]] = p["public_key"]
                 rooted = True
+                if bound is None:
+                    bound = str(p.get("body_id") or "")   # no body named: nothing verifies (fail closed)
             continue
         if kind != "greg.command.accepted":
             continue
         ckind = p.get("kind")
         if ckind not in kinds and ckind not in ("ROTATE_FOUNDER_KEY", "DEVICE_ENROLL", "DEVICE_REVOKE"):
             continue
-        principal = _verify_envelope(p, founders, devices, body_id)
+        principal = _verify_envelope(p, founders, devices, bound or "")
         if principal is None:
             continue
         body = p["envelope"]["body"]
@@ -138,6 +145,23 @@ def signed_commands(journal, *kinds: str, body_id: str | None = None) -> dict[st
         if ckind in kinds:
             out[p["digest"]] = {**p, "principal": principal}
     return out
+
+
+def signed_answer(signed: dict, request_id: str, answer: Any) -> dict | None:
+    """The signature-verified DECISION behind one recorded ``decision.answered``, or None.
+
+    It counts only when the cited digest is a verified DECISION (not a MISSION, GOAL or GOAL_CONTROL),
+    for exactly this request, with exactly the recorded answer. Every goal-side reader uses this one
+    predicate: the mirrored refusal, the attention store, the evidence view and the ledger closure."""
+    if not isinstance(answer, dict):
+        return None
+    cmd = signed.get(answer.get("command_digest"))
+    body = ((cmd or {}).get("envelope") or {}).get("body")
+    if cmd is None or cmd.get("kind") != "DECISION" or not isinstance(body, dict):
+        return None
+    if body.get("request_id") != request_id or body.get("answer") != answer.get("answer"):
+        return None
+    return cmd
 
 
 def _spec(payload: Any, digest_: str) -> GoalSpec:
@@ -266,7 +290,7 @@ class BodyAttentionStore:
         book = self.body.engine.book
         for rid in self._requests(scope):
             answer = book.answers.get(rid)
-            if answer and answer.get("answer") in ANSWER and answer.get("command_digest") in self.signed:
+            if answer and answer.get("answer") in ANSWER and signed_answer(self.signed, rid, answer):
                 return {"decision": ANSWER[answer["answer"]], "request_id": rid,
                         "command_digest": answer["command_digest"]}
         return None
@@ -450,7 +474,7 @@ def _settle(body, reg: GoalRegistry, ok: dict, signed: dict, at: datetime) -> li
                 answer = book.answers.get(rid)
                 if r.get("kind") == "APPROVAL" and r.get("mission_id") == scope["mission_id"] \
                         and r.get("scope_digest") == scope["scope_digest"] and answer \
-                        and answer.get("answer") == "reject" and answer.get("command_digest") in signed:
+                        and answer.get("answer") == "reject" and signed_answer(signed, rid, answer):
                     who = signed[answer["command_digest"]]["principal"]
                     reg.record_refusal(gid, route_hash=move.route_hash, now=at,
                                        actor=f"{who} (signed DECISION {answer['command_digest'][7:19]})",
@@ -704,7 +728,7 @@ def evidence(journal, goal_id: str) -> dict:
         "experiences": WorldModel(ledger=ledger).evidence_for_goal(gid)[0],
         "asks": [{"request_id": rid, "answer": (book.answers.get(rid) or {}).get("answer"),
                   "answer_command": (book.answers.get(rid) or {}).get("command_digest"),
-                  "answer_signature_verified": (book.answers.get(rid) or {}).get("command_digest") in signed}
+                  "answer_signature_verified": signed_answer(signed, rid, book.answers.get(rid)) is not None}
                  for rid in requests],
         "mission_receipts": sorted({e.payload["receipt"] for e in journal.replay("mission.")
                                     if e.type in ("greg.mission.action", "greg.mission.observed")
@@ -719,12 +743,13 @@ def ledger_closure(journal, *, signed: dict | None = None) -> dict:
     """Detective closure over the body ledger.
 
     Every Gate dispatch traces to a ``greg.authority.grant_issued`` whose authority_ref is a founder MISSION
-    command digest that still verifies; no ``egregore.founder_answer`` exists unless it carries the digest of
-    a signature-verified DECISION (the hosted store writes none)."""
+    command digest that still verifies for this body; no ``egregore.founder_answer`` exists at all (the
+    hosted store writes none: founder answers on a body are signed DECISION commands); and every
+    ``greg.decision.answered`` carries a signature-verified DECISION for exactly that request and answer
+    (the mission fold still trusts the record itself, ADR-GOAL-GRAVITY-002 P2: this closure detects it)."""
     ledger = journal.ledger
     signed = signed if signed is not None else signed_commands(journal, *VERIFIED_KINDS)
     missions = {d for d, c in signed.items() if c["kind"] == "MISSION" and c["principal"] == "founder"}
-    decisions = {d for d, c in signed.items() if c["kind"] == "DECISION"}
     issued = {r.payload.get("grant_id"): r.payload for r in ledger.by_type("event")
               if r.payload.get("type") == "greg.authority.grant_issued"}
     problems = []
@@ -736,11 +761,19 @@ def ledger_closure(journal, *, signed: dict | None = None) -> dict:
         elif grant.get("authority_ref") not in missions:
             problems.append({"record": r.hash, "problem": "grant authority_ref is not a verified founder MISSION digest"})
     answers = ledger.by_type("egregore.founder_answer")
-    for r in answers:
-        if r.payload.get("command_digest") not in decisions:
-            problems.append({"record": r.hash, "problem": "egregore.founder_answer without a signature-verified DECISION"})
+    for r in answers:   # a digest alone binds nothing to the item it answers: none may exist on a body
+        problems.append({"record": r.hash, "problem": "egregore.founder_answer without a signature-verified DECISION "
+                                                      "for its item: a GREG body's hosted attention store writes none"})
+    unsigned = 0
+    for e in journal.replay("decision.answered"):
+        if signed_answer(signed, e.payload.get("request_id"), e.payload) is None:
+            unsigned += 1
+            problems.append({"record": journal.event_hash(e.event_id),
+                             "problem": "decision.answered without a signature-verified DECISION for that request "
+                                        "and answer"})
     return {"ok": not problems, "problems": problems, "grant_dispatches": len(dispatches),
-            "founder_answers": len(answers), "founder_asks": len(ledger.by_type("egregore.founder_ask"))}
+            "founder_answers": len(answers), "founder_asks": len(ledger.by_type("egregore.founder_ask")),
+            "unsigned_answers": unsigned}
 
 
 # -- founder operation without code: a GOAL derived from a signed mission ----------------------------

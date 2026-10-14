@@ -1,0 +1,251 @@
+"""Organ exchange on the mission path: DALEOBANKS -> WealthMachine over the signed bridge.
+
+Until now the signed organ exchange ran only from a script (``scripts/organ_bridge_live.py``,
+#171). A mission could not use it, so no mission's authority, receipts, appraisal or
+Mission Control trace ever included an organ. This module puts the same mechanism behind
+two governed capabilities; it adds no transport, no ledger and no authority:
+
+``organ.exchange`` (internal_write, target ``organ:daleobanks-wealthmachine``)
+    1. DALEOBANKS runs its own ``IdeaRefinery`` on the seed text, in its own checkout and
+       interpreter, and signs the resulting OpportunityPacket (``adapters/bridge_transport``).
+    2. WealthMachine, in its own checkout and interpreter, verifies that message and
+       answers with a signed VentureAssessment bound to the request digest.
+    3. GREG verifies both messages at the kernel, retains each body as untrusted content
+       and binds both to this mission's one trace (``greg.organ_bridge``).
+    4. A second, independent WealthMachine process re-derives the assessment from the same
+       packet; agreement is recorded as ``organ.appraised: REPRODUCED``, never VERIFIED.
+
+    Both organ processes run with a scrubbed environment and the OS network denial used for
+    every other GREG subprocess (``run_isolated``); their stores live in the mission
+    workspace. A per-invocation signing key is generated, passed only through the child
+    environment and never written. The organs pin ``uniimente-kernel-boundaries`` at 4999acff,
+    whose transport has one shared key, so ``sender_identity_isolated`` is reported false:
+    the exchange authenticates a key holder, not a specific organ (#174 explains the upgrade).
+
+``organ.status`` (read_only sensor, retry-safe)
+    Re-reads this mission's organ facts from the journal: which organs were observed, whether
+    every message was transport-verified, and the latest organ appraisal verdict.
+
+Nothing here contacts anyone, publishes, spends or decides. A signed organ message is
+evidence about an organ's computation; it is not a Kernel consequence and grants nothing.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+from pathlib import Path
+import secrets as _secrets
+import subprocess
+
+from adapters import bridge_transport as bt
+from greg import organ_bridge
+from greg.capabilities import CapabilityError, InvocationContext, _inside, run_isolated
+
+PAIR = "daleobanks-wealthmachine"
+TARGET = "organ:" + PAIR
+MAX_SEED = 2000
+
+DALEOBANKS_STAGE = r'''
+import asyncio, json, sys
+from adapters import bridge_transport as bt
+from db.session import get_db_session, init_db
+from services.idea_refinery import IdeaRefinery
+from services.venture_protocol import packet_to_wire
+init_db()
+refinery = IdeaRefinery()
+with get_db_session() as session:
+    idea = refinery.intake(session, sys.argv[1])
+    result = asyncio.run(refinery.refine(session, idea))
+if result.get("opportunity") is None:   # the organ's own judgment: nothing to evaluate
+    print(json.dumps({"no_opportunity": True, "refined": {k: str(v)[:300] for k, v in result.items()
+                                                          if k != "opportunity"}}))
+    raise SystemExit(0)
+wire = packet_to_wire(result["opportunity"])
+body = json.dumps(wire, sort_keys=True).encode()
+headers = bt.build_headers(body, identity="daleobanks", schema_version=wire.get("schema_version", "1.1"),
+                           idempotency_key=wire["id"], trace_id=sys.argv[2])
+print(json.dumps({"body": body.decode(), "headers": headers}))
+'''
+
+WEALTHMACHINE_STAGE = r'''
+import json, sys
+from adapters import bridge_transport as bt
+from src.services.opportunity_intake import OpportunityIntakeService
+msg = json.loads(sys.stdin.read())
+body = msg["body"].encode()
+bt.verify_headers(msg["headers"], body, nonce_cache=bt.NonceCache(), expected_sender="daleobanks",
+                  expected_recipient="wealthmachine", expected_operation="opportunity.evaluate")
+assessment = OpportunityIntakeService().evaluate_packet(json.loads(body))
+out = json.dumps(assessment, sort_keys=True).encode()
+headers = bt.build_headers(out, identity="wealthmachine", schema_version=assessment["schema_version"],
+                           idempotency_key=assessment["id"], recipient="kernel", operation="assessment.report",
+                           trace_id=msg["headers"]["X-Trace-Id"], request_digest=bt.body_digest(body))
+print(json.dumps({"body": out.decode(), "headers": headers}))
+'''
+
+# The assessment fields a second, independent WealthMachine run must reproduce exactly.
+REPRODUCIBLE = ("go_no_go", "opportunity_score", "market_alignment", "risk_level", "legal_readiness",
+                "requires_human_approval", "validation_plan", "reasons")
+SUMMARY = ("go_no_go", "opportunity_score", "risk_level", "legal_readiness", "requires_human_approval")
+
+
+def trace_for(mission_id: str, seed: str) -> str:
+    """One trace per mission and seed, stable across retries, so a retry binds to the same trace."""
+    return "trace-" + hashlib.sha256(json.dumps([mission_id, seed]).encode()).hexdigest()[:16]
+
+
+def _interpreter(path, ctx: InvocationContext, name: str) -> Path:
+    if not isinstance(path, str) or not path:
+        raise CapabilityError(f"{name} must name the organ's own interpreter (founder-declared)")
+    p = Path(path)
+    if not p.is_absolute():
+        raise CapabilityError(f"{name} must be an absolute path")
+    # The venv entry is often a symlink to the system interpreter: confine the declared path,
+    # not its target, and require it to be an executable file.
+    parent = _inside(p.parent, ctx.read_roots)
+    candidate = parent / p.name
+    if not (candidate.is_file() and os.access(candidate, os.X_OK)):
+        raise CapabilityError(f"{name} {path} is not an executable interpreter")
+    return candidate
+
+
+def _roots(params: dict, ctx: InvocationContext) -> dict:
+    try:
+        dale = _inside(Path(params["daleobanks_root"]), ctx.read_roots)
+        wmi = _inside(Path(params["wealthmachine_root"]), ctx.read_roots)
+    except KeyError as exc:
+        raise CapabilityError(f"missing {exc.args[0]}") from None
+    if not (dale / "services" / "idea_refinery.py").is_file():
+        raise CapabilityError("daleobanks_root is not a DALEOBANKS checkout")
+    if not (wmi / "src" / "services" / "opportunity_intake.py").is_file():
+        raise CapabilityError("wealthmachine_root is not a WealthMachineIntelligence checkout")
+    return {"daleobanks": dale, "wealthmachine": wmi,
+            "daleobanks_python": _interpreter(params.get("daleobanks_python"), ctx, "daleobanks_python"),
+            "wealthmachine_python": _interpreter(params.get("wealthmachine_python"), ctx, "wealthmachine_python")}
+
+
+def _head(path: Path) -> str | None:
+    try:
+        out = subprocess.run(["git", "-C", str(path), "rev-parse", "HEAD"], capture_output=True, text=True,
+                             timeout=10, env={"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1"})
+        return out.stdout.strip() or None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
+def _stage(python: Path, cwd: Path, code: str, *args, stdin=None, env: dict, timeout: int) -> dict:
+    try:
+        proc = run_isolated([str(python), "-s", "-c", code, *args], cwd=cwd, isolate_network=True,
+                            timeout=timeout, extra_env=env,
+                            input_bytes=json.dumps(stdin).encode() if stdin is not None else None)
+    except subprocess.TimeoutExpired:
+        raise CapabilityError(f"organ stage in {cwd.name} exceeded {timeout}s") from None
+    if proc.returncode:
+        raise CapabilityError(f"organ stage in {cwd.name} failed: "
+                              + proc.stderr.decode("utf-8", "replace")[-600:])
+    try:
+        return json.loads(proc.stdout.decode("utf-8").strip().splitlines()[-1])
+    except (ValueError, IndexError):
+        raise CapabilityError(f"organ stage in {cwd.name} returned no message") from None
+
+
+def exchange(params: dict, ctx: InvocationContext) -> dict:
+    seed = params.get("seed")
+    if not isinstance(seed, str) or not 1 <= len(seed) <= MAX_SEED:
+        raise CapabilityError(f"seed must be 1..{MAX_SEED} characters")
+    if not ctx.mission_id:
+        raise CapabilityError("an organ exchange belongs to exactly one mission")
+    roots = _roots(params, ctx)
+    timeout = int(params.get("timeout_seconds", 300))
+    if not 30 <= timeout <= 900:
+        raise CapabilityError("timeout_seconds must be in [30, 900]")
+    store = ctx.workspace / "organs" / PAIR
+    store.mkdir(parents=True, exist_ok=True)
+    key = _secrets.token_hex(32)          # per invocation, only in the children's environment, never written
+    env = {bt.SIGNING_KEY_ENV: key, "HOME": str(store), "PERSIST_STORE": "false",
+           "LEDGER_PATH": str(store / "daleobanks-decision-ledger.jsonl"),
+           "DB_SNAPSHOT_PATH": str(store / "daleobanks-store.jsonl"), "PYTHONDONTWRITEBYTECODE": "1"}
+    trace = trace_for(ctx.mission_id, seed)
+    d = _stage(roots["daleobanks_python"], roots["daleobanks"], DALEOBANKS_STAGE, seed, trace, env=env,
+               timeout=timeout)
+    if d.get("no_opportunity"):
+        # Truthful refusal: DALEOBANKS found nothing to evaluate. No message exists, so none is recorded.
+        raise CapabilityError("DALEOBANKS found no opportunity in the seed; nothing was sent to WealthMachine")
+    w = _stage(roots["wealthmachine_python"], roots["wealthmachine"], WEALTHMACHINE_STAGE, stdin=d, env=env,
+               timeout=timeout)
+    request_body, answer_body = d["body"].encode(), w["body"].encode()
+    # Kernel-side verification under the same key; a forged or replayed message raises here.
+    previous = os.environ.get(bt.SIGNING_KEY_ENV)
+    os.environ[bt.SIGNING_KEY_ENV] = key
+    try:
+        cache = bt.NonceCache()
+        if ctx.journal is not None:
+            seen = [organ_bridge.record_exchange(
+                        ctx.journal, mission_id=ctx.mission_id, headers=d["headers"], body=request_body,
+                        nonce_cache=cache, expected_sender="daleobanks", expected_operation="opportunity.evaluate"),
+                    organ_bridge.record_exchange(
+                        ctx.journal, mission_id=ctx.mission_id, headers=w["headers"], body=answer_body,
+                        nonce_cache=cache, expected_sender="wealthmachine", expected_recipient="kernel",
+                        expected_operation="assessment.report", request_digest=bt.body_digest(request_body))]
+        else:
+            seen = [bt.verify_headers(d["headers"], request_body, nonce_cache=cache, expected_sender="daleobanks",
+                                      expected_operation="opportunity.evaluate"),
+                    bt.verify_headers(w["headers"], answer_body, nonce_cache=cache, expected_sender="wealthmachine",
+                                      expected_recipient="kernel", expected_operation="assessment.report",
+                                      request_digest=bt.body_digest(request_body))]
+        # A non-producer re-derivation: a fresh WealthMachine process, the same packet, a fresh signature.
+        redo_request = {"body": d["body"], "headers": bt.build_headers(
+            request_body, identity="daleobanks", schema_version=d["headers"]["X-Schema-Version"],
+            idempotency_key=json.loads(d["body"])["id"], trace_id=trace)}
+    finally:
+        if previous is None:
+            os.environ.pop(bt.SIGNING_KEY_ENV, None)
+        else:
+            os.environ[bt.SIGNING_KEY_ENV] = previous
+    redo = _stage(roots["wealthmachine_python"], roots["wealthmachine"], WEALTHMACHINE_STAGE, stdin=redo_request,
+                  env=env, timeout=timeout)
+    packet, original, again = json.loads(d["body"]), json.loads(w["body"]), json.loads(redo["body"])
+    reproduced = {k: again.get(k) == original.get(k) for k in REPRODUCIBLE}
+    invariants = {"human_approval_required": original.get("requires_human_approval") is True,
+                  "answers_this_packet": original.get("opportunity_packet_id") == packet.get("id"),
+                  "finance_flag_forces_review": "finance_education_only" not in packet.get("risk_flags", [])
+                                                or original.get("legal_readiness") == "review_required"}
+    if ctx.journal is not None:
+        appraisal = organ_bridge.record_appraisal(ctx.journal, mission_id=ctx.mission_id,
+                                                  appraiser="kernel-organ-appraiser", reproduced=reproduced,
+                                                  invariants=invariants)
+    else:
+        passed = all(reproduced.values()) and all(invariants.values())
+        appraisal = {"verdict": organ_bridge.APPRAISAL_VERDICT if passed else "REFUTED",
+                     "checks": {**reproduced, **invariants}}
+    return {"pair": PAIR, "trace_id": trace, "packet_id": packet.get("id"),
+            "packet_sha256": hashlib.sha256(request_body).hexdigest(),
+            "assessment_sha256": hashlib.sha256(answer_body).hexdigest(),
+            "assessment": {k: original.get(k) for k in SUMMARY},
+            "appraisal_verdict": appraisal["verdict"], "transport_verified": True,
+            "sender_identity_isolated": all(bool(s.get("identity_isolated") in (True, "true")) or
+                                            bool(s.get("sender_identity_isolated")) for s in seen),
+            "organ_heads": {"daleobanks": _head(roots["daleobanks"]), "wealthmachine": _head(roots["wealthmachine"])},
+            "recorded_in_journal": ctx.journal is not None, "external_effects": None, "spend_usd": 0.0,
+            "authority_created": False}
+
+
+def status(params: dict, ctx: InvocationContext) -> dict:
+    """Read-only: this mission's organ facts as retained in the journal."""
+    if ctx.journal is None or not ctx.mission_id:
+        raise CapabilityError("organ.status reads one mission's journal facts")
+    observed = [e.payload for e in ctx.journal.replay("organ.observed")
+                if e.payload.get("mission_id") == ctx.mission_id and e.payload.get("operation")]
+    appraisals = [e.payload for e in ctx.journal.replay("organ.appraised")
+                  if e.payload.get("mission_id") == ctx.mission_id]
+    traces = sorted({o.get("trace_id") for o in observed if o.get("trace_id")})
+    return {"organs_observed": sorted({o["organ"] for o in observed}),
+            "messages": len(observed), "transport_verified": bool(observed) and all(o.get("transport_verified")
+                                                                                    for o in observed),
+            "trace_ids": traces, "verdict": appraisals[-1]["verdict"] if appraisals else None,
+            "appraisals": len(appraisals)}
+
+
+__all__ = ["DALEOBANKS_STAGE", "PAIR", "REPRODUCIBLE", "TARGET", "WEALTHMACHINE_STAGE", "exchange", "status",
+           "trace_for"]

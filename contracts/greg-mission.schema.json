@@ -231,12 +231,20 @@
                 "from": {
                   "type": "object",
                   "additionalProperties": false,
+                  "description": "action_id: the latest DONE receipt of that strategy. check_id: the receipt of the latest passing observation of a check this strategy requires (the exact evidence that satisfied its precondition).",
                   "required": [
-                    "action_id",
                     "field"
+                  ],
+                  "oneOf": [
+                    {"required": ["action_id"]},
+                    {"required": ["check_id"]}
                   ],
                   "properties": {
                     "action_id": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9_.-]{1,80}$"
+                    },
+                    "check_id": {
                       "type": "string",
                       "pattern": "^[a-z0-9_.-]{1,80}$"
                     },

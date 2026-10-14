@@ -145,8 +145,8 @@ def main() -> int:
         "system_44_trace": [{k: s[k] for k in ("kind", "event_id") if k in s} | ({"verdict": s["verdict"]} if "verdict" in s else {})
                             for s in trace_view["spans"]],
         "system_44_metrics": observability.metrics(events),
-        "organs_observed": sorted({e.payload["organ"] for e in journal.replay("mission.observed")}),
-        "sender_identity_isolated": sorted({e.payload["sender_identity_isolated"] for e in journal.replay("mission.observed")}),
+        "organs_observed": sorted({e.payload["organ"] for e in journal.replay("organ.observed")}),
+        "sender_identity_isolated": sorted({e.payload["sender_identity_isolated"] for e in journal.replay("organ.observed")}),
         "appraisal": appraisal, "replay_refused": replay_refused,
         "vepmc": metrics.vepmc(journal)["VEPMC"], "routing_track_records": routing.track_record(journal),
         "ledger_chain": journal.ledger.verify_chain(),

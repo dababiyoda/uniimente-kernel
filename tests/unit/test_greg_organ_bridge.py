@@ -56,9 +56,9 @@ def test_exchange_is_traced_per_mission_by_system_44(journal):
     organ_bridge.record_appraisal(journal, mission_id=MISSION, reproduced={"go_no_go": True},
                                   invariants={"human_approval_required": True}, appraiser="kernel-appraiser")
     spans = observability.correlate(_events(journal), MISSION)["missions"][MISSION]["spans"]
-    assert [s["kind"] for s in spans] == ["mission.observed", "mission.observed", "organ.appraised"]
+    assert [s["kind"] for s in spans] == ["organ.observed", "organ.observed", "organ.appraised"]
     assert spans[-1]["verdict"] == "REPRODUCED"
-    observed = [e.payload for e in journal.replay("mission.observed")]
+    observed = [e.payload for e in journal.replay("organ.observed")]
     assert {o["organ"] for o in observed} == {"daleobanks", "wealthmachine"}
     assert all(o["sender_identity_isolated"] is False for o in observed)
     assert len(journal.replay("external.ingested")) == 2
@@ -164,7 +164,7 @@ def test_redelivered_message_is_idempotent(journal):
         organ_bridge.record_exchange(journal, mission_id=MISSION, headers=headers, body=body,
                                      nonce_cache=bt.NonceCache(), expected_sender="daleobanks",
                                      expected_operation="opportunity.evaluate")
-    assert len(journal.replay("mission.observed")) == 1
+    assert len(journal.replay("organ.observed")) == 1
     assert len(journal.replay("external.ingested")) == 1
 
 
@@ -197,7 +197,7 @@ def test_message_without_trace_cannot_be_filed_under_a_mission(journal):
     body, headers = _signed("")
     with pytest.raises(organ_bridge.MissionBindingError):
         _record(journal, MISSION, body, headers)
-    assert journal.replay("mission.observed") == []
+    assert journal.replay("organ.observed") == []
 
 
 def test_another_missions_trace_cannot_be_filed_here(journal):

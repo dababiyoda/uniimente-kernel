@@ -570,6 +570,8 @@ STRENGTHENS = {
     "institution.compose": ("capability_formation", "routing", "compounding"),
     "institution.dossier": ("settlement", "routing", "compounding"),
     "institution.appraise": ("proof", "reliability"),
+    "organ.exchange": ("proof", "routing", "eligibility"),
+    "organ.status": ("proof", "reliability"),
 }
 
 
@@ -888,6 +890,36 @@ BUILTINS.update({
                                       filesystem="read-scoped", retry_safe=True, data_classes=("project_sources",),
                                       tests=_INSTITUTION_TESTS, provenance=_INSTITUTION_SOURCE),
                              _lazy("greg.institution", "appraise")),
+})
+
+_ORGAN_SOURCE = {"source": "uniimente-kernel/greg/organs.py",
+                 "mechanism_from": "scripts/organ_bridge_live.py (#171); adapters/bridge_transport.py; "
+                                   "greg/organ_bridge.py; DALEOBANKS services/idea_refinery.py; WMI "
+                                   "src/services/opportunity_intake.py"}
+_GIT = tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",)
+BUILTINS.update({
+    "organ.exchange": (_builtin("organ.exchange", "organ.signed_exchange",
+                                "DALEOBANKS refines a seed into a signed OpportunityPacket and WealthMachine answers "
+                                "with a signed VentureAssessment, each in its own checkout and founder-declared "
+                                "interpreter (inside read roots), with no network; GREG verifies both, binds them to "
+                                "this mission's one trace and has a second WealthMachine process re-derive the answer",
+                                "cli", "internal_write", "organ:",
+                                {"daleobanks_root": "path", "daleobanks_python": "path", "wealthmachine_root": "path",
+                                 "wealthmachine_python": "path", "seed": "str", "timeout_seconds": "int?"},
+                                {"trace_id": "str", "packet_id": "str", "assessment": "dict",
+                                 "appraisal_verdict": "REPRODUCED|REFUTED", "transport_verified": "bool",
+                                 "sender_identity_isolated": "bool", "organ_heads": "dict"},
+                                filesystem="workspace-write", binaries=_GIT, data_classes=("project_sources",),
+                                tests=("tests/unit/test_greg_organs.py", "tests/integration/test_one_machine.py"),
+                                provenance=_ORGAN_SOURCE),
+                       _lazy("greg.organs", "exchange")),
+    "organ.status": (_builtin("organ.status", "organ.exchange_status",
+                              "This mission's organ facts as retained: organs observed, transport verification, "
+                              "trace binding and the latest organ appraisal verdict", "api", "read_only", "organ:",
+                              {"(none)": "reads this mission's journal"}, {"verdict": "str|null", "organs_observed": "list", "transport_verified": "bool",
+                                   "trace_ids": "list"},
+                              retry_safe=True, tests=("tests/unit/test_greg_organs.py",), provenance=_ORGAN_SOURCE),
+                     _lazy("greg.organs", "status")),
 })
 
 # Cognitive families are the SAME capability manifests/genomes, lazily executed.

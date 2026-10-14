@@ -5,13 +5,15 @@ DALEOBANKS and WealthMachineIntelligence talk over the signed bridge
 observability could correlate them. This module records each verified message
 through the existing data plane (`greg.dataplane.ingest`: retained as inert,
 untrusted content, never a command) and links it to a mission with a
-`mission.observed` fact, so `foundry.systems.observability.correlate` returns one
+`organ.observed` fact, so `foundry.systems.observability.correlate` returns one
 trace per mission across organs.
 
 What it deliberately does not do:
 * Authentication is the transport's job: a message is recorded only after
   `verify_headers` succeeds. A verified sender is still untrusted content.
-* It never emits `mission.achieved`, so it cannot move VEPMC.
+* It never emits `mission.achieved`, so it cannot move VEPMC, and it never
+  writes `mission.observed`: that type is a success-check observation the
+  mission engine rebuilds state from (an organ message carries no check id).
 * It never emits a `VERIFIED` appraisal. Reproduction by a second run is
   recorded as `REPRODUCED` under its own event type, `organ.appraised`. It is
   never a `mission.appraised` fact: that type is the body's independent closure
@@ -41,7 +43,7 @@ def _check_binding(journal: Journal, mission_id: str, trace_id: str) -> None:
     mission's exchange under this mission or split one exchange across two."""
     if not trace_id:
         raise MissionBindingError("bridge message carries no trace id; cannot bind it to a mission")
-    for event in journal.replay("mission.observed"):
+    for event in journal.replay("organ.observed"):
         p = event.payload
         if p.get("operation") is None or "trace_id" not in p:
             continue
@@ -76,7 +78,7 @@ def record_exchange(journal: Journal, *, mission_id: str, headers: dict, body: b
     # No timestamp in the payload: the event envelope carries occurrence time,
     # and a volatile field would make a redelivered message collide with its
     # own retained fact.
-    journal.record("mission.observed", observed,
+    journal.record("organ.observed", observed,
                    key=[mission_id, "bridge", observed["content_sha256"]])
     return observed
 

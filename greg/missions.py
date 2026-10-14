@@ -104,9 +104,16 @@ class Unbound(Exception):
 def _validate_bindings(strategy: dict, actions: set):
     seen = set()
     for edge in strategy.get("bind", []):
-        source = edge["from"]["action_id"]
-        if source not in actions or source == strategy["action_id"]:
-            raise MissionError(f"strategy {strategy['action_id']} binds from unknown or own action {source!r}")
+        if "check_id" in edge["from"]:
+            # Only a check this strategy requires: the gate guarantees it was observed passing,
+            # so the bound value is exactly the evidence that satisfied the precondition.
+            if edge["from"]["check_id"] not in strategy.get("requires", []):
+                raise MissionError(f"strategy {strategy['action_id']} binds from check "
+                                   f"{edge['from']['check_id']!r}, which it does not require")
+        else:
+            source = edge["from"]["action_id"]
+            if source not in actions or source == strategy["action_id"]:
+                raise MissionError(f"strategy {strategy['action_id']} binds from unknown or own action {source!r}")
         if edge["param"] in seen:
             raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']} twice")
         seen.add(edge["param"])
@@ -125,7 +132,8 @@ def _validate_bindings(strategy: dict, actions: set):
 
 
 def _acyclic_bindings(strategies: list):
-    edges = {s["action_id"]: {e["from"]["action_id"] for e in s.get("bind", [])} for s in strategies}
+    edges = {s["action_id"]: {e["from"]["action_id"] for e in s.get("bind", []) if "action_id" in e["from"]}
+             for s in strategies}
     state = {}
 
     def visit(node):
@@ -163,13 +171,14 @@ def _set_path(params: dict, path: str, value):
 
 def bound_value(edge: dict, output):
     """The typed, size-bounded value one edge carries from a receipt's output."""
+    source = edge["from"].get("action_id") or "check " + str(edge["from"].get("check_id"))
     try:
         value = _field(output, edge["from"]["field"])
     except KeyError:
-        raise Unbound(f"{edge['from']['action_id']} output has no {edge['from']['field']}") from None
+        raise Unbound(f"{source} output has no {edge['from']['field']}") from None
     kinds = BIND_TYPES[edge["type"]]
     if not isinstance(value, kinds) or (edge["type"] in ("number", "integer") and isinstance(value, bool)):
-        raise Unbound(f"{edge['from']['action_id']}.{edge['from']['field']} is not {edge['type']}")
+        raise Unbound(f"{source}.{edge['from']['field']} is not {edge['type']}")
     if edge.get("render") == "json":
         value = json.dumps(value, sort_keys=True, indent=1, ensure_ascii=False)
     if edge.get("template") is not None:
@@ -368,7 +377,7 @@ class MissionBook:
                         # instead of repeating; eligible again after a later pass.
                         # A producer whose output another strategy binds changed its consumers' input,
                         # not the world: it is done, not ineffective, and is not re-run either.
-                        if any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
+                        if any(e["from"].get("action_id") == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
                             m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
                         else:
                             m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
@@ -511,7 +520,7 @@ class MissionEngine:
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.")) else None,
+                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.", "organ.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
                                  cognition_model=getattr(self, "cognition_model", None),
@@ -706,16 +715,26 @@ class MissionEngine:
         params = json.loads(json.dumps(s.get("params", {})))
         bindings, sources = [], []
         for edge in s["bind"]:
-            source = edge["from"]["action_id"]
-            receipt = latest.get(source)
-            if receipt is None:
-                raise Unbound(f"{source} has no completed action yet")
+            if "check_id" in edge["from"]:
+                source = edge["from"]["check_id"]
+                passing = [e.payload["receipt"] for e in self.journal.replay("mission.observed")
+                           if e.payload.get("mission_id") == m.mission_id and e.payload.get("check_id") == source
+                           and e.payload.get("passed") and e.payload.get("receipt")]
+                receipt = passing[-1] if passing else None
+                if receipt is None:
+                    raise Unbound(f"check {source} has no passing observation yet")
+            else:
+                source = edge["from"]["action_id"]
+                receipt = latest.get(source)
+                if receipt is None:
+                    raise Unbound(f"{source} has no completed action yet")
             record = self.office.ledger.find(receipt)
             if record is None or record.record_type != "receipt":
                 raise Unbound(f"{source} receipt {receipt[:19]} is not on the ledger")
             value = bound_value(edge, record.payload.get("result", {}).get("output"))
             _set_path(params, edge["param"], value)
-            bindings.append({"param": edge["param"], "from_action": source, "from_receipt": receipt,
+            bindings.append({"param": edge["param"], ("from_check" if "check_id" in edge["from"] else "from_action"): source,
+                             "from_receipt": receipt,
                              "field": edge["from"]["field"], "value_sha256": sha256_json({"v": value})})
             sources.append(receipt)
         return params, bindings, sources

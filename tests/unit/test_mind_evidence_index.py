@@ -24,7 +24,9 @@ def test_admission_statuses_reach_the_index_in_the_harness_shape(tmp_path, monke
         "collective_market": {"status": "SUPERSEDED", "version": None,
                               "evidence": f"{B.ADMISSION}/run-x/results.json#genomes.collective_market",
                               "history": [{"run": "run-x", "status": "SUPERSEDED", "version": None}]}}
-    assert not any("admission" in m for m in index["missing_sources"])
+    # the genome harness's run is present; PR #155's operation runs are absent from this tmp root and listed
+    assert not any("no frozen held-out admission run" in m for m in index["missing_sources"])
+    assert {rel for rel, _, _ in B.OPERATION_RUNS} <= set(index["missing_sources"])
 
 
 def test_a_missing_admission_run_is_listed_never_invented(tmp_path, monkeypatch):
@@ -59,3 +61,36 @@ def test_a_later_family_decides_a_recipe_and_earlier_verdicts_stay_in_its_histor
     row = B.build()["recipes"]["graph_then_allocate"]
     assert (row["family"], row["status"], row["prefer"]) == ("F7", "NO_LIFT", "greedy")
     assert [(h["family"], h["status"], h["wins"]) for h in row["history"]] == [("F3", "VPL_LIFT", 11)]
+
+
+def test_operation_verdicts_route_only_when_measured_and_the_latest_run_decides(tmp_path, monkeypatch):
+    """PR #155 lineage: a measured held-out verdict routes; a structural label is kept and routes as UNEVALUATED;
+    a later file (including a one-family file) decides and every run stays in the history."""
+    v1, v2, single = "v1.json", "v2.json", "one.json"
+    (tmp_path / v1).write_text(json.dumps({"source_commit": "a", "families": {
+        "pattern": {"status": "REJECTED"}, "search": {"status": "ALIAS"}, "crowd": {"status": "NOT_RUN"}}}))
+    (tmp_path / v2).write_text(json.dumps({"source_commit": "b", "families": {"crowd": {"status": "DEFAULT_FOR_GEOMETRY"}}}))
+    (tmp_path / single).write_text(json.dumps({"source_commit": "c", "status": {"status": "EXPERIMENTAL"}}))
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(B, "OPERATION_RUNS", ((v1, "families", None), (v2, "families", None),
+                                              (single, "status", "crowd")))
+    ops = B.build()["operations"]
+    assert (ops["pattern"]["status"], ops["pattern"]["measured"]) == ("REJECTED", True)
+    assert (ops["search"]["status"], ops["search"]["raw_status"], ops["search"]["measured"]) == \
+        ("UNEVALUATED", "ALIAS", False)
+    assert (ops["crowd"]["status"], ops["crowd"]["evidence"]) == ("EXPERIMENTAL", f"{single}#status")
+    assert [h["status"] for h in ops["crowd"]["history"]] == ["NOT_RUN", "DEFAULT_FOR_GEOMETRY", "EXPERIMENTAL"]
+
+
+def test_another_harness_file_in_the_admission_directory_is_not_a_genome_source(tmp_path, monkeypatch):
+    """PR #155's admission runs live under the same directory with a "families" key: the genome glob skips them
+    (they enter through OPERATION_RUNS), so no source is listed twice."""
+    run = tmp_path / B.ADMISSION / "2026-10-14"
+    run.mkdir(parents=True)
+    (run / "results.json").write_text(json.dumps({"source_commit": "x", "families": {"pattern": {"status": "REJECTED"}}}))
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(B, "OPERATION_RUNS", ((f"{B.ADMISSION}/2026-10-14/results.json", "families", None),))
+    index = B.build()
+    paths = [s["path"] for s in index["sources"]]
+    assert paths == [f"{B.ADMISSION}/2026-10-14/results.json"] and index["genomes"] == {}
+    assert index["operations"]["pattern"]["status"] == "REJECTED"

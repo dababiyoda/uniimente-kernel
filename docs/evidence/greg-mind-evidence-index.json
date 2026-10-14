@@ -1117,6 +1117,312 @@
   }
  },
  "missing_sources": [],
+ "operations": {
+  "blackbox": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.blackbox",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.blackbox",
+     "status": "SUPERSEDED"
+    }
+   ],
+   "measured": true,
+   "raw_status": "SUPERSEDED",
+   "status": "SUPERSEDED"
+  },
+  "causal": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.causal",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.causal",
+     "status": "NOT_BENCHMARKED"
+    }
+   ],
+   "measured": false,
+   "raw_status": "NOT_BENCHMARKED",
+   "status": "UNEVALUATED"
+  },
+  "collective": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.collective",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.collective",
+     "status": "REJECTED"
+    }
+   ],
+   "measured": true,
+   "raw_status": "REJECTED",
+   "status": "REJECTED"
+  },
+  "control": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.control",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.control",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    }
+   ],
+   "measured": true,
+   "raw_status": "DEFAULT_FOR_GEOMETRY",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "crowd": {
+   "evidence": "docs/evidence/pr155-crowd-sparse/2026-10-14/results.json#status",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.crowd",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/pr155-crowd-sparse/2026-10-14/results.json#status",
+     "status": "EXPERIMENTAL"
+    }
+   ],
+   "measured": true,
+   "raw_status": "EXPERIMENTAL",
+   "status": "EXPERIMENTAL"
+  },
+  "estimation": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.estimation",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.estimation",
+     "status": "SUPERSEDED_BY_CANONICAL_ORGAN"
+    }
+   ],
+   "measured": false,
+   "raw_status": "SUPERSEDED_BY_CANONICAL_ORGAN",
+   "status": "UNEVALUATED"
+  },
+  "evidence": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.evidence",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.evidence",
+     "status": "NOT_BENCHMARKED"
+    }
+   ],
+   "measured": false,
+   "raw_status": "NOT_BENCHMARKED",
+   "status": "UNEVALUATED"
+  },
+  "evolutionary": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.evolutionary",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.evolutionary",
+     "status": "REJECTED"
+    }
+   ],
+   "measured": true,
+   "raw_status": "REJECTED",
+   "status": "REJECTED"
+  },
+  "exact": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.exact",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.exact",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    }
+   ],
+   "measured": true,
+   "raw_status": "DEFAULT_FOR_GEOMETRY",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "formal": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.formal",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.formal",
+     "status": "SUPERSEDED_BY_CANONICAL_ORGAN"
+    }
+   ],
+   "measured": false,
+   "raw_status": "SUPERSEDED_BY_CANONICAL_ORGAN",
+   "status": "UNEVALUATED"
+  },
+  "game": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.game",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.game",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    }
+   ],
+   "measured": true,
+   "raw_status": "DEFAULT_FOR_GEOMETRY",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "graph": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.graph",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.graph",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    }
+   ],
+   "measured": true,
+   "raw_status": "DEFAULT_FOR_GEOMETRY",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "human": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.human",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.human",
+     "status": "ROUTE_ONLY"
+    }
+   ],
+   "measured": false,
+   "raw_status": "ROUTE_ONLY",
+   "status": "UNEVALUATED"
+  },
+  "information": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.information",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.information",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    }
+   ],
+   "measured": true,
+   "raw_status": "DEFAULT_FOR_GEOMETRY",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "micro": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.micro",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.micro",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    }
+   ],
+   "measured": true,
+   "raw_status": "DEFAULT_FOR_GEOMETRY",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "optimization": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.optimization",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.optimization",
+     "status": "SUPERSEDED_BY_CANONICAL_ORGAN"
+    }
+   ],
+   "measured": false,
+   "raw_status": "SUPERSEDED_BY_CANONICAL_ORGAN",
+   "status": "UNEVALUATED"
+  },
+  "pattern": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.pattern",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.pattern",
+     "status": "REJECTED"
+    }
+   ],
+   "measured": true,
+   "raw_status": "REJECTED",
+   "status": "REJECTED"
+  },
+  "probabilistic": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.probabilistic",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.probabilistic",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    }
+   ],
+   "measured": true,
+   "raw_status": "DEFAULT_FOR_GEOMETRY",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "protection": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.protection",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.protection",
+     "status": "NOT_BENCHMARKED"
+    }
+   ],
+   "measured": false,
+   "raw_status": "NOT_BENCHMARKED",
+   "status": "UNEVALUATED"
+  },
+  "robust_pattern": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.robust_pattern",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.robust_pattern",
+     "status": "EXPERIMENTAL"
+    }
+   ],
+   "measured": true,
+   "raw_status": "EXPERIMENTAL",
+   "status": "EXPERIMENTAL"
+  },
+  "search": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.search",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.search",
+     "status": "ALIAS"
+    }
+   ],
+   "measured": false,
+   "raw_status": "ALIAS",
+   "status": "UNEVALUATED"
+  },
+  "semantic": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.semantic",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.semantic",
+     "status": "NOT_RUN"
+    }
+   ],
+   "measured": false,
+   "raw_status": "NOT_RUN",
+   "status": "UNEVALUATED"
+  },
+  "sequential": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.sequential",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.sequential",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    }
+   ],
+   "measured": true,
+   "raw_status": "DEFAULT_FOR_GEOMETRY",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  },
+  "simulation": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.simulation",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.simulation",
+     "status": "REJECTED"
+    }
+   ],
+   "measured": true,
+   "raw_status": "REJECTED",
+   "status": "REJECTED"
+  },
+  "swarm": {
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.swarm",
+   "history": [
+    {
+     "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.swarm",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    }
+   ],
+   "measured": true,
+   "raw_status": "DEFAULT_FOR_GEOMETRY",
+   "status": "DEFAULT_FOR_GEOMETRY"
+  }
+ },
  "recipes": {
   "bayes_then_voi": {
    "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F4",
@@ -1253,6 +1559,21 @@
    "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json",
    "sha256": "sha256:e43312d2f6cb264e9e46ebd804e8dcfc7b25eb66f539d59b0af26cc6dc9952c5",
    "source_commit": "8e37cd851666e025aac4c0735083bef7bcb10235"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-14/results.json",
+   "sha256": "sha256:271a33417f5d0bd71b31d6f88c22e04e721e4660dccc24d1f21c777439f0baba",
+   "source_commit": "6e3f35db180d95ea156c04a1cea056e8e070fefb"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json",
+   "sha256": "sha256:79b92a9898f43f55de398398d718fcb24fcc95740abfcc28dd71f821ac6eb104",
+   "source_commit": "b99daba9df4d539b0a1dcb87d8fb882227f5c36a"
+  },
+  {
+   "path": "docs/evidence/pr155-crowd-sparse/2026-10-14/results.json",
+   "sha256": "sha256:7e1e34376aec775ec3168d2c19c160fc6ab750b0d6919ff7e4204963f72452da",
+   "source_commit": "85ce2750203097177ce752bf7e50a8bc8c9cda17"
   }
  ]
 }

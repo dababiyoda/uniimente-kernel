@@ -7,9 +7,12 @@ admission status from the directive's vocabulary:
     DEFAULT_FOR_GEOMETRY  NICHE_CAPABILITY  COMPOSITION_ONLY  EXPERIMENTAL  SUPERSEDED  REJECTED  FRONTIER_HORIZON
 
 This module asserts nothing by itself. ``implemented`` and ``integrated`` are read from live code (the
-cortex registry, the #140 operation contract, the genesis catalog, the composition recipes); an admission
-status other than EXPERIMENTAL or FRONTIER_HORIZON must cite a frozen evidence file, and ``check()``
-re-reads that file and refuses an entry the file does not support. Registered is not implemented: a
+cortex registry, the #140 operation contract, the genome library, the genesis catalog, the composition
+recipes); an admission status other than EXPERIMENTAL or FRONTIER_HORIZON must cite a frozen evidence file.
+Operation-family and genome statuses come from one place, the Mind evidence index that the Competency
+Compiler routes on (``docs/evidence/greg-mind-evidence-index.json``, whose every row
+``tests/unit/test_mind_evidence_sources.py`` re-derives from the frozen file it cites); ``check()`` refuses an
+entry the index does not support. Registered is not implemented: a
 reserved cortex family is FRONTIER_HORIZON as a cortex organ even when its effect is realised elsewhere,
 and the ``realized_by`` field names where.
 
@@ -28,16 +31,18 @@ BUILDABILITY = ("BUILDABLE_NOW", "EXPERIMENTAL_NOW", "FRONTIER_RESEARCH", "SCIEN
 CORTEX_LAYER = {"primitive_basal": 1, "distributed_collective": 2, "solver_macro_cognitive": 3,
                 "developmental_morphogenetic": 4, "meta_polyintelligence_cortex": 5}
 
-ADMISSION = "docs/evidence/greg-genome-admission/2026-10-14/results.json"
-ADMISSION_V2 = "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json"
 P6_V3 = "docs/evidence/greg-composition-lift/2026-10-14/results-v3.json"
-CROWD_SPARSE = "docs/evidence/pr155-crowd-sparse/2026-10-14/results.json"
 CROSSGEO_V03 = "tests/evidence/greg-crossgeo-v0.3/results.json"
 P4_V2 = "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json"
 P6_V1 = "docs/evidence/greg-composition-lift/2026-10-07/results.json"
 P6_V2 = "docs/evidence/greg-composition-lift/2026-10-14/results-v2.json"
 TARGET_FORM = "docs/TARGET_FORM_001.md"
 DEV_SWEEP = "docs/evidence/greg-developmental-sweep/2026-10-14/README.md"
+P4_V3_PR158 = "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json"
+P4_V3_PR155 = "docs/evidence/greg-learned-routing/2026-10-07/results-v3.json"
+P8_CYCLES = ("docs/evidence/greg-protected-evolution/2026-10-08", "docs/evidence/greg-protected-evolution/2026-10-09",
+             "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.json")
+P8_ROUTING = "docs/evidence/greg-protected-evolution/2026-10-14/results.json"
 
 # Founder layer of each #140 operation family (the catalog's own numbering is kept in ``detail``).
 FAMILY_LAYER = {"micro": 1, "control": 1, "pattern": 1, "robust_pattern": 1, "collective": 2, "human": 2, "crowd": 2,
@@ -130,29 +135,54 @@ def _cortex() -> list[GenomeEntry]:
     return out
 
 
-def admitted() -> dict:
-    """Family -> (raw status, evidence file); the newest frozen admission run that measured a family wins."""
-    out = {}
-    for ref in (ADMISSION, ADMISSION_V2):
-        if (ROOT / ref).exists():
-            for family, row in json.loads((ROOT / ref).read_text())["families"].items():
-                out[family] = (row.get("status", "NOT_BENCHMARKED"), ref)
-    if (ROOT / CROWD_SPARSE).exists():                 # later frozen native-geometry run for one family
-        out["crowd"] = (json.loads((ROOT / CROWD_SPARSE).read_text())["status"]["status"], CROWD_SPARSE)
-    return out
+def admitted(index: dict | None = None) -> dict:
+    """Operation family -> (raw status, evidence file), from the evidence index's ``operations`` section: the
+    newest frozen admission run that measured a family wins (PR #155 lineage runs)."""
+    from .compiler import evidence_index
+    index = evidence_index() if index is None else index
+    return {family: (row["raw_status"], row["evidence"].partition("#")[0])
+            for family, row in (index.get("operations") or {}).items()}
+
+
+def admission_of(family: str, index: dict) -> tuple[str, str, str | None]:
+    """(directive status, raw label, evidence file) for one catalog family, read from the evidence index.
+
+    A genome-library family reads ``genomes`` with the compiler's version rule: positive evidence binds the
+    version measured, so a bumped version is EXPERIMENTAL until re-admitted; negative evidence persists. Any
+    other family reads ``operations``. No index row means no frozen run: EXPERIMENTAL, labelled UNEVALUATED."""
+    from .compiler import NOT_POSITIVE
+    from .genomes import library
+    genomes = library.executables()
+    if family in genomes:
+        record = (index.get("genomes") or {}).get(family)
+        if not record:
+            return "EXPERIMENTAL", "UNEVALUATED", None
+        raw, ref = record["status"], record["evidence"].partition("#")[0]
+        current = genomes[family].genome.version
+        if record.get("version") and record["version"] != current and raw not in NOT_POSITIVE:
+            return "EXPERIMENTAL", f"{raw}@{record['version']} (stale at {current})", ref
+        return raw, raw, ref
+    record = (index.get("operations") or {}).get(family)
+    if not record:
+        return "EXPERIMENTAL", "UNEVALUATED", None
+    raw = record["raw_status"]
+    return STRUCTURAL.get(raw, raw), raw, record["evidence"].partition("#")[0]
 
 
 def _families() -> list[GenomeEntry]:
     from . import catalog, solvers
-    runs = admitted()
+    from .compiler import evidence_index
+    from .genomes import library
+    index, genomes = evidence_index(), library.executables()
     out = []
     for family, (catalog_layer, operations, classes, _, _) in catalog.FAMILIES.items():
-        raw, ref = runs.get(family, ("NOT_BENCHMARKED", None))
-        status = STRUCTURAL.get(raw, raw)
+        status, raw, ref = admission_of(family, index)
         implemented = family in solvers.SOLVERS
-        out.append(GenomeEntry(f"cognition.{family}", "operation_family", FAMILY_LAYER.get(family, 3), implemented,
+        layer = genomes[family].genome.layer if family in genomes else FAMILY_LAYER.get(family, 3)
+        source = "genome" if family in genomes else "operation"
+        out.append(GenomeEntry(f"cognition.{family}", "operation_family", layer, implemented,
                                implemented, "BUILDABLE_NOW", status,
-                               f"admission run: {raw}; catalog layer {catalog_layer}; ops {', '.join(operations)}"
+                               f"{source}; admission: {raw}; catalog layer {catalog_layer}; ops {', '.join(operations)}"
                                + (f"; {NOTES[family]}" if family in NOTES else ""),
                                (ref,) if ref else (), None, tuple(classes)))
     return out
@@ -165,17 +195,38 @@ def _acquired() -> list[GenomeEntry]:
                        "open-source mechanism formed by Capability Genesis; GREG certificate check; attach is "
                        "the founder's", ("tests/evidence/greg-open-source-genesis-2026-10-01",))
            for engine in genesis.CATALOG]
-    lift = {"estimate_then_optimize": ("F1 lift p=0.00012; X1 48/48", (P6_V1, P6_V2)),
-            "identify_then_optimize": ("F2b lift 11/3, p=0.029", (P6_V2,))}
+    from .compiler import evidence_index
+    recipes = evidence_index().get("recipes") or {}
+    # PR #155 lineage lift on further families for the same recipe: corroboration, not the routing verdict
+    corroboration = {"estimate_then_optimize": ("PR #155: X1 48/48", (P6_V1, P6_V2)),
+                     "identify_then_optimize": ("PR #155: F2b lift 11/3, p=0.029", (P6_V2,))}
     for recipe in composition.RECIPES:
-        detail, refs = lift.get(recipe, ("no held-out lift measured", ()))
+        verdict = recipes.get(recipe)
+        extra, extra_refs = corroboration.get(recipe, ("", ()))
+        if verdict is None:
+            status, detail, refs = "EXPERIMENTAL", "no held-out lift measured", ()
+        else:
+            status = "DEFAULT_FOR_GEOMETRY" if verdict["lift"] else "EXPERIMENTAL"
+            detail = (f"index {verdict['status']} on {verdict['family']} ({verdict['wins']}/{verdict['losses']}, "
+                      f"p={verdict['p_one_sided']})" + ("" if verdict["lift"] else
+                                                        f"; prefer {verdict['prefer']}"))
+            refs = (verdict["evidence"].partition("#")[0],)
         out.append(GenomeEntry(f"composition.{recipe}", "composition_recipe", 5, True, True, "BUILDABLE_NOW",
-                               "DEFAULT_FOR_GEOMETRY" if refs else "EXPERIMENTAL", detail, refs))
+                               status, detail + (f"; {extra}" if extra else ""), refs + extra_refs))
     out += [
         GenomeEntry("mechanism.conditional_competence", "mechanism", 5, True, True, "BUILDABLE_NOW", "EXPERIMENTAL",
-                    "P4 conditional memory; shadow by default; v1 and v2 INCONCLUSIVE (v3 decides)", (P4_V2,)),
+                    "P4 conditional memory, observed in shadow and never applied by default. Two pre-registered "
+                    "decisive retests found no gain: #158 v3 REGRESSION 160 vs 162; #155 v3 NO_GAIN 111 = 111 of "
+                    "130. Conditional solver learning is not currently worth its complexity",
+                    (P4_V2, P4_V3_PR158, P4_V3_PR155)),
         GenomeEntry("mechanism.protected_evolution", "mechanism", 5, True, False, "BUILDABLE_NOW", "EXPERIMENTAL",
-                    "P8 routing-genome search against a hash-pinned evaluator; not attached to runtime routing"),
+                    "P8 canonical controller (greg.cognition.evolution): Landlock-confined candidates, sealed "
+                    "evaluator, recurring-failure trigger; three cycles, all REJECT; never kept an improvement and "
+                    "never attaches", P8_CYCLES),
+        GenomeEntry("mechanism.protected_evolution_routing", "mechanism", 5, True, False, "BUILDABLE_NOW",
+                    "EXPERIMENTAL", "PR #155 lineage alternative (greg.cognition.evolution_routing), not a "
+                    "controller: routing-genome search against a hash-pinned evaluator; REJECT (no headroom); "
+                    "imported only by its historical runner", (P8_ROUTING,)),
         GenomeEntry("composition.derived", "composition_recipe", 5, True, True, "BUILDABLE_NOW", *_p6v3_status(),
                     (P6_V3,) if (ROOT / P6_V3).exists() else ()),
         GenomeEntry("mechanism.advantage_compiler", "mechanism", 5, True, False, "BUILDABLE_NOW", "EXPERIMENTAL",
@@ -209,8 +260,9 @@ def inventory() -> list[GenomeEntry]:
 
 def check(entries: list[GenomeEntry] | None = None) -> list[str]:
     """Problems that would make the library claim more than code and frozen evidence support."""
+    from .compiler import evidence_index
     problems = []
-    runs = admitted()
+    index = evidence_index()
     for e in entries if entries is not None else inventory():
         if e.admission not in STATUSES or e.buildability not in BUILDABILITY or e.layer not in range(1, 6):
             problems.append(f"{e.genome_id}: outside the closed vocabulary")
@@ -225,8 +277,8 @@ def check(entries: list[GenomeEntry] | None = None) -> list[str]:
             if not (ROOT / ref).exists():
                 problems.append(f"{e.genome_id}: missing evidence {ref}")
         if e.source == "operation_family":
-            raw = runs.get(e.genome_id.removeprefix("cognition."), ("NOT_BENCHMARKED", None))[0]
-            if STRUCTURAL.get(raw, raw) != e.admission:
+            status, raw, _ = admission_of(e.genome_id.removeprefix("cognition."), index)
+            if status != e.admission:
                 problems.append(f"{e.genome_id}: {e.admission} disagrees with frozen admission {raw}")
     return problems
 

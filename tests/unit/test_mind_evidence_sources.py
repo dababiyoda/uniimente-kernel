@@ -6,8 +6,9 @@ scripts/build_mind_evidence_index.py):
 
 * the sha256 of every listed source. A source absent from the checkout fails, naming every absent path and
   whether the clone is shallow; a shallow clone still holds every file of its commit, so absence is a defect;
-* every genome, recipe and routing row against the file and pointer it cites, and every genome history entry
-  against its own admission run; every cited file must be a listed, digested source;
+* every genome, recipe, routing and operation row against the file and pointer it cites, every genome history
+  entry against its own admission run and every operation history entry against its own file; every cited
+  file must be a listed, digested source;
 * that every source names a source commit present in this repository. A shallow clone may not hold a commit
   outside its fetched depth: those commits are then reported by an explicit skip (``pytest -rs``), never passed.
 
@@ -26,6 +27,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 INDEX = ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json"
 ADMISSION = "docs/evidence/greg-genome-admission"
+# held-out verdicts measured against a competitor; any other admission label is structural and must not route
+MEASURED = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "SUPERSEDED", "REJECTED")
 
 
 def _index() -> dict:
@@ -104,6 +107,20 @@ def test_every_cited_verdict_matches_the_source_it_cites():
         cited = _cite(row["evidence"], listed, problems)
         if cited is not None and cited.get("verdict") != row["verdict"]:
             problems.append(f"routing {name}: index {row['verdict']} but source {cited.get('verdict')}")
+    for family, row in (index.get("operations") or {}).items():
+        cited = _cite(row["evidence"], listed, problems)
+        if cited is not None and cited.get("status") != row["raw_status"]:
+            problems.append(f"operation {family}: index {row['raw_status']} but source {cited.get('status')}")
+        routed = row["raw_status"] if row["raw_status"] in MEASURED else "UNEVALUATED"
+        if (row["status"], row["measured"]) != (routed, row["raw_status"] in MEASURED):
+            problems.append(f"operation {family}: routes as {row['status']} but source label {row['raw_status']}")
+        history = row.get("history") or []
+        if not history or (history[-1]["evidence"], history[-1]["status"]) != (row["evidence"], row["raw_status"]):
+            problems.append(f"operation {family}: the latest history entry must be the deciding run")
+        for entry in history:
+            run = _cite(entry["evidence"], listed, problems)
+            if run is not None and run.get("status") != entry["status"]:
+                problems.append(f"operation {family}: history {entry} disagrees with its run")
     assert not problems, problems
 
 
@@ -129,6 +146,11 @@ def _flip_genome_status(index):
     row["status"] = "NICHE_CAPABILITY" if row["status"] == "DEFAULT_FOR_GEOMETRY" else "DEFAULT_FOR_GEOMETRY"
 
 
+def _route_a_structural_label(index):
+    row = next(r for r in index["operations"].values() if not r["measured"])
+    row["status"] = "DEFAULT_FOR_GEOMETRY"
+
+
 DIGESTS = test_every_listed_source_recomputes_to_its_recorded_sha256
 VERDICTS = test_every_cited_verdict_matches_the_source_it_cites
 COMMITS = test_every_source_names_a_commit_present_in_this_repository
@@ -140,6 +162,8 @@ COMMITS = test_every_source_names_a_commit_present_in_this_repository
     (_flip_genome_status, VERDICTS, "but source"),
     (lambda i: next(iter(i["recipes"].values())).update(wins=10 ** 6), VERDICTS, "but source"),
     (lambda i: i["sources"].pop(), VERDICTS, "not a listed"),
+    (lambda i: i["operations"]["pattern"].update(raw_status="DEFAULT_FOR_GEOMETRY"), VERDICTS, "but source"),
+    (_route_a_structural_label, VERDICTS, "routes as"),
     (lambda i: i["sources"][0].pop("source_commit"), COMMITS, "without a source commit"),
 ])
 def test_the_checks_fail_on_a_corrupted_index(tmp_path, monkeypatch, corrupt, check, needle):

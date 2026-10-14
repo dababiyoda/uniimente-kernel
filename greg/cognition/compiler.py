@@ -52,6 +52,11 @@ NATIVE_INPUTS = {
     "simulate": ("seed", "samples", "steps", "step_probability"), "minimax": ("payoffs",),
     "anomalies": ("observations",), "mdp": ("transitions", "rewards", "horizon"),
     "quorum": ("observations",), "calculate": ("expression",), "setpoint": ("observed", "low", "high"),
+    # PR #155 repertoire, where the input signature names the question unambiguously. robust_anomalies is not
+    # listed: it reads ("observations",) like anomalies and quorum, and all three are one epistemic class, so
+    # an observations-only request cannot say which question it asks (it stays reachable by its operation).
+    "crowd_label": ("classes", "labels"), "swarm_minimize": ("function", "shift", "bounds", "budget", "seed"),
+    "evolve_blackbox": ("function", "shift", "bounds", "budget", "seed"),
 }
 
 
@@ -347,10 +352,11 @@ OPERATOR_HOMES = {
 
 # ------------------------------------------------------------------ evidence-driven routing
 def evidence_index(path: Path | None = None) -> dict:
-    """Frozen results that change routing: genome admission statuses, recipe lift verdicts, P4 demotion."""
+    """Frozen results that change routing: genome and operation-family admission statuses, recipe lift
+    verdicts, P4 demotion."""
     path = path or EVIDENCE_INDEX
     if not path.exists():
-        return {"genomes": {}, "recipes": {}, "routing": {}}
+        return {"genomes": {}, "recipes": {}, "routing": {}, "operations": {}}
     return json.loads(path.read_text())
 
 
@@ -380,7 +386,9 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                     status = "UNEVALUATED"
             else:
                 need = NATIVE_INPUTS.get(op)
-                status = "UNEVALUATED"
+                # PR #155 lineage: a frozen held-out verdict for an operation family routes like a genome's;
+                # a structural label (alias, not run) is indexed as UNEVALUATED and changes nothing
+                status = (evidence.get("operations") or {}).get(family, {}).get("status", "UNEVALUATED")
                 standalone = True
             if need is None or not set(need) <= keys:
                 continue

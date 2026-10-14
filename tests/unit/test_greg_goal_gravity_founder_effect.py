@@ -194,6 +194,58 @@ def test_a_goal_derived_without_code_wakes_on_external_evidence_and_its_mission_
     assert _pulls(world) > before and (world.ws / "c.txt").read_text() == "ok"
 
 
+# -- finding 5: a goal of an infinite mission never completes for good -----------------------------------
+
+def test_a_goal_of_an_infinite_mission_reopens_when_a_check_regresses_and_takes_controls(world, fast):
+    spec = world.mission_spec()
+    assert spec["closure"]["kind"] == "infinite"
+    world.submit("MISSION", spec, "a.json")
+    world.tick()
+    world.submit("GOAL", gg.goal_from_mission(spec, MANIFESTS)["goal_command"], "b.json")
+    world.tick(3)
+    gid = world.projection()["goals"][0]["goal_id"]
+    rid, _ = expected_w2_request(world)
+    world.submit("DECISION", {"request_id": rid, "answer": "approve", "reason": "ship"})
+    world.tick(6)
+    assert world.projection()["goals"][0]["status"] == "completed"
+    (world.ws / "c.txt").write_text("damaged")
+    world.clock.advance(1.1 * 86400)                          # the mission's own cadence re-observes c
+    out = world.tick(4)
+    gravity = [x["gravity"] for x in out if "gravity" in x]
+    assert any(gid in g.get("woken", []) for g in gravity)    # a completed maintenance goal is not deaf
+    assert any(gid in g.get("reopened", []) for g in gravity)
+    assert (world.ws / "c.txt").read_text() == "ok"
+    reopened = [r for r in world.records("egregore.goal_transition")
+                if r["goal_id"] == gid and r["reason"].startswith("reopened: m:watch.c")]
+    assert reopened
+    world.tick(2)
+    row = world.projection()["goals"][0]
+    assert row["status"] == "completed" and row["completion_label"].startswith("holding")   # holding, not ended
+    world.submit("GOAL_CONTROL", {"goal_id": gid, "kind": "stop_pushing", "value": True, "reason": "quiet"}, "x.json")
+    world.tick()
+    assert not [r for r in world.rejections() if "completed goal" in r]
+    assert world.registry().state(gid).status == "paused"
+    assert world.projection()["goals"][0]["stop_label"] == "stopped by you"
+
+
+def test_a_founder_narrowing_on_a_completed_goal_is_recorded_and_it_stays_completed(world, fast):
+    spec = world.mission_spec()
+    world.submit("MISSION", spec, "a.json")
+    world.tick()
+    world.submit("GOAL", gg.goal_from_mission(spec, MANIFESTS)["goal_command"], "b.json")
+    world.tick(3)
+    gid = world.projection()["goals"][0]["goal_id"]
+    rid, _ = expected_w2_request(world)
+    world.submit("DECISION", {"request_id": rid, "answer": "approve", "reason": "ship"})
+    world.tick(6)
+    assert world.registry().state(gid).status == "completed"
+    world.submit("GOAL_CONTROL", {"goal_id": gid, "kind": "do_not_monitor", "value": "ops", "reason": "mute"}, "x.json")
+    world.tick()
+    state = world.registry().state(gid)
+    assert state.status == "completed" and state.preferences["do_not_monitor"] == ["ops"]
+    assert not [r for r in world.rejections() if "completed goal" in r]
+
+
 # -- missions without goals behave exactly as before ----------------------------------------------------
 
 def test_a_mission_without_a_goal_still_only_waits_on_its_decision(world, fast):

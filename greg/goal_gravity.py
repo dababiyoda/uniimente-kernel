@@ -746,7 +746,13 @@ def command(body, kind: str, payload: dict, digest_: str, *, signer: str = "foun
         if ck == "revoke":
             state = reg.revoke(gid, actor=actor, reason=reason, now=now)
         else:
+            completed = reg.state(gid).status == "completed"
+            if completed:     # observation-tier completion never makes a goal deaf to your controls
+                reg.transition(gid, status="dormant", now=now, reason=f"reopened to record {ck} by {actor}")
             state = reg.record_preference(gid, kind=ck, value=value, actor=actor, reason=reason, now=now)
+            if completed and state.status == "dormant":   # a stop or change keeps it paused; anything else
+                state = reg.transition(gid, status="completed", now=now,   # leaves it completed, as observed
+                                       reason=f"still completed (observation-tier) after recording {ck}")
         return {"goal_id": gid, "kind": ck, "status": state.status, "signer": signer, "authority_created": False}
     spec = check_goal(facts, payload, digest_, signer=signer, book=facts.book, manifests=facts.manifests, at=now,
                       issued_at=issued_at)
@@ -849,6 +855,30 @@ def _settle(body, reg: GoalRegistry, facts: FounderFacts, at: datetime) -> list[
                     mirrored.append(move.intervention_id)
                     break
     return mirrored
+
+
+def _reopen(reg: GoalRegistry, facts: FounderFacts, signals: list, at: datetime) -> list[str]:
+    """Completion is observation-tier, never terminal: an admitted, completed goal whose plan node an attributed
+    observation in this turn shows regressed is dormant again, so the same turn may wake it (an infinite
+    mission's checks keep being re-verified; a maintenance goal does not close for good)."""
+    readings: dict[str, Any] = {}
+    for sig in signals:
+        if sig.trust_level == "attributed":
+            for o in sig.payload.get("observations", []):
+                readings[f"{o['subject']}.{o['attribute']}"] = o["value"]
+    reopened = []
+    for gid in facts.admitted:
+        if gid in facts.closed or gid not in reg.goals() or reg.state(gid).status != "completed":
+            continue
+        for node in reg.get(gid).plan:
+            gap = metric_error(node.sbm_direction, node.sbm_target, readings[node.sbm]) if node.sbm in readings else None
+            if gap is not None and gap > 0:
+                reg.transition(gid, status="dormant", now=at,
+                               reason=f"reopened: {node.sbm} observed {readings[node.sbm]!r} (needs {node.sbm_direction} "
+                                      f"{node.sbm_target!r}); completion is observation-tier")
+                reopened.append(gid)
+                break
+    return reopened
 
 
 def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelope], int]:
@@ -996,6 +1026,7 @@ def _tick(body, now: datetime) -> dict:
     quarantined = _guard(body, reg, facts, at)
     refusals = _settle(body, reg, facts, at)
     signals, end = _sense(body, loop, held.cursor)
+    reopened = _reopen(reg, facts, signals, at)
     if not (signals or reg.due_for_review(at) or reg.by_status("awake")):
         held.cursor = end
         return {"state": "DORMANT", "quarantined": quarantined, "refusals_mirrored": refusals}
@@ -1006,7 +1037,7 @@ def _tick(body, now: datetime) -> dict:
     pulled = _activate(body, held, turn, at)
     return {"state": turn.status, "turn_id": turn.turn_id, "woken": list(turn.woken), "missions_pulled": pulled,
             "asked": list(held.store.asked), "wake_refused": [w["goal_id"] for w in turn.wake_refused],
-            "quarantined": quarantined, "refusals_mirrored": refusals}
+            "quarantined": quarantined, "refusals_mirrored": refusals, "reopened": reopened}
 
 
 # -- read-only projections (CLI, status, morning report, console, closures) ---------------------------
@@ -1043,6 +1074,18 @@ def _stop_label(facts: FounderFacts, gid: str, status: str) -> str | None:
         f"stopped by your device ({stop['principal'].split(':', 1)[-1]})"
 
 
+def _completion_label(book: MissionBook, spec: GoalSpec, status: str) -> str | None:
+    """What "completed" means on the founder surfaces: observation-tier, and never the end of a maintenance goal."""
+    if status != "completed":
+        return None
+    standing = [mid for mid in spec.authority.get("missions", []) if (m := book.missions.get(mid)) is not None
+                and m.status not in TERMINAL and m.spec["closure"]["kind"] == "infinite"]
+    if standing:
+        return (f"holding: every plan node is observed satisfied; {', '.join(standing)} keeps re-verifying, and a "
+                "regressed check reopens this goal")
+    return "completed at observation tier; a regressed plan-node observation reopens it"
+
+
 def projection(journal, *, closure: bool = True) -> dict:
     """Every goal on this body, read-only (safe while the body runs). Labels say what is and is not claimed."""
     reg = GoalRegistry(ledger=journal.ledger, quarantine_unhydratable=True)
@@ -1056,6 +1099,7 @@ def projection(journal, *, closure: bool = True) -> dict:
         row = {"goal_id": gid, "founder_intent": spec.founder_intent, "desired_state": spec.desired_state,
                "priority": reg.effective_priority(gid), "status": state.status,
                "stopped_by_founder": stop is not None, "stop_label": _stop_label(facts, gid, state.status),
+               "completion_label": _completion_label(book, spec, state.status),
                "stop_command": stop["by"] if stop else None,
                "active_node": state.active_node_id, "active_gate": state.active_gate, "sbm": state.sbm,
                "blockers": list(state.blockers), "last_woken_at": state.last_woken_at, "wake_reason": state.wake_reason,
@@ -1098,7 +1142,7 @@ def status_summary(journal) -> dict:
     view = projection(journal, closure=False)
     return {"label": label, "execution_authority": "none", "completion_tier": view["completion_tier"],
             "goals": [{k: g[k] for k in ("goal_id", "desired_state", "status", "stopped_by_founder", "stop_label",
-                                         "active_gate", "open_requests")}
+                                         "completion_label", "active_gate", "open_requests")}
                       | {"missions": [m["mission_id"] for m in g["missions"]]} for g in view["goals"]],
             "unadmitted": len(view["unadmitted"]), "faults": len(view["faults"])}
 

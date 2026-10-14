@@ -1,0 +1,175 @@
+{
+ "reality": "LOCAL-REAL rehearsal: Linux container (not ChromeOS; install.sh --allow-other-linux), test founder key with no passphrase (not Alfonso's), a bash restart loop in place of greg-body.service (no user systemd here). A structural candidate only; it never counts as VEPMC.",
+ "branch_commit_installed": "4d408b5 (first two runs), then 8531595 for the stranded-attach repair run",
+ "install": "fresh git clone of claude/greg-one-installable-mind-20261013, then bash greg/chromebook/install.sh --allow-other-linux --no-service --no-passphrase: doctor ready, 5 of 5 reasoning engines, body created, key enrolled, first-body designation signed",
+ "driver": "the console's own HTTP forms (ask, sign, decide, attach, accept), as the Chromebook browser drives them",
+ "N1_engineering_brief": {
+  "steps": [
+   "body running",
+   "first-body designation accepted",
+   "asked in the console",
+   "signed and closed the interface",
+   "kill -9 body",
+   "restarted without re-prompting",
+   "console reopened",
+   "one waiting delivery decision",
+   "delivered",
+   "accepted the result",
+   "closure read back"
+  ],
+  "vepmc_conditions": {
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": true,
+   "interruption_survived": true,
+   "appraised_verified": true,
+   "founder_accepted": true,
+   "founder_body": true,
+   "counts": true
+  },
+  "VEPMC_structural": 1,
+  "brief_sha256": "5a54fd8895ec84e35cdd152f16dc30574583e0fcffbb16ab5fe24626dc02a44b",
+  "presence": {
+   "state": "RUNNING",
+   "boots": 5,
+   "present_seconds": 72.934,
+   "absent_seconds": 2.382
+  }
+ },
+ "N2_verify_download": {
+  "steps": [
+   "N2 verify-download: proposal",
+   "N2 verify-download: founder approved",
+   "N2 verify-download: accepted"
+  ]
+ },
+ "LP_cognition_first_attempt": {
+  "steps": [
+   "LP cognition: proposal",
+   "LP cognition: founder approved",
+   "LP cognition: no acceptable result in time"
+  ],
+  "negative_evidence": "Approve was clicked on the CAPABILITY_ATTACH ask; the ask disappeared with its Attach button while m:plan-cd07f3a8c0 stayed blocked on acquired.lp.optimize.scipy (verified, unattached). Repaired in 8531595."
+ },
+ "LP_cognition_after_repair": {
+  "steps": [
+   "stranded mission visible",
+   "console shows Attach",
+   "attached from the console",
+   "LP result accepted"
+  ],
+  "goals": [
+   {
+    "mission_id": "m:engineering-brief-2026-10-13",
+    "intended_effect": "a current, source-bound engineering brief is waiting in the delivery folder",
+    "closure": "bounded",
+    "achieved": true
+   },
+   {
+    "mission_id": "m:verify-release-notes-txt",
+    "intended_effect": "the file is proven to match its published digest, and a record is filed only if it does",
+    "closure": "bounded",
+    "achieved": true
+   },
+   {
+    "mission_id": "m:plan-cd07f3a8c0",
+    "intended_effect": "the best plan under the stated limits with prices that prove no plan does better, or a proof that no plan meets them (naming the limits in conflict) or that the objective has no limit",
+    "closure": "bounded",
+    "achieved": true
+   }
+  ],
+  "attach_waiting_after": []
+ },
+ "same_body_mind_surfaces": {
+  "foundry_status": {
+   "complete": "42/55",
+   "by_state": {
+    "COMPLETE": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24,
+     25,
+     27,
+     30,
+     31,
+     34,
+     36,
+     38,
+     39,
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47,
+     48,
+     50,
+     53,
+     55
+    ],
+    "PARTIAL": [
+     9,
+     10,
+     26,
+     28,
+     29,
+     32,
+     33,
+     35,
+     37,
+     49,
+     51,
+     52,
+     54
+    ],
+    "OUTSTANDING": []
+   }
+  },
+  "resilience_episodes": {
+   "failures": 2,
+   "recovered": 2,
+   "open": 0,
+   "mean_recovery_seconds": 32.999649500000004,
+   "median_recovery_seconds": 32.999649500000004,
+   "recurrence_rate": 0.0,
+   "recovered_without_founder": 0.0,
+   "recovery_path_diversity": {
+    "m:engineering-brief-2026-10-13/fresh-brief": 1,
+    "m:verify-release-notes-txt/recorded": 1
+   }
+  },
+  "path_achieved": [
+   "N0",
+   "N1"
+  ],
+  "path_active": "N2",
+  "N2_not_achieved_because": "each N2 closure must also count for VEPMC, which needs a kill -9 while it waits; this rehearsal did not interrupt the N2 missions (the runbook asks the founder to)"
+ },
+ "ledger": {
+  "events": 229,
+  "sha256": "92abf501e55d047e3686d2b67a25e4c0bcfd57e07d1e4cac1fbd7649b31e777b"
+ }
+}

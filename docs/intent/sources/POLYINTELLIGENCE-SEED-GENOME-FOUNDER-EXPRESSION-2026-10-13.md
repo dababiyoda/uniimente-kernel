@@ -52,7 +52,7 @@ texts between BEGIN and END in the two review files. Compared with the 2026-10-0
 "I reran the review" (as in the 2026-09-30 original, not "In the review"), one blank line now separates the two
 passes, and the message ends with a newline. Every other byte of both passes is identical.
 
-## Deliveries (lineage only; checked by the same test)
+## Deliveries (lineage only; the table rows are checked by the same test)
 
 | Delivered (UTC) | Characters | SHA-256 (UTF-8) | Relation to the preserved message |
 | --- | --- | --- | --- |

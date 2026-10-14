@@ -47,15 +47,19 @@ Where the baselines failed: H-F08 [formal]: always_llm recommend (unsupported ce
 
 Kill criterion: not met: this is the first frozen version with the baselines run, and the routed seed has the critical-error advantage.
 
-Addendum, 2026-10-14. The experiment report's own first kill condition does apply: once the baselines ran and the
-exit was `GAIN_ABSENT`, the router stopped being a performance claim. The gates, receipts, verifier and abstention
-stay as a safety layer because they reduced critical errors on this suite. That reduction is observed but not
-established: exact one-sided McNemar p = 0.125 for harmful failures. At 42 items the frozen rule had only 10% power
-to establish the observed gain over `always_llm`, and 3% over `llm_committee`. A future frozen version that decides
-the question needs about 1,045 items on the frozen quality rule, or 93 items (144 if the seed itself failed harmfully 1% of the time) on a harmful-failure endpoint
-fixed before any baseline reply is collected. That choice is the founder's. The full reasoning is in
+Addendum, 2026-10-14 (corrected after an independent post-run review). The experiment report's own first kill
+condition applies: once the baselines ran and the exit was `GAIN_ABSENT`, the router stopped being a performance
+claim. The gates, receipts, verifier and abstention stay as a safety layer because they reduced critical errors on
+this suite (0 against 2 and 1). That reduction is observed but not established: exact one-sided McNemar p = 0.25 and
+0.5 for critical errors, and 0.125 against each baseline for harmful failures (critical or unsupported certainty).
+At 42 items the frozen rule had 10% power to establish the observed gain over `always_llm`, 3% over `llm_committee`
+and 3% over both, which the rule requires. A future frozen version that decides the question needs either about
+1,044 items on the frozen quality rule (0.80 power at the binomial limit, 0.796 under the replayed frozen bootstrap),
+or 104 items on a harmful-failure endpoint (164 if the seed itself failed harmfully on 1% of items). The endpoint
+must be fixed before any baseline reply is collected, and that choice is the founder's. The full reasoning is in
 `docs/cortex/SEED_EXPERIMENT_REPORT.md` (section "the decisive test, kill condition 1, and what would decide the
-gain") and the numbers are in `tests/evidence/cortex-seed-v0.1.6/power-analysis.json`.
+gain"). The numbers are in `tests/evidence/cortex-seed-v0.1.6/power-analysis.json`, and the review that corrected an
+earlier 93-item figure is `docs/cortex/reviews/POST_RUN_REVIEW_2026-10-14.json`.
 
 Read narrowly: the baseline model is from the same vendor family as the suite's authors; the suite is self-authored and
 structured-only; 42 items give wide intervals; cost and latency are not comparable across arms. Full limits:

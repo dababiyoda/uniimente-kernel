@@ -79,5 +79,7 @@ def test_the_2026_10_14_reissue_is_the_same_message_without_its_final_newline():
     message = _preface() + pass_1 + "\n\n" + pass_2.rstrip("\n") + "\n"
     assert hashlib.sha256(message[:-1].encode("utf-8")).hexdigest() == REISSUE_SHA256
     deliveries = SOURCE.read_text(encoding="utf-8").split("## Deliveries", 1)[1].split("\n## ", 1)[0]
-    assert MESSAGE_SHA256 in deliveries and REISSUE_SHA256 in deliveries
+    assert f"| 2026-10-13T14:42:11Z | {len(message)} | `{MESSAGE_SHA256}` | the message itself |" in deliveries
+    assert f"| 2026-10-14T04:46:50Z | {len(message) - 1} | `{REISSUE_SHA256}` |" in deliveries
     assert "Repetition creates no additional authority" in deliveries
+    assert "does not widen the approved scope" in deliveries

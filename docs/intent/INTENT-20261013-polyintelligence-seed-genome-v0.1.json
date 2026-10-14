@@ -38,7 +38,7 @@
     "The fourteen lineages that carry #137 cannot be merged to main until #137 is decided; their mechanisms are queued, not ported",
     "VEPMC remains 0: nothing here runs on the founder's Chromebook",
     "The frozen held-out verdict is GAIN_ABSENT: the routed seed scored 1.000 with no critical error against 0.905 and 0.929, but the paired-gain lower bounds (0.024, 0.000) did not clear the frozen 0.05 threshold on 42 self-authored items",
-    "Report kill condition 1 applies (2026-10-14): with the baselines run and the exit GAIN_ABSENT, the router is not a performance claim; the safety layer stays on an observed, unestablished critical-error advantage (exact one-sided McNemar p = 0.125 for harmful failures). At 42 items the frozen rule had 10% and 3% power for the observed gains (tests/evidence/cortex-seed-v0.1.6/power-analysis.json)"
+    "Report kill condition 1 applies (2026-10-14): with the baselines run and the exit GAIN_ABSENT, the router is not a performance claim; the safety layer stays on an observed, unestablished critical-error advantage (exact one-sided McNemar p = 0.25 and 0.5 for critical errors, 0.125 for harmful failures). At 42 items the frozen rule had 10% and 3% power for the observed gains, 3% against both baselines at once (tests/evidence/cortex-seed-v0.1.6/power-analysis.json)"
   ],
   "dependencies": [
     "capabilities.genome (KNOWN_CONTRACTS carries the five cortex contract names), memory.causal.VALIDATION_WEIGHT, provenance.ledger.EvidenceLedger, egregore.runtime.StandingCognitionRuntime",
@@ -51,7 +51,7 @@
     "Sixteen open draft lineages implement overlapping seeds (thirteen when this work began; #161-#163 opened the same day); this branch productizes the main-compatible #141 and registers the rest instead of adding a fourteenth silo",
     "The review's five-layer naming (L1-L5) versus the build prompt's five layers: both preserved through REVIEW_LAYER_MAP, unchanged here"
   ],
-  "next_review_trigger": "Founder review of the draft PR; or the first real outcome settled through the standing-runtime binding; or a founder-selected local model that unlocks the local baseline arms and the semantic organ; or a founder choice of the 0.1.7 primary endpoint (frozen quality rule on about 1,045 externally authored items, or harmful-failure rate on at least 93 to 144), fixed before any baseline reply is collected.",
+  "next_review_trigger": "Founder review of the draft PR; or the first real outcome settled through the standing-runtime binding; or a founder-selected local model that unlocks the local baseline arms and the semantic organ; or a founder choice of the 0.1.7 primary endpoint (frozen quality rule on about 1,044 externally authored items, or harmful-failure rate on about 104 to 164), fixed before any baseline reply is collected.",
   "supersedes": [],
   "superseded_by": [],
   "implementation_refs": [

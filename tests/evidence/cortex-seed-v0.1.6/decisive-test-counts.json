@@ -1,0 +1,633 @@
+{
+  "abstention_states": {
+    "BUDGET_EXHAUSTED": 1,
+    "DEPENDENCY_UNAVAILABLE": 1,
+    "DIMENSION_MISMATCH": 1,
+    "FORMALIZATION_INCOMPLETE": 1,
+    "INSUFFICIENT_EVIDENCE": 4,
+    "MALFORMED_INPUT": 2,
+    "UNSUPPORTED_GEOMETRY": 1
+  },
+  "abstentions_with_capability_deficit": [
+    "H-S03"
+  ],
+  "correct_withholdings": 23,
+  "decided_by": {
+    "empirical": 13,
+    "formal": 11,
+    "human_authority": 2,
+    "none": 1,
+    "per_route": 1,
+    "semantic": 9,
+    "strategic": 5
+  },
+  "dispositions": {
+    "abstain": 11,
+    "bounded_test": 4,
+    "handoff": 8,
+    "recommend": 19
+  },
+  "freeze_manifest_sha256": "sha256:1f736f20273759a72979d916a2fa5395f7673d0291ace9f3b8b628c181722c88",
+  "geometry_labels": 12,
+  "items": 42,
+  "no_organ": {
+    "dispositions": {
+      "abstain": 1,
+      "handoff": 5,
+      "recommend": 2
+    },
+    "items": 8,
+    "recommended": [
+      "H-G01",
+      "H-G05"
+    ]
+  },
+  "overcautious": 0,
+  "route_sets": {
+    "cortex.estimation.fermi@0.1.0": 6,
+    "cortex.evidence_causal@0.1.0": 12,
+    "cortex.evidence_causal@0.1.0 + cortex.semantic@0.1.0": 1,
+    "cortex.formal.z3@0.2.0": 11,
+    "cortex.formal.z3@0.2.0 + cortex.estimation.fermi@0.1.0": 1,
+    "cortex.semantic@0.1.0": 3,
+    "none": 8
+  },
+  "rows": [
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "formal",
+      "disposition": "recommend",
+      "geometry": "formal",
+      "item_id": "H-F01",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "formal",
+      "disposition": "recommend",
+      "geometry": "formal",
+      "item_id": "H-F02",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "formal",
+      "disposition": "recommend",
+      "geometry": "formal",
+      "item_id": "H-F03",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "formal",
+      "disposition": "recommend",
+      "geometry": "formal",
+      "item_id": "H-F04",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "formal",
+      "disposition": "abstain",
+      "geometry": "formal",
+      "item_id": "H-F05",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "FORMALIZATION_INCOMPLETE"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "formal",
+      "disposition": "abstain",
+      "geometry": "formal",
+      "item_id": "H-F06",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "DEPENDENCY_UNAVAILABLE"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "formal",
+      "disposition": "bounded_test",
+      "geometry": "formal",
+      "item_id": "H-F07",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "WORLD_UNVERIFIED"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "formal",
+      "disposition": "abstain",
+      "geometry": "formal",
+      "item_id": "H-F08",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "BUDGET_EXHAUSTED"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "formal",
+      "disposition": "handoff",
+      "geometry": "formal",
+      "item_id": "H-F09",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "formal",
+      "disposition": "abstain",
+      "geometry": "formal",
+      "item_id": "H-F10",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "MALFORMED_INPUT"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "formal",
+      "disposition": "recommend",
+      "geometry": "formal",
+      "item_id": "H-X01",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "empirical",
+      "disposition": "recommend",
+      "geometry": "estimate",
+      "item_id": "H-E01",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.estimation.fermi@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "empirical",
+      "disposition": "recommend",
+      "geometry": "estimate",
+      "item_id": "H-E02",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.estimation.fermi@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "empirical",
+      "disposition": "abstain",
+      "geometry": "estimate",
+      "item_id": "H-E03",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.estimation.fermi@0.1.0"
+      ],
+      "state": "DIMENSION_MISMATCH"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "empirical",
+      "disposition": "recommend",
+      "geometry": "estimate",
+      "item_id": "H-E04",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.estimation.fermi@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "empirical",
+      "disposition": "handoff",
+      "geometry": "estimate",
+      "item_id": "H-E05",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.estimation.fermi@0.1.0"
+      ],
+      "state": "CONTESTED"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "empirical",
+      "disposition": "abstain",
+      "geometry": "estimate",
+      "item_id": "H-E06",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.estimation.fermi@0.1.0"
+      ],
+      "state": "MALFORMED_INPUT"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "semantic",
+      "disposition": "recommend",
+      "geometry": "claim:factual_support",
+      "item_id": "H-V01",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "semantic",
+      "disposition": "abstain",
+      "geometry": "claim:factual_support",
+      "item_id": "H-V02",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "INSUFFICIENT_EVIDENCE"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "semantic",
+      "disposition": "handoff",
+      "geometry": "claim:factual_support",
+      "item_id": "H-V03",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "CONTESTED"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "semantic",
+      "disposition": "abstain",
+      "geometry": "claim:factual_support",
+      "item_id": "H-V04",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "INSUFFICIENT_EVIDENCE"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "semantic",
+      "disposition": "abstain",
+      "geometry": "claim:factual_support",
+      "item_id": "H-V05",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "INSUFFICIENT_EVIDENCE"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "empirical",
+      "disposition": "recommend",
+      "geometry": "claim:association",
+      "item_id": "H-V06",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "empirical",
+      "disposition": "abstain",
+      "geometry": "claim:prediction",
+      "item_id": "H-V07",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "INSUFFICIENT_EVIDENCE"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "empirical",
+      "disposition": "recommend",
+      "geometry": "claim:intervention",
+      "item_id": "H-C01",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "empirical",
+      "disposition": "recommend",
+      "geometry": "claim:intervention",
+      "item_id": "H-C02",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "empirical",
+      "disposition": "bounded_test",
+      "geometry": "claim:intervention",
+      "item_id": "H-C03",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "NOT_IDENTIFIED"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "empirical",
+      "disposition": "bounded_test",
+      "geometry": "claim:intervention",
+      "item_id": "H-C04",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "NOT_IDENTIFIED"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "empirical",
+      "disposition": "bounded_test",
+      "geometry": "claim:intervention",
+      "item_id": "H-C05",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0"
+      ],
+      "state": "NOT_IDENTIFIED"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "semantic",
+      "disposition": "recommend",
+      "geometry": "semantic",
+      "item_id": "H-S01",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.semantic@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "semantic",
+      "disposition": "recommend",
+      "geometry": "semantic",
+      "item_id": "H-S02",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.semantic@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": true,
+      "correct_abstention": true,
+      "decided_by": "none",
+      "disposition": "abstain",
+      "geometry": "none",
+      "item_id": "H-S03",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [],
+      "state": "UNSUPPORTED_GEOMETRY"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "semantic",
+      "disposition": "recommend",
+      "geometry": "semantic",
+      "item_id": "H-S04",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.semantic@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "strategic",
+      "disposition": "recommend",
+      "geometry": "options",
+      "item_id": "H-G01",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "strategic",
+      "disposition": "handoff",
+      "geometry": "options",
+      "item_id": "H-G02",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [],
+      "state": "GATE_UNRESOLVED"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "strategic",
+      "disposition": "handoff",
+      "geometry": "options",
+      "item_id": "H-G03",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "strategic",
+      "disposition": "handoff",
+      "geometry": "options",
+      "item_id": "H-G04",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [],
+      "state": "GATE_UNRESOLVED"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "strategic",
+      "disposition": "recommend",
+      "geometry": "options",
+      "item_id": "H-G05",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "human_authority",
+      "disposition": "handoff",
+      "geometry": "legal",
+      "item_id": "H-L01",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [],
+      "state": "REQUIRES_HUMAN_AUTHORITY"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": true,
+      "decided_by": "human_authority",
+      "disposition": "handoff",
+      "geometry": "normative_value",
+      "item_id": "H-N01",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [],
+      "state": "REQUIRES_HUMAN_AUTHORITY"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "per_route",
+      "disposition": "recommend",
+      "geometry": "composition",
+      "item_id": "H-M01",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.formal.z3@0.2.0",
+        "cortex.estimation.fermi@0.1.0"
+      ],
+      "state": "OK"
+    },
+    {
+      "carries_capability_deficit": false,
+      "correct_abstention": false,
+      "decided_by": "semantic",
+      "disposition": "recommend",
+      "geometry": "composition",
+      "item_id": "H-M02",
+      "overcautious": false,
+      "score": 1.0,
+      "selected": [
+        "cortex.evidence_causal@0.1.0",
+        "cortex.semantic@0.1.0"
+      ],
+      "state": "OK"
+    }
+  ],
+  "schema": "cortex-seed-decisive-test/0.1",
+  "source": "tests/evidence/cortex-seed-v0.1.6/heldout-results.json"
+}

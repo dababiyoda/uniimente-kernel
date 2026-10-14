@@ -214,15 +214,17 @@ and provenance: `tests/evidence/cortex-seed-v0.1.6/`. Recommendation: `EXPERIMEN
 
 ## 0.1.6 — the decisive test, kill condition 1, and what would decide the gain (2026-10-14)
 
-Written after the reported run; it changes no frozen rule, suite or result. The founder's decisive test, clause by
-clause, against this branch's evidence:
+Written after the reported run; it changes no frozen rule, suite or result. The counts below are recomputed from the
+frozen routed arm and the reported run by `scripts/analysis/cortex_seed_decisive_test.py`
+(`tests/evidence/cortex-seed-v0.1.6/decisive-test-counts.json`, checked by `tests/unit/test_cortex_seed_decisive_test.py`).
+The founder's decisive test, clause by clause:
 
 | Clause | State | Evidence |
 | --- | --- | --- |
 | encounter materially different problem geometries | met on a self-authored suite | 42 held-out items in 12 geometry labels (table above) |
-| select materially different computational cognition | met | seven distinct route sets on the held-out suite: evidence/causal 12, Z3 formal 11, none (withheld before any organ) 8, Fermi 6, semantic 3, Z3 + Fermi 1, evidence + semantic 1 |
-| produce proof appropriate to each epistemic class | met | every receipt cites `epistemic-finality/0.1`; held-out jurisdictions: empirical 13, formal 11, semantic 9, strategic 5, human authority 2, per route 1, none 1 (`tests/unit/test_cortex_finality_deficit.py`) |
-| abstain when no class can legitimately answer | met | 23 of 42 correct withholdings (11 abstain, 8 handoff, 4 bounded test), none overcautious; abstentions carry a typed, unverified `capability_deficit` |
+| select materially different computational cognition | met | seven distinct route sets: evidence/causal 12, Z3 formal 11, Fermi 6, semantic 3, Z3 + Fermi 1, evidence + semantic 1, and no organ 8 (gates and ranking only: 6 withheld, and 2 gated option choices, H-G01 and H-G05, recommended because one option passed every gate and dominated) |
+| produce proof appropriate to each epistemic class | met | every receipt cites `epistemic-finality/0.1`; deciding jurisdiction on the held-out suite: empirical 13, formal 11, semantic 9, strategic 5, human authority 2, per route 1, none 1 |
+| abstain when no class can legitimately answer | met | 23 of 42 correct withholdings (11 abstain, 8 handoff, 4 bounded test), none overcautious; an abstention caused by a capability gap carries a typed, unverified `capability_deficit` (1 of the 11 here, H-S03; the other 10 abstain for missing or malformed input, an exhausted budget or an unavailable dependency, which are not capability gaps) |
 | outperform an always-LLM baseline | **not established** | `GAIN_ABSENT`; paired gain +0.095 [0.024, 0.190] and +0.071 [0.000, 0.143] |
 | without gaining any new authority | met | `authority_created: false` on every receipt; closure, proposer and boundary tests |
 
@@ -231,33 +233,71 @@ is `GAIN_ABSENT`, stop treating the router as a performance claim. Keep the gate
 as a safety layer only if they still reduce critical errors against the baselines; otherwise regress the experiment
 to research." The baselines ran and the exit is `GAIN_ABSENT`, so the router is not a performance claim. The safety
 layer stays because on this suite it reduced critical errors (0 against 2 and 1) and unsupported certainty (0 against
-3 and 3). That reduction is observed, not established: exact one-sided McNemar p = 0.125 for harmful failures
-(critical or unsupported certainty) against each baseline, and 0.25 and 0.5 for critical errors alone. The ADR's
-kill criterion (`GAIN_ABSENT` on two frozen versions with no critical-error advantage) is not met.
+3 and 3). That reduction is observed, not established: exact one-sided McNemar p = 0.25 and 0.5 for critical errors,
+the measure the kill condition names, and 0.125 against each baseline for harmful failures (critical or unsupported
+certainty). The ADR's kill criterion (`GAIN_ABSENT` on two frozen versions with no critical-error advantage) is not
+met.
 
 **Why 42 items could not decide it.** If the observed gains were the true gains, the frozen rule had 10% power to
-establish the gain over `always_llm` and 3% over `llm_committee` at 42 items. The rule needs a lower bound above
-0.05. The committee scored 0.929, so it left 0.071 of headroom. The threshold was set when the expected baseline was
-a small local model. Against a frontier model it is reachable only with a much larger suite, and above a baseline
-quality of 0.95 it is unreachable at any size. `GAIN_ABSENT` here is mostly a sample-size verdict. It is not
-evidence of parity either.
+establish the gain over `always_llm`, 3% over `llm_committee`, and 3% over both at once, which is what the rule
+requires. The rule needs a lower bound above 0.05. The committee scored 0.929, so the largest possible gain over it
+was 0.071, only 0.021 above the threshold. The threshold was set when the expected baseline was a small local model.
+Against a frontier model it is reachable only with a much larger suite, and above a baseline quality of 0.95 it is
+unreachable at any size. `GAIN_ABSENT` here is mostly a sample-size verdict. It is not evidence of parity either.
 
-**Sample sizes for 80% power**, if the next suite's failure rates match this one's (`power-analysis.json`, exact
-binomial computation by `scripts/analysis/cortex_seed_power.py`, checked by `tests/unit/test_cortex_seed_power.py`):
+**Sample sizes for 80% power**, if the next suite's failure rates, and the overlap between the two baselines'
+failures, match this one's (`tests/evidence/cortex-seed-v0.1.6/power-analysis.json`, exact computation by
+`scripts/analysis/cortex_seed_power.py`, checked by `tests/unit/test_cortex_seed_power.py` and recomputed in CI job 6).
+The frozen rule must clear each declared baseline, so the deciding size is the one for both at once:
 
-| Endpoint for a future frozen version | vs `always_llm` | vs `llm_committee` | Baseline replies at the larger size |
-| --- | --- | --- | --- |
-| quality gain, frozen rule unchanged | 303 items | 1,045 items (0.80 at the binomial limit, 0.77 at the frozen bootstrap's own boundary, which needs one more win) | 4,180 |
-| harmful failure (critical or unsupported certainty), exact one-sided McNemar, alpha 0.05 | 93 | 93 | 372 (144 items, 576 replies, if the seed's own harmful-failure rate were 1%) |
-| critical error only | 140 | 281 | 1,124 |
+| Endpoint for a future frozen version | vs `always_llm` | vs `llm_committee` | **Both (decides)** | Baseline replies at that size |
+| --- | --- | --- | --- | --- |
+| quality gain, frozen rule unchanged | 303 items | 1,044 items | **1,044 items** | 4,176 |
+| harmful failure (critical or unsupported certainty), exact one-sided McNemar, alpha 0.05 | 93 | 93 | **104** | 416 |
+| the same, if the seed itself failed harmfully on 1% of items | 144 | 144 | **164** | 656 |
+| critical error only | 140 | 281 | **281** | 1,124 |
+
+Two checks on these numbers:
+
+- The quality sizes use the frozen bootstrap's large-B limit. Replaying the frozen bootstrap itself over 400 random
+  item orders gives 0.81 power at 303 items and 0.80 at 1,044 (0.796), against 0.80 at the limit. At 1,044 items, 68
+  wins clear the frozen rule in 77.5% of item orders and 69 in all but one in 400.
+- At 93 items each harmful-failure test alone has 80% power, but the chance of clearing both is 0.71, because the two
+  baselines fail on partly different items. The rule needs both, hence 104.
 
 **The founder decision this creates, prospective only.** Before any baseline reply is collected, a 0.1.7 freeze
 fixes one of two designs:
 
-- (a) keep the quality endpoint and commit to an externally authored suite of about 1,000 items;
+- (a) keep the quality endpoint and commit to an externally authored suite of about 1,050 items (roughly 4,200
+  baseline replies);
 - (b) pre-register harmful-failure rate as the primary endpoint, with mean quality as a secondary endpoint, on an
-  externally authored suite of at least 100 to 150 items.
+  externally authored suite of at least about 105 items (about 165 if the seed itself may fail harmfully on 1% of
+  items).
 
 Either way, the item author and the baseline model should come from outside the vendor family that wrote this
 suite. Re-scoring 0.1.6 under a different endpoint after seeing its result is not permitted, and this section does
 not do it.
+
+**Correction record.** Four independent reviewers attacked the first version of this section (commit `e5e1e2a`),
+and two separate skeptics then tried to refute each finding. Of 13 findings, 6 were confirmed by both skeptics, 2
+were refuted by both, and 1 split. For the other 4 the skeptic runs stopped on a usage limit, so each was reproduced
+before it was fixed. Corrected in this section:
+
+- The deciding harmful-failure size was given as 93, which is a single-baseline size. The rule must clear both
+  baselines, which needs 104.
+- 1,045 items were quoted, because the scan stepped by 5 above 400. Stepping by one item gives 1,044.
+- A frozen-bootstrap power of 0.77 was quoted. It came from a worst-of-three item-order check and is replaced by the
+  random-order replay above.
+- The no-organ route set was labelled "withheld", but 2 of its 8 items were recommendations.
+- Abstentions were said to carry a `capability_deficit`, but only 1 of the 11 does.
+- The harmful-failure p-value stood next to a critical-error claim without the critical-error p-values.
+- The route-set and jurisdiction counts cited a test that does not compute them.
+
+Corrected elsewhere:
+
+- The analysis now sums with `math.fsum`, so its output is byte-identical on Python 3.11, 3.12 and 3.13.
+- The unit test now catches tampering with every recorded value it guards (30 of 30 mutations).
+- The re-issue lineage test now checks the delivery table's rows, not only its hashes.
+
+Every finding, with its votes and disposition, is in `docs/cortex/reviews/POST_RUN_REVIEW_2026-10-14.json`. The
+earlier text stays in git history.

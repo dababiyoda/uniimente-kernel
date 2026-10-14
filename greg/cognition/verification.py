@@ -4,12 +4,13 @@ from __future__ import annotations
 from fractions import Fraction
 import math
 import statistics
+import time
 
 from .contracts import CognitionError, ProofArtifact, digest
 
 
 def verify(family, data, answer, proof_class):
-    checks, dissent = {}, []
+    checks, dissent, cross = {}, [], {}
     from .catalog import FAMILIES
     if family not in FAMILIES or proof_class != FAMILIES[family][3]:
         raise CognitionError("false proof type for selected method")
@@ -95,6 +96,31 @@ def verify(family, data, answer, proof_class):
             checks["integer_domain"] = all(v.denominator == 1 for v in values.values())
             objective = sum(c * values[n] for n, c in data["objective"]["coefficients"].items())
             checks["objective_substitution"] = math.isclose(float(objective), output["objective_value"], abs_tol=1e-6)
+            if output["solver_status"] == "OPTIMAL" and checks["constraint_substitution"] and checks["integer_domain"]:
+                # A second engine attacks the optimality claim: no feasible assignment may beat it.
+                better = _z3_integer_check(data, strictly_better_than=objective)
+                cross["optimality_cross_engine"] = better
+                if better is not None:
+                    checks["optimality_cross_engine"] = better == "unsat"
+                else:
+                    dissent.append("OPTIMAL was not re-checked by a second engine (Z3 unavailable or undecided); "
+                                   "optimality rests on CP-SAT's report.")
+            elif output["solver_status"] == "FEASIBLE":
+                dissent.append("FEASIBLE is not OPTIMAL: the assignment satisfies the model; optimality is unproven "
+                               f"(reported gap {artifact.get('optimality_gap')}).")
+    elif family == "optimization" and output["solver_status"] == "INFEASIBLE":
+        verdict = _z3_integer_check(data)
+        cross["infeasibility_cross_engine"] = verdict
+        if verdict is not None:
+            checks["infeasibility_cross_engine"] = verdict == "unsat"
+        else:
+            dissent.append("INFEASIBLE was not re-checked by a second engine (Z3 unavailable or undecided).")
+    elif family == "formal" and output["solver_status"] == "UNSAT":
+        cross["unsat_core"] = _z3_core_check(data, artifact.get("unsat_core") or [])
+        if cross["unsat_core"]["core_unsat"] is not None:
+            checks["unsat_core_recheck"] = cross["unsat_core"]["core_unsat"]
+        if cross["unsat_core"]["minimal"] is False:
+            dissent.append("The reported unsat core is valid but not minimal: a smaller core exists.")
     elif family in ("graph", "search"):
         # GREG's own Dijkstra (greg/cognition/network.py) shares no code with NetworkX. It refutes a
         # valid but longer path and a false "no path", which form checks alone let through.
@@ -211,9 +237,129 @@ def verify(family, data, answer, proof_class):
             checks["unknown_not_valid"] = answer["formal_validity"] == "UNKNOWN" and answer["status"] != "ANSWER"
         if output["solver_status"] in ("UNSAT", "INFEASIBLE"):
             dissent.append("UNSAT/core and INFEASIBLE are solver reports; no independent infeasibility certificate is established.")
+        if output["solver_status"] == "INFEASIBLE" and checks.get("infeasibility_cross_engine"):
+            dissent.append("INFEASIBLE is corroborated by Z3 on the same integer model (a different engine); "
+                           "agreement between two engines is still not a proof certificate.")
+        elif output["solver_status"] == "UNSAT" and checks.get("unsat_core_recheck"):
+            dissent.append("The unsat core was re-checked by a fresh Z3 solver: same engine, so a Z3 defect would be "
+                           f"shared ({cross['unsat_core']['status']}).")
     return {"verdict": "REFUTED" if not all(checks.values()) else "STRUCTURALLY_VERIFIED",
             "checks": checks, "dissent": dissent, "artifact_digest": digest(answer["proof"]),
-            "independence": "separate verification functions in reviewed Kernel code; no independent external evaluator"}
+            "cross_checks": cross,
+            "inconclusive": sorted(k for k, v in cross.items() if v is None or (isinstance(v, dict) and v["core_unsat"] is None)),
+            "independence": ("separate verification functions in reviewed Kernel code; CP-SAT optimality and "
+                             "infeasibility claims are re-checked by Z3 where it is installed; no independent "
+                             "external evaluator")}
+
+
+# The verifier runs inside the cognition worker under the request's latency limit (5 s by default), so the
+# second engine gets a fixed share of it. Running out of budget is "undecided", never a pass or a refutation.
+CROSS_CHECK_BUDGET_S = 1.5
+MINIMALITY_CAP = 16  # cores larger than this are re-checked but not tested for minimality
+
+
+def _remaining_ms(deadline):
+    left = int((deadline - time.monotonic()) * 1000)
+    return left if left >= 50 else None
+
+
+def _z3_integer_check(data, *, strictly_better_than=None, budget_s=CROSS_CHECK_BUDGET_S):
+    """'sat' | 'unsat' | None (engine unavailable or undecided). Integer model, as CP-SAT solved it."""
+    deadline = time.monotonic() + budget_s
+    try:
+        import z3
+    except ImportError:
+        return None
+
+    def whole(x):
+        value = Fraction(str(x))
+        if value.denominator != 1:
+            raise ValueError(x)
+        return int(value)
+
+    solver = z3.Solver()
+    vs = {n: z3.Int(n) for n in data["variables"]}
+    try:
+        for n, (lo, hi) in data["variables"].items():
+            solver.add(vs[n] >= whole(lo), vs[n] <= whole(hi))
+        for c in data["constraints"]:
+            lhs = z3.Sum([whole(co) * vs[n] for n, co in c["coefficients"].items()]) if c["coefficients"] else z3.IntVal(0)
+            rhs = whole(c["rhs"])
+            solver.add(_relation(c["op"], lhs, rhs))
+        if strictly_better_than is not None:
+            objective = data["objective"]
+            expr = z3.Sum([whole(co) * vs[n] for n, co in objective["coefficients"].items()])
+            bound = whole(strictly_better_than)
+            solver.add(expr < bound if objective["sense"] == "min" else expr > bound)
+    except (ValueError, TypeError, ArithmeticError, KeyError):
+        return None  # not a model this check can pose; the second engine stays silent rather than truncate or guess
+    left = _remaining_ms(deadline)
+    if left is None:
+        return None
+    solver.set(timeout=left)
+    return _status(z3, solver.check())
+
+
+def _z3_core_check(data, core, budget_s=CROSS_CHECK_BUDGET_S):
+    """Re-check a reported unsat core with a fresh solver, then test it for minimality."""
+    deadline = time.monotonic() + budget_s
+    try:
+        import z3
+    except ImportError:
+        return {"core_unsat": None, "minimal": None, "status": "engine unavailable"}
+
+    def check(indices):
+        left = _remaining_ms(deadline)
+        if left is None:
+            return None
+        solver = z3.Solver()
+        solver.set(timeout=left)
+        vs = {n: z3.Real(n) for n in data["variables"]}
+        for n, (lo, hi) in data["variables"].items():
+            solver.add(vs[n] >= z3.RealVal(str(lo)), vs[n] <= z3.RealVal(str(hi)))
+        for i in indices:
+            c = data["constraints"][i]
+            lhs = (z3.Sum([z3.RealVal(str(co)) * vs[n] for n, co in c["coefficients"].items()])
+                   if c["coefficients"] else z3.RealVal(0))
+            rhs = z3.RealVal(str(c["rhs"]))
+            try:
+                solver.add(_relation(c["op"], lhs, rhs))
+            except KeyError:
+                return None  # an operator this re-check cannot pose is undecided, never a crash
+        return _status(z3, solver.check())
+
+    try:
+        indices = sorted({int(str(name).removeprefix("constraint_")) for name in core})
+    except ValueError:
+        return {"core_unsat": False, "minimal": None, "status": "core names do not identify constraints"}
+    if not indices or any(not 0 <= i < len(data["constraints"]) for i in indices):
+        return {"core_unsat": False, "minimal": None, "status": "core is empty or names unknown constraints"}
+    whole = check(indices)
+    if whole != "unsat":
+        return {"core_unsat": None if whole is None else False, "minimal": None,
+                "status": "core re-check undecided" if whole is None else "the reported core is satisfiable"}
+    if len(indices) > MINIMALITY_CAP:
+        return {"core_unsat": True, "minimal": None,
+                "status": f"re-checked; minimality not tested (core of {len(indices)} exceeds {MINIMALITY_CAP})"}
+    drops = []
+    for i in indices:
+        drops.append(check([j for j in indices if j != i]))
+        if drops[-1] == "unsat":
+            break  # one removable member already proves a smaller core exists
+    minimal = False if "unsat" in drops else None if None in drops else True
+    return {"core_unsat": True, "minimal": minimal,
+            "status": ("re-checked; minimal" if minimal else "re-checked; minimality undecided" if minimal is None
+                       else "re-checked; not minimal (a smaller core exists)")}
+
+
+def _relation(op, lhs, rhs):
+    """The constraint operators the solvers accept, strict < and > included (formal models are real-valued)."""
+    return {"<=": lambda: lhs <= rhs, ">=": lambda: lhs >= rhs, "==": lambda: lhs == rhs, "!=": lambda: lhs != rhs,
+            "<": lambda: lhs < rhs, ">": lambda: lhs > rhs}[op]()
+
+
+def _status(z3, result):
+    return "sat" if result == z3.sat else "unsat" if result == z3.unsat else None
 
 
 def metaconsensus(receipts):

@@ -47,7 +47,20 @@ KERNEL_ROOT = Path(__file__).resolve().parents[1]
 
 
 class CapabilityError(RuntimeError):
-    """Capability unavailable, malformed, outside its manifest or failed."""
+    """Capability unavailable, malformed, outside its manifest or failed.
+
+    ``failure_class`` says what failed, typed where the failure is raised and never read back from
+    the message (evolution.failure_analysis.FAILURE_CLASSES): ``executor_error`` (the capability
+    itself, the default), ``transient`` (the host or infrastructure: a timeout, unavailable
+    isolation), ``budget_exceeded`` (a resource ceiling). Only ``executor_error`` is evidence
+    against the capability; Genesis never quarantines or re-forms one for an outage."""
+
+    def __init__(self, *args, failure_class: str = "executor_error"):
+        from evolution.failure_analysis import FAILURE_CLASSES
+        if failure_class not in FAILURE_CLASSES:
+            raise ValueError(f"unknown failure class {failure_class!r}")
+        super().__init__(*args)
+        self.failure_class = failure_class
 
 
 @dataclass
@@ -370,12 +383,12 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
     if isolate_network:
         if sys.platform == "darwin":
             if not Path("/usr/bin/sandbox-exec").exists():
-                raise CapabilityError("network isolation unavailable; command refused")
+                raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
             argv = ["/usr/bin/sandbox-exec", "-p", MACOS_NO_NETWORK, *argv]
         else:
             install_filter = _network_filter()
             if install_filter is None:
-                raise CapabilityError("network isolation unavailable; command refused")
+                raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
             preexec = _isolating_preexec(install_filter, confine)
     elif confine is not None:
         preexec = _isolating_preexec(lambda: None, confine)
@@ -394,7 +407,7 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
         proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, timeout=timeout,
                               preexec_fn=preexec, **stdin)
     if isolate_network and preexec is not None and proc.returncode == 97:
-        raise CapabilityError("network isolation unavailable; command refused")
+        raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
     if confine is not None and proc.returncode == 98:
         raise CapabilityError("filesystem confinement unavailable; command refused")
     return proc
@@ -407,7 +420,10 @@ def run_cli(params, ctx: InvocationContext, *, isolate_network: bool = True, tim
     if argv[0] not in ctx.manifest.binaries:
         raise CapabilityError(f"executable {argv[0]} not in this capability's manifest")
     ctx.workspace.mkdir(parents=True, exist_ok=True)
-    proc = run_isolated(argv, cwd=ctx.workspace, isolate_network=isolate_network, timeout=timeout)
+    try:
+        proc = run_isolated(argv, cwd=ctx.workspace, isolate_network=isolate_network, timeout=timeout)
+    except subprocess.TimeoutExpired:      # a refusal with a cause, never an "uncertain external effect"
+        raise CapabilityError(f"{argv[0]} did not finish within {timeout}s", failure_class="transient") from None
     return {"argv": argv, "returncode": proc.returncode,
             "stdout": proc.stdout[:MAX_READ_BYTES].decode("utf-8", errors="replace"),
             "stderr": proc.stderr[-4000:].decode("utf-8", errors="replace")}

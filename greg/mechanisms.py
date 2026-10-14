@@ -164,12 +164,14 @@ def run(candidate: PackageCandidate, source: str, requests: list, *, location: s
             proc = run_isolated([sys.executable, "-I", "-c", program, str(path), str(cpu_seconds)], cwd=Path(tmp),
                                 timeout=cpu_seconds + 20,
                                 extra_env={"OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"})
-        except Exception as exc:          # a timeout or refused isolation is a fault of this route
+        except Exception as exc:          # a timeout or refused isolation: the host failed, not this route
             raise CapabilityError(f"capability refused: package runner for {candidate.distribution} "
-                                  f"did not complete ({type(exc).__name__})") from exc
+                                  f"did not complete ({type(exc).__name__})",
+                                  failure_class=getattr(exc, "failure_class", "transient")) from exc
     if proc.returncode:
         raise CapabilityError(f"capability refused: package runner for {candidate.distribution} exited "
-                              f"{proc.returncode}: {proc.stderr.decode('utf-8', 'replace')[-240:]}")
+                              f"{proc.returncode}: {proc.stderr.decode('utf-8', 'replace')[-240:]}",
+                              failure_class="budget_exceeded" if proc.returncode < 0 else "executor_error")
     if len(proc.stdout) > MAX_OUTPUT:
         raise CapabilityError(f"capability refused: package runner for {candidate.distribution} output too large")
     try:

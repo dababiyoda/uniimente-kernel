@@ -756,7 +756,7 @@ class MissionEngine:
             streak = 0
             for obs in reversed([e.payload for e in self.journal.replay("mission.observed")
                                  if e.payload["mission_id"] == m.mission_id and e.payload["check_id"] == check_id]):
-                if obs["at"] < since or not is_capability_fault(manifest, obs["detail"]):
+                if obs["at"] < since or not is_capability_fault(manifest, obs["detail"], obs.get("failure_class")):
                     break
                 streak += 1
             if streak < 2:
@@ -776,6 +776,7 @@ class MissionEngine:
         self.disagreements = {}
         for check in m.current_checks():
             sensor = check["sensor"]
+            failure_class = None          # typed where a capability failure was raised, when one was
             manifest, adapter, missing = self._resolve(sensor)
             if manifest is None:
                 self._deficit(m, sensor, now, purpose=f"sensor for {check['check_id']}")
@@ -816,7 +817,8 @@ class MissionEngine:
                     return None, None
                 passed, detail = False, "sensor " + outcome.status + ": " + "; ".join(outcome.reasons)[:200]
                 sensor_errors.add(check["check_id"])
-                if self.genesis is not None and is_capability_fault(manifest, detail):
+                failure_class = outcome.failure_class
+                if self.genesis is not None and is_capability_fault(manifest, detail, failure_class):
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
@@ -827,7 +829,8 @@ class MissionEngine:
                     # same two-strike self-repair re-forms it (cognition itself did not fail).
                     formed = self.registry.manifests[fault["capability_id"]]
                     detail = f"{detail}; {str(fault.get('detail'))[:300]}"
-                    if is_capability_fault(formed, detail):
+                    failure_class = fault.get("failure_class")
+                    if is_capability_fault(formed, detail, failure_class):
                         self.capability_faults[check["check_id"]] = (formed, detail, sensor.get("params", {}))
                 views = disagreement(outcome.output)
                 if views and not passed:
@@ -840,6 +843,8 @@ class MissionEngine:
                     detail = f"sensor inconclusive ({why}): {detail}"
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
+            if failure_class is not None:
+                data["failure_class"] = failure_class
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
             if outcome.receipt_hash:
                 evidence.append(outcome.receipt_hash)

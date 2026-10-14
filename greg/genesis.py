@@ -372,10 +372,14 @@ def is_formed(manifest) -> bool:
     return manifest.provider.startswith(FORMED)
 
 
-def is_capability_fault(manifest, reason: str) -> bool:
-    """A failure of the capability itself, not of the world it reads (missing file, scope)."""
+def is_capability_fault(manifest, reason: str, failure_class: str | None = None) -> bool:
+    """A failure of the capability itself, not of the world it reads (missing file, scope) nor of the
+    host it runs on (timeout, unavailable isolation). Decided by the failure's type where one was
+    recorded; the message markers below serve only retained records written before types existed."""
     if not is_formed(manifest):
         return False
+    if failure_class is not None:
+        return failure_class == "executor_error"
     binary = Path(manifest.binaries[0]).name if manifest.binaries else None
     return any(m in reason for m in FAULT_MARKERS) or bool(binary and f"capability refused: {binary} exited" in reason)
 

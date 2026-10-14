@@ -68,10 +68,16 @@ class FavorableIntersectionDetector:
         self.world = world
         self.source = require_text("source", source)
         self._recorded: set[tuple[str, str]] = set()
-        for record in getattr(ledger, "records", ()):
+        self._folded = 0
+        self.sync()
+
+    def sync(self) -> None:
+        records = getattr(self.ledger, "records", ())
+        for record in records[self._folded:]:
             if getattr(record, "record_type", None) == self.INTERSECTION_RECORD:
                 p = record.payload.get("report", {})
                 self._recorded.add((p.get("goal_id"), p.get("factor_set_hash")))
+        self._folded = len(records)
 
     @property
     def execution_authority(self) -> str:
@@ -130,6 +136,7 @@ class FavorableIntersectionDetector:
                                     "threats": sorted(t["factor_id"] for t in threats)}),
             threats=tuple(threats), threat_score=threat_score)
         key = (spec.goal_id, report.factor_set_hash)
+        self.sync()
         if record and favorable and key not in self._recorded:
             self.ledger.append(self.INTERSECTION_RECORD, {"source": self.source, "report": report.to_dict(),
                                                           "disposition": "observed_not_acted"})

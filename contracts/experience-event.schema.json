@@ -94,6 +94,38 @@
               "attributed",
               "verified"
             ]
+          },
+          "method": {
+            "enum": [
+              "adversarial_review",
+              "deterministic_computation",
+              "empirical_experiment",
+              "expert_judgment",
+              "formal_verification",
+              "human_decision",
+              "legal_determination",
+              "retrieval",
+              "simulation",
+              "statistical_inference"
+            ],
+            "description": "Epistemic method that produced the observation (capabilities/router.py EPISTEMIC_METHODS)"
+          },
+          "establishes": {
+            "enum": [
+              "authorization",
+              "claim_with_provenance",
+              "estimate",
+              "external_fact",
+              "fact_within_model",
+              "hypothesis",
+              "legal_position",
+              "objection"
+            ],
+            "description": "Derived from the method by the router table; never self-declared"
+          },
+          "method_refused": {
+            "const": true,
+            "description": "A human-only method was claimed outside the founder-answer path; stripped and marked untrusted"
           }
         }
       }

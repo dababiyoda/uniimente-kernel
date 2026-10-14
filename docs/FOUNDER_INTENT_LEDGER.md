@@ -46,6 +46,42 @@ Overlapping unmerged mechanisms (#158 `greg/gravity.py`, #114/#137 `greg/mission
 #93/#97/#109 Goal Chase) are preserved as substrate; their reconciliation is a founder
 merge decision, never a silent replacement.
 
+## INTENT-20261014-competency-compiler wiring — 2026-10-14 re-issue
+
+The founder re-sent the Goal Gravity directive verbatim on 2026-10-14. The re-issue is appended, with lineage, to
+`docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md`. Repetition creates no additional authority. The
+re-issue restates the key sentence: "The intended engineering result is a Competency Compiler." PR #165 merged that
+intent and `capabilities/router.py` to `main` the same day as `INTENT-20261014-competency-compiler` (state
+**active**). The router was uncalled.
+
+Draft PR #160's third increment wires the router into the Goal Gravity loop without changing router semantics.
+The changes:
+
+- a gate's problem class is routed to the smallest competent mechanism;
+- evidence is typed by epistemic method;
+- an epistemic gap becomes a typed `CapabilityDeficit`;
+- calibration moves only on an independent verifier's confirm or refute;
+- an acquisition ladder can plan, qualify and, on a founder answer, attach a capability at `CANARY`.
+
+Records: `docs/decisions/ADR-GOAL-GRAVITY-002.md` and
+`docs/collaboration/deliberation-competency-compiler-wiring-2026-10-14.json` (decision `NEEDS_FOUNDER_DECISION`).
+Both intent `.json` records carry the new implementation references and conflicts.
+
+**Evidence tier.** IMPLEMENTED, UNIT-TESTED and INTEGRATION-TESTED on synthetic ledgers with synthetic verifiers. No
+routing decision has an outcome verified in reality.
+
+**Open conflict.** Entry gate G1 may treat wiring inert code in a draft PR as "runtime composition". That conflict is
+preserved as dissent, and adoption into `main` is the founder's decision.
+
+**Blocked, not dropped.** These remain open, each named with its dependency in the ADR:
+
+- a code-generating builder
+- an isolation boundary for untrusted candidates
+- a scheduler (G5)
+- founder authentication (G6)
+- live organ transport
+- real verified outcomes
+
 UNIIMENTE must never silently lose a founder intention, contributor objection, negative result, or superseded design.
 
 Every material intention discovered in chats, documents, issues, pull requests, repositories, or operating evidence must be normalized into an Intent Record and assigned exactly one lifecycle state:

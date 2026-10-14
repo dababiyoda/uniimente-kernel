@@ -591,3 +591,26 @@ def test_status_carries_critical_assumptions_and_the_waiting_split(stack):
         assert key in status
     cheaper = loop.work_to_first_actionable(goal_id)
     assert cheaper["first_actionable_turn"] == 1 and cheaper["work_units"] >= 3
+
+
+def test_refusal_binds_the_effect_so_a_relabelled_or_reworded_proposal_stays_refused(stack):
+    loop = make_loop(stack)
+    spec = robotics_goal(second_node=False)
+    goal_id = loop.registry.authorize(spec, now=T0)
+    turn = loop.turn(trigger_id="t1", now=T1, signals=[hardware_signal()], resources=governor(), evidence_confidence=0.9)
+    ask = next(a for a in turn.routing["immediate"] + turn.routing["batched"] if a["route_hash"] == outreach_move().route_hash)
+    assert ask["effect_hash"] == outreach_move().effect_hash
+    loop.founder_answer(ask["item_id"], decision="refuse", actor="alfonso_lopez", note="not this message", now=T1)
+    state = loop.registry.state(goal_id)
+    fix = loop.gps.fix(spec, state, now=T2, record=False)
+    relabelled = outreach_move(tactic="warm_intro", description="ask a friend to forward the intro", intervention_id="x")
+    assert relabelled.route_hash != outreach_move().route_hash and relabelled.effect_hash == outreach_move().effect_hash
+    verdict = loop.classifier.classify(spec, state, relabelled, fix=fix, grant=None, evidence_refs=["x"],
+                                       evidence_confidence=0.9, now=T2, record=False)
+    assert verdict.decision == "ABSTAIN" and "identical effect" in verdict.reasons[0]
+    changed = outreach_move(payload={"template": "a different, shorter intro"})
+    verdict2 = loop.classifier.classify(spec, state, changed, fix=fix, grant=None, evidence_refs=["x"],
+                                        evidence_confidence=0.9, now=T2, record=False)
+    assert verdict2.decision != "ABSTAIN"   # a changed effect is a new route, classified afresh
+    restarted = make_loop(stack)
+    assert restarted.registry.is_route_refused(goal_id, relabelled.route_hash, relabelled.effect_hash)

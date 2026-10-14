@@ -66,6 +66,38 @@ mode and every record says so.
 11. **Recalculate.** Goal state (position, active node, gate, SBM, blockers, evidence) is written as a ledgered
     transition; the goal returns to dormant or blocked; the turn is recorded and replayable.
 
+**The Competency Compiler on the loop (third increment, 2026-10-14).** The router on `main` (`capabilities/router.py`,
+PR #165) is mounted as `loop.competency` (`egregore/competency.py`) when a `CapabilityRouter` sharing the ledger and
+genome registry is passed. A plan node that declares a `problem_class` routes its gate: the router names the
+admissible epistemic methods and recruits the smallest competent registered mechanism or composition inside the
+goal's ceiling. Routing only tightens classification. A deficit makes every move wait and writes one typed
+`capability-deficit` record. A rejected declared mechanism prepares the move. A human-only gate (authorization,
+legal) becomes one founder decision, and its answer is the only evidence that can clear it. An unproven mechanism
+never runs an external move. Observations carry the epistemic `method` that produced them; what they `establish`
+comes from the router's table, and a typed gate clears only on admissible evidence, so a simulation never proves
+demand. `verify_outcome(..., verdict=...)` by an independent verifier calibrates every recruited mechanism, and
+`refresh()` replays other writers so track records survive restarts and agree across loops. When nothing registered
+is competent, `loop.acquisition` plans the resourcefulness ladder from recorded facts and the open-source catalog,
+`qualify()` runs a supplied candidate's acceptance tests in a subprocess under an independent evaluator, and only a
+founder `accept` attaches it (envelope capped, lifecycle CANARY); the original goal then resumes. There is no
+builder: candidates are supplied by a person, a coding agent or another lineage (#129, #164).
+
+Further capabilities added in the same increment:
+
+- **Personal advancement (§5).** Compares the authorized trajectory (`PlanNode.target_by`) with the observed one,
+  diagnoses friction from structured fields, and issues one mature, declinable report per stall episode.
+  Intensity is set per goal with the `set_intensity` preference.
+- **Computational modalities (§8).** The institution perceives its own deficits, conflicts, obligations,
+  opportunity density, ledger integrity, refusal rate, relationship changes and lateness. Readings are emitted
+  only on change. External modalities are declared unobserved, each with the sensor it needs.
+- **Organ signals (§8).** Canonical DALEOBANKS packets and WMI assessments become typed observations. WMI scores
+  are simulations.
+- **Opportunity package (§12, §28).** Quantifies factors against baselines, keeps contested factors separate and
+  dry-run classifies every move.
+- **Intake (§27).** Turns "I want X" into a draft with all fourteen fields. Authority is never filled in, and the
+  goal starts at two founder gates.
+- **Effect-level refusals (§20).** Refusals also bind the identical effect, and muted domains are not stored.
+
 Founder control surface (`GoalRegistry.record_preference`): `stop_pushing`, `change_goal` (pauses; `supersede()`
 replaces the immutable spec with lineage), `lower_priority`, `never_use_tactic`, `do_not_monitor` (also excludes the
 domain's intersection factors), `ask_before`, `forget_route`, `revoke_capability`, plus `revoke`.
@@ -90,6 +122,13 @@ Founder-facing status (`GoalGravityLoop.status`) renders the fourteen section-27
 | Capability Genesis link | PARTIAL | UNIT-TESTED | typed `capability-deficit` record with lifecycle and resume disposition; goal blocked not closed; resolved copy on genome registration | search/compose/build of the missing capability (the drafts' Genesis builder) |
 | Standing-cognition seam | IMPLEMENTED | UNIT-TESTED | tick records, guardian veto -> prepared, model-proposer candidate classified, per-goal budget metered | a model-backed proposer beating the rule baseline |
 | Evidence states and verification | IMPLEMENTED | UNIT-TESTED | Gate cut after dispatch never re-dispatched; `reconcile()` from Gate events or accountable resolution; `verify_outcome()` independent only | a real externally verified instance |
+| Competency Compiler wiring | IMPLEMENTED | UNIT-TESTED | typed deficit, typed gates, human-only gate decision, verified calibration, two-loop agreement, restart | a real independently verified outcome |
+| Capability acquisition (§15) | IMPLEMENTED (no builder) | UNIT-TESTED, SANDBOX-EXECUTED (subprocess, not isolation) | plan → qualify → founder attach → resume | a builder lineage; an isolation facility |
+| Personal advancement (§5) | IMPLEMENTED | UNIT-TESTED | stall, missed target, resolution latency, intensity, pause | friction removal beyond preparation |
+| Computational modalities (§8) | IMPLEMENTED | UNIT-TESTED | derived readings wake goals; emitted on change only | any external modality |
+| Organ signals (§8) | IMPLEMENTED | UNIT-TESTED | WMI score clears a forecast gate, never a demand gate | live organ transport |
+| Opportunity package (§12, §28) | IMPLEMENTED | UNIT-TESTED | baseline deltas, contested factors, dry-run options | real due diligence |
+| Intake (§27) | IMPLEMENTED | UNIT-TESTED | fourteen fields; authority never filled; two founder gates | a model drafter that beats the template |
 | Section-33 chain | IMPLEMENTED | INTEGRATION-TESTED (synthetic) | `tests/integration/test_goal_gravity_acceptance.py` | SANDBOX-VERIFIED with a live sensor; EXTERNALLY VERIFIED; FOUNDER-ACCEPTED |
 
 Never say "GREG experiences reality" for this code: it integrates typed observations into beliefs with provenance.
@@ -100,40 +139,50 @@ autonomously advances goals" unless a Gate receipt exists for the move; otherwis
 
 Statuses use the directive's section-22 vocabulary (EXISTING / PARTIAL / DUPLICATED / MISSING / SUPERSEDED /
 EXPERIMENTAL) and tiers use section 26. "EXISTING" means *works on this tree with tests*; it is never a claim of
-external effect. The inspection record behind this table is
-`docs/collaboration/goal-gravity-concept-map-2026-10-13.json` (full per-row evidence) and the completeness critique
-`docs/collaboration/goal-gravity-completeness-critique-2026-10-13.md` (what the record got wrong, with dispositions).
+external effect. Rows 0-27 come from the 2026-10-13 inspection record
+(`docs/collaboration/goal-gravity-concept-map-2026-10-13.json`, with the completeness critique beside it); the
+"This branch now" columns reflect the third increment (2026-10-14). Rows 28+ were added for the Competency
+Compiler and the gaps an independent audit found on 2026-10-14.
 
-| # | Concept | `main` 19fa33c | Draft lineages | Organs | This branch now | Tier now | Residual deficit |
+| # | Concept | `main` | Draft lineages | Organs | This branch now | Tier now | Residual deficit |
 |---|---|---|---|---|---|---|---|
-| 0 | A. Persistent Goal Registry | MISSING | see record | WMI: MISSING; src/core/performance.py SMARTGoal is a per-agent cycle-counter homonym, not ... | EXISTING | UNIT-TESTED, INTEGRATION-TESTED | goal-record and goal-state records validated on write (`egregore.contract_check`); `supersede` for change-goal; no cross-process kill test; founder authentication is declared lineage only |
-| 1 | B. Goal Relevance Router | MISSING | see record | WMI: MISSING; packet fields signal_type/audience/customer_segment/urgency ... | EXISTING | UNIT-TESTED | declared-match only; no organ observation adapter; no learned relevance |
-| 2 | C. Goal Wake/Sleep Runtime | PARTIAL | see record | WMI: MISSING (src/services/market_monitor.py MarketMonitor.start is an unwired ... | EXISTING (in-process) | UNIT-TESTED | conserve mode wakes priority 1-2 only and records every deferral; no durable scheduler/host (HOLD_ACTIVATION) |
-| 3 | D. Backcast GPS Adapter | MISSING | see record | WMI: MISSING; src/services/phase_management.py PhaseGate/PhaseManager is a venture-level ... | EXISTING | UNIT-TESTED, INTEGRATION-TESTED | moves ordered by CausalMemory precedent; later-node satisfaction flags `route_changed`; no re-planning beyond the declared plan; no ExperimentSpec/StrategyTree binding |
-| 4 | E. Intervention Classifier | PARTIAL | see record | WMI: contract-bound verdict enum go\|defer\|kill\|needs_more_evidence ... | EXISTING | UNIT-TESTED, INTEGRATION-TESTED | dependency, revoked-capability and foreign-principal cases added; EXECUTE still needs a caller-supplied grant from the existing issuer (process-memory only) |
-| 5 | F. Experience Integration | PARTIAL | see record | WMI: PARTIAL and reusable: adversarial cases[] (stance/severity/resolved, never averaged) ... | EXISTING | UNIT-TESTED | content conflicts refused, stale readings ignored, effects recorded; no organ adapter; belief confidence not derived from CausalMemory |
-| 6 | G. Favorable Intersection Detector | MISSING | see record | WMI: MISSING (EmergingTechAgent averages impact/maturity plus a count bonus; adversarial ... | EXISTING | UNIT-TESTED, INTEGRATION-TESTED | threat factors subtract; founder-muted domains excluded; thresholds uncalibrated; no organ factor source |
-| 7 | H. Asymmetry Retention | PARTIAL | see record | WMI: PARTIAL, organ-local in-memory (business_loop LoopRecord.history/learning, ... | EXISTING | UNIT-TESTED, INTEGRATION-TESTED | outcome bound to the goal's own executed move; genome envelope capped at the goal ceiling; registry re-hydrated from ledger; no externally verified outcome yet |
-| 8 | I. Founder Attention Router | MISSING | see record | WMI: MISSING (requires_human_approval const; notify_role only logs). | EXISTING | UNIT-TESTED | quiet hours, defer-with-cadence, information and emergency items added; marginal value still rule-based; no delivery adapter |
-| 9 | Capability Genesis connected to Goal Gravity | MISSING | see record | WMI: MISSING (manifest unresolved: venture cell charters not yet requested, Bridge B). | PARTIAL | UNIT-TESTED | typed `capability-deficit` records with lifecycle and resume disposition; resolution on genome registration; no search/build/sandbox route (builder lineage #137 awaits ruling) |
-| 10 | Founder refusal/corrections recorded and not re-proposed unchanged | PARTIAL | see record | WMI: MISSING (only compliance refusals retained in influencer_company drafts and ... | PARTIAL | UNIT-TESTED | refusals, forgotten routes and revoked capabilities enforced before policy for goal-originated moves; not consulted by the Gate or the Ratifier |
-| 11 | Restart continuity without duplicate consequential action | EXISTING | see record | WMI: EXISTING for evaluation admission only via kernel BridgeState (test_signed_bridge.py ... | EXISTING | UNIT-TESTED | latest-record route release; attempt-numbered re-dispatch only after accountable reconciliation; no process-kill test |
-| 12 | Evidence state distinction planned/attempted/executed/externally verified/failed/unknown | PARTIAL | see record | WMI: PARTIAL (LoopRecord.stage ladder with settled_simulated vs executed; 'unknown until ... | EXISTING | UNIT-TESTED | `reconcile()` derives executed/failed from the Gate's own events; `externally_verified` requires an independent verifier with evidence; zero real instances |
-| 13 | Experience Surface metrics | MISSING | see record | WMI: MISSING. | PARTIAL | UNIT-TESTED | `measures()` reports identity/agency/intelligence/experiential surface separately; intelligence is 'not measured here'; no ground-truth wake precision |
-| 14 | §25 scenario 1: Persistent goal survival | MISSING | see record | see record | EXISTING | UNIT-TESTED | in-process ledger reopen only |
+| 0 | A. Persistent Goal Registry | MISSING | see record | WMI: MISSING; src/core/performance.py SMARTGoal is a per-agent cycle-counter homonym, not ... | EXISTING | UNIT/INTEGRATION-TESTED | incremental ledger fold (two loops agree); founder authentication is declared lineage only (G6) |
+| 1 | B. Goal Relevance Router | MISSING | see record | WMI: MISSING; packet fields signal_type/audience/customer_segment/urgency ... | EXISTING | UNIT-TESTED | declared-match relevance; wake precision/recall measurable on labelled corpora (`evaluate_relevance`); no learned routing |
+| 2 | C. Goal Wake/Sleep Runtime | PARTIAL | see record | WMI: MISSING (src/services/market_monitor.py MarketMonitor.start is an unwired ... | EXISTING (in-process) | UNIT-TESTED | no durable scheduler/host (G5 forbids a new one before founder selection) |
+| 3 | D. Backcast GPS Adapter | MISSING | see record | WMI: MISSING; src/services/phase_management.py PhaseGate/PhaseManager is a venture-level ... | EXISTING | UNIT/INTEGRATION-TESTED | typed gates (`problem_class`); `route_changed`; `changed_since_last_assessment`; no re-planning beyond the declared plan |
+| 4 | E. Intervention Classifier | PARTIAL | see record | WMI: contract-bound verdict enum go|defer|kill|needs_more_evidence ... | EXISTING | UNIT/INTEGRATION-TESTED | Competency Compiler routing tightens classification; EXECUTE still needs a caller-supplied grant |
+| 5 | F. Experience Integration | PARTIAL | see record | WMI: PARTIAL and reusable: adversarial cases[] (stance/severity/resolved, never averaged) ... | EXISTING | UNIT-TESTED | observations typed by epistemic method; organ canonical outputs integrate (`organ_signals`); no live organ transport |
+| 6 | G. Favorable Intersection Detector | MISSING | see record | WMI: MISSING (EmergingTechAgent averages impact/maturity plus a count bonus; adversarial ... | EXISTING | UNIT/INTEGRATION-TESTED | threats subtract; quantified opportunity package; thresholds uncalibrated |
+| 7 | H. Asymmetry Retention | PARTIAL | see record | WMI: PARTIAL, organ-local in-memory (business_loop LoopRecord.history/learning, ... | EXISTING | UNIT/INTEGRATION-TESTED | outcome bound to the goal; envelope capped; registry re-hydrated; no externally verified outcome yet |
+| 8 | I. Founder Attention Router | MISSING | see record | WMI: MISSING (requires_human_approval const; notify_role only logs). | EXISTING | UNIT-TESTED | quiet hours, defer/accept/pause/lower semantics, information and emergency items; no delivery channel |
+| 9 | Capability Genesis connected to Goal Gravity | MISSING | see record | WMI: MISSING (manifest unresolved: venture cell charters not yet requested, Bridge B). | PARTIAL | UNIT-TESTED, SANDBOX-EXECUTED (subprocess) | plan → qualify → founder attach → resume works for supplied candidates; no builder (#129/#164/coding agent) |
+| 10 | Founder refusal/corrections recorded and not re-proposed unchanged | PARTIAL | see record | WMI: MISSING (only compliance refusals retained in influencer_company drafts and ... | EXISTING | UNIT-TESTED | refusals bind route and identical effect; declared model tactics bound; not consulted by the Gate or the Ratifier |
+| 11 | Restart continuity without duplicate consequential action | EXISTING | see record | WMI: EXISTING for evaluation admission only via kernel BridgeState (test_signed_bridge.py ... | EXISTING | INTEGRATION-TESTED (real SIGKILL ×2) | torn ledger tail refuses to open (characterized liveness gap) |
+| 12 | Evidence state distinction planned/attempted/executed/externally verified/failed/unknown | PARTIAL | see record | WMI: PARTIAL (LoopRecord.stage ladder with settled_simulated vs executed; 'unknown until ... | EXISTING | UNIT-TESTED | independent verification with a verdict; calibrates the router; zero real instances |
+| 13 | Experience Surface metrics | MISSING | see record | WMI: MISSING. | PARTIAL | UNIT-TESTED | trusted modalities count only attributed sources; relevance metrics need real labels |
+| 14 | §25 scenario 1: Persistent goal survival | MISSING | see record | see record | EXISTING | INTEGRATION-TESTED | cross-process restart covered by the kill tests |
 | 15 | §25 scenario 2: Dormant wake | MISSING | see record | MISSING | EXISTING | UNIT-TESTED | declared-match materiality |
-| 16 | §25 scenario 3: Irrelevant event rejection | MISSING | see record | MISSING | EXISTING | UNIT-TESTED | rejection cost at scale unmeasured |
-| 17 | §25 scenario 4: Cross-signal convergence | MISSING | see record | MISSING | EXISTING | UNIT-TESTED, INTEGRATION-TESTED | threshold uncalibrated |
-| 18 | §25 scenario 5: Authority boundary | EXISTING | see record | WMI: requires_human_approval const (adapter refuses authority inflation). | EXISTING | UNIT-TESTED, INTEGRATION-TESTED | no ceiling-narrowing invariant on transition |
-| 19 | §25 scenario 6: Capability deficit | MISSING | see record | MISSING | PARTIAL | UNIT-TESTED | detection, typed record and resume only |
-| 20 | §25 scenario 7: Goal drift | PARTIAL | see record | MISSING | EXISTING | UNIT-TESTED | proposal-id convention; drift surfaced as a high-urgency information item |
-| 21 | §25 scenario 8: Founder refusal | PARTIAL | see record | DALEOBANKS pending-only dedupe (gap); WMI none. | EXISTING | UNIT-TESTED | byte-identical route hash |
-| 22 | §25 scenario 9: Restart continuity | EXISTING | see record | WMI/DALEOBANKS: BridgeState idempotency for admission only. | EXISTING | UNIT-TESTED | gate cut after dispatch covered; no process kill |
-| 23 | §25 scenario 10: Evidence integrity | PARTIAL | see record | PARTIAL | EXISTING | UNIT-TESTED | independent verification path exists; no real instance |
-| 24 | §25 scenario 11: Compounding | PARTIAL | see record | PARTIAL | PARTIAL | UNIT-TESTED, INTEGRATION-TESTED | `work_to_first_actionable` measures work units; synthetic goals only |
-| 25 | §25 scenario 12: Attention conservation | MISSING | see record | DALEOBANKS SMS per request with no batching (risk). | EXISTING | UNIT-TESTED | rule-based marginal value; no delivery channel |
-| 26 | §25 scenario 13: Sensor contradiction | PARTIAL | see record | WMI adversarial cases preserve dissent (reusable); DALEOBANKS world model has no ... | EXISTING | UNIT-TESTED | synthetic sources only |
-| 27 | §25 scenario 14: Experience-to-learning | PARTIAL | see record | DALEOBANKS reflection/consolidation change organ-local priors; WMI none. | PARTIAL | UNIT-TESTED | classification input changes with beliefs; CausalMemory orders moves; no learning from a real outcome |
+| 16 | §25 scenario 3: Irrelevant event rejection | MISSING | see record | MISSING | EXISTING | UNIT-TESTED | muted domains are not integrated at all |
+| 17 | §25 scenario 4: Cross-signal convergence | MISSING | see record | MISSING | EXISTING | UNIT/INTEGRATION-TESTED | contested factors excluded from the score and listed |
+| 18 | §25 scenario 5: Authority boundary | EXISTING | see record | WMI: requires_human_approval const (adapter refuses authority inflation). | EXISTING | UNIT/INTEGRATION-TESTED | unproven mechanisms never run external moves |
+| 19 | §25 scenario 6: Capability deficit | MISSING | see record | MISSING | PARTIAL | UNIT-TESTED, SANDBOX-EXECUTED | acquisition chain without a builder |
+| 20 | §25 scenario 7: Goal drift | PARTIAL | see record | MISSING | EXISTING | UNIT-TESTED | drift on attempt-numbered ids handled |
+| 21 | §25 scenario 8: Founder refusal | PARTIAL | see record | DALEOBANKS pending-only dedupe (gap); WMI none. | EXISTING | UNIT-TESTED | identical effect also refused |
+| 22 | §25 scenario 9: Restart continuity | EXISTING | see record | WMI/DALEOBANKS: BridgeState idempotency for admission only. | EXISTING | INTEGRATION-TESTED (real SIGKILL ×2) | no supervisor (G5) |
+| 23 | §25 scenario 10: Evidence integrity | PARTIAL | see record | PARTIAL | EXISTING | UNIT-TESTED | verdict-bearing verification; no real instance |
+| 24 | §25 scenario 11: Compounding | PARTIAL | see record | PARTIAL | PARTIAL | UNIT/INTEGRATION-TESTED | work measured; attached capability makes a blocked goal executable; synthetic only |
+| 25 | §25 scenario 12: Attention conservation | MISSING | see record | DALEOBANKS SMS per request with no batching (risk). | EXISTING | UNIT-TESTED | founder burden measured; rule-based value |
+| 26 | §25 scenario 13: Sensor contradiction | PARTIAL | see record | WMI adversarial cases preserve dissent (reusable); DALEOBANKS world model has no ... | EXISTING | UNIT-TESTED | organ-typed contradictions possible through `organ_signals`; no live organ |
+| 27 | §25 scenario 14: Experience-to-learning | PARTIAL | see record | DALEOBANKS reflection/consolidation change organ-local priors; WMI none. | PARTIAL | UNIT-TESTED | typed beliefs change decisions; router calibration changes selection after verified outcomes; no real outcome |
+| 28 | Competency Compiler: recognize the problem / admissible methods | EXISTING (router, #165) | PARTIAL (#158 compiler, #143 cortex) | MISSING | EXISTING (`competency.py`) | UNIT-TESTED | closed eight-class taxonomy; unclassified gates unrouted and counted |
+| 29 | Competency Compiler: smallest competent mechanism or composition | EXISTING (router, inert) | PARTIAL | MISSING | EXISTING (wired) | UNIT-TESTED | coarse move-to-mechanism link via `requires_capabilities` |
+| 30 | Competency Compiler: typed evidence | MISSING | PARTIAL | MISSING | EXISTING | UNIT-TESTED | self-declared methods capped by trust; human-only only via founder answers |
+| 31 | Competency Compiler: observe outcomes, improve selection | EXISTING (router, no caller) | PARTIAL | MISSING | EXISTING | UNIT-TESTED | router lock-out after one failure (recorded for its owner) |
+| 32 | Competency Compiler: generate new bounded capabilities | MISSING | PARTIAL (#129 genesis, #164 RECOMBINE, #137 builder) | MISSING | PARTIAL (qualify + attach, no builder) | SANDBOX-EXECUTED (subprocess) | a supplier lineage or coding agent |
+| 33 | §5 Personal advancement (trajectory, friction, mature report) | MISSING | MISSING | MISSING | EXISTING | UNIT-TESTED | nothing removes friction automatically beyond preparing work and compressing decisions |
+| 34 | §8 Computational modalities (interoception) | MISSING | MISSING | MISSING | EXISTING (8 derived, 6 declared unobserved) | UNIT-TESTED | external modalities need sensors |
+| 35 | §12/§28 Opportunity package | MISSING | PARTIAL (#158 Foundry) | PARTIAL (WMI assessment) | EXISTING | UNIT-TESTED | due diligence and people/resources remain prepared work |
+| 36 | §27 'I want X' intake | MISSING | PARTIAL (#137 asks) | MISSING | EXISTING | UNIT-TESTED | deterministic draft; a local drafter must beat it |
 
 ## 4. Preserved future targets with the blocking dependency (section 32.14)
 
@@ -143,10 +192,10 @@ external effect. The inspection record behind this table is
 | Alien sensorium / 100000 senses | no live sources are wired | authorized data access and per-source `SignalEnvelope` adapters (DALEOBANKS perception and ContextPackets, WMI market monitor, public feeds) |
 | Learned relevance and model-backed proposers | rule baseline only | local open-source model route (INTENT-20260930) attached through standing-cognition proposers; must beat the rule baseline on held-out signals |
 | Autonomous execution at scale | the loop holds no grants | founder-issued standing grants through the existing issuer; the Gate consumes, never fills in |
-| Capability Genesis builder | deficit detection only | reconciliation of the drafts' Genesis/builder lineage (#114/#137) or a bounded coding-agent route under the Capability Genesis contract |
+| Capability Genesis builder | plan, qualification and founder-gated attach exist; nothing here writes the candidate | reconciliation of a builder lineage (#129 genesis, #164 RECOMBINE, #137 builder) or a bounded coding-agent route under the Capability Genesis contract |
 | Founder authentication for goal authorization | goals carry declared lineage only | SR001 G6: canonical founder key custody and revocation |
 | External verification of outcomes | synthetic executors | a real outcome adapter with `validation_status: externally_verified` |
-| Cross-organ goal feeds | organs untouched | typed adapters from DALEOBANKS/WMI wire contracts into observations (no copied governance) |
+| Cross-organ goal feeds | kernel-side adapters from canonical packets and assessments exist (`egregore/organ_signals.py`); organs untouched | a live bridge transport (both organs refuse anything but synthetic localhost today) and a ContextPacket contract reconciliation |
 | Physical embodiment | out of scope | authorized device/robotics interfaces under the Gate |
 | Richer Experience Surface metrics (recall, cross-modal inference, prediction calibration) | seven metrics implemented | calibration data from real predictions (`CausalMemory.calibrate` is the intended consumer) |
 | Merge of this PR and any lifecycle beyond TESTED | adoption is not a build-session decision | founder decision on `deliberation-goal-gravity-2026-10-13.json` (NEEDS_FOUNDER_DECISION, level constitutional) |
@@ -156,6 +205,9 @@ external effect. The inspection record behind this table is
 | Real founder authentication for authorization, answers and refusals | chat text, hashes, shared keys and the committed demo key never authenticate Alfonso | SR001 G6 founder enrollment outside this package |
 | DALEOBANKS perception as kernel-valid context-packet experience | schema mismatch (source/risk enums, stakes/incentives arrays, provenance shape) | an adapter with declared loss, a DALEOBANKS manifest refresh, `rfc3339-validator` in CI |
 | Asymmetry retention fed from WMI validation plans / next actions / monetization paths | no versioned contract for those fields | a venture-assessment 1.2 contract and adapter field mapping with declared loss |
+| Isolated qualification of generated capabilities | `qualify()` is a subprocess inside this repository | the SR001 isolated verification facility |
+| Taxonomy for constructed capabilities (optimization, assignment) | the router's eight classes have no optimization class | a router-owner PR on `main` (needed for #164's reductions) |
+| Torn-ledger-tail recovery | the ledger refuses to open after a partial append (fail-closed) | a repair procedure that quarantines the original first |
 | `turn()` as a stage of `tick()` (one trigger clock) | today `turn` consumes `tick` candidates as a projection with its own conflict record | founder decision after the first durable scheduler integration (second-increment dissent) |
 
 ## 5. How the loop is called
@@ -178,6 +230,12 @@ loop.founder_answer(item_id, decision="refuse", actor="alfonso_lopez", note="not
 loop.reconcile(goal_id, now=now)                                     # close attempted/unknown moves from Gate records
 loop.verify_outcome(goal_id, route_hash, verifier="auditor:x", evidence_refs=[...], note="...", now=now)
 loop.measures(now=now)                                               # identity / agency / intelligence / surface
+# Competency Compiler: pass capability_router=CapabilityRouter(genome_registry, ledger=ledger) to the constructor,
+# register competencies with loop.competency.register(Competency(...)), and give plan nodes a problem_class.
+plan = loop.acquisition.plan(goal_id, now=now)                       # ladder for an open deficit (no install)
+q = loop.acquisition.qualify(goal_id, genome=g, competency=c, acceptance_tests=["tests/..."], evaluator="harness:pytest", now=now)
+loop.propose_attach(goal_id, q, now=now)                             # one founder decision; accept attaches
+draft = loop.intake.draft("I want X", now=now)                       # section-27 fields; authority stays unresolved
 ```
 
 A scheduler must supply a globally stable `trigger_id`; retrying it with the same inputs returns the recorded turn,

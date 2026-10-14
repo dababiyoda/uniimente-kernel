@@ -22,7 +22,8 @@
       "conflicts": [
         "Draft lineage #158 (greg/gravity.py, greg/missions.py Genesis hook) carries an unmerged Goal Gravity turn on the greg/ package; preserved as substrate, reconciliation is a founder merge decision",
         "Draft lineages #114/#137 (greg/missions.py, greg/asks.py, greg/genesis.py) carry an unmerged persistent mission engine; preserved as substrate",
-        "Goal Chase sandbox #93/#97/#109 carries unmerged obligations/trigger proofs tied to docs/founder-loop-entry-gate.json; preserved as substrate"
+        "Goal Chase sandbox #93/#97/#109 carries unmerged obligations/trigger proofs tied to docs/founder-loop-entry-gate.json; preserved as substrate",
+        "INTENT-20261014-competency-compiler (main, #165) records that router composition waits on the founder-loop entry gate; this PR wires it as inert code and leaves G1/G5 to the founder"
       ],
       "evidence_refs": [
         "tests/unit/test_goal_gravity.py",
@@ -34,7 +35,17 @@
         "contracts/goal-state.schema.json",
         "contracts/experience-event.schema.json",
         "contracts/capability-deficit.schema.json",
-        "tests/evidence/goal-gravity-20261013/"
+        "tests/evidence/goal-gravity-20261013/",
+        "tests/unit/test_goal_gravity_competency.py",
+        "tests/unit/test_goal_gravity_acquisition.py",
+        "tests/unit/test_goal_gravity_advancement.py",
+        "tests/unit/test_goal_gravity_sensorium.py",
+        "tests/unit/test_goal_gravity_opportunity.py",
+        "tests/unit/test_goal_gravity_intake.py",
+        "tests/unit/test_goal_gravity_organs.py",
+        "tests/unit/test_goal_gravity_controls.py",
+        "tests/integration/test_goal_gravity_process_kill.py",
+        "docs/collaboration/deliberation-competency-compiler-wiring-2026-10-14.json"
       ],
       "implementation_refs": [
         "egregore/goals.py",
@@ -52,7 +63,15 @@
         "docs/GOAL_GRAVITY.md",
         "docs/decisions/ADR-GOAL-GRAVITY-001.md",
         "docs/collaboration/goal-gravity-concept-map-2026-10-13.json",
-        "docs/collaboration/goal-gravity-completeness-critique-2026-10-13.md"
+        "docs/collaboration/goal-gravity-completeness-critique-2026-10-13.md",
+        "egregore/competency.py",
+        "egregore/advancement.py",
+        "egregore/sensorium.py",
+        "egregore/opportunity.py",
+        "egregore/acquisition.py",
+        "egregore/intake.py",
+        "egregore/organ_signals.py",
+        "capabilities/router.py (main, #165)"
       ],
       "owner": "alfonso_lopez",
       "next_review_trigger": "Founder review of the draft PR; first real sensor adapter or durable scheduler calling GoalGravityLoop.turn without a human tick; any founder ruling on the #137/#158 lineages",
@@ -60,10 +79,12 @@
         "Which lineage mechanisms (asks contract, lightcone clamp, Genesis builder, Landlock workers) should be ported onto the canonical loop first once the founder rules on the draft PR graph?",
         "Which durable scheduler (cron, APScheduler as DALEOBANKS uses, Temporal) will own the trigger_id clock for the founder loop entry gate P1?",
         "Founder authentication, key custody and revocation remain unresolved (SR001 G6); goal authorization here is declared lineage only",
-        "Whether GoalGravityLoop.turn should become a stage of StandingCognitionRuntime.tick (one trigger clock) rather than a projection that consumes its candidates (see the second-increment dissent)"
+        "Whether GoalGravityLoop.turn should become a stage of StandingCognitionRuntime.tick (one trigger clock) rather than a projection that consumes its candidates (see the second-increment dissent)",
+        "Should the Competency Compiler taxonomy (capabilities/router.py PROBLEM_CLASSES) gain an optimization/assignment class so constructed capabilities such as draft #164's RECOMBINE reductions have an honest place to register?",
+        "Which supplier should feed acquisition candidates first: draft #129's genesis loop, draft #164's construction by reduction, or a coding agent under the Capability Genesis contract?"
       ],
       "created_at": "2026-10-13T14:30:00Z",
-      "updated_at": "2026-10-13T19:10:00Z"
+      "updated_at": "2026-10-14T06:30:00Z"
     }
   ]
 }

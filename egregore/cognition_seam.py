@@ -63,13 +63,17 @@ def candidate_to_intervention(candidate: CandidateProposal) -> InterventionSpec:
     declared = candidate.payload.get("egregore_intervention")
     if isinstance(declared, Mapping):
         return InterventionSpec.from_dict(declared)
-    payload = {k: v for k, v in candidate.payload.items() if k != "egregore_intervention"}
+    declared_tactic = candidate.payload.get("tactic")
+    payload = {k: v for k, v in candidate.payload.items() if k not in ("egregore_intervention", "tactic")}
+    # A proposer may declare its tactic so that "never use this tactic" binds it; an undeclared tactic is
+    # labelled by proposer, so a founder can also ban a proposer. Identical effects are refused by effect hash.
+    tactic = declared_tactic if isinstance(declared_tactic, str) and declared_tactic.strip() else f"proposer:{candidate.proposed_by}"
     return InterventionSpec.build(
         intervention_id=f"{candidate.proposed_by}:{candidate.candidate_id[7:23]}",
         description=candidate.objective, action_class=candidate.action_class,
         requested_capability=candidate.requested_capability, consequence_class=candidate.consequence_class,
         target=candidate.target, expected_outcome=candidate.expected_outcome, payload=payload,
-        estimated_cost_usd=candidate.estimated_cost_usd, tactic=f"proposer:{candidate.proposed_by}")
+        estimated_cost_usd=candidate.estimated_cost_usd, tactic=tactic)
 
 
 class GoalProposer:

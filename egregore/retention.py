@@ -77,6 +77,10 @@ class AsymmetryRetention:
         self.registry = registry
         self.genomes = genomes
         self.source = require_text("source", source)
+        self._folded = 0
+        self._hydrate_genomes()
+
+    def sync(self) -> None:
         self._hydrate_genomes()
 
     @property
@@ -85,7 +89,11 @@ class AsymmetryRetention:
 
     def _hydrate_genomes(self) -> None:
         """Capabilities retained on the ledger survive a restart: re-register them into the genome registry."""
-        for record in self.ledger.by_type(self.ASSET_RECORD):
+        records = self.ledger.records
+        start, self._folded = self._folded, len(records)
+        for record in records[start:]:
+            if record.record_type != self.ASSET_RECORD:
+                continue
             for asset in record.payload.get("retention", {}).get("assets", []):
                 cap = asset.get("capability")
                 if not cap:
@@ -180,6 +188,8 @@ class AsymmetryRetention:
             d = r.payload.get("deficit")
             if not d or d["deficit_id"] not in open_ids or d["deficit_id"] in resolved_ids:
                 continue
+            if d.get("missing_methods") or not d["missing_capabilities"]:
+                continue   # epistemic deficits close only when the gate routes again, never by retention
             if not set(d["missing_capabilities"]) <= set(capabilities):
                 continue
             closed = {**d, "lifecycle": "TESTED", "disposition": "resolved_resume_original_goal",

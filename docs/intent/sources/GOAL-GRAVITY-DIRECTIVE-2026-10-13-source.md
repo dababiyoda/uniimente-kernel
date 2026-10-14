@@ -1449,3 +1449,14 @@ Do not create a parallel GREG.
 
 Reconcile → implement → integrate → test → verify → compound → continue building the complete machine.
 ```
+
+## Re-issue (2026-10-14)
+
+The founder re-sent this directive in the same session on 2026-10-14 (the same preamble, interpretation
+paragraphs, Competency Compiler sentence, sections 0-33 and FINAL COMMAND on reading; not byte-compared,
+because the chat message is not retained as a file here). Repetition creates no additional authority (SR-001).
+Lineage of the Competency Compiler sentence: it is present in this 2026-10-13 text; the first two increments of
+draft PR #160 did not implement it; PR #165 (another session, merged to `main` 2026-10-14) added
+`capabilities/router.py` and recorded `docs/intent/INTENT-20261014-competency-compiler.json`; the third increment
+of draft PR #160 wires that router into the Goal Gravity loop (`egregore/competency.py`).
+

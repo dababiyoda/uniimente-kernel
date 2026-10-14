@@ -144,6 +144,11 @@
         "max_estimated_cost_usd": {
           "type": "number",
           "minimum": 0
+        },
+        "max_mechanism_cost_usd": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Ceiling on the combined per-use cost of mechanisms the Competency Compiler may recruit for one gate"
         }
       }
     },
@@ -332,6 +337,10 @@
             "risk_up",
             "upside_down"
           ]
+        },
+        "baseline": {
+          "type": "number",
+          "description": "Reference value the opportunity is quantified against (opportunity package); optional"
         }
       }
     },
@@ -465,6 +474,24 @@
             "type": "string"
           },
           "description": "entities whose <entity>.relationship belief must be truthy"
+        },
+        "target_by": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Authorized trajectory: when this backcast state should be true. Optional; omitted when unset."
+        },
+        "problem_class": {
+          "enum": [
+            "arithmetic",
+            "authorization",
+            "code_correctness",
+            "design_critique",
+            "fact_lookup",
+            "forecast",
+            "legal_question",
+            "market_demand"
+          ],
+          "description": "What kind of question the gate poses; routes the gate through capabilities/router.py. Optional."
         }
       }
     }

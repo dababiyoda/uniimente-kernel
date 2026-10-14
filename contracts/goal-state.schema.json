@@ -225,6 +225,21 @@
           "items": {
             "type": "string"
           }
+        },
+        "refused_effects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hash"
+          },
+          "description": "Effect hashes (action, capability, target, payload) of refused routes; a relabelled or reworded proposal of the same effect stays refused"
+        },
+        "intervention_intensity": {
+          "enum": [
+            "minimal",
+            "standard",
+            "active"
+          ],
+          "description": "Section 20 configurable intervention intensity; absent means standard"
         }
       }
     },

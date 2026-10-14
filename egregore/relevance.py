@@ -97,3 +97,40 @@ class GoalRelevanceRouter:
             verdicts[goal_id] = RelevanceVerdict(goal_id, signal.signal_id, score, matched, wake,
                                                  "wake threshold reached" if wake else "below wake threshold")
         return verdicts
+
+
+def evaluate_relevance(router: "GoalRelevanceRouter", labeled: Sequence[tuple[SignalEnvelope, Sequence[str]]], *,
+                       label_source: str) -> dict[str, Any]:
+    """Wake precision and recall of the relevance router against labelled examples (directive section 9).
+
+    ``labeled`` pairs each signal with the goal ids a person says it should wake. The result names its
+    corpus hash and ``label_source``; synthetic labels are a fixture, not ground truth, and say so.
+    Pure: nothing is integrated or written.
+    """
+    from .contracts import digest
+    tp: dict[str, int] = {}
+    fp: dict[str, int] = {}
+    fn: dict[str, int] = {}
+    corpus = []
+    for signal, expected in labeled:
+        expected = set(expected)
+        woke = {g for g, v in router.route(signal).items() if v.wake}
+        corpus.append({"signal_id": signal.signal_id, "expected": sorted(expected)})
+        for g in woke | expected:
+            if g in woke and g in expected:
+                tp[g] = tp.get(g, 0) + 1
+            elif g in woke:
+                fp[g] = fp.get(g, 0) + 1
+            else:
+                fn[g] = fn.get(g, 0) + 1
+    goals = sorted(set(tp) | set(fp) | set(fn))
+    per_goal = {}
+    for g in goals:
+        t_, f_, n_ = tp.get(g, 0), fp.get(g, 0), fn.get(g, 0)
+        per_goal[g] = {"precision": t_ / (t_ + f_) if t_ + f_ else None, "recall": t_ / (t_ + n_) if t_ + n_ else None,
+                       "true_wakes": t_, "false_wakes": f_, "missed_wakes": n_}
+    T, F, N = sum(tp.values()), sum(fp.values()), sum(fn.values())
+    return {"corpus_hash": digest({"kind": "egregore-relevance-corpus", "items": corpus}), "examples": len(corpus),
+            "label_source": label_source, "ground_truth": label_source not in ("synthetic", "fixture"),
+            "wake_precision": T / (T + F) if T + F else None, "wake_recall": T / (T + N) if T + N else None,
+            "per_goal": per_goal}

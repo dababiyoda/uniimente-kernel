@@ -73,6 +73,15 @@ def metric_error(direction: str, target: float | bool, value: Any) -> float | No
         return None
 
 
+def admissible_evidence(problem_class: str | None) -> set[str] | None:
+    """What evidence can clear a gate of this problem class (router table); None for an untyped gate."""
+    if problem_class is None:
+        return None
+    from capabilities.router import EPISTEMIC_METHODS, PROBLEM_CLASSES
+    spec = PROBLEM_CLASSES[problem_class]
+    return {EPISTEMIC_METHODS[m]["establishes"] for m in tuple(spec["any_of"]) + tuple(spec["all_of"])}
+
+
 def capability_present(genomes: Any, capability: str) -> bool:
     if genomes is None:
         return False
@@ -131,11 +140,20 @@ class BackcastGPSAdapter:
         gap = metric_error(node.sbm_direction, node.sbm_target, belief.value)
         if gap is None and belief.value is not None:
             blockers.append(f"type mismatch for {node.sbm}: target {type(node.sbm_target).__name__}, observed {type(belief.value).__name__}")
-        satisfied = gap == 0.0 and not belief.contradicted and trusted
+        # Typed evidence (Competency Compiler): a gate that poses a problem class clears only on evidence a
+        # method admissible for that class can establish. A forum post never proves demand; a simulation never
+        # proves an external fact; an authorization gate clears only on a recorded human decision.
+        admissible = admissible_evidence(node.problem_class)
+        typed_ok = admissible is None or belief.establishes in admissible
+        if not typed_ok:
+            blockers.append(f"evidence for {node.sbm} establishes {belief.establishes or 'nothing typed'}; "
+                            f"a {node.problem_class} gate needs {', '.join(sorted(admissible))}")
+        satisfied = gap == 0.0 and not belief.contradicted and trusted and typed_ok
         return satisfied, {"name": node.sbm, "current": belief.value, "target": node.sbm_target,
                            "direction": node.sbm_direction, "gap": gap, "satisfied": satisfied,
                            "observed_at": belief.observed_at, "contradicted": belief.contradicted,
-                           "trust_level": belief.trust_level}, blockers
+                           "trust_level": belief.trust_level, "establishes": belief.establishes,
+                           "required_evidence": sorted(admissible) if admissible is not None else None}, blockers
 
     def fix(self, spec: GoalSpec, state: GoalState, *, now: datetime | str, record: bool = True) -> GPSFix:
         fixed_at = iso(parse_time(now))

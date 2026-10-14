@@ -47,17 +47,23 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable, Mapping, Sequence
 
+from .acquisition import CapabilityAcquisition
+from .advancement import AdvancementMonitor
 from .attention import AttentionItem, AttentionPolicy, FounderAttentionRouter, Routing
 from .cognition_seam import GoalProposer, cadence_signal, candidate_to_intervention, goal_context
+from .competency import GoalCompetencyRouting, RoutingView
 from .contracts import ContractError, IntegrityConflict, SignalEnvelope, canonical_copy, digest, require_text
 from .experience import WorldModel
+from .intake import GoalIntake
 from .goals import CONSEQUENCE_CLASSES, GoalRegistry, GoalSpec, InterventionSpec, iso, parse_time
 from .gps import BackcastGPSAdapter, GPSFix
 from .intersections import FavorableIntersectionDetector, IntersectionReport
+from .opportunity import OpportunityPackager
 from .interventions import Classification, InterventionClassifier
 from .relevance import GoalRelevanceRouter
 from .resources import ResourceExhausted, ResourceGovernor, ResourceMode
 from .retention import AsymmetryRetention, DurableAsset
+from .sensorium import Sensorium
 
 TURN_STATUSES = ("silent", "advanced", "hibernating", "conserving")
 ACTIONABLE = ("EXECUTE_AUTONOMOUSLY", "PREPARE_FOR_FOUNDER", "ESCALATE")
@@ -85,6 +91,7 @@ class GravityTurn:
     experience_surface: dict[str, Any]
     deliberation: str = "declared_moves"   # or "standing_cognition"
     deferred: tuple[str, ...] = ()         # goals not woken because the governor is conserving
+    derived_signal_ids: tuple[str, ...] = ()   # interoceptive readings integrated this turn (section 8)
 
     @property
     def execution_authority(self) -> str:
@@ -97,7 +104,8 @@ class GravityTurn:
             "processed": list(self.processed), "executed": list(self.executed), "prepared": list(self.prepared),
             "escalated": list(self.escalated), "routing": self.routing, "resource_snapshot": self.resource_snapshot,
             "experience_surface": self.experience_surface, "deliberation": self.deliberation,
-            "deferred": list(self.deferred), "execution_authority": "none"})
+            "deferred": list(self.deferred), "derived_signal_ids": list(self.derived_signal_ids),
+            "execution_authority": "none"})
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "GravityTurn":
@@ -108,7 +116,8 @@ class GravityTurn:
                    routing=canonical_copy(value["routing"]), resource_snapshot=canonical_copy(value["resource_snapshot"]),
                    experience_surface=canonical_copy(value["experience_surface"]),
                    deliberation=value.get("deliberation", "declared_moves"),
-                   deferred=tuple(value.get("deferred", ())))
+                   deferred=tuple(value.get("deferred", ())),
+                   derived_signal_ids=tuple(value.get("derived_signal_ids", ())))
 
 
 class GoalGravityLoop:
@@ -122,10 +131,12 @@ class GoalGravityLoop:
     DISCREPANCY_RECORD = "egregore.outcome_discrepancy"
     RECONCILIATION_RECORD = "egregore.reconciliation"
     VERIFICATION_RECORD = "egregore.outcome_verified"
+    MUTED_RECORD = "egregore.signal_not_monitored"
 
     def __init__(self, *, ledger: Any, compiled: Any, passports: Any, actor: str, legal_principal: str,
                  genomes: Any = None, cognition: Any = None, memory: Any = None,
-                 attention_policy: AttentionPolicy | None = None,
+                 attention_policy: AttentionPolicy | None = None, interoception: bool = True,
+                 capability_router: Any = None,
                  source: str = "spiffe://uniimente.internal/egregore/goal-gravity"):
         if not hasattr(ledger, "append") or not hasattr(ledger, "by_type") or not hasattr(ledger, "records"):
             raise ContractError("ledger must provide append(), by_type() and records")
@@ -153,6 +164,15 @@ class GoalGravityLoop:
         self.detector = FavorableIntersectionDetector(ledger=ledger, world=self.world, source=source)
         self.retention = AsymmetryRetention(ledger=ledger, registry=self.registry, genomes=genomes, source=source) if genomes is not None else None
         self.attention = FounderAttentionRouter(ledger=ledger, registry=self.registry, policy=attention_policy, source=source)
+        self.advancement = AdvancementMonitor(ledger=ledger, registry=self.registry, turn_record=self.TURN_RECORD,
+                                              prepared_record=self.PREPARED_RECORD, source=source)
+        self.sensorium = Sensorium(self) if interoception else None
+        self.opportunity = OpportunityPackager(ledger=ledger, world=self.world, classifier=self.classifier, source=source)
+        self.acquisition = CapabilityAcquisition(self)
+        self.intake = GoalIntake(self)
+        # The Competency Compiler (capabilities/router.py on main): optional; without it gates are unrouted.
+        self.competency = (GoalCompetencyRouting(capability_router, ledger=ledger, genomes=genomes)
+                           if capability_router is not None else None)
         self._turns: dict[str, GravityTurn] = {}
         self._interventions: list[dict[str, Any]] = []
         self._decisions: dict[tuple[str, str], str] = {}   # (goal_id, route_hash) -> latest classification
@@ -165,7 +185,16 @@ class GoalGravityLoop:
 
     # ------------------------------------------------------------ ledger projection
     def _sync(self) -> None:
-        """Fold ledger records appended since the last fold (by this loop, another loop, the Gate, retention)."""
+        """Fold ledger records appended since the last fold (by this loop, another loop, the Gate, retention).
+
+        Every projection is a fold of the one ledger, so two loops over one ledger agree on goals, beliefs,
+        asks, intersections, retained genomes, routing track records, turns and interventions."""
+        for component in (getattr(self, "registry", None), getattr(self, "world", None), getattr(self, "attention", None),
+                          getattr(self, "detector", None), getattr(self, "retention", None)):
+            if component is not None:
+                component.sync()
+        if getattr(self, "competency", None) is not None:
+            self.competency.refresh()
         records = self.ledger.records
         for record in records[self._folded:]:
             rtype = getattr(record, "record_type", None)
@@ -293,7 +322,8 @@ class GoalGravityLoop:
             effort_estimate=f"read {len(refs)} evidence reference(s); one decision among {len(options)} options; "
                             f"nothing else is required unless you choose to act",
             category=intervention.consequence_class, created_at=now,
-            route_hash=intervention.route_hash, tactic=intervention.tactic or None)
+            route_hash=intervention.route_hash, tactic=intervention.tactic or None,
+            effect_hash=intervention.effect_hash)
 
     def _inform(self, spec: GoalSpec, *, title: str, text: str, urgency: str, evidence_refs: Sequence[str],
                 now: str, marginal_value: float, category: str = "information") -> AttentionItem:
@@ -305,13 +335,132 @@ class GoalGravityLoop:
             recommendation="no action needed; GREG continues within its authority",
             evidence_refs=tuple(evidence_refs[:5]), effort_estimate="none", category=category, created_at=now)
 
-    def _inform_intersection(self, spec: GoalSpec, report: IntersectionReport, *, now: str) -> AttentionItem:
-        return self._inform(
-            spec, title="favorable intersection", urgency="low", now=now,
-            marginal_value=0.2 + 0.1 * len(report.domains),
-            text=f"{len(report.satisfied)} weak signals across {', '.join(report.domains)} converged "
-                 f"(score {report.score:.2f} vs threshold {report.threshold:.2f}). No action is requested.",
-            evidence_refs=[s["signal_id"] for s in report.satisfied])
+    def _inform_intersection(self, spec: GoalSpec, report: IntersectionReport, *, now: str,
+                             package: Mapping[str, Any] | None = None) -> AttentionItem:
+        quantified = [f"{s['factor_id']} {s['quantified']['relative_improvement']:+.0%}"
+                      for s in (package or {}).get("satisfied", [])
+                      if s.get("quantified") and s["quantified"].get("relative_improvement") is not None]
+        need = sum(1 for o in (package or {}).get("options", []) if o["without_a_grant"] in ("PREPARE_FOR_FOUNDER", "ESCALATE"))
+        text = (f"{len(report.satisfied)} weak signals across {', '.join(report.domains)} converged "
+                f"(score {report.score:.2f} vs threshold {report.threshold:.2f})")
+        if quantified:
+            text += "; measured against baselines: " + ", ".join(quantified)
+        if package and package.get("contested"):
+            text += f"; {len(package['contested'])} contested factor(s) kept out of the score"
+        if package:
+            text += f". Opportunity package {package['package_id'][7:19]} lists {len(package['options'])} move(s): {need} need you"
+        text += ". No action is requested."
+        return self._inform(spec, title="favorable intersection", urgency="low", now=now,
+                            marginal_value=0.2 + 0.1 * len(report.domains), text=text,
+                            evidence_refs=(package or {}).get("evidence_refs") or [s["signal_id"] for s in report.satisfied])
+
+    def _route(self, spec: GoalSpec, fix: GPSFix, *, now: str, items: list, blockers: list) -> RoutingView | None:
+        """Route the active gate through the Competency Compiler and surface what it means."""
+        if fix.active_node_id is None:
+            return None
+        node = spec.node(fix.active_node_id)
+        if self.competency is None:
+            # Without the router a human-only gate (authorization, legal) is still recognised from the
+            # canonical taxonomy, so it surfaces as one founder decision instead of stalling silently.
+            from capabilities.router import HUMAN_ONLY_METHODS, PROBLEM_CLASSES
+            if node.problem_class is None:
+                return None
+            methods = set(PROBLEM_CLASSES[node.problem_class]["any_of"]) | set(PROBLEM_CLASSES[node.problem_class]["all_of"])
+            if not methods or not methods <= HUMAN_ONLY_METHODS:
+                return None
+            view = RoutingView(decision_id=digest({"kind": "egregore-human-gate", "goal_id": spec.goal_id, "node_id": node.node_id}),
+                               problem_id=digest({"kind": "egregore-routing-problem", "goal_id": spec.goal_id, "node_id": node.node_id}),
+                               problem_class=node.problem_class, selected=(), expected_evidence={},
+                               human_escalation=tuple(sorted(methods)), exploratory=False, requires_gate=False,
+                               rejected={}, deficit=None)
+            items.append(self._human_gate_item(spec, node, view, now=now))
+            return view
+        try:
+            routing = self.competency.route_gate(spec, fix)
+        except Exception as exc:   # a refused route is retained as a blocker and every move waits
+            if node.problem_class is None:
+                return None
+            reason = f"routing refused: {type(exc).__name__}: {exc}"[:200]
+            blockers.append(f"capability deficit: {reason}")
+            return RoutingView(decision_id=digest({"kind": "egregore-routing-refused", "goal_id": spec.goal_id,
+                                                   "node_id": node.node_id, "reason": reason}),
+                               problem_id=digest({"kind": "egregore-routing-problem", "goal_id": spec.goal_id,
+                                                  "node_id": node.node_id}),
+                               problem_class=node.problem_class, selected=(), expected_evidence={}, human_escalation=(),
+                               exploratory=False, requires_gate=False, rejected={},
+                               deficit={"router_deficit_id": digest({"kind": "egregore-router-refusal", "reason": reason}),
+                                        "problem_class": node.problem_class, "missing_methods": [reason], "rejected": {},
+                                        "authority": "none"})
+        if routing is None:
+            return None
+        if routing.deficit is not None:
+            blockers.append(f"capability deficit: epistemic: no mechanism offers {', '.join(routing.deficit['missing_methods'])} "
+                            f"for this {routing.problem_class} gate")
+        else:
+            self._resolve_epistemic_deficits(spec, node.node_id, routing, now=now)
+        if routing.human_escalation:
+            items.append(self._human_gate_item(spec, node, routing, now=now))
+        if routing.preferred_instead:
+            items.append(self._inform(spec, title="better mechanism available", urgency="low", now=now, marginal_value=0.4,
+                                      text=f"For gate '{node.gate}' the Competency Compiler would recruit "
+                                           f"{', '.join(routing.preferred_instead)} instead of the declared "
+                                           f"{', '.join(node.requires_capabilities)}. The declared plan still governs.",
+                                      evidence_refs=[], category="competency"))
+        return routing
+
+    def _resolve_epistemic_deficits(self, spec: GoalSpec, node_id: str, routing: RoutingView, *, now: str) -> None:
+        """A gate that now routes closes its open epistemic deficit; the original goal resumes."""
+        latest: dict[str, dict[str, Any]] = {}
+        for r in self.ledger.by_type(self.classifier.DEFICIT_RECORD):
+            d = r.payload.get("deficit") or {}
+            if d.get("goal_id") == spec.goal_id and d.get("active_node_id") == node_id and d.get("missing_methods"):
+                latest[d["deficit_id"]] = d
+        from .contract_check import validate_record
+        for d in latest.values():
+            if d["disposition"] != "goal_blocked_not_closed":
+                continue
+            closed = {**d, "lifecycle": "TESTED", "disposition": "resolved_resume_original_goal", "resolved_at": now,
+                      "resolved_by": f"competency:{routing.decision_id[7:23]}:{','.join(routing.selected)}"[:200]}
+            validate_record(closed, "capability-deficit")
+            self.ledger.append(self.classifier.DEFICIT_RECORD, {
+                "source": self.source, "deficit": closed, "goal_id": spec.goal_id, "missing_capabilities": [],
+                "founder_intent": closed["founder_intent"], "disposition": closed["disposition"]})
+
+    def _human_gate_item(self, spec: GoalSpec, node: Any, routing: RoutingView, *, now: str) -> AttentionItem:
+        """Only a person can answer this gate. One stable decision item; accepting records typed evidence."""
+        method = routing.human_escalation[0]
+        priority = self.registry.effective_priority(spec.goal_id)
+        return AttentionItem.build(
+            goal_id=spec.goal_id, kind="decision", urgency="normal",
+            marginal_value=round(min(1.0, 0.55 + 0.4 * ((6 - priority) / 5)), 3),
+            title=f"{spec.desired_state[:60]}: {node.gate[:60]}",
+            question=(f"Gate '{node.gate}' poses a {routing.problem_class} question that only a person can answer "
+                      f"({', '.join(routing.human_escalation)}). Accepting records your decision as evidence for "
+                      f"{node.sbm}; it is not a grant and executes nothing."),
+            options=({"label": "accept (record my decision)", "cost": "one decision"},
+                     {"label": "refuse", "cost": "none"}, {"label": "do nothing now", "cost": "none"}),
+            recommendation="decide when the prepared work and evidence for this gate are sufficient",
+            evidence_refs=tuple(r for r in (self.registry.authorization_hash(spec.goal_id),) if r),
+            effort_estimate="one decision; GREG prepares everything else", category=routing.problem_class,
+            created_at=now, evidence_on_accept={"sbm": node.sbm, "value": node.sbm_target, "method": method,
+                                                "node_id": node.node_id, "routing_decision_id": routing.decision_id})
+
+    def _advancement_item(self, spec: GoalSpec, report: Mapping[str, Any], *, now: str) -> AttentionItem:
+        """The section-5 report: one compressed entry point, never a reminder, always cheap to decline."""
+        decisions = report["open_decisions"]
+        options = ([{"label": "review the prepared decision(s)", "cost": f"{len(decisions)} decision(s)"}] if decisions else []) + [
+            {"label": "lower this goal's priority", "cost": "none"},
+            {"label": "pause this goal", "cost": "none"},
+            {"label": "do nothing now", "cost": "none"}]
+        priority = self.registry.effective_priority(spec.goal_id)
+        return AttentionItem.build(
+            goal_id=spec.goal_id, kind="decision" if decisions else "information", urgency="normal",
+            marginal_value=round(min(1.0, 0.45 + 0.4 * ((6 - priority) / 5)), 3),
+            title=f"{spec.desired_state[:60]}: progress report", question=report["text"], options=options,
+            recommendation=("the prepared decision is the shortest path past the main friction" if decisions
+                            else "no action needed; GREG keeps working within its authority"),
+            evidence_refs=tuple(report["evidence_refs"]), effort_estimate=report["effort"], category="advancement",
+            created_at=now)
 
     # ------------------------------------------------------------ drift and gate observation
     def drift_report(self, goal_id: str) -> dict[str, Any]:
@@ -413,16 +562,27 @@ class GoalGravityLoop:
                                                            "disposition": "refused_and_retained"})
             raise IntegrityConflict("trigger_id was reused for a different gravity request")
 
-        # 1. Sense -> Experience: every signal becomes a provenance-backed experience.
+        # 1. Sense -> Experience: every signal becomes a provenance-backed experience. Caller signals first,
+        #    then the institution's own derived modalities (section 8), emitted only when a value changed.
         wake_requests: dict[str, list[str]] = {}
         relevant_signals: dict[str, list[str]] = {}
         touched_keys: set[str] = set()
-        for signal in ordered_signals:
+
+        def sense(signal: SignalEnvelope) -> None:
+            observations = self.world.observations_from_signal(signal)
+            verdicts = self.router.route(signal, observations=observations)
+            domain = signal.payload.get("domain")
+            muting = [g for g in self.registry.goals() if self.registry.domain_muted(g, domain)]
+            if muting and not any(v.score > 0 and not self.registry.domain_muted(g, domain) for g, v in verdicts.items()):
+                # "Do not monitor this domain": the signal is not integrated, ingested or retained; only the fact
+                # that a muted-domain signal arrived is recorded, without its content.
+                self.ledger.append(self.MUTED_RECORD, {"source": self.source, "signal_id": signal.signal_id,
+                                                       "domain": domain, "muted_by": sorted(muting), "at": at,
+                                                       "disposition": "not integrated: founder do_not_monitor"})
+                return
             if self.cognition is not None:
                 self.cognition.ingest(signal)
-            observations = self.world.observations_from_signal(signal)
             touched_keys.update(o.key for o in observations)
-            verdicts = self.router.route(signal, observations=observations)
             woke_here = [g for g, v in verdicts.items() if v.wake]
             self.world.integrate(signal, now=at, goal_relevance={g: v.score for g, v in verdicts.items()},
                                  context={"trigger_id": trigger_id}, attention=woke_here)
@@ -430,6 +590,12 @@ class GoalGravityLoop:
                 relevant_signals.setdefault(goal_id, []).append(signal.signal_id)
                 if verdict.wake:
                     wake_requests.setdefault(goal_id, []).append(signal.signal_id)
+
+        for signal in ordered_signals:
+            sense(signal)
+        derived = self.sensorium.signals(at) if self.sensorium is not None else []
+        for signal in derived:
+            sense(signal)
         hibernating = resources.mode is ResourceMode.HIBERNATE
         conserving = resources.mode is ResourceMode.CONSERVE
         # Individually weak signals may still combine: a favorable intersection wakes a goal.
@@ -507,7 +673,11 @@ class GoalGravityLoop:
                 # Inform when the intersection becomes favorable (the transition is the news); a still-favorable
                 # intersection is status in the turn record and status(), not a fresh interruption.
                 if report.favorable and (goal_id in intersection_wakes or not self._last_intersection_favorable(goal_id)):
-                    items.append(self._inform_intersection(spec, report, now=at))
+                    package = self.opportunity.package(
+                        spec, state, report, fix, moves=[InterventionSpec.from_dict(m) for m in fix.next_interventions],
+                        evidence_refs=evidence_refs, confidence=confidence, now=at)
+                    summary["opportunity_package"] = package["package_id"]
+                    items.append(self._inform_intersection(spec, report, now=at, package=package))
             # 5. Discrepancies are made visible before any new move: drift, contradicted SBM, open attempts.
             drift = self.drift_report(goal_id)
             if drift["drift"]:
@@ -550,9 +720,13 @@ class GoalGravityLoop:
                 deficits.append(self._record_deficit(goal_id, "relationship", f"no established relationship with {rel}", now=at))
                 blockers.append(f"relationship deficit: {rel}")
             unmet = self._unmet_dependencies(spec)
+            summary["unmet_dependencies"] = list(unmet)
             for dep in unmet:
                 deficits.append(self._record_deficit(goal_id, "proof", f"dependency unmet: {dep}", now=at))
                 blockers.append(f"dependency unmet: {dep}")
+            # 6b. Competency Compiler: which registered mechanism can answer this gate, with what evidence type?
+            routing = self._route(spec, fix, now=at, items=items, blockers=blockers)
+            summary["routing"] = routing.to_dict() if routing is not None else {"status": "unrouted"}
             # 7. Deliberate: standing cognition when attached, declared moves otherwise. Classify every candidate;
             #    execute at most one, through the Gate only.
             signal_ids = list(relevant_signals.get(goal_id, []))
@@ -591,13 +765,16 @@ class GoalGravityLoop:
                 classification = self.classifier.classify(
                     spec, state, intervention, fix=fix, grant=grant, grant_view=grant_view,
                     evidence_refs=evidence_refs, evidence_confidence=confidence, now=at, selected=selected,
-                    unmet_dependencies=unmet)
+                    unmet_dependencies=unmet, routing=routing)
                 entry = {"intervention_id": intervention.intervention_id, "decision": classification.decision,
                          "reasons": list(classification.reasons), "selected_by_deliberation": selected,
                          "evidence_confidence": confidence, "evidence_basis": evidence_basis}
+                routed = ({"routing_decision_id": routing.decision_id, "routed_mechanisms": list(routing.selected),
+                           "expected_evidence": dict(routing.expected_evidence)} if routing is not None and routing.routed else {})
                 record = lambda evidence_state, detail=None: self._record_intervention(  # noqa: E731
                     goal_id, intervention, classification_id=classification.classification_id,
-                    decision=classification.decision, evidence_state=evidence_state, detail=detail, now=at)
+                    decision=classification.decision, evidence_state=evidence_state,
+                    detail={**routed, **dict(detail or {})}, now=at)
                 if classification.decision == "EXECUTE_AUTONOMOUSLY":
                     prior = self._already_attempted(goal_id, intervention.route_hash)
                     if prior is not None:
@@ -633,7 +810,7 @@ class GoalGravityLoop:
                                       "expected_vs_actual": outcome.get("expected_vs_actual")}
                             record("executed", detail)   # never "externally_verified" on the executor's own word
                             state.evidence_refs = list(state.evidence_refs) + [action.receipt_hash]
-                            executed.append({"goal_id": goal_id, **detail, "evidence_state": "executed"})
+                            executed.append({"goal_id": goal_id, **detail, **routed, "evidence_state": "executed"})
                             entry["evidence_state"] = "executed"
                             reconciled = "reconciled=True" in str(outcome.get("expected_vs_actual", ""))
                             if outcome.get("result_class") == "negative" or not reconciled:
@@ -694,7 +871,18 @@ class GoalGravityLoop:
                 decisions.append(entry)
             summary["decisions"] = decisions
             summary["deficits"] = deficits
-            blocked = bool(fix.missing_capabilities) or bool(unmet) or any(
+            # 7b. Personal advancement (section 5): authorized vs observed trajectory, friction, one mature report.
+            pending_decisions = [i.to_dict() for i in items if i.goal_id == goal_id and i.kind == "decision"]
+            known = {a["item_id"] for a in pending_decisions}
+            open_for_goal = [a for a in self.attention.open_asks() if a["goal_id"] == goal_id and a["item_id"] not in known]
+            report = self.advancement.assess(goal_id, summary={**summary, "blockers_now": sorted(set(blockers))}, now=at,
+                                             open_asks=pending_decisions + open_for_goal,
+                                             latest_by_route=self._latest_by_route(goal_id), evidence_refs=evidence_refs)
+            if report is not None:
+                summary["advancement"] = {"stalled": report["stalled"], "main_friction": report["main_friction"],
+                                          "behind_target": [n["node_id"] for n in report["behind_target"]]}
+                items.append(self._advancement_item(spec, report, now=at))
+            blocked = bool(fix.missing_capabilities) or bool(unmet) or (routing is not None and routing.deficit is not None) or any(
                 "evidence below floor" in b or "unknown" in b or "discrepancy" in b or "reconciliation" in b
                 or "resource budget" in b for b in blockers)
             self.registry.transition(goal_id, reason="gravity turn processed", now=at,
@@ -723,7 +911,7 @@ class GoalGravityLoop:
             escalated=tuple(escalated), routing=routing.to_dict(), resource_snapshot=resources.snapshot().to_dict(),
             experience_surface=self.world.experience_surface(goals=[self.registry.get(g) for g in self.registry.goals()], now=at),
             deliberation="standing_cognition" if self.cognition is not None else "declared_moves",
-            deferred=tuple(deferred))
+            deferred=tuple(deferred), derived_signal_ids=tuple(s.signal_id for s in derived))
         self.ledger.append(self.TURN_RECORD, {"source": self.source, "turn": turn.to_dict(), "disposition": "proposal_only"})
         self._sync()
         return turn
@@ -752,7 +940,9 @@ class GoalGravityLoop:
             proposal_id = item["detail"].get("proposal_id") or self.classifier.proposal_id_for(goal_id, route)
             observed = self._gate_observation(proposal_id)
             new_state: str | None = None
-            detail: dict[str, Any] = {"proposal_id": proposal_id, "reconciled_from": "gate_ledger_events"}
+            carried = {k: item["detail"][k] for k in ("routing_decision_id", "routed_mechanisms", "expected_evidence", "attempt")
+                       if k in item["detail"]}
+            detail: dict[str, Any] = {**carried, "proposal_id": proposal_id, "reconciled_from": "gate_ledger_events"}
             if observed and observed["state"] == "recorded":
                 outcome = observed.get("outcome", {})
                 new_state = "executed"
@@ -771,7 +961,7 @@ class GoalGravityLoop:
                 if not refs:
                     raise ContractError("a resolution needs evidence references")
                 new_state = res["state"]
-                detail = {"proposal_id": proposal_id, "reconciled_from": "accountable_resolution",
+                detail = {**carried, "proposal_id": proposal_id, "reconciled_from": "accountable_resolution",
                           "reconciled_by": require_text("reconciled_by", res.get("reconciled_by", "")),
                           "evidence_refs": refs, "note": require_text("note", res.get("note", ""))}
             if new_state is None:
@@ -801,42 +991,111 @@ class GoalGravityLoop:
         return {"goal_id": goal_id, "resolved": resolved, "unresolved": unresolved, "at": at}
 
     def verify_outcome(self, goal_id: str, route_hash: str, *, verifier: str, evidence_refs: Sequence[str], note: str,
-                       now: datetime | str) -> dict[str, Any]:
-        """``externally_verified`` is earned, never self-certified: an independent verifier cites evidence."""
+                       now: datetime | str, verdict: str = "confirmed") -> dict[str, Any]:
+        """``externally_verified`` is earned, never self-certified: an independent verifier cites evidence.
+
+        ``verdict`` is ``confirmed`` (the outcome is what the move claimed) or ``refuted`` (it is not). A
+        refuted move stays ``executed``, records a discrepancy and blocks the goal; it is never released for
+        re-dispatch. Either verdict calibrates the Competency Compiler's track record for every mechanism the
+        move was routed through. Every independence rule is checked before anything is written, and one
+        action is verified at most once.
+        """
         self._sync()
         at = iso(parse_time(now))
         self.registry.get(goal_id)
+        if verdict not in ("confirmed", "refuted"):
+            raise ContractError("verdict must be 'confirmed' or 'refuted'")
         verifier = require_text("verifier", verifier)
         refs = [require_text("evidence_refs[]", r) for r in evidence_refs]
         if not refs:
             raise ContractError("external verification needs at least one evidence reference")
+        note = require_text("note", note)
         latest = self._latest_by_route(goal_id).get(route_hash)
-        if latest is None or latest["evidence_state"] != "executed":
-            raise ContractError("only an executed move can be externally verified")
-        recorded_by = None
+        if latest is None or latest["evidence_state"] != "executed" or latest["detail"].get("verdict"):
+            raise ContractError("only an executed, not yet verified move can be externally verified")
         action_id = latest["detail"].get("action_id")
+        if any(r.payload.get("action_id") == action_id for r in self.ledger.by_type(self.VERIFICATION_RECORD)):
+            raise ContractError("this action has already been verified; one verification per action")
+        recorded_by = None
         for record in self.ledger.by_type("outcome"):
             if record.payload.get("action_ref") == action_id:
                 recorded_by = record.payload.get("recorded_by")
         if verifier in (self.classifier.actor, recorded_by, self.source):
             raise ContractError("verification must be independent of the actor that executed the move")
+        mechanisms = tuple(latest["detail"].get("routed_mechanisms", ()))
+        decision_id = latest["detail"].get("routing_decision_id")
+        if mechanisms and self.competency is not None:
+            self.competency.check_verifier(verifier, mechanisms)
         intervention = InterventionSpec.from_dict(latest["intervention"])
-        detail = {**latest["detail"], "verifier": verifier, "verification_evidence_refs": refs,
-                  "note": require_text("note", note), "verified_at": at}
-        payload = self._record_intervention(goal_id, intervention, classification_id=latest["classification_id"],
-                                            decision=latest["decision"], evidence_state="externally_verified",
-                                            detail=detail, now=at)
-        self.ledger.append(self.VERIFICATION_RECORD, {"source": self.source, "goal_id": goal_id, "route_hash": route_hash,
-                                                      "action_id": action_id, "verifier": verifier, "evidence_refs": refs,
-                                                      "at": at, "disposition": "externally_verified_by_independent_party"})
+        verification = self.ledger.append(self.VERIFICATION_RECORD, {
+            "source": self.source, "goal_id": goal_id, "route_hash": route_hash, "action_id": action_id,
+            "verifier": verifier, "verdict": verdict, "evidence_refs": refs, "note": note, "at": at,
+            "routing_decision_id": decision_id, "routed_mechanisms": list(mechanisms),
+            "disposition": "externally_verified_by_independent_party" if verdict == "confirmed"
+                           else "refuted_by_independent_party"})
+        detail = {**latest["detail"], "verifier": verifier, "verdict": verdict, "verification_evidence_refs": refs,
+                  "verification_hash": verification.hash, "note": note, "verified_at": at}
+        calibration: list[dict[str, Any]] = []
+        if mechanisms and decision_id and self.competency is not None:
+            calibration = self.competency.record_outcomes(decision_id, mechanisms, correct=verdict == "confirmed",
+                                                          evidence_ref=verification.hash, verified_by=verifier)
+            detail["calibration"] = calibration
         state = self.registry.state(goal_id)
-        self.registry.transition(goal_id, reason=f"outcome externally verified by {verifier}", now=at,
-                                 evidence_refs=list(dict.fromkeys(list(state.evidence_refs) + refs)))
+        if verdict == "confirmed":
+            payload = self._record_intervention(goal_id, intervention, classification_id=latest["classification_id"],
+                                                decision=latest["decision"], evidence_state="externally_verified",
+                                                detail=detail, now=at)
+            self.registry.transition(goal_id, reason=f"outcome externally verified by {verifier}", now=at,
+                                     evidence_refs=list(dict.fromkeys(list(state.evidence_refs) + refs)))
+        else:
+            payload = self._record_intervention(goal_id, intervention, classification_id=latest["classification_id"],
+                                                decision=latest["decision"], evidence_state="executed",
+                                                detail=detail, now=at)
+            self.ledger.append(self.DISCREPANCY_RECORD, {
+                "source": self.source, "goal_id": goal_id, "action_id": action_id, "route_hash": route_hash,
+                "result_class": "refuted_by_verifier", "expected_vs_actual": note, "at": at,
+                "disposition": "discrepancy_visible_not_hidden"})
+            self.registry.transition(goal_id, reason=f"outcome refuted by {verifier}", now=at, status="blocked",
+                                     blockers=sorted(set(state.blockers) | {
+                                         f"outcome discrepancy: {intervention.intervention_id} refuted by {verifier}"}),
+                                     evidence_refs=list(dict.fromkeys(list(state.evidence_refs) + refs)))
         return payload
+
+    def propose_attach(self, goal_id: str, qualification: Mapping[str, Any], *, now: datetime | str) -> Routing:
+        """Route the one founder decision a passed qualification needs (nothing attaches until it is accepted)."""
+        if not qualification.get("passed"):
+            raise ContractError("only a passed qualification can be proposed for attachment")
+        return self.attention.route([self.acquisition.attach_item(goal_id, qualification, now=iso(parse_time(now)))], now=now)
 
     # ------------------------------------------------------------ founder surface
     def founder_answer(self, item_id: str, *, decision: str, actor: str, note: str, now: datetime | str) -> dict[str, Any]:
-        return self.attention.answer(item_id, decision=decision, actor=actor, note=note, now=now)
+        """Record the answer. For a human-only gate, an accept or refuse also becomes typed gate evidence
+        (method ``human_decision`` / ``legal_determination``), the only path by which such evidence exists.
+        Founder identity here is declared lineage, not authentication (SR001 G6); trust stays ``attributed``."""
+        item = next((a for a in self.attention.open_asks() if a["item_id"] == item_id), None)
+        answer = self.attention.answer(item_id, decision=decision, actor=actor, note=note, now=now)
+        attach = (item or {}).get("attach_on_accept")
+        if attach and decision == "accept":
+            answer = {**answer, "attached": self.acquisition.attach(attach["qualification_hash"], actor=actor, now=now)}
+        gate = (item or {}).get("evidence_on_accept")
+        if gate and decision in ("accept", "refuse"):
+            at = iso(parse_time(now))
+            answer_hash = next((r.hash for r in reversed(self.ledger.by_type(self.attention.ANSWER_RECORD))
+                                if r.payload["item_id"] == item_id), None)
+            subject, attribute = gate["sbm"].split(".", 1)
+            target = gate["value"]
+            value = target if decision == "accept" else (not target if isinstance(target, bool) else None)
+            signal = SignalEnvelope.build(
+                source="founder://answers", source_event_id=f"{item_id}:{decision}", observed_at=at,
+                payload={"observations": [{"subject": subject, "attribute": attribute, "value": value,
+                                           "confidence": 1.0, "method": gate["method"]}]},
+                evidence_refs=tuple(r for r in (answer_hash,) if r), trust_level="attributed")
+            self.world.integrate(signal, now=at, goal_relevance={item["goal_id"]: 1.0},
+                                 context={"founder_answer": item_id, "routing_decision_id": gate.get("routing_decision_id")},
+                                 attention=[item["goal_id"]], allow_human_methods=True)
+            answer = {**answer, "gate_evidence": {"sbm": gate["sbm"], "value": value, "method": gate["method"],
+                                                  "signal_id": signal.signal_id}}
+        return answer
 
     def work_to_first_actionable(self, goal_id: str) -> dict[str, Any]:
         """How much work a goal needed before its first actionable move (execute/prepare/escalate).
@@ -887,8 +1146,44 @@ class GoalGravityLoop:
                              str(len(self.memory.institutional_learning())) + " action class(es)"},
             "experiential_surface": self.world.experience_surface(
                 goals=[self.registry.get(g) for g in self.registry.goals()], now=now),
+            "competency": self._competency_measures(),
+            "founder_burden": self._founder_burden(),
             "subjective_consciousness": "unresolved; not measured; not claimed",
         }
+
+    def _founder_burden(self) -> dict[str, Any]:
+        """Section 30: GREG becomes more capable while Alfonso becomes less operationally burdened."""
+        asks = [r.payload for r in self.ledger.by_type(self.attention.ASK_RECORD)]
+        answers = [r.payload for r in self.ledger.by_type(self.attention.ANSWER_RECORD)]
+        routed_at = {a["item"]["item_id"]: a["routed_at"] for a in asks}
+        latencies = [(parse_time(a["answered_at"]) - parse_time(routed_at[a["item_id"]])).total_seconds()
+                     for a in answers if a["item_id"] in routed_at]
+        done = sum(1 for g in self.registry.goals() for i in self._latest_by_route(g).values()
+                   if i["evidence_state"] in DONE_STATES)
+        turns = max(1, len(self._turns))
+        return {"immediate_asks": sum(1 for a in asks if a["lane"] == "immediate"),
+                "batched_asks": sum(1 for a in asks if a["lane"] == "batched"),
+                "immediate_asks_per_turn": round(sum(1 for a in asks if a["lane"] == "immediate") / turns, 4),
+                "asks_per_completed_move": round(len(asks) / done, 4) if done else None,
+                "answers": len(answers),
+                "mean_answer_latency_seconds": (sum(latencies) / len(latencies)) if latencies else None,
+                "note": "lower is better at constant or rising completed work"}
+
+    def _competency_measures(self) -> dict[str, Any]:
+        """How the Competency Compiler is being used: routed gates, deficits, human gates, verified track records."""
+        routed = deficits = human = 0
+        for turn in self._turns.values():
+            for p in turn.processed:
+                r = p.get("routing") or {}
+                if r.get("decision_id"):
+                    routed += 1
+                    deficits += 1 if r.get("deficit") else 0
+                    human += 1 if r.get("human_escalation") else 0
+        outcomes = [r.payload for r in self.ledger.by_type("event") if r.payload.get("type") == "capabilities.routing_outcome"]
+        return {"attached": self.competency is not None, "gate_routings": routed, "epistemic_deficits": deficits,
+                "human_only_gates": human, "verified_outcomes": len(outcomes),
+                "unrouted_gates_this_process": self.competency.unrouted_gates if self.competency else None,
+                "note": "calibration counts only independently verified, evidence-referenced outcomes"}
 
     def status(self, goal_id: str, *, now: datetime | str) -> dict[str, Any]:
         """The founder-facing compression of section 27: where things stand, in one read."""
@@ -928,6 +1223,64 @@ class GoalGravityLoop:
             "evidence_state": evidence_state, "blockers": list(state.blockers),
             "review_trigger": f"relevant signal, favorable intersection, or every {spec.review_cadence_seconds} seconds",
             "drift": self.drift_report(goal_id)["drift"],
+            "trajectory": self._trajectory_status(goal_id, now=now),
+            "competency": self._latest_routing(goal_id),
+            "gate_controller": self._gate_controller(spec, fix, goal_id),
+            "changed_since_last_assessment": self._changed_since_last_fix(goal_id),
+            "threats": self._latest_threats(goal_id),
+            "retained_assets": [a for r in self.ledger.by_type("egregore.asset_retained")
+                                if r.payload["retention"]["goal_id"] == goal_id for a in r.payload["retention"]["assets"]],
             "deliberation": "standing_cognition" if self.cognition is not None else "declared_moves",
             "execution_authority": "none",
         }
+
+    def _gate_controller(self, spec: GoalSpec, fix: GPSFix, goal_id: str) -> dict[str, Any] | None:
+        """Section 3, 'what currently controls that gate?': the metric, the evidence it needs, and who can supply it."""
+        if fix.active_node_id is None:
+            return None
+        node = spec.node(fix.active_node_id)
+        routing = self._latest_routing(goal_id) or {}
+        from .gps import admissible_evidence
+        needed = admissible_evidence(node.problem_class)
+        return {"metric": node.sbm, "target": node.sbm_target, "direction": node.sbm_direction,
+                "problem_class": node.problem_class, "evidence_needed": sorted(needed) if needed else "any trusted observation",
+                "supplied_by": (list(routing.get("human_escalation", [])) and ["Alfonso (" + ", ".join(routing["human_escalation"]) + ")"])
+                               or list(routing.get("selected", [])) or ["an observation from a trusted sensor"],
+                "requires_capabilities": list(node.requires_capabilities),
+                "requires_relationships": list(node.requires_relationships)}
+
+    def _changed_since_last_fix(self, goal_id: str) -> dict[str, Any]:
+        """Section 3, 'what changed in reality since the previous assessment?': diff of the last two GPS fixes."""
+        fixes = [r.payload["fix"] for r in self.ledger.by_type(self.gps.GPS_RECORD) if r.payload["fix"]["goal_id"] == goal_id]
+        if len(fixes) < 2:
+            return {"assessments": len(fixes), "changes": {}}
+        a, b = fixes[-2], fixes[-1]
+        changes = {k: {"before": a["current_position"].get(k), "after": v}
+                   for k, v in b["current_position"].items() if a["current_position"].get(k) != v}
+        if a["active_node_id"] != b["active_node_id"]:
+            changes["active_node"] = {"before": a["active_node_id"], "after": b["active_node_id"]}
+        return {"assessments": len(fixes), "since": a["fixed_at"], "changes": changes}
+
+    def _latest_threats(self, goal_id: str) -> list[str]:
+        for turn in sorted(self._turns.values(), key=lambda x: x.at, reverse=True):
+            for p in turn.processed:
+                if p["goal_id"] == goal_id and "intersection" in p:
+                    return list(p["intersection"].get("threats", []))
+        return []
+
+    def _latest_routing(self, goal_id: str) -> dict[str, Any] | None:
+        """The Competency Compiler's last view of this goal's gate (read-only: status never routes)."""
+        for turn in sorted(self._turns.values(), key=lambda x: x.at, reverse=True):
+            for p in turn.processed:
+                if p["goal_id"] == goal_id and "routing" in p:
+                    return p["routing"]
+        return None
+
+    def _trajectory_status(self, goal_id: str, *, now: datetime | str) -> dict[str, Any]:
+        points = self.advancement.trajectory(goal_id)
+        start = self.advancement.stall_start(points) if points else 0
+        reports = [r.payload for r in self.ledger.by_type(self.advancement.REPORT_RECORD) if r.payload["goal_id"] == goal_id]
+        return {"observed_points": len(points), "reviews_without_progress": len(points) - start if points else 0,
+                "behind_target": self.advancement.behind_target(goal_id, now=now),
+                "last_report": ({"reported_at": reports[-1]["reported_at"], "main_friction": reports[-1]["main_friction"]}
+                                if reports else None)}

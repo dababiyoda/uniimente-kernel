@@ -14,6 +14,8 @@ from datetime import datetime
 from typing import Any, Mapping, Sequence
 
 from .contract_check import validate_record
+from capabilities.router import EPISTEMIC_METHODS, HUMAN_ONLY_METHODS
+
 from .contracts import ContractError, IntegrityConflict, SignalEnvelope, canonical_copy, digest, require_text
 from .goals import GoalSpec, iso, parse_time
 
@@ -34,14 +36,24 @@ class Observation:
     observed_at: str
     evidence_refs: tuple[str, ...]
     trust_level: str
+    method: str | None = None          # epistemic method (capabilities.router.EPISTEMIC_METHODS) that produced it
+    method_refused: bool = False       # a human-only method was claimed outside the founder-answer path
 
     @property
     def key(self) -> str:
         return f"{self.subject}.{self.attribute}"
 
+    @property
+    def establishes(self) -> str | None:
+        """What this observation can count as, from the Competency Compiler's table; never self-declared."""
+        return EPISTEMIC_METHODS[self.method]["establishes"] if self.method else None
+
     @classmethod
     def build(cls, *, subject: str, attribute: str, value: Any, confidence: float, source: str,
-              observed_at: str, evidence_refs: Sequence[str] = (), trust_level: str = "untrusted") -> "Observation":
+              observed_at: str, evidence_refs: Sequence[str] = (), trust_level: str = "untrusted",
+              method: str | None = None, method_refused: bool = False) -> "Observation":
+        if method is not None and method not in EPISTEMIC_METHODS:
+            raise ExperienceError(f"unknown epistemic method {method!r}")
         if isinstance(confidence, bool) or not isinstance(confidence, (int, float)) or not 0.0 <= float(confidence) <= 1.0:
             raise ExperienceError("confidence must be between 0 and 1")
         if trust_level not in TRUST_LEVELS:
@@ -52,12 +64,18 @@ class Observation:
                    value=canonical_copy(value), confidence=float(confidence), source=require_text("source", source),
                    observed_at=iso(parse_time(observed_at)),
                    evidence_refs=tuple(require_text("evidence_refs[]", r) for r in evidence_refs),
-                   trust_level=trust_level)
+                   trust_level=trust_level, method=method, method_refused=bool(method_refused))
 
     def to_dict(self) -> dict[str, Any]:
-        return {"subject": self.subject, "attribute": self.attribute, "value": self.value,
-                "confidence": self.confidence, "source": self.source, "observed_at": self.observed_at,
-                "evidence_refs": list(self.evidence_refs), "trust_level": self.trust_level}
+        out = {"subject": self.subject, "attribute": self.attribute, "value": self.value,
+               "confidence": self.confidence, "source": self.source, "observed_at": self.observed_at,
+               "evidence_refs": list(self.evidence_refs), "trust_level": self.trust_level}
+        if self.method:
+            out["method"] = self.method
+            out["establishes"] = self.establishes
+        if self.method_refused:
+            out["method_refused"] = True
+        return out
 
 
 @dataclass(frozen=True)
@@ -75,6 +93,8 @@ class Belief:
     alternatives: tuple[dict[str, Any], ...]
     trust_level: str = "untrusted"
     record_hash: str | None = None   # ledger hash of the experience record that set this belief
+    method: str | None = None        # epistemic method behind the current value (None = untyped)
+    establishes: str | None = None   # what the current value can count as (router table)
 
     @property
     def key(self) -> str:
@@ -85,7 +105,8 @@ class Belief:
                 "confidence": self.confidence, "observed_at": self.observed_at, "integrated_at": self.integrated_at,
                 "source": self.source, "signal_id": self.signal_id, "evidence_refs": list(self.evidence_refs),
                 "contradicted": self.contradicted, "alternatives": [canonical_copy(a) for a in self.alternatives],
-                "trust_level": self.trust_level, "record_hash": self.record_hash}
+                "trust_level": self.trust_level, "record_hash": self.record_hash,
+                "method": self.method, "establishes": self.establishes}
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "Belief":
@@ -94,7 +115,8 @@ class Belief:
                    integrated_at=value["integrated_at"], source=value["source"], signal_id=value["signal_id"],
                    evidence_refs=tuple(value.get("evidence_refs", ())), contradicted=bool(value.get("contradicted")),
                    alternatives=tuple(canonical_copy(a) for a in value.get("alternatives", ())),
-                   trust_level=value.get("trust_level", "untrusted"), record_hash=value.get("record_hash"))
+                   trust_level=value.get("trust_level", "untrusted"), record_hash=value.get("record_hash"),
+                   method=value.get("method"), establishes=value.get("establishes"))
 
 
 @dataclass(frozen=True)
@@ -157,14 +179,20 @@ class WorldModel:
         self._events: dict[str, ExperienceEvent] = {}
         self._record_hashes: dict[str, str] = {}   # signal_id -> ledger hash of its experience record
         self._contradictions: list[dict[str, Any]] = []
+        self._folded = 0
         self._hydrate()
 
     @property
     def execution_authority(self) -> str:
         return "none"
 
+    def sync(self) -> None:
+        """Fold experience records other writers appended since the last fold."""
+        self._hydrate()
+
     def _hydrate(self) -> None:
-        for record in getattr(self.ledger, "records", ()):
+        records = getattr(self.ledger, "records", ())
+        for record in records[self._folded:]:
             rtype = getattr(record, "record_type", None)
             payload = getattr(record, "payload", {})
             if rtype == self.EXPERIENCE_RECORD:
@@ -173,17 +201,26 @@ class WorldModel:
                 if existing is not None and existing.experience_id != event.experience_id:
                     raise IntegrityConflict("ledger contains conflicting experience for one signal")
                 self._events[event.signal_id] = event
-                self._record_hashes[event.signal_id] = getattr(record, "hash", None)
+                record_hash = getattr(record, "hash", None)
+                self._record_hashes[event.signal_id] = record_hash
                 for belief in payload.get("beliefs", ()):
                     b = Belief.from_dict(belief)
+                    if b.signal_id == event.signal_id and b.record_hash is None:
+                        b = Belief(**{**b.__dict__, "record_hash": record_hash})   # restored after restart too
                     self._beliefs[b.key] = b
             elif rtype == self.CONTRADICTION_RECORD:
                 self._contradictions.append(canonical_copy(payload))
+        self._folded = len(records)
 
     # ------------------------------------------------------------ observations
     @staticmethod
-    def observations_from_signal(signal: SignalEnvelope) -> tuple[Observation, ...]:
-        """Typed observations travel in ``payload['observations']``; text stays data."""
+    def observations_from_signal(signal: SignalEnvelope, *, allow_human_methods: bool = False) -> tuple[Observation, ...]:
+        """Typed observations travel in ``payload['observations']``; text stays data.
+
+        An observation may name the epistemic method that produced it. Human-only methods
+        (``human_decision``, ``legal_determination``) are accepted only on the founder-answer path;
+        anywhere else the claim is stripped, the observation is marked untrusted and the refusal is kept.
+        """
         raw = signal.payload.get("observations", ())
         if isinstance(raw, (str, bytes)) or not isinstance(raw, (list, tuple)):
             raise ExperienceError("payload.observations must be a list")
@@ -200,22 +237,29 @@ class WorldModel:
                 raise ExperienceError(f"unknown trust level {item_trust!r}")
             # A payload may lower its own trust, never raise it above the envelope's.
             trust = min((item_trust, envelope_trust), key=lambda t: WorldModel.TRUST_RANK[t])
+            method = item.get("method")
+            refused = False
+            if method is not None and method not in EPISTEMIC_METHODS:
+                raise ExperienceError(f"unknown epistemic method {method!r}")
+            if method in HUMAN_ONLY_METHODS and not allow_human_methods:
+                method, refused, trust = None, True, "untrusted"
             out.append(Observation.build(
                 subject=item["subject"], attribute=item["attribute"], value=item["value"],
                 confidence=item.get("confidence", 0.5), source=signal.source,
                 observed_at=item.get("observed_at", signal.observed_at),
                 evidence_refs=tuple(signal.evidence_refs) + tuple(item.get("evidence_refs", ())),
-                trust_level=trust))
+                trust_level=trust, method=method, method_refused=refused))
         return tuple(out)
 
     # ------------------------------------------------------------ integration
     def integrate(self, signal: SignalEnvelope, *, now: datetime | str,
                   goal_relevance: Mapping[str, float] | None = None,
                   context: Mapping[str, Any] | None = None,
-                  attention: Sequence[str] = ()) -> ExperienceEvent:
+                  attention: Sequence[str] = (), allow_human_methods: bool = False) -> ExperienceEvent:
         """Integrate one signal. ``attention`` names the goals this signal is expected to wake."""
         if not isinstance(signal, SignalEnvelope):
             raise ExperienceError("integrate requires a SignalEnvelope")
+        self._hydrate()
         existing = self._events.get(signal.signal_id)
         if existing is not None:
             if existing.content_hash and existing.content_hash != signal.content_hash:
@@ -227,7 +271,7 @@ class WorldModel:
             return ExperienceEvent.from_dict(existing.to_dict())
         integrated_at = iso(parse_time(now))
         observed_at = iso(parse_time(signal.observed_at))   # a malformed timestamp never reaches the ledger
-        observations = self.observations_from_signal(signal)
+        observations = self.observations_from_signal(signal, allow_human_methods=allow_human_methods)
         changes: list[dict[str, Any]] = []
         new_beliefs: list[Belief] = []
         contradictions: list[dict[str, Any]] = []
@@ -284,6 +328,12 @@ class WorldModel:
                 contradictions.append(contradiction)
                 changes.append({"key": obs.key, "previous": previous.value, "current": belief.value,
                                 "updated": keep_new, "contradiction": True, "disposition": "contradiction_retained"})
+            if belief.signal_id == signal.signal_id and belief.value == obs.value:
+                # The belief now carries this observation's value: its evidence type follows the observation,
+                # except that an untyped corroboration never erases an earlier typed reading of the same value.
+                typed = obs if obs.method or previous is None or previous.value != obs.value else previous
+                belief = Belief(**{**belief.__dict__, "method": typed.method,
+                                   "establishes": typed.establishes if isinstance(typed, Observation) else typed.establishes})
             new_beliefs.append(belief)
         # Directive section 7: an experience may change memory, prediction, attention, learning or action.
         effects = {
@@ -314,10 +364,12 @@ class WorldModel:
             self._beliefs[b.key] = b
         self._events[signal.signal_id] = event
         self._record_hashes[signal.signal_id] = record_hash
+        self._folded = len(self.ledger.records)   # own records already applied in memory
         return ExperienceEvent.from_dict(event.to_dict())
 
     def record_hash(self, signal_id: str) -> str | None:
         """Ledger hash of the experience record for a signal: a real evidence reference."""
+        self._hydrate()
         return self._record_hashes.get(signal_id)
 
     def evidence_for_goal(self, goal_id: str) -> tuple[list[str], float]:
@@ -327,6 +379,7 @@ class WorldModel:
         relevance-weighted mean confidence of the beliefs those signals set. No ref is fabricated:
         a goal nothing relevant has been observed for gets ([], 0.0).
         """
+        self._hydrate()
         refs: list[str] = []
         weighted = 0.0
         weight = 0.0
@@ -345,27 +398,33 @@ class WorldModel:
 
     # ------------------------------------------------------------ reads
     def belief(self, subject: str, attribute: str) -> Belief | None:
+        self._hydrate()
         b = self._beliefs.get(f"{subject}.{attribute}")
         return Belief.from_dict(b.to_dict()) if b else None
 
     def belief_by_key(self, key: str) -> Belief | None:
+        self._hydrate()
         b = self._beliefs.get(key)
         return Belief.from_dict(b.to_dict()) if b else None
 
     def beliefs(self) -> dict[str, Belief]:
+        self._hydrate()
         return {k: Belief.from_dict(v.to_dict()) for k, v in self._beliefs.items()}
 
     def contradictions(self) -> list[dict[str, Any]]:
         return [canonical_copy(c) for c in self._contradictions]
 
     def experiences(self) -> list[ExperienceEvent]:
+        self._hydrate()
         return [ExperienceEvent.from_dict(e.to_dict()) for e in self._events.values()]
 
     def experience_surface(self, *, goals: Sequence[GoalSpec] = (), now: datetime | str | None = None) -> dict[str, Any]:
         """Functional access to reality, measured. Not a consciousness score."""
+        self._hydrate()
         beliefs = list(self._beliefs.values())
         events = list(self._events.values())
-        sources = {b.source for b in beliefs}
+        sources = {b.source for b in beliefs if self.TRUST_RANK.get(b.trust_level, 0) >= self.TRUST_RANK["attributed"]}
+        untrusted_sources = {b.source for b in beliefs} - sources
         with_provenance = sum(1 for b in beliefs if b.evidence_refs)
         latencies = []
         for e in events:
@@ -377,7 +436,8 @@ class WorldModel:
         observed = {m for m in metrics_needed if m in self._beliefs}
         relevant_events = sum(1 for e in events if e.goal_relevance)
         return {
-            "trusted_modalities": len(sources),
+            "trusted_modalities": len(sources),          # distinct sources with at least one attributed belief
+            "untrusted_sources": len(untrusted_sources),
             "beliefs": len(beliefs),
             "provenance_coverage": (with_provenance / len(beliefs)) if beliefs else 0.0,
             "contradiction_rate": (len(self._contradictions) / len(beliefs)) if beliefs else 0.0,

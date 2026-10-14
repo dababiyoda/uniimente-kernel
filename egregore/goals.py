@@ -29,7 +29,8 @@ from .contracts import (
 GOAL_STATUSES = ("dormant", "awake", "blocked", "paused", "completed", "revoked", "superseded")
 DEFICIT_CLASSES = ("capability", "resource", "relationship", "proof")
 PRIORITIES = (1, 2, 3, 4, 5)
-CONSEQUENCE_CLASSES = ("read_only", "internal_write", "external_contact", "financial", "irreversible")
+from capabilities.genome import CONSEQUENCE_CLASSES  # noqa: E402  one canonical ordering (genome, router, passports)
+from capabilities.router import PROBLEM_CLASSES  # noqa: E402  the Competency Compiler's closed taxonomy
 DIRECTIONS = ("gte", "lte", "eq")
 WAKE_KINDS = ("subject", "tag", "domain", "metric")
 PREFERENCE_KINDS = (
@@ -41,7 +42,10 @@ PREFERENCE_KINDS = (
     "ask_before",          # value: consequence class or action class
     "forget_route",        # value: route hash
     "revoke_capability",   # value: capability name@version
+    "set_intensity",       # value: "minimal" | "standard" | "active" (section 20: configurable intervention intensity)
 )
+
+INTENSITIES = ("minimal", "standard", "active")
 
 
 class GoalError(ContractError):
@@ -160,6 +164,17 @@ class InterventionSpec:
                        "requested_capability": self.requested_capability, "target": self.target,
                        "payload": self.payload, "tactic": self.tactic})
 
+    @property
+    def effect_hash(self) -> str:
+        """Identity of the effect regardless of who proposed it or how it is labelled.
+
+        A founder refusal binds the effect too: the same message to the same target through the same
+        capability stays refused when another proposer relabels its tactic or rewords its description.
+        A changed effect (different target, payload, action or capability) is a new route."""
+        return digest({"kind": "egregore-effect", "action_class": self.action_class,
+                       "requested_capability": self.requested_capability, "target": self.target,
+                       "payload": self.payload})
+
     def to_dict(self) -> dict[str, Any]:
         return {"intervention_id": self.intervention_id, "description": self.description,
                 "action_class": self.action_class, "requested_capability": self.requested_capability,
@@ -188,13 +203,18 @@ class PlanNode:
     interventions: tuple[InterventionSpec, ...]
     requires_capabilities: tuple[str, ...] = ()
     requires_relationships: tuple[str, ...] = ()
+    target_by: str | None = None   # the authorized trajectory: when this state should be true (optional)
+    problem_class: str | None = None   # what kind of question the gate poses (capabilities.router.PROBLEM_CLASSES)
 
     @classmethod
     def build(cls, *, node_id: str, outcome: str, gate: str, sbm: str, sbm_direction: str,
               sbm_target: float | bool, exit_evidence: Sequence[str] = (),
               interventions: Sequence[InterventionSpec] = (),
               requires_capabilities: Sequence[str] = (),
-              requires_relationships: Sequence[str] = ()) -> "PlanNode":
+              requires_relationships: Sequence[str] = (),
+              target_by: str | datetime | None = None, problem_class: str | None = None) -> "PlanNode":
+        if problem_class is not None and problem_class not in PROBLEM_CLASSES:
+            raise GoalError(f"unknown problem class {problem_class!r}; the taxonomy is capabilities.router.PROBLEM_CLASSES")
         if sbm_direction not in DIRECTIONS:
             raise GoalError(f"unknown SBM direction {sbm_direction!r}")
         if isinstance(sbm_target, bool):
@@ -213,15 +233,22 @@ class PlanNode:
                    sbm_direction=sbm_direction, sbm_target=sbm_target,
                    exit_evidence=_tuple_of_text("exit_evidence", exit_evidence), interventions=specs,
                    requires_capabilities=_tuple_of_text("requires_capabilities", requires_capabilities),
-                   requires_relationships=_tuple_of_text("requires_relationships", requires_relationships))
+                   requires_relationships=_tuple_of_text("requires_relationships", requires_relationships),
+                   target_by=iso(parse_time(target_by)) if target_by is not None else None,
+                   problem_class=problem_class)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"node_id": self.node_id, "outcome": self.outcome, "gate": self.gate, "sbm": self.sbm,
-                "sbm_direction": self.sbm_direction, "sbm_target": self.sbm_target,
-                "exit_evidence": list(self.exit_evidence),
-                "interventions": [i.to_dict() for i in self.interventions],
-                "requires_capabilities": list(self.requires_capabilities),
-                "requires_relationships": list(self.requires_relationships)}
+        out = {"node_id": self.node_id, "outcome": self.outcome, "gate": self.gate, "sbm": self.sbm,
+               "sbm_direction": self.sbm_direction, "sbm_target": self.sbm_target,
+               "exit_evidence": list(self.exit_evidence),
+               "interventions": [i.to_dict() for i in self.interventions],
+               "requires_capabilities": list(self.requires_capabilities),
+               "requires_relationships": list(self.requires_relationships)}
+        if self.target_by is not None:   # omitted when unset so existing goal ids stay stable
+            out["target_by"] = self.target_by
+        if self.problem_class is not None:
+            out["problem_class"] = self.problem_class
+        return out
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "PlanNode":
@@ -230,7 +257,8 @@ class PlanNode:
                          exit_evidence=value.get("exit_evidence", ()),
                          interventions=[InterventionSpec.from_dict(i) for i in value.get("interventions", ())],
                          requires_capabilities=value.get("requires_capabilities", ()),
-                         requires_relationships=value.get("requires_relationships", ()))
+                         requires_relationships=value.get("requires_relationships", ()),
+                         target_by=value.get("target_by"), problem_class=value.get("problem_class"))
 
 
 @dataclass(frozen=True)
@@ -246,6 +274,7 @@ class OpportunityFactor:
     weight: float
     effect: str               # favorable: cost_down | feasibility_up | timing | risk_down | upside_up
                               # threats:   cost_up | feasibility_down | risk_up | upside_down
+    baseline: float | None = None   # the reference value the opportunity is quantified against (optional)
 
     EFFECTS = ("cost_down", "feasibility_up", "timing", "risk_down", "upside_up")
     THREAT_EFFECTS = ("cost_up", "feasibility_down", "risk_up", "upside_down")
@@ -257,7 +286,10 @@ class OpportunityFactor:
 
     @classmethod
     def build(cls, *, factor_id: str, domain: str, subject: str, attribute: str, direction: str,
-              threshold: float | bool | None = None, weight: float = 1.0, effect: str) -> "OpportunityFactor":
+              threshold: float | bool | None = None, weight: float = 1.0, effect: str,
+              baseline: float | None = None) -> "OpportunityFactor":
+        if baseline is not None:
+            baseline = _number("baseline", baseline)
         if direction not in DIRECTIONS + ("present",):
             raise GoalError(f"unknown factor direction {direction!r}")
         if direction != "present" and threshold is None:
@@ -269,17 +301,20 @@ class OpportunityFactor:
         return cls(factor_id=require_text("factor_id", factor_id), domain=require_text("domain", domain),
                    subject=require_text("subject", subject), attribute=require_text("attribute", attribute),
                    direction=direction, threshold=threshold, weight=_number("weight", weight, minimum=0.0),
-                   effect=effect)
+                   effect=effect, baseline=baseline)
 
     def to_dict(self) -> dict[str, Any]:
-        return {"factor_id": self.factor_id, "domain": self.domain, "subject": self.subject,
-                "attribute": self.attribute, "direction": self.direction, "threshold": self.threshold,
-                "weight": self.weight, "effect": self.effect}
+        out = {"factor_id": self.factor_id, "domain": self.domain, "subject": self.subject,
+               "attribute": self.attribute, "direction": self.direction, "threshold": self.threshold,
+               "weight": self.weight, "effect": self.effect}
+        if self.baseline is not None:   # omitted when unset so existing goal ids stay stable
+            out["baseline"] = self.baseline
+        return out
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "OpportunityFactor":
         return cls.build(**{k: value[k] for k in ("factor_id", "domain", "subject", "attribute", "direction", "effect")},
-                         threshold=value.get("threshold"), weight=value.get("weight", 1.0))
+                         threshold=value.get("threshold"), weight=value.get("weight", 1.0), baseline=value.get("baseline"))
 
 
 @dataclass(frozen=True)
@@ -351,6 +386,8 @@ class GoalSpec:
         if not isinstance(budget.get("max_model_calls"), int) or budget["max_model_calls"] < 0:
             raise GoalError("resource_budget.max_model_calls must be a non-negative integer")
         _number("resource_budget.max_estimated_cost_usd", budget.get("max_estimated_cost_usd"), minimum=0.0)
+        if "max_mechanism_cost_usd" in budget:   # per-gate ceiling on routed mechanism cost (Competency Compiler)
+            _number("resource_budget.max_mechanism_cost_usd", budget["max_mechanism_cost_usd"], minimum=0.0)
         body = {
             "founder_intent": require_text("founder_intent", founder_intent),
             "desired_state": require_text("desired_state", desired_state),
@@ -454,7 +491,7 @@ class GoalState:
     preferences: dict[str, Any] = field(default_factory=lambda: {
         "stop_pushing": False, "priority_override": None, "never_use_tactic": [],
         "do_not_monitor": [], "ask_before": [], "refused_routes": [], "forgotten_routes": [],
-        "revoked_capabilities": [], "change_notes": []})
+        "revoked_capabilities": [], "change_notes": [], "refused_effects": []})
     version: int = 0
 
     def to_dict(self) -> dict[str, Any]:
@@ -489,6 +526,7 @@ class GoalRegistry:
         self._specs: dict[str, GoalSpec] = {}
         self._states: dict[str, GoalState] = {}
         self._record_hashes: dict[str, str] = {}
+        self._folded = 0
         self._hydrate()
 
     @property
@@ -496,8 +534,13 @@ class GoalRegistry:
         return "none"
 
     # ------------------------------------------------------------ hydration
+    def sync(self) -> None:
+        """Fold goal records other writers appended since the last fold (two loops over one ledger agree)."""
+        self._hydrate()
+
     def _hydrate(self) -> None:
-        for record in getattr(self.ledger, "records", ()):
+        records = getattr(self.ledger, "records", ())
+        for record in records[self._folded:]:
             rtype = getattr(record, "record_type", None)
             payload = getattr(record, "payload", {})
             if rtype == self.AUTHORIZED_RECORD:
@@ -515,12 +558,15 @@ class GoalRegistry:
                 if state.goal_id not in self._specs:
                     raise IntegrityConflict("ledger transition references an unknown goal")
                 self._states[state.goal_id] = state
+        self._folded = len(records)
 
     # ------------------------------------------------------------ queries
     def goals(self) -> list[str]:
+        self._hydrate()
         return sorted(self._specs)
 
     def get(self, goal_id: str) -> GoalSpec:
+        self._hydrate()
         try:
             return self._specs[goal_id]
         except KeyError as exc:
@@ -536,32 +582,42 @@ class GoalRegistry:
         return self._record_hashes.get(goal_id)
 
     def by_status(self, status: str) -> list[str]:
+        self._hydrate()
         return sorted(g for g, s in self._states.items() if s.status == status)
 
     def effective_priority(self, goal_id: str) -> int:
+        self._hydrate()
         spec, state = self.get(goal_id), self._states[goal_id]
         override = state.preferences.get("priority_override")
         return int(override) if override is not None else spec.priority
 
-    def is_route_refused(self, goal_id: str, route_hash: str) -> bool:
+    def is_route_refused(self, goal_id: str, route_hash: str, effect_hash: str | None = None) -> bool:
+        self._hydrate()
         prefs = self._states[goal_id].preferences
-        return route_hash in prefs.get("refused_routes", []) or route_hash in prefs.get("forgotten_routes", [])
+        if route_hash in prefs.get("refused_routes", []) or route_hash in prefs.get("forgotten_routes", []):
+            return True
+        return bool(effect_hash) and effect_hash in prefs.get("refused_effects", [])
 
     def tactic_forbidden(self, goal_id: str, tactic: str) -> bool:
+        self._hydrate()
         return bool(tactic) and tactic in self._states[goal_id].preferences.get("never_use_tactic", [])
 
     def domain_muted(self, goal_id: str, domain: str | None) -> bool:
+        self._hydrate()
         return bool(domain) and domain in self._states[goal_id].preferences.get("do_not_monitor", [])
 
     def ask_before(self, goal_id: str, *categories: str) -> bool:
+        self._hydrate()
         wanted = set(self._states[goal_id].preferences.get("ask_before", []))
         return any(c in wanted for c in categories if c)
 
     def capability_revoked(self, goal_id: str, capability: str) -> bool:
+        self._hydrate()
         return capability in self._states[goal_id].preferences.get("revoked_capabilities", [])
 
     def due_for_review(self, now: datetime | str) -> list[str]:
         """Dormant goals whose review cadence has elapsed. Dormancy costs nothing until now."""
+        self._hydrate()
         current = parse_time(now)
         due: list[str] = []
         for goal_id in self.goals():
@@ -578,6 +634,7 @@ class GoalRegistry:
         if not isinstance(spec, GoalSpec):
             raise GoalError("authorize requires a GoalSpec")
         spec = GoalSpec.from_dict(spec.to_dict())
+        self._hydrate()
         if spec.goal_id in self._specs:
             return spec.goal_id  # idempotent: identical content, identical id
         authorized_at = iso(parse_time(now))
@@ -589,15 +646,18 @@ class GoalRegistry:
         self._specs[spec.goal_id] = spec
         self._states[spec.goal_id] = GoalState(goal_id=spec.goal_id, last_reviewed_at=authorized_at,
                                                missing_capabilities=list(spec.missing_capabilities))
+        self._folded = len(self.ledger.records)
         return spec.goal_id
 
     def _write_state(self, record_type: str, goal_id: str, state: GoalState, *, reason: str, extra: dict | None = None) -> GoalState:
         state.version += 1
         state.history_count += 1
         validate_record(state.to_dict(), "goal-state")
+        self._hydrate()   # fold foreign records first; this write then applies on top of the latest state
         self.ledger.append(record_type, {"source": self.source, "goal_id": goal_id, "reason": require_text("reason", reason),
                                          "state": state.to_dict(), **(extra or {})})
         self._states[goal_id] = GoalState.from_dict(state.to_dict())
+        self._folded = len(self.ledger.records)   # own record already applied in memory
         return self.state(goal_id)
 
     def transition(self, goal_id: str, *, reason: str, now: datetime | str, status: str | None = None,
@@ -692,6 +752,10 @@ class GoalRegistry:
             prefs.setdefault("forgotten_routes", []).append(require_text("route_hash", value))
         elif kind == "revoke_capability":
             prefs.setdefault("revoked_capabilities", []).append(require_text("capability", value))
+        elif kind == "set_intensity":
+            if value not in INTENSITIES:
+                raise GoalError(f"intensity must be one of {INTENSITIES}")
+            prefs["intervention_intensity"] = value
         elif kind == "change_goal":
             # The spec is immutable: a change pauses this goal until a replacement supersedes it.
             prefs.setdefault("change_notes", []).append(require_text("note", value))
@@ -700,11 +764,14 @@ class GoalRegistry:
         return self._write_state(self.PREFERENCE_RECORD, goal_id, state, reason=f"{kind} by {require_text('actor', actor)}: {reason}",
                                  extra={"preference": {"kind": kind, "value": canonical_copy(value)}})
 
-    def record_refusal(self, goal_id: str, *, route_hash: str, actor: str, reason: str, now: datetime | str) -> GoalState:
+    def record_refusal(self, goal_id: str, *, route_hash: str, actor: str, reason: str, now: datetime | str,
+                       effect_hash: str | None = None) -> GoalState:
         state = self.state(goal_id)
         if state.status in ("revoked", "superseded", "completed"):
             raise GoalError(f"a {state.status} goal accepts no further refusals")
         state.preferences.setdefault("refused_routes", []).append(require_text("route_hash", route_hash))
+        if effect_hash:
+            state.preferences.setdefault("refused_effects", []).append(require_text("effect_hash", effect_hash))
         state.last_reviewed_at = iso(parse_time(now))
         return self._write_state(self.PREFERENCE_RECORD, goal_id, state, reason=f"route refused by {actor}: {reason}",
                                  extra={"preference": {"kind": "refused_route", "value": route_hash}})

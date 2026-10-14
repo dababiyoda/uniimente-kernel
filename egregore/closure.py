@@ -109,12 +109,21 @@ def goal_gravity_closures() -> ModuleClosures:
         forbidden = {"execute", "publish", "post", "trade", "transfer", "sign", "issue_grant", "approve", "apply_change"}
         exposed = [name for name in forbidden if hasattr(GoalGravityLoop, name)]
         ledger, loop = _stack()
+        # Every service object the loop composes reports no authority and exposes no effect method, and the
+        # loop retains no gate, executor or grant between turns (the recorded executor-signature deviation).
+        components = [loop, loop.registry, loop.world, loop.router, loop.gps, loop.classifier, loop.detector,
+                      loop.attention, loop.advancement, loop.opportunity, loop.acquisition, loop.intake]
+        components += [c for c in (loop.retention, loop.sensorium, loop.competency) if c is not None]
+        exposed += [f"{type(c).__name__}.{name}" for c in components for name in forbidden if hasattr(c, name)]
+        exposed += [type(c).__name__ for c in components if getattr(c, "execution_authority", None) != "none"]
+        exposed += [k for k in vars(loop) if k in ("gate", "executor", "grants", "_gate", "_executor", "_grants")]
         loop.registry.authorize(_goal(), now="2026-10-13T00:00:00Z")
         turn = loop.turn(trigger_id="probe-2", now="2026-10-13T01:00:00Z", signals=[_signal("e2", 0.2)],
                          resources=ResourceGovernor(max_model_calls=2, max_estimated_cost_usd=0.01), evidence_confidence=0.9)
         prepared_only = turn.executed == () and all(d["decision"] in ("PREPARE_FOR_FOUNDER", "ABSTAIN", "WAIT", "REQUEST_EVIDENCE", "ESCALATE")
                                                      for d in turn.processed[0]["decisions"])
-        return not exposed and prepared_only, "no effect methods; without a pre-existing grant every move is prepared, never executed"
+        return not exposed and prepared_only, ("no effect methods or authority on any composed component; no retained gate, "
+                                               "executor or grant; without a pre-existing grant every move is prepared")
 
     def evidence() -> tuple[bool, str]:
         from .gravity import GoalGravityLoop

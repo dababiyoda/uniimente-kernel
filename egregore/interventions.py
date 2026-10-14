@@ -28,9 +28,11 @@ from .contracts import canonical_copy, digest, require_text
 from .goals import CONSEQUENCE_CLASSES, GoalRegistry, GoalSpec, GoalState, InterventionSpec, iso, parse_time
 from .gps import GPSFix
 
-RESOLUTION_ORDER = ("existing capability", "composition", "commodity infrastructure", "open source",
-                    "API/plugin/service", "authorized computer use", "small utility", "coding agent",
-                    "organization design", "new architecture", "escalate/abstain")
+from capabilities.router import RESOLUTION_ORDER as _ROUTER_ORDER  # noqa: E402  one canonical ladder
+
+# The doctrine's resourcefulness ladder (FOUNDER_EFFECT_COMPILER) as the router on main records it, plus
+# the doctrine's final rung, which the router leaves implicit.
+RESOLUTION_ORDER = tuple(_ROUTER_ORDER) + ("escalate/abstain",)
 
 DECISIONS = ("EXECUTE_AUTONOMOUSLY", "PREPARE_FOR_FOUNDER", "REQUEST_EVIDENCE", "WAIT", "ESCALATE", "ABSTAIN")
 EVIDENCE_STATES = ("planned", "attempted", "executed", "externally_verified", "failed", "unknown")
@@ -84,6 +86,33 @@ class InterventionClassifier:
     def execution_authority(self) -> str:
         return "none"
 
+    def _record_deficit(self, spec: GoalSpec, deficit: Mapping[str, Any]) -> None:
+        """One typed record per open deficit (both origins), deduped by deficit id while open."""
+        deficit = canonical_copy(dict(deficit))
+        validate_record(deficit, "capability-deficit")
+        already = any(r.payload.get("deficit", {}).get("deficit_id") == deficit["deficit_id"]
+                      and r.payload["deficit"]["disposition"] == "goal_blocked_not_closed"
+                      for r in self.ledger.by_type(self.DEFICIT_RECORD))
+        resolved = any(r.payload.get("deficit", {}).get("deficit_id") == deficit["deficit_id"]
+                       and r.payload["deficit"]["disposition"] == "resolved_resume_original_goal"
+                       for r in self.ledger.by_type(self.DEFICIT_RECORD))
+        if not already or resolved and not self._reopened(deficit["deficit_id"]):
+            self.ledger.append(self.DEFICIT_RECORD, {"source": self.source, "deficit": deficit,
+                                                     # flattened copies keep older readers working
+                                                     "goal_id": spec.goal_id,
+                                                     "missing_capabilities": deficit["missing_capabilities"],
+                                                     "founder_intent": spec.founder_intent,
+                                                     "disposition": deficit["disposition"]})
+
+    def _reopened(self, deficit_id: str) -> bool:
+        """True when the latest record for this deficit is already open (no duplicate re-open)."""
+        latest = None
+        for r in self.ledger.by_type(self.DEFICIT_RECORD):
+            d = r.payload.get("deficit", {})
+            if d.get("deficit_id") == deficit_id:
+                latest = d["disposition"]
+        return latest == "goal_blocked_not_closed"
+
     @staticmethod
     def proposal_id_for(goal_id: str, route_hash: str, *, attempt: int = 0) -> str:
         """Deterministic proposal identity: ``egregore:goal:<goal23>:<route23>`` for the first dispatch of a
@@ -112,12 +141,16 @@ class InterventionClassifier:
     def classify(self, spec: GoalSpec, state: GoalState, intervention: InterventionSpec, *, fix: GPSFix | None,
                  grant: Mapping[str, Any] | None, evidence_refs: Sequence[str], evidence_confidence: float,
                  now: datetime | str, record: bool = True, grant_view: Mapping[str, Any] | None = None,
-                 selected: bool | None = None, unmet_dependencies: Sequence[str] = ()) -> Classification:
+                 selected: bool | None = None, unmet_dependencies: Sequence[str] = (),
+                 routing: Any = None) -> Classification:
         """``grant_view`` is the Gate's evaluation view of the same grant (wire contract plus
         gate-managed stage metadata); when omitted the raw grant is evaluated as-is.
         ``selected`` reports whether standing deliberation (guardian/treasury evaluators) selected this
         move; ``False`` turns an otherwise executable move into prepared work. ``unmet_dependencies``
-        (goals the spec depends on that are not completed) make every move WAIT."""
+        (goals the spec depends on that are not completed) make every move WAIT. ``routing`` is the
+        Competency Compiler's view of the active gate (``egregore.competency.RoutingView``); it only ever
+        tightens: a deficit waits, a rejected declared mechanism or a human-only gate prepares, and an
+        unproven mechanism never runs an external move."""
         classified_at = iso(parse_time(now))
         reasons: list[str] = []
         missing: tuple[str, ...] = ()
@@ -129,13 +162,32 @@ class InterventionClassifier:
             decision, reasons = "ABSTAIN", [f"goal is {state.status}; founder stopped pushing"]
         elif self.registry.tactic_forbidden(spec.goal_id, intervention.tactic):
             decision, reasons = "ABSTAIN", [f"founder said never use tactic {intervention.tactic!r}"]
-        elif self.registry.is_route_refused(spec.goal_id, intervention.route_hash):
-            decision, reasons = "ABSTAIN", ["founder refused this exact route; not re-proposed unchanged"]
+        elif self.registry.is_route_refused(spec.goal_id, intervention.route_hash, intervention.effect_hash):
+            decision, reasons = "ABSTAIN", ["founder refused this exact route or its identical effect; not re-proposed unchanged"]
         elif self.registry.capability_revoked(spec.goal_id, intervention.requested_capability):
             decision, reasons = "ABSTAIN", [f"founder revoked capability {intervention.requested_capability!r} for this goal"]
         elif unmet_dependencies:
             decision = "WAIT"
             reasons = [f"dependency unmet: {d}" for d in unmet_dependencies] + ["original goal retained"]
+        elif routing is not None and routing.deficit is not None:
+            d = routing.deficit
+            decision = "WAIT"
+            reasons = [f"Competency Compiler: no registered mechanism can answer this {d['problem_class']} gate "
+                       f"(missing {', '.join(d['missing_methods'])}); original goal retained"]
+            if record:
+                deficit = {
+                    "deficit_id": digest({"kind": "egregore-epistemic-deficit", "goal_id": spec.goal_id,
+                                          "active_node_id": fix.active_node_id if fix else None,
+                                          "missing_methods": sorted(d["missing_methods"]),
+                                          "problem_class": d["problem_class"]}),
+                    "goal_id": spec.goal_id, "active_node_id": fix.active_node_id if fix else None,
+                    "missing_capabilities": [], "missing_methods": list(d["missing_methods"]),
+                    "problem_class": d["problem_class"], "router_deficit_id": d["router_deficit_id"],
+                    "routing_decision_id": routing.decision_id, "rejected": dict(d["rejected"]),
+                    "founder_intent": spec.founder_intent, "resolution_order": list(RESOLUTION_ORDER),
+                    "lifecycle": "DISCOVERED", "disposition": "goal_blocked_not_closed", "detected_at": classified_at,
+                    "resume": "original_goal"}
+                self._record_deficit(spec, deficit)
         elif fix is not None and fix.missing_capabilities:
             decision = "WAIT"
             reasons = [f"capability deficit: {', '.join(fix.missing_capabilities)}; original goal retained"]
@@ -148,21 +200,19 @@ class InterventionClassifier:
                     "missing_capabilities": list(fix.missing_capabilities), "founder_intent": spec.founder_intent,
                     "resolution_order": list(RESOLUTION_ORDER), "lifecycle": "DISCOVERED",
                     "disposition": "goal_blocked_not_closed", "detected_at": classified_at, "resume": "original_goal"}
-                validate_record(deficit, "capability-deficit")
-                already = any(r.payload.get("deficit", {}).get("deficit_id") == deficit["deficit_id"]
-                              and r.payload["deficit"]["disposition"] == "goal_blocked_not_closed"
-                              for r in self.ledger.by_type(self.DEFICIT_RECORD))
-                if not already:
-                    self.ledger.append(self.DEFICIT_RECORD, {"source": self.source, "deficit": deficit,
-                                                             # flattened copies keep older readers working
-                                                             "goal_id": spec.goal_id,
-                                                             "missing_capabilities": deficit["missing_capabilities"],
-                                                             "founder_intent": spec.founder_intent,
-                                                             "disposition": deficit["disposition"]})
+                self._record_deficit(spec, deficit)
         else:
             identity_ok, why = self.passports.verify(self.actor)
             if not identity_ok:
                 decision, reasons = "PREPARE_FOR_FOUNDER", [f"actor identity not valid: {why}; prepared only"]
+            elif routing is not None and routing.declared_rejected:
+                key, why = sorted(routing.declared_rejected.items())[0]
+                decision, reasons = "PREPARE_FOR_FOUNDER", [
+                    f"Competency Compiler rejected the declared mechanism {key}: {why}; prepared only"]
+            elif (routing is not None and routing.human_escalation
+                  and CONSEQUENCE_CLASSES.index(intervention.consequence_class) >= CONSEQUENCE_CLASSES.index("external_contact")):
+                decision, reasons = "PREPARE_FOR_FOUNDER", [
+                    f"this gate needs {', '.join(routing.human_escalation)}, which only a person can supply; prepared only"]
             elif spec.authority["legal_principal"] != self.legal_principal:
                 decision, reasons = "PREPARE_FOR_FOUNDER", [
                     f"goal legal principal {spec.authority['legal_principal']!r} differs from the acting principal "
@@ -192,8 +242,20 @@ class InterventionClassifier:
                     elif selected is False:
                         decision, reasons = "PREPARE_FOR_FOUNDER", [
                             "standing deliberation (guardian/treasury evaluators) did not select this move; prepared only"]
+                    elif routing is not None and routing.exploratory and (
+                            self.registry.ask_before(spec.goal_id, "exploratory_mechanism")
+                            or CONSEQUENCE_CLASSES.index(intervention.consequence_class) >= CONSEQUENCE_CLASSES.index("external_contact")):
+                        decision, reasons = "PREPARE_FOR_FOUNDER", [
+                            f"recruited mechanism(s) {', '.join(routing.selected)} have no verified track record; "
+                            "margin from an uncertain boundary: prepared only"]
                     else:
                         decision, reasons = "EXECUTE_AUTONOMOUSLY", ["policy allows under a pre-existing grant"]
+                        if routing is not None:
+                            reasons.append(f"Competency Compiler recruited {', '.join(routing.selected) or 'no mechanism'} "
+                                           f"(decision {routing.decision_id[7:19]})")
+        if routing is not None and decision != "WAIT" and routing.preferred_instead:
+            reasons = list(reasons) + [f"Competency Compiler would recruit {', '.join(routing.preferred_instead)} "
+                                       "instead of the declared mechanism"]
         result = Classification(
             goal_id=spec.goal_id, intervention_id=intervention.intervention_id, route_hash=intervention.route_hash,
             decision=decision, reasons=tuple(reasons), policy_verdict=verdict, missing=missing,

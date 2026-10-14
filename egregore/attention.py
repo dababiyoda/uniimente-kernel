@@ -19,6 +19,8 @@ Answer semantics (what each answer does, and what it never does):
   review cadence has elapsed since the answer.
 * ``change``: recorded; the spec is immutable, so a replacement goal must be
   authorized (``GoalRegistry.supersede``).
+* ``pause`` and ``lower_priority``: the goal's preference is written first (stop pushing; priority one
+  step lower), exactly as the control surface would.
 """
 from __future__ import annotations
 
@@ -31,7 +33,7 @@ from .goals import GoalRegistry, iso, parse_time
 
 URGENCY = ("emergency", "high", "normal", "low")
 KINDS = ("decision", "information", "confirmation")
-ANSWERS = ("accept", "refuse", "defer", "never_use_tactic", "change")
+ANSWERS = ("accept", "refuse", "defer", "never_use_tactic", "change", "pause", "lower_priority")
 
 
 @dataclass(frozen=True)
@@ -51,12 +53,17 @@ class AttentionItem:
     route_hash: str | None
     tactic: str | None
     created_at: str
+    effect_hash: str | None = None
+    evidence_on_accept: dict[str, Any] | None = None   # a human-only gate: the answer becomes typed gate evidence
+    attach_on_accept: dict[str, Any] | None = None     # a qualified capability: accepting attaches it (no grant)
 
     @classmethod
     def build(cls, *, goal_id: str, kind: str, urgency: str, marginal_value: float, title: str, question: str,
               options: Sequence[Mapping[str, Any]], recommendation: str, evidence_refs: Sequence[str],
               effort_estimate: str, category: str, created_at: str | datetime, route_hash: str | None = None,
-              tactic: str | None = None) -> "AttentionItem":
+              tactic: str | None = None, effect_hash: str | None = None,
+              evidence_on_accept: Mapping[str, Any] | None = None,
+              attach_on_accept: Mapping[str, Any] | None = None) -> "AttentionItem":
         if kind not in KINDS:
             raise ValueError(f"unknown attention kind {kind!r}")
         if urgency not in URGENCY:
@@ -76,7 +83,10 @@ class AttentionItem:
                    marginal_value=float(marginal_value), title=body["title"], question=body["question"], options=opts,
                    recommendation=body["recommendation"], evidence_refs=tuple(evidence_refs),
                    effort_estimate=require_text("effort_estimate", effort_estimate), category=body["category"],
-                   route_hash=route_hash, tactic=tactic, created_at=iso(parse_time(created_at)))
+                   route_hash=route_hash, tactic=tactic, created_at=iso(parse_time(created_at)),
+                   effect_hash=effect_hash,
+                   evidence_on_accept=canonical_copy(dict(evidence_on_accept)) if evidence_on_accept else None,
+                   attach_on_accept=canonical_copy(dict(attach_on_accept)) if attach_on_accept else None)
 
     @property
     def has_no_cost_option(self) -> bool:
@@ -88,6 +98,8 @@ class AttentionItem:
                 "options": [canonical_copy(o) for o in self.options], "recommendation": self.recommendation,
                 "evidence_refs": list(self.evidence_refs), "effort_estimate": self.effort_estimate,
                 "category": self.category, "route_hash": self.route_hash, "tactic": self.tactic,
+                "effect_hash": self.effect_hash, "evidence_on_accept": canonical_copy(self.evidence_on_accept),
+                "attach_on_accept": canonical_copy(self.attach_on_accept),
                 "created_at": self.created_at, "execution_authority": "none"}
 
 
@@ -136,23 +148,33 @@ class FounderAttentionRouter:
         self.source = require_text("source", source)
         self._open: dict[str, dict[str, Any]] = {}
         self._answers: dict[str, dict[str, Any]] = {}
-        for record in getattr(ledger, "records", ()):
+        self._folded = 0
+        self.sync()
+
+    def sync(self) -> None:
+        """Fold ask and answer records other writers appended since the last fold."""
+        records = getattr(self.ledger, "records", ())
+        for record in records[self._folded:]:
             rtype = getattr(record, "record_type", None)
             if rtype == self.ASK_RECORD:
                 item = record.payload["item"]
-                self._open[item["item_id"]] = item
+                if item["item_id"] not in self._answers or self._answers[item["item_id"]].get("decision") == "defer":
+                    self._open[item["item_id"]] = item
             elif rtype == self.ANSWER_RECORD:
                 self._answers[record.payload["item_id"]] = record.payload
                 self._open.pop(record.payload["item_id"], None)
+        self._folded = len(records)
 
     @property
     def execution_authority(self) -> str:
         return "none"
 
     def open_asks(self) -> list[dict[str, Any]]:
+        self.sync()
         return [canonical_copy(v) for v in self._open.values()]
 
     def route(self, items: Sequence[AttentionItem], *, now: datetime | str, channel: str = "immediate") -> Routing:
+        self.sync()
         routed_at = iso(parse_time(now))
         quiet = self.policy.is_quiet(now)
         immediate: list[AttentionItem] = []
@@ -191,12 +213,14 @@ class FounderAttentionRouter:
                        "quiet_hours": quiet, "disposition": "pending_founder; no external channel contacted"}
             self.ledger.append(self.ASK_RECORD, payload)
             self._open[item.item_id] = item.to_dict()
+        self._folded = len(self.ledger.records)   # own records already applied in memory
         return Routing(tuple(immediate), tuple(batched), tuple(suppressed), routed_at)
 
     def answer(self, item_id: str, *, decision: str, actor: str, note: str, now: datetime | str) -> dict[str, Any]:
         """Record a founder answer. An answer is a record; it is not the work and not a grant."""
         if decision not in ANSWERS:
             raise ValueError(f"unknown answer {decision!r}")
+        self.sync()
         item = self._open.get(item_id)
         if item is None:
             raise ValueError("unknown or already answered ask")
@@ -207,8 +231,9 @@ class FounderAttentionRouter:
         # force and the ask still open, never an answer whose effect was lost.
         effect = "recorded; grants nothing by itself"
         if decision == "refuse" and item.get("route_hash"):
-            self.registry.record_refusal(item["goal_id"], route_hash=item["route_hash"], actor=actor, reason=note, now=now)
-            effect = "route refused; the unchanged route is never re-proposed"
+            self.registry.record_refusal(item["goal_id"], route_hash=item["route_hash"], actor=actor, reason=note, now=now,
+                                         effect_hash=item.get("effect_hash"))
+            effect = "route refused; the unchanged route and its identical effect are never re-proposed"
         elif decision == "never_use_tactic" and item.get("tactic"):
             self.registry.record_preference(item["goal_id"], kind="never_use_tactic", value=item["tactic"],
                                             actor=actor, reason=note, now=now)
@@ -219,6 +244,14 @@ class FounderAttentionRouter:
             effect = "deferred; re-surfaces after the goal's review cadence"
         elif decision == "change":
             effect = "change requested; the spec is immutable, a replacement goal must supersede it"
+        elif decision == "pause":
+            self.registry.record_preference(item["goal_id"], kind="stop_pushing", value=True, actor=actor, reason=note, now=now)
+            effect = "goal paused; nothing about it is surfaced until you resume it"
+        elif decision == "lower_priority":
+            current = self.registry.effective_priority(item["goal_id"])
+            self.registry.record_preference(item["goal_id"], kind="lower_priority", value=min(5, current + 1),
+                                            actor=actor, reason=note, now=now)
+            effect = f"priority lowered to {min(5, current + 1)}"
         payload = {"source": self.source, "item_id": item_id, "goal_id": item["goal_id"], "decision": decision,
                    "actor": actor, "note": note, "answered_at": answered_at, "effect": effect,
                    "authority_note": "answer recorded; grants nothing by itself"}
@@ -228,4 +261,5 @@ class FounderAttentionRouter:
         self.ledger.append(self.ANSWER_RECORD, payload)
         self._answers[item_id] = payload
         self._open.pop(item_id, None)
+        self._folded = len(self.ledger.records)
         return canonical_copy(payload)

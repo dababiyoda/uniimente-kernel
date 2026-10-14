@@ -90,9 +90,15 @@ capabilities:
     produces: []
     lifecycle: TESTED
   - capability_id: kernel.goal_gravity
-    description: Persistent authorized goals as attractors; wake/sleep, Backcast GPS adapter, intervention classification, experience integration, favorable intersections (threats subtract), asymmetry retention, founder attention routing; deliberation through the standing-cognition tick when attached; Gate-only execution; reconciliation from Gate records; independent outcome verification; records validated by contract on write
+    description: Persistent authorized goals as attractors; wake/sleep, Backcast GPS adapter, intervention classification, experience integration, favorable intersections (threats subtract), asymmetry retention, founder attention routing; deliberation through the standing-cognition tick when attached; Competency Compiler mount (capabilities.router selects the smallest competent mechanism per gate problem class, typed epistemic evidence, epistemic CapabilityDeficits, calibration only from independent verification); advancement monitor and stall reports at founder-chosen intensity; derived institutional sensorium; opportunity packages; capability acquisition ladder with tested qualification and founder-answered attach; goal intake drafts; DALEOBANKS/WMI observation adapters (untrusted unless signed); Gate-only execution; reconciliation from Gate records; independent outcome verification; records validated by contract on write
     implementation_path: egregore/gravity.py
     consumes: [event, evidence, capability-grant]
+    produces: [event]
+    lifecycle: TESTED
+  - capability_id: kernel.capability_router
+    description: Competency Compiler router (#165); maps a problem class to the epistemic methods that can answer it, selects the smallest competent mechanism or exact-cover composition inside the consequence and budget envelope, names a CapabilityDeficit when the repertoire is insufficient, and updates calibration only from independent verification; mounted by kernel.goal_gravity; routing confers no authority
+    implementation_path: capabilities/router.py
+    consumes: [evidence]
     produces: [event]
     lifecycle: TESTED
   - capability_id: kernel.bridge_adapters

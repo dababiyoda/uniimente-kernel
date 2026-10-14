@@ -216,7 +216,7 @@ def test_network_loss_is_an_unmeasured_world_not_a_failed_goal_and_recovery_need
     """Directive section 13, loss of a network connection: GREG backs off, acts on nothing it could not measure,
     never closes, and closes on its own once the upstream returns, with both facts in the egress journal."""
     home, key, body_id = body_with_confined_egress(tmp_path)
-    clock = [datetime.datetime(2026, 10, 14, 12, 0, tzinfo=datetime.timezone.utc)]
+    clock = [datetime.datetime.now(datetime.timezone.utc)]       # never before the envelope's signing time
     network.down["now"] = True
     drop(home, signed(key, body_id, "MISSION", fetch_mission("m:network-loss")))
     with Body(home, clock=lambda: clock[0]) as body:
@@ -234,7 +234,7 @@ def test_network_loss_is_an_unmeasured_world_not_a_failed_goal_and_recovery_need
 
 def test_sustained_network_loss_escalates_once_instead_of_looping(tmp_path, network):
     home, key, body_id = body_with_confined_egress(tmp_path)
-    clock = [datetime.datetime(2026, 10, 14, 12, 0, tzinfo=datetime.timezone.utc)]
+    clock = [datetime.datetime.now(datetime.timezone.utc)]       # never before the envelope's signing time
     network.down["now"] = True
     drop(home, signed(key, body_id, "MISSION", fetch_mission("m:network-gone")))
     with Body(home, clock=lambda: clock[0]) as body:

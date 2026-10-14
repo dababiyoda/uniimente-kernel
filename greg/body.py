@@ -338,6 +338,7 @@ class Body:
                     return prior[0].payload
                 raise MissionError("the first body is already designated; do not silently replace it")
             record = {"body_id": self.config["body_id"], "platform": os.uname().sysname,
+                      "device_class": doctor.device_class(),   # informational; never part of founder_body
                       "purpose": body["purpose"], "command_digest": digest, "at": iso(self.clock())}
             self.journal.record("body.designated", record, key=[self.config["body_id"], "first"])
             return record
@@ -475,6 +476,7 @@ class Body:
                     "mission_id": mid, "boot_id": getattr(self, "boot_id", None), "pid": os.getpid(),
                     "platform": os.uname().sysname, "body_id": self.config["body_id"],
                     "hosted": getattr(self, "boot_id", None) is not None,
+                    "device_class": doctor.device_class(),   # informational; never part of founder_body
                     "at": iso(now)}, key=[mid, "context"])
             if mid not in appraised:
                 verdict = self.appraise(mid)

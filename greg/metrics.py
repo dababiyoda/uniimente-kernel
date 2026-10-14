@@ -18,6 +18,8 @@ establish the physical owner's identity or verify hardware ownership by itself.
 Fixture results are structural tests, never external VEPMC evidence: a closure whose
 receipts carry fixture-mode or fixture-tier output is reported with its conditions but
 never counted, whatever else holds (the nine conditions themselves are unchanged).
+Each row also reports the observed ``device_class`` of the closure and of the designation
+(macos / chromeos_linux / linux_other / other): forgeable information, never a condition.
 """
 from __future__ import annotations
 
@@ -84,7 +86,12 @@ def vepmc(journal: Journal) -> dict:
         fixture = any(_fixture((record.payload.get("result") or {}).get("output"))
                       for record in (ledger.find(h) for h in evidence)
                       if record is not None and record.record_type == "receipt")
+        # Where it ran, as observed (absent on records older than the field): information beside the
+        # conditions, never one of them. Which device is the first VEPMC body is the founder's ruling.
+        designated_class = next((d.get("device_class") for d, designation_seq in designations
+                                 if d.get("body_id") == context.get("body_id") and designation_seq < 1 << 60), None)
         rows.append({"mission_id": mid, "closure_event_id": event.event_id, **row,
+                     "device_class": context.get("device_class"), "designated_device_class": designated_class,
                      "fixture_evidence": fixture,
                      "counts": all(row[c] for c in CONDITIONS) and not fixture,
                      "missing": [c for c in CONDITIONS if not row[c]] + (["no_fixture_evidence"] if fixture else [])})

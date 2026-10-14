@@ -193,12 +193,17 @@ mode**; the GREG binding (`greg/goal_gravity.py`) is thin and holds no authority
 founder-signed GOAL --Body.apply (Ed25519, nonce, TTL)--> GoalRegistry on the one body ledger (<home>/ledger.jsonl)
 Body.tick: ingest inbox -> stop/pause -> goal_gravity.tick -> MissionEngine.tick -> appraisal -> anchor
 goal_gravity.tick (nothing at all without a goal record):
-  admission  the retained GOAL envelope must verify under the key valid at its ledger position and rebuild the spec
-             byte for byte; anything else stays on the ledger, quarantined (stop_pushing by the admission check)
-  guard      a signed founder stop / change / revoke is restored if an unsigned record undid it
-  settle     a signature-verified DECISION reject of a goal move's exact scope is also the goal's route refusal
-  sense      mission observations (check predicate recomputed from the Gate's own receipt; a claim that differs
-             is untrusted), separate-process appraisals, greg.path nodes, non-quarantined intake (untrusted)
+  admission  founder_facts: each retained GOAL / GOAL_CONTROL is re-judged at its own ledger position (key valid
+             there, this body, nonce unused, accepted inside its signed validity, and the same check_goal /
+             check_control Body.apply ran); anything else stays on the ledger, quarantined (stop_pushing by the
+             admission check)
+  guard      every signed closure (revoke, supersede), stop / change, narrowing preference and priority floor is
+             restored if an unsigned record widened it
+  settle     a signature-verified DECISION for exactly that request and answer, rejecting a goal move's exact
+             scope, is also the goal's route refusal
+  sense      mission observations (check predicate recomputed from the Gate receipt of that check's own sensor
+             read; a claim that differs is untrusted, a foreign receipt is no evidence), separate-process
+             appraisals, greg.path nodes, non-quarantined intake (untrusted)
   loop       GoalGravityLoop.turn(gate=None, executor=None, grants=None); on a body ledger anything else raises
                awake goal  -> MissionEngine.observe_now(mission): its next read-only look, sooner (timing only)
                decision    -> MissionEngine.request_decision: the mission's own APPROVAL for the exact scope
@@ -215,7 +220,7 @@ MissionEngine -> AuthorityOffice -> ConsequenceGate remains the only execution p
 | founder asks | `greg.asks.record` through the engine (`request_decision`); answers only as signed DECISION commands |
 | attention routing | `FounderAttentionRouter` with the hosted `BodyAttentionStore` (no `egregore.founder_ask/answer` records) |
 | backcast | per goal `egregore.gps`; developmental position `greg.path`, fed in as `greg.path.<node>` observations |
-| one-turn analysis | `greg gravity --situation` (#158), unchanged; founder-paused missions now labelled `paused` (`dormant` alias) |
+| one-turn analysis | `greg gravity --situation` (#158), contract unchanged (`dormant`); the label `paused` is added alongside |
 
 **GOAL body** (founder key only):
 `{"goal": <GoalSpec fields without goal_id/authority/execution_authority>, "missions": [<signed mission ids>],
@@ -223,7 +228,10 @@ MissionEngine -> AuthorityOffice -> ConsequenceGate remains the only execution p
 signature (`authorization_ref` = command digest, `authorized_at` = body clock). Each declared move must name
 `{"mission_id", "action_id"}` of a static strategy of a bound mission, restate its capability, target, manifest
 consequence class and cost exactly, and lie **outside** that mission's cone (inside-cone work is the mission's own).
-An identical intent is refused; `supersedes` replaces an admitted goal and keeps the old one as `superseded`.
+A move may not name a strategy the founder excluded by a signed critique or a scope the founder rejected. An
+identical intent is refused, and so is a GOAL signed before the founder revoked or superseded a goal with the same
+intent; `supersedes` replaces an admitted goal and keeps the old one as `superseded`. A GOAL or GOAL_CONTROL the body
+verifies and then rejects consumes its nonce, so the retained file cannot be re-dropped later.
 
 **GOAL_CONTROL body**: `{"goal_id", "kind", "value"?, "reason"?}` with kind in the egregore preference kinds plus
 `revoke`. A delegated device key may only narrow (`stop_pushing` true, `lower_priority`, `never_use_tactic`,
@@ -248,6 +256,7 @@ read those projections.
 **Not claimed.** The loop never executes on a body; missions do all execution through the Gate. Goal completion is
 observation-tier (attributed ledger observations recomputed from Gate receipts and appraisals), never external
 verification. A goal cannot pull a mission that is paused or blocked on a founder decision. Evidence for this section:
-`tests/unit/test_greg_goal_gravity.py`, `tests/unit/test_goal_gravity_body_mode.py` and the `greg-goal-gravity`
+`tests/unit/test_greg_goal_gravity.py`, `tests/unit/test_greg_goal_gravity_authority.py`,
+`tests/unit/test_goal_gravity_body_mode.py` and the `greg-goal-gravity`
 closures (IMPLEMENTED / UNIT-TESTED on temporary bodies with a test key; no external effect; nothing activates until
 the founder signs a GOAL on a real body).

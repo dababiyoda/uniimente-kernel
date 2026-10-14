@@ -760,6 +760,105 @@ def test_a_founder_detach_decides_a_candidate_and_an_approve_stands_only_while_i
         assert [e.payload["request_id"] for e in body.journal.replay("decision.withdrawn")] == [own["request_id"]]
 
 
+def test_a_founder_detach_of_what_an_open_shared_ask_named_lapses_it_for_the_waiting_mission(tmp_path, index):
+    """A founder detach of the candidate an open shared ask names decides that candidate without an answer to the ask.
+    The ask then no longer stands for the mission's need, just as a mission arriving now would not share it: the
+    waiting mission is asked once, on its own ask, about the candidate never put to the founder, the same as a new
+    mission with the same need. The compiler's ask stays open for its own use, and one attach resolves both missions."""
+    from greg.console import _attachable
+    dp = library.executables()["dp_knapsack"]
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission("m:pack", {"geometry": "optimization"},
+                                                               dp.instance(2)[0])))     # development seed
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 3)
+        [shared] = attach_asks(body)
+        named = shared["authority_requested"]["attach"]
+        [other] = [c for c in body.engine.book.missions["m:pack"].blocker["attach_candidates"] if c != named]
+        body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": named}))   # the ask is not answered
+        ticks(body, clock, 3)
+    with Body(home, clock=clock) as body:                                    # the lapse survives a restart
+        body.boot()
+        ticks(body, clock, 2)
+        book = body.engine.book
+        assert shared["request_id"] not in book.answers and shared["request_id"] not in book.withdrawn
+        [own] = [r for r in book.open_requests() if r["mission_id"] == "m:pack"]
+        assert [c["capability_id"] for c in _attachable(own)] == [other]   # never the candidate just detached
+        blocker = book.missions["m:pack"].blocker
+        assert "shared_ask" not in blocker and blocker["request_id"] == own["request_id"]
+        assert sorted(blocker["attach_candidates"]) == sorted([named, other])   # an attach of either resolves it
+        assert len(attach_asks(body)) == 2
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:pack2", {"geometry": "optimization"},
+                                                                   dp.instance(3)[0])))  # development seed
+        for _ in range(3):
+            body.tick()
+            clock.advance(31)
+        book = body.engine.book
+        [second] = [r for r in book.open_requests() if r["mission_id"] == "m:pack2"]
+        assert [c["capability_id"] for c in _attachable(second)] == [other]   # the same treatment as m:pack
+        assert len(attach_asks(body)) == 3
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": other}))
+        states = {}
+        for _ in range(3):
+            states.update({s["mission_id"]: s["state"] for s in body.tick()["missions"]})
+            clock.advance(31)
+        assert states == {"m:pack": "ACHIEVED", "m:pack2": "ACHIEVED"}
+        assert sorted(e.payload["request_id"] for e in body.journal.replay("decision.withdrawn")) == sorted(
+            [own["request_id"], second["request_id"]])
+
+
+@pytest.mark.parametrize("acts", [
+    (), ("approve",), ("reject",), ("withdraw",), ("detach named",), ("detach other",),
+    ("detach named", "detach other"), ("approve", "detach named"), ("approve", "detach other"),
+    ("reject", "detach other"), ("reject", "detach named"), ("withdraw", "detach named"),
+    ("detach named", "approve"), ("detach named", "reject"), ("detach other", "reject")])
+def test_a_mission_with_an_undecided_candidate_only_ever_waits_on_an_ask_that_stands(tmp_path, index, acts):
+    """The rule for the whole class, over orders of founder acts on the shared ask and on the candidates, each followed
+    by ticks. A candidate is decided by a founder detach, or by the founder's reject of an ask the mission waited on
+    that named it. While a candidate is undecided, the mission waits on an ask that names one and that the founder can
+    still answer or has approved. No ask offers a candidate already decided. The rest of the need is asked about at
+    most once, and nothing is asked once every candidate is decided (section 60)."""
+    from greg.console import _attachable
+    data, _ = library.executables()["dp_knapsack"].instance(2)               # development seed
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission("m:pack", {"geometry": "optimization"}, data)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 3)
+        [shared] = attach_asks(body)
+        named = shared["authority_requested"]["attach"]
+        [other] = [c for c in body.engine.book.missions["m:pack"].blocker["attach_candidates"] if c != named]
+        undecided, seen = {named, other}, {shared["request_id"]}
+        for act in acts:
+            if act in ("approve", "reject"):
+                body.apply(signed(key, body_id, "DECISION", {"request_id": shared["request_id"], "answer": act,
+                                                              "reason": "the founder's answer"}))
+                undecided -= {named} if act == "reject" else set()
+            elif act == "withdraw":
+                body.journal.record("decision.withdrawn", {"request_id": shared["request_id"], "mission_id": None,
+                                                           "why": "withdrawn by the body", "evidence": [],
+                                                           "at": "2026-01-01"}, key=[shared["request_id"], "withdrawn"])
+            else:
+                detached = named if act == "detach named" else other
+                body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": detached}))
+                undecided -= {detached}
+            ticks(body, clock, 3)
+            for ask in attach_asks(body):
+                if ask["request_id"] not in seen:
+                    seen.add(ask["request_id"])
+                    offered = {c["capability_id"] for c in _attachable(ask)}
+                    assert ask["mission_id"] == "m:pack" and offered and offered <= undecided, (act, offered)
+        assert len(seen) <= 2                                                # the rest is asked about once
+        book = body.engine.book
+        rid = book.missions["m:pack"].blocker["request_id"]
+        stands = rid not in book.withdrawn and (book.answers.get(rid) or {}).get("answer") in (None, "approve") \
+            and bool({c["capability_id"] for c in _attachable(book.requests[rid])} & undecided)
+        assert stands or not undecided, (rid, undecided)
+
+
 def test_several_withheld_genomes_fit_and_the_founder_is_asked_once(tmp_path, index):
     data, _ = library.executables()["dp_knapsack"].instance(2)               # development seed
     home, key, body_id, _ = make_body(tmp_path)

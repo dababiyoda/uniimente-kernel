@@ -1,0 +1,263 @@
+{
+ "authority_created": false,
+ "families": {
+  "F1": {
+   "best_constituent": "optimize_at_worst_case",
+   "frozen_lift": true,
+   "items": 16,
+   "latency": {
+    "added_s": 0.433,
+    "best_constituent_median_s": 0.873,
+    "ratio": 1.496,
+    "routed_median_s": 1.306
+   },
+   "practitioner": {},
+   "routed_vs_static": {
+    "identical_answers": 16,
+    "losses": 0,
+    "sign_test_p_one_sided": 1.0,
+    "static_arm": "DECIDES",
+    "static_decided": 16,
+    "ties": 16,
+    "wins": 0
+   },
+   "source_commit": "1521bd173c9c6692a6ceae69c6f9e2f6f3dda0d8"
+  },
+  "F2": {
+   "best_constituent": "optimize_on_association",
+   "frozen_lift": false,
+   "items": 16,
+   "latency": {
+    "added_s": 0.508,
+    "best_constituent_median_s": 0.735,
+    "ratio": 1.691,
+    "routed_median_s": 1.243
+   },
+   "practitioner": {},
+   "routed_vs_static": {
+    "identical_answers": 0,
+    "losses": 0,
+    "sign_test_p_one_sided": 3.1e-05,
+    "static_arm": "DEGENERATE",
+    "static_decided": 0,
+    "ties": 1,
+    "wins": 15
+   },
+   "source_commit": "1521bd173c9c6692a6ceae69c6f9e2f6f3dda0d8"
+  },
+  "F2R": {
+   "best_constituent": "optimize_on_association",
+   "frozen_lift": true,
+   "items": 64,
+   "latency": {
+    "added_s": 0.4655,
+    "best_constituent_median_s": 0.5565,
+    "ratio": 1.836,
+    "routed_median_s": 1.022
+   },
+   "practitioner": {},
+   "routed_vs_static": {
+    "identical_answers": 0,
+    "losses": 0,
+    "sign_test_p_one_sided": 0.0,
+    "static_arm": "DEGENERATE",
+    "static_decided": 0,
+    "ties": 7,
+    "wins": 57
+   },
+   "source_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a"
+  },
+  "F3": {
+   "best_constituent": "graph_alone_greedy",
+   "frozen_lift": true,
+   "items": 30,
+   "latency": {
+    "added_s": 0.843,
+    "best_constituent_median_s": 0.202,
+    "ratio": 5.173,
+    "routed_median_s": 1.045
+   },
+   "practitioner": {},
+   "routed_vs_static": {
+    "identical_answers": 0,
+    "losses": 0,
+    "sign_test_p_one_sided": 0.0,
+    "static_arm": "DEGENERATE",
+    "static_decided": 0,
+    "ties": 0,
+    "wins": 30
+   },
+   "source_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a"
+  },
+  "F4": {
+   "best_constituent": "voi_uninformed",
+   "frozen_lift": true,
+   "items": 30,
+   "latency": {
+    "added_s": 0.2015,
+    "best_constituent_median_s": 0.4,
+    "ratio": 1.504,
+    "routed_median_s": 0.6015
+   },
+   "practitioner": {},
+   "routed_vs_static": {
+    "identical_answers": 0,
+    "losses": 0,
+    "sign_test_p_one_sided": 0.0,
+    "static_arm": "DEGENERATE",
+    "static_decided": 0,
+    "ties": 0,
+    "wins": 30
+   },
+   "source_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a"
+  },
+  "F5": {
+   "best_constituent": "optimize_alone",
+   "frozen_lift": false,
+   "items": 30,
+   "latency": {
+    "added_s": 2.9505,
+    "best_constituent_median_s": 0.762,
+    "ratio": 4.872,
+    "routed_median_s": 3.7125
+   },
+   "practitioner": {
+    "historical_mean": {
+     "losses": 8,
+     "sign_test_p_one_sided": 0.008062,
+     "ties": 0,
+     "total_cost": 27129.519,
+     "wins": 22
+    },
+    "point_forecast_then_optimize": {
+     "losses": 11,
+     "sign_test_p_one_sided": 0.100244,
+     "ties": 0,
+     "total_cost": 18296.865,
+     "wins": 19
+    }
+   },
+   "routed_vs_static": {
+    "identical_answers": 30,
+    "losses": 0,
+    "sign_test_p_one_sided": 1.0,
+    "static_arm": "DECIDES",
+    "static_decided": 30,
+    "ties": 30,
+    "wins": 0
+   },
+   "source_commit": "07350d4bc7637e85e5439640cd3ab250278e7e1a"
+  },
+  "F6": {
+   "best_constituent": "forecast_alone",
+   "frozen_lift": true,
+   "items": 90,
+   "latency": {
+    "added_s": 6.917,
+    "best_constituent_median_s": 6.9974,
+    "ratio": 1.989,
+    "routed_median_s": 13.9144
+   },
+   "practitioner": {
+    "median_forecast_then_staff": {
+     "losses": 41,
+     "sign_test_p_one_sided": 0.230396,
+     "ties": 0,
+     "total_cost": 715226.0,
+     "wins": 49
+    },
+    "weekly_mean_then_staff": {
+     "losses": 50,
+     "sign_test_p_one_sided": 0.876947,
+     "ties": 0,
+     "total_cost": 662089.0,
+     "wins": 40
+    }
+   },
+   "routed_vs_static": {
+    "identical_answers": 90,
+    "losses": 0,
+    "sign_test_p_one_sided": 1.0,
+    "static_arm": "DECIDES",
+    "static_decided": 90,
+    "ties": 90,
+    "wins": 0
+   },
+   "source_commit": "5acda2c4e226d34a2d305a12c9c182a2ea45d79a"
+  }
+ },
+ "frozen_vpl": {
+  "families": [
+   "F1",
+   "F2",
+   "F2R",
+   "F3",
+   "F4",
+   "F5",
+   "F6"
+  ],
+  "families_with_lift": [
+   "F1",
+   "F2R",
+   "F3",
+   "F4",
+   "F6"
+  ]
+ },
+ "inputs": [
+  "docs/evidence/greg-composition-lift/2026-10-07/results.json",
+  "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json",
+  "docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json"
+ ],
+ "label": "POST_HOC: computed after the runs; no frozen verdict is changed",
+ "latency_sensitivity": {
+  "lifts_within_multiplier_of_best_constituent_median": {
+   "1.5x": [
+    "F1"
+   ],
+   "1x": [],
+   "2x": [
+    "F1",
+    "F2R",
+    "F4",
+    "F6"
+   ],
+   "5x": [
+    "F1",
+    "F2R",
+    "F4",
+    "F6"
+   ]
+  },
+  "note": "no netting rule was pre-registered, so none is applied; this is a table, not a verdict"
+ },
+ "practitioner_beaten_significantly": {
+  "F6": {
+   "median_forecast_then_staff": false,
+   "weekly_mean_then_staff": false
+  }
+ },
+ "remeasured": {
+  "F2": "F2R (the same identify_then_optimize recipe, redesigned and re-measured in v2)"
+ },
+ "routing_beyond_static": {
+  "families_where_static_decides": {
+   "F1": {
+    "identical_answers": 16,
+    "routed_losses": 0,
+    "routed_wins": 0
+   },
+   "F6": {
+    "identical_answers": 90,
+    "routed_losses": 0,
+    "routed_wins": 0
+   }
+  },
+  "families_where_static_is_degenerate": [
+   "F2R",
+   "F3",
+   "F4"
+  ],
+  "note": "where the static recipe decides, routing chose it on every item; where it is degenerate, routing's contribution is choosing a recipe that fits the inputs at all"
+ }
+}

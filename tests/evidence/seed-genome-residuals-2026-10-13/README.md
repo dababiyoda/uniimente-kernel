@@ -40,9 +40,20 @@ built:
 - `greg cognition verify-package presentation.json` is the recipient's check. It needs no GREG state, exits 0
   when every revealed value matches its commitment, and exits 1 otherwise.
 
-**What it proves, and what it does not.** It proves that the revealed values are the ones GREG committed to.
-It does not prove factual truth, legitimacy, ledger inclusion (which needs the ledger or a witness bundle),
-or acceptance. The package carries this statement.
+**What it proves, and what it does not.** It proves that the revealed values match the package's own
+commitments. It does not prove:
+
+- **who issued it:** the package is unsigned, because GREG holds no issuer key, so attribution rests on the
+  channel it arrived through;
+- **ledger inclusion:** GREG's ledger is a linear hash chain whose record hashes cover whole payloads, so showing
+  that a record is in it takes the ledger records themselves. A witness bundle only shows that a presented
+  ledger was not rewritten after anchoring;
+- **factual truth, legitimacy or acceptance.**
+
+The package carries these limits, and the recipient-side check reports its own copy of them, so a package
+cannot shorten the list. An earlier draft of this README, and of the package text, said inclusion was checkable
+"with the ledger or a witness bundle" and called the package's guarantee "attribution". Both overstated it and
+were corrected in a later commit on this PR.
 
 **Evidence:**
 - `cli-package.log`: the real CLI on a real body run (an optimization mission). The package verifies, and a
@@ -77,9 +88,9 @@ Measured through `reason()` on native synthetic workloads whose answers are know
 
 ## Verification
 
-- 13 new tests: 9 for disclosure (including the CLI) and 4 for characterization. One coverage test was
+- 14 new tests: 10 for disclosure (including the CLI) and 4 for characterization. One coverage test was
   hardened.
-- `mutants.log`: 15 mutants, all caught. That is the 7 from #161, 7 for disclosure gates and 1 for the
+- `mutants.log`: 16 mutants, all caught. That is the 7 from #161, 8 for disclosure gates and 1 for the
   harness.
 - `full-suite.log`: the whole frontier suite at the commit this README describes.
 - **Frozen inputs:** this change touches no file a freeze pins. `cortex.py` and `verification.py` are

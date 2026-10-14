@@ -57,6 +57,9 @@ MUTANTS = [
  ('a dispute recorded without grounds', 'greg/cognition/disclosure.py',
   'if response in ("disputed", "declined", "partially_accepted") and not grounds and not note:', 'if False:',
   'test_an_institutional_response_is_appended_never_edited_in_and_grants_nothing', DISCLOSURE),
+ ('a package shortens the limits the recipient is told', 'greg/cognition/disclosure.py',
+  '            "does_not_prove": list(LIMITATIONS)}', '            "does_not_prove": list(package.get("limitations", []))}',
+  'test_an_unsigned_package_reports_the_verifiers_own_limits', DISCLOSURE),
  # Characterization harness (directive section 5): the measurement must notice a weakened verifier.
  ('error correction counted without the verifier', 'greg/cognition/characterize.py',
   'corrections.append(verdict == "REFUTED")', 'corrections.append(True)',

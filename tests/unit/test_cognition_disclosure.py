@@ -81,6 +81,19 @@ def test_tampering_is_detected_on_the_recipient_side(body):
     assert any("not committed" in p for p in D.verify_presentation(foreign)["problems"])
 
 
+def test_an_unsigned_package_reports_the_verifiers_own_limits(body):
+    # Anyone can re-digest an unsigned package, so a self-consistent edit still verifies. That is why
+    # attribution to GREG is not claimed, and why the check reports its own limits, not the package's.
+    from provenance.ledger import sha256_json
+    _, holder = _package(body)
+    shown = json.loads(json.dumps(D.present(holder)))
+    shown["package"]["limitations"] = []
+    shown["package_digest"] = sha256_json(shown["package"])
+    checked = D.verify_presentation(shown)
+    assert checked["valid"] and checked["does_not_prove"] == list(D.LIMITATIONS)
+    assert "GREG" not in checked["proves"] and any("unsigned" in line for line in checked["does_not_prove"])
+
+
 def test_decoys_hide_how_many_fields_were_withheld(body):
     _, plain = _package(body, decoys=0)
     _, padded = _package(body, decoys=5)
@@ -143,7 +156,7 @@ def test_custody_is_stated_and_a_broken_chain_issues_nothing(body):
     custody = holder["package"]["custody"]
     assert custody["ledger_head"] == body.journal.ledger.head and custody["chain_verified_at_packaging"].startswith("chain intact")
     assert custody["anchoring"]["configured"] in (False, None) or custody["anchoring"]["configured"] is not True
-    assert "witness bundle" in custody["inclusion"]
+    assert custody["inclusion"].startswith("not checkable from this package") and "witness bundle" in custody["inclusion"]
     record = body.journal.ledger.records[2]
     saved = json.loads(json.dumps(record.payload))
     record.payload["tampered"] = True

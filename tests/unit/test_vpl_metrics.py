@@ -60,6 +60,20 @@ def test_accounting_reports_latency_without_inventing_a_netting_rule_and_flags_a
     assert acc["label"].startswith("POST_HOC")
 
 
+def test_f7_counts_an_optimal_answer_as_correct_and_names_its_practitioners():
+    rows = _rows("F7", [{"routed_composition": _res("optimal", 1.2), "graph_alone_greedy": _res(r, 0.2),
+                         "static_composition": _res("optimal", 1.2), "shortest_path_upgrade": _res(r, 0.0),
+                         "parametric_min_cost_flow": _res("optimal", 0.0)}
+                        for r in ("suboptimal", "suboptimal", "optimal")])
+    run = {"source_commit": "x", "heldout": rows,
+           "summary": {"F7": {"best_constituent": "graph_alone_greedy", "lift": True}, "VPL_v4": {}}}
+    f7 = M.accounting([run])["families"]["F7"]
+    assert f7["routed_vs_static"]["static_arm"] == "DECIDES"
+    assert f7["practitioner"]["shortest_path_upgrade"]["wins"] == 2
+    assert f7["practitioner"]["parametric_min_cost_flow"] == {"wins": 0, "losses": 0, "ties": 3,
+                                                              "sign_test_p_one_sided": 1.0}
+
+
 def test_accounting_on_the_frozen_runs_matches_their_recorded_verdicts():
     import json
     from pathlib import Path

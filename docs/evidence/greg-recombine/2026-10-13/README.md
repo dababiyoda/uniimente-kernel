@@ -106,7 +106,7 @@ production activation. Who can ratify: Alfonso.
 
 Tests and mutation checks:
 
-- `tests/unit/test_greg_recombine.py`: 16 passed.
+- `tests/unit/test_greg_recombine.py`: 19 passed. CI's mutation check (`scripts/ci/check_cortex_mutants.py`) carries a `recombine` group of 10 mutants, all caught locally.
 - Five targeted mutants were each killed by a test:
   - the engine quarantine in `repair` removed;
   - the founder-detach check removed;
@@ -116,20 +116,20 @@ Tests and mutation checks:
 - The engine-usable mutant first survived. A test was added for it.
 
 Stress and reuse measurement (`results.json`, from `python scripts/qualify_recombine.py`, 60 seeds).
-The environment was Python 3.11.15 on Linux, with NetworkX 3.6.1, SciPy 1.17.1 and NumPy 2.4.6. OR-Tools is
-not installed.
+The environment was Python 3.11.15 on Linux, with NetworkX 3.6.1, SciPy 1.17.1, NumPy 2.4.6 and OR-Tools
+9.15.6755.
 
 | Function | Engine | Cases | Proved without engine | Engine cases | Wrong | Refused |
 |---|---|---|---|---|---|---|
 | assignment.staffing | NetworkX max-flow | 600 | 0 | 600 | 0 | 0 |
 | assignment.staffing | SciPy max-flow | 600 | 0 | 600 | 0 | 0 |
 | project.crash | SciPy LP (HiGHS) | 600 | 184 | 416 | 0 | 0 |
-| project.crash | OR-Tools LP (GLOP) | not installed | | | | |
+| project.crash | OR-Tools LP (GLOP) | 600 | 184 | 416 | 0 | 0 |
 
 Reuse, measured on one engine (`results.json`):
 
 - Qualifying the max-flow engine took 0.23 s: 12 oracle cases plus a scale probe of 300 nodes and 2,942 arcs, in one isolated batch.
-- Constructing staffing over that attached engine took 0.22 s for 10 cases. Constructing matching took 0.23 s for 9 cases.
+- Constructing staffing over that attached engine took 0.2 s for 10 cases. Constructing matching took 0.23 s for 9 cases.
 - Neither construction re-qualified the engine. Neither added solver code.
 
 **Negative result, then fixed.** The first version (`results-v1-per-call.json`) took 2.09 s and
@@ -147,7 +147,6 @@ Negative results (kept):
   - a crash plan costing 12 where 10 is optimal.
 
   GREG's certificates refused both, and the fixtures were corrected.
-- OR-Tools is not installed here, so the GLOP route for `project.crash` is untested.
 - No founder use, no external outcome. VEPMC is still 0.
 
 ## System impact

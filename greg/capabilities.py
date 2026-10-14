@@ -301,40 +301,102 @@ def fs_write(params, ctx: InvocationContext) -> dict:
     return {"path": str(path), "sha256": hashlib.sha256(content.encode()).hexdigest()}
 
 
-def _no_network_preexec():
-    # Reuse the Kernel's reviewed seccomp filter where libseccomp exists.
+def _network_filter():
+    """The Kernel's reviewed seccomp filter, loaded into THIS process before any child runs.
+
+    The forked child calls the in-memory function and never imports from disk: an isolated child
+    can write files (no filesystem confinement by default), so a filter read from
+    tools/offline_test.py at fork time could be replaced by one stage to switch isolation off for
+    every later child. None when it cannot be loaded (the child then fails closed)."""
     try:
-        sys.path.insert(0, str(KERNEL_ROOT / "tools"))
-        from offline_test import install_filter  # type: ignore
-        install_filter()
+        module = sys.modules.get("offline_test")
+        if module is None:
+            sys.path.insert(0, str(KERNEL_ROOT / "tools"))
+            import offline_test as module  # type: ignore
+        return module.install_filter
     except Exception:
-        os._exit(97)  # fail closed: never run an isolated command without isolation
+        return None
+
+
+if sys.platform != "darwin":
+    _network_filter()          # load at import, before any isolated child can touch the file
+
+
+def _no_network_preexec():
+    """preexec_fn for callers that need only the network filter: the module already in memory, or
+    fail closed. Never an import from disk in the child."""
+    try:
+        sys.modules["offline_test"].install_filter()
+    except Exception:
+        os._exit(97)
+
+
+def _isolating_preexec(install_filter, confine: dict | None):
+    from greg.isolation import confine_paths      # resolved here, in the parent: the child imports nothing
+
+    def preexec():
+        if confine is not None:
+            try:
+                confine_paths(**confine)
+            except Exception:
+                os._exit(98)   # fail closed: never run a confined command unconfined
+        try:
+            install_filter()
+        except Exception:
+            os._exit(97)       # fail closed: never run an isolated command without isolation
+    return preexec
 
 
 MACOS_NO_NETWORK = "(version 1)(allow default)(deny network*)"
 
 
 def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout: int = 30,
-                 extra_env: dict | None = None, input_bytes: bytes | None = None) -> subprocess.CompletedProcess:
+                 extra_env: dict | None = None, input_bytes: bytes | None = None,
+                 confine: dict | None = None, stop_check=None) -> subprocess.CompletedProcess:
     """Run one command with a scrubbed environment and, by default, no network.
 
-    Linux: the Kernel's seccomp filter (tools/offline_test.py). macOS: the system
-    sandbox-exec profile denying network. No isolation available -> refusal.
+    Linux: the Kernel's seccomp filter (tools/offline_test.py, held in memory). macOS: the system
+    sandbox-exec profile denying network. No isolation available -> refusal. ``confine``
+    (``read``/``read_exec``/``write`` path lists, Linux Landlock) additionally limits the files the
+    command can reach; when it cannot be installed the command is refused, never run unconfined.
+    ``stop_check`` runs the command supervised (``workers.supervised_run``): founder STOP is polled,
+    the process group is killed, and on Linux the child dies with the body; a stop raises
+    ``workers.WorkerInterrupted``.
     """
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": str(cwd), **(extra_env or {})}
     preexec = None
+    if confine is not None and sys.platform == "darwin":
+        raise CapabilityError("filesystem confinement unavailable on this host; command refused")
     if isolate_network:
         if sys.platform == "darwin":
             if not Path("/usr/bin/sandbox-exec").exists():
                 raise CapabilityError("network isolation unavailable; command refused")
             argv = ["/usr/bin/sandbox-exec", "-p", MACOS_NO_NETWORK, *argv]
         else:
-            preexec = _no_network_preexec
-    stdin = {"stdin": subprocess.DEVNULL} if input_bytes is None else {"input": input_bytes}
-    proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, timeout=timeout,
-                          preexec_fn=preexec, **stdin)
+            install_filter = _network_filter()
+            if install_filter is None:
+                raise CapabilityError("network isolation unavailable; command refused")
+            preexec = _isolating_preexec(install_filter, confine)
+    elif confine is not None:
+        preexec = _isolating_preexec(lambda: None, confine)
+    if stop_check is not None:
+        from greg.workers import _die_with_body, supervised_run
+        isolate = preexec
+
+        def supervised_preexec():
+            _die_with_body()
+            if isolate is not None:
+                isolate()
+        proc = supervised_run(argv, input=input_bytes, timeout=timeout, cwd=cwd, env=env,
+                              preexec_fn=supervised_preexec, stop_check=stop_check)
+    else:
+        stdin = {"stdin": subprocess.DEVNULL} if input_bytes is None else {"input": input_bytes}
+        proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, timeout=timeout,
+                              preexec_fn=preexec, **stdin)
     if isolate_network and preexec is not None and proc.returncode == 97:
         raise CapabilityError("network isolation unavailable; command refused")
+    if confine is not None and proc.returncode == 98:
+        raise CapabilityError("filesystem confinement unavailable; command refused")
     return proc
 
 

@@ -231,6 +231,9 @@ def test_appraisal_binds_acceptance_to_the_original_commission(tmp_path, monkeyp
     assert any("digest" in f or "canonical" in f for f in result["findings"])
     assert appraisal["verdict"] == "REFUTED", appraisal
     assert appraisal["checks"]["world_reobserved"] is False
+    # Refuted for the binding, not incidentally: on a host without the worker envelope the separate appraiser
+    # cannot re-run acceptance tests and refutes every worker mission, which once let a mutant survive in CI.
+    assert any("canonical" in f or "digest" in f for f in appraisal["findings"]), appraisal["findings"]
 
 
 @pytest.mark.parametrize("params, message", [

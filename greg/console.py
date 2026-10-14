@@ -147,9 +147,12 @@ class Console:
         return pid
 
     def attach(self, request_id: str, capability_id: str) -> Path:
-        """Sign CAPABILITY_ATTACH only for a verified candidate that an open capability ask names."""
-        open_asks = {r["request_id"]: r for r in status(self.home)["decisions_required"]}
-        if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))}:
+        """Sign CAPABILITY_ATTACH only for a verified candidate an open capability ask names, or one a
+        blocked mission is still waiting on after its ask was answered (``status()["attach_waiting"]``)."""
+        st = status(self.home)
+        open_asks = {r["request_id"]: r for r in st["decisions_required"]}
+        waiting = {w["capability_id"] for w in st.get("attach_waiting", [])}
+        if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))} | waiting:
             raise ValueError("that capability is not a verified candidate of an open capability ask")
         return self.sign("CAPABILITY_ATTACH", {"capability_id": capability_id})
 
@@ -333,8 +336,12 @@ def render_home(console: Console) -> bytes:
     if st["decisions_required"]:
         rows = []
         for r in st["decisions_required"]:
-            actions = (_form(console, "/decide", {"request_id": r["request_id"], "answer": "approve"}, "Approve",
-                             disabled=not can) + " " +
+            # On a capability ask Approve would only record an answer, never attach (greg/asks.py), and
+            # answering removes the ask; offer Attach and Reject instead.
+            approve = "" if _attachable(r) else _form(console, "/decide", {"request_id": r["request_id"],
+                                                                           "answer": "approve"}, "Approve",
+                                                      disabled=not can) + " "
+            actions = (approve +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reject"}, "Reject",
                              cls="secondary", disabled=not can)) if r["kind"] != "RECONCILIATION" else (
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_executed"},
@@ -350,6 +357,17 @@ def render_home(console: Console) -> bytes:
                         f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r)}</td>"
                         f"<td>{actions}</td></tr>")
         out.append("<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>")
+    asked = {c["capability_id"] for r in st["decisions_required"] for c in _attachable(r)}
+    waiting = [w for w in st.get("attach_waiting", []) if w["capability_id"] not in asked]
+    if waiting:
+        rows = [f"<tr><td><span class=pill>ATTACH</span></td><td>{_e(w['mission_id'] or '')} is waiting for "
+                f"{_e(w['capability_id'])}<br><span class=muted>Verified by Genesis; your earlier answer did not "
+                "attach it. Attaching is a signed command.</span></td><td>"
+                + _form(console, "/attach", {"request_id": "", "capability_id": w["capability_id"]},
+                        f"Attach {w['capability_id']}", disabled=not can,
+                        confirm=f"Sign CAPABILITY_ATTACH for {w['capability_id']}?") + "</td></tr>"
+                for w in waiting]
+        out.append("<section><h2>Waiting for an attach</h2><table>" + "".join(rows) + "</table></section>")
     closures = [r for r in vepmc["missions"]]
     if closures:
         rows = []

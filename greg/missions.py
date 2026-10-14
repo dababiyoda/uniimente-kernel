@@ -233,6 +233,15 @@ def unanswered(output) -> str | None:
     return str(output.get("reason_code") or output.get("abstention_state"))
 
 
+def blames_strategy(reason: str) -> bool:
+    """Whether a failed-strategy reason is evidence against the strategy's capability.
+
+    Only "executed, re-observed, and the world measurably did not change" is. A re-observation
+    that did not measure the world (a failed sensor call or an abstaining cognitive receipt,
+    both recorded as "sensor ...") says nothing about the strategy's effect."""
+    return reason.startswith("executed but ") and ": sensor " not in reason
+
+
 def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
     op = predicate["op"]
     try:
@@ -334,11 +343,6 @@ class MissionBook:
                         continue
                     if data["passed"]:
                         checks.discard(data["check_id"])
-                    elif data["detail"].startswith("sensor "):
-                        # The world was not measured (sensor error or an abstaining
-                        # cognitive receipt): the strategy's effect is unknown, not
-                        # refuted. Keep waiting for a conclusive observation.
-                        continue
                     else:
                         # Surprise: executed, yet the world did not change. Replan
                         # instead of repeating; eligible again after a later pass.
@@ -767,9 +771,10 @@ class MissionEngine:
                         self.capability_faults[check["check_id"]] = (formed, detail, sensor.get("params", {}))
                 why = None if passed else unanswered(outcome.output)
                 if why:
-                    # Bounded retry and escalation follow the existing unmeasured-world path.
+                    # The receipt abstained: the world was not measured. The mission keeps its
+                    # retry cadence (learned routing settles the lead engine's resource failure
+                    # from these retries); _record_routing_outcomes never blames the strategy.
                     detail = f"sensor inconclusive ({why}): {detail}"
-                    sensor_errors.add(check["check_id"])
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
@@ -783,7 +788,7 @@ class MissionEngine:
         """Close the routing loop: an executed strategy that did not change the world
         lowers its capability's reliability for every future mission."""
         for aid, reason in m.failed.items():
-            if not reason.startswith("executed but "):
+            if not blames_strategy(reason):
                 continue
             done = [e.payload for e in self.journal.replay("mission.action")
                     if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid

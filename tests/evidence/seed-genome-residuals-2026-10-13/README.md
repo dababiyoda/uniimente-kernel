@@ -139,6 +139,7 @@ three re-runs ran. Timings come from this container and vary by machine; the tes
 - **Later full runs (same interpreter):**
   - at `ac6952a`, after the first frontier merge: 2821 passed, 5 failed, 16 skipped;
   - at `5362d13`, after the second: 2849 passed, 6 failed, 16 skipped.
+  - at `86096ac`, with §12: 2886 passed, 5 failed, 16 skipped.
   - **The failures:** five are the environmental Landlock tests named in `full-suite.log`. The sixth, in `test_greg_competency_compiler.py`, fails identically at the pristine frontier `d5bb5cb` and fails the frontier's own CI there. The frontier fixed it by `5287303`, which is merged here.
 - **Frozen inputs:** §9 and §5 changed no pinned file. §12 changes `cortex.py` and `compiler.py`, which the P6
   freezes hash as part of the `greg/cognition` closure. No recorded result changes: P6 v1 to v3 ran at their

@@ -222,3 +222,36 @@ class TestRecordAndDeterminism:
         assert types.count("capabilities.routing_outcome") == 1
         assert ledger.verify_chain()[0] is True
         assert gap.to_dict()["deficit"]["deficit_id"].startswith("sha256:")
+
+
+class TestRestart:
+    def test_track_record_survives_restart_from_the_ledger(self, tmp_path):
+        path = str(tmp_path / "ledger.jsonl")
+        genesis = "sha256:" + "e" * 64
+        ledger = EvidenceLedger(genesis, path=path)
+        fast = ("fast", ["deterministic_computation"], ["arithmetic"], "read_only", 0.0,
+                "read_only", 0.0)
+        slow = ("slow", ["deterministic_computation"], ["arithmetic"], "read_only", 1.0,
+                "read_only", 1.0)
+        router = _router(fast, slow, ledger=ledger)
+        problem = _problem("arithmetic", budget_usd=1.0)
+        first = router.route(problem)
+        for i in range(3):
+            router.record_outcome(first.decision_id, "fast@1.0.0", correct=False,
+                                  evidence_ref=f"audit-{i}", verified_by="independent-auditor")
+        ledger.close()
+
+        # A fresh process: new registry, same ledger file.
+        reopened = EvidenceLedger(genesis, path=path)
+        rebuilt = _router(fast, slow, ledger=reopened)
+        assert rebuilt.restore() == 3
+        assert rebuilt.calibration("fast@1.0.0", "arithmetic").incorrect == 3
+        assert [c.key for c in rebuilt.route(problem).selected] == ["slow@1.0.0"]
+        # Outcomes for decisions made before the restart still validate.
+        rebuilt.record_outcome(first.decision_id, "fast@1.0.0", correct=True,
+                               evidence_ref="audit-late", verified_by="independent-auditor")
+        assert rebuilt.calibration("fast@1.0.0", "arithmetic").trials == 4
+
+    def test_restore_refuses_without_a_ledger(self):
+        with pytest.raises(RouterError, match="no ledger"):
+            _router(CALC).restore()

@@ -211,7 +211,9 @@ class CapabilityRouter:
         self.ledger = ledger
         self._competencies: dict[str, Competency] = {}
         self._calibration: dict[tuple[str, str], Calibration] = {}
-        self._decisions: dict[str, RoutingDecision] = {}
+        # decision_id -> (problem_class, selected keys). Enough to validate
+        # an outcome, and rebuildable from the ledger after a restart.
+        self._decisions: dict[str, tuple[str, frozenset]] = {}
 
     # ------------------------------------------------------------ register
     def register(self, competency: Competency) -> Competency:
@@ -293,7 +295,8 @@ class CapabilityRouter:
                                         "deficit": deficit.deficit_id if deficit else None,
                                         "calibration": [(c.key, c.trials, c.reliability)
                                                         for c in selected]})
-        self._decisions[decision.decision_id] = decision
+        self._decisions[decision.decision_id] = (problem.problem_class,
+                                                 frozenset(c.key for c in selected))
         self._record("capabilities.routing_decision", {
             "decision_id": decision.decision_id, "problem_id": problem.problem_id,
             "problem_class": problem.problem_class,
@@ -366,24 +369,55 @@ class CapabilityRouter:
         decision = self._decisions.get(decision_id)
         if decision is None:
             raise RouterError("unknown routing decision")
-        if competency_key not in {c.key for c in decision.selected}:
+        problem_class, selected = decision
+        if competency_key not in selected:
             raise RouterError("outcome names a mechanism this decision did not select")
         if not evidence_ref:
             raise RouterError("an outcome requires an evidence reference")
         if not verified_by or verified_by == competency_key or \
                 verified_by.split("@", 1)[0] == competency_key.split("@", 1)[0]:
             raise RouterError("outcomes must be verified by someone other than the mechanism")
-        cal = self._calibration.setdefault((competency_key, decision.problem_class), Calibration())
+        cal = self._calibration.setdefault((competency_key, problem_class), Calibration())
         if correct:
             cal.correct += 1
         else:
             cal.incorrect += 1
         self._record("capabilities.routing_outcome", {
             "decision_id": decision_id, "competency": competency_key,
-            "problem_class": decision.problem_class, "correct": bool(correct),
+            "problem_class": problem_class, "correct": bool(correct),
             "evidence_ref": evidence_ref, "verified_by": verified_by,
             "reliability": round(cal.reliability, 4), "trials": cal.trials})
         return cal
+
+    # ------------------------------------------------------------- restart
+    def restore(self) -> int:
+        """Rebuild decisions and calibration from the ledger after a restart.
+        Competencies are not restored: they must be re-registered against
+        the current genome registry, so a retired genome cannot come back
+        through history. Returns the number of outcomes replayed."""
+        if self.ledger is None:
+            raise RouterError("no ledger to restore from")
+        ok, reason = self.ledger.verify_chain()
+        if not ok:
+            raise RouterError(f"ledger chain is broken; refusing to restore: {reason}")
+        self._decisions.clear()
+        self._calibration.clear()
+        replayed = 0
+        for record in self.ledger.records:
+            payload = record.payload if record.record_type == "event" else {}
+            kind = payload.get("type")
+            if kind == "capabilities.routing_decision":
+                self._decisions[payload["decision_id"]] = (
+                    payload["problem_class"], frozenset(payload["selected"]))
+            elif kind == "capabilities.routing_outcome":
+                cal = self._calibration.setdefault(
+                    (payload["competency"], payload["problem_class"]), Calibration())
+                if payload["correct"]:
+                    cal.correct += 1
+                else:
+                    cal.incorrect += 1
+                replayed += 1
+        return replayed
 
     def _record(self, event_type: str, payload: dict) -> None:
         if self.ledger is not None:

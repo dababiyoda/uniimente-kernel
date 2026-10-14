@@ -136,6 +136,8 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
     report["routing_knowledge"] = routing.routing_knowledge(journal)
     from greg import improvement
     report["learning"] = improvement.report(journal, journal.ledger)   # kept, rejected, reverted, expired
+    from greg import goal_gravity          # persistent goals: what woke, what was asked, what is stopped
+    report["goal_gravity"] = goal_gravity.morning_section(journal)
     report["report_digest"] = sha256_json(report)
     return report
 

@@ -77,7 +77,12 @@ async function refresh() {
     const status = (await api("/api/status")).data;
     const hb = status.background || {};
     $("state").textContent = `${hb.state || "unknown"} · boots ${status.boots} · chain ${status.security.chain_verified ? "verified" : "BROKEN"}`;
-    $("goals").replaceChildren(...status.goals.map((g) => el("li", `${g.mission_id}: ${g.achieved ? "achieved" : g.closure}`)));
+    $("goals").replaceChildren(...(status.missions || status.goals).map((g) => el("li", `${g.mission_id}: ${g.achieved ? "achieved" : g.closure}`)));
+    // Persistent Goal Gravity goals (founder-signed GOAL commands): read-only here; the missions act.
+    $("gravity").replaceChildren(...(status.gravity?.goals || []).map((g) =>
+      el("li", `${g.desired_state} — ${g.stop_label || g.status}` +
+        (g.open_requests.length ? ` · ${g.open_requests.length} decision(s) above` : "") +
+        ` · missions ${g.missions.join(", ")}`)));
     $("cognition").replaceChildren(...(status.cognition?.receipts || []).map((r) => {
       const item = el("li", `${r.problem_id}: ${r.answered ? "checked conditional result" : "needs evidence or review"}. ${r.next_step}`);
       const detail = el("details", "");

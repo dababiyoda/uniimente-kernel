@@ -19,6 +19,16 @@ Answer semantics (what each answer does, and what it never does):
   review cadence has elapsed since the answer.
 * ``change``: recorded; the spec is immutable, so a replacement goal must be
   authorized (``GoalRegistry.supersede``).
+
+Where routed asks and answers live is a store. The default
+(:class:`LedgerAttentionStore`) writes ``egregore.founder_ask`` /
+``egregore.founder_answer`` records on the loop's ledger, as before. A host
+that already owns the founder-ask path supplies its own store: the GREG body
+turns decision items into its one ask path and information items into
+notices, writes no ``egregore.founder_ask`` / ``egregore.founder_answer``
+record, and refuses unsigned answers (founder answers there are Ed25519-signed
+commands). :class:`MemoryAttentionStore` is the inert body-mode default: it
+dedupes in memory, writes nothing and refuses unsigned answers.
 """
 from __future__ import annotations
 
@@ -26,7 +36,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Any, Mapping, Sequence
 
-from .contracts import canonical_copy, digest, require_text
+from .contracts import ContractError, canonical_copy, digest, require_text
 from .goals import GoalRegistry, iso, parse_time
 
 URGENCY = ("emergency", "high", "normal", "low")
@@ -124,33 +134,101 @@ class Routing:
                 "suppressed": [list(s) for s in self.suppressed], "routed_at": self.routed_at}
 
 
-class FounderAttentionRouter:
-    ASK_RECORD = "egregore.founder_ask"
-    ANSWER_RECORD = "egregore.founder_answer"
+ASK_RECORD = "egregore.founder_ask"
+ANSWER_RECORD = "egregore.founder_answer"
 
-    def __init__(self, *, ledger: Any, registry: GoalRegistry, policy: AttentionPolicy | None = None,
-                 source: str = "spiffe://uniimente.internal/egregore/goal-gravity"):
+
+class LedgerAttentionStore:
+    """Default store: routed asks and founder answers as egregore records on the loop's ledger."""
+
+    accepts_unsigned_answers = True
+
+    def __init__(self, ledger: Any):
         self.ledger = ledger
-        self.registry = registry
-        self.policy = policy or AttentionPolicy()
-        self.source = require_text("source", source)
         self._open: dict[str, dict[str, Any]] = {}
         self._answers: dict[str, dict[str, Any]] = {}
         for record in getattr(ledger, "records", ()):
             rtype = getattr(record, "record_type", None)
-            if rtype == self.ASK_RECORD:
+            if rtype == ASK_RECORD:
                 item = record.payload["item"]
                 self._open[item["item_id"]] = item
-            elif rtype == self.ANSWER_RECORD:
+            elif rtype == ANSWER_RECORD:
                 self._answers[record.payload["item_id"]] = record.payload
                 self._open.pop(record.payload["item_id"], None)
+
+    def open_items(self) -> list[dict[str, Any]]:
+        return [canonical_copy(v) for v in self._open.values()]
+
+    def get_open(self, item_id: str) -> dict[str, Any] | None:
+        return self._open.get(item_id)
+
+    def is_open(self, item: AttentionItem) -> bool:
+        return item.item_id in self._open
+
+    def answer_for(self, item: AttentionItem) -> dict[str, Any] | None:
+        return self._answers.get(item.item_id)
+
+    def record_ask(self, item: AttentionItem, payload: Mapping[str, Any]) -> None:
+        self.ledger.append(ASK_RECORD, dict(payload))
+        self._open[item.item_id] = item.to_dict()
+
+    def record_answer(self, item_id: str, payload: Mapping[str, Any]) -> None:
+        self.ledger.append(ANSWER_RECORD, dict(payload))
+        self._answers[item_id] = dict(payload)
+        self._open.pop(item_id, None)
+
+
+class MemoryAttentionStore:
+    """Body-mode default: dedupes in memory, writes no record and refuses unsigned answers.
+
+    A host that owns the founder-ask path (the GREG body) replaces it with a store that turns
+    decisions into that path's asks. Nothing routed here ever reaches the founder by itself."""
+
+    accepts_unsigned_answers = False
+
+    def __init__(self):
+        self._open: dict[str, dict[str, Any]] = {}
+
+    def open_items(self) -> list[dict[str, Any]]:
+        return [canonical_copy(v) for v in self._open.values()]
+
+    def get_open(self, item_id: str) -> dict[str, Any] | None:
+        return self._open.get(item_id)
+
+    def is_open(self, item: AttentionItem) -> bool:
+        return item.item_id in self._open
+
+    def answer_for(self, item: AttentionItem) -> dict[str, Any] | None:
+        return None
+
+    def record_ask(self, item: AttentionItem, payload: Mapping[str, Any]) -> None:
+        self._open[item.item_id] = item.to_dict()
+
+    def record_answer(self, item_id: str, payload: Mapping[str, Any]) -> None:
+        raise ContractError("this host accepts founder answers only as signed founder commands")
+
+
+class FounderAttentionRouter:
+    ASK_RECORD = ASK_RECORD
+    ANSWER_RECORD = ANSWER_RECORD
+
+    def __init__(self, *, ledger: Any, registry: GoalRegistry, policy: AttentionPolicy | None = None,
+                 source: str = "spiffe://uniimente.internal/egregore/goal-gravity", store: Any = None):
+        self.ledger = ledger
+        self.registry = registry
+        self.policy = policy or AttentionPolicy()
+        self.source = require_text("source", source)
+        self.store = store if store is not None else LedgerAttentionStore(ledger)
+        for name in ("open_items", "get_open", "is_open", "answer_for", "record_ask", "record_answer"):
+            if not callable(getattr(self.store, name, None)):
+                raise ContractError(f"attention store must provide {name}()")
 
     @property
     def execution_authority(self) -> str:
         return "none"
 
     def open_asks(self) -> list[dict[str, Any]]:
-        return [canonical_copy(v) for v in self._open.values()]
+        return self.store.open_items()
 
     def route(self, items: Sequence[AttentionItem], *, now: datetime | str, channel: str = "immediate") -> Routing:
         routed_at = iso(parse_time(now))
@@ -161,10 +239,10 @@ class FounderAttentionRouter:
         seen: set[str] = set()
         ordered = sorted(items, key=lambda i: (URGENCY.index(i.urgency), -i.marginal_value, i.item_id))
         for item in ordered:
-            if item.item_id in seen or item.item_id in self._open:
+            if item.item_id in seen or self.store.is_open(item):
                 suppressed.append((item.item_id, "duplicate of an open or already-routed ask"))
                 continue
-            answer = self._answers.get(item.item_id)
+            answer = self.store.answer_for(item)
             if answer is not None:
                 if answer["decision"] != "defer":
                     suppressed.append((item.item_id, "already answered by founder"))
@@ -189,15 +267,18 @@ class FounderAttentionRouter:
         for item, lane in [(i, "immediate") for i in immediate] + [(i, "batched") for i in batched]:
             payload = {"source": self.source, "item": item.to_dict(), "lane": lane, "routed_at": routed_at,
                        "quiet_hours": quiet, "disposition": "pending_founder; no external channel contacted"}
-            self.ledger.append(self.ASK_RECORD, payload)
-            self._open[item.item_id] = item.to_dict()
+            self.store.record_ask(item, payload)
         return Routing(tuple(immediate), tuple(batched), tuple(suppressed), routed_at)
 
     def answer(self, item_id: str, *, decision: str, actor: str, note: str, now: datetime | str) -> dict[str, Any]:
         """Record a founder answer. An answer is a record; it is not the work and not a grant."""
+        if not getattr(self.store, "accepts_unsigned_answers", True):
+            # Refused before any effect is written: on a host whose founder answers are signed commands,
+            # an in-process call is not the founder.
+            raise ContractError("founder answers on this host arrive only as signed founder commands")
         if decision not in ANSWERS:
             raise ValueError(f"unknown answer {decision!r}")
-        item = self._open.get(item_id)
+        item = self.store.get_open(item_id)
         if item is None:
             raise ValueError("unknown or already answered ask")
         answered_at = iso(parse_time(now))
@@ -225,7 +306,5 @@ class FounderAttentionRouter:
         if decision == "defer":
             cadence = self.registry.get(item["goal_id"]).review_cadence_seconds
             payload["resurface_after"] = iso(parse_time(now) + timedelta(seconds=cadence))
-        self.ledger.append(self.ANSWER_RECORD, payload)
-        self._answers[item_id] = payload
-        self._open.pop(item_id, None)
+        self.store.record_answer(item_id, payload)
         return canonical_copy(payload)

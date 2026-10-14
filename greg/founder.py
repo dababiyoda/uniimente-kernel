@@ -50,12 +50,17 @@ COMMAND_KINDS = (
     "DEVICE_ENROLL",      # delegate a narrow, expiring subset of kinds to a phone/remote device key
     "DEVICE_REVOKE",
     "ANCHOR_CONFIGURE",   # enable/disable RFC 3161 anchoring of the ledger head at a pinned TSA
+    "GOAL",               # authorize (or supersede) a persistent Goal Gravity goal bound to signed missions
+    "GOAL_CONTROL",       # stop/resume/lower/never/mute/ask-before/forget/revoke one admitted goal
 )
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only
-# answer, criticize, pause, resume or stop. Missions, capabilities, key rotation and device
-# enrollment always need the founder key itself.
-DEVICE_KINDS = ("DECISION", "CRITIQUE", "LIFECYCLE", "BODY_PAUSE", "BODY_RESUME", "BODY_STOP")
+# answer, criticize, pause, resume or stop. Missions, goals, capabilities, key rotation and
+# device enrollment always need the founder key itself. GOAL_CONTROL is delegable only for
+# narrowing controls (greg/goal_gravity.py DEVICE_GOAL_CONTROLS): stop, lower, never, mute,
+# ask-before, forget, revoke a capability. Resuming, changing or revoking a goal needs the
+# founder key.
+DEVICE_KINDS = ("DECISION", "CRITIQUE", "LIFECYCLE", "BODY_PAUSE", "BODY_RESUME", "BODY_STOP", "GOAL_CONTROL")
 DEVICE_MAX_LIFETIME = timedelta(days=90)
 READ_SKEW = timedelta(seconds=60)
 CLOCK_SKEW = timedelta(minutes=5)
@@ -63,6 +68,28 @@ CLOCK_SKEW = timedelta(minutes=5)
 
 class FounderAuthError(ValueError):
     """Unauthenticated, replayed, expired or malformed founder interaction."""
+
+
+def spent_nonce(event_type: str, payload) -> str | None:
+    """The nonce one retained command record spends: the one predicate ``Body`` (replay refusal) and the
+    goal tick (``greg.goal_gravity.founder_facts``) share.
+
+    An accepted command spends its own top-level ``nonce``; a verified-then-rejected command spends its
+    ``consumed`` nonce. A nonce named anywhere else in a record (an ``envelope`` field, say) spends
+    nothing. ``Body`` counts every such record (fail closed: a forged record can only make it refuse a
+    command, which the founder sees as REJECTED); the goal tick counts an accepted record's nonce only
+    when that record verified at its ledger position, so a forged record can never hide a signed
+    command the body applied."""
+    if not isinstance(payload, dict):
+        return None
+    if event_type == "greg.command.accepted":
+        nonce = payload.get("nonce")
+    elif event_type == "greg.command.rejected":
+        consumed = payload.get("consumed")
+        nonce = consumed.get("nonce") if isinstance(consumed, dict) else None
+    else:
+        return None
+    return nonce if isinstance(nonce, str) else None
 
 
 def stamp(value: datetime) -> str:
@@ -92,6 +119,9 @@ def key_id(public_hex: str) -> str:
 def _signing_bytes(envelope: dict) -> bytes:
     unsigned = {k: v for k, v in envelope.items() if k != "signature"}
     return ("uniimente-greg-founder-command-v1\n" + canonical_json(unsigned)).encode("utf-8")
+
+
+signing_bytes = _signing_bytes   # public: retained envelopes are re-verified from the ledger (greg/goal_gravity.py)
 
 
 # -- key custody on the founder's own device ------------------------------------

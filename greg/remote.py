@@ -31,7 +31,7 @@ from pathlib import Path
 import secrets
 
 from events.spine import EventSpine
-from greg.body import Layout, device_delegations, status
+from greg.body import Layout, consumed_nonces, device_delegations, status
 from greg.founder import FounderAuthError, FounderVerifier
 from greg.journal import Journal
 from provenance.ledger import EvidenceLedger
@@ -74,7 +74,7 @@ class _Reader:
             elif event.type == "greg.founder.key_rotated":
                 founder.pop(event.payload["old_key_id"], None)
                 founder[event.payload["new_key_id"]] = event.payload["new_public_key"]
-        nonces = {e.payload["nonce"] for e in self.journal.replay("command.accepted")}
+        nonces = consumed_nonces(self.journal)
         self.verifier = FounderVerifier(body_id=self.config["body_id"], enrolled=founder,
                                         seen_nonce=nonces.__contains__, devices=device_delegations(self.journal))
         return self

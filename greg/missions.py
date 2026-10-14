@@ -22,6 +22,8 @@ state. Process completion never closes a mission: only re-observed evidence does
 """
 from __future__ import annotations
 
+import os
+
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import json
@@ -740,7 +742,8 @@ class MissionEngine:
         """No strategy is not blindness: keep re-observing at cadence. If the world heals
         without GREG acting, the escalation is withdrawn as moot (a body event, never a
         founder answer) and the mission resumes; otherwise it keeps waiting, silently."""
-        if m.next_observe_at and now < datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")):
+        if m.next_observe_at and now < datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")) \
+                and not self._deliverable_arrived(m):
             return {"state": "WAITING", "blocker": m.blocker, "until": m.next_observe_at}
         failing, evidence = self._observe(m, now)
         if failing is None:
@@ -762,8 +765,42 @@ class MissionEngine:
         self._unblock(m, why)
         self.book.rebuild()
         if failing:                                  # other checks remain: pursue them from the next step
+            resumed = self.book.missions[m.mission_id]
+            if resumed.next_observe_at and now < datetime.fromisoformat(resumed.next_observe_at.replace("Z", "+00:00")):
+                self._schedule(resumed, now, 0)      # observed early: the next step must not wait out the old slot
             return {"state": "RESUMED", "still_failing": sorted(failing)}
         return self._setpoint_reached(self.book.missions[m.mission_id], now, evidence)
+
+    def _deliverable_arrived(self, m: MissionState) -> bool:
+        """A person's work landed since GREG last looked: observe now, not at the next cadence slot.
+
+        Only for a human_work blocker, only the file paths the founder-signed mission's own fs.read
+        sensors name (the checks this work advances, and its declined_if), and only their metadata:
+        no content is read, no grant is issued and nothing is recorded until the governed
+        observation runs. ctime counts as well as mtime, because a downloaded or copied file keeps
+        an old mtime but gets a new ctime when it lands. Without this, an hourly cadence left each
+        of a business case's four human steps unnoticed for up to an hour.
+        """
+        if m.blocker.get("type") != "human_work" or not m.next_observe_at:
+            return False
+        last = datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")) - timedelta(
+            seconds=m.spec["closure"].get("cadence_seconds", 3600))
+        waiting = set(m.blocker.get("failing_checks", []))
+        sensors = [c["sensor"] for c in m.spec["success_checks"] if c["check_id"] in waiting]
+        strategy = next((s for s in m.spec["strategies"] if s["action_id"] == m.blocker.get("action_id")), None)
+        if strategy and strategy.get("declined_if"):
+            sensors.append(strategy["declined_if"]["sensor"])
+        for sensor in sensors:
+            path = (sensor.get("params") or {}).get("path")
+            if sensor.get("capability") != "fs.read" or not isinstance(path, str):
+                continue
+            try:
+                st = os.stat(path)
+            except OSError:
+                continue
+            if max(st.st_mtime, st.st_ctime) > last.timestamp():
+                return True
+        return False
 
     def _declined(self, m: MissionState, now: datetime):
         """(detail, receipt) when the person this step waits on is observed to have declined, else None."""

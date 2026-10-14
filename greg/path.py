@@ -268,9 +268,41 @@ def human_work_shared(journal: Journal) -> dict:
                        "acceptance, not provable here"}
 
 
+def venture_compounding(journal: Journal) -> dict:
+    """A capability proven in one venture made a second venture faster or cheaper, and the second
+    venture's verified revenue funds every obligation and reserve with surplus left to reinvest.
+
+    The transplant is a ratified SOP taught by one venture's verified cases and run, at least
+    twice, as closed N3 cases in another venture, with fewer founder interventions, less model
+    spend or less time per outcome and no quality failure. The books run that venture's reconciled
+    revenue through capital/allocation-policy.yaml against the amounts Alfonso signed; GREG moves
+    and allocates no money. Whether a second venture could stand alone is Alfonso's judgment.
+    """
+    from greg import venture_books
+    moved = venture_books.transfers(journal)
+    proven = [t for t in moved if t["faster_or_cheaper"]]
+    ledgers = venture_books.books(journal)
+    funded = [b for b in ledgers if b["venture"] in {t["to_venture"] for t in proven}
+              and venture_books.reinvestable(b)]
+    missing = []
+    if not moved:
+        missing.append("no ratified procedure from one venture has run in another")
+    elif not proven:
+        missing.append("no transplant was faster or cheaper: " + "; ".join(
+            f"{t['procedure_id']} {t['from_venture']}->{t['to_venture']}: {', '.join(t.get('why_not', []))}"
+            for t in moved))
+    if proven and not funded:
+        missing.append("the second venture's verified revenue leaves no surplus after signed obligations and "
+                       "reserves (or none were signed)")
+    return {"met": not missing, "value": len(funded), "transfers": moved, "books": ledgers,
+            **({"missing": missing} if missing else {}),
+            "reality": "transfer, reconciliation and the waterfall are computed from the ledger; GREG moves no money; "
+                       "whether the second venture could stand alone is Alfonso's judgment"}
+
+
 PREDICATES = {"vepmc_at_least_one": vepmc_at_least_one, "genesis_closure": genesis_closure,
               "business_loop_closed": business_loop_closed, "sop_compounding": sop_compounding,
-              "human_work_shared": human_work_shared}
+              "human_work_shared": human_work_shared, "venture_compounding": venture_compounding}
 
 
 def position(journal: Journal | None, data: dict | None = None) -> dict:

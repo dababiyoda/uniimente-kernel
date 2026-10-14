@@ -45,7 +45,7 @@ REQUIRED_CHECKS = ("chain_intact", "founder_signature_verified", "checks_rederiv
                    "approval_boundaries_honored")
 CLASS_ORDER = ("read_only", "internal_write", "external_contact")
 PRE_APPROVABLE = ("read_only", "internal_write")     # contact with the world and spend always ask
-MASKED = (("mission_id",), ("light_cone", "horizon"), ("provenance",))
+MASKED = (("mission_id",), ("light_cone", "horizon"), ("provenance",), ("venture",))
 ROLE_ORDER = {"input": 0, "value": 1, "param": 2, "target": 3, "text": 4}
 BUILTIN_NAMES = ("mission_id", "mission_dir")
 MIN_SUBSTITUTION = 2
@@ -239,13 +239,35 @@ def _set(tree, path, value):
 
 
 def _strip(spec: dict) -> dict:
-    out = copy.deepcopy({k: v for k, v in spec.items() if k not in ("mission_id", "provenance")})
+    out = copy.deepcopy({k: v for k, v in spec.items() if k not in ("mission_id", "provenance", "venture")})
     out.get("light_cone", {}).pop("horizon", None)
     return out
 
 
 def _env(mission_id: str, slots: dict) -> dict:
     return {"mission_id": mission_id, "mission_dir": mission_id.replace(":", "_"), **slots}
+
+
+def _seeds(specs: list[dict]) -> dict:
+    """Template inputs every run recorded and that differed between runs: the first candidates for slots.
+
+    A template records its normalized inputs in the signed provenance (attribution, never
+    authority). Seeding derivation with them lets a procedure ask only for what a person chose
+    (a buyer, a price), instead of every text that repeats it. The workflow must still rebuild
+    every run exactly, so a misleading record cannot change what a run does."""
+    records = [(s.get("provenance") or {}).get("inputs") for s in specs]
+    if not all(isinstance(r, dict) for r in records):
+        return {}
+    names = set.intersection(*(set(r) for r in records))
+    seeds = {}
+    for name in sorted(names):
+        values = [r[name] for r in records]
+        if re.fullmatch(r"[a-z][a-z0-9_]*", name) and name not in BUILTIN_NAMES \
+                and all(isinstance(v, (str, int, float)) and not isinstance(v, bool) for v in values) \
+                and all(type(v) is type(values[0]) for v in values) \
+                and any(not _same(v, values[0]) for v in values) and all(len(str(v)) >= MIN_SUBSTITUTION for v in values):
+            seeds[name] = values
+    return seeds
 
 
 def generalize(specs: list[dict]) -> dict:
@@ -260,7 +282,8 @@ def generalize(specs: list[dict]) -> dict:
     authority = [_dotted(p) for p in varying if _role(p) is None]
     if authority:
         raise SopError("these differ between runs but are not parameters: " + ", ".join(authority[:5]))
-    env = [_env(s["mission_id"], {}) for s in specs]
+    seeds = _seeds(specs)
+    env = [_env(s["mission_id"], {name: values[i] for name, values in seeds.items()}) for i, s in enumerate(specs)]
     slots, holes = {}, {}
     for path in sorted(varying, key=lambda p: (ROLE_ORDER[_role(p)], paths.index(p))):
         values = [t[path] for t in tables]
@@ -272,11 +295,15 @@ def generalize(specs: list[dict]) -> dict:
             raise SopError(f"{_dotted(path)} varies in type or is not a single value")
         if isinstance(values[0], str) and not all(values):
             raise SopError(f"{_dotted(path)} is empty in a run")
-        name = _slot_name(path, specs[0], slots)
+        name = _slot_name(path, specs[0], {**seeds, **slots})
         slots[name] = {"type": _slot_type(values[0]), "at": _dotted(path), "role": _role(path), "examples": values}
         for names, value in zip(env, values):
             names[name] = value
         holes[path] = {"$slot": name}
+    used = {m.group(1) for hole in holes.values() if "$format" in hole for m in TOKEN.finditer(hole["$format"])
+            if m.group(1)}
+    slots = {**{name: {"type": _slot_type(values[0]), "at": "provenance.inputs." + name, "role": "input",
+                       "examples": values} for name, values in seeds.items() if name in used}, **slots}
     skeleton = _strip(specs[0])
     for path, hole in holes.items():
         _set(skeleton, path, hole)
@@ -373,6 +400,9 @@ def propose(journal: Journal) -> list[dict]:
             record["workflow_unavailable"] = str(exc)[:300]
         else:
             workflow["horizon_days"] = _horizon_days([registered[mid] for mid in missions])
+            ventures = {registered[mid].payload["spec"].get("venture") for mid in missions}
+            if len(ventures) == 1 and None not in ventures:
+                workflow["venture"] = ventures.pop()
             record["workflow"] = workflow
             record["pre_approvable"] = _pre_approvable(journal, missions, workflow["skeleton"])
         journal.record("sop.proposed", record, key=pid)
@@ -435,7 +465,7 @@ def _within(cone: dict, capability: str, target: str) -> tuple[bool, bool]:
 
 
 def instantiate(record: dict, slots: dict, *, now: datetime | None = None, horizon_days: float | None = None,
-                mission_id: str | None = None) -> dict:
+                mission_id: str | None = None, venture: str | None = None) -> dict:
     """A complete mission for one run of a ratified procedure: zero model calls; Alfonso signs it."""
     from greg.missions import validate_mission
     workflow = record.get("workflow")
@@ -461,6 +491,8 @@ def instantiate(record: dict, slots: dict, *, now: datetime | None = None, horiz
             cone["targets"] = [*cone["targets"], strategies[step["action_id"]]["target"]]
         if CLASS_ORDER.index(step["consequence_class"]) > CLASS_ORDER.index(cone["max_consequence_class"]):
             cone["max_consequence_class"] = step["consequence_class"]
+    if venture or workflow.get("venture"):          # a procedure taught in one venture may run in another
+        spec["venture"] = venture or workflow["venture"]
     spec["provenance"] = {"origin": ORIGIN + record["procedure_id"], "planner": "greg.sop/1",
                           "procedure_id": record["procedure_id"], "ratification": record["command_digest"],
                           "slots": slots, "model_calls": 0, "model_cost_usd": 0.0}
@@ -483,7 +515,7 @@ def instantiates(record: dict, spec: dict, *, registered_at: str | None = None) 
         return None
     try:
         expected = instantiate(record, slots, now=_instant(spec["light_cone"]["horizon"]) - timedelta(
-            days=workflow["horizon_days"]), mission_id=spec["mission_id"])
+            days=workflow["horizon_days"]), mission_id=spec["mission_id"], venture=spec.get("venture"))
     except (SopError, ValueError, KeyError):
         return None
     expected["light_cone"]["horizon"] = spec["light_cone"]["horizon"]
@@ -552,11 +584,18 @@ def trend(journal: Journal) -> dict:
     costs = _mission_costs(journal)
     accepted = ratified(journal)
 
+    closed_at = {e.payload["mission_id"]: e.occurred_at for e in journal.replay("mission.achieved")}
+
     def row(mid):
         c = costs[mid]
+        hours = None
+        if mid in closed_at and mid in registered:   # to 0.01 h: nothing finer is a real difference in pace
+            hours = round(max(0.0, (_instant(closed_at[mid]) - _instant(registered[mid].occurred_at))
+                              .total_seconds() / 3600), 2)
         return {"mission_id": mid, "interventions": sum(c["interventions"].values()),
                 "by_kind": dict(sorted(c["interventions"].items())), "model_calls": c["model_calls"],
-                "model_cost_usd": round(c["model_cost_usd"], 6), "cost_known": c["cost_known"]}
+                "model_cost_usd": round(c["model_cost_usd"], 6), "cost_known": c["cost_known"],
+                "hours_to_close": hours}
 
     report = []
     for event in journal.replay("sop.proposed"):

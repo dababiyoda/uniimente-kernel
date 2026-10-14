@@ -57,7 +57,7 @@
   "owner": "GREG cognition maintainers; Alfonso remains root human authority",
   "state": "active",
   "lifecycle_state": "active",
-  "implementation_state": "in progress 2026-10-14: P6 v3 measured (natural family F6 lifts; natural families 1 of 2); genome admission v2 measured (21 of 32 admitted; basal_bayes_filter stale at 1.0.1 pending re-admission); the 2026-10-14 independent review's 15 defects fixed; human judgment is bound to its own recorded question; forecast calibration is live through a founder-signed REALIZATION command. P4 decisive retest applied; P8 two cycles (both REJECT). No genome is attached.",
+  "implementation_state": "in progress 2026-10-14: P6 v3 measured (natural family F6 lifts; natural families 1 of 2); genome admission v2 measured (21 of 32 admitted; basal_bayes_filter stale at 1.0.1 pending re-admission); the 2026-10-14 independent review's 15 defects fixed; human judgment is bound to its own recorded question; forecast calibration is live through a founder-signed REALIZATION command. P4 decisive retest applied; P8 two cycles (both REJECT). No genome is attached; after the audit: the compiler reaches the cortex organs (Z3, CP-SAT, Fermi, evidence/causal, semantic), parses consequence strictly, ranks ties on held-out latency, records its attach and human-judgment asks once on the body, demotes methods with significantly poor settled outcomes, keeps stage counterarguments and records the geometry the inputs imply; P8 cycle 3 rejected; VPL accounting published post hoc.",
   "binding_scope": "Reversible implementation, frozen evaluation, review and draft PRs. Destination continuity for the whole Mind.",
   "authority_scope": "No merge, deployment, publication, contact, spending beyond signed caps, credential change or authority expansion.",
   "constitutional_constraints": [
@@ -86,7 +86,9 @@
     "P6 v3 negative evidence: the routed and static arms gave identical answers on all 90 days (the lift is composition, not routing); against the weekly-mean practitioner pipeline composition loses on day count (40-50) and on cost at P = 3; the gain is the predictive quantile (median-forecast ablation 29% dearer); the decision layer is declared, the data are one bank in 2003, and the fpp3 (GPL-3) redistribution is a founder decision",
     "Admission v2 negative evidence: basal_pid SUPERSEDED (0-30 against the simulation-optimised PI, 2-28 in v1), develop_constraint_release DEFAULT -> NICHE (5-15 against random restart, significant), develop_repair's unreliable-controller win did not replicate (7-8); two of eight statuses re-measured under an unchanged rule moved one rung down, both from a v1 rule boundary",
     "Admission v2 data reuse: forecast_quantile's 30 held-out series had all been used by P8's forecasting cycle (the pool is finite and seeds wrap around it); its v2 DEFAULT is a replication on reused data, and the harness now checks data identities (209f72c)",
-    "Independent review of bb65d6f..8e37cd8: 15 reproduced defects, all fixed with regression tests (350627a, d05c1dc, d34dde6, 209f72c); among them a high-severity one: any signed founder answer to any request decided a human-judgment question; and a multiple-testing artefact behind 168cf3a's MISCALIBRATED claim (recomputed: CALIBRATED at n = 20, coverage below nominal at every level, underpowered)"
+    "Independent review of bb65d6f..8e37cd8: 15 reproduced defects, all fixed with regression tests (350627a, d05c1dc, d34dde6, 209f72c); among them a high-severity one: any signed founder answer to any request decided a human-judgment question; and a multiple-testing artefact behind 168cf3a's MISCALIBRATED claim (recomputed: CALIBRATED at n = 20, coverage below nominal at every level, underpowered)",
+    "P8 cycle 3 (constraint-release search policy, pre-registered 5287303): REJECT at the adversarial gate: the best candidate (recombination 0.3 -> 0.13) was 20% better on train but 6.3% worse with validation cut to four cases (tolerance 5%); held-out 7300-7389 unspent; section 31 item 7 stays not met after three cycles (docs/evidence/greg-protected-evolution/2026-10-14/README.md)",
+    "VPL accounting (post hoc, 2026-10-14): every lift costs latency (1.5x-5.2x the best constituent's median); routing chose the static recipe on every item wherever that recipe could decide (F1, F5, F6), so its measured contribution is choosing a recipe that fits at all (F2, F2R, F3, F4); no practitioner pipeline in a run was beaten on day count where measured (F6) (docs/evidence/greg-composition-lift/2026-10-14-accounting/README.md)"
   ],
   "dependencies": [
     "INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT",
@@ -124,7 +126,9 @@
     "docs/evidence/greg-protected-evolution/2026-10-09/README.md",
     "docs/evidence/greg-genome-admission/2026-10-13-v1/README.md",
     "docs/evidence/greg-composition-lift/2026-10-14-v3/README.md",
-    "docs/evidence/greg-genome-admission/2026-10-14-v2/README.md"
+    "docs/evidence/greg-genome-admission/2026-10-14-v2/README.md",
+    "docs/evidence/greg-protected-evolution/2026-10-14/README.md",
+    "docs/evidence/greg-composition-lift/2026-10-14-accounting/README.md"
   ],
   "failure_condition": "A mechanism, benchmark or passing suite is reported as the completed Mind; frozen evidence is retuned; a layer is left permanently unbuilt; or any cognition result expands authority.",
   "next_gate": "Attach decisions for the admitted genomes are the founder's. Next measured gates: re-admit basal_bayes_filter 1.0.1 on fresh seeds; a composition family that uses an admitted L1 genome (filter -> control); P8 cycle 3 on an admitted genome's configuration space; new forecasting data before any further forecast admission (the M4 weekly pool is exhausted).",

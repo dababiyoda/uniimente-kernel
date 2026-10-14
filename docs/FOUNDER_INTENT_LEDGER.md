@@ -44,6 +44,16 @@ Progress 2026-10-14 (measured, frozen, negative results kept):
   - High severity: any signed founder answer to any request decided a human-judgment question. Human judgment is now bound to its own recorded question, and only the founder's signed answer to that request decides.
   - The "miscalibrated" forecast claim was a multiple-testing artefact; it is corrected.
 - **Product delta:** forecast calibration is live through a founder-signed `greg realize`, and `greg cognition calibration` reports it.
+- **After the directive audit:**
+  - The Competency Compiler now reaches the cortex organs (Z3, CP-SAT, Fermi, evidence/causal, semantic).
+  - It records its attach and human-judgment asks on the body, once each.
+  - It demotes methods whose settled outcomes on the body are significantly poor.
+  - It reports the geometry a request's inputs imply.
+- **P8 cycle 3** ([evidence](evidence/greg-protected-evolution/2026-10-14/README.md)) targeted the constraint-release search policy. It was **REJECTED** at the adversarial gate: the candidate was 20% better on training, but 6.3% worse when validation was cut to four cases. Protected evolution has still never kept an improvement.
+- **VPL accounting** ([post hoc](evidence/greg-composition-lift/2026-10-14-accounting/README.md)):
+  - every lift costs latency (1.5-5.2x);
+  - routing adds nothing within a family;
+  - no practitioner pipeline was beaten where one was measured.
 - **Next gate:**
   - re-admit `basal_bayes_filter` 1.0.1;
   - a composition family that uses an admitted Layer 1 genome;

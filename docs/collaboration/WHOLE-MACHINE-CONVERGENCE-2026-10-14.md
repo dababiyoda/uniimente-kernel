@@ -210,8 +210,8 @@ mission. Three attacks were added this increment; the rest existed and were loca
 | Forged or selectively disclosed evidence package | `test_cognition_disclosure::test_the_cli_exports_without_sending_and_the_recipient_check_needs_no_greg_state` (signed mission on a real body, CLI export, tampered package refused), `test_tampering_is_detected_on_the_recipient_side`, `test_a_disagreeing_receipt_over_the_same_input_cannot_be_left_out` | INTEGRATED (corrected from COMPONENT in increment 5) |
 | Revoked capability reused after restart | `test_greg_adversarial_machine::test_revoked_engine_is_not_reused_after_restart` | INTEGRATED |
 | Loss of a vendor, API, network or node | **new** `test_greg_confined_egress::test_network_loss_is_an_unmeasured_world_not_a_failed_goal_and_recovery_needs_no_founder`, `test_sustained_network_loss_escalates_once_instead_of_looping`; `test_greg_models::test_genesis_builds_through_whichever_vendor_is_up_and_records_route_health`; `test_greg_ollama::test_local_model_refusal_is_terminal_and_outage_can_fail_over`; `test_greg_cognition_process::test_cli_composition_survives_sigkill_without_duplicate_computation` | INTEGRATED (network, node); COMPONENT (model vendor) |
-| Profitable action that violates participant rights | `test_lawful_leverage::test_consent_harm_vector_consequence_and_path_are_gates_before_estimation`, `test_a_surface_that_names_third_parties_needs_consent_covering_every_one`; `test_institutional_leverage::test_do_nothing_wins_over_net_harm` | COMPONENT |
-| Local metric improving while the institution degrades | `test_greg_resilience::test_a_local_metric_rising_while_the_system_degrades_is_flagged` (now also a Mission Control warning) | COMPONENT (over a real journal) |
+| Profitable action that violates participant rights | **new (increment 7)** `test_greg_adversarial_machine::test_a_more_profitable_offer_that_pressures_buyers_is_refused_and_the_plain_one_is_sold`, `test_selling_content_whose_own_rights_deny_a_license_is_refused_and_reaches_the_founder`; `test_greg_owned_company::test_participant_rights_gate_both_routes_to_the_catalog_and_the_sale`; `test_lawful_leverage::test_consent_harm_vector_consequence_and_path_are_gates_before_estimation`, `test_a_surface_that_names_third_parties_needs_consent_covering_every_one`; `test_institutional_leverage::test_do_nothing_wins_over_net_harm` | INTEGRATED (from increment 7; FIXTURE commerce) |
+| Local metric improving while the institution degrades | **new (increment 7)** `test_greg_adversarial_machine::test_a_strategy_that_lifts_its_own_metric_by_breaking_a_passing_check_is_blamed_not_repeated` (with and without a route that keeps both); `test_greg_resilience::test_a_local_metric_rising_while_the_system_degrades_is_flagged` (a Mission Control warning across missions) | INTEGRATED (from increment 7) |
 | Duplicate Kernel, hidden escalation, unapproved activation | `test_greg_cognition::test_no_profile_creates_a_second_authority_or_changes_legacy_digests`; `test_greg_gravity::test_a_sensed_situation_cannot_widen_authority`; `test_greg_recombine::test_without_auto_attach_greg_constructs_nothing_into_service`; `test_greg_adversarial_machine::test_a_paid_worker_outside_the_signed_envelope_never_runs` | INTEGRATED |
 | Interrupted capability construction or self-repair | **new** `test_greg_adversarial_machine::test_an_interrupted_capability_construction_resumes_once_and_serves_nothing_half_built` (process death before and after the attach is journaled); `test_greg_self_repair::test_tampered_capability_is_reformed_after_restart_instead_of_crash_looping` | INTEGRATED (construction); restart only (self-repair) |
 
@@ -386,7 +386,8 @@ ACHIEVED; the test asserts it does not.
 
 Two section 13 classes now remain component-level: a profitable action that violates participant rights, which is
 reached through `greg gravity` and the Lawful Leverage Foundry rather than a mission capability, and a local metric
-damaging the whole.
+damaging the whole. (Increment 7 brings both onto signed missions, after finding that each was reachable on the
+mission path after all.)
 
 While writing this, a sensor on `foundry.query` system 34 `report` failed with `KeyError: 'steps'`. This is the
 dispatch rule working as designed: the canonical attribution module (#132) serves its own `report`, and the journey
@@ -408,6 +409,61 @@ socket of its own, through the relay and the mandated proxy, exactly as `http.ge
   `test_a_confined_fetch_refuses_header_injection_before_launch` covers the refusals.
 - **Still PARTIAL.** The browser capabilities still run unconfined. Coding workers run in bubblewrap but keep host
   networking for their provider instead of the relay. Confined egress is still opt-in.
+
+## Increment 7 (same day): the last two section 13 classes, and a mutant that survived in CI
+
+Both attacks found real holes on the mission path. Each was reproduced on a real body before it was fixed, and each
+new test fails on the old code.
+
+### A profitable action that violates participant rights
+
+- **The hole.** A signed mission could produce media on Foundry #35 and publish an offer straight onto #54, around
+  #49's editorial constitution. Reproduced through the Foundry bridge: an offer for content whose own provenance
+  read "copied from a third party; no license", at four times the price, with the copy "Act now: only 2 hours left
+  before you lose access forever. You'll regret waiting.", was published and discoverable for sale. The constitution
+  only ever checked a charter's declared rule list, never what was being sold.
+- **The fix.** `foundry/systems/offers.participant_rights` gates the one chokepoint both routes share
+  (`offers.publish`), and again at sale (`_order`), so an offer retained before the gate or written around it is never
+  sold. It refuses offer copy that GREG's own ask screen (`greg.asks.RULES`) flags as manufactured urgency or
+  emotional manipulation; no second list was written. It also refuses content whose declared rights deny a right to
+  sell it. Every rights declaration GREG already uses passes.
+- **On a signed mission.** The first-ranked strategy lists at 4900 cents with pressured copy. It is REFUSED on
+  participant rights, GREG routes to the plain offer at 1200, and only that one is ever sold. When the only route
+  sells unlicensed content, nothing is listed or sold, the mission never closes, and the founder is asked once.
+- **Limits.** This screens declarations and wording. It does not prove title, and wording can evade a pattern
+  screen. A false positive is possible: a guide about emergencies would be refused for the word "emergency". The
+  refusal names the matched phrase so the founder can reword. Commerce is FIXTURE only; no money moves.
+
+### A local gain that damages the whole
+
+- **The hole.** The engine judged each strategy only by the checks it declares it advances. On a signed mission, one
+  strategy raised throughput by breaking safety, which had passed, and another restored safety by breaking
+  throughput. The body alternated them on every tick: 14 real writes in 14 ticks, indefinitely. It never tried the
+  strategy that satisfied both, and never asked. The existing decoupling warning could not see it, because every
+  action reported DONE.
+- **The fix (`greg/missions.py`, projection only, no new event).** A check that passed just before an action ran,
+  and that the action does not advance, is watched. If its next real measurement fails, the action is blamed
+  (`regressed <check>, which passed before it ran`) and is not re-run automatically. Drift never washes that blame
+  out. An unmeasured check is not a regression.
+- **Outcome.** With a route that keeps both checks, GREG takes it after two writes and closes. Without one, it asks
+  once. The ask's `why_now` names the trade-off ("GREG will not trade one for the other on its own") and its evidence
+  carries `tradeoffs`. Writing stops, and the plant is left as GREG found it, safe.
+- **Limits.** Blame is by sequence, not proven causation. World drift between an action and the next observation is
+  blamed on the action, which errs toward not repeating it. Only the next observation of each check counts.
+
+### CI: a mutant survived on the runner (`5170dbb`)
+
+- **What failed.** CI on `5170dbb` failed the worker-appraisal mutant guard: "read-only journal propagation" was
+  SURVIVED_OR_INVALID. Every test and the verifier passed. `3356be9`, before the #157 extraction, was green.
+- **Root cause, reproduced.** On a host without a usable bubblewrap envelope, the test process uses the scripted
+  envelope, but the separate appraiser process cannot. It cannot re-run the acceptance tests, so it refutes every
+  worker mission. The test asserted only REFUTED, so it passed for the wrong reason, and the mutant survived. I
+  reproduced this by removing bubblewrap from this container: the mutant survived, as it did in CI.
+- **Fix.** The appraiser now records the re-observed capability's own findings ("...; because: ..."). The Proof view
+  therefore no longer shows a forged acceptance and a host that cannot run the envelope as the same "world no longer
+  matches". The test asserts the binding reason. All three mutants are caught with and without bubblewrap.
+- **What this confirms.** This is CI evidence for an open item: the GitHub runner does not provide the worker
+  envelope to the appraiser. Worker missions there are refuted, not accepted, which fails closed.
 
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 

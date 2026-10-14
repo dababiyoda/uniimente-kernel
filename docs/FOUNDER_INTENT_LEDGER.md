@@ -20,6 +20,9 @@ The founder's OPUS MAXIMUS continuation directive is implemented on draft branch
   - money kept in separate columns;
   - recovery evidence on the Proof view;
   - a section 13 attack map covering all 14 classes, with three new integrated attacks: disagreeing intelligences, network loss and interrupted construction.
+- Increments 6 and 7 bring the last three section 13 classes onto signed missions: stale community state, a profitable action that violates participant rights, and a local gain that damages the whole. Two were real holes on the mission path:
+  - an offer with pressured copy for unlicensed content could be published straight onto Foundry #54, around the company's editorial constitution; it is now refused at publication and at sale;
+  - the engine oscillated forever between a strategy that broke safety and one that broke throughput; it now blames the one that broke a passing check and asks the founder to decide the trade-off.
 - State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
 
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13

@@ -41,16 +41,24 @@ realised rate) -> erlang_c_staffing on that rate. Because the Erlang requirement
 the arrival rate, staffing to the q* forecast quantile is the expected-cost minimiser under the
 predictive distribution; neither intelligence can produce it alone (the forecaster has no queueing model,
 the queueing model has no predictive distribution).
+
+0.4 (P6 v5) adds ``track_then_staff``, the first recipe whose first stage is a Layer 1 (basal) genome:
+kalman_track follows today's demand multiplier z_j = N_j / plan_j against a standing plan (the observed blocks
+whose plan is at least half the day's mean plan; fewer than 3 such blocks abstains), and the q* = 1 - c/P
+quantile of the predicted multiplier, m = position + z(q*) sqrt(position variance + r), scales the plan of the
+decision block into an arrival rate -> erlang_c_staffing at that rate. The tracker has no queueing model; the
+queueing model has no view of how today departs from the plan.
 """
 from __future__ import annotations
 
 import copy
 import math
+from statistics import NormalDist, fmean
 import time
 
 from .contracts import CognitionError, canonical, digest, strict_data
 
-SCHEMA = "greg-composition/0.3"
+SCHEMA = "greg-composition/0.4"
 MAX_REQUEST_BYTES = 192 * 1024
 DECL = {"consequence_class": "read_only", "reversibility": "reversible"}
 
@@ -77,6 +85,10 @@ RECIPES = {
     "forecast_then_staff": {"requires": ("arrival_histories", "staffing"),
                             "stages": ("forecast", "staff"),
                             "operations": ("forecast_distribution", "erlang_c_staffing")},
+    # Basal tracker of today's multiplier against a standing plan -> critical-fractile rate -> Erlang C staffing.
+    "track_then_staff": {"requires": ("observed_today", "standing_plan", "staffing"),
+                         "stages": ("track", "staff"),
+                         "operations": ("kalman_track", "erlang_c_staffing")},
 }
 OPERATION_STAGE_LATENCY_S = 20.0
 
@@ -302,8 +314,99 @@ def _forecast_then_staff(payload, pid, kw, receipt, finish):
                                      "quantile_level": level})
 
 
+TRACK_NULL_FRACTION = 0.5          # a block whose plan is below half the day's mean plan gives no measurement
+TRACK_MIN_MEASUREMENTS = 3          # fewer usable blocks than this: the tracker abstains
+TRACK_FLOOR_MULTIPLIER = 0.05       # the staffed rate never falls below 5% of the plan
+TRACKER_KEYS = {"q", "r", "prior"}
+
+
+def _count(x, name) -> float:
+    if isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x) or x < 0:
+        raise CognitionError(f"{name} must be a finite non-negative number")
+    return float(x)
+
+
+def track_measurements(payload: dict) -> tuple[dict, int, float]:
+    """The kalman_track request a track_then_staff payload implies: (data, usable measurements, decision-block plan).
+
+    z_j = N_j / plan_j for each observed block j, null where plan_j is below half the day's mean plan (or zero).
+    The standing plan covers the whole day; its decision block must come after every observed block (a payload
+    holding the count it is asked to staff for is refused). q, r and the prior come from ``tracker``; a missing
+    noise declaration is passed through so the Kalman genome's own contract abstains on it."""
+    observed, plan, tracker = payload["observed_today"], payload["standing_plan"], payload.get("tracker", {})
+    if not isinstance(observed, list) or not 1 <= len(observed) <= 999:
+        raise CognitionError("observed_today lists 1-999 completed block counts, from the start of the day")
+    if (not isinstance(plan, dict) or set(plan) != {"blocks", "decision_block"} or not isinstance(plan["blocks"], list)
+            or not 2 <= len(plan["blocks"]) <= 1000):
+        raise CognitionError("standing_plan is {blocks: the day's planned count per block, decision_block: index}")
+    block = plan["decision_block"]
+    if isinstance(block, bool) or not isinstance(block, int) or not len(observed) <= block < len(plan["blocks"]):
+        raise CognitionError("the decision block is a block of the plan after every observed block")
+    if not isinstance(tracker, dict) or set(tracker) - TRACKER_KEYS:
+        raise CognitionError(f"tracker takes only {sorted(TRACKER_KEYS)}")
+    counts = [_count(n, "an observed count") for n in observed]
+    blocks = [_count(p, "a planned count") for p in plan["blocks"]]
+    zs = plan_ratios(counts, blocks)
+    data = {"dt": 1.0, "measurements": zs, **{k: tracker[k] for k in sorted(TRACKER_KEYS) if k in tracker}}
+    return data, sum(z is not None for z in zs), blocks[block]
+
+
+def plan_ratios(counts: list, blocks: list) -> list:
+    """N_j / plan_j for the counted blocks; null where plan_j is zero or below half the day's mean plan."""
+    floor = TRACK_NULL_FRACTION * fmean(blocks)
+    return [n / p if p > 0 and p >= floor else None for n, p in zip(counts, blocks)]
+
+
+def tracked_multiplier(output: dict, r: float, level: float) -> float:
+    """The q* quantile of the decision block's multiplier: position + z(q*) sqrt(position variance + r)."""
+    return output["positions"][-1] + NormalDist().inv_cdf(level) * math.sqrt(output["final_position_variance"] + r)
+
+
+def _track_then_staff(payload, pid, kw, receipt, finish):
+    from .cortex import reason
+    plan = payload["staffing"]
+    if not isinstance(plan, dict) or set(plan) != STAFF_KEYS:
+        raise CognitionError(f"track_then_staff takes a staffing plan with exactly {sorted(STAFF_KEYS)}")
+    data, usable, planned = track_measurements(payload)
+    level = staffing_quantile(plan)
+    receipt["bindings"].append({"slot": "staffing costs -> critical fractile", "bound": level})
+    if usable < TRACK_MIN_MEASUREMENTS:
+        return finish("STAGE_ABSTAINED", f"track: {usable} usable measurements, at least {TRACK_MIN_MEASUREMENTS} "
+                                         f"required (a block planned below {TRACK_NULL_FRACTION} x the day's mean "
+                                         "gives none)")
+    tracked = _operation(reason, f"{pid}/track", "kalman_track", data, **kw)
+    receipt["stages"].append(_op_summary("track", tracked))
+    if not _answered(tracked):
+        return finish("STAGE_ABSTAINED", f"track: {tracked['abstention_state']}")
+    out = tracked["output"]
+    try:
+        multiplier = tracked_multiplier(out, float(data["r"]), level)
+        rate = planned * max(multiplier, TRACK_FLOOR_MULTIPLIER) / float(plan["block_seconds"])
+    except (KeyError, TypeError, ValueError, IndexError, OverflowError) as exc:
+        multiplier = rate = math.nan
+        receipt["translation_failures"].append(f"tracker output cannot become a multiplier: {type(exc).__name__}")
+    receipt["bindings"].append({"slot": f"kalman position, variance -> q{level:g} multiplier", "bound": multiplier,
+                                "z": NormalDist().inv_cdf(level), "r": data.get("r")})
+    if not (math.isfinite(rate) and rate > 0):
+        receipt["translation_failures"].append(f"multiplier {multiplier} x plan {planned} is not an arrival rate")
+        return finish("TRANSLATION_FAILED", "the tracked multiplier cannot become an arrival rate")
+    receipt["bindings"].append({"slot": f"multiplier x plan[{payload['standing_plan']['decision_block']}] -> "
+                                        "arrival_rate", "bound": rate, "floor": TRACK_FLOOR_MULTIPLIER})
+    staffed = _operation(reason, f"{pid}/staff", "erlang_c_staffing",
+                         {"arrival_rate": rate, "mean_service_time": plan["mean_service_time"],
+                          "target_wait": plan["target_wait"], "max_wait_probability": plan["max_wait_probability"]},
+                         **kw)
+    receipt["stages"].append(_op_summary("staff", staffed))
+    if not _answered(staffed):
+        return finish("STAGE_ABSTAINED", f"staff: {staffed['abstention_state']}")
+    return finish("ANSWERED", None, {"agents": staffed["output"]["agents"],
+                                     "block": payload["standing_plan"]["decision_block"], "quantile_level": level,
+                                     "multiplier": multiplier, "arrival_rate": rate})
+
+
 OPERATION_RECIPES = {"graph_then_allocate": _graph_then_allocate, "bayes_then_voi": _bayes_then_voi,
-                     "forecast_then_allocate": _forecast_then_allocate, "forecast_then_staff": _forecast_then_staff}
+                     "forecast_then_allocate": _forecast_then_allocate, "forecast_then_staff": _forecast_then_staff,
+                     "track_then_staff": _track_then_staff}
 
 
 def validate(params) -> tuple[str, dict]:

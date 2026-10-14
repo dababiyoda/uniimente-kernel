@@ -574,8 +574,10 @@ def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> d
                 if v is not None}
     served = fallback["method"] if fallback else "no attached method"
     measured["registered"] = [{"capability_id": best["method"], "state": "VERIFIED"}]
+    # one ask per method and measured version, however many requests need it (never one per request)
     packet = asks.resource_request(
-        request_id=f"attach-{digest({'pid': pid, 'method': best['method']})[7:23]}", kind="CAPABILITY_ATTACH",
+        request_id=f"attach-{digest({'method': best['method'], 'version': record.get('version')})[7:23]}",
+        kind="CAPABILITY_ATTACH",
         resource="capability",
         why_now=f"the best-fitting method for request {pid} by frozen evidence, {best['method']}, is registered "
                 f"but not attached",
@@ -595,8 +597,7 @@ def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> d
     violations = asks.screen(packet, quoted=(pid,))      # the caller's problem id is data, not GREG's wording
     if violations:
         raise CognitionError(f"the attach ask failed the ask screen: {violations}")
-    return {**packet, "state": "PREPARED_NOT_RECORDED",
-            "record_with": "greg.asks.record on the body (the one path for decision.requested)"}
+    return packet
 
 
 def _judgment_ask(pid: str, request_id: str, scope: str, packet: dict, journal) -> dict:
@@ -605,17 +606,26 @@ def _judgment_ask(pid: str, request_id: str, scope: str, packet: dict, journal) 
     from datetime import datetime, timezone
     from greg import asks
     from .human import judgment_ask
+    return _record_once(journal, judgment_ask(pid, request_id, scope, packet, datetime.now(timezone.utc).isoformat()),
+                        quoted=(pid,))
+
+
+def _record_once(journal, message: dict, *, quoted=()) -> dict:
+    """Record one founder ask through greg.asks (the one path for decision.requested) when a canonical journal is
+    present, at most once per request id; otherwise return it prepared. Asking decides and grants nothing."""
+    from greg import asks
+    rid = message["request_id"]
     existing = None if journal is None else next(
-        (e.payload for e in journal.replay("decision.requested") if e.payload.get("request_id") == request_id), None)
+        (e.payload for e in journal.replay("decision.requested") if e.payload.get("request_id") == rid), None)
     if existing is not None:
-        return {"request_id": request_id, "state": "RECORDED", "scope_digest": existing.get("scope_digest")}
-    message = judgment_ask(pid, request_id, scope, packet, datetime.now(timezone.utc).isoformat())
+        return {"request_id": rid, "kind": existing.get("kind"), "state": "RECORDED",
+                "scope_digest": existing.get("scope_digest")}
     if journal is None or not callable(getattr(journal, "record", None)):
         asks.validate(message)
         return {**message, "state": "PREPARED_NOT_RECORDED",
                 "record_with": "greg.asks.record on the body (the one path for decision.requested)"}
-    shown = asks.record(journal, message, quoted=(pid,))
-    return {"request_id": request_id, "state": "RECORDED", "scope_digest": shown["scope_digest"]}
+    shown = asks.record(journal, message, quoted=quoted)
+    return {"request_id": rid, "kind": shown["kind"], "state": "RECORDED", "scope_digest": shown["scope_digest"]}
 
 
 def _settled_competence(journal, geometry_class) -> dict:
@@ -796,7 +806,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                                     f"capability can be attached"}
         else:
             try:
-                receipt["founder_attach_ask"] = attach_ask(pid, best, runnable[0] if runnable else None, evidence)
+                receipt["founder_attach_ask"] = _record_once(
+                    journal, attach_ask(pid, best, runnable[0] if runnable else None, evidence), quoted=(pid,))
             except Exception as exc:      # the optional ask never aborts routing; its failure is recorded
                 receipt["founder_attach_ask"] = {"state": "NOT_PREPARED", "why": f"{type(exc).__name__}: {exc}"[:300]}
     if not runnable:

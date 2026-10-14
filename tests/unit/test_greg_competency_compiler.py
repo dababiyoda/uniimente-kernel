@@ -371,3 +371,26 @@ def test_measured_held_out_latency_breaks_ties_within_one_status():
     assert [r["method"] for r in ranked] == ["cognition.a", "cognition.b", "cognition.c"]
     niche = {**fast, "method": "cognition.d", "status": "NICHE_CAPABILITY", "median_seconds": 0.0001}
     assert sorted([niche, slow], key=lambda r: compiler._rank(r, [], {}))[0]["method"] == "cognition.b"
+
+
+def test_on_the_body_a_withheld_best_fit_is_asked_for_once_per_method_and_the_founder_can_attach_it(tmp_path,
+                                                                                                    no_index):
+    """Audit 2026-10-14: the compiler prepared attach asks that nothing recorded. With a canonical journal it
+    records one CAPABILITY_ATTACH ask per method and measured version, however many requests need it."""
+    from greg.body import Body
+    from greg.console import _attachable
+    from tests.greg_fixtures import make_body
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY", "version": "x"}},
+                                    "recipes": {}, "routing": {}}))
+    home, _, _, _ = make_body(tmp_path)
+    with Body(home) as b:
+        registry = registry_view(b.journal)
+        assert registry.state["cognition.flow_maxflow"] == "VERIFIED"           # withheld on a fresh body
+        for pid in ("first", "second"):
+            r = reason({"problem_id": pid, "compile": {"geometry": {"geometry": "optimization"},
+                                                       "data": maxflow_instance(3)[0], "execute": False}},
+                       registry=registry, journal=b.journal)
+            assert r["founder_attach_ask"]["state"] == "RECORDED"
+        requested = [e.payload for e in b.journal.replay("decision.requested")]
+    assert len(requested) == 1 and requested[0]["kind"] == "CAPABILITY_ATTACH"
+    assert [c["capability_id"] for c in _attachable(requested[0])] == ["cognition.flow_maxflow"]

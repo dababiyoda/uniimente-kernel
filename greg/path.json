@@ -224,16 +224,27 @@
         "name": "verified surplus available for founder-authorized reinvestment",
         "baseline": 0,
         "target": "> 0",
-        "measured_by": null
+        "measured_by": "greg.path.venture_compounding"
       },
       "exit_evidence": [
         "capability transplant makes the second venture faster or cheaper, measured",
         "revenue reconciled against obligations and reserves"
       ],
-      "evidence_source": "external",
-      "predicate": null,
-      "evidence_status": "unresolved",
-      "evidence_refs": []
+      "evidence_source": "ledger",
+      "predicate": "venture_compounding",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/unit/test_greg_venture_books.py",
+        "greg/venture_books.py",
+        "capital/treasury.py"
+      ],
+      "components": [
+        "business cases carry their venture; a procedure ratified from one venture's verified cases runs in another (greg/sop.py instantiate venture)",
+        "transfer measured per verified outcome: founder interventions, model spend and hours to close, against the runs that taught it, on at least two closed N3 cases in the second venture (greg/venture_books.py transfers)",
+        "founder-only TREASURY_REQUIREMENTS signs per-tier obligation and reserve amounts for one venture and currency",
+        "reconciled revenue from closed N3 cases runs through the Kernel's own waterfall (capital/treasury.py over capital/allocation-policy.yaml); surplus exists only after every tier above reinvestment is fully funded; GREG moves no money"
+      ],
+      "smallest_next_build": "done agent-side: `greg mission new business-case --venture --approve-writes`, `greg sop run --venture`, `greg treasury set|books`; tests/unit/test_greg_venture_books.py closes N7 on a booted, designated body. Remains founder-only: two real ventures with real buyers, your signed obligations and reserves, and the judgment that the second venture could stand alone"
     },
     {
       "id": "N8",

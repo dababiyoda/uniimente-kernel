@@ -405,7 +405,8 @@ def asks_human_work(function) -> bool:
 
 def business_case(*, case: str, buyer: str, offer: str, price: str, currency: str, acceptance: str,
                   workspace_root: Path, statement: str = "statement.csv", columns: dict | None = None,
-                  minor_units: bool = False, horizon_days: float = 45) -> dict:
+                  minor_units: bool = False, horizon_days: float = 45, venture: str | None = None,
+                  approve_writes: bool = False) -> dict:
     """One customer case through the Kernel's commercial order, as a founder-signed mission (node N3).
 
     problem -> buyer -> offer -> payment -> delivery -> customer outcome (business/commercial_loop.py).
@@ -415,8 +416,14 @@ def business_case(*, case: str, buyer: str, offer: str, price: str, currency: st
     amount and currency carrying the case reference in the statement Alfonso exports. Each stage
     ``requires`` the one before it, and the settlement record requires payment, delivery and the
     buyer's confirmation, so nothing is recorded as settled out of order.
+
+    ``venture`` names the business the case serves (books and transfer are measured per venture).
+    ``approve_writes`` keeps GREG's cone read-only, so drafting the offer and writing the settlement
+    each stop for Alfonso's approval; a procedure he later ratifies may pre-approve them.
     """
     amount = business_loop_amount(price)
+    if venture is not None and not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,40}", venture):
+        raise ValueError("venture is a short lowercase name (letters, digits, hyphens)")
     currency = currency.strip().upper()
     if not re.fullmatch(r"[A-Z]{3}", currency):
         raise ValueError("currency is a three-letter code such as USD")
@@ -484,9 +491,16 @@ def business_case(*, case: str, buyer: str, offer: str, price: str, currency: st
              "requires": ["paid", "delivered", "outcome_confirmed"], "advances": ["settled"],
              "rationale": "record the settlement only after payment, delivery and confirmation are all observed"},
         ],
-        "light_cone": {"capabilities": ["fs.read", "fs.write", "business.reconcile"],
-                       "targets": ["fs:*", "workspace:*", "person:*"], "max_consequence_class": "internal_write",
+        "light_cone": {"capabilities": ["fs.read", "business.reconcile"] if approve_writes else
+                       ["fs.read", "fs.write", "business.reconcile"],
+                       "targets": ["fs:*", "workspace:*", "person:*"],
+                       "max_consequence_class": "read_only" if approve_writes else "internal_write",
                        "budget_usd": 0, "horizon": _horizon(horizon_days)},
+        **({"venture": venture} if venture else {}),
+        "provenance": {"origin": "template:business-case", "planner": "greg.templates/1",
+                       "inputs": {"reference": ref, "buyer": " ".join(buyer.split()), "offer": " ".join(offer.split()),
+                                  "price": str(amount), "currency": currency,
+                                  "acceptance": " ".join(acceptance.split())}},
     }
 
 

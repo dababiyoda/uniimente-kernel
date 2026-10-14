@@ -63,17 +63,20 @@
         "N4",
         "N7"
       ],
-      "reality_status": "ONE VERIFIED LOOP (N3) and REPEATABLE COMPETENCE (N4) have ledger predicates and machinery closed end to end in container tests on a booted, designated body: a business case in commercial order; a ratified SOP whose runs need no model and no approval stop for steps approved in every verified run. No real business loop or real SOP run has happened; REUSABLE CAPABILITIES -> SECOND VENTURE -> TRANSFER (N7) remain unbuilt",
+      "reality_status": "ONE VERIFIED LOOP (N3), REPEATABLE COMPETENCE (N4) and REUSABLE CAPABILITIES -> SECOND VENTURE -> MEASURE TRANSFER ADVANTAGE (N7) have ledger predicates and machinery closed end to end in container tests on a booted, designated body. In those tests a procedure taught by three verified cases in one venture ran two cases in a second venture at 4 founder interventions per outcome instead of 6. That venture's reconciled revenue then funded the signed obligations and reserves through capital/allocation-policy.yaml before any surplus showed; GREG moves no money. No real venture, buyer or payment exists yet",
       "implementation_refs": [
         "greg/business_loop.py",
         "greg/templates.py",
         "greg/sop.py",
         "greg/path.py",
-        "greg/cli.py"
+        "greg/cli.py",
+        "greg/venture_books.py",
+        "capital/treasury.py"
       ],
       "tests": [
         "tests/unit/test_greg_business_case.py",
-        "tests/unit/test_greg_sop_compounding.py"
+        "tests/unit/test_greg_sop_compounding.py",
+        "tests/unit/test_greg_venture_books.py"
       ]
     },
     {

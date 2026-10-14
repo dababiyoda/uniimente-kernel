@@ -210,6 +210,42 @@ greg sop trend                                  # before and after, per verified
   - asked you less per verified outcome than the runs that taught it;
   - used no more model spend.
 
+## The seventh node (N7): a second venture, and books that pay obligations first
+
+Name the venture on each case. If you want to approve GREG's own writes in a new business, add
+`--approve-writes`:
+
+```bash
+greg mission new business-case --venture leases --approve-writes --case "lease review 01" ...
+```
+
+After three verified cases, ratify the procedure GREG proposes, pre-approving its two writes. Then
+run it for a second venture:
+
+```bash
+greg sop ratify <procedure-id> --pre-approve draft-offer --pre-approve record-settlement --key ~/greg-founder.pem
+greg sop run <procedure-id> --venture audits --set reference=CASE-AUDIT-01 --set buyer="..." \
+  --set offer="..." --set price=300.00 --set acceptance="..." --key ~/greg-founder.pem
+```
+
+Sign what each venture owes before any surplus counts. Tier names come from
+`capital/allocation-policy.yaml`:
+
+```bash
+greg treasury set --venture audits --currency USD \
+  --tier taxes_and_binding_legal_obligations=120 \
+  --tier emergency_liquidity_and_operating_reserves=80 --key ~/greg-founder.pem
+greg treasury books
+```
+
+- **Revenue counts only from cases that closed N3:** paid to the cent, people did every outward
+  act, appraised VERIFIED and accepted by you.
+- **Surplus is what remains** after every tier above reinvestment is fully funded.
+- **GREG moves and allocates no money;** these are books.
+- **`greg path` measures N7.** It is met when a procedure taught by one venture made at least two
+  closed cases in another cheaper or faster per outcome, and that venture's books show surplus.
+- **Your judgment remains:** whether the second venture could stand alone.
+
 ## The sixth node (N6): one piece of work with a named person
 
 When work needs a person (a designer, a bookkeeper, a lawyer), sign a mission that names them, the

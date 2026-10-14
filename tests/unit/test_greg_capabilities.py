@@ -241,6 +241,8 @@ def test_credentials_are_never_forwarded_to_another_host(monkeypatch):
     assert sent == [("https://a.example/x", True, True), ("https://a.example/y", True, True),
                     ("https://b.example/z", False, False), ("https://a.example/back", False, False)]
     assert all(r["headers"].get("accept") == "x/y" for r in web.seen)
+    # each hop names its own host: a stale Host header would misroute the hop
+    assert [r["headers"]["host"] for r in web.seen] == ["a.example", "a.example", "b.example", "a.example"]
 
 
 def test_a_redirected_post_is_never_resent(monkeypatch):

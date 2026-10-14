@@ -100,7 +100,9 @@ def open_checked(request: urllib.request.Request, *, allowlist, timeout: float,
             raise EgressRefused(f"redirect (HTTP {status}) without a Location target")
         target = urllib.parse.urljoin(request.full_url, location)
         next_host = check(target, allowlist)
-        headers = {name: value for name, value in request.header_items()
+        # Only the caller's own headers travel: urllib's per-connection ones (Host, and
+        # Content-* for a body) are recomputed for the new target.
+        headers = {name: value for name, value in request.headers.items()
                    if next_host == host or name.lower() not in CREDENTIAL_HEADERS}
         request = urllib.request.Request(target, headers=headers, method=request.get_method())
         host = next_host

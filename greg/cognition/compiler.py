@@ -461,20 +461,29 @@ def _reject_relaxations(rows: list[dict]) -> None:
 def _organ_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     """Cortex organs (Z3, CP-SAT, Fermi, evidence/causal, semantic, deterrence, schedule extraction) for payload
     parts they serve, named by the cortex's own deterministic route policy and run through the canonical problem
-    path. Their status comes from the evidence index's ``organs`` section when it has one, else UNEVALUATED."""
+    path. Their status comes from the evidence index's ``organs`` section when it has one, else UNEVALUATED; like a
+    genome's, positive organ evidence binds the version it was measured at (CORTEX_ENTRIES) and negative evidence
+    persists until a re-admission replaces it."""
     from cortex.routing import _route_parts      # the cortex's route policy, reused rather than re-implemented
     from .bridge import _CLASS, ORGANS
+    from .catalog import CORTEX_ENTRIES
     rows = []
     for key, cls in _route_parts(data):
         cid = ORGANS.get(key)
         if cid is None:
             continue
         klass = _CLASS.get(cls, cls)
-        status = (evidence.get("organs") or {}).get(cid, {}).get("status", "UNEVALUATED")
+        record = (evidence.get("organs") or {}).get(cid, {})
+        status = record.get("status", "UNEVALUATED")
+        measured, current = record.get("version"), CORTEX_ENTRIES.get(cid, (None,))[0]
+        stale = None
+        if measured and current and measured != current and status not in NOT_POSITIVE:
+            stale = f"{status} was measured at version {measured}; version {current} needs re-admission"
+            status = "UNEVALUATED"
         reason = (f"native geometry {klass} does not include {g.geometry}" if g.geometry and g.geometry != klass
                   else f"frozen status {status}" if status in EXCLUDED else None)
         rows.append({"method": cid, "operation": "problem", "kind": "problem", "status": status, "organ": key,
-                     "epistemic_classes": [klass], "rejected": reason})
+                     "epistemic_classes": [klass], "rejected": reason, **({"stale_evidence": stale} if stale else {})})
     return rows
 
 

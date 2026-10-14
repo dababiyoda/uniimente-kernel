@@ -13,8 +13,8 @@ calls the library its solver uses.
   algorithm (``networkx.max_weight_matching``). Verified for validity by arithmetic and for optimality by an
   independent exact method chosen by structure: an LP dual checked arithmetically on bipartite graphs,
   exhaustive enumeration up to 16 vertices, otherwise a dual of Edmonds' odd-set matching LP found by cutting
-  planes and checked in exact rational arithmetic; only where those stall, SciPy HiGHS branch-and-cut (a second
-  solver's report, named as such in the check).
+  planes with exact (Padberg-Rao) odd-set separation and checked in exact rational arithmetic. Where that does
+  not close, optimality is reported not established; no floating-point solver's report certifies it.
 * ``critical_path`` (``project_critical_path``): critical path method (forward and backward passes in a Kahn
   topological order). Verified by an independent explicit-stack depth-first recomputation of earliest and
   latest finishes, floats and makespan, and a source-to-sink chain check of the returned path.
@@ -303,7 +303,8 @@ def assignment_ortools(data):
 # =================================================================== 2. maximum-weight matching (general graphs)
 MATCH_MAX_VERTICES, MATCH_MAX_EDGES, MATCH_MAX_WEIGHT = 400, 2000, 1_000_000
 MATCH_NATIVE_VERTICES, MATCH_NATIVE_EDGES, MATCH_EXHAUSTIVE_VERTICES = 80, 400, 16
-MATCH_CUT_ROUNDS = 40                     # odd-set cutting-plane rounds before the HiGHS fallback
+MATCH_CUT_ROUNDS = 100                    # odd-set cutting-plane rounds; optimality is not established after
+MATCH_TIE_BREAK = 0.01                    # largest per-edge objective nudge that breaks LP ties (never certifies)
 
 
 def _matching_graph(data):
@@ -434,35 +435,147 @@ def _odd_components(ends, x, n, keep):
     return out
 
 
-def _exact_dual_bound(ends, weights, member, sets, n, marginals):
-    """The objective of a dual of the odd-set matching LP, checked exactly, or None.
+_FLOW_EPS, _SUPPORT_EPS = 1e-12, 1e-9
 
-    HiGHS's floating dual (y_v per degree row, z_S per odd-set row) is rounded to rationals and must satisfy
-    y, z >= 0 and y_u + y_v + sum_{S contains u and v} z_S >= w_uv on every edge in exact arithmetic; then by
-    weak duality D = sum y + sum z_S (|S| - 1) / 2 bounds the weight of every matching. The tightest bound among
-    a few rounding grids is returned."""
+
+def _min_cut(cap, s, t):
+    """Maximum s-t flow on an undirected graph with float capacities ``cap[u][v] == cap[v][u]`` by shortest
+    augmenting paths (Edmonds-Karp). Returns (value, the s side of a minimum cut)."""
+    res = {u: dict(nbrs) for u, nbrs in cap.items()}
+    value = 0.0
+    while True:
+        prev, queue = {s: None}, deque([s])
+        while queue and t not in prev:
+            u = queue.popleft()
+            for v, c in res[u].items():
+                if c > _FLOW_EPS and v not in prev:
+                    prev[v] = u
+                    queue.append(v)
+        if t not in prev:
+            return value, set(prev)
+        path, v = [], t
+        while prev[v] is not None:
+            path.append((prev[v], v))
+            v = prev[v]
+        push = min(res[u][v] for u, v in path)
+        for u, v in path:
+            res[u][v] -= push
+            res[v][u] += push
+        value += push
+
+
+def _gomory_hu(cap, n):
+    """Gomory-Hu cut tree of nodes 0..n-1 by Gusfield's method (n - 1 minimum cuts, no contraction): node i >= 1
+    hangs from ``parent[i]`` (root 0) by an edge of weight ``value[i]``, and the subtree of i is the i side of a
+    minimum cut between i and ``parent[i]``."""
+    parent, value = [0] * n, [0.0] * n
+    for s in range(1, n):
+        t = parent[s]
+        f, side = _min_cut(cap, s, t)
+        value[s] = f
+        for i in range(n):
+            if i != s and i in side and parent[i] == t:
+                parent[i] = s
+        if parent[t] in side:
+            parent[s], parent[t] = parent[t], s
+            value[s], value[t] = value[t], f
+    return parent, value
+
+
+def _violated_odd_sets(ends, x, n):
+    """Every odd set S (index frozensets, |S| >= 3) whose fundamental Gomory-Hu cut violates x(E(S)) <=
+    (|S| - 1) / 2: exact Padberg-Rao separation. With slacks s_v = 1 - x(delta(v)) on edges to an extra node t,
+    the odd-set row for S is x(delta(S)) + s(S) >= 1, a cut whose side without t is odd; a minimum such cut is a
+    fundamental cut of a Gomory-Hu tree, so an empty answer means no odd-set row is violated (up to float
+    tolerance). Only vertices that x touches can lie in a violated set (any other has slack 1)."""
+    degree = [0.0] * n
+    for k, (i, j) in enumerate(ends):
+        degree[i] += x[k]
+        degree[j] += x[k]
+    support = [i for i in range(n) if degree[i] > _SUPPORT_EPS]
+    local = {v: a for a, v in enumerate(support)}
+    t = len(support)
+    cap = {a: {} for a in range(t + 1)}
+    for k, (i, j) in enumerate(ends):
+        if x[k] > _SUPPORT_EPS:
+            a, b = local[i], local[j]
+            cap[a][b] = cap[b][a] = cap[a].get(b, 0.0) + x[k]
+    for v, a in local.items():
+        if 1.0 - degree[v] > _SUPPORT_EPS:
+            cap[a][t] = cap[t][a] = 1.0 - degree[v]
+    if t < 3:
+        return []
+    parent, value = _gomory_hu(cap, t + 1)
+    children = [[] for _ in range(t + 1)]
+    for i in range(1, t + 1):
+        children[parent[i]].append(i)
+    out = []
+    for i in range(1, t + 1):
+        if value[i] >= 1.0 - 1e-6:
+            continue
+        subtree, stack = set(), [i]
+        while stack:
+            a = stack.pop()
+            subtree.add(a)
+            stack.extend(children[a])
+        side = subtree if t not in subtree else set(range(t)) - subtree
+        if len(side) >= 3 and len(side) % 2:
+            s = frozenset(support[a] for a in side)
+            if s not in out:
+                out.append(s)
+    return out
+
+
+def _checked_dual_objective(ends, weights, sets, n, y, z):
+    """Weak duality, checked in exact rational arithmetic: when y, z >= 0 and every edge is covered,
+    y_u + y_v + sum_{S contains u and v} z_S >= w_uv, then every matching weighs at most
+    D = sum y + sum z_S floor(|S| / 2). Returns D, or None when the dual is infeasible."""
+    if len(y) != n or len(z) != len(sets) or any(v < 0 for v in y) or any(v < 0 for v in z):
+        return None
+    for (i, j), w in zip(ends, weights):
+        if y[i] + y[j] + sum(zs for zs, s in zip(z, sets) if i in s and j in s) < w:
+            return None
+    return sum(y) + sum(zs * (len(s) // 2) for zs, s in zip(z, sets))
+
+
+def _exact_dual_bound(ends, weights, member, sets, n, marginals):
+    """An exact upper bound on every matching's weight built from HiGHS's floating dual (y_v per degree row,
+    z_S per odd-set row), or None.
+
+    The float dual only proposes. Each value is taken as an exact rational (and also rounded to a few small
+    denominators); any edge it leaves short by float error is covered by raising y at one end by the shortfall,
+    so the dual is feasible by construction; ``_checked_dual_objective`` then checks it in exact arithmetic.
+    The smallest checked objective is returned."""
     from fractions import Fraction
     duals = [max(0.0, -float(d)) for d in marginals]
+    if len(duals) != n + len(sets) or not all(math.isfinite(d) for d in duals):
+        return None
     best = None
-    for den in (1, 2, 6, 60, 2520):
-        q = [Fraction(d).limit_denominator(den) for d in duals]
+    for den in (None, 1, 2, 6, 60, 2520):
+        q = [Fraction(d) if den is None else Fraction(d).limit_denominator(den) for d in duals]
         y, z = q[:n], q[n:]
-        if all(y[i] + y[j] + sum(z[s] for s in member[k]) >= w for k, ((i, j), w) in enumerate(zip(ends, weights))):
-            bound = sum(y) + sum(zs * ((len(s) - 1) // 2) for zs, s in zip(z, sets))
-            best = bound if best is None else min(best, bound)
+        for k, ((i, j), w) in enumerate(zip(ends, weights)):
+            short = w - y[i] - y[j] - sum(z[s] for s in member[k])
+            if short > 0:
+                y[i] += short
+        bound = _checked_dual_objective(ends, weights, sets, n, y, z)
+        if bound is not None and (best is None or bound < best):
+            best = bound
     return best
 
 
 def _matching_odd_set_dual(edges, lower=None):
     """Exact maximum matching weight certified by an exactly checked dual of Edmonds' matching LP, or None.
 
-    Cutting planes: degree rows x(delta(v)) <= 1, then odd-set rows x(E(S)) <= (|S| - 1) / 2 for every odd
-    connected component S of the fractional (or the positive) part of an LP optimum whose edge mass exceeds that
-    bound - a separation heuristic, not exact (Padberg-Rao) separation, so the loop may stall. SciPy HiGHS only
-    proposes: its dual is checked exactly (``_exact_dual_bound``), and the bound D certifies the optimum only when
-    a matching in hand weighs exactly D - an integral LP optimum (checked to be a matching, weighed in integers)
-    or ``lower``, the weight of a matching the caller has already validated. None when no violated odd set is
-    found, after ``MATCH_CUT_ROUNDS`` rounds, or when no rounded dual passes the exact check."""
+    Cutting planes: degree rows x(delta(v)) <= 1, then odd-set rows x(E(S)) <= (|S| - 1) / 2. Each round adds
+    the odd components of the fractional (or the positive) part of the LP optimum whose edge mass exceeds that
+    bound and every violated fundamental cut of a Gomory-Hu tree (exact Padberg-Rao separation,
+    ``_violated_odd_sets``), so the loop heads for Edmonds' LP optimum, which is the maximum matching weight.
+    SciPy HiGHS only proposes: its dual is checked exactly (``_exact_dual_bound``) and bounds every matching by
+    D, so with integer weights by floor(D). The optimum is certified only when a matching in hand weighs exactly
+    floor(D): the LP optimum rounded to a matching (checked to be one, weighed in integers) or ``lower``, the
+    weight of a matching the caller has already validated. None when the rounds run out, separation finds
+    nothing more, or HiGHS fails: optimality is then not established either way."""
     import numpy as np
     from scipy.optimize import linprog
     names = _vertices(edges)
@@ -474,27 +587,32 @@ def _matching_odd_set_dual(edges, lower=None):
     for k, (i, j) in enumerate(ends):
         rows[i][k] = rows[j][k] = 1.0
     sets, member = [], [[] for _ in range(m)]          # member[k]: odd sets containing both ends of edge k
+    # a fixed nudge in [0, MATCH_TIE_BREAK) per edge picks one LP optimum among many equal ones, so degenerate
+    # weights (two levels, near-equal) do not cycle through equally good fractional optima; it is nonnegative,
+    # so HiGHS's dual still covers the true weights, and at most 80 * 0.01 / 2 = 0.4 rides on any matching
+    nudge = np.array([MATCH_TIE_BREAK * ((k * 0.6180339887498949) % 1.0) for k in range(m)])
     for _ in range(MATCH_CUT_ROUNDS):
-        res = linprog(-np.array(weights, dtype=float), A_ub=np.array(rows),
+        res = linprog(-(np.array(weights, dtype=float) + nudge), A_ub=np.array(rows),
                       b_ub=[1.0] * n + [float((len(s) - 1) // 2) for s in sets], bounds=(0, None), method="highs")
         if res.status != 0:
             return None
         x = res.x
-        bound = _exact_dual_bound(ends, weights, member, sets, n, res.ineqlin.marginals)
-        if bound is not None:
-            if all(min(abs(v), abs(v - 1.0)) < 1e-7 for v in x):
-                chosen = [k for k in range(m) if x[k] > 0.5]
-                covered = [i for k in chosen for i in ends[k]]
-                if len(set(covered)) == len(covered) and sum(weights[k] for k in chosen) == bound:
-                    return int(bound)
-            if lower is not None and lower == bound:
-                return lower
+        chosen = [k for k in range(m) if x[k] > 0.5]
+        covered = [i for k in chosen for i in ends[k]]
+        found = sum(weights[k] for k in chosen) if len(set(covered)) == len(covered) else None
+        best = max((w for w in (lower, found) if w is not None), default=None)
+        # the exact check is worth running only once the LP value is within reach of a matching in hand
+        if best is not None and -res.fun < best + 2:
+            bound = _exact_dual_bound(ends, weights, member, sets, n, res.ineqlin.marginals)
+            if bound is not None and math.floor(bound) == best:
+                return best
         new = []
         for keep in (lambda v: 1e-7 < v < 1.0 - 1e-7, lambda v: v > 1e-7):
             for s in _odd_components(ends, x, n, keep):
                 mass = sum(x[k] for k, (i, j) in enumerate(ends) if i in s and j in s)
                 if mass > (len(s) - 1) // 2 + 1e-6 and s not in sets and s not in new:
                     new.append(s)
+        new += [s for s in _violated_odd_sets(ends, x, n) if s not in sets and s not in new]
         if not new:
             return None
         for s in new:
@@ -509,9 +627,10 @@ def _matching_odd_set_dual(edges, lower=None):
 
 
 def _matching_milp(edges):
-    """Exact optimum of the degree-constrained 0/1 program by SciPy HiGHS branch-and-cut (gap 0), or None when
-    HiGHS does not report optimality. A second solver's report, not a checkable certificate: the last resort
-    when the odd-set dual does not close."""
+    """SciPy HiGHS branch-and-cut's reported optimum of the degree-constrained 0/1 program (gap 0), weighed in
+    integers from its rounded solution, or None when HiGHS reports no optimum. A floating-point solver's
+    report, not a certificate: HiGHS has reported a matching one unit lighter than the optimum as optimal on a
+    native graph with weights near 10^6, so this is a retained cross-check only and never certifies."""
     import numpy as np
     from scipy.optimize import Bounds, LinearConstraint, milp
     names = _vertices(edges)
@@ -519,31 +638,29 @@ def _matching_milp(edges):
     a = np.zeros((len(names), len(edges)))
     for k, (u, v, _) in enumerate(edges):
         a[index[u], k] = a[index[v], k] = 1.0
-    w = np.array([float(e[2]) for e in edges])
-    res = milp(-w, constraints=LinearConstraint(a, -np.inf, 1.0), integrality=np.ones(len(edges)),
-               bounds=Bounds(0.0, 1.0), options={"mip_rel_gap": 0.0, "time_limit": 20.0})
+    res = milp(-np.array([float(e[2]) for e in edges]), constraints=LinearConstraint(a, -np.inf, 1.0),
+               integrality=np.ones(len(edges)), bounds=Bounds(0.0, 1.0),
+               options={"mip_rel_gap": 0.0, "time_limit": 20.0})
     if res.status != 0 or res.x is None:
         return None
-    x = np.round(res.x)
-    value = int(round(-res.fun))
-    if abs(-res.fun - value) > 1e-6 or (a @ x > 1.0 + 1e-9).any() or int(round(float(w @ x))) != value:
+    chosen = [k for k, v in enumerate(res.x) if v > 0.5]
+    covered = [x for k in chosen for x in (index[edges[k][0]], index[edges[k][1]])]
+    if len(set(covered)) != len(covered):
         return None
-    return value
+    return sum(edges[k][2] for k in chosen)
 
 
 def matching_optimum(edges, lower=None):
     """(optimum, method) by an exact method independent of the blossom solver, chosen by structure: a checked
-    bipartite LP dual, exhaustive enumeration, a checked odd-set LP dual, else HiGHS branch-and-cut. ``lower`` is
-    the weight of an already validated matching (it lets the odd-set dual certify without an integral LP)."""
+    bipartite LP dual, exhaustive enumeration, else a checked odd-set LP dual. ``lower`` is the weight of an
+    already validated matching (it lets the odd-set dual certify without an integral LP). The optimum is None
+    when the method does not close: optimality is then not established, neither certified nor refuted."""
     colour = _two_colouring(edges)
     if colour is not None:
         return _matching_bipartite_dual(edges, colour), "bipartite_lp_dual"
     if len(_vertices(edges)) <= MATCH_EXHAUSTIVE_VERTICES:
         return _matching_exhaustive(edges), "exhaustive_enumeration"
-    certified = _matching_odd_set_dual(edges, lower)
-    if certified is not None:
-        return certified, "odd_set_lp_dual"
-    return _matching_milp(edges), "highs_branch_and_cut"
+    return _matching_odd_set_dual(edges, lower), "odd_set_lp_dual"
 
 
 def _matching_weight(edges, pairs):
@@ -572,14 +689,17 @@ def matching_verify(data, output, certificate):
         return {"matching_well_formed": True, "edges_exist_and_are_vertex_disjoint": True,
                 "independent_check_within_bounds": False}
     certificate = _cert(certificate)
+    checks = {"matching_well_formed": True, "edges_exist_and_are_vertex_disjoint": True,
+              "weight_recomputed": type(output.get("weight")) is int and output["weight"] == weight,
+              "certificate_counts_recomputed": certificate.get("vertices") == len(_vertices(edges))
+              and certificate.get("edges") == len(edges) and certificate.get("matched_pairs") == len(pairs)}
     optimum, method = matching_optimum(edges, lower=weight)
-    # the check's name records how optimality was established: the first three are checked here in exact
-    # arithmetic; highs_branch_and_cut is a second solver's report
-    return {"matching_well_formed": True, "edges_exist_and_are_vertex_disjoint": True,
-            "weight_recomputed": type(output.get("weight")) is int and output["weight"] == weight,
-            "certificate_counts_recomputed": certificate.get("vertices") == len(_vertices(edges))
-            and certificate.get("edges") == len(edges) and certificate.get("matched_pairs") == len(pairs),
-            f"optimal_by_{method}": optimum is not None and weight == optimum}
+    if optimum is None:
+        # the exact method did not close: optimality is not established, so it is neither certified nor
+        # refuted; no floating-point solver's report stands in for a certificate
+        return {**checks, "independent_check_within_bounds": False}
+    # every method is checked here in exact arithmetic; the check's name records which one established it
+    return {**checks, f"optimal_by_{method}": weight == optimum}
 
 
 def matching_instance(seed):
@@ -629,7 +749,10 @@ def matching_instance(seed):
         add("v00", "v01", 1)
     r.shuffle(edges)
     data = {"weighted_edges": edges}
-    return data, {"optimum": matching_optimum(_matching_graph(data))[0]}
+    optimum = matching_optimum(_matching_graph(data))[0]
+    if optimum is None:                                       # never score against an uncertified truth
+        raise GenomeError(f"graph_matching seed {seed}: the optimum is not established by an exact method")
+    return data, {"optimum": optimum}
 
 
 def matching_subregion(data):
@@ -925,7 +1048,9 @@ def cpm_greedy_chain(data):
 
 def cpm_networkx(data):
     """Competitor: networkx.dag_longest_path on the activity-on-arc expansion (each precedence arc weighs its
-    predecessor's duration; sentinel start and finish nodes are tuples, never activity ids)."""
+    predecessor's duration; sentinel start and finish nodes are tuples, never activity ids). Every arc into
+    finish weighs one more than its activity, so finish is the unique farthest node: the longest path cannot
+    stop early at a zero-duration milestone that ties with it, and its weight is the makespan plus one."""
     import networkx as nx
     ids, dur, preds = _project(data)
     start, finish = ("start",), ("finish",)
@@ -940,9 +1065,9 @@ def cpm_networkx(data):
             has_succ.add(p)
     for a in ids:
         if a not in has_succ:
-            g.add_edge(a, finish, weight=dur[a])
+            g.add_edge(a, finish, weight=dur[a] + 1)
     path = nx.dag_longest_path(g, weight="weight")
-    return {"makespan": int(nx.path_weight(g, path, weight="weight")), "critical_path": path[1:-1]}
+    return {"makespan": int(nx.path_weight(g, path, weight="weight")) - 1, "critical_path": path[1:-1]}
 
 
 def cpm_cpsat_makespan(data):
@@ -1367,23 +1492,27 @@ INTELLIGENCES = [
                                 "independent exact method chosen by structure, named in the check: an integral LP "
                                 "dual (Hungarian potentials) checked arithmetically on bipartite graphs; exhaustive "
                                 f"enumeration up to {MATCH_EXHAUSTIVE_VERTICES} vertices; otherwise a dual of "
-                                "Edmonds' odd-set matching LP (HiGHS cutting planes) checked in exact rational "
-                                "arithmetic and closed by a matching of equal weight; only when that stalls, the "
-                                "optimum of the degree-constrained 0/1 program by SciPy HiGHS branch-and-cut",
-            confidence_semantics="exact maximum weight. Certified arithmetically on bipartite graphs (LP dual), up to "
-                                 f"{MATCH_EXHAUSTIVE_VERTICES} vertices (exhaustive), and on larger general graphs "
-                                 "whenever the odd-set cutting planes close (a checked dual; on development seeds 0-9 "
-                                 "and review seeds 3000-3099 they closed on 78 of 83 non-bipartite graphs). Where they "
-                                 "stall, optimality rests on agreement of two independent exact solvers (blossom and "
-                                 "HiGHS branch-and-cut), not on a checkable certificate; the verifier's check name "
-                                 "says which",
+                                "Edmonds' odd-set matching LP (HiGHS cutting planes with exact Padberg-Rao odd-set "
+                                "separation over a Gomory-Hu tree) made feasible and checked in exact rational "
+                                "arithmetic, which bounds every matching by its floor and is closed by a matching "
+                                "of exactly that weight. When it does not close the check is reported not within "
+                                "bounds: optimality is neither certified nor refuted",
+            confidence_semantics="exact maximum weight, certified in exact arithmetic: on bipartite graphs by an LP "
+                                 f"dual, up to {MATCH_EXHAUSTIVE_VERTICES} vertices by exhaustive enumeration, and "
+                                 "on larger general graphs by a checked dual of Edmonds' odd-set LP. A floating-point "
+                                 "solver's report never certifies. Where the cutting planes do not close within "
+                                 f"{MATCH_CUT_ROUNDS} rounds optimality is not established; that did not happen on "
+                                 "the 308 non-bipartite graphs of development seeds 0-9 and review seeds 3000-3399 "
+                                 "nor on 1,898 random review graphs with adversarial weights (uniform to 10^6, near "
+                                 "10^6, two-level 1 or 10^6, unit, 0-3)",
             resource_profile="O(V^3) pure Python; <= 80 vertices and 400 edges native",
             latency_profile="tens of milliseconds at benchmark size",
             known_strengths=("exact on general graphs where bipartite methods and the degree LP fail (odd cycles)",
                              "polynomial time without integer programming"),
             known_failure_modes=("the blossom dual is not exported: the answer carries no checkable certificate of "
-                                 "its own; the verifier constructs one, and on general graphs where its odd-set "
-                                 "separation heuristic stalls it falls back to a second solver's report",
+                                 "its own; the verifier constructs one, and on a general graph where its cutting "
+                                 "planes do not close it reports optimality not established, which the canonical "
+                                 "path records as a failed check although the answer may be optimal",
                                  "pure Python O(V^3): slow beyond a few hundred vertices",
                                  "maximum weight, not maximum cardinality: a heavier matching may leave more "
                                  "vertices unmatched"),
@@ -1391,8 +1520,11 @@ INTELLIGENCES = [
                                 "capacitated or b-matching (use min_cost_flow or an integer program)",
                                 "pairings that must cover every vertex (perfect matching is not enforced)"),
             abstention_conditions=(f"more than {MATCH_NATIVE_VERTICES} vertices or {MATCH_NATIVE_EDGES} edges",),
-            benchmark_suite="general sparse, odd-cycle cluster, bipartite and geometric graphs with 24-60 vertices; "
-                            "seeds 0-9 dev, held-out seeds fixed by the admission freeze",
+            benchmark_suite="general sparse, odd-cycle cluster, bipartite and geometric graphs of at most 66 "
+                            "vertices: vertex targets of 24-60, which the odd-cycle cluster kind overshoots by up to "
+                            "one cluster of 7, less any vertex left without an edge (18-66 vertices on development "
+                            "seeds 0-9 and review seeds 3000-3999); seeds 0-9 dev, held-out seeds fixed by the "
+                            "admission freeze",
             baseline="greedy by descending weight (a 1/2-approximation)",
             competitor="OR-Tools CP-SAT on the degree-constrained 0/1 program (one worker, fixed seed)",
             dependency="networkx", **_common()),

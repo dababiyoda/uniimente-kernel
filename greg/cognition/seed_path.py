@@ -22,7 +22,7 @@ from cortex.seed.contracts import (CognitiveCapabilityProfile, EXPOSURES, METHOD
 from cortex.seed.methods import artifact
 from provenance.ledger import sha256_json
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 POLICY = 'static-smallest-sufficient/1'
 
 
@@ -226,7 +226,7 @@ def status(params, ctx):
     specs = [e.payload['spec'] for e in ctx.journal.replay('mission.registered')
              if e.payload['mission_id'] == ctx.mission_id]
     problems = [s['params']['problem'] for spec in specs for s in spec['strategies']
-                if s.get('capability') == 'cognition.solve' and
+                if s.get('capability') == 'cognition.seed.solve' and
                 s.get('params', {}).get('problem', {}).get('problem_id') == params['problem_id']]
     valid = bool(problems and sha256_json(problems[0]) == r['input_digest'] and r['answered'])
     if valid:

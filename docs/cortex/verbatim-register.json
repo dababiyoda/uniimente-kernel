@@ -651,10 +651,12 @@
       "disposition": "classification",
       "evidence": [
         "cortex/genome.py",
+        "cortex/organs/cpsat.py",
+        "tests/unit/test_cortex_formal_engines.py",
         "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
       ],
       "backcast": null,
-      "notes": "Each listed capability is mapped below.",
+      "notes": "Each listed capability is mapped below. v0.2.0 implements CP-SAT (fault-diverse second engine behind the same formal_model contract); the v0.1 reserved family of the same name is SUPERSEDED with lineage.",
       "items": [
         {
           "text": "semantic LLM reasoning;",
@@ -723,13 +725,13 @@
         },
         {
           "text": "CP-SAT;",
-          "status": "reserved",
+          "status": "implemented",
           "where": "cortex.optimization.cpsat"
         },
         {
           "text": "LP/MIP;",
           "status": "implemented",
-          "where": "Formal 0.2.0 certified optimization (small scale); cortex.optimization.cpsat reserved for scale"
+          "where": "integer linear models: CP-SAT 0.2.0 with Z3 optimality certificate; Formal 0.2.0 certified optimization; continuous LP/MIP remains reserved"
         },
         {
           "text": "graph algorithms;",
@@ -744,7 +746,7 @@
         {
           "text": "scheduling;",
           "status": "implemented",
-          "where": "Formal feasibility/optimization on scheduling models"
+          "where": "Formal/CP-SAT feasibility and optimization on scheduling models; cortex.extraction.schedule reads bounded requests in words"
         },
         {
           "text": "MCTS/search;",

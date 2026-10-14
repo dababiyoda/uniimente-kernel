@@ -25,6 +25,61 @@ _INJECTION = re.compile(r"(ignore (all|previous|prior) instructions|system:|mark
                         r"you must answer|output approved)", re.I)
 
 
+def _recheck_formal_answers(payload, results, add) -> None:
+    """Directive 7C/7E: check every returned assignment against the SOURCE constraints.
+
+    Reads the model from the problem payload, never from the route's proof, so a
+    forged or corrupted proof artifact cannot vouch for itself. Shares only the
+    parser with the engines (disclosed in ``formal_eval``)."""
+    model = payload.get("formal_model")
+    candidates = [r for r in results if (r.proof or {}).get("proof_class") in ("formal", "optimization")
+                  and r.answer is not None]
+    if not candidates or not isinstance(model, Mapping):
+        return
+    from .formal import FormalModelError, Spec
+    from . import formal_eval
+    try:
+        spec = Spec(model)
+    except (FormalModelError, KeyError, TypeError, ValueError) as exc:
+        add("critical", "source_model_unparseable", f"answer returned for a model the verifier cannot parse: {exc}")
+        return
+    for r in candidates:
+        answer, proof = r.answer, r.proof
+        assignment = answer.get("model") if answer.get("feasible") else answer.get("counterexample")
+        if assignment is not None:
+            check = formal_eval.check_assignment(spec, assignment)
+            if not check["holds"]:
+                add("critical", "assignment_violates_source_constraints",
+                    f"{r.organ_id}: {check['violated_constraints'] or check['bound_violations'] or check['error']}",
+                    r.organ_id)
+            elif answer.get("counterexample") is not None and spec.query.get("kind") == "entailment":
+                prop = formal_eval.evaluate(spec.query["property"], assignment, spec.variables)
+                if prop is not False:
+                    add("critical", "counterexample_does_not_violate_property",
+                        f"{r.organ_id}: reported counterexample satisfies the property", r.organ_id)
+        if answer.get("optimal") is not None and assignment is not None and spec.query.get("kind") == "optimize":
+            value = formal_eval.objective_value(spec, assignment)
+            if value != answer.get("objective"):
+                add("critical", "objective_mismatch",
+                    f"{r.organ_id}: reported objective {answer.get('objective')} but the assignment yields {value}",
+                    r.organ_id)
+        if answer.get("optimal") is True:
+            solver = proof.get("solver") or {}
+            proven = (solver.get("certificate_check") == "UNSAT" or proof.get("native_status") == "OPTIMAL"
+                      or solver.get("status") == "OPTIMAL")
+            if not proven:
+                add("critical", "optimality_claim_without_proof",
+                    f"{r.organ_id} claims an optimum but neither a certificate nor an OPTIMAL status is recorded",
+                    r.organ_id)
+            cert = proof.get("certificate") or {}
+            if cert.get("status") == "REFUTED":
+                add("critical", "optimality_refuted_by_second_engine",
+                    f"{cert.get('engine')} found a strictly better assignment", r.organ_id)
+        if (proof.get("engine_disagreement") or {}).get("answer") is not None:
+            add("critical", "engines_disagree", f"{r.organ_id} vs {proof['engine_disagreement']['engine']}: "
+                f"{proof['engine_disagreement']['answer']}", r.organ_id)
+
+
 def verify(problem, geometry, results: list, *, proposed_disposition: str,
            gate_reports: Mapping[str, Any] | None = None, ranking: Mapping[str, Any] | None = None,
            protection: Any = None) -> dict:
@@ -34,6 +89,7 @@ def verify(problem, geometry, results: list, *, proposed_disposition: str,
         findings.append({"severity": severity, "kind": kind, "detail": detail, "target": target})
 
     payload = problem.payload
+    _recheck_formal_answers(payload, results, add)
     # injected instructions inside supplied data
     for s in payload.get("sources", []):
         if _INJECTION.search(s.get("text", "")):
@@ -43,7 +99,7 @@ def verify(problem, geometry, results: list, *, proposed_disposition: str,
         proof = r.proof
         pc = proof.get("proof_class")
         # assumptions without evidence
-        if pc == "formal":
+        if pc in ("formal", "optimization"):
             for pid in proof.get("unverified_premises", []):
                 add("major", "unverified_premise", f"formal premise {pid} is unverified; result is WORLD_UNVERIFIED",
                     pid)

@@ -58,6 +58,12 @@ DETERRENCE_EXTERNAL = {"problem_id": "example-deterrence-external", "question": 
                            {"id": "I_report", "kind": "report_to_authority", "cost_usd": 0,
                             "effects": {"p_sanction": {"set": 0.95}, "p_detect": {"set": 0.6}}}]},
                            "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
+SCHEDULE_WORDS = {"problem_id": "example-schedule-in-words", "question": "Schedule these jobs", "payload": {
+    "schedule_request": {"text": "Shift: 10 hours. Job A takes 3 hours. Job B takes 4 hours. Job C takes 2 hours. "
+                                 "A before C. B must finish by hour 9. One machine; one job at a time. "
+                                 "Minimize total completion time.",
+                         "availability_evidence": "example: shift roster for the day"},
+    "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
 PROTECTION = {"relevant": True, "required_actions": ["immediate_protection", "evidence_preservation", "escalation"],
               "evidence_access": "need_to_know", "disclosure_controls": ["no disclosure without the person's consent"]}
 
@@ -78,6 +84,7 @@ def build() -> dict[str, tuple[str, dict]]:
     receipts["receipt-formal-optimize-certified"] = cortex.run(copy.deepcopy(STAFFING))
     receipts["receipt-deterrence-internal-control"] = cortex.run(copy.deepcopy(DETERRENCE_INTERNAL))
     receipts["receipt-deterrence-external-handoff"] = cortex.run(copy.deepcopy(DETERRENCE_EXTERNAL))
+    receipts["receipt-schedule-composition"] = cortex.run(copy.deepcopy(SCHEDULE_WORDS))
     protected = _find(items, "H-F01")
     protected["problem_id"] = "example-victim-protection"
     protected["payload"]["victim_protection"] = copy.deepcopy(PROTECTION)

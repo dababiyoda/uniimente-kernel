@@ -100,7 +100,7 @@ def verify(params: dict, ctx: InvocationContext) -> dict:
     if not draft.is_file():
         return {"present": False, "verdict": "ABSENT"}
     text = draft.read_text(encoding="utf-8")
-    source = _inside(Path(params["source"]), ctx.read_roots).read_text(encoding="utf-8")
+    source = _inside(Path(params["source"]), ctx.read_roots + (ctx.workspace,)).read_text(encoding="utf-8")
     checks = _run(params, ctx, "verify")
     findings = []
     limit = int(params.get("max_chars", 280))

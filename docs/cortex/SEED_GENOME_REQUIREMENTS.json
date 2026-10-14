@@ -74,7 +74,7 @@
       "section": 8,
       "status": "active",
       "implementation_refs": [
-        "greg/cognition.py"
+        "greg/cognition/seed_path.py"
       ],
       "unresolved": "Declared structured geometry only; no free-text inference or learned classifier. Independent verification shares author, inputs and Python."
     },
@@ -83,7 +83,7 @@
       "status": "active",
       "implementation_refs": [
         "cortex/seed/verify.py",
-        "greg/cognition.py"
+        "greg/cognition/seed_path.py"
       ],
       "unresolved": "Rich typed computation receipts carry evidence, geometry, assumptions, uncertainty, calibration limits and contribution. External acceptance/appeal and unimplemented proof jurisdictions remain partial."
     },
@@ -91,7 +91,7 @@
       "section": 10,
       "status": "active",
       "implementation_refs": [
-        "greg/cognition.py",
+        "greg/cognition/seed_path.py",
         "cortex/gates.py"
       ],
       "unresolved": "Eligibility before computation, static rules and canonical grant. No earned market default or learned route selection."
@@ -100,7 +100,7 @@
       "section": 11,
       "status": "active",
       "implementation_refs": [
-        "greg/cognition.py",
+        "greg/cognition/seed_path.py",
         "greg/routing.py"
       ],
       "unresolved": "Persistent append/correction with reported conditional scores; no real-world outcome adapter or automatic policy updates."
@@ -109,7 +109,7 @@
       "section": 12,
       "status": "active",
       "implementation_refs": [
-        "greg/cognition.py"
+        "greg/cognition/seed_path.py"
       ],
       "unresolved": "Wall deadline and mandatory verifier reserve implemented; decision-specific VOI and measured energy are not implemented."
     },

@@ -1,6 +1,10 @@
-# Polyintelligence Cortex seed v0.1 — optional solver dependency, tested separately
+# Polyintelligence Cortex — optional solver dependencies, tested separately
 # (Canonical CI job 6). Z3 is MIT-licensed (https://github.com/Z3Prover/z3).
-# Acquisition verified in a sandbox on 2026-09-30: SAT, UNSAT with unsat core.
+# OR-Tools CP-SAT is Apache-2.0 (https://github.com/google/or-tools); cortex 0.2.x uses it as a
+# fault-diverse second formal engine behind the same contract, imported lazily.
+# Acquisition verified in a sandbox on 2026-09-30 (Z3) and 2026-10-01 (CP-SAT: OPTIMAL, FEASIBLE,
+# INFEASIBLE with assumptions, MODEL_INVALID, UNKNOWN kept distinct).
 # Installing this file does not activate anything; building != installation !=
 # activation != consequence authority.
 z3-solver==5.1.0.0
+ortools==9.15.6755

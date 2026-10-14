@@ -155,6 +155,52 @@ class Spec:
         self.timeout_ms = int(model.get("timeout_ms", 5000))
 
 
+def _bound_text(bounds) -> str:
+    lo, hi = bounds
+    if lo is None and hi is None:
+        return " (unbounded)"
+    return f" in [{'-∞' if lo is None else lo}, {'∞' if hi is None else hi}]"
+
+
+def review(spec: Spec) -> tuple[list, list, list]:
+    """Reverse translation plus the structural discrepancy check, independent of any solver.
+
+    Shared by every formal engine (Z3 here, OR-Tools CP-SAT in ``cpsat``) so the
+    same model receives the same review whichever engine the router selects.
+    Returns (reverse_translation, discrepancies, warnings)."""
+    reverse = [f"{v} is {'a boolean' if s == 'bool' else ('an integer' if s == 'int' else 'a real')}"
+               + ("" if s == "bool" else _bound_text(spec.bounds[v])) for v, s in spec.variables.items()]
+    reverse += [f"{c['id']} (covers {', '.join(c['covers']) or 'nothing'}): {render(c['expr'])}"
+                for c in spec.constraints]
+    if spec.query["kind"] == "entailment":
+        reverse.append(f"question: do the constraints guarantee {render(spec.query['property'])}?")
+    elif spec.query["kind"] == "optimize":
+        reverse.append(f"question: which assignment satisfying every constraint "
+                       f"{spec.query['sense']}s {render(spec.query['objective'])}?")
+    discrepancies = []
+    covered = {o for c in spec.constraints for o in c["covers"]}
+    for oid in spec.obligations:
+        if oid not in covered:
+            discrepancies.append(f"obligation {oid} has no constraint: {spec.obligations[oid]!r}")
+    for c in spec.constraints:
+        if not c["covers"]:
+            discrepancies.append(f"constraint {c['id']} traces to no obligation")
+        for oid in c["covers"]:
+            if oid not in spec.obligations:
+                discrepancies.append(f"constraint {c['id']} cites unknown obligation {oid}")
+    warnings = []
+    for oid, text in spec.obligations.items():
+        numbers = set(re.findall(r"(?<![A-Za-z_])\d+(?:\.\d+)?", text))
+        used = set()
+        for c in spec.constraints:
+            if oid in c["covers"]:
+                used |= set(re.findall(r"(?<![A-Za-z_])\d+(?:\.\d+)?", str(c["expr"])))
+        missing = sorted(numbers - used)
+        if missing:
+            warnings.append(f"{oid}: numbers {missing} in the requirement text appear in no covering constraint")
+    return reverse, discrepancies, warnings
+
+
 def _z3():
     try:
         import z3  # noqa: F401
@@ -185,39 +231,7 @@ class FormalOrgan:
         except (FormalModelError, KeyError, TypeError, ValueError) as exc:
             return self._fail("MALFORMED_INPUT", f"model rejected: {exc}", started)
 
-        # reverse translation
-        reverse = [f"{v} is {'a boolean' if s == 'bool' else ('an integer' if s == 'int' else 'a real')}"
-                   + ("" if s == "bool" else self._bound_text(spec.bounds[v])) for v, s in spec.variables.items()]
-        reverse += [f"{c['id']} (covers {', '.join(c['covers']) or 'nothing'}): {render(c['expr'])}"
-                    for c in spec.constraints]
-        if spec.query["kind"] == "entailment":
-            reverse.append(f"question: do the constraints guarantee {render(spec.query['property'])}?")
-        elif spec.query["kind"] == "optimize":
-            reverse.append(f"question: which assignment satisfying every constraint "
-                           f"{spec.query['sense']}s {render(spec.query['objective'])}?")
-
-        # discrepancy check (structural part)
-        discrepancies = []
-        covered = {o for c in spec.constraints for o in c["covers"]}
-        for oid in spec.obligations:
-            if oid not in covered:
-                discrepancies.append(f"obligation {oid} has no constraint: {spec.obligations[oid]!r}")
-        for c in spec.constraints:
-            if not c["covers"]:
-                discrepancies.append(f"constraint {c['id']} traces to no obligation")
-            for oid in c["covers"]:
-                if oid not in spec.obligations:
-                    discrepancies.append(f"constraint {c['id']} cites unknown obligation {oid}")
-        warnings = []
-        for oid, text in spec.obligations.items():
-            numbers = set(re.findall(r"(?<![A-Za-z_])\d+(?:\.\d+)?", text))
-            used = set()
-            for c in spec.constraints:
-                if oid in c["covers"]:
-                    used |= set(re.findall(r"(?<![A-Za-z_])\d+(?:\.\d+)?", str(c["expr"])))
-            missing = sorted(numbers - used)
-            if missing:
-                warnings.append(f"{oid}: numbers {missing} in the requirement text appear in no covering constraint")
+        reverse, discrepancies, warnings = review(spec)
 
         z3 = None if faults.get("solver_available") is False else _z3()
         if z3 is None:
@@ -231,12 +245,21 @@ class FormalOrgan:
         env = self._declare(z3, spec)
         exprs = {c["id"]: self._build(z3, c["expr"], env) for c in spec.constraints}
         domain = self._domain(z3, spec, env)
+        # The declared latency budget caps every solve: no fresh timeout per check.
+        latency = float(getattr(budget, "max_latency_s", 0) or 0)
+        deadline = started + latency if latency > 0 else None
 
-        def check(assertions, track=None):
+        def ms_left(until=None) -> int:
+            end = until if until is not None else deadline
+            if end is None:
+                return spec.timeout_ms
+            return min(spec.timeout_ms, int((end - time.perf_counter()) * 1000))
+
+        def check(assertions, track=None, until=None):
             nonlocal calls
             calls += 1
             s = z3.Solver()
-            s.set("timeout", spec.timeout_ms)
+            s.set("timeout", max(1, ms_left(until)))   # 1 ms: an exhausted budget answers unknown at once
             if track:
                 s.set(unsat_core=True)
                 for name, e in track.items():
@@ -274,14 +297,18 @@ class FormalOrgan:
             return self._result("FORMALIZATION_INCOMPLETE", None, spec, z3, started, calls, reverse,
                                 discrepancies, warnings, witness_results, [], {"status": "not_run"})
 
-        # counterexample search
+        # counterexample search: a diagnostic, so it may spend at most half of what remains
         cex = []
+        cex_until = None if deadline is None else time.perf_counter() + (deadline - time.perf_counter()) / 2
         for c in spec.constraints:
             if calls >= max_calls - 1:
                 cex.append({"constraint": c["id"], "result": "skipped: solver-call budget"})
                 continue
+            if cex_until is not None and ms_left(cex_until) < 1:
+                cex.append({"constraint": c["id"], "result": "skipped: latency budget"})
+                continue
             others = [e for cid, e in exprs.items() if cid != c["id"]]
-            _, res = check(domain + others + [z3.Not(exprs[c["id"]])])
+            _, res = check(domain + others + [z3.Not(exprs[c["id"]])], until=cex_until)
             if res == z3.unsat:
                 cex.append({"constraint": c["id"], "result": "implied by the others (redundant or mis-encoded?)"})
             elif res == z3.sat:
@@ -321,7 +348,7 @@ class FormalOrgan:
                     return self._fail("BUDGET_EXHAUSTED", "solver-call budget exhausted before optimization",
                                       started, reverse=reverse, discrepancies=discrepancies, warnings=warnings,
                                       calls=calls)
-                outcome = self._optimize(z3, spec, env, domain, exprs, check)
+                outcome = self._optimize(z3, spec, env, domain, exprs, check, max(1, ms_left()))
                 calls += 1  # the Optimize call; the certificate check counted itself
                 if outcome[0] != "OK":
                     state, why = outcome
@@ -351,13 +378,13 @@ class FormalOrgan:
                             witness_results, cex, solver_out)
 
     # ---------------------------------------------------------------- optimization
-    def _optimize(self, z3, spec, env, domain, exprs, check):
+    def _optimize(self, z3, spec, env, domain, exprs, check, timeout_ms=None):
         """Optimal assignment plus a certificate: an independent check that no feasible
         assignment is strictly better. Returns ("OK", answer, solver_out) or (state, reason)."""
         sense = spec.query["sense"]
         objective = self._build(z3, spec.query["objective"], env)
         opt = z3.Optimize()
-        opt.set("timeout", spec.timeout_ms)
+        opt.set("timeout", timeout_ms or spec.timeout_ms)
         for a in domain + list(exprs.values()):
             opt.add(a)
         handle = opt.minimize(objective) if sense == "minimize" else opt.maximize(objective)
@@ -383,12 +410,7 @@ class FormalOrgan:
         return ("OK", answer, solver_out)
 
     # ---------------------------------------------------------------- helpers
-    @staticmethod
-    def _bound_text(bounds) -> str:
-        lo, hi = bounds
-        if lo is None and hi is None:
-            return " (unbounded)"
-        return f" in [{'-∞' if lo is None else lo}, {'∞' if hi is None else hi}]"
+    _bound_text = staticmethod(_bound_text)
 
     @staticmethod
     def _declare(z3, spec: Spec) -> dict:

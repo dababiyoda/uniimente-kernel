@@ -26,7 +26,7 @@
     "tests/integration/test_greg_cognition_process.py"
   ],
   "implementation_refs": [
-    "greg/cognition.py",
+    "greg/cognition/seed_path.py",
     "cortex/seed",
     "docs/cortex/SEED_GENOME_REQUIREMENTS.json",
     "greg/path.json"

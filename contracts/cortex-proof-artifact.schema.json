@@ -23,7 +23,8 @@
         "simulation",
         "human_adjudication",
         "measurement",
-        "institutional_observation"
+        "institutional_observation",
+        "extraction"
       ]
     }
   },
@@ -325,6 +326,93 @@
                 }
               }
             }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "optimization"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "allOf": [
+          {
+            "anyOf": [
+              {
+                "required": [
+                  "failure"
+                ]
+              },
+              {
+                "required": [
+                  "objective",
+                  "structured_model",
+                  "assignment",
+                  "feasibility_check",
+                  "native_status",
+                  "bound",
+                  "gap",
+                  "budget",
+                  "timeout_s",
+                  "optimality",
+                  "reverse_translation",
+                  "discrepancy_check",
+                  "premises",
+                  "unverified_premises"
+                ]
+              }
+            ]
+          },
+          {
+            "required": [
+              "scope"
+            ],
+            "properties": {
+              "scope": {
+                "const": "valid_given_encoding"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "proof_class": {
+            "const": "extraction"
+          }
+        },
+        "required": [
+          "proof_class"
+        ]
+      },
+      "then": {
+        "anyOf": [
+          {
+            "required": [
+              "failure"
+            ]
+          },
+          {
+            "required": [
+              "original",
+              "grammar",
+              "extractor",
+              "structured",
+              "reverse_translation",
+              "audit",
+              "compiled_model",
+              "limits",
+              "proposal"
+            ]
           }
         ]
       }

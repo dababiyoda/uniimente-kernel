@@ -134,3 +134,22 @@ with ≥ 5 weighted outcomes each (the ledger's evidence threshold).
 ## 13. Final command
 
 **Validate.**
+
+## Addendum, 2026-10-01: Stage-gate
+
+The cognitive substrate now runs on GREG's mission path and has a frozen comparison against GREG's own
+baselines (`docs/cortex/GREG_SEED_GENOME_REPORT.md`). It remains an internal competency substrate. No
+external actor has accepted its artifacts for a consequential transaction, so market control, mandates,
+capital effects and network effects are unproven.
+
+- **Decision: Stage-gate.**
+- **Next external action:** the founder selects a local model on Body 1, and the frozen v0.3 suite's
+  `always_llm` and `tool_llm` arms run.
+- **Number it must change:** model arms run 0/2 -> 2/2, with a recorded verdict against the strongest of
+  them.
+- **Evidence required:** results tied to `cortex/evaluation/freeze-crossgeo-v0.3.json`.
+- **Budget:** local model only; no paid inference without the founder's own signed selection.
+- **Termination trigger:** `GAIN_ABSENT` against the strongest model arm on two frozen versions with no
+  hard-failure advantage. In that case keep the static router as default and retain the cortex
+  mechanisms only where fault and adversarial evidence shows they earn their cost.
+

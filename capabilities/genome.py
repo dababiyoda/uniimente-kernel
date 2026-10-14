@@ -59,6 +59,7 @@ class CapabilityGenome:
     recovery_path: str
     legal_operator: str = "alfonso_lopez"
     cognitive_profiles: list[dict] = field(default_factory=list)
+    cognitive_profile: dict = field(default_factory=dict)
 
     def validate(self) -> list[str]:
         problems = []
@@ -84,6 +85,12 @@ class CapabilityGenome:
                     problems.extend(CognitiveCapabilityProfile(**profile).validate())
                 except (TypeError, ValueError):
                     problems.append('invalid cognitive profile')
+        if self.cognitive_profile:
+            try:
+                from greg.cognition.contracts import CognitiveCapabilityProfile
+                CognitiveCapabilityProfile.from_dict(self.cognitive_profile)
+            except (TypeError, ValueError) as exc:
+                problems.append(f"invalid cognitive profile: {exc}")
         return problems
 
 

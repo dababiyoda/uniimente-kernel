@@ -13,7 +13,7 @@ import importlib.util
 
 from greg.body import Body, observe, status
 from tests.greg_fixtures import make_body
-from tests.unit.test_greg_cognition import problem, estimation, allocation
+from tests.unit.test_greg_cognition_seed_path import problem, estimation, allocation
 
 ROOT = Path(__file__).resolve().parents[2]
 pytestmark = pytest.mark.skipif(any(importlib.util.find_spec(m) is None for m in ('z3', 'ortools')),
@@ -45,7 +45,7 @@ def test_cli_composition_survives_sigkill_without_duplicate_computation(tmp_path
             with observe(home, actor='spiffe://uniimente.internal/greg/recovery-test') as journal:
                 observed = bool([e for e in journal.replay(kill_after)
                                  if kill_after == 'cognition.receipt' or
-                                 e.payload.get('capability') == 'cognition.solve'])
+                                 e.payload.get('capability') == 'cognition.seed.solve'])
             if observed:
                 child.kill()  # actual SIGKILL; no orderly close or manual tick
                 break
@@ -68,7 +68,7 @@ def test_cli_composition_survives_sigkill_without_duplicate_computation(tmp_path
         assert len(receipts) == 1 and receipts[0].payload['answered']
         assert len({c['method'] for c in receipts[0].payload['claims']}) == 2
         actions = [e for e in body.journal.replay('mission.action')
-                   if e.payload.get('capability') == 'cognition.solve']
+                   if e.payload.get('capability') == 'cognition.seed.solve']
         # The durable cognition receipt precedes the Gate's final record. A kill
         # in that gap can leave no mission.action, but never a second computation.
         assert len(actions) <= 1

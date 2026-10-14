@@ -1,14 +1,15 @@
 # Polyintelligence Cortex — Seed Experiment
 
-Current bounded product integration: [Seed Genome on the canonical GREG path](GREG_SEED_GENOME.md). The older sandbox experiment and its frozen results remain historical evidence.
-
 The `cortex` package is the seed of GREG's Polyintelligence Cortex: a router that classifies a problem's
 geometry, checks which cognitive organs are eligible for it, runs the eligible ones under a budget, attacks
 their output with an independent verifier, and returns a recommendation, abstention, bounded test or handoff
 together with a content-addressed receipt.
 
-**Status:** cortex 0.1.5 · six seed organs `SANDBOXED` · 28 reserved families registered and disabled ·
-frozen held-out result `INCONCLUSIVE` · **not promoted**. See [`SEED_EXPERIMENT_REPORT.md`](SEED_EXPERIMENT_REPORT.md).
+**Status:** cortex 0.2.1, converged onto GREG's mission path (`cognition.solve`, one registry, one receipt
+envelope, one settlement) · seven seed organs including a fault-diverse CP-SAT engine and the schedule-extraction
+composition · reserved families registered and disabled · **not promoted**. The frozen cross-geometry comparison
+against GREG's own baselines is reported in [`GREG_SEED_GENOME_REPORT.md`](GREG_SEED_GENOME_REPORT.md); the v0.1
+seed experiment is in [`SEED_EXPERIMENT_REPORT.md`](SEED_EXPERIMENT_REPORT.md).
 
 Source of requirements: the verbatim build prompt in
 [`docs/intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md`](../intent/sources/POLYINTELLIGENCE-CORTEX-BUILD-PROMPT-SEED-V0.1-2026-09-30.md).
@@ -112,8 +113,17 @@ pip install -r requirements-dev.txt -r requirements-cortex.txt
 python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py \
     tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py
 
-# mutation check: 26 safeguard-removing mutants on a scratch copy; all must be caught
+# mutation check: cortex and GREG-path safeguard-removing mutants on a scratch copy; all must be caught
 python scripts/ci/check_cortex_mutants.py
+
+# the cortex on GREG's path: bridge, composition, cross-geometry instrument, signed mission, kill -9 rehearsal
+python -m pytest -q tests/unit/test_greg_cortex_bridge.py tests/unit/test_cortex_formal_engines.py \
+    tests/unit/test_cortex_schedule_composition.py tests/unit/test_cortex_crossgeo.py \
+    tests/integration/test_greg_cortex_mission.py tests/integration/test_greg_cortex_rehearsal.py
+
+# cross-geometry comparison (directive section 15): five arms, predeclared loss, frozen before reporting
+python -m cortex.evaluation.crossgeo --partition selection --out selection.json
+python -m cortex.evaluation.crossgeo --partition reported --out results.json   # refused unless frozen
 
 # development partitions (no freeze needed)
 python -m cortex.evaluation.run --partition smoke --out smoke.json

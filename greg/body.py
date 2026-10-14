@@ -159,8 +159,9 @@ class Body:
         self.office = AuthorityOffice(compiled=self.compiled, passports=self.passports, signer=signer,
                                       ledger=self.ledger)
         self.registry = CapabilityRegistry()
+        from greg.cognition.catalog import initial_state
         for manifest, adapter in BUILTINS.values():
-            self.registry.register(manifest, adapter, state="ATTACHED")
+            self.registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
         self._refresh_builder()
@@ -171,6 +172,7 @@ class Body:
                                     secrets=self.secrets, workspace_root=self.layout.workspace,
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
+        self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         return self
 
     def _refresh_builder(self):
@@ -419,8 +421,11 @@ class Body:
         if self.paused():
             self._heartbeat("PAUSED", [])
             return {"commands": commands, "paused": True}
+        self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         summary = self.engine.tick(now, should_stop=self._stop_now)
         self._close_out(now)
+        from greg.cognition.settlement import reconcile as settle_cognition
+        settle_cognition(self.journal)
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)
         anchored = anchor.anchor_once(self.journal, now) if anchor.due(self.journal, now) else None

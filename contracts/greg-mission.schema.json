@@ -210,6 +210,71 @@
               "pattern": "^[a-z0-9_.-]{1,80}$"
             },
             "description": "check_ids that must be observed passing before this strategy may act (e.g. file a verification record only after the digest matched)"
+          },
+          "bind": {
+            "type": "array",
+            "maxItems": 8,
+            "description": "typed output->input edges: a param of this strategy is taken from a field of the latest DONE Gate receipt of another strategy in the same signed mission. The value is data: target, capability, cost and consequence class stay as signed, and the bound params enter the scope digest, so an approval covers the exact bound content.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "param",
+                "from",
+                "type"
+              ],
+              "properties": {
+                "param": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_]{1,64}(\\.[A-Za-z0-9_]{1,64}){0,5}$"
+                },
+                "from": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "action_id",
+                    "field"
+                  ],
+                  "properties": {
+                    "action_id": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9_.-]{1,80}$"
+                    },
+                    "field": {
+                      "type": "string",
+                      "maxLength": 300
+                    }
+                  }
+                },
+                "type": {
+                  "enum": [
+                    "string",
+                    "number",
+                    "integer",
+                    "boolean",
+                    "object",
+                    "array"
+                  ]
+                },
+                "render": {
+                  "enum": [
+                    "value",
+                    "json"
+                  ],
+                  "description": "json: the value as sorted JSON text"
+                },
+                "template": {
+                  "type": "string",
+                  "maxLength": 4000,
+                  "description": "text with exactly one {value} placeholder"
+                },
+                "max_bytes": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 65536
+                }
+              }
+            }
           }
         }
       }

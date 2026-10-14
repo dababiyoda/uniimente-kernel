@@ -95,3 +95,58 @@ Totals: DEFAULT_FOR_GEOMETRY 12, NICHE_CAPABILITY 8, SUPERSEDED 6, COMPOSITION_O
   (`docs/evidence/greg-composition-lift/`). It does not attach any family: every genome stays registered
   VERIFIED (withheld), and attaching one is the founder's decision.
 - **Authority delta: none.** Read-only computations; no model calls; no external effects.
+
+## Erratum: independent evidence review, 2026-10-13
+
+An independent read-only review (a separate agent, not the one that built and ran this admission)
+re-derived every status from the per-instance rows and checked every claim. The evidence itself
+holds:
+- `results.json` is unedited;
+- all 11 freeze hashes match `496c85b` and every later commit;
+- all 31 statuses re-derive exactly;
+- every table cell above matches `results.json`.
+
+The prose above overstated or misdescribed seven points. It is kept as written; the corrections
+follow.
+
+1. **"Admitted" means DEFAULT_FOR_GEOMETRY or NICHE_CAPABILITY.** The admitted count is 20 of the
+   31 evaluated: L1 5, L2 2, L3 11, L4 2. The other 11 are not admitted:
+   - 6 SUPERSEDED and 3 COMPOSITION_ONLY, which the compiler excludes;
+   - 2 EXPERIMENTAL.
+
+   Layer 2 is thin: 4 of its 6 genomes are SUPERSEDED or EXPERIMENTAL.
+2. **"Superseded by a mature or simpler mechanism" fits at most 4 of the 6:** `game_minimax`,
+   `dp_knapsack`, `search_astar` and `flow_reinforce_greedy`.
+   - `collective_market`'s competitor is a centralized optimum that knows every private value. That
+     is an upper bound using information no market has, not a deployable mechanism; its SUPERSEDED
+     status comes from a 0.07 ms latency gap on 30 ties.
+   - `collective_flock`'s competitor is stronger but about 35x slower, so it is not simpler.
+
+   Consequence, recorded rather than re-ruled: the compiler excludes SUPERSEDED, so the market
+   geometry has no routable method. The next admission version should not let a competitor that
+   uses unavailable information supersede.
+3. **SUPERSEDED genomes are not "fallbacks."** They stay registered and VERIFIED (withheld), but
+   `compiler.candidates()` rejects them, so no fallback routing exists.
+4. **`develop_repair` does not simply "lose" to the replanner.** Overall it is 12-18, and p_worse =
+   0.18 is not significant.
+   - With a reliable controller it loses 0-15.
+   - With an unreliable controller it wins 12-3 (p = 0.018).
+   - The replanner gave 5 wrong answers and the candidate gave 0.
+
+   Its NICHE status comes from latency, not quality. The subregion result is reported, not part of
+   the rule.
+5. **`bayes_interval`'s competitor is not SciPy.** It is the closed-form Wilson interval from the
+   standard library; the SciPy dependency belongs to the candidate (Jeffreys).
+6. **The narrative is hand-written; the table is scripted.** "Every number below is copied from
+   results.json by script" is true of the table only.
+7. **"p=0" means p < 1e-6.** The table shows `round(p, 6)`; for example, 28-2 is about 4.3e-7.
+
+The freeze also left code unhashed that the run depends on:
+- `greg/cognition/cortex.py`, through the smoke;
+- `greg/cognition/solvers.py`;
+- `developmental/mica.py` and `developmental/contracts.py`;
+- the M4 data.
+
+None changed between `496c85b` and `7f491c5`, so this run is unaffected. Admission freezes now hash
+the computed import closure and the dependency versions (`cortex/evaluation/closure.py`, commit
+`4d99fb0`).

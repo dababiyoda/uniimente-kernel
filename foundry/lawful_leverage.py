@@ -58,10 +58,12 @@ COMPLEMENTS = (("proof", "eligibility"), ("proof", "settlement"), ("proof", "rep
                ("routing", "information"), ("coordination", "standards"), ("dependency", "capability"),
                ("permission", "eligibility"), ("capital", "settlement"))
 MAX_CANDIDATES = 64           # the institutional-leverage contract's intervention ceiling
+PRINCIPAL = "alfonso_lopez"     # the registered human principal (greg.authority.PRINCIPAL; equality is tested)
 NON_HUMAN_OPERATORS = ("uniimente", "greg", "egregore")   # the institution never is its own legal operator
 # Letters from other scripts that render like the Latin letters of those names (Cyrillic, Greek, Latin
 # extensions; a subset of Unicode TR39 confusables). Mapped before the check, so "Grеg" with a Cyrillic "е"
-# is still GREG. The check fails closed: an over-mapped human name is refused, never an institution accepted.
+# is still GREG. Any letter still outside a-z after mapping is refused rather than deleted (fail closed), and
+# the ASCII lookalikes l/1/| for i and rn for m are folded, so "UNlIMENTE" is UNIIMENTE.
 CONFUSABLE = str.maketrans({
     "а": "a", "е": "e", "ё": "e", "є": "e", "і": "i", "ї": "i", "ј": "j", "о": "o", "р": "p", "с": "c",
     "у": "y", "х": "x", "ѕ": "s", "ԁ": "d", "ԍ": "g", "ɡ": "g", "ց": "g", "ɢ": "g", "ʀ": "r", "г": "r",
@@ -70,10 +72,27 @@ CONFUSABLE = str.maketrans({
     "ᴜ": "u", "ɴ": "n", "ᴍ": "m", "ᴇ": "e", "ᴛ": "t", "ᴏ": "o", "ᴦ": "r", "ǥ": "g", "ğ": "g", "ĝ": "g"})
 
 
-def _operator_skeleton(name: str) -> str:
+ASCII_LOOKALIKE = str.maketrans({"l": "i", "1": "i", "|": "i", "0": "o"})
+
+
+def _operator_tokens(name: str) -> list[str]:
+    """Skeleton tokens of a legal-operator name; raises if a letter outside the reviewed Latin set remains."""
     folded = unicodedata.normalize("NFKD", unicodedata.normalize("NFKC", name).casefold())
     folded = "".join(ch for ch in folded if not unicodedata.combining(ch)).translate(CONFUSABLE)
-    return re.sub(r"[^a-z0-9]", "", folded)
+    if any(ch.isalpha() and not "a" <= ch <= "z" for ch in folded):
+        raise LeverageRefused("the legal operator's name has letters outside the reviewed Latin set; name a "
+                              "registered human principal")
+    folded = folded.replace("rn", "m").translate(ASCII_LOOKALIKE)
+    return [t for t in re.split(r"[^a-z0-9]+", folded) if t]
+
+
+def _non_human_operator(name: str) -> bool:
+    """The institution, or a lookalike of it, named as the legal operator. Whole tokens, so Gregory, McGregor
+    and Grégoire stay human; a human named exactly Greg must use the registered principal id."""
+    if name == PRINCIPAL:
+        return False
+    tokens = _operator_tokens(name)
+    return not tokens or "".join(tokens) in NON_HUMAN_OPERATORS or any(t in NON_HUMAN_OPERATORS for t in tokens)
 PROBABLE = 0.8                # "defensible" and "dominates" both mean at least 80% of joint samples
 
 
@@ -243,8 +262,7 @@ def validate(problem: dict) -> dict:
                     key=lambda e: list(e.path))
     if errors:
         raise LeverageRefused(f"lawful-leverage problem: {errors[0].message} at {list(errors[0].path)}")
-    operator = _operator_skeleton(str(problem["constraints"].get("legal_operator", "alfonso_lopez")))
-    if not operator or any(name in operator for name in NON_HUMAN_OPERATORS):
+    if _non_human_operator(str(problem["constraints"].get("legal_operator", PRINCIPAL))):
         raise LeverageRefused("the legal operator must be a human principal; UNIIMENTE, GREG or the egregore never is")
     model = ranker._validate("map", problem["institutional_map"])
     for kind in ("nodes", "links"):
@@ -576,12 +594,12 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
     if "direct_labor" in p:
         d = p["direct_labor"]
         direct = Mechanism("direct_labor", "direct", "direct", d["description"], "work.perform",
-                           d.get("consequence_class", "internal_write"),
+                           d["consequence_class"],
                            d["effect"], 2 + 18 * d["confidence"], 0.0, d["cost_usd_per_cycle"] * horizon,
                            d["effort_hours_per_cycle"] * horizon, 0.0, 0.0, 0.0,
-                           d.get("reversibility", "irreversible" if d.get("consequence_class") == "irreversible"
+                           d.get("reversibility", "irreversible" if d["consequence_class"] == "irreversible"
                                  else "reversible"), tuple(sorted(d.get("harm", {}).items())),
-                           d.get("consequence_class") == "external_contact" or bool(d.get("third_parties")),
+                           d["consequence_class"] == "external_contact" or bool(d["third_parties"]),
                            ("knowledge",), 0.1, 0.1, 0.0, 0.0, 0.2,
                            "per-cycle gap at the bottleneck falls while the labour is paid",
                            "stop the labour; the gap returns", "repeated labour does not compound",
@@ -590,7 +608,7 @@ def compile(problem: dict) -> dict:  # noqa: A001 - the Foundry's public verb
     # Nothing is dropped silently: the report lists every candidate not evaluated.
     labour_surface = None
     if direct:
-        labour_surface = {"node": bottleneck, "third_parties": p["direct_labor"].get("third_parties", [])}
+        labour_surface = {"node": bottleneck, "third_parties": p["direct_labor"]["third_parties"]}
         if p["direct_labor"].get("consent"):
             labour_surface["consent"] = p["direct_labor"]["consent"]
     pool = base + ([(direct, labour_surface)] if direct else []) + combos + mutated

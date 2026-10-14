@@ -1838,17 +1838,19 @@ def _ca_design(g, zset):
     return np.column_stack(cols) if cols else np.zeros((len(g["cols"][g["t"]]), 0))
 
 
+CA_MAX_CONDITION = 1e8
+
+
 def _ca_regress(t, y, Z):
     import numpy as np
     Zc = Z - Z.mean(axis=0) if Z.shape[1] else Z
     X = np.column_stack([np.ones(len(t)), t, Zc, t[:, None] * Zc])
     coef, _, rank, _ = np.linalg.lstsq(X, y, rcond=None)
-    if rank < X.shape[1] or len(t) <= X.shape[1] + 1:
-        return None
+    if rank < X.shape[1] or len(t) <= X.shape[1] + 1 or np.linalg.cond(X) > CA_MAX_CONDITION:
+        return None                    # rank or near-collinearity: the coefficient is not numerically identified
     resid = y - X @ coef
-    bread = np.linalg.inv(X.T @ X)
-    meat = (X * resid[:, None] ** 2).T @ X
-    se = math.sqrt(max(0.0, float((bread @ meat @ bread)[1, 1])))       # HC0 sandwich
+    row = np.linalg.pinv(X)[1]                 # (X'X)^-1 X' by SVD, without squaring the condition number
+    se = math.sqrt(float(np.sum(row * row * resid * resid)))           # HC0 sandwich
     return float(coef[1]), se, X.shape[1]
 
 
@@ -1955,27 +1957,65 @@ def causal_verify(data, output, certificate):
         se = math.sqrt(math.fsum(((a[0] + a[2]) / n) ** 2 * (statistics.variance(groups[key, True]) / a[0]
                                                          + statistics.variance(groups[key, False]) / a[2])
                                  for key, a in acc.items()))
-    else:                                              # normal equations instead of least squares
+        size = len(acc)
+    else:                                              # Householder QR, not the solver's SVD least squares
         import numpy as np
-        Z = _ca_design(g, declared)
+        Z = _verify_design(g, declared)
         Zc = Z - Z.mean(axis=0)
         tt = np.asarray(t, dtype=float)
         X = np.hstack([np.ones((n, 1)), tt[:, None], Zc, tt[:, None] * Zc])
         yy = np.asarray(y, dtype=float)
+        size = X.shape[1]
         try:
-            est = float(np.linalg.solve(X.T @ X, X.T @ yy)[1])
+            est, e = _qr_fit(X, yy)
             # Frisch-Waugh-Lovell: the HC0 variance of the treatment coefficient is
             # sum(r^2 e^2) / (r'r)^2, with r the treatment column residualised on the other columns.
-            others = np.delete(X, 1, axis=1)
-            r = tt - others @ np.linalg.solve(others.T @ others, others.T @ tt)
-            e = yy - X @ np.linalg.solve(X.T @ X, X.T @ yy)
+            _, r = _qr_fit(np.delete(X, 1, axis=1), tt, coefficient=None)
             se = math.sqrt(float(np.sum(r * r * e * e)) / float(r @ r) ** 2)
-        except np.linalg.LinAlgError:
+        except (np.linalg.LinAlgError, ZeroDivisionError):
             checks["estimate_recomputed"] = False
             return checks
     checks["estimate_recomputed"] = abs(est - output["ate"]) <= 1e-6 * (1 + abs(est))
     checks["standard_error_recomputed"] = _is_num(output.get("se")) and abs(se - output["se"]) <= 1e-6 * (1 + se)
+    # the certificate published with the receipt: every claim in it is bound, not carried on trust
+    cert = certificate if isinstance(certificate, dict) else {}
+    ci, bd = cert.get("ci95"), cert.get("backdoor")
+    checks["certificate_claims_recomputed"] = bool(
+        isinstance(ci, list) and len(ci) == 2 and all(_is_num(v) for v in ci) and _is_num(output.get("se"))
+        and abs(ci[0] - (output["ate"] - 1.96 * output["se"])) <= 1e-9 * (1 + abs(ci[0]))
+        and abs(ci[1] - (output["ate"] + 1.96 * output["se"])) <= 1e-9 * (1 + abs(ci[1]))
+        and cert.get("n") == n and type(cert.get("n")) is int and cert.get("strata_or_columns") == size
+        and isinstance(bd, dict) and bd and all(v is True for v in bd.values())
+        and checks["backdoor_criterion_by_independent_bayes_ball"])
     return checks
+
+
+def _verify_design(g, zset):
+    """The verifier's own covariate encoding: continuous columns as given, each discrete variable as
+    indicators of every level except its smallest."""
+    import numpy as np
+    n = len(g["cols"][g["t"]])
+    columns = []
+    for name in zset:
+        values = g["cols"][name]
+        if g["info"][name]["type"] == "continuous":
+            columns.append([float(v) for v in values])
+            continue
+        levels = sorted(set(values))
+        for level in levels[1:]:
+            columns.append([1.0 if v == level else 0.0 for v in values])
+    return np.array(columns, dtype=float).T if columns else np.zeros((n, 0))
+
+
+def _qr_fit(X, y, coefficient=1):
+    """Least squares by Householder QR: (coefficient, residual), or (None, residual) when coefficient is None."""
+    import numpy as np
+    q, r = np.linalg.qr(X)
+    if np.min(np.abs(np.diag(r))) <= 1e-12 * np.max(np.abs(np.diag(r))):
+        raise np.linalg.LinAlgError("rank deficient")
+    beta = np.linalg.solve(r, q.T @ y)                 # r is upper triangular and nonsingular
+    resid = y - X @ beta
+    return (None if coefficient is None else float(beta[coefficient])), resid
 
 
 def causal_score(data, truth, output):

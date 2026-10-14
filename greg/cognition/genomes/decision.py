@@ -57,21 +57,27 @@ def solve(data, budget):
 
 
 def verify(data, output, certificate):
-    """Independent recomputation in exact rational arithmetic for integer posteriors (else float recursion)."""
+    """Independent recomputation: exact rational products for integer posteriors (O(n) terms, never a
+    factorial of the posterior parameters), otherwise a log-space ratio recursion that cannot underflow."""
     a, b, n, customers, value, fixed, cost = _inputs(data)
     probs = []
     if float(a).is_integer() and float(b).is_integer() and n <= 200:
         a_i, b_i = int(a), int(b)
-        def beta_int(x, y):
-            return Fraction(math.factorial(x - 1) * math.factorial(y - 1), math.factorial(x + y - 1))
-        probs = [float(math.comb(n, k) * beta_int(a_i + k, b_i + n - k) / beta_int(a_i, b_i)) for k in range(n + 1)]
+        # P(k) = C(n, k) * prod_{i<k}(a+i) * prod_{j<n-k}(b+j) / prod_{m<n}(a+b+m)
+        rising_a, rising_b = [1], [1]
+        for i in range(n):
+            rising_a.append(rising_a[-1] * (a_i + i))
+            rising_b.append(rising_b[-1] * (b_i + i))
+        denominator = 1
+        for m in range(n):
+            denominator *= a_i + b_i + m
+        probs = [float(Fraction(math.comb(n, k) * rising_a[k] * rising_b[n - k], denominator)) for k in range(n + 1)]
     else:
-        p = 1.0
-        for i in range(n):                              # P(k=0) by product, then the ratio recursion
-            p *= (b + i) / (a + b + i)
+        log_p = math.fsum(math.log(b + i) - math.log(a + b + i) for i in range(n))     # log P(k=0)
         for k in range(n + 1):
-            probs.append(p)
-            p *= (n - k) / (k + 1) * (a + k) / (b + n - k - 1) if k < n else 1
+            probs.append(math.exp(log_p))
+            if k < n:
+                log_p += math.log(n - k) - math.log(k + 1) + math.log(a + k) - math.log(b + n - k - 1)
     scenarios = output.get("posterior_scenarios") if isinstance(output, dict) else None
     if (not isinstance(scenarios, list) or len(scenarios) != n + 1
             or not all(isinstance(s, dict) and set(s) == {"probability", "best_value"}

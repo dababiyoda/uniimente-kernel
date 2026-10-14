@@ -89,3 +89,39 @@ def test_claims_in_any_script_stay_distinct_and_are_not_flagged_as_a_campaign():
     for s in ("a", "b", "c"):
         feed(j, s, "Доставка  задерживается на НЕДЕЛЮ!")      # case and punctuation still collapse
     assert dataplane.community_evidence(j, "community")["coordination_flags"][0]["sources"] == 3
+
+
+def test_vowel_and_tone_marks_keep_distinct_claims_apart():
+    # review 2026-10-13: combining marks became spaces, so three different Hindi complaints (parcel arrived
+    # empty / open / opened) merged into one "coordinated campaign" and two were dropped; Thai news/rice too
+    j = Journal()
+    for source, text in (("a", "पैकेट खाली आया"), ("b", "पैकेट खुला आया"), ("c", "पैकेट खोला आया"),
+                         ("d", "ข่าว"), ("e", "ข้าว")):
+        feed(j, source, text)
+    out = dataplane.community_evidence(j, "community")
+    assert out["distinct_claims"] == 5 and out["coordination_flags"] == []
+
+
+def test_a_dotted_capital_i_does_not_split_one_claim():
+    keys = {dataplane._normal(t) for t in ("Ödeme iptal edildi", "Ödeme İptal edildi", "ÖDEME İPTAL EDİLDİ")}
+    assert keys == {"ödeme iptal edildi"}
+
+
+def test_fancy_text_cannot_steer_a_cluster_out_of_its_kind():
+    # review 2026-10-13: the first poster's raw text decided the cluster's kind; a mathematical-bold post
+    # arriving first moved five plain crash reports to "unclassified"
+    j = Journal()
+    feed(j, "fancy", "𝐓𝐡𝐞 𝐚𝐩𝐩 𝐜𝐫𝐚𝐬𝐡𝐞𝐬 𝐨𝐧 𝐥𝐨𝐠𝐢𝐧")
+    for s in ("u1", "u2", "u3", "u4", "u5"):
+        feed(j, s, "The app crashes on login")
+    out = dataplane.community_evidence(j, "community")
+    assert "failure" in out["by_kind"] and "unclassified" not in out["by_kind"]
+
+
+def test_one_identity_can_never_be_a_campaign():
+    import pytest
+    j = Journal()
+    feed(j, "a", "We need dark mode")
+    for bad in (0, 1, -3, 2.0, "3"):
+        with pytest.raises(ValueError):
+            dataplane.community_evidence(j, "community", campaign_sources=bad)

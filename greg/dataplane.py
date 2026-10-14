@@ -75,9 +75,12 @@ _KINDS = {k: re.compile(v, re.IGNORECASE) for k, v in SIGNAL_KINDS.items()}
 
 def _normal(text: str) -> str:
     """Clustering key: NFKC, case-folded, punctuation and spacing collapsed, in every script (an ASCII-only key
-    merged all non-Latin text into one cluster). Text with no word characters keys on itself."""
-    folded = unicodedata.normalize("NFKC", text).casefold()
-    words = re.sub(r"[\W_]+", " ", folded).strip()
+    merged all non-Latin text into one cluster). Combining marks are part of words (Devanagari and Thai vowel
+    and tone signs distinguish claims); NFKC runs again after case-folding so a folded dotted capital I
+    recombines. Text with no word characters keys on itself."""
+    folded = unicodedata.normalize("NFKC", unicodedata.normalize("NFKC", text).casefold()).replace("i\u0307", "i")
+    words = "".join(ch if ch.isalnum() or unicodedata.category(ch)[0] == "M" else " " for ch in folded)
+    words = " ".join(words.split())
     return words or folded.strip()
 
 
@@ -86,21 +89,28 @@ def community_evidence(journal: Journal, channel: str, *, campaign_sources: int 
 
     * one source carries one unit of weight per claim, whatever its volume (brigading by repetition fails);
     * identical normalised text from ``campaign_sources`` or more sources is flagged as a possible
-      coordinated campaign and its cluster counts as ``campaign_sources - 1`` units: no more than an
+      coordinated campaign and its cluster counts as ``campaign_sources - 1`` units (an integer of at
+      least 2 is required, so a flag always means several identities): no more than an
       unflagged cluster can reach (sybils gain nothing over two identities), and never less (more
       independent agreement can never lower a claim's support or demote it to a minority report);
     * per kind, every distinct claim is kept with its support; claims below the most-supported one are the
       minority reports, listed explicitly;
     * classification is a keyword heuristic, labelled as such.
     """
+    if type(campaign_sources) is not int or campaign_sources < 2:
+        raise ValueError("campaign_sources is an integer of at least 2: one identity is never a campaign")
     items = [e.payload for e in journal.replay("external.ingested")
              if e.payload["channel"] == channel and not e.payload["quarantined"]]
     clusters: dict[str, dict] = {}
     for item in items:
-        key = hashlib.sha256(_normal(item["content"]).encode()).hexdigest()
+        normal = _normal(item["content"])
+        key = hashlib.sha256(normal.encode()).hexdigest()
         c = clusters.setdefault(key, {"text": item["content"][:500], "sources": set(), "first_at": item["at"],
-                                      "kinds": sorted(k for k, rx in _KINDS.items() if rx.search(item["content"]))})
+                                      "kinds": set()})
         c["sources"].add(item["source"])
+        # classify the normalised text (fancy Unicode must not hide a keyword) and take the union over the
+        # cluster, so no single source's spelling or arrival order decides the cluster's kind
+        c["kinds"] |= {k for k, rx in _KINDS.items() if rx.search(normal) or rx.search(item["content"])}
     by_kind: dict[str, list] = {k: [] for k in SIGNAL_KINDS}
     flagged = []
     for key, c in sorted(clusters.items()):
@@ -111,7 +121,7 @@ def community_evidence(journal: Journal, channel: str, *, campaign_sources: int 
                             "flag": "COORDINATED_CAMPAIGN_SUSPECTED", "counted_as": weight})
         record = {"claim": c["text"], "support_sources": weight, "raw_sources": len(c["sources"]),
                   "first_at": c["first_at"], "cluster": key[:16], "campaign_suspected": campaign}
-        for kind in c["kinds"] or ["unclassified"]:
+        for kind in sorted(c["kinds"]) or ["unclassified"]:
             by_kind.setdefault(kind, []).append(record)
     kinds = {}
     for kind, records in by_kind.items():

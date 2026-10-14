@@ -135,6 +135,8 @@ def answer(output, certificate, *, status="ANSWER", missing=()) -> dict:
     """The return shape of ``solve``. status: ANSWER, ABSTAIN or UNKNOWN."""
     if status not in ("ANSWER", "ABSTAIN", "UNKNOWN"):
         raise GenomeError("solve status is ANSWER, ABSTAIN or UNKNOWN")
+    if status == "ANSWER" and output is None:
+        raise GenomeError("an ANSWER carries its output; abstain or report UNKNOWN instead")
     return {"output": output, "certificate": certificate, "status": status, "missing": list(missing)}
 
 

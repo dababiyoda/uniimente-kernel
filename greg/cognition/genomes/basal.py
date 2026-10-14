@@ -427,7 +427,9 @@ def pid_verify(data, output, certificate):
               "limit_run_recomputed": cert.get("longest_limit_run") == sim["longest_limit_run"],
               "seed_bound": cert.get("seed") == p["seed"] and cert.get("delay_samples") == p["delay"],
               "no_divergence": sim["max_abs_error"] <= PID_DIVERGE * _pid_span(p),
-              "no_persistent_saturation": sim["longest_limit_run"] <= PID_SAT_FRACTION * p["steps"]}
+              "no_persistent_saturation": sim["longest_limit_run"] <= PID_SAT_FRACTION * p["steps"],
+              # the genome's answer is a SIMC PI controller; any other law (an on/off relay) is not that answer
+              "controller_is_declared_pid": ctrl["law"] == "pid"}
     if ctrl["law"] == "pid":
         rho = _pid_eig_radius(p, ctrl)
         checks["linear_loop_stable"] = rho < 1.0

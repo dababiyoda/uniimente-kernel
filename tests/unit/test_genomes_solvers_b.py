@@ -474,3 +474,17 @@ def test_game_security_baseline_is_exact_only_on_saddle_games():
         data, truth = dev("game_minimax", seed)
         category = solvers_b.game_score(data, truth, solvers_b.game_security(data))["category"]
         assert category == ("correct" if solvers_b.game_subregion(data) == "pure_saddle" else "wrong")
+
+
+def test_erlang_verifier_and_truth_do_not_share_the_solvers_tail_formula(monkeypatch):
+    # review 2026-10-13: verify and truth evaluated P(W > T) with the solver's own _p_exceed, so a defect in
+    # it would have been reproduced everywhere. Corrupting the solver's tail must leave the verifier's and
+    # the truth's judgement unchanged and must get the corrupted solver's answer refuted.
+    data, truth = solvers_b.erlang_instance(5)
+    good = solvers_b.erlang_solve(data, {})
+    monkeypatch.setattr(solvers_b, "_p_exceed", lambda c, agents, lam, aht, target: c * math.exp(-agents / aht * target))
+    assert all(solvers_b.erlang_verify(data, good["output"], good["certificate"]).values())
+    assert solvers_b.erlang_truth(data) == truth["agents"] == good["output"]["agents"]
+    bad = solvers_b.erlang_solve(data, {})
+    assert bad["output"]["agents"] != good["output"]["agents"]
+    assert not all(solvers_b.erlang_verify(data, bad["output"], bad["certificate"]).values())

@@ -85,10 +85,10 @@ def _parse_key(key, width, height):
     """'x,y' -> index, or None when malformed / off the lattice."""
     if not isinstance(key, str) or key.count(",") != 1:
         return None
-    a, b = key.split(",")
-    if not (a.isdigit() and b.isdigit()) or len(a) > 3 or len(b) > 3:
+    match = re.fullmatch(r"([0-9]{1,3}),([0-9]{1,3})", key)       # ASCII digits only (str.isdigit admits "²")
+    if match is None:
         return None
-    x, y = int(a), int(b)
+    x, y = int(match.group(1)), int(match.group(2))
     if not (0 <= x < width and 0 <= y < height):
         return None
     return x * height + y
@@ -1072,6 +1072,13 @@ def constraint_release_verify(data, output, certificate):
     evaluations_ok = (type(evaluations) is int and isinstance(certificate, dict)
                       and certificate.get("evaluations") == evaluations and evaluations <= eval_budget
                       and lineage_ok and len(lineage) <= evaluations and lineage[-1]["id"] < evaluations)
+    # Selection: the seeded (mu+lambda) search is deterministic, so it is re-executed on the training split and
+    # the output must be what it selects. This binds the claim that validation only chose among the training
+    # shortlist; it re-executes the search rather than deriving the answer independently.
+    replay = constraint_release_solve(data, {})
+    selection_ok = (replay["status"] == "ANSWER" and replay["output"]["configuration"] == list(config)
+                    and replay["output"]["retained"] is retained and replay["output"]["evaluations"] == evaluations
+                    and replay["output"]["lineage"] == lineage)
     cert_scheds = certificate.get("validation_schedules") if isinstance(certificate, dict) else None
     cert_ok = (isinstance(cert_scheds, list) and len(cert_scheds) == len(validation)
                and all(_is_permutation(s, len(c[0])) for s, c in zip(cert_scheds, validation))
@@ -1080,6 +1087,7 @@ def constraint_release_verify(data, output, certificate):
             "validation_claims_recomputed": claims_ok, "retain_or_extinct_rule_obeyed": rule_ok,
             "lineage_replays_from_original_to_output": lineage_ok,
             "evaluations_within_budget_and_consistent": evaluations_ok,
+            "selection_replays_the_seeded_search": selection_ok,
             "certificate_schedules_match_objective": cert_ok,
             "no_authority_claimed": output.get("authority") == CR_AUTHORITY}
 

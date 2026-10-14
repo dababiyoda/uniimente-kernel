@@ -353,6 +353,7 @@
     "greg/cognition/linear.py",
     "greg/cognition/network.py",
     "greg/cognition/protection.py",
+    "greg/cognition/reserved.py",
     "greg/cognition/seed_evaluation.py",
     "greg/cognition/seed_path.py",
     "greg/cognition/semantic.py",

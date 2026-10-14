@@ -119,10 +119,13 @@ evidence plane.
 | capability acquisition | `acquisition.py` | an 11-rung acquisition ladder over existing capabilities, the open-source catalog and infrastructure leads; qualification runs the genome's declared repository tests (plus any added) under a sanitized environment with an independent evaluator and refuses envelope widening, a mismatched registered genome or human-only methods; attach requires the founder's ledgered acceptance, lands at `CANARY`, replays after restart and in every loop on the ledger, and can be detached |
 | goal intake | `intake.py` | a founder statement becomes a section-27 draft with every unknown marked `unresolved`; authorization refuses missing authority and seeds confirm/plan gates whose assumptions stay marked unresolved |
 | organ observation adapters | `organ_signals.py` | DALEOBANKS `OpportunityPacket` and WMI `VentureAssessment` outputs become typed signals with declared field mappings, information lost/added and assumptions; trust is `attributed` only for a `verify_headers` result bound to the raw body it verified and to the producing organ, otherwise `untrusted`; WMI scores are typed `simulation`, never evidence of the world |
+| founder return report (2026-10-14) | `absence.py` | `AbsenceReporter.report(since, until)` folds the ledger into the founder's acceptance scene: executed moves with receipts and reconciliation flags, prepared moves, Gate refusals, classifier withholding, open attempts as of the window end, reconciliations, discrepancies, independent verifications, decisions waiting / deferred / information items, founder activity (`away`), money as declared estimates (never settlement), retention, learning, deficits, intersections, advancement, evidence tier and a deterministic headline; `information`, `requests_nothing`, recorded once per identical content; identical across loops and restarts |
+| host-trigger wake schedule (2026-10-14) | `schedule.py` | `WakeSchedule.entries/next_trigger`: cadence due times for sleeping goals and resurface times for deferred asks, the earliest of them and a stable `trigger_id_for`; the read-only view any G5 scheduler needs; appends nothing, runs nothing |
 
 Contracts: `contracts/goal-record.schema.json`, `contracts/goal-state.schema.json`, `contracts/experience-event.schema.json`,
 `contracts/capability-deficit.schema.json`.
-Tests: `tests/unit/test_goal_gravity.py` (section-25 scenarios), `tests/unit/test_goal_gravity_seams.py` (cognition seam,
+Tests: `tests/unit/test_goal_gravity_absence.py` (return report; open-attempt regression), `tests/unit/test_goal_gravity_schedule.py`,
+`tests/integration/test_goal_gravity_absence.py` (three-day absence across restarts), `tests/unit/test_goal_gravity.py` (section-25 scenarios), `tests/unit/test_goal_gravity_seams.py` (cognition seam,
 deficit classes, reconciliation, independent verification, section-20 controls, section-13 attention),
 `tests/unit/test_goal_gravity_competency.py` (router mount, typed evidence, epistemic deficits, calibration, restart),
 `tests/unit/test_goal_gravity_advancement.py`, `tests/unit/test_goal_gravity_sensorium.py`,
@@ -165,3 +168,5 @@ it submits one bounded move through the Gate and records the receipt. It does no
 - **Live organ transport**: the adapters accept canonical organ outputs. No live DALEOBANKS or WMI transport is connected, so organ signals are untrusted unless signed headers verify.
 - **Router taxonomy**: the eight problem classes are `main`'s. Extending them is a router-owner decision, not a loop decision.
 - **Torn-tail repair**: a partially written final ledger line refuses to load. That is characterized by test, not repaired.
+- **Report delivery and settlement figures** (fourth increment): the return report is a ledger record and a method; no channel is contacted and no settlement record exists for its money section to consume. A real absence, a founder channel (G6) and organ-side settlement adapters are the dependencies.
+- **A host clock for the wake schedule**: `wake_schedule()` computes when to call `turn()`; nothing calls it. G5 selection is the dependency.

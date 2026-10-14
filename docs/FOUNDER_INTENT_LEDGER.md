@@ -85,6 +85,40 @@ founder's decision.
 - live organ transport
 - real verified outcomes
 
+## Third issuance and supplementary materials — 2026-10-14
+
+The founder issued the Goal Gravity directive a third time, in a new session (`session_01TnTfFXr93jtNSzVD9SWeGx`), with
+five supplementary essays, a founder-voiced "at full intended maturity" statement, the 2026-09-05 external audit and
+three AI-generated PDFs. Repetition creates no additional authority. Everything supplied is preserved with lineage:
+the essays verbatim in `docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md`, the audit verbatim with a
+Kernel-side disposition table in `docs/collaboration/UNIIMENTE-AUDIT-2026-09-05-external.md`, the PDFs by name and hash
+in the directive source's "Third issuance" note. Fourteen intent records with lifecycle states live in
+`docs/intent/INTENT-20261014-egregore-synthesis-materials.json` (validator exit 0):
+
+| Record | State | Authority | What it preserves |
+|---|---|---|---|
+| `founder-return-report` | active | active_requirement | the founder's acceptance scene, built as `egregore/absence.py` on draft #160 (fourth increment) |
+| `host-trigger-wake-schedule` | active | active_requirement | the G5/P1 view a scheduler needs, `egregore/schedule.py` |
+| `git-native-causal-memory` | exploratory | exploratory | content-addressed causal history: effect exists (ledger, causal memory); literal Git object model regressed |
+| `substrate-sovereignty` | **conflicted** | advisory | "never rely on external APIs" versus acquire-before-inventing and INTENT-20260930; one founder question resolves it |
+| `master-system-prompt-artifact` | **prohibited** | aspiration | the `EGREGORE_INSTANTIATION` block: preserved as artifact, refused as protocol; its effects are served elsewhere |
+| `durable-execution-substrate` | exploratory | exploratory | Temporal / LangGraph / APScheduler as G5 candidates; effect list is the contract |
+| `self-improving-cognition-research` | exploratory | exploratory | swarms, Bayesian coordination, MALT, DSPy: proposers behind the seam, human-ratified, must beat the baseline |
+| `fifty-five-technology-arsenal` | active | active_requirement | the arsenal is a registry (55 entries on main), not 55 products; "52/55 built" needs evidence |
+| `minimum-viable-continuous-loop` | active | active_requirement | the five-step loop mapped to existing mechanisms; residual: host clock, isolation, real outcomes |
+| `maturity-capabilities` | deferred | aspiration | the ten capabilities with their evidence state and blockers |
+| `pdf-technology-map` | exploratory | advisory | Kimi-generated 2026-07-19 snapshot; autonomy A0–A4 superseded by the Kernel's A0–A9 |
+| `pdf-final-plan` | deferred | active_requirement | four verbatim founder requests (rabbit holes, own automations, swarms, regenerative capital + IaaS) and the passed 2026-08-18 contracts deadline |
+| `pdf-reality-compiler-blueprint` | exploratory | advisory | ChatGPT-generated; stakeholder-first bottleneck; de-literalized "egregore" |
+| `external-audit-2026-09-05` | needs_evidence | advisory | kernel items F03/F04/F05 verified repaired on main; organ items preserved; backlog now 118 open drafts |
+
+Decision record for the fourth increment: `docs/decisions/ADR-GOAL-GRAVITY-003.md` and
+`docs/collaboration/deliberation-goal-gravity-fourth-increment-2026-10-14.json` (EXPERIMENT; adoption remains the
+founder's). While building the return report's tests a defect in the third increment was reproduced and fixed (a grantless
+wake could hide an open attempt and allow a second dispatch; `tests/evidence/goal-gravity-20261013/defect-repro-increment-4.log`).
+Evidence tier unchanged: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED on synthetic ledgers; not externally verified; not
+founder-accepted.
+
 UNIIMENTE must never silently lose a founder intention, contributor objection, negative result, or superseded design.
 
 Every material intention discovered in chats, documents, issues, pull requests, repositories, or operating evidence must be normalized into an Intent Record and assigned exactly one lifecycle state:

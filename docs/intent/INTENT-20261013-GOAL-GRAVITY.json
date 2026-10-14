@@ -23,7 +23,9 @@
         "Draft lineage #158 (greg/gravity.py, greg/missions.py Genesis hook) carries an unmerged Goal Gravity turn on the greg/ package; preserved as substrate, reconciliation is a founder merge decision",
         "Draft lineages #114/#137 (greg/missions.py, greg/asks.py, greg/genesis.py) carry an unmerged persistent mission engine; preserved as substrate",
         "Goal Chase sandbox #93/#97/#109 carries unmerged obligations/trigger proofs tied to docs/founder-loop-entry-gate.json; preserved as substrate",
-        "INTENT-20261014-competency-compiler (main, #165) records that router composition waits on the founder-loop entry gate; this PR wires it as inert code and leaves G1/G5 to the founder"
+        "INTENT-20261014-competency-compiler (main, #165) records that router composition waits on the founder-loop entry gate; this PR wires it as inert code and leaves G1/G5 to the founder",
+        "Third issuance (2026-10-14, session_01TnTfFXr93jtNSzVD9SWeGx) arrived with supplementary materials whose literal readings conflict with INTENT-0030 and INTENT-20260930 (substrate sovereignty; the Master System Prompt); recorded with lifecycle states in INTENT-20261014-egregore-synthesis-materials.json, none adopted as architecture",
+        "A defect in the third increment (grantless wake hid an open attempt; second dispatch possible) was reproduced on 6ce6b3f and fixed in the fourth increment; recorded as counterevidence against the earlier 'never re-dispatched' claim and as a regression test"
       ],
       "evidence_refs": [
         "tests/unit/test_goal_gravity.py",
@@ -45,7 +47,12 @@
         "tests/unit/test_goal_gravity_organs.py",
         "tests/unit/test_goal_gravity_controls.py",
         "tests/integration/test_goal_gravity_process_kill.py",
-        "docs/collaboration/deliberation-competency-compiler-wiring-2026-10-14.json"
+        "docs/collaboration/deliberation-competency-compiler-wiring-2026-10-14.json",
+        "tests/unit/test_goal_gravity_absence.py",
+        "tests/unit/test_goal_gravity_schedule.py",
+        "tests/integration/test_goal_gravity_absence.py",
+        "tests/evidence/goal-gravity-20261013/defect-repro-increment-4.log",
+        "docs/collaboration/deliberation-goal-gravity-fourth-increment-2026-10-14.json"
       ],
       "implementation_refs": [
         "egregore/goals.py",
@@ -71,7 +78,12 @@
         "egregore/acquisition.py",
         "egregore/intake.py",
         "egregore/organ_signals.py",
-        "capabilities/router.py (main, #165)"
+        "capabilities/router.py (main, #165)",
+        "egregore/absence.py",
+        "egregore/schedule.py",
+        "docs/decisions/ADR-GOAL-GRAVITY-003.md",
+        "docs/intent/INTENT-20261014-egregore-synthesis-materials.json",
+        "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md"
       ],
       "owner": "alfonso_lopez",
       "next_review_trigger": "Founder review of the draft PR; first real sensor adapter or durable scheduler calling GoalGravityLoop.turn without a human tick; any founder ruling on the #137/#158 lineages",
@@ -84,7 +96,7 @@
         "Which supplier should feed acquisition candidates first: draft #129's genesis loop, draft #164's construction by reduction, or a coding agent under the Capability Genesis contract?"
       ],
       "created_at": "2026-10-13T14:30:00Z",
-      "updated_at": "2026-10-14T06:30:00Z"
+      "updated_at": "2026-10-14T16:40:00Z"
     }
   ]
 }

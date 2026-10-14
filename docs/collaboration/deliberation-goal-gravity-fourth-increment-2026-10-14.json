@@ -1,0 +1,417 @@
+{
+  "decision_id": "DELIB-GOAL-GRAVITY-2026-10-14-003",
+  "title": "Fourth increment of the Goal Gravity loop on draft PR #160: founder return report, host-trigger wake schedule, open-attempt guard, and provenance for the third issuance; linked to DELIB-GOAL-GRAVITY-2026-10-13-001 and -2026-10-14-002",
+  "problem": "Observation: on 2026-10-14 the founder issued the Goal Gravity directive a third time, in a new session, with five supplementary essays, a founder-voiced 'at full intended maturity' statement containing an acceptance scene (a multi-day absence followed by one report of receipts, prepared work, policy blocks, waiting decisions, money and learning), the 2026-09-05 external audit and three AI-generated PDFs. Observation: draft PR #160 already implements targets A-I (three increments, 767 tests, CI green, mergeable, NEEDS_FOUNDER_DECISION for adoption). Observation: #160 has per-goal status() and global measures() but no cross-goal, time-windowed, ledger-derived digest, and no view that tells a host scheduler when to call turn(). Observation (reproduced on 6ce6b3f): a grantless wake of a goal with an open attempt re-classified the route to PREPARE, wrote a fresh 'planned' record that hid the 'unknown' attempt from _latest_by_route, dropped the reconciliation blocker, and a later grant dispatched the route a second time under an attempt-suffixed proposal id. Inference: the residual CapabilityDeficit this issuance exposes is the founder's return report, the wake-schedule view, and the open-attempt guard; the supplementary materials are mechanism sources and aspirations needing ledger records, not new architecture. Proposal: build that residual as a fourth increment on #160's branch, preserve the materials verbatim with lineage, record fourteen intents with lifecycle states, and activate nothing.",
+  "founder_intent_refs": [
+    "INTENT-20261013-GOAL-GRAVITY",
+    "INTENT-20261014-founder-return-report",
+    "INTENT-20261014-host-trigger-wake-schedule",
+    "INTENT-20261014-egregore-synthesis-materials (fourteen records)",
+    "INTENT-20261014-competency-compiler",
+    "INTENT-0030",
+    "INTENT-0027",
+    "SR001-FOUNDER-LOOP-ENTRY"
+  ],
+  "baseline": "Draft PR #160 at 6ce6b3f (main d64a6c9 merged): Goal Gravity loop with targets A-I, Competency Compiler seam, acquisition chain, 767 tests passing, verifier V1-V5 green; no return report, no wake schedule, open-attempt guard only inside the EXECUTE arm.",
+  "alternatives": [
+    {
+      "name": "Fourth increment on #160's branch (selected)",
+      "description": "Add egregore/absence.py (AbsenceReporter, read-only fold, idempotent REPORT_RECORD), egregore/schedule.py (WakeSchedule, read-only), move the prior-attempt guard before classification in turn(), extend closures, add 16 tests including a three-day restart scenario, preserve the supplementary materials and audit verbatim, record fourteen intents, update docs.",
+      "advantages": [
+        "Continues the one canonical lineage the directive's section 22 requires; no parallel GREG",
+        "Every number in the report is a fold of records the loop already writes; no new authority object",
+        "The defect fix removes a real duplicate-consequence path and is covered by regression tests",
+        "Reversible: additive files plus a small loop edit; revert one commit"
+      ],
+      "disadvantages": [
+        "Adds about 580 lines of source to an already 14k-line draft the founder has not yet ruled on",
+        "The report's status_now fields mix present state with window facts (labelled, but a reader may skim)",
+        "The loop edit touches the core per-move path; a hidden dependency on re-classification could exist"
+      ],
+      "revival_evidence": "n/a (selected)"
+    },
+    {
+      "name": "Stacked draft PR based on #160's branch",
+      "description": "Same code, opened as a child PR whose base is claude/goal-gravity-loop-20261013.",
+      "advantages": [
+        "Isolates review of the increment",
+        "Leaves #160's head untouched for the founder's pending ruling"
+      ],
+      "disadvantages": [
+        "Adds a 119th open draft to a backlog the audit's F13 already flags as the process failure",
+        "A base-branch ruling would strand or orphan the child; two PR bodies to keep truthful"
+      ],
+      "revival_evidence": "The founder asks for increment-level PRs, or #160 is frozen for ruling"
+    },
+    {
+      "name": "New PR off main re-implementing the report and schedule",
+      "description": "Build the two views against main without #160's modules.",
+      "advantages": [
+        "Mergeable independent of #160"
+      ],
+      "disadvantages": [
+        "Impossible without the goal registry, attention router and intervention records that only exist on #160; would recreate them, which is exactly the parallel GREG the directive forbids (section 22) and the process failure INTENT-20261014-competency-compiler records"
+      ],
+      "revival_evidence": "#160 is killed by the founder and its mechanisms are re-derived under a new ruling"
+    },
+    {
+      "name": "Fold into the #173 full-machine convergence lineage",
+      "description": "Implement on claude/greg-full-machine-convergence-20261013, which claims to converge #158/#159/#160/#132/#141/#172.",
+      "advantages": [
+        "One lineage for everything"
+      ],
+      "disadvantages": [
+        "315 commits ahead of main across 1081 files; not inspected or tested in this session; a founder convergence decision is pending; building there would stack on an unruled base"
+      ],
+      "revival_evidence": "The founder adopts #173 as canonical; then port the increment through #173's adapters"
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The third issuance and its materials remain unrecorded; the founder's acceptance scene has no mechanism; the open-attempt defect stays latent in #160 and would allow a duplicate external dispatch after a grantless wake.",
+    "advantages": [
+      "No new code on a draft awaiting ruling",
+      "Zero risk of touching the loop"
+    ],
+    "disadvantages": [
+      "Violates the ledger rule that no founder intention is silently lost",
+      "Leaves a reproduced duplicate-consequence path in the canonical candidate",
+      "Leaves P1 (host-owned trigger discovers due work) without the view any scheduler needs"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The founder's own acceptance scene is the clearest statement of the intended effect in all of the supplied material; it should become code that can be falsified, and every supplementary intention must receive a lifecycle state rather than being summarized away.",
+      "material_concerns": [
+        "Material 1's Master System Prompt must be preserved yet prohibited as a protocol without erasing its three valid effects",
+        "The PDFs are AI advisories; only quoted constitution clauses and the four verbatim Final Plan requests are founder expression"
+      ],
+      "evidence_refs": [
+        "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md",
+        "docs/intent/INTENT-20261014-egregore-synthesis-materials.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Both new modules are read-only folds over existing records and bind to nothing new; the guard belongs before classification because _latest_by_route is the loop's single source of truth for a route's state and any later record overwrites it.",
+      "material_concerns": [
+        "Skipping classify() for a route with a prior attempt means no CLASSIFICATION_RECORD for that turn; status() reads the _decisions map, which keeps the last classification, so waiting_work stays truthful",
+        "The report counts treasury/business events all-time while everything else is windowed; labelled, but it is a second clock in one document"
+      ],
+      "evidence_refs": [
+        "egregore/gravity.py (guard at the top of the per-move loop)",
+        "tests/unit/test_goal_gravity_absence.py::test_an_executed_route_is_not_re_proposed_or_hidden_by_a_later_grantless_wake"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "The defect is real and the fix is minimal, but it changes the core per-move path of a 14k-line draft under founder review; an independent adversarial review with refuting verifiers must run before the increment is pushed, and the report must be attacked for every way it could overstate.",
+      "material_concerns": [
+        "A reader could mistake 'estimated_cost_usd_executed' for money moved despite the note",
+        "The headline's first sentence counts goals 'active' if any status transition fell in the window, including a founder pause",
+        "Two reports over the same window on a ledger that changed in between produce two records; is that documented?"
+      ],
+      "evidence_refs": [
+        "tests/evidence/goal-gravity-20261013/defect-repro-increment-4.log",
+        "tests/evidence/goal-gravity-20261013/review-increment-4.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Stdlib only, no services, full suite 33 seconds, verifier green; the report is O(records) per call and should be rotated behind the same ledger-rotation decision the earlier increments already name before 24/7 use.",
+      "material_concerns": [
+        "The report scans the whole ledger on every call; acceptable now, needs an index or incremental fold at scale",
+        "Trigger ids embed ISO timestamps; a host must call with the suggested id to get idempotent replay"
+      ],
+      "evidence_refs": [
+        "tests/evidence/goal-gravity-20261013/pytest-full-suite-increment-4.log",
+        "tests/evidence/goal-gravity-20261013/verifier-v2-increment-4.log"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "The report must never let an executor's claim, a prepared move or an estimate pass as more than it is; the tests pin each of those; nothing contacts a real person and the report requests nothing. Everything remains synthetic: no real outcome, no real founder, no real money.",
+      "material_concerns": [
+        "Evidence tier is unchanged: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED on synthetic ledgers; FOUNDER-ACCEPTED requires a real absence and a real read",
+        "The audit's organ-side findings are preserved but not acted on; they must not be implied repaired"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_goal_gravity_absence.py::test_executor_claims_are_not_verification_but_an_independent_verifier_is",
+        "docs/collaboration/UNIIMENTE-AUDIT-2026-09-05-external.md (disposition table)"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "The increment's tests pass with the full suite and verifier",
+      "tier": "unit_test",
+      "reference": "tests/evidence/goal-gravity-20261013/pytest-full-suite-increment-4.log; verifier-v2-increment-4.log",
+      "finding": "783 passed, 4 skipped; verifier V1-V5 PASS; closures include egregore-goal-gravity with the report assertion"
+    },
+    {
+      "claim": "The open-attempt defect existed on 6ce6b3f and allowed a second dispatch",
+      "tier": "sandbox_execution",
+      "reference": "tests/evidence/goal-gravity-20261013/defect-repro-increment-4.log",
+      "finding": "After a grantless wake the route's latest record became 'planned'; with a grant the executor ran again and the Gate recorded a second dispatch claim ':r1'"
+    },
+    {
+      "claim": "The report is identical across two loops and a restart and is recorded once",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_goal_gravity_absence.py; tests/integration/test_goal_gravity_absence.py",
+      "finding": "Report dictionaries equal; second call recorded=False; exactly one REPORT_RECORD"
+    },
+    {
+      "claim": "The PDFs were read in full and their claims classified by tier",
+      "tier": "model_output",
+      "reference": "tests/evidence/goal-gravity-20261013/pdf-extraction-increment-4.json",
+      "finding": "Pages 1-19, 1-11, 1-21 read; all three documents AI-generated; founder expression limited to quoted clauses and four verbatim requests"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "The report proves the founder's scene has been achieved",
+      "tier": "deterministic_fixture",
+      "reference": "tests/integration/test_goal_gravity_absence.py",
+      "finding": "False: executors are scripted, grants test-minted, verifiers synthetic; the scene's '$18,430 moved' and 'closed one paying customer' have no ledger counterpart; the report says so in its money note"
+    },
+    {
+      "claim": "The loop guard cannot break a legitimate path",
+      "tier": "unit_test",
+      "reference": "full suite on this tree",
+      "finding": "Three existing tests asserted the old note wording and were satisfied by keeping that wording; no test exercises a route shared by two goals or re-planned nodes, so that path is covered only by reasoning"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "After an absence the founder reads one truthful, ledger-derived report; a host scheduler can discover due work from durable state; a route with an open attempt can never be hidden or re-dispatched; every supplementary intention has a lifecycle state and verbatim lineage.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "One report replaces per-goal status reads",
+        "amplified_value": "Becomes the default founder surface after any absence; compounds as more record types land (a settlement record would appear in the money section without a new document); reverses into a liability only if a reader treats it as authority or settlement, which its text forbids"
+      },
+      {
+        "id": "A2",
+        "statement": "The wake schedule is the interface every scheduler needs",
+        "amplified_value": "Lets the founder choose cron, APScheduler or Temporal without redesign; reverses if a host treats the view as permission to act (it is a time, not a grant)"
+      },
+      {
+        "id": "A3",
+        "statement": "The open-attempt guard closes a duplicate-consequence path",
+        "amplified_value": "Strengthens the structural authority boundary the earlier increments claimed; reverses only if some path legitimately needs re-classification of an attempted route, which would surface as a stuck goal, visible in the report"
+      },
+      {
+        "id": "A4",
+        "statement": "Fourteen intent records make the supplementary materials governable",
+        "amplified_value": "Future agents can cite a lifecycle state instead of re-reading 60 KB of essays; prohibited and conflicted states prevent accidental authority"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "More code on an unruled draft",
+        "severity": "medium",
+        "response_type": "governance",
+        "redesigned_response": "Additive modules plus one loop edit; the PR body gains a fourth-increment section; adoption remains NEEDS_FOUNDER_DECISION per the earlier deliberations"
+      },
+      {
+        "id": "D2",
+        "statement": "status_now fields and the all-time treasury count mix clocks with windowed facts",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "Every non-windowed field carries 'now' or 'all_time' in its name and the money note states the basis"
+      },
+      {
+        "id": "D3",
+        "statement": "The loop guard skips classification and could hide a legitimate re-evaluation",
+        "severity": "medium",
+        "response_type": "protective",
+        "redesigned_response": "The guard applies only when the route's latest record is an open or completed attempt; reconcile() releases failed routes; two regression tests pin both directions; an independent review attacks the path"
+      },
+      {
+        "id": "D4",
+        "statement": "A full-ledger scan per report",
+        "severity": "low",
+        "response_type": "modularity",
+        "redesigned_response": "Acceptable at current ledger sizes; named as an operator item with the existing rotation decision"
+      },
+      {
+        "id": "D5",
+        "statement": "Verbatim preservation of AI-generated essays could be mistaken for founder doctrine",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "The source file header labels each material's authorship; the intent records set prohibited/conflicted/exploratory states; the Master System Prompt is explicitly prohibited as protocol"
+      }
+    ],
+    "comparisons": {
+      "baseline": "#160 at 6ce6b3f: no report, no schedule view, latent duplicate-dispatch path",
+      "do_nothing": "Intentions lost, defect latent, P1 view absent",
+      "simplest_viable_alternative": "Only the loop guard and its regression tests (fixes the defect, leaves the founder's scene and P1 unserved)",
+      "strongest_competing_architecture": "Fold into #173's convergence lineage or stack a child PR; both add backlog or stack on an unruled base",
+      "reversible_experiment": "This increment on the draft branch: revert one commit; the records remain as negative or positive evidence"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "New PR off main",
+        "rejection_reason": "Would recreate #160's goal substrate: the parallel GREG the directive forbids",
+        "revival_evidence": "Founder kills #160 and orders re-derivation"
+      },
+      {
+        "name": "Stacked child PR",
+        "rejection_reason": "Adds to the 118-PR backlog the audit names as the process failure; strands on a base ruling",
+        "revival_evidence": "Founder asks for increment-level review units"
+      },
+      {
+        "name": "Fold into #173",
+        "rejection_reason": "Uninspected 315-commit lineage awaiting its own ruling",
+        "revival_evidence": "Founder adopts #173 as canonical"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Assume pass 1 shipped. The report becomes the founder's habitual surface and its omissions become invisible; the schedule becomes a de facto scheduler contract; the guard becomes a place where a stuck route is never re-evaluated; the fourteen records become a second ledger format beside main's 15-field format; and the increment grows #160 past what one reviewer can hold.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "comprehensibility",
+        "statement": "A founder who reads only the headline may miss that 'executed' means a Gate receipt on a synthetic executor",
+        "strengthening_response": "The headline's last sentence states the evidence basis and that executor claims are not verification; the evidence_tier block names the limitation in full"
+      },
+      {
+        "id": "W2",
+        "category": "dependency",
+        "statement": "A host could treat suggested_trigger_id as authority to run",
+        "strengthening_response": "The schedule returns no gate, grant or executor and its note says nothing here runs; turn() still requires a caller-supplied grant for any execution"
+      },
+      {
+        "id": "W3",
+        "category": "fragility",
+        "statement": "A route stuck in 'unknown' with no Gate observation and no accountable resolution is never re-evaluated",
+        "strengthening_response": "That is the intended fail-closed posture (SR001 P2); the report lists open attempts as of the window end and the blocker stays visible in status(); reconcile() with an accountable resolution is the release path"
+      },
+      {
+        "id": "W4",
+        "category": "bureaucracy",
+        "statement": "Two intent-record formats coexist (skill schema vs the repository's 15-field ledger format)",
+        "strengthening_response": "Already recorded as a format conflict by the third increment; this increment uses the schema the validators accept and notes the conflict for the ledger owner rather than restructuring main's record"
+      },
+      {
+        "id": "W5",
+        "category": "expense",
+        "statement": "#160 grows to roughly 15k lines across four increments",
+        "strengthening_response": "Each increment carries its own ADR, deliberation, evidence logs and PR section so a reviewer can rule increment by increment; nothing here changes the earlier increments' semantics beyond the guard"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "The alternative (a parallel lineage) is worse; the founder's ruling covers the whole draft",
+        "owner": "alfonso_lopez",
+        "review_trigger": "Founder ruling on draft PR #160"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "resolved",
+        "rationale": "Field names carry their clock; tests check the labels",
+        "owner": "Kernel egregore maintainers",
+        "review_trigger": "A settlement record type lands on the ledger"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "experiment",
+        "rationale": "Regression tests pin both directions; an independent adversarial review with refuting verifiers runs before push",
+        "owner": "Kernel egregore maintainers",
+        "review_trigger": "Any goal stuck with a route the founder expected to be re-evaluated"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "deferred",
+        "rationale": "No ledger is large enough to matter before activation",
+        "owner": "Kernel operator",
+        "review_trigger": "Ledger rotation decision before 24/7 use"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "resolved",
+        "rationale": "Authorship labels in the source header and lifecycle states in the records",
+        "owner": "Founder-intent ledger owner",
+        "review_trigger": "Any agent cites a prohibited or exploratory record as a requirement"
+      }
+    ],
+    "final_design": "AbsenceReporter and WakeSchedule as read-only folds attached to GoalGravityLoop (return_report, wake_schedule); prior-attempt guard before classification in turn(); closures extended; verbatim source files and the audit preserved; fourteen intent records; ADR-GOAL-GRAVITY-003; evidence logs; PR body section. Nothing activates, no grant is issued, no channel is contacted.",
+    "residual_risks": [
+      {
+        "risk": "The report is mistaken for settlement or for proof of real outcomes",
+        "mitigation": "Money note, evidence_tier block and headline wording; FOUNDER-ACCEPTED withheld until a real read",
+        "owner": "alfonso_lopez",
+        "review_trigger": "First real absence report"
+      },
+      {
+        "risk": "The guard hides a legitimately re-evaluable route",
+        "mitigation": "Open attempts listed in every report and status(); accountable reconciliation releases the route",
+        "owner": "Kernel egregore maintainers",
+        "review_trigger": "A stuck goal the founder expected to move"
+      },
+      {
+        "risk": "The draft becomes too large to rule on",
+        "mitigation": "Per-increment ADRs, deliberations and evidence; the PR body indexes them",
+        "owner": "alfonso_lopez",
+        "review_trigger": "Founder review of draft PR #160"
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Recorded, not resolved; the increment proceeds as a reversible experiment on a draft with each dissent's threshold named.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "The core loop edit should not ship on the same commit as new features",
+        "rationale": "A reviewer ruling on the defect fix should not have to accept the report and schedule with it",
+        "evidence_threshold": "If the founder or a reviewer asks for separation, split the guard and its two regression tests into their own commit on the branch",
+        "owner": "Kernel egregore maintainers",
+        "review_trigger": "Founder or reviewer request on draft PR #160"
+      },
+      {
+        "role": "Evidence and Welfare Guardian",
+        "position": "Everything here is synthetic; the founder's scene is served in form, not in substance",
+        "rationale": "No real outcome, grant, verifier or money exists; the report's honesty rules are what make this acceptable",
+        "evidence_threshold": "One real consequence under a founder-issued grant, independently verified, appearing in a real return report",
+        "owner": "alfonso_lopez",
+        "review_trigger": "First real absence"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Additive modules, one loop edit, docs and records on draft PR #160's branch; no schema, contract or manifest semantics change; existing ledgers hydrate unchanged (the new record type is only written when return_report is called with record=True).",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the fourth-increment commit on claude/goal-gravity-loop-20261013",
+      "Keep the intent records, source files and audit copy as evidence if the founder wishes (they create no authority)",
+      "Ledgers written with egregore.return_report records remain valid; readers ignore unknown record types"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any path by which the report or schedule creates, implies or is cited as authority",
+    "Any path by which the guard allows a second dispatch of a route whose outcome is unknown",
+    "The founder rules that the draft lineage is not canonical",
+    "A real return report misstates executed, prepared, refused or verified counts against the ledger"
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "Founder review of draft PR #160; the independent adversarial review of this increment; the first real absence report; G5 scheduler selection"
+}

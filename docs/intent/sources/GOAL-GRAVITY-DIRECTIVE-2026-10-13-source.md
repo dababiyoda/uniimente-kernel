@@ -1460,3 +1460,26 @@ draft PR #160 did not implement it; PR #165 (another session, merged to `main` 2
 `capabilities/router.py` and recorded `docs/intent/INTENT-20261014-competency-compiler.json`; the third increment
 of draft PR #160 wires that router into the Goal Gravity loop (`egregore/competency.py`).
 
+
+## Third issuance (2026-10-14, Claude Code cloud session `session_01TnTfFXr93jtNSzVD9SWeGx`)
+
+The founder issued the directive a third time, in a new session, with the same preamble, interpretation paragraphs,
+Competency Compiler sentence, sections 0-33 and FINAL COMMAND on reading (not byte-compared; the chat message is not
+retained as a file). Repetition creates no additional authority (SR-001). What was new in this issuance was the
+material supplied around the directive, all preserved with lineage:
+
+- the five supplementary essays and the "at full intended maturity" statement, reproduced verbatim in
+  `docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md`;
+- the external repository audit of 2026-09-05, reproduced verbatim with a Kernel-side disposition table in
+  `docs/collaboration/UNIIMENTE-AUDIT-2026-09-05-external.md` (sha256 `fac5d1ec…`);
+- three PDFs, referenced by name and hash (not copied into the repository): "UNIIMENTE – Build Your Own X – The Egregore
+  Technology Map" (19 pages, sha256 `036ff76f8b11c9905db43fd3fad2c3f07820be451b7856e6f89321bcadb7a421`), "UNIIMENTE – The
+  Final Plan: Distribution, Automation, Swarms, Regenerative Capital, IaaS" (11 pages, sha256
+  `2603776f311109a2028bab23a456b263f5b01e17b49d63c622b36341a0e09f40`) and "03 UNIIMENTE Reality Compiler Blueprint"
+  (21 pages, sha256 `f53a255529ee97859980b51d39672c5450505439b0d3dc141ef1d555417521f8`); their extracted intent
+  candidates, conflicts and mechanism-status claims are recorded in `docs/intent/INTENT-20261014-egregore-synthesis-materials.json`.
+
+The issuance was received after draft PR #160 had implemented targets A-I (three increments). It was reconstructed against
+repository truth as the directive's section 22 and 32 require; the residual it exposed (the founder's return report, the
+host-trigger wake schedule, and a reproduced open-attempt defect) is the fourth increment of draft PR #160
+(`docs/decisions/ADR-GOAL-GRAVITY-003.md`). No parallel GREG was created.

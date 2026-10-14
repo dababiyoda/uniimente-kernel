@@ -18,8 +18,11 @@ from .runtime import CognitionCycle, CycleStatus, StandingCognitionRuntime
 from .goals import GoalRegistry, GoalSpec, GoalState, InterventionSpec, OpportunityFactor, PlanNode, WakeCondition
 from .experience import ExperienceEvent, Observation, WorldModel
 from .gravity import GoalGravityLoop, GravityTurn
+from .absence import AbsenceReporter
+from .schedule import WakeSchedule
 
 __all__ = [
+    "AbsenceReporter",
     "Assessment",
     "ExperienceEvent",
     "GoalGravityLoop",
@@ -32,6 +35,7 @@ __all__ = [
     "OpportunityFactor",
     "PlanNode",
     "WakeCondition",
+    "WakeSchedule",
     "WorldModel",
     "CandidateProposal",
     "ChangeProposal",

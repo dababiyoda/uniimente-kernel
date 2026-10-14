@@ -1,0 +1,4 @@
+# scripts/ci/check_schema_refs.py — fourth increment — 2026-10-14T17:02:11Z
+schemas scanned: 18, local refs checked: 34
+all document-local schema references resolve
+exit=0

@@ -108,6 +108,24 @@ Founder-facing status (`GoalGravityLoop.status`) renders the fourteen section-27
 `GoalGravityLoop.measures()` reports persistent identity, agency, intelligence and the experiential surface separately
 (section 19); subjective consciousness is "unresolved; not measured; not claimed".
 
+**Founder absence (fourth increment, 2026-10-14).** `GoalGravityLoop.return_report(since, until)` folds the ledger into the
+founder's own acceptance scene ("You disappear from operational involvement for several days. When you return ..."):
+goals active, moves executed through the Gate with receipt hashes and reconciliation flags, moves prepared and never
+executed, Gate refusals with the Gate's reasons, classifier withholding, dispatched moves whose outcome is unknown as of
+the window end, reconciliations, discrepancies, independent verifications, decisions waiting / deferred / information
+items as of the window end, founder activity in the window (`away` when none), money as declared estimates with
+reconciliation flags and the sentence "this is not a bank statement", retained assets, what changed in the world model,
+deficits, intersections, advancement reports and a deterministic headline. Every number is a fold of records with logical
+time inside the window; prepared is never counted as executed; an executor's `validation_status` is never counted as
+verification; the report is `information`, `requests_nothing`, and is recorded once per identical content
+(`egregore.return_report`). Two loops over one ledger, or one loop across a restart, produce the same report.
+`GoalGravityLoop.wake_schedule(now)` is the read-only view a host scheduler needs (entry gate G5/P1): cadence due times
+for sleeping goals, resurface times for deferred asks, the earliest of them and a stable `trigger_id_for`; it appends
+nothing and runs nothing. Writing the report's tests reproduced a defect in the third increment (a grantless wake
+re-classified a route with an open attempt, hid it from `_latest_by_route` and later allowed a second dispatch); a route
+whose latest record is an open or completed attempt is now never re-classified, re-asked or re-dispatched
+(`tests/evidence/goal-gravity-20261013/defect-repro-increment-4.log`; ADR-GOAL-GRAVITY-003).
+
 ## 2. Evidence tier per target (section 26 vocabulary)
 
 | Target | State on this branch | Tier | Proof | Not yet |
@@ -132,6 +150,9 @@ Founder-facing status (`GoalGravityLoop.status`) renders the fourteen section-27
 | Opportunity package (§12, §28) | IMPLEMENTED | UNIT-TESTED | baseline deltas, contested factors, dry-run options | real due diligence |
 | Intake (§27) | IMPLEMENTED | UNIT-TESTED | fourteen fields; authority never filled; two founder gates | a model drafter that beats the template |
 | Section-33 chain | IMPLEMENTED | INTEGRATION-TESTED (synthetic) | `tests/integration/test_goal_gravity_acceptance.py` | SANDBOX-VERIFIED with a live sensor; EXTERNALLY VERIFIED; FOUNDER-ACCEPTED |
+| Founder return report (Material 7 scene) | IMPLEMENTED | UNIT-TESTED, INTEGRATION-TESTED (three-day absence across restarts) | executed/prepared/refused/unknown separated; executor claims not verification; estimates not settlement; identical across loops and restart; recorded once | a real absence, a real read, a delivery channel; FOUNDER-ACCEPTED |
+| Host-trigger wake schedule (G5/P1 view) | IMPLEMENTED | UNIT-TESTED | due times from durable state; paused/revoked/awake excluded; a turn at `next_due_at` wakes exactly the due goal; appends nothing | a host clock calling `turn()` without a human (G5) |
+| Open-attempt guard before classification | IMPLEMENTED | UNIT-TESTED (reproduction + 2 regressions) | an open or done route is never re-classified, re-asked or re-dispatched; `reconcile()` is the only release | — |
 
 Never say "GREG experiences reality" for this code: it integrates typed observations into beliefs with provenance.
 Never say "GREG creates coincidences": it detects declared factor convergence inside a window. Never say "GREG
@@ -189,12 +210,16 @@ Compiler and the gaps an independent audit found on 2026-10-14.
 | 34 | §8 Computational modalities (interoception) | MISSING | MISSING | MISSING | EXISTING (8 derived, 6 declared unobserved) | UNIT-TESTED | external modalities need sensors |
 | 35 | §12/§28 Opportunity package | MISSING | PARTIAL (#158 Foundry) | PARTIAL (WMI assessment) | EXISTING | UNIT-TESTED | due diligence and people/resources remain prepared work |
 | 36 | §27 'I want X' intake | MISSING | PARTIAL (#137 asks) | MISSING | EXISTING | UNIT-TESTED | deterministic draft; a local drafter must beat it |
+| 37 | Founder return report (Material 7 acceptance scene) | MISSING | PARTIAL (#137 asks/digest; DALEOBANKS digest, organ-local) | DALEOBANKS: digest/operator_line (organ-local, not kernel-valid) | EXISTING (`absence.py`) | UNIT/INTEGRATION-TESTED | no delivery channel; no settlement records to report; FOUNDER-ACCEPTED pending a real absence |
+| 38 | Host-trigger wake schedule (G5/P1) | PARTIAL (`due_for_review`) | PARTIAL (#93/#109 obligations/trigger proofs) | DALEOBANKS: APScheduler runner (organ-local) | EXISTING (`schedule.py`, view only) | UNIT-TESTED | G5 selection; no host clock calls `turn()` |
+| 39 | Open attempt never hidden or re-dispatched after a grantless wake | PARTIAL (guard inside EXECUTE arm only; defect reproduced on 6ce6b3f) | see record | MISSING | EXISTING (guard before classification) | UNIT-TESTED | — |
+| 40 | Third-issuance materials as governed intents (14 records) | MISSING | MISSING | MISSING | EXISTING (`docs/intent/INTENT-20261014-egregore-synthesis-materials.json`) | validator exit 0 | founder rulings on the conflicted records (substrate sovereignty; audit backlog matrix) |
 
 ## 4. Preserved future targets with the blocking dependency (section 32.14)
 
 | Target | Why not now | Blocking dependency |
 |---|---|---|
-| 24/7 operation, dormant goals woken by real time | nothing here installs a scheduler | founder activation decision; a bounded host trigger (cron / APScheduler as DALEOBANKS already runs / Temporal) per `docs/founder-loop-entry-gate.json` G5, P1 |
+| 24/7 operation, dormant goals woken by real time | nothing here installs a scheduler; `wake_schedule()` now tells a host when to call and with which trigger id | founder activation decision; a bounded host trigger (cron / APScheduler as DALEOBANKS already runs / Temporal) per `docs/founder-loop-entry-gate.json` G5, P1 |
 | Alien sensorium / 100000 senses | no live sources are wired | authorized data access and per-source `SignalEnvelope` adapters (DALEOBANKS perception and ContextPackets, WMI market monitor, public feeds) |
 | Learned relevance and model-backed proposers | rule baseline only | local open-source model route (INTENT-20260930) attached through standing-cognition proposers; must beat the rule baseline on held-out signals |
 | Autonomous execution at scale | the loop holds no grants | founder-issued standing grants through the existing issuer; the Gate consumes, never fills in |
@@ -215,6 +240,8 @@ Compiler and the gaps an independent audit found on 2026-10-14.
 | Taxonomy for constructed capabilities (optimization, assignment) | the router's eight classes have no optimization class | a router-owner PR on `main` (needed for #164's reductions) |
 | Torn-ledger-tail recovery | the ledger refuses to open after a partial append (fail-closed) | a repair procedure that quarantines the original first |
 | `turn()` as a stage of `tick()` (one trigger clock) | today `turn` consumes `tick` candidates as a projection with its own conflict record | founder decision after the first durable scheduler integration (second-increment dissent) |
+| Delivery of the return report to the founder | the report is a ledger record and a method; no channel is contacted | founder channel decision; founder authentication (G6) |
+| Money in the return report beyond declared estimates | no settlement, payment or bank record type exists on the ledger | organ-side payment/settlement adapters and a reconciled record type the report can consume |
 
 ## 5. How the loop is called
 
@@ -242,6 +269,8 @@ plan = loop.acquisition.plan(goal_id, now=now)                       # ladder fo
 q = loop.acquisition.qualify(goal_id, genome=g, competency=c, acceptance_tests=["tests/..."], evaluator="harness:pytest", now=now)
 loop.propose_attach(goal_id, q, now=now)                             # one founder decision; accept attaches
 draft = loop.intake.draft("I want X", now=now)                       # section-27 fields; authority stays unresolved
+report = loop.return_report(since="2026-11-01T09:00:00Z", until="2026-11-05T09:00:00Z")   # the founder's return brief; information only
+plan = loop.wake_schedule(now=now)                                   # when a host should next call turn(), and with which trigger id
 ```
 
 A scheduler must supply a globally stable `trigger_id`; retrying it with the same inputs returns the recorded turn,

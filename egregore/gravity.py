@@ -47,6 +47,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable, Mapping, Sequence
 
+from .absence import AbsenceReporter
 from .acquisition import CapabilityAcquisition
 from .advancement import AdvancementMonitor
 from .attention import AttentionItem, AttentionPolicy, FounderAttentionRouter, Routing
@@ -63,6 +64,7 @@ from .interventions import Classification, InterventionClassifier
 from .relevance import GoalRelevanceRouter
 from .resources import ResourceExhausted, ResourceGovernor, ResourceMode
 from .retention import AsymmetryRetention, DurableAsset
+from .schedule import WakeSchedule
 from .sensorium import SOURCE as SENSORIUM_SOURCE, Sensorium
 
 TURN_STATUSES = ("silent", "advanced", "hibernating", "conserving")
@@ -175,6 +177,10 @@ class GoalGravityLoop:
         self.opportunity = OpportunityPackager(ledger=ledger, world=self.world, classifier=self.classifier, source=source)
         self.acquisition = CapabilityAcquisition(self)
         self.intake = GoalIntake(self)
+        # Founder-facing read-only projections: the return report (what happened while away) and the wake
+        # schedule (when a host trigger should next call turn). Both fold the ledger; neither runs anything.
+        self.absence = AbsenceReporter(self)
+        self.schedule = WakeSchedule(self)
         # The Competency Compiler (capabilities/router.py on main): optional; without it gates are unrouted.
         self.competency = (GoalCompetencyRouting(capability_router, ledger=ledger, genomes=genomes)
                            if capability_router is not None else None)
@@ -823,6 +829,23 @@ class GoalGravityLoop:
             decisions: list[dict[str, Any]] = []
             executed_this_goal = False
             for intervention in moves:
+                prior = self._already_attempted(goal_id, intervention.route_hash)
+                if prior is not None:
+                    # A route whose latest record is an open attempt (attempted/unknown) or a completed one
+                    # (executed/externally_verified) is never re-classified. A fresh "planned" record here would
+                    # hide the attempt from _latest_by_route, drop the reconciliation blocker, release the route for
+                    # a blind re-dispatch under an attempt-suffixed proposal id, and make verify_outcome/reconcile
+                    # lose it (reproduced on 6ce6b3f; tests/evidence/goal-gravity-20261013/defect-repro-increment-4.log).
+                    open_attempt = prior["evidence_state"] in OPEN_ATTEMPT_STATES
+                    decisions.append({"intervention_id": intervention.intervention_id, "decision": prior["decision"],
+                                      "reasons": ["route already attempted; no re-classification, no new ask, "
+                                                  "no duplicate consequential action"],
+                                      "selected_by_deliberation": None, "evidence_confidence": confidence,
+                                      "evidence_basis": evidence_basis, "evidence_state": prior["evidence_state"],
+                                      "note": "already attempted; no duplicate consequential action",
+                                      "disposition": ("reconciliation required before any further move on this route" if open_attempt
+                                                      else "already executed; not re-proposed")})
+                    continue
                 grant = grants.get(intervention.requested_capability)
                 grant_view = None
                 if grant is not None and gate is not None and hasattr(gate, "grants"):
@@ -846,11 +869,7 @@ class GoalGravityLoop:
                     decision=classification.decision, evidence_state=evidence_state,
                     detail={**routed, **dict(detail or {})}, now=at)
                 if classification.decision == "EXECUTE_AUTONOMOUSLY":
-                    prior = self._already_attempted(goal_id, intervention.route_hash)
-                    if prior is not None:
-                        entry["evidence_state"] = prior["evidence_state"]
-                        entry["note"] = "already attempted; no duplicate consequential action"
-                    elif executed_this_goal or gate is None or executor is None or open_attempts:
+                    if executed_this_goal or gate is None or executor is None or open_attempts:
                         note = ("reconciliation pending for this goal" if open_attempts else
                                 "execution deferred: one move per goal per turn, or no gate/executor supplied")
                         record("planned", {"note": note})
@@ -1409,6 +1428,18 @@ class GoalGravityLoop:
             "deliberation": "standing_cognition" if self.cognition is not None else "declared_moves",
             "execution_authority": "none",
         }
+
+    # ------------------------------------------------------------ founder absence and host trigger views
+    def return_report(self, *, since: datetime | str, until: datetime | str, record: bool = True) -> dict[str, Any]:
+        """What happened while the founder was away, folded from the ledger only: executed moves with receipts,
+        prepared work, Gate refusals, unknown attempts, decisions waiting, estimates (never settlement), retained
+        assets and what changed in the world model. Information; requests nothing (see ``egregore.absence``)."""
+        return self.absence.report(since=since, until=until, record=record)
+
+    def wake_schedule(self, *, now: datetime | str) -> dict[str, Any]:
+        """When a host-owned trigger should next call ``turn`` and with which trigger id, computed from durable
+        state. Read-only; nothing here fires (founder-loop entry gate G5/P1; see ``egregore.schedule``)."""
+        return self.schedule.next_trigger(now)
 
     def _gate_controller(self, spec: GoalSpec, fix: GPSFix, goal_id: str) -> dict[str, Any] | None:
         """Section 3, 'what currently controls that gate?': the metric, the evidence it needs, and who can supply it."""

@@ -1,0 +1,572 @@
+{
+  "intents": [
+    {
+      "intent_id": "INTENT-20261014-founder-return-report",
+      "title": "The founder's return report: what happened while he was away, from the ledger alone",
+      "statement": "\"You disappear from operational involvement for several days. When you return, UNIIMENTE does not merely tell you, 'I completed 842 tasks'. It tells you: Three authorized missions remained active [...] $18,430 moved through authorized budgets; every movement reconciled. Two actions were blocked by policy. One decision exceeds delegated authority and is waiting for you. Here are the receipts, causal evidence, failures, financial results, and what the institution learned.\" (founder-voiced, Material 7). Compiled effect: a deterministic, idempotent, ledger-derived digest over a time window that separates executed (with receipts) from prepared, Gate refusals from classifier withholding, unknown attempts awaiting reconciliation, decisions waiting as of the window end, declared cost estimates (never settlement) with reconciliation flags, retained assets, and what changed in the world model; it is information and requests nothing.",
+      "source": "Founder-supplied material in Claude Code cloud session session_01TnTfFXr93jtNSzVD9SWeGx, 2026-10-14 (chat text is lineage, not founder authentication)",
+      "source_location": "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md, Material 7 \"At full intended maturity\", the paragraph beginning \"The scene that would convince me\"",
+      "source_date_or_version": "2026-10-14",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "bounded",
+      "intended_outcome": "After any absence the founder reads one report, folded from ledger records with logical time inside the window, in which no prepared move is counted as executed, no executor claim is counted as verification, no estimate is presented as money moved, and nothing is requested; two loops over one ledger or one loop across a restart produce the same report; recording it twice appends nothing.",
+      "affected_systems": [
+        "uniimente-kernel egregore/absence.py (AbsenceReporter; record type egregore.return_report)",
+        "uniimente-kernel egregore/gravity.py (GoalGravityLoop.return_report; the prior-attempt guard the report's tests exposed)",
+        "uniimente-kernel egregore/closure.py (evidence closure asserts the report is ledger-derived information)"
+      ],
+      "rationale": "Draft PR #160 implemented targets A-I with per-goal status() and global measures() but no cross-goal, time-windowed digest; the founder's own acceptance scene is exactly that digest. Building it as a read-only fold of the existing records adds no authority object and reuses every record the loop, Gate, attention router and retention already write.",
+      "conflicts": [
+        "The scene's figures ('$18,430 moved', 'closed one paying customer') describe settlement and commercial closure that no Kernel ledger today records; the report therefore labels money as declared estimates with reconciliation flags and says so, rather than inventing a settlement column",
+        "While building the report's tests a defect in draft #160 was reproduced (a grantless wake re-classified a route with an open attempt and later allowed a second dispatch); fixed in this increment with regression tests (tests/evidence/goal-gravity-20261013/defect-repro-increment-4.log)"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_goal_gravity_absence.py",
+        "tests/integration/test_goal_gravity_absence.py (three-day absence across process-image restarts)",
+        "egregore/closure.py::goal_gravity_closures (evidence closure)",
+        "tests/evidence/goal-gravity-20261013/pytest-full-suite-increment-4.log",
+        "Evidence tier: IMPLEMENTED, UNIT-TESTED, INTEGRATION-TESTED on synthetic ledgers; not SANDBOX-VERIFIED, not EXTERNALLY VERIFIED, not FOUNDER-ACCEPTED"
+      ],
+      "implementation_refs": [
+        "egregore/absence.py",
+        "egregore/gravity.py::GoalGravityLoop.return_report",
+        "docs/GOAL_GRAVITY.md section 1 (founder absence) and section 2",
+        "docs/decisions/ADR-GOAL-GRAVITY-003.md"
+      ],
+      "owner": "alfonso_lopez; Kernel egregore maintainers implement",
+      "next_review_trigger": "Founder reads one real return report after a real absence; or a settlement/payment record type lands on the ledger (then the money section must consume it); or founder review of draft PR #160",
+      "unresolved_questions": [
+        "Which delivery channel should carry the report to the founder (none is contacted today; the report is a ledger record and a method)?",
+        "Should a period report be scheduled by the same host trigger that calls turn(), and at what cadence?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-host-trigger-wake-schedule",
+      "title": "A host-owned trigger discovers due work without a human tick (wake schedule view)",
+      "statement": "Directive section 3: \"Design appropriate: dormant states; wake conditions; event triggers; priority queues; resource ceilings; relevance thresholds; review cadences; urgency classes. A long-horizon objective may sleep for months. A relevant event may wake it instantly.\" Founder-loop entry gate P1: \"a bounded host-owned trigger discovers it without a human tick\". Compiled effect: a read-only view of every cadence due time and every deferred ask's resurface time, the earliest of them, and a stable trigger id for it, so that whichever scheduler the founder selects (G5) can call turn() at the right moment.",
+      "source": "Goal Gravity directive (third issuance) and docs/founder-loop-entry-gate.json G5/P1",
+      "source_location": "docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md section 3 and section 24 C; docs/founder-loop-entry-gate.json entries G5 and P1",
+      "source_date_or_version": "2026-10-14",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "bounded",
+      "intended_outcome": "Any host scheduler can compute, from durable state alone, when to next call turn() and with which trigger id; the view appends nothing and runs nothing; paused, revoked, superseded, completed and awake goals are never scheduled; a turn at the computed time wakes exactly the due goal by cadence.",
+      "affected_systems": [
+        "uniimente-kernel egregore/schedule.py (WakeSchedule)",
+        "uniimente-kernel egregore/gravity.py (GoalGravityLoop.wake_schedule)"
+      ],
+      "rationale": "G5 forbids a new scheduler before founder selection; the view is the interface every candidate (cron, APScheduler as DALEOBANKS runs, Temporal) needs and is the smallest mechanism that makes P1 testable without building a trigger component.",
+      "conflicts": [
+        "G5 remains DECISION_REQUIRED_BEFORE_NEW_ARCHITECTURE; this record does not select a scheduler and the gate file is unchanged",
+        "Material 6 proposes Temporal plus LangGraph as the substrate; recorded separately as INTENT-20261014-durable-execution-substrate (exploratory)"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_goal_gravity_schedule.py",
+        "tests/integration/test_goal_gravity_absence.py (schedule after the absence)",
+        "Evidence tier: IMPLEMENTED, UNIT-TESTED; no host scheduler has called turn() on its own clock"
+      ],
+      "implementation_refs": [
+        "egregore/schedule.py",
+        "egregore/gravity.py::GoalGravityLoop.wake_schedule"
+      ],
+      "owner": "alfonso_lopez (G5 selection); Kernel egregore maintainers implement",
+      "next_review_trigger": "Founder selects the bounded host trigger (G5); first scheduler integration",
+      "unresolved_questions": [
+        "Which scheduler owns the trigger clock (G5)?",
+        "Should event-driven wakes (a relevant signal arriving between cadences) be routed through the same host or through the organ transport?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-git-native-causal-memory",
+      "title": "Content-addressed causal memory with branchable, auditable history (\"Git-native DAG for cognition\")",
+      "statement": "Materials 1 and 3 ask for \"a Git-native causal Directed Acyclic Graph (DAG) for all internal state management\", content-addressed blobs/trees/commits, branch-and-merge of parallel realities, \"the log itself is the history\", local hydration into a read model, deterministic topological sorting in compiled code, and causal ancestry/descendant/counterfactual queries. Compiled effect: every consequential record is immutable, content-addressed and linked by provenance; contradictions coexist until resolved by a record; failures are preserved; the institution can reconstruct how it reached any state and ask what caused what.",
+      "source": "Founder-forwarded AI-generated essays supplied 2026-10-14 (Materials 1 and 3)",
+      "source_location": "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md, Material 1 (\"Theoretical Framework III\") and Material 3 (whole essay)",
+      "source_date_or_version": "2026-10-14",
+      "status": "exploratory",
+      "authority_level": "exploratory",
+      "consequence_class": "bounded",
+      "intended_outcome": "Immutable, hash-linked, content-addressed institutional records with causal links and preserved contradictions, hydrated into in-memory projections for cheap reads, with deterministic dependency ordering computed in code rather than by a model.",
+      "affected_systems": [
+        "uniimente-kernel provenance/ledger.py (append-only hash chain; corrections point at the record they correct)",
+        "uniimente-kernel memory/causal.py (ancestry, descendants, precedents, calibration)",
+        "uniimente-kernel egregore/* (content-derived identifiers; every projection is a fold of the ledger)",
+        "uniimente-kernel twins/ (counterfactual forks, recommend-only)"
+      ],
+      "rationale": "The effect already exists on main: EvidenceLedger is an append-only SHA-256 chain anchored to the constitution, CausalMemory walks causal_parent links, egregore identifiers are content digests, the twins package runs counterfactual forks that recommend and never apply, and the Goal Gravity projections hydrate from records. A literal Git object model, a rewritten Git server, Entire/KoruDelta-style forges, CRDT merges and grammar-constrained decoding are mechanism research, not requirements; INTENT-0030 regresses the literal framing and the Technology Map itself downgrades the Git port to 'ceremony over real Git'.",
+      "conflicts": [
+        "Material 3's roadmap (Epochs 1-5, 2026-2035) and throughput figures (570,000 clones/hour) are forecasts and vendor claims, not requirements; recorded as exploratory",
+        "Material 4 asks for a git commit after every decision; the hash chain already yields rollback and audit without Git, so the commit is optional tooling, not a requirement"
+      ],
+      "evidence_refs": [
+        "provenance/ledger.py::verify_chain and tests/unit (full suite green on this branch)",
+        "memory/causal.py",
+        "egregore/absence.py (a fold of records; identical across two loops and a restart)",
+        "Mechanisms cited by the essays (Gitlet, pygit, Dolt, KoruDelta, Beads, AgentReplay, Entire) are unverified external references in this record"
+      ],
+      "implementation_refs": [
+        "provenance/ledger.py",
+        "memory/causal.py",
+        "twins/twin.py",
+        "egregore/gravity.py::_sync"
+      ],
+      "owner": "Kernel provenance/memory maintainers; alfonso_lopez for any literal-substrate decision",
+      "next_review_trigger": "A measured ledger-growth or branching problem that the current chain and projections cannot serve; or a founder instruction that the Git object model itself is a requirement",
+      "unresolved_questions": [
+        "Is a materialized read model (SQLite) needed before 24/7 operation, and at what ledger size?",
+        "Should counterfactual branches (twins/) be fed from Goal Gravity goal records?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-substrate-sovereignty",
+      "title": "Substrate sovereignty: 'what I cannot create, I do not understand' versus acquire-before-inventing",
+      "statement": "Materials 1, 3 and 5 assert that \"If an AI relies on external APIs, opaque libraries, or black-box systems for its cognitive operations, it is not autonomous\", that the system \"will never rely on assumed external infrastructure or black-box APIs for its core cognitive functions\", and that databases, blockchains, containers, operating systems, network stacks and neural networks should be built from scratch. Compiled effect: the founder owns, pins, exports and can replay the law, history and capability registry that decide institutional outcomes; no vendor change alters a verdict; the institution survives any provider; commodity mechanics are rented, the control plane is owned.",
+      "source": "Founder-forwarded AI-generated essays supplied 2026-10-14 (Materials 1, 3, 5) read against the Technology Map PDF and Kernel doctrine",
+      "source_location": "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md, Material 1 (\"Theoretical Framework II\", Layer 2 of the Master System Prompt), Material 3, Material 5; Technology Map PDF (sha256 036ff76f...) pages 1, 4-7, 14-17",
+      "source_date_or_version": "2026-10-14",
+      "status": "conflicted",
+      "authority_level": "advisory",
+      "consequence_class": "material",
+      "intended_outcome": "Vendor independence and replayable, owned decision logic (the effect) without rebuilding commodity technology (the literal reading): deterministic constitutional evaluation owned in this repository, exportable signed records, replaceable models behind a router, and rebuild-from-ledger drills.",
+      "affected_systems": [
+        "uniimente-kernel compiler/ucl_compiler.py (owned constitutional evaluator)",
+        "uniimente-kernel docs/FOUNDER_EFFECT_COMPILER.md (resourcefulness ladder)",
+        "uniimente-kernel docs/intent/INTENT-20260930-open-source-first.json",
+        "build-your-own-x fork (study material, not substrate)"
+      ],
+      "rationale": "The literal reading conflicts with three binding sources: the resourcefulness ladder (existing capability -> composition -> commodity -> open source -> ... -> new architecture), INTENT-20260930 open-source-first, and the Technology Map's own 'study only; adopt mature infrastructure' verdict with explicit rejections of a general database, Git rewrite, own neural network and browser/OS builds. The effect is already partly realized (owned UCL compiler and Gate, hash-chained ledger, model router doctrine). Both readings are preserved; the literal one is regressed per INTENT-0030's default decision.",
+      "conflicts": [
+        "Material 1 Layer 2.1 'never rely on ... black-box APIs' versus INTENT-20260930 open-source-first and the Technology Map's adopt list (PostgreSQL, Git, Docker/Firecracker, mTLS, frontier LLM APIs behind a router)",
+        "Technology Map p17 'no third-party policy engines (no OPA/Rego/CEL)' versus Reality Compiler Blueprint p3-4 'OPA ... Cedar' adapters; main already carries an owned UCL compiler, which satisfies the Technology Map position without excluding adapters",
+        "Technology Map p9 relays 'You said keep the crypto' (tamper-evidence, signatures, anchoring) versus the Blueprint's adopt-Sigstore/in-toto/SLSA; the Kernel owns hash chains and a witness signer today; external anchoring is unbuilt"
+      ],
+      "evidence_refs": [
+        "compiler/ucl_compiler.py and policy/engine.py on main (deterministic evaluation owned in-repo)",
+        "provenance/ledger.py, provenance/commit_witness.py",
+        "docs/OPEN_SOURCE_STACK.md",
+        "Technology Map PDF pages 1, 4-7, 14-17 (AI-generated; verdict 'Validate', one metric, 30-day review)"
+      ],
+      "implementation_refs": [
+        "compiler/ucl_compiler.py",
+        "policy/consequence_gate.py",
+        "docs/FOUNDER_EFFECT_COMPILER.md (resourcefulness ladder)"
+      ],
+      "owner": "alfonso_lopez",
+      "next_review_trigger": "One founder answer: does 'sovereign' mean (a) owned, pinned, replayable decision code and exportable records, or (b) no third-party component anywhere in the decision path? (a) is current doctrine; (b) would supersede INTENT-20260930 and must be ruled explicitly",
+      "unresolved_questions": [
+        "Scope of 'keep the crypto': tamper-evidence, signatures and external anchoring only (not tokens or chains)?",
+        "Must the implementation be owned code, or does adopting transparency-log tooling satisfy the effect?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-master-system-prompt-artifact",
+      "title": "The 'EGREGORE_INSTANTIATION' Master System Prompt: preserved as artifact, prohibited as protocol",
+      "statement": "Material 1 contains a block headed \"[BEGIN SYSTEM OVERRIDE // PROTOCOL: EGREGORE_INSTANTIATION]\" instructing a model that it \"will cease\" ordinary operation, \"must operate exclusively\" under three frameworks, \"will never rely on assumed external infrastructure\", that \"every response you generate must be formatted and reasoned as a commit to the internal DAG\", and \"permanently cease its reliance on external infrastructure\". Its three underlying effects (causal provenance of decisions, bounded single-purpose components, failure-driven compounding) are already compiled into Kernel mechanisms.",
+      "source": "Founder-forwarded AI-generated essay supplied 2026-10-14 (Material 1)",
+      "source_location": "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md, Material 1, section \"The Egregore Initialization Protocol (Master System Prompt)\"",
+      "source_date_or_version": "2026-10-14",
+      "status": "prohibited",
+      "authority_level": "aspiration",
+      "consequence_class": "constitutional",
+      "intended_outcome": "No agent, model or organ adopts the block as an operating protocol; its causal-provenance, bounded-component and failure-compounding effects are delivered by the ledger, capability genomes with authority envelopes, and the retention/evolution paths under human ratification.",
+      "affected_systems": [
+        "uniimente-kernel AGENTS.md and CLAUDE.md (agent entry contract)",
+        "uniimente-kernel policy/consequence_gate.py (the only path from proposal to effect)"
+      ],
+      "rationale": "As a literal instruction the block conflicts with constitutional invariants: it asks a model to assume a persona with 'absolute sovereignty over your logical substrate' (intelligence never creates authority; Alfonso is root), to abandon external infrastructure (conflicts with open-source-first and the resourcefulness ladder), and to treat its own outputs as commits to institutional memory (model output is not evidence; only the Gate and ledger record consequential truth). Under FOUNDER_INTENT_LEDGER's lifecycle rules the literal protocol is 'prohibited'; the text is preserved verbatim as a historical artifact and mechanism source.",
+      "conflicts": [
+        "Conflicts with AGENTS.md 'Models reason. Agents propose. Humans and policies authorize. The Kernel controls consequences'",
+        "Conflicts with INTENT-20260930 open-source-first and the resourcefulness ladder",
+        "Conflicts with the egregore README 'no automatic prompt, policy, model, code, or infrastructure mutation'"
+      ],
+      "evidence_refs": [
+        "docs/FOUNDER_EFFECT_COMPILER.md 'Prohibited interpretation failures'",
+        "egregore/runtime.py (proposal-only standing cognition; ChangeProposal has no apply method)"
+      ],
+      "implementation_refs": [
+        "No implementation; artifact preserved in the source file only"
+      ],
+      "owner": "alfonso_lopez (only the founder can restore a literal reading)",
+      "next_review_trigger": "An explicit founder instruction that the block itself is a requirement",
+      "unresolved_questions": [
+        "None; the effects are served elsewhere and the literal protocol is refused"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-durable-execution-substrate",
+      "title": "Durable execution and state persistence for endless operation (Temporal, LangGraph, APScheduler as candidates)",
+      "statement": "Material 6: \"An autonomous entity cannot compound its successes if its cognitive processes are tethered to the ephemeral lifespan of a single hardware process\"; proposes Temporal.io durable workflows with timer-based zero-cost waits and continue-as-new, LangGraph checkpointers (Postgres/Redis) and cross-thread stores. Compiled effect: a goal or workflow interrupted at any point resumes from durable state without duplicate consequential action; waiting costs nothing; a host clock, not a human, fires the next step.",
+      "source": "Founder-forwarded AI-generated essay supplied 2026-10-14 (Material 6)",
+      "source_location": "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md, Material 6, \"The Bedrock of Endless Operation\"",
+      "source_date_or_version": "2026-10-14",
+      "status": "exploratory",
+      "authority_level": "exploratory",
+      "consequence_class": "bounded",
+      "intended_outcome": "The effect list is the contract: pause/resume/retry/reconcile, crash-after-dispatch recovery without blind retry, idempotent delivery, causal ordering, zero-cost waits and a host-owned clock; the transport and scheduler stay behind the existing organ-neutral interfaces (events/spine.py, GoalGravityLoop.turn trigger ids, WakeSchedule).",
+      "affected_systems": [
+        "uniimente-kernel events/spine.py (DurableWorkflow, resume, reconciliation-required semantics)",
+        "uniimente-kernel egregore/gravity.py (idempotent trigger ids; attempted/unknown states; reconcile)",
+        "uniimente-kernel egregore/schedule.py (wake schedule view)",
+        "docs/founder-loop-entry-gate.json G5"
+      ],
+      "rationale": "Most of the effect exists on main (DurableWorkflow checkpoints and resume refuse blind retry; the Goal Gravity loop survives SIGKILL across process images in tests). What is missing is the host clock (G5) and any supervisor. Temporal and APScheduler are mature candidates; the founder selects. LangGraph's checkpointer/store roles are already played by the ledger and its folds.",
+      "conflicts": [
+        "G5 requires the founder to select a bounded trigger/supervision implementation before any new component; this record selects nothing",
+        "Technology Map proposes a Postgres-backed workflow engine and rejects brokers until throughput pain; the Blueprint proposes Temporal and NATS/Kafka; UNIIMENTE_FINAL_BUILD_ORDER section 4.9 keeps transport behind an organ-neutral interface, which accommodates both"
+      ],
+      "evidence_refs": [
+        "tests/integration/test_goal_gravity_process_kill.py (SIGKILL after dispatch, never re-dispatched)",
+        "tests/integration/test_goal_gravity_absence.py (restarts between days)",
+        "events/spine.py::DurableWorkflow.resume",
+        "No Temporal, LangGraph or APScheduler integration exists in this repository"
+      ],
+      "implementation_refs": [
+        "events/spine.py",
+        "egregore/schedule.py"
+      ],
+      "owner": "alfonso_lopez (G5); Kernel events/egregore maintainers",
+      "next_review_trigger": "Founder G5 selection; first scheduler integration test in which a host clock calls turn() without a human",
+      "unresolved_questions": [
+        "Cron, APScheduler (as DALEOBANKS runs) or Temporal for the first host clock?",
+        "Does any candidate require a ledger backend change (JSONL to Postgres) before 24/7 use?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-self-improving-cognition-research",
+      "title": "Compounding cognition: swarms, Bayesian coordination, MALT value iteration and DSPy prompt compilation as research, under human ratification",
+      "statement": "Material 6 proposes stigmergic blackboards, ACO/PSO/ABC swarm algorithms, quorum sensing, the ECON Bayesian-Nash framework, value-of-information gating, MALT off-policy value iteration with DPO, and DSPy/MIPROv2 prompt compilation so the system \"literally rewrite[s] its own cognitive pathways\". Compiled effect: proposer/evaluator mechanisms whose selection and configuration improve from independently verified outcomes, where every change to prompts, routing or policy is a reviewable ChangeProposal that a human ratifies, never a self-applied mutation.",
+      "source": "Founder-forwarded AI-generated essay supplied 2026-10-14 (Material 6)",
+      "source_location": "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md, Material 6, sections \"Intelligent Swarm Dynamics\", \"Advanced Multi-Agent Coordination\", \"Continuous Self-Improvement\"",
+      "source_date_or_version": "2026-10-14",
+      "status": "exploratory",
+      "authority_level": "exploratory",
+      "consequence_class": "material",
+      "intended_outcome": "Any learned proposer, router calibration or prompt variant must beat the rule baseline on held-out signals and verified outcomes; improvements enter as ChangeProposals with tests and rollback and take effect only after human ratification; calibration moves only on independent verification.",
+      "affected_systems": [
+        "uniimente-kernel egregore/runtime.py (proposers/evaluators; ChangeProposal without apply)",
+        "uniimente-kernel capabilities/router.py (calibration from independent verification only)",
+        "uniimente-kernel evolution/ (strategy trees, baseline comparison, ratification)",
+        "uniimente-kernel egregore/cognition_seam.py (GoalProposer)"
+      ],
+      "rationale": "The egregore README forbids automatic prompt, policy, model, code or infrastructure mutation; the Final Build Order's Bridge E routes every improvement through isolated tests, strict baseline comparison and human authorization. The swarm, Bayesian and training mechanisms are legitimate candidates for proposers and evaluators behind the standing-cognition seam, but the essay's quantitative claims (21.4% fewer tokens, 11% accuracy) are uncited here and unverified.",
+      "conflicts": [
+        "Material 6 'rewrite its own cognitive pathways' and 'entirely without requiring human annotation' versus 'no self-apply' and human ratification (egregore README; RECURSIVE_COLLABORATION_PROTOCOL section 4)",
+        "Materials 1 and 6 propose swarms as the architecture; the Final Plan PDF schedules a Swarm Gate last (months 30-48) and the Blueprint rejects swarm-first; the Technology Map limits parallel agents to budgeted, chartered work"
+      ],
+      "evidence_refs": [
+        "egregore/runtime.py::StandingCognitionRuntime.propose_change (no apply method)",
+        "capabilities/router.py::record_outcome (independent verifier only)",
+        "No MALT, DSPy, ECON or swarm library is integrated; essay figures unverified"
+      ],
+      "implementation_refs": [
+        "egregore/cognition_seam.py",
+        "evolution/loop.py"
+      ],
+      "owner": "Kernel egregore/evolution maintainers; alfonso_lopez ratifies any promotion",
+      "next_review_trigger": "A model-backed or learned proposer attached through the standing-cognition seam is measured against the rule baseline on labelled signals and verified outcomes",
+      "unresolved_questions": [
+        "Which first problem class justifies a learned proposer over deterministic matching?",
+        "What held-out corpus and verified-outcome set would a prompt-compilation experiment be judged on?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-fifty-five-technology-arsenal",
+      "title": "The 55-technology arsenal is a mechanism registry the Foundry draws from, not 55 products",
+      "statement": "Material 2: \"The advantage is not that the private repository contains 55 exotic programs. The advantage is that it is being designed to combine ordinary, buildable technologies into an institution that behaves unlike an ordinary company\"; \"the complete 55-technology arsenal remains a target architecture, not 55 finished production systems\"; the Foundry 'does not activate all 55 technologies for every opportunity' and follows nine steps from market failure to compounding.",
+      "source": "Founder-supplied material 2026-10-14 (Material 2) read against foundry/arsenal.py on main and the Technology Map PDF",
+      "source_location": "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md, Material 2; foundry/arsenal.py (ARSENAL: 55 entries); Technology Map PDF pages 4-7 (decision codes A-E)",
+      "source_date_or_version": "2026-10-14",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "bounded",
+      "intended_outcome": "Every opportunity draws the minimum set of registered mechanisms into one bounded composition with declared authority, tested before activation, retained only after externally verified economic value, and packaged as a reusable Capability Genome; the registry's lifecycle statuses stay honest about what is built.",
+      "affected_systems": [
+        "uniimente-kernel foundry/arsenal.py (55 registered entries with statuses)",
+        "uniimente-kernel foundry/composition.py, foundry/pipeline.py, foundry/advantage.py",
+        "uniimente-kernel capabilities/genome.py"
+      ],
+      "rationale": "The registry and the nine-step Foundry lifecycle exist on main as proposal-only machinery (composition plans are reversible and non-executing; sealing requires clean external closure). Material 2's own current-reality distinction matches repository truth. Claims of '52/55 systems built' (draft #132 title) and the Blueprint's count of 57 are unverified and must not be read as production capability.",
+      "conflicts": [
+        "Draft PR #132 title claims '52/55 systems built and integrated with GREG'; unmerged and not verified here (needs_evidence)",
+        "Technology Map assigns most arsenal rows 'study only' or 'adopt'; Material 5 reads the same rows as custom builds (see INTENT-20261014-substrate-sovereignty)"
+      ],
+      "evidence_refs": [
+        "foundry/arsenal.py (ARSENAL has 55 entries; VALID_STATUSES three)",
+        "docs/FOUNDRY_OMNIMORPH_V1.md",
+        "tests/unit/test_advantage_foundry_v1.py",
+        "No arsenal entry has an externally verified economic outcome"
+      ],
+      "implementation_refs": [
+        "foundry/arsenal.py",
+        "foundry/pipeline.py",
+        "foundry/advantage.py"
+      ],
+      "owner": "Kernel foundry maintainers; alfonso_lopez",
+      "next_review_trigger": "First sealed Advantage Genome after clean external closure; or founder ruling on draft #132",
+      "unresolved_questions": [
+        "Which arsenal entries are 'built' at which lifecycle status, with test references, on main today? (a per-entry evidence table is not in this increment)"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-minimum-viable-continuous-loop",
+      "title": "The minimum viable continuous loop: Read State, Route, Propose, Gate, Execute, Measure, Branch on Failure",
+      "statement": "Material 4 asks for an event-sourced causal substrate (append-only JSONL plus a commit per decision), a deterministic orchestrator that 'does not use AI; it uses pure deterministic logic to manage the AI' with the Consequence Gate between proposal and effect, specialized single-purpose 'cellular' agents in isolated containers, a failure-driven compounding loop that isolates failures and merges verified fixes, and measurement against external reality with a Capability Genome Registry.",
+      "source": "Founder-supplied material 2026-10-14 (Material 4)",
+      "source_location": "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md, Material 4",
+      "source_date_or_version": "2026-10-14",
+      "status": "active",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "A 24/7 loop in which durable state is read, moves are classified deterministically, a model only proposes, the Gate alone executes, outcomes are measured against reality and failures become preserved evidence that improves the next cycle.",
+      "affected_systems": [
+        "uniimente-kernel provenance/ledger.py (JSONL append-only chain)",
+        "uniimente-kernel egregore/gravity.py (deterministic turn; model-free classification; Gate-only execution)",
+        "uniimente-kernel egregore/runtime.py (proposal-only cognition)",
+        "uniimente-kernel capabilities/genome.py and egregore/retention.py (registry; retention after verified outcomes)",
+        "uniimente-kernel sandbox/ (isolation: specification only)"
+      ],
+      "rationale": "Four of the five steps exist on this branch in bounded form: the JSONL ledger, the deterministic loop with Gate-only execution, capability genomes with authority envelopes, and retention/evolution under ratification. Residual: a host clock (G5), an isolation facility for untrusted candidates, and any real externally verified outcome. A git commit per decision is unnecessary given the hash chain; failure 'branches' compile to preserved failed records plus ChangeProposals, not Git branches.",
+      "conflicts": [
+        "Material 4's orchestrator 'executes it only if it passes all automated tests' versus the Gate's requirement of a pre-existing grant, policy and commit-time revalidation; tests are necessary, not sufficient",
+        "Isolation ('isolated Docker container') is a stated requirement with no facility in this repository (SR001 isolated verification facility blocker)"
+      ],
+      "evidence_refs": [
+        "tests/integration/test_goal_gravity_acceptance.py (section-33 chain)",
+        "tests/integration/test_goal_gravity_absence.py",
+        "docs/founder-loop-entry-gate.json (P1-P7; HOLD_ACTIVATION)",
+        "Zero externally verified outcomes (CMC 0)"
+      ],
+      "implementation_refs": [
+        "egregore/gravity.py",
+        "provenance/ledger.py",
+        "egregore/retention.py"
+      ],
+      "owner": "alfonso_lopez (activation); Kernel egregore maintainers",
+      "next_review_trigger": "G5 scheduler selection and the first host-driven turn; first externally verified outcome",
+      "unresolved_questions": [
+        "Which isolation facility (container with egress allow-list, WASI, microVM) qualifies untrusted candidates first?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-maturity-capabilities",
+      "title": "The ten capabilities of UNIIMENTE at full intended maturity (founder-voiced destination)",
+      "statement": "Material 7 lists ten capabilities that 'should actually impress you': (1) command outcomes, not tasks; (2) discover a missing part of itself and build a replacement; (3) almost every component can die without killing UNIIMENTE; (4) run a conglomerate while the founder operates as owner/CEO; (5) turn intelligence into money or prove the idea failed; (6) temporary organizations recruited around a mission; (7) different kinds of intelligence for different problem geometries; (8) rehearse futures before spending; (9) the public media organ changes the environment future inventions need; (10) success makes the people and systems around it stronger. It closes: \"it still would not need to be conscious or biologically alive\".",
+      "source": "Founder-supplied material 2026-10-14 (Material 7, founder-voiced)",
+      "source_location": "docs/intent/sources/EGREGORE-SYNTHESIS-MATERIALS-2026-10-14-source.md, Material 7",
+      "source_date_or_version": "2026-10-14",
+      "status": "deferred",
+      "authority_level": "aspiration",
+      "consequence_class": "material",
+      "intended_outcome": "Each capability is preserved as a serious destination with its current evidence state: (1) PARTIAL (goal intake, GPS, Gate-only execution; no standing grants); (2) PARTIAL (deficit detection, acquisition plan, qualification, founder-gated attach; no builder, no isolation); (3) PARTIAL (ledger continuity, replaceable models doctrine; no rebuild drill, no succession); (4) MISSING (no venture cell runs; organs proposal-only); (5) PARTIAL (reconciliation and independent verification exist; zero payments); (6) PARTIAL (OMNIMORPH manifests PROPOSED_NOT_EXECUTED); (7) PARTIAL (router by epistemic method; developmental research sealed); (8) PARTIAL (twins recommend only); (9) MISSING (no DALEOBANKS live transport); (10) MISSING (no participants yet).",
+      "affected_systems": [
+        "uniimente-kernel egregore/ (1, 2, 7)",
+        "uniimente-kernel omnimorph/, foundry/ (6)",
+        "uniimente-kernel twins/ (8)",
+        "DALEOBANKS, WealthMachineIntelligence, PumpStation organs (4, 9, 10) - unchanged by this record"
+      ],
+      "rationale": "The founder states the destination explicitly as not-yet-achieved ('The current project is still embryonic and fragmented'). Recording each capability with its evidence state prevents 'not implemented' from becoming 'not intended' and gives every future increment a place to attach.",
+      "conflicts": [
+        "Capability (4) and (9) require live organ transport and venture cells that the founder-loop entry gate holds; no build session can supply them",
+        "Capability (2)'s 'generate materially different replacement mechanisms' needs a builder lineage (#129, #164, #137) or a coding-agent route under the Capability Genesis contract; none is adopted"
+      ],
+      "evidence_refs": [
+        "docs/GOAL_GRAVITY.md section 4 (preserved future targets with blockers)",
+        "docs/founder-loop-entry-gate.json",
+        "CMC, VDM, verified_external_outcomes all 0"
+      ],
+      "implementation_refs": [
+        "egregore/acquisition.py (2, partial)",
+        "egregore/absence.py (the acceptance scene's report)",
+        "omnimorph/ (6, proposal-only)"
+      ],
+      "owner": "alfonso_lopez",
+      "next_review_trigger": "Each founder ruling on a blocker: scheduler (G5), authentication (G6), builder lineage, live organ transport, standing grants",
+      "unresolved_questions": [
+        "Which of the ten is the active bottleneck after the first real verified outcome?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-pdf-technology-map",
+      "title": "PDF: 'UNIIMENTE x Build Your Own X - The Egregore Technology Map' (AI-generated advisory, 2026-07-19 snapshot)",
+      "statement": "A 19-page Kimi.ai-generated map addressed to the founder: build five narrow proprietary control layers (UCL evaluator, commit-time Action Gateway, evidence spine, amendment ceremony over Git, one operator authority channel); adopt mature infrastructure; study-only weekend builds; reject own neural nets, tokens, blockchain settlement, Kafka/Kubernetes, general language/database, Git/Docker rewrites; 'the single missing puzzle piece: executable law at the point of effect'; autonomy A0-A4 with 'A5 does not exist'; master metric founder interventions per verified outcome; kill condition 'cathedral'; final decision 'Validate' with one metric and a 30-day review.",
+      "source": "Founder upload 2026-10-14; document self-describes as 'Generated by Kimi.ai', 'Verified against your live GitHub state, 2026-07-19'",
+      "source_location": "Upload 95d5657e-UNIIMENTE___Build_Your_Own_X___The_Egregore_Technology_Map.pdf, 19 pages, sha256 036ff76f8b11c9905db43fd3fad2c3f07820be451b7856e6f89321bcadb7a421 (not copied into the repository)",
+      "source_date_or_version": "2026-07-19 (document date); supplied 2026-10-14",
+      "status": "exploratory",
+      "authority_level": "advisory",
+      "consequence_class": "bounded",
+      "intended_outcome": "The document's mechanisms are available as mechanism sources; its implementation-state labels are treated as a dated snapshot superseded by executable evidence; its founder-relayed instructions ('keep the crypto', 'eliminate duplications') are carried into the conflict records above.",
+      "affected_systems": [
+        "uniimente-kernel compiler/ (the owned UCL evaluator it asked for exists on main)",
+        "uniimente-kernel policy/consequence_gate.py (the commit-time gate)",
+        "uniimente-kernel autonomy/levels.py (A0-A9 on main versus the document's A0-A4)"
+      ],
+      "rationale": "Founder expression in the document is limited to quoted constitution clauses and relayed instructions; the rest is the model's recommendation voice. Its 'Specification only ... no tests, no runtime' label for the kernel is contradicted by the current tree (783 tests green on this branch), so its state claims are historical artifacts. Its doctrine largely matches INTENT-0030 and the resourcefulness ladder.",
+      "conflicts": [
+        "Autonomy ladder A0-A4 ('A5 does not exist') versus autonomy/levels.py A0-A9 on main ('A9 reserved human sovereignty'); the Kernel's ladder stands; the document's is a superseded formulation with lineage",
+        "'No third-party policy engines' versus the Blueprint's OPA/Cedar adapters (see INTENT-20261014-substrate-sovereignty)",
+        "First bottleneck 'executable law' (this document) versus 'consequence-gate vertical slice' (Final Plan) versus 'external stakeholder pre-commitment' (Blueprint); cheapest clarification: name the external counterparty whose decision the first action family changes",
+        "'Thirteen layers' header lists fourteen items (unreviewed generation)"
+      ],
+      "evidence_refs": [
+        "PDF pages 1-19 read in full by an extraction agent (tests/evidence/goal-gravity-20261013/pdf-extraction-increment-4.json); page-cited claims and literalization risks preserved there",
+        "compiler/ucl_compiler.py exists on main (the document's Milestone 1 target)"
+      ],
+      "implementation_refs": [
+        "compiler/ucl_compiler.py",
+        "policy/consequence_gate.py",
+        "autonomy/levels.py"
+      ],
+      "owner": "alfonso_lopez",
+      "next_review_trigger": "Founder answers the two questions in INTENT-20261014-substrate-sovereignty; or a golden-packet replay test is adopted as a CI metric",
+      "unresolved_questions": [
+        "Should a golden-packet bit-identical replay test become a CI gate (the document's one metric)?",
+        "Is 'Reality Gradient' (referenced, undefined) an existing doctrine anywhere in the three repositories?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-pdf-final-plan",
+      "title": "PDF: 'UNIIMENTE: The Final Plan - Distribution, Automation, Swarms, Regenerative Capital, IaaS' (AI-generated; four verbatim founder requests)",
+      "statement": "An 11-page Kimi.ai-generated plan quoting four founder requests verbatim: lawful 'rabbit holes' in recommendation systems; the institution authoring its own Zapier/Make-class automations; agent swarms into agent-only ecosystems; regenerative economics plus infrastructure-as-a-service businesses that earn money. It proposes five organs (Rabbit Hole Engine, Automation Loom, Swarm Gate, Regenerative Treasury, Institution-as-a-Service), rejects every organ-first branch, and sequences: consequence gate first, Loom second, distribution third, businesses fourth, swarms last; Backcast GPS with the active node 'consequence gate vertical slice' and deadlines of 2026-08-18 (four shared contracts) and 2026-10-17 (first closed external loop).",
+      "source": "Founder upload 2026-10-14; document self-describes as Kimi.ai-generated and quotes the founder's four requests",
+      "source_location": "Upload 128dea86-UNIIMENTE___The_Final_Plan_Distribution_Automation_Swarms_Regenerative_Capital_IaaS.pdf, 11 pages, sha256 2603776f311109a2028bab23a456b263f5b01e17b49d63c622b36341a0e09f40 (not copied into the repository)",
+      "source_date_or_version": "undated in extraction; deadlines imply mid-2026; supplied 2026-10-14",
+      "status": "deferred",
+      "authority_level": "active_requirement",
+      "consequence_class": "material",
+      "intended_outcome": "The four founder requests are preserved as active requirements with the document's own sequence and red lines (declared machine identity, official APIs only, no inauthentic behavior, human ratification of every workflow, regenerative-debt blocks promotion); each is deferred behind the consequence-gate vertical slice and the founder-loop entry gate.",
+      "affected_systems": [
+        "uniimente-kernel loom/ (Automation Loom exists: canonical.py, pattern.py, ratify.py, weaver.py)",
+        "uniimente-kernel capital/treasury.py (waterfall mechanics exist; eleven-position order unverified here)",
+        "uniimente-kernel foundry/territory.py (territory graphs)",
+        "uniimente-kernel contracts/ (ActionIntent, ExecutionReceipt, ReconciliationRecord schemas absent; commit witness exists in code, not as a schema)"
+      ],
+      "rationale": "The four requests are genuine founder expression and must not be lost; the document's own tree search rejects building them first. The 2026-08-18 deadline for four shared contracts passed without those schemas in contracts/, which is recorded as a fact, not blame. 'Autonomy budget already exists' and 'already owns the conversion engine' are claims without referents.",
+      "conflicts": [
+        "Document claims (p4-6) that bounded loops, an autonomy budget and a conversion engine 'already exist' versus its own Node 2 scheduling them to be built; needs_evidence",
+        "Swarm Gate as a scheduled organ versus the Blueprint's rejection of swarm-first and Material 6's swarm-centric design; the founder's effect (parallel bounded evidence work under gate authority with declared identity) is what is preserved",
+        "Deadline 2026-10-17 for a first closed external loop is three days away at recording; CMC is 0"
+      ],
+      "evidence_refs": [
+        "PDF pages 1-11 read in full by an extraction agent (tests/evidence/goal-gravity-20261013/pdf-extraction-increment-4.json)",
+        "loom/ and capital/ packages on main (existence only; conformance to the document unverified)",
+        "contracts/ listing on this branch (no ActionIntent/ExecutionReceipt/ReconciliationRecord schema)"
+      ],
+      "implementation_refs": [
+        "loom/ratify.py",
+        "capital/treasury.py",
+        "foundry/territory.py"
+      ],
+      "owner": "alfonso_lopez",
+      "next_review_trigger": "First action family passes the consequence-gate vertical slice with 100% mediated side-effect coverage; founder confirms whether a dedicated swarm substrate is a requirement or one acquisition route",
+      "unresolved_questions": [
+        "Should the four shared contracts become JSON schemas in contracts/ (ActionIntent, CommitWitness, ExecutionReceipt, ReconciliationRecord)?",
+        "Which DALEOBANKS approval family is the first vertical slice?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-pdf-reality-compiler-blueprint",
+      "title": "PDF: '03 UNIIMENTE Reality Compiler Blueprint' (ChatGPT-generated advisory)",
+      "statement": "A 21-page ChatGPT-authored blueprint: treat build-your-own-x as a technology anatomy atlas; do not build a generic agent platform, custom LLM, blockchain or AI OS; build a 'proof-to-consequence compiler' of seven pieces (Institutional ISA/Reality Compiler, Reality Git, Capability Cell Runtime, Consequence Engine, Precedent Engine, Proof Credential Fabric, Capability Genome Foundry) as a thin control plane over open standards (Git/IPFS, OPA, Cedar, WASI/Wasmtime, Firecracker, SPIFFE, Temporal, in-toto, SLSA, Sigstore/Rekor, W3C VC); the first bottleneck is a named external stakeholder pre-committing to acceptance criteria; 'egregore' means 'a standing institutional process with persistent memory, bounded organs, externally legible identity, and an evidence-to-settlement metabolism', 'not an emergent consciousness'.",
+      "source": "Founder upload 2026-10-14; document carries a ChatGPT header and states the kernel repository returned 404 to it",
+      "source_location": "Upload 444d13e9-03-UNIIMENTE-Reality-Compiler-Blueprint.pdf, 21 pages, sha256 f53a255529ee97859980b51d39672c5450505439b0d3dc141ef1d555417521f8 (not copied into the repository)",
+      "source_date_or_version": "undated in extraction; supplied 2026-10-14",
+      "status": "exploratory",
+      "authority_level": "advisory",
+      "consequence_class": "bounded",
+      "intended_outcome": "Its de-literalization of 'egregore' and its consequence lifecycle (proposed -> evidence_ready -> policy_approved -> human_approved -> capability_issued -> commit_revalidated -> executed -> receipt_captured -> reconciled -> outcome_verified -> precedent_updated) are available as mechanism sources; its R0/R1 maturity ratings describe the model's proposal, never the kernel's state.",
+      "affected_systems": [
+        "uniimente-kernel policy/consequence_gate.py (lifecycle largely realized: witness, grant, commit revalidation, receipt, outcome)",
+        "uniimente-kernel egregore/gravity.py (reconcile, verify_outcome)",
+        "uniimente-kernel sandbox/ (specification only)"
+      ],
+      "rationale": "The document never saw the kernel (404), so none of its state claims apply; its design direction matches main's Gate lifecycle closely and its stakeholder-first bottleneck is a serious alternative to the other two documents' first bottlenecks. All example identifiers and credentials in it are illustrative.",
+      "conflicts": [
+        "First bottleneck: external stakeholder pre-commitment (this document) versus executable law (Technology Map) versus gate vertical slice (Final Plan)",
+        "'55 technologies' listed as 57 (unreviewed generation)",
+        "OPA/Cedar adapters versus the Technology Map's prohibition (see INTENT-20261014-substrate-sovereignty)"
+      ],
+      "evidence_refs": [
+        "PDF pages 1-21 read in full by an extraction agent (tests/evidence/goal-gravity-20261013/pdf-extraction-increment-4.json)",
+        "policy/consequence_gate.py::run (lifecycle on main)"
+      ],
+      "implementation_refs": [
+        "policy/consequence_gate.py",
+        "egregore/gravity.py::reconcile",
+        "egregore/gravity.py::verify_outcome"
+      ],
+      "owner": "alfonso_lopez",
+      "next_review_trigger": "Founder names the external counterparty whose decision the first action family will change",
+      "unresolved_questions": [
+        "Is there a named verifier or counterparty willing to specify acceptance evidence for a first bounded outcome?"
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    },
+    {
+      "intent_id": "INTENT-20261014-external-audit-2026-09-05",
+      "title": "External repository audit of 2026-09-05: kernel-side findings dispositioned, organ-side findings preserved",
+      "statement": "The founder supplied the 5 September 2026 audit ('UNIIMENTE has a coherent institutional direction and meaningful implementations, but its development process is accumulating competing states faster than it integrates and verifies them'), fifteen findings F01-F15, a repair sequence, and the process correction 'one named bottleneck, one canonical integration path, one falsifiable acceptance result'.",
+      "source": "Founder upload 2026-10-14 of an AI-assistant audit dated 2026-09-05",
+      "source_location": "docs/collaboration/UNIIMENTE-AUDIT-2026-09-05-external.md (verbatim copy with a Kernel-side disposition table); upload sha256 fac5d1ecc41fcaf63aa0af5825a1b337eb4bb7cc96247e13ea2a40e119973fd4",
+      "source_date_or_version": "2026-09-05",
+      "status": "needs_evidence",
+      "authority_level": "advisory",
+      "consequence_class": "material",
+      "intended_outcome": "Kernel-side priority-0 items are verified repaired on main (F03 gate self-issue refused, F04 genesis hash verified, F05 replay index derived from durable history); the backlog finding F13 is acknowledged (118 open draft PRs on 2026-10-14) and answered by continuing draft #160 rather than opening a parallel lineage; organ-side findings are preserved as claims for their owners.",
+      "affected_systems": [
+        "uniimente-kernel policy/consequence_gate.py (F03)",
+        "uniimente-kernel provenance/ledger.py (F04)",
+        "uniimente-kernel events/spine.py (F05)",
+        "WealthMachineIntelligence, DALEOBANKS, PumpStation, RESEARCH-IN, RAILSCOUT (F01, F02, F06-F12, F14, F15: not assessed here)"
+      ],
+      "rationale": "The audit's process correction is the operating rule this increment followed (inspect, continue the canonical lineage, one falsifiable acceptance test). Its kernel defects were checked against code on main and the green suite, not against its prose.",
+      "conflicts": [
+        "Audit F13 recommends one integration matrix for 109 open PRs; the count is now 118 and no matrix exists in this increment (open)",
+        "Audit's 'next highest-value change' (WMI authentication and packaged bridge entrypoint) is organ-side and outside this repository"
+      ],
+      "evidence_refs": [
+        "policy/consequence_gate.py::run ('executor admission requires pre-existing grant')",
+        "provenance/ledger.py::verify_chain (genesis hash recomputed)",
+        "events/spine.py::_refresh",
+        "tests/evidence/goal-gravity-20261013/pytest-full-suite-increment-4.log"
+      ],
+      "implementation_refs": [
+        "docs/collaboration/UNIIMENTE-AUDIT-2026-09-05-external.md (disposition table)"
+      ],
+      "owner": "alfonso_lopez; organ maintainers for organ-side items",
+      "next_review_trigger": "Organ-side repairs land (WMI #23/#24/#32, DALEOBANKS #74, PumpStation #16) or the founder rules on the PR backlog",
+      "unresolved_questions": [
+        "Who owns the integration matrix the audit asks for across 118 open PRs?",
+        "Do the organ-side findings (WMI, DALEOBANKS, PumpStation) still reproduce on their current default branches? Not assessed in this increment."
+      ],
+      "created_at": "2026-10-14T16:40:00Z",
+      "updated_at": "2026-10-14T16:40:00Z"
+    }
+  ]
+}

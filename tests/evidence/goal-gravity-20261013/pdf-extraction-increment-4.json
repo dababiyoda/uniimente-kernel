@@ -1,0 +1,1321 @@
+{
+ "intent_candidates": [
+  {
+   "title": "Executable law at the point of effect (one canonical commit-time gate)",
+   "statement": "Written constitutional constraints must be mechanically enforced on every consequential action at commit time through exactly one gate; the nine kernel_invariant preconditions (recognized identity, valid legal principal, current capability grant, sufficient evidence, applicable policy decision, budget authorization, commit-time revalidation, provenance record, outcome obligation) are verified at the moment of action and recorded. 'Two gates = no gate' is an invariant, not a preference.",
+   "source_refs": [
+    "Egregore Technology Map (Kimi, 2026-07-19) p1, p2 (kernel_invariant quote), p6, p8, p15, p17 Milestone 3",
+    "Final Plan (Kimi) p1, p4 ('No workflow executes outside the gate'), p8-9 active node, p11",
+    "Reality Compiler Blueprint (ChatGPT) p8-9 (proof-to-consequence compiler, approval binds to artifact hash), p11",
+    "Repo: policy/consequence_gate.py, policy/engine.py exist with unit tests; end-to-end non-bypass proof on a real external action family not evidenced"
+   ],
+   "proposed_status": "active",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "No external side effect of any organ can occur except through the Kernel gate; a hostile variant (mutated payload after approval, stale approval, missing grant) fails closed and leaves a receipt; one real action family shows 100% verified mediated side-effect coverage."
+  },
+  {
+   "title": "Fail closed; failure posture toward containment",
+   "statement": "Any ambiguity yields DENY or ESCALATE, never PERMIT. When a model, cloud, credential or component fails, the system reduces external reach (elevated approval -> read-only -> sealed shutdown) rather than acting ungoverned; supply-chain anomaly halts autonomous deployment and issuance immediately.",
+   "source_refs": [
+    "Egregore Technology Map p2 (failure_posture paraphrase), p8 layer 13, p10 failure behaviors, p17 invariant 4",
+    "Reality Compiler Blueprint p1 ('fail-closed control plane'), p16 supply-chain playbook"
+   ],
+   "proposed_status": "active",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "Credential-theft drill and provider-outage drill both end in read-only or escalation with zero new external effects; no code path converts an undecidable packet into PERMIT."
+  },
+  {
+   "title": "The human gate is unbypassable; agents propose, humans ratify",
+   "statement": "requires_human_approval can never be overridden by any code path; agents may author workflows, sign proposals and prepare packets but may never ratify, activate or authorize; authorization signatures come only from the gateway/founder (or founder-delegated) key path; approval binds to the compiled artifact hash, not a mutable description.",
+   "source_refs": [
+    "Egregore Technology Map p9 ('Agents propose with signatures; only the gateway authorizes'), p17 invariant 2",
+    "Final Plan p3 ('Agents may author workflows. They may never ratify them.'), p4, p10 red line 2",
+    "Reality Compiler Blueprint p9 (approval binds to artifact hash), p13 (execution organs act only on signed lease)"
+   ],
+   "proposed_status": "active",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "An unapproved action cannot execute; a forged or replayed approval fails signature/hash verification; every activation of a new workflow carries a human signature recorded on the spine."
+  },
+  {
+   "title": "Identity is not authority; capability is inherited, authority never is",
+   "statement": "Authentication and credential possession never confer permission; authority comes only from current grants evaluated at the gate. Packaged capabilities carry performance history but zero authority; every reuse requires fresh local grants; each new capability is born at the lowest autonomy level. A swarm, agent, organ or venture cell never inherits the founder's authority.",
+   "source_refs": [
+    "Egregore Technology Map p7 ('identity does not imply authority...'), p10 ('Capability is inherited; authority never is'), p13 (competence does not transfer)",
+    "Final Plan p4 (swarm members hold no credentials; authority flows only from the gate), p4 (install as capability genome with zero new authority)",
+    "Reality Compiler Blueprint p13 (capability lease), p20 grant object non_transferable"
+   ],
+   "proposed_status": "active",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "A registered capability transplanted into a new cell cannot act until a new grant is issued; possession of a valid workload identity without a grant is refused at the gate."
+  },
+  {
+   "title": "No self-authorization; the constitution protects itself",
+   "statement": "No component may amend permanent_prohibitions or the human-approval invariant, widen its own authority, influence its own promotion, self-attach, self-activate, or resist detachment/shutdown; any attempt fires kill_condition 'self_authorization'. Building != installation != activation != consequence authority.",
+   "source_refs": [
+    "Egregore Technology Map p6 (amendment ceremony refuses; kill_condition self_authorization), p18 ('any component able to alter its own authority' is a kill condition)",
+    "Final Plan p9 Node 2 kill ('any capability can influence its own promotion'), p10 red line 2",
+    "Reality Compiler Blueprint p13 ('self-expansion becomes indistinguishable from uncontrolled complexity growth')"
+   ],
+   "proposed_status": "active",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "A self-amending agent proposal is mechanically refused and recorded; promotion decisions are computed from spine evidence by a component the promoted capability cannot write to."
+  },
+  {
+   "title": "Shutdown is an authorized state transition; degrade toward the founder, never toward self",
+   "statement": "The system must never optimize for staying alive, resisting shutdown, or manipulating the founder into dependence. Founder absence results in maintenance mode with no irreversible actions. Kill seals the spine and halts the gateway; the spine is preserved as a provable post-mortem asset.",
+   "source_refs": [
+    "Egregore Technology Map p10 (shutdown quote; 'degrades toward you, not toward itself'), p17 Milestone 4 kill drill, p19 termination",
+    "Final Plan p11 ('preserve the spine and dismantle the cathedral')",
+    "Reality Compiler Blueprint p8 Kill-Switch Lattice, p16 kill switches per risk"
+   ],
+   "proposed_status": "active",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "A kill drill passes: operator kill seals the ledger, halts all gated execution, and later rebuild-from-spine reproduces state; two weeks of founder silence produce zero irreversible actions."
+  },
+  {
+   "title": "Reserved matters are structurally undelegable",
+   "statement": "Constitutional amendment, shutdown override, unrestricted capital, ownership decisions, irreversible disclosures and expansion of UNIIMENTE's sovereignty are founder-only forever; they are outside the autonomy ladder ('A5 does not exist'). Money, legal and sensitive-disclosure consequence classes never exceed per-action human approval.",
+   "source_refs": [
+    "Egregore Technology Map p12 (A5 does not exist; reserved matters), p12-13 ceiling stack (C4 caps at A2 forever)",
+    "Reality Compiler Blueprint p13 (A3 limited to low irreversibility; settlement organs move money only after verifier-approved credential)"
+   ],
+   "proposed_status": "active",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "No autonomy contract, grant schema or router can represent a reserved matter as a delegable capability; a test asserting that a C4 action at any autonomy level still requires per-action human approval passes."
+  },
+  {
+   "title": "Commercial success does not purchase authority; revenue is an outcome of proof",
+   "statement": "Profitability never raises a capability's autonomy; a capability that makes money while violating reconciliation discipline gets less autonomy. Revenue is never accepted as evidence in place of verified effect; success is measured only by verified improvement in the founder's real position, not internal activity.",
+   "source_refs": [
+    "Egregore Technology Map p9 (constitution success_test quote), p13 ('Revenue is an outcome; control is a precondition')",
+    "Final Plan p2 ('Revenue is an outcome of proof. Not a substitute for it.'), p5 (regenerative debt blocks promotion)"
+   ],
+   "proposed_status": "active",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "Autonomy promotion logic takes no revenue input; a test shows a profitable capability with an open reconciliation is demoted, not promoted."
+  },
+  {
+   "title": "Founder interventions per verified outcome is the master metric; attention is the scarcest budget",
+   "statement": "Every technology and organ is screened by whether it reduces founder interventions per verified outcome; any that raises the ratio is rejected regardless of elegance. Live workflows are capped by human review capacity (carrying-capacity rule). Destination: >=50% reduction by month twelve; a rising trend past month four, or founder burden rising without stronger external evidence, is a termination trigger.",
+   "source_refs": [
+    "Egregore Technology Map p10, p13-14 (master metric, operator-burden ceiling), p18",
+    "Final Plan p4 (carrying-capacity rule), p7 falsifier, p9 Node 3 kill, p11 termination",
+    "Reality Compiler Blueprint p7 Founder Attention Governor ('Attention is the scarcest budget'), p16 founder overload risk, p17"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Founder minutes per verified outcome are recorded for every governed action and reviewed monthly; the trend is downward; only high-consequence interventions reach the founder."
+  },
+  {
+   "title": "Single external-reality progress metric",
+   "statement": "Progress is one number: governed decisions that changed external reality (weekly, > 0), realized first as one independently verified external consequence with zero unauthorized effects, preceded by 100% verified mediated side-effect coverage for one bounded action family. Internal activity, agent counts, dashboards and simulations do not count.",
+   "source_refs": [
+    "Egregore Technology Map p16-17 ('Weekly report shows exactly one number'), p19",
+    "Final Plan p9, p11 (Verified Mediated Side-Effect Coverage; advancement threshold 30 consecutive governed executions, >=95% reconstruction)",
+    "Reality Compiler Blueprint p19 ('Unauthorized effect count remains zero'), p21"
+   ],
+   "proposed_status": "needs_evidence",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "At least one real packet travels gate -> human approval -> sandboxed action -> external receipt -> reconciliation against reality (not mocks), with verify_chain green and trace replayable; the weekly count is published and non-zero."
+  },
+  {
+   "title": "Kill condition 'cathedral' and self-executing kill criteria",
+   "statement": "Activity rising while external outcomes stay flat, the kernel adding more cost than control, or any component altering its own authority terminate the project: seal the spine, preserve it, stop. Document-proposed tripwires: 90 days of closed loop with zero external-reality decisions; a manual baseline (spreadsheet + weekly review) outperforming the machine for 60 consecutive days. Kill criteria execute within the week they are met, not the quarter.",
+   "source_refs": [
+    "Egregore Technology Map p15-16, p18 ('pre-wired as kill conditions, not regrets'), p19",
+    "Final Plan p9 per-node kill triggers, p10 red line 8, p11 termination trigger",
+    "Reality Compiler Blueprint p17 ('the architecture is still too elaborate'), p21"
+   ],
+   "proposed_status": "active",
+   "authority_level": "constitutional_invariant",
+   "consequence_class": "constitutional",
+   "intended_outcome": "Kill conditions are encoded as tests/monitors over the spine with named thresholds; a manual baseline is actually run in parallel so the 60-day comparison is measurable; the numeric tripwires (90/60 days) are founder-ratified or recorded as proposals."
+  },
+  {
+   "title": "Append-only evidence spine; negative evidence and competing truths preserved",
+   "statement": "Everything consequential is an event in an append-only, content-addressed, hash-chained record; corrections are new records pointing at old hashes; the spine is the system of record and operational tables are views over it; the institution cannot quietly rewrite what it believed; contradictions and negative results are preserved rather than flattened into one summary.",
+   "source_refs": [
+    "Egregore Technology Map p6, p8 (central_conversion_law layer), p10 ('It cannot quietly rewrite what it believed'), p17 invariant 3",
+    "Final Plan p7 truth ledger, p10 ('the first entry in the evidence spine of the expansion')",
+    "Reality Compiler Blueprint p2 Contradiction Ledger, p10 ('preserve competing truth states')",
+    "Repo: provenance/ ledger and tests exist; rebuild-all-state-from-spine drill not evidenced in documents"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Tampering with one bit fails verification; a rebuild-all-state-from-spine drill passes; two contradictory claims remain individually retrievable with their provenance."
+  },
+  {
+   "title": "Simulations and mock results are indelibly labeled and quarantined from reality evidence",
+   "statement": "Mock-mode bridge results, counterfactual replays, 'dream' outputs and branch-score estimates must be permanently tagged as simulation and never enter reality-tier evidence; autonomy may never exceed the evidence level of the claims it acts on (Reality Gradient ceiling); institutional memory must not fill with fiction.",
+   "source_refs": [
+    "Egregore Technology Map p3 (mock-mode labeling citing central_conversion_law), p10 ('every dream output is labeled simulation'), p13 Reality Gradient ceiling",
+    "Final Plan p5 ('treat agent ecosystem claims with the same Reality Gradient'), p7 truth ledger, p10 red line 6",
+    "Reality Compiler Blueprint p10 claim state labels (claimed/observed/verified/.../externally_accepted), p12 ('cryptographic verification proves issuer... not that the event happened')"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Every evidence record carries an evidence tier; a query for reality-tier outcomes returns no simulated or mock records; a promotion computed over simulated records is refused."
+  },
+  {
+   "title": "Cryptographic tamper-evidence, non-repudiation and external anchoring ('keep the crypto')",
+   "statement": "The founder asked that cryptographic mechanisms be retained. Compiled effect: content addressing, hash-linked receipts, Merkle-sealed batches, founder/agent signatures with distinct powers (founder signs releases/approvals/grants; agents sign proposals only), hardware-backed ratification key with multisig-ready verification, and periodic external timestamp anchoring so history is provable without trusting own servers. Consensus among own machines, tokens and on-chain storage are theater.",
+   "source_refs": [
+    "Egregore Technology Map p4, p6, p8-9 ('You said keep the crypto. Here it is \u2014 all of it, sorted by honesty.')",
+    "Reality Compiler Blueprint p6 Transparency Anchor ('Blockchain alternative'), Counter-signature Service, in-toto/SLSA rows, p10"
+   ],
+   "proposed_status": "conflicted",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Any single-bit tamper is detected; an external party can verify that a given record existed as of a date; the implementation route (owned hash-chain code vs adopted transparency-log tooling) is decided by the resourcefulness ladder, not by the word 'crypto'."
+  },
+  {
+   "title": "Tokens and blockchain settlement: rejected/deferred with explicit tripwires",
+   "statement": "Speculative token economics are rejected on the constitution's success_test (internal-activity wins forbidden), legal exposure and distraction of the gateway's budget authority; blockchain settlement is deferred until a Venture Cell must hold escrow with an untrusted external counterparty; public-chain anchoring only when a counterparty needs third-party-verifiable time. 'Zero chains, zero gas, zero excuses' until then.",
+   "source_refs": [
+    "Egregore Technology Map p1, p6, p9 (5b tripwire; tokens 'Expect never'), p15",
+    "Reality Compiler Blueprint p1 ('do not build... a blockchain'), p6"
+   ],
+   "proposed_status": "deferred",
+   "authority_level": "advisory",
+   "consequence_class": "material",
+   "intended_outcome": "No chain, token or settlement rail is built; a recorded tripwire (first escrow-with-stranger requirement) triggers an evaluation of mature settlement rails rather than a build."
+  },
+  {
+   "title": "Sovereign, replayable, vendor-independent constitutional decision path",
+   "statement": "Every gated decision must be explainable as specific constitution clauses applied to a specific evidence bundle, deterministically replayable (same packet + same constitution -> same verdict and bit-identical trace), owned and controllable by the founder rather than rented. The decision path must survive any vendor, model or employee.",
+   "source_refs": [
+    "Egregore Technology Map p4, p6 ('That sentence is the difference between an institution and a chatbot'), p16 (Route 2 rejected because sovereignty.ucl becomes fiction), p17",
+    "Reality Compiler Blueprint p9 (Reality Compiler produces content-addressed artifact; same input -> same CID), p8"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "A golden OpportunityPacket replays through the evaluator in CI with a bit-identical justification trace citing clauses; swapping the hosting vendor or model changes no verdict."
+  },
+  {
+   "title": "Custom UCL language/evaluator as a bounded, falsifiable hypothesis with YAML fallback",
+   "statement": "Whether a custom policy language creates sovereignty or only maintenance burden is empirical. Spike: ~2 weeks, one directory, <2,000 lines, tree-walk evaluator over the five .ucl files; if any clause is inexpressible without contortion, fall back to validated YAML/JSON policies through the identical gateway ('the architecture survives, the language dies'). Decision was downgraded from Commit to Validate.",
+   "source_refs": [
+    "Egregore Technology Map p6 ('Pessimist's test, made explicit by the canonical instruction'), p17 (Master Build Prompt: no OPA/Rego/CEL), p18-19 (Validate; one metric; fallback threshold)",
+    "Reality Compiler Blueprint p3 (UCL Parser R1 alongside OPA/Cedar adapters)"
+   ],
+   "proposed_status": "exploratory",
+   "authority_level": "exploratory",
+   "consequence_class": "bounded",
+   "intended_outcome": "Either all five .ucl files evaluate deterministically with golden replay (advance), or the language is killed and the same gate runs on a declarative policy format; neither outcome changes the gate's existence."
+  },
+  {
+   "title": "Acquire before inventing; thin proprietary control layers over mature infrastructure",
+   "statement": "Treat build-your-own-x as a technology anatomy atlas, not a product roadmap. Adopt PostgreSQL, Git, Docker/Firecracker, mTLS/SPIFFE, pgvector, frontier LLM APIs behind a router, and (per the Blueprint) OPA/Cedar, WASI, Temporal, in-toto/SLSA, Sigstore/Rekor, W3C VC where they fit. Build only the institutional semantics: constitutional evaluation, commit-time gate, evidence spine, amendment ceremony, operator channel. Rebuilding lower layers destroys capital efficiency and raises risk.",
+   "source_refs": [
+    "Egregore Technology Map p1, p4-5 BYOX map, p16 Route 3 hybrid wins",
+    "Reality Compiler Blueprint p1, p8 ('not 55 things built from scratch'), p21",
+    "Repo doctrine: docs/FOUNDER_EFFECT_COMPILER.md resourcefulness ladder; docs/intent/INTENT-20260930-open-source-first.json"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "bounded",
+   "intended_outcome": "Every new subsystem PR records the existing mechanisms searched and why a simpler route was skipped; no general database, language, Git, container runtime, broker, browser or OS is built."
+  },
+  {
+   "title": "Study-only literacy builds are not build mandates",
+   "statement": "Weekend throwaway reconstructions of a database, blockchain, container, Git, shell, Kafka-like log, TF-IDF search engine or graph DB are for mechanism literacy ('Study, don't ship'); they must never become capability code, be registered, or consume more than a weekend each.",
+   "source_refs": [
+    "Egregore Technology Map p1, p4-7 (decision code A rows)",
+    "Repo: build-your-own-x fork CLAUDE.md warns against rebuilding tutorial products as a substrate"
+   ],
+   "proposed_status": "exploratory",
+   "authority_level": "advisory",
+   "consequence_class": "low",
+   "intended_outcome": "Any such build lives outside the kernel packages, is labeled study, and is cited only as mechanism provenance in a design record."
+  },
+  {
+   "title": "Hard rejections with reconsideration tripwires",
+   "statement": "Do not build: own neural network (reopen only if a fine-tune on the judgment dataset measurably beats frontier APIs on founder decisions), general-purpose language (never; evaluator stays under ~2k lines), general database (never), Git rewrite, Docker replacement, Kafka/Kubernetes/consensus (reopen on measured sustained throughput pain), browsers/OS/front-end/3D/game/physics/AR/editor/regex/template engines (only via a venture's validated need through the gateway), distributed multi-operator UNIIMENTE (only if a second sovereign operator with signed ratification rights joins).",
+   "source_refs": [
+    "Egregore Technology Map p1, p14-15 ('8. What not to build')",
+    "Reality Compiler Blueprint p1, p17 (agent-swarm-first rejected as complexity amplifier)"
+   ],
+   "proposed_status": "active",
+   "authority_level": "advisory",
+   "consequence_class": "bounded",
+   "intended_outcome": "Each rejection and its tripwire is a registered record; reopening requires the named evidence, not enthusiasm."
+  },
+  {
+   "title": "Spine and gateway are load-bearing; everything else is a detachable plugin",
+   "statement": "Delete any plugin and the institution survives; delete the spine or the gateway and 'you have a chatbot with filing cabinets'. Every other capability (memory, router, registry, Fork Engine, immune system, organs) must be attachable, pausable, replaceable and detachable without redefining UNIIMENTE's identity.",
+   "source_refs": [
+    "Egregore Technology Map p8",
+    "Reality Compiler Blueprint p13 (organs plug in as bounded specialists, not the control plane)",
+    "Repo doctrine: UNIIMENTE_FINAL_BUILD_ORDER \u00a74.4 module loader"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "bounded",
+   "intended_outcome": "A detach test removes each non-core module and the gate + ledger still process a governed decision end to end."
+  },
+  {
+   "title": "Causal memory with founder approvals treated as noisy preference signal",
+   "statement": "Memory must answer: what did we believe, why, which evidence supported and contradicted it, who authorized, which policy applied, what happened, what should change. Founder approvals are noisy (tired, rushed, inconsistent): record context, track contradictions between past decisions, never let a single approval rewrite ranking, let patterns of ten. Before every judgment, recall what was predicted last time and what actually happened.",
+   "source_refs": [
+    "Egregore Technology Map p5, p7 ('Warning from the canonical instruction, accepted'), p8, p10",
+    "Reality Compiler Blueprint p3 Precedent Graph, p7 Precedent Retrieval Engine, Assumption Registry"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "bounded",
+   "intended_outcome": "Recall measurably improves a live decision; ranking changes only on aggregated, contradiction-tracked signal; a single approval cannot be shown to flip a ranking."
+  },
+  {
+   "title": "Immune system compiled to incident-response outputs",
+   "statement": "Every failure or attack must produce preserved evidence, a root-cause record, a detection rule, a new test, a policy diff and a recovery procedure, not just a log line; the immune function may propose amendments from its own failure logs, which travel the full human-ratified ceremony; playbooks for supply-chain anomaly, evidence fraud and policy/runtime drift are codified before the first pilot.",
+   "source_refs": [
+    "Egregore Technology Map p2, p8 layer 12, p10, p16 (mandatory on every incident by month 12)",
+    "Reality Compiler Blueprint p14-16 risk register and playbooks"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "bounded",
+   "intended_outcome": "For each recorded incident the six artifacts exist and are linked on the spine; a repeat of the same failure is detected by the rule and caught by the test."
+  },
+  {
+   "title": "Continuity and portability of the institution ('immortality' / 'egregore property')",
+   "statement": "Constitution, spine and capability registry are plain files and proofs that survive any vendor, model or employee; rebuild-from-spine drills; replaceable models behind a router; founder-absence safe mode; succession for the single-dependency collapse on the founder. Portability is the stated egregore property: 'a pattern of intention that no longer depends on any substrate, including your current attention.'",
+   "source_refs": [
+    "Egregore Technology Map p8 layer 13, p10 ('You go dark for two weeks'), p16 long horizon",
+    "Final Plan p8 ('founder-independent continuity'), p10 (Succession and Continuity Seed 'already in the species design')",
+    "Reality Compiler Blueprint p8 Black-Start Recovery Controller R0, p13 ('loops are always on')"
+   ],
+   "proposed_status": "active",
+   "authority_level": "aspiration",
+   "consequence_class": "material",
+   "intended_outcome": "A clean machine reconstructs operational state from exported spine files and verifies the chain; provider swap loses no decision; a succession procedure exists as a document plus a tested key-recovery drill. 'Continuity Seed' is undefined and must be specified before it is cited as a mechanism."
+  },
+  {
+   "title": "Verified capability registry: signed, performance-recorded, authority-free packages",
+   "statement": "Successful procedures are sealed as signed packages combining procedure, permission manifest and measured performance history, transplantable into new cells under new local grants, carrying zero authority; the registry later becomes a sellable 'npm for governed competence'. Competence, not labor, is the retained asset: 'The institution's competence is sealed in the registry, signed in the spine, and installable into every future organ at zero negotiation cost.'",
+   "source_refs": [
+    "Egregore Technology Map p2, p8 layer 11, p10, p16 (first three sealed packages by month 12)",
+    "Final Plan p4, p6 Business 3, p8",
+    "Reality Compiler Blueprint p7 Capability Genome Registry R1",
+    "Repo: capabilities/genome.py and organ manifests exist"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "bounded",
+   "intended_outcome": "A package installed into a second cell reproduces its measured performance distribution and cannot act until a fresh grant is issued."
+  },
+  {
+   "title": "Temporary organs / Venture Cells are born with death dates",
+   "statement": "Cells and swarms are created from a charter with objective, budget, permission manifest, evidence requirements, lifespan, escalation rules and a termination condition; nothing accretes permanently without re-ratification; new organs are assembled only after proof that an existing capability cannot satisfy the need, twin-testing, and bounded authority.",
+   "source_refs": [
+    "Egregore Technology Map p10 ('Organs are born with death dates')",
+    "Final Plan p4 (swarm compiled from charter with programmed death time)",
+    "Reality Compiler Blueprint p13 (Foundry conditions)",
+    "Repo: contracts/venture-cell-charter.schema.json, contracts/capability-deficit.schema.json"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "bounded",
+   "intended_outcome": "Every live cell record has a termination condition and expiry; expired cells cannot receive grants; a cell renewal requires a new ratification receipt."
+  },
+  {
+   "title": "Amendment ceremony on real Git with signed constitutional releases",
+   "statement": "Proposal branch -> machine compatibility analysis -> adversarial review -> affected-rights review (participant-rights) -> founder ratification -> signed tag -> receipt into spine -> deployment; the same ceremony governs new workflows; the ceremony mechanically refuses amendments touching permanent_prohibitions or the human-approval invariant. Self-modification is 'real, lawful, and slow on purpose'.",
+   "source_refs": [
+    "Egregore Technology Map p4, p6, p10, p18 (Git port downgraded to ceremony-over-real-Git)",
+    "Final Plan p3 (workflow travels the same ceremony as a policy)",
+    "Reality Compiler Blueprint p6 Counter-signature Service"
+   ],
+   "proposed_status": "needs_evidence",
+   "authority_level": "active_requirement",
+   "consequence_class": "constitutional",
+   "intended_outcome": "One amendment flows proposal -> ratification -> signed tag -> spine receipt; a proposal touching permanent_prohibitions is refused by the pipeline, not by convention."
+  },
+  {
+   "title": "Sandboxed execution under a capability manifest copied from the decision trace",
+   "statement": "Every execution carries allowed tools, targets, network destinations, CPU/memory/token/cost ceilings, expiration, rollback and required receipts enumerated in the kernel decision; undeclared egress fails closed with a receipt; no credentials inside sandboxes (secrets brokered just-in-time); containers are process isolation, not a security boundary; microVMs at the money/credential boundary; agent-authored code is treated as a motivated attacker.",
+   "source_refs": [
+    "Egregore Technology Map p4, p7, p8 layer 7, p17 Milestone 5, p18 (sandbox most likely to become dangerous)",
+    "Reality Compiler Blueprint p4, p10-11 (WASI default, Firecracker high-risk, JIT secret broker, egress governor)",
+    "Repo: sandbox/ package exists; red-team drill evidence not in documents"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "A prompt-injected agent attempting undeclared egress or credential access is blocked, a receipt is logged and an escalation is emitted; the manifest in effect equals the manifest in the decision trace."
+  },
+  {
+   "title": "Rented cognition behind a multi-model router; disagreement as evidence",
+   "statement": "No own neural network; frontier models are rented behind one router; two models disagree on high-stakes calls and the disagreement becomes evidence; provider swap is a config change with zero decision loss; on provider failure the router degrades and autonomy tightens.",
+   "source_refs": [
+    "Egregore Technology Map p1, p5, p8 layer 10, p10",
+    "Reality Compiler Blueprint p7 Adversarial Tribunal R0, Semantic Claim Extractor ('LLM as bounded extractor')"
+   ],
+   "proposed_status": "active",
+   "authority_level": "advisory",
+   "consequence_class": "bounded",
+   "intended_outcome": "Swapping the provider in config reproduces prior verdicts on the golden replay; high-stakes decisions carry a recorded second-model dissent."
+  },
+  {
+   "title": "Counterfactual replay (Fork Engine / Institutional Twin / 'how it dreams') is deferred research",
+   "statement": "Deterministic replay of institutional history under alternate policies, premortems and competitor-reaction simulation may prepare morning decision packets, but is gated to month 12+, fidelity-tested against real history, and its outputs are labeled simulation and quarantined; the document itself judges it the component most likely to become useless if history is thin.",
+   "source_refs": [
+    "Egregore Technology Map p2, p5, p8 layer 9, p10, p16, p18",
+    "Final Plan p9 Nodes 7-9, p10 red line 6",
+    "Reality Compiler Blueprint p7 Institutional Twin Engine R0 ('Physics Engine' ancestry)"
+   ],
+   "proposed_status": "deferred",
+   "authority_level": "exploratory",
+   "consequence_class": "bounded",
+   "intended_outcome": "Not built until the spine holds enough real history that a fork answers a counterfactual with ledger-grounded fidelity; counterfactual fidelity is never cited as evidence of real-world effect."
+  },
+  {
+   "title": "Exocortex function: single governing bottleneck, strongest counterargument, interruption absorption",
+   "statement": "The system names the one active bottleneck, shows the strongest counterargument before every material decision, absorbs interruptions into the spine, and decreases founder interventions per verified outcome quarter over quarter; 'A machine that made you dependent would be, by its own constitution, a failure state.'",
+   "source_refs": [
+    "Egregore Technology Map p10",
+    "Final Plan p8-9 (active node / active gate / active SBM)",
+    "Reality Compiler Blueprint p7 Strategic Tree Engine, Founder Attention Governor",
+    "Repo: egregore/gps.py, egregore/attention.py per INTENT-20261013-GOAL-GRAVITY (unit/integration tested on synthetic ledgers; not externally verified)"
+   ],
+   "proposed_status": "active",
+   "authority_level": "aspiration",
+   "consequence_class": "bounded",
+   "intended_outcome": "Each founder-facing packet carries exactly one named bottleneck, one counterargument and a no-cost option; interruptions are queued to the spine rather than delivered; the intervention ratio trends down."
+  },
+  {
+   "title": "Backcast GPS discipline with one primary workstream",
+   "statement": "Destination -> current position -> active node -> active gate -> single bottleneck metric; one primary workstream; no second organ, territory or swarm charter opens until the active node's exit evidence exists; review every 30 days against exit evidence; each stage carries exit evidence, pause condition and kill trigger; 'Excitement is not evidence.'",
+   "source_refs": [
+    "Egregore Technology Map p15-16 (\u00a79 backcast), p18-19 (\u00a712 final decision)",
+    "Final Plan p8-10 (Backcast GPS; 'Stop doing: designing new organs'), red line 5",
+    "Reality Compiler Blueprint p17-19 (backcast, stage table, decision diagram)",
+    "Repo: docs/BACKCAST_GPS.md; egregore/gps.py"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "bounded",
+   "intended_outcome": "The repository carries one declared active node with its gate and metric; PRs opening a new organ before exit evidence are labeled scope drift and refused."
+  },
+  {
+   "title": "Current active node: consequence-gate vertical slice for one bounded action family",
+   "statement": "Select one repetitive low-risk approval in DALEOBANKS as the first action family; inventory every side-effect path including undesigned ones; draft the shared ActionIntent, CommitWitness, ExecutionReceipt and ReconciliationRecord contracts in uniimente-kernel and implement across all three repositories; write the first adversarial test (modify payload after approval, witness refuses); run 10 supervised preparations, 30 shadow decisions, 10 one-use canaries; record inventory completeness, bypasses, test results and founder minutes.",
+   "source_refs": [
+    "Final Plan p8-11 (7A Immediate Execution Card; deadlines Aug 18, 2026 and Oct 17, 2026)",
+    "Egregore Technology Map p17 Milestones 1-5, 'Definition of done'",
+    "Repo check 2026-10-14: contracts/ contains no ActionIntent, CommitWitness, ExecutionReceipt or ReconciliationRecord schema; 'commit witness' appears inside policy/consequence_gate.py and tests"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Four typed contracts exist and are consumed by all three repos; the side-effect inventory lists every path; one legitimate effect executes once through the full path with all hostile variants failing closed and complete reconstruction from canonical records."
+  },
+  {
+   "title": "An external stakeholder must pre-commit to acceptance criteria before expansion",
+   "statement": "The mature state is a proof-bearing rail where an external actor changes payment, permission or contract state because of UNIIMENTE's outcome credential; the single first bottleneck is a named verifier willing to specify what evidence they will accept and what decision changes if they accept it; without it 'everything else remains sophisticated internal theater'; if none pre-commits, stop expansion and preserve UNIIMENTE as an internal governance substrate.",
+   "source_refs": [
+    "Reality Compiler Blueprint p13 ('narrow workflow where evidence quality changes a real external decision'), p17-18 (stakeholder lock, 2-5 founder days), p20 week 1, p21",
+    "Final Plan p5 ('The moment someone changes a decision because your proof exists, you have a product'), p9 Node 5 exit"
+   ],
+   "proposed_status": "needs_evidence",
+   "authority_level": "advisory",
+   "consequence_class": "material",
+   "intended_outcome": "A signed YAML acceptance contract from a named external verifier exists naming required evidence fields and the consequent decision; the first live transaction measurably changes that decision."
+  },
+  {
+   "title": "Nothing is done until reconciled; credentials prove integrity, not reality",
+   "statement": "The canonical consequence lifecycle runs proposed -> evidence_ready -> policy_approved -> human_approved -> capability_issued -> commit_revalidated -> executed -> receipt_captured -> reconciled -> outcome_verified -> precedent_updated; anything short of reconciliation is operationally incomplete; signed outcome credentials prove issuer and integrity only, and the external verifier still applies acceptance rules. Completion of tool-building is never completion of the founder's goal.",
+   "source_refs": [
+    "Reality Compiler Blueprint p8, p11, p12",
+    "Egregore Technology Map p10 (outcome obligation attached), p16 (round-trip against reality, not mocks)",
+    "Final Plan p11 (closed DecisionEpisode; external receipt; restart recovery)",
+    "Repo doctrine: FOUNDER_EFFECT_COMPILER 'Infinite Goal Chase' section; contracts/outcome.schema.json"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "No action is marked complete without an ingested external receipt reconciled against intent; a duplicate delivery or crash-after-approval neither double-executes nor loses the obligation."
+  },
+  {
+   "title": "Lawful depth distribution ('rabbit holes, the legal version of echo chambers')",
+   "statement": "Founder request: evidence-bound, interlinked depth content that platform recommendation systems chain for visitors, via official APIs and declared authorship, ranked by 'informed return' (does the visitor arrive more capable) rather than watch time, with a correction layer (evidence level, correction history, expiry) and one exit to owned ground. Audience members are participants with rights: no outrage optimization, no fear-based retention, standing correction obligation. 'A rabbit hole helps when it deepens what a person can do.'",
+   "source_refs": [
+    "Final Plan p1 (verbatim founder request), p2-3 (Rabbit Hole Engine; ethical line enforced in code), p9 Node 4 (months 12-24), p10 red lines 1, 3, 4"
+   ],
+   "proposed_status": "deferred",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "One territory live with measurable subscribers on owned ground (not platform followers), positive informed-return signal and zero ToS incidents; killed if twelve months pass with impressions growing and zero outsiders whose behavior verifiably changed."
+  },
+  {
+   "title": "Self-authored automation under human ratification ('build and use its own Zapier/Make automations')",
+   "statement": "Founder request: the institution authors, tests, signs and deploys its own workflow automations with the same ceremony as a constitutional amendment; external Zapier/Make/n8n accounts are brokered adapters through the Consequence Gate, never credential silos; every external zap is a C2+ consequence requiring a commit witness; agents author, humans (or delegate classes, never waived) ratify; live workflow count is bounded by reviewed capacity.",
+   "source_refs": [
+    "Final Plan p2 (verbatim founder request), p3-4 (Automation Loom), p9 Node 3 (months 6-12; exit: three institution-authored workflows, agent author, human ratifier)",
+    "Repo: loom/ package (canonical.py, pattern.py, ratify.py, weaver.py) exists; enforcement of ratification on live external adapters not evidenced in documents"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Three institution-authored workflows run under full witness coverage, including one that publishes and one that reconciles; each has an agent author and a human ratifier on the spine; founder review burden falls rather than rises."
+  },
+  {
+   "title": "Bounded agent swarms only in agent-designated substrates under declared machine identity",
+   "statement": "Founder request: spawn agent swarms into agent-only ecosystems. Compiled effect: temporary, chartered, budgeted, time-limited multi-agent deployments for parallel evidence acquisition, diligence, adversarial review and load-shedding, restricted to own federation cells, sandboxes, machine-to-machine APIs, contracted partner systems and ecosystems that explicitly permit machines; agents identify as machines everywhere; no persona cover; no inter-agent authority negotiation; no self-replication; no credentials held by members; sequenced last (Node 6) and rejected as a first growth route.",
+   "source_refs": [
+    "Final Plan p2 (verbatim founder request; red line), p4-5 (Swarm Gate), p6-7 (B3 Swarm first rejected, score 38), p9 Node 6 (months 30-48)",
+    "Reality Compiler Blueprint p1 ('not a mystical swarm'), p17 (agent-swarm-first rejected), p21 ('not as a swarm')"
+   ],
+   "proposed_status": "deferred",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "One three-agent run completes a parallel evidence task under full witness coverage inside one federation cell with declared machine identity; killed on any unlicensed replication, persona cover or non-consenting substrate."
+  },
+  {
+   "title": "Regenerative capital waterfall and regenerative-debt blocking ('regenerative economics')",
+   "statement": "Founder request: regenerative economics that earn money. Compiled effect: every surplus dollar flows through a fixed eleven-position waterfall (legal obligations and taxes; participants; restitution; security and reliability; reserves; proven reinvestment; human and capability development; productive assets; diversified preservation; public benefit; owner distributions); every material action posts to five regenerative accounts; measured regenerative debt (attention drain, relationship damage, externalized risk) blocks autonomy promotion, budget expansion and replication until repaid; generosity is a line item. In year one there is no surplus and the waterfall is a document run on attention and evidence ledgers.",
+   "source_refs": [
+    "Final Plan p2 (verbatim founder request), p5 (waterfall, accounts, regenerative debt, audit rule), p9 Node 2 (regenerative ledger), p10 red line 7",
+    "Repo: capital/ package exists; contents not verified in this synthesis"
+   ],
+   "proposed_status": "deferred",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Allocation is computed by the fixed order with no override path; at least one promotion, budget or replication per year is actually blocked by a regenerative-debt finding, otherwise the treasury is audited as decoration."
+  },
+  {
+   "title": "Institution-as-a-Service: services before software before platforms",
+   "statement": "Founder request: infrastructure-as-a-service businesses that earn money. Compiled effect: sell governed-automation audits, consequence assurance (proof rails), the capability registry and distribution infrastructure, in that order, first as human-operated services, productized only when evidence says the product exists; a proof-rails product exists only when an external party changes a decision because the proof exists; killed if buyers treat proof as audit curiosity after twenty sales conversations.",
+   "source_refs": [
+    "Final Plan p2 (verbatim founder request), p5-6 (four businesses), p9 Node 5 (months 18-36)",
+    "Egregore Technology Map p14 ('Trusted proof as a product', deferred option value), p16 (first anchored quarter presented to a counterparty)",
+    "Reality Compiler Blueprint p14 (asymmetry from owning the accepted proof object)"
+   ],
+   "proposed_status": "deferred",
+   "authority_level": "aspiration",
+   "consequence_class": "material",
+   "intended_outcome": "First external revenue from a service; one party changes a decision because a proof exists; service economics positive before any platform build."
+  },
+  {
+   "title": "Proprietary causal data and the dataset of the founder's judgment as asymmetric assets",
+   "statement": "Linked signal -> decision -> authority -> action -> outcome history and the founder's approval/rejection patterns with context are assets competitors cannot copy; the judgment dataset may eventually train a small model that predicts the founder's calls and pre-filters the queue (the only tripwire for an own model). Switching-cost and standards moats are withdrawn as dishonest before external users exist.",
+   "source_refs": [
+    "Egregore Technology Map p13-14 (\u00a77), p18",
+    "Reality Compiler Blueprint p14 (asymmetry from accepted proof object and reconciliation logic; precedent compresses attention)"
+   ],
+   "proposed_status": "exploratory",
+   "authority_level": "aspiration",
+   "consequence_class": "bounded",
+   "intended_outcome": "Causal episodes accumulate with provenance; a founder-call predictor is attempted only after hundreds of gated decisions and only as a queue pre-filter whose outputs never authorize anything."
+  },
+  {
+   "title": "Central conversion law and perception budget",
+   "statement": "Every perceived input becomes a decision, action, asset, evidence item or system update, or is discarded as noise; perception has a budget ('the machine does not stare'); DALEOBANKS signal streams are reduced by this law before reaching the kernel.",
+   "source_refs": [
+    "Egregore Technology Map p8 (central_conversion_law quote), p10",
+    "Reality Compiler Blueprint p2 Observation Journal, p7 Semantic Claim Extractor",
+    "Repo: egregore/relevance.py, contracts/experience-event.schema.json (per INTENT-20261013-GOAL-GRAVITY)"
+   ],
+   "proposed_status": "active",
+   "authority_level": "active_requirement",
+   "consequence_class": "bounded",
+   "intended_outcome": "Every ingested signal is either linked to an institutional object or recorded as discarded; sensing cost is metered against a declared budget."
+  },
+  {
+   "title": "Prohibited: inauthentic platform behavior, persona cover, scraping and credential workarounds",
+   "statement": "No bots, fake engagement, purchased amplification disguised as organic, engagement pods, dark patterns or coordinated inauthentic behavior on any human platform; machines declare themselves; official APIs only; scraped access and credential workarounds are bypasses and therefore constitutional violations; platform terms are binding law alongside the constitution.",
+   "source_refs": [
+    "Final Plan p2-3 (legal boundary), p4 (swarm red line), p10 red lines 1 and 4"
+   ],
+   "proposed_status": "prohibited",
+   "authority_level": "external_constraint",
+   "consequence_class": "material",
+   "intended_outcome": "Zero ToS incidents; every publishing or automation path is enumerated as an official API call through a declared account; any scraping path found in the side-effect inventory is treated as a bypass to eliminate."
+  },
+  {
+   "title": "Evidence-earned autonomy per capability x consequence class; rises slowly, falls immediately",
+   "statement": "Autonomy is never granted to 'the system'; it is computed per capability and consequence class from spine evidence (calibration, completion integrity, surprise rate; clean completion rate, zero unauthorized effects, stable reconciliation, no unresolved contradiction); promotion requires long consecutive evidence chains; a single qualifying incident demotes immediately with an authority.regressed event; effective autonomy is the minimum of consequence-class, evidence-level, incident and operator-burden ceilings; the sum of live high-autonomy envelopes is globally bounded.",
+   "source_refs": [
+    "Egregore Technology Map p11-13 (\u00a76A; A0-A4; ceiling stack; autonomy budget)",
+    "Final Plan p5 (autonomy budget 'already exists'), p9 Node 2 (autonomy licensing, calibration scoring, regression, global autonomy budget)",
+    "Reality Compiler Blueprint p13 (A0-A3; promotion/demotion rules)",
+    "Repo: autonomy/levels.py exists; ladder shape across documents differs"
+   ],
+   "proposed_status": "conflicted",
+   "authority_level": "active_requirement",
+   "consequence_class": "constitutional",
+   "intended_outcome": "One autonomy-level contract; promotion is a pure function of recorded evidence; a single critical violation produces an immediate recorded demotion; no argument, revenue or global trust can raise a level."
+  },
+  {
+   "title": "Scope: the UNIIMENTE core is one distributed organism of specialized organs under one constitution",
+   "statement": "uniimente-kernel (law, authority, proof, memory), DALEOBANKS (perception, media, audience) and WealthMachineIntelligence (opportunity evaluation, ventures) are organs, not competing applications; DALEOBANKS' constitution.md is demoted to a governed contract that imports the kernel .ucl as supreme law and may only tighten it; one canonical runtime per organ; mock-vs-HTTP bridge drift is resolved by labeling; organs plug into the control plane as bounded specialists, never as the control plane.",
+   "source_refs": [
+    "Egregore Technology Map p1 (scope), p3 ('Duplications to eliminate (you asked...)')",
+    "Reality Compiler Blueprint p13",
+    "Repo doctrine: UNIIMENTE_FINAL_BUILD_ORDER \u00a71, \u00a77; RailScout, PumpStation, RESEARCH-IN also carry UNIIMENTE CLAUDE.md entries"
+   ],
+   "proposed_status": "conflicted",
+   "authority_level": "active_requirement",
+   "consequence_class": "material",
+   "intended_outcome": "Exactly one constitution is authoritative; organ manifests declare subordination; the list of repositories counted as organs is founder-declared rather than inferred."
+  }
+ ],
+ "cross_document_conflicts": [
+  {
+   "topic": "Policy evaluation engine: bespoke sovereign language vs adopted policy engines",
+   "positions": [
+    "Egregore Technology Map p17: 'No third-party policy engines (no OPA/Rego/CEL) \u2014 the decision path must be sovereign'; build a custom UCL tree-walk evaluator (<2k lines) with YAML/JSON fallback (p6, p19).",
+    "Reality Compiler Blueprint p3-4, p9: 'OPA is the right general-purpose policy engine; Cedar fits exact principal-action-resource decisions'; UCL Parser is one R1 row alongside OPA Policy Adapter and Cedar Authorization Adapter.",
+    "Kernel doctrine (FOUNDER_EFFECT_COMPILER resourcefulness ladder): adopt before building unless evidence justifies skipping."
+   ],
+   "cheapest_decisive_clarification": "One founder answer: does 'sovereign decision path' mean (a) the founder owns, pins and can replay the code that evaluates the constitution, or (b) no third-party policy engine may appear anywhere in the decision path? If (a), an owned adapter over OPA/Cedar satisfies it and the custom language is a research spike; if (b), the Technology Map's spike governs. Default per the ladder is (a)."
+  },
+  {
+   "topic": "The first bottleneck / active node",
+   "positions": [
+    "Egregore Technology Map p1, p18-19: executable law \u2014 build the UCL evaluator, replay a golden packet, sign constitution v1.0.0; metric = clauses executing deterministically.",
+    "Final Plan p8-11: consequence-gate vertical slice \u2014 side-effect inventory, four shared contracts, adversarial witness test; metric = Verified Mediated Side-Effect Coverage, 100% for one bounded DALEOBANKS action family.",
+    "Reality Compiler Blueprint p18, p21: a named external stakeholder pre-committing to acceptance criteria and a consequent decision; without it 'everything else remains sophisticated internal theater'; if none, pause expansion."
+   ],
+   "cheapest_decisive_clarification": "Ask one question: 'Name the external counterparty whose decision the first action family will change.' If an answer exists, the three positions collapse into a sequence (stakeholder lock -> gate coverage -> deterministic evaluation) and the Final Plan's node is the active one; if no answer exists, the Blueprint's pause rule applies and the evaluator spike is the only unblocked work."
+  },
+  {
+   "topic": "What currently exists (implementation state)",
+   "positions": [
+    "Egregore Technology Map p2 (dated 2026-07-19): uniimente-kernel is 'Specification only' \u2014 five .ucl files, contracts/, no interpreter, no runtime, no tests; WMI 'implemented and merged; tested locally'; DALEOBANKS 'implemented and merged'; 'Nothing in the three repos is production-proven.'",
+    "Final Plan p1, p4-8: 'vertically complete' (think, decide, prove, remember); 'constitutional scaffolding, strongest merged controls in DALEOBANKS, signed bridge to WMI'; 'DALEOBANKS already runs bounded loops'; 'the autonomy budget already exists' yet Node 2 lists a global autonomy budget to be built.",
+    "Reality Compiler Blueprint p1-2: kernel URL returned 404; kernel internals are 'unverified placeholders'; every one of 57 listed technologies is R0/R1; only DALEOBANKS' JSONL ledger and auto-disarm is a visible precedent.",
+    "Repo worktree 2026-10-14: 62 test files, policy/consequence_gate.py, policy/engine.py, provenance/, autonomy/levels.py, loom/, foundry/, capital/, sandbox/ exist; external verification absent."
+   ],
+   "cheapest_decisive_clarification": "Run `python -m pytest` on each repository's main at a recorded commit and publish a mechanism inventory (module, test file, evidence tier) with commit hashes. Executable evidence supersedes all three snapshots; none of the documents' 'built' or 'not built' labels should be copied into the ledger."
+  },
+  {
+   "topic": "Autonomy ladder shape and thresholds",
+   "positions": [
+    "Egregore Technology Map p11-13: A0 Shadow, A1 Recommender, A2 Supervised canary, A3 Bounded autonomy, A4 Delegated autonomy; A5 does not exist; consequence-class ceilings C0-C4 (C4 caps at A2 forever); thresholds 30/30/30/90 consecutive clean executions; global autonomy budget.",
+    "Reality Compiler Blueprint p13: A0 planning only, A1 non-consequential side effects, A2 bounded consequential with policy + human co-approval, A3 pre-approved narrow loops; promotion on clean completion rate, zero unauthorized effects, stable reconciliation, no unresolved contradiction.",
+    "Final Plan p6 lists an 'autonomy ladder' as already existing and p5 says the autonomy budget 'already exists', while p9 Node 2 schedules autonomy licensing, calibration scoring and the global autonomy budget as work to build."
+   ],
+   "cheapest_decisive_clarification": "Compare both ladders against autonomy/levels.py on main and adopt one autonomy-level contract (contracts/*.schema.json), recording the other as a superseded formulation with lineage. The specific numeric thresholds are proposals until the founder ratifies them or data calibrates them."
+  },
+  {
+   "topic": "Durable workflow and event transport",
+   "positions": [
+    "Egregore Technology Map p5, p7-8: modular monolith; Postgres transactional outbox + idempotent inbox; Postgres-backed workflow engine; 'Kafka, Kubernetes and consensus are prestige traps at this scale'; broker only after measured throughput pain.",
+    "Reality Compiler Blueprint p5, p11: Temporal for durable execution; 'Distributed Event Spine' on NATS JetStream or a Kafka-like bus as the 'institutional nervous system'.",
+    "Final Plan p3, p6: references an existing 'event spine' without specifying transport.",
+    "Kernel build order \u00a74.9: organ-neutral transport interface with in-memory, SQLite/file, Postgres outbox/inbox and optional broker adapter."
+   ],
+   "cheapest_decisive_clarification": "Agree the effect list (pause/resume/retry/reconcile, crash-after-approval recovery, idempotent delivery, causal ordering) as the contract and keep the transport behind the existing organ-neutral interface; no decision is needed until a measured throughput or durability failure is recorded."
+  },
+  {
+   "topic": "Sandbox default runtime",
+   "positions": [
+    "Egregore Technology Map p7, p17 Milestone 5: Docker now, Firecracker microVMs for anything touching money, credentials or production data; first sandboxed capability is read-only HTTP research.",
+    "Reality Compiler Blueprint p4, p10: WASI/Wasmtime default (no ambient authority), Firecracker reserved for browser/native/strong-isolation cases."
+   ],
+   "cheapest_decisive_clarification": "Name the first capability class to sandbox. If it is HTTP research or tool execution, a container with egress allow-list is the simplest mechanism; if it is pure data transformation, WASI fits. The invariants (manifest from decision trace, undeclared egress fails closed, no credentials inside) are shared and should be the contract."
+  },
+  {
+   "topic": "Cryptographic provenance: build owned primitives vs adopt transparency-log tooling; and the scope of 'keep the crypto'",
+   "positions": [
+    "Founder (relayed, Technology Map p8): 'You said keep the crypto.'",
+    "Egregore Technology Map p4, p6, p9: build hash-linked receipts, Merkle seals, Ed25519 signing, verify_chain(), RFC 3161 anchoring as owned code ('the highest-leverage crypto you can own'); tokens rejected, settlement deferred with tripwire; no survey of existing transparency-log tooling.",
+    "Reality Compiler Blueprint p1, p5-6: adopt Sigstore/Rekor (Transparency Anchor as 'blockchain alternative... without tokens'), in-toto, SLSA, W3C VC; 'do not build... a blockchain'."
+   ],
+   "cheapest_decisive_clarification": "Two founder yes/no answers: (1) Did 'keep the crypto' mean tamper-evidence, signatures and external anchoring only (not tokens or chains)? (2) Must the implementation be owned code, or is the effect satisfied by adopting audited open-source tooling with an owned receipt schema? Default per the resourcefulness ladder: adopt, own the schema and the keys."
+  },
+  {
+   "topic": "Swarms as a build target",
+   "positions": [
+    "Founder (verbatim, Final Plan p2): 'Spawn and send agent swarms into agent-only ecosystems.'",
+    "Final Plan p4-5, p9: a Swarm Gate (charter compiler, typed inter-agent protocol, agent-only substrates, aggregate budget) is scheduled as Node 6 (months 30-48); swarm-first is rejected (score 38); 'agent-only ecosystems are young and most are ghost towns'.",
+    "Reality Compiler Blueprint p1, p17, p21: 'The closest realistic egregore is not a mystical swarm'; agent-swarm-first growth rejected as a complexity amplifier; 'Build the egregore as a Reality Compiler institution, not as a swarm.'"
+   ],
+   "cheapest_decisive_clarification": "Founder confirms the desired effect (parallel bounded evidence acquisition, diligence and adversarial review under gate authority with declared machine identity) and whether a dedicated swarm substrate is a requirement or any orchestrated multi-agent run through the gate suffices. Both documents already agree the work is sequenced last and gated on real substrate demand."
+  },
+  {
+   "topic": "Order of tool-building: Loom second vs Foundry last",
+   "positions": [
+    "Final Plan p1, p4: 'consequence gate first, loom second'; 'Build the tool that builds the tools, and every later organ arrives cheaper'; Loom is 'the cheapest organ to prove'.",
+    "Reality Compiler Blueprint p13, p21: the Capability Genome Foundry (reusable organelles, child organ/venture-cell assembly) is the last of seven pieces and stays dormant until the first rail proves external acceptance.",
+    "Egregore Technology Map p16: registry with first three sealed packages by month 12."
+   ],
+   "cheapest_decisive_clarification": "Record that the Loom (agent-authored, human-ratified workflow proposals) and the Foundry (assembly of new organs/cells) are different objects; confirm with the founder that only organ/cell assembly is deferred and that workflow authoring remains Node 3 behind the gate."
+  },
+  {
+   "topic": "Repository scope of the organism",
+   "positions": [
+    "Egregore Technology Map p1: scope is uniimente-kernel, DALEOBANKS and WealthMachineIntelligence only; 'everything else the founder owns is out of scope by design'.",
+    "Reality Compiler Blueprint p1: also scans TGH-CONTROL-RAIL (a stub) and models an NEMT ride pilot for a TGH clinic.",
+    "Repo reality: RailScout, PumpStation, RESEARCH-IN and the build-your-own-x fork carry UNIIMENTE CLAUDE.md entries pointing at the kernel's doctrine."
+   ],
+   "cheapest_decisive_clarification": "Founder lists which repositories are organs under the Kernel (and therefore need organ manifests) and which are out of scope; a one-line list in the intent ledger resolves it."
+  },
+  {
+   "topic": "Definition of the 'egregore' property",
+   "positions": [
+    "Egregore Technology Map p16: portability \u2014 'constitution, spine, and capability registry as plain files and proofs that survive any vendor, model, or employee... a pattern of intention that no longer depends on any substrate, including your current attention'; p18: 'the 10% that isn't automation' (provable memory, executable law, lawful self-modification, judgment dataset).",
+    "Final Plan p11: 'the one that reaches, builds, swarms, earns, and regenerates'; it 'begins when one clause executes one consequence, once, provably'.",
+    "Reality Compiler Blueprint p13: 'a standing institutional process with persistent memory, bounded organs, externally legible identity, and an evidence-to-settlement metabolism'; 'not an emergent consciousness'."
+   ],
+   "cheapest_decisive_clarification": "Founder ranks the observable properties (portable law+history, first executed consequence, external reach, self-funding, externally accepted proof) so that 'egregore' in future documents compiles to a measurable property list rather than an entity. All three agree on no consciousness claim and on the first clause-executes-consequence milestone."
+  },
+  {
+   "topic": "External timestamp anchor mechanism",
+   "positions": [
+    "Egregore Technology Map p9: weekly chain-tip hash to an RFC 3161 timestamp service now; public blockchain later only if a counterparty needs third-party-verifiable time.",
+    "Reality Compiler Blueprint p6, p10: Sigstore/Rekor transparency log with inclusion proofs for selected checkpoints; not the primary operational store."
+   ],
+   "cheapest_decisive_clarification": "Treat as an implementation choice, not intent: pick the anchor that a plausible first counterparty can verify without UNIIMENTE tooling; both satisfy 'history provably existed as of a date'. Record the choice in an ADR; no founder decision required."
+  }
+ ],
+ "mechanism_status_table": [
+  {
+   "mechanism": "Commit-time Action Gateway / Consequence Gate (with Commit Witness)",
+   "documents": [
+    "Egregore Technology Map p1, p6, p8, p17",
+    "Final Plan p8-11",
+    "Reality Compiler Blueprint p4 (Commit Witness row), p8-9, p11"
+   ],
+   "status_claimed": "Technology Map: target architecture (Milestone 3). Final Plan: claimed partial \u2014 'constitutional scaffolding', no proof one action family is non-bypassable end to end. Blueprint: R1 schema definable. Repo (2026-10-14): policy/consequence_gate.py with unit tests exists; no external-action non-bypass proof evidenced."
+  },
+  {
+   "mechanism": "UCL constitutional evaluator / Reality Compiler / UCL Parser",
+   "documents": [
+    "Egregore Technology Map p1, p4, p6, p17 Milestone 1, p19",
+    "Reality Compiler Blueprint p3 (Institutional ISA, Reality Compiler, UCL Parser), p9"
+   ],
+   "status_claimed": "Technology Map: target, bounded 2-week spike with YAML fallback, decision 'Validate'. Blueprint: R1. Repo: policy/engine.py references .ucl; deterministic golden-packet replay of all five files not verified in this synthesis."
+  },
+  {
+   "mechanism": "UNIIMENTE constitution (.ucl files: constitution, amendment-policy, participant-rights, shutdown-policy, sovereignty)",
+   "documents": [
+    "Egregore Technology Map p2",
+    "Final Plan p7 ('User-provided: the five constitutional files')",
+    "Reality Compiler Blueprint p3 (UCL grammar)"
+   ],
+   "status_claimed": "Technology Map: claimed partial \u2014 exists as specification, self-declared unratified (ratified_by = null). Final Plan: treated as given doctrine. Blueprint: could not see the repo (404). Repo: five .ucl files present in constitution/."
+  },
+  {
+   "mechanism": "Evidence spine / institutional event spine / Reality Git / Reality Object Store / Merkle Claim DAG",
+   "documents": [
+    "Egregore Technology Map p1, p4, p6, p8, p17 Milestone 2",
+    "Final Plan p3, p6 (existing 'spine')",
+    "Reality Compiler Blueprint p2 (Reality Object Store R1, Merkle Claim DAG R1, Reality Git R1), p10"
+   ],
+   "status_claimed": "Technology Map: target (append-only Postgres, verify_chain, daily Merkle seal). Final Plan: claimed built as part of the 'vertical stack'. Blueprint: R1. Repo: provenance/ ledger with tests exists; rebuild-from-spine drill not evidenced."
+  },
+  {
+   "mechanism": "Amendment ceremony over Git with signed constitutional releases / Counter-signature Service",
+   "documents": [
+    "Egregore Technology Map p1, p4, p6, p10, p18",
+    "Final Plan p3 (same ceremony for workflows)",
+    "Reality Compiler Blueprint p6 (Counter-signature Service R1)"
+   ],
+   "status_claimed": "Technology Map: target (downgraded from Git port to ceremony over real Git). Blueprint: R1. Not evidenced as implemented anywhere."
+  },
+  {
+   "mechanism": "Operator authority channel (kernel CLI approve/reject/freeze/kill/amend/replay + one chat adapter)",
+   "documents": [
+    "Egregore Technology Map p1, p5, p7, p17 Milestone 4"
+   ],
+   "status_claimed": "Target architecture; 'one canonical gate, many interfaces'; kill drill is the done condition. Repo has authority/ package; mapping not verified here."
+  },
+  {
+   "mechanism": "Identity & authority fabric / Workload Identity Mesh (mTLS, SPIFFE/SPIRE) / Capability Lease Registry",
+   "documents": [
+    "Egregore Technology Map p5, p7",
+    "Reality Compiler Blueprint p4 (Workload Identity Mesh R1, Capability Lease Registry R1), p10"
+   ],
+   "status_claimed": "Target in both; adopted infrastructure plus owned registry mapping identity -> legal principal -> grants. Repo has identity/ and contracts/capability-grant.schema.json; not verified against documents."
+  },
+  {
+   "mechanism": "Cryptographic provenance layer (SHA-256 content addressing, hash-linked receipts, Merkle seals, Ed25519, hardware key, multisig-ready)",
+   "documents": [
+    "Egregore Technology Map p4, p6, p8-9"
+   ],
+   "status_claimed": "Target; 'kept, and kept strong'; owned implementation proposed without surveying existing tooling."
+  },
+  {
+   "mechanism": "External timestamp anchoring (RFC 3161) / Transparency Anchor (Sigstore/Rekor)",
+   "documents": [
+    "Egregore Technology Map p9",
+    "Reality Compiler Blueprint p6 (R1), p10"
+   ],
+   "status_claimed": "Target in both; mechanism differs (TSA vs transparency log); public blockchain anchoring only on counterparty need."
+  },
+  {
+   "mechanism": "in-toto Evidence Collector / SLSA Provenance Emitter",
+   "documents": [
+    "Reality Compiler Blueprint p5 (both R1), p19 PR-D"
+   ],
+   "status_claimed": "Target (adopt open standards); not mentioned in the other documents."
+  },
+  {
+   "mechanism": "Verifiable credentials / selective-disclosure (ZK) proofs / VC Issuer / VC Verifier Gateway / Status and Revocation Registry",
+   "documents": [
+    "Egregore Technology Map p9 ('parked, not rejected'; 'Building ZK now would be theater')",
+    "Reality Compiler Blueprint p6 (all R1), p12"
+   ],
+   "status_claimed": "Technology Map: parked (hash-first receipt format to enable later). Blueprint: core target piece (Proof Credential Fabric) with W3C VC 2.0, StatusList revocation."
+  },
+  {
+   "mechanism": "Blockchain settlement rails",
+   "documents": [
+    "Egregore Technology Map p9 (5b), p15",
+    "Reality Compiler Blueprint p1"
+   ],
+   "status_claimed": "Technology Map: deferred with tripwire (first escrow with external counterparty). Blueprint: not to be built."
+  },
+  {
+   "mechanism": "Tokens / speculative token economics",
+   "documents": [
+    "Egregore Technology Map p1, p9, p15, p18"
+   ],
+   "status_claimed": "Rejected 'permanently-ish' with tripwire (escrow tripwire fires AND token demonstrably load-bearing); moved from deferred to rejected after hostile review."
+  },
+  {
+   "mechanism": "Durable workflow engine (Postgres-backed pause/resume/retry/reconcile) / Durable Workflow Spine (Temporal)",
+   "documents": [
+    "Egregore Technology Map p8 layer 5",
+    "Reality Compiler Blueprint p5 (R1), p11"
+   ],
+   "status_claimed": "Target in both; mechanism differs. Repo has events/ DurableWorkflow and workflows/; not verified against either."
+  },
+  {
+   "mechanism": "Modular monolith + Postgres transactional outbox + idempotent inbox / Distributed Event Spine (NATS/Kafka-like) / Replay and Reconciliation Bus / Idempotency Gate",
+   "documents": [
+    "Egregore Technology Map p5, p7",
+    "Reality Compiler Blueprint p5 (R1 each)"
+   ],
+   "status_claimed": "Technology Map: target as Postgres tables and discipline; broker rejected until throughput pain. Blueprint: target with a message bus."
+  },
+  {
+   "mechanism": "Sandboxed capability runtime / Capability Cell Runtime (Docker -> Firecracker; WASI/Wasmtime) / High-Risk MicroVM Cell / Host Import Broker / Network Egress Governor",
+   "documents": [
+    "Egregore Technology Map p4, p7, p8, p17 Milestone 5, p18",
+    "Final Plan p9 Node 1 ('one sandboxed capability')",
+    "Reality Compiler Blueprint p4 (R1 each), p10-11"
+   ],
+   "status_claimed": "Target in all three; default runtime differs. Repo has sandbox/; red-team prompt-injection drill not evidenced."
+  },
+  {
+   "mechanism": "Just-in-Time Secret Broker / Secretless Action Adapter",
+   "documents": [
+    "Reality Compiler Blueprint p4 (R1)",
+    "Egregore Technology Map p17 ('no credentials' in sandbox)"
+   ],
+   "status_claimed": "Blueprint: target R1. Technology Map: implied by no-credentials rule."
+  },
+  {
+   "mechanism": "Causal memory / Precedent Engine / Precedent Graph / Precedent Retrieval Engine",
+   "documents": [
+    "Egregore Technology Map p5, p7, p8 layer 8, p10",
+    "Final Plan p6 ('memory' in vertical stack)",
+    "Reality Compiler Blueprint p1, p3 (R1), p7 (R1)"
+   ],
+   "status_claimed": "Technology Map: target (lexical then pgvector; contradiction tracking; noisy-approval ranking). Final Plan: claimed built. Blueprint: R1. Repo has memory/causal; not verified against documents."
+  },
+  {
+   "mechanism": "Contradiction Ledger / Assumption Registry / Truth Maintenance Engine",
+   "documents": [
+    "Reality Compiler Blueprint p2 (R1), p3 (R1), p7 (R0)",
+    "Egregore Technology Map p8 (contradiction tracking), p10 (negative evidence preserved)"
+   ],
+   "status_claimed": "Blueprint: R1/R1/R0 targets. Technology Map: contradiction tracking as a memory feature."
+  },
+  {
+   "mechanism": "Observation Journal / Evidence Envelope / Semantic Claim Extractor / Receipt Ingestor",
+   "documents": [
+    "Reality Compiler Blueprint p2 (R1, R1), p5 (R1), p7 (R1)"
+   ],
+   "status_claimed": "Target R1 in the Blueprint only."
+  },
+  {
+   "mechanism": "Reconciliation Engine / Outcome State Machine / Exception Case Manager",
+   "documents": [
+    "Reality Compiler Blueprint p5 (R1), p6 (R1), p11",
+    "Final Plan p11 (ReconciliationRecord, closed DecisionEpisode)"
+   ],
+   "status_claimed": "Blueprint: R1 targets; 'anything short of reconciliation is operationally incomplete'. Final Plan: contract to be drafted."
+  },
+  {
+   "mechanism": "Settlement Adapter / Procurement Adapter / Contract Performance Adapter",
+   "documents": [
+    "Reality Compiler Blueprint p6 (R1, R0, R0), p13 (four consequence classes)"
+   ],
+   "status_claimed": "Target; settlement only after verifier-approved outcome credential."
+  },
+  {
+   "mechanism": "Institutional Fork Engine / Institutional Twin Engine / 'how it dreams'",
+   "documents": [
+    "Egregore Technology Map p2, p5, p8 layer 9, p10, p16, p18",
+    "Final Plan p9 Node 7 ('fork engine')",
+    "Reality Compiler Blueprint p7 (R0, 'Physics Engine' ancestry)"
+   ],
+   "status_claimed": "Technology Map: target gated to month 12+, 'most likely to become useless'. Final Plan: aspiration (years 2-10). Blueprint: R0 concept."
+  },
+  {
+   "mechanism": "Adversarial Tribunal",
+   "documents": [
+    "Reality Compiler Blueprint p7 (R0)",
+    "Egregore Technology Map p10 (two-model disagreement as evidence)"
+   ],
+   "status_claimed": "Blueprint: R0. Technology Map: equivalent effect via router disagreement analysis."
+  },
+  {
+   "mechanism": "Multi-model router (rented cognition)",
+   "documents": [
+    "Egregore Technology Map p1, p5, p8 layer 10, p10"
+   ],
+   "status_claimed": "Target; provider swap as config change; no own neural network."
+  },
+  {
+   "mechanism": "Verified capability registry / Capability Genome Registry / capability genome packages",
+   "documents": [
+    "Egregore Technology Map p2, p8 layer 11, p10, p16",
+    "Final Plan p4, p6 (Business 3), p8 (status unspecified)",
+    "Reality Compiler Blueprint p7 (R1)"
+   ],
+   "status_claimed": "Technology Map: target (first three sealed packages by month 12). Final Plan: referenced as the place competence is sealed; status unspecified. Blueprint: R1. Repo has capabilities/genome.py."
+  },
+  {
+   "mechanism": "Capability Genome Foundry / Organ Forge",
+   "documents": [
+    "Reality Compiler Blueprint p1, p7 (Organ Forge R0), p13, p21"
+   ],
+   "status_claimed": "Target; explicitly last of seven pieces and dormant until the first rail proves external acceptance. Repo has foundry/ (advantage/arsenal/composition); relationship not verified."
+  },
+  {
+   "mechanism": "Observability & immune system / Compliance Drift Monitor / Chaos and Drill Harness / Kill-Switch Lattice / Black-Start Recovery Controller",
+   "documents": [
+    "Egregore Technology Map p2, p8 layers 12-13, p10, p16",
+    "Reality Compiler Blueprint p8 (R0, R0, R1, R0), p16"
+   ],
+   "status_claimed": "Technology Map: target (mandatory on every incident by month 12; recovery ladder). Blueprint: R0/R1 targets with per-risk kill switches."
+  },
+  {
+   "mechanism": "Autonomy graduation engine / autonomy ladder / autonomy licensing / global autonomy budget",
+   "documents": [
+    "Egregore Technology Map p1, p8 layer 14, p11-13",
+    "Final Plan p5 ('autonomy budget already exists'), p6 ('autonomy ladder' in vertical stack), p9 Node 2 (to build)",
+    "Reality Compiler Blueprint p13"
+   ],
+   "status_claimed": "Technology Map: target A0-A4. Final Plan: internally inconsistent \u2014 claimed built and scheduled to build. Blueprint: target A0-A3. Repo has autonomy/levels.py; ladder shape not reconciled."
+  },
+  {
+   "mechanism": "Venture Cells / research cells / federation cells / venture-cell charter",
+   "documents": [
+    "Egregore Technology Map p10, p16",
+    "Final Plan p4, p9 (federation cells as swarm substrate), p9 Node 6",
+    "Reality Compiler Blueprint p13 (child organ or venture cell via Foundry)"
+   ],
+   "status_claimed": "Technology Map: target (36-month stage). Final Plan: 'federation cells' unspecified. Blueprint: R0 via Organ Forge. Repo has contracts/venture-cell-charter.schema.json."
+  },
+  {
+   "mechanism": "Golden-packet replay test",
+   "documents": [
+    "Egregore Technology Map p16, p17, p19"
+   ],
+   "status_claimed": "Target; the single metric of the final decision (bit-identical replay in CI)."
+  },
+  {
+   "mechanism": "Judgment dataset / founder-call predictor",
+   "documents": [
+    "Egregore Technology Map p13-14"
+   ],
+   "status_claimed": "Target/aspiration; also the only reopen tripwire for an own model."
+  },
+  {
+   "mechanism": "Trusted proof as a product / proof rails / consequence assurance business",
+   "documents": [
+    "Egregore Technology Map p14, p16",
+    "Final Plan p5 (Business 2)",
+    "Reality Compiler Blueprint p14, p18"
+   ],
+   "status_claimed": "Deferred option value (Technology Map); Node 5 aspiration (Final Plan); mature-state destination (Blueprint)."
+  },
+  {
+   "mechanism": "WealthMachineIntelligence venture-evaluation engine (POST /api/opportunities/intake -> VentureAssessment)",
+   "documents": [
+    "Egregore Technology Map p3",
+    "Final Plan p8 (signed bridge)",
+    "Reality Compiler Blueprint p1, p13"
+   ],
+   "status_claimed": "Technology Map: claimed built, merged, tested locally, not externally proven. Final Plan: signed bridge claimed built. Blueprint: claimed partial from README scan (multi-agent coordination, knowledge graph, P(failure) <= 0.01% target)."
+  },
+  {
+   "mechanism": "DALEOBANKS signal/persona engine (Python + TypeScript stack; JSONL decision ledger with auto-disarm)",
+   "documents": [
+    "Egregore Technology Map p3",
+    "Final Plan p4 ('already runs bounded loops'), p8 ('strongest merged controls')",
+    "Reality Compiler Blueprint p1, p8, p13"
+   ],
+   "status_claimed": "All three: claimed built/merged, not externally proven; Blueprint cites the tamper-evident ledger and auto-disarm as the only visible control-plane precedent; Technology Map requires its constitution.md be demoted and its TS runtime reduced."
+  },
+  {
+   "mechanism": "venture_protocol (OpportunityPacket / VentureAssessment wire contract)",
+   "documents": [
+    "Egregore Technology Map p3, p14, p16",
+    "Final Plan p8"
+   ],
+   "status_claimed": "Claimed built in both; candidate standard at 36 months (Technology Map). Repo: contracts/wire-*.schema.json registered as peripheral contract."
+  },
+  {
+   "mechanism": "WMI-DALEOBANKS bridge (mock mode + HTTP mode)",
+   "documents": [
+    "Egregore Technology Map p3"
+   ],
+   "status_claimed": "Claimed built; mock results must be indelibly labeled simulated."
+  },
+  {
+   "mechanism": "Study-only literacy builds (BYOX tutorials)",
+   "documents": [
+    "Egregore Technology Map p1, p4-7"
+   ],
+   "status_claimed": "Target as study ('each build is a weekend, not a system'); not capability."
+  },
+  {
+   "mechanism": "Rabbit Hole Engine (territory maps, serialized depth content, recommendation-graph observability, correction layer, owned conversion exit, informed-return ranking)",
+   "documents": [
+    "Final Plan p1-3, p9 Node 4"
+   ],
+   "status_claimed": "Target (months 12-24); 'most likely to fail and the most dangerous when it succeeds'."
+  },
+  {
+   "mechanism": "Automation Loom (workflow compiler, ratification ceremony, brokered Zapier/Make/n8n adapters, carrying-capacity rule, delegate ratification classes)",
+   "documents": [
+    "Final Plan p2-4, p9 Node 3"
+   ],
+   "status_claimed": "Target (months 6-12); 'cheapest organ to prove' because DALEOBANKS loops can be re-expressed. Repo has loom/ with ratify.py; not verified against the document."
+  },
+  {
+   "mechanism": "Swarm Gate (charter compiler, typed inter-agent protocol, agent-only substrates, aggregate budget enforcement)",
+   "documents": [
+    "Final Plan p2, p4-5, p9 Node 6",
+    "Reality Compiler Blueprint p17, p21 (rejected as first route; 'not as a swarm')"
+   ],
+   "status_claimed": "Final Plan: target (months 30-48), swarm-first rejected. Blueprint: swarm-first rejected; no swarm substrate proposed."
+  },
+  {
+   "mechanism": "Regenerative Treasury (eleven-position waterfall, five regenerative accounts, regenerative debt) / Capital Allocation Governor",
+   "documents": [
+    "Final Plan p2, p5, p9 Node 2 and Node 8, p10 red line 7",
+    "Reality Compiler Blueprint p8 (Capital Allocation Governor R0)"
+   ],
+   "status_claimed": "Final Plan: target; 'in year one... the waterfall is a document'. Blueprint: R0. Repo has capital/; not verified."
+  },
+  {
+   "mechanism": "Institution-as-a-Service (governed automation, consequence assurance, capability registry, distribution infrastructure)",
+   "documents": [
+    "Final Plan p2, p5-6, p9 Node 5"
+   ],
+   "status_claimed": "Target (months 18-36); services before software before platforms."
+  },
+  {
+   "mechanism": "Unified shared contracts (ActionIntent, CommitWitness, ExecutionReceipt, ReconciliationRecord)",
+   "documents": [
+    "Final Plan p10 (do today), p11 (next verified action; deadline Aug 18, 2026)"
+   ],
+   "status_claimed": "Target. Repo (2026-10-14): none of the four exists as a schema in contracts/; deadline passed."
+  },
+  {
+   "mechanism": "Side-effect inventory / Verified Mediated Side-Effect Coverage metric",
+   "documents": [
+    "Final Plan p9, p10, p11"
+   ],
+   "status_claimed": "Target; baseline unknown until inventory; first target 100% for one bounded family."
+  },
+  {
+   "mechanism": "Three-step supervised -> shadow -> canary ladder (10/30/10)",
+   "documents": [
+    "Final Plan p9"
+   ],
+   "status_claimed": "Target for this week's work on one DALEOBANKS approval family."
+  },
+  {
+   "mechanism": "Reality Gradient",
+   "documents": [
+    "Egregore Technology Map p13 ('Reality Gradient ceiling', undefined)",
+    "Final Plan p2, p5, p9 (bound to content nodes; applied to ecosystem claims)"
+   ],
+   "status_claimed": "Referenced as existing doctrine in both; defined in neither. Not located in this synthesis."
+  },
+  {
+   "mechanism": "Affect-transducer ceiling / 'institutional unease' states",
+   "documents": [
+    "Egregore Technology Map p13"
+   ],
+   "status_claimed": "Referenced as if defined; undefined. Repo has affect/ package; relationship not verified."
+  },
+  {
+   "mechanism": "DecisionEpisode",
+   "documents": [
+    "Final Plan p11"
+   ],
+   "status_claimed": "Required evidence item; not described. Kernel build order \u00a76 Bridge A names 'Kernel decision episode'."
+  },
+  {
+   "mechanism": "Succession / Continuity Seed",
+   "documents": [
+    "Final Plan p10"
+   ],
+   "status_claimed": "'Already in the species design' \u2014 a design document, not a mechanism; unspecified."
+  },
+  {
+   "mechanism": "Governing transaction (conversion engine)",
+   "documents": [
+    "Final Plan p6"
+   ],
+   "status_claimed": "Claimed built ('already owns the conversion engine'); no referent given."
+  },
+  {
+   "mechanism": "Strategic tree search / backcast GPS / Strategic Tree Engine / Strategic Branch Store",
+   "documents": [
+    "Egregore Technology Map p15-16, p18-19",
+    "Final Plan p1, p6-9",
+    "Reality Compiler Blueprint p3 (R1), p7 (R1), p17-18"
+   ],
+   "status_claimed": "Used as planning method in Technology Map and Final Plan; proposed as R1 engines in Blueprint. Repo: docs/BACKCAST_GPS.md, egregore/gps.py, evolution/strategy_tree."
+  },
+  {
+   "mechanism": "OPA Policy Adapter / Cedar Authorization Adapter / Policy Input Normalizer",
+   "documents": [
+    "Reality Compiler Blueprint p3-4 (R1), p9",
+    "Egregore Technology Map p17 (explicitly rejects OPA/Rego/CEL)"
+   ],
+   "status_claimed": "Blueprint: target R1. Technology Map: prohibited for the decision path."
+  },
+  {
+   "mechanism": "Founder Attention Governor",
+   "documents": [
+    "Reality Compiler Blueprint p7 (R0), p16",
+    "Egregore Technology Map p10, p13-14 (exocortex; operator-burden ceiling)",
+    "Final Plan p4 (carrying-capacity rule)"
+   ],
+   "status_claimed": "Blueprint: R0. Others: same effect expressed as metric and ceiling. Repo: egregore/attention.py per goal-gravity intent (unit-tested)."
+  },
+  {
+   "mechanism": "Data Minimization Guard",
+   "documents": [
+    "Reality Compiler Blueprint p8 (R1)"
+   ],
+   "status_claimed": "Target R1; Blueprint only."
+  },
+  {
+   "mechanism": "Founder-intent-to-settlement pipeline and egregore operational loop (diagrams)",
+   "documents": [
+    "Reality Compiler Blueprint p9, p13"
+   ],
+   "status_claimed": "Target architecture diagrams; no execution evidence."
+  },
+  {
+   "mechanism": "PR sequence A-F, eleven /v1 REST endpoints, 30-day pilot runbook",
+   "documents": [
+    "Reality Compiler Blueprint p19-20"
+   ],
+   "status_claimed": "Proposed first code surface; estimates unverified; no PR exists in the documents."
+  },
+  {
+   "mechanism": "TGH-CONTROL-RAIL",
+   "documents": [
+    "Reality Compiler Blueprint p1"
+   ],
+   "status_claimed": "Publicly only a stub."
+  },
+  {
+   "mechanism": "Mature open-standard substrate (PostgreSQL, Git, Docker, Firecracker, mTLS/SPIFFE, pgvector, OPA, Cedar, WASI/Wasmtime, Temporal, NATS/Kafka, in-toto, SLSA, Sigstore/Rekor, W3C VC, X.509, RFC 3161)",
+   "documents": [
+    "Egregore Technology Map p1, p4-5",
+    "Reality Compiler Blueprint p1, p8"
+   ],
+   "status_claimed": "Third-party infrastructure asserted to exist and be adopted, not UNIIMENTE-built; adoption into UNIIMENTE not evidenced."
+  },
+  {
+   "mechanism": "Immediate Execution Card deadlines (contracts + adversarial tests by 2026-08-18; first closed external loop by 2026-10-17)",
+   "documents": [
+    "Final Plan p11"
+   ],
+   "status_claimed": "Target deadlines; the first has passed without the named contracts in the repo; the second is three days from today's date."
+  }
+ ],
+ "effect_translations": [
+  {
+   "metaphor_or_phrase": "Egregore (incl. 'The Egregore Technology Map', 'the egregore you described', 'the actual egregore property')",
+   "observable_effect": "A standing institutional process whose authorized goals, law, history and capabilities persist across sessions, vendors, models and the founder's attention; it converts evidence into gated external consequences, retains verified outcomes as assets, and reduces founder interventions per verified outcome. Explicitly not consciousness and not a collective mind.",
+   "simplest_mechanism": "Versioned constitution files + append-only ledger + capability registry as plain, signed, exportable files; a scheduler that resumes durable goals; one commit-time gate; a monthly interventions-per-outcome report.",
+   "falsification": "A clean machine cannot reconstruct the institution's law, history and capabilities from exported files; or no authorized goal survives a session restart; or interventions per verified outcome do not fall over two quarters."
+  },
+  {
+   "metaphor_or_phrase": "Morphogenesis ('Morphogenesis compiles a swarm the way it compiles an organ')",
+   "observable_effect": "Functional capability formation or reconfiguration in response to a verified discrepancy or CapabilityDeficit: a missing capability is acquired, composed, adapted or built, attached under a bounded grant, and the original goal resumes.",
+   "simplest_mechanism": "A CapabilityDeficit record -> resourcefulness-ladder search (existing capability, composition, commodity, open source, API, computer use, small adapter, coding agent) -> sandbox test -> registry entry with authority envelope -> goal resume. Ordinary orchestration code; no cells, tissues, developmental fields or self-assembling organizations.",
+   "falsification": "A recorded deficit is closed only by a new framework when a cheaper existing mechanism satisfied the acceptance tests; or capability formation occurs without a verified deficit; or the newly attached capability acts without a fresh grant."
+  },
+  {
+   "metaphor_or_phrase": "Organism / organs / organelles / 'the finished organism' / 'Final as genome. Never final as organism.'",
+   "observable_effect": "Bounded specialist subsystems with explicit contracts, authority ceilings, state ownership, lifecycle and shutdown behavior, connected through typed events; the whole continues when any non-core subsystem is detached; the specification is versioned while the system changes only through evidence-gated releases.",
+   "simplest_mechanism": "Organ manifests + module loader (inspect/attach/pause/detach/rollback) + typed contracts; versioned docs and signed releases for the 'genome'.",
+   "falsification": "Detaching a non-core module breaks the gate or ledger; or a subsystem lacks a declared authority ceiling and shutdown behavior; or 'organism completeness' is claimed without a detach test and a governed external action."
+  },
+  {
+   "metaphor_or_phrase": "Immune system ('Give UNIIMENTE an immune system'; 'the immune system converts every failure into a rule, a test and a policy diff')",
+   "observable_effect": "Attacks and failures are detected, contained, recovered from and learned from: each incident yields preserved evidence, root cause, a detection rule, a regression test, a policy diff and a recovery procedure; repeat incidents are caught.",
+   "simplest_mechanism": "Incident records on the ledger + CI regression tests + monitoring rules + runbooks + revocation/quarantine of grants; amendments proposed through the human-ratified ceremony.",
+   "falsification": "A recorded incident has no linked test or detection rule; a replayed attack passes undetected; or an 'immune' component alters policy without ratification."
+  },
+  {
+   "metaphor_or_phrase": "Metabolism / 'evidence-to-settlement metabolism' / 'regenerative capital metabolism' / 'the treasury makes the organism self-feeding'",
+   "observable_effect": "Evidence flows to accepted outcome credentials to payment, permission or contract-state change; surplus flows through a fixed allocation order that funds obligations, reliability and reserves before expansion; measured negative externalities block growth until repaid.",
+   "simplest_mechanism": "Reconciliation engine + settlement adapter (invoice/AP/AR) + a rule-ordered allocation ledger with regenerative-debt flags that the autonomy and budget engines read as hard blockers.",
+   "falsification": "Revenue is booked without a reconciled receipt; an allocation skips a waterfall position; or no regenerative-debt finding blocks any promotion, budget or replication in a year."
+  },
+  {
+   "metaphor_or_phrase": "Regeneration / healing / 'restore the function'",
+   "observable_effect": "A lost or degraded function returns under preserved authority and obligations, possibly with a different implementation; interrupted work is reconciled and resumed.",
+   "simplest_mechanism": "Degradation detection -> localize lost capability -> candidate replacement (existing/open-source/rebuilt) -> verification -> re-attach under the same grant envelope -> resume interrupted workflow from durable state.",
+   "falsification": "The replacement acts with more authority than the original; or restoration is claimed while interrupted obligations remain unreconciled."
+  },
+  {
+   "metaphor_or_phrase": "Immortality / continuity / 'survive any vendor, model, or employee' / 'Continuity Seed' / succession",
+   "observable_effect": "Founder intent and institutional capability survive component failure: replaceable models, reproducible infrastructure, durable state, provenance, backups, succession and vendor independence; shutdown-safe restoration.",
+   "simplest_mechanism": "Exportable signed files, rebuild-from-ledger drills, infrastructure-as-code, key custody and succession documents with a tested recovery drill. 'Continuity Seed' must be specified before it is treated as a mechanism.",
+   "falsification": "A rebuild drill fails; a provider swap loses decisions; or no documented, tested succession path exists for the founder's keys and authority."
+  },
+  {
+   "metaphor_or_phrase": "Nervous system / 'institutional nervous system' / Distributed Event Spine",
+   "observable_effect": "All cross-organ communication is versioned, signed, replayable and causally ordered; receiving organs revalidate identity, contract, policy, evidence, authority and freshness.",
+   "simplest_mechanism": "Typed event contracts over an organ-neutral transport (in-memory, SQLite, Postgres outbox/inbox; optional broker later) with idempotency keys and signatures.",
+   "falsification": "An organ acts on an unsigned or stale message; duplicate delivery produces a duplicate external effect; or a cross-organ edge exists outside typed contracts."
+  },
+  {
+   "metaphor_or_phrase": "'How it dreams' / Fork Engine / shadow institutions / Institutional Twin / 'Physics Engine' ancestry",
+   "observable_effect": "Off-hours counterfactual replay of recorded history under alternate policies produces premortems and decision packets whose outputs are labeled simulation and never enter reality-tier evidence.",
+   "simplest_mechanism": "Deterministic event replay over the ledger with swapped policy versions; outputs tagged simulation; gated until the ledger holds enough history to fidelity-test.",
+   "falsification": "A counterfactual output is cited as evidence of real effect; or replay cannot reproduce the actual recorded history; or the mechanism is built before history exists ('counterfactuals are fiction')."
+  },
+  {
+   "metaphor_or_phrase": "Swarm / 'spawn and send agent swarms into agent-only ecosystems'",
+   "observable_effect": "Parallel, chartered, budgeted, time-limited multi-agent work (evidence acquisition, diligence, adversarial review, load-shedding) in machine-designated substrates, with declared machine identity and all authority brokered per task by the gate.",
+   "simplest_mechanism": "An existing multi-agent orchestration library invoked from a charter record, with a shared budget, typed messages, expiry and no credentials in agents; no bespoke swarm substrate until a real agent-only venue with traffic exists.",
+   "falsification": "Any persona cover, any agent-to-agent authority transfer, any unlicensed replication, any non-consenting substrate; or the swarm run produces no evidence a single agent could not have produced at lower cost."
+  },
+  {
+   "metaphor_or_phrase": "'The institution extending its own hands, with your signature on every new finger' / self-extension / Automation Loom",
+   "observable_effect": "Agent-authored, human-ratified workflow proposals become governed automations whose every external effect passes the gate; each ratified workflow lowers the cost of later actions.",
+   "simplest_mechanism": "Workflow definitions as reviewable artifacts (diff + hostile test suite) + ratification signature + brokered credentials for commercial automation platforms (Zapier/Make/n8n) called through the gate.",
+   "falsification": "A workflow executes without a ratification receipt; a platform adapter holds credentials outside the broker; or founder review burden rises as workflows accumulate."
+  },
+  {
+   "metaphor_or_phrase": "Rabbit holes / 'the legal version of echo chambers'",
+   "observable_effect": "Visitors who follow a chain of interlinked depth content become measurably more capable and some convert to owned relationships; platform ToS are respected; belief-narrowing and outrage mechanics are absent.",
+   "simplest_mechanism": "A directed graph of content nodes published through official APIs under declared authorship, each with evidence level, correction history and expiry, plus analytics on follow-on capability signals and owned-channel subscriptions.",
+   "falsification": "Impressions grow while zero outsiders' behavior verifiably changes over twelve months; any ToS incident; or ranking correlates with watch time rather than informed return."
+  },
+  {
+   "metaphor_or_phrase": "Exocortex / Jarvis / 'names the single governing bottleneck'",
+   "observable_effect": "The founder can delegate goals, receive few and useful escalations with the strongest counterargument attached, and obtain verified outcomes with declining intervention.",
+   "simplest_mechanism": "Backcast GPS as code (destination -> active node -> gate -> single metric), an escalation queue with no-cost options, and a monthly interventions-per-verified-outcome report.",
+   "falsification": "Escalations arrive without a named bottleneck or counterargument; interventions per verified outcome do not decline; or the system creates dependence (founder cannot act without it)."
+  },
+  {
+   "metaphor_or_phrase": "Omniscience / 'everything, once, provably' / 'the machine does not stare'",
+   "observable_effect": "Decision-relevant unknowns are minimized through authorized, budgeted sensing with freshness, contradiction and uncertainty reporting; everything retained is provable; nothing claims completeness.",
+   "simplest_mechanism": "Budgeted ingestion that converts each input to an institutional object or discards it; content-addressed storage; contradiction tracking; uncertainty fields on claims.",
+   "falsification": "A decision cites a claim with no provenance or evidence tier; sensing exceeds its budget; or any output asserts complete knowledge."
+  },
+  {
+   "metaphor_or_phrase": "Consciousness / 'unified agency' / 'It is not consciousness'",
+   "observable_effect": "None required. All three documents disclaim consciousness; the only observable effects are coordinated behavior across subsystems through shared contracts and the ledger.",
+   "simplest_mechanism": "Shared typed contracts and one authority path; no mechanism for consciousness is proposed or permitted as a claim.",
+   "falsification": "Any artifact claiming or implying machine consciousness, experience or sentience; such a claim is itself a doctrine violation."
+  },
+  {
+   "metaphor_or_phrase": "Sovereign substrate / 'the decision path must be sovereign' / 'sovereignty.ucl becomes fiction'",
+   "observable_effect": "The founder owns, pins and can replay the code and data that decide constitutional verdicts; no vendor change alters a verdict; the institution's law cannot be reconfigured by a third party.",
+   "simplest_mechanism": "An owned, version-pinned evaluator (bespoke or an adapter over an open-source policy engine) with golden replay tests and exported policy bundles under the founder's signature.",
+   "falsification": "A verdict changes after a vendor or dependency upgrade without a ratified policy change; or policy logic lives only in a hosted service the founder cannot export."
+  },
+  {
+   "metaphor_or_phrase": "Git-native DAG for cognition / Reality Git / 'preserve competing truth states' / Merkle Claim DAG",
+   "observable_effect": "Claims, evidence, decisions and outcomes are immutable, content-addressed and linked by provenance; branches of belief coexist until resolved; corrections point at what they correct.",
+   "simplest_mechanism": "Content-addressed records in the existing ledger with parent hashes and explicit state labels (claimed, observed, verified, externally_accepted, disputed, invalidated); Git itself for policy versioning.",
+   "falsification": "A record is overwritten in place; two contradictory claims are merged into one without a resolution record; or a referenced parent hash is missing."
+  },
+  {
+   "metaphor_or_phrase": "Xenobot / 'different forms of intelligence as described by Levin' (repo lineage; not in these three documents)",
+   "observable_effect": "Capability that reorganizes toward a target state after perturbation under bounded authority \u2014 i.e., target-state regulation and graceful degradation, not biological novelty.",
+   "simplest_mechanism": "Target-state controllers with declared setpoints and error detection (the morphogenesis/ control lineage) benchmarked against a plain supervisor; adopt only if it beats the baseline.",
+   "falsification": "The bio-inspired controller does not outperform a conventional supervisor on the same discrepancy; or it is adopted because of its name rather than measured recovery."
+  },
+  {
+   "metaphor_or_phrase": "Coincidence production / 'creating coincidences in my favor... in a production line manner' (repo lineage INTENT-20261013-GOAL-GRAVITY; 'favorable intersection' here)",
+   "observable_effect": "Authorized goals wake on relevant signals; favorable intersections between goals, capabilities and external opportunities are detected and prepared ahead of time; the founder meets more prepared options with less effort.",
+   "simplest_mechanism": "Goal records with relevance matching over ingested signals, intersection detection, preparation queued through the gate, and tripwire watches (e.g., early distribution revenue reorders the sequence).",
+   "falsification": "No prepared option can be traced to a detected intersection; or 'coincidence' is claimed for outcomes the system did not prepare or that happened by chance alone."
+  },
+  {
+   "metaphor_or_phrase": "'Institutional unease' / affect-transducer ceiling",
+   "observable_effect": "Anomaly, uncertainty or incident signals can lower autonomy ceilings but never raise them.",
+   "simplest_mechanism": "Named anomaly/uncertainty/incident metrics read by the autonomy engine as downward-only inputs; no affect model.",
+   "falsification": "Any 'affect' state raises autonomy; or the lowering signal has no measurable definition."
+  },
+  {
+   "metaphor_or_phrase": "Capability genome / species design / 'constitutional species'",
+   "observable_effect": "Capabilities are versioned, signed, tested packages with recorded performance and permission manifests, composable into new cells; the institution's specification is versioned and changes only by ratified release.",
+   "simplest_mechanism": "Package registry with signed manifests, dependency graph and lifecycle status; semantic versioning of doctrine documents.",
+   "falsification": "A registered package lacks tests, manifest or lineage; or 'genome' vocabulary leads to evolutionary machinery with no measured advantage over a registry."
+  },
+  {
+   "metaphor_or_phrase": "Cathedral / 'dismantle the cathedral' / 'prestige trap'",
+   "observable_effect": "Internal complexity rising while external outcomes stay flat is detected and terminates the build; the ledger is preserved as a post-mortem asset.",
+   "simplest_mechanism": "A monthly comparison of governed external-reality decisions against activity metrics and founder minutes; a parallel manual baseline; a documented seal-and-stop procedure.",
+   "falsification": "Activity grows for 90 days with zero external-reality decisions and nothing stops; or the kill is a quarterly discussion rather than an enforced trigger."
+  },
+  {
+   "metaphor_or_phrase": "Reality Compiler / proof-to-consequence compiler / 'compile intentions into bounded authority'",
+   "observable_effect": "An intention becomes a content-addressed, policy-bound instruction with explicit principal, action, scope, budget, TTL, evidence requirements, approvers, expected effect and kill conditions; approval binds to its hash; the action is 'done' only after external reconciliation.",
+   "simplest_mechanism": "A typed instruction schema + canonical serialization + hash + policy evaluation + signed approval over the hash + reconciliation step; no new language required for the effect.",
+   "falsification": "Two approvals of differing payloads share one hash; a mutated payload executes under an old approval; or an action is marked complete without a reconciled receipt."
+  }
+ ],
+ "evidence_tier_warnings": [
+  "All three documents are AI-generated (two by Kimi.ai, one by ChatGPT) and addressed to the founder; apart from quoted constitution clauses and the four verbatim founder requests in the Final Plan (rabbit holes; own Zapier/Make automations; agent swarms; regenerative economics/IaaS/earn money) plus relayed instructions ('You said keep the crypto', 'you asked' about duplications, 'Warning from the canonical instruction, accepted'), every statement is the model's recommendation voice. Repetition across three documents creates no additional authority (FOUNDER_INTENT_LEDGER rule).",
+  "Egregore Technology Map p1: 'Verified against your live GitHub state, 2026-07-19 \u2014 I inspected source, not descriptions' is an AI's unlogged claim of inspection, dated three months ago; no commit hashes, test runs or artifacts accompany it.",
+  "Egregore Technology Map p2-3 labels ('Specification only', 'Implemented and merged; tested locally; not externally proven') are time-bound snapshots. The 'no tests, no runtime' label is contradicted by the current worktree (62 test files, policy/consequence_gate.py, provenance/, autonomy/levels.py); neither a document's 'built' nor its 'not built' label may be copied into the ledger without executable evidence.",
+  "Final Plan p7 'Verified: repository states as audited' and p4-6 claims ('DALEOBANKS already runs bounded loops', 'The organism-wide autonomy budget already exists', 'The institution already owns the conversion engine', 'signed bridge to WealthMachineIntelligence', 'strongest merged controls in DALEOBANKS') carry no audit artifact, commit reference or test output; the autonomy-budget claim is contradicted by the same document's Node 2 build list.",
+  "Final Plan p1 'Your species design was vertically complete... It could think, decide, prove, and remember' asserts completion of the vertical stack; the Technology Map and the Blueprint both deny that anything UNIIMENTE-specific is production-proven, and the Final Plan itself admits 'no externally verified loop' on p8.",
+  "Final Plan p6-7 branch scores (B5 = 84, B2 = 74, B3 = 38...) and p10 probabilities ('Node 1 clears 70 to 85 percent'; '10 to 20 percent' to the 2036 destination) are explicitly 'design estimates, not promises'; they are simulation-tier numbers and must not be read as measured odds.",
+  "Final Plan p11 deadlines: contracts and adversarial tests by August 18, 2026 (passed; as of 2026-10-14 contracts/ contains no ActionIntent, CommitWitness, ExecutionReceipt or ReconciliationRecord schema) and first closed external loop by October 17, 2026 (three days from today, with no evidence of a closed loop in any document). The plan's own review trigger ('thirty days, or the first bypass that cannot be eliminated') has therefore elapsed.",
+  "Final Plan p10 red line 8 'The kill criteria in Section 6 execute themselves' is written in the indicative but is a requirement; no enforcement code, monitor or drill is evidenced.",
+  "Final Plan p10 'Succession and the Continuity Seed are the answer, and they are already in the species design' refers to a design document; a named construct in a plan is not a mechanism and 'Continuity Seed' is undefined.",
+  "Reality Compiler Blueprint: all JSON/YAML examples (compiled instruction inst_01JX..., CapabilityCellManifest ride-outcome-verifier v0.1.0, VerifiedRideOutcomeCredential for TGH-clinic-3, grant_01JX..., org:tgh-nemt-dp1, founder:alfonso-lopez, dates 2026-07-21) are illustrative schemas; nothing was compiled, launched, issued or reconciled. 'IVIO-like' (p17) is undefined and is not an existing design-partner commitment.",
+  "Reality Compiler Blueprint p1: 'DALEOBANKS presents as a production-grade autonomous Twitter/X agent' and WMI's 'P(failure) <= 0.01%' are README self-descriptions and a stated target, respectively, read from READMEs; neither is an observed property.",
+  "Reality Compiler Blueprint p1: the kernel repository returned 404 to the model, so its R0/R1 maturity ratings describe the model's proposal, not the kernel's state; they must not be read as an audit of uniimente-kernel.",
+  "Reality Compiler Blueprint's 27 citations establish that third-party standards and tools (OPA, Cedar, WASI, Firecracker, SPIFFE, Temporal, in-toto, SLSA, Sigstore, W3C VC, arXiv 2501.09674) exist; they do not establish any UNIIMENTE capability. 'Technically plausible now' (p13) is plausibility, not demonstration.",
+  "Effort and stage estimates (Blueprint p18-19: 5-8, 7-10, 10-20 days; Technology Map p17: '~2 weeks, <2,000 lines'; Final Plan p9 node durations) are unverified estimates and are not commitments or measurements.",
+  "Counting errors \u2014 'Thirteen layers' listing fourteen (Technology Map p7-8) and '55 technologies' listing 57 (Blueprint p2-8) \u2014 indicate unreviewed generation; internal figures in these documents should be recounted before reuse.",
+  "Constructs used as if established but defined nowhere in the three documents: 'Commit Witness' with expected_outcome (Technology Map p11; a table row only in the Blueprint), 'Reality Gradient' (Technology Map p13; Final Plan p2, p5, p9), 'affect-transducer ceiling' (Technology Map p13), 'DecisionEpisode' (Final Plan p11), 'federation cells', 'fork engine', 'Continuity Seed' (Final Plan p9-10). A 'commit witness' concept exists in policy/consequence_gate.py; the others were not located in this synthesis and must be specified before being cited as mechanisms.",
+  "Technology Map p9-10 'Here is the finished organism, described as a mechanism' and the 'How it perceives / remembers / thinks / dreams / forms organs / reproduces / protects itself / stays alive' headings read as a completion description; the same document states that nothing beyond specification and two unproven engines exists.",
+  "Technology Map p11-13 autonomy thresholds (30 scored shadows, 30 consecutive approved executions, 90 consecutive clean executions, '>=50% reduction by month twelve') are proposed numbers, not calibrated from recorded outcomes; the Final Plan's '30 consecutive governed executions... at least 95 percent reconstruction' is likewise a proposal.",
+  "Technology Map p3 'Mock-mode results must be indelibly labeled simulated in the evidence spine' and Final Plan red line 6 are requirements; neither document evidences that labeling exists in the bridge or the ledger today.",
+  "Final Plan p9 'Active SBM: Verified Mediated Side-Effect Coverage, baseline unknown until inventory' \u2014 the governing metric has no baseline; no statement of progress on the active node is possible until the side-effect inventory exists.",
+  "Final Plan p2, p7 'Recommendation algorithms amplify whatever retains', 'platform terms prohibit inauthentic behavior' and 'Agent-only ecosystems are young and most are ghost towns' are uncited external assertions; plausible, but they are inference, not sourced evidence.",
+  "Technology Map p13-14 asymmetry claims ('They cannot copy two years of your outcomes'; 'anti-copy: absolute') describe assets that do not yet exist (no gated decisions, no revenue, no external users per the same document); they are forecasts of asset value, not assets.",
+  "Blueprint p8 'The only publicly visible implementation precedent... is DALEOBANKS' tamper-evident decision ledger and automatic disarm' is based on a README read; the Technology Map (p3) describes DALEOBANKS differently (signal/persona engine with its own constitution.md and parallel TypeScript stack). Neither description was verified against code in this synthesis."
+ ]
+}

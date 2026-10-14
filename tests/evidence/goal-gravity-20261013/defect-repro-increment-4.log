@@ -1,0 +1,7 @@
+tree: 6ce6b3f gravity.py modified: True
+after day1 latest: {'dce600614755': 'unknown'}
+after grantless day2 latest: {'dce600614755': 'planned'}
+day2 blockers: ['reconciliation required: route dce600614755083b outcome unknown']
+day3 with grant: executor calls = ['outreach.contact'] | decision state = executed
+gate dispatch claims: ['00614755083b', '14755083b:r1']
+DEFECT REPRODUCED: second dispatch of a route whose first outcome is unknown

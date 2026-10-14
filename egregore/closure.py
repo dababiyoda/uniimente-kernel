@@ -117,7 +117,8 @@ def goal_gravity_closures() -> ModuleClosures:
         # Every service object the loop composes reports no authority and exposes no effect method, and the
         # loop retains no gate, executor or grant between turns (the recorded executor-signature deviation).
         components = [loop, loop.registry, loop.world, loop.router, loop.gps, loop.classifier, loop.detector,
-                      loop.attention, loop.advancement, loop.opportunity, loop.acquisition, loop.intake]
+                      loop.attention, loop.advancement, loop.opportunity, loop.acquisition, loop.intake,
+                      loop.absence, loop.schedule]
         components += [c for c in (loop.retention, loop.sensorium, loop.competency) if c is not None]
         exposed += [f"{type(c).__name__}.{name}" for c in components for name in forbidden if hasattr(c, name)]
         exposed += [type(c).__name__ for c in components if getattr(c, "execution_authority", None) != "none"]
@@ -147,7 +148,9 @@ def goal_gravity_closures() -> ModuleClosures:
         from .attention import FounderAttentionRouter
         from .retention import AsymmetryRetention
         from .intersections import FavorableIntersectionDetector
+        from .absence import AbsenceReporter
         names = {GoalRegistry.AUTHORIZED_RECORD, GoalRegistry.TRANSITION_RECORD, GoalRegistry.PREFERENCE_RECORD,
+                 AbsenceReporter.REPORT_RECORD,
                  WorldModel.EXPERIENCE_RECORD, WorldModel.CONTRADICTION_RECORD, InterventionClassifier.DEFICIT_RECORD,
                  GoalGravityLoop.TURN_CONFLICT_RECORD, GoalGravityLoop.DRIFT_RECORD, FounderAttentionRouter.ANSWER_RECORD,
                  AsymmetryRetention.ASSET_RECORD, FavorableIntersectionDetector.INTERSECTION_RECORD}
@@ -155,8 +158,16 @@ def goal_gravity_closures() -> ModuleClosures:
         loop.registry.authorize(_goal(), now="2026-10-13T00:00:00Z")
         loop.turn(trigger_id="probe-3", now="2026-10-13T01:00:00Z", signals=[_signal("e3", 0.2)],
                   resources=ResourceGovernor(max_model_calls=2, max_estimated_cost_usd=0.01), evidence_confidence=0.9)
+        # The founder's return report is folded from these records and requests nothing: prepared work is never
+        # counted as executed, and the report is information, not an ask.
+        report = loop.return_report(since="2026-10-13T00:00:00Z", until="2026-10-13T02:00:00Z", record=True)["report"]
+        honest = (report["executed"] == [] and len(report["prepared"]) >= 1 and report["requests_nothing"] is True
+                  and report["kind"] == "information" and "options" not in report
+                  and report["founder_activity"]["goals_authorized"] == 1
+                  and len(ledger.by_type(AbsenceReporter.REPORT_RECORD)) == 1)
         ok, msg = ledger.verify_chain()
-        return ok and len(names) == 11, f"positive, negative, contradictory and refused evidence have record types; {msg}"
+        return ok and len(names) == 12 and honest, (f"positive, negative, contradictory and refused evidence have record types; "
+                                                     f"the return report is ledger-derived information; {msg}")
 
     def economic() -> tuple[bool, str]:
         ledger, loop = _stack()

@@ -485,3 +485,68 @@ def test_fresh_until_is_optional_in_the_evidence_contract():
     jsonschema.validate(_packet(fresh_for=timedelta(hours=1)), schema, format_checker=checker)
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(_packet(fresh_until="tomorrow"), schema, format_checker=checker)
+
+
+# ---------- #12: a child grant is a strict subset of its parent ----------
+# Re-expressed from refs/remotes/pr/12:sdk-python/tests/test_capability.py test_child_grant_must_be_subset
+# and test_child_grant_subset_ok, retargeted at the one GrantIssuer.
+
+def _parent(gate, actor_id, **kw):
+    kw.setdefault("estimated_cost_usd", 3.0)
+    return gate.grants.issue_single_action(proposal=make_proposal(actor_id, **kw), policy_version="1.0.0")
+
+
+def _child(gate, actor_id, parent_id, **kw):
+    p = make_proposal(actor_id, context={"parent_grant": parent_id}, **kw)
+    return gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+
+
+def test_child_grant_must_be_subset(stack):
+    gate, passports, ledger, actor, _ = stack
+    parent = _parent(gate, actor.passport_id)
+    for kw, why in (({"requested_capability": "funds.transfer"}, "permitted_actions"),
+                    ({"estimated_cost_usd": 3.01}, "spending limit"),
+                    ({"target": "sandbox:elsewhere"}, "counterparties"),
+                    ({"legal_principal": "another_principal"}, "legal actor")):
+        with pytest.raises(ValueError, match=why) as refused:      # GrantRefused is a ValueError
+            _child(gate, actor.passport_id, parent["grant_id"], **kw)
+        assert type(refused.value).__name__ == "GrantRefused"
+
+
+def test_child_grant_subset_ok(stack):
+    gate, passports, ledger, actor, _ = stack
+    parent = _parent(gate, actor.passport_id)
+    child = _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=1.0)
+    assert child["parent_grant"] == parent["grant_id"]
+    assert child["permitted_actions"] == ["draft.publish"] and child["spending_limit_usd"] == 1.0
+    assert child["expires_at"] <= parent["expires_at"]
+    from adapters.contract_validation import validate_contract
+    validate_contract(child, "capability-grant")
+
+
+@pytest.mark.parametrize("state", ["unknown", "revoked", "expired", "consumed"])
+def test_child_of_an_unknown_revoked_expired_or_consumed_parent_is_refused(stack, state):
+    gate, passports, ledger, actor, _ = stack
+    parent = _parent(gate, actor.passport_id)
+    parent_id = parent["grant_id"]
+    if state == "unknown":
+        parent_id = "not-issued-here"
+    elif state == "revoked":
+        gate.grants.revoke(parent_id, reason="adversarial", revoker="alfonso")
+    elif state == "expired":
+        parent["expires_at"] = (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat().replace("+00:00", "Z")
+    else:
+        gate.grants.mark_used(parent_id)
+    with pytest.raises(ValueError, match="parent grant"):
+        _child(gate, actor.passport_id, parent_id, estimated_cost_usd=1.0)
+
+
+def test_child_inherits_parent_prohibitions_and_cannot_take_a_prohibited_action(stack):
+    gate, passports, ledger, actor, _ = stack
+    parent = _parent(gate, actor.passport_id)
+    parent["prohibited"] = ["draft.publish"]
+    with pytest.raises(ValueError, match="prohibited by the parent"):
+        _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=1.0)
+    parent["prohibited"] = ["material_debt"]
+    child = _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=1.0)
+    assert child["prohibited"] == ["material_debt"]

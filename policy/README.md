@@ -20,7 +20,9 @@ Proposal → identity → legal principal → evidence → policy
   `evidence_freshness_reasons()` resolves evidence refs against a register.
 - `consequence_gate.py` — the gate: lifecycle states from
   `workflows/approval-lifecycle.yaml`, `GrantIssuer` (single-action grants,
-  contract-exact), `BudgetOffice` (explicit reservations, released on every
+  contract-exact; a child grant is refused unless it is a subset of a known,
+  live, unconsumed parent, per `authority/authority-matrix.yaml`
+  `child_grants: strict_subset_of_parent`), `BudgetOffice` (explicit reservations, released on every
   failure path), commit-time revalidation (grant fresh/unrevoked/unused,
   effect hash and granted authority bound, proposal unchanged since
   admission, identity still valid, policy still ALLOWs or a human approval
@@ -40,6 +42,9 @@ Proposal → identity → legal principal → evidence → policy
 - consequence class (or any authority-relevant field) changed between
   admission and commit, or REQUIRE_HUMAN at commit without a matching
   approval → hard refusal; authority mismatches raise an incident (#55)
+- child grant beyond its parent (actions, spending, counterparties, legal
+  actor, prohibitions, lifetime) or of an unknown/revoked/expired/consumed
+  parent → refused at issuance (`GrantRefused`, #12)
 - missing outcome record → blocks autonomy promotion
 - any executor exception → `failed`, budget released, evidence preserved
 - models recommend; this code authorizes

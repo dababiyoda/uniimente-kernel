@@ -116,6 +116,10 @@ class BudgetOffice:
         return self._reservations[reservation_id]["state"]
 
 
+class GrantRefused(ValueError):
+    """The issuer will not mint this grant: it would exceed what its parent holds."""
+
+
 class GrantIssuer:
     """Issues single-action capability grants per the grant contract.
     New grants start at simulate/shadow; an executable single-action grant
@@ -126,6 +130,13 @@ class GrantIssuer:
     Gate-internal metadata (stage, single-use, effect binding) lives in a
     separate internal record keyed by grant_id; the wire contract is never
     patched silently.
+
+    A child grant (proposal.context["parent_grant"]) is a strict subset of its
+    parent, as authority/authority-matrix.yaml grant_rules.child_grants
+    declares: the parent must be known to this issuer, unrevoked, unexpired
+    and unconsumed, and the child may not exceed its permitted actions,
+    spending limit, counterparties or legal actor, may not take an action the
+    parent prohibits, inherits its prohibitions and never outlives it.
     """
 
     def __init__(self, issuer_id: str = "spiffe://uniimente.internal/kernel/action-gateway"):
@@ -133,8 +144,39 @@ class GrantIssuer:
         self._grants: dict[str, dict] = {}       # contract-valid grants
         self._meta: dict[str, dict] = {}         # gate-internal metadata
 
+    def _parent_of(self, proposal: Proposal, now: datetime) -> dict | None:
+        """Refuse a child grant that would exceed its parent (mechanism of PR #12
+        sdk-python/uniimente_kernel/capability.py _enforce_subset_of_parent)."""
+        parent_id = proposal.context.get("parent_grant")
+        if parent_id is None:
+            return None
+        parent = self._grants.get(parent_id) if isinstance(parent_id, str) else None
+        if parent is None:
+            raise GrantRefused(f"parent grant {parent_id!r} unknown to this issuer")
+        if parent.get("revoked"):
+            raise GrantRefused("parent grant is revoked")
+        if now >= datetime.fromisoformat(parent["expires_at"].replace("Z", "+00:00")):
+            raise GrantRefused("parent grant is expired")
+        if self._meta.get(parent_id, {}).get("used"):
+            raise GrantRefused("parent grant is already consumed")
+        if proposal.requested_capability not in parent.get("permitted_actions", []):
+            raise GrantRefused("child grant exceeds parent permitted_actions")
+        if float(proposal.estimated_cost_usd) > float(parent.get("spending_limit_usd", 0)):
+            raise GrantRefused("child grant exceeds parent spending limit")
+        if proposal.target not in parent.get("counterparties", []):
+            raise GrantRefused("child grant exceeds parent counterparties")
+        if proposal.legal_principal != parent.get("legal_actor"):
+            raise GrantRefused("child grant changes the parent's legal actor")
+        if proposal.action_class in parent.get("prohibited", []):
+            raise GrantRefused(f"{proposal.action_class} is prohibited by the parent grant")
+        return parent
+
     def issue_single_action(self, *, proposal: Proposal, policy_version: str) -> dict:
         now = _now()
+        parent = self._parent_of(proposal, now)
+        expires = now + GRANT_TTL
+        if parent is not None:
+            expires = min(expires, datetime.fromisoformat(parent["expires_at"].replace("Z", "+00:00")))
         grant = {
             "grant_id": str(uuid.uuid4()),
             "grantee": proposal.actor,
@@ -148,11 +190,11 @@ class GrantIssuer:
             "data_boundaries": [],
             "spending_limit_usd": float(proposal.estimated_cost_usd),
             "rate_limits": None,
-            "prohibited": [],
+            "prohibited": list(parent.get("prohibited", [])) if parent else [],
             "initial_stage": "simulate",           # lineage: starts non-executable
-            "parent_grant": proposal.context.get("parent_grant"),
+            "parent_grant": parent["grant_id"] if parent else None,
             "issued_at": _rfc(now),
-            "expires_at": _rfc(now + GRANT_TTL),
+            "expires_at": _rfc(expires),
             "escalation_triggers": [],
             "revocable_by": ["spiffe://uniimente.internal/kernel/action-gateway"],
             "revoked": False,

@@ -6,7 +6,7 @@
  "subject_source_commit": "07af5758197501662df81ff05e2b34ce8224a322",
  "artifact": "policy/consequence_gate.py",
  "pinned_sha256": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e",
- "hardened_sha256": "490ded58ea9605d4cd02d8eddbeb7d2b16bbbba7f175c0ff5c8d8eb815c14ac6",
+ "hardened_sha256": "812384a85552f8b449bb9d8eadffb43a07a43b23b4beb3cd62b45e60e2115fab",
  "hardening": [
   {
    "port": "#55 commit-window escalation",
@@ -17,6 +17,11 @@
    "port": "#21 stale evidence at commit",
    "effect": "a Gate holding an evidence register resolves every evidence ref to a contract-valid evidence packet and refuses unknown or stale evidence at evaluation and again at commit",
    "sha256_after": "490ded58ea9605d4cd02d8eddbeb7d2b16bbbba7f175c0ff5c8d8eb815c14ac6"
+  },
+  {
+   "port": "#12 child-grant subset",
+   "effect": "GrantIssuer refuses a child grant of an unknown, revoked, expired or consumed parent, or one exceeding the parent's permitted actions, spending limit, counterparties, legal actor or prohibitions; children inherit prohibitions and never outlive the parent",
+   "sha256_after": "812384a85552f8b449bb9d8eadffb43a07a43b23b4beb3cd62b45e60e2115fab"
   }
  ],
  "direction": "subtractive only: every change refuses more and authorizes nothing new",

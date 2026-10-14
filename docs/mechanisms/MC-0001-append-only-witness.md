@@ -11,7 +11,9 @@ Evidence: `tests/evidence/append-only-witness-20261014/`.
 - **No append-only proof.** Nothing proved that a later checkpoint extends an earlier one. A host that rewrites record *k*, rebuilds the hash chain and re-checkpoints gets a valid chain, a valid root and valid inclusion proofs. The test `test_existing_inclusion_proofs_cannot_detect_a_rewritten_history` reproduces this.
 - **The verifier still trusts the host.** The root an auditor checks against is published by the host, on the host's own ledger. `closure/kernel_registry.py` says "no trust in the ledger host, ever". That holds for inclusion against a root the auditor already trusts. It does not hold for where that root comes from.
 
-Searched first, and found absent: all 164 remote Kernel branches had no consistency-proof or cosigning implementation. The existing primitives (hash chain, inclusion proofs, HMAC commit witness) are reused.
+Searched first: none of the 164 remote Kernel branches had a consistency-proof or cosigning implementation. The existing primitives (hash chain, inclusion proofs, HMAC commit witness) are reused.
+
+**Correction (2026-10-14).** The first search missed `greg/anchor.py` on PR #132's branch, because it looked for consistency and cosign terms. That module is the strongest existing UNIIMENTE anti-rewrite mechanism. It anchors ledger heads with RFC 3161 time-stamps, and `verify_witness` detects rewrite, deletion, rollback and anchor substitution within a previously exported witness bundle. It is gated on your signed `ANCHOR_CONFIGURE` and needs an external time-stamp authority. Its check walks the full presented ledger for the anchored head, which is the cost profile of baseline B1. Comparison in §7.
 
 ## 2. REA investigation (real run)
 
@@ -121,8 +123,22 @@ Verdict:
 - every rewrite position for n ≤ 32;
 - every single-hash corruption for n ≤ 32.
 
+**Existing UNIIMENTE mechanism (`greg/anchor.py`, PR #132): compared structurally, not run.** Running it needs a configured, network-reachable time-stamp authority and your `ANCHOR_CONFIGURE`. Neither is available here, and I did not fake it.
+
+| Property | `anchor.verify_witness` | Witness quorum (this card) |
+|---|---|---|
+| Detects rewrite within the witnessed prefix | yes | yes |
+| Verifier needs the full ledger | yes, O(n) | no: (size, root) plus an O(log n) proof |
+| Independent time | yes (TSA) | **no** |
+| External network | yes (TSA) | no |
+| Trust anchor | TSA root certs plus a witness bundle kept outside GREG | k distinct registered witnesses |
+| Activation gate | founder `ANCHOR_CONFIGURE` | none needed for read-only use |
+
+**Verdict:** complementary, not a replacement. The natural recombination is to anchor `(tree_size, merkle_root)` rather than the chain head. One TSA token then supports O(log n) consistency checks against any later checkpoint, without shipping the ledger to the verifier. This is recorded as a candidate, not built.
+
 ## 8. Negative results and limits (retained)
 
+- The first deficit search missed the competing `greg/anchor.py` on PR #132. The corrected comparison is in §7.
 - The test expecting `(old, new+1)` relabelling to fail was wrong. RFC 9162 verification binds roots, not sizes. The test was corrected, not deleted.
 - HMAC cosignatures are not publicly verifiable.
 - Witness state is durable when `state_path` is given: fsync and atomic rename happen before any cosignature, and corrupt or foreign state fails closed. Without `state_path` a restart reverts to first-use trust, and a test keeps that failure visible.

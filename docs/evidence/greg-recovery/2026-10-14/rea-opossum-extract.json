@@ -1,0 +1,65 @@
+{
+  "tool": "rea-agents@6.1.0 (npx, install scripts disabled)",
+  "operation": "analyze-javascript-application <dir> --json",
+  "target": {
+    "package": "opossum@10.0.0",
+    "license": "Apache-2.0",
+    "tarball_sha256": "6bc54f2dff664f33bafd82d2a60e98b581a2e74461a9095ee5a675f59cb9c637",
+    "rea_subject_digest": "928a7de164f493e305f726b9607115892c5d425009226807c628b7ea2d33e3e4",
+    "rights": "public Apache-2.0 npm package; static analysis of the shipped artifact only; nothing executed"
+  },
+  "evidence_id": "ev_bda547f2ecf27a6f41d199efc4b0f67d73c1fe52b0c6d0afb699ad9de213781b",
+  "evidence_json_sha256": "3ab4de3c21d0343d1fcb6aee426a67cc849340811bb20f7234378c406d167284",
+  "evidence_json_bytes": 75714545,
+  "provider": {
+    "id": "rea-javascript-application",
+    "name": "REA JavaScript application analyzer",
+    "version": "1"
+  },
+  "confidence": "derived",
+  "authority": "shipped-artifact",
+  "statistics": {
+    "relevant_files": 10,
+    "nested_asar_containers": 0,
+    "text_bytes_read": 359345,
+    "invalid_utf8_files": 0,
+    "parsed_javascript_files": 7,
+    "visited_ast_nodes": 19338,
+    "findings": 34,
+    "modules": 0,
+    "parse_failures": 0,
+    "truncated_scopes": 0
+  },
+  "semantic_graph": {
+    "nodes": 13071,
+    "relations": 19361,
+    "fingerprints": 485,
+    "unknowns": 2708
+  },
+  "limitations": [
+    "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+    "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+    "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+    "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+    "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code.",
+    "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+    "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+    "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+    "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+    "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+  ],
+  "observations_file": "rea-opossum-circuit-observations.txt",
+  "established_statically": [
+    "lib/circuit.js: _startTimer (line 315) schedules setTimeout (318) whose callback calls _halfOpen (333), which writes STATE=HALF_OPEN and emits 'halfOpen'",
+    "constructor registers on('open', _startTimer(this)) and on('success', -> close() if halfOpen) (lines 348-349)",
+    "fail() (line 981) emits 'failure' and calls open() when the error rate exceeds the threshold or when half-open",
+    "healthCheck schedules setInterval (886) and emits 'healthCheckFailed'",
+    "the reset timer delay is options.resetTimeout: a constant, not a backoff (confirmed in source text)"
+  ],
+  "verified_in_source": "lib/circuit.js lines 270-360, 395-440, 978-1000 read as text after the REA run; consistent with every statement above",
+  "not_established": [
+    "runtime behaviour (nothing was executed)",
+    "2,708 unresolved dynamic call targets in the whole package graph",
+    "how deployments tune resetTimeout or volumeThreshold"
+  ]
+}

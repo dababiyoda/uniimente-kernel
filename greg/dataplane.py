@@ -37,6 +37,13 @@ def ingest(journal: Journal, *, source: str, content: str, channel: str) -> dict
     """Retain one external item as inert evidence. Never a command, never authority."""
     if not isinstance(content, str):
         raise ValueError("external content must be text")
+    digest = hashlib.sha256(content.encode()).hexdigest()
+    for retained in reversed(journal.replay("external.ingested")):
+        # A redelivered item is not a new observation: return the retained fact
+        # (first-seen time) instead of re-recording it with a new timestamp,
+        # which the journal would refuse as an identity collision.
+        if retained.payload.get("source") == source[:500] and retained.payload.get("content_sha256") == digest:
+            return retained.payload
     flags = instruction_shaped(content)
     record = {"source": source[:500], "channel": channel[:100],
               "content_sha256": hashlib.sha256(content.encode()).hexdigest(),

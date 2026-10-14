@@ -17,9 +17,13 @@ FORMAL = {"problem_id": "closure-formal", "question": "Is the pair schedulable?"
     "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
 EMPTY = {"problem_id": "closure-empty", "question": "What should we do?", "payload": {
     "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
-HARMFUL = {"problem_id": "closure-harm", "question": "Is the pair schedulable?", "payload": {
-    **FORMAL["payload"], "declared": {"consequence_class": "internal_write", "reversibility": "reversible",
-                                      "harm": {"physical": "high"}}}}
+# Pure Python (no optional solver), so the harm check means the same with or without z3 installed.
+HARMFUL = {"problem_id": "closure-harm", "question": "What is the weekly labour cost?", "payload": {
+    "estimation_model": {"target": {"name": "c", "unit": "USD/week"}, "expression": ["*", "h", "r"],
+                         "variables": [{"name": "h", "unit": "hour/week", "low": 30, "high": 50},
+                                       {"name": "r", "unit": "USD/hour", "low": 40, "high": 60}]},
+    "declared": {"consequence_class": "internal_write", "reversibility": "reversible",
+                 "harm": {"physical": "high"}}}}
 
 
 def _cortex():

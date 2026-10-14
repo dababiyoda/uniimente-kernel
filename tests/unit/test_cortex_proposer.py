@@ -18,6 +18,18 @@ FORMAL = {"problem_id": "cp-formal-1", "question": "Is the pair schedulable?", "
                      "obligations": [{"id": "R1", "text": "x + y at most 4"}],
                      "constraints": [{"id": "C1", "covers": ["R1"], "expr": ["<=", ["+", "x", "y"], 4]}]},
     "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
+# Pure Python: recommends whether or not the optional solver is installed (CI job 1 runs without z3).
+ESTIMATE = {"problem_id": "cp-estimate-1", "question": "What is the weekly labour cost?", "payload": {
+    "estimation_model": {"target": {"name": "c", "unit": "USD/week"}, "expression": ["*", "h", "r"],
+                         "variables": [{"name": "h", "unit": "hour/week", "low": 30, "high": 50},
+                                       {"name": "r", "unit": "USD/hour", "low": 40, "high": 60}]},
+    "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}}
+try:
+    import z3  # noqa: F401
+    HAVE_Z3 = True
+except ModuleNotFoundError:
+    HAVE_Z3 = False
+needs_z3 = pytest.mark.skipif(not HAVE_Z3, reason="z3-solver not installed (see requirements-cortex.txt)")
 LEGAL = {"problem_id": "cp-legal-1", "question": "May we rely on this clause?", "payload": {
     "sources": [{"id": "s1", "text": "Clause 4 says notice is required."}],
     "declared": {"epistemic_class": "legal", "consequence_class": "internal_write", "reversibility": "reversible"}}}
@@ -55,17 +67,22 @@ def tick(runtime, problem, trigger="tick-1"):
                         context={REQUEST_KEY: {"problem": problem}})
 
 
-def test_recommendation_becomes_a_review_candidate_with_a_ledgered_receipt():
+@pytest.mark.parametrize("problem, epistemic_class, route", [
+    (ESTIMATE, "estimate", "cortex.estimation.fermi@0.1.0"),
+    pytest.param(FORMAL, "constraint_feasibility", "cortex.formal.z3@0.2.0", marks=needs_z3),
+])
+def test_recommendation_becomes_a_review_candidate_with_a_ledgered_receipt(problem, epistemic_class, route):
     ledger, proposer, runtime = harness()
-    cycle = tick(runtime, FORMAL)
+    cycle = tick(runtime, problem)
     assert cycle.status == CycleStatus.PROPOSED
     assert len(cycle.candidates) == 1
     c = cycle.candidates[0]
     assert c.proposed_by == "seed_cortex" and c.action_class == "draft.prepare"
     assert c.consequence_class == "internal_write" and c.execution_authority == "none"
     assert c.payload["authority_created"] is False and c.payload["disposition"]["kind"] == "recommend"
-    assert c.payload["epistemic_class"] == "constraint_feasibility"
-    assert c.payload["selected_routes"] == ["cortex.formal.z3@0.2.0"]
+    assert c.payload["epistemic_class"] == epistemic_class
+    assert c.payload["selected_routes"] == [route]
+    assert c.payload["coverage"] == "complete"
     receipts = ledger.by_type(RECEIPT_RECORD)
     assert len(receipts) == 1 and receipts[0].hash == c.payload["cortex_receipt_ref"]
     assert receipts[0].payload["execution_authority"] == "none"
@@ -175,7 +192,7 @@ def test_registering_under_another_key_is_the_callers_error_and_as_organ_prevent
     assert proposer.as_organ() == {"seed_cortex": proposer}
     runtime = StandingCognitionRuntime(ledger=ledger, proposers={"cortex": proposer},
                                        evaluators={"guardian": approving("guardian"), "treasury": approving("treasury")})
-    cycle = tick(runtime, FORMAL)
+    cycle = tick(runtime, ESTIMATE)
     assert cycle.status == CycleStatus.REFUSED
     assert any("does not match organ" in f.get("error", "") for f in cycle.failures)
 

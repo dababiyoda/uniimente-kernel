@@ -867,3 +867,51 @@ def first_mission(*, kernel_root: str, effort_budget: int = 8, run: str | None =
 
 
 TEMPLATES["first-mission"] = first_mission
+
+
+def compiled_question(*, problem_id: str, data: dict, geometry: dict | None = None, objective: str = "",
+                      allow_construction: bool = False, horizon_days: float = 2) -> dict:
+    """A problem for the Competency Compiler (Layer 5), which may need a capability GREG constructs.
+
+    The Mind recognizes the problem's shape. When no admitted method fits but a reduction does, its
+    CapabilityDeficit names that function; Capability Genesis constructs it over an engine it already
+    certifies and, only if you sign ``allow_construction``, attaches it read-only inside this mission's
+    light cone (the construction and its engine are named there). The Mind then answers with the
+    construction's problem-level certificate. Without that signature GREG asks you to attach.
+    Read-only: nobody is assigned, scheduled or paid.
+    """
+    from greg.genesis import CATALOG
+    from greg.recombine import chain, fits
+
+    if not isinstance(problem_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}", problem_id):
+        raise ValueError("problem_id must be 1-64 letters, digits or _.:-")
+    params = {"problem_id": problem_id, "compile": {"geometry": dict(geometry or {"geometry": "optimization"}),
+                                                    "data": data}}
+    if objective:
+        params["compile"]["geometry"].setdefault("objective", objective[:300])
+    target = f"cognition:{problem_id}"
+    capabilities = ["cognition.solve"]
+    if allow_construction:
+        for reduction in fits(data):
+            found = chain(reduction.function, CATALOG)
+            if found:
+                capabilities += [f"composed.{reduction.function}.*", f"acquired.{found[1]}.*"]
+    spec = {
+        "mission_id": f"m:compiled-{problem_id}"[:96],
+        "founder_expression": objective or f"answer {problem_id} with the smallest competent method",
+        "intended_effect": "an answer from the smallest competent method, with typed evidence GREG checks itself",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "answered", "description": "a competent method answered with its evidence",
+                            "sensor": {"capability": "cognition.solve", "target": target, "params": params},
+                            "predicate": {"op": "equals", "field": "state", "value": "ANSWERED"}}],
+        "strategies": [{"action_id": "compile", "capability": "cognition.solve", "target": target, "params": params,
+                        "advances": ["answered"], "rationale": "compile the problem's geometry to a competent method"}],
+        "light_cone": {"capabilities": list(dict.fromkeys(capabilities)), "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+    if allow_construction:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["compiled-question"] = compiled_question

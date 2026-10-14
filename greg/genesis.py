@@ -376,8 +376,26 @@ class Genesis:
                 return manifest
         return None
 
+    def construction_engine(self, function: str):
+        """The catalogued engine function a constructible function reduces to, else None."""
+        found = recombine.chain(function, CATALOG)
+        return found[1] if found else None
+
+    def construction_ready(self, function: str) -> bool:
+        """True once: the engine is attached and no construction over it was formed yet (none to wait on)."""
+        engine_function = self.construction_engine(function)
+        engine = self.find_attached(engine_function) if engine_function else None
+        if engine is None:
+            return False
+        return not any(m.provider.startswith("composed:")
+                       and m.provenance.get("target_capability_id") == engine.capability_id
+                       for m in self.registry.by_function(function))
+
     # -- restart: rebuild acquired adapters from retained provenance -------------
-    def restore(self):
+    def restore(self, *, record: bool = True):
+        """Re-register formed capabilities; ``record=False`` (independent appraisal over a read-only
+        ledger) applies the same pin and digest checks but writes nothing."""
+        self._recording = record
         states = {}
         for event in self.journal.replay("capability."):
             data = event.payload
@@ -400,7 +418,7 @@ class Genesis:
                 self.registry.register(manifest, builders.built_adapter(origin["contract"], path, origin["source_sha256"]),
                                        state=state if intact else "QUARANTINED")
                 if not intact and state != "QUARANTINED":
-                    self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED",
+                    self._restore_note({"capability_id": cid, "state": "QUARANTINED",
                                                              "why": "built source missing or changed since verification"},
                                         key=[cid, "quarantine", origin["source_sha256"]])
                 continue
@@ -417,9 +435,13 @@ class Genesis:
             self.registry.register(manifest, catalog_adapter(origin["function"], candidate, binary),
                                    state=state if intact else "QUARANTINED")
             if not intact and state != "QUARANTINED":
-                self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED",
+                self._restore_note({"capability_id": cid, "state": "QUARANTINED",
                                                          "why": "binary missing or changed since verification"},
                                     key=[cid, "quarantine", manifest.provenance.get("binary_sha256")])
+
+    def _restore_note(self, payload, key):
+        if getattr(self, "_recording", True):
+            self.journal.record("capability.state", payload, key=key)
 
     def _restore_package(self, cid, manifest, origin, state):
         """A qualified package is trusted again only if its pinned files and shared dependencies are unchanged."""
@@ -442,7 +464,7 @@ class Genesis:
         adapter = package_adapter(origin["function"], candidate) if candidate else (lambda params, ctx: None)
         self.registry.register(manifest, adapter, state="QUARANTINED" if why else state)
         if why and state != "QUARANTINED":
-            self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED", "why": why},
+            self._restore_note({"capability_id": cid, "state": "QUARANTINED", "why": why},
                                 key=[cid, "quarantine", manifest.provenance.get("package_digest"), why])
 
     def _restore_composed(self, cid, manifest, origin, state):
@@ -459,7 +481,7 @@ class Genesis:
         self.registry.register(manifest, recombine.composed_adapter(path, self.registry),
                                state="QUARANTINED" if why else state)
         if why and state != "QUARANTINED":
-            self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED", "why": why},
+            self._restore_note({"capability_id": cid, "state": "QUARANTINED", "why": why},
                                 key=[cid, "quarantine", origin["chain_digest"], why])
 
     # -- the loop -------------------------------------------------------------------

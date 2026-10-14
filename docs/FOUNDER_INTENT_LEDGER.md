@@ -26,6 +26,16 @@ Reconciliation: no third mission engine, router or genesis was created. Kernel P
 
 Evidence: [README](evidence/greg-recombine/2026-10-13/README.md). State: active. Authority delta: none. VEPMC: 0.
 
+Progress 2026-10-14 ([evidence](evidence/greg-mind-constructs/2026-10-14/README.md)). The Mind and Capability Genesis now close one loop on the canonical path:
+
+1. The Competency Compiler recognizes a problem whose inputs fit a reduction. Its deficit names that constructible function, not an unbuildable geometry label.
+2. Genesis constructs it under the mission's signed scope.
+3. The Mind answers with the construction's certificate.
+4. The independent appraiser re-derives the answer through a read-only restore and returns VERIFIED.
+5. A construction that faults while the Mind uses it is repaired by the same two-strike mechanism.
+
+Unsigned missions ask first for the engine, then for the construction, and never self-attach. Authority delta: none.
+
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
 
 `INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.

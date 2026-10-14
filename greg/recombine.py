@@ -614,6 +614,7 @@ class Reduction:
     baseline: str              # the simplest alternative, stated honestly
     card: dict                 # Mechanism Card (directive section 6 fields)
     direct: object = None      # answers that need no engine (proved from the problem alone)
+    epistemic_classes: tuple = ("optimization",)   # the Competency Compiler's geometry vocabulary
 
 
 CARD_FIELDS = ("source", "source_version_and_license", "observed_behavior", "underlying_function",
@@ -770,6 +771,17 @@ def chain(function: str, catalog: dict, reductions: dict | None = None):
     if not path or catalog.get(current, {}).get("kind") != "package":
         return None
     return path, current
+
+
+def fits(data: dict, reductions: dict | None = None) -> list[Reduction]:
+    """Reductions whose declared inputs a request carries, most specific first.
+
+    How the Mind recognizes a problem shape it can have constructed: the Competency Compiler names
+    such a function in its CapabilityDeficit instead of an unbuildable geometry label."""
+    reductions = REDUCTIONS if reductions is None else reductions
+    keys = set(data) if isinstance(data, dict) else set()
+    return sorted((r for r in reductions.values() if set(r.inputs) <= keys),
+                  key=lambda r: (-len(r.inputs), r.function))
 
 
 def library(query: str = "", reductions: dict | None = None) -> list[dict]:

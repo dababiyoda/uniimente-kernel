@@ -199,8 +199,31 @@ RECOMBINE_MUTANTS = [
      "if not chain or any([a, b] not in p[\"precedences\"] for a, b in zip(chain, chain[1:])):", "if False:"),
 ]
 
+# 2026-10-14: the Mind names constructible deficits, uses attached constructions, and repairs them.
+MIND_CONSTRUCTION_TESTS = ["tests/integration/test_greg_mind_constructs_capability.py"]
+MIND_CONSTRUCTION_MUTANTS = [
+    ("the Mind uses a construction that is not attached", "greg/cognition/compiler.py",
+     "and registry.usable(m.capability_id)[0]]", "]"),
+    ("the deficit names an unbuildable geometry label", "greg/cognition/compiler.py",
+     "        if buildable:\n", "        if False:\n"),
+    ("a construction's fault is charged to cognition, not repaired", "greg/missions.py",
+     'if is_capability_fault(formed, detail):\n                        self.capability_faults',
+     'if False:\n                        self.capability_faults'),
+    ("attaching the engine never forms the construction", "greg/missions.py",
+     'if cap is None and self.genesis.construction_ready(b["function"]):', "if False:"),
+    ("the construction awaiting attach is hidden behind the old ask", "greg/missions.py",
+     "awaiting=bool(waiting))", "awaiting=False)"),
+    ("a formed-capability fault waits on the founder while blocked", "greg/missions.py",
+     'if failing and self.capability_faults and m.blocker["type"] != "human_work":', "if False:"),
+    ("the appraiser cannot see formed capabilities", "greg/appraisal.py",
+     'capability_registry=_formed_registry(journal, request["workspace"])', "capability_registry=None"),
+    ("restore writes to the appraiser's read-only ledger", "greg/genesis.py",
+     'if getattr(self, "_recording", True):', "if True:"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
-          ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS)]
+          ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
+          ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS)]
 
 
 def main() -> int:

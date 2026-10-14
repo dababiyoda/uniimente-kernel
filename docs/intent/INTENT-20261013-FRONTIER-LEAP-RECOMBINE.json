@@ -66,16 +66,23 @@
   "implementation_refs": [
     "greg/recombine.py",
     "greg/genesis.py (_recombine_route, _composed_manifest, _restore_composed, repair)",
-    "greg/templates.py (constructed_question)"
+    "greg/templates.py (constructed_question)",
+    "greg/cognition/compiler.py (constructed_candidates, _run_constructed, constructible deficit)",
+    "greg/missions.py (capability_fault attribution, construction_ready unblock, awaiting asks, repair while blocked)",
+    "greg/appraisal.py (_formed_registry)",
+    "greg/genesis.py (construction_ready, restore(record=False))",
+    "greg/templates.py (compiled_question)"
   ],
   "tests": [
-    "tests/unit/test_greg_recombine.py"
+    "tests/unit/test_greg_recombine.py",
+    "tests/integration/test_greg_mind_constructs_capability.py"
   ],
   "evidence_refs": [
-    "docs/evidence/greg-recombine/2026-10-13/README.md"
+    "docs/evidence/greg-recombine/2026-10-13/README.md",
+    "docs/evidence/greg-mind-constructs/2026-10-14/README.md"
   ],
   "failure_condition": "a constructed capability is attached without founder signature, answers without its problem-level certificate, keeps serving over a detached or quarantined engine, or a new reduction is admitted without a frozen oracle that passes through the real engine",
-  "next_gate": "connect the Competency Compiler's CAPABILITY_DEFICIT geometry to the reduction library so a deficit can name a constructible function, then measure VPL on a family served only by construction",
+  "next_gate": "reductions demanded by real founder missions; Goal Gravity waking a compiled question; VPL on a family only construction serves",
   "review_trigger": "every new reduction, any certificate fault in service, founder correction",
   "named_skill": "mechanism-recombination-foundry (reasoning), install-recursive-founder-intent-collaboration-protocol (records); one agent performed every review role, which is not independent peer review"
 }

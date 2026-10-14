@@ -226,7 +226,16 @@ def test_a_receipt_that_claims_authority_or_is_forged_is_refused_before_ledgerin
         r["receipt_id"] = digest(body)   # a well-formed receipt that simply spent money
         return r
 
-    for mutate, match in ((claims_authority, "claims authority"), (tampered, "content address"), (spent, "spent")):
+    def calls(r):
+        from cortex.contracts import digest
+        r["expenditure"] = dict(r["expenditure"], model_calls=50)
+        body = dict(r)
+        body.pop("receipt_id")
+        r["receipt_id"] = digest(body)   # a well-formed receipt that used model calls beyond the ceiling
+        return r
+
+    for mutate, match in ((claims_authority, "claims authority"), (tampered, "content address"), (spent, "spent"),
+                          (calls, "model calls")):
         ledger = EvidenceLedger("sha256:" + "a" * 64)
         proposer = CortexProposer(Forging(mutate), ledger)
         with pytest.raises(ContractError, match=match):
@@ -234,3 +243,38 @@ def test_a_receipt_that_claims_authority_or_is_forged_is_refused_before_ledgerin
         assert ledger.by_type(RECEIPT_RECORD) == []
     with pytest.raises(ContractError):
         CortexProposer(Cortex(), EvidenceLedger("sha256:" + "a" * 64), max_receipt_usd=-1)
+
+
+# ------------------------------------------------------------------ pre-run review (0.1.6): the reference instant
+def _expired_mandate_provider(request):
+    return [{"record_id": "m-expired", "kind": "founder_mandate", "origin": "founder_signed",
+             "body": {"scope": {"action_classes": ["draft.*"], "targets": ["internal://*"],
+                                "max_consequence_class": "internal_write", "expires_at": "2020-01-01T00:00:00Z"}}},
+            {"record_id": "p-O1", "kind": "policy_decision", "origin": "kernel_policy_engine",
+             "body": {"subject": "O1", "verdict": "allow"}}]
+
+
+def _option_problem(as_of=None):
+    payload = {"options": [{"option_id": "O1", "action_class": "draft.prepare", "target": "internal://drafts",
+                            "consequence_class": "internal_write", "reversibility": "reversible", "cost_usd": 0.0,
+                            "harm": {}, "evidence_statuses": ["internally_observed"], "advantage": {"v": 1}}],
+               "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}
+    if as_of:
+        payload["as_of"] = as_of
+    return {"problem_id": f"asof-{as_of}", "question": "Which option?", "payload": payload}
+
+
+def test_tick_context_cannot_set_the_instant_that_decides_whether_a_mandate_expired():
+    ledger = EvidenceLedger("sha256:" + "a" * 64)
+    proposer = CortexProposer(Cortex(clock=lambda: "2026-10-13T00:00:00Z"), ledger,
+                              records_provider=_expired_mandate_provider)
+    with pytest.raises(ContractError, match="as_of"):
+        proposer((signal(),), {REQUEST_KEY: {"problem": _option_problem("2019-06-01T00:00:00Z")}})
+    assert ledger.by_type(RECEIPT_RECORD) == []
+    runtime = StandingCognitionRuntime(ledger=ledger, proposers=proposer.as_organ(),
+                                       evaluators={"guardian": approving("guardian"), "treasury": approving("treasury")})
+    cycle = tick(runtime, _option_problem())
+    receipt = ledger.by_type(RECEIPT_RECORD)[0].payload["receipt"]
+    assert receipt["gates"]["O1"]["gates"]["founder_scope"]["status"] == "FAIL"   # expired at the proposer's clock
+    assert receipt["disposition"]["kind"] != "recommend"
+    assert all(c.action_class != "draft.prepare" for c in cycle.candidates)

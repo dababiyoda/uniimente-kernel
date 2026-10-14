@@ -28,7 +28,7 @@
     "tests/unit/test_seed_genome_founder_expression.py (the 2026-10-13 message rebuilds byte for byte)",
     "tests/unit/test_cognition_lineages.py (every lineage registered with a disposition that creates no authority)",
     "tests/evidence/cortex-seed-v0.1.6/ (frozen held-out run with the declared baselines served from the recorded frontier-model transcript; verdict as computed by the unchanged exit rule)",
-    "scripts/ci/check_cortex_mutants.py 26/26 caught on 0.1.6; the full Kernel suite and CI guard scripts green on the branch"
+    "scripts/ci/check_cortex_mutants.py 43/43 caught on 0.1.6 by behavioural tests (freeze-hash checks deselected); the full Kernel suite and CI guard scripts green on the branch"
   ],
   "failure_evidence": [
     "No real outcome has settled competence; the CompetenceLedger has only synthetic settlements (learning_checks)",

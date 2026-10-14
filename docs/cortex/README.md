@@ -132,6 +132,19 @@ observation, so the record says `verified: false`: a capability-genesis loop ver
 across recorded cycles and diagnoses it before proposing anything (PR #129's `DeficitDetector` is that mechanism;
 a trial merge of #129 with this branch passes the full suite).
 
+**Pre-run independent review (2026-10-14).** Before the reported run, three reviewers attacked the 0.1.6 changes and
+an independent verifier re-ran each finding; 14 of 17 were confirmed and fixed with fail-before/pass-after tests:
+a replayed arm with any missing reply is `NOT_RUN` (an unasked prompt is never a baseline failure); the freeze
+hashes every in-repo module the scored path imports; transcripts refuse repeated keys and runs refuse repeated arms;
+provenance hashes the bytes that served the replies and names the replay code; a declared class without its input is
+`INSUFFICIENT_EVIDENCE`, not a capability gap; a payload part with no eligible route is unanswered and never
+recommended around; disabled families come from the registry; a handoff carries no deficit; options are parsed before
+any organ spends; settlement checks the receipt's content address, settles only a route that ran, and settles a method
+once per receipt; the proposer sets the mandate reference instant from its own clock and checks the model-call ceiling
+on the receipt. The mutation check now deselects the freeze-hash tests, which had counted any edit to frozen code as
+caught; all 43 mutants are caught by behavioural tests. The 42 held-out routed items are unchanged on every scoring
+field.
+
 **Replayed baseline arms.** When no model is reachable from the evaluation process, the declared arms can be run
 from a transcript of replies produced elsewhere, keyed by `sha256(system + NUL + user)`; a missing reply is an
 error on that item, never a guess; the frozen inputs are untouched; the model's provenance replaces the
@@ -155,7 +168,7 @@ pip install -r requirements-dev.txt -r requirements-cortex.txt
 python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py \
     tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py
 
-# mutation check: 26 safeguard-removing mutants on a scratch copy; all must be caught
+# mutation check: 43 safeguard-removing mutants on a scratch copy; behavioural tests must catch each (freeze-hash checks deselected)
 python scripts/ci/check_cortex_mutants.py
 
 # development partitions (no freeze needed)

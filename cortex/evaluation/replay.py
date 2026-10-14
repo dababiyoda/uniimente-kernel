@@ -39,6 +39,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from . import run as R
+from . import scoring as S
 
 _HEX64 = re.compile(r"[0-9a-f]{64}")
 PROBE_SYSTEM = "Return {\"ok\": true} as JSON."
@@ -70,18 +71,28 @@ class TranscriptClient:
             if not (isinstance(key, str) and _HEX64.fullmatch(key) and isinstance(reply, str)):
                 raise ValueError("replay transcript must map 64-hex prompt keys to reply strings")
         self._replies = dict(replies)
+        self.transcript_sha256: str | None = None   # set by from_file from the bytes it parsed
         self.requests: list[str] = []   # every lookup
         self.calls: list[str] = []      # lookups that were served
         self.misses: list[str] = []
 
     @classmethod
     def from_file(cls, path: str | Path, *, model_label: str = "replayed-transcript") -> "TranscriptClient":
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        raw = Path(path).read_bytes()
+
+        def no_duplicates(pairs):
+            keys = [k for k, _ in pairs]
+            if len(keys) != len(set(keys)):
+                raise ValueError("replay transcript repeats a key; a prompt must have exactly one recorded reply")
+            return dict(pairs)
+        data = json.loads(raw.decode("utf-8"), object_pairs_hook=no_duplicates)
         if not isinstance(data, Mapping) or data.get("schema") != REPLAY_SCHEMA:
             raise ValueError(f"replay transcript schema must be {REPLAY_SCHEMA}")
         if "replies" not in data:
             raise ValueError("replay transcript has no 'replies'")
-        return cls(data["replies"], model_label=model_label)
+        client = cls(data["replies"], model_label=model_label)
+        client.transcript_sha256 = "sha256:" + hashlib.sha256(raw).hexdigest()
+        return client
 
     def complete(self, system_prompt: str, user_prompt: str) -> str:
         if (system_prompt, user_prompt) == (PROBE_SYSTEM, PROBE_USER):
@@ -139,6 +150,8 @@ def _cortex_with_semantic_client(client) -> Any:
 
 def run_replay(partition: str, arm_names: list[str], replies_path: str | Path,
                provenance: Mapping[str, Any], *, semantic_replies_path: str | Path | None = None) -> dict:
+    if len(arm_names) != len(set(arm_names)):
+        raise ValueError(f"arm names repeat: {list(arm_names)}; each arm runs once")
     prov = validate_provenance(provenance, semantic=semantic_replies_path is not None)
     label = str(prov["model"]).split(" (")[0].strip() or "replayed-transcript"
     client = TranscriptClient.from_file(replies_path, model_label=label)
@@ -163,7 +176,7 @@ def run_replay(partition: str, arm_names: list[str], replies_path: str | Path,
                          "prompts_served": len(semantic_client.calls),
                          "prompts_missing": len(semantic_client.misses),
                          "model_label_on_receipts": semantic_client.config.model},
-            "transcript_sha256": "sha256:" + hashlib.sha256(Path(semantic_replies_path).read_bytes()).hexdigest(),
+            "transcript_sha256": semantic_client.transcript_sha256,
             "declared_by_operator": dict(prov["semantic_transcript"]),
         }
         routed_disclosure = (f"Python + z3 solver in-process; semantic route served by a recorded transcript "
@@ -184,7 +197,8 @@ def run_replay(partition: str, arm_names: list[str], replies_path: str | Path,
     results["arm_provenance"] = {
         "schema": "cortex-arm-provenance/0.2",
         "replayed_arms": replayed,
-        "transcript_sha256": "sha256:" + hashlib.sha256(Path(replies_path).read_bytes()).hexdigest(),
+        "transcript_sha256": client.transcript_sha256,
+        "replay_code_sha256": "sha256:" + hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "prompts_requested": len(client.requests), "prompts_served": len(client.calls),
         "prompts_missing": len(client.misses),
         "semantic_route": semantic_route,
@@ -197,6 +211,20 @@ def run_replay(partition: str, arm_names: list[str], replies_path: str | Path,
     if "routed_seed" in arm_names:
         disclosure["routed_seed"] = routed_disclosure
     results["resource_disclosure"] = disclosure
+    # An unasked prompt is not a baseline failure: a replayed arm with any missing reply did not run, and the
+    # frozen exit rule then reads it as not run. A semantic miss leaves the routed seed's result incomplete.
+    if client.misses:
+        for arm in replayed:
+            results["arms"][arm] = {**results["arms"][arm], "status": "NOT_RUN",
+                                    "reason": f"replay transcript is missing {len(client.misses)} of "
+                                              f"{len(client.requests)} requested replies"}
+        results["exit"] = S.exit_verdict(results["arms"])
+    if semantic_replies_path is not None and semantic_client.misses:
+        exit_ = dict(results["exit"])
+        exit_.update(verdict="INCONCLUSIVE", promote=False,
+                     reasons=[f"semantic transcript is missing {len(semantic_client.misses)} replies; the routed "
+                              f"seed's sourced items are incomplete"] + list(exit_.get("reasons", [])))
+        results["exit"] = exit_
     return results
 
 

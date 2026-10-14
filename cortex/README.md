@@ -19,7 +19,7 @@ receipt that creates no authority. Full documentation: `docs/cortex/README.md`,
 ## Recorded proof
 
 `tests/unit/test_cortex_*.py` (routes, pipeline, gates/genome, traceability, register, replay, proposer,
-defect fixes); `scripts/ci/check_cortex_mutants.py` (26 safeguard-removing mutants, all caught);
+defect fixes); `scripts/ci/check_cortex_mutants.py` (43 safeguard-removing mutants, all caught by behavioural tests with the freeze-hash checks deselected);
 `tests/evidence/cortex-seed-v*/` frozen held-out runs.
 
 ## Buildability standard (14 conditions)

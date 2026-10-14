@@ -18,7 +18,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 TESTS = ["tests/unit/test_cortex_gates_genome.py", "tests/unit/test_cortex_routes.py",
-         "tests/unit/test_cortex_pipeline.py"]
+         "tests/unit/test_cortex_pipeline.py", "tests/unit/test_cortex_defect_fixes.py",
+         "tests/unit/test_cortex_finality_deficit.py", "tests/unit/test_cortex_proposer.py",
+         "tests/unit/test_cortex_replay.py"]
+# A mutant must be caught by a behavioural test. The freeze-hash checks fail for any edit to a frozen file,
+# so they are deselected here; otherwise every mutant of frozen code would count as caught (0.1.6).
+DESELECT = ["tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity::test_heldout_matches_its_freeze",
+            "tests/unit/test_cortex_replay.py::test_replay_does_not_touch_the_freeze"]
 MUTANTS = [
     ("receipt claims authority", "cortex/routing.py",
      '"authority_created": False,\n            "execution_authority": "none",\n        }\n        body["receipt_id"]',
@@ -79,6 +85,43 @@ MUTANTS = [
     ("receipt drops protection", "cortex/routing.py",
      '"protection": None if protection is None or not protection.relevant else {',
      '"protection": None if True else {'),
+    # ---- 0.1.6 safeguards
+    ("settlement accepts the wrong method version", "cortex/memory.py",
+     "if key not in selected:", "if False:"),
+    ("settlement ignores the content address", "cortex/memory.py",
+     'if unsigned.pop("receipt_id", None) != digest(unsigned):', 'if False:'),
+    ("settlement counts a route that never ran", "cortex/memory.py",
+     "if outcome_status in SETTLING and key not in ran:", "if False:"),
+    ("one observation settles twice", "cortex/memory.py",
+     "if outcome_status in SETTLING and any(", "if False and any("),
+    ("composed part settles under the receipt's class", "cortex/memory.py",
+     "geometry = part_geometries.get(key) or geometry", "geometry = geometry"),
+    ("expiring mandate passes without an instant", "cortex/gates.py",
+     "        if not as_of:\n", "        if False:\n"),
+    ("harm cannot raise the consequence class", "cortex/routing.py",
+     'implied = "financial" if (harm.levels["financial"] in ("high", "critical") or harm.hard_violations()) else None',
+     "implied = None"),
+    ("unanswered part recommended around", "cortex/routing.py",
+     'if unanswered and disposition == "recommend":', "if False:"),
+    ("missing input called a capability gap", "cortex/routing.py",
+     "            if eligible:\n                # A capability exists", "            if False:\n                # A capability exists"),
+    ("deficit emitted on a handoff", "cortex/routing.py",
+     'if disposition == "abstain" else None))', "if True else None))"),
+    ("options parsed after organs spend", "cortex/routing.py",
+     '        if problem.payload.get("options"):\n            try:\n                recs = ',
+     '        if False:\n            try:\n                recs = '),
+    ("context authority records trusted", "egregore/cortex_proposer.py",
+     'if "authority_records" in request:', "if False:"),
+    ("context instant trusted", "egregore/cortex_proposer.py",
+     'if "as_of" in payload:', "if False:"),
+    ("receipt guard skips the content address", "egregore/cortex_proposer.py",
+     "if identity != cortex_digest(body):", "if False:"),
+    ("receipt guard skips the model-call ceiling", "egregore/cortex_proposer.py",
+     "if not isinstance(calls, int) or isinstance(calls, bool) or calls > self.max_model_calls:", "if False:"),
+    ("missing replay reply counts as a baseline failure", "cortex/evaluation/replay.py",
+     "    if client.misses:\n        for arm in replayed:", "    if False:\n        for arm in replayed:"),
+    ("replay accepts repeated arms", "cortex/evaluation/replay.py",
+     "if len(arm_names) != len(set(arm_names)):", "if False:"),
 ]
 
 
@@ -96,7 +139,8 @@ def main() -> int:
                 continue
             path.write_text(source.replace(old, new), encoding="utf-8")
             try:
-                run = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *TESTS],
+                run = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *TESTS,
+                                      *[f"--deselect={d}" for d in DESELECT]],
                                      cwd=work, capture_output=True, text=True)
             finally:
                 path.write_text(source, encoding="utf-8")

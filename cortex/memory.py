@@ -138,12 +138,25 @@ class CompetenceLedger:
                 raise CortexError("attribution requires an uncertainty of low, medium or high")
         if outcome_status in SETTLING and not any(a.get("method") == method for a in attribution):
             raise CortexError("a settling outcome must attribute a role to the method being updated")
+        unsigned = dict(receipt)
+        if unsigned.pop("receipt_id", None) != digest(unsigned):
+            raise CortexError("receipt content address mismatch; refusing to settle")
         geometry = receipt["geometry"]["epistemic_class"] or "unresolved"
         selected = receipt["route"]["selected"]
         key = f"{method}@{method_version}"
         if key not in selected:
             raise CortexError(f"a receipt can only settle a method and version it actually selected; "
                               f"{key!r} is not among {list(selected)}")
+        ran = {(r.get("organ_id") if "@" in str(r.get("organ_id")) else f"{r.get('organ_id')}@{r.get('organ_version')}")
+               for r in (receipt.get("output") or {}).get("per_route") or []}
+        if outcome_status in SETTLING and key not in ran:
+            raise CortexError(f"a receipt can only settle a method and version that actually ran; {key!r} "
+                              f"produced no result ({receipt.get('coverage')})")
+        if outcome_status in SETTLING and any(
+                r.receipt_id == receipt["receipt_id"] and r.method == method and r.method_version == method_version
+                and r.outcome_status in SETTLING for r in self._records):
+            raise CortexError("this receipt already settled this method and version; one decision is one "
+                              "observation, and a correction must be an explicit supersession")
         # 0.1.6: a composed route settles under the geometry of the payload part it served,
         # not under the receipt's first structural class.
         part_geometries = receipt["route"].get("part_geometries") or {}

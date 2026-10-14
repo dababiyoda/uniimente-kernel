@@ -297,11 +297,16 @@ class TestRoutingMemory:
         self.geometry = self.receipt["geometry"]["epistemic_class"]
 
     def verified(self, n=1, status="verified_success"):
+        # 0.1.6: one receipt is one decision and settles a method once, so each outcome gets its own receipt.
         for _ in range(n):
-            self.ledger.settle(outcome_status=status,
+            self._decisions = getattr(self, "_decisions", 0) + 1
+            problem = formal_problem()
+            problem["problem_id"] = f"{problem['problem_id']}-{self._decisions}"
+            self.ledger.settle(outcome_status=status, receipt=cortex().run(problem),
+                               method="cortex.formal.z3", method_version="0.2.0",
                                provenance={"kind": "external_observation", "validation_status": "externally_verified"},
                                attribution=[{"method": "cortex.formal.z3", "role": "final_answer",
-                                             "uncertainty": "low"}], **self.kw)
+                                             "uncertainty": "low"}])
 
     def test_absent_and_unresolved_change_nothing(self):
         for status in ("absent_feedback", "unresolved"):
@@ -492,6 +497,18 @@ class TestEvaluationIntegrity:
         monkeypatch.setattr(R, "MANIFEST", fake)
         with pytest.raises(SystemExit, match="frozen inputs changed"):
             R.run("heldout", ["always_abstain"])
+
+    def test_every_in_repo_module_the_scored_path_imports_is_frozen(self):
+        # Pre-run review (0.1.6): memory/causal.py and capabilities/genome.py shaped scores but were not hashed.
+        import subprocess
+        import sys
+        code = ("import sys, pathlib, cortex.evaluation.run as R; root = pathlib.Path('.').resolve(); "
+                "print('\\n'.join(sorted(str(pathlib.Path(m.__file__).resolve().relative_to(root)) "
+                "for m in list(sys.modules.values()) if getattr(m, '__file__', None) "
+                "and pathlib.Path(m.__file__).resolve().is_relative_to(root))))")
+        out = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True, check=True)
+        imported = set(out.stdout.split())
+        assert imported and imported <= set(R.FROZEN_CODE), sorted(imported - set(R.FROZEN_CODE))
 
     def test_every_organ_and_core_module_is_frozen(self):
         # A route whose code is not hashed could change after the freeze without the runner noticing.

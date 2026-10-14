@@ -53,6 +53,43 @@ def test_missing_reply_is_an_error_on_that_item_not_a_guess(tmp_path):
     assert len(errors) == 1
     prov = results["arm_provenance"]
     assert prov["prompts_missing"] == 1 and prov["prompts_served"] == prov["prompts_requested"] - 1
+    # pre-run review (0.1.6): an unasked prompt is not a baseline failure; the arm did not run
+    assert {results["arms"][a]["status"] for a in ("always_llm", "llm_committee")} == {"NOT_RUN"}
+
+
+def test_a_transcript_with_no_baseline_replies_can_never_verify_a_gain(tmp_path):
+    # Before the fix: both baselines "RUN" at quality 0 and the exit read GAIN_VERIFIED, promote true.
+    other = {"disposition": "abstain", "answer": {}, "confidence": 0.5}
+    path = tmp_path / "unrelated.json"
+    path.write_text(json.dumps({"schema": RP.REPLAY_SCHEMA,
+                                "replies": {"0" * 64: json.dumps(other)}}), encoding="utf-8")
+    results = RP.run_replay("smoke", ["routed_seed", "always_llm", "llm_committee", "always_abstain"], path, PROV)
+    assert results["arms"]["always_llm"]["status"] == results["arms"]["llm_committee"]["status"] == "NOT_RUN"
+    assert results["exit"]["verdict"] == "INCONCLUSIVE" and results["exit"]["promote"] is False
+
+
+def test_duplicate_transcript_keys_and_repeated_arms_are_refused(tmp_path):
+    key = RP.prompt_key("s", "u")
+    dup = tmp_path / "dup.json"
+    dup.write_text('{"schema": "%s", "replies": {"%s": "a", "%s": "b"}}' % (RP.REPLAY_SCHEMA, key, key),
+                   encoding="utf-8")
+    with pytest.raises(ValueError, match="repeats a key"):
+        RP.TranscriptClient.from_file(dup)
+    path = _transcript(tmp_path, "smoke", json.dumps({"disposition": "abstain", "answer": {}, "confidence": 0.5}))
+    with pytest.raises(ValueError, match="arm names repeat"):
+        RP.run_replay("smoke", ["always_llm", "always_llm"], path, PROV)
+
+
+def test_provenance_hashes_the_bytes_that_served_the_replies(tmp_path):
+    import hashlib
+    path = _transcript(tmp_path, "smoke", json.dumps({"disposition": "abstain", "answer": {}, "confidence": 0.5}))
+    served = "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+    client = RP.TranscriptClient.from_file(path)
+    assert client.transcript_sha256 == served
+    results = RP.run_replay("smoke", ["always_llm"], path, PROV)
+    assert results["arm_provenance"]["transcript_sha256"] == served
+    code = "sha256:" + hashlib.sha256(Path(RP.__file__).read_bytes()).hexdigest()
+    assert results["arm_provenance"]["replay_code_sha256"] == code
 
 
 def test_transcript_and_provenance_are_validated(tmp_path):

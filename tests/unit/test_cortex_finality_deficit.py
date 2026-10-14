@@ -94,15 +94,77 @@ def test_unknown_geometry_abstains_with_a_typed_deficit():
     assert r["route"]["finality"]["decides"] == "none"
 
 
-@pytest.mark.parametrize("cls", ["prediction", "strategic"])
-def test_a_known_geometry_with_no_enabled_route_names_the_gap_and_the_disabled_families(cls):
+def _registry_with_disabled(*keys):
+    """The seed registry with the named organs disabled through the public registration API."""
+    from dataclasses import replace as _replace
+    from cortex.genome import IntelligenceGenome, IntelligenceRegistry, seed_registry
+    seed, reg = seed_registry(), IntelligenceRegistry()
+    for k in seed.keys():
+        g = seed.get(k)
+        if k in keys:
+            g = IntelligenceGenome(g.capability, _replace(g.profile, enabled=False, lifecycle="SPECIFIED"))
+        reg.register(g)
+    return reg
+
+
+def run_with(registry, payload, pid="p"):
+    receipt = Cortex(registry=registry, clock=lambda: "2026-10-13T00:00:00Z").run(
+        {"problem_id": pid, "question": "q", "payload": payload})
+    validate(receipt, "cortex-receipt")
+    return receipt
+
+
+@pytest.mark.parametrize("cls", ["prediction", "strategic", "estimate", "constraint_feasibility"])
+def test_a_known_class_without_its_input_is_missing_input_not_a_capability_gap(cls):
+    # Review finding (pre-run, 0.1.6): an eligible route exists, the payload just lacks its input.
     r = run({"declared": {**DECL, "epistemic_class": cls}}, pid=cls)
+    eligible = [e["key"] for e in r["eligibility"] if e["eligible"]]
+    assert eligible, "the seed registry has an eligible route for this class"
+    assert r["output"]["state"] == "INSUFFICIENT_EVIDENCE" and r["disposition"]["kind"] == "abstain"
+    assert "none of their inputs" in r["disposition"]["reason"]
+    assert r["capability_deficit"] is None
+
+
+def test_a_class_whose_only_route_is_disabled_names_the_gap_and_the_disabled_families():
+    reg = _registry_with_disabled("cortex.evidence_causal@0.1.0")
+    r = run_with(reg, {"declared": {**DECL, "epistemic_class": "prediction"}})
     d = r["capability_deficit"]
     assert r["output"]["state"] == d["state"] == "NO_ELIGIBLE_METHOD"
-    assert d["geometry"] == cls and d["jurisdiction"] == _jurisdiction(cls)
-    assert d["why"] == r["disposition"]["reason"] == f"no enabled route supports {cls}"
-    assert isinstance(d["registered_but_disabled"], list)
+    assert d["geometry"] == "prediction" and d["jurisdiction"] == _jurisdiction("prediction")
+    assert d["why"] == r["disposition"]["reason"] == "no enabled route supports prediction"
+    assert "cortex.evidence_causal@0.1.0" in d["registered_but_disabled"]
+    assert "cortex.probabilistic.bayes@0.1.0" in d["registered_but_disabled"]   # reserved family, from the registry
     assert d["resolution_order"][0] == "existing capability" and d["resolution_order"][-1] == "new architecture"
+
+
+@needs_z3
+def test_a_part_with_no_eligible_route_is_unanswered_never_recommended_around():
+    reg = _registry_with_disabled("cortex.semantic@0.1.0")
+    r = run_with(reg, {"formal_model": FORMAL_MODEL, "sources": [{"id": "S1", "text": "The shift is ten hours."}],
+                       "declared": DECL})
+    assert r["route"]["selected"] == ["cortex.formal.z3@0.2.0"]
+    assert r["disposition"]["kind"] == "abstain" and r["output"]["state"] == "NO_ELIGIBLE_METHOD"
+    assert "cortex.semantic@0.1.0" in r["coverage"] and r["coverage"].startswith("incomplete")
+    assert r["route"]["finality"]["by_route"] == {"cortex.formal.z3@0.2.0": "formal"}   # only what ran decides
+    d = r["capability_deficit"]
+    assert d["geometry"] == "semantic" and d["unanswered_parts"] == {"cortex.semantic@0.1.0": "semantic"}
+    assert r["output"]["per_route"][0]["state"] == "OK"   # the answered part is still reported
+
+
+def test_a_protection_handoff_carries_no_deficit():
+    protect = {"relevant": True, "required_actions": ["immediate_protection", "evidence_preservation", "escalation"],
+               "evidence_access": "need_to_know", "disclosure_controls": ["no disclosure without consent"]}
+    for declared in (DECL, {**DECL, "epistemic_class": "prediction"}):
+        r = run({"victim_protection": protect, "declared": declared})
+        assert r["disposition"]["kind"] == "handoff"
+        assert r["capability_deficit"] is None, "a handoff is not a capability gap"
+
+
+@needs_z3
+def test_an_option_rejected_after_routing_is_rejected_before_any_organ_runs():
+    r = run({"formal_model": FORMAL_MODEL, "options": [{"label": "no option_id"}], "declared": DECL})
+    assert r["output"]["state"] == "MALFORMED_INPUT"
+    assert r["expenditure"]["solver_calls"] == 0 and r["route"]["selected"] == []
 
 
 def test_a_deficit_requests_formation_and_never_authorizes_it():
@@ -113,7 +175,7 @@ def test_a_deficit_requests_formation_and_never_authorizes_it():
 
 
 def test_one_receipt_never_verifies_a_deficit():
-    d = run({"declared": {**DECL, "epistemic_class": "prediction"}})["capability_deficit"]
+    d = run({})["capability_deficit"]
     assert d["verified"] is False
     assert "recurrence across recorded cycles" in d["verification"]
     r = run({})

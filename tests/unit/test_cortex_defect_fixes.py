@@ -127,7 +127,10 @@ def test_d2_read_side_a_settled_composed_part_can_reorder():
         "formal_model": FORMAL_MODEL, "estimation_model": EST_MODEL, "declared": DECL}})
     ledger = CompetenceLedger()
     ok = {"kind": "external_observation", "validation_status": "externally_verified"}
-    for _ in range(int(MIN_OUTCOME_EVIDENCE) + 1):
+    for n in range(int(MIN_OUTCOME_EVIDENCE) + 1):
+        # one decision per outcome: a receipt settles each method once (0.1.6)
+        receipt = cortex().run({"problem_id": f"d2r-{n}", "question": "q", "payload": {
+            "formal_model": FORMAL_MODEL, "estimation_model": EST_MODEL, "declared": DECL}})
         ledger.settle(receipt=receipt, method="cortex.estimation.fermi", method_version="0.1.0",
                       outcome_status="verified_success", provenance=ok,
                       attribution=[{"method": "cortex.estimation.fermi", "role": "final_answer", "uncertainty": "low"}])
@@ -157,3 +160,56 @@ def test_d3_coverage_reports_a_selected_route_that_was_refused_before_execution(
 
 def test_version_records_the_sixth_disclosed_change():
     assert CORTEX_VERSION == "0.1.6"
+
+
+# ------------------------------------------------------------------ pre-run review (0.1.6), settlement integrity
+OK_PROV = {"kind": "external_observation", "validation_status": "externally_verified"}
+FORMAL_ATTR = [{"method": "cortex.formal.z3", "role": "final_answer", "uncertainty": "low"}]
+
+
+def _formal(pid="s", **payload):
+    return cortex().run({"problem_id": pid, "question": "q",
+                         "payload": {"formal_model": FORMAL_MODEL, "declared": DECL, **payload}})
+
+
+@needs_z3
+def test_settlement_refuses_a_route_that_was_selected_but_never_ran():
+    refused = _formal("never-ran", resources={"max_solver_calls": 0})
+    assert refused["route"]["selected"] == [FORMAL] and refused["output"]["per_route"] == []
+    ledger = CompetenceLedger()
+    with pytest.raises(ValueError, match="actually ran"):
+        ledger.settle(receipt=refused, method="cortex.formal.z3", method_version="0.2.0",
+                      outcome_status="verified_success", provenance=OK_PROV, attribution=FORMAL_ATTR)
+    assert ledger.records() == []
+    # a non-settling record (weight 0) is still kept
+    ledger.settle(receipt=refused, method="cortex.formal.z3", method_version="0.2.0",
+                  outcome_status="absent_feedback", provenance={"kind": "internal_observation"}, attribution=[])
+    assert len(ledger.records()) == 1
+
+
+@needs_z3
+def test_settlement_refuses_a_receipt_whose_content_address_does_not_match():
+    receipt = _formal("tamper")
+    receipt["route"] = {**receipt["route"], "selected": [SEMANTIC], "part_geometries": {SEMANTIC: "causal"}}
+    ledger = CompetenceLedger()
+    with pytest.raises(ValueError, match="content address"):
+        ledger.settle(receipt=receipt, method="cortex.semantic", method_version="0.1.0",
+                      outcome_status="verified_success", provenance=OK_PROV,
+                      attribution=[{"method": "cortex.semantic", "role": "final_answer", "uncertainty": "low"}])
+    assert ledger.records() == []
+
+
+@needs_z3
+def test_one_receipt_settles_a_method_once():
+    from cortex.memory import MIN_OUTCOME_EVIDENCE
+    receipt = _formal("once")
+    ledger = CompetenceLedger()
+    ledger.settle(receipt=receipt, method="cortex.formal.z3", method_version="0.2.0",
+                  outcome_status="verified_success", provenance=OK_PROV, attribution=FORMAL_ATTR)
+    for status in ("verified_success", "observed_failure"):
+        with pytest.raises(ValueError, match="already settled"):
+            ledger.settle(receipt=receipt, method="cortex.formal.z3", method_version="0.2.0",
+                          outcome_status=status, provenance=OK_PROV, attribution=FORMAL_ATTR)
+    assert len(ledger.records()) == 1
+    est = ledger.estimate("cortex.formal.z3", "0.2.0", receipt["geometry"]["epistemic_class"])
+    assert est["weighted_outcomes"] < MIN_OUTCOME_EVIDENCE   # one observation cannot move a default

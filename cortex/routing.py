@@ -73,8 +73,9 @@ def _jurisdiction(epistemic_class) -> str:
     return "none"
 
 
-def _finality(geometry, parts) -> dict:
-    by_route = {key: _jurisdiction(part_class) for key, part_class in parts}
+def _finality(geometry, parts, selected=None) -> dict:
+    by_route = {key: _jurisdiction(part_class) for key, part_class in parts
+                if selected is None or key in selected}
     whole = _jurisdiction(geometry.epistemic_class)
     # a composed question is decided part by part; no part's jurisdiction is promoted to the whole
     decides = "per_route" if len(set(by_route.values())) > 1 and whole != "human_authority" else whole
@@ -82,16 +83,18 @@ def _finality(geometry, parts) -> dict:
             "disagreement": FINALITY_RULE["disagreement"]}
 
 
-def _capability_deficit(geometry, eligibility, state, reason) -> dict | None:
+def _capability_deficit(epistemic_class, registry, state, reason, *, unanswered=None) -> dict | None:
     """The Competency Compiler's horizon hook: when the repertoire cannot answer, say so in a typed record
     that capability genesis can consume. One receipt is one observation, so the record is marked unverified:
     a capability-genesis loop verifies a deficit by its recurrence across recorded cycles and diagnoses it
     before anything is proposed. It is a request for formation, never an authorization."""
     if state not in ("NO_ELIGIBLE_METHOD", "UNSUPPORTED_GEOMETRY"):
         return None
-    disabled = sorted(e.key for e in eligibility if any("disabled" in r for r in e.reasons))
-    return {"kind": "CapabilityDeficit", "state": state, "geometry": geometry.epistemic_class,
-            "jurisdiction": _jurisdiction(geometry.epistemic_class),
+    # Registered families that would serve this class if they were enabled: the cheapest lead for formation.
+    disabled = sorted(k for k, p in registry.profiles().items()
+                      if not p.enabled and epistemic_class in p.supported_geometries)
+    deficit = {"kind": "CapabilityDeficit", "state": state, "geometry": epistemic_class,
+            "jurisdiction": _jurisdiction(epistemic_class),
             "registered_but_disabled": disabled,
             "why": reason,
             "verified": False,
@@ -100,6 +103,9 @@ def _capability_deficit(geometry, eligibility, state, reason) -> dict | None:
             "resolution_order": ["existing capability", "composition", "commodity infrastructure", "open source",
                                  "API/plugin/service", "small bounded utility", "coding agent", "new architecture"],
             "authority": "formation requests nothing; building != installation != activation != consequence authority"}
+    if unanswered:
+        deficit["unanswered_parts"] = dict(unanswered)
+    return deficit
 
 
 # The deterministic route policy lives in _route_parts: formal_model -> Formal,
@@ -273,7 +279,7 @@ def derive_geometry(problem: Problem, *, proposer: Callable[[Problem], Mapping] 
         unresolved_fields=tuple(dict.fromkeys(unresolved)), provenance=prov, rejected_proposals=tuple(rejected))
 
 
-def _coverage(selected, results, dropped_by_cap) -> str:
+def _coverage(selected, results, dropped_by_cap, unanswered=()) -> str:
     """What actually ran, from the receipt's own facts: never 'complete' when a selected route did not execute."""
     ran = {r.organ_id for r in results}
     not_run = [k for k in selected if k.split("@")[0] not in ran and k not in ran]
@@ -284,6 +290,8 @@ def _coverage(selected, results, dropped_by_cap) -> str:
         parts.append(f"{not_run} selected but produced no result")
     if dropped_by_cap:
         parts.append(f"{list(dropped_by_cap)} eligible but not run (composition cap)")
+    if unanswered:
+        parts.append(f"payload part(s) {[k for k, _ in unanswered]} have no eligible route")
     return "complete" if not parts else "incomplete: " + "; ".join(parts)
 
 
@@ -390,6 +398,8 @@ class Cortex:
             if key in rows:
                 part_eligibility[key] = rows[key]
         eligible_parts = [k for k, _ in parts if k in part_eligibility and part_eligibility[k].eligible]
+        # 0.1.6: a payload part whose route is not eligible is unanswered, and the receipt says so.
+        unanswered = [(k, c) for k, c in parts if k not in eligible_parts]
         selected = eligible_parts[:MAX_COMPOSITION]
         # 0.1.6: a route the cap drops is disclosed as dropped, never as "not required".
         dropped_by_cap = eligible_parts[MAX_COMPOSITION:]
@@ -419,6 +429,15 @@ class Cortex:
         elif FORMAL in selected and limits.max_solver_calls < 1:
             budget_problem = "route needs the solver; solver-call budget is zero"
 
+        # Options and authority records are parsed before any organ spends budget (0.1.6).
+        options, recs = [], []
+        if problem.payload.get("options"):
+            try:
+                recs = [r if isinstance(r, AuthorityRecord) else AuthorityRecord.from_dict(r) for r in (records or [])]
+                options = [Option.from_dict(o) for o in problem.payload["options"]]
+            except (CortexError, KeyError) as exc:
+                return self._malformed(problem.to_dict(), f"option rejected: {exc}", started, geometry)
+
         results: list[OrganResult] = []
         if budget_problem is None:
             for key in selected:
@@ -429,26 +448,28 @@ class Cortex:
 
         # gates before ranking, on consequential options
         gate_reports, ranking = {}, None
-        options = []
-        if problem.payload.get("options"):
-            try:
-                recs = [r if isinstance(r, AuthorityRecord) else AuthorityRecord.from_dict(r) for r in (records or [])]
-                options = [Option.from_dict(o) for o in problem.payload["options"]]
-            except (CortexError, KeyError) as exc:
-                return self._malformed(problem.to_dict(), f"option rejected: {exc}", started, geometry)
+        if options:
             remaining = limits.max_cost_usd - spent.usd
             try:
                 gate_reports = {o.option_id: evaluate_gates(o, recs, remaining_budget_usd=remaining,
                                                             as_of=problem.payload.get("as_of"))
                                 for o in options}
             except (CortexError, ValueError, TypeError) as exc:
-                return self._malformed(problem.to_dict(), f"authority record rejected: {exc}", started, geometry)
+                return self._malformed(problem.to_dict(), f"authority record rejected: {exc}", started, geometry,
+                                       spent=spent, ran=results)
             weights = next((r.body.get("weights") for r in recs if r.kind == "founder_mandate"
                             and r.permission_bearing and r.body.get("weights")), None)
             ranking = rank_after_gates(options, gate_reports, founder_weights=weights)
 
         state, disposition, reason, next_step = self._dispose(
             geometry, selected, eligibility, results, budget_problem, ranking, gate_reports, options)
+        if unanswered and disposition == "recommend":
+            # The most cautious state across parts decides: an unanswered part is never recommended around.
+            why = {k: list(part_eligibility[k].reasons) if k in part_eligibility else ["no eligibility row"]
+                   for k, _ in unanswered}
+            state, disposition = "NO_ELIGIBLE_METHOD", "abstain"
+            reason = f"payload part(s) with no eligible route: {why}; the answered parts are in per_route"
+            next_step = "enable or form a capability for the unanswered part, or ask only the answered part"
         if protection.relevant and (set(protection.required_actions) & set(HUMAN_LED_PROTECTION) or protection.gaps):
             human_led = [a for a in protection.ordered_actions if a in HUMAN_LED_PROTECTION]
             if disposition != "handoff":
@@ -479,8 +500,14 @@ class Cortex:
         return self._receipt(problem, geometry, eligibility, selected, alternatives, results, verifier,
                              gate_reports, ranking, state, disposition, reason, next_step, spent, protection,
                              part_geometries=part_geometries, dropped_by_cap=dropped_by_cap,
-                             finality=_finality(geometry, parts),
-                             deficit=_capability_deficit(geometry, eligibility, state, reason))
+                             unanswered=unanswered,
+                             finality=_finality(geometry, parts, selected),
+                             deficit=(_capability_deficit(
+                                 (unanswered[0][1] if unanswered and state == "NO_ELIGIBLE_METHOD" and results
+                                  else geometry.epistemic_class),
+                                 self.registry, state, reason,
+                                 unanswered=unanswered if state == "NO_ELIGIBLE_METHOD" and results else None)
+                                 if disposition == "abstain" else None))
 
     # ------------------------------------------------------------------ disposition
     def _dispose(self, geometry, selected, eligibility, results, budget_problem, ranking, gate_reports, options):
@@ -494,10 +521,16 @@ class Cortex:
             return ("UNSUPPORTED_GEOMETRY", "abstain", "no structured facts establish what kind of claim this is",
                     "supply structured facts or declare the question type")
         if not selected and not options:
-            enabled = [e for e in eligibility if not any("disabled" in r for r in e.reasons)]
-            state = "NO_ELIGIBLE_METHOD" if enabled else "UNSUPPORTED_GEOMETRY"
-            return state, "abstain", f"no enabled route supports {geometry.epistemic_class}", \
-                "register and validate a capability for this geometry"
+            eligible = sorted(e.key for e in eligibility if e.eligible)
+            if eligible:
+                # A capability exists; the caller did not supply its input. That is not a capability gap.
+                return ("INSUFFICIENT_EVIDENCE", "abstain",
+                        f"eligible route(s) {eligible} support {geometry.epistemic_class} but the payload carries "
+                        f"none of their inputs",
+                        "supply the structured input a route needs (claim, formal_model, estimation_model, "
+                        "deterrence_model or sources)")
+            return ("NO_ELIGIBLE_METHOD", "abstain", f"no enabled route supports {geometry.epistemic_class}",
+                    "register and validate a capability for this geometry")
         states = [r.state for r in results]
         if results:
             worst = max(states, key=lambda s: _ORDER.index(STATE_DISPOSITION[s]))
@@ -570,7 +603,7 @@ class Cortex:
 
     def _receipt(self, problem, geometry, eligibility, selected, alternatives, results, verifier, gate_reports,
                  ranking, state, disposition, reason, next_step, spent, protection=None, *, part_geometries=None,
-                 dropped_by_cap=(), finality=None, deficit=None) -> dict:
+                 dropped_by_cap=(), unanswered=(), finality=None, deficit=None) -> dict:
         payload = problem.payload
         refs = sorted({s.get("id") for s in payload.get("sources", []) if s.get("id")} |
                       {e.get("id") for e in payload.get("evidence", []) if e.get("id")})
@@ -609,7 +642,7 @@ class Cortex:
             "assumptions": [a for r in results for a in r.assumptions],
             "output": {"state": state, "answer": answer, "per_route": [r.to_dict() for r in results]},
             "uncertainty": "; ".join(r.uncertainty for r in results) or "no route executed",
-            "coverage": _coverage(selected, results, dropped_by_cap),
+            "coverage": _coverage(selected, results, dropped_by_cap, unanswered),
             "proof_artifacts": [dict(r.proof) for r in results],
             "verifier": verifier,
             "gates": {k: v.to_dict() for k, v in gate_reports.items()} or None,
@@ -633,7 +666,11 @@ class Cortex:
         body["receipt_id"] = digest(body)
         return body
 
-    def _malformed(self, raw, why, started, geometry=None) -> dict:
+    def _malformed(self, raw, why, started, geometry=None, *, spent=None, ran=()) -> dict:
+        # 0.1.6: an input rejected after routes ran still reports what ran and what it spent.
+        executed = [r.organ_id if "@" in r.organ_id else f"{r.organ_id}@{r.organ_version}" for r in ran]
+        expenditure = (spent or Expenditure()).plus(
+            Expenditure(seconds=time.perf_counter() - started - (spent.seconds if spent else 0.0)))
         body = {
             "schema": "cortex-receipt/0.1", "created_at": self.clock(),
             "problem": {"problem_id": str((raw or {}).get("problem_id") if isinstance(raw, Mapping) else "unknown"),
@@ -642,14 +679,20 @@ class Cortex:
             "inputs": {"evidence_refs": [], "payload_keys": []},
             "versions": {"cortex": CORTEX_VERSION, "policy": POLICY_VERSION, "routes": {}},
             "geometry": geometry.to_dict() if geometry else None,
-            "eligibility": [], "route": {"policy": POLICY_VERSION, "selected": [], "composition": False,
+            "eligibility": [], "route": {"policy": POLICY_VERSION, "selected": executed,
+                                         "composition": len(executed) > 1,
                                          "part_geometries": {}, "dropped_by_cap": [],
                                          "finality": {"rule": FINALITY_RULE["version"], "decides": "none",
                                                       "by_route": {}, "disagreement": FINALITY_RULE["disagreement"]},
-                                         "rationale": "input rejected before routing"},
+                                         "rationale": ("input rejected after routing: the routes listed ran "
+                                                       "and their spend is reported" if executed
+                                                       else "input rejected before routing")},
             "alternatives": [], "assumptions": [],
-            "output": {"state": "MALFORMED_INPUT", "answer": None, "per_route": []},
-            "uncertainty": "no route executed", "coverage": "none: malformed input", "proof_artifacts": [],
+            "output": {"state": "MALFORMED_INPUT", "answer": None, "per_route": [r.to_dict() for r in ran]},
+            "uncertainty": "no route executed" if not executed else "input rejected after routing; no answer given",
+            "coverage": ("none: malformed input" if not executed
+                         else f"none: malformed input rejected after {executed} ran; no answer given"),
+            "proof_artifacts": [],
             "capability_deficit": None,
             "verifier": {"proof_class": "verifier_findings", "verifier": adversarial.VERIFIER_ID,
                          "findings": [{"severity": "major", "kind": "malformed_input", "detail": why,
@@ -659,7 +702,7 @@ class Cortex:
                                           "shared_with_routes": [], "independent_of_routes": True,
                                           "shared_between_routes": {}, "note": "no routes ran"}},
             "gates": None, "ranking": None, "shared_dependencies": {},
-            "expenditure": Expenditure(seconds=time.perf_counter() - started).to_dict(),
+            "expenditure": expenditure.to_dict(),
             "disposition": {"kind": "abstain", "reason": f"malformed input: {why}",
                             "next_step": "correct the input"},
             "truth": {"formal_validity": "not_applicable", "empirical_validity": "unknown",

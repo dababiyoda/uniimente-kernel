@@ -41,6 +41,8 @@ on verified outcomes; a candidate's ``confidence`` is 0.0 until that exists.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from typing import Any, Callable, Mapping, Sequence
 
 from egregore.contracts import CandidateProposal, ContractError, SignalEnvelope, canonical_copy
@@ -60,7 +62,8 @@ class CortexProposer:
 
     def __init__(self, cortex: Any, ledger: Any, *, name: str = "seed_cortex", max_model_calls: int = 0,
                  max_receipt_usd: float = 0.0,
-                 records_provider: Callable[[Mapping[str, Any]], Sequence[Mapping[str, Any]]] | None = None):
+                 records_provider: Callable[[Mapping[str, Any]], Sequence[Mapping[str, Any]]] | None = None,
+                 clock: Callable[[], str] | None = None):
         if not hasattr(cortex, "run"):
             raise ContractError("cortex must expose run(problem, records=...)")
         if not hasattr(ledger, "append") or not hasattr(ledger, "by_type"):
@@ -77,6 +80,9 @@ class CortexProposer:
         self.max_model_calls = max_model_calls
         self.max_receipt_usd = float(max_receipt_usd)
         self.records_provider = records_provider
+        # The reference instant for mandate validity comes from a trusted clock, never from tick context.
+        self.clock = clock or getattr(cortex, "clock", None) or (
+            lambda: datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
 
     @property
     def execution_authority(self) -> str:
@@ -128,6 +134,7 @@ class CortexProposer:
                 "selected_routes": list((receipt.get("route") or {}).get("selected") or []),
                 "state": receipt["output"]["state"],
                 "answer": receipt["output"]["answer"],
+                "coverage": receipt.get("coverage"),
                 "authority_created": False,
             },
             evidence_refs=(f"ledger:{record.hash}", *self._receipt_refs(receipt)),
@@ -158,15 +165,23 @@ class CortexProposer:
         usd = float((receipt.get("expenditure") or {}).get("usd", 0.0))
         if usd > self.max_receipt_usd:
             raise ContractError(f"cortex receipt spent {usd} USD; proposer ceiling is {self.max_receipt_usd}")
+        calls = (receipt.get("expenditure") or {}).get("model_calls", 0)
+        if not isinstance(calls, int) or isinstance(calls, bool) or calls > self.max_model_calls:
+            raise ContractError(f"cortex receipt used {calls} model calls; proposer ceiling is {self.max_model_calls}")
         return receipt
 
     def _bounded_problem(self, problem: Mapping[str, Any]) -> dict:
-        """Clamp the semantic organ's model budget to what this proposer may spend."""
+        """Clamp the semantic organ's model budget to what this proposer may spend, and set the reference
+        instant for mandate validity from the proposer's trusted clock."""
         problem = canonical_copy(dict(problem))
         payload = problem.get("payload") or {}
         if not isinstance(payload, Mapping):
             raise ContractError("problem.payload must be a mapping")
         payload = dict(payload)
+        if "as_of" in payload:
+            # as_of decides whether a mandate has expired; from tick context it could revive an expired one.
+            raise ContractError("payload.as_of is not accepted from tick context; the proposer sets it from its clock")
+        payload["as_of"] = self.clock()
         resources = payload.get("resources") or {}
         if not isinstance(resources, Mapping):
             raise ContractError("payload.resources must be a mapping")

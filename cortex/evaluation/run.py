@@ -35,7 +35,11 @@ FROZEN_CODE = ["cortex/evaluation/scoring.py", "cortex/evaluation/arms.py", "cor
                "cortex/evaluation/run.py", "cortex/routing.py", "cortex/gates.py", "cortex/genome.py",
                "cortex/contracts.py", "cortex/memory.py", "cortex/organs/formal.py",
                "cortex/organs/estimation.py", "cortex/organs/evidence_causal.py", "cortex/organs/semantic.py",
-               "cortex/organs/adversarial.py", "cortex/organs/deterrence.py"]
+               "cortex/organs/adversarial.py", "cortex/organs/deterrence.py",
+               # 0.1.6: every in-repo module the scored path imports is frozen too (package inits included);
+               # cortex/evaluation/replay.py stays out by design and its hash is recorded on replayed results.
+               "cortex/__init__.py", "cortex/organs/__init__.py", "cortex/evaluation/__init__.py",
+               "memory/__init__.py", "memory/causal.py", "capabilities/__init__.py", "capabilities/genome.py"]
 
 
 def _sha(path: Path) -> str:
@@ -76,12 +80,17 @@ def learning_checks() -> dict:
     """Deterministic checks of item 10 on real receipts: delayed and absent outcomes,
     predictions offered as outcomes, bounded updates, default changes, rollback."""
     cortex = Cortex(clock=lambda: "2026-09-30T00:00:00Z")
-    receipt = cortex.run({"problem_id": "learn-1", "question": "Is the pair schedulable?", "payload": {
-        "formal_model": {"requirement": "x + y <= 4", "variables": [{"name": "x", "sort": "int", "lo": 0, "hi": 4},
-                                                                   {"name": "y", "sort": "int", "lo": 0, "hi": 4}],
-                         "obligations": [{"id": "R1", "text": "x + y at most 4"}],
-                         "constraints": [{"id": "C1", "covers": ["R1"], "expr": ["<=", ["+", "x", "y"], 4]}]},
-        "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}})
+
+    def decide(n: int) -> dict:
+        # 0.1.6: one receipt is one observation and settles a method once, so each outcome needs its own decision.
+        return cortex.run({"problem_id": f"learn-{n}", "question": "Is the pair schedulable?", "payload": {
+            "formal_model": {"requirement": "x + y <= 4",
+                             "variables": [{"name": "x", "sort": "int", "lo": 0, "hi": 4},
+                                           {"name": "y", "sort": "int", "lo": 0, "hi": 4}],
+                             "obligations": [{"id": "R1", "text": "x + y at most 4"}],
+                             "constraints": [{"id": "C1", "covers": ["R1"], "expr": ["<=", ["+", "x", "y"], 4]}]},
+            "declared": {"consequence_class": "internal_write", "reversibility": "reversible"}}})
+    receipt = decide(1)
     ledger = CompetenceLedger()
     method, version = "cortex.formal.z3", "0.2.0"
     geometry = receipt["geometry"]["epistemic_class"]
@@ -99,8 +108,8 @@ def learning_checks() -> dict:
     except ValueError as exc:
         out["prediction_as_outcome"] = f"refused: {exc}"
     checkpoint = ledger.head
-    for _ in range(6):
-        ledger.settle(receipt=receipt, method=method, method_version=version, outcome_status="verified_success",
+    for n in range(6):
+        ledger.settle(receipt=decide(n + 2), method=method, method_version=version, outcome_status="verified_success",
                       provenance={"kind": "external_observation", "validation_status": "externally_verified"},
                       attribution=[{"method": method, "role": "final_answer", "uncertainty": "low"},
                                    {"method": "cortex.verifier.adversarial", "role": "flaw_detection",

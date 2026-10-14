@@ -175,6 +175,7 @@ def main(argv=None) -> int:
     cm.add_argument("--equals", default="NONE", help="expected JSON value (or a plain string)")
     cm.add_argument("--key"); cm.add_argument("--no-passphrase", action="store_true")
     cm.add_argument("--print-only", action="store_true")
+    cm.add_argument("--organ", help="pin one cortex organ (e.g. formal.z3): founder-signed exploration for learned routing")
 
     for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
                  "accept"):
@@ -475,13 +476,17 @@ def main(argv=None) -> int:
                     expected = args.equals
                 target = "cognition:" + request["problem_id"]
                 step = {"capability": "cognition.solve", "target": target, "params": request}
-                data = {"mission_id": args.id, "founder_expression": "Solve the supplied bounded cognitive problem with typed evidence",
+                if args.organ:
+                    from greg.cognition.shadow import exploration_step
+                    step = exploration_step(request, args.organ)
+                data = {"mission_id": args.id, "founder_expression": "Solve the supplied bounded cognitive problem with typed evidence"
+                        + (f", pinned to {step['capability']} so learned routing gains evidence on it" if args.organ else ""),
                         "intended_effect": "Reobserved computation satisfying the founder's stated predicate; no external consequence",
                         "closure": {"kind": "bounded"}, "priority": 50,
                         "success_checks": [{"check_id": "cognitive-answer", "description": "typed answer satisfies the requested predicate",
                                             "sensor": step, "predicate": {"op": "equals", "field": args.field, "value": expected}}],
                         "strategies": [{**step, "action_id": "recompute", "advances": ["cognitive-answer"], "rationale": "bounded recomputation"}],
-                        "light_cone": {"capabilities": ["cognition.solve"], "targets": [target], "max_consequence_class": "read_only",
+                        "light_cone": {"capabilities": [step["capability"]], "targets": [target], "max_consequence_class": "read_only",
                                        "budget_usd": 0, "horizon": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()}}
                 if not args.print_only:
                     if not args.key:

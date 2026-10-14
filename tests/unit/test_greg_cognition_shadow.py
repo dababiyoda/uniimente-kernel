@@ -52,7 +52,9 @@ def test_one_default_receipt_is_a_decision_point_with_no_evidence_and_no_proposa
     assert d["live"] == ["cortex.optimization.cpsat@0.2.0", "cortex.formal.z3@0.2.0"]
     assert d["shadow"] == d["live"] and not d["differs"] and not d["ready"]
     assert d["live_outcome"] is True and d["estimates"][0]["basis"] == "prior"
-    assert report["summary"]["cells"] == [] and report["authority_created"] is False
+    [cell] = report["summary"]["cells"]                     # the outcome counts after the decision it scored
+    assert cell["method"] == "cortex.optimization.cpsat" and cell["weighted_outcomes"] == 0.6
+    assert not cell["enough_to_reorder"] and report["authority_created"] is False
 
 
 def test_ordinary_missions_never_explore_the_second_engine_so_the_shadow_never_moves(monkeypatch, receipts):
@@ -126,3 +128,41 @@ def test_the_founder_reads_the_shadow_from_the_cli(tmp_path, capsys):
         assert not exit_.code
     data = json.loads(capsys.readouterr().out)
     assert data["summary"]["decision_points"] == 1 and data["authority_created"] is False
+
+
+def _pinned_spec(tmp_path, capsys, organ):
+    import json
+    from greg import cli
+    request = tmp_path / "request.json"
+    request.write_text(json.dumps(cortex_params()))
+    try:
+        cli.main(["--home", str(tmp_path / "unused"), "cognition", "mission", "--request", str(request),
+                  "--id", "m:explore-z3", "--field", "output.answer.objective", "--equals", "7",
+                  "--organ", organ, "--print-only"])
+    except SystemExit as exit_:
+        assert not exit_.code
+    return json.loads(capsys.readouterr().out)
+
+
+def test_a_founder_pinned_mission_gives_the_second_engine_its_first_settled_outcome(tmp_path, capsys):
+    spec = _pinned_spec(tmp_path, capsys, "formal.z3")
+    assert spec["light_cone"]["capabilities"] == ["cognition.cortex.formal.z3"]
+    assert spec["strategies"][0]["capability"] == "cognition.cortex.formal.z3"
+    assert spec["light_cone"]["max_consequence_class"] == "read_only" and "pinned to" in spec["founder_expression"]
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        assert body.tick()["missions"][0]["state"] == "ACHIEVED"
+        report = shadow.shadow(body.journal, body.ledger)
+    assert report["decisions"] == [], "a pinned plan has one engine: no decision point"
+    [cell] = report["summary"]["cells"]
+    assert cell["method"] == "cortex.formal.z3" and cell["weighted_outcomes"] == 0.6 and not cell["enough_to_reorder"]
+
+
+def test_exploration_refuses_an_unknown_organ_and_a_non_cortex_request():
+    with pytest.raises(ValueError, match="unknown cortex organ"):
+        shadow.exploration_step(cortex_params(), "formal.unlisted")
+    with pytest.raises(ValueError, match="cortex contract"):
+        shadow.exploration_step({"problem_id": "x", "operation": "calculate", "data": {"expression": "1+1"}}, "formal.z3")
+    assert shadow.exploration_step(cortex_params(), "cognition.cortex.formal.z3")["capability"] == "cognition.cortex.formal.z3"

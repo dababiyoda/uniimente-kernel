@@ -3255,7 +3255,7 @@
    "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (Appendix A, row B53)",
    "source_date": "2026-10-01",
    "intended_effect": "P4 cognitive Spider-Web",
-   "interpretation": "Routing memory exists (cortex/memory.py). Since 2026-10-14 GREG replays it in shadow over its own settled cortex outcomes (greg/cognition/shadow.py, `greg cognition shadow`): per receipt, from earlier outcomes only, the order the ledger would have chosen, whether it differs, and whether every compared cell has the evidence a reorder needs. Live routing stays the fixed policy; promotion is a founder decision. Ordinary missions never explore the second formal engine; founder-pinned organs do. Learned routing is not yet shown better than static.",
+   "interpretation": "Routing memory exists (cortex/memory.py). Since 2026-10-14 GREG replays it in shadow over its own settled cortex outcomes (greg/cognition/shadow.py, `greg cognition shadow`): per receipt, from earlier outcomes only, the order the ledger would have chosen, whether it differs, and whether every compared cell has the evidence a reorder needs. Live routing stays the fixed policy; promotion is a founder decision. Ordinary missions never explore the second formal engine; founder-pinned organs do. Learned routing is not yet shown better than static. Since 2026-10-14 the founder can sign that exploration: `greg cognition mission --organ <organ>` pins one registered cortex organ and its outcome settles into the shadow's cells.",
    "canonical_owner": "greg/cognition + cortex (Kernel)",
    "lifecycle_state": "active",
    "implementation_state": "PARTIAL",

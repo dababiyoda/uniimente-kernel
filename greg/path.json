@@ -1236,20 +1236,20 @@
           "id": "P4",
           "title": "Cognitive settlement and learned routing",
           "maps_to": "N4",
-          "status": "SHADOW: learned cortex routing replayed from GREG's settled outcomes without hindsight (greg/cognition/shadow.py, `greg cognition shadow`); live routing unchanged; not shown better than static",
+          "status": "SHADOW: learned cortex routing replayed from GREG's settled outcomes without hindsight (greg/cognition/shadow.py, `greg cognition shadow`); live routing unchanged; not shown better than static; founder-pinned exploration missions exist (`greg cognition mission --organ formal.z3`) and settle into the shadow's cells",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P3 plus settled outcomes from real missions (real-mission outcomes gate the claim; the machinery is buildable now)",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
           "review_trigger": "20 settled real-mission outcomes in one geometry",
           "falsification": "learned routing does not beat the frozen static router",
-          "smallest_next_experiment": "replay the frozen held-out suite with routing memory seeded from settled outcomes; compare to static_router",
+          "smallest_next_experiment": "run nine pinned Z3 and nine default missions on one geometry, then read `greg cognition shadow` for the first ready decision point",
           "exit": "learned routing beats the static baseline on held-out tasks without new authority",
           "evidence_refs": [
             "tests/unit/test_greg_cognition_shadow.py"
           ],
           "completion": {
             "class": "BUILDABLE_NOW",
-            "build_now": "founder-pinned exploration missions to give the second formal engine a cell; a frozen shadow-versus-static comparison on a new suite (the held-out spend stays founder-gated)",
+            "build_now": "a frozen shadow-versus-static comparison on a new suite (the held-out spend stays founder-gated)",
             "claim_gate": "'beats the static baseline on real missions' needs settled founder missions (FOUNDER_USE); a crossgeo v0.4 held-out spend needs founder approval (#151)"
           }
         },

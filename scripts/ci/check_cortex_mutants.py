@@ -304,6 +304,10 @@ SHADOW_MUTANTS = [
      "    for key in _ran_first(cortex)[:1]:", "    for key in cortex[\"route\"][\"selected\"] + (cortex[\"route\"].get(\"formal_plan\") or {}).get(\"order\", []):"),
     ("shadow accepts an invalid receipt", "greg/cognition/shadow.py",
      'output.get("proof_type") == "cortex_receipt" and _valid_receipt(output):', 'output.get("proof_type") == "cortex_receipt":'),
+    ("shadow summary drops the latest settled outcomes", "greg/cognition/shadow.py",
+     "    for index_, outcome in settled[cursor:]:", "    for index_, outcome in []:"),
+    ("exploration accepts an unregistered organ", "greg/cognition/shadow.py",
+     "    if capability not in ORGANS.values():", "    if False:"),
     ("shadow reports a single-engine plan as a decision point", "greg/cognition/shadow.py",
      "    if len(order) > 1:\n", "    if order:\n"),
 ]

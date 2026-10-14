@@ -94,6 +94,10 @@ def shadow(journal, ledger) -> dict:
                               **point, "shadow": proposed, "differs": proposed != point["live"],
                               "estimates": estimates, "ready": all(e["basis"] == "cell" for e in estimates),
                               "live_outcome": outcome_of.get(record.hash), "ledger_head": memory.head})
+    for index_, outcome in settled[cursor:]:          # the summary's cells count every settled outcome
+        latest = by_hash.get(ledger.records[index_].hash)
+        if latest is not None:
+            _settle(memory, latest, outcome["correct"])
     return {"version": VERSION, "decisions": decisions, "summary": _summary(decisions, memory),
             "promotion": "founder decision; live routing stays the fixed policy",
             "authority_created": False}
@@ -113,3 +117,21 @@ def _summary(decisions: list[dict], memory: CompetenceLedger) -> dict:
             "rule": f"a reorder needs every compared cell at {MIN_OUTCOME_EVIDENCE:g} weighted outcomes and a "
                     f"{DEFAULT_MARGIN:g} estimated gap; ordinary missions never explore the second engine, a "
                     f"founder-pinned organ does"}
+
+
+def exploration_step(request: dict, organ: str) -> dict:
+    """The sensor/strategy step of a founder-pinned exploration mission (the shadow's only lawful exploration).
+
+    ``organ`` is a GREG cortex organ capability id (``cognition.cortex.formal.z3``) or its short form
+    (``formal.z3``). The step invokes that organ directly, so cognition.solve's pinning runs it first
+    and alone, and settlement credits it. Pinning narrows; it never widens: the organ must already be a
+    registered cortex organ, the request must use the cortex contract, and the founder signs the mission.
+    """
+    from .bridge import ORGANS, _validate
+    capability = organ if organ.startswith("cognition.cortex.") else "cognition.cortex." + organ
+    if capability not in ORGANS.values():
+        raise ValueError(f"unknown cortex organ {organ!r}; one of {sorted(ORGANS.values())}")
+    if not isinstance(request, dict) or "problem" not in request:
+        raise ValueError("an exploration mission pins a cortex organ: the request needs the cortex contract (problem)")
+    _validate(request)
+    return {"capability": capability, "target": "cognition:" + request["problem_id"], "params": request}

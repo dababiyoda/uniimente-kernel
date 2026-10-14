@@ -105,6 +105,12 @@ def main(argv=None) -> int:
     css = cs.add_subparsers(dest="cognition_cmd", required=True)
     css.add_parser("inventory")
     css.add_parser("knowledge")
+    css.add_parser("genomes", help="every intelligence GREG can or intends to recruit: layer, admission, evidence")
+    ca = css.add_parser("advantage", help="lawful candidate interventions at the evidenced bottlenecks of a control map")
+    ca.add_argument("--map", required=True, help="institutional-leverage map JSON (nodes, links)")
+    ca.add_argument("--outcome", required=True, help="outcome node id")
+    ca.add_argument("--objective", required=True)
+    css.add_parser("destinations", help="founder destinations compiled to effects, with buildability and backcast")
     cm = css.add_parser("mission")
     cm.add_argument("--request", required=True, help="bounded cognition request JSON")
     cm.add_argument("--id", required=True, help="durable mission identity")
@@ -332,6 +338,16 @@ def main(argv=None) -> int:
                     registry = registry_view()
                 data = [{**m.to_dict(), "attached": registry.usable(cid)[0]} for cid, m in registry.manifests.items()
                         if cid.startswith("cognition.")]
+            elif args.cognition_cmd == "genomes":
+                from greg.cognition.genome_library import export
+                data = export()
+            elif args.cognition_cmd == "advantage":
+                from greg.cognition.advantage import compile_map
+                data = compile_map(json.loads(Path(args.map).read_text()),
+                                   {"objective": args.objective, "outcome_node": args.outcome})
+            elif args.cognition_cmd == "destinations":
+                from greg.cognition.advantage import export as advantage_export
+                data = advantage_export()["destinations"]
             elif args.cognition_cmd == "knowledge":
                 from greg.cognition.settlement import competence
                 from greg.cognition.cells import cells

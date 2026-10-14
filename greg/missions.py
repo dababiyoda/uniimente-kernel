@@ -940,6 +940,45 @@ class MissionEngine:
                           {"option": "do nothing: keep results with their gaps listed", "cost": "none",
                            "expected_effect": "results stay partial; every gap stays visible in each result"}]})
 
+    def _cognition_ask(self, m: MissionState, aid: str, receipt: dict, now: datetime) -> str | None:
+        """Goal gravity for the Mind: a persistent goal pulls the intelligence it needs. A cognition
+        receipt that abstained because the eligible families are built but not attached becomes one
+        ask naming them with their native-benchmark admission (greg/cognition/genome_library.py).
+        A family REJECTED or SUPERSEDED on its own geometry is listed, never recommended. Informational,
+        never a blocker; asking grants nothing: only Alfonso attaches, with ``greg attach``."""
+        from greg.cognition.genome_library import inventory
+        waiting = sorted({r["method"] for r in receipt.get("alternative_methods_considered") or []
+                          if not r.get("eligible") and str(r.get("reason", "")).startswith("state ")})
+        if not waiting:
+            return None
+        library = {e.genome_id: e for e in inventory()}
+        families = [{"capability": cid, "admission": library[cid].admission if cid in library else "NOT_INVENTORIED",
+                     "layer": library[cid].layer if cid in library else None,
+                     "detail": library[cid].detail[:200] if cid in library else "",
+                     "evidence_refs": list(library[cid].evidence_refs) if cid in library else []} for cid in waiting]
+        order = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "NOT_INVENTORIED")
+        admissible = sorted((f for f in families if f["admission"] in order), key=lambda f: order.index(f["admission"]))
+        best = admissible[0] if admissible else None
+        return self._request(
+            m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json({"cognition": waiting}), action_id=aid,
+            why=f"{aid} needed {receipt.get('epistemic_class')} cognition; the eligible families are built and "
+                "verified but not attached, so the receipt abstained",
+            recommendation=(f"attach {best['capability']} (native-benchmark admission: {best['admission']}) with: "
+                            f"greg attach {best['capability']}") if best else
+                           "do not attach: every eligible family lost to a simpler method on its own benchmark; "
+                           "revise the mission's operation",
+            requested={"capabilities": waiting, "spend": "none requested"}, now=now,
+            resource={"resource": "capability",
+                      "evidence": {"families": families, "receipt": receipt.get("missing_information", [])[:3]},
+                      "expected_effect": "the next attempt is answered by the attached family and re-verified by the "
+                                         "independent checker; the mission's own success checks still decide",
+                      "uncertainty": "admission was measured on synthetic native benchmarks, not on this mission's data",
+                      "options": [{"option": f"greg attach {f['capability']}", "cost": "none in money",
+                                   "expected_effect": f"{f['capability']} becomes routable ({f['admission']})"}
+                                  for f in admissible[:3]] +
+                                 [{"option": "do nothing: the mission tries its other strategies", "cost": "none",
+                                   "expected_effect": "this step keeps abstaining"}]})
+
     def _spend_ask(self, m: MissionState, s: dict, outcome, routing_decision: dict) -> dict:
         """Section 60 for money: an approval that spends is a resource ask with its own evidence."""
         cost = float(s["cost_usd"])
@@ -1069,6 +1108,9 @@ class MissionEngine:
             return {"state": "BLOCKED", "blocker": m.blocker}
         if outcome.status == "DONE" and isinstance(outcome.output, dict) and outcome.output.get("access_gap"):
             self._access_ask(m, aid, manifest, outcome.output["access_gap"], now)
+        if outcome.status == "DONE" and isinstance(outcome.output, dict) \
+                and outcome.output.get("abstention_state") == "CAPABILITY_DEFICIT":
+            self._cognition_ask(m, aid, outcome.output, now)
         # DONE: re-observe next tick to verify the effect in the world; REFUSED/
         # UNAVAILABLE: the failure is retained and an alternative is tried next.
         return {"state": "ACTED" if outcome.status == "DONE" else "REPLANNING", "action": aid,

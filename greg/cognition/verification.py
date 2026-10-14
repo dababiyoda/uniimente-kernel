@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 import math
+import statistics
 
 from .contracts import CognitionError, ProofArtifact, digest
 
@@ -154,6 +155,44 @@ def verify(family, data, answer, proof_class):
         checks["span_binding"] = all(b["source_id"] in sources and b["quote"] in sources[b["source_id"]]["text"] for b in data["bindings"])
         checks["contradiction_preserved"] = output["contested"] == any(b["relationship"] == "contradicts" for b in data["bindings"])
         dissent.append("Declared provenance/quality need separate authentication; quote binding does not prove entailment.")
+    elif family == "robust_pattern":
+        # Recompute the median and MAD with the standard library and re-derive every flag.
+        values = [float(v) for v in data["observations"]]
+        median = statistics.median(values)
+        mad = statistics.median(abs(v - median) for v in values)
+        threshold = float(data.get("threshold", 3.5))
+        checks["artifact_observations_match_input"] = artifact["observations"] == values
+        checks["independent_median_mad"] = math.isclose(output["median"], median) and math.isclose(output["mad"], mad)
+        if mad > 0:
+            checks["independent_flags"] = output["anomalies"] == [
+                i for i, v in enumerate(values) if abs(0.6745 * (v - median) / mad) > threshold]
+        dissent.append("Flags are statistical; a flagged value is not shown to be an error or an attack.")
+    elif family == "crowd":
+        classes = data["classes"]
+        post, labels = output["posteriors"], output["labels"]
+        checks["posteriors_normalised"] = all(math.isclose(sum(p), 1, abs_tol=1e-6) for p in post.values())
+        checks["labels_are_posterior_argmax"] = all(
+            labels[i] is None or labels[i] == classes[max(range(len(classes)), key=lambda c: (p[c], -c))]
+            for i, p in post.items())
+        tally = {}
+        for r in data["labels"]:
+            key = (str(r["item_id"]), str(r["independence_group"]))
+            tally.setdefault(key, []).append(r["label"])
+        decided = {item for (item, _), got in tally.items()
+                   if sorted(got.count(c) for c in set(got))[-1:] != sorted(got.count(c) for c in set(got))[-2:-1]}
+        checks["every_decidable_item_answered"] = set(labels) == decided
+        objective = [step["map_objective"] for step in artifact["trace"]["em"]]
+        checks["em_objective_non_decreasing"] = all(b >= a - 1e-6 * max(1.0, abs(a)) for a, b in zip(objective, objective[1:]))
+        dissent.append("Dawid-Skene assumes observers err independently given the true class; correlated error "
+                       "outside the declared independence groups is not detected.")
+    elif family in ("swarm", "blackbox"):
+        from .repertoire import objective
+        f, bounds, budget = objective(data)
+        x = output["candidate"]
+        checks["candidate_in_bounds"] = len(x) == len(bounds) and all(lo <= v <= hi for v, (lo, hi) in zip(x, bounds))
+        checks["independent_fitness"] = math.isclose(f(x), output["fitness"], rel_tol=1e-9, abs_tol=1e-12)
+        checks["evaluation_budget"] = output["evaluations"] <= budget
+        dissent.append("A heuristic search returns the best point it evaluated; no global-optimality certificate.")
     else:
         dissent.append("Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.")
     if family in ("formal", "optimization"):

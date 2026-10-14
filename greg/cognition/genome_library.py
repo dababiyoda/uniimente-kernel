@@ -29,6 +29,8 @@ CORTEX_LAYER = {"primitive_basal": 1, "distributed_collective": 2, "solver_macro
                 "developmental_morphogenetic": 4, "meta_polyintelligence_cortex": 5}
 
 ADMISSION = "docs/evidence/greg-genome-admission/2026-10-14/results.json"
+ADMISSION_V2 = "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json"
+P6_V3 = "docs/evidence/greg-composition-lift/2026-10-14/results-v3.json"
 CROSSGEO_V03 = "tests/evidence/greg-crossgeo-v0.3/results.json"
 P4_V2 = "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json"
 P6_V1 = "docs/evidence/greg-composition-lift/2026-10-07/results.json"
@@ -36,7 +38,8 @@ P6_V2 = "docs/evidence/greg-composition-lift/2026-10-14/results-v2.json"
 TARGET_FORM = "docs/TARGET_FORM_001.md"
 
 # Founder layer of each #140 operation family (the catalog's own numbering is kept in ``detail``).
-FAMILY_LAYER = {"micro": 1, "control": 1, "pattern": 1, "collective": 2, "human": 2, "evolutionary": 4}
+FAMILY_LAYER = {"micro": 1, "control": 1, "pattern": 1, "robust_pattern": 1, "collective": 2, "human": 2, "crowd": 2,
+                "swarm": 2, "evolutionary": 4, "blackbox": 4}
 # Admission-run structural statuses mapped into the directive's vocabulary.
 STRUCTURAL = {"ALIAS": "SUPERSEDED", "SUPERSEDED_BY_CANONICAL_ORGAN": "SUPERSEDED",
               "NOT_BENCHMARKED": "EXPERIMENTAL", "NOT_RUN": "EXPERIMENTAL", "ROUTE_ONLY": "EXPERIMENTAL"}
@@ -117,18 +120,28 @@ def _cortex() -> list[GenomeEntry]:
     return out
 
 
+def admitted() -> dict:
+    """Family -> (raw status, evidence file); the newest frozen admission run that measured a family wins."""
+    out = {}
+    for ref in (ADMISSION, ADMISSION_V2):
+        if (ROOT / ref).exists():
+            for family, row in json.loads((ROOT / ref).read_text())["families"].items():
+                out[family] = (row.get("status", "NOT_BENCHMARKED"), ref)
+    return out
+
+
 def _families() -> list[GenomeEntry]:
     from . import catalog, solvers
-    admitted = json.loads((ROOT / ADMISSION).read_text())["families"]
+    runs = admitted()
     out = []
     for family, (catalog_layer, operations, classes, _, _) in catalog.FAMILIES.items():
-        raw = admitted.get(family, {}).get("status", "NOT_BENCHMARKED")
+        raw, ref = runs.get(family, ("NOT_BENCHMARKED", None))
         status = STRUCTURAL.get(raw, raw)
         implemented = family in solvers.SOLVERS
         out.append(GenomeEntry(f"cognition.{family}", "operation_family", FAMILY_LAYER.get(family, 3), implemented,
                                implemented, "BUILDABLE_NOW", status,
                                f"admission run: {raw}; catalog layer {catalog_layer}; ops {', '.join(operations)}",
-                               (ADMISSION,), None, tuple(classes)))
+                               (ref,) if ref else (), None, tuple(classes)))
     return out
 
 
@@ -150,11 +163,25 @@ def _acquired() -> list[GenomeEntry]:
                     "P4 conditional memory; shadow by default; v1 and v2 INCONCLUSIVE (v3 decides)", (P4_V2,)),
         GenomeEntry("mechanism.protected_evolution", "mechanism", 5, True, False, "BUILDABLE_NOW", "EXPERIMENTAL",
                     "P8 routing-genome search against a hash-pinned evaluator; not attached to runtime routing"),
+        GenomeEntry("composition.derived", "composition_recipe", 5, True, True, "BUILDABLE_NOW",
+                    "DEFAULT_FOR_GEOMETRY" if _p6v3_lift() else "EXPERIMENTAL",
+                    "chains absent from RECIPES derived by typed dataflow (estimate + identify -> optimize); "
+                    + ("P6 v3 lift" if _p6v3_lift() else "P6 v3 not yet run or no lift"),
+                    (P6_V3,) if (ROOT / P6_V3).exists() else ()),
+        GenomeEntry("mechanism.advantage_compiler", "mechanism", 5, True, False, "BUILDABLE_NOW", "EXPERIMENTAL",
+                    "mental models as typed operators at evidenced bottlenecks; lawful-means gate; generates "
+                    "UNESTIMATED candidates for the existing leverage ranker; no outcome evidence yet"),
         GenomeEntry("mechanism.mica_cdpe", "mechanism", 4, True, False, "EXPERIMENTAL_NOW", "EXPERIMENTAL",
                     "MICA/CDPE damage-recovery lab: MECHANICS_VALIDATED_NOT_PRODUCTION_AUTHORIZED (parity "
                     ">= 90% of adaptive central replanning, no advantage shown)", (TARGET_FORM,)),
     ]
     return out
+
+
+def _p6v3_lift() -> bool:
+    if not (ROOT / P6_V3).exists():
+        return False
+    return bool(json.loads((ROOT / P6_V3).read_text())["summary"]["vs_best_single"]["lift"])
 
 
 def inventory() -> list[GenomeEntry]:
@@ -164,7 +191,7 @@ def inventory() -> list[GenomeEntry]:
 def check(entries: list[GenomeEntry] | None = None) -> list[str]:
     """Problems that would make the library claim more than code and frozen evidence support."""
     problems = []
-    admitted = json.loads((ROOT / ADMISSION).read_text())["families"]
+    runs = admitted()
     for e in entries if entries is not None else inventory():
         if e.admission not in STATUSES or e.buildability not in BUILDABILITY or e.layer not in range(1, 6):
             problems.append(f"{e.genome_id}: outside the closed vocabulary")
@@ -179,7 +206,7 @@ def check(entries: list[GenomeEntry] | None = None) -> list[str]:
             if not (ROOT / ref).exists():
                 problems.append(f"{e.genome_id}: missing evidence {ref}")
         if e.source == "operation_family":
-            raw = admitted.get(e.genome_id.removeprefix("cognition."), {}).get("status", "NOT_BENCHMARKED")
+            raw = runs.get(e.genome_id.removeprefix("cognition."), ("NOT_BENCHMARKED", None))[0]
             if STRUCTURAL.get(raw, raw) != e.admission:
                 problems.append(f"{e.genome_id}: {e.admission} disagrees with frozen admission {raw}")
     return problems

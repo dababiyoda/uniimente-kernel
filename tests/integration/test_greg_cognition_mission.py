@@ -83,3 +83,35 @@ def test_console_exposes_scoped_cognitive_result_from_retained_receipt(tmp_path)
     response=remote.handle(home,'GET','/api/status',headers,b'',now=now)
     data=json.loads(response[2])['data']
     assert data['cognitive'][0]['receipt_id']==snapshot['cognitive'][0]['receipt_id']
+
+
+def test_goal_gravity_pulls_an_unattached_family_with_its_admission_evidence(tmp_path):
+    """The Mind connected to the persistent goal: an abstaining receipt becomes one precise founder ask."""
+    home, key, body_id, _ = make_body(tmp_path)
+    labels = [{"item_id": f"i{i}", "observer_id": f"o{j}", "independence_group": f"g{j}", "label": "a"}
+              for i in range(3) for j in range(3)]
+    params = {"problem_id": "crowd:labels", "operation": "crowd_label", "data": {"classes": ["a", "b"], "labels": labels}}
+    check = {"check_id": "labelled", "description": "crowd labels aggregated",
+             "sensor": {"capability": "cognition.solve", "target": "cognition:crowd", "params": params},
+             "predicate": {"op": "equals", "field": "output.labels.i0", "value": "a"}}
+    spec = mission("m:crowd", checks=[check], strategies=[{
+        "action_id": "aggregate", "capability": "cognition.solve", "target": "cognition:crowd", "params": params,
+        "advances": ["labelled"], "rationale": "aggregate the observers' labels"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        body.tick()
+        asks = [e.payload for e in body.journal.replay("decision.requested") if e.payload["kind"] == "CAPABILITY_ATTACH"]
+        assert len(asks) == 1, asks
+        ask = asks[0]
+        assert "greg attach cognition.crowd" in ask["recommendation"]
+        family = next(f for f in ask["evidence"]["families"] if f["capability"] == "cognition.crowd")
+        assert family["layer"] == 2 and family["admission"]
+        assert ask["requested"]["spend"] == "none requested"
+        assert not body.registry.usable("cognition.crowd")[0]           # asking attached nothing
+        body.tick()
+        assert len([e for e in body.journal.replay("decision.requested") if e.payload["kind"] == "CAPABILITY_ATTACH"]) == 1
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.crowd"}))
+        outcome = body.tick()
+        assert outcome["missions"][0]["state"] == "ACHIEVED", outcome

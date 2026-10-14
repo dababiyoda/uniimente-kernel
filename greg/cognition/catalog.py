@@ -27,6 +27,11 @@ FAMILIES = {
     "human": (4, ("human_review",), ("normative", "legal", "institutional_acceptance"), "human_judgment", None),
     "collective": (4, ("quorum",), ("prediction",), "collective_trace", None),
     "evolutionary": (4, ("evolve_vector",), ("optimization",), "collective_trace", "scipy"),
+    # Admitted only through native benchmarks (repertoire.py; founder directive 2026-10-07).
+    "robust_pattern": (1, ("robust_anomalies",), ("prediction",), "pattern_evidence", None),
+    "crowd": (4, ("crowd_label",), ("prediction",), "collective_trace", None),
+    "swarm": (4, ("swarm_minimize",), ("optimization",), "collective_trace", None),
+    "blackbox": (4, ("evolve_blackbox",), ("optimization",), "collective_trace", "scipy"),
 }
 
 # Existing alternative implementations retain their code and lineage. Cataloguing

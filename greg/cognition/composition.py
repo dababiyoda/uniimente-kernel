@@ -20,6 +20,10 @@ composition); without it the geometry router chooses.
 
 Recipes live in ``RECIPES``; each declares the payload keys that identify its geometry. A recipe is
 eligible only when exactly its geometry is present, so two recipes never claim the same problem.
+When no single recipe fits, ``derive`` builds the chain by dataflow from typed stage signatures
+(``PRODUCERS``): every ``$param`` root in the formal template must be produced by a stage whose input
+the payload carries (for example estimate + identify -> optimize, which no recipe lists). A root
+without a producer makes the composition abstain; nothing is guessed.
 """
 from __future__ import annotations
 
@@ -43,11 +47,42 @@ RECIPES = {
 }
 
 
+# Typed stage signatures: what each stage needs from the payload and which template root it produces.
+# A chain absent from RECIPES is derived from these by dataflow (the template's ``$param`` roots).
+PRODUCERS = {"estimate": ("estimate", "estimation_model"), "effect": ("identify", "causal_studies")}
+STAGE_ORDER = ("estimate", "identify")
+
+
 def route(payload: dict) -> str | None:
     """The recipe whose geometry the payload has, or None when no single recipe fits."""
     keys = set(payload)
     matches = [name for name, r in RECIPES.items() if set(r["requires"]) <= keys]
     return matches[0] if len(matches) == 1 else None
+
+
+def _roots(template, out: set) -> set:
+    if isinstance(template, dict) and "$param" in template:
+        out.add(str(template["$param"]).split(".", 1)[0])
+    elif isinstance(template, dict):
+        for v in template.values():
+            _roots(v, out)
+    elif isinstance(template, list):
+        for v in template:
+            _roots(v, out)
+    return out
+
+
+def derive(payload: dict) -> tuple[str, ...] | None:
+    """Derive a chain by dataflow when no single recipe fits: every ``$param`` root the formal template
+    references must be produced by a stage whose input the payload carries. None when any root has no
+    producer (the composition abstains rather than guessing)."""
+    if not isinstance(payload.get("formal_template"), dict):
+        return None
+    roots = _roots(payload["formal_template"], set())
+    if not roots or any(r not in PRODUCERS or PRODUCERS[r][1] not in payload for r in roots):
+        return None
+    needed = {PRODUCERS[r][0] for r in roots}
+    return tuple(stage for stage in STAGE_ORDER if stage in needed) + ("optimize",)
 
 
 class TranslationError(CognitionError):
@@ -131,6 +166,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     budget = float(chain.get("max_latency_s", 60.0))
     recipe = chain.get("recipe") or route(payload)
     routed_by = "fixed" if chain.get("recipe") else "geometry"
+    stages = RECIPES[recipe]["stages"] if recipe else None
+    if recipe is None and not chain.get("recipe") and (derived := derive(payload)) is not None:
+        stages, recipe, routed_by = derived, "derived:" + "+".join(derived), "dataflow"
     receipt = {"schema": SCHEMA, "problem_id": pid, "input_digest": digest(params), "recipe": recipe,
                "routed_by": routed_by, "stages": [], "bindings": [], "translation_failures": [],
                "answer": None, "state": "ABSTAIN", "reason": None, "authority_created": False,
@@ -146,20 +184,23 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
 
     if recipe is None:
         return finish("NO_RECIPE", "no single composition recipe matches this geometry")
-    missing = [k for k in RECIPES[recipe]["requires"] if k not in payload]
+    requires = RECIPES[recipe]["requires"] if recipe in RECIPES else \
+        tuple(PRODUCERS[r][1] for r in PRODUCERS if PRODUCERS[r][0] in stages) + ("formal_template",)
+    missing = [k for k in requires if k not in payload]
     if missing:
         return finish("NO_RECIPE", f"recipe {recipe} needs {missing}")
+    receipt["chain"] = list(stages)
     declared = payload.get("declared", DECL)
     values = {}
     kw = dict(registry=registry, journal=journal, model_config=model_config)
-    if recipe == "estimate_then_optimize":
+    if "estimate" in stages:
         first = _stage(reason, f"{pid}/estimate", question,
                        {"estimation_model": payload["estimation_model"], "declared": declared}, **kw)
         receipt["stages"].append(_summary("estimate", first))
         if first["abstention_state"] != "NONE" or not isinstance((first.get("output") or {}).get("answer"), dict):
             return finish("STAGE_ABSTAINED", f"estimate: {first['abstention_state']}")
         values["estimate"] = first["output"]["answer"]
-    else:
+    if "identify" in stages:
         studies = payload["causal_studies"]
         if not isinstance(studies, dict) or not 1 <= len(studies) <= 8:
             raise CognitionError("causal_studies maps 1-8 named studies")

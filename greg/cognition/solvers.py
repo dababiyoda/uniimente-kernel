@@ -446,3 +446,5 @@ SOLVERS = {"evidence": __import__("greg.cognition.evidence", fromlist=["assess"]
 SOLVERS.update({"collective": quorum, "evolutionary": evolutionary})
 from .protection import assess as protection
 SOLVERS["protection"] = protection
+from .repertoire import REPERTOIRE
+SOLVERS.update(REPERTOIRE)

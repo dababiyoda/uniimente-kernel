@@ -35,7 +35,8 @@ from pathlib import Path
 from foundry.company import REQUIRED_EDITORIAL_RULES, CompanyFoundry, FoundryError, MediaCompanyCharter
 from foundry.distribution import DistributionLoop
 from foundry.systems import attribution, federation, payments, rabbit_hole, treasury
-from foundry.systems import media_engine as media, owned_community as community
+from foundry.systems import commons as community
+from foundry.systems import media_engine as media
 from foundry.territory import ContentNode, TerritoryGraph
 
 PROHIBITED_PATTERNS = ("guaranteed income", "risk-free", "act now", "limited time", "secret method", "you will get rich")

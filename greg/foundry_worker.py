@@ -104,14 +104,14 @@ def main():
     resource.setrlimit(resource.RLIMIT_FSIZE, (8 * 1048576, 8 * 1048576))
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     request = json.loads(sys.stdin.buffer.read(131073))
-    from foundry.systems import operation
+    from foundry.systems import module_for
     system = request["system"]
     root = Path(request["root"])
     # A composition cannot bypass this by selecting #52 in a child stage.
     if system == 52:
         print(json.dumps({"error": "caller source execution requires OS filesystem confinement"}))
         return
-    fn = operation(system, request["table"], request["op"])
+    mod = module_for(system, request["op"], request.get("implementation"))
     try:
         store = root.parent
         root.mkdir(parents=True, exist_ok=True)
@@ -124,7 +124,7 @@ def main():
             "scope": "reviewed Python operations only; OS filesystem confinement unavailable",
             "abi": support["abi"]}
         guard(store, public)
-        answer = {"result": fn(request["args"], root),
+        answer = {"result": getattr(mod, request["table"])[request["op"]](request["args"], root),
                   "isolation": isolation}
     except Exception as exc:
         answer = {"error": f"{type(exc).__name__}: {str(exc)[:300]}"}

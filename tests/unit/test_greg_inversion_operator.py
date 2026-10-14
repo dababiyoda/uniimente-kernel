@@ -59,3 +59,15 @@ def test_the_negation_is_exact_at_a_strict_boundary():
 def test_malformed_claims_are_refused(bad):
     with pytest.raises(CognitionError):
         compiler.invert_claim(bad)
+
+
+def test_the_independent_core_recheck_accepts_the_exact_strict_negation():
+    # The cross-engine unsat-core re-check came from another lineage with only <=, >=, ==, != and crashed the
+    # independent verifier (MODEL_INVALID) on every claim that holds; every re-check shares one table now.
+    from greg.cognition import verification
+    negated = compiler.invert_claim({"variables": {"x": [0, 10]}, "constraints": [],
+                                     "property": {"coefficients": {"x": 1}, "op": "<=", "rhs": 10}})
+    assert negated["constraints"][-1]["op"] == ">"
+    assert verification._z3_core_check(negated, ["constraint_0"])["core_unsat"] is True
+    assert all(verification._holds(op, 10, 10) is want for op, want in
+               {"<=": True, ">=": True, "==": True, "!=": False, "<": False, ">": False}.items())

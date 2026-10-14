@@ -854,36 +854,30 @@ def test_agent_commerce_sells_by_card_402_and_processor_verified_receipts(tmp_pa
 from foundry import systems as foundry_systems
 
 
-def test_co_implementations_stay_reachable_and_ambiguous_ops_must_be_qualified(tmp_path):
-    # both lineages answer through the same system number; the primary backs the evidence
+def test_alternates_stay_reachable_through_the_bridge_by_rule_or_by_name(tmp_path):
+    # both lineages answer through the same system number; the canonical module backs the evidence
     assert foundry_systems.implementations(34) == ("attribution", "journeys")
     assert foundry_systems.implementations(50) == ("rabbit_hole", "journeys")
-    query = foundry_systems.operations(34, "QUERY_OPS")
-    assert "report" not in query, "a bare op two implementations declare is never resolved silently"
-    assert query["attribution.report"] == ("attribution", "report") and query["journeys.report"] == ("journeys", "report")
-    assert query["report_territory"] == ("attribution", "report_territory") and query["route"] == ("journeys", "route")
-    with pytest.raises(LookupError, match="ambiguous"):
-        foundry_systems.operation(34, "QUERY_OPS", "report")
-    with pytest.raises(CapabilityError, match="ambiguous"):
-        foundry_bridge.query({"system": 34, "op": "report", "args": {}}, _ctx(tmp_path, "foundry.query"))
-    with pytest.raises(LookupError, match="no apply op"):
+    with pytest.raises(foundry_systems.OperationError, match="no apply op"):
         foundry_systems.operation(31, "APPLY_OPS", "inspect")   # a query op never answers on the write table
-    # the qualified #158 journeys report reads the shared observed-event store through the bridge
+    # the #158-line journeys report, selected by name, reads the shared observed-event store through the bridge
     out = foundry_bridge.query({"system": 34, "op": "journeys.report", "args": {"tier": "observed"}},
                                _ctx(tmp_path, "foundry.query"))
     assert out["result"]["events"] == 0
-    # the #132 primary and the #158 co-implementation of system 31 share one store without colliding names
+    same = foundry_bridge.query({"system": 34, "op": "report", "implementation": "journeys", "args": {"tier": "observed"}},
+                                _ctx(tmp_path, "foundry.query"))
+    assert same["result"] == out["result"]
     rendered = foundry_bridge.query({"system": 31, "op": "render", "args": {"path": "/missing", "now": 0}},
                                     _ctx(tmp_path, "foundry.query"))
     assert rendered["result"]["status"] == 404
 
 
-def test_contract_rejects_undeclared_or_overclaimed_co_implementations():
+def test_contract_rejects_undeclared_or_overclaimed_alternates():
     rows = completion.contract()
-    hidden = {**rows, 31: {k: v for k, v in rows[31].items() if k != "co_implementations"}}
-    assert any("system 31: co_implementations [] differ from the registry ['portal']" in p
+    hidden = {**rows, 31: {k: v for k, v in rows[31].items() if k != "alternates"}}
+    assert any("system 31: alternates [] differ from the registry ['portal']" in p
                for p in completion.audit(hidden, rerun=False))
-    overclaimed = {**rows, 37: {**rows[37], "co_implementations": [{**rows[37]["co_implementations"][0], "state": "COMPLETE"}]}}
+    overclaimed = {**rows, 37: {**rows[37], "alternates": [{**rows[37]["alternates"][0], "state": "COMPLETE"}]}}
     assert any("must be PARTIAL or OUTSTANDING" in p for p in completion.audit(overclaimed, rerun=False))
     bad_tier = {**rows, 25: {**rows[25], "evidence_tier": "PRODUCTION"}}
     assert any("not in the directive vocabulary" in p for p in completion.audit(bad_tier, rerun=False))
@@ -999,7 +993,7 @@ def test_federation_owns_actors_verifies_signatures_and_moves_accounts_with_foll
 
 # -- increment 8 (part): the owned community -----------------------------------------------------------
 
-from foundry.systems import owned_community as community
+from foundry.systems import commons as community
 
 
 def test_community_holds_identity_history_and_exports_under_signed_rules(tmp_path):
@@ -1061,9 +1055,15 @@ def test_media_engine_renders_from_canon_with_disclosure_and_signed_provenance(t
     # under a foundry.apply grant (the policy split is recorded for the founder in the convergence ADR).
     assert media.APPLY_OPS == {}
     with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 35, "op": "produce", "implementation": "media_engine", "args": {}},
+                             _ctx(tmp_path, "foundry.apply"))
+    # Convergence: the Mind-line alternate (#35 ``media``) owns ``produce`` as a mission-gated internal write,
+    # and it still refuses production without a canon.
+    with pytest.raises(CapabilityError, match="canon"):
+        foundry_bridge.apply({"system": 35, "op": "produce", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+    # "<implementation>.<op>" names the canonical engine explicitly, and it declares no write op
+    with pytest.raises(CapabilityError, match="no apply op"):
         foundry_bridge.apply({"system": 35, "op": "media_engine.produce", "args": {}}, _ctx(tmp_path, "foundry.apply"))
-    from foundry import systems as registry
-    assert registry.operations(35, "APPLY_OPS")["produce"] == ("media", "produce")
 
 
 # -- increment 8 (part): the company loop end to end ------------------------------------------------
@@ -1096,43 +1096,64 @@ def test_company_loop_runs_charter_to_kill_with_owned_distribution_products_fina
         foundry_bridge.apply({"system": 49, "op": "cycle", "args": {}}, _ctx(tmp_path, "foundry.apply"))
 
 
-def test_co_implementation_evidence_is_rederived_and_a_forged_record_fails(tmp_path, monkeypatch):
+def test_convergent_implementations_dispatch_by_declared_op_deterministically():
+    from foundry.systems import ALTERNATES, SYSTEMS, implementation_for
+    # Canonical declares 'verify' on #35; the Mind-line alternate alone declares 'produce'.
+    assert implementation_for(35, "verify") == SYSTEMS[35] == "media_engine"
+    assert implementation_for(35, "produce") == "media"
+    # An op both declare stays canonical; the alternate is reachable only by name.
+    assert implementation_for(34, "report") == SYSTEMS[34] == "attribution"
+    assert implementation_for(34, "report", "journeys") == "journeys"
+    # An op nobody declares stays canonical so the canonical module refuses it.
+    assert implementation_for(32, "no-such-op") == SYSTEMS[32]
+    with pytest.raises(KeyError):
+        implementation_for(32, "ingest", "offers")          # not a registered implementation of #32
+    assert all(isinstance(v, tuple) and v for v in ALTERNATES.values())
+
+
+def test_every_system_the_contract_promises_to_greg_stays_registered():
+    # A convergence merge once adopted a registry that had dropped #9 ("oci") while the contract row still
+    # promised GREG "foundry.query inspect (system9)": the signed Body was refused at dispatch. Every row whose
+    # interface names a GREG capability must resolve, and every lineage's registered module stays reachable.
+    from foundry.systems import ALTERNATES, SYSTEMS, module
+    for sid, row in completion.contract().items():
+        interface = str(row.get("interface", ""))
+        if "foundry.query" in interface or "foundry.apply" in interface:
+            assert sid in SYSTEMS, f"system {sid} is promised to GREG but not registered"
+            assert module(sid).__name__ == f"foundry.systems.{SYSTEMS[sid]}"
+    assert SYSTEMS[9] == "oci" and not ALTERNATES.get(9)
+
+
+def test_alternate_evidence_is_rederived_and_a_forged_record_fails(tmp_path, monkeypatch):
     rows = completion.contract()
-    co = rows[35]["co_implementations"][0]
-    assert co["module"] == "media" and co["evidence"] == "foundry/evidence/system-35-co-media.json"
-    assert completion._co_implementation_problems(35, rows[35], "system 35") == []
-    forged = json.loads((completion.ROOT / co["evidence"]).read_text())
+    alt = rows[35]["alternates"][0]
+    assert alt["module"] == "foundry/systems/media.py" and alt["evidence"] == "foundry/evidence/alternates/system-35-media.json"
+    assert completion._alternate_problems(35, rows[35], "system 35") == []
+    forged = json.loads((completion.ROOT / alt["evidence"]).read_text())
     forged["result_sha256"] = "sha256:" + "0" * 64
     (tmp_path / "forged.json").write_text(json.dumps(forged))
     monkeypatch.setattr(completion, "ROOT", tmp_path)
-    (tmp_path / "foundry" / "systems").mkdir(parents=True)
-    for path in co.get("existing", []) + co.get("tests", []) + co.get("implementation", []):
+    for path in [alt["module"]] + alt.get("existing", []) + alt.get("tests", []) + alt.get("implementation", []):
         if ":" not in path:
             (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
             (tmp_path / path).write_text("")
-    row = {**rows[35], "co_implementations": [{**co, "evidence": "forged.json"}]}
-    assert any("does not reproduce" in p for p in completion._co_implementation_problems(35, row, "system 35"))
-    with pytest.raises(KeyError, match="not registered"):
+    row = {**rows[35], "alternates": [{**alt, "evidence": "forged.json"}]}
+    assert any("does not reproduce" in p for p in completion._alternate_problems(35, row, "system 35"))
+    with pytest.raises(KeyError, match="not registered for Foundry system 35"):
         completion.run(35, "portal")
 
 
-def test_every_composition_path_resolves_co_implementation_ops_through_the_one_resolver(tmp_path):
+def test_every_composition_path_follows_the_one_dispatch_rule(tmp_path):
     from foundry.systems import OperationError, any_operation, linking, op_class, shell, teams, workflows
-    # composition callers reach a co-implementation's op by its unique bare name...
+    # composition callers reach an alternate's op by its unique bare name...
     assert op_class(35, "inspect") == "read_only" and op_class(35, "produce") == "internal_write"
     assert any_operation(32, "summary") is foundry_systems.operation(32, "QUERY_OPS", "summary")
-    # ...and never resolve a bare name two implementations declare
-    with pytest.raises(OperationError, match="ambiguous"):
-        any_operation(34, "report")
-    with pytest.raises(linking.LinkError, match="ambiguous"):
-        linking._op_class(34, "report")
-    assert linking._op_class(34, "journeys.report") == "read_only"
+    # ...an op the canonical module declares stays canonical, and a qualified name selects the alternate
+    assert any_operation(34, "report") is foundry_systems.operation(34, "QUERY_OPS", "attribution.report")
+    assert any_operation(34, "journeys.report") is foundry_systems.module(34, "journeys").QUERY_OPS["report"]
+    assert linking._op_class(34, "report") == "read_only"
     with pytest.raises(KeyError):
         any_operation(26, "anything")                 # an unregistered system stays a KeyError
-    # the workflow engine refuses an unknown op with its own error type
-    from events.spine import EventError
-    with pytest.raises(EventError, match="no query op"):
-        workflows.run_composed({"steps": [{"name": "s", "system": 35, "op": "nope"}]}, tmp_path / "foundry" / "system-15")
-    with pytest.raises(EventError, match="ambiguous"):
-        workflows.run_composed({"steps": [{"name": "s", "system": 34, "op": "report"}]}, tmp_path / "foundry" / "system-15")
-    assert shell and teams                            # both import the resolver at call time
+    with pytest.raises(OperationError, match="no op"):
+        any_operation(35, "nope")
+    assert shell and teams and workflows              # each resolves through implementation_for at call time

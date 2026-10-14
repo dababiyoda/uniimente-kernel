@@ -2,6 +2,15 @@
 
 # Founder Intent Ledger
 
+## Whole-machine convergence and the Founder's First Mission — 2026-10-14
+
+The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`.
+
+- The Mind line is the canonical base. #160 and #132 are joined, and #132's Foundry modules keep the Mind-line modules as registered alternates behind one dispatch rule.
+- #159 is ported. #157's worker isolation is the named next extraction.
+- The executable Founder's First Mission and the five-question Mission Control are on the one mission path. `greg rehearse` runs both without credentials.
+- State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
+
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
 
 `INTENT-20261013-FRONTIER-LEAP-RECOMBINE` ([record](intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json), [full directive, verbatim](intent/sources/FRONTIER-LEAP-DIRECTIVE-2026-10-13-source.md)): stop treating Capability Genesis as part replacement and make it construct new, integrated capabilities from harvested mechanisms, on GREG's one path. Founder instructions A-D are preserved verbatim in the record's `founder_quotations` and in the source file. They are read under INTENT-0030. "Meniscus", "impermeable shield" and "systemic dominance" keep the 2026-10-07 executable interpretation. They authorize no crossing of legal boundaries, no coercion and no immunity from shutdown.
@@ -73,6 +82,15 @@ Progress 2026-10-13 (measured, frozen, negative results kept):
 `INTENT-20261001-greg-seed-genome` ([record](intent/INTENT-20261001-greg-seed-genome.json), [verbatim source](intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md), [requirement map](collaboration/requirements-greg-seed-genome-20261001.json), [intents SG-001 to SG-012](collaboration/intents-greg-seed-genome-20261001.json), [deliberation](collaboration/deliberation-greg-seed-genome-20261001.json), [ADR](decisions/ADR-20261001-greg-seed-genome.md)): GREG recognizes a problem's geometry, recruits the smallest competent method, produces typed evidence, respects authority and settles competence from outcomes. The founder's goal-set words are kept verbatim: "meniscus" is translated as the frontier of the verified envelope, "impermeable shield" as layered prevention and verification, "systemic dominance" as superior lawful capability (SG-002). Control over people, resistance to shutdown and promises of perfection are prohibited (SG-003). State: active. The seed is implemented and integrated through `cognition.solve`, and survives `kill -9` with one settlement. The frozen comparison failed once (v0.2 GAIN_ABSENT, one hard failure, fixed in 0.2.1) and passed on fresh samples (v0.3 GAIN_VERIFIED_AGAINST_RUN_BASELINES against the static router; the gain is concentrated in one family; model arms NOT_RUN). Open founder decisions: merge, and whether high privacy harm is a hard gate (SG-012). Authority delta: none. VEPMC: 0.
 
 Correction absorbed the same day (comment on #143; draft #144, `INTENT-20261001-open-source-mechanism-harvest`): Capability Genesis forms `graph.shortest_path`, `graph.max_flow` and `lp.optimize` from installed open-source packages (NetworkX, SciPy, OR-Tools) on a Mechanism Card, accepts answers only on GREG's own certificate, and leaves attach with the founder. VEPMC stays the required device proof but no longer stops development. Evidence: `tests/evidence/greg-open-source-genesis-2026-10-01/`. Authority delta: none.
+
+Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSUE-2026-10-13-source.md)): byte-identical text with the new opening line "Build this prompt meet and exceed all in this prompt:". It is applied by closing the requirement map's section residuals on the canonical path:
+
+- **§9:** selective-disclosure evidence packages, built from retained receipts. They use the salted-hash disclosures of RFC 9901, include every same-input receipt, and append institutional responses rather than editing them in. `greg cognition package` exports one read-only; nothing is sent.
+- **§5:** a measured characterization harness covering latency, error correction against self-consistent lies, a problem-space ladder and invariance, with Wilson intervals.
+- **§13 and §15:** the verifier cross-checks and evidence-backed legitimacy in #161.
+- **§12:** wiring the budget controller into a runtime optional step is deferred until the next freeze, because the frozen evaluations pin `cortex.py`.
+
+Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
 
 ## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
 

@@ -27,18 +27,25 @@ from greg.capabilities import CapabilityError, InvocationContext
 def _call(params, ctx: InvocationContext, table: str) -> dict:
     if ctx.stop_check and ctx.stop_check():
         raise CapabilityError("foundry worker stopped by canonical revocation/pause")
-    from foundry.systems import operation
+    from foundry.systems import implementation_for, module
     try:
         system = int(params["system"])
         op = str(params["op"])
     except (KeyError, TypeError, ValueError):
         raise CapabilityError("foundry call needs integer 'system' and string 'op'") from None
+    implementation = params.get("implementation")
+    if implementation is not None and not isinstance(implementation, str):
+        raise CapabilityError("foundry 'implementation' names a registered module")
+    if implementation is None and "." in op:
+        # "<implementation>.<op>" names one registered implementation explicitly (same as 'implementation')
+        implementation, op = op.split(".", 1)
     try:
-        # One resolver for the primary and any co-implementation; an op only
-        # another table declares, or an ambiguous bare name, is refused here.
-        operation(system, table, op)
-    except LookupError as exc:
+        implementation = implementation_for(system, op, implementation)
+        ops = getattr(module(system, implementation), table)
+    except KeyError as exc:
         raise CapabilityError(str(exc)) from None
+    if op not in ops:
+        raise CapabilityError(f"system {system} has no {table.split('_')[0].lower()} op {op!r}")
     def source_execution(value):
         if isinstance(value, dict):
             if str(value.get("system")) == "52":
@@ -48,7 +55,7 @@ def _call(params, ctx: InvocationContext, table: str) -> dict:
     if source_execution(params):
         raise CapabilityError("caller source execution requires OS filesystem confinement")
     root = Path(ctx.workspace) / "foundry" / f"system-{system:02d}"
-    request = json.dumps({"system": system, "op": op, "table": table,
+    request = json.dumps({"system": system, "op": op, "table": table, "implementation": implementation,
                           "args": dict(params.get("args") or {}), "root": str(root.resolve())}, allow_nan=False)
     if len(request.encode()) > 131072:
         raise CapabilityError("foundry request exceeds 128 KiB")
@@ -118,7 +125,7 @@ def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
                 if ctx.stop_check and ctx.stop_check():
                     raise CapabilityError("canonical revocation/pause before Foundry commit")
                 after = commit(staged, root.parent, before) if table == "APPLY_OPS" else before
-                return {"system": system, "op": op, "result": answer["result"],
+                return {"system": system, "op": op, "implementation": params["implementation"], "result": answer["result"],
                         "execution": {"process": "disposable", "network": "seccomp-denied",
                                       "filesystem": answer.get("isolation", {}).get("filesystem", "reviewed-code-python-guard"),
                                       "landlock_abi": answer.get("isolation", {}).get("abi"),

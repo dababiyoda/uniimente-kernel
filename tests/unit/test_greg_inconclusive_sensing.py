@@ -2,13 +2,14 @@
 
 Under host load a budget-bounded solve may return a receipt with no answer
 (TIMEOUT, BUDGET_EXHAUSTED, ...). Reading its missing field as a negative
-observation booked the world as unchanged and blamed the executed strategy,
-which then lowered that capability's learned routing reliability for every
-future mission. The observation is now a sensor error: bounded retry, then
-escalation, and the strategy's effect stays unknown instead of refuted.
+observation booked routing.outcome "ineffective" against the executed
+strategy's capability, lowering its reliability for every future mission.
+The observation is now labelled inconclusive and never blames the strategy.
+The mission keeps its retry cadence: learned routing settles the lead
+engine's resource failure from those retries (a real signal at that layer).
 """
 from greg.body import Body
-from greg.missions import MissionBook, unanswered
+from greg.missions import MissionBook, blames_strategy, unanswered
 from tests.greg_fixtures import make_body, mission, signed
 
 PARAMS = {"problem_id": "qualified:game", "operation": "minimax", "data": {"payoffs": [[1, -1], [-1, 1]]}}
@@ -22,7 +23,14 @@ def test_unanswered_separates_abstention_from_answers_and_refutations():
     assert unanswered({"abstention_state": "CAPABILITY_DEFICIT", "output": None}) == "CAPABILITY_DEFICIT"
 
 
-def test_an_unmeasured_world_never_blames_the_executed_strategy(tmp_path):
+def test_only_a_measured_unchanged_world_blames_the_strategy():
+    assert blames_strategy("executed but value still failing: 1 == 0")
+    assert not blames_strategy("executed but value still failing: sensor inconclusive (TIMEOUT): field 'output.value' absent")
+    assert not blames_strategy("executed but value still failing: sensor UNAVAILABLE: adapter down")
+    assert not blames_strategy("capability refused: outside cone")
+
+
+def test_an_unmeasured_world_keeps_the_retry_cadence_but_books_no_blame(tmp_path):
     home, key, body_id, _ = make_body(tmp_path)
     spec = mission("m:game", checks=[{
         "check_id": "value", "description": "minimax value",
@@ -42,10 +50,7 @@ def test_an_unmeasured_world_never_blames_the_executed_strategy(tmp_path):
                                             "receipt": "sha256:" + "2" * 64, "rung": 0, "at": "2026-10-14T00:00:00Z"},
                        key=["m:game", "value", "p1"])
         state = MissionBook(journal).missions["m:game"]
-        assert "recompute" not in state.failed and state.pending_effect.get("recompute") == {"value"}
-        # control: a conclusive negative observation still marks the surprise and replans
-        journal.record("mission.observed", {"mission_id": "m:game", "check_id": "value", "passed": False,
-                                            "detail": "1 == 0", "receipt": "sha256:" + "3" * 64, "rung": 0,
-                                            "at": "2026-10-14T00:01:00Z"}, key=["m:game", "value", "p2"])
-        state = MissionBook(journal).missions["m:game"]
-        assert state.failed["recompute"].startswith("executed but value still failing: 1 == 0")
+        # cadence unchanged: the mission replans and retries as before...
+        assert state.failed["recompute"].startswith("executed but value still failing: sensor inconclusive")
+        # ...but the reason never counts against the capability's routing reliability
+        assert not blames_strategy(state.failed["recompute"])

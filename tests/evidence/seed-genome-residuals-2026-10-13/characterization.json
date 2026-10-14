@@ -1,0 +1,416 @@
+{
+ "version": "greg-characterization/1",
+ "families": {
+  "exact": {
+   "operation": "calculate",
+   "available": true,
+   "responsiveness": {
+    "n": 5,
+    "p50_seconds": 0.2454,
+    "max_seconds": 0.277
+   },
+   "error_correction": {
+    "refuted": 3,
+    "n": 3,
+    "rate_wilson95": [
+     0.4385,
+     1.0
+    ],
+    "corruption_model": "primary field `exact` changed and mirrored into the artifact"
+   },
+   "problem_space": {
+    "ladder": [
+     {
+      "size": 1,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.3085,
+      "state": "NONE"
+     },
+     {
+      "size": 4,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2222,
+      "state": "NONE"
+     },
+     {
+      "size": 16,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2459,
+      "state": "NONE"
+     },
+     {
+      "size": 64,
+      "answered": false,
+      "correct": false,
+      "wall_seconds": 0.1296,
+      "state": "ABSTAIN"
+     }
+    ],
+    "largest_correct_size": 16
+   },
+   "generalization": {
+    "invariant": 3,
+    "n": 3,
+    "rate_wilson95": [
+     0.4385,
+     1.0
+    ],
+    "transform": "renamed identifiers and reversed order"
+   },
+   "correlated_failure_evidence": {
+    "verifier_independence": [
+     "separate verification functions in reviewed Kernel code; CP-SAT optimality and infeasibility claims are re-checked by Z3 where it is installed; no independent external evaluator"
+    ],
+    "cross_checks": []
+   }
+  },
+  "estimation": {
+   "operation": "estimate",
+   "available": true,
+   "responsiveness": {
+    "n": 5,
+    "p50_seconds": 0.264,
+    "max_seconds": 0.2939
+   },
+   "error_correction": {
+    "refuted": 4,
+    "n": 4,
+    "rate_wilson95": [
+     0.5101,
+     1.0
+    ],
+    "corruption_model": "primary field `central` changed and mirrored into the artifact"
+   },
+   "problem_space": {
+    "ladder": [
+     {
+      "size": 1,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2719,
+      "state": "NONE"
+     },
+     {
+      "size": 4,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2458,
+      "state": "NONE"
+     },
+     {
+      "size": 8,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2483,
+      "state": "NONE"
+     },
+     {
+      "size": 16,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2948,
+      "state": "NONE"
+     }
+    ],
+    "largest_correct_size": 16
+   },
+   "generalization": {
+    "invariant": 4,
+    "n": 4,
+    "rate_wilson95": [
+     0.5101,
+     1.0
+    ],
+    "transform": "renamed identifiers and reversed order"
+   },
+   "correlated_failure_evidence": {
+    "verifier_independence": [
+     "separate verification functions in reviewed Kernel code; CP-SAT optimality and infeasibility claims are re-checked by Z3 where it is installed; no independent external evaluator"
+    ],
+    "cross_checks": []
+   }
+  },
+  "formal": {
+   "operation": "constraints",
+   "available": true,
+   "responsiveness": {
+    "n": 5,
+    "p50_seconds": 0.278,
+    "max_seconds": 0.3062
+   },
+   "error_correction": {
+    "refuted": 4,
+    "n": 4,
+    "rate_wilson95": [
+     0.5101,
+     1.0
+    ],
+    "corruption_model": "primary field `solver_status` changed and mirrored into the artifact"
+   },
+   "problem_space": {
+    "ladder": [
+     {
+      "size": 1,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.367,
+      "state": "NONE"
+     },
+     {
+      "size": 4,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.268,
+      "state": "NONE"
+     },
+     {
+      "size": 16,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.3339,
+      "state": "NONE"
+     },
+     {
+      "size": 64,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2833,
+      "state": "NONE"
+     }
+    ],
+    "largest_correct_size": 64
+   },
+   "generalization": {
+    "invariant": 4,
+    "n": 4,
+    "rate_wilson95": [
+     0.5101,
+     1.0
+    ],
+    "transform": "renamed identifiers and reversed order"
+   },
+   "correlated_failure_evidence": {
+    "verifier_independence": [
+     "separate verification functions in reviewed Kernel code; CP-SAT optimality and infeasibility claims are re-checked by Z3 where it is installed; no independent external evaluator"
+    ],
+    "cross_checks": []
+   }
+  },
+  "optimization": {
+   "operation": "optimize",
+   "available": true,
+   "responsiveness": {
+    "n": 5,
+    "p50_seconds": 0.6771,
+    "max_seconds": 0.7584
+   },
+   "error_correction": {
+    "refuted": 4,
+    "n": 4,
+    "rate_wilson95": [
+     0.5101,
+     1.0
+    ],
+    "corruption_model": "primary field `objective_value` changed and mirrored into the artifact"
+   },
+   "problem_space": {
+    "ladder": [
+     {
+      "size": 1,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.7419,
+      "state": "NONE"
+     },
+     {
+      "size": 4,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.7105,
+      "state": "NONE"
+     },
+     {
+      "size": 16,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.8183,
+      "state": "NONE"
+     },
+     {
+      "size": 64,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.702,
+      "state": "NONE"
+     }
+    ],
+    "largest_correct_size": 64
+   },
+   "generalization": {
+    "invariant": 4,
+    "n": 4,
+    "rate_wilson95": [
+     0.5101,
+     1.0
+    ],
+    "transform": "renamed identifiers and reversed order"
+   },
+   "correlated_failure_evidence": {
+    "verifier_independence": [
+     "separate verification functions in reviewed Kernel code; CP-SAT optimality and infeasibility claims are re-checked by Z3 where it is installed; no independent external evaluator"
+    ],
+    "cross_checks": [
+     "optimality_cross_engine"
+    ]
+   }
+  },
+  "graph": {
+   "operation": "shortest_path",
+   "available": false,
+   "responsiveness": {
+    "n": 5,
+    "p50_seconds": 0.0012,
+    "max_seconds": 0.0013
+   },
+   "error_correction": {
+    "refuted": 0,
+    "n": 0,
+    "rate_wilson95": null,
+    "corruption_model": "primary field `cost` changed and mirrored into the artifact"
+   },
+   "problem_space": {
+    "ladder": [
+     {
+      "size": 1,
+      "answered": false,
+      "correct": false,
+      "wall_seconds": 0.0016,
+      "state": "CAPABILITY_DEFICIT"
+     },
+     {
+      "size": 8,
+      "answered": false,
+      "correct": false,
+      "wall_seconds": 0.0014,
+      "state": "CAPABILITY_DEFICIT"
+     },
+     {
+      "size": 64,
+      "answered": false,
+      "correct": false,
+      "wall_seconds": 0.0014,
+      "state": "CAPABILITY_DEFICIT"
+     },
+     {
+      "size": 256,
+      "answered": false,
+      "correct": false,
+      "wall_seconds": 0.0022,
+      "state": "CAPABILITY_DEFICIT"
+     }
+    ],
+    "largest_correct_size": null
+   },
+   "generalization": {
+    "invariant": 0,
+    "n": 0,
+    "rate_wilson95": null,
+    "transform": "renamed identifiers and reversed order"
+   },
+   "correlated_failure_evidence": {
+    "verifier_independence": [],
+    "cross_checks": []
+   }
+  },
+  "causal": {
+   "operation": "treatment_effect",
+   "available": true,
+   "responsiveness": {
+    "n": 5,
+    "p50_seconds": 0.2345,
+    "max_seconds": 0.2411
+   },
+   "error_correction": {
+    "refuted": 4,
+    "n": 4,
+    "rate_wilson95": [
+     0.5101,
+     1.0
+    ],
+    "corruption_model": "primary field `effect` changed and mirrored into the artifact"
+   },
+   "problem_space": {
+    "ladder": [
+     {
+      "size": 1,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2597,
+      "state": "NONE"
+     },
+     {
+      "size": 8,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2245,
+      "state": "NONE"
+     },
+     {
+      "size": 64,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2163,
+      "state": "NONE"
+     },
+     {
+      "size": 256,
+      "answered": true,
+      "correct": true,
+      "wall_seconds": 0.2415,
+      "state": "NONE"
+     }
+    ],
+    "largest_correct_size": 256
+   },
+   "generalization": {
+    "invariant": 4,
+    "n": 4,
+    "rate_wilson95": [
+     0.5101,
+     1.0
+    ],
+    "transform": "renamed identifiers and reversed order"
+   },
+   "correlated_failure_evidence": {
+    "verifier_independence": [
+     "separate verification functions in reviewed Kernel code; CP-SAT optimality and infeasibility claims are re-checked by Z3 where it is installed; no independent external evaluator"
+    ],
+    "cross_checks": []
+   }
+  }
+ },
+ "not_applicable": {
+  "memory_depth": "stateless per call; retained history is the body's journal (restart and replay are tested separately)",
+  "persistence": "the body's property, not the solver's; see the kill -9 and restart integration tests",
+  "prediction_horizon": "no forecast is produced by these families",
+  "adaptability": "no online update inside a family; routing adapts from settled outcomes (learned_routing)",
+  "cooperation": "measured for compositions, not single families; see the P6 composition-lift evidence",
+  "higher_scale_coherence": "unmeasured for single families; the P6 VPL measurement is the relevant evidence"
+ },
+ "environment": {
+  "python": "3.11.15",
+  "platform": "Linux-6.18.44-fc-v114-x86_64-with-glibc2.39",
+  "packages": {
+   "ortools": "9.15.6755",
+   "z3-solver": "5.1.0.0",
+   "networkx": "3.6.1",
+   "sympy": "1.14.0",
+   "scipy": "1.17.1"
+  }
+ },
+ "limits": "synthetic native workloads with answers known by construction; one machine; latency is environment-dependent; corruptions are a declared model, not every possible lie",
+ "authority_created": false
+}

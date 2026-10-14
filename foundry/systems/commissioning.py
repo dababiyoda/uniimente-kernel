@@ -156,18 +156,15 @@ class Commission:
         return report
 
     def _proposal_body(self, contract: dict, branch: str, report: dict, builder: str) -> str:
+        """The repository's own PR template, every heading kept, with the commission's facts above it and CI below."""
         template = self.repo / ".github" / "pull_request_template.md"
-        body = template.read_text() if template.exists() else "## Purpose\n\n## Reality status\n\n- [ ] Sandbox\n"
-        fills = {"## Purpose": f"## Purpose\n\n{contract['purpose']}\n\nCommission `{contract['contract_id']}` "
-                               f"(contract `{contract['contract_sha256']}`), built by `{builder}` on branch `{branch}`.",
-                 "- Intent IDs or source references:": f"- Intent IDs or source references: contract {contract['contract_sha256']}",
-                 "- [ ] Sandbox": "- [x] Sandbox"}
-        for key, value in fills.items():
-            body = body.replace(key, value, 1)
-        body += ("\n\n## CI before proposal\n\n" + "\n".join(f"- `{' '.join(c['argv'])}` → exit {c['exit']}" for c in report["commands"])
-                 + "\n" + "\n".join(f"- docs: `{d['requirement']}` → {'ok' if d['ok'] else 'missing'}" for d in report["docs"])
-                 + "\n\nHeld-out tests revealed at CI time match the frozen contract hash. Merging is a human act.\n")
-        return body
+        body = template.read_text() if template.exists() else "## Reality status\n\n- [ ] Sandbox\n"
+        head = (f"## Commission\n\n{contract['purpose']}\n\nCommission `{contract['contract_id']}` (contract `{contract['contract_sha256']}`), "
+                f"built by `{builder}` on branch `{branch}`. Reality: sandbox; nothing merged, published or spent.\n\n")
+        tail = ("\n\n## CI before proposal\n\n" + "\n".join(f"- `{' '.join(c['argv'])}` → exit {c['exit']}" for c in report["commands"])
+                + "\n" + "\n".join(f"- docs: `{d['requirement']}` → {'ok' if d['ok'] else 'missing'}" for d in report["docs"])
+                + "\n\nHeld-out tests revealed at CI time match the frozen contract hash. Merging is a human act.\n")
+        return head + body + tail
 
     # -- the commission -------------------------------------------------------------------------
     def run(self, contract_id: str, *, builder) -> dict:
@@ -307,11 +304,11 @@ QUERY_OPS = {"contracts": lambda a, r: {"contracts": [{k: c[k] for k in ("contra
 APPLY_OPS: dict = {}      # freezing a contract and running an agent are founder-authorized acts on a repository, not free ops
 
 
-def _template_lead(repo: Path) -> str:
-    """First line of the repository's pull-request template (the proposal body must start with it)."""
+def template_headings_kept(repo: Path, body: str) -> bool:
+    """Every second-level heading of the repository's own PR template survives into the proposal."""
     template = Path(repo) / ".github" / "pull_request_template.md"
-    lines = template.read_text().splitlines() if template.exists() else []
-    return lines[0] if lines else "## Purpose"
+    headings = [l for l in template.read_text().splitlines() if l.startswith("## ")] if template.exists() else []
+    return bool(headings) and all(h in body.splitlines() for h in headings)
 
 
 def seed_repository(path: Path) -> Path:
@@ -401,11 +398,8 @@ def exercise(root) -> dict:
                     and held_out_revealed == VAT_TESTS_HELD_OUT,
                     "held_out_not_in_proposal": not any(f.startswith("tests/held_out/") for f in vat["proposal"]["files"]),
                     "secret_scrubbed_from_ci": all(c["exit"] == 0 for c in vat["ci"]["commands"]),
-                    # built from the repository's own template (its first line, whatever the template's current
-                    # lead section is) with the purpose filled and the CI and debate sections kept
-                    "body_from_repo_template": vat["proposal"]["body"].startswith(_template_lead(repo))
-                    and "## Purpose" in vat["proposal"]["body"] and "## CI before proposal" in vat["proposal"]["body"]
-                    and "## Five-role debate" in vat["proposal"]["body"]},
+                    "body_from_repo_template": template_headings_kept(repo, vat["proposal"]["body"])
+                    and vat["proposal"]["body"].startswith("## Commission") and "## CI before proposal" in vat["proposal"]["body"]},
             "cone_breach": {"status": cone_breach["status"], "problems": cone_breach["rounds"][0]["problems"]},
             "shell": {"status": shell["status"], "problems": shell["rounds"][0]["problems"]},
             "nodocs": {"status": nodocs["status"], "docs_missing": nodocs["rounds"][0]["docs_missing"], "tests_green": nodocs["rounds"][0]["failing_tests"] == []},

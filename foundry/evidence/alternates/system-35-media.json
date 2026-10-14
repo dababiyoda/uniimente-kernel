@@ -1,7 +1,7 @@
 {
- "command": "python -m foundry.completion --run 35 media",
+ "command": "python -m foundry.completion --run 35",
  "name": "Graphics, audio, video, and game engines",
- "note": "co-implementation evidence (#158 line, foundry/systems/media.py); re-derived by `python -m foundry.completion --audit` on every CI run",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
  "result": {
   "deduplicated": true,
   "formats": [

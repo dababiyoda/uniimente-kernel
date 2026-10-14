@@ -4,7 +4,8 @@ import os, shutil, subprocess, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 MUTANTS = [
-    ("mandatory verification reserve", "self.verification_reserve = max(.01, self.total_seconds * .5)",
+    ("mandatory verification reserve",
+     'self.verification_reserve = max(.01, self.total_seconds * (.1 if family == "cortex" else .5))',
      "self.verification_reserve = 0"),
     ("caller compute intersection", "self.compute_limit = min(self.compute_limit, integer(caller_window.compute_ceiling_operations, low=0, high=100000))",
      "self.compute_limit = self.compute_limit"),

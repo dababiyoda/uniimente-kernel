@@ -5,7 +5,7 @@ import os, shutil, subprocess, sys, tempfile
 ROOT = Path(__file__).resolve().parents[2]
 MUTANTS = [
     ("canonical commission binding", "greg/workers.py", "if ctx.journal is not None:", "if False:"),
-    ("worker world reobservation", "greg/appraisal.py", '\n                "worker.appraise"}', '}'),
+    ("worker world reobservation", "greg/appraisal.py", '"worker.appraise", "browser.trace"', '"browser.trace"'),
     ("read-only journal propagation", "greg/appraisal.py", '"artifact.inspect", "worker.appraise")', '"artifact.inspect")'),
 ]
 

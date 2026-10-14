@@ -233,6 +233,15 @@ def unanswered(output) -> str | None:
     return str(output.get("reason_code") or output.get("abstention_state"))
 
 
+def blames_strategy(reason: str) -> bool:
+    """Whether a failed-strategy reason is evidence against the strategy's capability.
+
+    Only "executed, re-observed, and the world measurably did not change" is. A re-observation
+    that did not measure the world (a failed sensor call or an abstaining cognitive receipt,
+    both recorded as "sensor ...") says nothing about the strategy's effect."""
+    return reason.startswith("executed but ") and ": sensor " not in reason
+
+
 def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
     op = predicate["op"]
     try:
@@ -334,15 +343,15 @@ class MissionBook:
                         continue
                     if data["passed"]:
                         checks.discard(data["check_id"])
-                    elif data["detail"].startswith("sensor "):
-                        # The world was not measured (sensor error or an abstaining
-                        # cognitive receipt): the strategy's effect is unknown, not
-                        # refuted. Keep waiting for a conclusive observation.
-                        continue
                     else:
                         # Surprise: executed, yet the world did not change. Replan
                         # instead of repeating; eligible again after a later pass.
-                        m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
+                        # A producer whose output another strategy binds changed its consumers' input,
+                        # not the world: it is done, not ineffective, and is not re-run either.
+                        if any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
+                            m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
+                        else:
+                            m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
                     if not checks:
                         m.pending_effect.pop(aid, None)
             elif kind == "mission.action":
@@ -482,7 +491,7 @@ class MissionEngine:
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.")) else None,
+                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
                                  cognition_model=getattr(self, "cognition_model", None))
@@ -762,11 +771,6 @@ class MissionEngine:
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
-                why = None if passed else unanswered(outcome.output)
-                if why:
-                    # Bounded retry and escalation follow the existing unmeasured-world path.
-                    detail = f"sensor inconclusive ({why}): {detail}"
-                    sensor_errors.add(check["check_id"])
                 fault = outcome.output.get("capability_fault") if isinstance(outcome.output, dict) else None
                 if not passed and isinstance(fault, dict) and self.genesis is not None \
                         and fault.get("capability_id") in self.registry.manifests:
@@ -776,6 +780,12 @@ class MissionEngine:
                     detail = f"{detail}; {str(fault.get('detail'))[:300]}"
                     if is_capability_fault(formed, detail):
                         self.capability_faults[check["check_id"]] = (formed, detail, sensor.get("params", {}))
+                why = None if passed else unanswered(outcome.output)
+                if why:
+                    # The receipt abstained: the world was not measured. The mission keeps its
+                    # retry cadence (learned routing settles the lead engine's resource failure
+                    # from these retries); _record_routing_outcomes never blames the strategy.
+                    detail = f"sensor inconclusive ({why}): {detail}"
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
@@ -789,7 +799,7 @@ class MissionEngine:
         """Close the routing loop: an executed strategy that did not change the world
         lowers its capability's reliability for every future mission."""
         for aid, reason in m.failed.items():
-            if not reason.startswith("executed but "):
+            if not blames_strategy(reason):
                 continue
             done = [e.payload for e in self.journal.replay("mission.action")
                     if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid

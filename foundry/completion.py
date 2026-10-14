@@ -41,26 +41,30 @@ EVIDENCE_TIERS = ("INTENDED", "DESIGNED", "IMPLEMENTED", "INTEGRATED", "UNIT_VER
                   "COMMERCIAL_OUTCOME_VERIFIED", "BLOCKED_WITH_REASON")
 
 
-def _co_implementation_problems(sid: int, row: dict, label: str, rerun: bool = True) -> list[str]:
-    """Every registered co-implementation is declared in its row and vice versa.
+def _alternate_problems(sid: int, row: dict, label: str, rerun: bool = True) -> list[str]:
+    """Every registered alternate is declared in its row and vice versa.
 
-    A co-implementation keeps its own state and gap; it cannot claim COMPLETE,
-    because the row's evidence record is re-derived from the primary only. A
-    co-implementation that names its own evidence record must reproduce it.
+    An alternate keeps its own state and gap; it cannot claim COMPLETE, because the row's
+    evidence record is re-derived from the canonical implementation only. An alternate that
+    names its own evidence record must reproduce it.
     """
-    from foundry.systems import CO_IMPLEMENTATIONS
+    from foundry.systems import ALTERNATES
     problems: list[str] = []
-    declared = [c.get("module") for c in row.get("co_implementations", []) or []]
-    registered = list(CO_IMPLEMENTATIONS.get(sid, ()))
-    if sorted(declared) != sorted(registered):
-        problems.append(f"{label}: co_implementations {declared} differ from the registry {registered}")
-    for record in row.get("co_implementations", []) or []:
-        name = f"{label} co-implementation {record.get('module')!r}"
+    records = row.get("alternates", []) or []
+    declared = sorted(Path(str(r.get("module", ""))).stem for r in records)
+    registered = sorted(ALTERNATES.get(sid, ()))
+    if declared != registered:
+        problems.append(f"{label}: alternates {declared} differ from the registry {registered}")
+    for record in records:
+        name = f"{label} alternate {record.get('module')!r}"
+        module_path = str(record.get("module", ""))
+        if not (ROOT / module_path).is_file():
+            problems.append(f"{name}: module path not found")
         if not record.get("lineage"):
             problems.append(f"{name}: lineage is required")
         state = record.get("state")
         if state not in ("PARTIAL", "OUTSTANDING"):
-            problems.append(f"{name}: state {state!r} must be PARTIAL or OUTSTANDING (evidence is the primary's)")
+            problems.append(f"{name}: state {state!r} must be PARTIAL or OUTSTANDING (evidence is the canonical one's)")
         elif not record.get("gap"):
             problems.append(f"{name}: an open obligation must name its gap")
         for path in list(record.get("implementation", [])) + list(record.get("existing", [])) + list(record.get("tests", [])):
@@ -68,9 +72,10 @@ def _co_implementation_problems(sid: int, row: dict, label: str, rerun: bool = T
                 problems.append(f"{name}: path {path!r} not found")
         if record.get("evidence"):
             evidence_path = ROOT / str(record["evidence"])
+            stem = Path(module_path).stem
             if not evidence_path.is_file():
                 problems.append(f"{name}: evidence record {record['evidence']!r} not found")
-            elif rerun and record.get("module") in registered and not _reproduces(evidence_path, run(sid, record["module"])):
+            elif rerun and stem in registered and not _reproduces(evidence_path, run(sid, stem)):
                 problems.append(f"{name}: evidence does not reproduce (re-run differs from the record)")
     return problems
 
@@ -141,7 +146,7 @@ def audit(rows: dict[int, dict] | None = None, *, rerun: bool = True) -> list[st
         tier = row.get("evidence_tier")
         if tier is not None and tier not in EVIDENCE_TIERS:
             problems.append(f"{label}: evidence_tier {tier!r} is not in the directive vocabulary")
-        problems.extend(_co_implementation_problems(sid, row, label, rerun))
+        problems.extend(_alternate_problems(sid, row, label, rerun))
         if state != "COMPLETE":
             continue
         for key in ("implementation", "tests", "interface", "evidence", "limitations", "recovery"):

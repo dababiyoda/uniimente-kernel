@@ -302,6 +302,29 @@ class MissionState:
         return [c for c in self.spec["success_checks"] if c["check_id"] in wanted]
 
 
+def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *, now: datetime) -> dict:
+    """The exact Gate scope of one static strategy of mission ``m`` and the reasons it lies outside its cone.
+
+    Pure: the mission state and the capability manifests are given, so the same answer is derived by the
+    engine (live) and by greg/goal_gravity.py (the mission state at a founder command's ledger position)."""
+    s = next((x for x in (m.spec["strategies"] if m else []) if x["action_id"] == action_id), None)
+    if s is None or "capability" not in s or s.get("bind") or "$from_action" in json.dumps(s.get("params", {})):
+        raise MissionError("only a static, capability-bound strategy of a registered mission has an exact scope")
+    manifest = manifests.get(s["capability"])
+    if manifest is None:
+        raise MissionError(f"capability {s['capability']} is not registered on this body")
+    cost = float(s.get("cost_usd", 0.0))
+    scope = AuthorityOffice.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
+                                         params=s.get("params", {}), target=s["target"],
+                                         consequence_class=manifest.consequence_class, cost_usd=cost)
+    outside = m.cone.admits(capability=manifest.capability_id, target=s["target"],
+                            consequence_class=manifest.consequence_class, cost_usd=cost,
+                            spent_usd=m.spent_usd, at=now)
+    return {"mission_id": m.mission_id, "action_id": action_id, "capability": manifest.capability_id,
+            "target": s["target"], "consequence_class": manifest.consequence_class, "cost_usd": cost,
+            "scope_digest": scope, "outside_cone": outside, "strategy": s}
+
+
 class MissionBook:
     """Projection of mission truth from retained greg.* events."""
 
@@ -315,83 +338,89 @@ class MissionBook:
     def rebuild(self):
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
         for event in self.journal.replay():
-            kind, data = event.type[len("greg."):], event.payload
-            mid = data.get("mission_id")
-            m = self.missions.get(mid)
-            if kind == "mission.registered":
-                self.missions[mid] = MissionState(spec=data["spec"], command_digest=data["command_digest"],
-                                                  cone=LightCone.from_dict(data["spec"]["light_cone"]))
-            elif m is None:
-                if kind == "decision.requested":
-                    self.requests[data["request_id"]] = data
-                elif kind == "decision.answered":
-                    self.answers[data["request_id"]] = data
-                elif kind == "decision.withdrawn":
-                    self.withdrawn[data["request_id"]] = data
-                continue
-            elif kind == "mission.lifecycle":
-                m.paused = data["state"] == "PAUSED"
-                if data["state"] in ("ABANDONED", "SUPERSEDED"):
-                    m.status = data["state"]
-            elif kind == "mission.observed":
-                m.observations[data["check_id"]] = data
-                if data["passed"]:  # drift later -> previously ineffective strategies may be tried again
-                    for aid in [a for a, r in m.failed.items() if r.startswith(f"executed but {data['check_id']} ")]:
-                        m.failed.pop(aid)
-                for aid, checks in list(m.pending_effect.items()):
-                    if data["check_id"] not in checks:
-                        continue
-                    if data["passed"]:
-                        checks.discard(data["check_id"])
-                    else:
-                        # Surprise: executed, yet the world did not change. Replan
-                        # instead of repeating; eligible again after a later pass.
-                        # A producer whose output another strategy binds changed its consumers' input,
-                        # not the world: it is done, not ineffective, and is not re-run either.
-                        if any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
-                            m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
-                        else:
-                            m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
-                    if not checks:
-                        m.pending_effect.pop(aid, None)
-            elif kind == "mission.action":
-                aid = data["action_id"]
-                m.attempts[aid] = data["attempt"] + 1
-                if data["status"] == "DONE":
-                    m.actions_done += 1
-                    m.spent_usd += data.get("cost_usd", 0.0)
-                    m.failed.pop(aid, None)
-                    strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
-                    if strategy:
-                        m.pending_effect[aid] = set(strategy["advances"])
-                elif data["status"] in ("REFUSED", "UNAVAILABLE"):
-                    m.failed[aid] = "; ".join(data["reasons"])[:300]
-            elif kind == "mission.blocked":
-                m.blocker = data["blocker"]
-            elif kind == "mission.unblocked":
-                m.blocker = None
-            elif kind == "mission.setpoint":
-                m.setpoints_reached += 1
-                m.rung = data["next_rung"]
-            elif kind == "mission.achieved":
-                m.status = "ACHIEVED"
-            elif kind == "mission.schedule":
-                m.next_observe_at = data["next_observe_at"]
-            elif kind == "mission.strategy_excluded":
-                m.excluded[data["action_id"]] = data["reason"]
-            elif kind == "decision.requested":
+            self.fold(event.type[len("greg."):], event.payload)
+
+    def fold(self, kind: str, data: dict) -> None:
+        """Fold one retained greg.* fact (``kind`` without the ``greg.`` prefix), in ledger order.
+
+        ``rebuild`` is this fold over the whole journal; greg/goal_gravity.py folds the same facts one at a
+        time to judge a founder command against the mission state at its own ledger position."""
+        mid = data.get("mission_id")
+        m = self.missions.get(mid)
+        if kind == "mission.registered":
+            self.missions[mid] = MissionState(spec=data["spec"], command_digest=data["command_digest"],
+                                              cone=LightCone.from_dict(data["spec"]["light_cone"]))
+        elif m is None:
+            if kind == "decision.requested":
                 self.requests[data["request_id"]] = data
-            elif kind == "decision.withdrawn":
-                self.withdrawn[data["request_id"]] = data
             elif kind == "decision.answered":
                 self.answers[data["request_id"]] = data
-                request = self.requests.get(data["request_id"])
-                if request and data["answer"] == "approve":
-                    m.approved_scopes.add(request["scope_digest"])
-                elif request and data["answer"] == "reject":
-                    m.rejected_scopes.add(request["scope_digest"])
-                    if request.get("action_id"):
-                        m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
+            elif kind == "decision.withdrawn":
+                self.withdrawn[data["request_id"]] = data
+            return
+        elif kind == "mission.lifecycle":
+            m.paused = data["state"] == "PAUSED"
+            if data["state"] in ("ABANDONED", "SUPERSEDED"):
+                m.status = data["state"]
+        elif kind == "mission.observed":
+            m.observations[data["check_id"]] = data
+            if data["passed"]:  # drift later -> previously ineffective strategies may be tried again
+                for aid in [a for a, r in m.failed.items() if r.startswith(f"executed but {data['check_id']} ")]:
+                    m.failed.pop(aid)
+            for aid, checks in list(m.pending_effect.items()):
+                if data["check_id"] not in checks:
+                    continue
+                if data["passed"]:
+                    checks.discard(data["check_id"])
+                else:
+                    # Surprise: executed, yet the world did not change. Replan
+                    # instead of repeating; eligible again after a later pass.
+                    # A producer whose output another strategy binds changed its consumers' input,
+                    # not the world: it is done, not ineffective, and is not re-run either.
+                    if any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
+                        m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
+                    else:
+                        m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
+                if not checks:
+                    m.pending_effect.pop(aid, None)
+        elif kind == "mission.action":
+            aid = data["action_id"]
+            m.attempts[aid] = data["attempt"] + 1
+            if data["status"] == "DONE":
+                m.actions_done += 1
+                m.spent_usd += data.get("cost_usd", 0.0)
+                m.failed.pop(aid, None)
+                strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
+                if strategy:
+                    m.pending_effect[aid] = set(strategy["advances"])
+            elif data["status"] in ("REFUSED", "UNAVAILABLE"):
+                m.failed[aid] = "; ".join(data["reasons"])[:300]
+        elif kind == "mission.blocked":
+            m.blocker = data["blocker"]
+        elif kind == "mission.unblocked":
+            m.blocker = None
+        elif kind == "mission.setpoint":
+            m.setpoints_reached += 1
+            m.rung = data["next_rung"]
+        elif kind == "mission.achieved":
+            m.status = "ACHIEVED"
+        elif kind == "mission.schedule":
+            m.next_observe_at = data["next_observe_at"]
+        elif kind == "mission.strategy_excluded":
+            m.excluded[data["action_id"]] = data["reason"]
+        elif kind == "decision.requested":
+            self.requests[data["request_id"]] = data
+        elif kind == "decision.withdrawn":
+            self.withdrawn[data["request_id"]] = data
+        elif kind == "decision.answered":
+            self.answers[data["request_id"]] = data
+            request = self.requests.get(data["request_id"])
+            if request and data["answer"] == "approve":
+                m.approved_scopes.add(request["scope_digest"])
+            elif request and data["answer"] == "reject":
+                m.rejected_scopes.add(request["scope_digest"])
+                if request.get("action_id"):
+                    m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
 
     def open_requests(self) -> list[dict]:
         return [r for rid, r in self.requests.items() if rid not in self.answers and rid not in self.withdrawn]
@@ -496,23 +525,7 @@ class MissionEngine:
         from the capability manifest, never from the caller), so an approve of it is the approval the
         mission itself would ask for. Strategies bound to another action's output have no exact scope
         before they run and are refused here."""
-        m = self.book.missions.get(mission_id)
-        s = next((x for x in (m.spec["strategies"] if m else []) if x["action_id"] == action_id), None)
-        if s is None or "capability" not in s or s.get("bind") or "$from_action" in json.dumps(s.get("params", {})):
-            raise MissionError("only a static, capability-bound strategy of a registered mission has an exact scope")
-        manifest = self.registry.manifests.get(s["capability"])
-        if manifest is None:
-            raise MissionError(f"capability {s['capability']} is not registered on this body")
-        cost = float(s.get("cost_usd", 0.0))
-        scope = AuthorityOffice.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id,
-                                             params=s.get("params", {}), target=s["target"],
-                                             consequence_class=manifest.consequence_class, cost_usd=cost)
-        outside = m.cone.admits(capability=manifest.capability_id, target=s["target"],
-                                consequence_class=manifest.consequence_class, cost_usd=cost,
-                                spent_usd=m.spent_usd, at=now)
-        return {"mission_id": mission_id, "action_id": action_id, "capability": manifest.capability_id,
-                "target": s["target"], "consequence_class": manifest.consequence_class, "cost_usd": cost,
-                "scope_digest": scope, "outside_cone": outside, "strategy": s}
+        return strategy_scope(self.book.missions.get(mission_id), self.registry.manifests, action_id, now=now)
 
     def request_decision(self, mission_id: str, action_id: str, *, why: str, recommendation: str, now: datetime,
                          evidence: dict | None = None, quoted: tuple = ()) -> str:
@@ -532,6 +545,12 @@ class MissionEngine:
             raise MissionError(f"{action_id} is inside the mission's light cone: it needs no founder decision")
         if scope["scope_digest"] in m.rejected_scopes:
             raise MissionError("the founder already rejected this exact scope")
+        # The mission's own selection never picks an excluded or failed strategy (tick: "in m.failed or in
+        # m.excluded"), so it would never ask for one; asking ahead of it must not either.
+        if action_id in m.excluded:
+            raise MissionError(f"the founder excluded {action_id} by a signed critique: {m.excluded[action_id]}"[:400])
+        if action_id in m.failed:
+            raise MissionError(f"{action_id} is not selectable now: {m.failed[action_id]}"[:400])
         s, cost = scope["strategy"], scope["cost_usd"]
         resource = None
         if cost > 0:

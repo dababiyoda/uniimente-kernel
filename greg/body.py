@@ -65,6 +65,23 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
     return devices
 
 
+# A founder-signed GOAL or GOAL_CONTROL the body verified and then rejected (it would widen authority, it
+# duplicates a goal, ...) consumes its nonce: re-dropping the retained file later, after the state that
+# refused it changed (a revoke, a supersede), must not apply it without a new signature.
+NONCE_CONSUMED_ON_REJECT = ("GOAL", "GOAL_CONTROL")
+
+
+def consumed_nonces(journal: Journal) -> set[str]:
+    """Nonces a command may not reuse: every accepted command's, and every verified-then-rejected
+    GOAL / GOAL_CONTROL's (``command.rejected`` carrying ``consumed``)."""
+    out = {e.payload["nonce"] for e in journal.replay("command.accepted")}
+    for e in journal.replay("command.rejected"):
+        consumed = e.payload.get("consumed")
+        if isinstance(consumed, dict) and isinstance(consumed.get("nonce"), str):
+            out.add(consumed["nonce"])
+    return out
+
+
 class Layout:
     def __init__(self, home: str | Path):
         self.home = Path(home).expanduser().resolve()
@@ -236,7 +253,7 @@ class Body:
         return device_delegations(self.journal)
 
     def _seen_nonce(self, nonce: str) -> bool:
-        return any(e.payload["nonce"] == nonce for e in self.journal.replay("command.accepted"))
+        return nonce in consumed_nonces(self.journal)
 
     def verifier(self) -> FounderVerifier:
         return FounderVerifier(body_id=self.config["body_id"], enrolled=self.enrolled_keys(),
@@ -249,22 +266,29 @@ class Body:
         prior = [e.payload for e in self.journal.replay("command.accepted") if e.payload["digest"] == digest]
         if prior:
             return {"status": "ALREADY_APPLIED", "digest": digest}
+        now = self.clock()
         verifier = self.verifier()
-        env = verifier.verify(envelope, now=self.clock())
-        principal = verifier.principal(env, now=self.clock())
+        env = verifier.verify(envelope, now=now)
+        principal = verifier.principal(env, now=now)
         kind, body = env["kind"], env["body"]
         # Commands are applied before the next tick's rebuild; a request raised during the
         # previous tick must already be visible, or a fast approval is refused as "unknown".
         self.engine.book.rebuild()
-        result = self._dispatch(kind, body, digest, principal=principal)
+        try:
+            result = self._dispatch(kind, body, digest, principal=principal, envelope=env, now=now)
+        except (MissionError, ValueError, KeyError, TypeError) as exc:
+            if kind in NONCE_CONSUMED_ON_REJECT:   # verified, then refused: the nonce is spent (ingest_inbox records it)
+                exc.consumed = {"kind": kind, "digest": digest, "nonce": env["nonce"], "signer": principal}
+            raise
         self.journal.record("command.accepted", {"kind": kind, "digest": digest, "nonce": env["nonce"],
                                                   "founder_key_id": env["founder_key_id"], "signer": principal,
-                                                  "issued_at": env["issued_at"], "body": body,
-                                                  "envelope": env, "channel": channel,
+                                                  "issued_at": env["issued_at"], "accepted_at": iso(now),
+                                                  "body": body, "envelope": env, "channel": channel,
                                                   "result": result}, key=digest)
         return {"status": "APPLIED", "digest": digest, "result": result}
 
-    def _dispatch(self, kind: str, body: dict, digest: str, *, principal: str = "founder"):
+    def _dispatch(self, kind: str, body: dict, digest: str, *, principal: str = "founder",
+                  envelope: dict | None = None, now: datetime | None = None):
         if kind == "MISSION":
             return {"mission_id": self.engine.register(body, digest)}
         if kind == "DECISION":
@@ -361,7 +385,7 @@ class Body:
             # A persistent goal bound to signed missions (ADR-GOAL-GRAVITY-002). GOAL is founder-key only;
             # a device may sign GOAL_CONTROL only to narrow a goal (the binding checks the principal).
             from greg import goal_gravity
-            return goal_gravity.command(self, kind, body, digest, signer=principal)
+            return goal_gravity.command(self, kind, body, digest, signer=principal, envelope=envelope, now=now)
         raise MissionError(f"unsupported command kind {kind}")
 
     def _stop_now(self) -> bool:
@@ -383,9 +407,11 @@ class Body:
             except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
                     tribunal.CritiqueError) as exc:
                 raw = path.read_bytes()
+                consumed = getattr(exc, "consumed", None)
                 self.journal.record("command.rejected", {"file": path.name, "sha256": sha256_json(raw.hex()),
                                                           "reason": f"{type(exc).__name__}: {exc}"[:500],
-                                                          "instruction_status": "data_only"},
+                                                          "instruction_status": "data_only",
+                                                          **({"consumed": consumed} if consumed else {})},
                                     key=[path.name, sha256_json(raw.hex())])
                 shutil.move(str(path), self.layout.rejected / path.name)
                 outcome = {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}

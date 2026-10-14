@@ -29,16 +29,18 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from egregore.attention import AttentionItem
-from egregore.contracts import ContractError, SignalEnvelope, digest
-from egregore.goals import CONSEQUENCE_CLASSES, PREFERENCE_KINDS, GoalRegistry, GoalSpec, InterventionSpec, PlanNode, \
-    WakeCondition
+from egregore.contracts import ContractError, SignalEnvelope, digest, require_text
+from egregore.goals import CONSEQUENCE_CLASSES, PREFERENCE_KINDS, PRIORITIES, GoalRegistry, GoalSpec, InterventionSpec, \
+    PlanNode, WakeCondition
 from egregore.gravity import GoalGravityLoop
 from egregore.resources import ResourceGovernor
+from events.spine import EventError
 from greg import asks, path as devpath
 from greg.authority import PRINCIPAL
-from greg.founder import instant, key_id, signing_bytes
+from greg.capabilities import BUILTINS, CapabilityManifest
+from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes
 from greg.journal import SOURCE, iso
-from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate
+from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, strategy_scope
 from provenance.ledger import sha256_json
 
 SCHEMA = "greg-goal-gravity-binding/1"
@@ -51,6 +53,12 @@ CONTROL_KINDS = PREFERENCE_KINDS + ("revoke",)
 DEVICE_GOAL_CONTROLS = ("stop_pushing", "lower_priority", "never_use_tactic", "do_not_monitor", "ask_before",
                         "forget_route", "revoke_capability")
 VERIFIED_KINDS = ("MISSION", "DECISION", "GOAL", "GOAL_CONTROL")
+KEY_KINDS = ("ROTATE_FOUNDER_KEY", "DEVICE_ENROLL", "DEVICE_REVOKE")
+STOP_KINDS = ("stop_pushing", "change_goal")
+# Signed narrowing controls and the goal-state preference list each one appends to.
+NARROWING = {"never_use_tactic": "never_use_tactic", "do_not_monitor": "do_not_monitor", "ask_before": "ask_before",
+             "forget_route": "forgotten_routes", "revoke_capability": "revoked_capabilities"}
+NARROWING_KIND = {v: k for k, v in NARROWING.items()}
 ANSWER = {"approve": "accept", "reject": "refuse"}
 CLOSED = ("paused", "revoked", "superseded", "completed")
 ADMISSION_ACTOR = "greg goal-gravity admission check"
@@ -69,10 +77,14 @@ class _Genomes:
         return m if m is not None and m.version == version and self.registry.usable(name)[0] else None
 
 
-# -- founder authentication, re-derived from retained signed envelopes ---------------------------------
+# -- founder facts, re-derived from retained signed envelopes at their ledger positions --------------------
 
-def _verify_envelope(payload: dict, founders: dict, devices: dict, body_id: str) -> str | None:
-    """Principal of a retained command.accepted whose envelope verifies under a key valid at its position."""
+def _verify_envelope(payload: dict, founders: dict, devices: dict, body_id: str,
+                     at: datetime | None = None) -> str | None:
+    """Principal of a retained command.accepted whose envelope verifies under a key valid at its position.
+
+    A device delegation must cover the kind and be unexpired when the command was accepted (``at``, the
+    body clock the command path judged it at) or, for a record that names no acceptance time, when signed."""
     env = payload.get("envelope")
     if not isinstance(env, dict) or env.get("kind") != payload.get("kind") or sha256_json(env) != payload.get("digest"):
         return None
@@ -84,7 +96,8 @@ def _verify_envelope(payload: dict, founders: dict, devices: dict, body_id: str)
             public, principal = founders[kid], "founder"
         elif kid in devices:
             grant = devices[kid]
-            if env["kind"] not in grant["kinds"] or not instant(env["issued_at"]) < instant(grant["expires_at"]):
+            when = at or instant(env["issued_at"])
+            if env["kind"] not in grant["kinds"] or not when < instant(grant["expires_at"]):
                 return None
             public, principal = grant["public_key"], "device:" + grant["label"]
         else:
@@ -94,6 +107,228 @@ def _verify_envelope(payload: dict, founders: dict, devices: dict, body_id: str)
     except (InvalidSignature, ValueError, KeyError, TypeError):
         return None
     return principal
+
+
+def _fresh(env: dict, accepted_at: datetime | None) -> str | None:
+    """The command path's lifetime check (FounderVerifier.verify), judged at the acceptance time; None = ok."""
+    try:
+        issued, expires = instant(env["issued_at"]), instant(env["expires_at"])
+    except (KeyError, TypeError, ValueError):
+        return "unreadable issued_at / expires_at"
+    if expires - issued > MAX_TTL or expires <= issued:
+        return "command lifetime invalid"
+    if accepted_at is not None and not issued - CLOCK_SKEW <= accepted_at < expires:
+        return "accepted outside its signed validity (expired or issued in the future)"
+    return None
+
+
+def _when(value: Any) -> datetime | None:
+    try:
+        return instant(value) if isinstance(value, str) else None
+    except ValueError:
+        return None
+
+
+def _manifests_builtin() -> dict:
+    return {manifest.capability_id: manifest for manifest, _ in BUILTINS.values()}
+
+
+@dataclass
+class FounderFacts:
+    """What founder-signed commands bound to this body establish, each judged at its own ledger position.
+
+    ``signed`` holds commands whose envelope verifies under the key valid at that position, addressed to
+    this body, with a nonce no earlier accepted (or verified-then-rejected GOAL / GOAL_CONTROL) command
+    used, accepted inside its signed validity. GOAL and GOAL_CONTROL commands must also pass the command
+    path's own validators (``check_goal`` / ``check_control``) against the mission book, the capability
+    manifests and these facts as they stood at that position. Everything else is retained data only:
+    goal-registry state records never feed these facts, so an unsigned record can neither admit, re-open,
+    un-mute, re-prioritize nor resume a goal."""
+    body_id: str
+    signed: dict = field(default_factory=dict)          # digest -> verified, fresh command (+ principal)
+    admitted: dict = field(default_factory=dict)        # goal_id -> the GOAL digest that admitted it
+    specs: dict = field(default_factory=dict)           # goal_id -> GoalSpec of an admitted goal
+    refused: dict = field(default_factory=dict)         # digest -> why a signed GOAL / GOAL_CONTROL does not count
+    closed: dict = field(default_factory=dict)          # goal_id -> {status, by, issued_at[, superseded_by]}
+    closed_intents: dict = field(default_factory=dict)  # goal intent digest -> issued_at of the signed closure
+    stop: dict = field(default_factory=dict)            # goal_id -> last signed stop / resume / change
+    narrowing: dict = field(default_factory=dict)       # goal_id -> {state preference key: [values]}
+    floor: dict = field(default_factory=dict)           # goal_id -> lowest priority signed (never above the spec's)
+    authorizations: dict = field(default_factory=dict)  # goal_id -> first egregore.goal_authorized payload
+    book: Any = None                                    # MissionBook folded to the end of the ledger
+    manifests: dict = field(default_factory=dict)       # capability id -> manifest, at the end of the ledger
+
+    def open_goals(self) -> dict:
+        return {g: self.specs[g] for g in self.admitted if g not in self.closed}
+
+    def stopped(self, goal_id: str) -> dict | None:
+        """The signed stop in force for an admitted goal (stop_pushing true or change_goal), else None."""
+        s = self.stop.get(goal_id)
+        if goal_id not in self.admitted or s is None:
+            return None
+        return s if s["kind"] == "change_goal" or s["value"] is True else None
+
+
+class _NoEvents:
+    def replay(self, kind_prefix: str = "") -> list:
+        return []
+
+
+def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
+    """One pass over the body ledger in order: keys, nonces, mission book, manifests and founder goal facts.
+
+    The first trust-on-first-use enrollment is the root (and names the body); later founder keys, device
+    delegations and revocations count only as founder-signed accepted commands that verify at their own
+    position. A record written by any other route (an in-process ``command.accepted``, ``device.enrolled``
+    or goal-registry record) authenticates nothing."""
+    ok, why = ledger.verify_chain()
+    if not ok:
+        raise EventError(why)
+    founders: dict[str, str] = {}
+    devices: dict[str, dict] = {}
+    seen_nonces: set[str] = set()
+    book = MissionBook(_NoEvents())
+    manifests = _manifests_builtin()
+    builtin = set(manifests)
+    facts = FounderFacts(body_id=body_id or "", book=book, manifests=manifests)
+    rooted = False
+    for rec in ledger.records:
+        if rec.record_type == GoalRegistry.AUTHORIZED_RECORD:
+            goal = rec.payload.get("goal") if isinstance(rec.payload, dict) else None
+            if isinstance(goal, dict) and isinstance(goal.get("goal_id"), str):
+                facts.authorizations.setdefault(goal["goal_id"], rec.payload)
+            continue
+        if rec.record_type != "event" or "event_id" not in rec.payload:
+            continue
+        kind, p = rec.payload.get("type", ""), rec.payload.get("payload") or {}
+        if not kind.startswith("greg."):
+            continue
+        if kind == "greg.founder.enrolled":
+            if not rooted:                     # only the first enrollment is the root; later ones are data
+                founders[p["key_id"]] = p["public_key"]
+                rooted = True
+                if body_id is None:
+                    facts.body_id = str(p.get("body_id") or "")   # no body named: nothing verifies (fail closed)
+            continue
+        if kind == "greg.command.rejected":
+            consumed = p.get("consumed")
+            if isinstance(consumed, dict) and isinstance(consumed.get("nonce"), str):
+                seen_nonces.add(consumed["nonce"])
+            continue
+        if kind == "greg.capability.registered":
+            try:
+                manifest = CapabilityManifest.from_dict(p["manifest"])
+                if manifest.capability_id not in builtin:
+                    manifests[manifest.capability_id] = manifest
+            except (KeyError, TypeError, ValueError):
+                pass
+        if kind != "greg.command.accepted":
+            book.fold(kind[len("greg."):], p)
+            continue
+        nonce = p.get("nonce")
+        try:
+            _accepted(facts, p, founders, devices, seen_nonces)
+        finally:
+            if isinstance(nonce, str):
+                seen_nonces.add(nonce)
+            env = p.get("envelope")
+            if isinstance(env, dict) and isinstance(env.get("nonce"), str):
+                seen_nonces.add(env["nonce"])
+    return facts
+
+
+def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_nonces: set) -> None:
+    ckind, digest_ = p.get("kind"), p.get("digest")
+    if ckind not in VERIFIED_KINDS and ckind not in KEY_KINDS:
+        return
+    env = p.get("envelope")
+    if not isinstance(env, dict):
+        return
+    accepted_at = _when(p.get("accepted_at"))
+    auth = None
+    if ckind == "GOAL" and accepted_at is None:    # older records: the goal record carries the body clock
+        try:
+            auth = facts.authorizations.get(_spec(env.get("body"), digest_).goal_id)
+        except (ContractError, MissionError, KeyError, TypeError, ValueError):
+            auth = None
+        accepted_at = _when((auth or {}).get("authorized_at"))
+    principal = _verify_envelope(p, founders, devices, facts.body_id, accepted_at)
+    if principal is None:
+        return
+    if env.get("nonce") in seen_nonces or p.get("nonce") != env.get("nonce"):
+        facts.refused[digest_] = "replayed nonce: an earlier accepted or verified-then-rejected command used it"
+        return
+    stale = _fresh(env, accepted_at)
+    if stale is None and accepted_at is None and ckind in ("GOAL", "GOAL_CONTROL"):
+        stale = "no acceptance time on the ledger"
+    if stale is not None:
+        facts.refused[digest_] = stale
+        return
+    body = env["body"]
+    try:
+        if ckind == "ROTATE_FOUNDER_KEY" and principal == "founder":
+            founders.pop(env["founder_key_id"], None)
+            founders[key_id(body["new_public_key"])] = body["new_public_key"]
+        elif ckind == "DEVICE_ENROLL" and principal == "founder":
+            devices[key_id(body["public_key"])] = {"public_key": body["public_key"], "label": str(body["label"]),
+                                                   "kinds": tuple(body["kinds"]), "expires_at": body["expires_at"]}
+        elif ckind == "DEVICE_REVOKE" and principal == "founder":
+            devices.pop(body.get("device_key_id"), None)
+    except (KeyError, TypeError, ValueError):
+        return
+    if ckind not in VERIFIED_KINDS:
+        return
+    facts.signed[digest_] = {**p, "principal": principal}
+    try:
+        if ckind == "GOAL":
+            _admit(facts, body, digest_, principal, env, accepted_at)
+        elif ckind == "GOAL_CONTROL":
+            gid, ck, value = check_control(facts, body, signer=principal, issued_at=env["issued_at"])
+            _apply_control(facts, gid, ck, value, digest_, principal, env["issued_at"])
+    except (ContractError, MissionError, KeyError, TypeError, ValueError) as exc:
+        facts.refused[digest_] = f"{type(exc).__name__}: {exc}"[:300]
+
+
+def _admit(facts: FounderFacts, body: Any, digest_: str, principal: str, env: dict, accepted_at: datetime) -> None:
+    """A retained GOAL counts only as the command path would have applied it at this position."""
+    spec = check_goal(facts, body, digest_, signer=principal, book=facts.book, manifests=facts.manifests,
+                      at=accepted_at, issued_at=env["issued_at"])
+    auth = facts.authorizations.get(spec.goal_id)
+    if auth is None or auth.get("goal") != spec.to_dict():
+        raise MissionError("no goal record for exactly this GOAL precedes its acceptance")
+    authorized_at = _when(auth.get("authorized_at"))
+    if authorized_at is None or _fresh(env, authorized_at) is not None or authorized_at > accepted_at:
+        raise MissionError("its goal record is dated outside the GOAL's signed validity or after its acceptance")
+    gid = spec.goal_id
+    facts.admitted[gid], facts.specs[gid] = digest_, spec
+    facts.floor[gid] = spec.priority
+    facts.narrowing[gid] = {}
+    if spec.supersedes:
+        facts.closed[spec.supersedes] = {"status": "superseded", "by": digest_, "superseded_by": gid,
+                                         "issued_at": env["issued_at"], "principal": principal}
+        _close_intent(facts, spec.supersedes, env["issued_at"])
+
+
+def _close_intent(facts: FounderFacts, goal_id: str, issued_at: str) -> None:
+    intent = _intent(facts.specs[goal_id])
+    at = instant(issued_at)
+    facts.closed_intents[intent] = max(at, facts.closed_intents.get(intent, at))
+
+
+def _apply_control(facts: FounderFacts, gid: str, ck: str, value: Any, digest_: str, principal: str,
+                   issued_at: str) -> None:
+    if ck == "revoke":
+        facts.closed[gid] = {"status": "revoked", "by": digest_, "issued_at": issued_at, "principal": principal}
+        _close_intent(facts, gid, issued_at)
+    elif ck in STOP_KINDS:
+        facts.stop[gid] = {"kind": ck, "value": value, "by": digest_, "principal": principal, "issued_at": issued_at}
+    elif ck == "lower_priority":
+        facts.floor[gid] = max(facts.floor[gid], int(value))
+    elif ck in NARROWING:
+        values = facts.narrowing[gid].setdefault(NARROWING[ck], [])
+        text = require_text(ck, value)
+        if text not in values:
+            values.append(text)
 
 
 def signed_commands(journal, *kinds: str, body_id: str | None = None) -> dict[str, dict]:
@@ -107,44 +342,9 @@ def signed_commands(journal, *kinds: str, body_id: str | None = None) -> dict[st
 
     Every envelope must be addressed to this body: ``body_id`` defaults to the one the root enrollment
     names, so the tick and every founder view (projection, status, morning report, evidence, closure)
-    agree that a command the same key signed for another body authenticates nothing here."""
-    founders: dict[str, str] = {}
-    devices: dict[str, dict] = {}
-    rooted = False
-    bound = body_id
-    out: dict[str, dict] = {}
-    for event in journal.replay():
-        kind, p = event.type, event.payload
-        if kind == "greg.founder.enrolled":
-            if not rooted:
-                founders[p["key_id"]] = p["public_key"]
-                rooted = True
-                if bound is None:
-                    bound = str(p.get("body_id") or "")   # no body named: nothing verifies (fail closed)
-            continue
-        if kind != "greg.command.accepted":
-            continue
-        ckind = p.get("kind")
-        if ckind not in kinds and ckind not in ("ROTATE_FOUNDER_KEY", "DEVICE_ENROLL", "DEVICE_REVOKE"):
-            continue
-        principal = _verify_envelope(p, founders, devices, bound or "")
-        if principal is None:
-            continue
-        body = p["envelope"]["body"]
-        try:
-            if ckind == "ROTATE_FOUNDER_KEY" and principal == "founder":
-                founders.pop(p["envelope"]["founder_key_id"], None)
-                founders[key_id(body["new_public_key"])] = body["new_public_key"]
-            elif ckind == "DEVICE_ENROLL" and principal == "founder":
-                devices[key_id(body["public_key"])] = {"public_key": body["public_key"], "label": str(body["label"]),
-                                                       "kinds": tuple(body["kinds"]), "expires_at": body["expires_at"]}
-            elif ckind == "DEVICE_REVOKE" and principal == "founder":
-                devices.pop(body.get("device_key_id"), None)
-        except (KeyError, TypeError, ValueError):
-            continue
-        if ckind in kinds:
-            out[p["digest"]] = {**p, "principal": principal}
-    return out
+    agree that a command the same key signed for another body authenticates nothing here. A replayed
+    nonce, or an acceptance outside the envelope's signed validity, authenticates nothing either."""
+    return {d: c for d, c in founder_facts(journal.ledger, body_id=body_id).signed.items() if c["kind"] in kinds}
 
 
 def signed_answer(signed: dict, request_id: str, answer: Any) -> dict | None:
@@ -182,23 +382,17 @@ def _spec(payload: Any, digest_: str) -> GoalSpec:
 
 
 def admitted(signed: dict, registry: GoalRegistry) -> dict[str, str]:
-    """goal_id -> GOAL command digest, for goals a founder-signed GOAL authorizes byte for byte."""
-    goals = {d: c for d, c in signed.items() if c["kind"] == "GOAL" and c["principal"] == "founder"}
-    out = {}
-    for gid in registry.goals():
-        ref = registry.get(gid).authority.get("authorization_ref")
-        cmd = goals.get(ref)
-        if cmd is None:
-            continue
-        try:
-            if _spec(cmd["envelope"]["body"], ref).goal_id == gid:
-                out[gid] = ref
-        except (KeyError, TypeError, ValueError):
-            continue
-    return out
+    """goal_id -> GOAL command digest, for registry goals a founder-signed GOAL in ``signed`` admits at its
+    ledger position (signature, body, nonce, validity and the command path's GOAL validator)."""
+    facts = founder_facts(registry.ledger)
+    goals = set(registry.goals())
+    return {gid: d for gid, d in facts.admitted.items() if d in signed and gid in goals}
 
 
-def _linked(engine, spec: GoalSpec, move: InterventionSpec, *, now: datetime) -> dict:
+# -- the command path's validators (Body.apply and the tick's re-derivation use these same functions) -----
+
+def _move_scope(book: MissionBook, manifests: dict, spec: GoalSpec, move: InterventionSpec, *,
+                now: datetime) -> dict:
     """The exact mission scope a goal move restates, or MissionError."""
     ref = move.payload
     if not isinstance(ref, dict) or not {"mission_id", "action_id"} <= set(ref):
@@ -206,12 +400,83 @@ def _linked(engine, spec: GoalSpec, move: InterventionSpec, *, now: datetime) ->
                            "mission's strategy: GREG asks only for what a signed mission can execute")
     if ref["mission_id"] not in spec.authority.get("missions", []):
         raise MissionError(f"goal move {move.intervention_id} names a mission the goal does not bind")
-    scope = engine.strategy_scope(ref["mission_id"], ref["action_id"], now=now)
+    scope = strategy_scope(book.missions.get(ref["mission_id"]), manifests, ref["action_id"], now=now)
     if (scope["capability"], scope["target"], scope["consequence_class"], scope["cost_usd"]) != \
             (move.requested_capability, move.target, move.consequence_class, float(move.estimated_cost_usd)):
         raise MissionError(f"goal move {move.intervention_id} must restate its strategy's capability, target, "
                            "consequence class and cost exactly")
     return scope
+
+
+def _linked(engine, spec: GoalSpec, move: InterventionSpec, *, now: datetime) -> dict:
+    """The exact mission scope a goal move restates, on the live engine (asks and mirrored refusals)."""
+    return _move_scope(engine.book, engine.registry.manifests, spec, move, now=now)
+
+
+def check_goal(facts: FounderFacts, payload: Any, digest_: str, *, signer: str, book: MissionBook, manifests: dict,
+               at: datetime, issued_at: str) -> GoalSpec:
+    """The GOAL validator. Raises MissionError (the command is rejected and retained as data)."""
+    if signer != "founder":
+        raise MissionError("only the founder key may authorize a goal")
+    spec = _spec(payload, digest_)
+    cones = []
+    for mid in spec.authority["missions"]:
+        m = book.missions.get(mid)
+        if m is None or m.status in TERMINAL:
+            raise MissionError(f"goal binds unknown or closed mission {mid}")
+        cones.append(CONSEQUENCE_CLASSES.index(m.cone.max_consequence_class))
+    if CONSEQUENCE_CLASSES.index(spec.authority["max_consequence_class"]) > max(cones, default=0):
+        raise MissionError("a goal cannot declare more authority than its missions' signed light cones")
+    for move in _moves(spec):
+        scope = _move_scope(book, manifests, spec, move, now=at)
+        if not scope["outside_cone"]:
+            raise MissionError(f"{move.intervention_id} is inside its mission's light cone: the mission pursues it "
+                               "when the goal wakes; declare only moves that need your decision")
+        m = book.missions[scope["mission_id"]]
+        if scope["action_id"] in m.excluded:   # the mission never selects (so never asks for) an excluded strategy
+            raise MissionError(f"{move.intervention_id} names {scope['action_id']}, which you excluded by a signed "
+                               f"critique ({m.excluded[scope['action_id']][:120]}); a goal may not ask for it")
+        if scope["scope_digest"] in m.rejected_scopes:
+            raise MissionError(f"{move.intervention_id}: you already rejected this exact scope")
+    intent = _intent(spec)
+    open_goals = facts.open_goals()
+    for gid, other in open_goals.items():
+        if gid != spec.goal_id and _intent(other) == intent:
+            raise MissionError(f"an identical goal is already authorized as {gid[:23]}; supersede it to change it")
+    closed_at = facts.closed_intents.get(intent)
+    if closed_at is not None and not instant(issued_at) > closed_at:
+        raise MissionError("you revoked or superseded a goal with this intent after this GOAL was signed; sign a "
+                           "new GOAL to authorize it again")
+    if spec.supersedes and spec.supersedes not in open_goals:
+        raise MissionError("a goal may supersede only an admitted, open goal")
+    return spec
+
+
+def check_control(facts: FounderFacts, payload: Any, *, signer: str, issued_at: str) -> tuple[str, str, Any]:
+    """The GOAL_CONTROL validator: (goal_id, kind, value), or MissionError."""
+    if not isinstance(payload, dict) or set(payload) - CONTROL_FIELDS or not {"goal_id", "kind"} <= set(payload):
+        raise MissionError("GOAL_CONTROL takes goal_id, kind and optionally value, reason")
+    gid, ck, value = payload["goal_id"], payload["kind"], payload.get("value")
+    if gid not in facts.admitted:
+        raise MissionError("GOAL_CONTROL names an unknown or unadmitted goal")
+    if ck not in CONTROL_KINDS:
+        raise MissionError(f"GOAL_CONTROL kind must be one of {CONTROL_KINDS}")
+    if ck == "stop_pushing" and not isinstance(value, bool):
+        raise MissionError("stop_pushing takes true (stop) or false (resume)")
+    if signer != "founder" and not (ck in DEVICE_GOAL_CONTROLS and (ck != "stop_pushing" or value is True)):
+        raise MissionError(f"a device key may only narrow a goal ({', '.join(DEVICE_GOAL_CONTROLS)}; stop_pushing "
+                           f"only true); {ck}{'=false' if ck == 'stop_pushing' else ''} needs the founder key")
+    closed = facts.closed.get(gid)
+    if closed is not None and ck != "revoke":
+        raise MissionError(f"a {closed['status']} goal accepts no further controls; authorize a new goal instead")
+    if ck == "lower_priority" and (isinstance(value, bool) or value not in PRIORITIES or value < facts.floor[gid]):
+        raise MissionError("lower_priority may only lower (1 highest .. 5 lowest)")
+    if ck in NARROWING or ck == "change_goal":
+        require_text(ck, value)
+    last = facts.stop.get(gid)
+    if ck in STOP_KINDS and last is not None and instant(issued_at) < instant(last["issued_at"]):
+        raise MissionError("a later-signed stop, resume or change of this goal is already applied; this one is stale")
+    return gid, ck, value
 
 
 def _moves(spec: GoalSpec):
@@ -357,40 +622,36 @@ def binding_for(body) -> _Binding:
 
 # -- founder commands (already signature-verified by Body.apply) ---------------------------------------
 
-def command(body, kind: str, payload: dict, digest_: str, *, signer: str = "founder") -> dict:
-    """Apply one verified GOAL or GOAL_CONTROL. Raises MissionError (rejected, retained as data)."""
+def command(body, kind: str, payload: dict, digest_: str, *, signer: str = "founder", envelope: dict | None = None,
+            now: datetime | None = None) -> dict:
+    """Apply one verified GOAL or GOAL_CONTROL. Raises MissionError (rejected, retained as data).
+
+    The validators are the ones the tick re-runs at this command's ledger position (``founder_facts``), on
+    the same facts: the mission book and manifests folded to here and the founder goal facts so far."""
     held = binding_for(body)
-    reg, now = held.loop.registry, body.clock()
+    reg, now = held.loop.registry, now or body.clock()
     reg.refresh()
-    signed = signed_commands(body.journal, "GOAL", body_id=body.config["body_id"])
-    ok = admitted(signed, reg)
+    facts = founder_facts(body.journal.ledger, body_id=body.config["body_id"])
+    issued_at = (envelope or {}).get("issued_at") or iso(now)
     if kind == "GOAL_CONTROL":
-        return _control(reg, ok, payload, digest_, signer, now)
-    if signer != "founder":
-        raise MissionError("only the founder key may authorize a goal")
-    spec = _spec(payload, digest_)
-    book = body.engine.book
-    cones = []
-    for mid in spec.authority["missions"]:
-        m = book.missions.get(mid)
-        if m is None or m.status in TERMINAL:
-            raise MissionError(f"goal binds unknown or closed mission {mid}")
-        cones.append(CONSEQUENCE_CLASSES.index(m.cone.max_consequence_class))
-    if CONSEQUENCE_CLASSES.index(spec.authority["max_consequence_class"]) > max(cones, default=0):
-        raise MissionError("a goal cannot declare more authority than its missions' signed light cones")
-    for move in _moves(spec):
-        scope = _linked(body.engine, spec, move, now=now)
-        if not scope["outside_cone"]:
-            raise MissionError(f"{move.intervention_id} is inside its mission's light cone: the mission pursues it "
-                               "when the goal wakes; declare only moves that need your decision")
-    intent = _intent(spec)
-    for gid in ok:
-        if gid != spec.goal_id and reg.state(gid).status not in ("revoked", "superseded") \
-                and _intent(reg.get(gid)) == intent:
-            raise MissionError(f"an identical goal is already authorized as {gid[:23]}; supersede it to change it")
+        gid, ck, value = check_control(facts, payload, signer=signer, issued_at=issued_at)
+        actor = f"{signer} (signed GOAL_CONTROL {digest_[7:19]})"
+        reason = str(payload.get("reason") or ck)[:300]
+        if ck == "revoke":
+            state = reg.revoke(gid, actor=actor, reason=reason, now=now)
+        else:
+            state = reg.record_preference(gid, kind=ck, value=value, actor=actor, reason=reason, now=now)
+        return {"goal_id": gid, "kind": ck, "status": state.status, "signer": signer, "authority_created": False}
+    spec = check_goal(facts, payload, digest_, signer=signer, book=facts.book, manifests=facts.manifests, at=now,
+                      issued_at=issued_at)
+    prior = facts.authorizations.get(spec.goal_id)
+    if prior is not None:        # only a crash-replay of this same GOAL may find its record already written
+        at = _when(prior.get("authorized_at"))
+        if at is None or not instant(issued_at) - CLOCK_SKEW <= at <= now:
+            raise MissionError(f"a goal record for this GOAL already exists, dated {prior.get('authorized_at')}, "
+                               "outside this envelope's signed validity: it was not written by this body applying "
+                               "your GOAL; it stays preserved and quarantined. Sign a new GOAL")
     if spec.supersedes:
-        if spec.supersedes not in ok or reg.state(spec.supersedes).status in ("revoked", "superseded"):
-            raise MissionError("a goal may supersede only an admitted, open goal")
         gid = reg.supersede(spec.supersedes, spec, actor=f"founder (signed GOAL {digest_[7:19]})",
                             reason="founder-signed replacement", now=now)
     else:
@@ -399,33 +660,12 @@ def command(body, kind: str, payload: dict, digest_: str, *, signer: str = "foun
             "authority_created": False, "execution_authority": "none"}
 
 
-def _control(reg: GoalRegistry, ok: dict, payload: Any, digest_: str, signer: str, now: datetime) -> dict:
-    if not isinstance(payload, dict) or set(payload) - CONTROL_FIELDS or not {"goal_id", "kind"} <= set(payload):
-        raise MissionError("GOAL_CONTROL takes goal_id, kind and optionally value, reason")
-    gid, ck, value = payload["goal_id"], payload["kind"], payload.get("value")
-    if gid not in ok:
-        raise MissionError("GOAL_CONTROL names an unknown or unadmitted goal")
-    if ck not in CONTROL_KINDS:
-        raise MissionError(f"GOAL_CONTROL kind must be one of {CONTROL_KINDS}")
-    if ck == "stop_pushing" and not isinstance(value, bool):
-        raise MissionError("stop_pushing takes true (stop) or false (resume)")
-    if signer != "founder" and not (ck in DEVICE_GOAL_CONTROLS and (ck != "stop_pushing" or value is True)):
-        raise MissionError(f"a device key may only narrow a goal ({', '.join(DEVICE_GOAL_CONTROLS)}; stop_pushing "
-                           f"only true); {ck}{'=false' if ck == 'stop_pushing' else ''} needs the founder key")
-    actor = f"{signer} (signed GOAL_CONTROL {digest_[7:19]})"
-    reason = str(payload.get("reason") or ck)[:300]
-    if ck == "revoke":
-        state = reg.revoke(gid, actor=actor, reason=reason, now=now)
-    else:
-        state = reg.record_preference(gid, kind=ck, value=value, actor=actor, reason=reason, now=now)
-    return {"goal_id": gid, "kind": ck, "status": state.status, "signer": signer, "authority_created": False}
-
-
 # -- one turn on the body ------------------------------------------------------------------------------
 
-def _guard(body, reg: GoalRegistry, ok: dict, signed: dict, at: datetime) -> list[str]:
+def _guard(body, reg: GoalRegistry, facts: FounderFacts, at: datetime) -> list[str]:
     """Narrowing only: unadmitted goals never pull; a signed stop/change/revoke is never undone unsigned."""
     quarantined = []
+    ok = facts.admitted
     for gid in reg.goals():
         if gid not in ok and reg.state(gid).status not in CLOSED:
             reg.record_preference(gid, kind="stop_pushing", value=True, actor=ADMISSION_ACTOR, now=at,
@@ -434,33 +674,36 @@ def _guard(body, reg: GoalRegistry, ok: dict, signed: dict, at: datetime) -> lis
     for gid in ok:                                     # lift only the binding's own quarantine, once admitted
         prefs = [r.payload for r in body.ledger.by_type(GoalRegistry.PREFERENCE_RECORD) if r.payload["goal_id"] == gid]
         if prefs and prefs[-1]["reason"].startswith(f"stop_pushing by {ADMISSION_ACTOR}") \
-                and reg.state(gid).status == "paused":
+                and reg.state(gid).status == "paused" and facts.stopped(gid) is None:
             reg.record_preference(gid, kind="stop_pushing", value=False, actor=ADMISSION_ACTOR, now=at,
                                   reason="a retained founder-signed GOAL now authorizes this goal")
-    last = {}
-    for d, c in signed.items():                         # dict order is ledger order
-        b = c["envelope"]["body"]
-        if c["kind"] == "GOAL_CONTROL" and isinstance(b, dict) and b.get("kind") in ("stop_pushing", "change_goal",
-                                                                                      "revoke"):
-            last[b.get("goal_id")] = (b["kind"], b.get("value"), d, c["principal"])
-    for gid, (ck, value, d, principal) in last.items():
-        if gid not in ok:
-            continue
-        state = reg.state(gid)
-        actor = f"restoring signed {principal} control {d[7:19]}"
-        if ck == "revoke" and principal == "founder" and state.status != "revoked":
-            reg.revoke(gid, actor=actor, reason="signed revoke", now=at)
-        elif ((ck == "change_goal" and principal == "founder") or (ck == "stop_pushing" and value is True)) \
-                and state.status not in CLOSED:
-            reg.record_preference(gid, kind="stop_pushing", value=True, actor=actor, reason="signed stop", now=at)
+    for gid in ok:
+        if gid in reg.goals():
+            try:
+                _restore(reg, facts, gid, at)
+            except ContractError:            # a refused restoration never faults the turn; the goal stays narrow
+                continue
     return quarantined
 
 
-def _settle(body, reg: GoalRegistry, ok: dict, signed: dict, at: datetime) -> list[str]:
+def _restore(reg: GoalRegistry, facts: FounderFacts, gid: str, at: datetime) -> None:
+    state = reg.state(gid)
+    closed = facts.closed.get(gid)
+    if closed is not None and closed["status"] == "revoked" and state.status != "revoked":
+        reg.revoke(gid, actor=f"restoring signed {closed['principal']} control {closed['by'][7:19]}",
+                   reason="signed revoke", now=at)
+        return
+    stop = facts.stopped(gid)
+    if stop is not None and state.status not in CLOSED:
+        reg.record_preference(gid, kind="stop_pushing", value=True, reason="signed stop", now=at,
+                              actor=f"restoring signed {stop['principal']} control {stop['by'][7:19]}")
+
+
+def _settle(body, reg: GoalRegistry, facts: FounderFacts, at: datetime) -> list[str]:
     """A signature-verified reject of a goal move's exact scope is remembered by the goal too."""
-    book, mirrored = body.engine.book, []
-    for gid in ok:
-        if reg.state(gid).status in ("revoked", "superseded", "completed"):
+    book, mirrored, signed = body.engine.book, [], facts.signed
+    for gid in facts.admitted:
+        if gid not in reg.goals() or reg.state(gid).status in ("revoked", "superseded", "completed"):
             continue
         spec = reg.get(gid)
         for move in _moves(spec):
@@ -590,11 +833,10 @@ def _tick(body, now: datetime) -> dict:
     last = [r.payload["turn"]["at"] for r in body.ledger.by_type(GoalGravityLoop.TURN_RECORD)][-1:]
     at = max([now] + [datetime.fromisoformat(a.replace("Z", "+00:00")) for a in last])   # never backdated
     body.engine.book.rebuild()
-    signed = signed_commands(body.journal, *VERIFIED_KINDS, body_id=body.config["body_id"])
-    held.store.begin(signed)
-    ok = admitted(signed, reg)
-    quarantined = _guard(body, reg, ok, signed, at)
-    refusals = _settle(body, reg, ok, signed, at)
+    facts = founder_facts(body.ledger, body_id=body.config["body_id"])
+    held.store.begin(facts.signed)
+    quarantined = _guard(body, reg, facts, at)
+    refusals = _settle(body, reg, facts, at)
     signals, end = _sense(body, loop, held.cursor)
     if not (signals or reg.due_for_review(at) or reg.by_status("awake")):
         held.cursor = end
@@ -631,8 +873,8 @@ def _goal_requests(book: MissionBook, gid: str, spec: GoalSpec) -> list[str]:
 def projection(journal, *, closure: bool = True) -> dict:
     """Every goal on this body, read-only (safe while the body runs). Labels say what is and is not claimed."""
     reg = GoalRegistry(ledger=journal.ledger, quarantine_unhydratable=True)
-    signed = signed_commands(journal, *VERIFIED_KINDS)
-    ok = admitted(signed, reg)
+    facts = founder_facts(journal.ledger)
+    signed, ok = facts.signed, facts.admitted
     book = MissionBook(journal)
     goals, unadmitted = [], []
     for gid in reg.goals():
@@ -649,8 +891,10 @@ def projection(journal, *, closure: bool = True) -> dict:
         if gid in ok:
             goals.append({**row, "admitted": True, "authorization_command": ok[gid]})
         else:
-            unadmitted.append({**row, "admitted": False,
-                               "why": "no retained founder-signed GOAL authorizes it; preserved, never woken"})
+            ref = spec.authority.get("authorization_ref")
+            why = (f"its signed GOAL does not admit it here: {facts.refused[ref]}" if ref in facts.refused
+                   else "no retained founder-signed GOAL authorizes it")
+            unadmitted.append({**row, "admitted": False, "why": why + "; preserved, never woken"})
     turns = journal.ledger.by_type(GoalGravityLoop.TURN_RECORD)
     out = {
         "schema": SCHEMA, "goals": goals, "unadmitted": unadmitted, "quarantined_records": list(reg.quarantined),
@@ -705,8 +949,8 @@ def evidence(journal, goal_id: str) -> dict:
         raise MissionError(f"no single goal matches {goal_id!r}")
     gid = matches[0]
     spec = reg.get(gid)
-    signed = signed_commands(journal, *VERIFIED_KINDS)
-    ok = admitted(signed, reg)
+    facts = founder_facts(journal.ledger)
+    signed, ok = facts.signed, facts.admitted
     ledger = journal.ledger
     command_events = [e for e in journal.replay("command.accepted") if e.payload.get("digest") == ok.get(gid)]
     mids = set(spec.authority.get("missions", []))

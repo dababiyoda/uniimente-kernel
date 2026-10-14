@@ -154,3 +154,26 @@ def test_claude_code_builder_has_no_tools_no_disk_and_a_spend_cap():
     argv = seen["argv"]
     assert argv[argv.index("--tools") + 1] == "" and argv[argv.index("--max-budget-usd") + 1] == "0.40"
     assert "held_out" not in seen["input"] and "numbered" not in seen["input"]
+
+
+def test_a_billed_attempt_without_a_candidate_carries_its_cost():
+    """Genesis books BuildError.cost_usd against the signed build budget: an answer is paid for even when
+    it holds no source, and a CLI error after spending is still spend."""
+    request = {"function": FUNCTION, "description": CONTRACT["description"], "examples": CONTRACT["examples"]}
+
+    class Router:
+        last = None
+
+        def complete(self, system, user, *, budget_usd=None):
+            return {"text": "I would rather explain it in prose.", "route": "r", "cost_usd": 0.04}
+
+    with pytest.raises(builders.BuildError) as info:
+        builders.ModelBuilder(Router()).build(request)
+    assert info.value.cost_usd == 0.04
+
+    def runner(argv, **kw):
+        return subprocess.CompletedProcess(argv, 0, json.dumps({"is_error": True, "result": "budget exceeded",
+                                                                "total_cost_usd": 0.4}), "")
+    with pytest.raises(builders.BuildError) as info:
+        builders.ClaudeCodeBuilder("/usr/bin/claude", max_budget_usd=0.4, runner=runner).build(request)
+    assert info.value.cost_usd == 0.4

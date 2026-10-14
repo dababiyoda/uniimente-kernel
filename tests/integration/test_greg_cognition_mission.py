@@ -141,9 +141,12 @@ def test_recombined_native_game_uses_same_gate_appraisal_and_learning_after_rest
         assert body.engine.book.missions["m:native-game"].status == "ACHIEVED"
         assert not [e for e in body.journal.replay("routing.outcome")
                     if e.payload["mission_id"] == "m:native-game"], "an abstaining sensor never books a strategy ineffective"
-        cognitive = next(r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
+        # The receipt that answered: under load an earlier observation may have abstained (see above),
+        # and an abstention carries no verifier checks.
+        cognitive = next(r.payload["result"]["output"] for r in reversed(body.ledger.by_type("receipt"))
                          if isinstance(r.payload["result"].get("output"), dict)
-                         and r.payload["result"]["output"].get("problem_id") == "qualified:game")
+                         and r.payload["result"]["output"].get("problem_id") == "qualified:game"
+                         and r.payload["result"]["output"].get("abstention_state") == "NONE")
         assert cognitive["method"] == "cognition.game" and cognitive["method_version"] == "0.3.0"
         assert cognitive["evaluator"] == "greg.cognition.verification/0.3.0"
         assert cognitive["evaluator_result"]["checks"]["independent_minimax_primal_dual"]

@@ -36,6 +36,7 @@ P4_V2 = "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json"
 P6_V1 = "docs/evidence/greg-composition-lift/2026-10-07/results.json"
 P6_V2 = "docs/evidence/greg-composition-lift/2026-10-14/results-v2.json"
 TARGET_FORM = "docs/TARGET_FORM_001.md"
+DEV_SWEEP = "docs/evidence/greg-developmental-sweep/2026-10-14/README.md"
 
 # Founder layer of each #140 operation family (the catalog's own numbering is kept in ``detail``).
 FAMILY_LAYER = {"micro": 1, "control": 1, "pattern": 1, "robust_pattern": 1, "collective": 2, "human": 2, "crowd": 2,
@@ -43,6 +44,13 @@ FAMILY_LAYER = {"micro": 1, "control": 1, "pattern": 1, "robust_pattern": 1, "co
 # Admission-run structural statuses mapped into the directive's vocabulary.
 STRUCTURAL = {"ALIAS": "SUPERSEDED", "SUPERSEDED_BY_CANONICAL_ORGAN": "SUPERSEDED",
               "NOT_BENCHMARKED": "EXPERIMENTAL", "NOT_RUN": "EXPERIMENTAL", "ROUTE_ONLY": "EXPERIMENTAL"}
+# Findings recorded next to a frozen verdict without changing it (see the cited README).
+NOTES = {
+    "swarm": "post hoc (not pre-registered): multistart L-BFGS-B beats PSO 32/7; acquisition target",
+    "blackbox": "superseded by multistart L-BFGS-B 26/8 (p = 0.0015); acquisition target",
+    "crowd": "one-step agreement-weighted vote ties it 18/15; simpler method not yet beaten",
+    "robust_pattern": "beats the rejected z-score 25/5 (reference); not admitted over IQR fences",
+}
 # Reserved cortex families whose effect already runs as an operation family or a lab (not as a cortex organ).
 REALIZED_BY = {
     "cortex.probabilistic.bayes": "cognition.probabilistic", "cortex.information.voi": "cognition.information",
@@ -140,7 +148,8 @@ def _families() -> list[GenomeEntry]:
         implemented = family in solvers.SOLVERS
         out.append(GenomeEntry(f"cognition.{family}", "operation_family", FAMILY_LAYER.get(family, 3), implemented,
                                implemented, "BUILDABLE_NOW", status,
-                               f"admission run: {raw}; catalog layer {catalog_layer}; ops {', '.join(operations)}",
+                               f"admission run: {raw}; catalog layer {catalog_layer}; ops {', '.join(operations)}"
+                               + (f"; {NOTES[family]}" if family in NOTES else ""),
                                (ref,) if ref else (), None, tuple(classes)))
     return out
 
@@ -172,8 +181,9 @@ def _acquired() -> list[GenomeEntry]:
                     "mental models as typed operators at evidenced bottlenecks; lawful-means gate; generates "
                     "UNESTIMATED candidates for the existing leverage ranker; no outcome evidence yet"),
         GenomeEntry("mechanism.mica_cdpe", "mechanism", 4, True, False, "EXPERIMENTAL_NOW", "EXPERIMENTAL",
-                    "MICA/CDPE damage-recovery lab: MECHANICS_VALIDATED_NOT_PRODUCTION_AUTHORIZED (parity "
-                    ">= 90% of adaptive central replanning, no advantage shown)", (TARGET_FORM,)),
+                    "MICA/CDPE damage-recovery lab: MECHANICS_VALIDATED_NOT_PRODUCTION_AUTHORIZED on its fixed "
+                    "perturbation; unseen-damage sweep PARITY with adaptive central replanning on 40/40 seeds "
+                    "(distributed shortest-path routing; no advantage)", (TARGET_FORM, DEV_SWEEP)),
     ]
     return out
 

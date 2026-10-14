@@ -1451,8 +1451,16 @@
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:568",
-          "reality": "graph.shortest_path, graph.max_flow, lp.optimize qualified from open source (VERIFIED, not ATTACHED); other families deferred on demand",
-          "evidence": "tests/evidence/greg-open-source-genesis-2026-10-01/README.md"
+          "reality": "graph.shortest_path, graph.max_flow, lp.optimize qualified from open source (VERIFIED, not ATTACHED); other families deferred on demand; admission v1 (2026-10-14): 8 DEFAULT_FOR_GEOMETRY, 4 REJECTED; admission v2: crowd (Dawid-Skene) and swarm (PSO) DEFAULT_FOR_GEOMETRY, robust_pattern EXPERIMENTAL, blackbox (DE) SUPERSEDED by multistart L-BFGS-B (acquisition target; post hoc it also beats PSO 32/7)",
+          "evidence": "docs/evidence/greg-genome-admission/2026-10-14/README.md; README-v2.md",
+          "implementation_refs": [
+            "cortex/evaluation/genome_admission/run.py",
+            "cortex/evaluation/genome_admission/run_v2.py",
+            "greg/cognition/genome_library.py",
+            "greg/cognition/repertoire.py",
+            "tests/unit/test_greg_genome_library.py",
+            "tests/unit/test_greg_repertoire.py"
+          ]
         },
         {
           "id": "P6",
@@ -1507,7 +1515,7 @@
           "id": "P8",
           "title": "Evolutionary cognition",
           "requirement": "Use trustworthy machine-evaluable objectives, protected evaluators, candidate mutation/recombination, sandbox execution, selection, and lineage. Exit: repeated held-out gains without evaluator gaming or unauthorized mutation. No self-authored evaluator may be its own final judge.",
-          "status": "deferred",
+          "status": "active (machinery IMPLEMENTED; first run REJECT)",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P7 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1517,8 +1525,17 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:578"
+          "smallest_next_experiment": "the same protected machinery on a search space with headroom (composition recipes or a multi-engine repertoire), pre-registered",
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:578",
+          "reality": "protected routing-genome evolution IMPLEMENTED, TESTED: closed data-only schema, authority-bearing keys refused, hash-pinned separate-process evaluator re-checked around every call; first frozen run (97 candidates) found no dev improvement, held-out 112 = 112, verdict REJECT; adversarial probes all refused; exit not met (no headroom in this search space)",
+          "implementation_refs": [
+            "cortex/evaluation/evolution/evaluator.py",
+            "cortex/evaluation/evolution/run.py",
+            "greg/cognition/evolution.py",
+            "tests/unit/test_greg_protected_evolution.py"
+          ],
+          "evidence": "docs/evidence/greg-protected-evolution/2026-10-14/README.md",
+          "exit_met": false
         },
         {
           "id": "P9",
@@ -1541,7 +1558,7 @@
           "id": "P10",
           "title": "Functional morphogenesis",
           "requirement": "Inject an unseen loss. Require recovered target function through a materially different organization, bounded local information, no scripted restoration, preserved authority/identity, and independent outcome verification. Compare against a strong centralized adaptive baseline. Metric: scoped Unscripted Functional Recovery Rate.",
-          "status": "deferred",
+          "status": "deferred (unseen-damage sweep run: PARITY)",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P9 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1552,7 +1569,12 @@
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
-          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:584"
+          "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:584",
+          "reality": "MICA/CDPE lab composed on unseen random damage (40 seeds, 10-40 %): PARITY with adaptive central replanning on 40/40 seeds (distributed shortest-path routing); falsifier 'beats adaptive central on unseen failures' not met",
+          "implementation_refs": [
+            "cortex/evaluation/developmental_sweep/run.py"
+          ],
+          "evidence": "docs/evidence/greg-developmental-sweep/2026-10-14/README.md"
         },
         {
           "id": "P11",

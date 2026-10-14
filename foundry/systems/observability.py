@@ -32,7 +32,9 @@ def correlate(events: list[dict], mission_id: str | None = None) -> dict:
     traces: dict[str, list] = defaultdict(list)
     requested: dict[str, str] = {}
     last_capability: dict[str, str] = {}
-    for e in sorted(events, key=lambda e: (e["at"], e["event_id"])):
+    # A ledger sequence, when the caller has one, is the canonical order: timestamps can come from
+    # different clocks (the body's, an organ's, the dataplane's) and do not order causally.
+    for e in sorted(events, key=lambda e: (e.get("seq", -1), e["at"], e["event_id"])):
         p, kind = e["payload"], _kind(e)
         mid = p.get("mission_id")
         if not mid or (mission_id and mid != mission_id):

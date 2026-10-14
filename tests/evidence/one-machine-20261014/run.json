@@ -1,0 +1,22 @@
+{
+ "mission_id": "m:one-machine-staff-om",
+ "ledger_head": "sha256:58b510acd5eb4c5032bdf3bd2170d84f56329e8e87741d55f038f213d8ef5bd4",
+ "worker_runs": [
+  "19695 1791983577.9866576",
+  "20229 1791983584.978305"
+ ],
+ "reconciliation_request": "req-904dedc26b6197abfed1aa16",
+ "boots": 3,
+ "recoveries": 2,
+ "later_mission": "m:compiled-staff-later",
+ "later_method": "composed.assignment.staffing.networkx.5670bf4c5c",
+ "formed": [
+  "acquired.graph.max_flow.networkx",
+  "composed.assignment.staffing.networkx.5670bf4c5c"
+ ],
+ "organ_heads": [
+  "daleobanks",
+  "wealthmachine"
+ ],
+ "authority": "per-test Ed25519 key; NOT Alfonso's key; synthetic founder authority"
+}

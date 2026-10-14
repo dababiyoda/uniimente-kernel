@@ -43,8 +43,8 @@ def closed_procedures(journal: Journal) -> dict[str, list]:
     steps = defaultdict(list)
     for event in journal.replay("mission.action"):
         data = event.payload
-        if data["mission_id"] in achieved and data["status"] == "DONE":
-            steps[data["mission_id"]].append(data["capability"])
+        if data["mission_id"] in achieved and data["status"] == "DONE" and data.get("capability"):
+            steps[data["mission_id"]].append(data["capability"])   # pre-2026-10-14 reconciliations name none
     return dict(steps)
 
 

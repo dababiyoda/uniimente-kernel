@@ -67,3 +67,75 @@ def vepmc(journal: Journal) -> dict:
                      "missing": [c for c in CONDITIONS if not row[c]]})
     return {"VEPMC": sum(r["counts"] for r in rows), "missions": rows, "conditions": list(CONDITIONS),
             "external_confirmation_required": "ledger checks cannot prove physical ownership or personal presence"}
+
+
+# -- engineering diagnostic: sandbox whole-machine closures (NEVER VEPMC) ---------------------
+
+STAGES = ("founder_signed_via_inbox", "mind_certified_without_model", "capability_formed", "organs_reproduced",
+          "worker_accepted", "interruption_reconciled", "appraised_verified")
+
+
+def sandbox_whole_machine(journal: Journal) -> dict:
+    """How many closed missions exercised the whole machine on one path, from ledger facts.
+
+    A diagnostic for engineering convergence, distinct from VEPMC by name, by evidence tier and
+    by construction: it needs no founder acceptance and no founder-designated body, and it counts
+    synthetic-authority test runs. It must never be reported as, added to, or substituted for VEPMC.
+
+      founder_signed_via_inbox      appraiser re-verified the signature; the mission came through the inbox
+      mind_certified_without_model  a Competency Compiler receipt ANSWERED with a certified result, 0 model calls
+      capability_formed             Genesis opened, verified and resolved a deficit for this mission
+      organs_reproduced             two organs observed, transport-verified, organ.appraised REPRODUCED
+      worker_accepted               worker.appraise observed ACCEPTED for this mission
+      interruption_reconciled       a body recovery between registration and closure, and a founder
+                                    reconciliation answered for this mission (no blind retry)
+      appraised_verified            the separate-process closure appraisal returned VERIFIED
+    """
+    ledger = journal.ledger
+    seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
+    registered = {e.payload["mission_id"]: seq[e.event_id] for e in journal.replay("mission.registered")}
+    appraised = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.appraised")}
+    recoveries = [seq[e.event_id] for e in journal.replay("body.recovered")]
+    reconciliations = {e.payload.get("request_id") for e in journal.replay("decision.requested")
+                       if e.payload.get("kind") == "RECONCILIATION"}
+    answered = {e.payload["request_id"] for e in journal.replay("decision.answered")
+                if e.payload.get("answer", "").startswith("reconcile_")}
+    requested_for = {e.payload["request_id"]: e.payload.get("mission_id") for e in journal.replay("decision.requested")}
+    rows = []
+    for event in journal.replay("mission.achieved"):
+        mid, done = event.payload["mission_id"], seq[event.event_id]
+        checks = (appraised.get(mid) or {}).get("checks", {})
+        observed = [e.payload for e in journal.replay("mission.observed") if e.payload["mission_id"] == mid]
+        outputs = []
+        for o in observed:
+            record = ledger.find(o.get("receipt") or "") if o.get("receipt") else None
+            if record is not None and record.record_type == "receipt":
+                outputs.append((o, record.payload.get("result", {}).get("output")))
+        organs = [e.payload for e in journal.replay("organ.observed") if e.payload.get("mission_id") == mid]
+        organ_verdicts = [e.payload["verdict"] for e in journal.replay("organ.appraised")
+                          if e.payload.get("mission_id") == mid]
+        deficits = {e.payload["deficit_id"] for e in journal.replay("deficit.opened") if e.payload.get("mission_id") == mid}
+        resolved = {e.payload["deficit_id"] for e in journal.replay("deficit.resolved") if e.payload.get("mission_id") == mid}
+        verified = {e.payload["deficit_id"] for e in journal.replay("genesis.verified") if e.payload.get("passed")}
+        row = {
+            "founder_signed_via_inbox": bool(checks.get("founder_signature_verified")) and bool(checks.get("arrived_via_inbox")),
+            "mind_certified_without_model": any(
+                isinstance(out, dict) and out.get("schema") == "greg-competency-compilation/0.1"
+                and out.get("state") == "ANSWERED" and str(out.get("confidence_type", "")).startswith("certified")
+                and (out.get("cost") or {}).get("model_calls") == 0 for _, out in outputs),
+            "capability_formed": bool(deficits & resolved & verified),
+            "organs_reproduced": {o.get("organ") for o in organs} >= {"daleobanks", "wealthmachine"}
+                                 and all(o.get("transport_verified") for o in organs)
+                                 and bool(organ_verdicts) and organ_verdicts[-1] == "REPRODUCED",
+            "worker_accepted": any(isinstance(out, dict) and out.get("verdict") == "ACCEPTED" and o.get("passed")
+                                   for o, out in outputs if o.get("check_id")),
+            "interruption_reconciled": any(registered.get(mid, 1 << 60) < r < done for r in recoveries)
+                                       and any(requested_for.get(rid) == mid for rid in reconciliations & answered),
+            "appraised_verified": (appraised.get(mid) or {}).get("verdict") == "VERIFIED",
+        }
+        rows.append({"mission_id": mid, **row, "whole_machine": all(row.values()),
+                     "missing": [s for s in STAGES if not row[s]]})
+    return {"SANDBOX_WHOLE_MACHINE_CLOSURES": sum(r["whole_machine"] for r in rows), "missions": rows,
+            "stages": list(STAGES),
+            "tier": "sandbox integration diagnostic: synthetic or test authority allowed; never VEPMC, never "
+                    "founder acceptance, never real-world outcome evidence"}

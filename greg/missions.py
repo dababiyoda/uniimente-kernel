@@ -641,9 +641,12 @@ class MissionEngine:
             if m.blocker["type"] == "reconciliation":
                 answer = self.book.answers[m.blocker["request_id"]]["answer"]
                 aid = m.blocker["action_id"]
+                strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), {})
                 self.journal.record("mission.action", {
                     "mission_id": m.mission_id, "action_id": aid, "attempt": m.attempts.get(aid, 1) - 1,
                     "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
+                    "capability": strategy.get("capability"), "route": "founder_reconciliation",
+                    "receipt": None, "at": iso(now),
                     "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0},
                     key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
             lifted = m.blocker

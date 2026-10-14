@@ -210,7 +210,7 @@ def test_moving_bytes_between_copies_is_refused_although_the_sum_is_unchanged(
     per-artifact digests see it, and the historical verdict must use them."""
     objects = tmp_path / "objects"
     shutil.copytree(continuity.OBJECTS, objects)
-    (first, d1), (second, d2) = SR002.artifacts[0], SR002.artifacts[1]
+    (_, d1), (_, d2) = SR002.artifacts[0], SR002.artifacts[1]
     a, b = (objects / d1).read_bytes(), (objects / d2).read_bytes()
     (objects / d1).write_bytes(a[:-1])
     (objects / d2).write_bytes(a[-1:] + b)

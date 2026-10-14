@@ -2300,6 +2300,7 @@ INTELLIGENCES = [
                        "information the market never sees)")),
         solve=market_solve, verify=market_verify, instance=market_instance, score=market_score,
         baseline=market_proportional, competitor=market_central_optimum, subregion=market_subregion,
+        competitor_deployable=False,
         tolerance=1e-6,
         notes={"score": "realized welfare above the reserve / DP optimum; capacity or request violation = wrong (-1)",
                "information_asymmetry": "the competitor reads private values; the market only queries demand"}),

@@ -159,8 +159,93 @@ def reconcile(journal):
             journal.record("cognition.settled", revision, key=[identity, "invalidate", prior.event_id], causal_parent=prior.event_id)
 
 
+REALIZATION_SOURCES = ("sensor_observation", "external_record", "founder_reported")
+MIN_CALIBRATION_N = 20
+
+
+def record_realization(journal, *, receipt: str, realized, source: str, note: str = "") -> dict:
+    """Bind the realized values of a forecast to the ledger receipt that carried it (one fact per receipt).
+
+    ``receipt`` is the ledger hash of the action receipt whose output is the cognitive receipt; ``realized`` is
+    one finite number per forecast horizon step, observed after the forecast was made. The source is labelled,
+    never upgraded: a founder-reported value is evidence of that report, not a sensor reading. No authority."""
+    record = journal.ledger.find(receipt)
+    cognitive = (record.payload.get("result", {}).get("output") if record is not None and
+                 record.record_type == "receipt" else None)
+    if not _valid_receipt(cognitive) or not isinstance((cognitive.get("output") or {}).get("quantiles"), dict):
+        raise ValueError("realizations bind only to a retained, valid forecast receipt")
+    horizon = len(cognitive["output"]["point"])
+    if (not isinstance(realized, list) or len(realized) != horizon
+            or not all(type(v) in (int, float) and v == v and abs(v) != float("inf") for v in realized)):
+        raise ValueError(f"realized takes {horizon} finite numbers, one per forecast horizon step")
+    if source not in REALIZATION_SOURCES:
+        raise ValueError(f"source is one of {list(REALIZATION_SOURCES)}")
+    payload = {"receipt": receipt, "cognitive_receipt": cognitive["receipt_id"], "realized": list(realized),
+               "source": source, "note": str(note)[:300], "authority_created": False}
+    journal.record("cognition.realization", payload, key=receipt, sensitivity="confidential")
+    return payload
+
+
+def _wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    if n == 0:
+        return 0.0, 1.0
+    p = k / n
+    centre = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / (1 + z * z / n)
+    return max(0.0, centre - half), min(1.0, centre + half)
+
+
 def outcome_calibration(journal):
-    # A passing predicate is not a labeled realization of a probabilistic event.
-    # Retain the seam; require real prediction-target outcomes before calibration.
-    return {"verdict": "unmeasured", "n": 0,
-            "missing": "receipt-bound realizations of the predicted event, distinct from solver acceptance"}
+    """Coverage of forecast quantiles against realized values bound to their receipts.
+
+    Per method and requested level, the verdict uses the one-step-ahead realization of each receipt only (one
+    observation per forecast, so the Wilson 95% interval is not inflated by the dependent later steps of the
+    same path): a level is MISCALIBRATED when its interval excludes the nominal level, and needs at least
+    MIN_CALIBRATION_N receipts. Coverage and pinball loss over every horizon step are reported as description.
+    A passing mission predicate is still not a realization: only ``cognition.realization`` facts count."""
+    if journal is None:
+        return {"verdict": "unmeasured", "n": 0, "missing": "no journal"}
+    cells = defaultdict(lambda: {"covered": 0, "n": 0, "pinball": 0.0, "h1_covered": 0, "h1_n": 0})
+    seen = set()
+    for event in journal.replay("cognition.realization"):
+        data = event.payload
+        record = journal.ledger.find(data["receipt"])
+        cognitive = (record.payload.get("result", {}).get("output")
+                     if record is not None and record.record_type == "receipt" else None)
+        if not _valid_receipt(cognitive) or cognitive["receipt_id"] != data.get("cognitive_receipt"):
+            continue
+        if cognitive["receipt_id"] in seen:
+            continue                     # one realization per forecast, however many ledger copies carry it
+        seen.add(cognitive["receipt_id"])
+        quantiles = (cognitive.get("output") or {}).get("quantiles") or {}
+        for key, path in quantiles.items():
+            level = float(key)
+            cell = cells[cognitive["method"], cognitive["method_version"], key]
+            if path and data["realized"]:
+                cell["h1_n"] += 1
+                cell["h1_covered"] += int(data["realized"][0] <= path[0])
+            for predicted, actual in zip(path, data["realized"]):
+                cell["n"] += 1
+                cell["covered"] += int(actual <= predicted)
+                cell["pinball"] += max(level * (actual - predicted), (level - 1) * (actual - predicted))
+    if not cells:
+        return {"verdict": "unmeasured", "n": 0,
+                "missing": "receipt-bound realizations of the predicted quantity (cognition.realization)"}
+    levels, verdicts = [], set()
+    for (method, version, key), cell in sorted(cells.items()):
+        low, high = _wilson(cell["h1_covered"], cell["h1_n"])
+        nominal = float(key)
+        state = ("INSUFFICIENT_EVIDENCE" if cell["h1_n"] < MIN_CALIBRATION_N
+                 else "CALIBRATED" if low <= nominal <= high else "MISCALIBRATED")
+        verdicts.add(state)
+        levels.append({"method": method, "method_version": version, "level": nominal, "receipts": cell["h1_n"],
+                       "one_step_coverage": round(cell["h1_covered"] / cell["h1_n"], 4) if cell["h1_n"] else None,
+                       "interval95": [round(low, 4), round(high, 4)], "state": state,
+                       "all_steps": {"n": cell["n"], "coverage": round(cell["covered"] / cell["n"], 4),
+                                     "mean_pinball": round(cell["pinball"] / cell["n"], 6),
+                                     "note": "steps of one path are dependent: description, not a test"}})
+    verdict = ("MISCALIBRATED" if "MISCALIBRATED" in verdicts else "INSUFFICIENT_EVIDENCE"
+               if "INSUFFICIENT_EVIDENCE" in verdicts else "CALIBRATED")
+    return {"verdict": verdict, "n": len(seen), "levels": levels,
+            "evidence_tier": "realized values bound to retained forecast receipts; source labelled per fact",
+            "authority_created": False}

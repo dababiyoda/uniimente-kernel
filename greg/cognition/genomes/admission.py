@@ -56,6 +56,7 @@ from greg.cognition.genomes.contract import CATEGORIES, GenomeError  # noqa: E40
 
 DEV_SEEDS = tuple(range(0, 10))
 HELDOUT_SEEDS = tuple(range(1000, 1030))
+P8_RESERVED = range(7000, 8060)          # protected-evolution partitions (greg/cognition/evolution.py)
 COST_RATIO = 1.25
 ALPHA = 0.05
 RULE = ("COMPOSITION_ONLY if no standalone decision; REJECTED if more wrong than baseline or significantly worse "
@@ -64,7 +65,10 @@ RULE = ("COMPOSITION_ONLY if no standalone decision; REJECTED if more wrong than
         "competitor >=1.25x cheaper; NICHE_CAPABILITY if beats baseline but significantly worse than competitor "
         "with some wins, or more wrong than competitor, or ties competitor at >=1.25x cost; DEFAULT_FOR_GEOMETRY "
         "if beats baseline, not significantly worse than competitor, no more wrong, and significantly better or "
-        "<=1.25x competitor median latency. One-sided exact sign tests, alpha 0.05, 30 held-out seeds.")
+        "<=1.25x competitor median latency. A competitor declared non-deployable (an oracle upper bound) is a "
+        "reported reference: it neither supersedes nor demotes, so a candidate that beats its baseline without "
+        "more wrong answers is DEFAULT_FOR_GEOMETRY. One-sided exact sign tests, alpha 0.05, 30 held-out seeds "
+        "recorded in the freeze.")
 EVIDENCE = ROOT / "docs" / "evidence" / "greg-genome-admission"
 
 
@@ -149,6 +153,8 @@ def decide(item, rows) -> tuple[str, dict]:
         status = "REJECTED"
     elif not beats_baseline:
         status = "EXPERIMENTAL"
+    elif not getattr(item, "competitor_deployable", True):
+        status = "DEFAULT_FOR_GEOMETRY"          # the best deployable method here; the oracle gap is reported
     elif vk["p_worse"] < ALPHA:
         status = "NICHE_CAPABILITY" if vk["wins"] > 0 else "SUPERSEDED"
     elif vk["wins"] == vk["losses"] == 0 and lat_k * COST_RATIO <= lat_c:
@@ -165,7 +171,20 @@ def decide(item, rows) -> tuple[str, dict]:
             sub = [r for r in rows if r["subregion"] == name]
             subregions[name] = {"n": len(sub), "vs_baseline": compare(sub, "candidate", "baseline", tol),
                                 "vs_competitor": compare(sub, "candidate", "competitor", tol)}
-    return status, {"arms": stats, "vs_baseline": vb, "vs_competitor": vk, "subregions": subregions}
+    detail = {"arms": stats, "vs_baseline": vb, "vs_competitor": vk, "subregions": subregions}
+    if not getattr(item, "competitor_deployable", True):
+        detail["competitor_role"] = "reference upper bound (not deployable): gap reported, never superseding"
+    return status, detail
+
+
+def spent_seeds(exclude: Path | None = None) -> set[int]:
+    """Held-out seeds already used by any admission freeze in the evidence tree."""
+    out = set()
+    for manifest in EVIDENCE.glob("*/freeze.json") if EVIDENCE.exists() else []:
+        if exclude is not None and manifest.parent == exclude:
+            continue
+        out |= set(json.loads(manifest.read_text())["inputs"].get("heldout_seeds", []))
+    return out
 
 
 def _sha(path: Path) -> str:
@@ -182,7 +201,7 @@ FREEZE_EXTRA = ("cortex/evaluation/data/m4_weekly.json.gz", "tools/offline_test.
                 "requirements-cortex.txt", "requirements-cognition.txt")
 
 
-def inputs(families) -> dict:
+def inputs(families, heldout=HELDOUT_SEEDS) -> dict:
     """Everything a held-out run can execute or read: the import closure of this harness and the isolated
     worker (the smoke runs through the canonical cortex path), all of ``greg/cognition`` (the library imports
     genome modules by name), the M4 data and the dependency versions. The 2026-10-13-v1 freeze hashed only
@@ -190,16 +209,16 @@ def inputs(families) -> dict:
     from cortex.evaluation.closure import code_closure, dependency_versions
     files = code_closure(("greg/cognition/genomes/admission.py", "greg/cognition/worker.py"),
                          packages=("greg/cognition",), extra=FREEZE_EXTRA, root=ROOT)
-    return {"rule": RULE, "dev_seeds": list(DEV_SEEDS), "heldout_seeds": list(HELDOUT_SEEDS),
+    return {"rule": RULE, "dev_seeds": list(DEV_SEEDS), "heldout_seeds": list(heldout),
             "families": sorted(families), "code": {p: _sha(ROOT / p) for p in files},
             "dependencies": dependency_versions()}
 
 
-def smoke(family: str) -> dict:
+def smoke(family: str, seed: int = HELDOUT_SEEDS[0]) -> dict:
     """One held-out instance through GREG's canonical cognition path, family attached for evaluation only."""
     from greg.cognition.cortex import reason, registry_view
     item = library.executables()[family]
-    data, _ = item.instance(HELDOUT_SEEDS[0])
+    data, _ = item.instance(seed)
     registry = registry_view()
     cid = f"cognition.{family}"
     if cid not in registry.manifests:
@@ -219,6 +238,8 @@ def main(argv=None):
     ap.add_argument("--freeze", metavar="RUN_ID", help="freeze code and protocol for every library family")
     ap.add_argument("--run", metavar="RUN_ID", help="run the frozen held-out admission")
     ap.add_argument("--only", nargs="*", help="restrict --freeze to these families")
+    ap.add_argument("--heldout-start", type=int, default=HELDOUT_SEEDS[0],
+                    help="first of 30 fresh held-out seeds, recorded in the freeze (spent ranges are refused)")
     args = ap.parse_args(argv)
     families = sorted(library.executables())
     if args.dev:
@@ -235,8 +256,12 @@ def main(argv=None):
             raise SystemExit("refusing to overwrite an existing admission freeze; use a new run id")
         target.mkdir(parents=True, exist_ok=True)
         chosen = sorted(args.only) if args.only else families
+        heldout = tuple(range(args.heldout_start, args.heldout_start + len(HELDOUT_SEEDS)))
+        if set(heldout) & (spent_seeds(exclude=target) | set(DEV_SEEDS) | set(P8_RESERVED)):
+            raise SystemExit("those held-out seeds are development, P8-reserved or spent by an earlier admission "
+                             "run; choose fresh ones")
         manifest.write_text(json.dumps({"frozen_at": datetime.now(timezone.utc).isoformat(),
-                                        "inputs": inputs(chosen)}, indent=2) + "\n")
+                                        "inputs": inputs(chosen, heldout)}, indent=2) + "\n")
         print(manifest)
         return
     if not args.run:
@@ -244,7 +269,8 @@ def main(argv=None):
     target = EVIDENCE / args.run
     frozen = json.loads((target / "freeze.json").read_text())
     chosen = frozen["inputs"]["families"]
-    if frozen["inputs"] != inputs(chosen):
+    heldout = tuple(frozen["inputs"]["heldout_seeds"])
+    if frozen["inputs"] != inputs(chosen, heldout):
         raise SystemExit("FROZEN_INPUT_CHANGED: admission results cannot be reported")
     if (target / "results.json").exists():
         raise SystemExit("refusing to overwrite admission results")
@@ -253,10 +279,10 @@ def main(argv=None):
               "platform": platform.platform(), "python": sys.version.split()[0], "rule": RULE, "genomes": {}}
     for family in chosen:
         item = library.executables()[family]
-        rows = evaluate(item, HELDOUT_SEEDS)
+        rows = evaluate(item, heldout)
         status, detail = decide(item, rows)
         try:
-            canonical = smoke(family)
+            canonical = smoke(family, heldout[0])
         except Exception as exc:       # recorded, never hidden; a failing smoke blocks DEFAULT below
             canonical = {"state": "SMOKE_FAILED", "error": f"{type(exc).__name__}: {str(exc)[:300]}"}
         if canonical.get("verifier") not in ("STRUCTURALLY_VERIFIED", None) or canonical.get("state") == "SMOKE_FAILED":

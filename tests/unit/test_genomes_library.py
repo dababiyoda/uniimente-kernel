@@ -321,3 +321,30 @@ def test_the_admission_freeze_hashes_the_path_the_data_and_the_dependency_versio
                  "greg/capabilities.py", "cortex/evaluation/data/m4_weekly.json.gz", "tools/offline_test.py"):
         assert path in frozen["code"]
     assert frozen["dependencies"]["numpy"] and frozen["dependencies"]["scipy"]
+
+
+def test_an_oracle_competitor_is_a_reference_and_never_supersedes():
+    # independent evidence review 2026-10-13: collective_market was SUPERSEDED by a latency gap against a
+    # centralized optimum that reads every private value, leaving the market geometry unroutable
+    item = library.executables()["collective_market"]
+    assert item.competitor_deployable is False
+    assert all(e.competitor_deployable for f, e in library.executables().items() if f != "collective_market")
+    rows = admission.evaluate(item, list(admission.DEV_SEEDS[:4]))
+    status, detail = admission.decide(item, rows)
+    assert status != "SUPERSEDED" and "reference upper bound" in detail["competitor_role"]
+    deployable = type(item)(**{**item.__dict__, "competitor_deployable": True})
+    assert "competitor_role" not in admission.decide(deployable, rows)[1]
+
+
+def test_a_re_admission_freezes_its_own_fresh_seeds_and_refuses_spent_ones(tmp_path, monkeypatch):
+    monkeypatch.setattr(admission, "EVIDENCE", tmp_path)
+    admission.main(["--freeze", "r1", "--only", "flow_maxflow"])                  # default range 1000-1029
+    with pytest.raises(SystemExit, match="spent"):
+        admission.main(["--freeze", "r2", "--only", "flow_maxflow", "--heldout-start", "1010"])
+    for reserved in ("7000", "0"):
+        with pytest.raises(SystemExit, match="P8-reserved|development"):
+            admission.main(["--freeze", f"r-{reserved}", "--only", "flow_maxflow", "--heldout-start", reserved])
+    admission.main(["--freeze", "r3", "--only", "flow_maxflow", "--heldout-start", "1100"])
+    frozen = json.loads((tmp_path / "r3" / "freeze.json").read_text())
+    assert frozen["inputs"]["heldout_seeds"] == list(range(1100, 1130))
+    assert admission.inputs(["flow_maxflow"], tuple(range(1100, 1130))) == frozen["inputs"]

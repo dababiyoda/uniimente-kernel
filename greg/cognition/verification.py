@@ -248,7 +248,8 @@ def verify(family, data, answer, proof_class):
         for c in data["constraints"]:
             lhs = sum(Fraction(str(co)) * values[n] for n, co in c["coefficients"].items())
             rhs = Fraction(str(c["rhs"]))
-            valid &= {"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs}[c["op"]]
+            valid &= {"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs,
+                      "<": lhs < rhs, ">": lhs > rhs}[c["op"]]
         checks["constraint_substitution"] = bool(valid)
         if family == "optimization":
             checks["integer_domain"] = all(v.denominator == 1 for v in values.values())

@@ -121,7 +121,7 @@ def fermi(data, geometry):
     return result(out, proof)
 
 
-def _model(data, *, integers=False):
+def _model(data, *, integers=False, strict=False):
     variables, constraints = data["variables"], data["constraints"]
     if not isinstance(variables, dict) or not 1 <= len(variables) <= 64:
         raise CognitionError("bounded named variables required")
@@ -137,7 +137,8 @@ def _model(data, *, integers=False):
         if low > high:
             raise CognitionError("invalid variable bounds")
     for c in constraints:
-        if c["op"] not in ("<=", ">=", "==", "!=") or not set(c["coefficients"]) <= set(variables):
+        ops = ("<=", ">=", "==", "!=", "<", ">") if strict else ("<=", ">=", "==", "!=")
+        if c["op"] not in ops or not set(c["coefficients"]) <= set(variables):
             raise CognitionError("invalid linear constraint")
         for x in [*c["coefficients"].values(), c["rhs"]]:
             (integer(x, low=-1000000, high=1000000) if integers else number(x))
@@ -146,7 +147,7 @@ def _model(data, *, integers=False):
 
 def formal(data, geometry):
     import z3
-    variables, constraints = _model(data)
+    variables, constraints = _model(data, strict=True)      # strict < and > over the reals (exact negations)
     solver = z3.Solver()
     solver.set(timeout=max(1, int(geometry["latency_limit"] * 800)))
     solver.set(rlimit=geometry["compute_limit"])
@@ -158,7 +159,7 @@ def formal(data, geometry):
         lhs = sum(z3.RealVal(str(v)) * vs[n] for n, v in c["coefficients"].items())
         rhs = z3.RealVal(str(c["rhs"]))
         expr = {"<=": lambda: lhs <= rhs, ">=": lambda: lhs >= rhs, "==": lambda: lhs == rhs,
-                "!=": lambda: lhs != rhs}[c["op"]]()
+                "!=": lambda: lhs != rhs, "<": lambda: lhs < rhs, ">": lambda: lhs > rhs}[c["op"]]()
         solver.assert_and_track(expr, f"constraint_{i}")
         descriptions.append(f"sum({c['coefficients']}) {c['op']} {c['rhs']}")
     status = solver.check()

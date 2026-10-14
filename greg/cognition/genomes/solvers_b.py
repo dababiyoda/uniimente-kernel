@@ -1314,7 +1314,7 @@ INTELLIGENCES = [
                          "an inflated self-reported SE cannot widen its agreement tolerance"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.queue.erlang_c_staffing", version="1.0.2", family="queue_erlang", layer=3,
+            intelligence_id="solver.queue.erlang_c_staffing", version="1.0.3", family="queue_erlang", layer=3,
             operation="erlang_c_staffing", epistemic_class="prediction",
             subgeometry="M/M/c minimum staffing for a waiting-time service level",
             source_provenance="Erlang (1917) delay formula; Erlang-B recursion (textbook queueing theory)",

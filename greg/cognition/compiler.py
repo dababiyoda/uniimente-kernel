@@ -572,7 +572,25 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     if g.human_judgment_required or g.legal_content or g.rights_impact or g.geometry in HUMAN_CLASSES:
         receipt["method_or_composition_selected"] = "human:qualified_judgment"
         receipt["selection_level"] = "constitutional_route"
-        return finish("HUMAN_JUDGMENT_REQUIRED", human_packet(g, body))
+        packet = human_packet(g, body)
+        judgments = (body.get("human") or {}).get("judgments")
+        if judgments is None:
+            return finish("HUMAN_JUDGMENT_REQUIRED", packet)
+        # the return path: typed judgments are evidence; only the founder's signed answer decides
+        from .human import adjudicate
+        adjudicated = adjudicate(judgments, journal)
+        receipt["human_judgments"] = adjudicated
+        for j in adjudicated["judgments"]:
+            if j["verdict"] != (adjudicated["decision"] or {}).get("verdict"):
+                receipt["dissent"].append(f"{j['role']} {j['participant_ref']} ({j['competence_domain']}): "
+                                          f"{j['verdict']}: {j['rationale'][:200]}")
+        receipt["dissent"] += adjudicated["provenance_conflicts"]
+        if adjudicated["decision"] is None:
+            return finish("HUMAN_JUDGMENT_REQUIRED", {**packet, "judgments_received": len(adjudicated["judgments"]),
+                                                       "awaiting": "the founder's signed answer"})
+        return finish("HUMAN_JUDGMENT_RECORDED", {"decision": adjudicated["decision"],
+                                                  "acts": "nothing: a recorded human decision still reaches the "
+                                                          "world only through the Gate"})
     # 2. operators transform the representation (recorded, never silent)
     for op in OPERATORS:
         if op.applies(g, body):

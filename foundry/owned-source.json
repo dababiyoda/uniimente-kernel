@@ -389,6 +389,7 @@
     "greg/sop.py",
     "greg/templates.py",
     "greg/tribunal.py",
+    "greg/venture_books.py",
     "greg/ventures.py",
     "greg/workers.py",
     "identity/README.md",

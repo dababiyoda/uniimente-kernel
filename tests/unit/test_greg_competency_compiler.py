@@ -152,3 +152,24 @@ def test_strategic_geometry_recruits_game_theory_and_records_it(registry):
                             "consequence_class": "internal_write"}, maxflow_instance(3)[0], execute=False)
     ops = {t["operator_id"] for t in r["transformations"]}
     assert {"game_theory", "inversion", "premortem"} <= ops
+
+
+def test_positive_admission_evidence_binds_the_version_it_measured(registry, no_index):
+    # a status measured on another version of the code is not inherited: the method ranks as UNEVALUATED
+    # and the receipt says so; negative evidence persists until a re-admission replaces it
+    from greg.cognition.genomes import library
+    data = maxflow_instance(3)[0]
+    current = library.genome("flow_maxflow").version
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY",
+                                                                 "version": current}}, "recipes": {}, "routing": {}}))
+    fresh = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert fresh["selection_level"] == "admission_status"
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY",
+                                                                 "version": "0.0.1"}}, "recipes": {}, "routing": {}}))
+    stale = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert stale["method_or_composition_selected"] == "cognition.flow_maxflow"
+    assert stale["selection_level"] == "unevaluated_at_current_version"
+    assert any("measured at version 0.0.1" in d for d in stale["dissent"])
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "REJECTED", "version": "0.0.1"}},
+                                    "recipes": {}, "routing": {}}))
+    assert compile_(registry, {"geometry": "optimization"}, data)["state"] == "CAPABILITY_DEFICIT"

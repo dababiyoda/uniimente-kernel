@@ -457,7 +457,7 @@ def _genome(**kw):
 INTELLIGENCES = [
     Executable(
         genome=_genome(
-            intelligence_id="solver.forecast.damped_trend_quantiles", version="1.0.1", family="forecast_quantile",
+            intelligence_id="solver.forecast.damped_trend_quantiles", version="1.1.0", family="forecast_quantile",
             layer=3, operation="forecast_distribution", epistemic_class="prediction",
             subgeometry="univariate positive time series, horizon 1-26",
             native_representation="ordered history of positive values",
@@ -484,7 +484,7 @@ INTELLIGENCES = [
         competitor=theta_empirical, tolerance=1e-9),
     Executable(
         genome=_genome(
-            intelligence_id="solver.or.newsvendor_saa_compiler", version="1.0.1", family="newsvendor_compile",
+            intelligence_id="solver.or.newsvendor_saa_compiler", version="1.0.2", family="newsvendor_compile",
             layer=3, operation="compile_newsvendor", epistemic_class="optimization",
             subgeometry="capacity-coupled newsvendor -> integer SAA model",
             native_representation="demand scenarios + overage/underage costs + shared capacity",

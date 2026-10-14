@@ -116,7 +116,7 @@ def score(data, truth, output):
 INTELLIGENCES = [
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.decision.preposterior", version="1.0.1", family="decision_preposterior",
+            intelligence_id="solver.decision.preposterior", version="1.0.2", family="decision_preposterior",
             layer=3, operation="preposterior_scenarios", epistemic_class="strategic",
             subgeometry="go/no-go with a Beta posterior and an optional binomial pilot",
             native_representation="Beta(a, b) posterior + linear payoff + pilot size and cost",

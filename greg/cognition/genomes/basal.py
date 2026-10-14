@@ -1619,7 +1619,7 @@ def _genome(version="1.0.0", **kw):
 INTELLIGENCES = [
     Executable(
         genome=_genome(
-            intelligence_id="basal.control.simc_pi", version="1.0.1", family="basal_pid", operation="pid_track",
+            intelligence_id="basal.control.simc_pi", version="1.0.2", family="basal_pid", operation="pid_track",
             epistemic_class="physical",
             subgeometry="setpoint tracking and load rejection of a declared first-order-plus-dead-time plant",
             source_provenance="Skogestad (2003) SIMC rules; Astrom & Hagglund (2004) AMIGO; Ziegler & Nichols (1942); "

@@ -355,10 +355,18 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     genomes = library.executables()
     for family, (_, ops, classes, _, _) in FAMILIES.items():
         for op in ops:
+            stale = None
             if family in genomes:
                 need = genomes[family].genome.required_inputs
-                status = evidence["genomes"].get(family, {}).get("status", "UNEVALUATED")
+                record = evidence["genomes"].get(family, {})
+                status = record.get("status", "UNEVALUATED")
                 standalone = genomes[family].genome.standalone_decision
+                measured, current = record.get("version"), genomes[family].genome.version
+                if measured and measured != current and status not in EXCLUDED:
+                    # positive evidence binds the version measured; negative evidence persists until a
+                    # re-admission replaces it
+                    stale = f"{status} was measured at version {measured}; version {current} needs re-admission"
+                    status = "UNEVALUATED"
             else:
                 need = NATIVE_INPUTS.get(op)
                 status = "UNEVALUATED"
@@ -373,7 +381,8 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             elif status in EXCLUDED:
                 reason = f"frozen admission status {status}"
             rows.append({"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
-                         "epistemic_classes": list(classes), "rejected": reason})
+                         "epistemic_classes": list(classes), "rejected": reason,
+                         **({"stale_evidence": stale} if stale else {})})
     recipe = route(data)
     if recipe:
         verdict = evidence["recipes"].get(recipe, {})
@@ -517,6 +526,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                   or chosen["method"] in plan["prefer"] else "admission_status")
     if chosen.get("demoted"):
         receipt["dissent"].append(chosen["demoted"])
+    if chosen.get("stale_evidence"):
+        receipt["selection_level"] = "unevaluated_at_current_version"
+        receipt["dissent"].append(f"stale admission evidence: {chosen['stale_evidence']}")
     receipt["conditional_competence_basis"] = {m: round(v, 4) for m, v in competence.items()} or \
         "no settled outcomes in this journal; admission evidence and cost decide"
     if body.get("execute") is False:

@@ -2709,7 +2709,7 @@ INTELLIGENCES = [
         competitor=cegis_full_domain, subregion=cegis_subregion, tolerance=1e-9),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.causal.backdoor_adjustment", version="1.1.0", family="causal_backdoor", layer=3,
+            intelligence_id="solver.causal.backdoor_adjustment", version="1.2.0", family="causal_backdoor", layer=3,
             operation="backdoor_ate", epistemic_class="causal",
             subgeometry="average treatment effect of a binary treatment from observational data and a declared DAG",
             source_provenance="Pearl (1993, 2009) backdoor criterion; Robins g-formula; regression adjustment",

@@ -1213,7 +1213,7 @@ def constraint_release_instance(seed):
 
 # ============================================================================ genomes
 def _genome(**kw):
-    return IntelligenceGenome(layer=4, buildability="BUILDABLE_NOW", lineage=LINEAGE, version="1.1.0", **kw)
+    return IntelligenceGenome(layer=4, buildability="BUILDABLE_NOW", lineage=LINEAGE, version="1.1.1", **kw)
 
 
 FRONTIER = ("frontier NOT achieved: robust unscripted organ formation",

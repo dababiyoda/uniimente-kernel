@@ -2,127 +2,158 @@
  "genomes": {
   "basal_bandit": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.basal_bandit",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.0.0"
   },
   "basal_breaker": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.basal_breaker",
-   "status": "NICHE_CAPABILITY"
+   "status": "NICHE_CAPABILITY",
+   "version": "1.0.0"
   },
   "basal_hysteresis": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.basal_hysteresis",
-   "status": "NICHE_CAPABILITY"
+   "status": "NICHE_CAPABILITY",
+   "version": "1.0.0"
   },
   "basal_kalman": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.basal_kalman",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.0.0"
   },
   "basal_pid": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.basal_pid",
-   "status": "NICHE_CAPABILITY"
+   "status": "NICHE_CAPABILITY",
+   "version": "1.0.1"
   },
   "bayes_interval": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.bayes_interval",
-   "status": "NICHE_CAPABILITY"
+   "status": "NICHE_CAPABILITY",
+   "version": "1.0.2"
   },
   "causal_backdoor": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.causal_backdoor",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.1.0"
   },
   "collective_aco": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_aco",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.0.1"
   },
   "collective_flock": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_flock",
-   "status": "SUPERSEDED"
+   "status": "SUPERSEDED",
+   "version": "1.0.2"
   },
   "collective_immune": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_immune",
-   "status": "EXPERIMENTAL"
+   "status": "EXPERIMENTAL",
+   "version": "1.0.2"
   },
   "collective_market": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_market",
-   "status": "SUPERSEDED"
+   "status": "SUPERSEDED",
+   "version": "1.1.0"
   },
   "collective_physarum": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_physarum",
-   "status": "NICHE_CAPABILITY"
+   "status": "NICHE_CAPABILITY",
+   "version": "1.0.1"
   },
   "collective_quorum": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.collective_quorum",
-   "status": "EXPERIMENTAL"
+   "status": "EXPERIMENTAL",
+   "version": "1.0.1"
   },
   "control_mpc": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.control_mpc",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.0.0"
   },
   "decision_preposterior": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.decision_preposterior",
-   "status": "COMPOSITION_ONLY"
+   "status": "COMPOSITION_ONLY",
+   "version": "1.0.1"
   },
   "develop_constraint_release": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.develop_constraint_release",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.1.0"
   },
   "develop_repair": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.develop_repair",
-   "status": "NICHE_CAPABILITY"
+   "status": "NICHE_CAPABILITY",
+   "version": "1.1.0"
   },
   "dp_knapsack": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.dp_knapsack",
-   "status": "SUPERSEDED"
+   "status": "SUPERSEDED",
+   "version": "1.0.1"
   },
   "flow_capacity_plan": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.flow_capacity_plan",
-   "status": "COMPOSITION_ONLY"
+   "status": "COMPOSITION_ONLY",
+   "version": "1.0.1"
   },
   "flow_maxflow": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.flow_maxflow",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.0.1"
   },
   "flow_reinforce_greedy": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.flow_reinforce_greedy",
-   "status": "SUPERSEDED"
+   "status": "SUPERSEDED",
+   "version": "1.0.0"
   },
   "forecast_quantile": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.forecast_quantile",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.0.1"
   },
   "game_minimax": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.game_minimax",
-   "status": "SUPERSEDED"
+   "status": "SUPERSEDED",
+   "version": "1.0.1"
   },
   "info_experiment": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.info_experiment",
-   "status": "NICHE_CAPABILITY"
+   "status": "NICHE_CAPABILITY",
+   "version": "1.1.0"
   },
   "mc_importance": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.mc_importance",
-   "status": "NICHE_CAPABILITY"
+   "status": "NICHE_CAPABILITY",
+   "version": "1.0.1"
   },
   "mech_vcg": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.mech_vcg",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.1.0"
   },
   "newsvendor_compile": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.newsvendor_compile",
-   "status": "COMPOSITION_ONLY"
+   "status": "COMPOSITION_ONLY",
+   "version": "1.0.1"
   },
   "queue_erlang": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.queue_erlang",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.0.2"
   },
   "search_astar": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.search_astar",
-   "status": "SUPERSEDED"
+   "status": "SUPERSEDED",
+   "version": "1.0.2"
   },
   "synth_cegis": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.synth_cegis",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.0.0"
   },
   "verify_modelcheck": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json#genomes.verify_modelcheck",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "status": "DEFAULT_FOR_GEOMETRY",
+   "version": "1.1.0"
   }
  },
  "missing_sources": [],

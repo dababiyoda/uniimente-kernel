@@ -68,7 +68,8 @@ def test_genomes_validate_and_are_layer_three():
         assert g.layer == 3 and g.buildability == "BUILDABLE_NOW" and g.standalone_decision
         # 1.0.2: verifier strengthened by the library-wide mutation audit (A* steps, Erlang C and occupancy,
         # Jeffreys posterior mean)
-        assert g.version == ("1.0.2" if g.family in ("search_astar", "queue_erlang", "bayes_interval") else "1.0.1")
+        # 1.0.3 (queue_erlang): the verifier and truth use their own tail formula (independent review)
+        assert g.version == {"queue_erlang": "1.0.3", "search_astar": "1.0.2", "bayes_interval": "1.0.2"}.get(g.family, "1.0.1")
         assert g.operation == OPS[g.family] and g.epistemic_class == CLASSES[g.family]
         assert g.evidence_type == EVIDENCE[g.family]
         assert "INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION" in g.lineage

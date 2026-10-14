@@ -80,7 +80,9 @@ def build() -> dict:
         # The admission harness (greg/cognition/genomes/admission.py) writes one entry per family under "genomes".
         for family, row in (data.get("genomes") or {}).items():
             if row.get("status"):
-                index["genomes"][family] = {"status": row["status"], "evidence": f"{rel}#genomes.{family}"}
+                # the version the status was measured at: a later code change needs re-admission
+                index["genomes"][family] = {"status": row["status"], "evidence": f"{rel}#genomes.{family}",
+                                            "version": row.get("version")}
     if not base.exists() or not index["genomes"]:
         index["missing_sources"].append(f"{ADMISSION}/*/results.json (no frozen held-out admission run yet)")
     return index

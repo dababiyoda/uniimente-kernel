@@ -92,7 +92,11 @@ Measured through `reason()` on native synthetic workloads whose answers are know
   hardened.
 - `mutants.log`: 16 mutants, all caught. That is the 7 from #161, 8 for disclosure gates and 1 for the
   harness.
-- `full-suite.log`: the whole frontier suite at the commit this README describes.
+- `full-suite.log`: the whole frontier suite at `47bff1d`, the commit that built §9 and §5.
+- **Later full runs (same interpreter):**
+  - at `ac6952a`, after the first frontier merge: 2821 passed, 5 failed, 16 skipped;
+  - at `5362d13`, after the second: 2849 passed, 6 failed, 16 skipped.
+  - **The failures:** five are the environmental Landlock tests named in `full-suite.log`. The sixth, in `test_greg_competency_compiler.py`, fails identically at the pristine frontier `d5bb5cb` and fails the frontier's own CI there. The frontier fixed it by `5287303`, which is merged here.
 - **Frozen inputs:** this change touches no file a freeze pins. `cortex.py` and `verification.py` are
   unchanged relative to #161, and `cli.py` is unpinned.
 

@@ -10,9 +10,12 @@ beside it in greg/cognition/reserved.py; it is explicit, never inferred, and thi
 * the record follows cortex/genome.py's own convention (SUPERSEDED lineage naming every executor, else SPECIFIED),
   keeps the frozen lineage, and flags exactly the families whose frozen cortex record is behind; the frozen
   registry itself is untouched (still disabled, still its frozen lifecycle);
-* a genome or catalog family whose identity names a reserved family's mechanism (its leaf name or its
-  failure-diversity key) must be reconciled with that family, so a new executor cannot silently leave a reserved
-  family claiming that nothing executes it.
+* a genome or catalog family whose identity (its family name, intelligence id or any catalog operation name)
+  names a reserved family's mechanism (its leaf name or its failure-diversity key) must be reconciled with that
+  family, as an executor or as a partial precursor named in the coverage note or reason, so a new executor cannot
+  silently leave a reserved family claiming that nothing executes it;
+* a no-executor reason does not deny a mechanism GREG's code has: every ``module.symbol`` it names resolves, and
+  the facts it states about named code agree with that code.
 
 What is not verified: that an executor implements the reserved mechanism well (admission evidence decides that,
 docs/evidence/greg-mind-evidence-index.json), or that the name heuristic finds every executor (it is a net; the
@@ -101,8 +104,8 @@ def test_the_record_follows_the_cortex_convention_and_leaves_the_frozen_registry
 def test_an_executor_named_after_a_reserved_mechanism_cannot_leave_it_claiming_no_executor():
     """The net: a family or intelligence id containing a reserved leaf name or diversity key is reconciled."""
     genomes = library.executables()
-    identities = {family: {_norm(family)} | ({_norm(genomes[family].genome.intelligence_id)} if family in genomes
-                                             else set())
+    identities = {family: {_norm(family)} | {_norm(op) for op in FAMILIES[family][1]}
+                  | ({_norm(genomes[family].genome.intelligence_id)} if family in genomes else set())
                   for family in FAMILIES}
     unreconciled = []
     for name, (_, _, _, diversity, _) in RESERVED_FAMILIES.items():
@@ -113,8 +116,9 @@ def test_an_executor_named_after_a_reserved_mechanism_cannot_leave_it_claiming_n
             if not any(token in ident for token in tokens for ident in names):
                 continue
             ref = f"cognition.{family}"
-            if name in EXECUTED_ON_GREG and ref in EXECUTED_ON_GREG[name][0]:
-                continue
+            if name in EXECUTED_ON_GREG and (ref in EXECUTED_ON_GREG[name][0] or
+                                             re.search(rf"{re.escape(ref)}\b", EXECUTED_ON_GREG[name][1])):
+                continue          # an executor, or a partial precursor named in the coverage note
             if name in RESERVED_WITHOUT_EXECUTOR and re.search(rf"{re.escape(ref)}\b", RESERVED_WITHOUT_EXECUTOR[name]):
                 continue          # named as a partial or different precursor, with the reason
             unreconciled.append((name, ref))
@@ -127,3 +131,63 @@ def test_the_net_catches_a_new_genome_named_after_a_reserved_mechanism(monkeypat
     with pytest.raises(AssertionError) as caught:
         test_an_executor_named_after_a_reserved_mechanism_cannot_leave_it_claiming_no_executor()
     assert "cortex.collective.swarm_pso" in str(caught.value) and "cognition.swarm_pso_probe" in str(caught.value)
+
+
+def test_the_net_reads_catalog_operation_names(monkeypatch):
+    """A family whose name does not name a reserved mechanism but whose catalog operation does must force a
+    decision too (cognition.collective's operation 'quorum' escaped a net that read family names only)."""
+    monkeypatch.setitem(FAMILIES, "opaque_probe", (2, ("swarm_pso_step",), ("optimization",), "collective_trace",
+                                                   None))
+    with pytest.raises(AssertionError) as caught:
+        test_an_executor_named_after_a_reserved_mechanism_cannot_leave_it_claiming_no_executor()
+    assert "cortex.collective.swarm_pso" in str(caught.value) and "cognition.opaque_probe" in str(caught.value)
+
+
+def _settled_reputation() -> bool:
+    from greg.cognition import compiler
+    return callable(getattr(compiler, "_settled_competence", None)) and \
+        callable(getattr(compiler, "_settled_inhibition", None))
+
+
+def _capability_repair() -> bool:
+    from greg.genesis import Genesis
+    return callable(getattr(Genesis, "repair", None))
+
+
+def _hmm_filter() -> bool:
+    return "HMM" in library.genome("basal_bayes_filter").algorithm_or_runtime
+
+
+# (reserved family, a fact GREG's code establishes, words the record must use for it, words that deny it)
+CODE_FACTS = (
+    ("cortex.collective.ecology_market", _settled_reputation, ("_settled_competence", "_settled_inhibition"),
+     ("settle reputation",)),
+    ("cortex.collective.immune", _capability_repair, ("greg.genesis.Genesis.repair", "quarantines"),
+     ("repair and recouple loop are not implemented",)),
+    ("cortex.probabilistic.bayes", _hmm_filter, ("HMM",), ("closed-form conjugate updates only",)),
+)
+
+
+@pytest.mark.parametrize("name, fact, must, must_not", CODE_FACTS)
+def test_a_no_executor_reason_agrees_with_the_code_it_describes(name, fact, must, must_not):
+    reason = RESERVED_WITHOUT_EXECUTOR[name]
+    assert fact(), f"{name}: the code fact changed; revisit the reason"
+    assert all(word in reason for word in must), (name, must)
+    assert not any(word in reason for word in must_not), (name, must_not)
+
+
+def test_every_module_symbol_a_reason_or_coverage_note_names_resolves():
+    texts = list(RESERVED_WITHOUT_EXECUTOR.values()) + [note for _, note in EXECUTED_ON_GREG.values()]
+    for text in texts:
+        for ref in re.findall(r"\b(greg(?:\.\w+)+)", text):
+            parts = ref.split(".")
+            target = None
+            for cut in range(len(parts) - 1, 0, -1):          # longest importable module prefix, then attributes
+                try:
+                    target = importlib.import_module(".".join(parts[:cut]))
+                except ImportError:
+                    continue
+                for attr in parts[cut:]:
+                    target = getattr(target, attr, None)
+                break
+            assert target is not None, (ref, text)

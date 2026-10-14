@@ -33,9 +33,17 @@ P6_RUNS = (
       "F5": "forecast_then_allocate"}),
     ("docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json", {"F6": "forecast_then_staff"}),
     ("docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json", {"F7": "graph_then_allocate"}),
+    # PR #155 lineage (finished 2026-10-14 11:12 and 12:28 UTC, after #158's v4). F2b re-measured F2's
+    # identify -> optimise recipe on fresh seeds. X1 and X2 are cortex multi-organ routes and the v3 file
+    # measures runtime-derived chains: frozen sources with no composition-recipe row.
+    ("docs/evidence/greg-composition-lift/2026-10-14/results-v2.json", {"F2b": "identify_then_optimize"}),
+    ("docs/evidence/greg-composition-lift/2026-10-14/results-v3.json", {}),
 )
+# In finish order; the last decides. PR #155's decisive retest (NO_GAIN, 2026-10-14) follows #158's (REGRESSION,
+# 2026-10-08); both are kept in ``history`` and neither is a gain, so the default stays shadow.
 P4_RUNS = ("docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
-           "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json")
+           "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json",
+           "docs/evidence/greg-learned-routing/2026-10-07/results-v3.json")
 ADMISSION = "docs/evidence/greg-genome-admission"
 # PR #155 lineage, in run order: (file, key holding the rows, family when the file measures one family).
 OPERATION_RUNS = (
@@ -87,10 +95,14 @@ def build() -> dict:
         summary = data.get("summary", {})
         key = "primary_conditional_vs_static" if "primary_conditional_vs_static" in summary else "conditional_vs_static"
         verdict = (summary.get(key) or {}).get("verdict")
+        prior = index["routing"].get("conditional_competence")
         index["routing"]["conditional_competence"] = {
             "verdict": verdict, "consequence": data.get("consequence") or summary.get("consequence"),
             "default": "shadow (observed, never applied)" if verdict != "GAIN" else "conditional",
             "evidence": f"{rel}#summary.{key}"}
+        if prior:
+            # every earlier frozen retest stays visible beside the deciding one
+            index["routing"]["conditional_competence"]["history"] = [*prior.pop("history", []), prior]
     base = ROOT / ADMISSION
     for path in sorted(base.glob("*/results.json")) if base.exists() else []:
         data = json.loads(path.read_text())

@@ -6,6 +6,7 @@ quoted verbatim, and a BUILDABLE_NOW label must say why it describes the destina
 """
 import json
 from pathlib import Path
+import re
 
 import pytest
 
@@ -73,12 +74,100 @@ def test_the_validator_refuses_a_thinned_or_relabelled_frontier(change, needle):
         path.validate(data)
 
 
+WORDS = ("no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
+ORDINALS = ("first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth")
+
+
+def _natural_recipe_families() -> dict:
+    """P6 family -> lifted?, for every family a frozen run's own limits call real data (not constructed)."""
+    index = json.loads((ROOT / "docs/evidence/greg-mind-evidence-index.json").read_text())
+    out = {}
+    for row in index["recipes"].values():
+        for verdict in [row, *row.get("history", [])]:
+            limits = json.loads((ROOT / verdict["evidence"].partition("#")[0]).read_text())["limits"]
+            named = [x for x in limits if verdict["family"] in re.findall(r"\bF\d+R?\b", x)]
+            text = " ".join(named or [x for x in limits if not re.findall(r"\bF\d+R?\b", x)])
+            if re.search(r"\breal\b", text) and "constructed" not in text:
+                out[verdict["family"]] = verdict["status"] == "VPL_LIFT"
+    return out
+
+
 def test_mind_nodes_record_measured_reality_not_plans():
     cortex = path.load()["subordinate_workstreams"]["polyintelligence_cortex"]
     nodes = {n["id"]: n for n in cortex["nodes"]}
     assert nodes["P8"]["status"] == "active" and nodes["P8"]["exit_met"] is False
     for ref in nodes["P8"]["implementation_refs"] + nodes["P6"]["implementation_refs"]:
         assert (ROOT / ref).exists(), ref
+
+
+def test_the_p6_node_counts_the_natural_families_the_evidence_index_records():
+    natural = _natural_recipe_families()
+    lifted = sorted(f for f, lift in natural.items() if lift)
+    nodes = {n["id"]: n for n in path.load()["subordinate_workstreams"]["polyintelligence_cortex"]["nodes"]}
+    exit_met = nodes["P6"]["exit_met"]
+    count = f"{WORDS[len(lifted)]} of {WORDS[len(natural)]} natural families"
+    assert natural and count in exit_met, (natural, exit_met)
+    for family in natural:
+        assert re.search(rf"\b{family}\b", exit_met), family
+
+
+def test_the_p8_node_records_every_frozen_cycle():
+    cycles = sorted(ROOT.glob("docs/evidence/greg-protected-evolution/*/cycle-*.json"))
+    decisions = [json.loads(c.read_text())["decision"] for c in cycles]
+    p8 = {n["id"]: n for n in path.load()["subordinate_workstreams"]["polyintelligence_cortex"]["nodes"]}["P8"]
+    assert cycles and f"{WORDS[len(cycles)]} frozen cycles" in p8["reality"], p8["reality"]
+    for number, decision in enumerate(decisions, 1):
+        assert re.search(rf"cycle {number} \([^)]*\) {decision}", p8["reality"]), (number, decision)
+    for ordinal in ORDINALS[:len(cycles)]:
+        assert f"a {ordinal} cycle" not in p8["smallest_next_experiment"], "the next experiment is already done"
+    if all(d == "REJECT" for d in decisions):
+        assert p8["exit_met"] is False and "never kept an improvement" in p8["reality"]
+
+
+# The frozen runs each Mind node is measured by (a P8 cycle record is not an index source).
+FROZEN_RUNS = {"P4": "docs/evidence/greg-learned-routing/", "P6": "docs/evidence/greg-composition-lift/",
+               "P8": "docs/evidence/greg-protected-evolution/"}
+
+
+def test_the_older_cognition_cortex_nodes_point_at_the_measured_nodes_and_their_frozen_evidence():
+    """The cognition_cortex P0-P13 backcast is lineage (developmental inheritance: reroute, never delete). Where the
+    polyintelligence_cortex node of the same id records measured reality, the older node may not remain a bare
+    placeholder: it names that node as its current record, cites every frozen run measuring it, and states the
+    frozen outcome (the natural-family count, every P8 cycle decision, the P4 verdict)."""
+    data = path.load()
+    [ws] = [w for w in data["workstreams"] if w["id"] == "cognition_cortex"]
+    older = {n["id"]: n for n in ws["nodes"]}
+    current = {n["id"]: n for n in data["subordinate_workstreams"]["polyintelligence_cortex"]["nodes"]}
+    measured = sorted(k for k, n in current.items() if n.get("reality"))
+    assert set(FROZEN_RUNS) <= set(measured)
+    sources = [s["path"] for s in json.loads((ROOT / "docs/evidence/greg-mind-evidence-index.json").read_text())
+               ["sources"]]
+    cycles = sorted(ROOT.glob("docs/evidence/greg-protected-evolution/*/cycle-*.json"))
+    for key in measured:
+        node, live = older[key], current[key]
+        assert node.get("current_record") == {"workstream": "polyintelligence_cortex", "node": key}, key
+        cited = set(re.findall(r"docs/evidence/[\w./-]+\.(?:md|json)",
+                               json.dumps([live.get("implementation_refs", []), live.get("evidence", "")])))
+        if key in FROZEN_RUNS:
+            cited |= {s for s in sources if s.startswith(FROZEN_RUNS[key])}
+            assert node["status"].split(";")[0].strip() != "HORIZON", key
+        if key == "P8":
+            cited |= {str(c.relative_to(ROOT)) for c in cycles}
+        refs = node.get("evidence_refs") or []
+        assert cited <= set(refs), (key, sorted(cited - set(refs)))
+        assert all((ROOT / ref).exists() for ref in refs), key
+    natural = _natural_recipe_families()
+    p6 = older["P6"]["status"]
+    assert f"{WORDS[sum(natural.values())]} of {WORDS[len(natural)]} natural families" in p6, p6
+    assert all(re.search(rf"\b{family}\b", p6) for family in natural), p6
+    p8 = older["P8"]["status"]
+    decisions = [json.loads(c.read_text())["decision"] for c in cycles]
+    assert f"{WORDS[len(cycles)]} frozen cycles" in p8, p8
+    for number, decision in enumerate(decisions, 1):
+        assert re.search(rf"cycle {number} \([^)]*\) {decision}", p8), (number, decision)
+    verdict = json.loads((ROOT / "docs/evidence/greg-mind-evidence-index.json").read_text())["routing"][
+        "conditional_competence"]["verdict"]
+    assert verdict in older["P4"]["status"] and (verdict != "REGRESSION" or "DEMOTED" in older["P4"]["status"])
 
 
 def test_every_section_7_descendant_stays_on_the_horizon_with_the_founders_class():

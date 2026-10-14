@@ -1,0 +1,84 @@
+{
+  "order": {
+    "acceptance": {
+      "criteria": "<= 280 characters; no figures absent from the source; no hype, no calls to buy; not a proposal (no pilot/KPI language)",
+      "output": "post.txt"
+    },
+    "allowed_paths": [
+      "post.txt"
+    ],
+    "authority_ref": "sha256:2da25d5f8f89be770c7851c50da7ef20d2f3477e307a2102124821109efd0e38",
+    "base": "HEAD",
+    "context": "",
+    "grant_id": "15ff80e5-fcc0-4384-ae50-47911e12ad3d",
+    "inputs": [
+      "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/facts.json"
+    ],
+    "max_budget_usd": 2.0,
+    "mission_id": "m:research-z3-composed-note",
+    "mode": "document",
+    "objective": "Write a short factual DALEOBANKS post noting the latest z3-solver release on PyPI. Write the post as plain text, at most 280 characters, stating only facts present in the input; every number must appear in the input.",
+    "order": "z3-composed-note",
+    "provider": "claude-code",
+    "repo": null,
+    "timeout_seconds": 600,
+    "tools": []
+  },
+  "order_digest": "sha256:7f6fb5144daa908b137c1f6d8212e99bd0f6923a2dc66c42153082e03e26076e",
+  "status": "COMPLETED",
+  "summary": {
+    "acceptance_owner": "worker.appraise (independent)",
+    "authority_created": false,
+    "base_commit": "dc66df6ce8e30b890daa3db5eabd4738d8a2d381",
+    "branch": "greg/z3-composed-note",
+    "changed_files": [
+      "post.txt"
+    ],
+    "commit": "8c9c54f8a32f73bcdc9024063204ec70b73b2486",
+    "evidence_path": "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/work-orders/z3-composed-note/evidence.json",
+    "grant_id": "15ff80e5-fcc0-4384-ae50-47911e12ad3d",
+    "greg_tests": [],
+    "greg_tests_passed": false,
+    "mission_id": "m:research-z3-composed-note",
+    "mode": "document",
+    "order_digest": "sha256:7f6fb5144daa908b137c1f6d8212e99bd0f6923a2dc66c42153082e03e26076e",
+    "output": {
+      "bytes": 101,
+      "path": "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/work-orders/z3-composed-note/work/post.txt",
+      "sha256": "sha256:681026c60f7d661cdc114bfeb843a662489e4d6f40f9ed7bded171e731b36df8"
+    },
+    "patch_path": "/tmp/greg-p6/body/workspace/m_research-z3-composed-note/work-orders/z3-composed-note/change.patch",
+    "patch_sha256": "sha256:b6c905a8b738c99e8ac01f7caf4508e670f3b3e7944ea21fbc8926972f76a2b8",
+    "repo": null,
+    "scope": {
+      "outside_allowed": [],
+      "protected_touched": [],
+      "too_many_files": false
+    },
+    "status": "COMPLETED",
+    "work_order": "z3-composed-note",
+    "worker": {
+      "cost_usd": 0.024900799999999997,
+      "duration_s": 9.35,
+      "error": null,
+      "exit_code": 0,
+      "identity": "claude-code",
+      "permission_denials": [],
+      "provider": "claude-code",
+      "served_models": [
+        "claude-haiku-4-5-20251001",
+        "claude-sonnet-5-5"
+      ],
+      "turns": 4
+    },
+    "worker_claim": {
+      "changed": [
+        "post.txt"
+      ],
+      "confidence": 0.95,
+      "tests_run": [],
+      "unresolved": []
+    },
+    "worker_summary_tail": "I wrote the post to `post.txt`. It's about 100 characters, well under the 280 limit:\n\n> Latest z3-solver release on PyPI: 5.1.0.0. Previous releases: 5.0.0.0, 4.16.0.0, 4.15.8.0, 4.15.7.0.\n\nEvery version number comes from `inputs/facts.json`. I didn't run any tests, since there was nothing to test beyond the length and the numbers.\n\nWORK_REPORT: {\"changed\": [\"post.txt\"], \"tests_run\": [], \"unresolved\": [], \"confidence\": 0.95}"
+  }
+}

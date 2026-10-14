@@ -22,6 +22,8 @@ state. Process completion never closes a mission: only re-observed evidence does
 """
 from __future__ import annotations
 
+import os
+
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import json
@@ -74,6 +76,8 @@ def validate_mission(spec: dict) -> dict:
         if "declined_if" in strategy and not asks.human_work(strategy.get("function")):
             raise MissionError(f"strategy {strategy['action_id']}: declined_if applies only to a person's step "
                                "(human.* or professional.*)")
+        _validate_bindings(strategy, set(actions))
+    _acyclic_bindings(spec["strategies"])
     ladder = spec["closure"].get("ladder", [])
     for rung in ladder:
         if set(rung) - checks:
@@ -87,6 +91,123 @@ def validate_mission(spec: dict) -> dict:
         raise MissionError("capability build budgets exceed the mission budget")
     del cone
     return spec
+
+
+BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "boolean": (bool,),
+              "object": (dict,), "array": (list,)}
+DEFAULT_BIND_BYTES = 16 * 1024
+
+
+class Unbound(Exception):
+    """A bound input is not available yet (or no longer matches its declared type)."""
+
+
+def _validate_bindings(strategy: dict, actions: set):
+    seen = set()
+    for edge in strategy.get("bind", []):
+        source = edge["from"]["action_id"]
+        if source not in actions or source == strategy["action_id"]:
+            raise MissionError(f"strategy {strategy['action_id']} binds from unknown or own action {source!r}")
+        if edge["param"] in seen:
+            raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']} twice")
+        seen.add(edge["param"])
+        try:
+            _path(strategy.get("params", {}), edge["param"])
+        except KeyError:
+            pass
+        else:
+            raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']}, which is also signed "
+                               "statically; one source per param")
+        template = edge.get("template")
+        if template is not None and template.count("{value}") != 1:
+            raise MissionError("a binding template needs exactly one {value} placeholder")
+        if template is not None and edge["type"] != "string" and edge.get("render") != "json":
+            raise MissionError("a templated binding renders text: declare type string or render json")
+
+
+def _acyclic_bindings(strategies: list):
+    edges = {s["action_id"]: {e["from"]["action_id"] for e in s.get("bind", [])} for s in strategies}
+    state = {}
+
+    def visit(node):
+        if state.get(node) == 1:
+            raise MissionError(f"binding cycle through {node}")
+        if state.get(node) == 2:
+            return
+        state[node] = 1
+        for parent in edges.get(node, ()):
+            visit(parent)
+        state[node] = 2
+
+    for node in edges:
+        visit(node)
+
+
+def _path(params: dict, path: str):
+    node = params
+    for part in path.split("."):
+        if not isinstance(node, dict) or part not in node:
+            raise KeyError(path)
+        node = node[part]
+    return node
+
+
+def _set_path(params: dict, path: str, value):
+    parts = path.split(".")
+    node = params
+    for part in parts[:-1]:
+        node = node.setdefault(part, {})
+        if not isinstance(node, dict):
+            raise Unbound(f"param {path} crosses a non-object")
+    node[parts[-1]] = value
+
+
+def bound_value(edge: dict, output):
+    """The typed, size-bounded value one edge carries from a receipt's output."""
+    try:
+        value = _field(output, edge["from"]["field"])
+    except KeyError:
+        raise Unbound(f"{edge['from']['action_id']} output has no {edge['from']['field']}") from None
+    kinds = BIND_TYPES[edge["type"]]
+    if not isinstance(value, kinds) or (edge["type"] in ("number", "integer") and isinstance(value, bool)):
+        raise Unbound(f"{edge['from']['action_id']}.{edge['from']['field']} is not {edge['type']}")
+    if edge.get("render") == "json":
+        value = json.dumps(value, sort_keys=True, indent=1, ensure_ascii=False)
+    if edge.get("template") is not None:
+        value = edge["template"].replace("{value}", value if isinstance(value, str) else json.dumps(value))
+    size = len(json.dumps(value, ensure_ascii=False).encode())
+    if size > edge.get("max_bytes", DEFAULT_BIND_BYTES):
+        raise Unbound(f"bound value of {size} bytes exceeds {edge.get('max_bytes', DEFAULT_BIND_BYTES)}")
+    return value
+
+
+# Capabilities whose own adapter measures provider spend (not a worker's self-claim):
+# capability -> field of the adapter output holding the provider-reported USD.
+METERED_SPEND = {"worker.commission": "worker.cost_usd"}
+
+
+def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
+    """What a DONE action books against the mission budget.
+
+    The signed cap stays the authorization ceiling. Where GREG's adapter measured the
+    provider's spend, that measurement is booked; an absent, malformed, negative or
+    over-cap report books the cap (conservative), and the basis says which happened."""
+    cap = float(cap_usd)
+    field_path = METERED_SPEND.get(capability_id)
+    reported = None
+    if field_path is not None and isinstance(output, dict):
+        try:
+            reported = _field(output, field_path)
+        except KeyError:
+            reported = None
+    if isinstance(reported, bool) or not isinstance(reported, (int, float)) or reported != reported:
+        return {"cost_usd": cap, "cost_cap_usd": cap, "spend_basis": "signed_cap" if field_path is None
+                else "signed_cap: provider spend not reported", "provider_reported_usd": None}
+    if reported < 0 or reported > cap + 1e-9:
+        return {"cost_usd": cap, "cost_cap_usd": cap, "provider_reported_usd": float(reported),
+                "spend_basis": "signed_cap: provider report outside [0, cap]"}
+    return {"cost_usd": round(float(reported), 6), "cost_cap_usd": cap, "provider_reported_usd": float(reported),
+            "spend_basis": "provider_reported"}
 
 
 def _field(output, path: str):
@@ -253,6 +374,15 @@ class MissionBook:
         return [r for rid, r in self.requests.items() if rid not in self.answers and rid not in self.withdrawn]
 
 
+def _mechanism_summary(provenance: dict) -> dict:
+    """What the founder needs to decide whether GREG may depend on an open-source package."""
+    qualification = provenance.get("qualification") or {}
+    return {k: provenance.get(k) for k in ("distribution", "version", "license", "upstream", "package_digest",
+                                           "primitive", "competence", "common_mode", "acquisition", "limits")} | {
+        "qualification": {"cases": qualification.get("cases"), "failures": len(qualification.get("failures", [])),
+                          "oracle": qualification.get("oracle"), "scale_probe": qualification.get("scale_probe")}}
+
+
 class MissionEngine:
     """One tick = one bounded turn of every active mission's feedback loop."""
 
@@ -265,6 +395,7 @@ class MissionEngine:
         self.artifact_root = Path(artifact_root) if artifact_root else None
         self.genesis, self.max_actions_per_tick = genesis, max_actions_per_tick
         self.book = MissionBook(journal)
+        self._stop_check = None
 
     # -- founder inputs (already signature-verified by the body) ---------------
     def register(self, spec: dict, command_digest: str) -> str:
@@ -321,6 +452,7 @@ class MissionEngine:
     def tick(self, now: datetime, *, should_stop=None) -> list[dict]:
         """One turn per mission. ``should_stop`` is consulted before every mission step:
         a stop that arrives mid-tick admits no further dispatch (from #112)."""
+        self._stop_check = should_stop
         self.book.rebuild()
         summary = []
         order = sorted(self.book.missions.values(), key=lambda m: (-m.spec.get("priority", 0), m.mission_id))
@@ -336,8 +468,10 @@ class MissionEngine:
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith("artifact.") else None,
-                                 artifact_root=self.artifact_root)
+                                 manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
+                                 artifact_root=self.artifact_root, stop_check=self._stop_check,
+                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
+                                 cognition_model=getattr(self, "cognition_model", None))
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
@@ -487,6 +621,34 @@ class MissionEngine:
             return {"state": "SENSOR_RETRY", "checks": sorted(errors)}
         return self._pursue(m, now, failing, evidence)
 
+    def _bind(self, m: MissionState, s: dict) -> tuple[dict, list, list]:
+        """Resolve a strategy's typed input edges from retained Gate receipts of this mission.
+
+        The source is the latest DONE action of the named strategy; its output is read from
+        the canonical ledger, never from a cache or the adapter's memory. Only param values
+        change: capability, target, cost and consequence class stay exactly as signed."""
+        latest = {}
+        for event in self.journal.replay("mission.action"):
+            data = event.payload
+            if data.get("mission_id") == m.mission_id and data.get("status") == "DONE" and data.get("receipt"):
+                latest[data["action_id"]] = data["receipt"]
+        params = json.loads(json.dumps(s.get("params", {})))
+        bindings, sources = [], []
+        for edge in s["bind"]:
+            source = edge["from"]["action_id"]
+            receipt = latest.get(source)
+            if receipt is None:
+                raise Unbound(f"{source} has no completed action yet")
+            record = self.office.ledger.find(receipt)
+            if record is None or record.record_type != "receipt":
+                raise Unbound(f"{source} receipt {receipt[:19]} is not on the ledger")
+            value = bound_value(edge, record.payload.get("result", {}).get("output"))
+            _set_path(params, edge["param"], value)
+            bindings.append({"param": edge["param"], "from_action": source, "from_receipt": receipt,
+                             "field": edge["from"]["field"], "value_sha256": sha256_json({"v": value})})
+            sources.append(receipt)
+        return params, bindings, sources
+
     def _self_repair(self, m: MissionState, now: datetime):
         """A formed capability that faults twice in a row on the same check is re-formed, not escalated."""
         for check_id, (manifest, detail, params) in sorted(self.capability_faults.items()):
@@ -580,7 +742,8 @@ class MissionEngine:
         """No strategy is not blindness: keep re-observing at cadence. If the world heals
         without GREG acting, the escalation is withdrawn as moot (a body event, never a
         founder answer) and the mission resumes; otherwise it keeps waiting, silently."""
-        if m.next_observe_at and now < datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")):
+        if m.next_observe_at and now < datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")) \
+                and not self._deliverable_arrived(m):
             return {"state": "WAITING", "blocker": m.blocker, "until": m.next_observe_at}
         failing, evidence = self._observe(m, now)
         if failing is None:
@@ -602,8 +765,42 @@ class MissionEngine:
         self._unblock(m, why)
         self.book.rebuild()
         if failing:                                  # other checks remain: pursue them from the next step
+            resumed = self.book.missions[m.mission_id]
+            if resumed.next_observe_at and now < datetime.fromisoformat(resumed.next_observe_at.replace("Z", "+00:00")):
+                self._schedule(resumed, now, 0)      # observed early: the next step must not wait out the old slot
             return {"state": "RESUMED", "still_failing": sorted(failing)}
         return self._setpoint_reached(self.book.missions[m.mission_id], now, evidence)
+
+    def _deliverable_arrived(self, m: MissionState) -> bool:
+        """A person's work landed since GREG last looked: observe now, not at the next cadence slot.
+
+        Only for a human_work blocker, only the file paths the founder-signed mission's own fs.read
+        sensors name (the checks this work advances, and its declined_if), and only their metadata:
+        no content is read, no grant is issued and nothing is recorded until the governed
+        observation runs. ctime counts as well as mtime, because a downloaded or copied file keeps
+        an old mtime but gets a new ctime when it lands. Without this, an hourly cadence left each
+        of a business case's four human steps unnoticed for up to an hour.
+        """
+        if m.blocker.get("type") != "human_work" or not m.next_observe_at:
+            return False
+        last = datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")) - timedelta(
+            seconds=m.spec["closure"].get("cadence_seconds", 3600))
+        waiting = set(m.blocker.get("failing_checks", []))
+        sensors = [c["sensor"] for c in m.spec["success_checks"] if c["check_id"] in waiting]
+        strategy = next((s for s in m.spec["strategies"] if s["action_id"] == m.blocker.get("action_id")), None)
+        if strategy and strategy.get("declined_if"):
+            sensors.append(strategy["declined_if"]["sensor"])
+        for sensor in sensors:
+            path = (sensor.get("params") or {}).get("path")
+            if sensor.get("capability") != "fs.read" or not isinstance(path, str):
+                continue
+            try:
+                st = os.stat(path)
+            except OSError:
+                continue
+            if max(st.st_mtime, st.st_ctime) > last.timestamp():
+                return True
+        return False
 
     def _declined(self, m: MissionState, now: datetime):
         """(detail, receipt) when the person this step waits on is observed to have declined, else None."""
@@ -776,7 +973,9 @@ class MissionEngine:
         evidence = {"function": function, "required_by": purpose, "deficit_id": deficit_id,
                     "searched": routes or [{"route": "genesis", "result": "not available on this body"
                                             if self.genesis is None else "no route recorded"}],
-                    "registered": [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id]}
+                    "registered": [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id],
+                                    **({"mechanism": _mechanism_summary(c.provenance)}
+                                       if c.provider.startswith("installed:python:") else {})}
                                    for c in self.registry.by_function(function)]}
         return {"resource": "capability", "evidence": evidence,
                 "expected_effect": f"the blocked step ({purpose}) proceeds once a verified capability for "
@@ -855,6 +1054,7 @@ class MissionEngine:
         records = routing.track_record(self.journal)
         value = float(m.spec.get("value_per_check_usd", 1.0))
         held = {}                            # strategies waiting on a precondition observation says fails
+        bound = {}                           # action_id -> (params, binding provenance, source receipts)
         for index, s in enumerate(m.spec["strategies"]):
             gain = len(set(s["advances"]) & failing)
             if not gain or s["action_id"] in m.failed or s["action_id"] in m.excluded:
@@ -862,6 +1062,12 @@ class MissionEngine:
             if set(s.get("requires", [])) & failing:
                 held[s["action_id"]] = sorted(set(s["requires"]) & failing)
                 continue
+            if s.get("bind"):
+                try:
+                    bound[s["action_id"]] = self._bind(m, s)
+                except Unbound as why:
+                    held[s["action_id"]] = [f"input: {why}"]
+                    continue
             manifest = self.registry.manifests.get(s.get("capability"))
             if manifest is None and s.get("function") and self.genesis is not None:
                 manifest = self.genesis.find_attached(s["function"])
@@ -909,17 +1115,23 @@ class MissionEngine:
                 return {"state": "BLOCKED", "blocker": m.blocker}
         aid = s["action_id"]
         attempt = m.attempts.get(aid, 0)
+        params, bindings, sources = bound.get(aid, (s.get("params", {}), [], []))
         outcome = self.office.act(
             mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
-            adapter=adapter, ctx=self._context(m, manifest), params=s.get("params", {}), target=s["target"],
+            adapter=adapter, ctx=self._context(m, manifest), params=params, target=s["target"],
             cost_usd=float(s.get("cost_usd", 0.0)), expected_outcome=s.get("expected_outcome", "strategy executed"),
-            evidence_refs=evidence, attempt=attempt, spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
+            evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
+            spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)))
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,
                   "cost_usd": outcome.cost_usd if outcome.status == "DONE" else 0.0,
                   "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now)}
+        if outcome.status == "DONE" and float(s.get("cost_usd", 0.0)) > 0:
+            record.update(metered_spend(manifest.capability_id, outcome.output, outcome.cost_usd))
+        if bindings:
+            record["bindings"] = bindings
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             if outcome.scope_digest in m.rejected_scopes:
                 record["status"] = "REFUSED"
@@ -957,6 +1169,16 @@ class MissionEngine:
             return {"state": "BLOCKED", "blocker": m.blocker}
         if outcome.status == "DONE" and isinstance(outcome.output, dict) and outcome.output.get("access_gap"):
             self._access_ask(m, aid, manifest, outcome.output["access_gap"], now)
+        deficit = outcome.output.get("capability_deficit") if outcome.status == "DONE" and \
+            isinstance(outcome.output, dict) and outcome.output.get("state") == "CAPABILITY_DEFICIT" else None
+        if isinstance(deficit, dict) and deficit.get("function"):
+            # Directive 2026-10-07 section 24: no current intelligence fits the residual geometry, so the one
+            # Capability Genesis loop searches for it under this mission's authority, else asks the founder once.
+            # The deficit is the missing function, not the (attached) solver that reported it: only a capability
+            # attached for that function, or a founder answer, clears the blocker.
+            if self._deficit(m, {"function": deficit["function"]}, now,
+                             purpose=f"cognition for {deficit.get('purpose', 'a cognitive request')}"[:200]) is None:
+                return {"state": "BLOCKED", "blocker": m.blocker}
         # DONE: re-observe next tick to verify the effect in the world; REFUSED/
         # UNAVAILABLE: the failure is retained and an alternative is tried next.
         return {"state": "ACTED" if outcome.status == "DONE" else "REPLANNING", "action": aid,

@@ -1,0 +1,170 @@
+{
+  "exit": "INCONCLUSIVE",
+  "gain": {
+    "absolute_mean": -4.4496500000000024e-05,
+    "relative_mean": -0.024148825996600728,
+    "ci95_cluster": [
+      -0.00016400380000000002,
+      7.555940000000001e-05
+    ],
+    "families": 20,
+    "timing_independent_gain": 0.0,
+    "interpretation": "same deterministic policy in both arms; differences in latency are execution noise"
+  },
+  "summary": {
+    "static_rules/ALL_QUALITY": {
+      "n": 100,
+      "mean_loss": 0.0018425947500000002,
+      "matched": 100,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 242.47899999999998,
+        "p95": 835.404,
+        "max": 1509.466
+      }
+    },
+    "static_rules/semantic": {
+      "n": 20,
+      "mean_loss": 1.1150000000000001e-07,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 0.019,
+        "p95": 0.039,
+        "max": 0.058
+      }
+    },
+    "static_rules/estimation": {
+      "n": 20,
+      "mean_loss": 0.0009614922500000001,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 181.66250000000002,
+        "p95": 249.014,
+        "max": 260.124
+      }
+    },
+    "static_rules/formal": {
+      "n": 20,
+      "mean_loss": 0.0021943045,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 271.65700000000004,
+        "p95": 439.7,
+        "max": 518.621
+      }
+    },
+    "static_rules/optimization": {
+      "n": 20,
+      "mean_loss": 0.0039780105,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 783.6795,
+        "p95": 1259.152,
+        "max": 1509.466
+      }
+    },
+    "static_rules/causal": {
+      "n": 20,
+      "mean_loss": 0.00119023775,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 217.447,
+        "p95": 296.219,
+        "max": 465.956
+      }
+    },
+    "static_rules/mixed": {
+      "n": 20,
+      "mean_loss": 0.00088892875,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 82.94200000000001,
+        "p95": 441.796,
+        "max": 473.136
+      }
+    },
+    "routed_seed/ALL_QUALITY": {
+      "n": 100,
+      "mean_loss": 0.0018870912500000001,
+      "matched": 100,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 228.97050000000002,
+        "p95": 864.439,
+        "max": 1430.089
+      }
+    },
+    "routed_seed/semantic": {
+      "n": 20,
+      "mean_loss": 3.9575000000000003e-07,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 0.0165,
+        "p95": 0.422,
+        "max": 0.549
+      }
+    },
+    "routed_seed/estimation": {
+      "n": 20,
+      "mean_loss": 0.0009841432500000001,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 195.7405,
+        "p95": 246.886,
+        "max": 253.335
+      }
+    },
+    "routed_seed/formal": {
+      "n": 20,
+      "mean_loss": 0.0022258025,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 245.099,
+        "p95": 422.393,
+        "max": 600.012
+      }
+    },
+    "routed_seed/optimization": {
+      "n": 20,
+      "mean_loss": 0.0040274640000000006,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 707.336,
+        "p95": 1347.024,
+        "max": 1430.089
+      }
+    },
+    "routed_seed/causal": {
+      "n": 20,
+      "mean_loss": 0.00138253175,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 230.85,
+        "p95": 471.318,
+        "max": 616.484
+      }
+    },
+    "routed_seed/mixed": {
+      "n": 20,
+      "mean_loss": 0.0008155147500000001,
+      "matched": 20,
+      "hard_failures": 0,
+      "latency_ms": {
+        "p50": 87.967,
+        "p95": 499.035,
+        "max": 620.354
+      }
+    }
+  }
+}

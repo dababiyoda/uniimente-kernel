@@ -2,6 +2,42 @@
 
 # Founder Intent Ledger
 
+## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
+
+`INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.
+
+Progress 2026-10-08 (measured, frozen, negative results kept):
+
+- **P6 v2:** VPL is 3 of 4. F2R, F3 and F4 lift; the natural M4 family F5 does not (8.5% cheaper, not significant).
+- **P4 decisive retest:** REGRESSION, 160 vs 162. All discordant items used identical orders, so this is timing noise. Conditional routing is demoted and the shadow default stays.
+- **P8 cycle 1:** REJECT. The overfit was caught under a sealed evaluator.
+- **Built:**
+  - Competency Compiler with 15 typed mental-model operators, including executable sensitivity analysis;
+  - frozen-evidence routing;
+  - Lawful Leverage Foundry, hardened after an adversarial review;
+  - Goal Gravity (`greg gravity`).
+- **Backcast GPS:** nine frontier backcasts added.
+
+Progress 2026-10-13 (measured, frozen, negative results kept):
+
+- **P8 cycle 2** (negative-selection detector): REJECT on a genuine scarce-sample fragility.
+- **Genome admission** ([evidence](evidence/greg-genome-admission/2026-10-13-v1/README.md)): 31 executable genomes across L1-L4 on held-out seeds, pre-registered at `496c85b`:
+  - 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED;
+  - none attached; attaching any is the founder's decision.
+- **Verifiers hardened before the freeze:** a mutation audit found over 1,000 accepted or crashing corruptions of valid answers; all were closed.
+- **Second Foundry/Gravity/resilience review:** 8 defects plus a cortex abstention crash, fixed with regression tests. They included a consent gap, a hidden-bottleneck map, a lookalike legal operator, paused-mission authority and stale asks.
+- **Next gate:** P6 v3, VPL re-measured with the admitted genomes on a new natural family.
+
+## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
+
+`INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT` ([record](intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json), [verbatim source](intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md)): founder review of PR #155. P4 learned routing and P6 typed composition are Layer 5 substrate, not the Polyintelligence Mind; all five layers (basal, collective, solver, developmental, meta) remain obligations. Metric: held-out problem families where geometry routing or composition beats the strongest single available intelligence, net of cost/latency, with no added false answers or unauthorized effects; 0 means "a sophisticated router". Sequence: P6 cognitive composition lift → P4 conditional competence memory (hierarchical fallback) → P8 protected evolutionary cognition → IntelligenceGenome library expansion, each family admitted only when it beats simpler baselines on its native geometry. State: active. VPL: 0. Authority delta: none.
+
+## Seed genome: the Competency Compiler on GREG's path — 2026-10-01
+
+`INTENT-20261001-greg-seed-genome` ([record](intent/INTENT-20261001-greg-seed-genome.json), [verbatim source](intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md), [requirement map](collaboration/requirements-greg-seed-genome-20261001.json), [intents SG-001 to SG-012](collaboration/intents-greg-seed-genome-20261001.json), [deliberation](collaboration/deliberation-greg-seed-genome-20261001.json), [ADR](decisions/ADR-20261001-greg-seed-genome.md)): GREG recognizes a problem's geometry, recruits the smallest competent method, produces typed evidence, respects authority and settles competence from outcomes. The founder's goal-set words are kept verbatim: "meniscus" is translated as the frontier of the verified envelope, "impermeable shield" as layered prevention and verification, "systemic dominance" as superior lawful capability (SG-002). Control over people, resistance to shutdown and promises of perfection are prohibited (SG-003). State: active. The seed is implemented and integrated through `cognition.solve`, and survives `kill -9` with one settlement. The frozen comparison failed once (v0.2 GAIN_ABSENT, one hard failure, fixed in 0.2.1) and passed on fresh samples (v0.3 GAIN_VERIFIED_AGAINST_RUN_BASELINES against the static router; the gain is concentrated in one family; model arms NOT_RUN). Open founder decisions: merge, and whether high privacy harm is a hard gate (SG-012). Authority delta: none. VEPMC: 0.
+
+Correction absorbed the same day (comment on #143; draft #144, `INTENT-20261001-open-source-mechanism-harvest`): Capability Genesis forms `graph.shortest_path`, `graph.max_flow` and `lp.optimize` from installed open-source packages (NetworkX, SciPy, OR-Tools) on a Mechanism Card, accepts answers only on GREG's own certificate, and leaves attach with the founder. VEPMC stays the required device proof but no longer stops development. Evidence: `tests/evidence/greg-open-source-genesis-2026-10-01/`. Authority delta: none.
+
 ## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
 
 `INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE` ([record](intent/INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE.json), [verbatim sections](intent/sources/MASTER-BUILD-DIRECTIVE-2026-09-30-source.md)): GREG may ask for resources (an account, compute, software, a build, a licensed professional, a human worker), and every ask carries evidence, alternatives, costs, expected effect, uncertainty and authority requirements, with no emotional manipulation, no manufactured urgency and no framing of denial as harm to GREG (section 60; **implemented** as the one path `greg/asks.py`). Business grows one verified loop before a second venture (61); new organizations only for recurring bottlenecks (62); regenerative advantage without dependency or exploitation (63); external reality is the final judge (64). Section 76 lets an obsolete implementation leave the active tree when a placement justifies it, with its intent kept on `greg/path.json` and its history in git; this reconciles, and is recorded against, the Final Build Order's preservation rule. State: active. Authority delta: none; asking grants nothing.
@@ -190,3 +226,16 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
+## Seed Genome integration — October 1, 2026
+
+[INTENT-2026-10-01-POLYINTELLIGENCE-SEED](intent/INTENT-2026-10-01-POLYINTELLIGENCE-SEED.json) remains **active**: bounded computation is integrated into the existing GREG mission, authority and journal path; the complete directive and live verification remain open. [Current scope, evidence and residual obligations](cortex/GREG_SEED_GENOME.md) govern claims. [Every supplied directive line and Appendix A item](cortex/SEED_GENOME_REQUIREMENTS.json) has retained lineage. PR137 is the runtime base; PR141 is reused and preserved; PR139's selected integration/outcome mechanisms remain linked for later extraction. The simple static policy is retained after a negative advantage comparison. No cognition result changes human sovereignty. P0–P13/C1–C8 live beneath `greg/path.json`; N1/VEPMC remains primary, and Foundry-55 is unaffected.
+
+
+## Full-machine completion — controlling correction, October 1, 2026
+
+**BODY + ORGANS + MIND = GREG / UNIIMENTE** is the fixed completion boundary. Read `intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and its verbatim source. Reconstruct the whole boundary, implement the highest-priority unfinished dependency in rigorous increments, prove and integrate each increment, then automatically resume the parent objective and the next unblocked requirement. Seeds, experiments, sandboxes, benchmarks, PRs and VEPMC are intermediate sequencing/evidence units; none may narrow the machine or stop unrelated feasible implementation. A future-family label preserves its obligation. Registered is not implemented; a tested component is not an integrated machine.
+
+Continue until the currently achievable machine is integrated and executable. A precise founder-only action, genuine external dependency or demonstrated technology limit blocks only the affected requirement; continue other buildable work, preserve the destination and implement the strongest defensible approximation/backcast. Prose and placeholders cannot replace executable machinery when feasible. Existing authority, resource, consent, refusal, pause/revocation and shutdown gates remain effective.
+
+Intent remains **active**, implementation in progress. Preserve prior Seed Genome negative evidence and N1/VEPMC authentic-use predicates; they do not gate unrelated software completion. Propagation evidence is recorded separately from intent and never inferred from a plan.

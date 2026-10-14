@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import random
 import subprocess
 import sys
@@ -136,22 +137,17 @@ def _stage_canary(c, ctx):
             "market": market["kind"]}
 
 
-_VERIFY = """
-import json, sys
-from foundry.systems import dsl
-job = json.load(sys.stdin)
-out = [dsl.run(job["language"], job["source"], case) for case in job["cases"]]
-print(json.dumps(out))
-"""
-
-
 def _stage_verification(c, ctx):
     cases = [t["inputs"] for t in c["tests"]] + ctx["history"]
     local = [dsl.run(c["language"], c["source"], case) for case in cases]
     root = Path(__file__).resolve().parents[2]
-    proc = subprocess.run([sys.executable, "-s", "-c", _VERIFY], input=json.dumps(
+    env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONPATH": str(root),
+           "PYTHONDONTWRITEBYTECODE": "1"}
+    if os.environ.get("GREG_FOUNDRY_STORE"):
+        env["GREG_FOUNDRY_STORE"] = os.environ["GREG_FOUNDRY_STORE"]
+    proc = subprocess.run([sys.executable, "-s", "-m", "greg.foundry_protocol_worker", "dsl-verify"], input=json.dumps(
         {"language": c["language"], "source": c["source"], "cases": cases}), capture_output=True, text=True,
-        cwd=root, timeout=60)
+        cwd=root, timeout=60, env=env)
     if proc.returncode != 0:
         raise PromotionError(f"independent verifier failed: {proc.stderr[-300:]}")
     remote = json.loads(proc.stdout)

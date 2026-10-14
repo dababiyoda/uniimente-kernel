@@ -1,6 +1,11 @@
 # Build Order: ten phases, stage-gated
 
-Authority: canonical architecture, Section XXXII. No phase starts before the prior phase's exit evidence exists.
+## Controlling founder correction — complete machine, 2026-10-01
+
+**Body + Organs + Mind is the fixed completion boundary.** Apply `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and the current `AGENTS.md` execution rule: prove and integrate each increment, then automatically continue the parent machine objective. Seed/PR/VEPMC gates never stop unrelated achievable implementation; specific live authority and real-use evidence remain separate.
+
+
+Authority: canonical architecture, Section XXXII. Prior-phase evidence gates consequential activation and acceptance; reversible implementation of currently achievable machine dependencies continues while founder-use evidence is pending.
 
 ## Phase 1: Canonical Kernel Repository (THIS REPOSITORY)
 

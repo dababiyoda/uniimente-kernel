@@ -1,0 +1,49 @@
+diff --git a/greg/doctor.py b/greg/doctor.py
+index 7bf61c5..1551078 100644
+--- a/greg/doctor.py
++++ b/greg/doctor.py
+@@ -21,6 +21,15 @@ def is_crostini(markers=CROSTINI_MARKERS) -> bool:
+     return any(Path(marker).exists() for marker in markers)
+ 
+ 
++FRONTIER_WORKERS = ("claude", "codex", "aider")
++
++
++def frontier_workers(names=FRONTIER_WORKERS, which=None) -> dict:
++    """Which temporary frontier worker CLIs are installed. Looks them up on PATH; never runs them."""
++    which = which or shutil.which
++    return {name: which(name) is not None for name in names}
++
++
+ def chromebook() -> dict:
+     checks = {
+         "python_3_11": sys.version_info >= (3, 11),
+@@ -43,6 +52,8 @@ def chromebook() -> dict:
+             "ready_for_linux_service": not missing,
+             "checks": checks, "missing": missing,
+             "crostini_detected": is_crostini(),
++            # informational only: not a readiness check, and presence grants no authority
++            "frontier_workers_installed": frontier_workers(),
+             **({"fix": {"python_venv_available": "sudo apt install python3-venv"}}
+                if "python_venv_available" in missing else {}),
+             "not_verified": ["ChromeOS host identity and ownership", "VM restart at login", "sleep continuity",
+diff --git a/tests/unit/test_greg_chromebook_doctor.py b/tests/unit/test_greg_chromebook_doctor.py
+index d2890e6..9bb1870 100644
+--- a/tests/unit/test_greg_chromebook_doctor.py
++++ b/tests/unit/test_greg_chromebook_doctor.py
+@@ -26,3 +26,15 @@ def test_chromebook_doctor_does_not_probe_service_outside_linux(monkeypatch):
+     monkeypatch.setattr(doctor.shutil, "which", lambda binary: "/usr/bin/" + binary)
+     monkeypatch.setattr(doctor.subprocess, "run", lambda *a, **kw: 1 / 0)
+     assert not doctor.chromebook()["ready_for_linux_service"]
++
++
++def test_doctor_reports_frontier_workers_without_running_them(monkeypatch):
++    monkeypatch.setattr(doctor.platform, "system", lambda: "Linux")
++    present = ("git", "systemctl", "codex")
++    monkeypatch.setattr(doctor.shutil, "which", lambda binary: "/usr/bin/" + binary if binary in present else None)
++    calls = []
++    monkeypatch.setattr(doctor.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or SimpleNamespace(returncode=0))
++    report = doctor.chromebook()
++    assert report["frontier_workers_installed"] == {"claude": False, "codex": True, "aider": False}
++    assert calls == [["systemctl", "--user", "show-environment"]]  # no worker was executed
++    assert report["ready_for_linux_service"] and "frontier_workers_installed" not in report["checks"]

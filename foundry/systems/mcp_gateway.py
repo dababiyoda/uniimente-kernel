@@ -37,6 +37,18 @@ class GatewayError(RuntimeError):
 
 def _params(provider: dict):
     from mcp.client.stdio import StdioServerParameters
+    scope = os.environ.get("GREG_FOUNDRY_STORE")
+    if scope:
+        if provider.get("module") != "foundry.mcp.foundry_server" or set(provider.get("env", {})) != {"FOUNDRY_MCP_ROOT"}:
+            raise GatewayError("unreviewed MCP providers require OS filesystem confinement")
+        if Path(provider["env"]["FOUNDRY_MCP_ROOT"]).resolve() != Path(scope).resolve():
+            raise GatewayError("first-party MCP store scope is fixed")
+        env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONPATH": str(ROOT),
+               "PYTHONDONTWRITEBYTECODE": "1", "GREG_FOUNDRY_STORE": scope,
+               "HOME": os.environ["HOME"], "FOUNDRY_MCP_ROOT": str(Path(scope).resolve())}
+        return StdioServerParameters(command=sys.executable,
+                                     args=["-s", "-m", "greg.foundry_protocol_worker", "mcp-foundry"],
+                                     env=env, cwd=str(ROOT))
     env = {**{k: v for k, v in os.environ.items() if k in ("PATH", "HOME", "LANG")},
            "PYTHONPATH": str(ROOT), **provider.get("env", {})}
     return StdioServerParameters(command=sys.executable, args=["-s", "-m", provider["module"]], env=env, cwd=str(ROOT))
@@ -150,11 +162,22 @@ def ecosystem(name: str, log: Path, *, flaky: bool = False) -> dict:
 
 def _query(args, root):
     """Read-only: call a read-only tool on the Foundry's own MCP server."""
-    provider = {**FOUNDRY, "env": {"FOUNDRY_MCP_ROOT": str(root)}}
+    if not isinstance(args, dict) or "tool" not in args or set(args) - {"tool", "args"}:
+        raise GatewayError("first-party MCP accepts only tool and args")
+    if args["tool"] not in {"foundry_query", "price_quote"}:
+        raise GatewayError("unlisted first-party MCP tool")
+    if args["tool"] == "foundry_query":
+        from foundry.systems import ops as system_ops
+        request = args.get("args") or {}
+        if not isinstance(request, dict) or "system" not in request or "op" not in request:
+            raise GatewayError("read-only Foundry query needs system and op")
+        if request["op"] not in system_ops(int(request["system"]), "QUERY_OPS"):
+            raise GatewayError(f"system {request['system']} has no read-only op {request['op']!r}")
+    provider = {**FOUNDRY, "env": {"FOUNDRY_MCP_ROOT": str(Path(root).parent)}}
     return asyncio.run(_call(provider, args["tool"], args.get("args", {})))
 
 
-QUERY_OPS = {"foundry_tool": _query, "list_foundry_tools": lambda a, r: {"tools": list_tools(FOUNDRY)}}
+QUERY_OPS = {"foundry_tool": _query, "list_foundry_tools": lambda a, r: {"tools": list_tools({**FOUNDRY, "env": {"FOUNDRY_MCP_ROOT": str(Path(r).parent)}})}}
 APPLY_OPS: dict = {}
 
 

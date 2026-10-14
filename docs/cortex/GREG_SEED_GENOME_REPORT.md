@@ -253,6 +253,13 @@ Done after the correction:
   an affected party with declared harm appears. The appraiser recomputes the case and refutes a memo
   whose case differs. Four mutants caught.
 
+- **Learned routing in shadow (P4).** `greg cognition shadow` replays the cortex competence ledger over
+  GREG's own settled outcomes: for each receipt, from earlier outcomes only, the engine order the ledger
+  would have chosen and whether every compared cell holds the five weighted outcomes a reorder needs.
+  Live routing is unchanged. Finding: ordinary missions never explore the second formal engine, so the
+  ledger cannot move a default on its own; founder-pinned organ missions are the lawful exploration.
+  Four mutants caught. Learned routing is not shown better than static.
+
 Next mechanisms:
 
 1. A cognition deficit with no installed engine, closed through the builder route against a

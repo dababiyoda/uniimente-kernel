@@ -295,9 +295,22 @@ ADV_MUTANTS = [
      '        if recomputed != inputs["advantage"]:', "        if False:"),
 ]
 
+# Path node P4 in shadow: learned cortex routing replayed from GREG's settled outcomes.
+SHADOW_TESTS = ["tests/unit/test_greg_cognition_shadow.py"]
+SHADOW_MUTANTS = [
+    ("shadow judges with hindsight", "greg/cognition/shadow.py",
+     "while cursor < len(settled) and settled[cursor][0] < position:", "while cursor < len(settled):"),
+    ("shadow credits every route instead of the one observed", "greg/cognition/shadow.py",
+     "    for key in _ran_first(cortex)[:1]:", "    for key in cortex[\"route\"][\"selected\"] + (cortex[\"route\"].get(\"formal_plan\") or {}).get(\"order\", []):"),
+    ("shadow accepts an invalid receipt", "greg/cognition/shadow.py",
+     'output.get("proof_type") == "cortex_receipt" and _valid_receipt(output):', 'output.get("proof_type") == "cortex_receipt":'),
+    ("shadow reports a single-engine plan as a decision point", "greg/cognition/shadow.py",
+     "    if len(order) > 1:\n", "    if order:\n"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("characterization", CHAR_TESTS, CHAR_MUTANTS),
-          ("advantage case", ADV_TESTS, ADV_MUTANTS)]
+          ("advantage case", ADV_TESTS, ADV_MUTANTS), ("learned routing shadow", SHADOW_TESTS, SHADOW_MUTANTS)]
 
 
 def main() -> int:

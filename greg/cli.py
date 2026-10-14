@@ -167,6 +167,7 @@ def main(argv=None) -> int:
     css = cs.add_subparsers(dest="cognition_cmd", required=True)
     css.add_parser("inventory")
     css.add_parser("knowledge")
+    css.add_parser("shadow", help="what learned routing would have chosen (read-only; live routing unchanged)")
     cm = css.add_parser("mission")
     cm.add_argument("--request", required=True, help="bounded cognition request JSON")
     cm.add_argument("--id", required=True, help="durable mission identity")
@@ -443,6 +444,10 @@ def main(argv=None) -> int:
                     data = {"competence": [{"method": k[0], "version": k[1], "geometry_key": k[2], **v}
                                            for k, v in competence(journal).items()],
                             "cells": cells(journal, registry), "authority_created": False}
+            elif args.cognition_cmd == "shadow":
+                from greg.cognition.shadow import shadow
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = shadow(journal, journal.ledger)
             else:
                 request = json.loads(Path(args.request).read_text())
                 if "problem" in request:          # cortex contract: validated by the bridge, same entry

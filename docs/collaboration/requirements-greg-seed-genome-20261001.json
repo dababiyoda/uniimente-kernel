@@ -3255,9 +3255,9 @@
    "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (Appendix A, row B53)",
    "source_date": "2026-10-01",
    "intended_effect": "P4 cognitive Spider-Web",
-   "interpretation": "Routing memory exists; learned routing not yet better than static",
+   "interpretation": "Routing memory exists (cortex/memory.py). Since 2026-10-14 GREG replays it in shadow over its own settled cortex outcomes (greg/cognition/shadow.py, `greg cognition shadow`): per receipt, from earlier outcomes only, the order the ledger would have chosen, whether it differs, and whether every compared cell has the evidence a reorder needs. Live routing stays the fixed policy; promotion is a founder decision. Ordinary missions never explore the second formal engine; founder-pinned organs do. Learned routing is not yet shown better than static.",
    "canonical_owner": "greg/cognition + cortex (Kernel)",
-   "lifecycle_state": "deferred",
+   "lifecycle_state": "active",
    "implementation_state": "PARTIAL",
    "authority_scope": "development and evaluation only; consequence-inert; cognition creates no authority",
    "dependencies": [
@@ -3267,10 +3267,13 @@
    "implementation_refs": [
     "cortex/memory.py",
     "docs/cortex/SPIDER_WEB_CORTEX.md",
-    "greg/cognition/settlement.py"
+    "greg/cognition/settlement.py",
+    "greg/cognition/shadow.py",
+    "greg/cli.py"
    ],
    "tests": [
-    "tests/unit/test_cortex_pipeline.py"
+    "tests/unit/test_cortex_pipeline.py",
+    "tests/unit/test_greg_cognition_shadow.py"
    ],
    "evidence_refs": [],
    "failure_condition": "the horizon is dropped from greg/path.json or activated without its gate",

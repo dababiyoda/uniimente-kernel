@@ -1225,7 +1225,7 @@
           "id": "P4",
           "title": "Cognitive settlement and learned routing",
           "maps_to": "N4",
-          "status": "HORIZON",
+          "status": "SHADOW: learned cortex routing replayed from GREG's settled outcomes without hindsight (greg/cognition/shadow.py, `greg cognition shadow`); live routing unchanged; not shown better than static",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P3 plus settled outcomes from real missions (real-mission outcomes gate the claim; the machinery is buildable now)",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1233,10 +1233,12 @@
           "falsification": "learned routing does not beat the frozen static router",
           "smallest_next_experiment": "replay the frozen held-out suite with routing memory seeded from settled outcomes; compare to static_router",
           "exit": "learned routing beats the static baseline on held-out tasks without new authority",
-          "evidence_refs": [],
+          "evidence_refs": [
+            "tests/unit/test_greg_cognition_shadow.py"
+          ],
           "completion": {
             "class": "BUILDABLE_NOW",
-            "build_now": "routing that learns from settled competence, evaluated on a new frozen suite; the dependency on real-mission outcomes gates the claim, not the machinery",
+            "build_now": "founder-pinned exploration missions to give the second formal engine a cell; a frozen shadow-versus-static comparison on a new suite (the held-out spend stays founder-gated)",
             "claim_gate": "'beats the static baseline on real missions' needs settled founder missions (FOUNDER_USE); a crossgeo v0.4 held-out spend needs founder approval (#151)"
           }
         },

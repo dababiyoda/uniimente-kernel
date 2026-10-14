@@ -27,7 +27,8 @@
   "source_refs": [
     "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md",
     "PR #155 (dababiyoda/uniimente-kernel)",
-    "docs/intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md"
+    "docs/intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md",
+    "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-REISSUE-2026-10-13-source.md"
   ],
   "source_location": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md",
   "source_date": "2026-10-07",
@@ -56,7 +57,7 @@
   "owner": "GREG cognition maintainers; Alfonso remains root human authority",
   "state": "active",
   "lifecycle_state": "active",
-  "implementation_state": "in progress 2026-10-13: P6 v2 measured (VPL 3 of 4; natural family 0 of 1); P4 decisive retest measured and applied; P8 implemented with two cycles (both REJECT); 31-genome library admitted on held-out data across L1-L4 and wired into the Competency Compiler through the evidence index; Lawful Leverage Foundry, Goal Gravity, resilience and community evidence integrated and twice adversarially reviewed. No genome is attached.",
+  "implementation_state": "in progress 2026-10-13: P6 v2 measured (VPL 3 of 4; natural family 0 of 1); P4 decisive retest measured and applied; P8 implemented with two cycles (both REJECT); 31-genome library evaluated on held-out data across L1-L4 (20 admitted: L1 5, L2 2, L3 11, L4 2) and wired into the Competency Compiler through the evidence index; Lawful Leverage Foundry and Goal Gravity reviewed twice, resilience and community evidence once, all by the building agent, then an independent five-lens review (2026-10-13) whose reproduced defects were fixed in 4d99fb0, ed0f00b and 9a799ed. No genome is attached.",
   "binding_scope": "Reversible implementation, frozen evaluation, review and draft PRs. Destination continuity for the whole Mind.",
   "authority_scope": "No merge, deployment, publication, contact, spending beyond signed caps, credential change or authority expansion.",
   "constitutional_constraints": [
@@ -79,9 +80,9 @@
     "P8 cycle 1 REJECT (held out 42 wins / 59 losses)",
     "The first Lawful Leverage Foundry commit (1828d33) had 25 review-confirmed defects including consent and authority bypasses; fixed in 8ed25ca with regression tests",
     "P8 cycle 2 (negative-selection detector) REJECT on a genuine scarce-sample fragility; held-out set unspent (docs/evidence/greg-protected-evolution/2026-10-09/README.md)",
-    "Genome admission negative results: 6 genomes superseded by mature or simpler mechanisms, 2 with no edge over their baselines, wrong answers in 3 genomes (Jeffreys interval 3, quorum 1, greedy reinforcement 14); constraint-release recombination does not beat random restart (8-13) and local repair loses to the centralized replanner (12-18)",
-    "Before the freeze a mutation audit found that genome verifiers accepted or crashed on over 1,000 of ~3,800 single-leaf corruptions of valid answers (unchecked claims such as forecast quantiles, compiled models, max-flow cuts, lineage records, the authority string); closed in b5aa2f0",
-    "The second Foundry/Gravity/resilience review found 8 defects (consent with undeclared parties, ungated direct labour, duplicate map ids hiding the bottleneck, a homoglyph legal operator, paused or expired missions lending authority, stale situations reaching the founder, unattributed antifragility evidence, non-monotone and ASCII-only community weighting) plus a cortex abstention crash; fixed in 6801c3c"
+    "Genome admission negative results: 6 genomes SUPERSEDED (4 by mature or simpler mechanisms; collective_market only by a latency gap against an oracle that knows every private value, which leaves the market geometry unroutable; collective_flock by a stronger but 35x slower planner), 2 with no edge over their baselines, wrong answers in 3 genomes (Jeffreys interval 3, quorum 1, greedy reinforcement 14); constraint-release recombination does not beat random restart (8-13, not significant); local repair is 12-18 against the centralized replanner (not significant): it loses 0-15 with a reliable controller and wins 12-3 with an unreliable one, where the replanner gave 5 wrong answers and repair 0",
+    "Before the freeze a mutation audit (an uncommitted sweep over dev seeds 0-4; about 3,713 mutants, 1,740 surviving, 1,417 excluding raised non-binding bounds) found genome verifiers accepting or crashing on corruptions of valid answers (unchecked claims such as forecast quantiles, compiled models, max-flow cuts, lineage records, the authority string). The committed test covers one dev seed per genome and the first three elements of each list (730 mutants, 360 surviving on the parent 8c5da6d). After b5aa2f0 no non-equivalent mutant survives on dev seeds 0-9; equivalent raised non-binding bounds are accepted by design",
+    "The second Foundry/Gravity/resilience review (by the building agent) found 9 defects (consent with undeclared parties, ungated direct labour, duplicate map ids hiding the bottleneck, a homoglyph legal operator, paused or expired missions lending authority, stale situations reaching the founder, unattributed antifragility evidence, non-monotone and ASCII-only community weighting) plus a cortex abstention crash; fixed in 6801c3c"
   ],
   "dependencies": [
     "INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT",
@@ -127,6 +128,6 @@
     "P6 v2: lift on F2R, F3, F4 (docs/evidence/greg-composition-lift/2026-10-08/README.md)",
     "P4 v3 decisive verdict reached and its predeclared consequence applied (docs/evidence/greg-learned-routing/2026-10-08/README.md)",
     "P8 protected evolution caught an overfit candidate under a sealed evaluator (docs/evidence/greg-protected-evolution/2026-10-08/README.md)",
-    "Admitted genomes per layer with recorded baselines: 31 executable genomes (L1 x5, L2 x6, L3 x18, L4 x2) on held-out seeds 1000-1029 under a pre-registered freeze (496c85b): 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED (docs/evidence/greg-genome-admission/2026-10-13-v1/README.md)"
+    "Admitted genomes per layer with recorded baselines: 31 executable genomes evaluated (L1 x5, L2 x6, L3 x18, L4 x2) on held-out seeds 1000-1029 under a pre-registered freeze (496c85b): 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED; admitted (DEFAULT or NICHE) 20: L1 5, L2 2, L3 11, L4 2 (docs/evidence/greg-genome-admission/2026-10-13-v1/README.md, including its erratum)"
   ]
 }

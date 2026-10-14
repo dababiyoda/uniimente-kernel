@@ -63,7 +63,9 @@ def _series(data):
     levels = data.get("levels", list(LEVELS))
     if not isinstance(levels, list) or not 1 <= len(levels) <= 41:
         raise GenomeError("1-41 quantile levels required")
-    levels = sorted(finite(q, low=1e-6, high=1 - 1e-6, name="level") for q in levels)
+    levels = sorted({finite(q, low=1e-6, high=1 - 1e-6, name="level") for q in levels})
+    if len({f"{q:g}" for q in levels}) != len(levels):
+        raise GenomeError("quantile levels must stay distinct at six significant digits")
     return values, horizon, levels
 
 
@@ -147,6 +149,12 @@ def _error_quantiles(y, point_fn, params, horizon, levels, config=DEFAULT_CONFIG
     return out, len(errors[0])
 
 
+def _sig(v):
+    """Published precision: 12 significant digits, so a series in any unit keeps its shape (6 absolute
+    decimals collapsed series below 1e-6 to a constant or to zero)."""
+    return float(f"{v:.12g}")
+
+
 def distribution(data, config=DEFAULT_CONFIG, point_name="holt"):
     y, horizon, levels = _series(data)
     params = fit(y, config) if point_name == "holt" else None
@@ -154,12 +162,12 @@ def distribution(data, config=DEFAULT_CONFIG, point_name="holt"):
     point = point_fn(y, params, horizon, config)
     eq, origins = _error_quantiles(y, point_fn, params, horizon, levels, config)
     if config["error_model"] == "log_ratio":
-        quantiles = {f"{q:g}": [round(point[h] * math.exp(eq[h][i]), 6) for h in range(horizon)]
+        quantiles = {f"{q:g}": [_sig(point[h] * math.exp(eq[h][i])) for h in range(horizon)]
                      for i, q in enumerate(levels)}
     else:
-        quantiles = {f"{q:g}": [round(max(point[h] + eq[h][i] * y[-1], 1e-9), 6) for h in range(horizon)]
+        quantiles = {f"{q:g}": [_sig(max(point[h] + eq[h][i] * y[-1], 1e-9)) for h in range(horizon)]
                      for i, q in enumerate(levels)}
-    return {"point": [round(v, 6) for v in point], "levels": levels, "quantiles": quantiles}, params, origins
+    return {"point": [_sig(v) for v in point], "levels": levels, "quantiles": quantiles}, params, origins
 
 
 def _distribution(data, point_name):
@@ -169,6 +177,7 @@ def _distribution(data, point_name):
 def solve_with(config, data):
     out, params, origins = distribution(data, config)
     return answer(out, {"alpha": params[0], "beta": params[1], "phi": params[2], "fit_window": config["fit_window"],
+                        "beta_set": list(config["beta_set"]), "phi_set": list(config["phi_set"]),
                         "rolling_origins": origins, "error_model": f"empirical {config['error_model']} quantiles "
                         "per horizon", "interval_scale": config["interval_scale"],
                         "selection": "grid minimum of in-sample one-step squared error"})
@@ -187,6 +196,16 @@ def _verify_point(prefix, p, window, horizon):
         e = v - (level + p[2] * trend)
         level, trend = level + p[2] * trend + p[0] * e, p[2] * trend + p[0] * p[1] * e
     return [max(level + sum(p[2] ** j for j in range(1, h + 1)) * trend, 1e-9) for h in range(1, horizon + 1)]
+
+
+def _verify_sse(w, p):
+    """In-sample one-step squared error of damped-trend Holt, error-correction form."""
+    level, trend, sse = w[0], (w[1] - w[0]) if len(w) > 1 else 0.0, 0.0
+    for v in w[1:]:
+        e = v - (level + p[2] * trend)
+        sse += e * e
+        level, trend = level + p[2] * trend + p[0] * e, p[2] * trend + p[0] * p[1] * e
+    return sse
 
 
 def _verify_quantile(values, q):
@@ -214,13 +233,15 @@ def verify(data, output, certificate):
         return {"shape": False}
     p = tuple(cert.get(k) for k in ("alpha", "beta", "phi"))
     window, origins, scale = cert.get("fit_window"), cert.get("rolling_origins"), cert.get("interval_scale")
+    beta_set, phi_set = cert.get("beta_set"), cert.get("phi_set")
+    if not all(type(v) in (int, float) and math.isfinite(v) for v in p) or type(window) is not int:
+        return {"shape": True, "declared_configuration_in_reviewed_space": False}
     error_model = next((m for m in CONFIG_SPACE["error_model"][1]
                         if cert.get("error_model") == f"empirical {m} quantiles per horizon"), None)
     n = len(y)
     first = n - horizon + 1 - origins if type(origins) is int else None
-    config_ok = (p[0] in [a / 10 for a in range(1, 10)]
-                 and p[1] in {b for c in CONFIG_SPACE["beta_set"][1] for b in c}
-                 and p[2] in {f for c in CONFIG_SPACE["phi_set"][1] for f in c}
+    config_ok = (beta_set in CONFIG_SPACE["beta_set"][1] and phi_set in CONFIG_SPACE["phi_set"][1]
+                 and p[0] in [a / 10 for a in range(1, 10)] and p[1] in beta_set and p[2] in phi_set
                  and window in CONFIG_SPACE["fit_window"][1] and error_model is not None
                  and type(scale) in (int, float) and CONFIG_SPACE["interval_scale"][1][0] <= scale
                  <= CONFIG_SPACE["interval_scale"][1][1] and type(origins) is int and origins >= 8
@@ -232,8 +253,14 @@ def verify(data, output, certificate):
               "positive_and_finite": all(v > 0 for k in keys for v in quantiles[k])}
     if not config_ok:
         return checks
+    # the declared parameters are the grid minimum of in-sample one-step squared error (verifier's own
+    # error-correction recursion); a relative tolerance absorbs the two recursions' rounding, not a worse fit
+    sse = {g: _verify_sse(y[-window:], g) for g in
+           ((a / 10, b, f) for a in range(1, 10) for b in beta_set for f in phi_set)}
+    checks["parameters_are_the_grid_selection"] = sse[p] <= min(sse.values()) * (1 + 1e-9) + 1e-12 * max(y) ** 2
     path = _verify_point(y, p, window, horizon)
-    checks["point_recomputed"] = all(math.isclose(a, b, rel_tol=1e-6, abs_tol=1e-6) for a, b in zip(path, point))
+    tol = 1e-9 * max(y)                       # scale-relative floor; the published values carry 12 digits
+    checks["point_recomputed"] = all(math.isclose(a, b, rel_tol=1e-6, abs_tol=tol) for a, b in zip(path, point))
     errors = [[] for _ in range(horizon)]
     for o in range(first, n - horizon + 1):
         f = _verify_point(y[:o], p, window, horizon)
@@ -246,7 +273,7 @@ def verify(data, output, certificate):
         for q, k in zip(levels, keys):
             e = mid + (_verify_quantile(errors[h], q) - mid) * scale
             expected[k].append(path[h] * math.exp(e) if error_model == "log_ratio" else max(path[h] + e * y[-1], 1e-9))
-    checks["quantiles_recomputed"] = all(math.isclose(a, b, rel_tol=1e-6, abs_tol=2e-6)
+    checks["quantiles_recomputed"] = all(math.isclose(a, b, rel_tol=1e-6, abs_tol=tol)
                                          for k in keys for a, b in zip(expected[k], quantiles[k]))
     return checks
 
@@ -314,6 +341,9 @@ def _products(data):
                                   for v in scen],
                     "over": bounded_int(p.get("over_cost"), low=1, high=10_000, name="over_cost"),
                     "under": bounded_int(p.get("under_cost"), low=1, high=10_000, name="under_cost")})
+    if len({len(p["scenarios"]) for p in out}) != 1:
+        raise GenomeError("every product needs the same number of scenarios (the summed objective is then the "
+                          "sample average times a common constant)")
     capacity = bounded_int(data.get("capacity"), low=0, high=1_000_000, name="capacity")
     return out, capacity
 
@@ -427,7 +457,7 @@ def _genome(**kw):
 INTELLIGENCES = [
     Executable(
         genome=_genome(
-            intelligence_id="solver.forecast.damped_trend_quantiles", version="1.0.1", family="forecast_quantile",
+            intelligence_id="solver.forecast.damped_trend_quantiles", version="1.1.0", family="forecast_quantile",
             layer=3, operation="forecast_distribution", epistemic_class="prediction",
             subgeometry="univariate positive time series, horizon 1-26",
             native_representation="ordered history of positive values",
@@ -454,7 +484,7 @@ INTELLIGENCES = [
         competitor=theta_empirical, tolerance=1e-9),
     Executable(
         genome=_genome(
-            intelligence_id="solver.or.newsvendor_saa_compiler", version="1.0.1", family="newsvendor_compile",
+            intelligence_id="solver.or.newsvendor_saa_compiler", version="1.0.2", family="newsvendor_compile",
             layer=3, operation="compile_newsvendor", epistemic_class="optimization",
             subgeometry="capacity-coupled newsvendor -> integer SAA model",
             native_representation="demand scenarios + overage/underage costs + shared capacity",

@@ -119,7 +119,9 @@
         "confidence",
         "cost_usd_per_cycle",
         "effort_hours_per_cycle",
-        "evidence_refs"
+        "evidence_refs",
+        "consequence_class",
+        "third_parties"
       ],
       "properties": {
         "description": {
@@ -144,7 +146,8 @@
             "external_contact",
             "financial",
             "irreversible"
-          ]
+          ],
+          "description": "Declared, never defaulted: an omitted class would skip the third-party gate."
         },
         "evidence_refs": {
           "$ref": "#/$defs/refs"
@@ -162,7 +165,7 @@
           "items": {
             "$ref": "#/$defs/text"
           },
-          "description": "Parties the labour affects or contacts; external_contact labour must name them."
+          "description": "Parties the labour affects or contacts, declared explicitly ([] for none); external_contact labour must name them."
         },
         "consent": {
           "$ref": "#/properties/surfaces/items/properties/consent"

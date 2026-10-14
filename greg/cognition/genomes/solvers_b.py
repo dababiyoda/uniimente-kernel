@@ -778,15 +778,20 @@ def _erlang_c_logsum(agents, load):
     return math.exp(last - top) / (sum(math.exp(x - top) for x in logs) + math.exp(last - top))
 
 
+def _erlang_tail(erlang_c, agents, load, aht, target):
+    """Verifier/truth tail, written apart from the solver's: P(W > T) = C * exp(-(c - a) T / AHT), a = lam*AHT."""
+    return math.exp(math.log(erlang_c) - (agents - load) * target / aht) if erlang_c > 0 else 0.0
+
+
 def erlang_verify(data, output, certificate):
     lam, aht, target, alpha, load, abandonment, cv = _queue(data)
     c = output.get("agents") if isinstance(output, dict) else None
     if type(c) is not int or not load < c <= Q_MAX_AGENTS:
         return {"stable_staffing": False}
     erlang_c = _erlang_c_logsum(c, load)
-    p = _p_exceed(erlang_c, c, lam, aht, target)
+    p = _erlang_tail(erlang_c, c, load, aht, target)
     below = c - 1
-    minimal = below <= load or _p_exceed(_erlang_c_logsum(below, load), below, lam, aht, target) > alpha
+    minimal = below <= load or _erlang_tail(_erlang_c_logsum(below, load), below, load, aht, target) > alpha
     claimed, claimed_c, occupancy = (output.get(k) for k in ("p_wait_exceeds_target", "erlang_c", "occupancy"))
     return {"stable_staffing": True, "meets_target": p <= alpha * (1 + 1e-9), "minimal": minimal,
             "probability_recomputed": type(claimed) is float and abs(claimed - p) <= 1e-9 + 1e-6 * p,
@@ -806,7 +811,7 @@ def _erlang_c_poisson(agents, load):
 def erlang_truth(data):
     lam, aht, target, alpha, load, *_ = _queue(data)
     agents = math.floor(load) + 1
-    while _p_exceed(_erlang_c_poisson(agents, load), agents, lam, aht, target) > alpha:
+    while _erlang_tail(_erlang_c_poisson(agents, load), agents, load, aht, target) > alpha:
         agents += 1
     return agents
 
@@ -1309,7 +1314,7 @@ INTELLIGENCES = [
                          "an inflated self-reported SE cannot widen its agreement tolerance"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.queue.erlang_c_staffing", version="1.0.2", family="queue_erlang", layer=3,
+            intelligence_id="solver.queue.erlang_c_staffing", version="1.0.3", family="queue_erlang", layer=3,
             operation="erlang_c_staffing", epistemic_class="prediction",
             subgeometry="M/M/c minimum staffing for a waiting-time service level",
             source_provenance="Erlang (1917) delay formula; Erlang-B recursion (textbook queueing theory)",

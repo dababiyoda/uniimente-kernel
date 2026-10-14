@@ -68,7 +68,8 @@ def test_genomes_validate_and_are_layer_three():
         assert g.layer == 3 and g.buildability == "BUILDABLE_NOW" and g.standalone_decision
         # 1.0.2: verifier strengthened by the library-wide mutation audit (A* steps, Erlang C and occupancy,
         # Jeffreys posterior mean)
-        assert g.version == ("1.0.2" if g.family in ("search_astar", "queue_erlang", "bayes_interval") else "1.0.1")
+        # 1.0.3 (queue_erlang): the verifier and truth use their own tail formula (independent review)
+        assert g.version == {"queue_erlang": "1.0.3", "search_astar": "1.0.2", "bayes_interval": "1.0.2"}.get(g.family, "1.0.1")
         assert g.operation == OPS[g.family] and g.epistemic_class == CLASSES[g.family]
         assert g.evidence_type == EVIDENCE[g.family]
         assert "INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION" in g.lineage
@@ -474,3 +475,17 @@ def test_game_security_baseline_is_exact_only_on_saddle_games():
         data, truth = dev("game_minimax", seed)
         category = solvers_b.game_score(data, truth, solvers_b.game_security(data))["category"]
         assert category == ("correct" if solvers_b.game_subregion(data) == "pure_saddle" else "wrong")
+
+
+def test_erlang_verifier_and_truth_do_not_share_the_solvers_tail_formula(monkeypatch):
+    # review 2026-10-13: verify and truth evaluated P(W > T) with the solver's own _p_exceed, so a defect in
+    # it would have been reproduced everywhere. Corrupting the solver's tail must leave the verifier's and
+    # the truth's judgement unchanged and must get the corrupted solver's answer refuted.
+    data, truth = solvers_b.erlang_instance(5)
+    good = solvers_b.erlang_solve(data, {})
+    monkeypatch.setattr(solvers_b, "_p_exceed", lambda c, agents, lam, aht, target: c * math.exp(-agents / aht * target))
+    assert all(solvers_b.erlang_verify(data, good["output"], good["certificate"]).values())
+    assert solvers_b.erlang_truth(data) == truth["agents"] == good["output"]["agents"]
+    bad = solvers_b.erlang_solve(data, {})
+    assert bad["output"]["agents"] != good["output"]["agents"]
+    assert not all(solvers_b.erlang_verify(data, bad["output"], bad["certificate"]).values())

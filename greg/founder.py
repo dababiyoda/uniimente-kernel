@@ -50,12 +50,17 @@ COMMAND_KINDS = (
     "DEVICE_ENROLL",      # delegate a narrow, expiring subset of kinds to a phone/remote device key
     "DEVICE_REVOKE",
     "ANCHOR_CONFIGURE",   # enable/disable RFC 3161 anchoring of the ledger head at a pinned TSA
+    "GOAL",               # authorize (or supersede) a persistent Goal Gravity goal bound to signed missions
+    "GOAL_CONTROL",       # stop/resume/lower/never/mute/ask-before/forget/revoke one admitted goal
 )
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only
-# answer, criticize, pause, resume or stop. Missions, capabilities, key rotation and device
-# enrollment always need the founder key itself.
-DEVICE_KINDS = ("DECISION", "CRITIQUE", "LIFECYCLE", "BODY_PAUSE", "BODY_RESUME", "BODY_STOP")
+# answer, criticize, pause, resume or stop. Missions, goals, capabilities, key rotation and
+# device enrollment always need the founder key itself. GOAL_CONTROL is delegable only for
+# narrowing controls (greg/goal_gravity.py DEVICE_GOAL_CONTROLS): stop, lower, never, mute,
+# ask-before, forget, revoke a capability. Resuming, changing or revoking a goal needs the
+# founder key.
+DEVICE_KINDS = ("DECISION", "CRITIQUE", "LIFECYCLE", "BODY_PAUSE", "BODY_RESUME", "BODY_STOP", "GOAL_CONTROL")
 DEVICE_MAX_LIFETIME = timedelta(days=90)
 READ_SKEW = timedelta(seconds=60)
 CLOCK_SKEW = timedelta(minutes=5)
@@ -92,6 +97,9 @@ def key_id(public_hex: str) -> str:
 def _signing_bytes(envelope: dict) -> bytes:
     unsigned = {k: v for k, v in envelope.items() if k != "signature"}
     return ("uniimente-greg-founder-command-v1\n" + canonical_json(unsigned)).encode("utf-8")
+
+
+signing_bytes = _signing_bytes   # public: retained envelopes are re-verified from the ledger (greg/goal_gravity.py)
 
 
 # -- key custody on the founder's own device ------------------------------------

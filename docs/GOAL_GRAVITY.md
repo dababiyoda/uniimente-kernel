@@ -4,6 +4,7 @@ Status: IMPLEMENTED on `main`'s canonical standing runtime (draft PR); adoption 
 Intent: `INTENT-20261013-GOAL-GRAVITY` (`docs/intent/INTENT-20261013-GOAL-GRAVITY.md`).
 Verbatim founder source: `docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md`.
 Decision record: `docs/decisions/ADR-GOAL-GRAVITY-001.md`; deliberation `docs/collaboration/deliberation-goal-gravity-2026-10-13.json`.
+GREG body binding: `docs/decisions/ADR-GOAL-GRAVITY-002-greg-binding.md` (section 6 below).
 
 > Preserve the effect. Do not literalize the metaphor. "Coincidence production" compiles to persistent goal memory +
 > situational awareness + preparation + timing + option creation. Nothing here controls chance, claims experience, or
@@ -144,7 +145,7 @@ external effect. The inspection record behind this table is
 | Learned relevance and model-backed proposers | rule baseline only | local open-source model route (INTENT-20260930) attached through standing-cognition proposers; must beat the rule baseline on held-out signals |
 | Autonomous execution at scale | the loop holds no grants | founder-issued standing grants through the existing issuer; the Gate consumes, never fills in |
 | Capability Genesis builder | deficit detection only | reconciliation of the drafts' Genesis/builder lineage (#114/#137) or a bounded coding-agent route under the Capability Genesis contract |
-| Founder authentication for goal authorization | goals carry declared lineage only | SR001 G6: canonical founder key custody and revocation |
+| Founder authentication for goal authorization | standalone goals carry declared lineage only; on the GREG body a goal is admitted only from a founder-signed Ed25519 `GOAL` (section 6) | SR001 G6: canonical founder key custody and revocation for the founder's real key |
 | External verification of outcomes | synthetic executors | a real outcome adapter with `validation_status: externally_verified` |
 | Cross-organ goal feeds | organs untouched | typed adapters from DALEOBANKS/WMI wire contracts into observations (no copied governance) |
 | Physical embodiment | out of scope | authorized device/robotics interfaces under the Gate |
@@ -182,3 +183,71 @@ loop.measures(now=now)                                               # identity 
 
 A scheduler must supply a globally stable `trigger_id`; retrying it with the same inputs returns the recorded turn,
 and changing the inputs under the same id is refused and retained as a conflict.
+
+## 6. On the GREG body (ADR-GOAL-GRAVITY-002)
+
+One canonical persistent operating path. The egregore loop is used unchanged in its semantics and hosted in **body
+mode**; the GREG binding (`greg/goal_gravity.py`) is thin and holds no authority of its own.
+
+```text
+founder-signed GOAL --Body.apply (Ed25519, nonce, TTL)--> GoalRegistry on the one body ledger (<home>/ledger.jsonl)
+Body.tick: ingest inbox -> stop/pause -> goal_gravity.tick -> MissionEngine.tick -> appraisal -> anchor
+goal_gravity.tick (nothing at all without a goal record):
+  admission  the retained GOAL envelope must verify under the key valid at its ledger position and rebuild the spec
+             byte for byte; anything else stays on the ledger, quarantined (stop_pushing by the admission check)
+  guard      a signed founder stop / change / revoke is restored if an unsigned record undid it
+  settle     a signature-verified DECISION reject of a goal move's exact scope is also the goal's route refusal
+  sense      mission observations (check predicate recomputed from the Gate's own receipt; a claim that differs
+             is untrusted), separate-process appraisals, greg.path nodes, non-quarantined intake (untrusted)
+  loop       GoalGravityLoop.turn(gate=None, executor=None, grants=None); on a body ledger anything else raises
+               awake goal  -> MissionEngine.observe_now(mission): its next read-only look, sooner (timing only)
+               decision    -> MissionEngine.request_decision: the mission's own APPROVAL for the exact scope
+               information -> greg.goal.notice (no ask)
+MissionEngine -> AuthorityOffice -> ConsequenceGate remains the only execution path.
+```
+
+| Concern | Canonical owner on the body |
+|---|---|
+| goal persistence | `egregore.goals.GoalRegistry` on `Body.ledger` (stray records quarantined, `greg.goal.record_quarantined`) |
+| goal authentication | `greg.founder.FounderVerifier` via `Body.apply`; `goal_gravity.signed_commands` / `admitted` re-verify every tick |
+| mission lifecycle | `MissionEngine` (signed LIFECYCLE); a goal never pauses, resumes or abandons a mission |
+| execution | `MissionEngine -> AuthorityOffice.act -> ConsequenceGate.run` under the mission's signed light cone |
+| founder asks | `greg.asks.record` through the engine (`request_decision`); answers only as signed DECISION commands |
+| attention routing | `FounderAttentionRouter` with the hosted `BodyAttentionStore` (no `egregore.founder_ask/answer` records) |
+| backcast | per goal `egregore.gps`; developmental position `greg.path`, fed in as `greg.path.<node>` observations |
+| one-turn analysis | `greg gravity --situation` (#158), unchanged; founder-paused missions now labelled `paused` (`dormant` alias) |
+
+**GOAL body** (founder key only):
+`{"goal": <GoalSpec fields without goal_id/authority/execution_authority>, "missions": [<signed mission ids>],
+"max_consequence_class": <no higher than the bound missions' cones>}`. The body derives the authority block from the
+signature (`authorization_ref` = command digest, `authorized_at` = body clock). Each declared move must name
+`{"mission_id", "action_id"}` of a static strategy of a bound mission, restate its capability, target, manifest
+consequence class and cost exactly, and lie **outside** that mission's cone (inside-cone work is the mission's own).
+An identical intent is refused; `supersedes` replaces an admitted goal and keeps the old one as `superseded`.
+
+**GOAL_CONTROL body**: `{"goal_id", "kind", "value"?, "reason"?}` with kind in the egregore preference kinds plus
+`revoke`. A delegated device key may only narrow (`stop_pushing` true, `lower_priority`, `never_use_tactic`,
+`do_not_monitor`, `ask_before`, `forget_route`, `revoke_capability`); resuming, `change_goal` and `revoke` need the
+founder key.
+
+**Operating it without code:**
+
+```text
+greg gravity authorize --from-mission m:watch --print-only     review the GOAL derived from a signed mission
+greg gravity authorize --from-mission m:watch --key K          sign it into the inbox (or: authorize FILE --key K)
+greg gravity goals                                             read-only, safe while the body runs
+greg gravity evidence <goal-id-prefix>                         ledger hashes behind one goal
+greg gravity control <goal-id-prefix> --kind stop_pushing --value true --key K
+greg decide <request_id> approve|reject --key K                answers stay on the one path (console, phone too)
+```
+
+`status()` lists missions under `missions` (and the legacy `goals` key for older clients, labelled in `keys`) and
+persistent goals under `gravity`; the phone, the console ("Persistent goals") and the morning report (`goal_gravity`)
+read those projections.
+
+**Not claimed.** The loop never executes on a body; missions do all execution through the Gate. Goal completion is
+observation-tier (attributed ledger observations recomputed from Gate receipts and appraisals), never external
+verification. A goal cannot pull a mission that is paused or blocked on a founder decision. Evidence for this section:
+`tests/unit/test_greg_goal_gravity.py`, `tests/unit/test_goal_gravity_body_mode.py` and the `greg-goal-gravity`
+closures (IMPLEMENTED / UNIT-TESTED on temporary bodies with a test key; no external effect; nothing activates until
+the founder signs a GOAL on a real body).

@@ -16,8 +16,8 @@ Founder directive 2026-10-07, section 19. The loop it implements toward:
            HOLD                  no defensible route: retain the current state
       -> receipt; the asset the cycle should leave; the next bottleneck.
 
-Dormant goals stay preserved: a situation naming a paused or blocked mission yields a wake proposal (the
-founder's lifecycle decision), never an automatic resume. The objective is option density (earlier
+Paused goals stay preserved: a situation naming a founder-paused or blocked mission yields a wake proposal
+(the founder's lifecycle decision), never an automatic resume. The objective is option density (earlier
 sight, prepared resources, lawful timing), never a claim of controlling luck. This module writes no
 ledger event, executes nothing, contacts no one, spends nothing and creates no authority.
 """
@@ -93,27 +93,37 @@ def validate(situation: dict, now: datetime | None = None) -> dict:
     return situation
 
 
+LABELS = {"paused": "founder-paused missions (a signed LIFECYCLE pause); only the founder resumes them",
+          "dormant": "legacy alias of 'paused' kept for older readers; in egregore Goal Gravity 'dormant' means "
+                     "a sleeping, wakeable goal, which a founder-paused mission is not"}
+
+
 def _goals(journal, mission_id: str | None) -> dict:
-    """Active, dormant (paused) and blocked missions from the canonical journal; read-only."""
+    """Active, founder-paused and blocked missions from the canonical journal; read-only.
+
+    Founder-paused missions are reported as ``paused``; ``dormant`` is kept as a legacy alias of the same
+    list, because in egregore Goal Gravity ``dormant`` means a sleeping goal that evidence may wake."""
     if journal is None:
-        return {"source": "no body ledger here", "active": [], "dormant": [], "blocked": [], "wake": None}
+        return {"source": "no body ledger here", "active": [], "paused": [], "dormant": [], "blocked": [],
+                "wake": None, "labels": LABELS}
     from greg.missions import MissionBook
     book = MissionBook(journal)
-    rows = {"active": [], "dormant": [], "blocked": []}
+    rows = {"active": [], "paused": [], "blocked": []}
     for mid, m in sorted(book.missions.items()):
         if m.status != "ACTIVE":
             continue
-        key = "dormant" if m.paused else "blocked" if m.blocker else "active"
+        key = "paused" if m.paused else "blocked" if m.blocker else "active"
         rows[key].append({"mission_id": mid, "blocker": m.blocker, "rung": m.rung})
     wake = None
     if mission_id:
         state = next((k for k, v in rows.items() for r in v if r["mission_id"] == mission_id), None)
-        if state in ("dormant", "blocked"):
+        if state in ("paused", "blocked"):
             wake = {"mission_id": mission_id, "was": state,
                     "proposal": "the situation bears on this goal; resuming it is the founder's signed lifecycle "
                                 "decision", "automatic_resume": False}
         rows["named_mission_state"] = state or "UNKNOWN_TO_THIS_LEDGER"
-    return {"source": "greg.missions.MissionBook projection", **rows, "wake": wake}
+    return {"source": "greg.missions.MissionBook projection", **rows, "dormant": rows["paused"], "wake": wake,
+            "labels": LABELS}
 
 
 CLASS_ORDER = lawful_leverage.CONSEQUENCE

@@ -256,7 +256,7 @@ class Body:
         # Commands are applied before the next tick's rebuild; a request raised during the
         # previous tick must already be visible, or a fast approval is refused as "unknown".
         self.engine.book.rebuild()
-        result = self._dispatch(kind, body, digest)
+        result = self._dispatch(kind, body, digest, principal=principal)
         self.journal.record("command.accepted", {"kind": kind, "digest": digest, "nonce": env["nonce"],
                                                   "founder_key_id": env["founder_key_id"], "signer": principal,
                                                   "issued_at": env["issued_at"], "body": body,
@@ -264,7 +264,7 @@ class Body:
                                                   "result": result}, key=digest)
         return {"status": "APPLIED", "digest": digest, "result": result}
 
-    def _dispatch(self, kind: str, body: dict, digest: str):
+    def _dispatch(self, kind: str, body: dict, digest: str, *, principal: str = "founder"):
         if kind == "MISSION":
             return {"mission_id": self.engine.register(body, digest)}
         if kind == "DECISION":
@@ -357,6 +357,11 @@ class Body:
                                                         "new_public_key": new_hex, "command_digest": digest},
                                 key=digest)
             return {"new_key_id": key_id(new_hex)}
+        if kind in ("GOAL", "GOAL_CONTROL"):
+            # A persistent goal bound to signed missions (ADR-GOAL-GRAVITY-002). GOAL is founder-key only;
+            # a device may sign GOAL_CONTROL only to narrow a goal (the binding checks the principal).
+            from greg import goal_gravity
+            return goal_gravity.command(self, kind, body, digest, signer=principal)
         raise MissionError(f"unsupported command kind {kind}")
 
     def _stop_now(self) -> bool:
@@ -421,6 +426,10 @@ class Body:
         if self.paused():
             self._heartbeat("PAUSED", [])
             return {"commands": commands, "paused": True}
+        # Goal Gravity first, so an awake goal's pulled observation is stepped in this same tick. Without a
+        # founder-signed goal on the ledger it does no work and writes nothing (None).
+        from greg import goal_gravity
+        gravity = goal_gravity.tick(self, now)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         summary = self.engine.tick(now, should_stop=self._stop_now)
         self._close_out(now)
@@ -429,7 +438,10 @@ class Body:
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)
         anchored = anchor.anchor_once(self.journal, now) if anchor.due(self.journal, now) else None
-        return {"commands": commands, "missions": summary, "anchor": anchored}
+        result = {"commands": commands, "missions": summary, "anchor": anchored}
+        if gravity is not None:
+            result["gravity"] = gravity
+        return result
 
     def _close_out(self, now):
         """Record where each closure happened and have it appraised by a separate process."""
@@ -610,6 +622,10 @@ def status(home: str | Path) -> dict:
             if event.payload["capability_id"] in registry.manifests:
                 registry.set_state(event.payload["capability_id"], event.payload["state"])
         ok, chain = ledger.verify_chain()
+        missions = [{"mission_id": mid, "intended_effect": spec["intended_effect"],
+                     "closure": spec["closure"]["kind"], "achieved": mid in achieved}
+                    for mid, spec in registered.items()]
+        from greg import goal_gravity
         return {
             "body_id": config["body_id"], "version": config["version"],
             "background": heartbeat, "boots": len(boots),
@@ -618,9 +634,16 @@ def status(home: str | Path) -> dict:
                                      for d in device_delegations(journal).values()],
                          "stop_file_present": layout.stop_file.exists(),
                          "pause_file_present": layout.pause_file.exists()},
-            "goals": [{"mission_id": mid, "intended_effect": spec["intended_effect"],
-                       "closure": spec["closure"]["kind"], "achieved": mid in achieved}
-                      for mid, spec in registered.items()],
+            # Missions and persistent goals are different objects: missions under "missions" (and under
+            # "goals", the legacy key older phone/Mac clients read), founder-signed Goal Gravity goals under
+            # "gravity". Neither key is ambiguous once "keys" is read.
+            "missions": missions,
+            "goals": missions,
+            "keys": {"missions": "founder-signed MISSION commands (one light cone each)",
+                     "goals": "legacy alias of 'missions' for older clients; these are missions, not Goal "
+                              "Gravity goals",
+                     "gravity": "persistent Goal Gravity goals (founder-signed GOAL commands bound to missions)"},
+            "gravity": goal_gravity.status_summary(journal),
             "decisions_required": [asks.surface(r) for r in requests],
             "capabilities": registry.inventory(), "permissions": {"read_roots": config["read_roots"]},
             "compute": compute.sample(layout.home),

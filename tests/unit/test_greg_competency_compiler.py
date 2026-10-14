@@ -221,11 +221,14 @@ def test_stale_subregion_evidence_never_steers_and_stale_negative_evidence_persi
     assert {r["status"] for r in rows if r["method"] == "cognition.develop_repair"} == {"EXPERIMENTAL"}
 
 
-def test_a_superseded_fit_names_the_deployable_mechanism_that_superseded_it(registry, no_index):
-    """Admission v2: basal_pid was superseded 0-30 by the simulation-optimised PI. A request only it fits is a
-    capability deficit, and the receipt names that mechanism for Genesis instead of leaving the deficit blank."""
+def test_a_superseded_fit_names_the_deployable_mechanism_that_superseded_it(registry, no_index, monkeypatch):
+    """Admission v2: basal_pid was superseded 0-30 by the simulation-optimised PI. Where that mechanism is not a
+    registered genome, a request only basal_pid fits is a capability deficit, and the receipt names the mechanism
+    for Genesis instead of leaving the deficit blank."""
+    from greg.cognition import catalog
     from greg.cognition.genomes import library
     item = library.executables()["basal_pid"]
+    monkeypatch.delitem(catalog.FAMILIES, library.promotions()["basal_pid"])     # its promotion not registered
     no_index.write_text(json.dumps({"genomes": {"basal_pid": {
         "status": "SUPERSEDED", "version": item.genome.version, "evidence": "v2/results.json#genomes.basal_pid"}},
         "recipes": {}, "routing": {}}))
@@ -234,6 +237,35 @@ def test_a_superseded_fit_names_the_deployable_mechanism_that_superseded_it(regi
     [candidate] = [c for c in r["acquisition_candidates"] if c["supersedes"] == "cognition.basal_pid"]
     assert candidate["mechanism"] == item.genome.competitor and candidate["authority"].startswith("none")
     assert candidate["evidence"] == "v2/results.json#genomes.basal_pid"
+
+
+def test_a_promoted_competitor_is_asked_for_by_attach_not_acquired_by_genesis(registry, no_index):
+    """Once the superseding mechanism is a registered genome (greg/cognition/genomes/competitors.py), the same
+    request fits it: the deficit is only that it is withheld, the founder's attach ask carries the frozen
+    supersession evidence labelled for what it measured, and nothing is proposed for Genesis acquisition."""
+    from greg import asks
+    from greg.cognition.genomes import library
+    item = library.executables()["basal_pid"]
+    no_index.write_text(json.dumps({"genomes": {"basal_pid": {
+        "status": "SUPERSEDED", "version": item.genome.version, "evidence": "v2/results.json#genomes.basal_pid"}},
+        "recipes": {}, "routing": {}}))
+    r = compile_(registry, {"geometry": item.genome.epistemic_class}, item.instance(0)[0], execute=False)
+    assert r["state"] == "CAPABILITY_DEFICIT" and "acquisition_candidates" not in r
+    assert {"method": "cognition.basal_pid", "why": "frozen admission status SUPERSEDED"} in r["methods_rejected"]
+    assert r["withheld_best_fit"]["method"] == "cognition.pid_simopt"
+    assert r["withheld_best_fit"]["promotes"] == "cognition.basal_pid"
+    rows = compiler.candidates(item.instance(0)[0], compiler.CompetencyGeometry.parse(
+        {"geometry": item.genome.epistemic_class}), json.loads(no_index.read_text()))
+    [old] = [x for x in rows if x["method"] == "cognition.basal_pid"]
+    assert old["superseded_by"]["promoted_as"] == "cognition.pid_simopt"
+    ask = r["founder_attach_ask"]
+    assert ask["kind"] == "CAPABILITY_ATTACH" and ask["authority_requested"]["attach"] == "cognition.pid_simopt"
+    assert ask["evidence"]["admission_status"] == "UNEVALUATED"
+    assert ask["evidence"]["promotes"]["supersession_evidence"] == "v2/results.json#genomes.basal_pid"
+    assert ask["evidence"]["promotes"]["superseded_status"] == "SUPERSEDED" and asks.screen(ask) == []
+    registry.set_state("cognition.pid_simopt", "ATTACHED")            # evaluation-only founder pin, in memory
+    planned = compile_(registry, {"geometry": item.genome.epistemic_class}, item.instance(0)[0], execute=False)
+    assert planned["state"] == "PLANNED" and planned["method_or_composition_selected"] == "cognition.pid_simopt"
 
 
 def test_an_oracle_competitor_is_never_proposed_for_acquisition(registry, no_index):

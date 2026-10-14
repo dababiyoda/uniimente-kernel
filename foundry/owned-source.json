@@ -336,6 +336,7 @@
     "greg/cognition/genomes/admission.py",
     "greg/cognition/genomes/basal.py",
     "greg/cognition/genomes/collective.py",
+    "greg/cognition/genomes/competitors.py",
     "greg/cognition/genomes/contract.py",
     "greg/cognition/genomes/decision.py",
     "greg/cognition/genomes/developmental.py",

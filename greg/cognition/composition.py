@@ -63,16 +63,20 @@ RECIPES = {
                                "stages": ("identify", "optimize")},
     # Graph bottleneck structure -> integer allocation; graph intelligence re-checks the answer.
     "graph_then_allocate": {"requires": ("capacity_network",),
-                            "stages": ("compile", "optimize", "cross_check")},
+                            "stages": ("compile", "optimize", "cross_check"),
+                            "operations": ("compile_capacity_expansion", "optimize", "max_flow")},
     # Bayesian posterior -> preposterior analysis -> value of information -> next action.
     "bayes_then_voi": {"requires": ("beta_evidence", "pilot_option"),
-                       "stages": ("posterior", "preposterior", "value_of_information", "act")},
+                       "stages": ("posterior", "preposterior", "value_of_information", "act"),
+                       "operations": ("beta_update", "preposterior_scenarios", "value_of_information")},
     # Calibrated predictive distribution -> SAA newsvendor allocation under shared capacity.
     "forecast_then_allocate": {"requires": ("demand_histories", "newsvendor"),
-                               "stages": ("forecast", "compile", "optimize")},
+                               "stages": ("forecast", "compile", "optimize"),
+                               "operations": ("forecast_distribution", "compile_newsvendor", "optimize")},
     # Predictive arrival distribution -> critical-fractile rate -> Erlang C staffing per block.
     "forecast_then_staff": {"requires": ("arrival_histories", "staffing"),
-                            "stages": ("forecast", "staff")},
+                            "stages": ("forecast", "staff"),
+                            "operations": ("forecast_distribution", "erlang_c_staffing")},
 }
 OPERATION_STAGE_LATENCY_S = 20.0
 

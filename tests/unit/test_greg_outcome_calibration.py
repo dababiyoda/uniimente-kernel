@@ -68,7 +68,7 @@ def test_a_realization_must_bind_a_valid_forecast_receipt_with_one_value_per_ste
     with pytest.raises(ValueError, match="source"):
         settlement.record_realization(j, receipt=h, realized=actual, source="rumour")
     forged = {**receipt, "output": {**receipt["output"], "point": [0.0] * 13}}  # receipt_id no longer holds
-    with pytest.raises(ValueError, match="valid forecast receipt"):
+    with pytest.raises(ValueError, match="unrefuted forecast receipt"):
         settlement.record_realization(j, receipt=j.ledger.add(forged), realized=actual, source="external_record")
     with pytest.raises(ValueError):
         settlement.record_realization(j, receipt="sha256:missing", realized=actual, source="external_record")
@@ -102,3 +102,85 @@ def test_copies_of_one_forecast_count_once_and_twenty_distinct_forecasts_give_a_
     out = settlement.outcome_calibration(j)
     assert out["n"] == 20 and all(row["receipts"] == 20 for row in out["levels"])
     assert out["verdict"] in ("CALIBRATED", "MISCALIBRATED")
+
+
+def test_re_running_one_forecast_never_manufactures_a_sample():
+    """Review finding 4: each re-run mints a new receipt id (latency is in the receipt), so one forecast re-run
+    twenty times gave n = 20 and a verdict."""
+    j = Journal()
+    data, truth = F.instance(0)                                               # development seed
+    registry = registry_view()
+    registry.set_state("cognition.forecast_quantile", "ATTACHED")
+    ids = set()
+    for _ in range(20):
+        r = reason({"problem_id": "daily-forecast", "operation": "forecast_distribution", "data": data,
+                    "geometry": {"latency_limit": 20}}, registry=registry)
+        ids.add(r["receipt_id"])
+        settlement.record_realization(j, receipt=j.ledger.add(r), realized=truth["actual"], source="external_record")
+    out = settlement.outcome_calibration(j)
+    assert len(ids) > 1 and out["n"] == 1 and out["verdict"] == "INSUFFICIENT_EVIDENCE"
+
+
+def test_conflicting_realizations_of_one_forecast_are_reported_not_resolved():
+    j = Journal()
+    receipt, actual = forecast(2)
+    settlement.record_realization(j, receipt=j.ledger.add(dict(receipt)), realized=actual, source="external_record")
+    settlement.record_realization(j, receipt=j.ledger.add(dict(receipt)), realized=[v + 1 for v in actual],
+                                  source="founder_reported")
+    out = settlement.outcome_calibration(j)
+    assert out["n"] == 0 and len(out["conflicts"]) == 1
+
+
+def test_a_refuted_forecast_is_never_bound_or_scored():
+    """Review finding 4: a REFUTED receipt keeps its output for audit and was bound and counted."""
+    from greg.cognition.contracts import digest
+    receipt, actual = forecast(3)
+    refuted = {k: v for k, v in receipt.items() if k != "receipt_id"}
+    refuted["abstention_state"] = "REFUTED"
+    refuted["receipt_id"] = digest(refuted)                                   # a genuinely valid REFUTED receipt
+    assert settlement._valid_receipt(refuted)
+    j = Journal()
+    with pytest.raises(ValueError, match="unrefuted"):
+        settlement.record_realization(j, receipt=j.ledger.add(refuted), realized=actual, source="external_record")
+
+
+def test_a_calibrated_forecaster_is_rarely_called_miscalibrated_across_its_levels():
+    """Review finding 5: seven uncorrected 95% tests called a perfectly calibrated forecaster MISCALIBRATED
+    about a quarter of the time. With the Bonferroni correction the family error stays near alpha."""
+    import random
+    from statistics import NormalDist
+    rnd = random.Random(3000)
+    levels = (0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95)
+    m, alpha, trials, false = len(levels), 0.05, 4000, 0
+    z = NormalDist().inv_cdf(1 - alpha / (2 * m))
+    for _ in range(trials):
+        u = [rnd.random() for _ in range(40)]                                 # PIT values of a calibrated forecaster
+        if any(not (lambda lo_hi: lo_hi[0] <= q <= lo_hi[1])(settlement._wilson(sum(x <= q for x in u), 40, z))
+               for q in levels):
+            false += 1
+    assert false / trials < 0.08
+
+
+def test_on_the_body_a_signed_realization_binds_and_the_awaiting_list_empties(tmp_path):
+    """Review finding 15: calibration was reachable only from tests. A forecast receipt retained on the body
+    ledger is listed as awaiting a realization; the founder's signed REALIZATION binds it (with its command
+    digest) and calibration reads it; a malformed one is rejected and recorded."""
+    from greg.body import Body
+    from tests.greg_fixtures import drop, make_body, signed
+    receipt, actual = forecast(0)
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as b:
+        record = b.journal.ledger.append("receipt", {"result": {"output": receipt}})
+        [waiting] = settlement.awaiting_realization(b.journal)
+        assert waiting["receipt"] == record.hash and waiting["horizon"] == 13
+    drop(home, signed(key, body_id, "REALIZATION", {"receipt": record.hash, "realized": actual,
+                                                    "source": "external_record", "note": "M4 test continuation"}))
+    drop(home, signed(key, body_id, "REALIZATION", {"receipt": record.hash, "realized": actual[:3],
+                                                    "source": "external_record"}), name="short.json")
+    with Body(home) as b:
+        b.tick()
+        [bound] = [e.payload for e in b.journal.replay("cognition.realization")]
+        assert bound["command_digest"] and bound["source"] == "external_record"
+        assert settlement.awaiting_realization(b.journal) == []
+        assert settlement.outcome_calibration(b.journal)["n"] == 1
+        assert any(e.payload["file"] == "short.json" for e in b.journal.replay("command.rejected"))

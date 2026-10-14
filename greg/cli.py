@@ -118,6 +118,8 @@ def main(argv=None) -> int:
     pk.add_argument("--out", required=True, help="directory for holder.json (keep) and presentation.json (share)")
     vp = css.add_parser("verify-package", help="recipient side: check a presentation without any GREG state")
     vp.add_argument("presentation")
+    css.add_parser("calibration", help="read-only: forecast calibration from realized values bound to receipts, "
+                                       "and the forecast receipts still awaiting a realization")
     cm = css.add_parser("mission")
     cm.add_argument("--request", required=True, help="bounded cognition request JSON")
     cm.add_argument("--id", required=True, help="durable mission identity")
@@ -127,7 +129,7 @@ def main(argv=None) -> int:
     cm.add_argument("--print-only", action="store_true")
 
     for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
-                 "accept"):
+                 "accept", "realize"):
         q = sub.add_parser(name)
         q.add_argument("--key")
         q.add_argument("--no-passphrase", action="store_true")
@@ -180,6 +182,13 @@ def main(argv=None) -> int:
             q.add_argument("capability_id")
         if name == "lifecycle":
             q.add_argument("mission_id"); q.add_argument("state"); q.add_argument("--reason", default="")
+        if name == "realize":
+            q.add_argument("receipt", help="ledger hash of the forecast receipt (greg cognition calibration lists them)")
+            q.add_argument("--value", type=float, action="append", required=True,
+                           help="one observed value per forecast horizon step, in order")
+            q.add_argument("--source", default="founder_reported",
+                           choices=["founder_reported", "external_record", "sensor_observation"])
+            q.add_argument("--note", default="")
 
     d = sub.add_parser("device", help="delegate a narrow, expiring key to a phone (founder-signed)")
     ds = d.add_subparsers(dest="device_cmd", required=True)
@@ -379,6 +388,11 @@ def main(argv=None) -> int:
                         "holder": str(out / "holder.json"), "presentation": str(out / "presentation.json"),
                         "presentation_verifies": checked["valid"], "sent": False,
                         "note": "nothing was sent; share presentation.json yourself, keep holder.json private"}
+            elif args.cognition_cmd == "calibration":
+                from greg.cognition.settlement import awaiting_realization, outcome_calibration
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = {"calibration": outcome_calibration(journal),
+                            "awaiting_realization": awaiting_realization(journal), "authority_created": False}
             elif args.cognition_cmd == "knowledge":
                 from greg.cognition.settlement import competence
                 from greg.cognition.cells import cells
@@ -518,6 +532,9 @@ def main(argv=None) -> int:
                 print(_drop(home, "BODY_STOP", {}, args))
         elif args.cmd in ("attach", "detach"):
             print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
+        elif args.cmd == "realize":
+            print(_drop(home, "REALIZATION", {"receipt": args.receipt, "realized": args.value, "source": args.source,
+                                              "note": args.note}, args))
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))

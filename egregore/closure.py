@@ -66,8 +66,13 @@ def goal_gravity_closures() -> ModuleClosures:
         actor = passports.issue(kind="agent", creator="alfonso", owner_organ="uniimente-kernel",
                                 legal_principal="alfonso_lopez", declared_capabilities=["research.brief"],
                                 budget_ceiling_usd=1.0, consequence_class="internal_write")
+        from capabilities.genome import GenomeRegistry
+        from capabilities.router import CapabilityRouter
+        genomes = GenomeRegistry()
+        # Fully composed: genome registry, retention and the Competency Compiler mount are all inspected below.
         loop = GoalGravityLoop(ledger=ledger, compiled=compiled, passports=passports, actor=actor.passport_id,
-                               legal_principal="alfonso_lopez")
+                               legal_principal="alfonso_lopez", genomes=genomes,
+                               capability_router=CapabilityRouter(genomes, ledger=ledger))
         return ledger, loop
 
     def _goal():
@@ -117,13 +122,22 @@ def goal_gravity_closures() -> ModuleClosures:
         exposed += [f"{type(c).__name__}.{name}" for c in components for name in forbidden if hasattr(c, name)]
         exposed += [type(c).__name__ for c in components if getattr(c, "execution_authority", None) != "none"]
         exposed += [k for k in vars(loop) if k in ("gate", "executor", "grants", "_gate", "_executor", "_grants")]
+        exposed += [type(c).__name__ for c in (loop.retention, loop.competency) if c is None]   # probe must compose them
+        # Capability attachment needs the founder's ledgered acceptance: a direct call is refused.
+        from .contracts import ContractError
+        try:
+            loop.acquisition.attach("sha256:" + "0" * 64, actor="alfonso_lopez", now="2026-10-13T00:00:00Z")
+            exposed.append("CapabilityAcquisition.attach without a founder answer")
+        except ContractError:
+            pass
         loop.registry.authorize(_goal(), now="2026-10-13T00:00:00Z")
         turn = loop.turn(trigger_id="probe-2", now="2026-10-13T01:00:00Z", signals=[_signal("e2", 0.2)],
                          resources=ResourceGovernor(max_model_calls=2, max_estimated_cost_usd=0.01), evidence_confidence=0.9)
         prepared_only = turn.executed == () and all(d["decision"] in ("PREPARE_FOR_FOUNDER", "ABSTAIN", "WAIT", "REQUEST_EVIDENCE", "ESCALATE")
                                                      for d in turn.processed[0]["decisions"])
-        return not exposed and prepared_only, ("no effect methods or authority on any composed component; no retained gate, "
-                                               "executor or grant; without a pre-existing grant every move is prepared")
+        return not exposed and prepared_only, ("no effect methods or authority on any composed component (router mount and "
+                                               "retention included); no retained gate, executor or grant; attach refused without "
+                                               "a founder answer; without a pre-existing grant every move is prepared")
 
     def evidence() -> tuple[bool, str]:
         from .gravity import GoalGravityLoop

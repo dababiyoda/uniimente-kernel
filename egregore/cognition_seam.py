@@ -58,16 +58,22 @@ def intervention_to_candidate(spec_or_goal_id: GoalSpec | str, intervention: Int
         source_signal_ids=tuple(signal_ids))
 
 
-def candidate_to_intervention(candidate: CandidateProposal) -> InterventionSpec:
-    """Any candidate (declared move, model proposal, organ proposal) becomes a classifiable move."""
+def candidate_to_intervention(candidate: CandidateProposal, *,
+                              declared_by: frozenset = frozenset({GOAL_PROPOSER_ROLE})) -> InterventionSpec:
+    """Any candidate (declared move, model proposal, organ proposal) becomes a classifiable move.
+
+    Only the goal proposer (``declared_by``: the names a ``GoalProposer`` is registered under; the runtime binds
+    ``proposed_by`` to the registered organ name) may hand over a declared plan move verbatim. Every other
+    proposer's tactic label always carries its proposer handle, ``proposer:<name>`` or
+    ``proposer:<name>/<declared tactic>``, so "never use this tactic" can ban the proposer or the tactic and a
+    proposer cannot relabel its way out of a ban. Identical effects are refused by effect hash."""
     declared = candidate.payload.get("egregore_intervention")
-    if isinstance(declared, Mapping):
+    if isinstance(declared, Mapping) and candidate.proposed_by in declared_by:
         return InterventionSpec.from_dict(declared)
     declared_tactic = candidate.payload.get("tactic")
     payload = {k: v for k, v in candidate.payload.items() if k not in ("egregore_intervention", "tactic")}
-    # A proposer may declare its tactic so that "never use this tactic" binds it; an undeclared tactic is
-    # labelled by proposer, so a founder can also ban a proposer. Identical effects are refused by effect hash.
-    tactic = declared_tactic if isinstance(declared_tactic, str) and declared_tactic.strip() else f"proposer:{candidate.proposed_by}"
+    handle = f"proposer:{candidate.proposed_by}"
+    tactic = f"{handle}/{declared_tactic.strip()}" if isinstance(declared_tactic, str) and declared_tactic.strip() else handle
     return InterventionSpec.build(
         intervention_id=f"{candidate.proposed_by}:{candidate.candidate_id[7:23]}",
         description=candidate.objective, action_class=candidate.action_class,

@@ -20,7 +20,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
-from capabilities.router import DEFAULT_MIN_RELIABILITY, CapabilityRouter, Competency, ProblemSpec, RouterError
+from capabilities.router import (DEFAULT_MIN_RELIABILITY, EPISTEMIC_METHODS, HUMAN_ONLY_METHODS, PROBLEM_CLASSES,
+                                  CapabilityRouter, Competency, ProblemSpec, RouterError)
 from .contracts import ContractError, digest
 from .goals import GoalSpec
 from .gps import GPSFix
@@ -100,6 +101,31 @@ class GoalCompetencyRouting:
         """Pass-through: a competency must describe a genome already in the shared registry."""
         return self.router.register(competency)
 
+    def replay(self, competency: Competency) -> bool:
+        """Re-install a competency an attach record already admitted, after a restart or for a second loop.
+
+        The router restores calibration, never competencies, so a retired genome cannot return through
+        history. Replay therefore re-runs the router's admission checks against the current genome registry
+        and installs nothing that fails them. It writes no ledger event: the attach record is the evidence."""
+        router = self.router
+        if competency.key in router._competencies:
+            return False
+        methods, classes = set(competency.methods), set(competency.problem_classes)
+        if (not methods or not methods <= set(EPISTEMIC_METHODS) or methods & HUMAN_ONLY_METHODS
+                or not classes or not classes <= set(PROBLEM_CLASSES) or competency.cost_usd < 0):
+            return False
+        ok, _ = self.genomes.may_instantiate(competency.genome_name, competency.genome_version,
+                                             requested_class=competency.consequence_class,
+                                             requested_budget_usd=competency.cost_usd)
+        if not ok:
+            return False
+        router._competencies[competency.key] = competency
+        return True
+
+    def retire(self, key: str) -> bool:
+        """Stop routing to a competency (detach). Its calibration history stays on the ledger."""
+        return self.router._competencies.pop(key, None) is not None
+
     # ------------------------------------------------------------ routing
     @staticmethod
     def problem_for(spec: GoalSpec, fix: GPSFix) -> ProblemSpec | None:
@@ -120,30 +146,38 @@ class GoalCompetencyRouting:
             # can never earn the trials that would restore it. Policy floors still apply to every move.
             min_reliability=DEFAULT_MIN_RELIABILITY)
 
-    def route_gate(self, spec: GoalSpec, fix: GPSFix) -> RoutingView | None:
+    def route_gate(self, spec: GoalSpec, fix: GPSFix, *, excluded: Any = ()) -> RoutingView | None:
+        """Route the active gate. ``excluded`` names mechanisms the founder revoked for this goal: they are withheld
+        from this routing only (the router has no per-problem exclusion), and the decision records why."""
         problem = self.problem_for(spec, fix)
         if problem is None:
             if fix.active_node_id is not None:
                 self.unrouted_gates += 1
             return None
         self.refresh()
-        decision = self.router.route(problem)
+        withheld = {k: self.router._competencies.pop(k) for k in sorted(set(excluded)) if k in self.router._competencies}
+        try:
+            decision = self.router.route(problem)
+        finally:
+            self.router._competencies.update(withheld)
         self._applied += 1 if self.router.ledger is not None else 0
         node = spec.node(fix.active_node_id)
         declared = set(node.requires_capabilities)
         selected = tuple(c.key for c in decision.selected)
+        revoked = {k: "revoked by the founder for this goal" for k in withheld}
+        rejected = {**dict(decision.rejected), **revoked}
         deficit = None
         if decision.deficit is not None:
             d = decision.deficit
             deficit = {"router_deficit_id": d.deficit_id, "problem_class": d.problem_class,
-                       "missing_methods": list(d.missing_methods), "rejected": dict(d.rejected),
+                       "missing_methods": list(d.missing_methods), "rejected": {**dict(d.rejected), **revoked},
                        "authority": d.authority}
         return RoutingView(
             decision_id=decision.decision_id, problem_id=problem.problem_id, problem_class=problem.problem_class,
             selected=selected, expected_evidence=dict(decision.expected_evidence),
             human_escalation=tuple(decision.human_escalation), exploratory=decision.exploratory,
-            requires_gate=decision.requires_gate, rejected=dict(decision.rejected), deficit=deficit,
-            declared_rejected={k: v for k, v in decision.rejected.items() if k in declared},
+            requires_gate=decision.requires_gate, rejected=rejected, deficit=deficit,
+            declared_rejected={k: v for k, v in rejected.items() if k in declared},
             preferred_instead=tuple(k for k in selected if declared and k not in declared))
 
     # ------------------------------------------------------------ outcomes

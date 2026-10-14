@@ -119,14 +119,14 @@ Founder-facing status (`GoalGravityLoop.status`) renders the fourteen section-27
 | G Favorable Intersection Detector | IMPLEMENTED | UNIT-TESTED, INTEGRATION-TESTED | three weak cross-domain signals wake a goal | real-world intersections |
 | H Asymmetry Retention | IMPLEMENTED | UNIT-TESTED, INTEGRATION-TESTED | outcome bound to the goal's executed move; envelope capped at the goal ceiling; registry re-hydrated after restart; later goal unblocked; `work_to_first_actionable` measured | retention from an externally verified outcome |
 | I Founder Attention Router | IMPLEMENTED | UNIT-TESTED | 306 signals -> at most two immediate asks; dedupe; manipulation guard; quiet hours; defer/accept/refuse semantics; information and emergency items | a real founder channel (none is contacted) |
-| Capability Genesis link | PARTIAL | UNIT-TESTED | typed `capability-deficit` record with lifecycle and resume disposition; goal blocked not closed; resolved copy on genome registration | search/compose/build of the missing capability (the drafts' Genesis builder) |
+| Capability Genesis link | PARTIAL | UNIT-TESTED | typed `capability-deficit` record with lifecycle and resume disposition; goal blocked not closed; resolved copy on genome registration; search and composition through the acquisition plan; founder-gated attach, replayed after restart, detachable | building the missing capability (the drafts' Genesis builder) |
 | Standing-cognition seam | IMPLEMENTED | UNIT-TESTED | tick records, guardian veto -> prepared, model-proposer candidate classified, per-goal budget metered | a model-backed proposer beating the rule baseline |
 | Evidence states and verification | IMPLEMENTED | UNIT-TESTED | Gate cut after dispatch never re-dispatched; `reconcile()` from Gate events or accountable resolution; `verify_outcome()` independent only | a real externally verified instance |
 | Competency Compiler wiring | IMPLEMENTED | UNIT-TESTED | typed deficit, typed gates, human-only gate decision, verified calibration, two-loop agreement, restart | a real independently verified outcome |
-| Capability acquisition (§15) | IMPLEMENTED (no builder) | UNIT-TESTED, SANDBOX-EXECUTED (subprocess, not isolation) | plan → qualify → founder attach → resume | a builder lineage; an isolation facility |
+| Capability acquisition (§15) | IMPLEMENTED (no builder) | UNIT-TESTED (qualification runs a pytest subprocess; not a sandbox, not SANDBOX-VERIFIED) | plan → qualify → founder attach → resume | a builder lineage; an isolation facility |
 | Personal advancement (§5) | IMPLEMENTED | UNIT-TESTED | stall, missed target, resolution latency, intensity, pause | friction removal beyond preparation |
 | Computational modalities (§8) | IMPLEMENTED | UNIT-TESTED | derived readings wake goals; emitted on change only | any external modality |
-| Organ signals (§8) | IMPLEMENTED | UNIT-TESTED | WMI score clears a forecast gate, never a demand gate | live organ transport |
+| Organ signals (§8) | IMPLEMENTED | UNIT-TESTED | WMI score clears a forecast gate, never a demand gate; attributed trust only for a verified transport bound to its body | live organ transport |
 | Opportunity package (§12, §28) | IMPLEMENTED | UNIT-TESTED | baseline deltas, contested factors, dry-run options | real due diligence |
 | Intake (§27) | IMPLEMENTED | UNIT-TESTED | fourteen fields; authority never filled; two founder gates | a model drafter that beats the template |
 | Section-33 chain | IMPLEMENTED | INTEGRATION-TESTED (synthetic) | `tests/integration/test_goal_gravity_acceptance.py` | SANDBOX-VERIFIED with a live sensor; EXTERNALLY VERIFIED; FOUNDER-ACCEPTED |
@@ -134,6 +134,10 @@ Founder-facing status (`GoalGravityLoop.status`) renders the fourteen section-27
 Never say "GREG experiences reality" for this code: it integrates typed observations into beliefs with provenance.
 Never say "GREG creates coincidences": it detects declared factor convergence inside a window. Never say "GREG
 autonomously advances goals" unless a Gate receipt exists for the move; otherwise it prepared.
+
+The third increment was attacked by an adversarial review before it was pushed. All 35 findings reproduced on the
+first commit and were fixed, each with a regression test (`tests/unit/test_goal_gravity_review.py`). The
+independent verifiers did not run. See "Adversarial review of this increment" in `docs/decisions/ADR-GOAL-GRAVITY-002.md`.
 
 ## 3. Repository concept map (section 22)
 
@@ -155,7 +159,7 @@ Compiler and the gaps an independent audit found on 2026-10-14.
 | 6 | G. Favorable Intersection Detector | MISSING | see record | WMI: MISSING (EmergingTechAgent averages impact/maturity plus a count bonus; adversarial ... | EXISTING | UNIT/INTEGRATION-TESTED | threats subtract; quantified opportunity package; thresholds uncalibrated |
 | 7 | H. Asymmetry Retention | PARTIAL | see record | WMI: PARTIAL, organ-local in-memory (business_loop LoopRecord.history/learning, ... | EXISTING | UNIT/INTEGRATION-TESTED | outcome bound to the goal; envelope capped; registry re-hydrated; no externally verified outcome yet |
 | 8 | I. Founder Attention Router | MISSING | see record | WMI: MISSING (requires_human_approval const; notify_role only logs). | EXISTING | UNIT-TESTED | quiet hours, defer/accept/pause/lower semantics, information and emergency items; no delivery channel |
-| 9 | Capability Genesis connected to Goal Gravity | MISSING | see record | WMI: MISSING (manifest unresolved: venture cell charters not yet requested, Bridge B). | PARTIAL | UNIT-TESTED, SANDBOX-EXECUTED (subprocess) | plan → qualify → founder attach → resume works for supplied candidates; no builder (#129/#164/coding agent) |
+| 9 | Capability Genesis connected to Goal Gravity | MISSING | see record | WMI: MISSING (manifest unresolved: venture cell charters not yet requested, Bridge B). | PARTIAL | UNIT-TESTED (pytest subprocess; not SANDBOX-VERIFIED) | plan → qualify → founder attach → resume works for supplied candidates; no builder (#129/#164/coding agent) |
 | 10 | Founder refusal/corrections recorded and not re-proposed unchanged | PARTIAL | see record | WMI: MISSING (only compliance refusals retained in influencer_company drafts and ... | EXISTING | UNIT-TESTED | refusals bind route and identical effect; declared model tactics bound; not consulted by the Gate or the Ratifier |
 | 11 | Restart continuity without duplicate consequential action | EXISTING | see record | WMI: EXISTING for evaluation admission only via kernel BridgeState (test_signed_bridge.py ... | EXISTING | INTEGRATION-TESTED (real SIGKILL ×2) | torn ledger tail refuses to open (characterized liveness gap) |
 | 12 | Evidence state distinction planned/attempted/executed/externally verified/failed/unknown | PARTIAL | see record | WMI: PARTIAL (LoopRecord.stage ladder with settled_simulated vs executed; 'unknown until ... | EXISTING | UNIT-TESTED | independent verification with a verdict; calibrates the router; zero real instances |
@@ -165,7 +169,7 @@ Compiler and the gaps an independent audit found on 2026-10-14.
 | 16 | §25 scenario 3: Irrelevant event rejection | MISSING | see record | MISSING | EXISTING | UNIT-TESTED | muted domains are not integrated at all |
 | 17 | §25 scenario 4: Cross-signal convergence | MISSING | see record | MISSING | EXISTING | UNIT/INTEGRATION-TESTED | contested factors excluded from the score and listed |
 | 18 | §25 scenario 5: Authority boundary | EXISTING | see record | WMI: requires_human_approval const (adapter refuses authority inflation). | EXISTING | UNIT/INTEGRATION-TESTED | unproven mechanisms never run external moves |
-| 19 | §25 scenario 6: Capability deficit | MISSING | see record | MISSING | PARTIAL | UNIT-TESTED, SANDBOX-EXECUTED | acquisition chain without a builder |
+| 19 | §25 scenario 6: Capability deficit | MISSING | see record | MISSING | PARTIAL | UNIT-TESTED | acquisition chain without a builder |
 | 20 | §25 scenario 7: Goal drift | PARTIAL | see record | MISSING | EXISTING | UNIT-TESTED | drift on attempt-numbered ids handled |
 | 21 | §25 scenario 8: Founder refusal | PARTIAL | see record | DALEOBANKS pending-only dedupe (gap); WMI none. | EXISTING | UNIT-TESTED | identical effect also refused |
 | 22 | §25 scenario 9: Restart continuity | EXISTING | see record | WMI/DALEOBANKS: BridgeState idempotency for admission only. | EXISTING | INTEGRATION-TESTED (real SIGKILL ×2) | no supervisor (G5) |
@@ -178,7 +182,7 @@ Compiler and the gaps an independent audit found on 2026-10-14.
 | 29 | Competency Compiler: smallest competent mechanism or composition | EXISTING (router, inert) | PARTIAL | MISSING | EXISTING (wired) | UNIT-TESTED | coarse move-to-mechanism link via `requires_capabilities` |
 | 30 | Competency Compiler: typed evidence | MISSING | PARTIAL | MISSING | EXISTING | UNIT-TESTED | self-declared methods capped by trust; human-only only via founder answers |
 | 31 | Competency Compiler: observe outcomes, improve selection | EXISTING (router, no caller) | PARTIAL | MISSING | EXISTING | UNIT-TESTED | router lock-out after one failure (recorded for its owner) |
-| 32 | Competency Compiler: generate new bounded capabilities | MISSING | PARTIAL (#129 genesis, #164 RECOMBINE, #137 builder) | MISSING | PARTIAL (qualify + attach, no builder) | SANDBOX-EXECUTED (subprocess) | a supplier lineage or coding agent |
+| 32 | Competency Compiler: generate new bounded capabilities | MISSING | PARTIAL (#129 genesis, #164 RECOMBINE, #137 builder) | MISSING | PARTIAL (qualify + attach, no builder) | UNIT-TESTED (pytest subprocess; not SANDBOX-VERIFIED) | a supplier lineage or coding agent |
 | 33 | §5 Personal advancement (trajectory, friction, mature report) | MISSING | MISSING | MISSING | EXISTING | UNIT-TESTED | nothing removes friction automatically beyond preparing work and compressing decisions |
 | 34 | §8 Computational modalities (interoception) | MISSING | MISSING | MISSING | EXISTING (8 derived, 6 declared unobserved) | UNIT-TESTED | external modalities need sensors |
 | 35 | §12/§28 Opportunity package | MISSING | PARTIAL (#158 Foundry) | PARTIAL (WMI assessment) | EXISTING | UNIT-TESTED | due diligence and people/resources remain prepared work |
@@ -199,7 +203,7 @@ Compiler and the gaps an independent audit found on 2026-10-14.
 | Physical embodiment | out of scope | authorized device/robotics interfaces under the Gate |
 | Richer Experience Surface metrics (recall, cross-modal inference, prediction calibration) | seven metrics implemented | calibration data from real predictions (`CausalMemory.calibrate` is the intended consumer) |
 | Merge of this PR and any lifecycle beyond TESTED | adoption is not a build-session decision | founder decision on `deliberation-goal-gravity-2026-10-13.json` (NEEDS_FOUNDER_DECISION, level constitutional) |
-| End-to-end Capability Genesis on `main` (search -> build -> sandbox -> independent verify -> attach -> resume) | only detection, typed record and resume exist here | founder ruling on PR #137's `greg/genesis.py` lineage or an instruction to re-derive it; attach authority is a founder CAPABILITY_ATTACH-class decision |
+| End-to-end Capability Genesis on `main` (search -> build -> sandbox -> independent verify -> attach -> resume) | detection, typed record, search (acquisition plan), qualification by declared tests, founder-gated attach and resume exist here; build and sandbox do not | founder ruling on PR #137's `greg/genesis.py` lineage or an instruction to re-derive it; attach authority is a founder CAPABILITY_ATTACH-class decision |
 | OS-supervised host surviving SIGKILL without a human calling `turn()` | nothing here installs a supervisor | `docs/founder-loop-entry-gate.json` HOLD_ACTIVATION (G5) and an operations environment |
 | Any EXTERNALLY VERIFIED compounding, attention-conservation or experience-to-learning evidence (CMC/VEPMC > 0) | synthetic executors and test-minted grants only | a real consequence under a founder-issued grant, a real counterparty response, independent appraisal |
 | Real founder authentication for authorization, answers and refusals | chat text, hashes, shared keys and the committed demo key never authenticate Alfonso | SR001 G6 founder enrollment outside this package |

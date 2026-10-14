@@ -114,3 +114,78 @@ def test_attach_on_a_founder_decision_resumes_the_original_goal(stack):
     dispositions = [r.payload["deficit"]["disposition"] for r in ledger.by_type(loop.classifier.DEFICIT_RECORD)]
     assert dispositions[-1] == "resolved_resume_original_goal"
     assert goal_id in loop.registry.goals() and loop.registry.state(goal_id).status != "completed"
+
+
+def _qualified_and_asked(stack):
+    loop, router, spec, goal_id = blocked_arithmetic_goal(stack)
+    genome, competency = quantify_candidate()
+    passed = loop.acquisition.qualify(goal_id, genome=genome, competency=competency, acceptance_tests=[QUANTIFY_TEST],
+                                      evaluator="harness:pytest", now=T1)
+    routing = loop.propose_attach(goal_id, passed, now=T1)
+    [item] = [i for i in routing.immediate + routing.batched]
+    return loop, spec, goal_id, passed, item
+
+
+def test_attach_is_refused_without_the_founders_accepted_answer(stack):
+    loop, spec, goal_id, passed, item = _qualified_and_asked(stack)
+    with pytest.raises(ContractError):   # no answer at all: a direct call cannot attach
+        loop.acquisition.attach(passed["qualification_hash"], actor="alfonso_lopez", now=T2)
+    loop.founder_answer(item.item_id, decision="refuse", actor="alfonso_lopez", note="not now", now=T2)
+    with pytest.raises(ContractError):   # a refusal is not an acceptance
+        loop.acquisition.attach(passed["qualification_hash"], actor="alfonso_lopez", now=T2)
+    assert loop.genomes.get("opportunity.quantify", "1.0.0") is None
+    assert not loop.ledger.by_type(loop.acquisition.ATTACH_RECORD)
+
+
+def test_an_attached_capability_survives_restart_and_is_shared_until_detached(stack):
+    compiled, passports, ledger, gate, actor = stack
+    loop, spec, goal_id, passed, item = _qualified_and_asked(stack)
+    other, _ = competent_loop(stack)   # a second loop already running on the same ledger
+    loop.founder_answer(item.item_id, decision="accept", actor="alfonso_lopez", note="attach it", now=T2)
+    restarted, _ = competent_loop(stack)   # a new process: fresh genome registry and router
+    for i, view in enumerate((restarted, other)):
+        turn = view.turn(trigger_id=f"t-view-{i}", now=T2, signals=[poke("econ", 10 + i, T2)], resources=governor(),
+                         evidence_confidence=0.9)
+        assert turn.processed[0]["routing"]["selected"] == ["opportunity.quantify@1.0.0"]
+    attaches = len(ledger.by_type(restarted.acquisition.ATTACH_RECORD))
+    assert attaches == 1   # replay wrote nothing
+    with pytest.raises(ContractError):
+        restarted.acquisition.detach(passed["qualification_hash"], actor="alfonso_lopez", reason="", now=T3)
+    detached = restarted.acquisition.detach(passed["qualification_hash"], actor="alfonso_lopez",
+                                            reason="canary showed no value", now=T3)
+    assert detached["lifecycle"] == "HISTORICAL"
+    with pytest.raises(ContractError):
+        restarted.acquisition.detach(passed["qualification_hash"], actor="alfonso_lopez", reason="again", now=T3)
+    again, _ = competent_loop(stack)   # replay after a detach never brings it back
+    for i, view in enumerate((again, loop)):
+        turn = view.turn(trigger_id=f"t-after-{i}", now=T3, signals=[poke("econ", 20 + i, T3)], resources=governor(),
+                         evidence_confidence=0.9)
+        assert turn.processed[0]["routing"].get("selected", []) == []
+        assert [d["decision"] for d in turn.processed[0]["decisions"]] == ["WAIT"]
+    assert len(ledger.by_type(again.acquisition.ATTACH_RECORD)) == 1   # the attachment stays as history
+
+
+def test_detach_never_removes_a_genome_registered_by_someone_else(stack):
+    loop, spec, goal_id, passed, item = _qualified_and_asked(stack)
+    genome, _ = quantify_candidate()
+    loop.genomes.register(genome)   # an operator registered the genome independently
+    loop.founder_answer(item.item_id, decision="accept", actor="alfonso_lopez", note="attach it", now=T2)
+    attached = loop.ledger.by_type(loop.acquisition.ATTACH_RECORD)[-1].payload
+    assert attached["genome_registered"] is False and attached["competency_registered"] is True
+    loop.acquisition.detach(passed["qualification_hash"], actor="alfonso_lopez", reason="retire", now=T3)
+    assert loop.genomes.get("opportunity.quantify", "1.0.0") is not None
+
+
+def test_an_acceptance_whose_attach_was_lost_to_a_crash_completes_on_the_next_turn(stack):
+    loop, spec, goal_id, passed, item = _qualified_and_asked(stack)
+    # The answer lands, then the process dies before the attach record: simulated by answering at the
+    # attention layer only, which is the first of the two writes founder_answer makes.
+    loop.attention.answer(item.item_id, decision="accept", actor="alfonso_lopez", note="attach it", now=T2)
+    assert not loop.ledger.by_type(loop.acquisition.ATTACH_RECORD)
+    restarted, _ = competent_loop(stack)
+    turn = restarted.turn(trigger_id="t-recover", now=T2, signals=[poke("econ", 30, T2)], resources=governor(),
+                          evidence_confidence=0.9)
+    [attach] = [r.payload for r in restarted.ledger.by_type(restarted.acquisition.ATTACH_RECORD)]
+    assert attach["attached_by"] == "alfonso_lopez" and attach["answer_hash"]
+    assert turn.processed[0]["routing"]["selected"] == ["opportunity.quantify@1.0.0"]
+    assert not [a for a in restarted.attention.open_asks() if a.get("category") == "capability_attach"]   # never re-asked

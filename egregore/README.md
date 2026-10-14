@@ -116,9 +116,9 @@ evidence plane.
 | advancement monitor | `advancement.py` | per-goal trajectory, stall onset, behind-target detection and structured friction (open attempts, unknown decisions, unmet dependencies, missing capabilities, routing deficits, founder decisions, no declared move); one mature report per stall episode at the founder's chosen intensity (`minimal / standard / active`) with no-cost `pause` and `lower priority` answers |
 | derived sensorium | `sensorium.py` | eight institution-level modalities derived from the ledger (open deficits, evidence conflicts, open obligations, opportunity density, ledger integrity, consequence refusal rate, relationship changes, goals behind target) emitted as signals only when they change; six external modalities declared unobserved with what each requires |
 | opportunity package | `opportunity.py` | on a transition into a favorable state, a ledgered package of satisfied factors (with evidence and baseline deltas), threats, contested factors (excluded from the score), position and dry-run options; packaging never acts |
-| capability acquisition | `acquisition.py` | an 11-rung acquisition ladder over existing capabilities, the open-source catalog and infrastructure leads; qualification runs named repository tests under a sanitized environment with an independent evaluator and refuses envelope widening or human-only methods; attach happens only on a founder answer and lands at `CANARY` |
+| capability acquisition | `acquisition.py` | an 11-rung acquisition ladder over existing capabilities, the open-source catalog and infrastructure leads; qualification runs the genome's declared repository tests (plus any added) under a sanitized environment with an independent evaluator and refuses envelope widening, a mismatched registered genome or human-only methods; attach requires the founder's ledgered acceptance, lands at `CANARY`, replays after restart and in every loop on the ledger, and can be detached |
 | goal intake | `intake.py` | a founder statement becomes a section-27 draft with every unknown marked `unresolved`; authorization refuses missing authority and seeds confirm/plan gates whose assumptions stay marked unresolved |
-| organ observation adapters | `organ_signals.py` | DALEOBANKS `OpportunityPacket` and WMI `VentureAssessment` outputs become typed signals with declared field mappings, information lost/added and assumptions; unsigned transport stays `untrusted`; WMI scores are typed `simulation`, never evidence of the world |
+| organ observation adapters | `organ_signals.py` | DALEOBANKS `OpportunityPacket` and WMI `VentureAssessment` outputs become typed signals with declared field mappings, information lost/added and assumptions; trust is `attributed` only for a `verify_headers` result bound to the raw body it verified and to the producing organ, otherwise `untrusted`; WMI scores are typed `simulation`, never evidence of the world |
 
 Contracts: `contracts/goal-record.schema.json`, `contracts/goal-state.schema.json`, `contracts/experience-event.schema.json`,
 `contracts/capability-deficit.schema.json`.
@@ -129,6 +129,7 @@ deficit classes, reconciliation, independent verification, section-20 controls, 
 `tests/unit/test_goal_gravity_controls.py` (intensity, effect-level refusal, mute at sensing, founder burden),
 `tests/unit/test_goal_gravity_opportunity.py`, `tests/unit/test_goal_gravity_acquisition.py`,
 `tests/unit/test_goal_gravity_intake.py`, `tests/unit/test_goal_gravity_organs.py`,
+`tests/unit/test_goal_gravity_review.py` (one regression test per confirmed adversarial-review finding),
 `tests/integration/test_goal_gravity_acceptance.py` (section-33 chain) and
 `tests/integration/test_goal_gravity_process_kill.py` (SIGKILL after dispatch and before the gate, torn-tail characterization). Five closures: `goal_gravity_closures()` in
 `closure.py`, registered on the integration registry.

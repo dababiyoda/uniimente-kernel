@@ -1,0 +1,20 @@
+$ validate_deliberation.py docs/collaboration/deliberation-goal-gravity-2026-10-13.json
+VALID: deliberation contains five-role review and exactly two passes
+exit 0
+$ validate_deliberation.py docs/collaboration/deliberation-competency-compiler-wiring-2026-10-14.json
+VALID: deliberation contains five-role review and exactly two passes
+exit 0
+$ validate_intent_ledger.py docs/intent/INTENT-20261013-GOAL-GRAVITY.json
+VALID: 1 Founder Intent record(s)
+exit 0
+$ validate_intent_ledger.py docs/intent/INTENT-20261014-competency-compiler.json
+INVALID: 1 record(s), 27 error(s)
+- $[0].title: required field is missing
+- $[0].source: required field is missing
+exit 1
+NOTE on INTENT-20261014-competency-compiler.json: this record was authored on main (#165, b2f2d21) in the
+repository ledger's 15-field format (docs/FOUNDER_INTENT_LEDGER.md "Required Intent Record"), not the skill schema.
+The identical 27 errors reproduce on main's own version (git show b2f2d21:docs/intent/INTENT-20261014-competency-compiler.json).
+This increment's edits are additive within main's format and did not change the result. The skill schema rejects the
+15 ledger fields as unexpected, so the record cannot satisfy both formats without restructuring main's record, which
+this increment does not do. Recorded as a format conflict for the record's owner; the Goal Gravity record validates.

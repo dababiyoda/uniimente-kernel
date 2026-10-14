@@ -63,7 +63,7 @@ from .interventions import Classification, InterventionClassifier
 from .relevance import GoalRelevanceRouter
 from .resources import ResourceExhausted, ResourceGovernor, ResourceMode
 from .retention import AsymmetryRetention, DurableAsset
-from .sensorium import Sensorium
+from .sensorium import SOURCE as SENSORIUM_SOURCE, Sensorium
 
 TURN_STATUSES = ("silent", "advanced", "hibernating", "conserving")
 ACTIONABLE = ("EXECUTE_AUTONOMOUSLY", "PREPARE_FOR_FOUNDER", "ESCALATE")
@@ -131,6 +131,8 @@ class GoalGravityLoop:
     DISCREPANCY_RECORD = "egregore.outcome_discrepancy"
     RECONCILIATION_RECORD = "egregore.reconciliation"
     VERIFICATION_RECORD = "egregore.outcome_verified"
+    DISCREPANCY_REVIEW_RECORD = "egregore.discrepancy_reviewed"
+    RESERVED_SOURCE_RECORD = "egregore.reserved_source_refused"
     MUTED_RECORD = "egregore.signal_not_monitored"
 
     def __init__(self, *, ledger: Any, compiled: Any, passports: Any, actor: str, legal_principal: str,
@@ -148,6 +150,9 @@ class GoalGravityLoop:
                 raise ContractError("the standing cognition runtime must register a GoalProposer to deliberate goals")
             if cognition.ledger is not ledger:
                 raise ContractError("standing cognition must share the one ledger")
+        # Only these organ names may hand over a declared plan move verbatim (the runtime binds proposed_by to them).
+        self._goal_proposers = frozenset(
+            name for name, p in getattr(cognition, "proposers", {}).items() if isinstance(p, GoalProposer)) if cognition else frozenset()
         self.cognition = cognition
         if memory is None:
             from memory.causal import CausalMemory
@@ -176,6 +181,8 @@ class GoalGravityLoop:
         self._turns: dict[str, GravityTurn] = {}
         self._interventions: list[dict[str, Any]] = []
         self._decisions: dict[tuple[str, str], str] = {}   # (goal_id, route_hash) -> latest classification
+        # (goal_id, route_hash, classification_id) -> (record hash, payload) of each durable verification
+        self._verifications: dict[tuple[str, str, str], tuple[str, dict[str, Any]]] = {}
         self._folded = 0
         self._sync()
 
@@ -195,6 +202,8 @@ class GoalGravityLoop:
                 component.sync()
         if getattr(self, "competency", None) is not None:
             self.competency.refresh()
+        if getattr(self, "acquisition", None) is not None:
+            self.acquisition.sync()
         records = self.ledger.records
         for record in records[self._folded:]:
             rtype = getattr(record, "record_type", None)
@@ -206,13 +215,28 @@ class GoalGravityLoop:
             elif rtype == InterventionClassifier.CLASSIFICATION_RECORD:
                 c = record.payload["classification"]
                 self._decisions[(c["goal_id"], c["route_hash"])] = c["decision"]
+            elif rtype == self.VERIFICATION_RECORD and record.payload.get("classification_id"):
+                v = record.payload
+                self._verifications[(v["goal_id"], v["route_hash"], v["classification_id"])] = (record.hash, canonical_copy(v))
         self._folded = len(records)
 
-    def _latest_by_route(self, goal_id: str) -> dict[str, dict[str, Any]]:
+    def _latest_by_route(self, goal_id: str, *, raw: bool = False) -> dict[str, dict[str, Any]]:
+        """Latest intervention record per route. Unless ``raw``, a durable verification whose derived records are
+        not yet written (a crash after the commit point) is shown as applied, so reads never report a verified
+        move as unverified while the next write path completes it."""
         latest: dict[str, dict[str, Any]] = {}
         for item in self._interventions:
             if item["goal_id"] == goal_id:
                 latest[item["intervention"]["route_hash"]] = item
+        if raw:
+            return latest
+        for route, item in list(latest.items()):
+            pending = self._verifications.get((goal_id, route, item["classification_id"]))
+            if pending and item["evidence_state"] == "executed" and not item["detail"].get("verdict"):
+                h, v = pending
+                latest[route] = {**item, "evidence_state": "externally_verified" if v["verdict"] == "confirmed" else "executed",
+                                 "detail": {**item["detail"], "verdict": v["verdict"], "verifier": v["verifier"],
+                                            "verification_hash": h, "pending_completion": True}}
         return latest
 
     def _record_intervention(self, goal_id: str, intervention: InterventionSpec, *, classification_id: str,
@@ -375,8 +399,9 @@ class GoalGravityLoop:
                                rejected={}, deficit=None)
             items.append(self._human_gate_item(spec, node, view, now=now))
             return view
+        revoked = self.registry.state(spec.goal_id).preferences.get("revoked_capabilities", [])
         try:
-            routing = self.competency.route_gate(spec, fix)
+            routing = self.competency.route_gate(spec, fix, excluded=revoked)
         except Exception as exc:   # a refused route is retained as a blocker and every move waits
             if node.problem_class is None:
                 return None
@@ -396,6 +421,9 @@ class GoalGravityLoop:
         if routing.deficit is not None:
             blockers.append(f"capability deficit: epistemic: no mechanism offers {', '.join(routing.deficit['missing_methods'])} "
                             f"for this {routing.problem_class} gate")
+            # Recorded here, not only when a move is classified, so a gate with no candidate moves still names its
+            # deficit and opens the acquisition ladder (deduped while open).
+            self.classifier._record_deficit(spec, self.classifier.epistemic_deficit(spec, fix, routing, at=now))
         else:
             self._resolve_epistemic_deficits(spec, node.node_id, routing, now=now)
         if routing.human_escalation:
@@ -407,6 +435,26 @@ class GoalGravityLoop:
                                            f"{', '.join(node.requires_capabilities)}. The declared plan still governs.",
                                       evidence_refs=[], category="competency"))
         return routing
+
+    def _close_stale_epistemic_deficits(self, spec: GoalSpec, fix: GPSFix, *, now: str) -> None:
+        """An epistemic deficit belongs to one gate. When that gate is no longer active (it cleared by observation, or
+        the goal completed) the deficit is closed as history so acquisition never works on a question already settled."""
+        latest: dict[str, dict[str, Any]] = {}
+        for r in self.ledger.by_type(self.classifier.DEFICIT_RECORD):
+            d = r.payload.get("deficit") or {}
+            if d.get("goal_id") == spec.goal_id and d.get("missing_methods"):
+                latest[d["deficit_id"]] = d
+        from .contract_check import validate_record
+        for d in latest.values():
+            if d["disposition"] != "goal_blocked_not_closed" or d.get("active_node_id") == fix.active_node_id:
+                continue
+            how = "goal complete" if fix.complete else f"gate {d.get('active_node_id')} no longer active"
+            closed = {**d, "lifecycle": "HISTORICAL", "disposition": "resolved_resume_original_goal", "resolved_at": now,
+                      "resolved_by": f"gps: {how}"[:200]}
+            validate_record(closed, "capability-deficit")
+            self.ledger.append(self.classifier.DEFICIT_RECORD, {
+                "source": self.source, "deficit": closed, "goal_id": spec.goal_id, "missing_capabilities": [],
+                "founder_intent": closed["founder_intent"], "disposition": closed["disposition"]})
 
     def _resolve_epistemic_deficits(self, spec: GoalSpec, node_id: str, routing: RoutingView, *, now: str) -> None:
         """A gate that now routes closes its open epistemic deficit; the original goal resumes."""
@@ -516,7 +564,7 @@ class GoalGravityLoop:
         moves: list[InterventionSpec] = []
         selected_route: str | None = None
         for candidate in cycle.candidates:
-            move = candidate_to_intervention(candidate)
+            move = candidate_to_intervention(candidate, declared_by=self._goal_proposers)
             is_selected = candidate.candidate_id == cycle.selected_candidate_id
             if is_selected:
                 selected_route = move.route_hash
@@ -562,13 +610,27 @@ class GoalGravityLoop:
                                                            "disposition": "refused_and_retained"})
             raise IntegrityConflict("trigger_id was reused for a different gravity request")
 
+        # 0. Founder answers whose effect was lost to a crash (an attach, typed gate evidence) complete now; never re-asked.
+        self.acquisition.complete_accepted(now=at)
+        self._complete_founder_answers(now=at)
+        self._complete_verifications()
+
         # 1. Sense -> Experience: every signal becomes a provenance-backed experience. Caller signals first,
         #    then the institution's own derived modalities (section 8), emitted only when a value changed.
         wake_requests: dict[str, list[str]] = {}
         relevant_signals: dict[str, list[str]] = {}
         touched_keys: set[str] = set()
 
-        def sense(signal: SignalEnvelope) -> None:
+        reserved = {self.FOUNDER_ANSWER_SOURCE, SENSORIUM_SOURCE}
+
+        def sense(signal: SignalEnvelope, *, derived: bool = False) -> None:
+            if not derived and signal.source in reserved:
+                # Only founder_answer speaks as the founder and only the sensorium speaks for the institution; a
+                # caller signal claiming either source is refused and recorded, never integrated.
+                self.ledger.append(self.RESERVED_SOURCE_RECORD, {"source": self.source, "signal_id": signal.signal_id,
+                                                                 "claimed_source": signal.source, "at": at,
+                                                                 "disposition": "refused: reserved source"})
+                return
             observations = self.world.observations_from_signal(signal)
             verdicts = self.router.route(signal, observations=observations)
             domain = signal.payload.get("domain")
@@ -584,9 +646,10 @@ class GoalGravityLoop:
                 self.cognition.ingest(signal)
             touched_keys.update(o.key for o in observations)
             woke_here = [g for g, v in verdicts.items() if v.wake]
-            self.world.integrate(signal, now=at, goal_relevance={g: v.score for g, v in verdicts.items()},
+            relevant = {g: v for g, v in verdicts.items() if v.score > 0}
+            self.world.integrate(signal, now=at, goal_relevance={g: v.score for g, v in relevant.items()},
                                  context={"trigger_id": trigger_id}, attention=woke_here)
-            for goal_id, verdict in verdicts.items():
+            for goal_id, verdict in relevant.items():
                 relevant_signals.setdefault(goal_id, []).append(signal.signal_id)
                 if verdict.wake:
                     wake_requests.setdefault(goal_id, []).append(signal.signal_id)
@@ -595,7 +658,7 @@ class GoalGravityLoop:
             sense(signal)
         derived = self.sensorium.signals(at) if self.sensorium is not None else []
         for signal in derived:
-            sense(signal)
+            sense(signal, derived=True)
         hibernating = resources.mode is ResourceMode.HIBERNATE
         conserving = resources.mode is ResourceMode.CONSERVE
         # Individually weak signals may still combine: a favorable intersection wakes a goal.
@@ -649,6 +712,7 @@ class GoalGravityLoop:
             summary: dict[str, Any] = {"goal_id": goal_id, "priority": self.registry.effective_priority(goal_id)}
             # 3. Backcast -> active gate -> SBM (moves ordered by ledgered precedent when any exists).
             fix = self.gps.fix(spec, state, now=at)
+            self._close_stale_epistemic_deficits(spec, fix, now=at)
             summary.update({"active_node_id": fix.active_node_id, "active_gate": fix.active_gate, "sbm": fix.sbm,
                             "missing_capabilities": list(fix.missing_capabilities),
                             "missing_relationships": list(fix.missing_relationships),
@@ -712,6 +776,12 @@ class GoalGravityLoop:
                                                f"records or an accountable resolution.",
                                           evidence_refs=evidence_refs, category="reconciliation"))
             summary["open_attempts"] = [r for r in open_attempts]
+            # A negative, unreconciled or refuted outcome keeps the goal blocked on every later turn until an
+            # accountable party other than the acting agent reviews it (review_discrepancy); it is never forgotten.
+            unreviewed = self.unreviewed_discrepancies(goal_id)
+            for d in unreviewed:
+                blockers.append(f"outcome discrepancy unreviewed: route {d['route_hash'][7:23]} ({d.get('result_class')})"[:200])
+            summary["unreviewed_discrepancies"] = [d["discrepancy_hash"] for d in unreviewed]
             # 6. Deficits of every class the directive names (section 21): capability, resource, relationship, proof.
             deficits: list[dict[str, Any]] = []
             for cap in fix.missing_capabilities:
@@ -805,6 +875,7 @@ class GoalGravityLoop:
                         if action.state == "recorded":
                             outcome = action.outcome or {}
                             detail = {"action_id": action.action_id, "receipt_hash": action.receipt_hash,
+                                      "proposal_id": proposal.proposal_id, "attempt": attempt,
                                       "outcome_id": outcome.get("outcome_id"), "result_class": outcome.get("result_class"),
                                       "executor_claimed_validation": outcome.get("validation_status"),
                                       "expected_vs_actual": outcome.get("expected_vs_actual")}
@@ -833,12 +904,16 @@ class GoalGravityLoop:
                                                                                  description=f"verified receipt for {intervention.description}",
                                                                                  evidence_refs=[action.receipt_hash])], now=at)
                         elif action.state == "reconciliation_required":
-                            record("unknown", {"action_id": action.action_id, "reasons": action.refusal_reasons})
+                            # The attempt's own proposal id rides on the record, so reconcile() reads this attempt's Gate
+                            # events and never closes it from an earlier attempt's.
+                            record("unknown", {"action_id": action.action_id, "reasons": action.refusal_reasons,
+                                               "proposal_id": proposal.proposal_id, "attempt": attempt})
                             entry["evidence_state"] = "unknown"
                             blockers.append("gate outcome unknown; reconciliation required")
                         else:
                             record("failed", {"action_id": action.action_id, "state": action.state,
-                                              "reasons": action.refusal_reasons})
+                                              "reasons": action.refusal_reasons,
+                                              "proposal_id": proposal.proposal_id, "attempt": attempt})
                             entry["evidence_state"] = "failed"
                             blockers.append(f"gate {action.state}: {'; '.join(action.refusal_reasons)[:160]}")
                         executed_this_goal = True
@@ -1005,6 +1080,7 @@ class GoalGravityLoop:
         self.registry.get(goal_id)
         if verdict not in ("confirmed", "refuted"):
             raise ContractError("verdict must be 'confirmed' or 'refuted'")
+        self._complete_verifications()   # a verification already on the ledger is finished, never repeated
         verifier = require_text("verifier", verifier)
         refs = [require_text("evidence_refs[]", r) for r in evidence_refs]
         if not refs:
@@ -1014,32 +1090,65 @@ class GoalGravityLoop:
         if latest is None or latest["evidence_state"] != "executed" or latest["detail"].get("verdict"):
             raise ContractError("only an executed, not yet verified move can be externally verified")
         action_id = latest["detail"].get("action_id")
-        if any(r.payload.get("action_id") == action_id for r in self.ledger.by_type(self.VERIFICATION_RECORD)):
+        # One verification per executed move. A move closed by an accountable resolution has no Gate action id, so
+        # its subject is the classification it executed under, never a shared None.
+        subject = action_id or f"{goal_id}:{route_hash}:{latest['classification_id']}"
+        if any(r.payload.get("verification_subject", r.payload.get("action_id")) == subject
+               for r in self.ledger.by_type(self.VERIFICATION_RECORD)):
             raise ContractError("this action has already been verified; one verification per action")
         recorded_by = None
         for record in self.ledger.by_type("outcome"):
-            if record.payload.get("action_ref") == action_id:
+            if action_id and record.payload.get("action_ref") == action_id:
                 recorded_by = record.payload.get("recorded_by")
-        if verifier in (self.classifier.actor, recorded_by, self.source):
+        def identity(value: Any) -> str:   # "x@anything" is still x: a suffix never makes a party independent
+            return str(value or "").split("@", 1)[0].strip().casefold()
+        parties = {identity(p) for p in (self.classifier.actor, recorded_by, self.source) if p}
+        if identity(verifier) in parties:
             raise ContractError("verification must be independent of the actor that executed the move")
         mechanisms = tuple(latest["detail"].get("routed_mechanisms", ()))
         decision_id = latest["detail"].get("routing_decision_id")
+        if any(identity(verifier) == identity(m) for m in mechanisms):
+            raise ContractError("a mechanism may not verify an outcome it was routed to produce")
+        if mechanisms and decision_id and self.competency is None:
+            # The move's track record lives in the router; a verdict recorded here could never calibrate it and would
+            # consume the action's single verification.
+            raise ContractError("this move was routed through the Competency Compiler; verify it on a loop that mounts the router")
         if mechanisms and self.competency is not None:
             self.competency.check_verifier(verifier, mechanisms)
-        intervention = InterventionSpec.from_dict(latest["intervention"])
+        # The verification record is the commit point. Everything after it (calibration, the move's state, the
+        # discrepancy, the goal's transition) is derived from it idempotently, so a crash in between is finished
+        # on the next turn by _complete_verifications and never needs, or allows, a second verification.
         verification = self.ledger.append(self.VERIFICATION_RECORD, {
             "source": self.source, "goal_id": goal_id, "route_hash": route_hash, "action_id": action_id,
+            "verification_subject": subject, "classification_id": latest["classification_id"],
             "verifier": verifier, "verdict": verdict, "evidence_refs": refs, "note": note, "at": at,
             "routing_decision_id": decision_id, "routed_mechanisms": list(mechanisms),
             "disposition": "externally_verified_by_independent_party" if verdict == "confirmed"
                            else "refuted_by_independent_party"})
+        return self._apply_verification(verification)
+
+    def _apply_verification(self, verification: Any) -> dict[str, Any]:
+        v = verification.payload
+        goal_id, route_hash, verdict, verifier, at = v["goal_id"], v["route_hash"], v["verdict"], v["verifier"], v["at"]
+        refs = list(v["evidence_refs"])
+        latest = self._latest_by_route(goal_id, raw=True).get(route_hash)
+        if latest is None:
+            raise ContractError("verification names a move with no intervention record")
+        if latest["detail"].get("verification_hash") == verification.hash:
+            return canonical_copy(latest)   # already applied
+        mechanisms = tuple(v.get("routed_mechanisms") or ())
+        decision_id = v.get("routing_decision_id")
+        intervention = InterventionSpec.from_dict(latest["intervention"])
         detail = {**latest["detail"], "verifier": verifier, "verdict": verdict, "verification_evidence_refs": refs,
-                  "verification_hash": verification.hash, "note": note, "verified_at": at}
-        calibration: list[dict[str, Any]] = []
+                  "verification_hash": verification.hash, "note": v["note"], "verified_at": at}
         if mechanisms and decision_id and self.competency is not None:
-            calibration = self.competency.record_outcomes(decision_id, mechanisms, correct=verdict == "confirmed",
-                                                          evidence_ref=verification.hash, verified_by=verifier)
-            detail["calibration"] = calibration
+            self.competency.refresh()
+            done = {r.payload.get("competency") for r in self.ledger.by_type("event")
+                    if r.payload.get("type") == "capabilities.routing_outcome"
+                    and r.payload.get("evidence_ref") == verification.hash}
+            pending = tuple(m for m in mechanisms if m not in done)
+            detail["calibration"] = self.competency.record_outcomes(decision_id, pending, correct=verdict == "confirmed",
+                                                                    evidence_ref=verification.hash, verified_by=verifier) if pending else []
         state = self.registry.state(goal_id)
         if verdict == "confirmed":
             payload = self._record_intervention(goal_id, intervention, classification_id=latest["classification_id"],
@@ -1051,14 +1160,51 @@ class GoalGravityLoop:
             payload = self._record_intervention(goal_id, intervention, classification_id=latest["classification_id"],
                                                 decision=latest["decision"], evidence_state="executed",
                                                 detail=detail, now=at)
-            self.ledger.append(self.DISCREPANCY_RECORD, {
-                "source": self.source, "goal_id": goal_id, "action_id": action_id, "route_hash": route_hash,
-                "result_class": "refuted_by_verifier", "expected_vs_actual": note, "at": at,
-                "disposition": "discrepancy_visible_not_hidden"})
+            if not any(r.payload.get("verification_hash") == verification.hash for r in self.ledger.by_type(self.DISCREPANCY_RECORD)):
+                self.ledger.append(self.DISCREPANCY_RECORD, {
+                    "source": self.source, "goal_id": goal_id, "action_id": v.get("action_id"), "route_hash": route_hash,
+                    "verification_hash": verification.hash, "result_class": "refuted_by_verifier",
+                    "expected_vs_actual": v["note"], "at": at, "disposition": "discrepancy_visible_not_hidden"})
             self.registry.transition(goal_id, reason=f"outcome refuted by {verifier}", now=at, status="blocked",
                                      blockers=sorted(set(state.blockers) | {
                                          f"outcome discrepancy: {intervention.intervention_id} refuted by {verifier}"}),
                                      evidence_refs=list(dict.fromkeys(list(state.evidence_refs) + refs)))
+        return payload
+
+    def _complete_verifications(self) -> None:
+        """Finish verifications whose derived records were lost to a crash after the verification record."""
+        for record in self.ledger.by_type(self.VERIFICATION_RECORD):
+            latest = self._latest_by_route(record.payload["goal_id"], raw=True).get(record.payload["route_hash"])
+            if (latest is not None and latest["evidence_state"] == "executed" and not latest["detail"].get("verdict")
+                    and latest["classification_id"] == record.payload.get("classification_id", latest["classification_id"])):
+                self._apply_verification(record)
+
+    def unreviewed_discrepancies(self, goal_id: str) -> list[dict[str, Any]]:
+        reviewed = {r.payload["discrepancy_hash"] for r in self.ledger.by_type(self.DISCREPANCY_REVIEW_RECORD)}
+        return [{**canonical_copy(r.payload), "discrepancy_hash": r.hash} for r in self.ledger.by_type(self.DISCREPANCY_RECORD)
+                if r.payload.get("goal_id") == goal_id and r.hash not in reviewed]
+
+    def review_discrepancy(self, goal_id: str, discrepancy_hash: str, *, reviewer: str, resolution: str,
+                           now: datetime | str, evidence_refs: Sequence[str] = ()) -> dict[str, Any]:
+        """Record an accountable review of an outcome discrepancy so the goal may proceed. The discrepancy stays on
+        the ledger, the move is not released for re-dispatch, and the acting agent cannot review its own miss."""
+        self._sync()
+        at = iso(parse_time(now))
+        record = self.ledger.find(discrepancy_hash)
+        if record is None or record.record_type != self.DISCREPANCY_RECORD or record.payload.get("goal_id") != goal_id:
+            raise ContractError("no outcome discrepancy with that hash for this goal")
+        if any(r.payload["discrepancy_hash"] == discrepancy_hash for r in self.ledger.by_type(self.DISCREPANCY_REVIEW_RECORD)):
+            raise ContractError("this discrepancy has already been reviewed")
+        reviewer = require_text("reviewer", reviewer)
+        if reviewer.split("@", 1)[0].strip().casefold() in {str(p).split("@", 1)[0].strip().casefold()
+                                                             for p in (self.classifier.actor, self.source)}:
+            raise ContractError("the acting agent may not review its own outcome discrepancy")
+        payload = {"source": self.source, "goal_id": goal_id, "discrepancy_hash": discrepancy_hash,
+                   "route_hash": record.payload.get("route_hash"), "reviewer": reviewer,
+                   "resolution": require_text("resolution", resolution),
+                   "evidence_refs": [require_text("evidence_refs[]", r) for r in evidence_refs], "at": at,
+                   "disposition": "reviewed: the goal may proceed; the discrepancy stays on the ledger; no re-dispatch"}
+        self.ledger.append(self.DISCREPANCY_REVIEW_RECORD, payload)
         return payload
 
     def propose_attach(self, goal_id: str, qualification: Mapping[str, Any], *, now: datetime | str) -> Routing:
@@ -1073,29 +1219,59 @@ class GoalGravityLoop:
         (method ``human_decision`` / ``legal_determination``), the only path by which such evidence exists.
         Founder identity here is declared lineage, not authentication (SR001 G6); trust stays ``attributed``."""
         item = next((a for a in self.attention.open_asks() if a["item_id"] == item_id), None)
+        gate = (item or {}).get("evidence_on_accept")
+        if gate and decision in ("accept", "refuse"):
+            # Check before the answer is written, so a decision is never consumed by an effect that cannot land.
+            probe = self._gate_answer_signal(item, decision, at=iso(parse_time(now)), answer_hash=None)
+            if self.world.record_hash(probe.signal_id) is not None:
+                raise IntegrityConflict("a founder-answer signal for this ask already exists; the answer was not recorded")
         answer = self.attention.answer(item_id, decision=decision, actor=actor, note=note, now=now)
         attach = (item or {}).get("attach_on_accept")
         if attach and decision == "accept":
             answer = {**answer, "attached": self.acquisition.attach(attach["qualification_hash"], actor=actor, now=now)}
-        gate = (item or {}).get("evidence_on_accept")
         if gate and decision in ("accept", "refuse"):
-            at = iso(parse_time(now))
-            answer_hash = next((r.hash for r in reversed(self.ledger.by_type(self.attention.ANSWER_RECORD))
-                                if r.payload["item_id"] == item_id), None)
-            subject, attribute = gate["sbm"].split(".", 1)
-            target = gate["value"]
-            value = target if decision == "accept" else (not target if isinstance(target, bool) else None)
-            signal = SignalEnvelope.build(
-                source="founder://answers", source_event_id=f"{item_id}:{decision}", observed_at=at,
-                payload={"observations": [{"subject": subject, "attribute": attribute, "value": value,
-                                           "confidence": 1.0, "method": gate["method"]}]},
-                evidence_refs=tuple(r for r in (answer_hash,) if r), trust_level="attributed")
-            self.world.integrate(signal, now=at, goal_relevance={item["goal_id"]: 1.0},
-                                 context={"founder_answer": item_id, "routing_decision_id": gate.get("routing_decision_id")},
-                                 attention=[item["goal_id"]], allow_human_methods=True)
-            answer = {**answer, "gate_evidence": {"sbm": gate["sbm"], "value": value, "method": gate["method"],
-                                                  "signal_id": signal.signal_id}}
+            answer = {**answer, "gate_evidence": self._apply_gate_answer(item, decision, at=iso(parse_time(now)))}
         return answer
+
+    FOUNDER_ANSWER_SOURCE = "founder://answers"
+
+    def _gate_answer_signal(self, item: Mapping[str, Any], decision: str, *, at: str, answer_hash: str | None) -> SignalEnvelope:
+        gate = item["evidence_on_accept"]
+        subject, attribute = gate["sbm"].split(".", 1)
+        target = gate["value"]
+        value = target if decision == "accept" else (not target if isinstance(target, bool) else None)
+        return SignalEnvelope.build(
+            source=self.FOUNDER_ANSWER_SOURCE, source_event_id=f"{item['item_id']}:{decision}", observed_at=at,
+            payload={"observations": [{"subject": subject, "attribute": attribute, "value": value,
+                                       "confidence": 1.0, "method": gate["method"]}]},
+            evidence_refs=tuple(r for r in (answer_hash,) if r), trust_level="attributed")
+
+    def _apply_gate_answer(self, item: Mapping[str, Any], decision: str, *, at: str) -> dict[str, Any]:
+        """Turn a founder's answer to a human-only gate into typed evidence for that goal (the only path for it)."""
+        gate = item["evidence_on_accept"]
+        answer_record = next((r for r in reversed(self.ledger.by_type(self.attention.ANSWER_RECORD))
+                              if r.payload["item_id"] == item["item_id"]), None)
+        answered_at = answer_record.payload["answered_at"] if answer_record is not None else at
+        signal = self._gate_answer_signal(item, decision, at=answered_at,
+                                          answer_hash=answer_record.hash if answer_record is not None else None)
+        self.world.integrate(signal, now=at, goal_relevance={item["goal_id"]: 1.0},
+                             context={"founder_answer": item["item_id"], "routing_decision_id": gate.get("routing_decision_id")},
+                             attention=[item["goal_id"]], allow_human_methods=True)
+        return {"sbm": gate["sbm"], "value": signal.payload["observations"][0]["value"], "method": gate["method"],
+                "signal_id": signal.signal_id}
+
+    def _complete_founder_answers(self, *, now: str) -> None:
+        """Finish the effect of founder answers whose effect never landed (a crash after the answer was written):
+        typed gate evidence for human-only gates. The answer is the decision; it is never asked again."""
+        asks = {r.payload["item"]["item_id"]: r.payload["item"] for r in self.ledger.by_type(self.attention.ASK_RECORD)
+                if r.payload["item"].get("evidence_on_accept")}
+        for r in self.ledger.by_type(self.attention.ANSWER_RECORD):
+            item = asks.get(r.payload["item_id"])
+            if item is None or r.payload["decision"] not in ("accept", "refuse"):
+                continue
+            probe = self._gate_answer_signal(item, r.payload["decision"], at=r.payload["answered_at"], answer_hash=r.hash)
+            if self.world.record_hash(probe.signal_id) is None:
+                self._apply_gate_answer(item, r.payload["decision"], at=now)
 
     def work_to_first_actionable(self, goal_id: str) -> dict[str, Any]:
         """How much work a goal needed before its first actionable move (execute/prepare/escalate).
@@ -1261,8 +1437,13 @@ class GoalGravityLoop:
             changes["active_node"] = {"before": a["active_node_id"], "after": b["active_node_id"]}
         return {"assessments": len(fixes), "since": a["fixed_at"], "changes": changes}
 
+    def _turns_newest_first(self) -> list[GravityTurn]:
+        """Turns newest first by logical time; among turns at the same time the later ledger record wins."""
+        ordered = list(self._turns.values())   # ledger order (dict insertion order of the fold)
+        return [t for _, t in sorted(enumerate(ordered), key=lambda it: (it[1].at, it[0]), reverse=True)]
+
     def _latest_threats(self, goal_id: str) -> list[str]:
-        for turn in sorted(self._turns.values(), key=lambda x: x.at, reverse=True):
+        for turn in self._turns_newest_first():
             for p in turn.processed:
                 if p["goal_id"] == goal_id and "intersection" in p:
                     return list(p["intersection"].get("threats", []))
@@ -1270,7 +1451,7 @@ class GoalGravityLoop:
 
     def _latest_routing(self, goal_id: str) -> dict[str, Any] | None:
         """The Competency Compiler's last view of this goal's gate (read-only: status never routes)."""
-        for turn in sorted(self._turns.values(), key=lambda x: x.at, reverse=True):
+        for turn in self._turns_newest_first():
             for p in turn.processed:
                 if p["goal_id"] == goal_id and "routing" in p:
                     return p["routing"]

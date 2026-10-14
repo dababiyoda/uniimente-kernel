@@ -11,13 +11,19 @@ What exists here, and what does not:
   composition search, and leads from the dated open-source catalog on ``main``
   (``docs/open-source/repositories-*.json``) matched by a declared method table. Leads are named as
   leads; nothing is downloaded, installed or run.
-* ``qualify`` runs a candidate's declared acceptance tests (pytest node ids inside this repository's
-  ``tests/`` tree only) in a subprocess with a timeout, under an evaluator identity that must differ
+* ``qualify`` runs a candidate genome's own declared acceptance tests, plus any the caller adds (pytest
+  node ids inside this repository's ``tests/`` tree only), in a subprocess with a timeout, under an evaluator identity that must differ
   from the candidate and from the acting agent. A subprocess is not an isolation boundary, and the
   record says so. Passing opens one founder decision; failing leaves the goal blocked.
-* ``attach`` happens only after the founder accepts that decision: the genome is registered with an
-  envelope capped at the goal's ceiling, the competency is registered with the router, and the
-  capability starts unproven (CANARY). It earns calibration only from independently verified outcomes.
+* ``attach`` happens only after the founder accepts that decision: it refuses without the ledgered
+  acceptance of the attach ask for that qualification, the genome is registered with an envelope capped
+  at the goal's ceiling, the competency is registered with the router, and the capability starts
+  unproven (CANARY). It earns calibration only from independently verified outcomes.
+* ``sync`` replays attach and detach records, so an attached capability survives a restart and is
+  routable by every loop on the ledger; replay writes nothing. An acceptance whose attach record was
+  lost to a crash is completed on the next turn, never re-asked.
+* ``detach`` removes a capability from routing at any time, with an accountable actor and a reason.
+  The attachment stays on the ledger as history; replay never brings it back.
 * No builder: GREG does not write the candidate's code. A person, a coding agent or another lineage
   (PR #129's genesis loop, PR #164's construction by reduction) supplies it; this module qualifies it.
 
@@ -82,9 +88,105 @@ class CapabilityAcquisition:
     PLAN_RECORD = "egregore.acquisition_plan"
     QUALIFICATION_RECORD = "egregore.capability_qualification"
     ATTACH_RECORD = "egregore.capability_attached"
+    DETACH_RECORD = "egregore.capability_detached"
 
     def __init__(self, loop: Any):
         self.loop = loop
+        self._folded = 0
+        self._attached: dict[str, dict[str, Any]] = {}   # qualification hash -> attach payload
+        self._detached: set[str] = set()
+        self._installed_genomes: set[str] = set()   # genomes this process installed through an attachment
+
+    # ------------------------------------------------------------ fold
+    def sync(self) -> None:
+        """Replay attach and detach records appended since the last fold (an earlier process, another loop).
+
+        A founder-attached capability is re-installed in the genome registry and the router without a new
+        ledger event; a detached one is removed and never re-installed. The router does not restore
+        competencies by itself, by design; the attach record is the evidence that this one was admitted."""
+        records = self.loop.ledger.records
+        start, self._folded = self._folded, len(records)
+        for record in records[start:]:
+            if record.record_type == self.ATTACH_RECORD:
+                h = record.payload["qualification_hash"]
+                self._attached[h] = record.payload
+                if h not in self._detached:
+                    self._install(record.payload, replay=True)
+            elif record.record_type == self.DETACH_RECORD:
+                h = record.payload["qualification_hash"]
+                self._detached.add(h)
+                if h in self._attached:
+                    self._uninstall(self._attached[h])
+
+    def _qualification(self, qualification_hash: str) -> dict[str, Any] | None:
+        record = self.loop.ledger.find(qualification_hash)
+        if record is None or record.record_type != self.QUALIFICATION_RECORD:
+            return None
+        return record.payload
+
+    @staticmethod
+    def _parts(q: Mapping[str, Any]) -> tuple[CapabilityGenome, Competency]:
+        g = dict(q["candidate"]["genome"])
+        genome = CapabilityGenome(authority=AuthorityEnvelope(**g.pop("authority")), **g)
+        c = q["candidate"]["competency"]
+        return genome, Competency(c["genome_name"], c["genome_version"], tuple(c["methods"]), tuple(c["problem_classes"]),
+                                  c["consequence_class"], c["cost_usd"])
+
+    def _same_as_registered(self, genome: CapabilityGenome) -> None:
+        """The founder is shown the candidate's envelope, so a different genome already registered under the same
+        name@version (for example a wider envelope) is refused rather than silently attached."""
+        existing = self.loop.genomes.get(genome.name, genome.version) if self.loop.genomes is not None else None
+        if existing is not None and existing != genome:
+            raise ContractError(f"a different genome is already registered as {genome.name}@{genome.version}; "
+                                "qualify a new version instead")
+
+    def _install(self, attach: Mapping[str, Any], *, replay: bool) -> tuple[bool, bool]:
+        q = self._qualification(attach["qualification_hash"])
+        if q is None or self.loop.genomes is None:
+            if not replay:
+                raise ContractError("attaching needs the qualification on the ledger and a genome registry")
+            return False, False
+        genome, competency = self._parts(q)
+        existing = self.loop.genomes.get(genome.name, genome.version)
+        if existing is not None and existing != genome:
+            if replay:
+                return False, False   # never route an attachment through a genome other than the one qualified
+            raise ContractError(f"a different genome is already registered as {genome.name}@{genome.version}")
+        genome_registered = False
+        if self.loop.genomes.get(genome.name, genome.version) is None:
+            if replay:
+                if genome.validate():
+                    return False, False   # a malformed historical record is evidence, not a registration
+                self.loop.genomes._genomes[f"{genome.name}@{genome.version}"] = genome   # replay, no new ledger event
+            else:
+                self.loop.genomes.register(genome)
+            genome_registered = True
+            self._installed_genomes.add(f"{genome.name}@{genome.version}")
+        competency_registered = False
+        if self.loop.competency is not None:
+            if replay:
+                competency_registered = self.loop.competency.replay(competency)
+            else:
+                self.loop.competency.register(competency)
+                competency_registered = True
+        return genome_registered, competency_registered
+
+    def _uninstall(self, attach: Mapping[str, Any]) -> None:
+        key = attach["candidate_key"]
+        if self.loop.competency is not None:
+            self.loop.competency.retire(key)
+        if key in self._installed_genomes and self.loop.genomes is not None:   # never remove someone else's genome
+            self.loop.genomes._genomes.pop(key, None)
+            self._installed_genomes.discard(key)
+
+    def _accepted_answer(self, qualification_hash: str, goal_id: str) -> Any:
+        """The founder's ledgered acceptance of the attach ask for this qualification, or None."""
+        attention = self.loop.attention
+        items = {r.payload["item"]["item_id"] for r in self.loop.ledger.by_type(attention.ASK_RECORD)
+                 if (r.payload["item"].get("attach_on_accept") or {}).get("qualification_hash") == qualification_hash
+                 and r.payload["item"].get("goal_id") == goal_id}
+        return next((r for r in self.loop.ledger.by_type(attention.ANSWER_RECORD)
+                     if r.payload["item_id"] in items and r.payload["decision"] == "accept"), None)
 
     @property
     def execution_authority(self) -> str:
@@ -165,7 +267,9 @@ class CapabilityAcquisition:
         at = iso(parse_time(now))
         spec = self.loop.registry.get(goal_id)
         evaluator = require_text("evaluator", evaluator)
-        if evaluator in (self.loop.classifier.actor, self.loop.source) or evaluator.split("@", 1)[0] == genome.name:
+        def identity(value: Any) -> str:   # "x@anything" is still x
+            return str(value or "").split("@", 1)[0].strip().casefold()
+        if identity(evaluator) in {identity(self.loop.classifier.actor), identity(self.loop.source), identity(genome.name)}:
             raise ContractError("the evaluator must be independent of the candidate and of the acting agent")
         problems = genome.validate()
         if problems:
@@ -179,7 +283,15 @@ class CapabilityAcquisition:
         ceiling = spec.authority["max_consequence_class"]
         if CONSEQUENCE_CLASSES.index(genome.authority.max_consequence_class) > CONSEQUENCE_CLASSES.index(ceiling):
             raise ContractError(f"candidate envelope {genome.authority.max_consequence_class} exceeds the goal ceiling {ceiling}")
-        nodes = self._check_nodes(acceptance_tests)
+        if competency.consequence_class not in CONSEQUENCE_CLASSES or (
+                CONSEQUENCE_CLASSES.index(competency.consequence_class)
+                > CONSEQUENCE_CLASSES.index(genome.authority.max_consequence_class)):
+            raise ContractError(f"the competency's class {competency.consequence_class} exceeds the candidate envelope "
+                                f"{genome.authority.max_consequence_class}")
+        self._same_as_registered(genome)
+        # The candidate's own declared acceptance tests always run (and must be runnable node ids); the caller may
+        # add tests, never substitute them, so "passed its acceptance tests" means the tests the genome declares.
+        nodes = self._check_nodes(list(dict.fromkeys(list(genome.acceptance_tests) + list(acceptance_tests))))
         cmd = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", *nodes]
         env = {k: v for k, v in os.environ.items() if k in ("PATH", "HOME", "LANG", "LC_ALL", "PYTHONPATH", "TMPDIR")}
         env["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -228,30 +340,68 @@ class CapabilityAcquisition:
 
     # ------------------------------------------------------------ attach
     def attach(self, qualification_hash: str, *, actor: str, now: datetime | str) -> dict[str, Any]:
+        """Attach a qualified candidate the founder accepted. Refused without that ledgered acceptance."""
         at = iso(parse_time(now))
-        record = self.loop.ledger.find(qualification_hash)
-        if record is None or record.record_type != self.QUALIFICATION_RECORD or not record.payload.get("passed"):
+        self.loop.attention.sync()
+        self.sync()
+        q = self._qualification(qualification_hash)
+        if q is None or not q.get("passed"):
             raise ContractError("only a passed qualification on the ledger can be attached")
-        if any(r.payload["qualification_hash"] == qualification_hash for r in self.loop.ledger.by_type(self.ATTACH_RECORD)):
+        if qualification_hash in self._attached:
             raise ContractError("this qualification is already attached")
-        q = record.payload
-        g = dict(q["candidate"]["genome"])
-        genome = CapabilityGenome(authority=AuthorityEnvelope(**g.pop("authority")), **g)
-        if self.loop.genomes.get(genome.name, genome.version) is None:
-            self.loop.genomes.register(genome)
-        registered_competency = False
-        if self.loop.competency is not None:
-            c = q["candidate"]["competency"]
-            self.loop.competency.register(Competency(c["genome_name"], c["genome_version"], tuple(c["methods"]),
-                                                     tuple(c["problem_classes"]), c["consequence_class"], c["cost_usd"]))
-            registered_competency = True
+        answer = self._accepted_answer(qualification_hash, q["goal_id"])
+        if answer is None:
+            raise ContractError("attach requires the founder's accepted answer to the attach decision for this qualification")
+        actor = require_text("actor", actor)
+        if actor != answer.payload["actor"]:
+            raise ContractError("the attaching actor must be the one who accepted the attach decision")
+        genome_registered, registered_competency = self._install({"qualification_hash": qualification_hash}, replay=False)
         key = q["candidate_key"]
         if self.loop.retention is not None:   # declared capability deficits naming this genome resume their goal
             self.loop.retention._resolve_deficits(q["goal_id"], [key], retained_at=at, resolved_by=f"attach:{key}")
         attach = {"source": self.loop.source, "goal_id": q["goal_id"], "qualification_hash": qualification_hash,
-                  "candidate_key": key, "attached_by": require_text("actor", actor), "attached_at": at,
-                  "competency_registered": registered_competency, "lifecycle": "CANARY",
-                  "authority_note": "attached on a founder decision; not a grant; starts unproven",
+                  "candidate_key": key, "attached_by": actor, "answer_hash": answer.hash, "attached_at": at,
+                  "genome_registered": genome_registered, "competency_registered": registered_competency,
+                  "lifecycle": "CANARY", "authority_note": "attached on a founder decision; not a grant; starts unproven",
                   "disposition": "attached; the original goal resumes when its gate routes"}
         self.loop.ledger.append(self.ATTACH_RECORD, canonical_copy(attach))
+        self._attached[qualification_hash] = attach
+        self._folded = len(self.loop.ledger.records)
         return attach
+
+    def complete_accepted(self, *, now: datetime | str) -> list[dict[str, Any]]:
+        """Finish attaches the founder accepted but whose attach record never landed (a crash between the answer
+        and the attach). The acceptance is the decision; it is never asked again."""
+        self.loop.attention.sync()
+        self.sync()
+        done = []
+        for r in self.loop.ledger.by_type(self.loop.attention.ASK_RECORD):
+            attach = r.payload["item"].get("attach_on_accept") or {}
+            h = attach.get("qualification_hash")
+            if not h or h in self._attached or h in self._detached:
+                continue
+            q = self._qualification(h)
+            answer = self._accepted_answer(h, attach.get("goal_id")) if q and q.get("passed") else None
+            if answer is not None:
+                done.append(self.attach(h, actor=answer.payload["actor"], now=now))
+        return done
+
+    def detach(self, qualification_hash: str, *, actor: str, reason: str, now: datetime | str) -> dict[str, Any]:
+        """Remove an attached capability from routing. Reducing capability needs no grant; it needs an
+        accountable actor and a reason. The ledger keeps the attachment as history."""
+        at = iso(parse_time(now))
+        self.sync()
+        attach = self._attached.get(qualification_hash)
+        if attach is None:
+            raise ContractError("only an attached capability can be detached")
+        if qualification_hash in self._detached:
+            raise ContractError("this capability is already detached")
+        record = {"source": self.loop.source, "goal_id": attach["goal_id"], "qualification_hash": qualification_hash,
+                  "candidate_key": attach["candidate_key"], "detached_by": require_text("actor", actor),
+                  "reason": require_text("reason", reason), "detached_at": at, "lifecycle": "HISTORICAL",
+                  "disposition": "detached; not routable; preserved on the ledger and never replayed"}
+        self.loop.ledger.append(self.DETACH_RECORD, canonical_copy(record))   # ledger first, then the effect
+        self._detached.add(qualification_hash)
+        self._uninstall(attach)
+        self._folded = len(self.loop.ledger.records)
+        return record

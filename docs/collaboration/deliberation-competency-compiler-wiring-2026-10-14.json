@@ -166,15 +166,15 @@
     },
     {
       "claim": "Blocked goal acquires and resumes",
-      "tier": "sandbox_execution",
+      "tier": "unit_test",
       "reference": "tests/unit/test_goal_gravity_acquisition.py::test_attach_on_a_founder_decision_resumes_the_original_goal",
-      "finding": "a real repository test runs in a subprocess; attach waits for a founder answer; the deficit resolves and the move executes"
+      "finding": "a real repository test runs in a subprocess; attach waits for a founder answer; the deficit resolves and the move executes (pytest; the child process is not an isolation boundary, so this is not sandbox execution)"
     },
     {
       "claim": "Restart continuity across a real SIGKILL at two points",
-      "tier": "sandbox_execution",
+      "tier": "unit_test",
       "reference": "tests/integration/test_goal_gravity_process_kill.py",
-      "finding": "no re-dispatch; reconcile reports unresolved until an accountable resolution"
+      "finding": "no re-dispatch; reconcile reports unresolved until an accountable resolution (pytest; the child process is not an isolation boundary, so this is not sandbox execution)"
     }
   ],
   "counterevidence": [
@@ -195,6 +195,12 @@
       "tier": "unit_test",
       "reference": "capabilities/router.py _rejection with Beta(1,1)",
       "finding": "a mechanism with one success and one failure (0.5) is permanently rejected at the default floor; recorded for the router owner"
+    },
+    {
+      "claim": "The increment as first committed (81c90c7) met its own authority and evidence claims",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_goal_gravity_review.py; tests/evidence/goal-gravity-20261013/review-probes-increment-3.log",
+      "finding": "Refuted. An adversarial review raised 35 findings that reproduced on 81c90c7, including two blocking: a low-trust corroborator could relabel a trusted reading's method, and a re-dispatched attempt could be reconciled from an earlier attempt's Gate events. Others: attach without a founder answer, forged outcome events replayed into calibration, one goal's founder decision clearing another goal's gate. All are fixed with regression tests. The refuting verifiers and the completeness critic did not run (usage limit), so the findings were confirmed by re-running each reproduction, not by an independent verifier."
     }
   ],
   "pass_1": {

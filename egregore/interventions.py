@@ -86,6 +86,23 @@ class InterventionClassifier:
     def execution_authority(self) -> str:
         return "none"
 
+    @staticmethod
+    def epistemic_deficit(spec: GoalSpec, fix: Any, routing: Any, *, at: str) -> dict[str, Any]:
+        """The typed CapabilityDeficit for a gate no registered mechanism can answer (one id per goal, gate, gap)."""
+        d = routing.deficit
+        return {
+            "deficit_id": digest({"kind": "egregore-epistemic-deficit", "goal_id": spec.goal_id,
+                                  "active_node_id": fix.active_node_id if fix else None,
+                                  "missing_methods": sorted(d["missing_methods"]),
+                                  "problem_class": d["problem_class"]}),
+            "goal_id": spec.goal_id, "active_node_id": fix.active_node_id if fix else None,
+            "missing_capabilities": [], "missing_methods": list(d["missing_methods"]),
+            "problem_class": d["problem_class"], "router_deficit_id": d["router_deficit_id"],
+            "routing_decision_id": routing.decision_id, "rejected": dict(d["rejected"]),
+            "founder_intent": spec.founder_intent, "resolution_order": list(RESOLUTION_ORDER),
+            "lifecycle": "DISCOVERED", "disposition": "goal_blocked_not_closed", "detected_at": at,
+            "resume": "original_goal"}
+
     def _record_deficit(self, spec: GoalSpec, deficit: Mapping[str, Any]) -> None:
         """One typed record per open deficit (both origins), deduped by deficit id while open."""
         deficit = canonical_copy(dict(deficit))
@@ -175,19 +192,7 @@ class InterventionClassifier:
             reasons = [f"Competency Compiler: no registered mechanism can answer this {d['problem_class']} gate "
                        f"(missing {', '.join(d['missing_methods'])}); original goal retained"]
             if record:
-                deficit = {
-                    "deficit_id": digest({"kind": "egregore-epistemic-deficit", "goal_id": spec.goal_id,
-                                          "active_node_id": fix.active_node_id if fix else None,
-                                          "missing_methods": sorted(d["missing_methods"]),
-                                          "problem_class": d["problem_class"]}),
-                    "goal_id": spec.goal_id, "active_node_id": fix.active_node_id if fix else None,
-                    "missing_capabilities": [], "missing_methods": list(d["missing_methods"]),
-                    "problem_class": d["problem_class"], "router_deficit_id": d["router_deficit_id"],
-                    "routing_decision_id": routing.decision_id, "rejected": dict(d["rejected"]),
-                    "founder_intent": spec.founder_intent, "resolution_order": list(RESOLUTION_ORDER),
-                    "lifecycle": "DISCOVERED", "disposition": "goal_blocked_not_closed", "detected_at": classified_at,
-                    "resume": "original_goal"}
-                self._record_deficit(spec, deficit)
+                self._record_deficit(spec, self.epistemic_deficit(spec, fix, routing, at=classified_at))
         elif fix is not None and fix.missing_capabilities:
             decision = "WAIT"
             reasons = [f"capability deficit: {', '.join(fix.missing_capabilities)}; original goal retained"]

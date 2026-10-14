@@ -27,7 +27,8 @@ That is recorded as a conflict and dissent. The founder decides.
 ## Decision
 
 Mount the router on the loop as `loop.competency` (`egregore/competency.py`) behind an optional constructor
-argument. Leave `capabilities/router.py` semantics untouched.
+argument. Leave `capabilities/router.py` selection semantics untouched. The one change to it, made after the
+adversarial review below, is that `restore()` replays only outcome events `record_outcome` would itself have accepted.
 
 | Clause of the Competency Compiler sentence | Mechanism on this branch | Falsifying test |
 |---|---|---|
@@ -68,7 +69,7 @@ The same increment closes further directive gaps found by an independent audit.
 
 | Need | Reused | How |
 |---|---|---|
-| Method taxonomy, competent selection, calibration, deficits | `capabilities/router.py` (main, #165) | unchanged; called through `egregore/competency.py` |
+| Method taxonomy, competent selection, calibration, deficits | `capabilities/router.py` (main, #165) | selection unchanged; `restore()` hardened (see review); called through `egregore/competency.py` |
 | Genome envelopes | `capabilities/genome.py` | candidates and attachments use `CapabilityGenome`; envelope capped at the goal ceiling |
 | Open-source search | `docs/open-source/repositories-2026-09-30.json` (main) | read-only leads with license and freshness; nothing installed |
 | Organ contracts | `adapters/daleobanks_opportunity.py`, `adapters/wealthmachine_assessment.py` | canonical output only; the boundary package is not modified |
@@ -84,6 +85,47 @@ The same increment closes further directive gaps found by an independent audit.
 | #164 `greg/recombine.py` | constructs capabilities by certified reduction | the natural builder for `qualify()`; needs an optimization problem class on main |
 | #129 `egregore/parts.py`, `egregore/genesis.py` | parts board, genesis ladder, shadow, dossier, ratified bind | mergeable on main; its ratified genomes can become router competencies through `qualify()`/`attach()` |
 | #166 append-only witness, cross-organ mission | RFC 9162 consistency, witnessed checkpoints, real organ run | independent; its episode is natural experience input (labelled internal reproduction) |
+
+## Adversarial review of this increment
+
+Four dimension reviewers attacked commit `81c90c7`: authority and safety, competency and typed evidence, ledger
+consistency, and evidence honesty. They raised 35 findings, several of them the same defect seen from two
+dimensions, each with a reproduction. The four refuting verifiers and the completeness critic did not run, because
+the account's usage limit stopped them. Every reproduction was therefore re-run directly, twice: against a clean
+checkout of `81c90c7`, where each one reproduced, and against the fixed tree, where none does
+(`tests/evidence/goal-gravity-20261013/review-probes-increment-3.log`). Regression tests are in
+`tests/unit/test_goal_gravity_review.py` unless another file is named.
+
+| Finding (severity) | Fix |
+|---|---|
+| Direct `attach()` with no founder answer (major, raised twice) | attach requires the ledgered acceptance of the attach ask for that qualification, by the same actor |
+| Attached capability lost on restart or in a second loop (major, raised twice) | `CapabilityAcquisition.sync()` replays attach and detach records without new ledger events; `detach()` added; an acceptance whose attach record was lost completes on the next turn (`test_goal_gravity_acquisition.py`) |
+| Competency class or pre-registered genome wider than the envelope shown to the founder (major) | `qualify()` refuses a competency above its genome and a different genome already registered under the same name@version |
+| `qualify()` ran caller-chosen tests, not the genome's declared tests (major) | the declared tests always run; callers may only add |
+| Forged `routing_outcome` events replayed into calibration (major) | `CapabilityRouter.restore()` replays only outcomes that pass `record_outcome`'s own rules and lists the rest in `unreplayed` (`test_capability_router.py`) |
+| A low-trust corroborator relabels a trusted reading (blocking) | across sources one reading wins whole: value, trust and method come from the more trusted reading |
+| A lone critique clears `code_correctness`; a non-admitted method clears a gate by sharing a label (major) | admissibility is checked by method, and every `all_of` method needs its own trusted reading about the same subject |
+| One goal's founder decision clears another goal's gate; sensor readings veto or re-block a founder decision (major, three cases) | human-only gates read the founder decision recorded for that goal, which no sensor reading can contradict |
+| Founder answer consumed by an effect that cannot land; reserved source squatted (major, raised twice) | founder and sensorium sources are reserved at sensing; the effect is checked before the answer is written; a lost effect completes on the next turn |
+| Router-less loop spends a routed move's single verification; a suffixed actor verifies itself (major) | routed moves verify only on a router-mounted loop; identities compare before any `@` suffix; mechanisms cannot verify themselves |
+| Crash after the verification record strands it (major) | the verification record is the commit point; reads show it applied and the next write path finishes it idempotently |
+| One verification per action matched a shared `None` action id (minor) | the verification subject falls back to the move's classification |
+| A re-dispatched attempt reconciled from attempt 0's Gate events (blocking) | every outcome record carries its attempt's proposal id |
+| Refuted or negative outcome blocked only one turn (minor) | discrepancies stay blockers until `review_discrepancy()` by a party other than the acting agent |
+| Epistemic deficits missing for move-less gates and never closed after the gate cleared (minor) | recorded at routing; closed as history when the gate is no longer active |
+| A founder-revoked mechanism still recruited (major) | routing withholds it for that goal only and records why |
+| A proposer escapes a ban by declaring a tactic or embedding a declared move (major, raised twice) | tactics always carry the proposer handle; only the registered goal proposer may hand over a declared move |
+| A muted domain becomes the muting goal's evidence (major) | muted verdicts have zero relevance |
+| A superseded goal aborts every matching turn (minor, pre-existing) | relevance skips superseded goals |
+| Organ trust not bound to the verified body; identity from payload (major, raised twice) | attributed trust needs the raw body, a matching digest, the producing organ's identity and an identical re-adapted id (`test_goal_gravity_organs.py`) |
+| `minimal` intensity still reported late nodes (major) | `minimal` produces no report |
+| Status reported the oldest of same-time turns; sensorium hid reopened deficits; contradictions read without folding (minor) | ledger order breaks ties; the latest deficit record decides; the read folds first |
+| Closure probe composed no router or retention (minor) | the probe composes both and checks that attach is refused without an answer |
+| Tier table claimed SANDBOX-EXECUTED; refusal-rate modality claimed a 30-day window; stale Genesis rows (major and minor) | tiers corrected to UNIT-TESTED; the modality description now says it counts the whole ledger, because Gate events carry no logical time; rows corrected |
+
+What the review did not establish: no verifier independently refuted or confirmed these findings, and the
+completeness critic never ran. Areas no reviewer examined in depth are `egregore/intake.py` and
+`egregore/opportunity.py` beyond their tests.
 
 ## Findings recorded for other owners
 
@@ -112,5 +154,6 @@ Changes authority: no.
 ## Decision
 
 `NEEDS_FOUNDER_DECISION` for adoption. The implementation stands as a reversible experiment. Evidence tier is
-unchanged: IMPLEMENTED, UNIT-TESTED, INTEGRATION-TESTED and SANDBOX-EXECUTED in subprocesses on synthetic ledgers.
+unchanged: IMPLEMENTED, UNIT-TESTED and INTEGRATION-TESTED on synthetic ledgers. Qualification runs repository
+tests in a pytest subprocess; that is not a sandbox, so nothing here is SANDBOX-VERIFIED.
 Grants are test-minted. CMC and VEPMC remain 0.

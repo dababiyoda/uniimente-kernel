@@ -599,8 +599,16 @@ class GoalRegistry:
         return bool(effect_hash) and effect_hash in prefs.get("refused_effects", [])
 
     def tactic_forbidden(self, goal_id: str, tactic: str) -> bool:
+        """A ban binds the exact label, the proposer handle in ``proposer:<name>/<tactic>``, or the declared tactic."""
         self._hydrate()
-        return bool(tactic) and tactic in self._states[goal_id].preferences.get("never_use_tactic", [])
+        if not tactic:
+            return False
+        banned = set(self._states[goal_id].preferences.get("never_use_tactic", []))
+        parts = {tactic}
+        if tactic.startswith("proposer:") and "/" in tactic:
+            handle, declared = tactic.split("/", 1)
+            parts |= {handle, declared}
+        return bool(parts & banned)
 
     def domain_muted(self, goal_id: str, domain: str | None) -> bool:
         self._hydrate()

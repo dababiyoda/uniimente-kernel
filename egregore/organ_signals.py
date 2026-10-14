@@ -11,8 +11,12 @@ Rules (same as ``adapters/README.md``): declared mapping, information lost and a
 no fabricated fields; identity from transport, never payload; no authority inflation.
 
 * Trust is ``attributed`` only when the caller passes the result of
-  ``adapters.bridge_transport.verify_headers`` for this exact body; otherwise ``untrusted``. Never
-  ``verified``: an HMAC proves possession of a shared key, not an isolated identity.
+  ``adapters.bridge_transport.verify_headers`` together with the raw ``body`` it verified: the
+  transport identity must be the producing organ, the body's digest must equal the verified digest,
+  and re-adapting the body must yield the same canonical identifier. Otherwise ``untrusted``. Never
+  ``verified``: an HMAC proves possession of a shared key, not an isolated identity. This is a
+  consistency check on in-process inputs, not a security boundary: an in-process caller can build an
+  envelope directly, which is why trust is attributed and never verified.
 * Evidence types are honest. A WMI verdict and opportunity score are typed ``simulation``
   (they establish a hypothesis: the engine's market inputs are fixed constants), committee cases
   ``adversarial_review``; DALEOBANKS synthesis fields are untyped. None of it can clear a
@@ -24,6 +28,11 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+import hashlib
+import json
+
+from adapters import daleobanks_opportunity as _dop
+from adapters import wealthmachine_assessment as _wva
 from adapters.contract_validation import validate_contract
 from adapters.daleobanks_opportunity import AdaptationResult
 
@@ -63,7 +72,7 @@ INFORMATION_ADDED = (
     "epistemic method typing per attribute (declared above)",
 )
 ASSUMPTIONS = (
-    "a verified transport result for this body is the only basis for attributed trust",
+    "a verified transport result bound to the raw body it verified is the only basis for attributed trust",
     "WMI scores are simulations over constant market inputs, not measurements",
 )
 
@@ -77,11 +86,30 @@ def _validated(obj: Mapping[str, Any], contract: str) -> None:
         raise ContractError(str(exc)) from exc
 
 
-def _trust(transport: Mapping[str, Any] | None) -> str:
+def _trust(transport: Mapping[str, Any] | None, body: bytes | None, *, organ: str, canonical_id: str, kind: str) -> str:
+    """``attributed`` only for a verify_headers result bound to the body it verified; else ``untrusted``."""
     if transport is None:
+        if body is not None:
+            raise ContractError("a body without its verified transport result proves nothing; pass both or neither")
         return "untrusted"
-    if transport.get("signed") != "true" or not transport.get("identity") or not transport.get("body_digest"):
+    if transport.get("signed") != "true" or not transport.get("body_digest"):
         raise ContractError("transport must be the verify_headers result for this body")
+    if transport.get("identity") != organ:
+        raise ContractError(f"transport identity {transport.get('identity')!r} is not the producing organ {organ!r}")
+    if not isinstance(body, (bytes, bytearray)):
+        raise ContractError("attributed trust needs the raw body bytes that verify_headers verified")
+    if hashlib.sha256(bytes(body)).hexdigest() != transport["body_digest"]:
+        raise ContractError("the body does not match the verified transport digest")
+    try:
+        wire = json.loads(bytes(body))
+        if kind == "venture-assessment":
+            adapted_id = _wva.adapt(wire, transport_identity=organ)["assessment_id"]
+        else:
+            adapted_id = _dop.adapt(wire, transport_identity=organ).partial.get("packet_id")
+    except (ValueError, TypeError, KeyError, AttributeError) as exc:
+        raise ContractError(f"the verified body does not adapt: {exc}") from exc
+    if adapted_id != canonical_id:
+        raise ContractError("the canonical object was not adapted from the verified body")
     return "attributed"
 
 
@@ -94,17 +122,20 @@ def _flatten(prefix: str, items: list, method_count: str = "deterministic_comput
 
 def _envelope(kind: str, obj: Mapping[str, Any], *, ident: str, source: str, observed_at: str, subject: str,
               attributes: list[dict[str, Any]], extra_refs: list[str], organ: str,
-              transport: Mapping[str, Any] | None) -> SignalEnvelope:
+              transport: Mapping[str, Any] | None, body: bytes | None = None) -> SignalEnvelope:
     content = digest({"kind": f"egregore-organ-{kind}", "object": dict(obj)})
     observations = [{"subject": subject, **a} for a in attributes]
     return SignalEnvelope.build(
         source=source, source_event_id=f"{kind}:{ident}:{content[7:23]}", observed_at=observed_at,
         payload={"observations": observations, "domain": "venture", "tags": [kind, f"organ:{organ}"],
                  "schema_version": obj.get("schema_version")},
-        evidence_refs=tuple(list(extra_refs) + [content]), trust_level=_trust(transport))
+        evidence_refs=tuple(list(extra_refs) + [content]),
+        trust_level=_trust(transport, body, organ=organ, canonical_id=ident,
+                           kind="venture-assessment" if kind == "venture-assessment" else "opportunity-packet"))
 
 
-def packet_signal(packet: Mapping[str, Any], *, transport: Mapping[str, Any] | None = None) -> SignalEnvelope:
+def packet_signal(packet: Mapping[str, Any], *, transport: Mapping[str, Any] | None = None,
+                  body: bytes | None = None) -> SignalEnvelope:
     """A schema-valid canonical OpportunityPacket as experience. Partial translations are refused."""
     if isinstance(packet, AdaptationResult):
         raise ContractError("an unresolved translation is not a packet; use unresolved_signal")
@@ -121,10 +152,11 @@ def packet_signal(packet: Mapping[str, Any], *, transport: Mapping[str, Any] | N
                   "method": "deterministic_computation"})
     return _envelope("opportunity-packet", packet, ident=packet["packet_id"], source=packet["created_by"],
                      observed_at=packet["created_at"], subject=f"opportunity:{packet['packet_id']}", attributes=attrs,
-                     extra_refs=list(packet.get("evidence_refs", [])), organ="daleobanks", transport=transport)
+                     extra_refs=list(packet.get("evidence_refs", [])), organ="daleobanks", transport=transport, body=body)
 
 
-def assessment_signal(assessment: Mapping[str, Any], *, transport: Mapping[str, Any] | None = None) -> SignalEnvelope:
+def assessment_signal(assessment: Mapping[str, Any], *, transport: Mapping[str, Any] | None = None,
+                  body: bytes | None = None) -> SignalEnvelope:
     """A schema-valid canonical VentureAssessment as experience, typed as the hypothesis it is."""
     _validated(assessment, "venture-assessment")
     conf = float((assessment.get("evidence_state") or {}).get("confidence", CONFIDENCE))
@@ -144,10 +176,11 @@ def assessment_signal(assessment: Mapping[str, Any], *, transport: Mapping[str, 
     refs = list((assessment.get("evidence_state") or {}).get("evidence_refs", []))
     return _envelope("venture-assessment", assessment, ident=assessment["assessment_id"], source=assessment["assessed_by"],
                      observed_at=assessment["assessed_at"], subject=f"opportunity:{assessment['packet_id']}",
-                     attributes=attrs, extra_refs=refs, organ="wealthmachine", transport=transport)
+                     attributes=attrs, extra_refs=refs, organ="wealthmachine", transport=transport, body=body)
 
 
-def unresolved_signal(result: AdaptationResult, *, transport: Mapping[str, Any] | None = None) -> SignalEnvelope:
+def unresolved_signal(result: AdaptationResult, *, transport: Mapping[str, Any] | None = None,
+                  body: bytes | None = None) -> SignalEnvelope:
     """A translation that could not complete is itself knowledge: which underwriting facts are missing."""
     if not isinstance(result, AdaptationResult) or result.resolved:
         raise ContractError("unresolved_signal takes an unresolved AdaptationResult")
@@ -161,4 +194,4 @@ def unresolved_signal(result: AdaptationResult, *, transport: Mapping[str, Any] 
     return _envelope("opportunity-gap", {"partial": partial, "unresolved": sorted(result.unresolved)},
                      ident=partial["packet_id"], source=partial["created_by"], observed_at=partial["created_at"],
                      subject=f"opportunity:{partial['packet_id']}", attributes=attrs,
-                     extra_refs=list(partial.get("evidence_refs", [])), organ="daleobanks", transport=transport)
+                     extra_refs=list(partial.get("evidence_refs", [])), organ="daleobanks", transport=transport, body=body)

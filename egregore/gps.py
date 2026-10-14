@@ -73,13 +73,38 @@ def metric_error(direction: str, target: float | bool, value: Any) -> float | No
         return None
 
 
-def admissible_evidence(problem_class: str | None) -> set[str] | None:
-    """What evidence can clear a gate of this problem class (router table); None for an untyped gate."""
+def admissible_methods(problem_class: str | None) -> tuple[frozenset, frozenset] | None:
+    """Which methods may produce a gate's own reading, and which must also be on record about its subject.
+
+    From the router table: the gate's reading must come from an ``any_of`` method (or the ``all_of`` methods
+    when the class has no alternatives); every ``all_of`` method of a class that also has alternatives must
+    have its own trusted reading about the same subject. A lone critique therefore never proves code correct,
+    and a method the router never admits for a class cannot clear it by sharing a label with one it does."""
     if problem_class is None:
         return None
-    from capabilities.router import EPISTEMIC_METHODS, PROBLEM_CLASSES
+    from capabilities.router import PROBLEM_CLASSES
     spec = PROBLEM_CLASSES[problem_class]
-    return {EPISTEMIC_METHODS[m]["establishes"] for m in tuple(spec["any_of"]) + tuple(spec["all_of"])}
+    primary = frozenset(spec["any_of"]) or frozenset(spec["all_of"])
+    support = frozenset(spec["all_of"]) if spec["any_of"] else frozenset()
+    return primary, support
+
+
+def admissible_evidence(problem_class: str | None) -> set[str] | None:
+    """What the gate's own reading can count as (labels of its admissible methods); None for an untyped gate."""
+    methods = admissible_methods(problem_class)
+    if methods is None:
+        return None
+    from capabilities.router import EPISTEMIC_METHODS
+    return {EPISTEMIC_METHODS[m]["establishes"] for m in methods[0]}
+
+
+def human_only_class(problem_class: str | None) -> bool:
+    """Only a person can answer it (every admissible method is human-only)."""
+    methods = admissible_methods(problem_class)
+    if methods is None:
+        return False
+    from capabilities.router import HUMAN_ONLY_METHODS
+    return bool(methods[0]) and methods[0] <= HUMAN_ONLY_METHODS
 
 
 def capability_present(genomes: Any, capability: str) -> bool:
@@ -125,7 +150,11 @@ class BackcastGPSAdapter:
     def execution_authority(self) -> str:
         return "none"
 
-    def _node_status(self, node: PlanNode) -> tuple[bool, dict[str, Any], list[str]]:
+    def _node_status(self, node: PlanNode, goal_id: str | None = None) -> tuple[bool, dict[str, Any], list[str]]:
+        admissible = admissible_evidence(node.problem_class)
+        methods = admissible_methods(node.problem_class)
+        if human_only_class(node.problem_class):
+            return self._human_gate_status(node, goal_id, admissible)
         belief = self.world.belief_by_key(node.sbm)
         blockers: list[str] = []
         if belief is None:
@@ -140,20 +169,63 @@ class BackcastGPSAdapter:
         gap = metric_error(node.sbm_direction, node.sbm_target, belief.value)
         if gap is None and belief.value is not None:
             blockers.append(f"type mismatch for {node.sbm}: target {type(node.sbm_target).__name__}, observed {type(belief.value).__name__}")
-        # Typed evidence (Competency Compiler): a gate that poses a problem class clears only on evidence a
-        # method admissible for that class can establish. A forum post never proves demand; a simulation never
-        # proves an external fact; an authorization gate clears only on a recorded human decision.
-        admissible = admissible_evidence(node.problem_class)
-        typed_ok = admissible is None or belief.establishes in admissible
+        # Typed evidence (Competency Compiler): a gate that poses a problem class clears only on a reading made by
+        # a method the router admits for that class, plus a trusted reading from each method the class requires
+        # alongside. A forum post never proves demand; a simulation never proves an external fact; a critique
+        # alone never proves code correct.
+        typed_ok = methods is None or belief.method in methods[0]
         if not typed_ok:
-            blockers.append(f"evidence for {node.sbm} establishes {belief.establishes or 'nothing typed'}; "
-                            f"a {node.problem_class} gate needs {', '.join(sorted(admissible))}")
-        satisfied = gap == 0.0 and not belief.contradicted and trusted and typed_ok
+            blockers.append(f"evidence for {node.sbm} establishes {belief.establishes or 'nothing typed'} "
+                            f"(method {belief.method or 'undeclared'}); a {node.problem_class} gate needs "
+                            f"{', '.join(sorted(admissible))} (by {', '.join(sorted(methods[0]))})")
+        missing_support = sorted(m for m in (methods[1] if methods else ()) if not self._supported(node.sbm, m))
+        for m in missing_support:
+            blockers.append(f"a {node.problem_class} gate also needs a trusted {m} reading about "
+                            f"{node.sbm.split('.', 1)[0]}")
+        satisfied = gap == 0.0 and not belief.contradicted and trusted and typed_ok and not missing_support
         return satisfied, {"name": node.sbm, "current": belief.value, "target": node.sbm_target,
                            "direction": node.sbm_direction, "gap": gap, "satisfied": satisfied,
                            "observed_at": belief.observed_at, "contradicted": belief.contradicted,
                            "trust_level": belief.trust_level, "establishes": belief.establishes,
-                           "required_evidence": sorted(admissible) if admissible is not None else None}, blockers
+                           "required_evidence": sorted(admissible) if admissible is not None else None,
+                           "required_methods": sorted(methods[0]) if methods else None,
+                           "required_alongside": sorted(methods[1]) if methods else None}, blockers
+
+    def _supported(self, sbm: str, method: str) -> bool:
+        subject = sbm.split(".", 1)[0]
+        return any(b.subject == subject and b.method == method and not b.contradicted
+                   and self.TRUST_RANK.get(b.trust_level, 0) >= self.TRUST_RANK[self.min_trust]
+                   for b in self.world.beliefs().values())
+
+    def _human_gate_status(self, node: PlanNode, goal_id: str | None,
+                           admissible: set[str] | None) -> tuple[bool, dict[str, Any], list[str]]:
+        """An authorization or legal gate reads the founder's decision recorded for THIS goal, never a shared belief.
+
+        A decision is consent for one goal's gate: accepting it for one goal never clears another goal that uses
+        the same metric name, and no sensor reading can stand in for it or contradict it (sensor claims of a
+        human-only method are stripped at integration and retained as data)."""
+        reading = self.world.human_reading(goal_id, node.sbm) if goal_id else None
+        base = {"name": node.sbm, "target": node.sbm_target, "direction": node.sbm_direction,
+                "required_evidence": sorted(admissible) if admissible is not None else None,
+                "required_methods": sorted(admissible_methods(node.problem_class)[0]), "required_alongside": [],
+                "decision_scope": "this goal only"}
+        if reading is None:
+            return False, {**base, "current": None, "gap": None, "satisfied": False, "observed_at": None,
+                           "contradicted": False}, [f"no founder decision recorded for this goal's gate {node.sbm}"]
+        blockers: list[str] = []
+        trusted = self.TRUST_RANK.get(reading["trust_level"], 0) >= self.TRUST_RANK[self.min_trust]
+        if not trusted:
+            blockers.append(f"untrusted decision for {node.sbm} (trust {reading['trust_level']}; need {self.min_trust})")
+        gap = metric_error(node.sbm_direction, node.sbm_target, reading["value"])
+        if gap is None and reading["value"] is not None:
+            blockers.append(f"type mismatch for {node.sbm}: target {type(node.sbm_target).__name__}, "
+                            f"observed {type(reading['value']).__name__}")
+        elif gap:
+            blockers.append(f"the founder's recorded decision for {node.sbm} does not meet the gate")
+        satisfied = gap == 0.0 and trusted
+        return satisfied, {**base, "current": reading["value"], "gap": gap, "satisfied": satisfied,
+                           "observed_at": reading["observed_at"], "contradicted": False,
+                           "trust_level": reading["trust_level"], "establishes": reading["establishes"]}, blockers
 
     def fix(self, spec: GoalSpec, state: GoalState, *, now: datetime | str, record: bool = True) -> GPSFix:
         fixed_at = iso(parse_time(now))
@@ -164,7 +236,7 @@ class BackcastGPSAdapter:
         blockers: list[str] = []
         later_satisfied: list[str] = []
         for node in spec.plan:
-            satisfied, metric, node_blockers = self._node_status(node)
+            satisfied, metric, node_blockers = self._node_status(node, spec.goal_id)
             position[node.sbm] = metric["current"]
             if active is None:
                 if satisfied:

@@ -179,6 +179,8 @@ class WorldModel:
         self._events: dict[str, ExperienceEvent] = {}
         self._record_hashes: dict[str, str] = {}   # signal_id -> ledger hash of its experience record
         self._contradictions: list[dict[str, Any]] = []
+        # (goal_id, subject.attribute) -> the latest founder decision recorded for that goal (founder-answer path only).
+        self._human: dict[tuple[str, str], dict[str, Any]] = {}
         self._folded = 0
         self._hydrate()
 
@@ -203,6 +205,7 @@ class WorldModel:
                 self._events[event.signal_id] = event
                 record_hash = getattr(record, "hash", None)
                 self._record_hashes[event.signal_id] = record_hash
+                self._fold_human(event, record_hash)
                 for belief in payload.get("beliefs", ()):
                     b = Belief.from_dict(belief)
                     if b.signal_id == event.signal_id and b.record_hash is None:
@@ -211,6 +214,24 @@ class WorldModel:
             elif rtype == self.CONTRADICTION_RECORD:
                 self._contradictions.append(canonical_copy(payload))
         self._folded = len(records)
+
+    def _fold_human(self, event: "ExperienceEvent", record_hash: str | None) -> None:
+        """Index founder decisions by the goal they were given for. Human-only methods survive integration only
+        on the founder-answer path, so every such observation on the ledger is a founder answer."""
+        goals = [g for g, score in (event.goal_relevance or {}).items() if score and score > 0]
+        for o in event.observations:
+            if o.get("method") in HUMAN_ONLY_METHODS and not o.get("method_refused"):
+                for goal_id in goals:
+                    self._human[(goal_id, f"{o['subject']}.{o['attribute']}")] = {
+                        "value": o["value"], "observed_at": o["observed_at"], "trust_level": o["trust_level"],
+                        "method": o["method"], "establishes": EPISTEMIC_METHODS[o["method"]]["establishes"],
+                        "signal_id": event.signal_id, "record_hash": record_hash}
+
+    def human_reading(self, goal_id: str, key: str) -> dict[str, Any] | None:
+        """The latest founder decision recorded for this goal under this key (a later answer supersedes)."""
+        self._hydrate()
+        found = self._human.get((goal_id, key))
+        return canonical_copy(found) if found else None
 
     # ------------------------------------------------------------ observations
     @staticmethod
@@ -293,14 +314,24 @@ class WorldModel:
                 corroborated = previous.source != obs.source
                 remaining = tuple(a for a in previous.alternatives
                                   if not _values_agree(a["value"], obs.value, self.tolerance) and a["source"] != obs.source)
-                belief = Belief(obs.subject, obs.attribute, obs.value,
-                                max(previous.confidence, obs.confidence) if corroborated else obs.confidence,
-                                obs.observed_at, integrated_at, obs.source, signal.signal_id,
-                                tuple(dict.fromkeys(previous.evidence_refs + obs.evidence_refs)),
-                                bool(remaining), remaining,
-                                max((previous.trust_level, obs.trust_level), key=lambda t: self.TRUST_RANK[t]) if corroborated else obs.trust_level)
-                changes.append({"key": obs.key, "previous": previous.value, "current": obs.value,
-                                "updated": not _values_agree(previous.value, obs.value, self.tolerance),
+                refs = tuple(dict.fromkeys(previous.evidence_refs + obs.evidence_refs))
+                rank_o, rank_p = self.TRUST_RANK[obs.trust_level], self.TRUST_RANK[previous.trust_level]
+                # Across sources one reading wins whole: value, trust and evidence type come from the more trusted
+                # reading (a typed reading wins an equal-trust tie), so a low-trust corroborator can neither relabel
+                # nor nudge a value a trusted source reported.
+                keeps_previous = corroborated and (rank_p > rank_o or (rank_p == rank_o and previous.method and not obs.method))
+                if keeps_previous:
+                    belief = Belief(previous.subject, previous.attribute, previous.value,
+                                    max(previous.confidence, obs.confidence), previous.observed_at, integrated_at,
+                                    previous.source, previous.signal_id, refs, bool(remaining), remaining,
+                                    previous.trust_level, previous.record_hash, previous.method, previous.establishes)
+                else:
+                    belief = Belief(obs.subject, obs.attribute, obs.value,
+                                    max(previous.confidence, obs.confidence) if corroborated else obs.confidence,
+                                    obs.observed_at, integrated_at, obs.source, signal.signal_id, refs,
+                                    bool(remaining), remaining, obs.trust_level)
+                changes.append({"key": obs.key, "previous": previous.value, "current": belief.value,
+                                "updated": not _values_agree(previous.value, belief.value, self.tolerance),
                                 "contradiction": bool(remaining),
                                 "disposition": "corroborated" if corroborated else "refreshed"})
             else:
@@ -308,12 +339,17 @@ class WorldModel:
                 alternative = {"value": obs.value, "confidence": obs.confidence, "source": obs.source,
                                "observed_at": obs.observed_at, "signal_id": signal.signal_id,
                                "evidence_refs": list(obs.evidence_refs), "trust_level": obs.trust_level}
+                if obs.method:
+                    alternative["method"] = obs.method
                 keep_new = obs.confidence > previous.confidence
                 if keep_new:
-                    alternatives = ({"value": previous.value, "confidence": previous.confidence,
-                                     "source": previous.source, "observed_at": previous.observed_at,
-                                     "signal_id": previous.signal_id, "trust_level": previous.trust_level,
-                                     "evidence_refs": list(previous.evidence_refs)},) + previous.alternatives
+                    displaced = {"value": previous.value, "confidence": previous.confidence,
+                                 "source": previous.source, "observed_at": previous.observed_at,
+                                 "signal_id": previous.signal_id, "trust_level": previous.trust_level,
+                                 "evidence_refs": list(previous.evidence_refs)}
+                    if previous.method:
+                        displaced["method"] = previous.method
+                    alternatives = (displaced,) + previous.alternatives
                     belief = Belief(obs.subject, obs.attribute, obs.value, obs.confidence, obs.observed_at,
                                     integrated_at, obs.source, signal.signal_id, obs.evidence_refs, True, alternatives,
                                     obs.trust_level)
@@ -321,7 +357,7 @@ class WorldModel:
                     belief = Belief(previous.subject, previous.attribute, previous.value, previous.confidence,
                                     previous.observed_at, integrated_at, previous.source, previous.signal_id,
                                     previous.evidence_refs, True, previous.alternatives + (alternative,),
-                                    previous.trust_level)
+                                    previous.trust_level, previous.record_hash, previous.method, previous.establishes)
                 contradiction = {"source": self.source, "key": obs.key, "signal_id": signal.signal_id,
                                  "retained_belief": belief.to_dict(), "incoming": obs.to_dict(),
                                  "disposition": "both_retained_not_collapsed", "detected_at": integrated_at}
@@ -329,11 +365,13 @@ class WorldModel:
                 changes.append({"key": obs.key, "previous": previous.value, "current": belief.value,
                                 "updated": keep_new, "contradiction": True, "disposition": "contradiction_retained"})
             if belief.signal_id == signal.signal_id and belief.value == obs.value:
-                # The belief now carries this observation's value: its evidence type follows the observation,
-                # except that an untyped corroboration never erases an earlier typed reading of the same value.
-                typed = obs if obs.method or previous is None or previous.value != obs.value else previous
-                belief = Belief(**{**belief.__dict__, "method": typed.method,
-                                   "establishes": typed.establishes if isinstance(typed, Observation) else typed.establishes})
+                # The belief now carries this observation's reading, so its evidence type follows the observation.
+                # Within one source an untyped refresh of the same value keeps the earlier typed reading only when
+                # that reading was at least as trusted (the type is then attested at this trust or better).
+                keep_type = (previous is not None and previous.source == obs.source and previous.value == obs.value
+                             and not obs.method and self.TRUST_RANK[previous.trust_level] >= self.TRUST_RANK[obs.trust_level])
+                belief = Belief(**{**belief.__dict__, "method": previous.method if keep_type else obs.method,
+                                   "establishes": previous.establishes if keep_type else obs.establishes})
             new_beliefs.append(belief)
         # Directive section 7: an experience may change memory, prediction, attention, learning or action.
         effects = {
@@ -364,6 +402,7 @@ class WorldModel:
             self._beliefs[b.key] = b
         self._events[signal.signal_id] = event
         self._record_hashes[signal.signal_id] = record_hash
+        self._fold_human(event, record_hash)
         self._folded = len(self.ledger.records)   # own records already applied in memory
         return ExperienceEvent.from_dict(event.to_dict())
 
@@ -412,6 +451,7 @@ class WorldModel:
         return {k: Belief.from_dict(v.to_dict()) for k, v in self._beliefs.items()}
 
     def contradictions(self) -> list[dict[str, Any]]:
+        self._hydrate()
         return [canonical_copy(c) for c in self._contradictions]
 
     def experiences(self) -> list[ExperienceEvent]:

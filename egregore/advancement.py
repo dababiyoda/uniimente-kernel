@@ -179,6 +179,8 @@ class AdvancementMonitor:
         self._record_resolution(goal_id, points, start, at)
         if state.status in ("paused", "revoked", "superseded", "completed") or state.preferences.get("stop_pushing"):
             return None
+        if intensity == "minimal":
+            return None   # the founder chose no advancement reports for this goal: neither stall nor lateness surfaces
         threshold = STALL_TURNS.get(intensity)
         run = len(points) - start
         late = self.behind_target(goal_id, now=at)

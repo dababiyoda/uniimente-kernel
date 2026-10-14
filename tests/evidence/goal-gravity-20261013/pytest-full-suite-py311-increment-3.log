@@ -1,0 +1,4 @@
+$ python -m pytest -q   (Python 3.11.17, the CI interpreter; deps from requirements-dev.txt)
+.........ssss........................................................... [ 93%]
+...................................................                      [100%]
+767 passed, 4 skipped in 37.88s

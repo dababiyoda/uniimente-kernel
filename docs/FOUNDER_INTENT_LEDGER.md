@@ -54,7 +54,7 @@ re-issue restates the key sentence: "The intended engineering result is a Compet
 intent and `capabilities/router.py` to `main` the same day as `INTENT-20261014-competency-compiler` (state
 **active**). The router was uncalled.
 
-Draft PR #160's third increment wires the router into the Goal Gravity loop without changing router semantics.
+Draft PR #160's third increment wires the router into the Goal Gravity loop without changing router selection. After its adversarial review, `restore()` replays only outcomes that pass `record_outcome`'s own rules.
 The changes:
 
 - a gate's problem class is routed to the smallest competent mechanism;

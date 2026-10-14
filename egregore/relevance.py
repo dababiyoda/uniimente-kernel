@@ -88,9 +88,11 @@ class GoalRelevanceRouter:
             if score <= 0:
                 continue
             if self.registry.domain_muted(goal_id, domain):
-                verdicts[goal_id] = RelevanceVerdict(goal_id, signal.signal_id, score, matched, False, "domain muted by founder")
+                # Zero relevance, not just no wake: a muted domain never becomes this goal's evidence, deliberation
+                # input or status, even when another goal integrates the same signal.
+                verdicts[goal_id] = RelevanceVerdict(goal_id, signal.signal_id, 0.0, matched, False, "domain muted by founder")
                 continue
-            if state.status in ("completed", "revoked", "paused") or state.preferences.get("stop_pushing"):
+            if state.status in ("completed", "revoked", "paused", "superseded") or state.preferences.get("stop_pushing"):
                 verdicts[goal_id] = RelevanceVerdict(goal_id, signal.signal_id, score, matched, False, f"goal is {state.status}")
                 continue
             wake = score >= spec.wake_threshold

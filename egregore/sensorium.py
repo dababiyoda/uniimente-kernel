@@ -68,7 +68,7 @@ class Sensorium:
             (Modality("open_obligations", "derived", "count", "unknown outcomes, open founder decisions and overdue plan nodes"), self._obligations),
             (Modality("opportunity_density", "derived", "ratio", "favorable intersections in the last 30 days per goal with opportunity factors"), self._opportunity_density),
             (Modality("ledger_integrity", "derived", "boolean-as-number", "1 when the evidence hash chain verifies, else 0"), self._integrity),
-            (Modality("consequence_refusal_rate", "derived", "ratio", "share of Gate actions in the last 30 days that ended refused, denied, expired, revoked or failed"), self._refusal_rate),
+            (Modality("consequence_refusal_rate", "derived", "ratio", "share of all Gate actions on the ledger that ended refused, denied, expired, revoked or failed (Gate events carry no logical time, so no window applies)"), self._refusal_rate),
             (Modality("relationship_changes", "derived", "count", "relationship beliefs integrated in the last 30 days"), self._relationship_changes),
             (Modality("goals_behind_target", "derived", "count", "goals with a plan node past its authorized target date"), self._behind),
         ):
@@ -113,13 +113,12 @@ class Sensorium:
 
     # ------------------------------------------------------------ derived modalities
     def _open_deficits(self, at: datetime) -> int:
-        open_ids, resolved = set(), set()
+        latest: dict[str, str] = {}   # the latest record decides, so a reopened deficit counts as open again
         for r in self.loop.ledger.by_type(self.loop.classifier.DEFICIT_RECORD):
             d = r.payload.get("deficit")
-            if not d:
-                continue
-            (resolved if d["disposition"] == "resolved_resume_original_goal" else open_ids).add(d["deficit_id"])
-        return len(open_ids - resolved)
+            if d:
+                latest[d["deficit_id"]] = d["disposition"]
+        return sum(1 for disposition in latest.values() if disposition == "goal_blocked_not_closed")
 
     def _conflicts(self, at: datetime) -> int:
         return sum(1 for b in self.loop.world.beliefs().values() if b.contradicted)

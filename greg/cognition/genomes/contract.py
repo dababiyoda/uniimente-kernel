@@ -127,6 +127,9 @@ class Executable:
     baseline: Callable[[dict], Any]
     competitor: Callable[[dict], Any]
     subregion: Callable[[dict], str] | None = None     # native sub-regions for niche analysis
+    # False when the competitor uses information or powers no deployable method has (an oracle upper bound):
+    # it is reported as a reference gap and can neither supersede nor demote the candidate
+    competitor_deployable: bool = True
     tolerance: float = 1e-9                             # quality differences at or below this are ties
     notes: Mapping[str, str] = field(default_factory=dict)
 

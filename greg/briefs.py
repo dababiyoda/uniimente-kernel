@@ -31,6 +31,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from greg import egress
 from greg.capabilities import CapabilityError, InvocationContext, _inside
 
 RENDERER = "greg.briefs.render/1"
@@ -55,11 +56,15 @@ def _https_json(url: str, token: str | None) -> tuple[int, object]:
     if token:
         headers["Authorization"] = f"Bearer {token}"
     try:
-        with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=20) as response:  # noqa: S310
+        # Redirects are re-checked per hop; the token never leaves api.github.com.
+        with egress.open_checked(urllib.request.Request(url, headers=headers), allowlist=(API,),
+                                 timeout=20) as response:
             body = response.read(2 * 1024 * 1024 + 1)
             if len(body) > 2 * 1024 * 1024:
                 raise CapabilityError("GitHub response exceeds read ceiling")
             return response.status, json.loads(body)
+    except egress.EgressRefused as exc:
+        raise CapabilityError(str(exc)) from None
     except urllib.error.HTTPError as exc:
         return exc.code, None
     except (urllib.error.URLError, OSError) as exc:   # offline, DNS, TLS: nothing was read, nothing changed

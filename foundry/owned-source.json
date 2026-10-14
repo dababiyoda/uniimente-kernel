@@ -397,6 +397,7 @@
     "greg/daleobanks_bridge.py",
     "greg/dataplane.py",
     "greg/doctor.py",
+    "greg/egress.py",
     "greg/founder.py",
     "greg/foundry_bridge.py",
     "greg/foundry_protocol_worker.py",

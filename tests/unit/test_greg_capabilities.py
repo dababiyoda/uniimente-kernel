@@ -180,3 +180,74 @@ def test_secret_values_never_enter_the_ledger(tmp_path):
         assert "sk-live-DO-NOT-LEAK" not in Path(body.layout.ledger).read_text()
     finally:
         body.close()
+
+
+# -- #26 redirect hardening: a 3xx is a new request, re-checked or refused ---------
+# The transport below the redirect handler is replaced (tests/fake_web.py); urllib's
+# own redirect machinery runs, so the old default-follow behaviour is what is tested.
+
+def _web(monkeypatch, routes):
+    from tests.fake_web import FakeWeb
+    return FakeWeb(routes).install(monkeypatch)
+
+
+def test_http_get_redirect_off_the_allowlist_is_refused_before_it_is_sent(tmp_path, monkeypatch):
+    web = _web(monkeypatch, {"https://example.com/a": (302, "https://evil.example.net/steal", b""),
+                             "https://evil.example.net/steal": (200, None, b"attacker page")})
+    with pytest.raises(CapabilityError, match="not in allowlist"):
+        http_get({"url": "https://example.com/a"}, _ctx(tmp_path, "http.get"))
+    assert web.hosts() == ["example.com"]                     # evil.example.net received nothing
+
+
+@pytest.mark.parametrize("location", ["http://example.com/plain", "https://user:pw@example.com/x",
+                                      "https://example.com:99999/x", "file:///etc/passwd"])
+def test_http_get_redirect_downgrade_userinfo_or_bad_port_is_refused(tmp_path, monkeypatch, location):
+    web = _web(monkeypatch, {"https://example.com/a": (301, location, b"")})
+    with pytest.raises(CapabilityError):
+        http_get({"url": "https://example.com/a"}, _ctx(tmp_path, "http.get"))
+    assert len(web.seen) == 1
+
+
+def test_http_get_redirect_chain_of_four_is_refused(tmp_path, monkeypatch):
+    routes = {f"https://example.com/{i}": (302, f"https://example.com/{i + 1}", b"") for i in range(4)}
+    routes["https://example.com/4"] = (200, None, b"too far")
+    web = _web(monkeypatch, routes)
+    with pytest.raises(CapabilityError, match="exceeds 3 hops"):
+        http_get({"url": "https://example.com/0"}, _ctx(tmp_path, "http.get"))
+    assert [r["url"] for r in web.seen] == [f"https://example.com/{i}" for i in range(4)]
+
+
+def test_http_get_follows_three_allowlisted_hops_and_reports_where_it_read(tmp_path, monkeypatch):
+    routes = {f"https://example.com/{i}": (307, f"/{i + 1}", b"") for i in range(3)}
+    routes["https://example.com/3"] = (200, None, b"final page")
+    _web(monkeypatch, routes)
+    out = http_get({"url": "https://example.com/0"}, _ctx(tmp_path, "http.get"))
+    assert out["text"] == "final page" and out["url"] == "https://example.com/0"
+    assert out["final_url"] == "https://example.com/3"
+
+
+def test_credentials_are_never_forwarded_to_another_host(monkeypatch):
+    import urllib.request
+    from greg import egress
+    web = _web(monkeypatch, {"https://a.example/x": (302, "https://a.example/y", b""),
+                             "https://a.example/y": (308, "https://b.example/z", b""),
+                             "https://b.example/z": (302, "https://a.example/back", b""),
+                             "https://a.example/back": (200, None, b"ok")})
+    request = urllib.request.Request("https://a.example/x", headers={"Authorization": "Bearer secret",
+                                                                     "Cookie": "s=1", "Accept": "x/y"})
+    with egress.open_checked(request, allowlist=("a.example", "b.example"), timeout=5) as response:
+        assert response.read() == b"ok"
+    sent = [(r["url"], "authorization" in r["headers"], "cookie" in r["headers"]) for r in web.seen]
+    assert sent == [("https://a.example/x", True, True), ("https://a.example/y", True, True),
+                    ("https://b.example/z", False, False), ("https://a.example/back", False, False)]
+    assert all(r["headers"].get("accept") == "x/y" for r in web.seen)
+
+
+def test_a_redirected_post_is_never_resent(monkeypatch):
+    import urllib.request
+    from greg import egress
+    web = _web(monkeypatch, {"https://a.example/post": (303, "https://a.example/get", b"")})
+    request = urllib.request.Request("https://a.example/post", data=b"payload", method="POST")
+    with pytest.raises(egress.EgressRefused, match="POST"):
+        egress.open_checked(request, allowlist=("a.example",), timeout=5)
+    assert [r["url"] for r in web.seen] == ["https://a.example/post"]

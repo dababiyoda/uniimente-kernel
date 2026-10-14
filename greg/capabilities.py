@@ -30,6 +30,7 @@ import urllib.parse
 import urllib.request
 
 from capabilities.genome import AuthorityEnvelope, CapabilityGenome, GenomeRegistry, CONSEQUENCE_CLASSES
+from greg import egress
 
 ROUTES = ("api", "app_integration", "cli", "browser", "os_automation", "visual", "internal")
 # Spider-Web Compounding Rule (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING): every
@@ -379,11 +380,17 @@ def http_get(params, ctx: InvocationContext) -> dict:
     if parts.scheme != "https" or parts.hostname not in ctx.manifest.egress_allowlist:
         raise CapabilityError(f"egress to {parts.hostname!r} not in allowlist")
     request = urllib.request.Request(url, headers={"User-Agent": "uniimente-greg/0.1"})
-    with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - allowlisted https only
-        body = response.read(MAX_READ_BYTES + 1)
+    try:
+        # Every redirect hop is re-checked against this capability's allowlist.
+        with egress.open_checked(request, allowlist=ctx.manifest.egress_allowlist, timeout=20) as response:
+            body = response.read(MAX_READ_BYTES + 1)
+            final_url = response.geturl()
+    except egress.EgressRefused as exc:
+        raise CapabilityError(str(exc)) from None
     if len(body) > MAX_READ_BYTES:
         raise CapabilityError("response exceeds read ceiling")
-    return {"url": url, "status": response.status, "sha256": hashlib.sha256(body).hexdigest(),
+    return {"url": url, "final_url": final_url, "status": response.status,
+            "sha256": hashlib.sha256(body).hexdigest(),
             "text": body.decode("utf-8", errors="replace"), "trust": "untrusted-external-data"}
 
 

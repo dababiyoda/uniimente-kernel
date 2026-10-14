@@ -15,6 +15,7 @@ entries as evidence; a dry-run identifier is never reported as a post.
 Capabilities:
   ``daleobanks.verify``   read_only sensor: DALEOBANKS content checks + GREG claim/source binding
   ``daleobanks.publish``  external_contact: one publish request through DALEOBANKS's gate
+  ``daleobanks.outcome``  read_only sensor: projection of this mission's canonical publish receipts
 """
 from __future__ import annotations
 
@@ -137,17 +138,49 @@ def publish(params: dict, ctx: InvocationContext) -> dict:
             "authority_created": False}
 
 
-def publish_status(params: dict, ctx: InvocationContext) -> dict:
-    """``daleobanks.outcome`` (read-only sensor): read DALEOBANKS's ledger for this mission's request."""
+def _organ_hashes(ctx: InvocationContext) -> set | None:
+    """Entry hashes present in the workspace organ file; None when it is absent or unreadable."""
     ledger = _inside(ctx.workspace / "daleobanks" / "decision_ledger.jsonl", (ctx.workspace,))
-    if not ledger.is_file():
-        return {"requested": False, "outcome": "NONE"}
-    entries = [json.loads(line) for line in ledger.read_text().splitlines() if line.strip()]
-    results = [e for e in entries if e.get("event") == "publish_result"]
-    attempts = [e for e in entries if e.get("event") == "publish_attempt"]
-    if not results:
-        return {"requested": bool(attempts), "outcome": "UNKNOWN", "entries": len(entries)}
-    live = [r for r in results if not r["payload"].get("dry_run")]
-    return {"requested": True, "outcome": "PUBLISHED" if live else "BLOCKED_DRY_RUN", "attempts": len(attempts),
-            "results": [r["payload"] for r in results], "entries": len(entries),
-            "last_hash": entries[-1].get("hash")}
+    try:
+        return {json.loads(line).get("hash") for line in ledger.read_text().splitlines() if line.strip()}
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
+def publish_status(params: dict, ctx: InvocationContext) -> dict:
+    """``daleobanks.outcome`` (read-only sensor): a projection of this mission's canonical publish receipts.
+
+    The outcome comes only from Gate receipts of ``daleobanks.publish`` actions of this mission. The
+    workspace organ ledger is writable by any signed workspace write, so it can only lower
+    ``organ_consistent`` (a witnessed entry missing or rewritten); it never adds a fact. No receipted
+    publish -> no outcome. Limit: a bound receipt proves the Gate ran DALEOBANKS's publish gate and
+    retained what DALEOBANKS printed; it does not prove a post exists (no platform read-back exists).
+    """
+    if ctx.journal is None or not ctx.mission_id:
+        raise CapabilityError("daleobanks.outcome projects one mission's canonical publish receipts; journal required")
+    bound, unwitnessed = [], 0
+    for event in ctx.journal.replay("mission.action"):
+        p = event.payload
+        if p.get("mission_id") != ctx.mission_id or p.get("capability") != "daleobanks.publish" \
+                or p.get("status") != "DONE":
+            continue
+        record = ctx.journal.ledger.find(p["receipt"]) if p.get("receipt") else None
+        result = record.payload.get("result", {}) if record is not None and record.record_type == "receipt" else {}
+        if result.get("result_class") == "positive" and isinstance(result.get("output"), dict):
+            bound.append((record.hash, result["output"]))
+        else:
+            unwitnessed += 1    # e.g. founder reconcile_executed: executed, but its outcome was never retained
+    if not bound:
+        return {"requested": False, "outcome": "NONE", "unwitnessed_actions": unwitnessed}
+    witnessed, chains_ok = set(), True
+    for _, output in bound:
+        organ = output.get("daleobanks_ledger") or {}
+        chains_ok = chains_ok and organ.get("chain_ok") is True
+        witnessed |= {e["hash"] for e in organ.get("tail") or [] if isinstance(e, dict) and e.get("hash")}
+    present = _organ_hashes(ctx)
+    last = bound[-1][1]
+    return {"requested": True, "outcome": "PUBLISHED" if last.get("status") == "PUBLISHED" else "BLOCKED_DRY_RUN",
+            "statuses": [o.get("status") for _, o in bound], "bound_receipts": [h for h, _ in bound],
+            "unwitnessed_actions": unwitnessed,
+            "organ_consistent": chains_ok and present is not None and witnessed <= present,
+            "basis": "canonical daleobanks.publish receipts; DALEOBANKS self-report, no platform read-back"}

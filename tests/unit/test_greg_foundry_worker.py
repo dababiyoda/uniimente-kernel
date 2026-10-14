@@ -141,3 +141,27 @@ print(json.dumps({'denied':denied}))
                           env={"PATH": "/usr/bin:/bin", "PYTHONPATH": str(code), "PYTHONDONTWRITEBYTECODE": "1"})
     assert proc.returncode == 0, proc.stderr
     assert json.loads(proc.stdout)["denied"] == 5
+
+
+def test_store_edited_outside_foundry_apply_is_neither_served_nor_laundered(tmp_path):
+    """Within a mission the store is a projection of its foundry.apply receipts: each call must start from the last
+    receipted state_after ("absent" before any). A workspace write between applies is refused, never re-receipted."""
+    from events.spine import EventSpine
+    from greg.journal import Journal
+    from provenance.ledger import EvidenceLedger
+    journal = Journal(EventSpine(EvidenceLedger("sha256:" + "5" * 64, path=str(tmp_path / "l.jsonl"))),
+                      actor="spiffe://uniimente.internal/greg/test")
+    apply_ctx = replace(context(tmp_path), journal=journal, mission_id="m:books")
+    query_ctx = replace(context(tmp_path, "foundry.query"), journal=journal, mission_id="m:books")
+    put = foundry_bridge.apply({"system": 36, "op": "put", "args": {"text": "retained"}}, apply_ctx)
+    receipt = journal.ledger.append("receipt", {"result": {"result_class": "positive", "output": put}}).hash
+    journal.record("mission.action", {"mission_id": "m:books", "action_id": "put", "attempt": 0, "status": "DONE",
+                                      "capability": "foundry.apply", "receipt": receipt}, key=["m:books", "put"])
+    get = {"system": 36, "op": "get", "args": {"address": put["result"]["address"]}}
+    assert foundry_bridge.query(get, query_ctx)["result"]["text"] == "retained"
+    (tmp_path / "ws" / "foundry" / "system-36" / "forged.txt").write_text("edited outside the Gate")
+    for call, ctx in ((foundry_bridge.query, query_ctx), (foundry_bridge.apply, apply_ctx)):
+        with pytest.raises(CapabilityError, match="differs from this mission's last canonical foundry.apply") as exc:
+            call(get if call is foundry_bridge.query else {"system": 36, "op": "put", "args": {"text": "x"}}, ctx)
+        assert exc.value.failure_class == "verifier_insufficient"     # unbound evidence, not a capability fault
+    assert foundry_bridge.query(get, context(tmp_path, "foundry.query"))["result"]["text"] == "retained"  # standalone

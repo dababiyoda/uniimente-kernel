@@ -177,6 +177,69 @@ def test_a_pipeline_input_never_falls_back_past_a_reconciled_execution(tmp_path)
             resolve({"content": binding()}, body.journal, "m:pipeline")
 
 
+def test_the_morning_report_renders_a_reconciliation_retained_before_it_carried_a_time(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    note = workspace(home, "m:reconcile-legacy") / "c.txt"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:reconcile-legacy", checks=[note_check("c", note, "ok")],
+        strategies=[write_strategy("w", "c.txt", "ok", ["c"])], capabilities=["fs.read", "fs.write"])))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 3)
+        # the shape written before 2026-10-14: no capability, route, receipt or at
+        body.journal.record("mission.action", {"mission_id": "m:reconcile-legacy", "action_id": "w", "attempt": 0,
+                                               "status": "DONE", "cost_usd": 0.0,
+                                               "reasons": ["founder reconciliation: reconcile_executed"]},
+                            key=["m:reconcile-legacy", "w", "reconciled", "legacy"])
+        report = morning_report(body.journal, body.engine)
+    assert report["report_digest"] and len(report["q7_surprises"]) <= 1   # only the timed action is judged
+    assert [a["at"] is None for a in report["q3_what_i_did"]] == [False, True]
+
+
+def test_a_reconciled_brief_cannot_be_labelled_because_it_retained_no_inputs(tmp_path):
+    from greg import improvement, tribunal
+    home, key, body_id, _ = make_body(tmp_path)
+    with Body(home) as body:
+        body.journal.record("mission.action", {**reconciled_done("m:brief", "deliver", 0, improvement.CAPABILITY),
+                                               "dispatch_route": "builtin"}, key=["m:brief", "reconciled"])
+        target = body.journal.replay("mission.action")[-1]
+        for evidence in ({"attention": {"missed": [], "noise": ["acme/kernel#1"]}},
+                         {"failure_claim": {"missed_failing": ["acme/kernel#2"]}}):
+            with pytest.raises(tribunal.CritiqueError, match="reconciled brief has no retained inputs to label"):
+                tribunal.critique(body.journal, body.engine, {"target_event_id": target.event_id, "verdict": "reject",
+                                                              "evidence_type": "founder_judgment", "text": "noisy",
+                                                              **evidence}, "sha256:" + "c" * 64)
+        assert not body.journal.replay("critique.recorded")
+
+
+def test_sop_extraction_excludes_founder_reconciled_steps_consistently(tmp_path):
+    from greg import sop
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    for n, reconciled in ((1, True), (2, False), (3, False)):
+        mid = f"m:reconcile-sop-{n}"
+        drop(home, signed(key, body_id, "MISSION", mission(
+            mid, checks=[note_check("c", workspace(home, mid) / "c.txt", "ok")],
+            strategies=[write_strategy("w", "c.txt", "ok", ["c"]),
+                        write_strategy("w2", "c.txt", "ok, by the alternative", ["c"])],
+            capabilities=["fs.read", "fs.write"])))
+        with Body(home, clock=clock) as body:
+            if reconciled:
+                explode_once(body)
+                tick(body, clock, 3)
+                reconcile(body, key, body_id, clock, "reconcile_executed")
+            else:
+                tick(body, clock, 4)
+            assert body.engine.book.missions[mid].status == "ACHIEVED"
+    with Body(home, clock=clock) as body:
+        procedures = sop.closed_procedures(body.journal)
+        proposed = [e.payload for e in body.journal.replay("sop.proposed")]
+    # the appraiser verified only receipted steps; the reconciled one is not part of the procedure
+    assert procedures == {f"m:reconcile-sop-{n}": ["fs.write"] for n in (1, 2, 3)}
+    assert len(proposed) == 1 and proposed[0]["occurrences"] == 3
+    assert "founder-reconciled steps" in proposed[0]["evidence_level"]
+
+
 class Journal:
     """A retained journal as readers see it: append-only payloads, some written before 2026-10-14."""
 

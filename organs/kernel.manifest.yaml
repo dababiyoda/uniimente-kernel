@@ -117,14 +117,16 @@ authority:
 health:
   test_command: python -m pytest
   last_verified:
-    date: "2026-07-20"
-    commit: 3d9b5779a7093d6ddd07f225c8329ead6d0c6393
-    tests_passed: 172
+    date: "2026-10-14"
+    commit: 85a644cec64a1fd7a715e5591c974151000162cb
+    tests_passed: 1073
     tests_failed: 0
     notes: >-
-      Verified in-session after fixing misplaced $defs in 7 contract schemas
-      (2 tests failed pre-fix on the shipped tree; jsonschema dependency also
-      had to be installed per requirements-dev.txt).
+      Verified in-session on branch claude/polyintelligence-seed-genome-v0.1-20261013
+      (draft; not main): full suite 1073 passed, 4 skipped; verifier v2 V1-V5 PASS
+      (verifier/runs/v2-2026-10-14T00-43-45.252317+00-00.json); 43/43 cortex
+      mutants caught by behavioural tests; CI guard scripts green. The previous
+      record (2026-07-20, commit 3d9b577, 172 passed) stays in git history.
 shutdown_behavior: >-
   Affect controller completes shutdown from every state; workflows checkpoint on
   the ledger and resume without restatement.

@@ -521,6 +521,42 @@ Still outside the relay:
 Confined egress is also still opt-in. The second acceptance criterion ("a compromised component cannot reach
 undeclared hosts") therefore does not hold machine-wide.
 
+## Increment 9 (same day): two founder-runbook defects ported from #168
+
+A cross-lineage handoff on PR #169 (measured at `0e557d8`, from rehearsing the founder's runbook on the installed
+body in #168) named two product defects this branch still had. Both were reproduced here first, then ported with
+tests adapted to this branch's own templates and to Mission Control, the founder's front page.
+
+- **A capability ask could be stranded** (`8531595`). On a capability ask, Mission Control's front page (which
+  reuses the classic decisions block) offered Approve beside Attach. Approve only records an answer, and answering
+  removed the ask with its Attach button, while the mission stayed blocked on the unattached capability. The phone
+  can approve but never attach, so an answer given there stranded missions the same way.
+  - `status()` now projects `attach_waiting` from the ledger: the verified candidates a mission still waits on,
+    whatever the ask's answer.
+  - The page lists them under "Waiting for an attach", and `Console.attach` accepts exactly those.
+  - Approve is no longer offered on an ask that has an Attach button.
+  - Attach remains the one signed `CAPABILITY_ATTACH` for a verified candidate.
+  - Test: `test_greg_linear_genesis::test_an_answered_capability_ask_still_leaves_the_founder_an_attach`, on both
+    pages. It failed here first, with Approve offered.
+- **A person's work was noticed up to an hour late** (`924bede`). A mission blocked on HUMAN_WORK re-observed only
+  at its cadence (3600 s). While blocked on human work, the engine now checks only the metadata of the `fs.read`
+  paths the founder-signed mission declares. When one has changed since the last observation, the governed
+  observation runs at once, and an early withdrawal reschedules the next step to now. No content is read, no grant
+  issued and nothing recorded until the real observation. Test: `test_greg_human_work_latency.py`, rewritten for this
+  branch's `templates.human_work`. A delivered lease review was unseen two minutes later here, and is now seen.
+
+Not ported, recorded as an open cross-lineage obligation: `greg/path.json` names N3, N4, N6 and N7, but the
+`business_case` and `shared_work` templates and their measures exist only on #137/#168:
+
+- `business_loop_closed`
+- `sop_compounding`
+- `human_work_shared`
+- `venture_compounding`
+
+This branch's runbook steps 4–8 are its own (First Mission, memory, Ventures, founder control, acceptance) and run
+here, but N3 and later cannot be measured from this tree. Porting them spans path measures, two templates, venture
+books and the engine's `declined_if`, so it is its own increment.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

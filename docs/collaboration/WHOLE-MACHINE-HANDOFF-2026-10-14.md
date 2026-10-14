@@ -134,6 +134,10 @@ The 13 holes were:
   - the DALEOBANKS bridge.
   Confinement is also still opt-in.
 - **#9, #10, #28 and #52 PARTIAL** (Foundry 50/55).
+- **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
+  `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
+  measured from this tree. Porting them is its own increment. #168's two runbook defects (a stranded attach; human
+  work noticed up to an hour late) were ported in increment 9.
 - **Risks recorded with kill conditions in the convergence record:**
   - the owner link can leak through terminal scrollback;
   - the rights screen checks wording and declarations and does not prove title, so "emergency" in a title is a

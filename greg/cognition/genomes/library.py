@@ -32,6 +32,7 @@ MODULES = (
     "greg.cognition.genomes.solvers_c",     # L3 mechanism design, verification, control, causal (batch C)
     "greg.cognition.genomes.graph_or",      # L3 assignment, matching, critical path, min-cost flow (pack A)
     "greg.cognition.genomes.stochastic",    # L3 Monte Carlo expectation, BCa bootstrap, small MILP (pack B)
+    "greg.cognition.genomes.strategic",     # L3 pack C: bimatrix Nash, mechanism DSIC/IR check, fair liveness
     "greg.cognition.genomes.developmental",  # L4 developmental / target-state repair
     "greg.cognition.genomes.competitors",   # L3 promoted competitors of SUPERSEDED genomes (own genomes)
 )

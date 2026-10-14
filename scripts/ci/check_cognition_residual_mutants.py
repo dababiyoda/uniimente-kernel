@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 TESTS = 'tests/unit/test_cognition_residual_safeguards.py'
 DISCLOSURE = 'tests/unit/test_cognition_disclosure.py'
 CHARACTERIZE = 'tests/unit/test_cognition_characterize.py'
+BUDGET = 'tests/unit/test_cognition_thinking_budget.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -64,6 +65,23 @@ MUTANTS = [
  ('error correction counted without the verifier', 'greg/cognition/characterize.py',
   'corrections.append(verdict == "REFUTED")', 'corrections.append(True)',
   'test_a_verifier_that_accepts_everything_shows_up_as_zero_error_correction', CHARACTERIZE),
+ # Thinking budget (directive section 12): one budget per decision; required steps kept, optional ones priced.
+ ('an optional step starts without room to finish', 'greg/cognition/budget.py',
+  'elif not required and cost is not None and cost[1] > remaining:', 'elif False:',
+  'test_required_steps_are_never_priced_away_and_optional_ones_must_fit_their_measured_tail', BUDGET),
+ ('a step runs below the minimum that can still verify', 'greg/cognition/budget.py',
+  'if remaining < MIN_STEP_SECONDS:', 'if False:',
+  'test_a_spent_budget_narrows_the_result_instead_of_skipping_required_evidence', BUDGET),
+ ('an optional re-run is treated as required', 'greg/cognition/compiler.py',
+  'limit = budget.allot(f"sensitivity:{key}", required=False)', 'limit = budget.allot(f"sensitivity:{key}", required=True)',
+  'test_one_budget_covers_the_whole_compiled_decision', BUDGET),
+ ('every re-run gets the whole budget again', 'greg/cognition/compiler.py',
+  '                      "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,',
+  '                      "geometry": hint, **extra}, registry=registry, journal=journal,',
+  'test_one_budget_covers_the_whole_compiled_decision', BUDGET),
+ ('local compute recorded as free', 'greg/cognition/cortex.py',
+  '"cpu_seconds": _cpu_delta(cpu_started),', '"cpu_seconds": 0.0,',
+  'test_local_compute_is_measured_not_assumed_free', BUDGET),
 ]
 
 

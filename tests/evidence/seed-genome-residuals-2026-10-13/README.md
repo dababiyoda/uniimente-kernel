@@ -11,7 +11,7 @@ built:
 |---|---|---|---|
 | §9 | selective-disclosure evidence package missing | no implementation anywhere | built |
 | §5 | characterization harness | a static dictionary of descriptive strings, no measurement | built |
-| §12 | decision-specific VOI not wired | `budget.optional_step` exists; no runtime path calls it | deferred: wiring changes `cortex.py`, which the frozen evaluations pin |
+| §12 | decision-specific VOI not wired | `budget.optional_step` exists, but no runtime path calls it; the compile path handed its `latency_budget` to every inner run whole | built in the repeat of 2026-10-14 (below); first deferred, wrongly, because the frozen evaluations pin `cortex.py` |
 | §15 | 23 mandatory adversarial cases | covered (17 suite families plus 6 system-level tests), but references were checked only to file level | each reference now resolves to its test node |
 | §7, §13 | verifier certificates, legitimacy | fixed in #161 | — |
 
@@ -86,18 +86,63 @@ Measured through `reason()` on native synthetic workloads whose answers are know
 - **Sensitivity:** a verifier that accepts everything shows up as 0 refuted. The test suite checks this, and a
   mutant that bypasses the verifier is caught.
 
+## §12: Thinking budget on the compile path (`greg/cognition/budget.py`)
+
+Added when the founder repeated the directive on 2026-10-14
+([lineage](../../../docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSUE-2026-10-13-source.md)). The first round
+deferred §12 because the frozen evaluations pin `cortex.py`. That reason was wrong: P6 v3 ran in a clean worktree
+at its freeze commit, as v1 and v2 did, so changing `cortex.py` on a branch alters no recorded result.
+
+**Defect reproduced first** (`budget-reproduction.log`): on `8ad86ca`, a compile request with a declared 10 s
+`latency_budget` handed the full 10 s to each of its four inner runs, the answer and three sensitivity
+re-runs. That is 40 s for a 10 s budget, and up to six times the budget when a premises check and a fourth input
+also run. No run weighed whether it fitted, no stop reason was kept, and cortex receipts carried a compute
+ceiling, not a measurement.
+
+**What runs now:**
+- **One budget per decision.** `budget.Controller` holds the declared `latency_budget`, or a labelled 20 s default,
+  for the whole compile. Every inner run gets only what remains, capped at 30 s, and keeps its own mandatory
+  verification reserve (the cortex gives the solver 45% of a run's limit).
+- **Required steps are never priced away.** The answer and the premises check run on whatever remains. Below the
+  0.1 s minimum step, a required step is refused with BUDGET_EXHAUSTED and the result narrows: the compile
+  abstains, or the claim verdict keeps "premises UNDECIDED (BUDGET_EXHAUSTED)" instead of a proof that may be
+  vacuous.
+- **Optional steps are priced by their measured tail.** A sensitivity re-run starts only when the slowest step
+  measured so far fits in the remaining budget. An input it cannot afford is reported as untested, never as
+  robust, and the receipt's dissent says so.
+- **Every run and stop is kept** in the compile receipt's `resource_use.budget`: step, required or optional,
+  remaining budget, measured cost range, limit, time spent and stop reason.
+- **Local compute is measured.** Cortex receipts record `cpu_seconds`: the calling thread plus the solver and
+  verifier processes it waited for. Peak memory per run and energy are reported as unmeasured, not as zero.
+- **Declared budgets reach the other routes.** A declared budget becomes the ceiling of the cortex-problem route
+  (`resources.max_latency_s`) and of the composition route (`max_latency_s`). Those routes are not split into
+  steps.
+
+**On the real body path** (`budget-mission.log`): a signed mission's `cognition.solve` request compiles a
+financial optimisation with a 1.5 s budget. The answer took 0.60 s and one sensitivity re-run 0.42 s. The other
+two stopped, because the slowest measured step (0.60 s) exceeded the 0.46 s left. The compile finished in
+1.04 s, the receipt in the journal names both untested inputs, and CPU totalled 1.01 s. With a 30 s budget, all
+three re-runs ran. Timings come from this container and vary by machine; the tests use a deterministic clock.
+
+**Still open:**
+- `budget.optional_step`, the value-priced variant, has no runtime caller. No optional step yet states its
+  decision value in the unit of its cost.
+- The 30 s per-run ceiling and the 20 s default are design constants, not measured optima.
+
 ## Verification
 
-- 14 new tests: 10 for disclosure (including the CLI) and 4 for characterization. One coverage test was
+- 18 new tests: 10 for disclosure (including the CLI), 4 for characterization and 4 for the thinking budget. One coverage test was
   hardened.
-- `mutants.log`: 16 mutants, all caught. That is the 7 from #161, 8 for disclosure gates and 1 for the
+- `mutants.log`: 21 mutants, all caught. That is the 7 from #161, 8 for disclosure gates, 5 for the thinking budget and 1 for the
   harness.
 - `full-suite.log`: the whole frontier suite at `47bff1d`, the commit that built §9 and §5.
 - **Later full runs (same interpreter):**
   - at `ac6952a`, after the first frontier merge: 2821 passed, 5 failed, 16 skipped;
   - at `5362d13`, after the second: 2849 passed, 6 failed, 16 skipped.
   - **The failures:** five are the environmental Landlock tests named in `full-suite.log`. The sixth, in `test_greg_competency_compiler.py`, fails identically at the pristine frontier `d5bb5cb` and fails the frontier's own CI there. The frontier fixed it by `5287303`, which is merged here.
-- **Frozen inputs:** this change touches no file a freeze pins. `cortex.py` and `verification.py` are
-  unchanged relative to #161, and `cli.py` is unpinned.
+- **Frozen inputs:** §9 and §5 changed no pinned file. §12 changes `cortex.py` and `compiler.py`, which the P6
+  freezes hash as part of the `greg/cognition` closure. No recorded result changes: P6 v1 to v3 ran at their
+  freeze commits, and P6 v4 (frozen on the frontier at `14ec7a6`, held-out arm not yet run at the time of
+  writing) is reproduced at its freeze commit too. `verification.py` is unchanged relative to #161.
 
 Nothing was sent, attached, activated or merged. Authority delta: none. VEPMC: 0.

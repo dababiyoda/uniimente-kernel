@@ -29,6 +29,9 @@ from .contracts import CognitionError, canonical, digest, strict_data
 SCHEMA = "greg-competency-compilation/0.1"
 ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE_INDEX = ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json"
+# The thinking budget's clock (directive section 12); a module attribute so tests can drive it deterministically.
+CLOCK = time.monotonic
+DEFAULT_BUDGET_S = 20.0
 HIGH_CONSEQUENCE = ("external_contact", "financial", "irreversible")
 HUMAN_CLASSES = ("normative", "legal", "institutional_acceptance")
 HUMAN_ROLES = ("founder", "operator", "domain_expert", "affected_participant", "auditor", "customer",
@@ -696,6 +699,11 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     started = time.monotonic()
     pid, body = validate(params)
     g = CompetencyGeometry.parse(body.get("geometry", {}))
+    from .budget import Controller
+    # One thinking budget for the whole decision: the answer, the premises check and every sensitivity re-run
+    # draw on the declared latency_budget. It used to be a per-run limit, so one request could spend it six times.
+    budget = Controller(float(g.latency_budget) if g.latency_budget else DEFAULT_BUDGET_S,
+                        declared=bool(g.latency_budget), clock=CLOCK)
     data = body["data"]
     consequence = body.get("consequence") or {}
     evidence = evidence_index()
@@ -716,6 +724,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
 
     def finish(state, result=None):
         receipt["state"], receipt["result"] = state, result
+        receipt["resource_use"]["budget"] = budget.summary()
         receipt["requirements"] = list(dict.fromkeys(plan["requirements"]))
         receipt["dissent"] = list(dict.fromkeys(receipt["dissent"] + plan["dissent"]))
         receipt["latency_s"] = round(time.monotonic() - started, 4)
@@ -892,9 +901,19 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             receipt["abstentions"].append("FORMALIZATION_INCOMPLETE: complete formal model plus independently "
                                           "verified world assumptions")
             return finish("FORMALIZATION_INCOMPLETE")
+        limit = budget.allot("answer", required=True)
+        if limit is None:
+            receipt["abstentions"].append(budget.stops()[-1]["reason"])
+            return finish("ABSTAIN")
+        payload = data
+        if budget.declared:
+            resources = data.get("resources") or {}
+            payload = {**data, "resources": {**resources, "max_latency_s": min(
+                float(resources.get("max_latency_s", 30.0)), limit)}}
         inner = reason({"problem_id": pid, "problem": {"question": g.objective or g.epistemic_question or pid,
-                                                       "payload": data}},
+                                                       "payload": payload}},
                        registry=registry, journal=journal, model_config=model_config)
+        budget.done("answer")
         receipt["intermediate_receipts"] = [inner["receipt_id"]]
         receipt["proof_artifacts"] = [{"type": inner.get("proof_type"),
                                        "evidence_type": (inner.get("proof_artifact") or {}).get("evidence_type")}]
@@ -914,8 +933,15 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             receipt["abstentions"].append("FORMALIZATION_INCOMPLETE: complete formal model plus independently "
                                           "verified world assumptions")
             return finish("FORMALIZATION_INCOMPLETE")
-        inner = reason({"problem_id": pid, "chain": {"question": g.objective or "compiled", "payload": data}},
-                       registry=registry, journal=journal, model_config=model_config)
+        limit = budget.allot("answer", required=True)
+        if limit is None:
+            receipt["abstentions"].append(budget.stops()[-1]["reason"])
+            return finish("ABSTAIN")
+        chain = {"question": g.objective or "compiled", "payload": data,
+                 **({"max_latency_s": limit} if budget.declared else {})}
+        inner = reason({"problem_id": pid, "chain": chain}, registry=registry, journal=journal,
+                       model_config=model_config)
+        budget.done("answer")
         receipt["intermediate_receipts"] = [s["receipt_id"] for s in inner["stages"]]
         receipt["dissent"] += [f"stage {s['stage']} ({s['method']}): {s['counterargument']}"[:400]
                                for s in inner["stages"] if s.get("counterargument")]
@@ -927,10 +953,15 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             receipt["abstentions"].append(f"{inner['state']}: {inner['reason']}")
             return finish(inner["state"])
         return finish("ANSWERED", inner["answer"])
-    geometry_hint = {"latency_limit": min(30.0, float(g.latency_budget or 20.0)),
+    limit = budget.allot("answer", required=True)
+    if limit is None:
+        receipt["abstentions"].append(budget.stops()[-1]["reason"])
+        return finish("ABSTAIN")
+    geometry_hint = {"latency_limit": limit,
                      **({"consequence_class": g.consequence_class} if g.consequence_class else {})}
     inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint,
                     **extra}, registry=registry, journal=journal, model_config=model_config)
+    budget.done("answer", cpu_seconds=(inner.get("compute_cost") or {}).get("cpu_seconds"))
     receipt["intermediate_receipts"] = [inner["receipt_id"]]
     receipt["proof_artifacts"] = [{"type": inner["proof_type"],
                                    "evidence_type": (inner.get("proof_artifact") or {}).get("evidence_type")}]
@@ -951,11 +982,11 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         verdict = claim_verdict(inner["output"])
         if verdict["claim"] == "HOLDS_WITHIN_MODEL":
             verdict = _premises_check(pid, chosen["operation"], body["data"]["claim"], geometry_hint, verdict,
-                                      registry, journal, model_config, receipt, extra)
+                                      registry, journal, model_config, receipt, extra, budget)
         return finish(done, verdict)
     if "sensitivity" in plan["evaluate"]:
         receipt["sensitivity"] = _sensitivity_runs(pid, chosen["operation"], data, inner["output"], geometry_hint,
-                                                   registry, journal, model_config, receipt, extra)
+                                                   registry, journal, model_config, receipt, extra, budget)
     return finish(done, inner["output"])
 
 
@@ -965,14 +996,21 @@ def _has_answer(inner: dict) -> bool:
     return inner["abstention_state"] in ("NONE", "WORLD_UNVERIFIED") and isinstance(inner.get("output"), dict)
 
 
-def _premises_check(pid, operation, claim, hint, verdict, registry, journal, model_config, receipt, extra) -> dict:
+def _premises_check(pid, operation, claim, hint, verdict, registry, journal, model_config, receipt, extra,
+                    budget) -> dict:
     """An UNSAT negation proves the claim only if the constraints are satisfiable on their own; otherwise every
-    property 'holds' vacuously and the claim is PREMISES_INCONSISTENT."""
+    property 'holds' vacuously and the claim is PREMISES_INCONSISTENT. The check is required evidence, so the
+    thinking budget never prices it away; without room for it the verdict stays undecided."""
     from .cortex import reason
     if not claim["constraints"]:
         return {**verdict, "premises": "SATISFIABLE (no constraints)"}
+    limit = budget.allot("premises", required=True)
+    if limit is None:
+        return {**verdict, "premises": f"UNDECIDED ({budget.stops()[-1]['reason']}): the claim may hold vacuously"}
     check = reason({"problem_id": f"{pid}/premises"[:96], "operation": operation, "data": premises(claim),
-                    "geometry": hint, **extra}, registry=registry, journal=journal, model_config=model_config)
+                    "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
+                   model_config=model_config)
+    budget.done("premises", cpu_seconds=(check.get("compute_cost") or {}).get("cpu_seconds"))
     receipt["intermediate_receipts"].append(check["receipt_id"])
     status = check["output"].get("solver_status") if _has_answer(check) else None
     if status == "UNSAT":
@@ -1007,16 +1045,26 @@ def _scaled(value, factor):
     return [_scaled(v, factor) for v in value]
 
 
-def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, model_config, receipt, extra) -> dict:
-    """Perturb each numeric top-level input by +10% (at most four) and re-run the same method on the one path."""
+def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, model_config, receipt, extra,
+                      budget) -> dict:
+    """Perturb each numeric top-level input by +10% (at most four) and re-run the same method on the one path.
+
+    Each re-run is optional cognition: the thinking budget starts it only when the slowest measured run fits in
+    what remains. An input it cannot afford is reported as untested, never as robust."""
     from .cortex import reason
     keys = [k for k in sorted(data) if _numbers(data[k])][:4]
     base = _numbers(baseline)
-    rows = {}
+    rows, not_run = {}, {}
     for key in keys:
+        limit = budget.allot(f"sensitivity:{key}", required=False)
+        if limit is None:
+            not_run[key] = budget.stops()[-1]["reason"]
+            continue
         varied = {**data, key: _scaled(data[key], 1.1)}
         out = reason({"problem_id": f"{pid}/sens/{key}"[:128], "operation": operation, "data": varied,
-                      "geometry": hint, **extra}, registry=registry, journal=journal, model_config=model_config)
+                      "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
+                     model_config=model_config)
+        budget.done(f"sensitivity:{key}", cpu_seconds=(out.get("compute_cost") or {}).get("cpu_seconds"))
         receipt["intermediate_receipts"].append(out["receipt_id"])
         if not _has_answer(out):
             rows[key] = {"state": out["abstention_state"]}
@@ -1029,6 +1077,9 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
     fragile = [k for k, v in rows.items() if v.get("answer_changed")]
     if fragile:
         receipt["dissent"].append(f"sensitivity: the answer moves when {', '.join(fragile)} change by 10%")
+    if not_run:
+        receipt["dissent"].append(f"sensitivity: {', '.join(not_run)} not tested within the thinking budget; "
+                                  "the answer's robustness to them is unknown")
     receipt["resource_use"]["stages"] += len(rows)
     return {"perturbation": "+10% on each numeric top-level input (at most four)", "inputs": rows,
-            "fragile_inputs": fragile}
+            "fragile_inputs": fragile, "not_run": not_run}

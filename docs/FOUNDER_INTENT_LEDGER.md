@@ -75,7 +75,9 @@ Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSU
 - **§9:** selective-disclosure evidence packages, built from retained receipts. They use the salted-hash disclosures of RFC 9901, include every same-input receipt, and append institutional responses rather than editing them in. `greg cognition package` exports one read-only; nothing is sent.
 - **§5:** a measured characterization harness covering latency, error correction against self-consistent lies, a problem-space ladder and invariance, with Wilson intervals.
 - **§13 and §15:** the verifier cross-checks and evidence-backed legitimacy in #161.
-- **§12:** wiring the budget controller into a runtime optional step is deferred until the next freeze, because the frozen evaluations pin `cortex.py`.
+- **§12:** a thinking-budget controller now governs the compile path. One declared `latency_budget` covers the answer, the premises check and every sensitivity re-run, where each run had previously been handed the whole budget. Required steps are never priced away; an exhausted budget narrows the result. An optional re-run starts only when the slowest measured step fits. Every run and stop is kept with its reason, and cortex receipts record measured CPU seconds. The earlier deferral was wrong: frozen evaluations run at their freeze commits, so changing `cortex.py` on a branch alters no recorded result.
+
+Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12.
 
 Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
 

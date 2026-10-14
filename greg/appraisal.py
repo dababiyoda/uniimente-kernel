@@ -141,8 +141,13 @@ def appraise(request: dict) -> dict:
                                         capability_registry=_formed_registry(journal, request["workspace"])
                                         if cap.startswith("cognition.") else None)
                 try:
-                    now_ok, now_detail = evaluate_predicate(check["predicate"],
-                                                            adapter(check["sensor"].get("params", {}), ctx))
+                    output = adapter(check["sensor"].get("params", {}), ctx)
+                    now_ok, now_detail = evaluate_predicate(check["predicate"], output)
+                    reasons = output.get("findings") if isinstance(output, dict) else None
+                    if not now_ok and isinstance(reasons, list) and reasons:
+                        # Say why, in the capability's own words: a forged acceptance and a host that cannot
+                        # re-run the acceptance envelope must not read the same on the Proof view.
+                        now_detail += "; because: " + "; ".join(str(r)[:200] for r in reasons[:3])
                 except Exception as exc:  # the world could not be re-read: not verified
                     now_ok, now_detail = False, type(exc).__name__
                 if not now_ok:

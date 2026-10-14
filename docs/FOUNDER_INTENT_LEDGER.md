@@ -4,7 +4,7 @@
 
 ## Whole-machine convergence and the Founder's First Mission — 2026-10-14
 
-The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`.
+The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`. The section 16 handoff (nine items, with a recorded mission trace) is `collaboration/WHOLE-MACHINE-HANDOFF-2026-10-14.md`.
 
 - The Mind line is the canonical base. #160 and #132 are joined, and #132's Foundry modules keep the Mind-line modules as registered alternates behind one dispatch rule.
 - #159 is ported.
@@ -20,6 +20,10 @@ The founder's OPUS MAXIMUS continuation directive is implemented on draft branch
   - money kept in separate columns;
   - recovery evidence on the Proof view;
   - a section 13 attack map covering all 14 classes, with three new integrated attacks: disagreeing intelligences, network loss and interrupted construction.
+- Increments 6 and 7 bring the last three section 13 classes onto signed missions: stale community state, a profitable action that violates participant rights, and a local gain that damages the whole. Two were real holes on the mission path:
+  - an offer with pressured copy for unlicensed content could be published straight onto Foundry #54, around the company's editorial constitution; it is now refused at publication and at sale;
+  - the engine oscillated forever between a strategy that broke safety and one that broke throughput; it now blames the one that broke a passing check and asks the founder to decide the trade-off.
+- Increment 8 puts the browser (`browser.render`) and coding workers behind the #26 relay. They run in a bubblewrap network namespace whose only way out is a door to the relay, and every request is allowlisted and journaled. #26 stays PARTIAL: `browser.session`, the paid model routes, anchoring and the DALEOBANKS bridge remain outside, and confinement is opt-in.
 - State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
 
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13

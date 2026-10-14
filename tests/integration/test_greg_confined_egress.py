@@ -69,7 +69,7 @@ class Seen(list):
     down = page = None
 
 
-def fake_proxy(target_port, *, refuse=False, down=None):
+def fake_proxy(target_port, *, refuse=False, down=None, host="service.test"):
     """A CONNECT proxy that tunnels service.test:443 to the loopback TLS server and records every request head.
     ``down`` is a mutable flag: while ``down["now"]`` is true the upstream is unreachable (the network is lost)."""
     listener = socket.create_server(("127.0.0.1", 0))
@@ -103,7 +103,7 @@ def fake_proxy(target_port, *, refuse=False, down=None):
                     break
                 head += chunk
             seen.append(head.decode("latin-1"))
-            if refuse or not head.startswith(b"CONNECT service.test:443 "):
+            if refuse or not head.startswith(f"CONNECT {host}:443 ".encode()):
                 conn.sendall(b"HTTP/1.1 403 Forbidden\r\n\r\n")
                 conn.close()
                 continue
@@ -275,3 +275,239 @@ def test_a_malicious_page_fetched_by_a_mission_stays_data(tmp_path, network):
     assert not asked and acted <= {"http.get"}
     journal = [json.loads(line) for line in (home / "egress-journal.jsonl").read_text().splitlines()]
     assert {e["host"] for e in journal} == {"service.test"}                 # attacker.test was never contacted
+
+
+def github_server(cert_path, key_path):
+    """A loopback stand-in for api.github.com: chunked JSON replies, every request head recorded."""
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain(cert_path, key_path)
+    listener = socket.create_server(("127.0.0.1", 0))
+    heads = []
+    pulls = [{"number": 7, "title": "Confine GitHub reads", "draft": False, "user": {"login": "founder"},
+              "created_at": "2026-10-14T09:00:00Z", "updated_at": "2026-10-14T10:00:00Z",
+              "head": {"sha": "a" * 40}, "base": {"ref": "main"}}]
+    checks = {"check_runs": [{"status": "completed", "conclusion": "success", "name": "tests"}]}
+
+    def serve():
+        while True:
+            try:
+                conn, _ = listener.accept()
+            except OSError:
+                return
+            try:
+                with context.wrap_socket(conn, server_side=True) as tls:
+                    head = b""
+                    while b"\r\n\r\n" not in head:
+                        chunk = tls.recv(65536)
+                        if not chunk:
+                            break
+                        head += chunk
+                    heads.append(head.decode("latin-1"))
+                    path = head.split(b" ", 2)[1].decode()
+                    body = json.dumps(pulls if "/pulls?" in path else checks).encode()
+                    middle = len(body) // 2           # two chunks, so the decoder is actually exercised
+                    chunks = b"".join(b"%x\r\n%s\r\n" % (len(part), part) for part in (body[:middle], body[middle:]))
+                    tls.sendall(b"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n"
+                                b"Connection: close\r\n\r\n" + chunks + b"0\r\n\r\n")
+            except (OSError, ssl.SSLError):
+                pass
+    threading.Thread(target=serve, daemon=True).start()
+    return listener, heads
+
+
+def test_github_reads_run_confined_with_the_token_only_on_the_wire(tmp_path, monkeypatch):
+    """#26 for github.pulls: the read is made from a component with no socket of its own, through the relay and
+    the mandated proxy. The credential reaches GitHub's request header and nowhere else: not argv, not the
+    environment, not the egress journal, not the receipts."""
+    from greg.body import Layout
+    from greg.capabilities import SecretBroker
+    cert, key = certificate(tmp_path, "api.github.com")
+    server, heads = github_server(cert, key)
+    proxy, seen = fake_proxy(server.getsockname()[1], host="api.github.com")
+    monkeypatch.setenv("HTTPS_PROXY", f"http://127.0.0.1:{proxy.getsockname()[1]}")
+    monkeypatch.setenv("GREG_EGRESS_CAFILE", str(cert))
+    home, founder, body_id = body_with_confined_egress(tmp_path)
+    token = "ghp_fixtureTokenNeverJournaled0123456789"
+    SecretBroker(Layout(home).secrets).put("github_token", token)
+    check = {"check_id": "pulls", "description": "open pull requests were read",
+             "sensor": {"capability": "github.pulls", "params": {"github": ["acme/kernel"]}, "target": "github:acme/kernel"},
+             "predicate": {"op": "equals", "field": "repos.acme/kernel.open", "value": 1}}
+    spec = mission("m:confined-github", checks=[check], strategies=[], capabilities=["github.pulls"],
+                   targets=("github:*",), ceiling="read_only")
+    drop(home, signed(founder, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        out = body.tick()["missions"][0]
+        receipts = json.dumps([r.payload for r in body.ledger.by_type("receipt")])
+    assert out["state"] == "ACHIEVED", out
+    assert any(f"Authorization: Bearer {token}" in h for h in heads)          # the credential was on the wire
+    assert all(h.startswith("CONNECT api.github.com:443 ") for h in seen)       # only through the proxy tunnel
+    journal_text = (home / "egress-journal.jsonl").read_text()
+    entries = [json.loads(line) for line in journal_text.splitlines()]
+    assert entries and all(e["identity"] == "github.pulls" and e["host"] == "api.github.com" for e in entries)
+    assert token not in journal_text and token not in receipts               # and nowhere it would be retained
+    server.close()
+    proxy.close()
+
+
+def test_the_browser_renders_behind_the_relay_and_its_page_cannot_reach_anything_else(tmp_path):
+    """#26 for computer use: on a confined body, browser.render runs in a network namespace whose only way out is the
+    relay, allowlisted for the signed target alone. The page's JavaScript runs; its beacons, by name and by IP literal,
+    are denied at the relay and journaled; nothing reaches the beacon."""
+    import http.server
+    import shutil
+    from functools import partial
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    manifest, _ = BUILTINS["browser.render"]
+    if not manifest.available()[0]:
+        pytest.skip("no runnable browser here")
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        pytest.skip(f"no bubblewrap network namespaces here: {exc}")
+    hits, site = [], tmp_path / "site"
+    site.mkdir()
+
+    class Beacon(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path)
+            self.send_response(204)
+            self.end_headers()
+
+        def log_message(self, *a):
+            pass
+
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+    beacon = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Beacon)
+    b = beacon.server_address[1]
+    (site / "index.html").write_text(
+        "<html><head><title>relay probe</title></head><body><p id=x>static</p><script>"
+        "document.getElementById('x').textContent='rendered behind the relay';"
+        f"fetch('http://beacon.example.com:{b}/by-name').catch(()=>{{}});"
+        f"fetch('http://127.0.0.1:{b}/by-ip').catch(()=>{{}});</script></body></html>")
+    page = http.server.ThreadingHTTPServer(("127.0.0.1", 0), partial(Quiet, directory=str(site)))
+    for server in (beacon, page):
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+    url = f"http://127.0.0.1:{page.server_address[1]}/index.html"
+    home, key, body_id = body_with_confined_egress(tmp_path)
+    check = {"check_id": "rendered", "description": "the page shows its JavaScript-rendered text",
+             "sensor": {"capability": "browser.render", "params": {"url": url}, "target": "web:127.0.0.1"},
+             "predicate": {"op": "contains", "field": "text", "value": "rendered behind the relay"}}
+    drop(home, signed(key, body_id, "MISSION", mission("m:relay-web", checks=[check], strategies=[],
+                                                       capabilities=["browser.render"], targets=("web:127.0.0.1",),
+                                                       ceiling="read_only")))
+    try:
+        with Body(home) as body:
+            body.boot()
+            for _ in range(3):
+                out = body.tick()["missions"][0]
+                if out["state"] == "ACHIEVED":
+                    break
+            receipts = [r.payload["result"].get("output") for r in body.ledger.by_type("receipt")]
+    finally:
+        for server in (beacon, page):
+            server.shutdown()
+    assert out["state"] == "ACHIEVED", out
+    rendered = [r for r in receipts if isinstance(r, dict) and r.get("url") == url]
+    assert rendered and all(r["egress"].startswith("relay: only 127.0.0.1:") for r in rendered)
+    assert hits == []
+    journal = [json.loads(line) for line in (home / "egress-journal.jsonl").read_text().splitlines()]
+    mine = [e for e in journal if e["identity"] == "browser.render"]
+    assert {(e["host"], e["verdict"]) for e in mine if e["port"] == page.server_address[1]} == {("127.0.0.1", "ALLOWED")}
+    denied = {(e["host"], e["port"]) for e in mine if e["verdict"] == "DENIED"}
+    assert ("127.0.0.1", b) in denied and ("beacon.example.com", b) in denied
+    assert all(e["verdict"] != "ALLOWED" or (e["host"], e["port"]) == ("127.0.0.1", page.server_address[1])
+               for e in mine)
+
+
+PROVIDER = r'''
+import json, os, socket, sys, urllib.request
+from pathlib import Path
+up = int(sys.argv[1])
+report = {}
+opener = urllib.request.build_opener(urllib.request.ProxyHandler({"http": os.environ["HTTP_PROXY"]}))
+report["provider_api"] = opener.open("http://127.0.0.1:%d/v1/messages" % up, timeout=10).read().decode()
+port = int(os.environ["HTTPS_PROXY"].rsplit(":", 1)[1])
+s = socket.create_connection(("127.0.0.1", port))
+s.sendall(b"CONNECT example.com:443 HTTP/1.1\r\nHost: example.com:443\r\n\r\n")
+report["undeclared"] = s.recv(120).split(b"\r\n")[0].decode()
+try:
+    socket.create_connection(("127.0.0.1", up), timeout=2)
+    report["direct"] = "REACHED"
+except OSError as exc:
+    report["direct"] = type(exc).__name__
+Path("tests").mkdir(exist_ok=True)
+Path("pkg/calc.py").write_text("def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n")
+Path("tests/test_calc.py").write_text("from pkg.calc import sub\n\n\ndef test_sub():\n    assert sub(3, 1) == 2\n")
+Path("tests/egress_report.json").write_text(json.dumps(report))
+'''
+
+
+def test_a_coding_worker_reaches_its_provider_only_through_the_relay(tmp_path, monkeypatch):
+    """#26 for coding workers: on a confined body the provider client runs in a network namespace whose only way
+    out is the relay, allowlisted for the provider endpoint. Its API call succeeds and is journaled; an undeclared
+    host is denied; the body's loopback is unreachable directly. The work itself is collected and accepted as usual."""
+    import http.server
+    import sys
+    from greg import templates, workers
+    from greg.body import Layout
+    from greg.worker_isolation import _CERT_ENV, WorkerIsolationError, _backend
+    from foundry.systems import segmentation
+    from tests.unit.test_greg_workers import make_repo
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        pytest.skip(f"no bubblewrap network namespaces here: {exc}")
+    for name in _CERT_ENV:                       # a host CA outside the supported roots refuses dispatch (tested apart)
+        monkeypatch.delenv(name, raising=False)
+    calls = []
+
+    class Api(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            calls.append(self.path)
+            body = b'{"reply": "provider says hello"}'
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *a):
+            pass
+    api = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Api)
+    threading.Thread(target=api.serve_forever, daemon=True).start()
+    up = api.server_address[1]
+    real_policy = segmentation.policy_from_manifests
+    monkeypatch.setattr(segmentation, "policy_from_manifests", lambda: {
+        **real_policy(), "worker.commission": {"allow": [["127.0.0.1", up]], "external": False}})
+    data = tmp_path / "data"
+    data.mkdir()
+    repo = make_repo(data)
+    home, key, body_id = body_with_confined_egress(tmp_path)
+    provider = workers.CliAgentWorker("local-relay-test", [sys.executable, "-c", PROVIDER, str(up)], stdin=False,
+                                      reviewed=True)
+    monkeypatch.setitem(workers.PROVIDERS, "local-relay-test", provider)
+    spec = templates.code_change(repo=str(repo), objective="add sub()", order="relay-worker",
+                                 provider="local-relay-test", allowed_paths=["pkg/*", "tests/*"], budget_usd=1.0,
+                                 workspace_root=Layout(home).workspace)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    try:
+        with Body(home) as body:
+            body.boot()
+            body.tick()
+            action = body.journal.replay("mission.action")[-1].payload
+    finally:
+        api.shutdown()
+    assert action["status"] == "DONE", action["reasons"]
+    root = Layout(home).workspace / "m_work-relay-worker" / "work-orders" / "relay-worker"
+    summary = json.loads((root / "evidence.json").read_text())["summary"]
+    assert summary["status"] == "COMPLETED" and summary["greg_tests_passed"]
+    assert summary["worker"]["isolation"]["network"] == "relay-door: worker.commission"
+    report = json.loads((root / "repo" / "tests" / "egress_report.json").read_text())
+    assert report["provider_api"] == '{"reply": "provider says hello"}' and calls == ["/v1/messages"]
+    assert report["undeclared"].startswith("HTTP/1.1 403") and report["direct"] == "ConnectionRefusedError"
+    journal = [json.loads(line) for line in (home / "egress-journal.jsonl").read_text().splitlines()]
+    mine = [e for e in journal if e["identity"] == "worker.commission"]
+    assert {(e["host"], e["port"]) for e in mine if e["verdict"] == "DENIED"} == {("example.com", 443)}
+    assert any(e["verdict"] == "ALLOWED" and e["port"] == up and e.get("bytes_received", 0) > 0 for e in mine)

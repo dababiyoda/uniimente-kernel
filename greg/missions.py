@@ -94,7 +94,8 @@ DEFAULT_BIND_BYTES = 16 * 1024
 
 
 # Capabilities whose network access runs behind the body's #26 relay when the body confines egress.
-CONFINED_EGRESS = frozenset({"http.get"})
+CONFINED_EGRESS = frozenset({"http.get", "github.pulls", "brief.engineering", "browser.render",
+                             "worker.commission"})
 
 
 class Unbound(Exception):
@@ -285,6 +286,7 @@ class MissionState:
     actions_done: int = 0
     setpoints_reached: int = 0
     pending_effect: dict = field(default_factory=dict)  # action_id -> checks it should change
+    collateral: dict = field(default_factory=dict)      # action_id -> passing checks it does not advance
 
     @property
     def mission_id(self):
@@ -345,12 +347,26 @@ class MissionBook:
                         # instead of repeating; eligible again after a later pass.
                         # A producer whose output another strategy binds changed its consumers' input,
                         # not the world: it is done, not ineffective, and is not re-run either.
-                        if any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
+                        if m.failed.get(aid, "").startswith("regressed "):
+                            pass                     # blame for damaging the whole is never washed out by drift
+                        elif any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
                             m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
                         else:
                             m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
                     if not checks:
                         m.pending_effect.pop(aid, None)
+                # Section 13, a local gain that damages the whole: a check that passed just before an action ran,
+                # which that action does not advance, is re-observed failing. The action is blamed and not re-run
+                # automatically; if only such trade-offs remain, the founder decides. Unmeasured is not a regression.
+                for aid, watched in list(m.collateral.items()):
+                    if data["check_id"] not in watched or data["detail"].startswith("sensor "):
+                        continue
+                    watched.discard(data["check_id"])
+                    if not data["passed"]:
+                        m.failed[aid] = f"regressed {data['check_id']}, which passed before it ran: {data['detail']}"[:300]
+                        watched.clear()
+                    if not watched:
+                        m.collateral.pop(aid, None)
             elif kind == "mission.action":
                 aid = data["action_id"]
                 m.attempts[aid] = data["attempt"] + 1
@@ -363,6 +379,9 @@ class MissionBook:
                     strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
                     if strategy:
                         m.pending_effect[aid] = set(strategy["advances"])
+                        current = {c["check_id"] for c in m.current_checks()}
+                        m.collateral[aid] = {c for c, o in m.observations.items()
+                                             if o["passed"] and c in current and c not in strategy["advances"]}
                 elif data["status"] in ("REFUSED", "UNAVAILABLE"):
                     m.failed[aid] = "; ".join(data["reasons"])[:300]
             elif kind == "mission.blocked":
@@ -1075,9 +1094,19 @@ class MissionEngine:
             if split:
                 why = (f"qualified intelligences disagree on {', '.join(split)}; GREG keeps every view and does not "
                        f"vote, so it cannot close on either; " + why)
+            tradeoffs = {a: r for a, r in sorted(m.failed.items()) if r.startswith("regressed ")}
+            routes = [s["action_id"] for s in m.spec["strategies"] if set(s["advances"]) & failing]
+            blamed = "; ".join(f"{a} {r.split(',')[0]}" for a, r in tradeoffs.items())
+            if tradeoffs and not split and routes and all(a in tradeoffs for a in routes):
+                why = ("every remaining route improves one check only by breaking another that already passed ("
+                       + blamed + "); GREG will not trade one for the other on its own")
+            elif tradeoffs and not split:
+                why += "; routes that broke a check which already passed are not repeated (" + blamed + ")"
             rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None, why=why,
                                 recommendation=("review both views and decide, or add an independent verifier that "
                                                 "can settle the question" if split else
+                                                "decide which check matters more, or add a strategy that satisfies "
+                                                "both" if tradeoffs and routes and all(a in tradeoffs for a in routes) else
                                                 "add or revise strategies, widen scope, or abandon the mission"),
                                 alternatives=["add or revise strategies for the failing checks", "widen the scope",
                                               "abandon the mission"],
@@ -1085,6 +1114,7 @@ class MissionEngine:
                                 evidence={"failing_checks": sorted(failing), "failed": dict(sorted(m.failed.items())),
                                           "excluded": dict(sorted(m.excluded.items())),
                                           **({"held_by_precondition": held} if held else {}),
+                                          **({"tradeoffs": tradeoffs} if tradeoffs else {}),
                                           **({"disagreement": split} if split else {})})
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})

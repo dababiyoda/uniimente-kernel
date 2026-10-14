@@ -92,7 +92,7 @@ def _kill_process_group(proc):
 
 
 def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout, cwd, env,
-                   preexec_fn=None, close_fds=True, stop_check=None):
+                   preexec_fn=None, close_fds=True, stop_check=None, pass_fds=()):
     """Cancellable child supervision with file-backed, bounded stdout/stderr (extracted from #157).
 
     Pipe capture and a blocking wait let an untrusted worker exhaust GREG's memory or
@@ -105,7 +105,7 @@ def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout
             incoming.write(input.encode() if isinstance(input, str) else input)
         incoming.seek(0)
         proc = subprocess.Popen(argv, stdin=incoming, stdout=outgoing, stderr=errors, cwd=cwd, env=env,
-                                preexec_fn=preexec_fn, close_fds=close_fds,
+                                preexec_fn=preexec_fn, close_fds=close_fds, pass_fds=tuple(pass_fds),
                                 start_new_session=True)
         deadline = time.monotonic() + timeout
         try:
@@ -332,6 +332,20 @@ def _die_with_body():
         ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, 9)   # PR_SET_PDEATHSIG = 1, SIGKILL = 9
 
 
+def _door(egress):
+    """#26: a relay door for one provider run when the body confines egress, else nothing to open."""
+    import contextlib
+    if egress is None:
+        return contextlib.nullcontext()
+    from foundry.systems.relay_door import Door
+    return Door(egress, "worker.commission")
+
+
+def _fds(envelope: dict) -> dict:
+    """Only the door's descriptor crosses into the worker, and only when there is one."""
+    return {"pass_fds": envelope["pass_fds"]} if envelope.get("pass_fds") else {}
+
+
 class ClaudeCodeWorker:
     """The Claude Code CLI as a headless, tool-using coding/research worker.
 
@@ -364,18 +378,23 @@ class ClaudeCodeWorker:
             argv += ["--model", self.model]
         return argv
 
-    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None) -> WorkerReport:
+    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None, egress=None) -> WorkerReport:
         if not self.binary:
             raise WorkerError("Claude Code CLI is not installed on this body")
-        envelope = prepare_worker(self.argv(order), cwd, timeout_seconds=order.timeout_seconds, provider=self.name,
-                                  reviewed=True, file_bytes=8 * MAX_PROCESS_OUTPUT,
-                                  config_files={".claude/.credentials.json":
-                                                Path.home() / ".claude" / ".credentials.json"})
+        with _door(egress) as door:
+            envelope = prepare_worker(self.argv(order), cwd, timeout_seconds=order.timeout_seconds,
+                                      provider=self.name, reviewed=True, file_bytes=8 * MAX_PROCESS_OUTPUT,
+                                      config_files={".claude/.credentials.json":
+                                                    Path.home() / ".claude" / ".credentials.json"},
+                                      **({"door": door} if door is not None else {}))
+            return self._run(order, cwd, envelope, stop_check)
+
+    def _run(self, order: WorkOrder, cwd: Path, envelope: dict, stop_check) -> WorkerReport:
         started = time.monotonic()
         try:
             proc = self.runner(envelope["argv"], input=worker_prompt(order), capture_output=True, text=True,
                                timeout=order.timeout_seconds, cwd=cwd, env=envelope["env"], close_fds=True,
-                               preexec_fn=envelope["preexec_fn"], stop_check=stop_check)
+                               preexec_fn=envelope["preexec_fn"], stop_check=stop_check, **_fds(envelope))
         except WorkerInterrupted as exc:
             return WorkerReport(self.name, "claude-code", -1, time.monotonic() - started, None,
                                 error=str(exc), isolation=envelope["evidence"], interrupted=True)
@@ -427,14 +446,18 @@ class CliAgentWorker:
     def available(self) -> tuple[bool, str]:
         return (True, "") if self.binary else (False, f"{self.template[0]} is not installed on this body")
 
-    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None) -> WorkerReport:
+    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None, egress=None) -> WorkerReport:
         if not self.binary:
             raise WorkerError(f"{self.template[0]} is not installed on this body")
-        prompt = worker_prompt(order)
         config_files = {".codex/auth.json": Path.home() / ".codex" / "auth.json"} if self.name == "codex" else {}
-        envelope = prepare_worker([self.binary, *self.template[1:]], cwd, timeout_seconds=order.timeout_seconds,
-                                  provider=self.name, reviewed=self.reviewed, config_files=config_files,
-                                  file_bytes=8 * MAX_PROCESS_OUTPUT)
+        with _door(egress) as door:
+            envelope = prepare_worker([self.binary, *self.template[1:]], cwd, timeout_seconds=order.timeout_seconds,
+                                      provider=self.name, reviewed=self.reviewed, config_files=config_files,
+                                      file_bytes=8 * MAX_PROCESS_OUTPUT, **({"door": door} if door is not None else {}))
+            return self._run(order, cwd, envelope, stop_check)
+
+    def _run(self, order: WorkOrder, cwd: Path, envelope: dict, stop_check) -> WorkerReport:
+        prompt = worker_prompt(order)
         prompt_file = envelope["runtime_root"] / f"{order.order}.prompt.txt"
         prompt_file.write_text(prompt)
         argv = [a.replace("{prompt_file}", str(prompt_file)) for a in envelope["argv"]]
@@ -442,7 +465,7 @@ class CliAgentWorker:
         try:
             proc = self.runner(argv, input=prompt if self.stdin else None, capture_output=True, text=True,
                                timeout=order.timeout_seconds, cwd=cwd, env=envelope["env"], close_fds=True,
-                               preexec_fn=envelope["preexec_fn"], stop_check=stop_check)
+                               preexec_fn=envelope["preexec_fn"], stop_check=stop_check, **_fds(envelope))
         except WorkerInterrupted as exc:
             return WorkerReport(self.name, self.name, -1, time.monotonic() - started, None,
                                 error=str(exc), isolation=envelope["evidence"], interrupted=True)
@@ -596,7 +619,8 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     trusted_metadata = root / "base.git"
     shutil.copytree(work / ".git", trusted_metadata)
     try:
-        report = provider.run(order, work, stop_check=ctx.stop_check) if isinstance(
+        report = provider.run(order, work, stop_check=ctx.stop_check,
+                              **({"egress": ctx.egress} if ctx.egress is not None else {})) if isinstance(
             provider, (ClaudeCodeWorker, CliAgentWorker)) else provider.run(order, work)
     except WorkerIsolationError as exc:
         # Confinement was refused before a provider process was launched; no spend occurred.

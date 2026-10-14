@@ -18,8 +18,10 @@ founder has not granted. This mechanism needs none:
 
 Inter-organ traffic is the same thing: an organ's allowlist names the loopback endpoints of the organs it may call.
 
-Limits, stated: only components launched through ``run_confined`` are covered; capabilities that run inside the body
-process itself (``github.pulls``, ``http.get``, the browser) are not yet routed through the relay. External upstream
+Limits, stated: only components launched through ``run_confined``, or behind ``relay_door`` in a network namespace,
+are covered. On a body with confined egress that is ``http.get``, ``github.pulls`` and ``brief.engineering`` (here) and
+``browser.render`` and coding workers (the door). Still outside: ``browser.session`` (Playwright), the paid model
+routes called from the body process, anchoring, and the DALEOBANKS bridge. External upstream
 connections are refused unless the policy marks the identity ``external: true``: the relay opens them from the body
 process, and in an environment whose egress must traverse a mandated proxy the relay must chain to it first (the
 2026-09-30 negative evidence: a direct connection bypassed the configured proxy). The filter needs Linux and
@@ -33,6 +35,7 @@ import hashlib
 import ipaddress
 import json
 import os
+import re
 from pathlib import Path
 import socket
 import subprocess
@@ -196,8 +199,12 @@ class Relay:
 
     MAX_REQUESTS = 64          # per control channel: a compromised component cannot exhaust the relay
 
-    def serve(self, identity: str, control: socket.socket):
-        """One component's control channel, until it closes."""
+    def serve(self, identity: str, control: socket.socket, *, max_requests: int | None = None):
+        """One component's control channel, until it closes. A browser or provider client opens many connections, so
+        its door may raise the per-channel limit; it stays a bound."""
+        limit = self.MAX_REQUESTS if max_requests is None else max_requests
+        if type(limit) is not int or not 1 <= limit <= 4096:
+            raise SegmentationError("max_requests is an integer from 1 to 4096")
         with control:
             buf, requests = b"", 0
             while True:
@@ -211,7 +218,7 @@ class Relay:
                 while b"\n" in buf:
                     line, buf = buf.split(b"\n", 1)
                     requests += 1
-                    if requests > self.MAX_REQUESTS:
+                    if requests > limit:
                         self.journal.append({"identity": identity, "verdict": "DENIED", "why": "request limit"})
                         return
                     self._request(identity, control, line)
@@ -289,7 +296,7 @@ def _confine():
 
 
 def run_confined(argv: list, *, identity: str, relay: Relay, cwd: Path, timeout: int = 30,
-                 env: dict | None = None) -> subprocess.CompletedProcess:
+                 env: dict | None = None, input_bytes: bytes | None = None) -> subprocess.CompletedProcess:
     """Run one component with no socket of its own and one governed door, the relay."""
     if sys.platform != "linux":
         raise SegmentationError("kernel socket confinement requires Linux; launch refused")
@@ -297,7 +304,8 @@ def run_confined(argv: list, *, identity: str, relay: Relay, cwd: Path, timeout:
     worker = threading.Thread(target=relay.serve, args=(identity, control), daemon=True)
     worker.start()
     try:
-        proc = subprocess.run(argv, cwd=cwd, capture_output=True, timeout=timeout, preexec_fn=_confine,
+        stdin = {"stdin": subprocess.DEVNULL} if input_bytes is None else {"input": input_bytes}
+        proc = subprocess.run(argv, cwd=cwd, capture_output=True, timeout=timeout, preexec_fn=_confine, **stdin,
                               pass_fds=(child.fileno(),), close_fds=True,
                               env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONPATH": str(ROOT),
                                    "PYTHONDONTWRITEBYTECODE": "1", "GREG_EGRESS_FD": str(child.fileno()),
@@ -329,14 +337,18 @@ FETCH = r'''
 import base64, json, os, ssl, sys
 from foundry.systems.segmentation import egress_connect
 host, port, path, limit = sys.argv[1], int(sys.argv[2]), sys.argv[3], int(sys.argv[4])
+# Extra request headers (e.g. a credential) arrive on stdin, never in argv or the environment.
+extra = json.loads(sys.stdin.read() or "{}") if len(sys.argv) > 5 and sys.argv[5] == "--headers-stdin" else {}
 context = ssl.create_default_context(cafile=os.environ.get("GREG_EGRESS_CAFILE") or None)
 try:
     raw = egress_connect(host, port)
 except PermissionError as exc:
     print(json.dumps({"denied": str(exc)}))
     sys.exit(0)
+headers = {"Host": host, "User-Agent": "uniimente-greg/0.1", **extra, "Connection": "close"}
+request = f"GET {path} HTTP/1.1\r\n" + "".join(f"{k}: {v}\r\n" for k, v in headers.items()) + "\r\n"
 with context.wrap_socket(raw, server_hostname=host) as tls:
-    tls.sendall(f"GET {path} HTTP/1.1\r\nHost: {host}\r\nUser-Agent: uniimente-greg/0.1\r\nConnection: close\r\n\r\n".encode())
+    tls.sendall(request.encode())
     data = b""
     while len(data) <= limit + 65536:
         chunk = tls.recv(65536)
@@ -344,24 +356,46 @@ with context.wrap_socket(raw, server_hostname=host) as tls:
             break
         data += chunk
 head, _, body = data.partition(b"\r\n\r\n")
-status = int(head.split(b"\r\n", 1)[0].split()[1])
+lines = head.split(b"\r\n")
+status = int(lines[0].split()[1])
+if any(l.lower().replace(b" ", b"") == b"transfer-encoding:chunked" for l in lines[1:]):
+    decoded, rest = b"", body
+    while rest:
+        size_line, _, rest = rest.partition(b"\r\n")
+        size = int(size_line.split(b";")[0] or b"0", 16)
+        if size == 0:
+            break
+        decoded, rest = decoded + rest[:size], rest[size + 2:]
+    body = decoded
 print(json.dumps({"status": status, "body": base64.b64encode(body[:limit + 1]).decode(), "peer_verified": True}))
 '''
 
 
-def confined_fetch(url: str, *, identity: str, relay: Relay, cwd: Path, max_bytes: int, timeout: int = 30) -> dict:
+HEADER_NAME = re.compile(r"^[A-Za-z0-9-]{1,64}$")
+
+
+def confined_fetch(url: str, *, identity: str, relay: Relay, cwd: Path, max_bytes: int, timeout: int = 30,
+                   headers: dict | None = None) -> dict:
     """HTTPS GET performed by a component that holds no socket of its own: TLS (and certificate verification)
-    happens inside the confined child, the bytes cross only the relay, and the relay journals the decision."""
+    happens inside the confined child, the bytes cross only the relay, and the relay journals the decision.
+    ``headers`` reach the child on stdin only, so a credential never appears in argv, the environment or the
+    egress journal."""
     from urllib.parse import urlsplit
     parts = urlsplit(url)
     if parts.scheme != "https" or not parts.hostname:
         raise SegmentationError("confined fetch is HTTPS only")
     path = (parts.path or "/") + (("?" + parts.query) if parts.query else "")
+    for name, value in (headers or {}).items():
+        if not HEADER_NAME.match(str(name)) or any(c in str(value) for c in "\r\n\x00") or \
+                name.lower() in ("host", "connection", "transfer-encoding", "content-length"):
+            raise SegmentationError(f"request header {name!r} refused")
     env = {}
     if os.environ.get("GREG_EGRESS_CAFILE"):
         env["GREG_EGRESS_CAFILE"] = os.environ["GREG_EGRESS_CAFILE"]
-    proc = run_confined([sys.executable, "-s", "-c", FETCH, parts.hostname, str(parts.port or 443), path,
-                         str(max_bytes)], identity=identity, relay=relay, cwd=cwd, timeout=timeout, env=env)
+    argv = [sys.executable, "-s", "-c", FETCH, parts.hostname, str(parts.port or 443), path, str(max_bytes)]
+    proc = run_confined(argv + (["--headers-stdin"] if headers else []), identity=identity, relay=relay, cwd=cwd,
+                        timeout=timeout, env=env,
+                        input_bytes=json.dumps(headers).encode() if headers else None)
     relay.drain()
     if proc.returncode != 0:
         raise SegmentationError("confined fetch failed: " + proc.stderr.decode("utf-8", "replace")[-300:])

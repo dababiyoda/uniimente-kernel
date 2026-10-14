@@ -427,20 +427,35 @@ def browser_render(params, ctx: InvocationContext) -> dict:
         raise CapabilityError("browser.render loads https pages (http only on this machine's loopback)")
     binary = chrome_binary()
     with tempfile.TemporaryDirectory(prefix="greg-browser-") as profile:
-        argv = [binary, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
-                "--disable-extensions", "--disable-background-networking", "--disable-sync",
-                "--disable-component-update", "--disable-default-apps", "--mute-audio", "--hide-scrollbars",
-                f"--user-data-dir={profile}", f"--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE {host}",
-                # Every request goes to a dead proxy except the exact target origin, so page scripts
-                # cannot reach third parties even by IP literal (implicit loopback bypass removed).
-                "--proxy-server=http://127.0.0.1:9", f"--proxy-bypass-list=<-loopback>;{authority}",
-                "--virtual-time-budget=5000", "--dump-dom", url]
-        sandboxed = not (sys.platform.startswith("linux") and os.geteuid() == 0)
+        common = [binary, "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check",
+                  "--disable-extensions", "--disable-background-networking", "--disable-sync",
+                  "--disable-component-update", "--disable-default-apps", "--mute-audio", "--hide-scrollbars",
+                  f"--user-data-dir={profile}"]
+        if ctx.egress is None:
+            argv = [*common, f"--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE {host}",
+                    # Every request goes to a dead proxy except the exact target origin, so page scripts
+                    # cannot reach third parties even by IP literal (implicit loopback bypass removed).
+                    "--proxy-server=http://127.0.0.1:9", f"--proxy-bypass-list=<-loopback>;{authority}",
+                    "--virtual-time-budget=5000", "--dump-dom", url]
+        else:
+            # #26: the browser runs in a network namespace whose only way out is the body relay, allowlisted for the
+            # signed target alone; every request, the target's included, is decided there and journaled.
+            # The door is the namespace's own loopback; nothing else exists there to resolve or reach.
+            argv = [*common, "--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1", "--proxy-server={door}",
+                    "--proxy-bypass-list=<-loopback>", "--virtual-time-budget=5000", "--dump-dom", url]
+        sandboxed = not (sys.platform.startswith("linux") and os.geteuid() == 0) and ctx.egress is None
         if not sandboxed:
-            argv.insert(1, "--no-sandbox")  # Chromium cannot sandbox itself as root on Linux; reported below
+            argv.insert(1, "--no-sandbox")  # Chromium cannot sandbox itself as root on Linux, nor nest its own
+            #                                  user namespace inside GREG's; reported below
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": profile}
         try:
-            proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+            if ctx.egress is None:
+                proc = subprocess.run(argv, capture_output=True, timeout=45, env=env, cwd=profile)
+                route = f"only {authority} reachable"
+            else:
+                proc = _render_behind_relay(argv, ctx.egress, host, int(authority.rsplit(":", 1)[1]), loopback,
+                                            Path(profile), env)
+                route = f"relay: only {authority}, every request journaled"
         except subprocess.TimeoutExpired as exc:
             raise CapabilityError("browser did not finish rendering within 45 seconds") from exc
     dom = proc.stdout[:MAX_READ_BYTES * 4]
@@ -451,7 +466,29 @@ def browser_render(params, ctx: InvocationContext) -> dict:
     text = "\n".join(parser.parts)[:MAX_READ_BYTES]
     return {"url": url, "title": parser.title.strip()[:300], "text": text, "dom_sha256": hashlib.sha256(dom).hexdigest(),
             "dom_bytes": len(dom), "browser": Path(binary).name, "os_sandboxed": sandboxed,
-            "egress": f"only {authority} reachable", "trust": "untrusted-external-data"}
+            "egress": route, "trust": "untrusted-external-data"}
+
+
+def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, profile: Path, env: dict):
+    """Run the browser in a bubblewrap network namespace behind a door to a relay allowlisted for the target alone.
+    The per-call relay shares the body relay's journal and mandated proxy; without namespaces nothing runs."""
+    import shutil
+    from foundry.systems.relay_door import Door, door_argv
+    from foundry.systems.segmentation import Relay
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+    scoped = Relay({"browser.render": {"allow": [[host, port]], "external": not loopback}}, relay.journal,
+                   connect=relay.connect, proxy=relay.proxy)
+    with Door(scoped, "browser.render") as door:
+        namespace = [shutil.which("bwrap"), "--unshare-user", "--unshare-pid", "--unshare-ipc", "--unshare-uts",
+                     "--unshare-net", "--die-with-parent", "--new-session", "--ro-bind", "/", "/", "--proc", "/proc",
+                     "--dev", "/dev", "--tmpfs", "/dev/shm", "--tmpfs", "/tmp", "--bind", str(profile), str(profile),
+                     "--chdir", str(profile), "--"]
+        return subprocess.run(namespace + door_argv(sys.executable, door.fd, argv), pass_fds=[door.fd],
+                              capture_output=True, timeout=45, env=env)
 
 
 def mac_notify(params, ctx: InvocationContext) -> dict:

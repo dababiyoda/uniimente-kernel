@@ -822,6 +822,7 @@ def first_mission(*, kernel_root: str, effort_budget: int = 8, run: str | None =
     run = run or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M")
     digest = hashlib.sha256(json.dumps([root, effort_budget, run]).encode()).hexdigest()[:10]
     mission_id = f"m:first-mission-{digest}"
+    canon_id = f"first-mission-{digest}"
     base = {"kernel_root": root}
     return {
         "mission_id": mission_id,
@@ -836,7 +837,17 @@ def first_mission(*, kernel_root: str, effort_budget: int = 8, run: str | None =
                                            "dossier's objective, optimal selection and baseline",
                             "sensor": {"capability": "institution.appraise", "target": "institution:first-mission",
                                        "params": base},
-                            "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}}],
+                            "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}},
+                           {"check_id": "owned-preview",
+                            "description": "the Foundry's owned-page system holds an intact, receipted private page of the dossier",
+                            "sensor": {"capability": "foundry.query", "target": "foundry:first-mission",
+                                       "params": {"system": 31, "op": "inspect", "args": {"name": canon_id}}},
+                            "predicate": {"op": "equals", "field": "result.intact", "value": True}},
+                           {"check_id": "lesson-retained",
+                            "description": "the dossier's exact bytes are retained in the body's content-addressed memory",
+                            "sensor": {"capability": "institution.appraise", "target": "institution:first-mission",
+                                       "params": {**base, "require_retained": True}},
+                            "predicate": {"op": "equals", "field": "retained", "value": True}}],
         "strategies": [
             {"action_id": "survey", "capability": "institution.survey", "target": "institution:first-mission",
              "params": {**base, "effort_budget": effort_budget}, "advances": ["dossier-verified"],
@@ -852,15 +863,27 @@ def first_mission(*, kernel_root: str, effort_budget: int = 8, run: str | None =
              "advances": ["dossier-verified"],
              "rationale": "start from existing capabilities and Foundry systems; name each CapabilityDeficit"},
             {"action_id": "dossier", "capability": "institution.dossier", "target": "deliver:first-mission",
-             "params": {},
+             "params": {"canon_id": canon_id},
              "bind": [{"param": "survey", "from": {"action_id": "survey", "field": ""}, "type": "object", "max_bytes": 65536},
                       {"param": "selection", "from": {"action_id": "select", "field": "output"}, "type": "object", "max_bytes": 65536},
                       {"param": "composition", "from": {"action_id": "compose", "field": ""}, "type": "object", "max_bytes": 65536}],
              "advances": ["dossier-verified"],
-             "rationale": "one private deliverable to the founder; nothing is sent, published, spent or merged"}],
+             "rationale": "one private deliverable to the founder; nothing is sent, published, spent or merged"},
+            {"action_id": "owned-page", "capability": "foundry.apply", "target": "foundry:first-mission",
+             "params": {"system": 31, "op": "build", "args": {"reason": "Founder's First Mission dossier, private preview"}},
+             "bind": [{"param": "args.canon", "from": {"action_id": "dossier", "field": "canon"}, "type": "object"}],
+             "advances": ["owned-preview"],
+             "rationale": "Foundry #31 renders a versioned, content-addressed private page; nothing is publicly served"},
+            {"action_id": "retain", "capability": "artifact.store", "target": "artifact:first-mission",
+             "params": {"namespace": "first-mission"},
+             "bind": [{"param": "path", "from": {"action_id": "dossier", "field": "workspace_copy"}, "type": "string"}],
+             "advances": ["lesson-retained"],
+             "rationale": "keep the dossier and its lesson by digest; the next First Mission compares against it"}],
         "light_cone": {"capabilities": ["institution.survey", "institution.compose", "institution.dossier",
-                                        "institution.appraise", "cognition.dp_knapsack"],
-                       "targets": ["institution:*", "cognition:*", "deliver:*"],
+                                        "institution.appraise", "cognition.dp_knapsack", "foundry.apply",
+                                        "foundry.query", "artifact.store"],
+                       "targets": ["institution:*", "cognition:*", "deliver:*", "foundry:first-mission",
+                                   "artifact:first-mission"],
                        "max_consequence_class": "internal_write", "budget_usd": 0,
                        "horizon": _horizon(horizon_days)},
     }

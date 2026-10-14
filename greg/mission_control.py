@@ -104,6 +104,11 @@ def _mind() -> dict:
     return {"genomes": out, "counts": counts, "frozen": data.get("freeze_sha256", "")[:16], "source_commit": data.get("source_commit")}
 
 
+def _books(home, mission_id):
+    from greg.venture_rehearsal import books
+    return books(home, mission_id)
+
+
 def projection(console) -> dict:
     """Everything Mission Control shows, from retained state only."""
     from greg.body import morning_projection, observe, status
@@ -168,6 +173,8 @@ def projection(console) -> dict:
         "morning": {k: morning.get(k) for k in ("q1_goals_worked_on", "q3_what_i_did", "q4_intentionally_not_done", "q6_what_failed",
                                                  "q7_surprises", "q9_learned", "q12_decisions_required", "q13_tonight", "claims_not_made")},
         "templates": sorted(templates.TEMPLATES), "dossiers": dossiers, "ventures": ventures,
+        "rehearsals": [b for b in (_books(console.home, m["mission_id"]) for m in missions
+                                   if m["mission_id"].startswith("m:venture-rehearsal-")) if b],
         "foundry": _foundry(), "mind": _mind(), "read_roots": st.get("permissions", {}).get("read_roots", []),
     }
 
@@ -358,7 +365,17 @@ def _goals(console, p, form) -> str:
 
 
 def _ventures(console, p, form) -> str:
-    return ("<section><h2>Ventures</h2>" + (_table(["Delivered memo"], [[_e(v)] for v in p["ventures"]]) if p["ventures"] else
+    rows = [[_e(b["mission_id"]), _cls("FIXTURE"), _e(f"{(b.get('totals') or {}).get('revenue', '—')} cents"),
+             "balanced" if b.get("equation_holds") and not b.get("error") else _e(b.get("error", "does not balance")),
+             "no"] for b in p["rehearsals"]]
+    rehearsal = ("<section><h2>Commerce rehearsal (FIXTURE)</h2><p>Take your latest First Mission dossier through GREG's "
+                 "governed company loop: offer, a fixture buyer's signed order, delivery, signed acceptance, books reconciled "
+                 "to the cent. Every check is re-observed by the appraisal. The buyer is a published fixture key and no "
+                 "payment rail is called.</p>"
+                 + (_button(console, "/venture-rehearsal", {}, "Prepare the commerce rehearsal", cls="") if p["dossiers"] else
+                    "<p class=empty>Run the Founder's First Mission first; the rehearsal sells its dossier.</p>")
+                 + _table(["Rehearsal", "Mode", "Revenue booked", "Books", "Money moved"], rows) + "</section>")
+    return rehearsal + ("<section><h2>Ventures</h2>" + (_table(["Delivered memo"], [[_e(v)] for v in p["ventures"]]) if p["ventures"] else
             "<p class=empty>No venture memo has been delivered on this body. A <code>venture-assessment</code> mission runs RailScout "
             "and WealthMachine on one signal and delivers a memo; nothing is sent, bought or contacted.</p>")
             + "<p class=reality>Revenue, customers and business validation stay hypotheses until external evidence exists. "

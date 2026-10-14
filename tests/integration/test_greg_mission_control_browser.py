@@ -119,9 +119,9 @@ def test_fourteen_properties_through_the_founder_interface(browser, tmp_path, de
         # P7 crash after one more step, resume in a new process, no step repeated
         tick(home, 1)
         done_before = [a["action_id"] for a in actions(home) if a["status"] == "DONE"]
-        tick(home, 6)
+        tick(home, 10)
         done = [a["action_id"] for a in actions(home) if a["status"] == "DONE"]
-        results["P07_crash_resume_no_repeat"] = (len(done) == len(set(done)) == 4 and done[:len(done_before)] == done_before)
+        results["P07_crash_resume_no_repeat"] = (len(done) == len(set(done)) == 6 and done[:len(done_before)] == done_before)
         # P8 no duplicate consequence after further restarts
         tick(home, 2)
         dossiers = list((home / "deliveries" / "first-mission").glob("*.json"))

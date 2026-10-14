@@ -96,3 +96,67 @@ Attacking the result as if Pass 1 were deployed:
 ## Rollback
 
 Revert the branch commits. No data migration exists, and every new path is additive. `/classic` keeps the previous front page whole.
+
+## Increment 2 (same day): the whole loop, attacks, and the #26 mechanism
+
+### Product delta
+
+- **First Mission, now six steps.** It runs survey, then selection and composition, then the dossier, then Foundry
+  #31 builds an intact private page of the dossier, then the dossier is retained by digest. Three independent checks
+  must hold: the dossier re-derives, the page is intact, and the bytes are retained.
+- **Memory across missions.** A later First Mission reads earlier dossier receipts from the ledger. It reports what
+  is newly selected, no longer selected or still selected, and the lesson the earlier run retained. This survives
+  restart because it is read from receipts, not a cache.
+- **Commerce rehearsal (FIXTURE).** `greg/venture_rehearsal.py` and Mission Control's Ventures view take the latest
+  dossier through the governed company loop: #49 assemble, #54 fulfill a fixture buyer's signed order, #54 record
+  the signed acceptance, and #49 reconcile the books to the cent. Every check is a Foundry sensor the appraisal
+  re-observes, and an edited book is refused. The buyer is a published test key, no rail is called, and
+  `money_moved` stays false.
+- **`greg rehearse` runs the whole chain:** the First Mission with a simulated crash, the commerce rehearsal, then a
+  second First Mission that compares itself with the first.
+- **`greg acceptance`** is a read-only founder-device report from the body's own ledger. It has 14 properties, each
+  marked PASS or NOT_YET with the runbook step that produces it. It says FOUNDER-DEVICE only for a mission on a
+  designated first body. `greg/CHROMEBOOK_FIRST_MISSION.md` gains steps 4–8 (Mission Control, memory, Ventures,
+  founder control including the phone channel, and acceptance), and the installer now points to them.
+
+### Attacks run through the real body, Gate, Foundry worker and appraisal
+
+These are in `tests/integration/test_greg_adversarial_machine.py`:
+
+- **A lying solver.** A feasible, self-consistent, suboptimal selection, and an inflated value claim, are both caught
+  by the independent profit-DP verifier.
+- **A revoked engine after restart.** A new mission blocks on the capability and never reuses it.
+- **Sources edited mid-mission.** The mission cannot close as ACHIEVED.
+- **Prompt injection in the sources.** Instructions to attach a paid worker, spend, publish and email stay data. The
+  only capability transition is the founder's own attach.
+- **A paid worker outside the signed envelope.** When it is the only route, GREG asks and names the scope; nothing
+  executes. The first version of this test passed vacuously, because a cheaper route was chosen, and was rewritten.
+- **A replayed fixture order and acceptance.** There is no second booking, and the appraisal stays VERIFIED.
+
+### #26 without privilege, and #9/#10 hardening
+
+- **#26** is implemented in `foundry/systems/segmentation.py` and registered as system 26. Components launched
+  through `run_confined` cannot open any socket; the kernel filter denies it. Their only door is a relay that
+  enforces exact per-identity allowlists and journals every decision in a hash chain.
+  - It is exercised on loopback and TEST-NET only. A denied request never connects, and a foreign identity is denied.
+  - It is still PARTIAL: capabilities inside the body process and coding workers are not launched through it yet.
+- **#9 and #10:** a host-name approval gate refuses privileged runtimes before any command is built, and root images
+  are refused. Fixed a real extraction bug: `lstrip("./")` renamed every dotfile in an image. Hostile layers are
+  tested to stay inside the root. Both remain PARTIAL. The dedicated-host specification
+  (`PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md`) awaits the founder's choice.
+
+### Measured
+
+- **Rehearsal of the whole chain:** about 60 s on this container. Profiling showed most of the time is the mission
+  engine re-observing every check each tick, and each Foundry worker call costs about 0.35 s of process startup.
+- **A caching attempt failed.** Memoizing the learned-policy readout per ledger head saved about 1 s, because the
+  head moves on almost every event. It was reverted as code that buys nothing.
+- **Browser acceptance:** still 14/14 at both sizes with the six-step mission. The Ventures flow is covered over HTTP.
+
+### Negative evidence and open items
+
+- **One unreproduced block.** A single run during development ended BLOCKED with "no admissible strategy". 39 later
+  runs (24 under pytest, 15 in a stress loop) all reached ACHIEVED, and the cause was not found. It is recorded as
+  an open observation, not explained away.
+- **The rest:** VEPMC is still 0, and #9, #10 and #26 are still PARTIAL. #157 worker OS confinement has not been
+  extracted.

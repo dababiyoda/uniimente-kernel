@@ -240,6 +240,7 @@ def main(argv=None) -> int:
     fdb = fds.add_parser("seed", help="Institutional Seed: content-addressed backup of this body (private keys excluded)")
     fdb.add_argument("--out", required=True, help="seed store directory, outside the body home")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
+    sub.add_parser("acceptance", help="read-only founder-device acceptance report from this body's own ledger")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
                                           "Founder's First Mission end to end")
     rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
@@ -525,6 +526,9 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "acceptance":
+            from greg import acceptance
+            return acceptance.main(home)
         elif args.cmd == "rehearse":
             from greg import rehearsal
             return rehearsal.main(args)

@@ -163,6 +163,21 @@ class Console:
             self.proposals[pid] = {"text": text, "proposal": proposal, "at": time.time()}
         return pid
 
+    def venture_rehearsal(self) -> str:
+        """Draft the FIXTURE commerce rehearsal of the latest First Mission dossier, for review before signing."""
+        from greg.venture_rehearsal import latest_canon, venture_rehearsal
+        canon, source = latest_canon(self.deliver_root())
+        text = f"[FIXTURE] Rehearse selling and delivering my latest First Mission dossier ({Path(source).name})."
+        proposal = {"status": "PROPOSED", "origin": "template:venture-rehearsal", "spec": venture_rehearsal(canon=canon),
+                    "notes": ["FIXTURE: the buyer is a published test key and the consideration is a fixture amount; "
+                              "no payment rail is called and nothing is published",
+                              "every step runs through the Foundry bridge inside this mission's workspace",
+                              "the appraisal re-observes the company, the delivery, the acceptance and the books"]}
+        pid = secrets.token_urlsafe(9)
+        with self.lock:
+            self.proposals[pid] = {"text": text, "proposal": proposal, "at": time.time()}
+        return pid
+
     def attach(self, request_id: str, capability_id: str) -> Path:
         """Sign CAPABILITY_ATTACH only for a verified candidate that an open capability ask names."""
         open_asks = {r["request_id"]: r for r in status(self.home)["decisions_required"]}
@@ -596,6 +611,11 @@ def make_handler(console: Console):
             try:
                 if path == "/ask":
                     return self._send(303, b"", location="/proposal/" + console.ask(form.get("text", "")[:4000]))
+                if path == "/venture-rehearsal":
+                    try:
+                        return self._send(303, b"", location="/proposal/" + console.venture_rehearsal())
+                    except FileNotFoundError as exc:
+                        return self._send(409, str(exc).encode())
                 if path == "/first-mission":
                     return self._send(303, b"", location="/proposal/" + console.first_mission(form.get("effort_budget", "8")))
                 if path == "/sign":

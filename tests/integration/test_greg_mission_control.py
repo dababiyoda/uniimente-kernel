@@ -106,3 +106,34 @@ def test_refusals_hold_on_mission_control(running):
     readonly = Console(console.home)                             # no key: review works, signing refuses
     with pytest.raises(PermissionError):
         readonly.sign("MISSION", {})
+
+
+def test_commerce_rehearsal_from_the_ventures_view(running):
+    home, key, body_id, console, port = running
+    from urllib.error import HTTPError
+    _, page = http(port, "/mc/ventures")
+    assert "Run the Founder's First Mission first" in page or "Run the Founder&#x27;s First Mission first" in page
+    with pytest.raises(HTTPError) as early:                     # no dossier yet: refused, nothing drafted
+        http(port, "/venture-rehearsal", {"csrf": token(http(port, "/")[1])})
+    assert early.value.code == 409
+    _, page = http(port, "/")
+    url, review = http(port, "/first-mission", {"csrf": token(page), "effort_budget": "8"})
+    drop(home, signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.dp_knapsack"}), "attach.json")
+    http(port, "/sign", {"csrf": token(review), "proposal": url.rsplit("/", 1)[1]})
+    with Body(home) as body:
+        body.boot()
+        for _ in range(12):
+            if body.tick()["missions"][0]["state"] == "ACHIEVED":
+                break
+    _, page = http(port, "/mc/ventures")
+    url, review = http(port, "/venture-rehearsal", {"csrf": token(page)})
+    assert "template:venture-rehearsal" in review and "FIXTURE" in review and "$0" in review
+    http(port, "/sign", {"csrf": token(review), "proposal": url.rsplit("/", 1)[1]})
+    with Body(home) as body:
+        body.boot()
+        for _ in range(12):
+            states = {m["mission_id"]: m["state"] for m in body.tick()["missions"]}
+            if all(v == "ACHIEVED" for v in states.values()) and len(states) == 2:
+                break
+    _, page = http(port, "/mc/ventures")
+    assert "1200 cents" in page and "balanced" in page and "FIXTURE" in page

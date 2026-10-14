@@ -1,7 +1,7 @@
 """Cognition through signed missions, the real Gate, retained receipts and restart."""
 from greg.body import Body
 from greg.cognition.settlement import competence
-from tests.greg_fixtures import drop, make_body, mission, signed
+from tests.greg_fixtures import Clock, drop, make_body, mission, signed
 
 
 def test_cognition_is_durable_receipted_and_reobserved_on_the_existing_body(tmp_path):
@@ -127,12 +127,20 @@ def test_recombined_native_game_uses_same_gate_appraisal_and_learning_after_rest
         # Non-seed families start withheld (VERIFIED) on every body; the founder attaches them.
         body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.game"}))
     drop(home, signed(key, body_id, "MISSION", spec))
-    with Body(home) as body:
+    clock = Clock()
+    with Body(home, clock=clock) as body:
         body.boot()
-        # The converged engine acts in one tick and books the achieved closure on the next.
-        for _ in range(2):
+        # The converged engine acts in one tick and books the achieved closure on the next. Under host
+        # load a budget-bounded solve may abstain (TIMEOUT/BUDGET_EXHAUSTED); that observation is
+        # inconclusive, the engine backs off and re-observes, and the strategy is never blamed for it.
+        for _ in range(6):
             body.tick()
+            if body.engine.book.missions["m:native-game"].status == "ACHIEVED":
+                break
+            clock.advance(31)
         assert body.engine.book.missions["m:native-game"].status == "ACHIEVED"
+        assert not [e for e in body.journal.replay("routing.outcome")
+                    if e.payload["mission_id"] == "m:native-game"], "an abstaining sensor never books a strategy ineffective"
         cognitive = next(r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
                          if isinstance(r.payload["result"].get("output"), dict)
                          and r.payload["result"]["output"].get("problem_id") == "qualified:game")
@@ -142,7 +150,7 @@ def test_recombined_native_game_uses_same_gate_appraisal_and_learning_after_rest
         assert cognitive["authority_created"] is False and cognitive["empirical_validity"] == "WORLD_UNVERIFIED"
         assert body.journal.replay("mission.appraised")[-1].payload["verdict"] == "VERIFIED"
         count = len(body.ledger.by_type("receipt"))
-    with Body(home) as body:
+    with Body(home, clock=clock) as body:
         body.boot()
         body.tick()
         assert len(body.ledger.by_type("receipt")) == count

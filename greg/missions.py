@@ -219,6 +219,20 @@ def _field(output, path: str):
     return value
 
 
+def unanswered(output) -> str | None:
+    """Why a cognitive sensor receipt carries no answer; None when it answered or refuted.
+
+    A receipt that abstained (budget exhausted, timeout, capability deficit, evidence
+    expired, no quorum...) did not measure the world. Reading its missing field as a
+    negative observation would book the world as unchanged and blame the strategy.
+    REFUTED is a real negative result and stays one."""
+    if not isinstance(output, dict) or "abstention_state" not in output:
+        return None
+    if output.get("abstention_state") in ("NONE", "REFUTED"):
+        return None
+    return str(output.get("reason_code") or output.get("abstention_state"))
+
+
 def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
     op = predicate["op"]
     try:
@@ -320,6 +334,11 @@ class MissionBook:
                         continue
                     if data["passed"]:
                         checks.discard(data["check_id"])
+                    elif data["detail"].startswith("sensor "):
+                        # The world was not measured (sensor error or an abstaining
+                        # cognitive receipt): the strategy's effect is unknown, not
+                        # refuted. Keep waiting for a conclusive observation.
+                        continue
                     else:
                         # Surprise: executed, yet the world did not change. Replan
                         # instead of repeating; eligible again after a later pass.
@@ -716,6 +735,11 @@ class MissionEngine:
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
+                why = None if passed else unanswered(outcome.output)
+                if why:
+                    # Bounded retry and escalation follow the existing unmeasured-world path.
+                    detail = f"sensor inconclusive ({why}): {detail}"
+                    sensor_errors.add(check["check_id"])
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])

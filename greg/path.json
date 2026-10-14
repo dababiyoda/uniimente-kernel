@@ -1198,7 +1198,11 @@
           "id": "P4",
           "title": "Cognitive settlement and learned routing",
           "maps_to": "N4",
-          "status": "HORIZON",
+          "status": "IMPLEMENTED, INTEGRATED, TESTED; exit not met: the decisive pre-registered retest (2026-10-08, 191 held-out items, 3 repeats) is REGRESSION, 160 vs 162 (6-8, p=0.79; every discordant item used identical orders, so timing noise), and conditional formal-engine routing is DEMOTED: the shadow default stays and the competence memory is retained as evidence; measured on benchmark items, not on settled real-mission outcomes (this node's review trigger, 20 settled real-mission outcomes in one geometry, has not occurred); a HORIZON placeholder here until the founder's 2026-10-07 directive activated it in polyintelligence_cortex, its current record",
+          "current_record": {
+            "workstream": "polyintelligence_cortex",
+            "node": "P4"
+          },
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P3 plus settled outcomes from real missions",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1206,13 +1210,22 @@
           "falsification": "learned routing does not beat the frozen static router",
           "smallest_next_experiment": "replay the frozen held-out suite with routing memory seeded from settled outcomes; compare to static_router",
           "exit": "learned routing beats the static baseline on held-out tasks without new authority",
-          "evidence_refs": []
+          "evidence_refs": [
+            "docs/evidence/greg-learned-routing/2026-10-07/README.md",
+            "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
+            "docs/evidence/greg-learned-routing/2026-10-08/README.md",
+            "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json"
+          ]
         },
         {
           "id": "P5",
           "title": "Demand-led repertoire expansion",
           "maps_to": "N2",
           "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required; 2026-10-13: 31 executable genomes across L1-L4 evaluated on held-out seeds 1000-1029 (frozen 496c85b): 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED (20 admitted); all registered VERIFIED (withheld); attaching any is the founder's decision",
+          "current_record": {
+            "workstream": "polyintelligence_cortex",
+            "node": "P5"
+          },
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "a mission that needs a family the seed lacks",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1231,7 +1244,11 @@
           "id": "P6",
           "title": "Heterogeneous compositions and collective mechanisms",
           "maps_to": "N5",
-          "status": "HORIZON",
+          "status": "IMPLEMENTED, INTEGRATED, TESTED; exit partial: frozen held-out lift on four constructed families (F1, F2R, F3, F4) and on two of three natural families (F6 real bank arrivals, F7 real SNDlib backbones); the natural family F5 is not significant; the strongest practitioner pipeline measured for each lifted natural family is not beaten (F6 weekly mean, F7 parametric min-cost flow ties); correlated-failure analysis across stages is still open; a HORIZON placeholder here until the founder's 2026-10-07 directive activated it in polyintelligence_cortex, its current record",
+          "current_record": {
+            "workstream": "polyintelligence_cortex",
+            "node": "P6"
+          },
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P4",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1239,13 +1256,28 @@
           "falsification": "no composition beats its strongest constituent, a simple pipeline and a committee after overhead",
           "smallest_next_experiment": "compare the schedule composition against extraction-free formal input on the same requests",
           "exit": "one composition with measured net lift after overhead and correlated-failure analysis",
-          "evidence_refs": []
+          "evidence_refs": [
+            "docs/evidence/greg-composition/2026-10-07/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-07/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-07/results.json",
+            "docs/evidence/greg-composition-lift/2026-10-08/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json",
+            "docs/evidence/greg-composition-lift/2026-10-14-v3/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json",
+            "docs/evidence/greg-composition-lift/2026-10-14-v4/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json",
+            "docs/evidence/greg-composition-lift/2026-10-14-accounting/README.md"
+          ]
         },
         {
           "id": "P7",
           "title": "Cognitive Capability Genesis",
           "maps_to": "N2",
           "status": "VERIFIED_IN_TESTED_ENVIRONMENT on the DEPEND route: a mission closed with a capability absent at its start (installed package, Mechanism Card, frozen oracle, founder attach, certificate). Since 2026-10-09 a compile receipt with CAPABILITY_DEFICIT (no intelligence fits the residual geometry) opens the same Genesis loop for the missing function inside the mission engine, else one founder ask; only an attachment for that function clears the blocker",
+          "current_record": {
+            "workstream": "polyintelligence_cortex",
+            "node": "P7"
+          },
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P5 and GREG genesis (N2)",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1266,7 +1298,11 @@
           "id": "P8",
           "title": "Evolutionary cognition",
           "maps_to": "N4",
-          "status": "HORIZON",
+          "status": "IMPLEMENTED, TESTED; exit not met: three frozen cycles under a sealed evaluator, three REJECTs: cycle 1 (forecasting, 2026-10-08) REJECT at the held-out gate (overfit caught), cycle 2 (negative-selection detector, 2026-10-09) REJECT at the scarce-sample stress gate, cycle 3 (constraint-release search policy, 2026-10-14) REJECT at the stress gate; protected evolution has never kept an improvement; a HORIZON placeholder here until the founder's 2026-10-07 directive activated it in polyintelligence_cortex, its current record",
+          "current_record": {
+            "workstream": "polyintelligence_cortex",
+            "node": "P8"
+          },
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P7 and protected evaluators",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1274,7 +1310,14 @@
           "falsification": "gains vanish on held-out data or the evaluator is gamed",
           "smallest_next_experiment": "mutate one router policy parameter under a protected held-out evaluator",
           "exit": "repeated held-out gains without evaluator gaming or unauthorized mutation",
-          "evidence_refs": []
+          "evidence_refs": [
+            "docs/evidence/greg-protected-evolution/2026-10-08/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-08/cycle-forecast-1.json",
+            "docs/evidence/greg-protected-evolution/2026-10-09/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-09/cycle-immune-2.json",
+            "docs/evidence/greg-protected-evolution/2026-10-14/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.json"
+          ]
         },
         {
           "id": "P9",

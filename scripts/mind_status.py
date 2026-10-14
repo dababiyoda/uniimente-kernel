@@ -123,9 +123,17 @@ def _resolve_external(entry, mechanism: str, ctx: dict, *, version=None, code=No
     if digest is None or Path(rel).is_absolute() or ".." in Path(rel).parts:
         return None, f"{ref}: not a listed, digested source of the evidence index"
     file = Path(ctx["root"]) / rel
-    if not file.is_file() or _sha(file) != digest:
+    try:
+        data = file.read_bytes() if file.is_file() else None     # one read: the digested bytes are the parsed ones
+    except OSError:
+        data = None
+    if data is None or "sha256:" + hashlib.sha256(data).hexdigest() != digest:
         return None, f"{ref}: absent, or changed since the index digested it"
-    value = json.loads(file.read_text())
+    try:
+        # a listed source may be a frozen run's README or log, not JSON: the entry is reported, never a crash
+        value = json.loads(data.decode("utf-8"))
+    except (ValueError, RecursionError):        # JSONDecodeError and UnicodeDecodeError are ValueErrors
+        return None, f"{ref}: not a readable JSON source"
     for key in pointer.split("."):
         if not isinstance(value, dict) or key not in value:
             return None, f"{ref}: pointer does not resolve at {key!r}"

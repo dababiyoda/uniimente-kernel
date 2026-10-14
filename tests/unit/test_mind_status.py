@@ -307,6 +307,36 @@ def test_an_external_outcome_never_overrides_a_refuted_demoted_or_unadmitted_rec
     assert not _agreement(json.loads(fixture.read_text()), rows)
 
 
+def test_an_external_entry_citing_a_listed_source_that_is_not_json_is_reported_not_a_crash(tmp_path):
+    """A listed, correctly digested source need not be JSON (a frozen run's README is a receipt). An entry citing
+    it, or a source that is not UTF-8 or nests past the parser's limit, counts for nothing and is reported; the
+    ledger is still produced."""
+    readme = "docs/evidence/greg-genome-admission/2026-10-14-v2/README.md"
+    files = {readme: (ROOT / readme).read_bytes(),
+             "docs/evidence/external/latin1.json": '{"outcomes": "caf\xe9"}'.encode("latin-1"),
+             "docs/evidence/external/deep.json": b"[" * 200_000 + b"]" * 200_000}
+    root = tmp_path / "root"
+    for rel, data in files.items():
+        (root / rel).parent.mkdir(parents=True, exist_ok=True)
+        (root / rel).write_bytes(data)
+    cited = {("genomes", "flow_maxflow"): readme, ("recipes", "bayes_then_voi"): "docs/evidence/external/latin1.json",
+             ("routing", "conditional_competence"): "docs/evidence/external/deep.json"}
+
+    def change(index):
+        for rel in files:
+            index["sources"].append({"path": rel, "sha256": _sha(root / rel), "source_commit": "fixture"})
+        for (section, key), rel in cited.items():
+            index[section][key]["external_verification"] = [{"evidence": f"{rel}#outcomes.x"}]
+    fixture = _fixture(tmp_path, change)
+    status = M.status(index_path=fixture, evidence_root=root)
+    rows, plain = _rows(status), _rows(M.status())
+    for mid in ("cognition.flow_maxflow", "recipe.bayes_then_voi", "routing.conditional_competence"):
+        assert rows[mid]["label"] == plain[mid]["label"], mid                  # counts for nothing
+        assert [p for p in rows[mid]["external_verification_unresolved"] if "not a readable JSON source" in p], mid
+        assert any(p.startswith(f"{mid}:") for p in status["external_verification_problems"]), mid
+    assert status["counts"]["EXTERNALLY_VERIFIED"] == 0
+
+
 @pytest.mark.parametrize("wins, losses, label", [(17, 13, "UNRESOLVED"), (2, 15, "BUILT")])
 def test_a_recipe_without_lift_is_unresolved_unless_significantly_worse(tmp_path, wins, losses, label):
     def change(index):

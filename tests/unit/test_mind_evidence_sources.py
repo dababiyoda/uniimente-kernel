@@ -82,7 +82,11 @@ def _cite(ref: str, listed: set, problems: list):
     if rel not in listed:
         problems.append(f"{ref}: cites a file that is not a listed, digested source")
         return None
-    value = json.loads((ROOT / rel).read_text())
+    try:
+        value = json.loads((ROOT / rel).read_bytes().decode("utf-8"))
+    except (OSError, ValueError, RecursionError):         # a listed README or log, or an unreadable file
+        problems.append(f"{ref}: not a readable JSON source")
+        return None
     for key in fragment.split(".") if fragment else []:
         if not isinstance(value, dict) or key not in value:
             problems.append(f"{ref}: pointer does not resolve at {key!r}")
@@ -312,6 +316,14 @@ def _older_family_decides(index):
     index["recipes"]["graph_then_allocate"] = older
 
 
+def _external_cites_a_listed_readme(index):
+    """A frozen run's README listed with its true digest (a receipt, not JSON) and cited by an external entry."""
+    readme = f"{ADMISSION}/2026-10-14-v2/README.md"
+    index["sources"].append({"path": readme, "source_commit": "fixture",
+                             "sha256": "sha256:" + hashlib.sha256((ROOT / readme).read_bytes()).hexdigest()})
+    index["genomes"]["flow_maxflow"]["external_verification"] = [{"evidence": f"{readme}#outcome"}]
+
+
 DIGESTS = test_every_listed_source_recomputes_to_its_recorded_sha256
 VERDICTS = test_every_cited_verdict_matches_the_source_it_cites
 COMPLETE = test_every_frozen_run_is_indexed_and_the_latest_run_decides
@@ -346,6 +358,7 @@ COMMITS = test_every_source_names_a_commit_present_in_this_repository
     (lambda i: i["recipes"]["bayes_then_voi"].update(external_verification=[
         {"evidence": f"{ADMISSION}/2026-10-14-v2/results.json#genomes.collective_market"}]), EXTERNAL,
      "does not record a verified external outcome"),
+    (_external_cites_a_listed_readme, EXTERNAL, "not a readable JSON source"),
     (lambda i: i["sources"][0].pop("source_commit"), COMMITS, "without a source commit"),
 ])
 def test_the_checks_fail_on_a_corrupted_index(tmp_path, monkeypatch, corrupt, check, needle):

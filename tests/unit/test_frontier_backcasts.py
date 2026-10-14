@@ -124,6 +124,52 @@ def test_the_p8_node_records_every_frozen_cycle():
         assert p8["exit_met"] is False and "never kept an improvement" in p8["reality"]
 
 
+# The frozen runs each Mind node is measured by (a P8 cycle record is not an index source).
+FROZEN_RUNS = {"P4": "docs/evidence/greg-learned-routing/", "P6": "docs/evidence/greg-composition-lift/",
+               "P8": "docs/evidence/greg-protected-evolution/"}
+
+
+def test_the_older_cognition_cortex_nodes_point_at_the_measured_nodes_and_their_frozen_evidence():
+    """The cognition_cortex P0-P13 backcast is lineage (developmental inheritance: reroute, never delete). Where the
+    polyintelligence_cortex node of the same id records measured reality, the older node may not remain a bare
+    placeholder: it names that node as its current record, cites every frozen run measuring it, and states the
+    frozen outcome (the natural-family count, every P8 cycle decision, the P4 verdict)."""
+    data = path.load()
+    [ws] = [w for w in data["workstreams"] if w["id"] == "cognition_cortex"]
+    older = {n["id"]: n for n in ws["nodes"]}
+    current = {n["id"]: n for n in data["subordinate_workstreams"]["polyintelligence_cortex"]["nodes"]}
+    measured = sorted(k for k, n in current.items() if n.get("reality"))
+    assert set(FROZEN_RUNS) <= set(measured)
+    sources = [s["path"] for s in json.loads((ROOT / "docs/evidence/greg-mind-evidence-index.json").read_text())
+               ["sources"]]
+    cycles = sorted(ROOT.glob("docs/evidence/greg-protected-evolution/*/cycle-*.json"))
+    for key in measured:
+        node, live = older[key], current[key]
+        assert node.get("current_record") == {"workstream": "polyintelligence_cortex", "node": key}, key
+        cited = set(re.findall(r"docs/evidence/[\w./-]+\.(?:md|json)",
+                               json.dumps([live.get("implementation_refs", []), live.get("evidence", "")])))
+        if key in FROZEN_RUNS:
+            cited |= {s for s in sources if s.startswith(FROZEN_RUNS[key])}
+            assert node["status"].split(";")[0].strip() != "HORIZON", key
+        if key == "P8":
+            cited |= {str(c.relative_to(ROOT)) for c in cycles}
+        refs = node.get("evidence_refs") or []
+        assert cited <= set(refs), (key, sorted(cited - set(refs)))
+        assert all((ROOT / ref).exists() for ref in refs), key
+    natural = _natural_recipe_families()
+    p6 = older["P6"]["status"]
+    assert f"{WORDS[sum(natural.values())]} of {WORDS[len(natural)]} natural families" in p6, p6
+    assert all(re.search(rf"\b{family}\b", p6) for family in natural), p6
+    p8 = older["P8"]["status"]
+    decisions = [json.loads(c.read_text())["decision"] for c in cycles]
+    assert f"{WORDS[len(cycles)]} frozen cycles" in p8, p8
+    for number, decision in enumerate(decisions, 1):
+        assert re.search(rf"cycle {number} \([^)]*\) {decision}", p8), (number, decision)
+    verdict = json.loads((ROOT / "docs/evidence/greg-mind-evidence-index.json").read_text())["routing"][
+        "conditional_competence"]["verdict"]
+    assert verdict in older["P4"]["status"] and (verdict != "REGRESSION" or "DEMOTED" in older["P4"]["status"])
+
+
 def test_every_section_7_descendant_stays_on_the_horizon_with_the_founders_class():
     body, classes = _section_7()
     beyond_now = {line for line, cls in classes.items() if cls != "BUILDABLE_NOW"}

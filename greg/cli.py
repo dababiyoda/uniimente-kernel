@@ -17,6 +17,8 @@
     greg anchor export --roots R.pem --out W.json   witness bundle kept OUTSIDE GREG
     greg anchor verify --witness W.json --roots R.pem   rewrite/rollback of witnessed history exits 3
     greg gravity authorize --from-mission M --key K   a persistent goal derived from a signed mission
+    greg gravity authorize --from-mission M --print-only > g.json; greg gravity authorize g.json --key K
+    greg gravity authorize g.json --supersedes GOAL --key K   replace an admitted goal (the old one is kept)
     greg gravity goals | greg gravity evidence GOAL   read-only; greg gravity control GOAL --kind stop_pushing --value true --key K
 
 The CLI never opens the ledger as a writer while the body runs: commands are
@@ -123,9 +125,16 @@ def _gravity_action(home: str, args) -> None:
             notes = derived
         elif args.target:
             body = json.loads(Path(args.target).read_text())
-            body = body.get("goal_command", body) if isinstance(body, dict) else body
+            if isinstance(body, dict) and body.get("kind") == "GOAL" and isinstance(body.get("body"), dict):
+                body = body["body"]                     # the reviewed output of --print-only, as printed
+            elif isinstance(body, dict):
+                body = body.get("goal_command", body)
         else:
             raise BodyError("authorize needs a GOAL JSON file or --from-mission MISSION_ID")
+        if args.supersedes:
+            if not isinstance(body, dict) or not isinstance(body.get("goal"), dict):
+                raise BodyError("--supersedes needs a GOAL body with a 'goal' object")
+            body = {**body, "goal": {**body["goal"], "supersedes": _goal_id(home, args.supersedes)}}
         if args.print_only:
             print(json.dumps({"kind": "GOAL", "body": body, **notes}, indent=1))
             return
@@ -311,6 +320,8 @@ def main(argv=None) -> int:
     gv.add_argument("--no-passphrase", action="store_true")
     gv.add_argument("--ttl-hours", type=int, default=24)
     gv.add_argument("--print-only", action="store_true", help="authorize: print the GOAL body without signing")
+    gv.add_argument("--supersedes", help="authorize: replace this admitted goal (id or prefix); it stays on the "
+                                         "ledger as superseded")
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")

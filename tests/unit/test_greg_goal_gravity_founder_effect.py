@@ -279,6 +279,54 @@ def test_the_registered_closure_world_asks_only_for_a_move_its_mission_runs():
     assert ("w2", "DONE") in actions and (w.ws / "d.txt").read_text() == "shipped"
 
 
+# -- finding 7: review-then-sign and supersede without code ----------------------------------------------
+
+def test_the_reviewed_print_only_file_is_what_authorize_signs(world, fast, capsys):
+    from greg import cli
+    home, key = str(world.home), str(world.tmp / "founder.pem")
+    world.submit("MISSION", world.mission_spec(), "a.json")
+    world.tick()
+    assert cli.main(["--home", home, "gravity", "authorize", "--from-mission", MID, "--print-only"]) == 0
+    reviewed = world.tmp / "reviewed-goal.json"
+    reviewed.write_text(capsys.readouterr().out)
+    assert cli.main(["--home", home, "gravity", "authorize", str(reviewed), "--key", key, "--no-passphrase"]) == 0
+    capsys.readouterr()
+    world.tick()
+    assert world.rejections() == []
+    goals = world.projection()["goals"]
+    assert len(goals) == 1 and goals[0]["admitted"] is True
+    assert goals[0]["desired_state"] == json.loads(reviewed.read_text())["body"]["goal"]["desired_state"]
+
+
+def test_a_goal_is_superseded_without_code(world, fast, capsys):
+    from greg import cli
+    home, key = str(world.home), str(world.tmp / "founder.pem")
+    world.submit("MISSION", world.mission_spec(), "a.json")
+    world.tick()
+    assert cli.main(["--home", home, "gravity", "authorize", "--from-mission", MID, "--key", key,
+                     "--no-passphrase"]) == 0
+    capsys.readouterr()
+    world.tick()
+    old = world.projection()["goals"][0]["goal_id"]
+    assert cli.main(["--home", home, "gravity", "authorize", "--from-mission", MID, "--print-only"]) == 0
+    reviewed = json.loads(capsys.readouterr().out)
+    reviewed["body"]["goal"]["desired_state"] = "the watched note stays healthy and d ships this week"
+    edited = world.tmp / "edited-goal.json"
+    edited.write_text(json.dumps(reviewed))
+    assert cli.main(["--home", home, "gravity", "authorize", str(edited), "--supersedes", old[:20], "--key", key,
+                     "--no-passphrase"]) == 0
+    capsys.readouterr()
+    world.tick()
+    assert world.rejections() == []
+    view = world.projection()
+    by_id = {g["goal_id"]: g for g in view["goals"]}
+    new = next(g for g in by_id if g != old)
+    assert by_id[old]["status"] == "superseded" and by_id[new]["supersedes"] == old
+    assert by_id[new]["desired_state"].endswith("this week") and by_id[new]["admitted"] is True
+    assert cli.main(["--home", home, "gravity", "authorize", str(edited), "--supersedes", "sha256:nomatch",
+                     "--print-only"]) == 2
+
+
 # -- missions without goals behave exactly as before ----------------------------------------------------
 
 def test_a_mission_without_a_goal_still_only_waits_on_its_decision(world, fast):

@@ -273,6 +273,16 @@ class ConsequenceGate:
             return self._refuse(rec, "refused", [f"budget: {e}"])
 
         # 9. Commit Witness ---------------------------------------------------
+        # The durability boundary reconstructs the WHOLE chain. append() verifies only records not yet
+        # verified (provenance/ledger.py verify_incremental; FINDING-LEDGER-APPEND-COST-2026-10-14), so
+        # without this an old record altered in memory could be extended by a witness, a dispatch claim
+        # and an executed effect for up to FULL_VERIFY_SECONDS. Fail toward silence and preservation:
+        # nothing is witnessed, claimed or executed on altered history (the same ValueError the
+        # pre-incremental append raised).
+        intact, why = self.ledger.verify_chain()
+        if not intact:
+            self.budget.release(reservation["reservation_id"])
+            raise ValueError(f"evidence chain does not verify at commit: {why}")
         witness = new_witness(
             actor=proposal.actor, legal_principal=proposal.legal_principal,
             action_class=proposal.action_class, payload=proposal.payload, target=proposal.target,

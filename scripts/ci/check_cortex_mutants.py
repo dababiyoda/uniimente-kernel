@@ -221,9 +221,18 @@ MIND_CONSTRUCTION_MUTANTS = [
      'if getattr(self, "_recording", True):', "if True:"),
 ]
 
+# 2026-10-14 installed-body merge: appends verify only new history (e2440a6); a Gate commit verifies all of it.
+COMMIT_CHAIN_TESTS = ["tests/unit/test_consequence_gate.py"]
+COMMIT_CHAIN_MUTANTS = [
+    ("a Gate commit trusts the incremental check on altered history", "policy/consequence_gate.py",
+     "        intact, why = self.ledger.verify_chain()\n        if not intact:",
+     "        intact, why = self.ledger.verify_incremental()\n        if not intact:"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
-          ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS)]
+          ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
+          ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS)]
 
 
 def main() -> int:

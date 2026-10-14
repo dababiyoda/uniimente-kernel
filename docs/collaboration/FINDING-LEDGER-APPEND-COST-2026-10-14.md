@@ -74,10 +74,48 @@ plain types.
 | An outbox mediator changes the event it was shown | corrupted the staged record (hash mismatch) | changes only its copy; the staged fact is written |
 | The ledger's private list altered (`ledger._records`) | detected at the next read or append | detected at once by any explicit `verify_chain()`; on the hot path at its next full reconstruction (≤ 300 s), or immediately if the record is new or the verified tail changed |
 | Conflicting event identity in history | refused | refused, and keeps being refused |
+| A Consequence Gate commit on altered history | refused at the witness append (every append re-verified the chain) | refused: the commit path reconstructs the whole chain before the witness (added at the installed-body merge, below) |
 
 The one thing given up: code inside the process that alters the ledger's private list can be served by
 the hot path for up to 300 s. Code that can do that can also replace `verify_chain` itself, so the old
 check did not stop it either. A reader's bug can no longer corrupt history at all.
+
+### The commit path still verifies the whole chain (installed-body merge, 2026-10-14)
+
+Checked when this change was merged onto the convergence line: `policy/consequence_gate.py` had relied
+on `append()` to re-verify the chain, so after this change its commit path verified only new records. An
+old record altered in memory could then be extended by a witness, a dispatch claim and an executed
+effect for up to 300 s. The Gate now calls the full `verify_chain()` at the durability boundary (step 9,
+before the Commit Witness). On a broken chain it releases the budget reservation and raises
+`ValueError("evidence chain does not verify at commit: ...")`. Nothing is witnessed, claimed or
+executed. That is the same failure the pre-incremental `append()` raised.
+`tests/unit/test_consequence_gate.py::test_tampering_an_old_retained_record_refuses_the_next_commit`
+fails without the guard: the executor ran on altered history. The mutation check
+(`scripts/ci/check_cortex_mutants.py`, group "evidence chain at commit") swaps the guard back to the
+incremental check and must be caught.
+
+Where the whole chain is reconstructed now:
+
+- on open;
+- on every explicit `verify_chain()` (tribunal, appraisal, anchor, artifacts, disclosure packages);
+- at every Consequence Gate commit;
+- in the separate-process appraiser, which opens the file read-only (a full reconstruction) and then
+  calls `verify_chain()` again;
+- on the hot path, at least every 300 s.
+
+**Residual, stated plainly:**
+
+- Appends and spine reads outside a Gate commit can be served altered in-memory history for up to 300 s.
+  This covers event emission, journal replays, console and Mission Control projections, and path
+  predicates. Altered history can mislead a projection inside that window. It can never be committed
+  as a consequence, and it never reaches the file on disk.
+- A full verification costs about 37 ms at 5,000 records and 128 ms at 20,000 (this container). A body
+  pays it once per Gate commit, and GREG's sensor observations are Gate commits. A mission observing
+  every 60 s therefore pays one full verification per observation. That is about 46 times less than
+  before this change (46 full verifications per tick), but it still grows linearly with history.
+- Making commits cheaper on very large ledgers (for example, verifying only non-read-only commits in
+  full, or adding a rolling digest) would trade guarantee for speed again. That is a founder decision and
+  is not taken here.
 
 ## Evidence
 

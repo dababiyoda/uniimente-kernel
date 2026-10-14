@@ -298,3 +298,54 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
     result["receipt_id"] = digest({k: v for k, v in result.items() if k != "receipt_id"})
     return result
 
+
+
+# -- Goal Gravity on the Body path: which signed mission the engine attends to first ---------------
+
+SELECTION_SCHEMA = "greg-goal-gravity-selection/0.1"
+SELECTION_RULE = ("founder-signed priority first; then the learned reliability of the mission's strategy "
+                  "capabilities (routing track record), a tiebreak only; then mission id")
+
+
+def select(missions, journal) -> dict:
+    """Rank the founder-signed missions the engine will step this tick, in the order it steps them.
+
+    Authority-neutral by construction: it orders only missions the founder already signed, each inside
+    its own light cone, and every ACTIVE mission is still stepped (paused ones are listed as excluded,
+    terminal ones are omitted). It narrows nothing and widens nothing. Engaging only the top candidate,
+    leaving the rest dormant, would change what runs: that is reserved for a founder ruling
+    (ADR-GOAL-GRAVITY-001), as is the choice between this path and egregore.GoalGravityLoop."""
+    from greg import routing
+    from greg.missions import TERMINAL
+    record = routing.track_record(journal)
+    ranking, excluded = [], []
+    for m in missions:
+        if m.status in TERMINAL:
+            continue
+        if m.paused:
+            excluded.append({"mission_id": m.mission_id, "reason": "paused by the founder"})
+            continue
+        capabilities = sorted({s["capability"] for s in m.spec.get("strategies", []) if s.get("capability")})
+        learned = [routing.reliability(record.get(c)) for c in capabilities]
+        ranking.append({"mission_id": m.mission_id, "priority": m.spec.get("priority", 0),
+                        "reliability": round(sum(learned) / len(learned), 4) if learned else 0.5})
+    ranking.sort(key=lambda r: (-r["priority"], -r["reliability"], r["mission_id"]))
+    return {"schema": SELECTION_SCHEMA, "rule": SELECTION_RULE, "ranking": ranking,
+            "excluded": sorted(excluded, key=lambda r: r["mission_id"]),
+            "selected": ranking[0]["mission_id"] if ranking else None,
+            "engagement": "ordering only: every signed ACTIVE mission is still stepped each tick",
+            "authority_created": False}
+
+
+def consistent(selection: dict, signed_priority: dict) -> list[str]:
+    """Why a recorded selection does not follow its own rule from the signed specs (empty: it does)."""
+    findings = []
+    ranking = selection.get("ranking") or []
+    for row in ranking:
+        if signed_priority.get(row["mission_id"]) != row["priority"]:
+            findings.append(f"{row['mission_id']}: recorded priority {row['priority']} is not the signed one")
+    if ranking != sorted(ranking, key=lambda r: (-r["priority"], -r["reliability"], r["mission_id"])):
+        findings.append("the ranking does not follow the declared rule")
+    if selection.get("selected") != (ranking[0]["mission_id"] if ranking else None):
+        findings.append("the selected mission is not the top of the ranking")
+    return findings

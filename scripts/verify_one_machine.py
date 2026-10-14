@@ -20,6 +20,8 @@ What it re-derives, and from what (the producer's claims are inputs to check, ne
    bound to a DONE exchange receipt, and judged REPRODUCED. Without a WealthMachine checkout the
    verdict is NOT_REDERIVED: a skipped re-derivation is never a pass.
 5. Exactly one DONE commission and one worker commit, despite the interruption.
+   Goal Gravity's ranking recorded before the mission's first action names it and follows its own
+   declared rule from the signed specs.
 6. VEPMC stays 0: this is sandbox integration proof, not a founder-accepted closure.
 
 Limits: it runs on the same host as the body and reads the same files; it is a separate process
@@ -40,7 +42,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from greg import metrics, organ_bridge  # noqa: E402
+from greg import gravity, metrics, organ_bridge  # noqa: E402
 from greg.body import Layout, observe  # noqa: E402
 
 SUMMARY = ("go_no_go", "opportunity_score", "market_alignment", "risk_level", "legal_readiness",
@@ -126,6 +128,21 @@ def main(argv=None) -> int:
         checks["mind_used_no_model"] = (answer.get("cost") or {}).get("model_calls") == 0
         if not checks["mind_answer_is_optimal"]:
             findings.append(f"certified staffed={result.get('staffed')} but the exhaustive optimum is {truth}")
+
+        # 2b. Goal Gravity selected the work: a ranking recorded before this mission's first action names
+        #     it, and follows its own declared rule from the signed specs (re-derived here)
+        seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
+        first_action = min((seq[e.event_id] for e in journal.replay("mission.action")
+                            if e.payload["mission_id"] == a.mission), default=None)
+        signed_priority = {e.payload["mission_id"]: e.payload["spec"]["priority"]
+                           for e in journal.replay("mission.registered")}
+        prior = [e.payload for e in journal.replay("gravity.ranked")
+                 if first_action is not None and seq[e.event_id] < first_action]
+        checks["selected_by_goal_gravity"] = bool(prior) and \
+            a.mission in [r["mission_id"] for r in prior[-1]["ranking"]] and \
+            not gravity.consistent(prior[-1], signed_priority)
+        if not checks["selected_by_goal_gravity"]:
+            findings.append("no consistent Goal Gravity ranking named this mission before it acted")
 
         # 5. exactly one DONE commission despite the interruption
         done = [x for x in actions if x["action_id"] == "commission" and x["status"] == "DONE"]

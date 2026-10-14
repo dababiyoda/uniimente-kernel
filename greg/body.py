@@ -34,7 +34,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from compiler.ucl_compiler import compile_constitution
 from events.spine import EventSpine
-from greg import anchor, asks, compute, dataplane, doctor, improvement, metrics, models, presence, sop, tribunal
+from greg import anchor, asks, compute, dataplane, doctor, gravity, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
 from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
@@ -176,7 +176,26 @@ class Body:
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         self.engine.egress = self._egress_relay()
+        self.engine.selector = self._goal_gravity
         return self
+
+    def _goal_gravity(self, missions) -> list[str]:
+        """Goal Gravity orders this tick's signed missions; each change of order is a ledger fact.
+
+        A failure here never stops the missions: the engine keeps its static order and the
+        failure is recorded, so an unselected tick is visible rather than silent."""
+        try:
+            selection = gravity.select(missions, self.journal)
+        except Exception as exc:
+            why = f"{type(exc).__name__}: {exc}"[:300]
+            self.journal.record("gravity.unavailable", {"why": why}, key=["unavailable", why])
+            return []
+        recorded = self.journal.replay("gravity.ranked")
+        last = recorded[-1].payload if recorded else None
+        if selection["ranking"] and (last is None or last["ranking"] != selection["ranking"]
+                                     or last["excluded"] != selection["excluded"]):
+            self.journal.record("gravity.ranked", selection, key=["ranked", len(recorded), sha256_json(selection)])
+        return [row["mission_id"] for row in selection["ranking"]]
 
     def _egress_relay(self):
         """#26: one relay per body when the founder enabled confined egress; refused (fail closed) where the kernel

@@ -448,6 +448,7 @@ class MissionEngine:
         self.genesis, self.max_actions_per_tick = genesis, max_actions_per_tick
         self.book = MissionBook(journal)
         self._stop_check = None
+        self.selector = None          # the Body installs Goal Gravity here; None keeps the static order
 
     # -- founder inputs (already signature-verified by the body) ---------------
     def register(self, spec: dict, command_digest: str) -> str:
@@ -508,6 +509,10 @@ class MissionEngine:
         self.book.rebuild()
         summary = []
         order = sorted(self.book.missions.values(), key=lambda m: (-m.spec.get("priority", 0), m.mission_id))
+        if self.selector is not None:
+            # Goal Gravity orders the signed missions (greg.gravity.select); it never adds or drops one.
+            ranked = list(dict.fromkeys(mid for mid in self.selector(order) if mid in self.book.missions))
+            order = [self.book.missions[mid] for mid in ranked] + [m for m in order if m.mission_id not in ranked]
         for m in order:
             if should_stop is not None and should_stop():
                 summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})

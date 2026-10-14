@@ -20,9 +20,11 @@ Proposal → identity → legal principal → evidence → policy
   `evidence_freshness_reasons()` resolves evidence refs against a register.
 - `consequence_gate.py` — the gate: lifecycle states from
   `workflows/approval-lifecycle.yaml`, `GrantIssuer` (single-action grants,
-  contract-exact; a child grant is refused unless it is a subset of a known,
-  live, unconsumed parent, per `authority/authority-matrix.yaml`
-  `child_grants: strict_subset_of_parent`), `BudgetOffice` (explicit reservations, released on every
+  contract-exact; its own records are never handed out: holders get copies,
+  and an edited copy is an altered grant; a child grant is refused unless it
+  is a subset of a known, live, unconsumed parent whose whole lineage is live,
+  per `authority/authority-matrix.yaml` `child_grants: strict_subset_of_parent`
+  and `revocation: immediate_and_propagating`), `BudgetOffice` (explicit reservations, released on every
   failure path), commit-time revalidation (grant fresh/unrevoked/unused,
   effect hash and granted authority bound, proposal unchanged since
   admission, identity still valid, policy still ALLOWs or a human approval
@@ -49,8 +51,13 @@ Proposal → identity → legal principal → evidence → policy
   after the claim it cannot reach the effect. A proposal that cannot be
   canonicalised (e.g. mixed key types) is refused, never raised (#55 follow-up)
 - child grant beyond its parent (actions, spending, counterparties, legal
-  actor, prohibitions, lifetime) or of an unknown/revoked/expired/consumed
-  parent → refused at issuance (`GrantRefused`, #12)
+  actor, prohibitions, lifetime, consequence class, action class, objective)
+  or of an unknown/revoked/expired/consumed parent or ancestor → refused at
+  issuance (`GrantRefused`, #12)
+- spending is delegated, not copied: a parent's children together hold at
+  most its limit and the parent may then spend only what it has not delegated;
+  revoking a grant revokes its descendants; a revoked, expired or consumed
+  ancestor refuses a descendant at admission and at commit (#12 follow-up)
 - missing outcome record → blocks autonomy promotion
 - any executor exception → `failed`, budget released, evidence preserved
 - models recommend; this code authorizes

@@ -65,8 +65,22 @@ def _secret_value(name: str) -> str:
     return value
 
 
+# Where greg/chromebook/install.sh writes the founder key; used when --key is not given.
+DEFAULT_FOUNDER_KEY = "~/.greg-founder.pem"
+
+
+def _founder_key_file(args) -> Path:
+    """The key file to sign with. Checked before any passphrase prompt; a missing file is one plain
+    line, not a traceback. Defaulting the path widens nothing: the key and its passphrase still sign."""
+    path = Path(args.key or DEFAULT_FOUNDER_KEY).expanduser()
+    if not path.is_file():
+        raise BodyError(f"no founder key at {path}; pass --key <file> "
+                        f"(greg/chromebook/install.sh writes it to {DEFAULT_FOUNDER_KEY})")
+    return path
+
+
 def _drop(home: str, kind: str, body: dict, args) -> Path:
-    key = load_founder_key(args.key, _passphrase(args))
+    key = load_founder_key(_founder_key_file(args), _passphrase(args))
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 

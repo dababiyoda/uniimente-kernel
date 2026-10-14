@@ -22,8 +22,13 @@ bounded by the weakest criterion. A9 is never granted by this system.
 """
 from __future__ import annotations
 
+import copy
+import re
+import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
+
+from identity.text import fold
 
 LEVELS = {
     0: "observe", 1: "classify", 2: "recommend", 3: "simulate", 4: "prepare",
@@ -42,6 +47,36 @@ PROMOTION_CRITERIA = (
 
 SEVERE_FAILURES = ("harm", "concealment", "unauthorized_effect",
                    "reconciliation_forgery", "rights_violation")
+
+
+def _words(text) -> list[str]:
+    """The words a reader takes ``text`` to say (identity.text.fold: invisible code points removed, NFKC,
+    look-alike letters folded, case-folded), split on everything that is not a letter or digit."""
+    return re.findall(r"[^\W_]+", fold(text))
+
+
+def _authorizer_refusal(subject: str, authorized_by, level: int) -> str | None:
+    """Why ``authorized_by`` cannot be the named human who authorizes A``level`` for ``subject``, or None.
+
+    Compared as read, not as typed: 'uniimente', 'UNIIMENTE\\u200b', fullwidth or Cyrillic look-alike
+    spellings, 'U.N.I.I.M.E.N.T.E', 'UNIIMENTE Kernel' and spiffe://uniimente.internal/... all name UNIIMENTE.
+    """
+    if not isinstance(authorized_by, str) or not _words(authorized_by):
+        return (f"A{level} may not be issued without a named authorizer: a "
+                f"starting level above A0 is a founder grant, and every "
+                f"other route to it (promote) requires the full evidence "
+                f"set. Pass authorized_by=, or issue at A0 and earn it.")
+    words = _words(authorized_by)
+    if "uniimente" in "".join(words):
+        return "UNIIMENTE may not authorize its own autonomy; intelligence never creates authority"
+    if "://" in fold(authorized_by):
+        return "a workload identity (a URI) is not a named human authorizer"
+    own = _words(str(subject))
+    if own and ("".join(own) == "".join(words)
+                or any(words[i:i + len(own)] == own for i in range(len(words) - len(own) + 1))):
+        return ("the subject may not authorize its own autonomy; no component may authorize "
+                "its own promotion")
+    return None
 
 
 @dataclass
@@ -98,6 +133,13 @@ class AutonomyAuthority:
     cannot mint autonomy above A0 without a named human authorizer, and records
     every transition on the ledger with its evidence.
 
+    The ledger append comes first: a license is stored, promoted or renewed only
+    after its event is on the ledger, so no autonomy exists unrecorded. A
+    regression the ledger cannot record still takes effect, at its most
+    restrictive (A0, inactive): autonomy falls toward silence. Callers receive
+    copies; the authority's own records are never handed out, so assigning to a
+    returned license changes nothing.
+
     The second clause read "cannot waive criteria" until 2026-08-24 and was
     false: `issue(..., level=8)` returned A8 against an empty ledger. A
     docstring is not an enforcement mechanism, and this one had been asserting
@@ -136,39 +178,41 @@ class AutonomyAuthority:
         promotion or expand its own sovereignty". A0 stays free because A0 is
         Observe: minting an observer grants nothing.
 
+        The authorizer is compared as a person reads it (`_authorizer_refusal`):
+        any spelling that names UNIIMENTE, a workload URI, or the subject itself
+        is refused. `level` must be an int in A0..A8: NaN, floats and bools are
+        refused (NaN compared neither above nor below A0, so it needed no
+        authorizer and read as a live, unrecorded level).
+
         Honest limitation, stated rather than overclaimed: `authorized_by` is a
         caller-supplied string, so this makes a starting grant explicit,
         attributable and permanent, not unforgeable. It is the same shape as
         `EvidenceLedger.adopt_constitution` and a caller issuing its own
-        capability grant — process, not cryptography.
+        capability grant — process, not cryptography. Only an Ed25519 signature
+        by Alfonso's enrolled founder key (greg/founder.py) authenticates him;
+        binding A1+ issuance to such a signed decision is the open step.
         """
+        if type(level) is not int:
+            raise ValueError(f"autonomy level must be an integer A0..A{MAX_GRANTABLE}, not {level!r}")
         if level > MAX_GRANTABLE:
             raise ValueError("A9 is reserved human sovereignty; never granted by the system")
         if level < 0:
             raise ValueError("autonomy level may not be negative")
         if level > 0:
-            if not authorized_by or not authorized_by.strip():
-                raise ValueError(
-                    f"A{level} may not be issued without a named authorizer: a "
-                    f"starting level above A0 is a founder grant, and every "
-                    f"other route to it (promote) requires the full evidence "
-                    f"set. Pass authorized_by=, or issue at A0 and earn it.")
-            if authorized_by.strip() == "UNIIMENTE":
-                raise ValueError(
-                    "UNIIMENTE may not authorize its own autonomy; intelligence "
-                    "never creates authority")
-        import uuid
+            refusal = _authorizer_refusal(subject, authorized_by, level)
+            if refusal:
+                raise ValueError(refusal)
         entry = {"event": "issued", "level": level, "at": self._now()}
         if authorized_by:
             entry["authorized_by"] = authorized_by
-        lic = AutonomyLicense(license_id=str(uuid.uuid4()), subject=subject, tuple=tuple_,
+        lic = AutonomyLicense(license_id=str(uuid.uuid4()), subject=subject, tuple=copy.deepcopy(tuple_),
                               level=level, issued_at=self._now(),
                               history=[entry])
-        self._licenses[lic.license_id] = lic
-        self._by_subject_tuple[(subject, tuple_.key())] = lic.license_id
         self._record("issued", {"subject": subject, "tuple": asdict(tuple_),
                                 "level": level, "authorized_by": authorized_by})
-        return lic
+        self._licenses[lic.license_id] = lic                      # only once the ledger holds it
+        self._by_subject_tuple[(subject, tuple_.key())] = lic.license_id
+        return copy.deepcopy(lic)
 
     def promote(self, license_id: str, evidence: PromotionEvidence) -> AutonomyLicense:
         lic = self._licenses[license_id]
@@ -180,26 +224,35 @@ class AutonomyAuthority:
         if failures:
             self._record("promotion_refused", {"license_id": license_id, "failures": failures})
             raise ValueError(f"promotion criteria unmet (weakest link): {failures}")
-        lic.level += 1
-        lic.history.append({"event": "promoted", "level": lic.level, "at": self._now(),
-                            "verifier": evidence.independent_verifier})
-        self._record("promoted", {"license_id": license_id, "level": lic.level,
+        level = lic.level + 1
+        entry = {"event": "promoted", "level": level, "at": self._now(),
+                 "verifier": evidence.independent_verifier}
+        self._record("promoted", {"license_id": license_id, "level": level,
                                   "verifier": evidence.independent_verifier})
-        return lic
+        lic.level = level                                         # only once the ledger holds it
+        lic.history.append(entry)
+        return copy.deepcopy(lic)
 
     def regress(self, license_id: str, *, failure_class: str, detail: str) -> AutonomyLicense:
         """Autonomy falls IMMEDIATELY after severe failure. No ceremony."""
         lic = self._licenses[license_id]
-        if failure_class in SEVERE_FAILURES:
-            lic.level = 0
+        severe = failure_class in SEVERE_FAILURES
+        level = 0 if severe else max(0, lic.level - 1)
+        entry = {"event": "regressed", "failure_class": failure_class,
+                 "detail": detail, "level": level, "at": self._now()}
+        try:
+            self._record("regressed", {"license_id": license_id, "failure_class": failure_class,
+                                       "detail": detail, "level": level})
+        except Exception:
+            # Unrecorded, the fall is still applied, and at its floor: a ledger that
+            # refuses must never keep autonomy up after a failure.
+            lic.level, lic.active = 0, False
+            raise
+        lic.level = level
+        if severe:
             lic.active = False
-        else:
-            lic.level = max(0, lic.level - 1)
-        lic.history.append({"event": "regressed", "failure_class": failure_class,
-                            "detail": detail, "level": lic.level, "at": self._now()})
-        self._record("regressed", {"license_id": license_id, "failure_class": failure_class,
-                                   "detail": detail, "level": lic.level})
-        return lic
+        lic.history.append(entry)
+        return copy.deepcopy(lic)
 
     def renew(self, license_id: str, evidence: PromotionEvidence) -> AutonomyLicense:
         """Renewal after regression requires a fresh, complete evidence cycle."""
@@ -207,11 +260,11 @@ class AutonomyAuthority:
         failures = evidence.failures()
         if failures:
             raise ValueError(f"renewal criteria unmet: {failures}")
-        lic.active = True
-        lic.history.append({"event": "renewed", "at": self._now(),
-                            "verifier": evidence.independent_verifier})
+        entry = {"event": "renewed", "at": self._now(), "verifier": evidence.independent_verifier}
         self._record("renewed", {"license_id": license_id})
-        return lic
+        lic.active = True                                         # only once the ledger holds it
+        lic.history.append(entry)
+        return copy.deepcopy(lic)
 
     def level_of(self, subject: str, tuple_: AutonomyTuple) -> int:
         lid = self._by_subject_tuple.get((subject, tuple_.key()))

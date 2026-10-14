@@ -143,10 +143,11 @@
   },
   {
    "attack": "compromised or absent isolation mechanism",
-   "expected": "absent network isolation refuses before any organ code runs; worker-planted git hooks and filters never execute in GREG's collection",
+   "expected": "absent network isolation refuses before any organ code runs; worker-planted git hooks and filters never execute in GREG's collection; a worker that rewrites GREG's trusted .git copy has its collection refused",
    "tests": [
     "tests/integration/test_one_machine_attacks.py::test_attack_absent_isolation_refuses_the_organ_exchange",
-    "tests/integration/test_one_machine_attacks.py::test_attack_worker_plants_git_hooks_and_filters_that_never_run"
+    "tests/integration/test_one_machine_attacks.py::test_attack_worker_plants_git_hooks_and_filters_that_never_run",
+    "tests/integration/test_one_machine_attacks.py::test_attack_worker_tampers_with_greg_trusted_git_copy"
    ]
   },
   {

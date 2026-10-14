@@ -64,7 +64,7 @@
   "scripts/verify_one_machine.py",
   "tests/integration/test_one_machine.py",
   "tests/integration/test_one_machine_attacks.py",
-  "docs/integration/ONE-MACHINE-TRUNK-2026-10-14.md"
+  "docs/collaboration/ONE-MACHINE-TRUNK-2026-10-14.md"
  ],
  "reality_status": "SANDBOX: synthetic founder authority (per-test keys), real organ code, real processes, no external effect, no spend"
 }

@@ -78,7 +78,9 @@ SUPERVISION = {"process": "own session; parent-death SIGKILL (Linux); process gr
                "environment": "scrubbed: no ambient keys, home, proxies or SDK configuration",
                "filesystem": "NOT OS-confined: same UID as the body (see #157 worker_isolation)",
                "network": "NOT isolated for the worker process (a remote provider needs it)",
-               "git_metadata": "restored from a trusted copy before GREG runs git in the clone"}
+               "git_metadata": "restored from a trusted copy (digest held in memory) before GREG runs git in the "
+                               "clone; GREG's git runs with hooks, fsmonitor and attributes files disabled. "
+                               "A worker daemon that outlives the worker is NOT prevented (no PID namespace)"}
 ORDER_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]{0,60}$")
 REPORT_MARK = "WORK_REPORT:"
 
@@ -464,10 +466,31 @@ PROVIDERS: dict[str, object] = {
 
 # -- git helpers (scrubbed environment, never the founder's config) ------------------------
 
+# Defense in depth for every git command GREG runs in a worker's clone: no hooks, no fsmonitor,
+# no attributes file outside the tree (repository config is also restored before collection).
+_GIT_HARDENING = ("-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "core.attributesFile=/dev/null")
+
+
+def _tree_digest(root: Path) -> str:
+    """Digest of a directory's names, modes, file bytes and symlink targets (never followed)."""
+    h = hashlib.sha256()
+    for path in sorted(root.rglob("*")):
+        rel = path.relative_to(root).as_posix()
+        if path.is_symlink():
+            h.update(b"L" + rel.encode() + b"\0" + os.readlink(path).encode() + b"\0")
+        elif path.is_file():
+            h.update(b"F" + rel.encode() + b"\0" + oct(path.stat().st_mode & 0o777).encode() + b"\0")
+            h.update(path.read_bytes())
+        else:
+            h.update(b"D" + rel.encode() + b"\0")
+    return h.hexdigest()
+
+
 def _git(repo: Path, *args, check: bool = True, home: Path | None = None) -> subprocess.CompletedProcess:
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "GIT_CONFIG_NOSYSTEM": "1",
            "HOME": str(home or repo), "GIT_TERMINAL_PROMPT": "0"}
-    proc = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, timeout=120, env=env)
+    proc = subprocess.run(["git", *_GIT_HARDENING, "-C", str(repo), *args], capture_output=True, text=True,
+                          timeout=120, env=env)
     if check and proc.returncode:
         raise WorkerError(f"git {' '.join(args[:3])} failed: {proc.stderr[-300:]}")
     return proc
@@ -578,7 +601,10 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     # The worker can write the clone's .git (hooks, config filters, fsmonitor). GREG runs git there
     # next, so it restores the metadata it created before any worker code ran (port of #157).
     trusted_metadata = root / "base.git"
-    shutil.copytree(work / ".git", trusted_metadata)
+    shutil.copytree(work / ".git", trusted_metadata, symlinks=True)
+    # The worker runs with the body's UID (not OS-confined), so it could rewrite this copy too:
+    # the digest is held in memory only, and a changed copy refuses collection.
+    trusted_digest = _tree_digest(trusted_metadata)
     try:
         report = _provider_run(provider, order, work, ctx.stop_check)
     except WorkerInterrupted:
@@ -587,12 +613,15 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     if ctx.stop_check is not None and ctx.stop_check():
         _note_interrupted(root, order)
         raise WorkerInterrupted("stop requested while the worker ran; its changes were not collected")
+    if _tree_digest(trusted_metadata) != trusted_digest:
+        raise WorkerError("GREG's trusted copy of the clone's git metadata changed while the worker ran; "
+                          "nothing was collected or committed")
     metadata = work / ".git"
     if metadata.is_symlink() or metadata.is_file():
         metadata.unlink()
     elif metadata.exists():
         shutil.rmtree(metadata)
-    shutil.copytree(trusted_metadata, metadata)
+    shutil.copytree(trusted_metadata, metadata, symlinks=True)
     names, patch = collect_changes(work, base_commit)
     findings = scope_findings(names, order.allowed_paths, order.acceptance.get("max_changed_files"))
     commands = acceptance_commands(order.acceptance, names) if order.mode == "repository" else []

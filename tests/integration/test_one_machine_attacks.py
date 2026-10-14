@@ -121,6 +121,31 @@ def test_attack_worker_plants_git_hooks_and_filters_that_never_run(tmp_path, mon
     assert receipt["worker"]["supervision"]["git_metadata"].startswith("restored")
 
 
+def test_attack_worker_tampers_with_greg_trusted_git_copy(tmp_path, monkeypatch):
+    """Attack: workers are not OS-confined, so a worker that knows the layout rewrites GREG's trusted
+    copy of the clone's .git (beside its clone) to smuggle a filter in through the restore.
+    Expected: the in-memory digest no longer matches; collection is refused; nothing is committed
+    and the payload never runs."""
+    marker = tmp_path / "pwned-trusted"
+    original_run = Scripted.run
+
+    def run(self, order, cwd, *, stop_check=None):
+        report = original_run(self, order, cwd, stop_check=stop_check)
+        trusted = cwd.parent / "base.git" / "config"
+        trusted.write_text(trusted.read_text() + f"[filter \"evil\"]\n\tclean = sh -c 'touch {marker}; cat'\n")
+        (cwd / ".gitattributes").write_text("* filter=evil\n")
+        return report
+
+    monkeypatch.setattr(Scripted, "run", run)
+    honest = {"plan/plan.json": json.dumps({"assignment": [["Ana", "Dock2", 2], ["Ben", "Dock1", 4],
+                                                           ["Cy", "Line", 2]], "staffed": 8}),
+              "tests/test_plan.py": TEST_FROM_DOUBLE}
+    home, spec, states, outputs = run_in_process(tmp_path, monkeypatch, Scripted(honest))
+    assert not marker.exists(), "a filter smuggled through GREG's trusted copy executed"
+    assert not [o for o in outputs if o.get("work_order") == "attack" and o.get("commit")]
+    assert "ACHIEVED" not in states
+
+
 def test_attack_absent_isolation_refuses_the_organ_exchange(tmp_path, monkeypatch):
     """Attack: the OS network filter cannot be installed. Expected: a truthful refusal before any
     organ code runs (never an unconfined run); nothing is recorded."""

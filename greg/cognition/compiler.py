@@ -440,6 +440,55 @@ def _rank(row: dict, prefer: list, competence: dict) -> tuple:
             0 if row["kind"] == "operation" else 1, row["method"])
 
 
+def _usable(registry, row: dict) -> tuple[bool, str]:
+    """Whether the row can run now: an operation's capability must be attached; a composition's stages are
+    checked stage by stage on the canonical path."""
+    if row["kind"] != "operation":
+        return True, "composition: stages checked on the canonical path"
+    try:
+        ok, why = registry.usable(row["method"])
+    except Exception as exc:
+        return False, f"registry: {type(exc).__name__}"
+    return bool(ok), str(why)
+
+
+def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> dict:
+    """A founder ask to attach a withheld capability, on the one asks contract and its screen. Prepared here and
+    returned for the body to record through greg.asks; attaching stays the founder's decision."""
+    from datetime import datetime, timezone
+    from greg import asks
+    family = best["method"].removeprefix("cognition.")
+    record = evidence.get("genomes", {}).get(family, {})
+    measured = {k: v for k, v in {"admission_status": best["status"], "admission_evidence": record.get("evidence"),
+                                  "measured_version": record.get("version"),
+                                  "subregion": best.get("subregion"), "current_state": best["usable_why"]}.items()
+                if v is not None}
+    served = fallback["method"] if fallback else "no attached method"
+    packet = asks.resource_request(
+        request_id=f"attach-{digest({'pid': pid, 'method': best['method']})[7:23]}", kind="RESOURCE",
+        resource="capability",
+        why_now=f"the best-fitting method for request {pid} by frozen evidence, {best['method']}, is registered "
+                f"but not attached",
+        recommendation=f"review the admission evidence and attach {best['method']} if it is sufficient",
+        evidence=measured,
+        options=[{"option": f"attach {best['method']}", "cost": "one founder-signed attach decision; no money",
+                  "expected_effect": f"requests of this geometry route to {best['method']}"},
+                 {"option": "keep it withheld", "cost": "none",
+                  "expected_effect": f"requests of this geometry are served by {served}"}],
+        expected_effect=f"routes this geometry to {best['method']} instead of {served}",
+        uncertainty="held-out admission evidence on generated or reserved instances; outcomes on GREG's own "
+                    "missions are not yet measured",
+        authority_requested={"attach": best["method"], "spend": "none", "consequence_class": "read_only"},
+        consequence_of_no_response=f"requests of this geometry are served by {served}; nothing else changes",
+        created_at=datetime.now(timezone.utc).isoformat())
+    asks.validate(packet)
+    violations = asks.screen(packet)
+    if violations:
+        raise CognitionError(f"the attach ask failed the ask screen: {violations}")
+    return {**packet, "state": "PREPARED_NOT_RECORDED",
+            "record_with": "greg.asks.record on the body (the one path for decision.requested)"}
+
+
 def _settled_competence(journal, geometry_class) -> dict:
     """Mean settled correctness per method from the canonical journal (existing settlement), if any."""
     if journal is None:
@@ -550,7 +599,30 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         return finish("CAPABILITY_DEFICIT")
     competence = _settled_competence(journal, g.geometry)
     eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
-    chosen = eligible[0]
+    for r in eligible:
+        r["usable"], r["usable_why"] = _usable(registry, r)
+    best = eligible[0]
+    runnable = [r for r in eligible if r["usable"]]
+    if not best["usable"]:
+        # the best fit by evidence is registered but withheld: say so, route to the best usable fit, and
+        # prepare (never record or act on) one founder ask to attach it, with its admission evidence
+        receipt["withheld_best_fit"] = {"method": best["method"], "state": best["usable_why"],
+                                        "status": best["status"], "served_by": runnable[0]["method"] if runnable
+                                        else None, **({"subregion": best["subregion"]} if best.get("subregion")
+                                                      else {})}
+        receipt["founder_attach_ask"] = attach_ask(pid, best, runnable[0] if runnable else None, evidence)
+    if not runnable:
+        receipt["capability_deficit"] = {
+            "function": f"cognition.{g.geometry or 'unknown'}:{g.subgeometry or 'unspecified'}",
+            "purpose": g.objective or g.epistemic_question or "cognitive request",
+            "required_inputs": sorted(data), "geometry": g.known(),
+            "verification": {"failed": "every fitting method is registered but not attached",
+                             "unserviceable": [{"method": r["method"], "why": r["usable_why"]} for r in eligible],
+                             "verified": True},
+            "search_order": ["attached", "verified_detached", "installed_software", "builder", "founder"],
+            "route": "founder attach of the prepared ask, or greg.genesis under the enclosing mission's authority"}
+        return finish("CAPABILITY_DEFICIT")
+    chosen = runnable[0]
     receipt["method_or_composition_selected"] = chosen["method"]
     receipt["selection_level"] = ("only_fit_despite_no_lift" if chosen.get("demoted")
                                   else "preferred_by_operator" if chosen["operation"] in plan["prefer"]

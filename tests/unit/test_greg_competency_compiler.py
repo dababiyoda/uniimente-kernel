@@ -188,6 +188,7 @@ def test_measured_subregion_evidence_reaches_the_receipt_and_names_an_acquisitio
         "status": "NICHE_CAPABILITY", "version": item.genome.version, "evidence": "results.json#develop_repair",
         "competitor": item.genome.competitor, "subregions_vs_competitor": table}}, "recipes": {}, "routing": {}}))
     geometry = {"geometry": item.genome.epistemic_class}
+    registry.set_state("cognition.develop_repair", "ATTACHED")       # evaluation-only, in memory
     dominated = compile_(registry, geometry, item.instance(0)[0], execute=False)
     assert dominated["subregion_evidence"]["name"] == "reliable_controller"
     assert dominated["subregion_evidence"]["verdict"] == "DOMINATED"
@@ -207,5 +208,48 @@ def test_an_oracle_competitor_is_never_proposed_for_acquisition(registry, no_ind
         "status": "DEFAULT_FOR_GEOMETRY", "version": item.genome.version, "competitor": item.genome.competitor,
         "subregions_vs_competitor": {name: {"n": 10, "wins": 0, "losses": 10, "ties": 0, "p_better": 1.0,
                                             "p_worse": 0.001}}}}, "recipes": {}, "routing": {}}))
+    registry.set_state("cognition.collective_market", "ATTACHED")
     r = compile_(registry, {"geometry": item.genome.epistemic_class}, data, execute=False)
     assert r["subregion_evidence"]["verdict"] == "DOMINATED" and "acquisition_candidates" not in r
+
+
+def test_a_withheld_best_fit_prepares_one_screened_founder_attach_ask(registry, no_index):
+    # the best fit by frozen evidence is registered but withheld: the compiler says so, prepares an attach ask
+    # on the one asks contract (never recorded or acted on here) and serves nothing it cannot run
+    from greg import asks
+    from greg.cognition.genomes import library
+    item = library.executables()["develop_repair"]
+    no_index.write_text(json.dumps({"genomes": {"develop_repair": {
+        "status": "NICHE_CAPABILITY", "version": item.genome.version, "evidence": "results.json#develop_repair"}},
+        "recipes": {}, "routing": {}}))
+    r = compile_(registry, {"geometry": item.genome.epistemic_class}, item.instance(1)[0], execute=False)
+    assert r["state"] == "CAPABILITY_DEFICIT"
+    assert r["withheld_best_fit"]["method"] == "cognition.develop_repair"
+    assert r["withheld_best_fit"]["state"].startswith("state VERIFIED") and r["withheld_best_fit"]["served_by"] is None
+    ask = r["founder_attach_ask"]
+    assert ask["state"] == "PREPARED_NOT_RECORDED" and ask["resource"] == "capability"
+    assert ask["authority_requested"] == {"attach": "cognition.develop_repair", "spend": "none",
+                                          "consequence_class": "read_only"}
+    assert ask["evidence"]["admission_status"] == "NICHE_CAPABILITY"
+    assert any(o["cost"] == "none" for o in ask["options"])                   # refusing is a costed choice
+    asks.validate({k: v for k, v in ask.items() if k not in ("state", "record_with")})
+    assert asks.screen(ask) == []
+
+
+def test_an_attached_fit_serves_while_a_better_withheld_one_is_asked_for(registry, no_index):
+    # a payload both the max-flow genome and the graph -> allocate recipe fit: with the admitted genome
+    # withheld, the usable composition serves the request and the attach ask names the better fit
+    both = {**R.f3(3)["payload"], **maxflow_instance(3)[0]}
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"}},
+                                    "recipes": {}, "routing": {}}))
+    geometry = {"geometry": "optimization", "graph_structure": True}
+    attached = compile_(registry, geometry, both, execute=False)
+    assert attached["method_or_composition_selected"] == "cognition.flow_maxflow"
+    assert "withheld_best_fit" not in attached and "founder_attach_ask" not in attached
+    registry.set_state("cognition.flow_maxflow", "VERIFIED")                   # withhold the best fit
+    r = compile_(registry, geometry, both, execute=False)
+    assert r["state"] == "PLANNED"
+    assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
+    assert r["withheld_best_fit"] == {"method": "cognition.flow_maxflow", "state": "state VERIFIED",
+                                      "status": "DEFAULT_FOR_GEOMETRY", "served_by": "composition:graph_then_allocate"}
+    assert r["founder_attach_ask"]["authority_requested"]["attach"] == "cognition.flow_maxflow"

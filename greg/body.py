@@ -625,9 +625,8 @@ def status(home: str | Path) -> dict:
         journal = Journal(spine, actor="spiffe://uniimente.internal/greg/status-reader")
         registered = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
         achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
-        answered = {e.payload["request_id"] for e in journal.replay("decision.answered")}
-        answered |= {e.payload["request_id"] for e in journal.replay("decision.withdrawn")}
-        requests = [e.payload for e in journal.replay("decision.requested") if e.payload["request_id"] not in answered]
+        requests = asks.open_requests(journal.replay("decision.") + journal.replay("mission.achieved")
+                                      + journal.replay("mission.lifecycle"))
         founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
         boots = journal.replay("body.booted")
         registry = CapabilityRegistry()

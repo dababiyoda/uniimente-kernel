@@ -53,6 +53,19 @@ class BodyError(RuntimeError):
     pass
 
 
+def founder_keys(journal: Journal) -> dict[str, str]:
+    """Current founder keys from the one retained enrollment/rotation history (#138 b8a0ccd)."""
+    keys = {}
+    for event in journal.replay("founder."):
+        data = event.payload
+        if event.type == "greg.founder.enrolled":
+            keys[data["key_id"]] = data["public_key"]
+        elif event.type == "greg.founder.key_rotated":
+            keys.pop(data["old_key_id"], None)
+            keys[data["new_key_id"]] = data["new_public_key"]
+    return keys
+
+
 def device_delegations(journal: Journal) -> dict[str, dict]:
     """Currently delegated device keys (enrolled by the founder key, not revoked).
     Expiry is enforced at verification time, so an expired delegation is listed but unusable."""
@@ -212,15 +225,7 @@ class Body:
 
     # -- founder identity ----------------------------------------------------------
     def enrolled_keys(self) -> dict[str, str]:
-        keys = {}
-        for event in self.journal.replay("founder."):
-            data = event.payload
-            if event.type == "greg.founder.enrolled":
-                keys[data["key_id"]] = data["public_key"]
-            elif event.type == "greg.founder.key_rotated":
-                keys.pop(data["old_key_id"], None)
-                keys[data["new_key_id"]] = data["new_public_key"]
-        return keys
+        return founder_keys(self.journal)
 
     def enroll_founder(self, public_hex: str) -> dict:
         """Trust-on-first-use by whoever controls this body's filesystem."""
@@ -634,7 +639,7 @@ def status(home: str | Path) -> dict:
         answered = {e.payload["request_id"] for e in journal.replay("decision.answered")}
         answered |= {e.payload["request_id"] for e in journal.replay("decision.withdrawn")}
         requests = [e.payload for e in journal.replay("decision.requested") if e.payload["request_id"] not in answered]
-        founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
+        founder = list(founder_keys(journal))     # rotation honored: only the currently enrolled keys
         boots = journal.replay("body.booted")
         # The same states the body uses: catalog initial state, then every recorded transition.
         from greg.cognition.catalog import initial_state

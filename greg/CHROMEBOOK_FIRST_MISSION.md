@@ -44,8 +44,18 @@ cd uniimente-kernel && bash greg/chromebook/install.sh
 venv, writes a `greg` command to `~/.local/bin`, runs the doctor, creates the
 body, creates your key (you type the passphrase; the script never sees it),
 enrolls it, enables `greg-body.service`, and asks you to sign the designation of
-this machine as your first body. Re-running it changes nothing that is already
-done. Then skip to step 2. The manual steps below do the same thing by hand.
+this machine as your first body. Re-running preserves your body, keys, enrollment
+and accepted designation. It rewrites the command wrapper and default service
+configuration; review any customized service before rerunning. Then skip to step
+2. The manual steps below do the same thing by hand.
+
+The installer derives the public key from your actual signing key and checks it
+against any companion `.pub` file and the body's current enrollment. A mismatch
+stops before service installation or designation; it keeps existing keys and
+enrollment intact. To inspect your public key locally, use
+`greg founder public --key ~/.greg-founder.pem` (GREG asks for the passphrase).
+After an authorized key rotation, use the newly enrolled key. An enabled service
+and a queued designation are setup states; inspect `greg status` before a mission.
 
 It also installs GREG's open-source reasoning engines (Z3, OR-Tools, SciPy, NetworkX,
 SymPy; about 550 MB, binary wheels only) and prints how many are present. If your

@@ -3,6 +3,7 @@
     greg init --read-root ~/Projects          create this computer's body
     greg founder keygen --key ~/.greg-founder.pem   (on Alfonso's own device)
     greg founder enroll --pubkey HEX          trust-on-first-use enrollment
+    greg founder public --key K               print the public half of your key (writes no body state)
     greg mission submit mission.json --key K  signed goal -> inbox; the body runs it
     greg status | greg decisions | greg morning
     greg decide REQUEST_ID approve|reject --key K
@@ -35,7 +36,7 @@ import sys
 from greg import service
 from greg.body import (Body, BodyError, Layout, init_body, morning_projection, observe, send_signed,
                        status)
-from greg.founder import generate_founder_key, load_founder_key
+from greg.founder import generate_founder_key, load_founder_key, public_bytes
 from greg.tribunal import mark_reviewed, morning_report
 from provenance.ledger import WriterConflict
 
@@ -177,6 +178,8 @@ def main(argv=None) -> int:
     s.add_argument("--local-model", help="opt in to an already installed Ollama model for the one GREG router")
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
+    fp = fs.add_parser("public", help="read the public half of your founder key; writes no body state")
+    fp.add_argument("--key", required=True); fp.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
     at = fs.add_parser("attest", help="sign a founder-tier attestation from a passphrase-protected key (grants nothing)")
     at.add_argument("--key", required=True); at.add_argument("--no-passphrase", action="store_true")
@@ -405,6 +408,9 @@ def main(argv=None) -> int:
                                        deliver_root=args.deliver_root, local_model=args.local_model), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
             print(generate_founder_key(args.key, _passphrase(args)))
+        elif args.cmd == "founder" and args.founder_cmd == "public":
+            key = load_founder_key(args.key, _passphrase(args))
+            print(public_bytes(key.public_key()).hex())
         elif args.cmd == "founder" and args.founder_cmd == "enroll":
             with Body(home) as body:
                 print(json.dumps(body.enroll_founder(args.pubkey), indent=1))

@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Mapping, Sequence
 
+from .contract_check import validate_record
 from .contracts import (
     ContractError,
     IntegrityConflict,
@@ -25,7 +26,8 @@ from .contracts import (
     require_text,
 )
 
-GOAL_STATUSES = ("dormant", "awake", "blocked", "paused", "completed", "revoked")
+GOAL_STATUSES = ("dormant", "awake", "blocked", "paused", "completed", "revoked", "superseded")
+DEFICIT_CLASSES = ("capability", "resource", "relationship", "proof")
 PRIORITIES = (1, 2, 3, 4, 5)
 CONSEQUENCE_CLASSES = ("read_only", "internal_write", "external_contact", "financial", "irreversible")
 DIRECTIONS = ("gte", "lte", "eq")
@@ -185,12 +187,14 @@ class PlanNode:
     exit_evidence: tuple[str, ...]
     interventions: tuple[InterventionSpec, ...]
     requires_capabilities: tuple[str, ...] = ()
+    requires_relationships: tuple[str, ...] = ()
 
     @classmethod
     def build(cls, *, node_id: str, outcome: str, gate: str, sbm: str, sbm_direction: str,
               sbm_target: float | bool, exit_evidence: Sequence[str] = (),
               interventions: Sequence[InterventionSpec] = (),
-              requires_capabilities: Sequence[str] = ()) -> "PlanNode":
+              requires_capabilities: Sequence[str] = (),
+              requires_relationships: Sequence[str] = ()) -> "PlanNode":
         if sbm_direction not in DIRECTIONS:
             raise GoalError(f"unknown SBM direction {sbm_direction!r}")
         if isinstance(sbm_target, bool):
@@ -208,14 +212,16 @@ class PlanNode:
                    gate=require_text("gate", gate), sbm=require_text("sbm", sbm),
                    sbm_direction=sbm_direction, sbm_target=sbm_target,
                    exit_evidence=_tuple_of_text("exit_evidence", exit_evidence), interventions=specs,
-                   requires_capabilities=_tuple_of_text("requires_capabilities", requires_capabilities))
+                   requires_capabilities=_tuple_of_text("requires_capabilities", requires_capabilities),
+                   requires_relationships=_tuple_of_text("requires_relationships", requires_relationships))
 
     def to_dict(self) -> dict[str, Any]:
         return {"node_id": self.node_id, "outcome": self.outcome, "gate": self.gate, "sbm": self.sbm,
                 "sbm_direction": self.sbm_direction, "sbm_target": self.sbm_target,
                 "exit_evidence": list(self.exit_evidence),
                 "interventions": [i.to_dict() for i in self.interventions],
-                "requires_capabilities": list(self.requires_capabilities)}
+                "requires_capabilities": list(self.requires_capabilities),
+                "requires_relationships": list(self.requires_relationships)}
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "PlanNode":
@@ -223,7 +229,8 @@ class PlanNode:
                          sbm=value["sbm"], sbm_direction=value["sbm_direction"], sbm_target=value["sbm_target"],
                          exit_evidence=value.get("exit_evidence", ()),
                          interventions=[InterventionSpec.from_dict(i) for i in value.get("interventions", ())],
-                         requires_capabilities=value.get("requires_capabilities", ()))
+                         requires_capabilities=value.get("requires_capabilities", ()),
+                         requires_relationships=value.get("requires_relationships", ()))
 
 
 @dataclass(frozen=True)
@@ -237,9 +244,16 @@ class OpportunityFactor:
     direction: str            # gte | lte | eq | present
     threshold: float | bool | None
     weight: float
-    effect: str               # cost_down | feasibility_up | timing | risk_down | upside_up
+    effect: str               # favorable: cost_down | feasibility_up | timing | risk_down | upside_up
+                              # threats:   cost_up | feasibility_down | risk_up | upside_down
 
     EFFECTS = ("cost_down", "feasibility_up", "timing", "risk_down", "upside_up")
+    THREAT_EFFECTS = ("cost_up", "feasibility_down", "risk_up", "upside_down")
+
+    @property
+    def polarity(self) -> int:
+        """+1 for a favorable factor, -1 for a threat; threats subtract from the intersection score."""
+        return -1 if self.effect in self.THREAT_EFFECTS else 1
 
     @classmethod
     def build(cls, *, factor_id: str, domain: str, subject: str, attribute: str, direction: str,
@@ -248,7 +262,7 @@ class OpportunityFactor:
             raise GoalError(f"unknown factor direction {direction!r}")
         if direction != "present" and threshold is None:
             raise GoalError("factor threshold required unless direction is 'present'")
-        if effect not in cls.EFFECTS:
+        if effect not in cls.EFFECTS + cls.THREAT_EFFECTS:
             raise GoalError(f"unknown factor effect {effect!r}")
         if threshold is not None and not isinstance(threshold, bool):
             threshold = _number("threshold", threshold)
@@ -291,6 +305,8 @@ class GoalSpec:
     wake_threshold: float
     intersection_threshold: float
     intersection_window_seconds: int
+    assumptions: tuple[str, ...]
+    supersedes: str | None
     goal_id: str
 
     @classmethod
@@ -301,13 +317,14 @@ class GoalSpec:
               resource_budget: Mapping[str, Any] | None = None, dependencies: Sequence[str] = (),
               known_opportunities: Sequence[str] = (), known_threats: Sequence[str] = (),
               missing_capabilities: Sequence[str] = (), wake_threshold: float = 1.0,
-              intersection_threshold: float = 1.0, intersection_window_seconds: int = 30 * 86400) -> "GoalSpec":
+              intersection_threshold: float = 1.0, intersection_window_seconds: int = 30 * 86400,
+              assumptions: Sequence[str] = (), supersedes: str | None = None) -> "GoalSpec":
         if priority not in PRIORITIES:
             raise GoalError("priority must be 1 (highest) to 5 (lowest)")
         auth = canonical_copy(dict(authority))
         for key in ("authorized_by", "authorization_ref", "legal_principal", "max_consequence_class"):
-            require_text(f"authority.{key}", auth.get(key, ""))
-        if auth["legal_principal"].casefold() == "uniimente":
+            auth[key] = require_text(f"authority.{key}", auth.get(key, ""))
+        if auth["legal_principal"].strip().casefold() == "uniimente":
             raise GoalError("UNIIMENTE may never be the legal principal of a goal")
         if auth["max_consequence_class"] not in CONSEQUENCE_CLASSES:
             raise GoalError(f"unknown max_consequence_class {auth['max_consequence_class']!r}")
@@ -354,6 +371,8 @@ class GoalSpec:
             "wake_threshold": _number("wake_threshold", wake_threshold, minimum=0.0),
             "intersection_threshold": _number("intersection_threshold", intersection_threshold, minimum=0.0),
             "intersection_window_seconds": intersection_window_seconds,
+            "assumptions": list(_tuple_of_text("assumptions", assumptions)),
+            "supersedes": require_text("supersedes", supersedes) if supersedes is not None else None,
         }
         goal_id = digest({"kind": "egregore-goal", **body})
         return cls(founder_intent=body["founder_intent"], desired_state=body["desired_state"], priority=priority,
@@ -364,7 +383,8 @@ class GoalSpec:
                    dependencies=tuple(body["dependencies"]), known_opportunities=tuple(body["known_opportunities"]),
                    known_threats=tuple(body["known_threats"]), missing_capabilities=tuple(body["missing_capabilities"]),
                    wake_threshold=body["wake_threshold"], intersection_threshold=body["intersection_threshold"],
-                   intersection_window_seconds=intersection_window_seconds, goal_id=goal_id)
+                   intersection_window_seconds=intersection_window_seconds,
+                   assumptions=tuple(body["assumptions"]), supersedes=body["supersedes"], goal_id=goal_id)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -379,6 +399,7 @@ class GoalSpec:
             "missing_capabilities": list(self.missing_capabilities), "wake_threshold": self.wake_threshold,
             "intersection_threshold": self.intersection_threshold,
             "intersection_window_seconds": self.intersection_window_seconds,
+            "assumptions": list(self.assumptions), "supersedes": self.supersedes,
             "execution_authority": "none",
         }
 
@@ -398,7 +419,8 @@ class GoalSpec:
             known_opportunities=value.get("known_opportunities", ()), known_threats=value.get("known_threats", ()),
             missing_capabilities=value.get("missing_capabilities", ()), wake_threshold=value.get("wake_threshold", 1.0),
             intersection_threshold=value.get("intersection_threshold", 1.0),
-            intersection_window_seconds=value.get("intersection_window_seconds", 30 * 86400))
+            intersection_window_seconds=value.get("intersection_window_seconds", 30 * 86400),
+            assumptions=value.get("assumptions", ()), supersedes=value.get("supersedes"))
         if value.get("goal_id", rebuilt.goal_id) != rebuilt.goal_id:
             raise IntegrityConflict("persisted goal_id does not match goal content")
         return rebuilt
@@ -422,6 +444,8 @@ class GoalState:
     sbm: dict[str, Any] | None = None
     blockers: list[str] = field(default_factory=list)
     missing_capabilities: list[str] = field(default_factory=list)
+    missing_relationships: list[str] = field(default_factory=list)
+    deficits: list[dict[str, Any]] = field(default_factory=list)
     last_reviewed_at: str | None = None
     last_woken_at: str | None = None
     wake_reason: str | None = None
@@ -438,9 +462,11 @@ class GoalState:
             "goal_id": self.goal_id, "status": self.status, "current_state": self.current_state,
             "active_node_id": self.active_node_id, "active_gate": self.active_gate, "sbm": self.sbm,
             "blockers": list(self.blockers), "missing_capabilities": list(self.missing_capabilities),
+            "missing_relationships": list(self.missing_relationships), "deficits": list(self.deficits),
             "last_reviewed_at": self.last_reviewed_at, "last_woken_at": self.last_woken_at,
             "wake_reason": self.wake_reason, "history_count": self.history_count,
-            "evidence_refs": list(self.evidence_refs), "preferences": self.preferences, "version": self.version})
+            "evidence_refs": list(self.evidence_refs), "preferences": self.preferences, "version": self.version,
+            "execution_authority": "none"})
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "GoalState":
@@ -456,12 +482,13 @@ class GoalRegistry:
     CONFLICT_RECORD = "egregore.goal_conflict"
 
     def __init__(self, *, ledger: Any, source: str = "spiffe://uniimente.internal/egregore/goal-gravity"):
-        if not hasattr(ledger, "append") or not hasattr(ledger, "by_type"):
-            raise GoalError("ledger must provide append() and by_type()")
+        if not all(hasattr(ledger, name) for name in ("append", "by_type", "records")):
+            raise GoalError("ledger must provide append(), by_type() and records (hydration source)")
         self.ledger = ledger
         self.source = require_text("source", source)
         self._specs: dict[str, GoalSpec] = {}
         self._states: dict[str, GoalState] = {}
+        self._record_hashes: dict[str, str] = {}
         self._hydrate()
 
     @property
@@ -479,8 +506,10 @@ class GoalRegistry:
                 if existing is not None and existing.to_dict() != spec.to_dict():
                     raise IntegrityConflict("ledger contains conflicting goal content")
                 self._specs[spec.goal_id] = spec
+                self._record_hashes[spec.goal_id] = getattr(record, "hash", None)
                 self._states.setdefault(spec.goal_id, GoalState(goal_id=spec.goal_id,
-                                                                last_reviewed_at=payload.get("authorized_at")))
+                                                                last_reviewed_at=payload.get("authorized_at"),
+                                                                missing_capabilities=list(spec.missing_capabilities)))
             elif rtype in (self.TRANSITION_RECORD, self.PREFERENCE_RECORD):
                 state = GoalState.from_dict(payload["state"])
                 if state.goal_id not in self._specs:
@@ -500,6 +529,11 @@ class GoalRegistry:
     def state(self, goal_id: str) -> GoalState:
         self.get(goal_id)
         return GoalState.from_dict(self._states[goal_id].to_dict())
+
+    def authorization_hash(self, goal_id: str) -> str | None:
+        """Ledger hash of the goal's authorization record: real evidence of declared lineage."""
+        self.get(goal_id)
+        return self._record_hashes.get(goal_id)
 
     def by_status(self, status: str) -> list[str]:
         return sorted(g for g, s in self._states.items() if s.status == status)
@@ -547,16 +581,20 @@ class GoalRegistry:
         if spec.goal_id in self._specs:
             return spec.goal_id  # idempotent: identical content, identical id
         authorized_at = iso(parse_time(now))
-        self.ledger.append(self.AUTHORIZED_RECORD, {
+        validate_record(spec.to_dict(), "goal-record")
+        record = self.ledger.append(self.AUTHORIZED_RECORD, {
             "source": self.source, "goal": spec.to_dict(), "authorized_at": authorized_at,
             "authority_note": spec.authority["authority_note"], "disposition": "persisted_dormant"})
+        self._record_hashes[spec.goal_id] = getattr(record, "hash", None)
         self._specs[spec.goal_id] = spec
-        self._states[spec.goal_id] = GoalState(goal_id=spec.goal_id, last_reviewed_at=authorized_at)
+        self._states[spec.goal_id] = GoalState(goal_id=spec.goal_id, last_reviewed_at=authorized_at,
+                                               missing_capabilities=list(spec.missing_capabilities))
         return spec.goal_id
 
     def _write_state(self, record_type: str, goal_id: str, state: GoalState, *, reason: str, extra: dict | None = None) -> GoalState:
         state.version += 1
         state.history_count += 1
+        validate_record(state.to_dict(), "goal-state")
         self.ledger.append(record_type, {"source": self.source, "goal_id": goal_id, "reason": require_text("reason", reason),
                                          "state": state.to_dict(), **(extra or {})})
         self._states[goal_id] = GoalState.from_dict(state.to_dict())
@@ -566,8 +604,8 @@ class GoalRegistry:
                    **fields: Any) -> GoalState:
         self.get(goal_id)
         state = self.state(goal_id)
-        if state.status == "revoked":
-            raise GoalError("a revoked goal accepts no further transitions")
+        if state.status in ("revoked", "superseded"):
+            raise GoalError(f"a {state.status} goal accepts no further transitions")
         if status is not None:
             if status not in GOAL_STATUSES:
                 raise GoalError(f"unknown status {status!r}")
@@ -583,7 +621,7 @@ class GoalRegistry:
 
     def wake(self, goal_id: str, *, reason: str, now: datetime | str, signal_ids: Sequence[str] = ()) -> GoalState:
         state = self.state(goal_id)
-        if state.status in ("completed", "revoked", "paused") or state.preferences.get("stop_pushing"):
+        if state.status in ("completed", "revoked", "paused", "superseded") or state.preferences.get("stop_pushing"):
             raise GoalError(f"goal {goal_id} cannot wake from status {state.status}")
         state.status = "awake"
         state.last_woken_at = iso(parse_time(now))
@@ -594,11 +632,30 @@ class GoalRegistry:
 
     def sleep(self, goal_id: str, *, reason: str, now: datetime | str, blocked: bool = False) -> GoalState:
         state = self.state(goal_id)
-        if state.status in ("completed", "revoked"):
+        if state.status in ("completed", "revoked", "superseded"):
             return state
         state.status = "blocked" if blocked else "dormant"
         state.last_reviewed_at = iso(parse_time(now))
         return self._write_state(self.TRANSITION_RECORD, goal_id, state, reason=f"sleep: {reason}")
+
+    def supersede(self, old_goal_id: str, new_spec: GoalSpec, *, actor: str, reason: str,
+                  now: datetime | str) -> str:
+        """Founder 'change this goal': the old spec is immutable, so a new goal supersedes it with lineage.
+
+        The old goal becomes ``superseded`` (never deleted); the new goal must name it in ``supersedes``.
+        """
+        self.get(old_goal_id)
+        if not isinstance(new_spec, GoalSpec) or new_spec.supersedes != old_goal_id:
+            raise GoalError("the replacement goal must declare supersedes=<old goal_id>")
+        new_id = self.authorize(new_spec, now=now)
+        state = self.state(old_goal_id)
+        if state.status != "superseded":
+            state.status = "superseded"
+            state.last_reviewed_at = iso(parse_time(now))
+            self._write_state(self.TRANSITION_RECORD, old_goal_id, state,
+                              reason=f"superseded by {new_id[:19]} ({require_text('actor', actor)}): {reason}",
+                              extra={"superseded_by": new_id})
+        return new_id
 
     def revoke(self, goal_id: str, *, actor: str, reason: str, now: datetime | str) -> GoalState:
         state = self.state(goal_id)
@@ -612,6 +669,8 @@ class GoalRegistry:
         if kind not in PREFERENCE_KINDS:
             raise GoalError(f"unknown preference kind {kind!r}")
         state = self.state(goal_id)
+        if state.status in ("revoked", "superseded", "completed"):
+            raise GoalError(f"a {state.status} goal accepts no further preferences; authorize a new goal instead")
         prefs = state.preferences
         if kind == "stop_pushing":
             prefs["stop_pushing"] = bool(value)
@@ -620,7 +679,7 @@ class GoalRegistry:
             elif state.status == "paused":
                 state.status = "dormant"
         elif kind == "lower_priority":
-            if value not in PRIORITIES or value < self.get(goal_id).priority:
+            if value not in PRIORITIES or value < self.effective_priority(goal_id):
                 raise GoalError("lower_priority may only lower (1 highest .. 5 lowest)")
             prefs["priority_override"] = int(value)
         elif kind == "never_use_tactic":
@@ -634,13 +693,17 @@ class GoalRegistry:
         elif kind == "revoke_capability":
             prefs.setdefault("revoked_capabilities", []).append(require_text("capability", value))
         elif kind == "change_goal":
+            # The spec is immutable: a change pauses this goal until a replacement supersedes it.
             prefs.setdefault("change_notes", []).append(require_text("note", value))
+            state.status = "paused"
         state.last_reviewed_at = iso(parse_time(now))
         return self._write_state(self.PREFERENCE_RECORD, goal_id, state, reason=f"{kind} by {require_text('actor', actor)}: {reason}",
                                  extra={"preference": {"kind": kind, "value": canonical_copy(value)}})
 
     def record_refusal(self, goal_id: str, *, route_hash: str, actor: str, reason: str, now: datetime | str) -> GoalState:
         state = self.state(goal_id)
+        if state.status in ("revoked", "superseded", "completed"):
+            raise GoalError(f"a {state.status} goal accepts no further refusals")
         state.preferences.setdefault("refused_routes", []).append(require_text("route_hash", route_hash))
         state.last_reviewed_at = iso(parse_time(now))
         return self._write_state(self.PREFERENCE_RECORD, goal_id, state, reason=f"route refused by {actor}: {reason}",

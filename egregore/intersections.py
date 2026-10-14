@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Sequence
 
 from .contracts import canonical_copy, digest, require_text
 from .experience import WorldModel
@@ -30,6 +30,8 @@ class IntersectionReport:
     favorable: bool
     effects: dict[str, float]
     factor_set_hash: str
+    threats: tuple[dict[str, Any], ...] = ()
+    threat_score: float = 0.0
 
     @property
     def execution_authority(self) -> str:
@@ -41,6 +43,7 @@ class IntersectionReport:
                 "unsatisfied": list(self.unsatisfied), "domains": list(self.domains),
                 "cross_domain": self.cross_domain, "favorable": self.favorable,
                 "effects": canonical_copy(self.effects), "factor_set_hash": self.factor_set_hash,
+                "threats": [canonical_copy(t) for t in self.threats], "threat_score": self.threat_score,
                 "execution_authority": "none"}
 
 
@@ -48,7 +51,8 @@ def _condition_holds(factor: OpportunityFactor, value: Any) -> bool:
     if factor.direction == "present":
         return value is not None
     if isinstance(value, bool) or isinstance(factor.threshold, bool):
-        return factor.direction == "eq" and value == factor.threshold
+        # bool and numeric never cross-satisfy (True is not 1 here)
+        return factor.direction == "eq" and isinstance(value, bool) and isinstance(factor.threshold, bool) and value == factor.threshold
     if not isinstance(value, (int, float)):
         return False
     v, t = float(value), float(factor.threshold)
@@ -73,14 +77,22 @@ class FavorableIntersectionDetector:
     def execution_authority(self) -> str:
         return "none"
 
-    def detect(self, spec: GoalSpec, *, now: datetime | str, record: bool = True) -> IntersectionReport:
+    def detect(self, spec: GoalSpec, *, now: datetime | str, record: bool = True,
+               muted_domains: Sequence[str] = ()) -> IntersectionReport:
+        """``muted_domains`` are the founder's do-not-monitor domains for this goal: their factors never count."""
         current = parse_time(now)
         window = timedelta(seconds=spec.intersection_window_seconds)
+        muted = set(muted_domains)
         satisfied: list[dict[str, Any]] = []
+        threats: list[dict[str, Any]] = []
         unsatisfied: list[str] = []
         effects: dict[str, float] = {}
         score = 0.0
+        threat_score = 0.0
         for factor in spec.opportunity_factors:
+            if factor.domain in muted:
+                unsatisfied.append(factor.factor_id)
+                continue
             belief = self.world.belief(factor.subject, factor.attribute)
             if belief is None or belief.contradicted:
                 unsatisfied.append(factor.factor_id)
@@ -92,12 +104,20 @@ class FavorableIntersectionDetector:
             if not _condition_holds(factor, belief.value):
                 unsatisfied.append(factor.factor_id)
                 continue
-            score += factor.weight * belief.confidence
-            effects[factor.effect] = effects.get(factor.effect, 0.0) + factor.weight * belief.confidence
-            satisfied.append({"factor_id": factor.factor_id, "domain": factor.domain, "key": belief.key,
-                              "value": belief.value, "confidence": belief.confidence,
-                              "observed_at": belief.observed_at, "source": belief.source,
-                              "signal_id": belief.signal_id, "weight": factor.weight, "effect": factor.effect})
+            entry = {"factor_id": factor.factor_id, "domain": factor.domain, "key": belief.key,
+                     "value": belief.value, "confidence": belief.confidence,
+                     "observed_at": belief.observed_at, "source": belief.source,
+                     "signal_id": belief.signal_id, "weight": factor.weight, "effect": factor.effect}
+            contribution = factor.weight * belief.confidence
+            effects[factor.effect] = effects.get(factor.effect, 0.0) + contribution
+            if factor.polarity < 0:
+                # "What emerging threat increases its cost?": threats subtract and are listed, never hidden.
+                threat_score += contribution
+                threats.append(entry)
+            else:
+                score += contribution
+                satisfied.append(entry)
+        score -= threat_score
         domains = tuple(sorted({s["domain"] for s in satisfied}))
         cross_domain = len(domains) >= 2
         favorable = score >= spec.intersection_threshold and cross_domain and bool(satisfied)
@@ -106,7 +126,9 @@ class FavorableIntersectionDetector:
             satisfied=tuple(satisfied), unsatisfied=tuple(unsatisfied), domains=domains, cross_domain=cross_domain,
             favorable=favorable, effects=effects,
             factor_set_hash=digest({"kind": "egregore-intersection", "goal_id": spec.goal_id,
-                                    "factors": sorted(s["factor_id"] for s in satisfied)}))
+                                    "factors": sorted(s["factor_id"] for s in satisfied),
+                                    "threats": sorted(t["factor_id"] for t in threats)}),
+            threats=tuple(threats), threat_score=threat_score)
         key = (spec.goal_id, report.factor_set_hash)
         if record and favorable and key not in self._recorded:
             self.ledger.append(self.INTERSECTION_RECORD, {"source": self.source, "report": report.to_dict(),

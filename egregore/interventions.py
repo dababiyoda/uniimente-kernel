@@ -23,9 +23,14 @@ from typing import Any, Mapping, Sequence
 
 from policy.engine import Proposal, Verdict, evaluate
 
+from .contract_check import validate_record
 from .contracts import canonical_copy, digest, require_text
 from .goals import CONSEQUENCE_CLASSES, GoalRegistry, GoalSpec, GoalState, InterventionSpec, iso, parse_time
 from .gps import GPSFix
+
+RESOLUTION_ORDER = ("existing capability", "composition", "commodity infrastructure", "open source",
+                    "API/plugin/service", "authorized computer use", "small utility", "coding agent",
+                    "organization design", "new architecture", "escalate/abstain")
 
 DECISIONS = ("EXECUTE_AUTONOMOUSLY", "PREPARE_FOR_FOUNDER", "REQUEST_EVIDENCE", "WAIT", "ESCALATE", "ABSTAIN")
 EVIDENCE_STATES = ("planned", "attempted", "executed", "externally_verified", "failed", "unknown")
@@ -79,8 +84,18 @@ class InterventionClassifier:
     def execution_authority(self) -> str:
         return "none"
 
+    @staticmethod
+    def proposal_id_for(goal_id: str, route_hash: str, *, attempt: int = 0) -> str:
+        """Deterministic proposal identity: ``egregore:goal:<goal23>:<route23>`` for the first dispatch of a
+        route; ``...:r<n>`` for the n-th re-dispatch after an accountable reconciliation. The Gate's dispatch
+        claim is keyed on this id, so a re-dispatch is always a distinguishable record, never a replay."""
+        if not isinstance(attempt, int) or isinstance(attempt, bool) or attempt < 0:
+            raise ValueError("attempt must be a non-negative integer")
+        base = f"egregore:goal:{goal_id[:23]}:{route_hash[:23]}"
+        return base if attempt == 0 else f"{base}:r{attempt}"
+
     def proposal_for(self, spec: GoalSpec, intervention: InterventionSpec, *, evidence_refs: Sequence[str],
-                     evidence_confidence: float, context: Mapping[str, Any] | None = None) -> Proposal:
+                     evidence_confidence: float, context: Mapping[str, Any] | None = None, attempt: int = 0) -> Proposal:
         """Bind a move to real accountability for policy review (same shape as gate_adapter)."""
         return Proposal(
             actor=self.actor, legal_principal=self.legal_principal, action_class=intervention.action_class,
@@ -90,14 +105,19 @@ class InterventionClassifier:
             estimated_cost_usd=intervention.estimated_cost_usd, requested_capability=intervention.requested_capability,
             expected_outcome=intervention.expected_outcome,
             context={**canonical_copy(dict(context or {})), "goal_id": spec.goal_id,
-                     "egregore_route_hash": intervention.route_hash, "egregore_execution_authority": "none"},
-            proposal_id=f"egregore:goal:{spec.goal_id[:23]}:{intervention.route_hash[:23]}")
+                     "egregore_route_hash": intervention.route_hash, "egregore_attempt": attempt,
+                     "egregore_execution_authority": "none"},
+            proposal_id=self.proposal_id_for(spec.goal_id, intervention.route_hash, attempt=attempt))
 
     def classify(self, spec: GoalSpec, state: GoalState, intervention: InterventionSpec, *, fix: GPSFix | None,
                  grant: Mapping[str, Any] | None, evidence_refs: Sequence[str], evidence_confidence: float,
-                 now: datetime | str, record: bool = True, grant_view: Mapping[str, Any] | None = None) -> Classification:
+                 now: datetime | str, record: bool = True, grant_view: Mapping[str, Any] | None = None,
+                 selected: bool | None = None, unmet_dependencies: Sequence[str] = ()) -> Classification:
         """``grant_view`` is the Gate's evaluation view of the same grant (wire contract plus
-        gate-managed stage metadata); when omitted the raw grant is evaluated as-is."""
+        gate-managed stage metadata); when omitted the raw grant is evaluated as-is.
+        ``selected`` reports whether standing deliberation (guardian/treasury evaluators) selected this
+        move; ``False`` turns an otherwise executable move into prepared work. ``unmet_dependencies``
+        (goals the spec depends on that are not completed) make every move WAIT."""
         classified_at = iso(parse_time(now))
         reasons: list[str] = []
         missing: tuple[str, ...] = ()
@@ -111,21 +131,42 @@ class InterventionClassifier:
             decision, reasons = "ABSTAIN", [f"founder said never use tactic {intervention.tactic!r}"]
         elif self.registry.is_route_refused(spec.goal_id, intervention.route_hash):
             decision, reasons = "ABSTAIN", ["founder refused this exact route; not re-proposed unchanged"]
+        elif self.registry.capability_revoked(spec.goal_id, intervention.requested_capability):
+            decision, reasons = "ABSTAIN", [f"founder revoked capability {intervention.requested_capability!r} for this goal"]
+        elif unmet_dependencies:
+            decision = "WAIT"
+            reasons = [f"dependency unmet: {d}" for d in unmet_dependencies] + ["original goal retained"]
         elif fix is not None and fix.missing_capabilities:
             decision = "WAIT"
             reasons = [f"capability deficit: {', '.join(fix.missing_capabilities)}; original goal retained"]
             if record:
-                self.ledger.append(self.DEFICIT_RECORD, {
-                    "source": self.source, "goal_id": spec.goal_id, "active_node_id": fix.active_node_id,
+                deficit = {
+                    "deficit_id": digest({"kind": "egregore-capability-deficit", "goal_id": spec.goal_id,
+                                          "active_node_id": fix.active_node_id,
+                                          "missing": sorted(fix.missing_capabilities)}),
+                    "goal_id": spec.goal_id, "active_node_id": fix.active_node_id,
                     "missing_capabilities": list(fix.missing_capabilities), "founder_intent": spec.founder_intent,
-                    "resolution_order": ["existing capability", "composition", "commodity infrastructure", "open source",
-                                         "API/plugin/service", "authorized computer use", "small utility",
-                                         "coding agent", "organization design", "new architecture", "escalate/abstain"],
-                    "disposition": "goal_blocked_not_closed", "detected_at": classified_at})
+                    "resolution_order": list(RESOLUTION_ORDER), "lifecycle": "DISCOVERED",
+                    "disposition": "goal_blocked_not_closed", "detected_at": classified_at, "resume": "original_goal"}
+                validate_record(deficit, "capability-deficit")
+                already = any(r.payload.get("deficit", {}).get("deficit_id") == deficit["deficit_id"]
+                              and r.payload["deficit"]["disposition"] == "goal_blocked_not_closed"
+                              for r in self.ledger.by_type(self.DEFICIT_RECORD))
+                if not already:
+                    self.ledger.append(self.DEFICIT_RECORD, {"source": self.source, "deficit": deficit,
+                                                             # flattened copies keep older readers working
+                                                             "goal_id": spec.goal_id,
+                                                             "missing_capabilities": deficit["missing_capabilities"],
+                                                             "founder_intent": spec.founder_intent,
+                                                             "disposition": deficit["disposition"]})
         else:
             identity_ok, why = self.passports.verify(self.actor)
             if not identity_ok:
                 decision, reasons = "PREPARE_FOR_FOUNDER", [f"actor identity not valid: {why}; prepared only"]
+            elif spec.authority["legal_principal"] != self.legal_principal:
+                decision, reasons = "PREPARE_FOR_FOUNDER", [
+                    f"goal legal principal {spec.authority['legal_principal']!r} differs from the acting principal "
+                    f"{self.legal_principal!r}; prepared only"]
             else:
                 view = grant_view if grant_view is not None else grant
                 policy = evaluate(self.compiled, proposal, identity_ok=True, grant=dict(view) if view else None)
@@ -148,6 +189,9 @@ class InterventionClassifier:
                             f"{intervention.consequence_class} exceeds goal authority ceiling {ceiling}; prepared only"]
                     elif grant is None:
                         decision, reasons = "PREPARE_FOR_FOUNDER", ["no pre-existing standing grant; prepared only"]
+                    elif selected is False:
+                        decision, reasons = "PREPARE_FOR_FOUNDER", [
+                            "standing deliberation (guardian/treasury evaluators) did not select this move; prepared only"]
                     else:
                         decision, reasons = "EXECUTE_AUTONOMOUSLY", ["policy allows under a pre-existing grant"]
         result = Classification(

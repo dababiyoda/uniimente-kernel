@@ -108,11 +108,16 @@ evidence plane.
 | G Favorable Intersection Detector | `intersections.py` | cross-domain weak-signal convergence inside a goal's window; observed, never acted on directly |
 | H Asymmetry Retention | `retention.py` | durable assets anchored to ledgered outcomes; reusable capabilities registered as bounded Capability Genomes; other goals' deficits resolved |
 | I Founder Attention Router | `attention.py` | urgency × marginal-value routing, dedupe, batching, manipulation guard (every ask carries a no-cost option); answers recorded, refusals remembered |
-| the loop | `gravity.py` | `GoalGravityLoop.turn()` composes the above; idempotent per `trigger_id`; executes at most one move per goal per turn and only through `ConsequenceGate.run` with a caller-supplied pre-existing grant |
+| the loop | `gravity.py` | `GoalGravityLoop.turn()` composes the above; idempotent per `trigger_id`; executes at most one move per goal per turn and only through `ConsequenceGate.run` (which must share the ledger) with a caller-supplied pre-existing grant; `reconcile()` closes attempted/unknown moves from the Gate's own records or an accountable resolution; `verify_outcome()` grants `externally_verified` only to an independent verifier citing evidence; `measures()` reports identity, agency, intelligence and the experiential surface separately |
+| cognition seam | `cognition_seam.py` | `GoalProposer` registers with the standing runtime; when a `StandingCognitionRuntime` is attached every awake goal's deliberation runs through its `tick` (goal context in, candidates out, guardian/treasury vetoes honored, model calls metered by a per-goal governor carved out of the turn's budget); a vetoed or unselected move is prepared, never executed |
+| contract enforcement | `contract_check.py` | goal-record, goal-state, experience-event and capability-deficit records are validated (JSON Schema 2020-12, fail-closed formats) on every write; outside the pinned boundary-package allowlist |
 
-Contracts: `contracts/goal-record.schema.json`, `contracts/experience-event.schema.json`.
-Tests: `tests/unit/test_goal_gravity.py` (section-25 scenarios), `tests/integration/test_goal_gravity_acceptance.py`
-(section-33 chain). Five closures: `goal_gravity_closures()` in `closure.py`, registered on the integration registry.
+Contracts: `contracts/goal-record.schema.json`, `contracts/goal-state.schema.json`, `contracts/experience-event.schema.json`,
+`contracts/capability-deficit.schema.json`.
+Tests: `tests/unit/test_goal_gravity.py` (section-25 scenarios), `tests/unit/test_goal_gravity_seams.py` (cognition seam,
+deficit classes, reconciliation, independent verification, section-20 controls, section-13 attention),
+`tests/integration/test_goal_gravity_acceptance.py` (section-33 chain). Five closures: `goal_gravity_closures()` in
+`closure.py`, registered on the integration registry.
 
 Evidence tier of the current implementation: IMPLEMENTED, UNIT-TESTED, INTEGRATION-TESTED on synthetic ledgers with
 test passports and the development witness key. Not SANDBOX-VERIFIED against a live sensor, not EXTERNALLY VERIFIED,
@@ -123,13 +128,13 @@ it submits one bounded move through the Gate and records the receipt. It does no
 
 - **Existing mechanism**: ledger-hydrated state machines, deterministic rule matching, policy evaluation, hash-chained records; no novel science and no model calls in the loop itself.
 - **Defined interface**: `GoalRegistry.authorize/wake/sleep/transition/record_preference/revoke`; `WorldModel.integrate/belief/experience_surface`; `GoalRelevanceRouter.route`; `BackcastGPSAdapter.fix`; `InterventionClassifier.classify`; `FavorableIntersectionDetector.detect`; `AsymmetryRetention.retain`; `FounderAttentionRouter.route/answer`; `GoalGravityLoop.turn/status/founder_answer`.
-- **Bounded authority**: every object reports `execution_authority == "none"`; goals carry declared lineage, not authentication; execution only through the Gate with a caller-supplied grant; the loop never issues grants.
+- **Bounded authority**: every service object reports `execution_authority == "none"` and retains no gate, executor or grant between turns; goals carry declared lineage, not authentication; execution only through the Gate with a caller-supplied grant; the loop never issues grants; evidence references handed to policy are ledger hashes (authorization record, experience records, receipts), never labels.
 - **Available dependencies**: Python 3 stdlib + `provenance.ledger`, `policy.engine`, `morphogenesis.contracts`, `capabilities.genome`.
 - **Security model**: instruction-shaped signal text stays data; founder preferences and refusals are enforced before policy; duplicate consequential moves are refused by durable `attempted` records plus the Gate's dispatch claim; asks without a no-cost option are suppressed.
-- **Failure modes**: `GoalError`, `ExperienceError`, `IntegrityConflict` (conflicting goal content, conflicting trigger reuse); gate refusals become `failed`, executor exceptions become `unknown` with a reconciliation blocker.
+- **Failure modes**: `GoalError`, `ExperienceError`, `ContractViolation`, `IntegrityConflict` (conflicting goal content, conflicting signal content, conflicting trigger reuse); gate refusals become `failed`, executor exceptions become `unknown` with a sticky reconciliation blocker and an information item (emergency when the move was external); a negative or unreconciled outcome blocks the goal with a discrepancy record; a route is re-dispatched only after an accountable reconciliation and then under an attempt-numbered proposal id.
 - **Acceptance tests**: `tests/unit/test_goal_gravity.py`, `tests/integration/test_goal_gravity_acceptance.py`, `goal_gravity_closures()`.
 - **Recovery path**: rebuild from the ledger; an `attempted` move without a result is never retried blindly; `stop_pushing`/`revoke` halt a goal from any state.
-- **Resource ceiling**: a hibernating `ResourceGovernor` processes no goal; conserve mode processes priority 1–2 only; dormant goals consume nothing between turns.
+- **Resource ceiling**: a hibernating `ResourceGovernor` processes no goal; conserve mode wakes priority 1–2 only and records every deferral as a resource deficit; each goal's `resource_budget` bounds its deliberation per turn; dormant goals consume nothing between turns.
 - **Operating cost**: O(goals × signals) deterministic matching per turn; one ledger append per transition; no external calls.
 - **Legal operator**: the goal's declared legal principal (never UNIIMENTE); Alfonso remains root authority.
 - **Handoff state**: the ledger is the handoff; `GoalGravityLoop.status()` renders the section-27 fields for any goal.

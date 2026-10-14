@@ -26,10 +26,14 @@
       ],
       "evidence_refs": [
         "tests/unit/test_goal_gravity.py",
+        "tests/unit/test_goal_gravity_seams.py",
         "tests/integration/test_goal_gravity_acceptance.py",
         "egregore/closure.py::goal_gravity_closures",
+        "egregore/contract_check.py",
         "contracts/goal-record.schema.json",
+        "contracts/goal-state.schema.json",
         "contracts/experience-event.schema.json",
+        "contracts/capability-deficit.schema.json",
         "tests/evidence/goal-gravity-20261013/"
       ],
       "implementation_refs": [
@@ -42,19 +46,24 @@
         "egregore/retention.py",
         "egregore/attention.py",
         "egregore/gravity.py",
+        "egregore/cognition_seam.py",
+        "egregore/contract_check.py",
         "closure/gravity_registry.py",
         "docs/GOAL_GRAVITY.md",
-        "docs/decisions/ADR-GOAL-GRAVITY-001.md"
+        "docs/decisions/ADR-GOAL-GRAVITY-001.md",
+        "docs/collaboration/goal-gravity-concept-map-2026-10-13.json",
+        "docs/collaboration/goal-gravity-completeness-critique-2026-10-13.md"
       ],
       "owner": "alfonso_lopez",
       "next_review_trigger": "Founder review of the draft PR; first real sensor adapter or durable scheduler calling GoalGravityLoop.turn without a human tick; any founder ruling on the #137/#158 lineages",
       "unresolved_questions": [
         "Which lineage mechanisms (asks contract, lightcone clamp, Genesis builder, Landlock workers) should be ported onto the canonical loop first once the founder rules on the draft PR graph?",
         "Which durable scheduler (cron, APScheduler as DALEOBANKS uses, Temporal) will own the trigger_id clock for the founder loop entry gate P1?",
-        "Founder authentication, key custody and revocation remain unresolved (SR001 G6); goal authorization here is declared lineage only"
+        "Founder authentication, key custody and revocation remain unresolved (SR001 G6); goal authorization here is declared lineage only",
+        "Whether GoalGravityLoop.turn should become a stage of StandingCognitionRuntime.tick (one trigger clock) rather than a projection that consumes its candidates (see the second-increment dissent)"
       ],
       "created_at": "2026-10-13T14:30:00Z",
-      "updated_at": "2026-10-13T14:30:00Z"
+      "updated_at": "2026-10-13T19:10:00Z"
     }
   ]
 }

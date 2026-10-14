@@ -177,7 +177,59 @@ def _immune_spec() -> TargetSpec:
                             "keep comparing with the incumbent after adoption"})
 
 
-TARGET_SPECS = {"forecast_quantile": _forecasting_spec, "immune_detect": _immune_spec}
+# Cycle 3 (2026-10-14): the constraint-release search policy, where admission v2 measured headroom (random
+# restart beat the incumbent 15-5 on fresh seeds). Seeds inside P8's reserved range, used by no earlier cycle.
+CR_TRAIN_SEEDS = tuple(range(7200, 7260))
+CR_HELDOUT_SEEDS = tuple(range(7300, 7390))
+
+
+def cr_target() -> Target:
+    from .genomes import developmental
+    return Target("constraint_release", developmental.CR_CONFIG_SPACE, dict(developmental.CR_DEFAULT_CONFIG))
+
+
+def cr_split() -> tuple[dict, dict, list[str]]:
+    """Seeded scheduling instances reserved for P8, disjoint from every admission and earlier P8 seed."""
+    from .genomes import admission, developmental
+    reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
+                | set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS))
+    if reserved & (set(CR_TRAIN_SEEDS) | set(CR_HELDOUT_SEEDS)) or set(CR_TRAIN_SEEDS) & set(CR_HELDOUT_SEEDS):
+        raise EvolutionError("P8 constraint-release seeds overlap admission or earlier P8 seeds")
+
+    def item(seed):
+        data, truth = developmental.constraint_release_instance(seed)
+        return f"s{seed}", {"data": data, "truth": truth, "category": developmental.constraint_release_subregion(data)}
+    return (dict(item(s) for s in CR_TRAIN_SEEDS), dict(item(s) for s in CR_HELDOUT_SEEDS),
+            sorted(f"s{s}" for s in reserved))
+
+
+def _cr_stress(items: dict) -> dict:
+    """Adversarial derivations of train items: a lean evaluation budget; a validation split cut to four cases."""
+    out = {}
+    for key, item in items.items():
+        d = item["data"]
+        out[f"lean:{key}"] = {"data": {**d, "budget": 16}, "truth": item["truth"]}
+        out[f"fewval:{key}"] = {"data": {**d, "validation": d["validation"][:4]}, "truth": item["truth"]}
+    return out
+
+
+def _cr_spec() -> TargetSpec:
+    from .genomes import developmental
+
+    def bucket(item):
+        return [("due_dates", item["category"]), ("processing_times", item["truth"]["family"]["processing_times"])]
+    return TargetSpec(
+        name="constraint_release", target=cr_target, split=cr_split, score=developmental.constraint_release_score,
+        baseline=developmental.constraint_release_random_restart, verify=developmental.constraint_release_verify,
+        stress=_cr_stress, buckets=bucket,
+        failure_metric="normalised tardiness gap to the exact optimum on held-out cases vs random-restart search "
+                       "with the same budget and retain rule",
+        proposal={"module": "greg/cognition/genomes/developmental.py", "constant": "CR_DEFAULT_CONFIG",
+                  "canary": "re-admit develop_constraint_release with the proposed configuration on fresh seeds "
+                            "before adoption; keep comparing with the incumbent and random restart after adoption"})
+
+
+TARGET_SPECS = {"forecast_quantile": _forecasting_spec, "immune_detect": _immune_spec, "constraint_release": _cr_spec}
 
 
 def config_id(config: dict) -> str:
@@ -435,6 +487,13 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
                          "sign_test_p_one_sided": round(p, 6), "incumbent_mean_loss": round(mean_inc, 6),
                          "candidate_mean_loss": round(mean_cand, 6),
                          "relative_improvement": round(relative_gain(mean_inc, mean_cand), 4)}
+    # reported, never part of the decision: the candidate against the trigger's baseline on the same held-out items
+    base_h = heldout.losses({k: {"output": spec.baseline(v["data"])} for k, v in heldout_items.items()})
+    bw = sum(1 for k in base_h if cand_h[k] < base_h[k] - 1e-12)
+    bl = sum(1 for k in base_h if base_h[k] < cand_h[k] - 1e-12)
+    record["heldout"]["candidate_vs_baseline"] = {
+        "baseline": spec.failure_metric, "wins": bw, "losses": bl, "sign_test_p_one_sided": round(sign_test(bw, bl), 6),
+        "baseline_mean_loss": round(statistics.fmean(base_h.values()), 6), "role": "reported; not in the rule"}
     retain = p < ALPHA and mean_cand < mean_inc
     record["decision"] = "RETAIN" if retain else "REJECT"
     record["proposal"] = {"state": "PROPOSED_NOT_APPLIED", "change": {"module": spec.proposal["module"],

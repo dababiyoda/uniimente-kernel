@@ -169,3 +169,37 @@ def test_lazily_imported_runtime_is_loaded_before_confinement():
     assert {"numpy", "numpy.linalg"} <= set(S.TARGETS["immune_detect"][2])
     main = inspect.getsource(S.main)
     assert main.index("for name in runtime") < main.index("isolation.confine(")
+
+
+def test_the_constraint_release_target_is_a_closed_data_space_over_fresh_reserved_seeds():
+    """Cycle 3 (2026-10-14): the search policy of develop_constraint_release, where random restart beat the
+    incumbent 15-5 on admission v2's fresh seeds. A candidate is data; the default reproduces the admitted search."""
+    from greg.cognition.genomes import admission, developmental as D
+    target = E.cr_target()
+    assert target.validate(dict(D.CR_DEFAULT_CONFIG)) == D.CR_DEFAULT_CONFIG
+    for bad in ({**D.CR_DEFAULT_CONFIG, "mu": 5}, {**D.CR_DEFAULT_CONFIG, "p_restart": 1.5},
+                {**D.CR_DEFAULT_CONFIG, "retain_threshold": 0.0}):
+        with pytest.raises(E.EvolutionError):
+            target.validate(bad)
+    used = set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds() | \
+        set(E.IMMUNE_TRAIN_SEEDS) | set(E.IMMUNE_HELDOUT_SEEDS)
+    assert not used & (set(E.CR_TRAIN_SEEDS) | set(E.CR_HELDOUT_SEEDS))
+    assert set(E.CR_TRAIN_SEEDS) | set(E.CR_HELDOUT_SEEDS) <= set(admission.P8_RESERVED)
+    rng = random.Random(3)
+    child, _ = E.mutate(target, dict(D.CR_DEFAULT_CONFIG), rng)
+    data, _ = D.constraint_release_instance(3)                              # development seed
+    out = D.constraint_release_solve_with(child, data)
+    if out["status"] == "ANSWER":
+        assert all(D.constraint_release_verify(data, out["output"], out["certificate"]).values())
+
+
+def test_a_constraint_release_candidate_runs_confined_and_verifies(tmp_path):
+    from greg.cognition.genomes import developmental as D
+    target = E.cr_target()
+    config = {**D.CR_DEFAULT_CONFIG, "p_restart": 0.4}
+    data, _ = D.constraint_release_instance(4)                              # development seed
+    run = E.run_candidate(target, config, [{"id": "a", "data": data}],
+                          require_confinement=isolation.available()["available"])
+    produced = run["outputs"]["a"]
+    assert "error" not in produced
+    assert all(D.constraint_release_verify(data, produced["output"], produced["certificate"]).values())

@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://uniimente.internal/contracts/goal-state.schema.json",
+  "title": "Goal State",
+  "description": "The mutable runtime half of a persistent goal (egregore/goals.py GoalState): status, current_state, active node and gate, single bottleneck metric, blockers, deficits, evidence and history. Every change is a ledgered transition. Carries no authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "goal_id",
+    "status",
+    "current_state",
+    "active_node_id",
+    "active_gate",
+    "sbm",
+    "blockers",
+    "missing_capabilities",
+    "missing_relationships",
+    "deficits",
+    "last_reviewed_at",
+    "last_woken_at",
+    "wake_reason",
+    "history_count",
+    "evidence_refs",
+    "preferences",
+    "version",
+    "execution_authority"
+  ],
+  "properties": {
+    "goal_id": {
+      "$ref": "#/$defs/hash"
+    },
+    "status": {
+      "enum": [
+        "dormant",
+        "awake",
+        "blocked",
+        "paused",
+        "completed",
+        "revoked",
+        "superseded"
+      ]
+    },
+    "current_state": {
+      "type": "object"
+    },
+    "active_node_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "active_gate": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "sbm": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "name",
+            "current",
+            "target",
+            "direction",
+            "gap",
+            "satisfied"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "direction": {
+              "enum": [
+                "gte",
+                "lte",
+                "eq"
+              ]
+            },
+            "satisfied": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missing_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missing_relationships": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "deficits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "class",
+          "detail"
+        ],
+        "properties": {
+          "class": {
+            "enum": [
+              "capability",
+              "resource",
+              "relationship",
+              "proof"
+            ]
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "last_reviewed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "last_woken_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "wake_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "history_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "required": [
+        "stop_pushing",
+        "priority_override",
+        "never_use_tactic",
+        "do_not_monitor",
+        "ask_before",
+        "refused_routes",
+        "forgotten_routes",
+        "revoked_capabilities",
+        "change_notes"
+      ],
+      "properties": {
+        "stop_pushing": {
+          "type": "boolean"
+        },
+        "priority_override": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 5
+        },
+        "never_use_tactic": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "do_not_monitor": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ask_before": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "refused_routes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hash"
+          }
+        },
+        "forgotten_routes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "revoked_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "change_notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "execution_authority": {
+      "const": "none",
+      "description": "A goal state never carries execution authority; effects require a Consequence Gate grant."
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

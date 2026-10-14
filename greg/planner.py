@@ -454,12 +454,16 @@ class ClaudeCodeTransport(_TextTransport, models.ClaudeCodeRoute):
             raise MissionError(str(exc)) from exc
 
 
-def _complete(transport, system: str, user: str) -> tuple[str, str, list, str | None]:
-    """Text, true author, routes tried and provider-reported served model, for a transport or a ModelRouter."""
+IDENTITY_FIELDS = ("served_model", "requested_model", "substituted")   # model identity evidence, when reported
+
+
+def _complete(transport, system: str, user: str) -> tuple[str, str, list, dict]:
+    """Text, true author, routes tried and the reported model identity, for a transport or a ModelRouter."""
     result = transport.complete(system, user)
     if isinstance(result, dict):
-        return result["text"], result["route"], result.get("tried", []), result.get("served_model")
-    return result, transport.name, [], None
+        identity = {k: result[k] for k in IDENTITY_FIELDS if result.get(k) is not None}
+        return result["text"], result["route"], result.get("tried", []), identity
+    return result, transport.name, [], {}
 
 
 def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int = 1) -> dict:
@@ -469,7 +473,7 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
     attempts = []
     for round_number in range(repair_rounds + 1):
         try:
-            reply, author, tried, served = _complete(transport, SYSTEM, prompt)
+            reply, author, tried, identity = _complete(transport, SYSTEM, prompt)
             draft = _first_json_object(reply)
         except models.Refusal as exc:   # a decline is final; the router never re-asks another vendor
             return {"status": "REFUSED", "origin": origin, "why": str(exc)[:400], "refusal_class": exc.kind,
@@ -482,8 +486,7 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
                  "prompt_sha256": "sha256:" + hashlib.sha256((SYSTEM + "\n" + prompt).encode()).hexdigest()}
         if tried:
             extra["routes_tried"] = tried
-        if served:
-            extra["served_model"] = served
+        extra.update(identity)
         digest = (getattr(transport, "last", None) or {}).get("model_digest")
         if digest:
             extra["model_digest"] = digest

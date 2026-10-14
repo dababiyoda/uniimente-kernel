@@ -275,7 +275,8 @@ class ModelBuilder:
                              cost_usd=spent or None) from exc
         return {"source": _billed_source(result["text"], result.get("cost_usd")),
                 "builder": "model:" + result["route"],
-                "served_model": result.get("served_model"),
+                "served_model": result.get("served_model"), "requested_model": result.get("requested_model"),
+                "substituted": result.get("substituted"),   # None: the route did not or could not check
                 "model_digest": result.get("model_digest"),
                 "prompt_sha256": "sha256:" + hashlib.sha256(prompt.encode()).hexdigest(),
                 "cost_usd": result.get("cost_usd"), "routes_tried": result.get("tried", [])}

@@ -1021,7 +1021,9 @@ class Genesis:
                 "prompt_sha256": built.get("prompt_sha256"), "source_sha256": digest,
                 "cost_usd": built.get("cost_usd"), "sees": "description, signature, public examples only",
                 "served_model": built.get("served_model"), "routes_tried": built.get("routes_tried"),
-                **({"model_digest": built["model_digest"]} if built.get("model_digest") else {})},
+                **({"model_digest": built["model_digest"]} if built.get("model_digest") else {}),
+                # the model identity evidence: what was asked for and whether another model answered
+                **{k: built[k] for k in ("requested_model", "substituted") if built.get(k) is not None}},
                 key=[deficit_id, attempt, digest])
             problems = builders.screen(source)
             path = self.objects.path("sha256:" + digest)

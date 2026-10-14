@@ -16,9 +16,9 @@ class Client:
     """``beta.messages.create`` stand-in that reports a chosen served model and usage iterations."""
 
     def __init__(self, *, served=None, iterations=None, stop_reason="end_turn", tokens=(1000, 1000),
-                 report_model=True):
+                 report_model=True, text="answer"):
         self.calls, self.served, self.iterations, self.stop_reason = [], served, iterations, stop_reason
-        self.tokens, self.report_model = tokens, report_model
+        self.tokens, self.report_model, self.text = tokens, report_model, text
         self.beta = NS(messages=NS(create=self._create))
 
     def _create(self, **kw):
@@ -26,7 +26,7 @@ class Client:
         if self.stop_reason == "refusal":
             return NS(stop_reason="refusal", stop_details=NS(category="cyber"), content=[], model=kw["model"])
         return NS(stop_reason="end_turn", model=(self.served or kw["model"]) if self.report_model else None,
-                  content=[NS(type="text", text="answer")],
+                  content=[NS(type="text", text=self.text)],
                   usage=NS(input_tokens=self.tokens[0], output_tokens=self.tokens[1], iterations=self.iterations))
 
 
@@ -244,3 +244,33 @@ def test_a_withheld_build_attempt_is_booked_against_the_signed_build_budget(tmp_
     assert builder.budgets[1] == pytest.approx(1.0 - per_attempt)
     assert [e.payload["cost_usd"] for e in body.journal.replay("genesis.unbuilt")] == [pytest.approx(per_attempt)] * 2
     body.close()
+
+
+def test_substitution_evidence_reaches_the_build_record_and_the_planner_provenance(tmp_path):
+    """requested_model and substituted are evidence: a consumer must not drop them on the way to the journal."""
+    import json
+    from greg import builders, planner
+    from tests.greg_fixtures import drop, make_body, signed
+    from tests.unit.test_greg_genesis_builder import GOOD, _mission, _run
+    from tests.unit.test_greg_interface import GOOD as DRAFT, inventory
+
+    home, key, body_id, data = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", _mission(data)))
+    client = Client(served="claude-opus-4-8", text="```python\n" + GOOD + "```",
+                    iterations=[attempt("message", 1000, 0), attempt("fallback_message", 1000, 1000)])
+    builder = builders.ModelBuilder(models.ModelRouter([models.AnthropicRoute(
+        "k", model="claude-opus-5-5", client=client, fallback_models=("claude-opus-4-8",))]))
+    body, states = _run(home, builder)
+    assert "ACHIEVED" in states                                           # a permitted substitute may build
+    built = body.journal.replay("genesis.built")[0].payload
+    assert built["requested_model"] == "claude-opus-5-5" and built["served_model"] == "claude-opus-4-8"
+    assert built["substituted"] is True
+    body.close()
+
+    ctx = planner.PlannerContext(read_roots=(), capabilities=inventory(), repositories={}, today="2026-09-26")
+    router = models.ModelRouter([models.AnthropicRoute("k", model="claude-sonnet-5-5",
+                                                       client=Client(text=json.dumps(DRAFT)))])
+    proposal = planner.model_route("watch my notes", ctx, router)
+    assert proposal["status"] == "PROPOSED", proposal                     # the mission schema admits the fields
+    prov = proposal["spec"]["provenance"]
+    assert prov["requested_model"] == prov["served_model"] == "claude-sonnet-5-5" and prov["substituted"] is False

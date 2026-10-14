@@ -203,11 +203,11 @@ mission. Three attacks were added this increment; the rest existed and were loca
 | Compromised or lying cognitive provider | `test_greg_adversarial_machine::test_lying_solver_is_caught_by_the_independent_profit_dp`; `test_greg_recombine::test_a_lying_engine_is_caught_through_the_construction_and_both_are_replaced`; `test_greg_missions::test_genesis_rejects_a_lying_tool_and_escalates` | INTEGRATED |
 | Conflicting outputs from two qualified intelligences | **new** `test_greg_adversarial_machine::test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_voted` | INTEGRATED |
 | Malicious page and prompt injection | **new** `test_greg_confined_egress::test_a_malicious_page_fetched_by_a_mission_stays_data`; `test_greg_adversarial_machine::test_prompt_injection_in_sources_stays_data` | INTEGRATED (page fetched by `http.get`; GREG's computer-use browser is not exercised) |
-| Worker modifying its acceptance criteria | `test_greg_workers::test_no_test_change_means_no_acceptance`, `test_appraisal_binds_acceptance_to_the_original_commission`, `test_a_change_to_a_protected_surface_is_never_accepted` | COMPONENT (worker appraisal on a real git clone) |
+| Worker modifying its acceptance criteria | `test_greg_workers::test_no_test_change_means_no_acceptance`, `test_appraisal_binds_acceptance_to_the_original_commission`, `test_a_change_to_a_protected_surface_is_never_accepted` | INTEGRATED (signed mission on a real body, real git clone; corrected from COMPONENT in increment 5) |
 | Crash during an unknown external outcome | `test_greg_capabilities::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused`; `test_greg_local_mission::test_lost_host_claim_requires_reconciliation`; `test_greg_first_mission::test_crash_after_survey_resumes_without_repeating_a_completed_step` | INTEGRATED |
 | Duplicate payment or publication | `test_greg_adversarial_machine::test_duplicate_fixture_order_does_not_double_book`; `test_greg_community_journeys::test_journeys_measure_sequences_separate_tiers_and_refuse_duplicate_money` | INTEGRATED (FIXTURE) |
 | Stale community state overwriting a recent event | `test_greg_community_journeys::test_future_or_stale_events_do_not_produce_conversion_or_routing`; `test_egregore_runtime::test_conflicting_source_event_is_retained_then_refused` | COMPONENT |
-| Forged or selectively disclosed evidence package | `test_cognition_disclosure::test_tampering_is_detected_on_the_recipient_side`, `test_a_disagreeing_receipt_over_the_same_input_cannot_be_left_out` | COMPONENT (over real retained receipts) |
+| Forged or selectively disclosed evidence package | `test_cognition_disclosure::test_the_cli_exports_without_sending_and_the_recipient_check_needs_no_greg_state` (signed mission on a real body, CLI export, tampered package refused), `test_tampering_is_detected_on_the_recipient_side`, `test_a_disagreeing_receipt_over_the_same_input_cannot_be_left_out` | INTEGRATED (corrected from COMPONENT in increment 5) |
 | Revoked capability reused after restart | `test_greg_adversarial_machine::test_revoked_engine_is_not_reused_after_restart` | INTEGRATED |
 | Loss of a vendor, API, network or node | **new** `test_greg_confined_egress::test_network_loss_is_an_unmeasured_world_not_a_failed_goal_and_recovery_needs_no_founder`, `test_sustained_network_loss_escalates_once_instead_of_looping`; `test_greg_models::test_genesis_builds_through_whichever_vendor_is_up_and_records_route_health`; `test_greg_ollama::test_local_model_refusal_is_terminal_and_outage_can_fail_over`; `test_greg_cognition_process::test_cli_composition_survives_sigkill_without_duplicate_computation` | INTEGRATED (network, node); COMPONENT (model vendor) |
 | Profitable action that violates participant rights | `test_lawful_leverage::test_consent_harm_vector_consequence_and_path_are_gates_before_estimation`, `test_a_surface_that_names_third_parties_needs_consent_covering_every_one`; `test_institutional_leverage::test_do_nothing_wins_over_net_harm` | COMPONENT |
@@ -245,7 +245,133 @@ What the new attacks showed:
   itself. The cause was not found and may share one with the earlier unreproduced BLOCKED run.
 - **Disagreement detection is narrow.** It reads a composition's metaconsensus. Two strategies on different
   capabilities that disagree without a composition are not compared; each check is still judged by its own sensor.
-- **Coverage gaps.** Five attack classes are covered at component level only. No test kills the process in the
+- **Coverage gaps.** Five attack classes were recorded as component-level only. Increment 5 corrects two of them to
+  INTEGRATED (acceptance criteria and evidence package: their tests already run signed missions on a real body), so
+  three remain component-level: stale community state, a profitable action violating participant rights, and a
+  local metric damaging the whole. No test kills the process in the
   middle of a self-repair. The malicious-page attack uses `http.get`, not GREG's computer-use browser.
 - **Measures.** #26 stays PARTIAL: `github.pulls`, the browser capabilities and coding workers are not launched
   through the relay. #9 and #10 stay PARTIAL pending the founder's host decision. VEPMC is 0.
+
+## Increment 4 (same day): #157 worker isolation extracted onto the canonical worker path
+
+### What changed for GREG
+
+- **Workers run in an OS envelope or not at all.** `greg/worker_isolation.py` is extracted from #157 (commit
+  `9f5ff18`). Every coding worker gets:
+  - a scrubbed environment: only its provider's variables and transport settings, never GREG's keys, cloud
+    secrets, `LD_PRELOAD` or `PYTHONPATH`;
+  - a private HOME and private temporary directories;
+  - a narrow private copy of that provider's credential file only;
+  - rlimits, no-new-privileges and death with its parent;
+  - bubblewrap user, PID, IPC and UTS namespaces.
+
+  On a host that cannot provide the envelope, `worker.commission` refuses before dispatch, and no spend occurs.
+  Provider network access remains, and is reported as such; this is not a network-isolation claim.
+- **Worker-written acceptance tests are untrusted code.** They now run in bubblewrap with no network, no
+  credentials and no view of the body. Without the envelope they are refused and recorded as failed; they never
+  run with GREG's own reach. Previously they ran with network denied but with full filesystem access.
+- **GREG's git no longer executes what a worker planted.** Trusted `.git` metadata is copied out before the worker
+  runs and restored before GREG's collection touches the clone. GREG's git also runs with
+  `core.hooksPath=/dev/null`, `core.fsmonitor=false` and no global configuration.
+  - **Measured on the branch before this increment:** an executable `post-commit` hook planted by a worker ran
+    inside GREG's collection process, and a planted `.git/config` filter survived into the collected clone.
+  - **After:** neither occurs (`test_an_executable_hook_planted_by_the_worker_never_runs_in_gregs_collection`, and
+    #157's `test_parent_collection_restores_trusted_git_metadata_before_filters_or_hooks_can_run`).
+- **Bounded, cancellable supervision.** Worker output is file-backed and capped at 1 MiB per stream. STOP terminates
+  the worker's whole process namespace.
+- **An interrupted worker is reconciled.** The action becomes UNCERTAIN with the signed cap reserved, its receipt is
+  kept, and it is never blindly retried; the founder reconciles it. This was ported into `greg/missions.py` beside
+  the existing metered-spend booking, which stays canonical.
+- **Collector refusals instead of exceptions.** These now FAIL the collection, and the appraisal rejects any
+  collection that did not complete:
+  - over-cap or invalid spend;
+  - an oversized diff;
+  - a deliverable outside the workspace.
+- **Document orders can require a verbatim quote** of the frozen source context, checked byte for byte by the
+  appraisal.
+- **The doctor reports whether this host can confine workers,** with the fix. It is never a body prerequisite. The
+  Chromebook runbook gains an optional `sudo apt install -y bubblewrap`.
+
+### Kept from this branch, not from #157
+
+- The #159 canonical-receipt binding checks are stricter here and remain: exactly one commission receipt, the same
+  order name and mission, and the worker's cost.
+- Mission spend is still booked through `metered_spend`.
+- Work-order inputs may still come from the mission's own workspace.
+
+### Tests
+
+#157's isolation tests and new worker tests are ported:
+- **With bubblewrap:** 81 pass.
+- **Without bubblewrap:** governance tests still run, using an envelope labelled `scripted-test-envelope`; the
+  real-isolation tests skip and say why, and fail when `GREG_REQUIRE_WORKER_ISOLATION=1`.
+
+Two of #157's tests were made host-independent:
+- One inherited this sandbox's proxy CA from `SSL_CERT_FILE`, which lies outside the supported certificate roots.
+  That refusal is correct and has its own test.
+- #157's `support()` probe accepted Landlock alone, although dispatch always requires bubblewrap.
+
+CI now installs bubblewrap, reports whether the runner can use it, and runs the worker tests with skip reasons
+shown. No CI run has yet shown that GitHub's Ubuntu runners permit bubblewrap's user namespaces. The runner's
+AppArmor setting is not changed, because that would weaken an execution-environment security policy.
+
+### Not extracted yet from #157, in priority order
+
+1. **Console owner authentication** — done in increment 5, below.
+2. **BODY_STOP during a running worker** — done in increment 5. While a worker is supervised, only pending
+   founder-signed STOP commands are authenticated. A signed STOP from the console or the phone kills the running
+   child and is persisted, with no other command applied. A forged STOP is rejected and cannot stop the body
+   (#157's `test_greg_inflight_stop.py`, ported).
+3. **Paid-attempt scope binding** — done in increment 5. A paid action's approval digest now includes the mission's
+   spend and budget at approval time, so one approval can never fund a second paid attempt after spend or a
+   reserved cap changed the remaining mandate. Free reads keep a stable scope. A retained dispatch under the
+   earlier scope form is still reused exactly once (no redispatch).
+   - **Also from #157, the light cone:** a NaN, infinite or boolean budget is refused. Before, a NaN budget admitted
+     any spend, because no comparison with NaN is true. Invalid cost or spend values are refused. After an overrun
+     only zero-cost reads stay admitted, so the mission can still observe itself; nothing that writes or spends is.
+   - Tests: `test_greg_paid_scope.py` and #157's `test_greg_budget_observation.py`. The budget test failed 8 of 11
+     on the branch before this change.
+4. `greg/dataflow.py` duplicates this branch's typed bind edges, so its disposition is RETAIN_AS_EVIDENCE. The other
+   #157 changes (cortex, browser readiness and documentation) are outside this increment.
+
+## Increment 5 (same day): the console signs only for its owner
+
+### The hole, measured before the fix
+
+Any process that could reach `127.0.0.1:8766` could take over the founder's console. It read Mission Control, took
+the CSRF token from the page, posted `/first-mission` and then `/sign`. A MISSION signed with the founder's unlocked
+key landed in the body's inbox. This was reproduced on the branch before this increment.
+
+A coding worker is such a process: it keeps host networking so that it can reach its provider. That gave a worker,
+or any other local program, a path to founder-signed authority.
+
+### The fix (extracted from #157 and fitted to Mission Control)
+
+- **A single-use private link.** `greg console` and `greg rehearse --console` print the link. Opening it sets an
+  `HttpOnly`, `SameSite=Strict` session cookie. The cookie is scoped to a random owner path, because cookies are not
+  port-scoped and another local service would otherwise receive it.
+- **Every private read and every POST needs the session.** That covers Mission Control's ten views, the classic page,
+  proposals, deliveries, the morning report, both JSON APIs and every signed button. This is in addition to the
+  Host check, same-origin check and CSRF token.
+- **All links, forms and redirects are rewritten under the owner path.**
+- **Owned public pages (`/owned`) stay public,** and are served under a sandboxing content policy.
+- **Commands still need the founder's Ed25519 signature and the body's Gate.** The session only decides who may
+  ask this console to sign.
+
+### Evidence
+
+- `test_a_local_process_without_the_owner_session_cannot_use_the_founder_key` replays the attack. Nothing is served,
+  nothing is signed, and even a correct CSRF token is refused.
+- `test_the_private_link_works_once_and_the_session_cookie_is_narrow` checks four things:
+  - the link is spent after one use;
+  - a forged cookie is refused;
+  - the session does not work under another path;
+  - the cookie is HttpOnly, SameSite=Strict and path-scoped.
+- The Mission Control HTTP tests, the interface tests and the browser acceptance suite (14/14 at both sizes, plus
+  the baseline) now run through the owner session the way the founder's browser does.
+
+### Founder-facing change
+
+Open the link `greg console` prints, once, instead of typing `http://localhost:8766/`. The Chromebook runbook,
+installer message, README and First Mission guide say so. Restarting the console prints a new link.

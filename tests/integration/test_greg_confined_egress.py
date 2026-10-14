@@ -216,9 +216,7 @@ def test_network_loss_is_an_unmeasured_world_not_a_failed_goal_and_recovery_need
     """Directive section 13, loss of a network connection: GREG backs off, acts on nothing it could not measure,
     never closes, and closes on its own once the upstream returns, with both facts in the egress journal."""
     home, key, body_id = body_with_confined_egress(tmp_path)
-    # The founder signs with the real time (issued_at), and the body refuses a command issued more than
-    # CLOCK_SKEW after its own clock. Start the test clock at the real time, not at a fixed instant.
-    clock = [datetime.datetime.now(datetime.timezone.utc)]
+    clock = [datetime.datetime.now(datetime.timezone.utc)]       # never before the envelope's signing time
     network.down["now"] = True
     drop(home, signed(key, body_id, "MISSION", fetch_mission("m:network-loss")))
     with Body(home, clock=lambda: clock[0]) as body:
@@ -236,9 +234,7 @@ def test_network_loss_is_an_unmeasured_world_not_a_failed_goal_and_recovery_need
 
 def test_sustained_network_loss_escalates_once_instead_of_looping(tmp_path, network):
     home, key, body_id = body_with_confined_egress(tmp_path)
-    # The founder signs with the real time (issued_at), and the body refuses a command issued more than
-    # CLOCK_SKEW after its own clock. Start the test clock at the real time, not at a fixed instant.
-    clock = [datetime.datetime.now(datetime.timezone.utc)]
+    clock = [datetime.datetime.now(datetime.timezone.utc)]       # never before the envelope's signing time
     network.down["now"] = True
     drop(home, signed(key, body_id, "MISSION", fetch_mission("m:network-gone")))
     with Body(home, clock=lambda: clock[0]) as body:

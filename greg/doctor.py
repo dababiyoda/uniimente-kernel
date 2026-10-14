@@ -45,6 +45,22 @@ def engines() -> dict:
                     "installs one (the founder-run installer does, unless --no-engines)"}
 
 
+def worker_isolation() -> dict:
+    """Whether this host can confine coding workers and their acceptance tests (bubblewrap namespaces).
+
+    Not a prerequisite for the body: without it, ``worker.commission`` refuses to dispatch rather than run a
+    worker or its tests with GREG's own reach. Probing runs ``/usr/bin/true`` in a namespace; nothing else."""
+    from greg import worker_isolation as isolation
+    fix = "sudo apt install -y bubblewrap (worker.commission refuses to dispatch until this probe passes)"
+    if platform.system() != "Linux":
+        return {"workers_can_run_confined": False, "why": "the worker envelope is Linux-only on this path", "fix": fix}
+    try:
+        mechanism = isolation._backend(require_bubblewrap=True)[0]
+        return {"workers_can_run_confined": True, "mechanism": mechanism}
+    except Exception as exc:          # a probe failure is reported, never raised: the doctor is read-only
+        return {"workers_can_run_confined": False, "why": f"{type(exc).__name__}: {str(exc)[:280]}", "fix": fix}
+
+
 def chromebook() -> dict:
     checks = {
         "python_3_11": sys.version_info >= (3, 11),
@@ -68,6 +84,7 @@ def chromebook() -> dict:
             "checks": checks, "missing": missing,
             "crostini_detected": is_crostini(),
             "engines": engines(),
+            "worker_isolation": worker_isolation(),
             **({"fix": {"python_venv_available": "sudo apt install python3-venv"}}
                if "python_venv_available" in missing else {}),
             "not_verified": ["ChromeOS host identity and ownership", "VM restart at login", "sleep continuity",

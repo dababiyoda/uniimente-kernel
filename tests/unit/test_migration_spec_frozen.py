@@ -13,6 +13,7 @@ import pytest
 
 from evolution.migration import spec
 from evolution.repair.subjects import SR001, SR001_WORKFLOW_CLASS_SHA256
+from tests.history import require_commits
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -73,6 +74,7 @@ def test_the_subject_class_is_byte_identical_to_the_frozen_hash():
     """
     from events.spine import DurableWorkflow, WorkflowStep
 
+    require_commits(ROOT, spec.BASE_COMMIT)
     historical = subprocess.check_output(
         ["git", "show", f"{spec.BASE_COMMIT}:events/spine.py"], cwd=ROOT, text=True)
     nodes = {n.name: n for n in ast.parse(historical).body if isinstance(n, ast.ClassDef)}
@@ -305,6 +307,7 @@ def test_repair_cost_gains_the_two_state_terms():
 
 
 def test_continuity_baseline_is_true_right_now():
+    require_commits(ROOT, spec.BASE_COMMIT, SR001.source_commit)
     digest = hashlib.sha256()
     for rel in spec.CONTINUITY_ARTIFACTS:
         digest.update(subprocess.check_output(

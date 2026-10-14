@@ -315,13 +315,51 @@ AppArmor setting is not changed, because that would weaken an execution-environm
 
 ### Not extracted yet from #157, in priority order
 
-1. **Console owner authentication.** Today any local process that can reach the loopback console can read its CSRF
-   token and submit a command, and the console signs it with the founder's unlocked key. A confined worker keeps
-   host networking for its provider, so it is such a process. #157's private owner link and session cookie close
-   this. Next.
+1. **Console owner authentication** — done in increment 5, below.
 2. **BODY_STOP during a running worker.** Authenticate pending STOP commands while a worker is supervised. The STOP
    *file* already interrupts it.
 3. **Paid-attempt scope binding.** Approval of one paid attempt must not approve another after spend changed the
    remaining mandate.
 4. `greg/dataflow.py` duplicates this branch's typed bind edges, so its disposition is RETAIN_AS_EVIDENCE. The other
    #157 changes (cortex, browser readiness and documentation) are outside this increment.
+
+## Increment 5 (same day): the console signs only for its owner
+
+### The hole, measured before the fix
+
+Any process that could reach `127.0.0.1:8766` could take over the founder's console. It read Mission Control, took
+the CSRF token from the page, posted `/first-mission` and then `/sign`. A MISSION signed with the founder's unlocked
+key landed in the body's inbox. This was reproduced on the branch before this increment.
+
+A coding worker is such a process: it keeps host networking so that it can reach its provider. That gave a worker,
+or any other local program, a path to founder-signed authority.
+
+### The fix (extracted from #157 and fitted to Mission Control)
+
+- **A single-use private link.** `greg console` and `greg rehearse --console` print the link. Opening it sets an
+  `HttpOnly`, `SameSite=Strict` session cookie. The cookie is scoped to a random owner path, because cookies are not
+  port-scoped and another local service would otherwise receive it.
+- **Every private read and every POST needs the session.** That covers Mission Control's ten views, the classic page,
+  proposals, deliveries, the morning report, both JSON APIs and every signed button. This is in addition to the
+  Host check, same-origin check and CSRF token.
+- **All links, forms and redirects are rewritten under the owner path.**
+- **Owned public pages (`/owned`) stay public,** and are served under a sandboxing content policy.
+- **Commands still need the founder's Ed25519 signature and the body's Gate.** The session only decides who may
+  ask this console to sign.
+
+### Evidence
+
+- `test_a_local_process_without_the_owner_session_cannot_use_the_founder_key` replays the attack. Nothing is served,
+  nothing is signed, and even a correct CSRF token is refused.
+- `test_the_private_link_works_once_and_the_session_cookie_is_narrow` checks four things:
+  - the link is spent after one use;
+  - a forged cookie is refused;
+  - the session does not work under another path;
+  - the cookie is HttpOnly, SameSite=Strict and path-scoped.
+- The Mission Control HTTP tests, the interface tests and the browser acceptance suite (14/14 at both sizes, plus
+  the baseline) now run through the owner session the way the founder's browser does.
+
+### Founder-facing change
+
+Open the link `greg console` prints, once, instead of typing `http://localhost:8766/`. The Chromebook runbook,
+installer message, README and First Mission guide say so. Restarting the console prints a new link.

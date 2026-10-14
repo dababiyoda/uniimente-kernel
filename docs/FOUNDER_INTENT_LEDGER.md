@@ -12,7 +12,7 @@ The founder's OPUS MAXIMUS continuation directive is implemented on draft branch
   - workers and their acceptance tests run in bubblewrap envelopes or not at all;
   - GREG's git never runs a worker-planted hook or filter;
   - an interrupted worker is reconciled as UNCERTAIN.
-- Next is #157's console owner authentication.
+- The console signs only for its owner (increment 5). Before, any local process, including a worker with provider networking, could get a MISSION signed with the founder's key; this was reproduced, and is now refused.
 - The executable Founder's First Mission and the five-question Mission Control are on the one mission path. `greg rehearse` runs both without credentials.
 - Increment 3 adds:
   - discovery by intention;

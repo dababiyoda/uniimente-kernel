@@ -550,9 +550,12 @@ def main(argv=None) -> int:
                                                                             config=models_config)
             replacement = (None if args.no_model else
                            lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection))
-            server = serve(Console(home, key=key, transport=transport, transport_factory=replacement), port=args.port)
-            print(f"GREG console on http://127.0.0.1:{args.port}  (model route: "
+            console = Console(home, key=key, transport=transport, transport_factory=replacement)
+            server = serve(console, port=args.port)
+            print(f"GREG console: open this private link once, in this computer's browser:\n  "
+                  f"{console.owner_url(server.server_address[1])}\n(model route: "
                   f"{transport.name if transport else 'off'}; {'signing enabled' if key else 'read-only'}). "
+                  "The link works once; other local programs cannot use the console without it. "
                   "Ctrl-C closes the console; the body keeps running.", flush=True)
             try:
                 server.serve_forever()

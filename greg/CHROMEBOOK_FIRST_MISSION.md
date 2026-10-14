@@ -113,7 +113,7 @@ description is at
 greg console --key ~/.greg-founder.pem --no-model
 ```
 
-Open `http://localhost:8766/` in the Chromebook's Chrome browser. ChromeOS
+Open the private link `greg console` prints (it works once) in the Chromebook's Chrome browser. ChromeOS
 forwards local Linux ports into its browser. Ask **“Brief me on the state of my
 repositories.”** Review the proposed read and delivery scope, sign it, then
 close the browser tab and press Ctrl-C in the Terminal. The service should
@@ -192,7 +192,7 @@ for other environments and historical evidence; no Mac is required here.
 
 ## 4. The Founder's First Mission in Mission Control
 
-`greg console --key ~/.greg-founder.pem --no-model`, then open `http://localhost:8766/`. The first page is
+`greg console --key ~/.greg-founder.pem --no-model`, then open the private link it prints. The first page is
 Mission Control. It answers what GREG is, what it can do on this body now, what it is doing, what you can
 command and what needs your authority. Put the kernel checkout GREG should read under `~/src` (for example
 `git clone https://github.com/dababiyoda/uniimente-kernel ~/src/uniimente-kernel`), then:

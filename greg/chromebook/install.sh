@@ -206,7 +206,7 @@ fi
 cat <<EOF
 
 GREG is installed. Open Mission Control (greg/CHROMEBOOK_FIRST_MISSION.md, steps 2 and 4):
-  greg console --key $KEY --no-model     then open http://localhost:8766/ in Chrome
+  greg console --key $KEY --no-model     then open the private link it prints in Chrome
   Ask: "Brief me on the state of my repositories." Review, sign, close the tab.
   greg status        note the PID, then: kill -9 <PID>   (the service restarts GREG)
   Approve the one waiting delivery in the console, read the brief in $DELIVER_ROOT/briefs/, accept or reject it.

@@ -527,17 +527,9 @@ class MissionEngine:
         before they run and are refused here."""
         return strategy_scope(self.book.missions.get(mission_id), self.registry.manifests, action_id, now=now)
 
-    def request_decision(self, mission_id: str, action_id: str, *, why: str, recommendation: str, now: datetime,
-                         evidence: dict | None = None, quoted: tuple = ()) -> str:
-        """Ask the founder ahead of time about one signed strategy whose exact scope is outside the cone.
-
-        This is the engine's own APPROVAL ask: the same deterministic request id (mission, APPROVAL,
-        exact scope), the same contract and the same one-ask-per-scope rule, so when the mission's
-        loop later reaches the strategy it finds this request instead of asking again. Asking grants
-        nothing and executes nothing; an approve adds exactly this scope to the mission's approved
-        scopes, used only when the mission's own feedback loop selects the strategy."""
-        self.book.rebuild()
-        m = self.book.missions.get(mission_id)
+    def _askable(self, m: "MissionState | None", mission_id: str, action_id: str, *, now: datetime) -> dict:
+        """The exact scope of a strategy the founder may be asked about ahead of the mission's loop, or
+        MissionError saying why not. One predicate for ``request_decision`` and ``ask_refusal``."""
         if m is None or m.status in TERMINAL or m.paused:
             raise MissionError(f"mission {mission_id} is unknown, closed or paused: nothing to ask for it")
         scope = self.strategy_scope(mission_id, action_id, now=now)
@@ -551,6 +543,29 @@ class MissionEngine:
             raise MissionError(f"the founder excluded {action_id} by a signed critique: {m.excluded[action_id]}"[:400])
         if action_id in m.failed:
             raise MissionError(f"{action_id} is not selectable now: {m.failed[action_id]}"[:400])
+        return scope
+
+    def ask_refusal(self, mission_id: str, action_id: str, *, now: datetime) -> str | None:
+        """Why ``request_decision`` would refuse to ask about this strategy now, or None. Records nothing."""
+        self.book.rebuild()
+        try:
+            self._askable(self.book.missions.get(mission_id), mission_id, action_id, now=now)
+        except MissionError as exc:
+            return f"MissionError: {exc}"
+        return None
+
+    def request_decision(self, mission_id: str, action_id: str, *, why: str, recommendation: str, now: datetime,
+                         evidence: dict | None = None, quoted: tuple = ()) -> str:
+        """Ask the founder ahead of time about one signed strategy whose exact scope is outside the cone.
+
+        This is the engine's own APPROVAL ask: the same deterministic request id (mission, APPROVAL,
+        exact scope), the same contract and the same one-ask-per-scope rule, so when the mission's
+        loop later reaches the strategy it finds this request instead of asking again. Asking grants
+        nothing and executes nothing; an approve adds exactly this scope to the mission's approved
+        scopes, used only when the mission's own feedback loop selects the strategy."""
+        self.book.rebuild()
+        m = self.book.missions.get(mission_id)
+        scope = self._askable(m, mission_id, action_id, now=now)
         s, cost = scope["strategy"], scope["cost_usd"]
         resource = None
         if cost > 0:

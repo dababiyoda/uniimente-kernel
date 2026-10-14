@@ -507,12 +507,16 @@ class BodyAttentionStore:
         self.registry: GoalRegistry | None = None
         self.signed: dict = {}
         self.noticed: set[str] = set()
+        self._notices: set[tuple] = set()      # (item_id, kind, why): each notice is recorded once
         self._routed: dict[str, dict] = {}
         self.asked: list[str] = []
+        self.at: datetime | None = None
 
-    def begin(self, signed: dict) -> None:
-        self.signed = signed
-        self.noticed = {e.payload["item_id"] for e in self.body.journal.replay("goal.notice")}
+    def begin(self, signed: dict, at: datetime | None = None) -> None:
+        self.signed, self.at = signed, at
+        notices = [e.payload for e in self.body.journal.replay("goal.notice")]
+        self.noticed = {n["item_id"] for n in notices}
+        self._notices = {(n["item_id"], n["kind"], n.get("why", "")) for n in notices}
         self.asked = []
 
     # A decision item maps to one move of an admitted goal, then to one exact mission scope.
@@ -530,14 +534,30 @@ class BodyAttentionStore:
                 if r.get("kind") == "APPROVAL" and r.get("mission_id") == scope["mission_id"]
                 and r.get("scope_digest") == scope["scope_digest"]]
 
+    def _refusal(self, item: dict) -> str | None:
+        """Why the decision's move cannot be asked for now (the engine's own ``ask_refusal``), or None."""
+        try:
+            spec = self.registry.get(item["goal_id"])
+            move = next((m for m in _moves(spec) if m.route_hash == item.get("route_hash")), None)
+            if move is None:
+                return "MissionError: the decision names no declared move of this goal"
+            ref = move.payload
+            return self.body.engine.ask_refusal(ref["mission_id"], ref["action_id"], now=self.at or self.body.clock())
+        except CONTAINED as exc:
+            return f"{type(exc).__name__}: {exc}"
+
     def _open(self, item: dict) -> bool:
         if item["kind"] != "decision":
             return item["item_id"] in self._routed or item["item_id"] in self.noticed
         scope = self._scope(item)
-        if scope is None:
-            return item["item_id"] in self._routed
         book = self.body.engine.book
-        return any(rid not in book.answers and rid not in book.withdrawn for rid in self._requests(scope))
+        if scope is not None and any(rid not in book.answers and rid not in book.withdrawn
+                                     for rid in self._requests(scope)):
+            return True
+        # An ask the engine refused stays settled while the same refusal holds: it is not re-routed every wake
+        # (one notice, never a fault). When the reason changes (the founder resumed the mission), it is routed.
+        why = self._refusal(item)
+        return why is not None and (item["item_id"], "ask_not_recorded", why[:300]) in self._notices
 
     def open_items(self) -> list[dict]:
         return [dict(v) for v in self._routed.values() if self._open(v)]
@@ -570,7 +590,10 @@ class BodyAttentionStore:
                 "founder_surface": "notice only: no ask, no decision requested", "execution_authority": "none"}
         if why:
             data["why"] = why[:300]
-        self.body.journal.record("goal.notice", data, key=[item.item_id, kind, why[:300]])
+        ident = (item.item_id, kind, why[:300])
+        if ident not in self._notices:      # once: a later turn's copy differs only in its time and lane
+            self.body.journal.record("goal.notice", data, key=[item.item_id, kind, why[:300]])
+            self._notices.add(ident)
         self.noticed.add(item.item_id)
 
     def record_ask(self, item: AttentionItem, payload: dict) -> None:
@@ -579,23 +602,26 @@ class BodyAttentionStore:
         if item.kind != "decision":
             self._notice(item, kind=item.kind, lane=lane)
             return
-        spec = self.registry.get(item.goal_id)
-        move = next((m for m in _moves(spec) if m.route_hash == item.route_hash), None)
-        try:
-            if move is None:
-                raise MissionError("the decision names no declared move of this goal")
-            ref = move.payload
-            rid = self.body.engine.request_decision(
-                ref["mission_id"], ref["action_id"], why=item.question, recommendation=item.recommendation,
-                now=datetime.fromisoformat(str(payload.get("routed_at", iso(self.body.clock()))).replace("Z", "+00:00")),
-                evidence={"goal_id": item.goal_id, "goal_item_id": item.item_id, "lane": lane,
-                          "evidence_refs": list(item.evidence_refs)},
-                quoted=tuple(asks.founder_text([spec.founder_intent, spec.desired_state, move.description,
-                                                move.intervention_id, move.expected_outcome,
-                                                [n.gate for n in spec.plan], [n.outcome for n in spec.plan]])))
-            self.asked.append(rid)
-        except (MissionError, asks.AskContractError) as exc:
-            self._notice(item, kind="ask_not_recorded", lane=lane, why=f"{type(exc).__name__}: {exc}")
+        why = self._refusal(item.to_dict())
+        if why is None:
+            # One goal's refused or faulting ask never faults the turn for the other goals: it becomes one notice.
+            try:
+                spec = self.registry.get(item.goal_id)
+                move = next(m for m in _moves(spec) if m.route_hash == item.route_hash)
+                ref = move.payload
+                rid = self.body.engine.request_decision(
+                    ref["mission_id"], ref["action_id"], why=item.question, recommendation=item.recommendation,
+                    now=datetime.fromisoformat(str(payload.get("routed_at", iso(self.body.clock()))).replace("Z", "+00:00")),
+                    evidence={"goal_id": item.goal_id, "goal_item_id": item.item_id, "lane": lane,
+                              "evidence_refs": list(item.evidence_refs)},
+                    quoted=tuple(asks.founder_text([spec.founder_intent, spec.desired_state, move.description,
+                                                    move.intervention_id, move.expected_outcome,
+                                                    [n.gate for n in spec.plan], [n.outcome for n in spec.plan]])))
+                self.asked.append(rid)
+                return
+            except (asks.AskContractError, StopIteration, *CONTAINED) as exc:
+                why = f"{type(exc).__name__}: {exc}"
+        self._notice(item, kind="ask_not_recorded", lane=lane, why=why)
 
     def record_answer(self, item_id: str, payload: dict) -> None:
         raise ContractError("founder answers on a GREG body arrive only as signed DECISION commands")
@@ -888,7 +914,7 @@ def _tick(body, now: datetime) -> dict:
     at = max([now] + [datetime.fromisoformat(a.replace("Z", "+00:00")) for a in last])   # never backdated
     body.engine.book.rebuild()
     facts = founder_facts(body.ledger, body_id=body.config["body_id"])
-    held.store.begin(facts.signed)
+    held.store.begin(facts.signed, at)
     quarantined = _guard(body, reg, facts, at)
     refusals = _settle(body, reg, facts, at)
     signals, end = _sense(body, loop, held.cursor)

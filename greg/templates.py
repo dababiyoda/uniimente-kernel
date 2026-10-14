@@ -307,6 +307,104 @@ def human_work(*, function: str, purpose: str, workspace_root: Path, deliverable
     }
 
 
+RELATIONSHIPS = ("contract", "employment")
+
+
+def shared_work(*, task: str, person: str, relationship: str, function: str, deliverable: str, acceptance: str,
+                workspace_root: Path, horizon_days: float = 30) -> dict:
+    """One piece of work done by Alfonso, GREG and a named person together (developmental node N6).
+
+    GREG writes the handoff; the person agrees to the terms and does the work; Alfonso reviews
+    it; GREG records the outcome. GREG contacts, hires and pays no one: Alfonso sends the handoff
+    and engages and pays the person under the relationship he names here. Each step of the
+    person's is one ``HUMAN_WORK`` ask that closes only when its evidence is observed in the
+    case folder. The person may decline at any time before delivering: a ``declined.txt``
+    carrying the reference is honored as legitimate, so GREG withdraws its ask, never asks that
+    step again in this mission and asks Alfonso how to proceed. That the person is real and the
+    relationship lawful is attested by Alfonso's acceptance of the closure, not provable here.
+    """
+    if not asks_human_work(function) or function == "human.founder_review" \
+            or not re.fullmatch(r"[a-z0-9_.-]{3,80}", function):
+        raise ValueError("function is the person's work: professional.<field> or human.<task> (lowercase)")
+    if relationship not in RELATIONSHIPS:
+        raise ValueError(f"relationship is one of {RELATIONSHIPS}: a lawful engagement Alfonso makes himself")
+    task, person, acceptance = (" ".join(str(v).split()) for v in (task, person, acceptance))
+    for name, value, limit in (("task", task, 300), ("person", person, 200), ("acceptance", acceptance, 1000)):
+        if not value or len(value) > limit:
+            raise ValueError(f"{name} is required (at most {limit} characters)")
+    name = Path(deliverable).name
+    if not name or name != deliverable or name.startswith(".") or name in SHARED_WORK_FILES:
+        raise ValueError("deliverable is a plain file name placed in the case folder")
+    slug = re.sub(r"[^a-z0-9]+", "-", task.lower()).strip("-")[:40].strip("-")
+    if len(slug) < 3:
+        raise ValueError("task needs at least three letters or digits")
+    mission_id, ref = f"m:shared-{slug}", f"WORK-{slug.upper()}"
+    folder = Path(workspace_root) / mission_id.replace(":", "_")
+
+    def read(check_id, file, description, predicate):
+        return {"check_id": check_id, "description": description,
+                "sensor": {"capability": "fs.read", "params": {"path": str(folder / file)}, "target": f"fs:{file}"},
+                "predicate": predicate}
+    declined = {"sensor": {"capability": "fs.read", "params": {"path": str(folder / "declined.txt")},
+                           "target": "fs:declined.txt"},
+                "predicate": {"op": "contains", "field": "text", "value": ref}}
+    handoff = (f"# Work handoff {ref}\n\nTask: {task}\nFor: {person}, under a {relationship} that Alfonso Lopez "
+               f"arranges and pays directly\nDeliverable: {name}, placed in the case folder\nAcceptance: "
+               f"{acceptance}\n\nYour written agreement to these terms, carrying {ref}, is kept as consent.txt.\n"
+               "You may decline at any time before delivering. If you do, nothing more is asked of you for "
+               "this work.\nGREG, Alfonso's software, wrote this handoff; it contacts and pays no one.\n")
+    target = "person:" + (re.sub(r"[^a-z0-9]+", "-", person.lower()).strip("-")[:60] or "named")
+    return {
+        "mission_id": mission_id,
+        "founder_expression": f"Do {task} with {person} under a {relationship}; {name} is accepted when: {acceptance}",
+        "intended_effect": "the work is agreed, delivered, reviewed by Alfonso and recorded, with the person free to "
+                           "decline; GREG writes only the handoff and the outcome record",
+        "priority": 55, "closure": {"kind": "bounded", "cadence_seconds": 3600},
+        "success_checks": [
+            read("handoff_written", "handoff.md", "GREG's handoff names the task, terms and reference",
+                 {"op": "contains", "field": "text", "value": ref}),
+            read("consent_recorded", "consent.txt", f"{person}'s written agreement carries {ref}",
+                 {"op": "contains", "field": "text", "value": ref}),
+            read("deliverable_received", name, f"{name} is in the case folder",
+                 {"op": "equals", "field": "exists", "value": True}),
+            read("founder_review", "review.txt", f"Alfonso accepted the deliverable: ACCEPT {ref}",
+                 {"op": "contains", "field": "text", "value": f"ACCEPT {ref}"}),
+            read("outcome_recorded", "outcome.md", "GREG recorded the outcome",
+                 {"op": "contains", "field": "text", "value": ref})],
+        "strategies": [
+            {"action_id": "write-handoff", "capability": "fs.write",
+             "params": {"relative_path": "handoff.md", "content": handoff}, "target": "workspace:handoff.md",
+             "advances": ["handoff_written"], "rationale": "the person learns the task, terms and their right to decline"},
+            {"action_id": "agree-terms", "function": "human.agree_terms", "target": target,
+             "advances": ["consent_recorded"], "requires": ["handoff_written"], "declined_if": declined,
+             "rationale": f"Alfonso sends the handoff to {person} and saves their written agreement"},
+            {"action_id": "do-the-work", "function": function, "target": target,
+             "advances": ["deliverable_received"], "requires": ["consent_recorded"], "declined_if": declined,
+             "rationale": f"{person} does {task} and the deliverable is saved to the case folder"},
+            {"action_id": "review", "function": "human.founder_review", "target": "person:alfonso",
+             "advances": ["founder_review"], "requires": ["deliverable_received"],
+             "rationale": f"Alfonso checks {name} against the acceptance terms and writes ACCEPT {ref} or what "
+                          "to revise"},
+            {"action_id": "record-outcome", "capability": "fs.write",
+             "params": {"relative_path": "outcome.md",
+                        "content": f"# Outcome {ref}\n\n{person} delivered {name} for: {task}, under a "
+                                   f"{relationship}. Alfonso reviewed it against: {acceptance}\n"},
+             "target": "workspace:outcome.md", "advances": ["outcome_recorded"],
+             "requires": ["consent_recorded", "deliverable_received", "founder_review"],
+             "rationale": "the agreed, delivered and reviewed work is recorded"}],
+        "light_cone": {"capabilities": ["fs.read", "fs.write"], "targets": ["fs:*", "workspace:*", "person:*"],
+                       "max_consequence_class": "internal_write", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
+SHARED_WORK_FILES = ("handoff.md", "consent.txt", "review.txt", "outcome.md", "declined.txt")
+
+
+def asks_human_work(function) -> bool:
+    from greg.asks import human_work
+    return human_work(function) is not None
+
+
 def business_case(*, case: str, buyer: str, offer: str, price: str, currency: str, acceptance: str,
                   workspace_root: Path, statement: str = "statement.csv", columns: dict | None = None,
                   minor_units: bool = False, horizon_days: float = 45) -> dict:
@@ -409,7 +507,7 @@ def business_loop_amount(price) -> str:
 TEMPLATES = {"repo-guardian": repo_guardian, "integration-watch": integration_watch, "workspace-note": workspace_note,
              "engineering-brief": engineering_brief, "venture-assessment": venture_assessment,
              "verify-download": verify_download, "word-limit": word_limit, "human-work": human_work,
-             "business-case": business_case}
+             "business-case": business_case, "shared-work": shared_work}
 
 
 def cognitive_problem(problem: dict, *, horizon_days=2) -> dict:

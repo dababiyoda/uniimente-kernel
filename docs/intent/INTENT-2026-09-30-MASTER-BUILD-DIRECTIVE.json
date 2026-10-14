@@ -49,9 +49,10 @@
         "tests/unit/test_greg_founder_asks.py",
         "tests/integration/test_greg_phone_asks.py",
         "tests/unit/test_greg_account_access.py",
-        "tests/unit/test_greg_human_work.py"
+        "tests/unit/test_greg_human_work.py",
+        "tests/unit/test_greg_shared_work.py"
       ],
-      "reality_status": "UNIT-TESTED and INTEGRATION-TESTED in a container; not FOUNDER-USED; the wording screen is lexical and incomplete (see failure_evidence)"
+      "reality_status": "UNIT-TESTED and INTEGRATION-TESTED in a container; not FOUNDER-USED; the wording screen is lexical and incomplete (see failure_evidence); the human-worker ask now runs a whole shared piece of work with a named person (N6: handoff, consent, deliverable, founder review, outcome, refusal honored), closed in container tests, not FOUNDER-USED"
     },
     {
       "section": 61,

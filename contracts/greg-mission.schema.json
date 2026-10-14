@@ -275,6 +275,46 @@
                 }
               }
             }
+          },
+          "declined_if": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sensor",
+              "predicate"
+            ],
+            "description": "Only for a person's step (human.* or professional.*): the read-only observation that the person declined. When it holds, GREG records the refusal as legitimate, withdraws its ask, never pursues this step again in the mission and asks the founder how to proceed.",
+            "properties": {
+              "sensor": {
+                "$ref": "#/$defs/invocation"
+              },
+              "predicate": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "op"
+                ],
+                "properties": {
+                  "op": {
+                    "enum": [
+                      "exists",
+                      "absent",
+                      "equals",
+                      "contains",
+                      "not_contains",
+                      "gte",
+                      "lte",
+                      "count_gte"
+                    ]
+                  },
+                  "field": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "value": {}
+                }
+              }
+            }
           }
         }
       }

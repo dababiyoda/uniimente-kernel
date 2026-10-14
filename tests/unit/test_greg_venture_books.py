@@ -101,44 +101,6 @@ def test_a_business_procedure_asks_only_for_what_a_person_chose_and_moves_betwee
 
 # -- the body: N7 closes only with a cheaper transplant and funded obligations ---------------
 
-@pytest.fixture
-def tail_verified_ledger(monkeypatch):
-    """Test harness only. The writer re-verifies its whole chain before every append, so time grows with
-    the square of history (a Kernel scaling finding reported in the PR, not changed here). Five full
-    cases cross that line, so in this test the writer checks each new record against the last verified
-    head instead. The separate-process appraiser still verifies the full chain from the file for every
-    closure, and the test ends with one full verification of the writer's own chain."""
-    from provenance.ledger import EvidenceLedger
-    original = EvidenceLedger.verify_chain
-
-    def verify(self):
-        done = getattr(self, "_tail_verified", 0)
-        if not done or done > len(self.records) or self.records[done - 1].hash != self._tail_head:
-            ok, why = original(self)
-        else:
-            ok, why = True, "tail intact"
-            for rec in self.records[done:]:
-                body = {"seq": rec.seq, "record_type": rec.record_type, "payload": rec.payload,
-                        "prev_hash": rec.prev_hash, "corrects": rec.corrects}
-                if rec.hash_version == 2:
-                    body.update(ts_utc=rec.ts_utc, hash_version=2)
-                if self.records[rec.seq] is not rec or rec.prev_hash != self.records[rec.seq - 1].hash \
-                        or rec.record_type in ("genesis", "constitution_transition") \
-                        or venture_books_sha(body) != rec.hash:
-                    ok, why = False, f"tail check failed at {rec.seq}"
-                    break
-        if ok:
-            self._tail_verified, self._tail_head = len(self.records), self.records[-1].hash
-        return ok, why
-    monkeypatch.setattr(EvidenceLedger, "verify_chain", verify)
-    return original
-
-
-def venture_books_sha(body):
-    from provenance.ledger import sha256_json
-    return sha256_json(body)
-
-
 def tick(body, clock, ticks=3):
     clock.advance(4000)
     for _ in range(ticks):
@@ -181,7 +143,7 @@ def run_case(home, key, body_id, clock, body, spec) -> str:
 
 
 def test_a_procedure_from_one_venture_makes_a_second_cheaper_and_its_revenue_funds_reserves_first(
-        tmp_path, tail_verified_ledger):
+        tmp_path):
     home, key, body_id, _ = make_body(tmp_path)
     clock = Clock()
     body = Body(home, clock=clock).open()
@@ -228,7 +190,7 @@ def test_a_procedure_from_one_venture_makes_a_second_cheaper_and_its_revenue_fun
         [leases] = [b for b in after["books"] if b["venture"] == "leases"]
         assert leases["surplus_for_reinvestment"] is None            # no obligations signed there: no figure
         assert not [r for r in body.journal.ledger.by_type("event") if r.payload.get("type", "").startswith("treasury.")]
-        assert tail_verified_ledger(body.journal.ledger)[0] is True     # one full verification of the whole chain
+        assert body.journal.ledger.verify_chain()[0] is True     # one full verification of the whole chain
     finally:
         body.close()
 

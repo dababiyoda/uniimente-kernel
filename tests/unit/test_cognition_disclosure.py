@@ -144,7 +144,11 @@ def test_custody_is_stated_and_a_broken_chain_issues_nothing(body):
     assert custody["ledger_head"] == body.journal.ledger.head and custody["chain_verified_at_packaging"].startswith("chain intact")
     assert custody["anchoring"]["configured"] in (False, None) or custody["anchoring"]["configured"] is not True
     assert "witness bundle" in custody["inclusion"]
-    record = body.journal.ledger.records[2]
+    copy = body.journal.ledger.records[2]
+    copy.payload["tampered"] = True                    # a reader's copy: retained evidence is unchanged
+    again = D.build_package(body.journal, refs, recipient="C", purpose="p")
+    assert again["package"]["custody"]["chain_verified_at_packaging"].startswith("chain intact")
+    record = body.journal.ledger._records[2]           # the ledger's own retained record: tampering is caught
     saved = json.loads(json.dumps(record.payload))
     record.payload["tampered"] = True
     try:

@@ -35,7 +35,7 @@
     "The held-out suite is self-authored and structured-only (42 items, six geometry groups with n>=3); a free-text, externally authored suite does not exist",
     "The semantic organ has never run against a live local model in any recorded run (DEPENDENCY_UNAVAILABLE in this container)",
     "The baseline transcript was produced by sibling agents of the same frontier model family under an instruction not to use tools; the audit is post hoc (transcript inspection), not a runtime restriction",
-    "The ten lineages stacked on #137 cannot be merged to main until #137 is decided; their mechanisms are queued, not ported",
+    "The fourteen lineages that carry #137 cannot be merged to main until #137 is decided; their mechanisms are queued, not ported",
     "VEPMC remains 0: nothing here runs on the founder's Chromebook"
   ],
   "dependencies": [
@@ -46,7 +46,7 @@
   ],
   "conflicts": [
     "The review's 'Keep VEPMC 0->1 as GREG's current global bottleneck' versus the 2026-10-02 full-machine completion correction ('earlier global VEPMC pauses are superseded'): resolved here as the correction states, VEPMC stays the required device proof and the primary node, and does not pause buildable software",
-    "Thirteen open draft lineages implement overlapping seeds; this branch productizes the main-compatible #141 and registers the rest instead of adding a fourteenth silo",
+    "Sixteen open draft lineages implement overlapping seeds (thirteen when this work began; #161-#163 opened the same day); this branch productizes the main-compatible #141 and registers the rest instead of adding a fourteenth silo",
     "The review's five-layer naming (L1-L5) versus the build prompt's five layers: both preserved through REVIEW_LAYER_MAP, unchanged here"
   ],
   "next_review_trigger": "Founder review of the draft PR; or the first real outcome settled through the standing-runtime binding; or a founder-selected local model that unlocks the local baseline arms and the semantic organ.",

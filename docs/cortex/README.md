@@ -127,7 +127,10 @@ Each receipt records it in `route.finality`, per route for a composed question, 
 whole. When the repertoire cannot answer (`UNSUPPORTED_GEOMETRY`, `NO_ELIGIBLE_METHOD`), the receipt carries a typed
 `capability_deficit`: the geometry, its jurisdiction, the registered-but-disabled families and the resolution order
 (existing capability first, new architecture last). It is the input a later capability-formation loop would consume;
-it requests formation and authorizes nothing. A handoff or a malformed input is not a deficit.
+it requests formation and authorizes nothing. A handoff or a malformed input is not a deficit. One receipt is one
+observation, so the record says `verified: false`: a capability-genesis loop verifies a deficit by its recurrence
+across recorded cycles and diagnoses it before proposing anything (PR #129's `DeficitDetector` is that mechanism;
+a trial merge of #129 with this branch passes the full suite).
 
 **Replayed baseline arms.** When no model is reachable from the evaluation process, the declared arms can be run
 from a transcript of replies produced elsewhere, keyed by `sha256(system + NUL + user)`; a missing reply is an

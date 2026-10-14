@@ -40,7 +40,9 @@ condition or registration is refused (`cortex/genome.py`; enforced by test).
 
 ## 4. What already existed (searched before building)
 
-Thirteen open draft pull requests implement overlapping seeds; two are main-compatible. The full inventory with each
+Sixteen open draft pull requests implement overlapping seeds (thirteen when this work began; #161, #162 and #163 were
+opened by parallel sessions the same day); two of them are main-compatible, and two further main-based lineages are
+adjacent. The full inventory with each
 lineage's own measured results and a disposition is `docs/cortex/COGNITION_LINEAGES.json`
 (`tests/unit/test_cognition_lineages.py`). Decision:
 
@@ -48,10 +50,11 @@ lineage's own measured results and a disposition is `docs/cortex/COGNITION_LINEA
 | --- | --- | --- |
 | #141 `cortex/` (main-based, 27 commits, CI green, frozen eval, 26/26 mutants) | **PRODUCTIZE** — base of this branch | Implements the review's approved list almost entirely: ProblemGeometry, IntelligenceGenome profile, 13 epistemic classes, proof classes, harm vector, receipts, abstention, deterministic router, Semantic/Fermi/Formal(+certified optimization)/Evidence-Causal organs, adversarial verifier, reverse translation + counterexample search, frozen baseline harness, CompetenceLedger (method × version × geometry × conditions), 28 reserved disabled families |
 | #139 `egregore/cognition` (main-based) | **RECOMBINE** | Its `CortexProposer` seam is the one thing #141 lacked: a binding into `StandingCognitionRuntime`. Ported with credit as `egregore/cortex_proposer.py`, with the runtime test #139 did not have. The rest stays a registered competing implementation |
-| #140, #142, #143, #145, #151, #153, #154, #155, #156, #157, #158 (stacked on #137) | **RETAIN_AS_EVIDENCE** (+ mechanism source) | They cannot reach `main` before #137 is decided. Their results are registered verbatim; the mechanisms worth porting afterwards are named per lineage |
-| #160 Goal Gravity (main-based) | ADJACENT | Not a cognition seed; expected to merge beside this branch without textual conflict and to be a natural caller of the proposer |
+| #140, #142, #143, #145, #151, #153, #154, #155, #156, #157, #158, #161, #162, #163 (carry #137) | **RETAIN_AS_EVIDENCE** (+ mechanism source) | They cannot reach `main` before #137 is decided. Their results are registered as their own claims; the mechanisms worth porting afterwards are named per lineage. #162 calls itself evidence-only and not a merge candidate |
+| #160 Goal Gravity (main-based) | ADJACENT | Not a cognition seed; a natural caller of the proposer. A trial merge conflicts at three append-only sites (closure registry, intent ledger, verifier criteria); keeping both sides passes the full suite and verifier V1–V5 |
+| #129 Capability Genesis Loop (main-based) | ADJACENT | Not a cognition seed: the recurrence-verified capability-formation loop a cortex abstention's `capability_deficit` hands off to. A trial merge is textually clean and passes the full suite; the adapter from a receipt's geometry deficit to its per-cycle deficit kinds is not built |
 
-A fourteenth implementation written from scratch was the obvious move and the wrong one: it would have duplicated
+Another implementation written from scratch was the obvious move and the wrong one: it would have duplicated
 #141 and #139 and violated "one authority, many governed capabilities" (`UNIIMENTE_FINAL_BUILD_ORDER.md` §3, §9).
 
 ## 5. Residual CapabilityDeficit closed on this branch
@@ -78,7 +81,7 @@ A fourteenth implementation written from scratch was the obvious move and the wr
 ## 6. Why this beats the simplest viable alternative
 
 Simplest viable: open a PR that re-labels #141 as "approved". It would leave the exit `INCONCLUSIVE`, the four
-defects live, no caller on `main`, and thirteen lineages uncoordinated. Strongest competitor: #143's bridge on the
+defects live, no caller on `main`, and sixteen lineages uncoordinated. Strongest competitor: #143's bridge on the
 #137 stack, which has the only measured gain (narrow, against run baselines, no model arm) but cannot reach `main`
 until #137 does. Do nothing: the seed stays off `main` and the directive stays unexecuted. Reversible experiment:
 this branch — additive commits, no activation, revert restores `main`.
@@ -92,9 +95,11 @@ this branch — additive commits, no activation, revert restores `main`.
   suite").
 - The semantic organ has never run against a live local model in any recorded run.
 - The composition cap (two routes) is now disclosed, not lifted; lifting it is 0.1.7 work with its own freeze.
-- Ten lineages' mechanisms (one-entry bridge, open-source engine certification, Layer-5 compile with mental-model
-  operators, genome admission harness, lawful leverage foundry, resilience projection) are queued behind the #137
-  decision.
+- Mechanisms from the lineages that carry #137 (one-entry bridge, open-source engine certification, Layer-5 compile
+  with mental-model operators, genome admission harness, lawful leverage foundry, resilience projection, second-engine
+  solver cross-checks, legitimacy records, selective-disclosure evidence packages) are queued behind the #137 decision.
+- The handoff from a receipt's unverified `capability_deficit` to #129's recurrence-verified loop needs an adapter and
+  #129 on `main`; until then a cortex abstention reaches that loop only as a runtime silence streak.
 - VEPMC stays 0; nothing here runs on the founder's Chromebook. Per the 2026-10-02 completion correction, that is
   the required device proof and the primary node, and it does not pause buildable software.
 

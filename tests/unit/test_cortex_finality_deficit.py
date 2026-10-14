@@ -112,6 +112,16 @@ def test_a_deficit_requests_formation_and_never_authorizes_it():
     assert r["authority_created"] is False and r["execution_authority"] == "none"
 
 
+def test_one_receipt_never_verifies_a_deficit():
+    d = run({"declared": {**DECL, "epistemic_class": "prediction"}})["capability_deficit"]
+    assert d["verified"] is False
+    assert "recurrence across recorded cycles" in d["verification"]
+    r = run({})
+    r["capability_deficit"] = {**r["capability_deficit"], "verified": True}
+    with pytest.raises(Exception):
+        validate(r, "cortex-receipt")
+
+
 def test_malformed_input_carries_the_rule_and_no_deficit():
     r = Cortex(clock=lambda: "2026-10-13T00:00:00Z").run({"problem_id": "m", "question": "q", "payload": "nope"})
     validate(r, "cortex-receipt")

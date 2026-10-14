@@ -585,6 +585,8 @@
             "geometry",
             "jurisdiction",
             "registered_but_disabled",
+            "verified",
+            "verification",
             "why",
             "resolution_order",
             "authority"
@@ -598,6 +600,10 @@
                 "NO_ELIGIBLE_METHOD",
                 "UNSUPPORTED_GEOMETRY"
               ]
+            },
+            "verified": {
+              "const": false,
+              "description": "a single receipt never verifies a deficit; recurrence across recorded cycles does"
             }
           }
         }

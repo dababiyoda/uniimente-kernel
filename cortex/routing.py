@@ -84,7 +84,9 @@ def _finality(geometry, parts) -> dict:
 
 def _capability_deficit(geometry, eligibility, state, reason) -> dict | None:
     """The Competency Compiler's horizon hook: when the repertoire cannot answer, say so in a typed record
-    that capability genesis can consume. It is a request for formation, never an authorization."""
+    that capability genesis can consume. One receipt is one observation, so the record is marked unverified:
+    a capability-genesis loop verifies a deficit by its recurrence across recorded cycles and diagnoses it
+    before anything is proposed. It is a request for formation, never an authorization."""
     if state not in ("NO_ELIGIBLE_METHOD", "UNSUPPORTED_GEOMETRY"):
         return None
     disabled = sorted(e.key for e in eligibility if any("disabled" in r for r in e.reasons))
@@ -92,6 +94,9 @@ def _capability_deficit(geometry, eligibility, state, reason) -> dict | None:
             "jurisdiction": _jurisdiction(geometry.epistemic_class),
             "registered_but_disabled": disabled,
             "why": reason,
+            "verified": False,
+            "verification": "one receipt is a single observation; a verified CapabilityDeficit needs recurrence across "
+                            "recorded cycles (a deficit detector over standing-runtime cycles), then diagnosis",
             "resolution_order": ["existing capability", "composition", "commodity infrastructure", "open source",
                                  "API/plugin/service", "small bounded utility", "coding agent", "new architecture"],
             "authority": "formation requests nothing; building != installation != activation != consequence authority"}

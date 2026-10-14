@@ -1,7 +1,7 @@
 {
   "schema": "cognition-lineage-registry/0.1",
   "recorded_at": "2026-10-13",
-  "rule": "One authority, many governed capabilities (UNIIMENTE_FINAL_BUILD_ORDER \u00a73, \u00a79, \u00a713). Every lineage keeps an implementation id, its measured results verbatim from its own record, and a disposition. SUPERSEDED/RETAIN never means deleted. Dispositions create no authority; merging any lineage is a founder decision.",
+  "rule": "One authority, many governed capabilities (UNIIMENTE_FINAL_BUILD_ORDER §3, §9, §13). Every lineage keeps an implementation id, its measured results verbatim from its own record, and a disposition. SUPERSEDED/RETAIN never means deleted. Dispositions create no authority; merging any lineage is a founder decision.",
   "dispositions": {
     "PRODUCTIZE": "carried into this branch as the canonical main-compatible implementation",
     "RECOMBINE": "a mechanism ported into this branch with credit; the rest retained as a competing implementation",
@@ -11,9 +11,27 @@
   },
   "measured_in_this_session": {
     "method": "git merge-base/rev-list/diff against main 19fa33c on 2026-10-13; PR bodies read through the GitHub API; code read for #141 and #139 only",
-    "limits": "Results quoted from PR bodies are those lineages' own claims, not re-measured here, except #141 whose tests, mutants and freeze were re-run on this branch."
+    "limits": "Results quoted from PR bodies are those lineages' own claims, not re-measured here, except #141 whose tests, mutants and freeze were re-run on this branch. Heads are as measured: rows #129 and #160-#163 at about 23:55Z on 2026-10-13, after their lineages had moved; earlier rows at the head each records. Trial merges with #129 and #160 were run in throwaway worktrees."
   },
   "lineages": [
+    {
+      "implementation_id": "cognition-lineage/pr-129",
+      "pr": 129,
+      "head": "9309fd8",
+      "commits_ahead_of_main": 5,
+      "contains_pr137": false,
+      "diff_vs_main": "17 files changed, 3892 insertions(+), 1 deletion(-)",
+      "title": "Egregore: swappable parts + Capability Genesis Loop (deficit → ladder → shadow → dossier → ratified bind)",
+      "branch": "claude/opensource-llm-integration-rkr14o",
+      "package": "egregore/parts.py, egregore/genesis.py, egregore/failures.py, egregore/artifact.py",
+      "base": "main",
+      "author": "claude",
+      "disposition": "ADJACENT_MAIN_COMPATIBLE",
+      "lineage_relation": "main-based standing-cognition lineage, not a cortex seed: the recurrence-verified capability-formation loop (DeficitDetector -> diagnose -> ladder-ordered discovery -> shadow trial -> dossier -> ratified bind) that a cortex abstention's capability_deficit (verified: false) would hand off to",
+      "measured_results": "Its own claims: test_egregore_parts.py 19 passed, test_egregore_genesis.py 23 passed, 19 guards mutation-checked; full suite at 9309fd8 666 passed, 2 failed (also failing on main from a shallow clone), 4 skipped; four externally reproduced defects fixed as regression tests; two-mission reuse test: ladder depth 3 -> 0, new registrations 1 -> 0, 3/3 trial successes; Sandbox only, no real model endpoint called. Measured here: a trial merge of this branch with 9309fd8 is textually clean and its full suite passes (1,090 passed, 4 skipped).",
+      "carried_into_this_branch": "Nothing merged. Composition queued, not built: its deficit kinds are per cycle (component_failure, budget_refusal, refusal/silence/veto streaks), so a cortex abstention reaches it only as a runtime silence_streak and only when the cortex is the sole proposer; an adapter from a receipt's geometry deficit to a slot-scoped deficit, and routing hand-built deficits through DeficitDetector.scan so one observation never opens a case, are the residual seam. PartsBoard would let the CortexProposer be trialled as a proposer part against competing lineages.",
+      "authority_created": false
+    },
     {
       "implementation_id": "cognition-lineage/pr-139",
       "pr": 139,
@@ -28,7 +46,7 @@
       "author": "codex",
       "disposition": "RECOMBINE",
       "lineage_relation": "codex seed on main; sibling of #141",
-      "measured_results": "Frozen visible suite 32 synthetic cases (digest sha256:339ec1\u2026); default-client run 29/32 fixture checks; always-LLM and committee 32 NOT_RUN; synthetic plumbing replay 32/32 (explicitly no model-quality evidence); 797 passed / 4 skipped; CI run 369 all five jobs passed; promotion=unpromoted, superiority_claim=false.",
+      "measured_results": "Frozen visible suite 32 synthetic cases (digest sha256:339ec1…); default-client run 29/32 fixture checks; always-LLM and committee 32 NOT_RUN; synthetic plumbing replay 32/32 (explicitly no model-quality evidence); 797 passed / 4 skipped; CI run 369 all five jobs passed; promotion=unpromoted, superiority_claim=false.",
       "carried_into_this_branch": "CortexProposer adapter shape (egregore/cognition/integration.py) ported as egregore/cortex_proposer.py with a runtime test that #139 lacked; ledgered receipts for every disposition. Its organs, benchmark and RoutingMemory stay a competing implementation (one authority, many governed capabilities).",
       "authority_created": false
     },
@@ -65,7 +83,7 @@
       "disposition": "PRODUCTIZE",
       "lineage_relation": "claude seed on main; base of this branch (carried verbatim at ebc2130, then cortex 0.1.6)",
       "measured_results": "Frozen held-out 42 items: routed_seed 0.964 [0.911, 1.000], 0 critical errors, 0 unsupported certainty, 0 gate violations; always_abstain 0.577; always_llm and llm_committee NOT_RUN; exit INCONCLUSIVE; 26/26 mutants caught; 995 passed / 4 skipped with z3; six CI jobs green; stacks cleanly on #137.",
-      "carried_into_this_branch": "The whole package, contracts, freezes v0.1\u2013v0.1.5, evidence, docs and tests; plus the four 0.1.6 defect fixes, the replay client and the frozen comparison re-run with the declared baselines served from a frontier-model transcript.",
+      "carried_into_this_branch": "The whole package, contracts, freezes v0.1–v0.1.5, evidence, docs and tests; plus the four 0.1.6 defect fixes, the replay client and the frozen comparison re-run with the declared baselines served from a frontier-model transcript.",
       "authority_created": false
     },
     {
@@ -82,7 +100,7 @@
       "author": "codex",
       "disposition": "RETAIN_AS_EVIDENCE",
       "lineage_relation": "stacked on #137; carries #141's cortex package into the GREG mission path",
-      "measured_results": "120 self-authored structured cases (100 quality, 20 semantic-unavailability); proposed route equals the static specialist policy, timing-independent gain zero; model baselines NOT_RUN; version 3 INCONCLUSIVE; V1\u2013V5 PASS 1,518 unit tests / 8 skipped; six safeguard mutations caught.",
+      "measured_results": "120 self-authored structured cases (100 quality, 20 semantic-unavailability); proposed route equals the static specialist policy, timing-independent gain zero; model baselines NOT_RUN; version 3 INCONCLUSIVE; V1–V5 PASS 1,518 unit tests / 8 skipped; six safeguard mutations caught.",
       "carried_into_this_branch": "Nothing merged (depends on #137). Its separate-process original-input checks and SIGKILL rehearsals at receipt and action boundaries are mechanisms for the receipt-to-action path once #137 is decided.",
       "authority_created": false
     },
@@ -100,7 +118,7 @@
       "author": "claude",
       "disposition": "RETAIN_AS_EVIDENCE+MECHANISM_SOURCE",
       "lineage_relation": "stacked on #137; converges #140 and #141 through greg/cognition/bridge.py",
-      "measured_results": "v0.2 GAIN_ABSENT (kept); v0.3 GAIN_VERIFIED_AGAINST_RUN_BASELINES on fresh samples: routed_greg 0.0187 (0.0137\u20130.0239) vs static_router 0.0251 (0.0198\u20130.0305) vs existing_greg 0.3180; gain 0.0064 (25.6% relative), nearly all from incomparable trade-offs handed to the founder; always_llm/tool_llm NOT_RUN; 59 mutants 0 survived; 1,903 passed / 8 skipped; open-source engines (NetworkX, SciPy, OR-Tools GLOP) formed as certified functions with Mechanism Cards and GREG-owned certificates.",
+      "measured_results": "v0.2 GAIN_ABSENT (kept); v0.3 GAIN_VERIFIED_AGAINST_RUN_BASELINES on fresh samples: routed_greg 0.0187 (0.0137–0.0239) vs static_router 0.0251 (0.0198–0.0305) vs existing_greg 0.3180; gain 0.0064 (25.6% relative), nearly all from incomparable trade-offs handed to the founder; always_llm/tool_llm NOT_RUN; 59 mutants 0 survived; 1,903 passed / 8 skipped; open-source engines (NetworkX, SciPy, OR-Tools GLOP) formed as certified functions with Mechanism Cards and GREG-owned certificates.",
       "carried_into_this_branch": "Nothing merged (depends on #137). Mechanisms to port after the #137 decision: one-entry bridge, engine certification with model-free oracles, proofs of negatives (elastic program / improving direction), Chromebook engine install step.",
       "authority_created": false
     },
@@ -251,10 +269,10 @@
     {
       "implementation_id": "cognition-lineage/pr-160",
       "pr": 160,
-      "head": "ef4f5c7",
-      "commits_ahead_of_main": 1,
+      "head": "ef369d1",
+      "commits_ahead_of_main": 2,
       "contains_pr137": false,
-      "diff_vs_main": "34 files changed, 5470 insertions(+), 1 deletion(-)",
+      "diff_vs_main": "48 files changed, 9012 insertions(+), 1 deletion(-)",
       "title": "Goal Gravity loop on the canonical standing runtime: persistent goals as attractors, Gate-only execution, founder attention routing (INTENT-20261013-GOAL-GRAVITY)",
       "branch": "claude/goal-gravity-loop-20261013",
       "package": "egregore (goal gravity)",
@@ -263,7 +281,61 @@
       "disposition": "ADJACENT_MAIN_COMPATIBLE",
       "lineage_relation": "claude; Goal Gravity loop on the canonical standing runtime (not a cognition seed)",
       "measured_results": "Per its title: persistent goals as attractors, Gate-only execution, founder attention routing; its session reported CI green on 2026-10-13.",
-      "carried_into_this_branch": "Nothing merged. It adds egregore/ modules; this branch adds only egregore/cortex_proposer.py, so the two are expected to merge without textual conflict; the Goal Gravity turn is a natural caller of the proposer.",
+      "carried_into_this_branch": "Nothing merged. A trial merge with this branch at ef369d1 conflicts at three append-only sites (closure/integration_registry.py, docs/FOUNDER_INTENT_LEDGER.md, verifier/v2/criteria.json); keeping both sides gives a tree whose full suite passes (1,094 passed, 4 skipped) and whose verifier V1-V5 passes with both the cortex and goal-gravity closures. The Goal Gravity turn is a natural caller of the proposer.",
+      "authority_created": false
+    },
+    {
+      "implementation_id": "cognition-lineage/pr-161",
+      "pr": 161,
+      "head": "d655d4c",
+      "commits_ahead_of_main": 243,
+      "contains_pr137": true,
+      "diff_vs_main": "907 files changed, 584308 insertions(+), 31 deletions(-)",
+      "title": "Mind verifier: Z3 cross-checks on CP-SAT optimality/infeasibility and unsat cores; evidence-backed legitimacy gates (stacked on #158)",
+      "branch": "claude/greg-mind-residual-safeguards-20261013",
+      "package": "greg/cognition/verification.py, greg/cognition/legitimacy.py",
+      "base": "#158",
+      "author": "claude",
+      "disposition": "RETAIN_AS_EVIDENCE+MECHANISM_SOURCE",
+      "lineage_relation": "claude; hardens the GREG Polyintelligence Mind frontier (#158) with mechanisms ported from the superseded 2026-10-01 convergence branch (#162)",
+      "measured_results": "Its own claims: full frontier suite at 5a38e0d 2706 passed, 6 failed (one its own, fixed in d655d4c; five environmental, identical at base), 16 skipped; 9 focused tests; 7 of 7 new mutants caught; Seed Genome 240-row frozen comparison identical on every timing-independent field, exit INCONCLUSIVE (model baselines blocked); four reproduced defects move from STRUCTURALLY_VERIFIED/permitted to REFUTED/blocked; optimization p50 latency about 9% higher.",
+      "carried_into_this_branch": "Nothing merged (depends on #137/#155/#158). Mechanisms to port after the #137 decision: a second-engine counterexample search for OPTIMAL and INFEASIBLE solver claims, a fresh-solver unsat-core re-check with a minimality test, a fixed verification budget whose timeouts report inconclusive and never pass, and four-state law/consent/rights/authority legitimacy records settled only by permission-bearing origins.",
+      "authority_created": false
+    },
+    {
+      "implementation_id": "cognition-lineage/pr-162",
+      "pr": 162,
+      "head": "0de6d77",
+      "commits_ahead_of_main": 122,
+      "contains_pr137": true,
+      "diff_vs_main": "396 files changed, 67396 insertions(+), 29 deletions(-)",
+      "title": "Evidence only, do not merge: 2026-10-01 cortex convergence onto #140 (superseded; mechanisms ported to #161)",
+      "branch": "claude/greg-cortex-convergence-20261001",
+      "package": "greg/cognition (gates, advantage, budget, outcomes, pipeline, evaluation)",
+      "base": "#140",
+      "author": "claude",
+      "disposition": "RETAIN_AS_EVIDENCE",
+      "lineage_relation": "claude; the 2026-10-01 convergence of the #141 cortex seed onto codex cognition #140, stopped to avoid a third parallel cortex path; its own body says it is not a merge candidate",
+      "measured_results": "Its own claims: held-out partition never run; dev partition (viewed, arms adjusted afterwards, so not evidence of gain): routed mean loss 0.0486, static router 0.2305, GREG without cortex 0.4182; always_llm and tool_llm NOT_RUN; 2 of 48 own tests failed once on a cold run and passed in three later runs (cause not established).",
+      "carried_into_this_branch": "Nothing merged. Its gates and cross-engine checks were already ported to #161 by its own account; its outcomes, budget, pipeline and advantage modules are marked superseded by frontier modules. Closing it is a founder decision.",
+      "authority_created": false
+    },
+    {
+      "implementation_id": "cognition-lineage/pr-163",
+      "pr": 163,
+      "head": "40b4bff",
+      "commits_ahead_of_main": 245,
+      "contains_pr137": true,
+      "diff_vs_main": "918 files changed, 585967 insertions(+), 31 deletions(-)",
+      "title": "Seed Genome residuals: selective-disclosure evidence packages (RFC 9901) and a measured characterization harness (stacked on #161)",
+      "branch": "claude/greg-seed-genome-residuals-20261013",
+      "package": "greg/cognition/disclosure.py, greg/cognition/characterize.py",
+      "base": "#161",
+      "author": "claude",
+      "disposition": "RETAIN_AS_EVIDENCE+MECHANISM_SOURCE",
+      "lineage_relation": "claude; residual closure of the GREG Seed Genome lineage on the #161/#158 frontier, applying a 2026-10-13 re-issue of the 2026-10-01 build directive",
+      "measured_results": "Its own claims: full frontier suite at 47bff1d 2720 passed, 5 failed (environmental, identical at base), 16 skipped; 13 new tests; 15 of 15 mutants caught; characterization: every available family refutes every lie in its small sample (lower bounds about 0.44-0.51), answers invariant under renaming and reordering, exact arithmetic abstains at 64 terms, graph unattached on the default registry; frozen comparison not re-run because no evaluated path changed.",
+      "carried_into_this_branch": "Nothing merged (depends on #161/#158/#137). Mechanisms to port after the #137 decision: RFC 9901-style salted-hash selective disclosure of receipts (reveal claim type, status, verdict, dissent and limits; withhold inputs, outputs and evidence pointers), same-input completeness, a custody statement over the ledger chain, and append-only institutional responses that grant nothing.",
       "authority_created": false
     }
   ]

@@ -1,5 +1,5 @@
 {
-  "frozen_at": "2026-10-13T23:45:33Z",
+  "frozen_at": "2026-10-13T23:51:02Z",
   "inputs": {
     "arms": {
       "baseline_system_prompt_sha256": "sha256:e5ffbe9451a88600a36e2133ce48f2660f8483b9332fcad5e76017b73694b4d2",
@@ -36,7 +36,7 @@
       "cortex/organs/evidence_causal.py": "sha256:7569d74b10ffafed3b51aacbb854ff41d76d398cdd6f0b48e465e9cf9b66456e",
       "cortex/organs/formal.py": "sha256:537ed79c9bbf404b2002e63ef4c830eca4d5899f24708edefc24ed49862d032c",
       "cortex/organs/semantic.py": "sha256:20f1eaec8108f0ec650cf64069d6ba4e25819f1fe546afdb8907b5d4cb4db0d3",
-      "cortex/routing.py": "sha256:67d0dd3af28ab6829155653a62d10acb52a87052f9e966fed11b9c216429b1e1"
+      "cortex/routing.py": "sha256:c81fa19c267996836bbd2530261ea3ac197b09677466d36f31dff6a7aaeb74e4"
     },
     "cortex_version": "0.1.6",
     "default_budget": {

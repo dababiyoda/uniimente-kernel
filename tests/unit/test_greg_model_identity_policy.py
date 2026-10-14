@@ -216,3 +216,31 @@ def test_configured_allowlist_must_be_a_list_and_prices_a_mapping():
     with pytest.raises(ValueError, match="must map each fallback model"):
         models.AnthropicRoute("k", model="claude-opus-5-5", client=Client(), fallback_models=("claude-opus-4-8",),
                               fallback_prices=[[50.0, 250.0]])   # never silently replaced by the snapshot price
+
+
+def test_a_withheld_build_attempt_is_booked_against_the_signed_build_budget(tmp_path):
+    """Genesis pays for builds from the founder-signed build_budget_usd. A substituted answer is withheld,
+    so no candidate comes back, but the provider billed it: the next build's budget must be smaller."""
+    from greg import builders
+    from tests.greg_fixtures import Clock, drop, make_body, signed
+    from tests.unit.test_greg_genesis_builder import FUNCTION, _mission, _run
+
+    class Recording(builders.ModelBuilder):
+        def build(self, request, feedback=None):
+            self.budgets.append(self.max_budget_usd)
+            return super().build(request, feedback)
+
+    home, key, body_id, data = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", _mission(data)))          # build_budget_usd 1.0
+    builder = Recording(models.ModelRouter([models.AnthropicRoute("k", model="claude-opus-5-5",
+                                                                  client=Client(served="claude-opus-4-8"))]))
+    builder.budgets = []
+    body, states = _run(home, builder, ticks=2)
+    assert builder.budgets == [1.0] and "ACHIEVED" not in states and not body.journal.replay("genesis.built")
+    per_attempt = (1000 * 5.0 + 1000 * 25.0) / 1e6                       # claude-opus-4-8: withheld, but billed
+    # the same deficit resolved again (e.g. after the founder's answer) builds on what remains of the budget
+    body.genesis.resolve(mission=body.engine.book.missions["m:runbook"], function=FUNCTION, purpose="again",
+                         now=Clock()())
+    assert builder.budgets[1] == pytest.approx(1.0 - per_attempt)
+    assert [e.payload["cost_usd"] for e in body.journal.replay("genesis.unbuilt")] == [pytest.approx(per_attempt)] * 2
+    body.close()

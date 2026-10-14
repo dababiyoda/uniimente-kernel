@@ -78,7 +78,12 @@ sys.stdout.write(json.dumps(out))
 
 
 class BuildError(RuntimeError):
-    pass
+    """A build attempt produced no candidate. ``cost_usd`` is what the attempt was still billed (a withheld
+    substituted answer, a reply without source), so Genesis books it against the signed build budget."""
+
+    def __init__(self, message: str = "", *, cost_usd=None):
+        super().__init__(message)
+        self.cost_usd = cost_usd
 
 
 def screen(source: str) -> list[str]:
@@ -204,6 +209,13 @@ def extract_source(reply: str) -> str:
     return match.group(1).strip() + "\n"
 
 
+def _billed_source(reply: str, cost_usd) -> str:
+    try:
+        return extract_source(reply)
+    except BuildError as exc:   # a reply without source was still paid for
+        raise BuildError(str(exc), cost_usd=cost_usd) from exc
+
+
 class ClaudeCodeBuilder:
     """The installed Claude Code CLI as a coding agent: no tools, no disk, bounded spend."""
 
@@ -226,11 +238,12 @@ class ClaudeCodeBuilder:
         if proc.returncode:
             raise BuildError(f"Claude Code exited {proc.returncode}: {(proc.stderr or proc.stdout)[-300:]}")
         result = json.loads(proc.stdout)
+        cost = result.get("total_cost_usd")
         if result.get("is_error"):
-            raise BuildError(f"Claude Code reported an error: {str(result.get('result'))[:300]}")
-        return {"source": extract_source(str(result.get("result", ""))), "builder": self.identity,
+            raise BuildError(f"Claude Code reported an error: {str(result.get('result'))[:300]}", cost_usd=cost)
+        return {"source": _billed_source(str(result.get("result", "")), cost), "builder": self.identity,
                 "prompt_sha256": "sha256:" + hashlib.sha256(prompt.encode()).hexdigest(),
-                "cost_usd": result.get("total_cost_usd")}
+                "cost_usd": cost}
 
 
 BUILDER_SYSTEM = ("You write one small, pure Python function to an exact contract. You have no tools. "
@@ -255,11 +268,13 @@ class ModelBuilder:
         prompt = build_prompt(request, feedback)
         try:
             result = self.router.complete(BUILDER_SYSTEM, prompt, budget_usd=self.max_budget_usd)
-        except RouteError as exc:
+        except RouteError as exc:   # a withheld (e.g. substituted) answer was still billed: carry the spend
             spent = (getattr(self.router, "last", None) or {}).get("cost_usd") or 0.0
             raise BuildError(f"no model route produced a candidate: {exc}"[:300] + (f" (spent ${spent:.4f})"
-                                                                                  if spent else "")) from exc
-        return {"source": extract_source(result["text"]), "builder": "model:" + result["route"],
+                                                                                  if spent else ""),
+                             cost_usd=spent or None) from exc
+        return {"source": _billed_source(result["text"], result.get("cost_usd")),
+                "builder": "model:" + result["route"],
                 "served_model": result.get("served_model"),
                 "model_digest": result.get("model_digest"),
                 "prompt_sha256": "sha256:" + hashlib.sha256(prompt.encode()).hexdigest(),

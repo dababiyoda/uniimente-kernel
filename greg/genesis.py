@@ -982,8 +982,9 @@ class Genesis:
         # generation: a capability that keeps breaking cannot spend past what the founder signed.
         generations = {e.payload["deficit_id"] for e in self.journal.replay("deficit.opened")
                        if e.payload["mission_id"] == mission.mission_id and e.payload["function"] == function}
-        spent = sum(e.payload.get("cost_usd") or 0.0 for e in self.journal.replay("genesis.built")
-                    if e.payload["deficit_id"] in generations | {deficit_id})
+        # Spend is every billed attempt: built candidates and attempts that produced none (genesis.unbuilt).
+        spent = sum(e.payload.get("cost_usd") or 0.0 for kind in ("genesis.built", "genesis.unbuilt")
+                    for e in self.journal.replay(kind) if e.payload["deficit_id"] in generations | {deficit_id})
         if contract["build_budget_usd"] <= 0 or spent >= contract["build_budget_usd"]:
             self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
             self._route(deficit_id, "founder", "escalated", None)
@@ -1005,7 +1006,12 @@ class Genesis:
             try:
                 built = self.builder.build(request, feedback)
             except Exception as exc:  # the builder is untrusted; its failure is evidence
-                self._route(deficit_id, "builder", f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300], None)
+                why = f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300]
+                cost = getattr(exc, "cost_usd", None)
+                if cost:   # billed although no candidate came back (e.g. a withheld substituted answer)
+                    self.journal.record("genesis.unbuilt", {"deficit_id": deficit_id, "attempt": attempt,
+                                                            "cost_usd": cost, "why": why, "at": iso(now)})
+                self._route(deficit_id, "builder", why, None)
                 break
             spent += float(built.get("cost_usd") or 0.0)
             source = built["source"]

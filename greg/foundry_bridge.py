@@ -27,18 +27,18 @@ from greg.capabilities import CapabilityError, InvocationContext
 def _call(params, ctx: InvocationContext, table: str) -> dict:
     if ctx.stop_check and ctx.stop_check():
         raise CapabilityError("foundry worker stopped by canonical revocation/pause")
-    from foundry.systems import module
+    from foundry.systems import operation
     try:
         system = int(params["system"])
         op = str(params["op"])
     except (KeyError, TypeError, ValueError):
         raise CapabilityError("foundry call needs integer 'system' and string 'op'") from None
     try:
-        ops = getattr(module(system), table)
-    except KeyError as exc:
+        # One resolver for the primary and any co-implementation; an op only
+        # another table declares, or an ambiguous bare name, is refused here.
+        operation(system, table, op)
+    except LookupError as exc:
         raise CapabilityError(str(exc)) from None
-    if op not in ops:
-        raise CapabilityError(f"system {system} has no {table.split('_')[0].lower()} op {op!r}")
     def source_execution(value):
         if isinstance(value, dict):
             if str(value.get("system")) == "52":

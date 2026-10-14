@@ -653,3 +653,237 @@ def test_owned_build_is_reproducible_and_runs_from_the_bundle(tmp_path):
     assert result["identical_across_processes"] and result["verify"] and result["one_byte_changes_hash"]
     assert result["smoke"]["ran_from_bundle"], result["smoke"]
     assert result["toolchain_pins"] == ["PyYAML", "cryptography", "jsonschema", "pytest"]
+
+
+# -- increment 6: owned web --------------------------------------------------------------
+
+from foundry.systems import webserver
+
+
+def test_owned_site_serves_provable_pages_and_guards_portals(tmp_path):
+    result = webserver.exercise(tmp_path)
+    assert result["served"] == 200 and result["version"] == "2" and result["etag_is_content_hash"]
+    assert all(result["third_party_verification"].values()), "a stranger with the public key can verify the page"
+    assert result["forged_body_verification"]["body_matches_leaf"] is False
+    assert result["history"] == ["add outcome", "launch"]
+    assert result["not_modified"] == 304 and result["traversal"] == 400 and result["tampered_page"] == 500
+    assert result["portal"] == {"own": 200, "other_customer": 403, "no_token": 401, "expired": 403, "forged": 403}
+    assert result["public_bind_refused"]
+    site = webserver.Site(tmp_path / "s2", key_seed=bytes(32 * [5]))
+    with pytest.raises(webserver.SiteError, match="reason and evidence"):
+        site.publish("/x.html", "x", reason="", evidence=[])
+    rendered = foundry_bridge.query({"system": 31, "op": "render", "args": {"path": "/missing", "now": 0}},
+                                    _ctx(tmp_path, "foundry.query"))
+    assert rendered["result"]["status"] == 404
+
+
+# -- increment 8 (part): cognitive router -------------------------------------------------
+
+from foundry.systems import cognitive_router
+
+
+def test_cognitive_router_ranks_by_verified_evidence_and_keeps_governance(tmp_path):
+    result = cognitive_router.exercise(tmp_path)
+    assert result["by_quality"][0] == "anthropic:opus" and result["by_cost"][0] == "local:llama"
+    assert result["local_only"] == ["local:llama"], "a local-only request never reaches a contracted vendor"
+    assert result["after_provider_loss"] == ["openai:gpt", "local:llama"] and result["memory_kept_after_loss"]
+    assert result["failover_answered_by"] == "openai:gpt" and result["failover_tried"] == ["failed", "ok"]
+    assert result["refusals"]["refusal_is_terminal"] == "Refusal", "a declined request is never re-asked elsewhere"
+    assert "nothing_fits_budget_and_privacy" in result["refusals"]
+    # dominance: a route worse on every axis never leads the order even under its favourable priority
+    r = tmp_path / "dom"
+    cognitive_router.declare(r, "a", provider="p", privacy="public", price_per_call_usd=0.01)
+    cognitive_router.declare(r, "b", provider="p", privacy="public", price_per_call_usd=0.02)
+    now = "2026-10-13T00:00:00Z"
+    for n in range(6):
+        cognitive_router.observe(r, "a", task="t", verdict="VERIFIED", cost_usd=0.01, latency_s=1.0, at=now, evidence=f"a{n}")
+        cognitive_router.observe(r, "b", task="t", verdict="VERIFIED" if n < 2 else "REFUTED", cost_usd=0.02, latency_s=3.0,
+                                 at=now, evidence=f"b{n}")
+    d = cognitive_router.choose(r, task="t", privacy="public", priority="cost", now=now)
+    assert d["order"] == ["a", "b"] and d["dominated"] == ["b"]
+    with pytest.raises(cognitive_router.RouterPolicyError):
+        cognitive_router.declare(r, "c", provider="p", privacy="secret")
+    out = foundry_bridge.query({"system": 25, "op": "routes", "args": {"now": now}}, _ctx(tmp_path, "foundry.query"))
+    assert out["result"] == {}, "a fresh mission workspace has no routes until declared"
+
+
+# -- increment 7 (part): rabbit hole engine and path attribution ----------------------------
+
+from foundry.systems import attribution, rabbit_hole
+
+
+def test_rabbit_hole_routes_by_observed_doors_and_never_offers_weak_or_dark_nodes(tmp_path):
+    result = rabbit_hole.exercise(tmp_path)
+    assert result["territory_valid"] and "dark_pattern" in result["refusals"]
+    assert result["routed_from_entry"] == "pod-basics", "the door visitors actually completed and bought through leads"
+    assert result["alternatives"] == ["disputes"], "the other door is still offered, not hidden"
+    assert result["weak_node_never_offered"] and result["from_disputes"] == "audit-kit"
+    assert result["owned_ground"].startswith("portal:") and result["exit_ramp_always_present"] and result["depth_cap_stops"]
+    stats = result["door_stats"]["why-proof->pod-basics"]
+    assert stats["good"] <= stats["taken"], "a visitor counts once however well the visit went"
+    assert 0 < rabbit_hole.door_value(stats) <= 1.0
+    r2 = tmp_path / "t2"
+    rabbit_hole.demo_territory(r2)
+    rabbit_hole.observe(r2, session="s", kind="consume", node_id="why-proof", at="t")
+    rabbit_hole.observe(r2, session="s", kind="leave", node_id="why-proof", at="t")
+    with pytest.raises(rabbit_hole.RabbitHoleError, match="already left"):
+        rabbit_hole.observe(r2, session="s", kind="consume", node_id="pod-basics", at="t")
+    rec = foundry_bridge.query({"system": 50, "op": "recommend", "args": {"session": "nobody", "now": "t"}},
+                               _ctx(tmp_path, "foundry.query"))
+    assert rec["result"]["node"] is None and "exit_ramp" in rec["result"], "an empty territory routes nowhere, honestly"
+
+
+def test_attribution_measures_paths_and_refuses_small_sample_stories(tmp_path):
+    result = attribution.exercise(tmp_path)
+    assert result["sessions"] == 24 and result["conversions"] == 10
+    assert result["top_path"] == ["why-proof", "pod-basics", "audit-kit", "offer"]
+    assert result["top_path_lower_bound"] < result["top_path_rate"], "reported with its uncertainty"
+    assert result["single_session_path_lower_bound"] < 0.25, "one converting session is not a 100% path"
+    assert result["attribution_sums_to_conversions"] and result["disputes_attracts_but_does_not_convert"]
+    assert result["by_source"]["owned-newsletter"]["rate_lower_bound"] > result["by_source"]["platform-x"]["rate_lower_bound"]
+    # the #34 engine measures the #50 engine's own log through the bridge (sibling store)
+    ws = tmp_path / "ws" / "foundry"
+    rabbit_hole.demo_territory(ws / "system-50")
+    for i in range(3):
+        rabbit_hole.observe(ws / "system-50", session=f"s{i}", kind="consume", node_id="why-proof", at="t")
+        rabbit_hole.observe(ws / "system-50", session=f"s{i}", kind="consume", node_id="pod-basics", at="t")
+        rabbit_hole.observe(ws / "system-50", session=f"s{i}", kind="buy" if i else "leave", node_id="pod-basics", at="t")
+    measured = foundry_bridge.query({"system": 34, "op": "report_territory", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert measured["result"]["sessions"] == 3 and measured["result"]["conversions"] == 2
+    assert attribution.wilson_lower(0, 0) == 0.0 and attribution.report([])["removal"]["attribution"] == {}
+
+
+# -- increment 8 (part): payments on the rail's own SDK -----------------------------------------
+
+from foundry.systems import payments
+
+
+def test_payments_trace_every_charge_to_delivery_and_grant_and_reconcile_to_the_cent(tmp_path):
+    result = payments.exercise(tmp_path)
+    assert result["settled"] == "settled" and result["idempotent_retry_same_intent"]
+    assert result["declined"]["status"] == "declined" and result["metered_settled"] == "settled" and result["usage_billed"]
+    assert result["reconciled_to_processor"] and result["books_balance"]
+    assert result["reserve_after_refund_cents"] < result["reserve_cents"] + 7000, "a refund draws the dispute reserve first"
+    assert set(result["refusals"]) == {"live_key", "no_delivery_receipt", "no_grant", "grant_for_other_case",
+                                       "double_charge_same_case", "metered_mismatch", "refund_over_charge", "refund_without_reason"}
+    assert all(result["refusals"].values())
+    # the emulator itself refuses a non-test key and an idempotency key reused for a different request
+    server, emu = payments.start_emulator()
+    try:
+        status, body = emu.handle("POST", "/v1/payment_intents", {"amount": "100", "confirm": "true"}, "k1")
+        assert status == 200
+        assert emu.handle("POST", "/v1/refunds", {"payment_intent": body["id"]}, "k1")[0] == 400
+        assert emu.handle("POST", "/v1/payment_intents", {"amount": "0"}, None)[0] == 400
+    finally:
+        server.shutdown(); server.server_close()
+    books = foundry_bridge.query({"system": 38, "op": "books", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert books["result"]["balances"] == {}, "a fresh workspace has empty books; charging is never a free op"
+
+
+# -- increment 8 (part): markets whose rules are code ---------------------------------------------
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from foundry.systems import agent_commerce, marketplace
+from greg.founder import public_bytes
+
+
+def test_marketplace_matches_by_sealed_second_price_and_settles_only_through_verification(tmp_path):
+    result = marketplace.exercise(tmp_path)
+    big = result["big"]
+    assert big["winner"] == "party:alpha" and big["winning_bid_cents"] == 80000 and big["price_cents"] == 95000
+    assert result["cheapest_bid_did_not_win"] and result["paid_second_price_not_own_bid"]
+    assert "newcomer ceiling" in big["excluded"]["party:newcomer"] and "never revealed" in big["excluded"]["party:delta"]
+    assert result["no_reveal_on_record"] and result["truthful_bidding_dominant"]
+    assert result["strict"]["winner"] == "party:alpha" and result["sole_eligible_bidder_paid_ceiling"]
+    assert "below the buyer's minimum" in result["strict"]["excluded"]["party:gamma"]
+    assert result["standing"]["party:alpha"][0] == "rated" and result["standing"]["party:gamma"][2] == 1
+    assert result["settlement"]["status"] == "settled" and result["settlement"]["take_cents"] == 4750
+    assert result["settlement"]["supplier_payable_cents"] + result["settlement"]["take_cents"] == 95000
+    assert result["refuted_never_charged"] and result["books"]["equation_holds"] and result["books"]["cash_plus_reserve_matches_processor"]
+    assert set(result["refusals"]) >= {"self_dealing", "duplicate_commit", "reveal_before_close", "bid_after_close", "reveal_mismatch",
+                                       "verify_by_supplier", "settle_before_verification", "settle_refuted", "forged_signature",
+                                       "unenrolled_signer", "untyped_contract", "settle_grant_for_other_match", "settle_twice"}
+    assert all(result["refusals"].values()), "every attack named is refused with a reason"
+    # a sole unrated bidder cannot be paid more than the newcomer ceiling even when the buyer's ceiling is higher
+    root = tmp_path / "fresh"
+    buyer, seller = Ed25519PrivateKey.from_private_bytes(bytes(32 * [1])), Ed25519PrivateKey.from_private_bytes(bytes(32 * [2]))
+    marketplace.enroll(root, "b", public_bytes(buyer.public_key()).hex())
+    marketplace.enroll(root, "s", public_bytes(seller.public_key()).hex())
+    marketplace.post_request(root, marketplace.sign(buyer, {"request_id": "r", "buyer": "b", "produces": "evidence", "ceiling_cents": 90000,
+                                                            "closes_at": "2026-10-13T10:00:00Z", "verification_methods": ["human_review"],
+                                                            "min_reputation": None}))
+    marketplace.commit_bid(root, marketplace.sign(seller, {"request_id": "r", "supplier": "s",
+                                                           "commitment": marketplace.commitment("r", "s", 30000, "x")}), now="2026-10-13T09:00:00Z")
+    marketplace.reveal_bid(root, marketplace.sign(seller, {"request_id": "r", "supplier": "s", "amount_cents": 30000, "nonce": "x"}),
+                           now="2026-10-13T10:00:00Z")
+    awarded = marketplace.award(root, "r", now="2026-10-13T10:00:00Z")
+    assert awarded["status"] == "unfilled" and "newcomer ceiling" in awarded["excluded"]["s"]
+    board = foundry_bridge.query({"system": 37, "op": "board", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert board["result"]["requests"] == [] and board["result"]["rules"] == marketplace.DEFAULT_RULES
+    with pytest.raises(CapabilityError, match="refused"):
+        foundry_bridge.apply({"system": 37, "op": "award", "args": {"request_id": "nope", "now": "2026-10-13T10:00:00Z"}},
+                             _ctx(tmp_path, "foundry.apply"))
+
+
+def test_agent_commerce_sells_by_card_402_and_processor_verified_receipts(tmp_path):
+    result = agent_commerce.exercise(tmp_path)
+    assert result["published"]["skills"] == 2 and result["discovered"][0]["grants_access"] is False
+    assert result["card_served"] and all(result["card_proof"].values()), "the served card is provably the seller's"
+    assert result["quote_cents"] == 39200 and result["buyer_recomputes_same_quote"]
+    assert result["challenge_status"] == 402 and result["redeemed"] == 200
+    assert result["receipt_signature_verifies"] and result["forged_receipt_rejected"] and result["delivery_in_cas"]
+    assert result["confirmed"] == "confirmed" and result["undeliverable"] == {"status": 409, "refunded_cents": 108000}
+    assert result["receipts_without_verification_earn_nothing"] and result["declined_card_yields_no_payment"]
+    assert result["standing"]["report"]["incidents"] == 1 and result["standing"]["audit"]["effective_outcomes"] == 1.0
+    assert result["stray_swept"] == {"swept_cents": 39300, "payments": 2}, "under- and mis-paid money goes back to the payer"
+    assert result["reconciled_to_processor"] and result["books_balance"] and result["refunds_due_after_sweep"] == 0
+    assert set(result["refusals"]) >= {"unpriced_skill", "untyped_contract", "buyer_overrides_constant", "no_grant", "grant_for_other_order",
+                                       "replay_same_payment", "replay_under_new_order", "underpaid", "payment_bound_to_other_order",
+                                       "unknown_payment", "expired_challenge", "confirm_by_seller", "confirm_before_delivery"}
+    assert all(result["refusals"].values())
+    assert "replay refused" in result["refusals"]["replay_under_new_order"]
+    orders = foundry_bridge.query({"system": 54, "op": "orders", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert orders["result"]["orders"] == [], "a fresh workspace has sold nothing"
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 54, "op": "redeem", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- governed implementation pluralism (convergence of #132 foundry-55 with the #158 line) ---------
+
+from foundry import systems as foundry_systems
+
+
+def test_co_implementations_stay_reachable_and_ambiguous_ops_must_be_qualified(tmp_path):
+    # both lineages answer through the same system number; the primary backs the evidence
+    assert foundry_systems.implementations(34) == ("attribution", "journeys")
+    assert foundry_systems.implementations(50) == ("rabbit_hole", "journeys")
+    query = foundry_systems.operations(34, "QUERY_OPS")
+    assert "report" not in query, "a bare op two implementations declare is never resolved silently"
+    assert query["attribution.report"] == ("attribution", "report") and query["journeys.report"] == ("journeys", "report")
+    assert query["report_territory"] == ("attribution", "report_territory") and query["route"] == ("journeys", "route")
+    with pytest.raises(LookupError, match="ambiguous"):
+        foundry_systems.operation(34, "QUERY_OPS", "report")
+    with pytest.raises(CapabilityError, match="ambiguous"):
+        foundry_bridge.query({"system": 34, "op": "report", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    with pytest.raises(LookupError, match="no apply op"):
+        foundry_systems.operation(31, "APPLY_OPS", "inspect")   # a query op never answers on the write table
+    # the qualified #158 journeys report reads the shared observed-event store through the bridge
+    out = foundry_bridge.query({"system": 34, "op": "journeys.report", "args": {"tier": "observed"}},
+                               _ctx(tmp_path, "foundry.query"))
+    assert out["result"]["events"] == 0
+    # the #132 primary and the #158 co-implementation of system 31 share one store without colliding names
+    rendered = foundry_bridge.query({"system": 31, "op": "render", "args": {"path": "/missing", "now": 0}},
+                                    _ctx(tmp_path, "foundry.query"))
+    assert rendered["result"]["status"] == 404
+
+
+def test_contract_rejects_undeclared_or_overclaimed_co_implementations():
+    rows = completion.contract()
+    hidden = {**rows, 31: {k: v for k, v in rows[31].items() if k != "co_implementations"}}
+    assert any("system 31: co_implementations [] differ from the registry ['portal']" in p
+               for p in completion.audit(hidden, rerun=False))
+    overclaimed = {**rows, 37: {**rows[37], "co_implementations": [{**rows[37]["co_implementations"][0], "state": "COMPLETE"}]}}
+    assert any("must be PARTIAL or OUTSTANDING" in p for p in completion.audit(overclaimed, rerun=False))
+    bad_tier = {**rows, 25: {**rows[25], "evidence_tier": "PRODUCTION"}}
+    assert any("not in the directive vocabulary" in p for p in completion.audit(bad_tier, rerun=False))

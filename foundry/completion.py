@@ -32,6 +32,41 @@ CONTRACT = ROOT / "foundry" / "completion.yaml"
 STATES = ("COMPLETE", "PARTIAL", "OUTSTANDING")
 
 
+# Status distinctions of the 2026-10-13 full-machine completion contract; a row's
+# COMPLETE is bounded local contract evidence and names its tier when merged rows
+# could otherwise be read as more than that.
+EVIDENCE_TIERS = ("INTENDED", "DESIGNED", "IMPLEMENTED", "INTEGRATED", "UNIT_VERIFIED", "SANDBOX_VERIFIED",
+                  "BODY_VERIFIED", "FOUNDER_ACCEPTED", "AUTHORIZED_LIVE", "EXTERNALLY_VERIFIED",
+                  "COMMERCIAL_OUTCOME_VERIFIED", "BLOCKED_WITH_REASON")
+
+
+def _co_implementation_problems(sid: int, row: dict, label: str) -> list[str]:
+    """Every registered co-implementation is declared in its row and vice versa.
+
+    A co-implementation keeps its own state and gap; it cannot claim COMPLETE,
+    because the row's evidence record is re-derived from the primary only.
+    """
+    from foundry.systems import CO_IMPLEMENTATIONS
+    problems: list[str] = []
+    declared = [c.get("module") for c in row.get("co_implementations", []) or []]
+    registered = list(CO_IMPLEMENTATIONS.get(sid, ()))
+    if sorted(declared) != sorted(registered):
+        problems.append(f"{label}: co_implementations {declared} differ from the registry {registered}")
+    for record in row.get("co_implementations", []) or []:
+        name = f"{label} co-implementation {record.get('module')!r}"
+        if not record.get("lineage"):
+            problems.append(f"{name}: lineage is required")
+        state = record.get("state")
+        if state not in ("PARTIAL", "OUTSTANDING"):
+            problems.append(f"{name}: state {state!r} must be PARTIAL or OUTSTANDING (evidence is the primary's)")
+        elif not record.get("gap"):
+            problems.append(f"{name}: an open obligation must name its gap")
+        for path in list(record.get("implementation", [])) + list(record.get("existing", [])) + list(record.get("tests", [])):
+            if ":" not in path and not (ROOT / path).exists():
+                problems.append(f"{name}: path {path!r} not found")
+    return problems
+
+
 def contract(path: Path = CONTRACT) -> dict[int, dict]:
     return {int(k): v for k, v in (yaml.safe_load(path.read_text()) or {}).items()}
 
@@ -81,6 +116,10 @@ def audit(rows: dict[int, dict] | None = None, *, rerun: bool = True) -> list[st
             for path in row.get("existing", []):
                 if ":" not in path and not (ROOT / path).exists():
                     problems.append(f"{label}: existing path {path!r} not found")
+        tier = row.get("evidence_tier")
+        if tier is not None and tier not in EVIDENCE_TIERS:
+            problems.append(f"{label}: evidence_tier {tier!r} is not in the directive vocabulary")
+        problems.extend(_co_implementation_problems(sid, row, label))
         if state != "COMPLETE":
             continue
         for key in ("implementation", "tests", "interface", "evidence", "limitations", "recovery"):

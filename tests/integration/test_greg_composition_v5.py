@@ -215,6 +215,69 @@ def test_the_in_process_erlang_staffing_agrees_with_the_genome_on_the_rates_f8_m
         assert erlang_solve(data, {})["output"]["agents"] == erlang_truth(data) == R.requirement(arrivals)
 
 
+def test_a_null_observed_count_is_no_measurement_and_the_chain_still_answers():
+    # review 2026-10-14: a block with no observation (the local hour that does not exist when daylight saving time
+    # starts) must give no tracker measurement; the old contract refused null, so the harness could only pass a zero
+    payload = synthetic()
+    payload["observed_today"][4] = payload["observed_today"][5] = None
+    data, usable, _ = track_measurements(payload)
+    assert data["measurements"][4] is None and data["measurements"][5] is None and usable == 13
+    assert data["measurements"][3] == pytest.approx(payload["observed_today"][3] / 100.0)
+    r = reason(chain(payload), registry=attached())
+    assert r["state"] == "ANSWERED" and [s["stage"] for s in r["stages"]] == ["track", "staff"]
+    assert track_measurements(synthetic(observed=[None] * 15))[1] == 0      # nothing observed: no measurement at all
+    bad_plan = synthetic()
+    bad_plan["standing_plan"]["blocks"][3] = None                           # a plan is never missing
+    with pytest.raises(CognitionError):
+        reason(chain(bad_plan), registry=attached())
+
+
+def _f6_payload(**staffing):
+    return {"arrival_histories": [{"block": "08:00", "history": [float(100 + 3 * (i % 7)) for i in range(60)]}],
+            "staffing": {**R.STAFFING, "shortage_penalty": 10.0, **staffing}}
+
+
+def test_the_staffing_plan_numbers_are_refused_before_any_stage_on_both_staffing_recipes():
+    # review 2026-10-14: block_seconds 0 raised ZeroDivisionError out of cortex.reason after the tracker had run,
+    # the string '1800' was answered and True staffed a one-second block; forecast_then_staff shares the division
+    for bad in (0.0, -1800.0, "1800", True, None, [1800.0]):
+        tracked = synthetic()
+        tracked["staffing"]["block_seconds"] = bad
+        with pytest.raises(CognitionError, match="block_seconds"):
+            reason(chain(tracked), registry=attached())
+        with pytest.raises(CognitionError, match="block_seconds"):
+            reason({"problem_id": "t-compiled", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                            "data": tracked}}, registry=attached())
+        with pytest.raises(CognitionError, match="block_seconds"):
+            reason(chain(_f6_payload(block_seconds=bad)), registry=attached())
+    for name in ("agent_cost", "shortage_penalty"):
+        for bad in ("10", True, None):
+            payload = synthetic()
+            payload["staffing"][name] = bad
+            with pytest.raises(CognitionError, match=name):
+                reason(chain(payload), registry=attached())
+
+
+def test_a_critical_fractile_that_rounds_to_zero_or_one_is_refused_not_an_escaping_exception():
+    # review 2026-10-14: a penalty rounding q* to 1.0 or 0.0 raised statistics.StatisticsError out of cortex.reason
+    # (chain and compile) after the tracker stage had run
+    for penalty in (1e7, 1.0000001):
+        with pytest.raises(CognitionError, match="strictly between 0 and 1"):
+            staffing_quantile({"agent_cost": 1.0, "shortage_penalty": penalty})
+        with pytest.raises(CognitionError, match="strictly between 0 and 1"):
+            reason(chain(synthetic(penalty=penalty)), registry=attached())
+        with pytest.raises(CognitionError, match="strictly between 0 and 1"):
+            reason({"problem_id": "t-compiled", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                            "data": synthetic(penalty=penalty)}}, registry=attached())
+        with pytest.raises(CognitionError, match="strictly between 0 and 1"):
+            reason(chain(_f6_payload(shortage_penalty=penalty)), registry=attached())
+    assert staffing_quantile({"agent_cost": 1.0, "shortage_penalty": 1.000002}) == 0.000002   # still inside
+    r = reason(chain(synthetic(penalty=30.0)), registry=attached())
+    z = [b for b in r["bindings"] if "multiplier" in b["slot"] and "z" in b][0]["z"]
+    assert r["state"] == "ANSWERED" and z == NormalDist().inv_cdf(staffing_quantile({"agent_cost": 1.0,
+                                                                                      "shortage_penalty": 30.0}))
+
+
 # ------------------------------------------------------------------ the F8 family: partition, leakage, calibration
 def test_the_partition_is_fixed_by_date_and_the_heldout_count_is_declared():
     hist, dev, held = R.dates("history"), R.dates("dev"), R.dates("heldout")
@@ -252,6 +315,96 @@ def test_the_standing_plan_is_the_mean_of_the_four_previous_same_weekdays():
     assert R.standing_plan("Brooklyn", i) == expected
     with pytest.raises(ValueError):
         R.standing_plan("Brooklyn", 27)
+
+
+# ------------------------------------------------------------------ the local clock (review 2026-10-14)
+def test_the_calendar_marks_only_the_spring_forward_hour_missing_in_the_data():
+    # blocks are local wall-clock time: on 2015-03-08 02:00-03:00 does not exist. Calendar only: no count is read.
+    for day in R.uber()["dates"]:
+        seconds = B.local_block_seconds(day)
+        expected = [1800] * 48
+        if day == "2015-03-08":
+            expected[4] = expected[5] = 0
+        assert seconds == expected, day
+    assert B.local_block_seconds("2016-03-13")[4:6] == [0, 0]                 # the rule, not a date list
+    assert B.local_block_seconds("2015-11-01")[1:5] == [1800, 3600, 3600, 1800]   # the repeated hour
+    with pytest.raises(ValueError):
+        B.local_block_seconds("2006-04-02")
+    try:
+        from zoneinfo import ZoneInfo
+        new_york = ZoneInfo("America/New_York")
+    except Exception:                                    # no tz database here: the coded rule stands alone
+        return
+    from datetime import date, datetime, timedelta, timezone
+    for offset in range(3 * 365):                                       # 2015-2017 against the tz database
+        day = date(2015, 1, 1) + timedelta(days=offset)
+        expected = []
+        for b in range(48):
+            t = datetime(day.year, day.month, day.day, b // 2, 30 * (b % 2), tzinfo=new_york)
+            if t.astimezone(timezone.utc).astimezone(new_york).replace(tzinfo=None) != t.replace(tzinfo=None):
+                expected.append(0)                                      # a local time that does not exist
+            elif t.replace(fold=0).utcoffset() != t.replace(fold=1).utcoffset():
+                expected.append(3600)                                   # a local time that occurs twice
+            else:
+                expected.append(1800)
+        assert B.local_block_seconds(day.isoformat()) == expected, day
+
+
+def _spring_forward_on(day, monkeypatch):
+    """Make a development date look exactly as 2015-03-08 does: the calendar says 02:00-03:00 does not exist and
+    the extract holds zero pickups in blocks 4-5 of every stream."""
+    perturbed = copy.deepcopy(R.uber())
+    i = perturbed["dates"].index(day)
+    for days in perturbed["counts"].values():
+        days[i][4] = days[i][5] = 0
+    monkeypatch.setattr(R, "uber", lambda: perturbed)
+    # every other date of the data has 48 ordinary blocks (test_the_calendar_marks_only_the_spring_forward_hour...)
+    monkeypatch.setattr(R, "local_block_seconds", lambda d: [0 if d == day and b in (4, 5) else 1800
+                                                             for b in range(48)], raising=False)
+    return perturbed, i
+
+
+def test_a_missing_local_hour_is_null_in_the_payload_and_left_out_of_later_standing_plans(calibration, monkeypatch):
+    original = copy.deepcopy(R.uber())
+    perturbed, i = _spring_forward_on("2015-02-01", monkeypatch)              # a development Sunday
+    for stream in R.streams():
+        counts = R.day_counts(stream, i)
+        assert counts[4] is None and counts[5] is None
+        assert counts[:4] + counts[6:] == original["counts"][stream][i][:4] + original["counts"][stream][i][6:]
+        # the next Sunday's plan averages the three weeks that have blocks 4-5, never the structural zero
+        nxt = i + 7
+        plan = R.standing_plan(stream, nxt)
+        for b in (4, 5):
+            have = [original["counts"][stream][nxt - 7 * w][b] for w in (2, 3, 4)]
+            assert plan[b] == sum(have) / 3
+        for b in (3, 6, 16):
+            assert plan[b] == sum(original["counts"][stream][nxt - 7 * w][b] for w in (1, 2, 3, 4)) / 4
+    item = R.f8("Manhattan", "2015-02-01", 16, calibration)
+    assert item["payload"]["observed_today"][4:6] == [None, None]
+    data, usable, _ = track_measurements(item["payload"])
+    assert data["measurements"][4] is None and data["measurements"][5] is None
+    # a pickup in an hour that does not exist contradicts the clock: refused, never silently dropped
+    perturbed["counts"]["Bronx"][i][5] = 1
+    with pytest.raises(ValueError, match="does not exist"):
+        R.day_counts("Bronx", i)
+
+
+def test_the_missing_local_hour_does_not_send_the_tracker_to_the_fallback(calibration, monkeypatch):
+    # the review's reproduction on development Sunday 2015-02-22: read as zeros, blocks 4-5 sent routed composition
+    # to the standing-plan fallback on these seven items; read as missing, the tracker decides as it does without them
+    plain = {(s, b): R.run_arm(R.f8(s, "2015-02-22", b, calibration), "routed_composition", "track_then_staff")
+             for s, b in (("Manhattan", 16), ("Manhattan", 26), ("Manhattan", 36), ("Brooklyn", 16),
+                          ("Brooklyn", 26), ("Brooklyn", 36), ("Queens (excluding JFK and LaGuardia)", 16))}
+    _spring_forward_on("2015-02-22", monkeypatch)
+    for (stream, block), before in plain.items():
+        item = R.f8(stream, "2015-02-22", block, calibration)
+        row = R.run_arm(item, "routed_composition", "track_then_staff")
+        assert before["result"] == row["result"] == "decided" and row["state"] == "ANSWERED", (stream, block)
+        assert item["payload"]["observed_today"][4:6] == [None, None]
+        assert abs(row["agents"] - before["agents"]) <= 0.05 * before["agents"]
+        for arm in ("kalman_alone", "erlang_alone", "cumulative_ratio_then_staff", "ewma_ratio_then_staff",
+                    "ewma_ratio_quantile_then_staff", "kalman_median_then_staff"):
+            assert R.run_arm(item, arm, "track_then_staff")["result"] == "decided", (stream, block, arm)
 
 
 def test_calibration_reads_development_days_only_and_optimises_the_genomes_own_model(calibration, monkeypatch):
@@ -331,6 +484,10 @@ def test_the_preregistration_is_complete_and_names_the_committed_data():
     assert doc["static_arm"] == {**doc["static_arm"], "chosen_on": "development", "must_decide": True}
     assert doc["compiled_arm"]["entry"] == "compile" and doc["alpha"] == 0.05
     assert any("69-41" in d for d in doc["disclosures"])
+    # the local clock and its one missing hour are declared before the freeze (review 2026-10-14)
+    assert "America/New_York" in doc["data_provenance"]["clock"] and "2015-03-08" in doc["data_provenance"]["clock"]
+    assert "2015-03-08 blocks 4-5" in doc["decision_layer"]["missing_blocks"]
+    assert any("independent review of 53082f4" in d for d in doc["disclosures"])
     assert {p["arm"] for p in doc["predictions"]} >= {"best_constituent", "ewma_ratio_quantile_then_staff"}
 
 

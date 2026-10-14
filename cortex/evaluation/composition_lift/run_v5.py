@@ -17,7 +17,13 @@ Score the decision on the pickups that actually arrived in the decision block.
 
 Decision layer, declared here before any held-out arm runs (a standard workforce formulation, not Uber's):
 
-* standing plan: per block, the mean count of the same block on the 4 previous same weekdays;
+* clock: blocks are local wall-clock time in New York (the extract's ``CLOCK``). On 2015-03-08 (held out, daylight
+  saving time starts) the hour 02:00-03:00 does not exist, so blocks 4-5 are MISSING, decided from the calendar
+  alone (``build_uber_nyc_2015.local_block_seconds``), never zero counts: that date's payloads carry null for them
+  (no tracker measurement, no EWMA ratio, left out of the cumulative ratio), and the standing plans that would
+  average them (the next four Sundays) average the weeks that have the block. A decision block never falls in a
+  missing hour, and no date in the data has a repeated hour (the harness refuses one);
+* standing plan: per block, the mean count of the same block on the 4 previous same weekdays (that have the block);
 * service: mean service time 1200 s, target wait 120 s, P(wait > target) <= 0.2, block 1800 s;
 * cost: c * agents + P * max(0, required - agents), c = 1, P in {3, 10, 30} rotated by date index (days since
   2015-01-01, mod 3); ``required`` is the Erlang C requirement at the REALISED rate N_k / 1800, computed on the
@@ -79,6 +85,7 @@ ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT))
 
 from cortex.evaluation.composition_lift import run as V1  # noqa: E402
+from cortex.evaluation.data.build_uber_nyc_2015 import local_block_seconds  # noqa: E402
 
 SUITE = HERE / "suite-v5.json"
 MANIFEST = HERE / "freeze-v5.json"
@@ -189,16 +196,41 @@ def date_index(day: str) -> int:
     return uber()["dates"].index(day)
 
 
-def day_counts(stream: str, i: int) -> list[int]:
-    return uber()["counts"][stream][i]
+def day_counts(stream: str, i: int) -> list[int | None]:
+    """The date's 48 local wall-clock block counts, null for a block of a local hour that does not exist (from the
+    calendar: 2015-03-08 blocks 4-5, daylight saving time starts). That block's zero is structural, not demand, so it
+    is missing; a pickup recorded in it would contradict the extract's clock and is refused, as is a repeated hour."""
+    day = uber()["dates"][i]
+    out = []
+    for b, (n, seconds) in enumerate(zip(uber()["counts"][stream][i], local_block_seconds(day))):
+        if seconds == 0:
+            if n:
+                raise ValueError(f"{stream} {day} block {b}: pickups in a local hour that does not exist")
+            out.append(None)
+        elif seconds != STAFFING["block_seconds"]:
+            raise ValueError(f"{day} block {b} lasts {seconds} s (a repeated local hour): not handled")
+        else:
+            out.append(n)
+    return out
 
 
 def standing_plan(stream: str, i: int) -> list[float]:
-    """Per block, the mean count of that block on the 4 previous same weekdays (all inside the data)."""
+    """Per block, the mean count of that block on the 4 previous same weekdays (all inside the data); a week whose
+    block does not exist (missing) is left out of that block's mean, which averages the weeks that have it."""
     if i < 7 * PLAN_WEEKS:
         raise ValueError("a standing plan needs four previous same weekdays")
     weeks = [day_counts(stream, i - 7 * w) for w in range(1, PLAN_WEEKS + 1)]
-    return [sum(week[b] for week in weeks) / PLAN_WEEKS for b in range(len(weeks[0]))]
+    plan = []
+    for b in range(len(weeks[0])):
+        have = [week[b] for week in weeks if week[b] is not None]
+        if not have:
+            raise ValueError(f"block {b} exists on none of the four previous same weekdays")
+        plan.append(sum(have) / len(have))
+    return plan
+
+
+def _floats(counts: list) -> list:
+    return [None if n is None else float(n) for n in counts]
 
 
 def requirement(arrivals: float) -> int:
@@ -222,7 +254,7 @@ def _ratio_days(stream: str, part: str = "dev") -> list[list]:
     out = []
     for day in dates(part):
         i = date_index(day)
-        out.append(plan_ratios([float(n) for n in day_counts(stream, i)], standing_plan(stream, i)))
+        out.append(plan_ratios(_floats(day_counts(stream, i)), standing_plan(stream, i)))
     return out
 
 
@@ -304,6 +336,8 @@ def f8(stream: str, day: str, block: int, calibration: dict) -> dict:
     penalty = PENALTIES[i % len(PENALTIES)]
     staffing = {**STAFFING, "shortage_penalty": penalty}
     actual = counts[block]
+    if actual is None:
+        raise ValueError(f"{day}: decision block {block} is in a local hour that does not exist")
     required = requirement(actual)
     return {"item_id": f"F8-{STREAM_IDS[stream]}-{day}-{block // 2:02d}{30 * (block % 2):02d}", "family": "F8",
             "stream": stream, "date": day, "date_index": i, "block": block,
@@ -385,9 +419,10 @@ def run_arm(item, arm, static_recipe):
                     answer = {"agents": _erlang_op(f"{pid}/{arm}/staff", rate)}
                     stages += 1
         elif arm == "erlang_alone":
-            latest = payload["observed_today"][-1]
-            answer = {"agents": _erlang_op(f"{pid}/{arm}", latest / STAFFING["block_seconds"])}
-            stages = 1
+            latest = next((n for n in reversed(payload["observed_today"]) if n is not None), None)
+            if latest is not None:                 # the latest block observed (k - 2 is never a missing block)
+                answer = {"agents": _erlang_op(f"{pid}/{arm}", latest / STAFFING["block_seconds"])}
+                stages = 1
         elif arm in IN_PROCESS:
             from greg.cognition.composition import plan_ratios
             observed = payload["observed_today"]
@@ -395,10 +430,11 @@ def run_arm(item, arm, static_recipe):
             if arm == "standing_plan_then_staff":
                 m = 1.0
             elif arm == "cumulative_ratio_then_staff":
-                denominator = sum(blocks[:len(observed)])
-                m = sum(observed) / denominator if denominator > 0 else 1.0
+                seen = [(n, b) for n, b in zip(observed, blocks) if n is not None]   # missing blocks left out
+                denominator = sum(b for _, b in seen)
+                m = sum(n for n, _ in seen) / denominator if denominator > 0 else 1.0
             else:
-                m = ewma(plan_ratios([float(n) for n in observed], blocks), item["practitioner"]["alpha"])
+                m = ewma(plan_ratios(_floats(observed), blocks), item["practitioner"]["alpha"])
                 if arm == "ewma_ratio_quantile_then_staff":
                     from statistics import NormalDist
                     m += NormalDist().inv_cdf(level) * item["practitioner"]["sigma"]
@@ -659,6 +695,8 @@ def main():
               "calibration": suite["calibration"], "heldout": rows, "summary": summarize(rows),
               "limits": ["real pickups and real outcomes; the service time, waiting target, cost weights, decision "
                          "blocks and notice are a declared decision layer, not Uber's dispatch",
+                         "blocks are local wall-clock time: 2015-03-08 02:00-03:00 does not exist, and its two blocks "
+                         "are missing by the calendar (no measurement; left out of the next four Sundays' plans)",
                          "the requirement is the Erlang C model's at the realised rate: the outcome is real, the "
                          "queueing model is an assumption shared by every arm",
                          "items share dates and streams; the item sign test treats them as independent, so a "

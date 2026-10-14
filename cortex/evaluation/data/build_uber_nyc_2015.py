@@ -23,6 +23,15 @@ Staten Island, Newark Airport (EWR) and the TLC's ``Unknown`` zones are left out
 written deterministically (sorted keys, compact separators, gzip mtime 0 and no file name), so a rebuild from the
 same source gives the same bytes.
 
+Clock (``CLOCK``): a block is a half hour of LOCAL WALL-CLOCK time in New York (America/New_York), read from the
+text of ``Pickup_date``; block 0 is 00:00-00:30. Daylight saving time therefore shapes the extract: on 2015-03-08
+(the second Sunday of March) the local hour 02:00-03:00 does not exist, so blocks 4 and 5 of that date hold zero
+pickups in every stream. That zero is structural, not demand. ``local_block_seconds`` gives each block's real
+length from the calendar alone (0 for a block of the hour that does not exist, 3600 for a block of the hour that
+occurs twice when daylight saving time ends, 1800 otherwise); a consumer treats a 0-second block as missing, never
+as a count (``run_v5.day_counts`` does). The extract's bytes record the counts as binned; the calendar, not a
+change to the counts, says which blocks exist. No date in 2015-01-01..06-30 has a repeated hour.
+
 Usage (the output is committed, so evaluation never downloads):
 
     python -I cortex/evaluation/data/build_uber_nyc_2015.py <uber-raw-data-janjune-15.csv.zip> <taxi-zone-lookup.csv>
@@ -52,6 +61,10 @@ HEADER = ["Dispatching_base_num", "Pickup_date", "Affiliated_base_num", "locatio
 OUT = Path(__file__).resolve().parent / "uber_nyc_2015_halfhour.json.gz"
 FIRST, LAST = datetime.date(2015, 1, 1), datetime.date(2015, 6, 30)
 BLOCKS = 48
+BLOCK_SECONDS = 1800
+CLOCK = ("local wall-clock time in New York (America/New_York), read from the text of Pickup_date; block b covers "
+         "[b x 30 min, (b + 1) x 30 min) of the local day, so a block of an hour that does not exist (daylight saving "
+         "time starts) is empty and a block of an hour that occurs twice (it ends) holds an hour of pickups")
 AIRPORTS = {"JFK Airport": "JFK Airport", "LaGuardia Airport": "LaGuardia Airport"}
 BOROUGHS = {"Manhattan": "Manhattan", "Brooklyn": "Brooklyn", "Bronx": "Bronx",
             "Queens": "Queens (excluding JFK and LaGuardia)"}
@@ -60,6 +73,28 @@ STREAMS = ("Manhattan", "Brooklyn", "Queens (excluding JFK and LaGuardia)", "Bro
 LICENCE = ("public records: NYC Taxi and Limousine Commission trip records released under the Freedom of "
            "Information Law and published by FiveThirtyEight (github.com/fivethirtyeight/uber-tlc-foil-response); "
            "no open licence is stated; evaluation use only; attribute the NYC TLC and FiveThirtyEight")
+
+
+def _nth_sunday(year: int, month: int, n: int) -> datetime.date:
+    first = datetime.date(year, month, 1)
+    return first + datetime.timedelta(days=(6 - first.weekday()) % 7 + 7 * (n - 1))
+
+
+def local_block_seconds(day: str) -> list[int]:
+    """Real elapsed seconds in each of the 48 local wall-clock half-hour blocks of ``day`` in New York, from the
+    calendar alone (US rule in force since 2007: daylight saving time starts at 02:00 on the second Sunday of March,
+    when the clock jumps to 03:00, and ends at 02:00 on the first Sunday of November, when it falls back to 01:00).
+    1800 for an ordinary block; 0 for the two blocks of the hour that does not exist (02:00-03:00 on the start day);
+    3600 for the two blocks of the hour that occurs twice (01:00-02:00 on the end day)."""
+    d = datetime.date.fromisoformat(day)
+    if d.year < 2007:
+        raise ValueError("the daylight saving rule coded here is the one in force from 2007")
+    seconds = [BLOCK_SECONDS] * BLOCKS
+    if d == _nth_sunday(d.year, 3, 2):
+        seconds[4] = seconds[5] = 0
+    elif d == _nth_sunday(d.year, 11, 1):
+        seconds[2] = seconds[3] = 2 * BLOCK_SECONDS
+    return seconds
 
 
 def _checked(path: Path, expected: str) -> bytes:

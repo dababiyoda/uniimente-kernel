@@ -68,3 +68,16 @@ def test_every_protocol_intent_statement_quotes_the_message_verbatim():
             assert (ROOT / path.rstrip("/")).exists(), (record["intent_id"], path)
     literal = next(r for r in intents if "systemic dominance" in r["statement"])
     assert literal["status"] == "prohibited"
+
+
+REISSUE_SHA256 = "a1f3efcaac7edcbb39e942cbbf2358a2d378092a26633938b97ca646fb873e56"
+
+
+def test_the_2026_10_14_reissue_is_the_same_message_without_its_final_newline():
+    pass_1 = _verbatim(SOURCES / "POLYINTELLIGENCE-CORTEX-REVIEW-PASS-1-2026-09-30.md")
+    pass_2 = _verbatim(SOURCES / "POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md")
+    message = _preface() + pass_1 + "\n\n" + pass_2.rstrip("\n") + "\n"
+    assert hashlib.sha256(message[:-1].encode("utf-8")).hexdigest() == REISSUE_SHA256
+    deliveries = SOURCE.read_text(encoding="utf-8").split("## Deliveries", 1)[1].split("\n## ", 1)[0]
+    assert MESSAGE_SHA256 in deliveries and REISSUE_SHA256 in deliveries
+    assert "Repetition creates no additional authority" in deliveries

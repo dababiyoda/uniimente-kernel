@@ -47,6 +47,16 @@ Where the baselines failed: H-F08 [formal]: always_llm recommend (unsupported ce
 
 Kill criterion: not met: this is the first frozen version with the baselines run, and the routed seed has the critical-error advantage.
 
+Addendum, 2026-10-14. The experiment report's own first kill condition does apply: once the baselines ran and the
+exit was `GAIN_ABSENT`, the router stopped being a performance claim. The gates, receipts, verifier and abstention
+stay as a safety layer because they reduced critical errors on this suite. That reduction is observed but not
+established: exact one-sided McNemar p = 0.125 for harmful failures. At 42 items the frozen rule had only 10% power
+to establish the observed gain over `always_llm`, and 3% over `llm_committee`. A future frozen version that decides
+the question needs about 1,045 items on the frozen quality rule, or 93 items (144 if the seed itself failed harmfully 1% of the time) on a harmful-failure endpoint
+fixed before any baseline reply is collected. That choice is the founder's. The full reasoning is in
+`docs/cortex/SEED_EXPERIMENT_REPORT.md` (section "the decisive test, kill condition 1, and what would decide the
+gain") and the numbers are in `tests/evidence/cortex-seed-v0.1.6/power-analysis.json`.
+
 Read narrowly: the baseline model is from the same vendor family as the suite's authors; the suite is self-authored and
 structured-only; 42 items give wide intervals; cost and latency are not comparable across arms. Full limits:
 `tests/evidence/cortex-seed-v0.1.6/README.md`.

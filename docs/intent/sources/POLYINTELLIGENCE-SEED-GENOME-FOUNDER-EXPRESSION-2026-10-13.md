@@ -52,6 +52,17 @@ texts between BEGIN and END in the two review files. Compared with the 2026-10-0
 "I reran the review" (as in the 2026-09-30 original, not "In the review"), one blank line now separates the two
 passes, and the message ends with a newline. Every other byte of both passes is identical.
 
+## Deliveries (lineage only; checked by the same test)
+
+| Delivered (UTC) | Characters | SHA-256 (UTF-8) | Relation to the preserved message |
+| --- | --- | --- | --- |
+| 2026-10-13T14:42:11Z | 97219 | `de5db69c6c7a93aad302c422ae950c53ff25487bf919edd6ce504eb37e024acf` | the message itself |
+| 2026-10-14T04:46:50Z | 97218 | `a1f3efcaac7edcbb39e942cbbf2358a2d378092a26633938b97ca646fb873e56` | the preserved message without its final newline; no other byte differs |
+
+The second delivery was sent from the mobile client after the draft pull request was green. It is the same
+instruction, so it is preserved as lineage, not as a new source file. Repetition creates no additional authority and
+does not widen the approved scope.
+
 ## Where each preface paragraph was first preserved
 
 | Paragraph | First preserved in | Note |

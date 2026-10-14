@@ -105,7 +105,9 @@ jobs:
           python-version: "3.11"
       - run: pip install -r requirements-dev.txt -r requirements-cortex.txt
       - name: Cortex tests with the solver present (no skips for Z3)
-        run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py tests/unit/test_cortex_replay.py tests/unit/test_cortex_proposer.py tests/unit/test_cortex_defect_fixes.py tests/unit/test_cortex_finality_deficit.py tests/unit/test_cognition_lineages.py tests/unit/test_seed_genome_founder_expression.py
+        run: python -m pytest -q tests/unit/test_cortex_gates_genome.py tests/unit/test_cortex_routes.py tests/unit/test_cortex_pipeline.py tests/unit/test_cortex_traceability.py tests/unit/test_cortex_register.py tests/unit/test_cortex_replay.py tests/unit/test_cortex_proposer.py tests/unit/test_cortex_defect_fixes.py tests/unit/test_cortex_finality_deficit.py tests/unit/test_cognition_lineages.py tests/unit/test_seed_genome_founder_expression.py tests/unit/test_cortex_seed_power.py
+      - name: Power analysis reproduces from the frozen held-out result
+        run: python scripts/analysis/cortex_seed_power.py --check
       - name: Mutation check (every safeguard-removing mutant must be caught)
         run: python scripts/ci/check_cortex_mutants.py
       - name: Held-out drift guard (refuses if frozen inputs changed; LLM arms are NOT_RUN in CI, so this is never a reported run)

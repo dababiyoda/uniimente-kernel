@@ -211,3 +211,53 @@ structured-only; cost and latency are recorded by the frozen harness as 0.0 USD 
 replayed arms, so those two criteria do not discriminate and are not comparable. Evidence, transcripts, audits
 and provenance: `tests/evidence/cortex-seed-v0.1.6/`. Recommendation: `EXPERIMENT`, unpromoted; decision: `NEEDS_FOUNDER_DECISION`
 (`docs/decisions/ADR-20261013-polyintelligence-seed-genome-convergence.md`).
+
+## 0.1.6 — the decisive test, kill condition 1, and what would decide the gain (2026-10-14)
+
+Written after the reported run; it changes no frozen rule, suite or result. The founder's decisive test, clause by
+clause, against this branch's evidence:
+
+| Clause | State | Evidence |
+| --- | --- | --- |
+| encounter materially different problem geometries | met on a self-authored suite | 42 held-out items in 12 geometry labels (table above) |
+| select materially different computational cognition | met | seven distinct route sets on the held-out suite: evidence/causal 12, Z3 formal 11, none (withheld before any organ) 8, Fermi 6, semantic 3, Z3 + Fermi 1, evidence + semantic 1 |
+| produce proof appropriate to each epistemic class | met | every receipt cites `epistemic-finality/0.1`; held-out jurisdictions: empirical 13, formal 11, semantic 9, strategic 5, human authority 2, per route 1, none 1 (`tests/unit/test_cortex_finality_deficit.py`) |
+| abstain when no class can legitimately answer | met | 23 of 42 correct withholdings (11 abstain, 8 handoff, 4 bounded test), none overcautious; abstentions carry a typed, unverified `capability_deficit` |
+| outperform an always-LLM baseline | **not established** | `GAIN_ABSENT`; paired gain +0.095 [0.024, 0.190] and +0.071 [0.000, 0.143] |
+| without gaining any new authority | met | `authority_created: false` on every receipt; closure, proposer and boundary tests |
+
+**Kill condition 1 applies.** This report's first kill condition reads: "If the declared baselines run and the exit
+is `GAIN_ABSENT`, stop treating the router as a performance claim. Keep the gates, receipts, verifier and abstention
+as a safety layer only if they still reduce critical errors against the baselines; otherwise regress the experiment
+to research." The baselines ran and the exit is `GAIN_ABSENT`, so the router is not a performance claim. The safety
+layer stays because on this suite it reduced critical errors (0 against 2 and 1) and unsupported certainty (0 against
+3 and 3). That reduction is observed, not established: exact one-sided McNemar p = 0.125 for harmful failures
+(critical or unsupported certainty) against each baseline, and 0.25 and 0.5 for critical errors alone. The ADR's
+kill criterion (`GAIN_ABSENT` on two frozen versions with no critical-error advantage) is not met.
+
+**Why 42 items could not decide it.** If the observed gains were the true gains, the frozen rule had 10% power to
+establish the gain over `always_llm` and 3% over `llm_committee` at 42 items. The rule needs a lower bound above
+0.05. The committee scored 0.929, so it left 0.071 of headroom. The threshold was set when the expected baseline was
+a small local model. Against a frontier model it is reachable only with a much larger suite, and above a baseline
+quality of 0.95 it is unreachable at any size. `GAIN_ABSENT` here is mostly a sample-size verdict. It is not
+evidence of parity either.
+
+**Sample sizes for 80% power**, if the next suite's failure rates match this one's (`power-analysis.json`, exact
+binomial computation by `scripts/analysis/cortex_seed_power.py`, checked by `tests/unit/test_cortex_seed_power.py`):
+
+| Endpoint for a future frozen version | vs `always_llm` | vs `llm_committee` | Baseline replies at the larger size |
+| --- | --- | --- | --- |
+| quality gain, frozen rule unchanged | 303 items | 1,045 items (0.80 at the binomial limit, 0.77 at the frozen bootstrap's own boundary, which needs one more win) | 4,180 |
+| harmful failure (critical or unsupported certainty), exact one-sided McNemar, alpha 0.05 | 93 | 93 | 372 (144 items, 576 replies, if the seed's own harmful-failure rate were 1%) |
+| critical error only | 140 | 281 | 1,124 |
+
+**The founder decision this creates, prospective only.** Before any baseline reply is collected, a 0.1.7 freeze
+fixes one of two designs:
+
+- (a) keep the quality endpoint and commit to an externally authored suite of about 1,000 items;
+- (b) pre-register harmful-failure rate as the primary endpoint, with mean quality as a secondary endpoint, on an
+  externally authored suite of at least 100 to 150 items.
+
+Either way, the item author and the baseline model should come from outside the vendor family that wrote this
+suite. Re-scoring 0.1.6 under a different endpoint after seeing its result is not permitted, and this section does
+not do it.

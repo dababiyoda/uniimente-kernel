@@ -90,8 +90,9 @@ Measured through `reason()` on native synthetic workloads whose answers are know
 
 Added when the founder repeated the directive on 2026-10-14
 ([lineage](../../../docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSUE-2026-10-13-source.md)). The first round
-deferred §12 because the frozen evaluations pin `cortex.py`. That reason was wrong: P6 v3 ran in a clean worktree
-at its freeze commit, as v1 and v2 did, so changing `cortex.py` on a branch alters no recorded result.
+deferred §12 because the frozen evaluations pin `cortex.py`. That reason was wrong: the #158 lineage's P6 v3 ran
+in a clean worktree at its freeze commit `5acda2c`, as its v1 and v2 did, so changing `cortex.py` on a branch alters
+no recorded result.
 
 **Defect reproduced first** (`budget-reproduction.log`): on `8ad86ca`, a compile request with a declared 10 s
 `latency_budget` handed the full 10 s to each of its four inner runs, the answer and three sensitivity
@@ -142,8 +143,12 @@ three re-runs ran. Timings come from this container and vary by machine; the tes
   - at `86096ac`, with §12: 2886 passed, 5 failed, 16 skipped.
   - **The failures:** five are the environmental Landlock tests named in `full-suite.log`. The sixth, in `test_greg_competency_compiler.py`, fails identically at the pristine frontier `d5bb5cb` and fails the frontier's own CI there. The frontier fixed it by `5287303`, which is merged here.
 - **Frozen inputs:** §9 and §5 changed no pinned file. §12 changes `cortex.py` and `compiler.py`, which the P6
-  freezes hash as part of the `greg/cognition` closure. No recorded result changes: P6 v1 to v3 ran at their
-  freeze commits, and P6 v4 (frozen on the frontier at `14ec7a6`, held-out arm not yet run at the time of
+  freezes hash as part of the `greg/cognition` closure. No recorded result changes: the #158 lineage's P6 v1 to
+  v3 ran at their freeze commits, and its P6 v4 (frozen at `14ec7a6`, held-out arm not yet run at the time of
   writing) is reproduced at its freeze commit too. `verification.py` is unchanged relative to #161.
+- **Lineage (founder decision of 2026-10-14, `INTENT-20261014-MIND-LINEAGE-CONVERGENCE`):** this work is built on
+  the #158 Mind lineage, and its CI is evidence for that lineage only. Run names such as "P6 v3" are cited here
+  with their lineage and freeze commit, because the #155 lineage froze different evaluations under the same names
+  and paths. None of this work renames, regenerates or supersedes a frozen artifact of either lineage.
 
 Nothing was sent, attached, activated or merged. Authority delta: none. VEPMC: 0.

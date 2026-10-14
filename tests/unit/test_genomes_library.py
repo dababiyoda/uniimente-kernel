@@ -348,3 +348,31 @@ def test_a_re_admission_freezes_its_own_fresh_seeds_and_refuses_spent_ones(tmp_p
     frozen = json.loads((tmp_path / "r3" / "freeze.json").read_text())
     assert frozen["inputs"]["heldout_seeds"] == list(range(1100, 1130))
     assert admission.inputs(["flow_maxflow"], tuple(range(1100, 1130))) == frozen["inputs"]
+
+
+def test_freshness_is_checked_on_the_data_a_seed_draws_not_on_the_seed_number(tmp_path, monkeypatch):
+    """Review finding 6: forecast_quantile draws pool[(seed * 7919) % 241], so 'fresh' seed numbers redrew v1's
+    series (start 1241) and v2's seeds 1100-1129 drew 30 series P8 had trained or been evaluated on."""
+    monkeypatch.setattr(admission, "EVIDENCE", tmp_path)
+    admission.main(["--freeze", "r1", "--only", "forecast_quantile", "--heldout-start", "1000"])
+    with pytest.raises(SystemExit, match="draw data already used"):
+        admission.main(["--freeze", "r2", "--only", "forecast_quantile", "--heldout-start", "1241"])
+    reused = admission.reused_instances(["forecast_quantile"], tuple(range(1100, 1130)), set(range(1000, 1030)))
+    assert reused == {"forecast_quantile": {"reused": 30, "of": 30}}         # every v2 series was P8's
+    # a synthetic genome draws a new instance per seed: seed numbers are its identities
+    assert admission.reused_instances(["queue_erlang"], tuple(range(1241, 1271)), set(range(1000, 1030))) == {}
+
+
+def test_the_p8_forecast_split_replays_as_recorded_and_new_cycles_exclude_every_admission_run():
+    from greg.cognition import evolution
+    from pathlib import Path
+    recorded = json.loads((Path(__file__).resolve().parents[2] / "docs/evidence/greg-protected-evolution/"
+                           "2026-10-08/cycle-forecast-1.json").read_text())["split"]
+    cycle = evolution.COMPLETED_FORECAST_CYCLES["2026-10-08/cycle-forecast-1"]
+    train, held, excluded = evolution.forecasting_split(cycle["seed"], cycle["excluded_seeds"])
+    assert (len(train), len(held), len(excluded)) == (recorded["train"], recorded["heldout"],
+                                                      recorded["excluded_admission_series"])
+    train, held, excluded = evolution.forecasting_split()
+    from greg.cognition.genomes import forecasting
+    for seed in sorted(admission.spent_seeds()):
+        assert forecasting.instance_key(seed) not in train and forecasting.instance_key(seed) not in held

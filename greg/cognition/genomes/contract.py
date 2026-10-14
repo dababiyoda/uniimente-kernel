@@ -131,6 +131,9 @@ class Executable:
     # it is reported as a reference gap and can neither supersede nor demote the candidate
     competitor_deployable: bool = True
     tolerance: float = 1e-9                             # quality differences at or below this are ties
+    # For a genome that samples a finite pool of real data: the identity of the data a seed draws. Freshness of
+    # held-out data is checked on these identities, never on seed integers (two seeds can draw one series).
+    instance_key: Callable[[int], str] | None = None
     notes: Mapping[str, str] = field(default_factory=dict)
 
 

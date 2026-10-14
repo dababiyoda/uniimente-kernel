@@ -1451,8 +1451,8 @@
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:568",
-          "reality": "graph.shortest_path, graph.max_flow, lp.optimize qualified from open source (VERIFIED, not ATTACHED); other families deferred on demand; admission v1 (2026-10-14): 8 DEFAULT_FOR_GEOMETRY, 4 REJECTED; admission v2: crowd (Dawid-Skene) and swarm (PSO) DEFAULT_FOR_GEOMETRY, robust_pattern EXPERIMENTAL, blackbox (DE) SUPERSEDED by multistart L-BFGS-B (acquisition target; post hoc it also beats PSO 32/7)",
-          "evidence": "docs/evidence/greg-genome-admission/2026-10-14/README.md; README-v2.md",
+          "reality": "graph.shortest_path, graph.max_flow, lp.optimize qualified from open source (VERIFIED, not ATTACHED); other families deferred on demand; admission v1 (2026-10-14): 8 DEFAULT_FOR_GEOMETRY, 4 REJECTED; admission v2: crowd (Dawid-Skene) and swarm (PSO) DEFAULT_FOR_GEOMETRY, robust_pattern EXPERIMENTAL, blackbox (DE) SUPERSEDED by multistart L-BFGS-B (acquisition target; post hoc it also beats PSO 32/7); pr155-crowd-sparse (sparse multi-class crowds): Dawid-Skene loses to the one-step weighted vote 8/32 (p = 9e-5) - EXPERIMENTAL, attach not recommended; the one-step vote is the acquisition target",
+          "evidence": "docs/evidence/greg-genome-admission/2026-10-14/README.md; README-v2.md; docs/evidence/pr155-crowd-sparse/2026-10-14/README.md",
           "implementation_refs": [
             "cortex/evaluation/genome_admission/run.py",
             "cortex/evaluation/genome_admission/run_v2.py",

@@ -31,6 +31,7 @@ CORTEX_LAYER = {"primitive_basal": 1, "distributed_collective": 2, "solver_macro
 ADMISSION = "docs/evidence/greg-genome-admission/2026-10-14/results.json"
 ADMISSION_V2 = "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json"
 P6_V3 = "docs/evidence/greg-composition-lift/2026-10-14/results-v3.json"
+CROWD_SPARSE = "docs/evidence/pr155-crowd-sparse/2026-10-14/results.json"
 CROSSGEO_V03 = "tests/evidence/greg-crossgeo-v0.3/results.json"
 P4_V2 = "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json"
 P6_V1 = "docs/evidence/greg-composition-lift/2026-10-07/results.json"
@@ -48,7 +49,8 @@ STRUCTURAL = {"ALIAS": "SUPERSEDED", "SUPERSEDED_BY_CANONICAL_ORGAN": "SUPERSEDE
 NOTES = {
     "swarm": "post hoc (not pre-registered): multistart L-BFGS-B beats PSO 32/7; acquisition target",
     "blackbox": "superseded by multistart L-BFGS-B 26/8 (p = 0.0015); acquisition target",
-    "crowd": "one-step agreement-weighted vote ties it 18/15; simpler method not yet beaten",
+    "crowd": "dense crowds: ties the one-step weighted vote (admission v2); sparse multi-class crowds: loses to it "
+             "8/32, p = 9e-5 (pr155-crowd-sparse); the one-step vote is the acquisition target; do not attach as default",
     "robust_pattern": "beats the rejected z-score 25/5 (reference); not admitted over IQR fences",
 }
 # Reserved cortex families whose effect already runs as an operation family or a lab (not as a cortex organ).
@@ -135,6 +137,8 @@ def admitted() -> dict:
         if (ROOT / ref).exists():
             for family, row in json.loads((ROOT / ref).read_text())["families"].items():
                 out[family] = (row.get("status", "NOT_BENCHMARKED"), ref)
+    if (ROOT / CROWD_SPARSE).exists():                 # later frozen native-geometry run for one family
+        out["crowd"] = (json.loads((ROOT / CROWD_SPARSE).read_text())["status"]["status"], CROWD_SPARSE)
     return out
 
 

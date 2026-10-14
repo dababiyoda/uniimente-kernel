@@ -29,16 +29,39 @@ from greg.journal import Journal
 APPRAISAL_VERDICT = "REPRODUCED"
 
 
+class MissionBindingError(ValueError):
+    """A bridge message's trace does not belong to the mission it is filed under."""
+
+
+def _check_binding(journal: Journal, mission_id: str, trace_id: str) -> None:
+    """One mission, one trace. The first observed message binds them; later
+    messages must agree in both directions, so a caller cannot file another
+    mission's exchange under this mission or split one exchange across two."""
+    if not trace_id:
+        raise MissionBindingError("bridge message carries no trace id; cannot bind it to a mission")
+    for event in journal.replay("mission.observed"):
+        p = event.payload
+        if p.get("operation") is None or "trace_id" not in p:
+            continue
+        if p["trace_id"] == trace_id and p["mission_id"] != mission_id:
+            raise MissionBindingError(f"trace {trace_id} is bound to mission {p['mission_id']}")
+        if p["mission_id"] == mission_id and p["trace_id"] != trace_id:
+            raise MissionBindingError(f"mission {mission_id} is bound to trace {p['trace_id']}")
+
+
 def record_exchange(journal: Journal, *, mission_id: str, headers: dict, body: bytes,
                     nonce_cache, expected_sender: str, expected_operation: str,
                     expected_recipient: str | None = None, request_digest: str | None = None) -> dict:
     """Verify one bridge message, retain it as evidence, link it to a mission.
 
-    Raises `bt.BridgeSecurityError` (and records nothing) when verification fails.
+    Raises `bt.BridgeSecurityError` (and records nothing) when verification fails,
+    and `MissionBindingError` when the signed trace id belongs to another mission.
     """
     meta = bt.verify_headers(headers, body, nonce_cache=nonce_cache, expected_sender=expected_sender,
                              expected_recipient=expected_recipient, expected_operation=expected_operation,
                              request_digest=request_digest)
+    trace_id = meta.get("trace_id") or ""
+    _check_binding(journal, mission_id, trace_id)
     retained = dataplane.ingest(journal, source=f"organ:{meta['identity']}",
                                 content=body.decode("utf-8"), channel=f"bridge:{expected_operation}")
     observed = {"mission_id": mission_id, "organ": meta["identity"], "operation": expected_operation,
@@ -47,7 +70,7 @@ def record_exchange(journal: Journal, *, mission_id: str, headers: dict, body: b
                 # not a specific organ. Carried so no trace overstates it.
                 "sender_identity_isolated": meta.get("identity_isolated") == "true",
                 "content_trust": "untrusted", "quarantined": retained.get("quarantined", False),
-                "trace_id": meta.get("trace_id") or headers.get(bt.H_TRACE, ""), "receipt": None}
+                "trace_id": trace_id, "receipt": None}
     # No timestamp in the payload: the event envelope carries occurrence time,
     # and a volatile field would make a redelivered message collide with its
     # own retained fact.
@@ -68,4 +91,4 @@ def record_appraisal(journal: Journal, *, mission_id: str, reproduced: dict, inv
     return data
 
 
-__all__ = ["APPRAISAL_VERDICT", "record_appraisal", "record_exchange"]
+__all__ = ["APPRAISAL_VERDICT", "MissionBindingError", "record_appraisal", "record_exchange"]

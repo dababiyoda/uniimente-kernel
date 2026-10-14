@@ -81,7 +81,7 @@ def episodes(journal) -> list[dict]:
             out.append({**ep, "recovered_at": when, "seconds": (when - start).total_seconds(),
                         "founder_intervened": founder,
                         "recovery_actions": sorted({r["action_id"] for r in ran}),
-                        "recovery_capabilities": sorted({r.get("capability", "?") for r in ran})})
+                        "recovery_capabilities": sorted({r.get("capability") or "?" for r in ran})})
             recovered_before[key] += 1
         state[key] = "passing" if p["passed"] else "failing"
     for ep in open_.values():
@@ -94,7 +94,7 @@ def common_causes(journal, window: timedelta = timedelta(hours=1)) -> list[dict]
     failures = [e for e in _events(journal, "mission.action") if failed(e.payload)]
     by_cap = defaultdict(list)
     for e in failures:
-        by_cap[e.payload.get("capability", "?")].append(e)
+        by_cap[e.payload.get("capability") or "?"].append(e)
     out = []
     for cap, events in sorted(by_cap.items()):
         for i, first in enumerate(events):
@@ -111,7 +111,7 @@ def concentration(journal) -> dict:
     done = defaultdict(int)
     for e in journal.replay("mission.action"):
         if e.payload.get("status") == "DONE":
-            done[e.payload.get("capability", "?")] += 1
+            done[e.payload.get("capability") or "?"] += 1
     total = sum(done.values())
     if not total:
         return {"completed_actions": 0, "herfindahl": None, "top": None}
@@ -127,7 +127,7 @@ def after_failure(journal) -> dict:
     for e in _events(journal, "mission.action"):
         status = e.payload.get("status")
         if status == "DONE" or failed(e.payload):
-            by_cap[e.payload.get("capability", "?")].append(
+            by_cap[e.payload.get("capability") or "?"].append(
                 (_at(e), status == "DONE", (e.payload.get("mission_id"), e.payload.get("action_id"))))
     learned = [(_at(e), kind, e.payload or {}) for kind in LEARNING_EVENTS for e in journal.replay(kind)]
     # an exclusion counts only through the critique it cites: critique_ref -> critique.recorded ->
@@ -196,7 +196,7 @@ def decoupling_from_journal(journal) -> list[dict]:
     for e in journal.replay("mission.action"):
         status = e.payload.get("status")
         if status == "DONE" or failed(e.payload):
-            per_cap[e.payload.get("capability", "?")][_at(e).date()].append(1.0 if status == "DONE" else 0.0)
+            per_cap[e.payload.get("capability") or "?"][_at(e).date()].append(1.0 if status == "DONE" else 0.0)
     out = []
     for cap, days in sorted(per_cap.items()):
         local = [((d - origin).days, statistics.fmean(v)) for d, v in sorted(days.items())]

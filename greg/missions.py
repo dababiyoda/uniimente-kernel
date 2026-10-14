@@ -646,13 +646,27 @@ class MissionEngine:
             if m.blocker["type"] == "reconciliation":
                 answer = self.book.answers[m.blocker["request_id"]]["answer"]
                 aid = m.blocker["action_id"]
+                attempt = m.attempts.get(aid, 1) - 1
+                # The record reconciles the UNCERTAIN dispatch of this attempt: it names the capability that
+                # dispatch actually used (a strategy may name only a function), never the strategy's spec.
+                dispatch = next((e.payload for e in reversed(self.journal.replay("mission.action"))
+                                 if e.payload.get("mission_id") == m.mission_id and e.payload.get("action_id") == aid
+                                 and e.payload.get("attempt") == attempt
+                                 and e.payload.get("status") == "UNCERTAIN"), {})
                 strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), {})
+                cap = float(strategy.get("cost_usd", 0.0))
+                # Executed, but no adapter measured the provider's spend: book the signed cap (metered_spend's
+                # conservative rule), so the budget the founder signed still bounds every later action.
+                spend = {"cost_usd": cap, "cost_cap_usd": cap, "provider_reported_usd": None,
+                         "spend_basis": "signed_cap: founder reconciled executed; provider spend unknown"} \
+                    if answer == "reconcile_executed" and cap > 0 else {}
                 self.journal.record("mission.action", {
-                    "mission_id": m.mission_id, "action_id": aid, "attempt": m.attempts.get(aid, 1) - 1,
+                    "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
                     "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
-                    "capability": strategy.get("capability"), "route": "founder_reconciliation",
+                    "capability": dispatch.get("capability") or strategy.get("capability"),
+                    "route": "founder_reconciliation", "dispatch_route": dispatch.get("route"),
                     "receipt": None, "at": iso(now),
-                    "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0},
+                    "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0, **spend},
                     key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
             lifted = m.blocker
             self._unblock(m, why)
@@ -715,11 +729,11 @@ class MissionEngine:
         The source is the latest DONE action of the named strategy; its output is read from
         the canonical ledger, never from a cache or the adapter's memory. Only param values
         change: capability, target, cost and consequence class stay exactly as signed."""
-        latest = {}
+        latest = {}   # action_id -> receipt of its latest DONE; None when the founder reconciled it unreceipted
         for event in self.journal.replay("mission.action"):
             data = event.payload
-            if data.get("mission_id") == m.mission_id and data.get("status") == "DONE" and data.get("receipt"):
-                latest[data["action_id"]] = data["receipt"]
+            if data.get("mission_id") == m.mission_id and data.get("status") == "DONE":
+                latest[data["action_id"]] = data.get("receipt")
         params = json.loads(json.dumps(s.get("params", {})))
         bindings, sources = [], []
         for edge in s["bind"]:
@@ -733,9 +747,12 @@ class MissionEngine:
                     raise Unbound(f"check {source} has no passing observation yet")
             else:
                 source = edge["from"]["action_id"]
-                receipt = latest.get(source)
-                if receipt is None:
+                if source not in latest:
                     raise Unbound(f"{source} has no completed action yet")
+                receipt = latest[source]
+                if receipt is None:     # never an older receipt: that output is not the latest execution's
+                    raise Unbound(f"{source}'s latest execution was reconciled without a retained receipt; "
+                                  "its output is unknown")
             record = self.office.ledger.find(receipt)
             if record is None or record.record_type != "receipt":
                 raise Unbound(f"{source} receipt {receipt[:19]} is not on the ledger")
@@ -856,7 +873,8 @@ class MissionEngine:
             done = [e.payload for e in self.journal.replay("mission.action")
                     if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid
                     and e.payload["status"] == "DONE"]
-            if done:
+            # A founder reconciliation has no receipt: it is not a receipted execution to blame.
+            if done and done[-1].get("receipt"):
                 last = done[-1]
                 self.journal.record("routing.outcome", {"mission_id": m.mission_id, "action_id": aid,
                                                         "capability": last["capability"], "verdict": "ineffective",

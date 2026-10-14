@@ -52,6 +52,8 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
     # checks were still failing at the next observation of that check.
     surprises = []
     for action in done:
+        if not action.get("at"):     # reconciliations retained before 2026-10-14 carry no time to order by
+            continue
         spec = missions.get(action["mission_id"], {})
         strategy = next((s for s in spec.get("strategies", []) if s["action_id"] == action["action_id"]), None)
         for check in (strategy or {}).get("advances", []):
@@ -181,6 +183,10 @@ def critique(journal: Journal, engine, body: dict, command_digest: str) -> dict:
         if target.type != "greg.mission.action" or target.payload.get("status") != "DONE" \
                 or target.payload.get("capability") != improvement.CAPABILITY:
             raise CritiqueError("brief labels and failure claims must reference a delivered brief action")
+        if not target.payload.get("receipt"):
+            # A founder-reconciled delivery has no receipt, so improvement could never read what it showed.
+            raise CritiqueError("the reconciled brief has no retained inputs to label: its delivery was "
+                                "reconciled by the founder without a receipt")
         record["epistemic"] = {**epistemic, "is_truth": False}
     if body.get("regression"):
         condition = ("a test or check that fails on the criticized behavior" if not epistemic else

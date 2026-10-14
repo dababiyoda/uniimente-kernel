@@ -338,3 +338,19 @@ def test_history_written_before_this_change_loads_verifies_and_reserializes_byte
     led = EvidenceLedger(json.loads(lines[0])["payload"]["constitution_hash"], str(path), read_only=True)
     assert led.verify_chain()[0] and len(led.records) == len(lines)
     assert [json.dumps(asdict(r), allow_nan=False) for r in led.records] == lines
+
+
+def test_a_commit_witness_is_appended_only_onto_a_wholly_verified_chain():
+    """Installed-body merge: the Consequence Gate relied on append() re-verifying the whole chain before its
+    Commit Witness. Hot-path appends now verify only new records, so the witness, the Gate's durability
+    boundary, still reconstructs the whole chain (COMMIT_RECORD_TYPES). An ordinary append is served for up
+    to FULL_VERIFY_SECONDS on altered history (the stated residual); a witness never is."""
+    led = EvidenceLedger(ANCHOR)
+    for i in range(3):
+        led.append("event", {"i": i})
+    assert led.verify_incremental()[0]
+    led._records[1].payload["i"] = 99                    # an old retained record, altered in this process
+    led.append("event", {"i": 3})                         # the hot path does not see it (the residual)
+    with pytest.raises(ValueError, match="payload hash mismatch at seq 1"):
+        led.append("witness", {"w": 1})
+    assert not led.by_type("witness") and ledger_module.COMMIT_RECORD_TYPES == ("witness",)

@@ -222,11 +222,11 @@ MIND_CONSTRUCTION_MUTANTS = [
 ]
 
 # 2026-10-14 installed-body merge: appends verify only new history (e2440a6); a Gate commit verifies all of it.
-COMMIT_CHAIN_TESTS = ["tests/unit/test_consequence_gate.py"]
+COMMIT_CHAIN_TESTS = ["tests/unit/test_consequence_gate.py", "tests/unit/test_ledger_incremental_verification.py"]
 COMMIT_CHAIN_MUTANTS = [
-    ("a Gate commit trusts the incremental check on altered history", "policy/consequence_gate.py",
-     "        intact, why = self.ledger.verify_chain()\n        if not intact:",
-     "        intact, why = self.ledger.verify_incremental()\n        if not intact:"),
+    ("a Gate commit trusts the incremental check on altered history", "provenance/ledger.py",
+     "ok, reason = self.verify_chain() if record_type in COMMIT_RECORD_TYPES else self.verify_incremental()",
+     "ok, reason = self.verify_incremental()"),
 ]
 
 # 2026-10-14 installed-body merge (#137 verifier): a test-key closure is structural evidence, never the founder's path.

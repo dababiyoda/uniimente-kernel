@@ -27,6 +27,12 @@ GENESIS_PREV = "sha256:" + "0" * 64
 # on every explicit verify_chain(), and at least this often (FINDING-LEDGER-APPEND-COST-2026-10-14).
 FULL_VERIFY_SECONDS = 300.0
 _monotonic = time.monotonic
+# A Commit Witness is the Consequence Gate's durability boundary (policy/consequence_gate.py step 9, before the
+# dispatch claim and the executor). It is appended only onto a chain reconstructed whole at that moment, so no
+# effect is witnessed, claimed or executed on history altered in memory. The check lives here because the Gate's
+# source is a reviewed, hash-bound subject (evolution/repair/subjects.py SR-002) and so cannot change silently
+# (installed-body merge; FINDING-LEDGER-APPEND-COST-2026-10-14).
+COMMIT_RECORD_TYPES = ("witness",)
 
 
 class ReconciliationRequired(RuntimeError):
@@ -251,7 +257,7 @@ class EvidenceLedger:
             raise WriterConflict('not the active ledger writer')
         if self._uncertain:
             raise ReconciliationRequired('previous append is uncertain; reopen verified history')
-        ok, reason = self.verify_incremental()
+        ok, reason = self.verify_chain() if record_type in COMMIT_RECORD_TYPES else self.verify_incremental()
         if not ok:
             raise ValueError(reason)
         if record_type in ('genesis', 'constitution_transition'):

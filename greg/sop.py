@@ -50,6 +50,11 @@ ROLE_ORDER = {"input": 0, "value": 1, "param": 2, "target": 3, "text": 4}
 BUILTIN_NAMES = ("mission_id", "mission_dir")
 MIN_SUBSTITUTION = 2
 TOKEN = re.compile(r"\{\{|\}\}|\{([a-z][a-z0-9_]*)(\|basename)?\}|[{}]")
+# This module's own workflow markers ({"$slot"}, {"$format"}) and shape placeholder ({"$type"}). Only these
+# are reserved in a signed spec. Other "$" keys belong to the founder-signed structure, such as a typed
+# handoff {"$from_action": ...} (greg/pipeline.py) or a composition {"$param": ...}: they and everything under
+# them must be identical in every run of one procedure and never become a slot.
+SOP_MARKERS = ("$slot", "$format", "$type")
 
 
 class SopError(ValueError):
@@ -102,8 +107,8 @@ def _leaves(value, path=()):
         if not value:
             yield path, {}
         for key, item in value.items():
-            if str(key).startswith("$"):
-                raise SopError(f"{_dotted(path + (key,))}: keys beginning with $ are reserved")
+            if key in SOP_MARKERS:
+                raise SopError(f"{_dotted(path + (key,))}: {key} is reserved for SOP workflows")
             yield from _leaves(item, path + (key,))
     elif isinstance(value, list):
         if not value:
@@ -116,6 +121,8 @@ def _leaves(value, path=()):
 
 def _role(path) -> str | None:
     """The parameter role of a leaf, or None when it must be identical in every run of a procedure."""
+    if any(isinstance(p, str) and p.startswith("$") for p in path):
+        return None                          # inside signed structure such as a typed handoff: never a slot
     if path in (("founder_expression",), ("intended_effect",)):
         return "text"
     if len(path) >= 3 and isinstance(path[1], int):
@@ -371,7 +378,11 @@ def _groups(journal: Journal) -> dict:
             continue
         if str(event.payload["spec"].get("provenance", {}).get("origin", "")).startswith(ORIGIN):
             continue            # runs of a ratified SOP are its measurements, not new evidence for proposals
-        groups[(tuple(sequence), shape(event.payload["spec"]))].append(mission_id)
+        try:
+            signed_shape = shape(event.payload["spec"])
+        except SopError:
+            continue            # a spec this module cannot represent is no procedure's run; never fatal to a tick
+        groups[(tuple(sequence), signed_shape)].append(mission_id)
     return groups
 
 

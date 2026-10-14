@@ -98,6 +98,46 @@ def test_text_with_braces_and_numbers_round_trips_and_slots_are_checked_before_s
         sop.instantiate(record, {"text": "x"}, horizon_days=30)
 
 
+def bound_mission(home, mid: str, text: str) -> dict:
+    """A pipeline mission (greg/pipeline.py): its write consumes a typed handoff, {"$from_action": ...}."""
+    spec = note_mission(home, mid, text)
+    spec["strategies"][0]["params"]["content"] = {"$from_action": {"action_id": "read", "field": "text",
+                                                                   "type": "string"}}
+    return spec
+
+
+def test_a_typed_handoff_is_signed_structure_and_never_crashes_the_observer(tmp_path):
+    """Merge regression (installed-body merge): #168's generalization reserved every key beginning
+    with "$", and the convergence line's pipeline missions carry {"$from_action": ...}. sop.propose
+    runs in every body tick, so one verified pipeline closure raised SopError there and stopped the
+    body (tests/integration/test_greg_pipeline.py). A binding is founder-signed structure: identical
+    in every run of one procedure, never a slot. Only this module's own markers stay reserved, and a
+    spec that carries one is skipped by the observer, not fatal to the tick."""
+    specs = [bound_mission(tmp_path, f"m:bound-{n}", f"done {n}") for n in range(3)]
+    workflow = sop.generalize(specs)
+    assert list(workflow["slots"]) == ["text"]                   # the binding never became a parameter
+    record = record_like(workflow)
+    rebuilt = sop.instantiate(record, {"text": "done 1"}, mission_id="m:bound-1")
+    assert sop._strip(rebuilt) == sop._strip(specs[1])
+    assert rebuilt["strategies"][0]["params"]["content"] == {"$from_action": {"action_id": "read", "field": "text",
+                                                                              "type": "string"}}
+    moved = copy.deepcopy(specs[2])
+    moved["strategies"][0]["params"]["content"]["$from_action"]["action_id"] = "other"
+    assert sop.shape(moved) != sop.shape(specs[0])               # a different handoff is a different procedure
+    with pytest.raises(sop.SopError, match="not parameters"):
+        sop.generalize([*specs[:2], moved])
+    marked = note_mission(tmp_path, "m:marked", "done")
+    marked["strategies"][0]["params"]["content"] = {"$slot": "text"}
+    with pytest.raises(sop.SopError, match="reserved"):
+        sop.shape(marked)
+    home, *_ = make_body(tmp_path)
+    with Body(home) as body:
+        for spec in [*specs, marked]:
+            closure(body.journal, spec)
+        [proposal] = sop.propose(body.journal)                   # the marked spec is skipped, the tick goes on
+    assert proposal["missions"] == sorted(s["mission_id"] for s in specs) and "workflow" in proposal
+
+
 # -- crafted histories: what the trend refuses to count ---------------------------------------
 
 def closure(j, spec, *, approvals=("w",), verdict="VERIFIED", build_cost=None, approved_class="internal_write",

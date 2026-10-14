@@ -786,6 +786,93 @@ def test_game_solve_never_answers_an_attempt_whose_supported_action_the_verifier
     assert "row action" in out["certificate"]["failures"]["OR-Tools GLOP"]
 
 
+# The four LP attempts game_lp_dual_solve makes, in order: name -> (engine function, feasibility tolerance).
+GL_ATTEMPTS = {"OR-Tools GLOP": ("_gl_glop", competitors.GL_FEASIBILITY),
+               "SciPy HiGHS": ("_gl_highs", competitors.GL_FEASIBILITY),
+               "OR-Tools GLOP at its default tolerances": ("_gl_glop", None),
+               "SciPy HiGHS at its default tolerances": ("_gl_highs", None)}
+
+
+def _attempt_alone(monkeypatch, data, name):
+    """game_lp_dual_solve with only the attempt ``name`` live (every other engine call returns nothing)."""
+    live = GL_ATTEMPTS[name]
+    for function in ("_gl_glop", "_gl_highs"):
+        engine = getattr(competitors, function)
+        monkeypatch.setattr(competitors, function,
+                            lambda b, tolerance, f=function, e=engine: e(b, tolerance) if (f, tolerance) == live
+                            else None)
+    try:
+        return competitors.game_lp_dual_solve(data, BUDGET)
+    finally:
+        monkeypatch.undo()
+
+
+@pytest.mark.parametrize("seed,eps,size", [g for g in TINY_ENTRY_GAMES if g[0] in (3025000, 3053001)])
+def test_game_certificate_calls_failed_only_the_attempts_that_failed(seed, eps, size, monkeypatch):
+    """The answer's certificate listed every other attempt made as failed. On review seed 3053 (the verifier's
+    tinysweep tiny8) HiGHS answered with a gap of 1.11e-9 of the range and engines_failed named both GLOP attempts
+    and HiGHS at its defaults, though each passes the self-check alone (gaps 4.9e-9, 4.9e-9 and 9.5e-9); on 3025
+    (tiny9) it named both GLOP attempts, which pass, beside HiGHS at 1e-10, which returns nothing. Each attempt now
+    leaves one record, and every certificate field is derived from those records."""
+    data = {"payoffs": _tiny_entry_game(random.Random(seed), eps, size)}
+    cert = competitors.game_lp_dual_solve(data, BUDGET)["certificate"]
+    for name in cert["engines_failed"]:
+        assert _attempt_alone(monkeypatch, data, name)["status"] == "UNKNOWN", f"{name} passes on its own"
+    assert set(cert["failures"]) == set(cert["engines_failed"])
+    outcomes = [r["outcome"] for r in cert["attempts"]]
+    assert outcomes.count("answered") == 1 and "passed, not selected" in outcomes
+    for record in cert["attempts"]:
+        alone = _attempt_alone(monkeypatch, data, record["engine"])
+        if record["outcome"] == "failed":
+            assert alone["status"] == "UNKNOWN" and record["engine"] in cert["engines_failed"]
+            assert alone["certificate"]["failures"][record["engine"]] == record["reason"]
+        else:
+            assert alone["status"] == "ANSWER" and alone["certificate"]["engine"] == record["engine"]
+            assert alone["certificate"]["duality_gap"] == record["duality_gap"]
+            assert record["duality_gap"] >= cert["duality_gap"]
+            assert (record["outcome"] == "answered") == (record["engine"] == cert["engine"])
+    _json_clean(cert)
+
+
+def test_game_certificate_records_a_passing_attempt_that_was_not_selected(monkeypatch):
+    """GLOP's attempt passes the self-check with a gap of 1e-8 of the range, above the 1e-9 precision target, so
+    HiGHS is tried and answers with a smaller gap. GLOP passed: it is recorded as passed and not selected, with its
+    gap, and never as failed."""
+    data = {"payoffs": [[1.0, 0.0], [0.0, 1.0]]}
+    monkeypatch.setattr(competitors, "_gl_glop", lambda b, tolerance: ([0.5 + 1e-8, 0.5 - 1e-8], [0.5, 0.5]))
+    out = competitors.game_lp_dual_solve(data, BUDGET)
+    cert = out["certificate"]
+    assert out["status"] == "ANSWER" and cert["engine"] == "SciPy HiGHS"
+    assert cert["engines_failed"] == [] and cert["failures"] == {}
+    [glop, highs] = cert["attempts"]
+    assert glop["engine"] == "OR-Tools GLOP" and glop["outcome"] == "passed, not selected"
+    assert glop["duality_gap"] == pytest.approx(1e-8, rel=1e-6)
+    assert highs == {"engine": "SciPy HiGHS", "outcome": "answered", "duality_gap": cert["duality_gap"]}
+    assert all(competitors.game_lp_dual_verify(data, out["output"], cert).values())
+
+
+@pytest.mark.parametrize("glop", (([math.inf, 0.0], [0.5, 0.5]), ([1e308, 1e308], [1e308, 1e308]),
+                                  ([0.5, 0.5, math.nan], [0.5, 0.5])))
+def test_game_solve_never_answers_engine_output_that_is_not_finite(glop, monkeypatch):
+    """Synthetic engine output (real GLOP and HiGHS return finite values on these bounded LPs). inf became NaN
+    strategies and finite entries whose sum overflows became all-zero ones: both passed the self-check (NaN
+    compares False; zero strategies have zero gap) and were answered, and the verifier refuted them
+    (mixed_strategies). A NaN entry was silently clipped to 0, rewriting the engine's output. Non-finite output is
+    now no strategy: the attempt is recorded failed and the next engine answers, or the solver says UNKNOWN."""
+    x, y = glop
+    data = {"payoffs": [[1.0, 0.0], [0.0, 1.0], [0.0, 0.0]][:len(x)]}
+    monkeypatch.setattr(competitors, "_gl_glop", lambda b, tolerance: (list(x), list(y)))
+    out = competitors.game_lp_dual_solve(data, BUDGET)
+    assert out["status"] == "ANSWER" and out["certificate"]["engine"] == "SciPy HiGHS"
+    assert "not finite" in out["certificate"]["failures"]["OR-Tools GLOP"]
+    assert all(competitors.game_lp_dual_verify(data, out["output"], out["certificate"]).values())
+    monkeypatch.setattr(competitors, "_gl_highs", lambda b, tolerance: (list(x), list(y)))
+    out = competitors.game_lp_dual_solve(data, BUDGET)
+    assert out["status"] == "UNKNOWN" and out["output"] is None
+    assert out["certificate"]["engines_failed"] == list(GL_ATTEMPTS)
+    assert all(r["outcome"] == "failed" for r in out["certificate"]["attempts"])
+
+
 @pytest.mark.parametrize("payoffs", ([[3.0]], [[1, 2, 3]], [[1], [2], [3]], [[5, 5], [5, 5]]))
 def test_game_degenerate_shapes_verify(payoffs):
     out = competitors.game_lp_dual_solve({"payoffs": payoffs}, BUDGET)

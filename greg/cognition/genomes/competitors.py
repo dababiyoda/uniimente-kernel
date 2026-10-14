@@ -384,14 +384,24 @@ def _gl_highs(b, tolerance=GL_FEASIBILITY):
 
 
 def _gl_distribution(vector):
-    clipped = [max(0.0, float(p)) for p in vector]
+    """An engine's vector as a probability distribution: negative entries (rounding) clipped to 0, the rest
+    normalised. None when an entry is not finite or the mass is not a finite positive number: such output is no
+    strategy. Clipping NaN to 0 silently rewrote the engine's output; inf, or finite entries whose sum overflows,
+    became NaN or all-zero strategies, which pass every comparison of the self-check (NaN compares False) and which
+    the verifier refutes (mixed_strategies). So x and y meet the verifier's mixed_strategies condition by
+    construction: finite, non-negative, summing to 1 to within rounding."""
+    values = [float(p) for p in vector]
+    if not all(math.isfinite(p) for p in values):
+        return None
+    clipped = [max(0.0, p) for p in values]
     total = sum(clipped)
-    return [p / total for p in clipped] if total > 0 else None
+    return [p / total for p in clipped] if 0 < total < math.inf else None
 
 
 def _gl_check(b, x, y):
     """The verifier's best-response conditions on B (range 1) at GL_MARGIN of its tolerances. Returns the two
-    guarantees and the first condition that fails (None when all pass); the stated value is checked by the caller."""
+    guarantees and the first condition that fails (None when all pass); the stated value is checked by the caller,
+    and its mixed_strategies condition holds by construction (x and y come from _gl_distribution)."""
     import numpy as np
     guaranteed, conceded = np.array(x) @ b, b @ np.array(y)
     lower_b, upper_b = float(guaranteed.min()), float(conceded.max())
@@ -431,17 +441,18 @@ def game_lp_dual_solve(data, budget):
     attempts = (("OR-Tools GLOP", _gl_glop, GL_FEASIBILITY), ("SciPy HiGHS", _gl_highs, GL_FEASIBILITY),
                 ("OR-Tools GLOP at its default tolerances", _gl_glop, None),
                 ("SciPy HiGHS at its default tolerances", _gl_highs, None))
-    tried, unstated, failures, best = [], [], {}, None
+    record, best = [], None                 # one entry per attempt made, in order, and the best passing one
     for name, engine, tolerance in attempts:
-        tried.append(name)
         solved = engine(B, tolerance)
         x, y = (_gl_distribution(solved[0]), _gl_distribution(solved[1])) if solved else (None, None)
         if x is None or y is None:
-            failures[name] = "no strategies"
+            record.append({"engine": name, "outcome": "failed", "reason": "no strategies" if not solved else
+                           "strategies not finite, or without a finite positive mass"})
             continue
         lower_b, upper_b, failed = _gl_check(B, x, y)
         if failed:
-            failures[name] = f"{failed} (gap {upper_b - lower_b:.3g} of the range)"
+            record.append({"engine": name, "outcome": "failed",
+                           "reason": f"{failed} (gap {upper_b - lower_b:.3g} of the range)"})
             continue
         middle_b = 0.5 * (lower_b + upper_b)
         lower, upper, value = low + scale * lower_b, low + scale * upper_b, low + scale * middle_b
@@ -450,9 +461,10 @@ def game_lp_dual_solve(data, budget):
         # declared verification tolerance.
         stated = max(abs((s - low) - scale * t) for s, t in ((lower, lower_b), (upper, upper_b), (value, middle_b)))
         if stated > GL_STATED * scale:
-            failures[name] = "value or bounds cannot be stated"
-            unstated.append(stated / scale)
+            record.append({"engine": name, "outcome": "failed", "reason": "value or bounds cannot be stated",
+                           "stated_error_over_range": stated / scale})
             continue
+        record.append({"engine": name, "outcome": "passed", "duality_gap": scale * (upper_b - lower_b)})
         if best is None or upper_b - lower_b < best[0]:
             best = (upper_b - lower_b, name, x, y, lower, upper, value)
         if upper_b - lower_b <= GL_GAP:
@@ -462,19 +474,34 @@ def game_lp_dual_solve(data, budget):
         return answer({"row_strategy": x, "column_strategy": y, "value": value},
                       {"method": "one LP (row player's maximin) on the game rescaled to [0, 1]; the column "
                                  "player's strategy is the LP's dual solution", "engine": name,
-                       "engines_failed": [t for t in tried if t != name], "lower_bound": lower, "upper_bound": upper,
+                       **_gl_attempts(record, name), "lower_bound": lower, "upper_bound": upper,
                        "duality_gap": scale * gap_b,
                        "row_support": [i for i, p in enumerate(x) if p > 1e-12],
                        "column_support": [j for j, q in enumerate(y) if q > 1e-12],
                        "model": "two-player finite zero-sum game; payoff validity is unverified"})
+    unstated = [r["stated_error_over_range"] for r in record if "stated_error_over_range" in r]
     if unstated:
-        return answer(None, {"engines_failed": tried, "stated_error_over_range": max(unstated),
+        return answer(None, {**_gl_attempts(record), "stated_error_over_range": max(unstated),
                              "payoff_minimum": low, "payoff_range": spread}, status="UNKNOWN",
                       missing=[f"the payoffs' common offset is so large against their range that no floating-point "
                                f"value or bound can be stated within {GL_STATED:g} of the range"])
-    return answer(None, {"engines_failed": tried, "failures": failures}, status="UNKNOWN",
+    return answer(None, _gl_attempts(record), status="UNKNOWN",
                   missing=[(f"no LP attempt returned strategies that pass the verifier's checks at {GL_MARGIN:g} of "
                             "its tolerances")])
+
+
+def _gl_attempts(record, answered=None):
+    """The certificate's account of the LP attempts, derived on every certificate from the one entry each attempt
+    made (``record``, in order), so no field can call an attempt failed that passed the self-check. ``attempts``:
+    each attempt's outcome - ``answered``; ``passed, not selected`` (it passed the self-check, but the answered
+    attempt had a smaller gap; its duality_gap is given); or ``failed`` with its reason. ``engines_failed`` and
+    ``failures`` name only the failed attempts. Attempts not made (the precision target was already met) are
+    absent. Before, an answer listed every other attempt made as failed, including attempts that had passed."""
+    failed = [r for r in record if r["outcome"] == "failed"]
+    attempts = [r if r["outcome"] == "failed" else
+                {**r, "outcome": "answered" if r["engine"] == answered else "passed, not selected"} for r in record]
+    return {"attempts": attempts, "engines_failed": [r["engine"] for r in failed],
+            "failures": {r["engine"]: r["reason"] for r in failed}}
 
 
 def game_lp_dual_verify(data, output, certificate):

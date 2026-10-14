@@ -1160,7 +1160,7 @@
           "id": "P2",
           "title": "Seed proof",
           "maps_to": "N1",
-          "status": "IMPLEMENTED; advantage GAIN_VERIFIED_AGAINST_RUN_BASELINES (v0.3; v0.2 GAIN_ABSENT)",
+          "status": "IMPLEMENTED; advantage GAIN_VERIFIED_AGAINST_RUN_BASELINES (v0.3; v0.2 GAIN_ABSENT); competency characterization measured per method on native workloads (greg/cognition/benchmark.py, 2026-10-13): the falsifier refutes a single-leaf corruption in every measured family, semantic unmeasured without a founder-selected local model",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P1",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1170,7 +1170,8 @@
           "exit": "implementation evidence plus the predeclared performance test; otherwise remain an experiment",
           "evidence_refs": [
             "tests/evidence/greg-crossgeo-v0.2/results.json",
-            "cortex/evaluation/freeze-crossgeo-v0.2.json"
+            "cortex/evaluation/freeze-crossgeo-v0.2.json",
+            "tests/evidence/greg-characterization-2026-10-13/characterization.json"
           ],
           "completion": {
             "class": "DONE_IN_TESTED_ENVIRONMENT",

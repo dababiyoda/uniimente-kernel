@@ -234,8 +234,53 @@ OSS_TESTS_BY_FILE = {
 assert all(any(m[1] == rel for m in OSS_MUTANTS) for rel in OSS_TESTS_BY_FILE)
 assert set(t for ts in OSS_TESTS_BY_FILE.values() for t in ts) <= set(OSS_TESTS)
 
+# Competency characterization (directive section 5): the error-correction workload corrupts one leaf of
+# each verified answer and counts what the falsifier catches. Each mutant removes one exact re-check
+# the workload exposed as missing on 2026-10-13, or blunts the workload itself.
+CHAR_TESTS = ["tests/unit/test_greg_cognition_benchmark.py"]
+CHAR_MUTANTS = [
+    ("exact verifier skips the ratio string", "greg/cognition/verification.py",
+     'checks["exact_matches_ratio"] = Fraction(output["exact"]) == Fraction(int(output["numerator"]), int(output["denominator"]))',
+     'checks["exact_matches_ratio"] = True'),
+    ("polynomial verifier skips expansion of the factored form", "greg/cognition/verification.py",
+     'checks["factored_form_expands_back"] = sp.expand(sp.sympify(output["factored"], locals={"x": x}) - expr) == 0',
+     'checks["factored_form_expands_back"] = True'),
+    ("estimation verifier skips the interval products", "greg/cognition/verification.py",
+     'checks["interval_products"] = all(_close(output[k], b) for k, b in zip(("low", "central", "high"), bounds))',
+     'checks["interval_products"] = True'),
+    ("causal verifier skips the difference in means", "greg/cognition/verification.py",
+     'checks["difference_in_means"] = _close(output["effect"], effect)', 'checks["difference_in_means"] = True'),
+    ("control verifier skips the clamped PID law", "greg/cognition/verification.py",
+     'checks["clamped_pid_law"] = _close(output["correction"], correction)', 'checks["clamped_pid_law"] = True'),
+    ("information verifier skips the acquire rule", "greg/cognition/verification.py",
+     'checks["acquire_rule"] = isinstance(output["acquire"], bool) and output["acquire"] == (gross > cost)',
+     'checks["acquire_rule"] = True'),
+    ("simulation verifier skips moment consistency", "greg/cognition/verification.py",
+     'checks["moments_consistent"] = (0 <= low <= mean <= high <= steps and _close(mean * samples, round(mean * samples)))',
+     'checks["moments_consistent"] = True'),
+    ("pattern verifier skips the anomaly indices", "greg/cognition/verification.py",
+     "                                     and strict <= set(output[\"anomalies\"]) <= loose)",
+     "                                     and True)"),
+    ("micro verifier skips the set-point rule", "greg/cognition/verification.py",
+     'checks["setpoint_rule"] = output["state"] == ("stimulate" if observed < low else "inhibit" if observed > high else "abstain")',
+     'checks["setpoint_rule"] = True'),
+    ("sequential verifier skips the policy", "greg/cognition/verification.py",
+     '                                         and action_value(s, output["policy"][s], previous) == values[s]',
+     '                                         and True'),
+    ("collective verifier skips the quorum rule", "greg/cognition/verification.py",
+     'checks["quorum_rule"] = output["quorum_crossed"] == crossed and output["choice"] == (winner if crossed else None)',
+     'checks["quorum_rule"] = True'),
+    ("unknown solver status accepted", "greg/cognition/verification.py",
+     'checks["known_status"] = (output["solver_status"] in ("UNSAT", "UNKNOWN", "INFEASIBLE", "MODEL_INVALID")',
+     'checks["known_status"] = (True'),
+    ("characterization counts an accepted corruption as detected", "greg/cognition/benchmark.py",
+     'detected = [t for t in trials if t["outcome"] != "accepted"]', "detected = list(trials)"),
+    ("characterization corrupts nothing", "greg/cognition/benchmark.py",
+     "        yield path, output + LARGE\n", "        yield path, output\n"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
-          ("open-source genesis", OSS_TESTS, OSS_MUTANTS)]
+          ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("characterization", CHAR_TESTS, CHAR_MUTANTS)]
 
 
 def main() -> int:

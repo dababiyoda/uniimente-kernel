@@ -234,6 +234,18 @@ Done after the correction:
 - **Body 1 carries the engines.** The founder-run installer now installs them from binary wheels,
   best-effort: 5 of 5 in a fresh venv in 33 s, with 89 tests passing there. `greg doctor` reports
   each engine. `tests/evidence/greg-body1-engines-2026-10-01/`.
+- **The characterization measures (directive section 5, A37).** `python -m greg.cognition.benchmark`
+  now reports, per method, ten dimensions with a number from a native workload or an explicit
+  not-applicable / not-measured reason: latency p50/p95 against the declared estimate; settled
+  outcomes consulted; declared horizon; refutations needed to change a selection; single-leaf
+  corruption detection by the independent falsifier; enforced ceilings; metaconsensus
+  composability; held-out versus selection loss per stratum for the cortex arm (frozen v0.3);
+  higher-scale consumers (`venture.assess`). The first run showed the falsifier accepted every
+  corruption of estimation, causal, control, information, simulation, pattern, micro, sequential and
+  collective answers (0.0) and the exact string of `cognition.exact` (0.4). Exact-arithmetic re-checks
+  now refute all of them (1.0 on every measured family; 14 mutants). Persistence stays a body-scale
+  measurement; semantic stays unmeasured without a founder-selected local model.
+  `tests/evidence/greg-characterization-2026-10-13/`.
 
 Next mechanisms:
 

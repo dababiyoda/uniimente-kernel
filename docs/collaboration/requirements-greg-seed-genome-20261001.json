@@ -1208,7 +1208,7 @@
    "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (Appendix A, row A37)",
    "source_date": "2026-10-01",
    "intended_effect": "A competency characterization harness",
-   "interpretation": "The frozen cross-geometry comparison",
+   "interpretation": "The frozen cross-geometry comparison, and a per-method characterization that measures each dimension on a native workload (responsiveness p50/p95, settled outcomes consulted, declared horizon, re-ranking sensitivity, single-leaf corruption detection by the independent falsifier, enforced ceilings, metaconsensus composability, held-out versus selection loss for the cortex arm, higher-scale consumers) or states not applicable / not measured with what would measure it. Persistence is measured at body scale by the restart and kill -9 tests.",
    "canonical_owner": "greg/cognition + cortex (Kernel)",
    "lifecycle_state": "implemented",
    "implementation_state": "VERIFIED_IN_TESTED_ENVIRONMENT",
@@ -1220,19 +1220,24 @@
     "cortex/evaluation/crossgeo.py",
     "cortex/evaluation/crossgeo_arms.py",
     "cortex/evaluation/crossgeo_loss.py",
-    "cortex/evaluation/crossgeo_suite.py"
+    "cortex/evaluation/crossgeo_suite.py",
+    "greg/cognition/benchmark.py",
+    "greg/cognition/verification.py"
    ],
    "tests": [
-    "tests/unit/test_cortex_crossgeo.py"
+    "tests/unit/test_cortex_crossgeo.py",
+    "tests/unit/test_greg_cognition_benchmark.py"
    ],
    "evidence_refs": [
     "tests/evidence/greg-crossgeo-v0.3/results.json",
-    "cortex/evaluation/freeze-crossgeo-v0.3.json"
+    "cortex/evaluation/freeze-crossgeo-v0.3.json",
+    "tests/evidence/greg-characterization-2026-10-13/characterization.json"
    ],
    "failure_condition": "the cited tests fail, a mutation of the cited code survives, or the frozen comparison contradicts the stated state",
    "next_gate": "P2 exit: implementation evidence plus the predeclared performance test",
    "owner": "Alfonso Lopez (founder authority); cortex and GREG maintainers implement",
-   "review_trigger": "a new frozen comparison, a founder correction, or the named gate's exit evidence"
+   "review_trigger": "a new frozen comparison, a founder correction, or the named gate's exit evidence",
+   "negative_evidence": "2026-10-13: before the harness, the falsifier accepted every single-leaf corruption of estimation, causal, control, information, simulation, pattern, micro, sequential and collective answers, and the exact string of cognition.exact (detection 0.0 to 0.4); exact-arithmetic re-checks raised every measured family to 1.0. Two of the new re-checks first refuted correct answers (polynomial symbol binding; a Fraction compared through a float-only helper) and were fixed before commit. Semantic stays unmeasured without a founder-selected local model."
   },
   {
    "requirement_id": "SG-A38",

@@ -33,7 +33,8 @@ from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
                 "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query", "pipeline.inspect",
-                "worker.appraise", "browser.trace", "daleobanks.outcome"}
+                "worker.appraise", "browser.trace", "daleobanks.outcome",
+                "institution.appraise"}
 REOBSERVABLE.update(cid for cid in BUILTINS if cid.startswith("cognition.") and
                     cid not in ("cognition.semantic", "cognition.compose", "cognition.knowledge"))
 DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
@@ -51,6 +52,16 @@ def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:
             keys.pop(event.payload["old_key_id"], None)
             keys[event.payload["new_key_id"]] = event.payload["new_public_key"]
     return keys
+
+
+def _formed_registry(journal: Journal, workspace) -> object:
+    """The body's registry as retained: built-ins plus every capability Genesis formed (constructed,
+    acquired, built), re-pinned and re-checked as at restart, with nothing written to the ledger."""
+    from greg.cognition.cortex import registry_view
+    from greg.genesis import Genesis
+    registry = registry_view(journal)
+    Genesis(journal=journal, registry=registry, workspace_root=Path(workspace)).restore(record=False)
+    return registry
 
 
 def appraise(request: dict) -> dict:
@@ -122,11 +133,13 @@ def appraise(request: dict) -> dict:
                                         secrets=None, manifest=manifest,
                                         deliver_root=Path(request["deliver_root"])
                                         if request.get("deliver_root") else None,
-                                        journal=journal if cap in ("memory.precedents", "artifact.inspect", "worker.appraise") or cap.startswith(("cognition.", "pipeline.")) else None,
+                                        journal=journal if cap in ("memory.precedents", "artifact.inspect", "worker.appraise") or cap.startswith(("cognition.", "pipeline.", "institution.")) else None,
                                         mission_id=mid,
                                         artifact_root=Path(request["artifact_root"])
                                         if request.get("artifact_root") else None,
-                                        target=check["sensor"].get("target", ""))
+                                        target=check["sensor"].get("target", ""),
+                                        capability_registry=_formed_registry(journal, request["workspace"])
+                                        if cap.startswith("cognition.") else None)
                 try:
                     from greg.pipeline import resolve
                     bound_params, _ = resolve(check["sensor"].get("params", {}), journal, mid)

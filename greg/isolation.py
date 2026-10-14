@@ -95,6 +95,11 @@ def confine(root, public_files):
                 grants[path] = grants.get(path, 0) | READ_FILE
     interpreter = Path(sys.executable).resolve(strict=True)
     grants[interpreter] = READ_FILE | EXECUTE
+    # A child started from a virtual environment reads its interpreter configuration first; without it
+    # startup falls back to the base prefix and fails in ``site``. One public config file, read-only.
+    venv_config = Path(sys.prefix) / "pyvenv.cfg"
+    if sys.prefix != sys.base_prefix and venv_config.is_file():
+        grants[venv_config.resolve()] = READ_FILE
     for name in ("/etc/ld.so.cache", "/dev/null", "/etc/ssl/certs/ca-certificates.crt"):
         path = Path(name)
         if path.exists():

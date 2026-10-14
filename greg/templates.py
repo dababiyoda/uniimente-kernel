@@ -754,3 +754,164 @@ def plan_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = Fal
 
 
 TEMPLATES["plan-in-words"] = plan_in_words
+
+
+def constructed_question(*, function: str, params: dict, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """A question for a function GREG has no engine for, answered by a capability it constructs.
+
+    Genesis reduces the question onto an engine it can already certify (maximum flow, linear
+    programming), acquiring that engine first if needed, qualifies the construction on the
+    function's own brute-force oracle through the real engine, and asks you to attach it unless
+    this signed mission pre-authorizes a read-only attach. Every answer carries a certificate in
+    your problem's own terms (for staffing: the orders and the only workers who could serve them).
+    Read-only: nobody is assigned, scheduled or paid.
+    """
+    from greg.genesis import CATALOG
+    from greg.recombine import REDUCTIONS, chain
+
+    found = chain(function, CATALOG)
+    if found is None:
+        raise ValueError(f"GREG has no reduction chain for {function!r}; known: {sorted(REDUCTIONS)}")
+    path, engine = found
+    REDUCTIONS[function].normalize(params)          # refuse a malformed question before it is signed
+    digest = hashlib.sha256(json.dumps([function, params], sort_keys=True).encode()).hexdigest()[:10]
+    step = {"function": function, "params": params, "target": f"cognition:{function}-{digest}"}
+    spec = {
+        "mission_id": f"m:constructed-{digest}",
+        "founder_expression": f"{function}: {json.dumps(params, sort_keys=True)[:3000]}",
+        "intended_effect": f"{REDUCTIONS[function].description}, with a certificate GREG checks itself",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "certified-answer", "description": "an answer whose optimality (or "
+                            "impossibility) GREG proves in the problem's own terms, independent of the engine",
+                            "sensor": step, "predicate": {"op": "equals", "field": "certified", "value": True}}],
+        "strategies": [{"action_id": "solve", **step, "advances": ["certified-answer"],
+                        "rationale": "construct the function by certified reduction (read-only): "
+                                     + " -> ".join([r.function for r in path] + [engine])}],
+        "light_cone": {"capabilities": [f"composed.{function}.*", f"acquired.{engine}.*"],
+                       "targets": ["cognition:*"], "max_consequence_class": "read_only", "budget_usd": 0,
+                       "horizon": _horizon(horizon_days)},
+    }
+    if auto_attach:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["constructed-question"] = constructed_question
+
+
+FIRST_MISSION_WORDS = re.compile(r"\b(first mission|where (?:am i|i am) (?:trying to go|going)|highest[- ]value "
+                                 r"(?:work|opportunit)|what should (?:greg|you) (?:work on|do) next)\b", re.I)
+
+
+def first_mission(*, kernel_root: str, effort_budget: int = 8, run: str | None = None, horizon_days: float = 1,
+                  founder_expression: str | None = None) -> dict:
+    """The Founder's First Mission: one signed mission across Mind, Hands, Foundry and appraisal.
+
+    survey (read the authorized sources, reconstruct the objective, route founder-only items to the
+    decision queue) -> select (``cognition.dp_knapsack``: exact selection under the signed effort
+    budget, with its own verifier) and compose (which existing machinery advances each candidate,
+    and what is missing) -> dossier (one private deliverable to the founder's delivery root) ->
+    ``institution.appraise`` as the success sensor: an independent re-survey, a different exact
+    algorithm and a greedy replay. Steps hand typed outputs to each other through ``bind`` edges,
+    so nobody relays data by hand and a crash resumes from retained receipts without repeating
+    a completed step. Nothing is sent, published, spent or merged.
+    """
+    if not isinstance(effort_budget, int) or isinstance(effort_budget, bool) or not 1 <= effort_budget <= 200:
+        raise ValueError("effort_budget is an integer in [1, 200]")
+    root = str(Path(kernel_root).expanduser().resolve())
+    run = run or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M")
+    digest = hashlib.sha256(json.dumps([root, effort_budget, run]).encode()).hexdigest()[:10]
+    mission_id = f"m:first-mission-{digest}"
+    base = {"kernel_root": root}
+    return {
+        "mission_id": mission_id,
+        "founder_expression": founder_expression or (
+            "Understand where I am trying to go, find the highest-value unfinished work you can advance now, "
+            "compare the ways to do it, produce something useful, verify it and tell me what is next."),
+        "intended_effect": "one private dossier whose objective, selection, composition and next step an "
+                           "independent appraisal re-derives from the sources",
+        "priority": 70, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "dossier-verified",
+                            "description": "an independent re-survey and a different exact algorithm reproduce the "
+                                           "dossier's objective, optimal selection and baseline",
+                            "sensor": {"capability": "institution.appraise", "target": "institution:first-mission",
+                                       "params": base},
+                            "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}}],
+        "strategies": [
+            {"action_id": "survey", "capability": "institution.survey", "target": "institution:first-mission",
+             "params": {**base, "effort_budget": effort_budget}, "advances": ["dossier-verified"],
+             "rationale": "read GREG's own path and Foundry contract; founder-only items go to the decision queue"},
+            {"action_id": "select", "capability": "cognition.dp_knapsack", "target": f"cognition:first-mission-{digest}",
+             "params": {"problem_id": f"first-mission-{digest}", "operation": "knapsack_01_select"},
+             "bind": [{"param": "data", "from": {"action_id": "survey", "field": "knapsack"}, "type": "object"}],
+             "advances": ["dossier-verified"],
+             "rationale": "exact 0/1 selection under the signed effort budget; the genome verifies itself"},
+            {"action_id": "compose", "capability": "institution.compose", "target": "institution:first-mission",
+             "params": dict(base),
+             "bind": [{"param": "candidates", "from": {"action_id": "survey", "field": "candidates"}, "type": "array", "max_bytes": 65536}],
+             "advances": ["dossier-verified"],
+             "rationale": "start from existing capabilities and Foundry systems; name each CapabilityDeficit"},
+            {"action_id": "dossier", "capability": "institution.dossier", "target": "deliver:first-mission",
+             "params": {},
+             "bind": [{"param": "survey", "from": {"action_id": "survey", "field": ""}, "type": "object", "max_bytes": 65536},
+                      {"param": "selection", "from": {"action_id": "select", "field": "output"}, "type": "object", "max_bytes": 65536},
+                      {"param": "composition", "from": {"action_id": "compose", "field": ""}, "type": "object", "max_bytes": 65536}],
+             "advances": ["dossier-verified"],
+             "rationale": "one private deliverable to the founder; nothing is sent, published, spent or merged"}],
+        "light_cone": {"capabilities": ["institution.survey", "institution.compose", "institution.dossier",
+                                        "institution.appraise", "cognition.dp_knapsack"],
+                       "targets": ["institution:*", "cognition:*", "deliver:*"],
+                       "max_consequence_class": "internal_write", "budget_usd": 0,
+                       "horizon": _horizon(horizon_days)},
+    }
+
+
+TEMPLATES["first-mission"] = first_mission
+
+
+def compiled_question(*, problem_id: str, data: dict, geometry: dict | None = None, objective: str = "",
+                      allow_construction: bool = False, horizon_days: float = 2) -> dict:
+    """A problem for the Competency Compiler (Layer 5), which may need a capability GREG constructs.
+
+    The Mind recognizes the problem's shape. When no admitted method fits but a reduction does, its
+    CapabilityDeficit names that function; Capability Genesis constructs it over an engine it already
+    certifies and, only if you sign ``allow_construction``, attaches it read-only inside this mission's
+    light cone (the construction and its engine are named there). The Mind then answers with the
+    construction's problem-level certificate. Without that signature GREG asks you to attach.
+    Read-only: nobody is assigned, scheduled or paid.
+    """
+    from greg.genesis import CATALOG
+    from greg.recombine import chain, fits
+
+    if not isinstance(problem_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,63}", problem_id):
+        raise ValueError("problem_id must be 1-64 letters, digits or _.:-")
+    params = {"problem_id": problem_id, "compile": {"geometry": dict(geometry or {"geometry": "optimization"}),
+                                                    "data": data}}
+    if objective:
+        params["compile"]["geometry"].setdefault("objective", objective[:300])
+    target = f"cognition:{problem_id}"
+    capabilities = ["cognition.solve"]
+    if allow_construction:
+        for reduction in fits(data):
+            found = chain(reduction.function, CATALOG)
+            if found:
+                capabilities += [f"composed.{reduction.function}.*", f"acquired.{found[1]}.*"]
+    spec = {
+        "mission_id": f"m:compiled-{problem_id}"[:96],
+        "founder_expression": objective or f"answer {problem_id} with the smallest competent method",
+        "intended_effect": "an answer from the smallest competent method, with typed evidence GREG checks itself",
+        "priority": 60, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "answered", "description": "a competent method answered with its evidence",
+                            "sensor": {"capability": "cognition.solve", "target": target, "params": params},
+                            "predicate": {"op": "equals", "field": "state", "value": "ANSWERED"}}],
+        "strategies": [{"action_id": "compile", "capability": "cognition.solve", "target": target, "params": params,
+                        "advances": ["answered"], "rationale": "compile the problem's geometry to a competent method"}],
+        "light_cone": {"capabilities": list(dict.fromkeys(capabilities)), "targets": ["cognition:*"],
+                       "max_consequence_class": "read_only", "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+    if allow_construction:
+        spec["auto_attach"] = {"max_consequence_class": "read_only"}
+    return spec
+
+
+TEMPLATES["compiled-question"] = compiled_question

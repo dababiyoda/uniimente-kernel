@@ -2,6 +2,40 @@
 
 # Founder Intent Ledger
 
+## Whole-machine convergence and the Founder's First Mission — 2026-10-14
+
+The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`.
+
+- The Mind line is the canonical base. #160 and #132 are joined, and #132's Foundry modules keep the Mind-line modules as registered alternates behind one dispatch rule.
+- #159 is ported. #157's worker isolation is the named next extraction.
+- The executable Founder's First Mission and the five-question Mission Control are on the one mission path. `greg rehearse` runs both without credentials.
+- State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
+
+## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
+
+`INTENT-20261013-FRONTIER-LEAP-RECOMBINE` ([record](intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json), [full directive, verbatim](intent/sources/FRONTIER-LEAP-DIRECTIVE-2026-10-13-source.md)): stop treating Capability Genesis as part replacement and make it construct new, integrated capabilities from harvested mechanisms, on GREG's one path. Founder instructions A-D are preserved verbatim in the record's `founder_quotations` and in the source file. They are read under INTENT-0030. "Meniscus", "impermeable shield" and "systemic dominance" keep the 2026-10-07 executable interpretation. They authorize no crossing of legal boundaries, no coercion and no immunity from shutdown.
+
+What was built:
+
+- **Construction route.** `greg/recombine.py` adds certificate-carrying reductions. `greg/genesis.py` gains a `constructed` rung between `verified_detached` and `builder`. A function with no catalog entry is reduced onto an engine GREG already qualifies (maximum flow, LP). The engine is itself acquired by the same ladder when missing. Every answer is re-proved in the original problem's terms.
+- **First functions.** `assignment.staffing` (with a Hall/Koenig bottleneck), `assignment.matching` (chained through staffing) and `project.crash` (time-cost LP; an impossible deadline is proved without any engine).
+- **Mechanism Cards.** Every reduction carries a card with all twenty directive fields, searchable and deduplicated by content digest.
+- **Authority.** Constructions are read-only. They attach only by founder command or a signed read-only `auto_attach`. They stop when their engine is detached or quarantined, are quarantined when their reduction code changes, and are re-formed over a different engine when the engine lies.
+
+Reconciliation: no third mission engine, router or genesis was created. Kernel PR #129's `egregore/genesis.py` is the standing-cognition-slot loop (proposer/evaluator parts). `greg/genesis.py` stays the canonical mission-capability genesis. Convergence of the two is recorded as open work, and nothing was deleted.
+
+Evidence: [README](evidence/greg-recombine/2026-10-13/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+Progress 2026-10-14 ([evidence](evidence/greg-mind-constructs/2026-10-14/README.md)). The Mind and Capability Genesis now close one loop on the canonical path:
+
+1. The Competency Compiler recognizes a problem whose inputs fit a reduction. Its deficit names that constructible function, not an unbuildable geometry label.
+2. Genesis constructs it under the mission's signed scope.
+3. The Mind answers with the construction's certificate.
+4. The independent appraiser re-derives the answer through a read-only restore and returns VERIFIED.
+5. A construction that faults while the Mind uses it is repaired by the same two-strike mechanism.
+
+Unsigned missions ask first for the engine, then for the construction, and never self-attach. Authority delta: none.
+
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
 
 `INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.
@@ -39,6 +73,15 @@ Progress 2026-10-13 (measured, frozen, negative results kept):
 `INTENT-20261001-greg-seed-genome` ([record](intent/INTENT-20261001-greg-seed-genome.json), [verbatim source](intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md), [requirement map](collaboration/requirements-greg-seed-genome-20261001.json), [intents SG-001 to SG-012](collaboration/intents-greg-seed-genome-20261001.json), [deliberation](collaboration/deliberation-greg-seed-genome-20261001.json), [ADR](decisions/ADR-20261001-greg-seed-genome.md)): GREG recognizes a problem's geometry, recruits the smallest competent method, produces typed evidence, respects authority and settles competence from outcomes. The founder's goal-set words are kept verbatim: "meniscus" is translated as the frontier of the verified envelope, "impermeable shield" as layered prevention and verification, "systemic dominance" as superior lawful capability (SG-002). Control over people, resistance to shutdown and promises of perfection are prohibited (SG-003). State: active. The seed is implemented and integrated through `cognition.solve`, and survives `kill -9` with one settlement. The frozen comparison failed once (v0.2 GAIN_ABSENT, one hard failure, fixed in 0.2.1) and passed on fresh samples (v0.3 GAIN_VERIFIED_AGAINST_RUN_BASELINES against the static router; the gain is concentrated in one family; model arms NOT_RUN). Open founder decisions: merge, and whether high privacy harm is a hard gate (SG-012). Authority delta: none. VEPMC: 0.
 
 Correction absorbed the same day (comment on #143; draft #144, `INTENT-20261001-open-source-mechanism-harvest`): Capability Genesis forms `graph.shortest_path`, `graph.max_flow` and `lp.optimize` from installed open-source packages (NetworkX, SciPy, OR-Tools) on a Mechanism Card, accepts answers only on GREG's own certificate, and leaves attach with the founder. VEPMC stays the required device proof but no longer stops development. Evidence: `tests/evidence/greg-open-source-genesis-2026-10-01/`. Authority delta: none.
+
+Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSUE-2026-10-13-source.md)): byte-identical text with the new opening line "Build this prompt meet and exceed all in this prompt:". It is applied by closing the requirement map's section residuals on the canonical path:
+
+- **§9:** selective-disclosure evidence packages, built from retained receipts. They use the salted-hash disclosures of RFC 9901, include every same-input receipt, and append institutional responses rather than editing them in. `greg cognition package` exports one read-only; nothing is sent.
+- **§5:** a measured characterization harness covering latency, error correction against self-consistent lies, a problem-space ladder and invariance, with Wilson intervals.
+- **§13 and §15:** the verifier cross-checks and evidence-backed legitimacy in #161.
+- **§12:** wiring the budget controller into a runtime optional step is deferred until the next freeze, because the frozen evaluations pin `cortex.py`.
+
+Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
 
 ## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
 

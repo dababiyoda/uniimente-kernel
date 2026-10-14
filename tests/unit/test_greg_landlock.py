@@ -99,3 +99,36 @@ def test_landlock_inherits_into_exact_reviewed_dsl_and_packaging_children(tmp_pa
     assert out["result"]["blocked_at"] == "ratification"
     built = foundry_bridge.apply({"system": 53, "op": "build"}, context(tmp_path))
     assert built["execution"]["filesystem"] == "landlock"
+
+
+def test_confined_worker_can_import_installed_packages_and_runtime_libraries_but_not_private_files(tmp_path):
+    """CI regression (librt.so.1) and Debian dist-packages: runtime files only, private material still denied."""
+    require_support()
+    scope = tmp_path / "stage"; scope.mkdir()
+    private = tmp_path / "body-key.fixture"; private.write_text("synthetic-private-material")
+    code = Path(__file__).resolve().parents[2]
+    script = """
+import importlib.util,json,sys
+from pathlib import Path
+from greg.isolation import RUNTIME_LIBRARIES, confine
+root,private=map(Path,sys.argv[1:])
+libs=[p.resolve() for b in (Path('/lib'),Path('/usr/lib')) for s in ('','x86_64-linux-gnu/','aarch64-linux-gnu/')
+      for p in b.glob(s+'librt.so*') if p.is_file()]
+confine(root,[])
+out={'librt':[len(p.read_bytes())>0 for p in libs]}
+spec=importlib.util.find_spec('mcp')
+if spec is not None:
+    import mcp
+    out['mcp_imported']=True
+try:
+    private.read_text(); out['private_denied']=False
+except PermissionError:
+    out['private_denied']=True
+print(json.dumps(out))
+"""
+    env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONPATH": str(code), "PYTHONDONTWRITEBYTECODE": "1"}
+    result = subprocess.run([sys.executable, "-s", "-c", script, str(scope), str(private)], cwd=code, env=env,
+                            capture_output=True, text=True, timeout=30, close_fds=True)
+    assert result.returncode == 0, result.stderr
+    observed = json.loads(result.stdout)
+    assert all(observed["librt"]) and observed["private_denied"] is True

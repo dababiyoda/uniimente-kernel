@@ -16,6 +16,8 @@ import sys
 READ_FILE, READ_DIR = 1 << 2, 1 << 3
 WRITE_FILE, EXECUTE, TRUNCATE = 1 << 1, 1, 1 << 14
 ALL_FS = (1 << 15) - 1
+RUNTIME_LIBRARIES = ("libc.so*", "libm.so*", "librt.so*", "libdl.so*", "libpthread.so*", "libutil.so*",
+                     "libgcc_s.so*", "libstdc++.so*", "libz.so*", "libffi.so*")
 
 
 class IsolationError(RuntimeError):
@@ -69,6 +71,24 @@ def confine(root, public_files):
     for directory in (prefix / "lib", Path(sys.prefix).resolve() / "lib"):
         if directory.is_dir():
             grants[directory] = READ_FILE | READ_DIR
+    # The interpreter's own installed-package trees can sit outside <prefix>/lib (Debian's
+    # /usr/local/lib/pythonX.Y/dist-packages). User-site, the repository and the store stay excluded.
+    import site
+    import sysconfig
+    user_site = Path(site.getusersitepackages()).resolve()
+    for directory in {*site.getsitepackages(), sysconfig.get_paths()["purelib"], sysconfig.get_paths()["platlib"]}:
+        directory = Path(directory).resolve()
+        if directory.is_dir() and not any(directory == p or p in directory.parents or directory in p.parents
+                                          for p in (user_site, code, root)):
+            grants[directory] = grants.get(directory, 0) | READ_FILE | READ_DIR
+    # C runtime libraries an extension module imported after confinement may link against (CI:
+    # librt.so.1). Exact public library files, never a whole host library directory.
+    for base in (Path("/lib"), Path("/lib64"), Path("/usr/lib"), Path("/usr/lib64")):
+        for sub in ("", "x86_64-linux-gnu/", "aarch64-linux-gnu/"):
+            for name in RUNTIME_LIBRARIES:
+                for path in base.glob(sub + name):
+                    if path.is_file():
+                        grants[path.resolve()] = grants.get(path.resolve(), 0) | READ_FILE
     # Already-loaded ELF dependencies are explicit public runtime files.
     # No /proc hierarchy is granted; this read happens before confinement.
     for line in Path("/proc/self/maps").read_text().splitlines():

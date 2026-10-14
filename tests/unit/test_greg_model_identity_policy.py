@@ -164,6 +164,16 @@ def test_a_response_naming_no_model_is_unknown_not_the_requested_model():
     assert routed["served_model"] is None and routed["substituted"] is None
 
 
+def test_the_openai_route_does_not_invent_a_served_model_either():
+    def responses(model):
+        return NS(create=lambda **kw: NS(output_text="hi", output=[], status="completed", model=model,
+                                         usage=NS(input_tokens=10, output_tokens=10)))
+    route = models.OpenAIRoute("k", client=NS(responses=responses(None)))
+    assert route.complete("s", "u")["served_model"] is None              # unknown, not "gpt-5.5"
+    route = models.OpenAIRoute("k", client=NS(responses=responses("gpt-5.5-2026-08-01")))
+    assert route.complete("s", "u")["served_model"] == "gpt-5.5-2026-08-01"
+
+
 def test_a_route_that_never_checks_identity_reports_substituted_as_unknown():
     result = models.ModelRouter([Witness()]).complete("s", "u")
     assert result["substituted"] is None                      # not checked is not the same as "not substituted"

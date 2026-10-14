@@ -353,7 +353,8 @@ class OpenAIRoute:
         cost = None
         if usage is not None and self.price:
             cost = (usage.input_tokens * self.price[0] + usage.output_tokens * self.price[1]) / 1e6
-        return {"text": text, "cost_usd": cost, "served_model": getattr(response, "model", None) or self.model}
+        # the provider's report or None: a missing report is not filled in with the model we asked for
+        return {"text": text, "cost_usd": cost, "served_model": getattr(response, "model", None) or None}
 
 
 class OllamaRoute:

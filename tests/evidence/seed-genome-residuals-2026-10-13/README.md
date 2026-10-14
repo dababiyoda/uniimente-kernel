@@ -193,6 +193,14 @@ three re-runs ran. Timings come from this container and vary by machine; the tes
   - `test_greg_mind_convergence.py`: 11 passed. The reconciliation map's coverage test diffs fixed lineage heads,
     so carried files do not enter it;
   - mutants (`port-mutants.log`): 24 of 24 caught. That is the 21 from #163 plus 3 for the formed-route gate.
+  - full suite at `cf87e67` (`port-full-suite.log`): 3716 passed, 5 failed, 21 skipped. The five are the
+    environmental Landlock tests, which fail identically at the pristine #179 head `ccd38a2` with this interpreter
+    (`port-environment-failures-at-base.log`).
+  - **An earlier full run had a sixth failure, which this branch's own editing caused:**
+    `test_genomes_library.py::test_a_re_admission_freezes_its_own_fresh_seeds_and_refuses_spent_ones`. It
+    freezes a code closure that hashes all of `greg/cognition`, then recomputes it in the same test. During that
+    run, `compiler.py` in the same worktree was being edited for the formed-route fix and swapped for its
+    reproduction. The test passes on the clean tree, and the rerun above was made with nothing edited.
 - **Lineage:** results on this branch are evidence for the converged branch at the cited commit only. Run names
   are cited with their lineage and freeze commit. No frozen artifact of either lineage is renamed, regenerated or
   superseded.

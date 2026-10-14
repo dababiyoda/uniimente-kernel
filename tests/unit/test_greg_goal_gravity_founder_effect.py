@@ -117,3 +117,39 @@ def test_a_refused_ask_is_settled_until_the_founder_resumes_the_mission_then_ask
     asks = world.w2_requests()
     assert len(asks) == 1 and asks[0]["kind"] == "APPROVAL" and asks[0]["evidence"]["goal_id"] == gid
     assert not world.events("goal_gravity.fault")
+
+
+# -- finding 2: permitted preparation while the consequential decision is open --------------------------
+
+def test_a_pulled_mission_awaiting_an_approval_repairs_in_cone_and_never_runs_the_awaited_move(world, fast):
+    world.start()
+    rid, _ = expected_w2_request(world)
+    world.tick(6)
+    assert world.book().missions[MID].blocker["request_id"] == rid      # the consequential ask is open
+    (world.ws / "c.txt").write_text("damaged")
+    world.ingest("ops", "c.txt looks broken")
+    out = world.tick(5, step=120.0)
+    assert any(MID in (x["gravity"].get("missions_pulled") or []) for x in out)
+    assert (world.ws / "c.txt").read_text() == "ok"                    # in-cone repair through the Gate
+    assert not (world.ws / "d.txt").exists()                           # the awaited move never runs unapproved
+    assert [r["request_id"] for r in world.w2_requests()] == [rid]     # nothing new is asked
+    book = world.book()
+    assert book.missions[MID].blocker["request_id"] == rid and rid not in book.answers
+    prepared = world.events("mission.prepared")
+    assert prepared and prepared[-1]["awaiting"] == rid and book.missions[MID].pull is None   # the pull was served
+    assert not world.events("goal_gravity.fault")
+
+
+# -- missions without goals behave exactly as before ----------------------------------------------------
+
+def test_a_mission_without_a_goal_still_only_waits_on_its_decision(world, fast):
+    world.submit("MISSION", world.mission_spec(), "a.json")
+    world.tick(6)
+    book = world.book()
+    assert book.missions[MID].blocker["type"] == "decision" and getattr(book.missions[MID], "pull", None) is None
+    (world.ws / "c.txt").write_text("damaged")
+    world.ingest("ops", "c.txt looks broken")
+    world.tick(4, step=600.0)
+    assert (world.ws / "c.txt").read_text() == "damaged"     # no goal: no pull, no preparation, as before
+    assert not world.events("mission.prepared") and _pulls(world) == 0
+    assert world.events("goal") == []

@@ -15,14 +15,14 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from egregore.attention import ANSWER_RECORD, ASK_RECORD
-from egregore.contracts import ContractError
+from egregore.contracts import ContractError, digest
 from egregore.goals import GoalRegistry, GoalSpec, InterventionSpec, PlanNode, WakeCondition
 from egregore.gravity import GoalGravityLoop
 from greg import dataplane, goal_gravity as gg, path as devpath
 from greg.authority import AuthorityOffice
 from greg.body import Body, status
 from greg.founder import generate_founder_key, load_founder_key, sign_command
-from greg.journal import iso
+from greg.journal import SOURCE, iso
 from greg.missions import MissionBook
 from provenance.ledger import sha256_json
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, workspace, write_strategy
@@ -537,13 +537,19 @@ def test_an_executor_claim_never_becomes_goal_evidence(world, fast):
     world.tick(3)
     failing = next(o for o in reversed(world.events("mission.observed")) if o["check_id"] == "d" and not o["passed"])
     with world.body() as b:                                  # an in-process claim that d passed, citing that receipt
-        b.journal.record("mission.observed", {**failing, "passed": True, "detail": "trust me"}, key="forged-pass")
+        forged = b.journal.record("mission.observed", {**failing, "passed": True, "detail": "trust me"},
+                                  key="forged-pass")
     world.ingest("ops", "re-check")
     world.tick(2)
     with world.body() as b:
         loop = gg.binding_for(b).loop
         belief = loop.world.belief(MID, "d")
-        assert belief.value is False and belief.trust_level == "untrusted"
+        assert belief.value is False                         # never the claimed pass
+        # The claim's own experience: the predicate recomputed from its receipt (False), untrusted. (The goal's
+        # pull may since have had the waiting mission re-observe d, so the latest belief can be a genuine read.)
+        claim_signal = digest({"kind": "egregore-signal", "source": SOURCE, "source_event_id": forged.event_id})
+        claim = next(e for e in loop.world.experiences() if e.signal_id == claim_signal)
+        assert [(o["value"], o["trust_level"]) for o in claim.observations] == [(False, "untrusted")]
         assert loop.registry.state(gid).status != "completed"
         assert b.ledger.by_type(GoalGravityLoop.VERIFICATION_RECORD) == []
 

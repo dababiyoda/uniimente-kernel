@@ -1000,8 +1000,9 @@ def projection(journal, *, closure: bool = True) -> dict:
         "notices": [e.payload for e in journal.replay("goal.notice")][-10:],
         "faults": [e.payload for e in journal.replay("goal_gravity.fault")][-5:],
         "execution_authority": "none", "executes": False,
-        "how_it_acts": "an awake goal pulls its signed missions' next observation forward; the missions do all "
-                       "execution through the AuthorityOffice and the Consequence Gate",
+        "how_it_acts": "an awake goal pulls its signed missions' next observation forward (a mission waiting on "
+                       "your decision then re-observes and repairs its other checks inside its cone); the missions "
+                       "do all execution through the AuthorityOffice and the Consequence Gate",
         "completion_tier": "observation: attributed ledger observations recomputed from Gate receipts and "
                            "separate-process appraisals; not external verification",
     }

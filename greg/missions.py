@@ -288,6 +288,9 @@ class MissionState:
     actions_done: int = 0
     setpoints_reached: int = 0
     pending_effect: dict = field(default_factory=dict)  # action_id -> checks it should change
+    # A persistent goal's pull (greg/goal_gravity.py) not yet served while the mission waits on an APPROVAL:
+    # only ``observe_now`` sets it, so a mission no goal is bound to never has one.
+    pull: str | None = None
 
     @property
     def mission_id(self):
@@ -364,6 +367,8 @@ class MissionBook:
                 m.status = data["state"]
         elif kind == "mission.observed":
             m.observations[data["check_id"]] = data
+            if m.blocker is None:     # an observation of the unblocked loop serves any pending goal pull
+                m.pull = None
             if data["passed"]:  # drift later -> previously ineffective strategies may be tried again
                 for aid in [a for a, r in m.failed.items() if r.startswith(f"executed but {data['check_id']} ")]:
                     m.failed.pop(aid)
@@ -399,6 +404,7 @@ class MissionBook:
             m.blocker = data["blocker"]
         elif kind == "mission.unblocked":
             m.blocker = None
+            m.pull = None
         elif kind == "mission.setpoint":
             m.setpoints_reached += 1
             m.rung = data["next_rung"]
@@ -406,6 +412,10 @@ class MissionBook:
             m.status = "ACHIEVED"
         elif kind == "mission.schedule":
             m.next_observe_at = data["next_observe_at"]
+            if "cause" in data:       # a persistent goal pulled this observation forward (observe_now)
+                m.pull = data["next_observe_at"]
+        elif kind == "mission.prepared":
+            m.pull = None             # the pull was served while the mission waited on the founder
         elif kind == "mission.strategy_excluded":
             m.excluded[data["action_id"]] = data["reason"]
         elif kind == "decision.requested":
@@ -506,11 +516,18 @@ class MissionEngine:
 
         Timing only: scope, light cone, budget and strategies are unchanged, and the observation
         still goes through the Gate. A paused or terminal mission is the founder's and is never
-        touched; a mission already due needs no pull."""
+        touched; a mission already due needs no pull. A mission waiting on the founder's answer to
+        an APPROVAL may be pulled once per wait cycle: it then re-observes and repairs its other
+        checks inside its cone while the decision stays open (``_prepare``); the asked scope itself
+        still runs only after a signed approve."""
         self.book.rebuild()
         m = self.book.missions.get(mission_id)
-        if m is None or m.status in TERMINAL or m.paused or not m.next_observe_at or \
-                datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")) <= now:
+        if m is None or m.status in TERMINAL or m.paused:
+            return False
+        if self._awaiting_approval(m):
+            if m.pull is not None:
+                return False
+        elif not m.next_observe_at or datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")) <= now:
             return False
         self.journal.record("mission.schedule", {"mission_id": mission_id, "next_observe_at": iso(now),
                                                  "cause": str(cause)[:300]},
@@ -681,6 +698,48 @@ class MissionEngine:
                             key=[m.mission_id, "schedule", at])
         m.next_observe_at = at
 
+    def _awaiting_approval(self, m: MissionState) -> bool:
+        """Blocked on the founder's still-open answer to an APPROVAL for one exact strategy scope."""
+        b = m.blocker or {}
+        rid = b.get("request_id")
+        return (b.get("type") == "decision" and bool(b.get("action_id")) and rid not in self.book.answers
+                and rid not in self.book.withdrawn and (self.book.requests.get(rid) or {}).get("kind") == "APPROVAL")
+
+    def _inside_cone(self, m: MissionState, s: dict, now: datetime) -> bool:
+        """A static strategy whose exact scope the mission's signed light cone admits now (no decision needed)."""
+        try:
+            return not strategy_scope(m, self.registry.manifests, s["action_id"], now=now)["outside_cone"]
+        except MissionError:
+            return False
+
+    def _prepare(self, m: MissionState, now: datetime) -> dict:
+        """Permitted preparation while the founder decides (a goal pulled this mission; Mission F).
+
+        The mission re-observes its current checks through the Gate and pursues the failing checks the
+        awaited strategy does not advance, with in-cone static strategies only. The decision stays open
+        and its blocker stays in place; nothing new is asked. The pull stays pending while a repair
+        awaits its re-observation and is served (``mission.prepared``) once nothing more can be done."""
+        pending = m.blocker["action_id"]
+        rid = m.blocker["request_id"]
+        failing, evidence = self._observe(m, now)
+        if failing is None:                  # the sensor itself needs a capability or a decision
+            return {"state": "BLOCKED", "blocker": m.blocker}
+        self.book.rebuild()
+        m = self.book.missions[m.mission_id]
+        self._record_routing_outcomes(m)
+        awaited = next((set(s["advances"]) for s in m.spec["strategies"] if s["action_id"] == pending), set())
+        other = failing - awaited - set(self.sensor_errors)
+        if other:
+            done = self._pursue(m, now, other, evidence, prepare_for=pending)
+            if done.get("state") == "ACTED":
+                return {"state": "PREPARING", "awaiting": rid, "action": done["action"], "repairing": sorted(other)}
+            if done.get("state") not in ("NOTHING_TO_PREPARE", "REPLANNING"):
+                return done                  # e.g. an uncertain outcome now needs reconciliation
+        self.journal.record("mission.prepared", {"mission_id": m.mission_id, "awaiting": rid, "pull": m.pull,
+                                                 "still_failing": sorted(failing), "at": iso(now)},
+                            key=[m.mission_id, "prepared", m.pull])
+        return {"state": "WAITING", "blocker": m.blocker, "prepared": True, "still_failing": sorted(failing)}
+
     def _step(self, m: MissionState, now: datetime) -> dict:
         if m.status in TERMINAL:
             return {"state": m.status}
@@ -711,6 +770,8 @@ class MissionEngine:
         if m.blocker:
             resolved, why = self._blocker_resolved(m)
             if not resolved:
+                if m.pull is not None and self._awaiting_approval(m):
+                    return self._prepare(m, now)
                 return {"state": "WAITING", "blocker": m.blocker, "why": why}
             if m.blocker["type"] == "reconciliation":
                 answer = self.book.answers[m.blocker["request_id"]]["answer"]
@@ -1153,7 +1214,13 @@ class MissionEngine:
                      "expected_effect": "no money is spent; the mission tries " + (", ".join(others) or
                                                                                  "no other strategy") + " or asks again"}]}
 
-    def _pursue(self, m: MissionState, now: datetime, failing: set, evidence: list) -> dict:
+    def _pursue(self, m: MissionState, now: datetime, failing: set, evidence: list, *,
+                prepare_for: str | None = None) -> dict:
+        """Choose and run the highest-leverage strategy for the failing checks.
+
+        ``prepare_for`` (the strategy whose APPROVAL the founder has not answered yet) restricts the turn
+        to static strategies whose exact scope lies inside the cone: nothing is asked, nothing blocks,
+        and the awaited strategy itself never runs here."""
         candidates = []
         records = routing.track_record(self.journal)
         value = float(m.spec.get("value_per_check_usd", 1.0))
@@ -1162,6 +1229,8 @@ class MissionEngine:
         for index, s in enumerate(m.spec["strategies"]):
             gain = len(set(s["advances"]) & failing)
             if not gain or s["action_id"] in m.failed or s["action_id"] in m.excluded:
+                continue
+            if prepare_for is not None and (s["action_id"] == prepare_for or not self._inside_cone(m, s, now)):
                 continue
             if set(s.get("requires", [])) & failing:
                 held[s["action_id"]] = sorted(set(s["requires"]) & failing)
@@ -1180,6 +1249,8 @@ class MissionEngine:
             expected = routing.score(gain=gain, reliability_estimate=estimate,
                                      cost_usd=float(s.get("cost_usd", 0.0)), value_per_check_usd=value)
             candidates.append((-expected, route, index, s, estimate))
+        if not candidates and prepare_for is not None:
+            return {"state": "NOTHING_TO_PREPARE"}
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
             rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None,
@@ -1203,6 +1274,8 @@ class MissionEngine:
                             "alternatives": [{"action_id": c[3]["action_id"], "expected_value": round(-c[0], 4),
                                               "reliability": round(c[4], 4)} for c in candidates[1:6]]}
         manifest, adapter, _ = self._resolve(s)
+        if manifest is None and prepare_for is not None:
+            return {"state": "NOTHING_TO_PREPARE"}
         if manifest is None:
             if self._deficit(m, s, now, purpose=f"strategy {s['action_id']}") is None:
                 return {"state": "BLOCKED", "blocker": m.blocker}
@@ -1238,6 +1311,8 @@ class MissionEngine:
             record.update(metered_spend(manifest.capability_id, outcome.output, outcome.cost_usd))
         if bindings:
             record["bindings"] = bindings
+        if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION") and prepare_for is not None:
+            return {"state": "NOTHING_TO_PREPARE"}    # preparation never asks; nothing was dispatched
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             if outcome.scope_digest in m.rejected_scopes:
                 record["status"] = "REFUSED"

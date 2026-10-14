@@ -194,6 +194,68 @@ accepted by you. Your acceptance is what attests the buyer is real; the ledger c
 What no build session can supply: a real buyer and their consent, the legal operator, and your
 payment account.
 
+## The fourth node (N4): a procedure you ratify stops costing you attention
+
+After GREG closes the same kind of mission three times (for example three `word-limit` checks),
+it proposes a standard procedure. Nothing changes until you ratify it.
+
+```bash
+greg sop list                                   # proposals waiting for you, and their inputs
+greg sop show <procedure-id>                    # the evidence, the workflow, what may be pre-approved
+greg sop ratify <procedure-id> --pre-approve file-record --key ~/greg-founder.pem
+greg sop run <procedure-id> --set path="$HOME/drafts/essay.md" --set words=500 --key ~/greg-founder.pem
+greg sop trend                                  # before and after, per verified outcome
+```
+
+- **The workflow is learned only from what you signed.** It is rebuilt from the verified runs:
+  - anything that differed between them becomes an input (above, the file and the limit);
+  - checks, capabilities and the light cone must have matched in every run, or no procedure is
+    proposed.
+- **A run uses no model, and you still sign every run.**
+- **`--pre-approve` is limited.** It applies only to steps you approved in every one of those
+  runs, internal at most and free:
+  - the step then sits inside the cone you sign for each run, so it does not stop to ask you;
+  - contact with the outside world and any spend always ask.
+- **`greg path` measures N4 from the ledger.** It is met when three runs of the ratified
+  procedure:
+  - closed on this body, each appraised VERIFIED, none rejected or abandoned;
+  - asked you less per verified outcome than the runs that taught it;
+  - used no more model spend.
+
+## The sixth node (N6): one piece of work with a named person
+
+When work needs a person (a designer, a bookkeeper, a lawyer), sign a mission that names them, the
+relationship you arrange and pay yourself (`contract` or `employment`), the deliverable and the
+acceptance terms:
+
+```bash
+greg mission new shared-work --task "Design the GREG logo" --person "Dana Reyes" \
+  --relationship contract --function human.design_logo --deliverable logo.png \
+  --acceptance "a square PNG, 1024 px, two colors"
+```
+
+- GREG writes `handoff.md` first, with the task, the terms, a reference such as
+  `WORK-DESIGN-THE-GREG-LOGO` and the person's right to decline. **You** send it; GREG contacts,
+  hires and pays no one.
+- You save into the case folder, in order:
+  - `consent.txt`: their written agreement, carrying the reference;
+  - their deliverable;
+  - `review.txt`: `ACCEPT <reference>`, or what to revise (the mission waits).
+
+  GREG then writes `outcome.md`.
+- **A refusal is honored.** If they decline, save `declined.txt` with the reference:
+  - GREG withdraws its ask and never asks that step again;
+  - it asks you to choose: name someone else in a new mission, do it yourself, or abandon.
+
+`greg path` measures N6 from the ledger. It needs:
+
+- the handoff written before anything was asked;
+- every step of the person's, and your review, observed;
+- GREG's own actions internal only;
+- the closure appraised VERIFIED and accepted by you.
+
+Your acceptance is what attests that the person is real and the relationship lawful.
+
 ## 3. What "persistent" means on this Chromebook
 
 ChromeOS stops the Linux environment when you sign out and, by Google's design,

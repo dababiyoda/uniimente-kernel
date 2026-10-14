@@ -142,16 +142,27 @@
         "name": "founder interventions per verified outcome",
         "baseline": null,
         "target": "falling across 3+ closures",
-        "measured_by": null
+        "measured_by": "greg.path.sop_compounding"
       },
       "exit_evidence": [
         "sop.ratified for a procedure",
         "measured decline in interventions and cost per verified outcome on later closures"
       ],
       "evidence_source": "ledger",
-      "predicate": null,
-      "evidence_status": "unresolved",
-      "evidence_refs": []
+      "predicate": "sop_compounding",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/unit/test_greg_sop_compounding.py",
+        "greg/sop.py"
+      ],
+      "components": [
+        "proposal from three or more verified closures with the same capabilities and the same signed shape (greg/sop.py propose)",
+        "workflow = least general generalization of the signed specs: only parameter positions become slots; checks, operators, capabilities and the light cone must match in every run (greg/sop.py generalize)",
+        "founder-signed SOP_RATIFY; optional pre-approval only for steps approved in every verified run, internal and free",
+        "`greg sop run` instantiates a run with zero model calls; Alfonso signs every run",
+        "per-procedure trend of founder interventions, model calls and model cost per verified outcome, before and after ratification (greg/sop.py trend)"
+      ],
+      "smallest_next_build": "done agent-side: `greg sop show|ratify|run|trend`; tests/unit/test_greg_sop_compounding.py closes N4 on a booted, designated body. Remains founder-only: three verified closures of one real procedure on Body 1, your ratification, then three runs from it"
     },
     {
       "id": "N5",
@@ -182,15 +193,27 @@
         "name": "verified human+AI closures",
         "baseline": 0,
         "target": 1,
-        "measured_by": null
+        "measured_by": "greg.path.human_work_shared"
       },
       "exit_evidence": [
         "handoff, review and outcome recorded; human refusal honored as legitimate"
       ],
-      "evidence_source": "external",
-      "predicate": null,
-      "evidence_status": "unresolved",
-      "evidence_refs": []
+      "evidence_source": "ledger",
+      "predicate": "human_work_shared",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/unit/test_greg_shared_work.py",
+        "greg/templates.py",
+        "greg/missions.py"
+      ],
+      "components": [
+        "founder-signed shared-work mission naming the person, a contract or employment Alfonso arranges and pays, the deliverable and the acceptance terms (greg/templates.py shared_work)",
+        "GREG writes the handoff, including the person's right to decline, before anyone is asked anything",
+        "the person's agreement and deliverable and Alfonso's review each close one HUMAN_WORK ask only when observed in the case folder",
+        "a refusal observed through declined_if is honored: the ask is withdrawn, the step is never asked again, Alfonso chooses the next move (greg/missions.py)",
+        "GREG records the outcome; its own actions stay internal; Alfonso's acceptance attests the person and the relationship"
+      ],
+      "smallest_next_build": "done agent-side: `greg mission new shared-work`; tests/unit/test_greg_shared_work.py closes N6 on a booted, designated body and honors refusals. Remains founder-only: a real person, their consent, and the contract or employment you arrange and pay"
     },
     {
       "id": "N7",

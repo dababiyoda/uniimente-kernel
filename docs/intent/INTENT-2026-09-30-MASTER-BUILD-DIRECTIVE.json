@@ -49,9 +49,10 @@
         "tests/unit/test_greg_founder_asks.py",
         "tests/integration/test_greg_phone_asks.py",
         "tests/unit/test_greg_account_access.py",
-        "tests/unit/test_greg_human_work.py"
+        "tests/unit/test_greg_human_work.py",
+        "tests/unit/test_greg_shared_work.py"
       ],
-      "reality_status": "UNIT-TESTED and INTEGRATION-TESTED in a container; not FOUNDER-USED; the wording screen is lexical and incomplete (see failure_evidence)"
+      "reality_status": "UNIT-TESTED and INTEGRATION-TESTED in a container; not FOUNDER-USED; the wording screen is lexical and incomplete (see failure_evidence); the human-worker ask now runs a whole shared piece of work with a named person (N6: handoff, consent, deliverable, founder review, outcome, refusal honored), closed in container tests, not FOUNDER-USED"
     },
     {
       "section": 61,
@@ -62,7 +63,18 @@
         "N4",
         "N7"
       ],
-      "reality_status": "PROPOSED on greg/path.json; no business loop has run"
+      "reality_status": "ONE VERIFIED LOOP (N3) and REPEATABLE COMPETENCE (N4) have ledger predicates and machinery closed end to end in container tests on a booted, designated body: a business case in commercial order; a ratified SOP whose runs need no model and no approval stop for steps approved in every verified run. No real business loop or real SOP run has happened; REUSABLE CAPABILITIES -> SECOND VENTURE -> TRANSFER (N7) remain unbuilt",
+      "implementation_refs": [
+        "greg/business_loop.py",
+        "greg/templates.py",
+        "greg/sop.py",
+        "greg/path.py",
+        "greg/cli.py"
+      ],
+      "tests": [
+        "tests/unit/test_greg_business_case.py",
+        "tests/unit/test_greg_sop_compounding.py"
+      ]
     },
     {
       "section": 62,

@@ -358,7 +358,8 @@ def render_delivery(console: Console, name: str) -> bytes:
 def render_morning(console: Console) -> bytes:
     report = morning_projection(console.home)
     keep = {k: report[k] for k in ("q1_goals_worked_on", "q3_what_i_did", "q6_what_failed", "q7_surprises",
-                                   "q12_decisions_required", "q13_tonight", "metrics", "claims_not_made")}
+                                   "q9_learned", "q12_decisions_required", "q13_tonight", "metrics",
+                                   "claims_not_made")}
     return _page("GREG morning", "<p><a href=/>Back</a></p><section><h2>Morning report</h2><pre>"
                  + _e(json.dumps(keep, indent=1, default=str)) + "</pre></section>")
 

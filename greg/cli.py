@@ -70,6 +70,68 @@ def _drop(home: str, kind: str, body: dict, args) -> Path:
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 
+def _slot_value(declared: dict, assignment: str):
+    name, sep, raw = assignment.partition("=")
+    if not sep or name not in declared:
+        raise BodyError(f"--set takes SLOT=VALUE for one of {sorted(declared)}; got {assignment!r}")
+    kind = declared[name]["type"]
+    try:
+        value = {"integer": int, "number": float, "string": str}.get(kind, lambda v: {"true": True, "false": False}[v])(raw)
+    except (KeyError, ValueError):
+        raise BodyError(f"slot {name} takes a {kind}; got {raw!r}") from None
+    return name, value
+
+
+def _sop(home: str, args) -> dict:
+    """``greg sop``: reads retained history; ratify and run only drop founder-signed commands."""
+    from greg import sop
+    from greg.planner import authority_summary
+    from greg.capabilities import BUILTINS
+    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+        proposals = {e.payload["procedure_id"]: e.payload for e in journal.replay("sop.proposed")}
+        accepted = sop.ratified(journal)
+        measured = {p["procedure_id"]: p for p in sop.trend(journal)["procedures"]}
+        waiting = sop.awaiting_ratification(journal)
+    if args.sop_cmd in ("list", "trend"):
+        if args.sop_cmd == "trend":
+            return {"procedures": list(measured.values())}
+        return {"awaiting_ratification": waiting,
+                "ratified": [{"procedure_id": pid, "steps": r["record"]["steps"],
+                              "slots": sorted(r["record"].get("workflow", {}).get("slots", {})),
+                              "pre_approved": [s["action_id"] for s in r["record"].get("pre_approved_steps", [])],
+                              "compounding": measured.get(pid, {}).get("compounding", False),
+                              **({"why_not": measured[pid]["why_not"]} if measured.get(pid, {}).get("why_not") else {})}
+                             for pid, r in accepted.items()]}
+    pid = args.procedure_id
+    if pid not in proposals:
+        raise BodyError(f"no SOP {pid}; known: {sorted(proposals)}")
+    if args.sop_cmd == "show":
+        return {"proposal": proposals[pid], "ratified": accepted.get(pid, {}).get("record"),
+                "trend": measured.get(pid)}
+    if args.sop_cmd == "ratify":
+        if pid in accepted:
+            raise BodyError(f"{pid} is already ratified")
+        body = {"procedure_id": pid, **({"pre_approve": args.pre_approve} if args.pre_approve else {})}
+        offered = {s["action_id"] for s in proposals[pid].get("pre_approvable", [])}
+        if set(args.pre_approve) - offered:
+            raise BodyError(f"only these steps can be pre-approved: {sorted(offered)}")
+        return {"dropped": str(_drop(home, "SOP_RATIFY", body, args))}
+    if pid not in accepted:
+        raise BodyError(f"{pid} is not ratified; ratify it first (greg sop ratify {pid})")
+    record = accepted[pid]["record"]
+    declared = record.get("workflow", {}).get("slots", {})
+    try:
+        spec = sop.instantiate(record, dict(_slot_value(declared, a) for a in args.set),
+                               horizon_days=args.horizon_days)
+    except sop.SopError as exc:
+        raise BodyError(str(exc)) from None
+    summary = authority_summary(spec, [{"capability_id": cid, "consequence_class": m.consequence_class}
+                                       for cid, (m, _) in BUILTINS.items()])
+    if args.print_only:
+        return {"mission": spec, "signing_lets_greg": summary}
+    return {"dropped": str(_drop(home, "MISSION", spec, args)), "signing_lets_greg": summary}
+
+
 def _model_builder(secrets, config):
     """Builder factory for ``run --builder models``: every reachable model route behind one router."""
     from greg.builders import BuildError, ModelBuilder
@@ -151,6 +213,10 @@ def main(argv=None) -> int:
             q.add_argument("--price", help="business-case: price, e.g. 250 or 249.99")
             q.add_argument("--currency", default="USD", help="business-case: three-letter currency code")
             q.add_argument("--acceptance", help="business-case: the acceptance terms, fixed before anything runs")
+            q.add_argument("--task", help="shared-work: the work, in your words")
+            q.add_argument("--person", help="shared-work: the named person who will do it")
+            q.add_argument("--relationship", choices=["contract", "employment"],
+                           help="shared-work: the engagement you arrange and pay yourself")
             q.add_argument("--statement", default="statement.csv",
                            help="business-case: file name of the payment statement you export into the case folder")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
@@ -211,6 +277,24 @@ def main(argv=None) -> int:
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
     sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
+    so = sub.add_parser("sop", help="standard operating procedures learned from verified closures (node N4)")
+    sos = so.add_subparsers(dest="sop_cmd", required=True)
+    sos.add_parser("list", help="proposed and ratified procedures, and whether each is compounding")
+    sos.add_parser("trend", help="interventions, model calls and model cost per verified outcome, before and after")
+    sosh = sos.add_parser("show", help="one procedure: its evidence, workflow slots and what may be pre-approved")
+    sosh.add_argument("procedure_id")
+    sor = sos.add_parser("ratify", help="founder-signed: register a proposed procedure")
+    sor.add_argument("procedure_id")
+    sor.add_argument("--pre-approve", action="append", default=[], metavar="STEP",
+                     help="a step you approved in every verified run; future runs carry it in their signed cone")
+    sou = sos.add_parser("run", help="founder-signed: one run of a ratified procedure, with zero model calls")
+    sou.add_argument("procedure_id")
+    sou.add_argument("--set", action="append", default=[], metavar="SLOT=VALUE", help="a value for one slot")
+    sou.add_argument("--horizon-days", type=float, default=None)
+    sou.add_argument("--print-only", action="store_true", help="show the mission without signing")
+    for q in (sor, sou):
+        q.add_argument("--key"); q.add_argument("--no-passphrase", action="store_true")
+        q.add_argument("--ttl-hours", type=int, default=24)
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
@@ -291,6 +375,14 @@ def main(argv=None) -> int:
                                                    price=args.price, currency=args.currency,
                                                    acceptance=args.acceptance, statement=args.statement,
                                                    workspace_root=Layout(home).workspace)
+                elif args.target == "shared-work":
+                    missing = [f for f in ("task", "person", "relationship", "function", "acceptance")
+                               if not getattr(args, f)]
+                    if missing:
+                        raise BodyError("shared-work needs " + ", ".join("--" + f for f in missing))
+                    spec = templates.shared_work(task=args.task, person=args.person, relationship=args.relationship,
+                                                 function=args.function, deliverable=args.deliverable,
+                                                 acceptance=args.acceptance, workspace_root=Layout(home).workspace)
                 elif args.target == "human-work":
                     if not (args.function and args.purpose):
                         raise BodyError("human-work needs --function and --purpose")
@@ -391,6 +483,8 @@ def main(argv=None) -> int:
             else:
                 data = devpath.position(None)
             print(json.dumps(data, indent=1))
+        elif args.cmd == "sop":
+            print(json.dumps(_sop(home, args), indent=1))
         elif args.cmd == "presence":
             from greg import presence
             now = datetime.now(timezone.utc)

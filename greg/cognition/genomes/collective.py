@@ -1362,8 +1362,11 @@ def physarum_anticipate_then_replan(data):
 
 def physarum_competitor(data):
     """The competitor of each regime: ``physarum_multistart_search`` (unchanged) when nothing fails,
-    ``physarum_replan_at_failure`` when the data declare a failure."""
-    return physarum_replan_at_failure(data) if "failure" in data else physarum_multistart_search(data)
+    ``physarum_replan_at_failure`` when the data declare a failure. Dispatch reads the parsed declaration
+    (``_declared_failure``), as the subregion and the score do, so ``"failure": null`` declares no failure."""
+    if _declared_failure(data) is not None:
+        return physarum_replan_at_failure(data)
+    return physarum_multistart_search(data)
 
 
 def _physarum_network(r):
@@ -1487,7 +1490,9 @@ def physarum_instance(seed):
 
 
 def _declared_failure(data):
-    """The declared failure as a set of candidate-edge keys, or None when the data declare no failure."""
+    """The declared failure as a set of candidate-edge keys, or None when the data declare no failure (no
+    ``failure`` key, or ``"failure": null``). The one parser every native-regime dispatch reads: the subregion, the
+    competitor and the score agree on whether a failure is declared; a malformed declaration raises GenomeError."""
     failure = data.get("failure")
     if failure is None:
         return None
@@ -1571,6 +1576,8 @@ def physarum_failure_cost(data, output):
     Returns None when either network is invalid."""
     coords, pairs, _, terms, lam = _network_inputs(data)
     failed = _declared_failure(data)
+    if failed is None:
+        raise GenomeError("no declared failure to charge")
     pre = network_evaluate(data, output)
     if pre is None:
         return None
@@ -1612,7 +1619,7 @@ def _failure_floor(data):
 
 
 def physarum_score(data, truth, output):
-    if "failure" in data:
+    if _declared_failure(data) is not None:
         floor = -_failure_floor(data) / truth["scale"] - 1.0     # abstaining scores below any valid design
         if not isinstance(output, dict) or "edges" not in output:
             return {"quality": floor, "category": "abstain"}
@@ -1639,9 +1646,9 @@ def physarum_fault_band(data):
 
 
 def physarum_subregion(data):
-    """A declared failure marks ``edge_failure_mid_run``; without one, the pre-revision fault-weight band
-    (``physarum_fault_band``)."""
-    return "edge_failure_mid_run" if "failure" in data else physarum_fault_band(data)
+    """A declared failure (``_declared_failure`` is not None) marks ``edge_failure_mid_run``; without one, including
+    ``"failure": null``, the pre-revision fault-weight band (``physarum_fault_band``)."""
+    return "edge_failure_mid_run" if _declared_failure(data) is not None else physarum_fault_band(data)
 
 
 # ============================================================================ 4. negative selection detectors
@@ -2049,18 +2056,22 @@ IMMUNE_NATIVE_DIM = (2, 4)    # the native regimes stay in low dimension, where 
 IMMUNE_ANOMALY_MARGIN = 6.0   # native anomalies sit >= 6 noise units off the self support (density ratio < e^-18)
 
 
-def _immune_package(r, self_s, normal, anomalies, kinds, seed, support):
+def _immune_package(r, self_s, normal, anomalies, kinds, seed, support, geometry):
     """Shared tail of the native generators: 200 self-distributed and 20-40 anomalous test points, shuffled;
     tolerance 0.01-0.05; generator labels are the ground truth (the same shape as ``gaussian_ellipsoid``, except that
     ``kinds`` here lists each anomaly's kind in test-point order, where ``gaussian_ellipsoid`` keeps its pre-revision
     generation order). The data declare the self-support shape (``self_support``), as an operator who knows normal
-    operation is multimodal, annular or non-convex can; no arm reads it, only ``immune_subregion``."""
+    operation is multimodal, annular or non-convex can; no arm reads it, only ``immune_subregion``. The truth also
+    carries the self-support construction (``support``: the parameters the generator drew), so the labels can be
+    re-derived independently: every anomaly's distance off the support, in the regime's noise units, from the
+    declared geometry alone (tested)."""
     points = [(p, 0, None) for p in normal] + [(p, 1, kind) for p, kind in zip(anomalies, kinds)]
     r.shuffle(points)
     data = {"self_samples": [[round(float(v), 6) for v in p] for p in self_s],
             "test_points": [[round(float(v), 6) for v in p] for p, _, _ in points],
             "max_false_alarm_rate": r.choice((0.01, 0.02, 0.05)), "seed": seed, "self_support": support}
-    return data, {"labels": [lab for _, lab, _ in points], "kinds": [kind for _, lab, kind in points if lab]}
+    return data, {"labels": [lab for _, lab, _ in points], "kinds": [kind for _, lab, kind in points if lab],
+                  "support": geometry}
 
 
 def _immune_frame(r, g, dim):
@@ -2120,7 +2131,9 @@ def immune_mixture_instance(seed):
             anomalies.append(p)
             kinds.append(kind)
             break
-    return _immune_package(r, self_s, normal, anomalies, kinds, seed, "multimodal_self")
+    geometry = {"means": [[float(v) for v in m] for m in means],
+                "covariances": [[[float(v) for v in row] for row in cv] for cv in covs]}
+    return _immune_package(r, self_s, normal, anomalies, kinds, seed, "multimodal_self", geometry)
 
 
 def immune_ring_instance(seed):
@@ -2157,7 +2170,9 @@ def immune_ring_instance(seed):
             extra[r.randrange(dim - 2)] = r.choice((-1, 1)) * s * r.uniform(IMMUNE_ANOMALY_MARGIN, 8.0)
         anomalies.append(place(rho, theta, extra))
         kinds.append(kind)
-    return _immune_package(r, self_s, normal, anomalies, kinds, seed, "annular_self")
+    geometry = {"center": [float(v) for v in mu], "frame": [[float(v) for v in row] for row in q],
+                "radius": radius, "radial_spread": w, "axial_spread": s}
+    return _immune_package(r, self_s, normal, anomalies, kinds, seed, "annular_self", geometry)
 
 
 def _box_distance(x, y, boxes):
@@ -2214,7 +2229,9 @@ def immune_union_instance(seed):
             x, y = sample(1.0, math.inf, 0.0, hull=True) if kind == "concavity" else sample(1.0, 2.5, 2.5)
         anomalies.append(place(x, y, extra))
         kinds.append(kind)
-    return _immune_package(r, self_s, normal, anomalies, kinds, seed, "nonconvex_self")
+    geometry = {"center": [float(v) for v in mu], "frame": [[float(v) for v in row] for row in q],
+                "boxes": [list(b) for b in boxes], "span": list(span), "axial_spread": s}
+    return _immune_package(r, self_s, normal, anomalies, kinds, seed, "nonconvex_self", geometry)
 
 
 def immune_instance(seed):
@@ -2706,14 +2723,15 @@ def flock_online_replan(data):
     """Competitor in the native regimes: centralized prioritized planning REPLANNED ONLINE (Erdmann & Lozano-Perez
     planning, the same space-time A* as ``flock_prioritized``). A coordinator can only plan agents it can reach: agents
     linked by a chain of pairwise distances <= the declared ``communication_radius`` (unlimited when undeclared) form
-    one group; separate groups are planned by separate coordinators, each unaware of the others. Whenever a group
-    holds agents last planned by different coordinators (or not yet planned) it is replanned from the agents' current
-    positions: stopped agents (start = goal: dropped out) and arrived agents are reserved first as static discs, then
-    movers longest remaining trip first. Without a radius and without stopped agents this is exactly one
-    ``flock_prioritized`` plan. Abstains if any replanning fails."""
+    one group (``_declared_radius``); separate groups are planned by separate coordinators, each unaware of the others.
+    Whenever a group holds agents last planned by different coordinators (or not yet planned) it is replanned from the
+    agents' current positions: stopped agents (start = goal, as every declared dropout in ``stopped`` has) and arrived
+    agents are reserved first as static discs, then movers longest remaining trip first.
+    Without a radius and without stopped agents this is exactly one ``flock_prioritized`` plan. Abstains if any
+    replanning fails."""
     s, g, steps = _flock_inputs(data)
-    radius = data.get("communication_radius")
-    radius = math.inf if radius is None else finite(radius, low=FLOCK_SENSE, high=1e6, name="communication_radius")
+    radius = _declared_radius(data)
+    radius = math.inf if radius is None else radius
     n = len(s)
     pos = [tuple(p) for p in s]
     paths = [[p] for p in pos]
@@ -2752,7 +2770,7 @@ def flock_online_replan(data):
 
 def flock_competitor(data):
     """The competitor of each regime: ``flock_prioritized`` (unchanged) when nothing happens; ``flock_online_replan``
-    when agents have dropped out or a communication radius is declared."""
+    when the data declare dropped-out agents or a communication radius (``_flock_event``, on the parsed values)."""
     return flock_prioritized(data) if _flock_event(data) is None else flock_online_replan(data)
 
 
@@ -2786,6 +2804,21 @@ def flock_score(data, truth, output):
     return {"quality": truth["makespan_lower_bound"] / max(1, audit["makespan"]), "category": "correct"}
 
 
+def flock_regime_score(data, truth, output):
+    """The benchmark score of every regime: ``flock_score`` (unchanged), and a plan that moves a declared stopped
+    agent (``_declared_stopped``) is wrong: a dropped-out agent is a static disc, so any position of its trajectory
+    off its start (beyond the audit's 1e-3 rounding tolerance) is physically impossible. Without a ``stopped``
+    declaration this is exactly ``flock_score``."""
+    scored = flock_score(data, truth, output)
+    if scored["category"] != "correct":
+        return scored
+    for i in _declared_stopped(data):
+        flat, home = output["trajectories"][i], data["starts"][i]
+        if any(math.dist((flat[k], flat[k + 1]), home) > 1e-3 for k in range(0, len(flat), 2)):
+            return {"quality": -1.0, "category": "wrong"}     # a stopped agent moved
+    return scored
+
+
 FLOCK_SNAPSHOT_SPACING = 1.5      # snapshot discs >= this far apart, so no arm is boxed in at its first step
 FLOCK_COMM_RADIUS = (FLOCK_SENSE, 5.0)   # declared radii never undercut the local rules' sensing radius
 
@@ -2807,10 +2840,11 @@ def _flock_lower_bound(starts, goals):
 def flock_dropout_instance(seed):
     """Native regime ``agent_dropout``: the state at a dropout event. 6-9 agents of a perturbed antipodal swap are
     caught 15-40% of the way along their straight lines (discs >= 1.5 apart: the crowd is dense, never jammed); 1-2
-    of them have dropped out and stopped where they are (start = goal: static discs inside the crowd); the others
-    must still reach their goals. Every arm plans from this state: the local rules simply keep running, the
-    centralized planner must replan at the event (``flock_online_replan``). The dropout is a snapshot because the
-    unchanged ``solve`` takes no event schedule: the local rules' reaction inside one run is not exercised."""
+    of them have dropped out and stopped where they are (start = goal: static discs inside the crowd, declared by
+    index in ``stopped``); the others must still reach their goals. Every arm plans from this state: the local rules
+    simply keep running, the centralized planner must replan at the event (``flock_online_replan``). A plan that moves
+    a declared stopped agent is wrong (``flock_regime_score``). The dropout is a snapshot because the unchanged
+    ``solve`` takes no event schedule: the local rules' reaction inside one run is not exercised."""
     r = random.Random(7_610_000 + seed)
     for _ in range(500):
         n = r.randint(6, 9)
@@ -2823,9 +2857,10 @@ def flock_dropout_instance(seed):
                    for i in range(n)]
         if min(math.dist(a, b) for k, a in enumerate(starts) for b in starts[:k]) < FLOCK_SNAPSHOT_SPACING:
             continue
-        data = {"starts": starts, "goals": targets}
+        data = {"starts": starts, "goals": targets, "stopped": list(dropped)}
         try:
             _flock_inputs(data)
+            _declared_stopped(data)
         except GenomeError:
             continue
         return data, {"makespan_lower_bound": _flock_lower_bound(starts, targets), "dropped": dropped}
@@ -2862,12 +2897,41 @@ def flock_size_band(data):
     return "four_to_five_agents" if len(data["starts"]) <= 5 else "six_to_eight_agents"
 
 
+def _declared_radius(data):
+    """The declared communication radius, or None when the data declare none (no key, or null). A declared radius is
+    finite and never below the local rules' sensing radius; anything else raises GenomeError."""
+    radius = data.get("communication_radius")
+    if radius is None:
+        return None
+    return finite(radius, low=FLOCK_SENSE, high=1e6, name="communication_radius")
+
+
+def _declared_stopped(data):
+    """The declared dropped-out agents (``stopped``: distinct agent indices), as a sorted tuple; () when the data
+    declare none (no key, null or []). A stopped agent is a static disc: its goal must be its start, so every arm
+    treats it as arrived; anything else raises GenomeError. An agent that merely starts at its goal without being
+    declared is an ordinary agent (it may step aside and return), exactly as before BENCHMARK_REVISION."""
+    stopped = data.get("stopped")
+    if stopped is None:
+        return ()
+    s, g, _ = _flock_inputs(data)
+    if not isinstance(stopped, list):
+        raise GenomeError("stopped is a list of distinct agent indices")
+    out = [bounded_int(i, low=0, high=len(s) - 1, name="stopped agent") for i in stopped]
+    if len(set(out)) != len(out):
+        raise GenomeError("stopped is a list of distinct agent indices")
+    if any(math.dist(s[i], g[i]) > 1e-9 for i in out):
+        raise GenomeError("a stopped agent is a static disc: its goal must be its start")
+    return tuple(sorted(out))
+
+
 def _flock_event(data):
-    """The native regime the data declare: a communication radius (``limited_radius``), an agent whose start is its
-    goal (stopped: ``agent_dropout``), or None."""
-    if "communication_radius" in data:
+    """The native regime the data declare, read from the parsed declarations: a communication radius
+    (``limited_radius``), declared stopped agents (``agent_dropout``), or None (``"communication_radius": null`` and
+    ``"stopped": null`` or ``[]`` declare nothing)."""
+    if _declared_radius(data) is not None:
         return "limited_radius"
-    if any(a == b for a, b in zip(data["starts"], data["goals"])):
+    if _declared_stopped(data):
         return "agent_dropout"
     return None
 
@@ -3225,18 +3289,19 @@ INTELLIGENCES = [
             benchmark_suite="three regimes by seed % 3 (REGIMES): ring_swap (the generator before 2026-10-14: 4-8 "
                             "agents in perturbed antipodal swaps on a ring; subregions its v1 size bands), "
                             "agent_dropout (the state at a dropout event: 6-9 agents 15-40% along their swap, 1-2 "
-                            "stopped in the crowd as static discs) and limited_radius (a ring swap of 4-8 with a "
-                            "declared communication radius 3-5), each its own subregion; dev 0-9, held-out seeds "
-                            "recorded by each admission freeze",
+                            "stopped in the crowd as static discs, declared in stopped) and limited_radius (a ring "
+                            "swap of 4-8 with a declared communication radius 3-5), each its own subregion; dev 0-9, "
+                            "held-out seeds recorded by each admission freeze",
             baseline="straight-to-goal at full speed (ignores the others)",
             competitor="centralized prioritized planning: space-time A* per agent (longest trip first) around "
                        "earlier agents' reserved trajectories; in agent_dropout and limited_radius the same planner "
                        "replanned online (stopped and arrived agents reserved first; one coordinator per group of "
                        "agents linked within the communication radius, groups replanned jointly when they meet)")),
-        solve=flock_solve, verify=flock_verify, instance=flock_instance, score=flock_score,
+        solve=flock_solve, verify=flock_verify, instance=flock_instance, score=flock_regime_score,
         baseline=flock_straight, competitor=flock_competitor, subregion=flock_subregion, tolerance=1e-9,
         notes={"score": "makespan lower bound / makespan; any contact, speed violation or unreached goal = wrong "
-                        "(-1); abstain 0",
+                        "(-1); abstain 0; in agent_dropout a plan that moves a declared stopped agent is wrong "
+                        "(flock_regime_score)",
                "benchmark_revision": BENCHMARK_REVISION,
                "regimes": "seed % 3: ring_swap (the v1 generator), agent_dropout, limited_radius. agent_dropout is a "
                           "snapshot at the dropout event because solve takes no event schedule: the local rules' "

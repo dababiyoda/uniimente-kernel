@@ -445,6 +445,122 @@ def test_physarum_static_regime_is_still_scored_on_the_declared_objective():
     assert c.physarum_competitor(data) == c.physarum_multistart_search(data)
 
 
+def _independent_failure_cost(data, output):
+    """The realized failure cost recomputed with networkx, sharing no code with ``physarum_failure_cost``: build
+    length, terminal pairs the failure disconnects, and the rebuild (the arm's after-failure network when it replans,
+    else greedy cheapest-path reconnection from terminal 0's component with standing built tubes free)."""
+    import itertools
+
+    import networkx as nx
+    coords = [tuple(p) for p in data["nodes"]]
+    terms, lam = data["terminals"], data["lambda"]
+
+    def key(e):
+        return (min(e), max(e))
+
+    def length(e):
+        return math.hypot(coords[e[0]][0] - coords[e[1]][0], coords[e[0]][1] - coords[e[1]][1])
+    failed = {key(e) for e in data["failure"]["edges"]}
+    design = {key(e) for e in output["edges"]}
+    standing = design - failed
+    up = nx.Graph()
+    up.add_nodes_from(range(len(coords)))
+    up.add_edges_from(standing)
+    disconnected = sum(1 for a, b in itertools.combinations(terms, 2) if not nx.has_path(up, a, b))
+    if "after_failure" in output:
+        new = {key(e) for e in output["after_failure"]["edges"]} - standing
+    else:
+        weighted = nx.Graph()
+        for e in {key(e) for e in data["edges"]} - failed:
+            weighted.add_edge(*e, weight=0.0 if e in standing else length(e))
+        new, current = set(), nx.Graph(up)
+        while True:
+            root = nx.node_connected_component(current, terms[0])
+            loose = [t for t in terms if t not in root]
+            if not loose:
+                break
+            dist, paths = nx.multi_source_dijkstra(weighted, root)
+            path = paths[min(loose, key=lambda t: (dist[t], t))]
+            for a, b in itertools.pairwise(path):
+                if key((a, b)) not in standing:
+                    new.add(key((a, b)))
+                current.add_edge(a, b)
+    build, rebuild = math.fsum(map(length, design)), math.fsum(map(length, new))
+    return {"total": build + rebuild + lam * disconnected, "build": build, "rebuild": rebuild,
+            "disconnected_pairs": disconnected}
+
+
+BROKEN_TREE_SEED = 3      # a dev failure seed whose KMB tree uses a failed edge (dev seed 1's tree misses both)
+
+
+def test_physarum_failure_cost_matches_an_independent_recomputation_where_the_tree_breaks():
+    """Every arm's realized cost (build + rebuild + lambda x disconnected pairs) and score, recomputed independently
+    on a failure the KMB tree does not survive: 6 terminal pairs cut, 20.98 rebuilt by the shared repair rule."""
+    data, truth = _failure_case(BROKEN_TREE_SEED)
+    failed = c._declared_failure(data)
+    tree = c.physarum_mst(data)
+    assert {(min(e), max(e)) for e in tree["edges"]} & failed
+    assert data["lambda"] > 0
+    candidate = c.physarum_solve(copy.deepcopy(data), BUDGET)
+    assert candidate["status"] == "ANSWER"
+    arms = {"baseline": tree, "candidate": candidate["output"], "competitor": c.physarum_competitor(data)}
+    for name, out in arms.items():
+        mine = _independent_failure_cost(data, out)
+        cost = c.physarum_failure_cost(data, out)
+        assert cost["disconnected_pairs"] == mine["disconnected_pairs"], (name, cost, mine)
+        for part in ("build", "rebuild", "total"):
+            assert math.isclose(cost[part], mine[part], rel_tol=1e-9, abs_tol=1e-9), (name, part, cost, mine)
+        assert math.isclose(c.physarum_score(data, truth, out)["quality"], -mine["total"] / truth["scale"],
+                            rel_tol=1e-9), name
+    broken = _independent_failure_cost(data, tree)
+    assert broken["disconnected_pairs"] == 6 and math.isclose(broken["rebuild"], 20.982795643, abs_tol=1e-6)
+
+
+def test_physarum_competitor_replans_at_every_declared_failure():
+    for seed in (s for s in DEV if s % 2):
+        data, _ = _failure_case(seed)
+        out = item("collective_physarum").competitor(data)
+        assert out == c.physarum_competitor(data) == c.physarum_replan_at_failure(data), seed
+        assert out["after_failure"]["edges"], seed
+
+
+def test_physarum_replan_reuses_standing_built_tubes_for_free():
+    """Five nodes, terminals A (0) and B (1). Before the failure the shortest tree is A-M-B (20). M-B fails. Reusing the
+    standing tube A-M and detouring M-N-B costs 2 sqrt(34) = 11.66 new; the all-new route A-S-B costs
+    2 sqrt(101) = 20.10. A replanner that charged the standing tube A-M again (10 + 11.66 > 20.10) would rebuild
+    A-S-B; the from-scratch recomputation must treat what still stands as free."""
+    data = {"nodes": [[0, 0], [20, 0], [10, 0], [15, 3], [10, -1]],
+            "edges": [[0, 2], [1, 2], [2, 3], [1, 3], [0, 4], [1, 4]], "terminals": [0, 1], "lambda": 5.0,
+            "failure": {"after_step": 100, "edges": [[1, 2]]}}
+    detour, all_new = 2 * math.sqrt(34), 2 * math.sqrt(101)
+    assert detour < all_new < 10 + detour
+    out = c.physarum_competitor(data)
+    assert out == c.physarum_replan_at_failure(data)
+    assert out["edges"] == [[0, 2], [1, 2]] and out["after_failure"]["edges"] == [[0, 2], [1, 3], [2, 3]]
+    cost, mine = c.physarum_failure_cost(data, out), _independent_failure_cost(data, out)
+    assert cost["disconnected_pairs"] == mine["disconnected_pairs"] == 1
+    assert all(math.isclose(cost[part], mine[part]) for part in ("build", "rebuild", "total"))
+    assert math.isclose(cost["rebuild"], detour)
+    assert math.isclose(cost["total"], 20 + detour + 5.0)
+
+
+def test_a_null_failure_declares_no_failure():
+    """Dispatch reads the parsed declaration: ``"failure": null`` is the static regime for the subregion, the
+    competitor and the score alike; a malformed declaration is refused."""
+    data, truth = inst("collective_physarum", first_seed("collective_physarum", "static_design"))
+    null = dict(data, failure=None)
+    assert c.physarum_subregion(null) == c.physarum_subregion(data) == c.physarum_fault_band(data)
+    assert item("collective_physarum").subregion(null) == c.physarum_fault_band(data)
+    tree = c.physarum_mst(data)
+    assert c.physarum_score(null, truth, tree) == c.physarum_score(data, truth, tree)
+    assert c.physarum_competitor(null) == c.physarum_multistart_search(data)
+    with pytest.raises(c.GenomeError):
+        c.physarum_failure_cost(null, tree)
+    for bad in ({"after_step": 100, "edges": []}, {"edges": [[0, 1]]}, [[0, 1]]):
+        with pytest.raises(c.GenomeError):
+            c.physarum_subregion(dict(data, failure=bad))
+
+
 # ------------------------------------------------------------------ immune: non-elliptical self
 def test_immune_native_regimes_put_anomalies_inside_the_hull_and_stay_low_dimensional():
     """Each native regime puts some anomalies where an ellipsoid fitted to self is dense: inside the convex hull of
@@ -483,6 +599,54 @@ def test_immune_gaussian_mixture_anomalies_are_far_from_every_mode():
     assert min(nearest(p) for p in anomalies) > np.median([nearest(p) for p in normal])
 
 
+def _immune_offsets(data, truth):
+    """Each test point's distance off the self support declared in ``truth['support']``, recomputed from that
+    construction alone: (offset, plane). multimodal_self: the least Mahalanobis distance to any mode; annular_self:
+    the larger of |radius - R| / w and the largest extra-axis coordinate / s; nonconvex_self: the largest extra-axis
+    coordinate / s, with ``plane`` the in-plane distance to the union of arms (None for the other two)."""
+    import numpy as np
+    geometry = truth["support"]
+    x = np.array(data["test_points"], dtype=float)
+    if data["self_support"] == "multimodal_self":
+        per_mode = [np.sqrt(np.einsum("ij,jk,ik->i", x - m, np.linalg.inv(cv), x - m))
+                    for m, cv in zip(np.array(geometry["means"]), np.array(geometry["covariances"]))]
+        return np.min(per_mode, axis=0), None
+    z = (x - np.array(geometry["center"])) @ np.array(geometry["frame"])        # back into the generator's frame
+    axial = np.abs(z[:, 2:]).max(axis=1) / geometry["axial_spread"] if z.shape[1] > 2 else np.zeros(len(z))
+    if data["self_support"] == "annular_self":
+        radial = np.abs(np.hypot(z[:, 0], z[:, 1]) - geometry["radius"]) / geometry["radial_spread"]
+        return np.maximum(radial, axial), None
+    px, py = z[:, 0] + geometry["span"][0] / 2, z[:, 1] + geometry["span"][1] / 2
+    plane = np.min([np.hypot(np.maximum(np.maximum(x0 - px, px - x1), 0), np.maximum(np.maximum(y0 - py, py - y1), 0))
+                    for x0, x1, y0, y1 in geometry["boxes"]], axis=0)
+    return axial, plane
+
+
+def test_immune_native_anomalies_sit_off_the_declared_self_support():
+    """The labels are re-derived from the declared construction: every multimodal or annular anomaly is >= 6 noise
+    units off the self support and farther off than every normal point; every union anomaly is off the union (>= 1
+    unit in the plane for concavity and outer, <= 2.5 for outer; >= 6 spreads along an extra axis for off_plane)
+    while every normal point lies on it. The declared construction describes the self samples (checked first)."""
+    import numpy as np
+    margin, tolerance = 6.0, 1e-3              # the declared margin; tolerance covers the data's 6-decimal rounding
+    for seed in (s for s in DEV if s % 4):
+        data, truth = inst("collective_immune", seed)
+        labels = np.array(truth["labels"]) == 1
+        kinds = np.array(truth["kinds"])
+        offset, plane = _immune_offsets(data, truth)
+        own, own_plane = _immune_offsets(dict(data, test_points=data["self_samples"]), truth)
+        if plane is None:
+            assert own.max() < margin, (seed, own.max())                          # self lies on the support
+            assert offset[labels].min() >= margin - tolerance, (seed, offset[labels].min())
+            assert offset[~labels].max() < offset[labels].min(), seed
+            continue
+        assert own_plane.max() <= tolerance and plane[~labels].max() <= tolerance, seed      # self is on the union
+        in_plane = plane[labels][kinds != "off_plane"]
+        assert in_plane.size and in_plane.min() >= 1.0 - tolerance, (seed, in_plane.min())
+        assert plane[labels][kinds == "outer"].max(initial=0.0) <= 2.5 + tolerance, seed
+        assert offset[labels][kinds == "off_plane"].min(initial=np.inf) >= margin - tolerance, seed
+
+
 # sha256 of json.dumps(evolution.immune_split(), sort_keys=True) at dbc0643 with the P8 seeds replaced by these review
 # seeds (3001 and 3005 are not regime 0 of the new mixture, so drawing the mixture would change the digest)
 P8_STAND_IN = {"train": (3001, 3002, 3005), "heldout": (3003, 3006)}
@@ -511,7 +675,8 @@ def test_flock_dropout_snapshot_has_static_discs_in_a_dense_but_unjammed_crowd()
     for seed in (s for s in DEV if s % 3 == 1):
         data, truth = inst("collective_flock", seed)
         stopped = [i for i, (a, b) in enumerate(zip(data["starts"], data["goals"])) if a == b]
-        assert stopped == truth["dropped"] and 1 <= len(stopped) <= 2 and 6 <= len(data["starts"]) <= 9
+        assert stopped == truth["dropped"] == data["stopped"]
+        assert 1 <= len(stopped) <= 2 and 6 <= len(data["starts"]) <= 9
         assert min(math.dist(a, b) for k, a in enumerate(data["starts"])
                    for b in data["starts"][:k]) >= c.FLOCK_SNAPSHOT_SPACING
         out = c.flock_solve(copy.deepcopy(data), BUDGET)
@@ -541,3 +706,79 @@ def test_flock_online_replanning_is_one_prioritized_plan_without_events_and_safe
         if out is not None:
             audit = c.flock_audit(data, out)
             assert audit["clear"] and audit["goals"] and audit["speed"] and audit["within_budget"]
+
+
+def test_flock_competitor_is_online_replanning_in_the_native_regimes():
+    """agent_dropout dev seed 1: the one-shot prioritized plan abstains, online replanning (the competitor) answers.
+    limited_radius dev seed 2: the radius splits the coordinators at the start and costs a step (67 against 66 with
+    every agent in reach)."""
+    data, truth = inst("collective_flock", 1)
+    assert c.flock_subregion(data) == "agent_dropout"
+    assert c.flock_prioritized(data) is None
+    out = item("collective_flock").competitor(data)
+    assert out == c.flock_online_replan(data) and out["rule"] == "online_replanning"
+    assert item("collective_flock").score(data, truth, out)["category"] == "correct"
+    data, truth = inst("collective_flock", 2)
+    assert c.flock_subregion(data) == "limited_radius"
+    assert len(c._comm_groups([tuple(p) for p in data["starts"]], data["communication_radius"])) > 1
+    out = item("collective_flock").competitor(data)
+    assert out == c.flock_online_replan(data) and out["makespan"] == 67
+    assert item("collective_flock").score(data, truth, out)["category"] == "correct"
+    unlimited = c.flock_online_replan({k: v for k, v in data.items() if k != "communication_radius"})
+    assert unlimited["makespan"] == 66 and unlimited["trajectories"] != out["trajectories"]
+
+
+def test_a_plan_that_moves_a_declared_stopped_agent_is_wrong():
+    """A dropped-out agent is a static disc. A plan that steps it away and back passes the unchanged kinematic audit
+    and ``flock_score``; the benchmark score (``flock_regime_score``) marks it wrong. Holding still is not movement,
+    and without the ``stopped`` declaration an agent that starts at its goal may step aside, as before."""
+    score = item("collective_flock").score
+    for seed in (4, 7):                                              # agent_dropout dev seeds the candidate answers
+        data, truth = inst("collective_flock", seed)
+        solved = c.flock_solve(copy.deepcopy(data), BUDGET)
+        assert solved["status"] == "ANSWER", seed
+        assert score(data, truth, solved["output"])["category"] == "correct"
+        i = data["stopped"][0]
+        x, y = data["starts"][i]
+        for k in range(16):
+            a = k * math.pi / 8
+            moved = copy.deepcopy(solved["output"])
+            moved["trajectories"][i] = [x, y, round(x + 0.25 * math.cos(a), 5), round(y + 0.25 * math.sin(a), 5), x, y]
+            moved["arrival_steps"][i] = 2
+            if all(c.flock_verify(data, moved, solved["certificate"]).values()):
+                break
+        else:
+            pytest.fail(f"seed {seed}: no heading clear of the crowd")
+        assert c.flock_score(data, truth, moved)["category"] == "correct"        # kinematics alone cannot see it
+        assert score(data, truth, moved) == {"quality": -1.0, "category": "wrong"}, seed
+        held = copy.deepcopy(solved["output"])
+        held["trajectories"][i] = [x, y, x, y, x, y]
+        held["arrival_steps"][i] = 2
+        assert score(data, truth, held) == c.flock_score(data, truth, held)
+        assert score(data, truth, held)["category"] == "correct"
+        plain = {k: v for k, v in data.items() if k != "stopped"}
+        assert score(plain, truth, moved) == c.flock_score(plain, truth, moved)
+
+
+def test_flock_native_placement_reads_the_parsed_declarations():
+    """An undeclared request is placed in its v1 size band even when an agent starts at its goal; ``stopped`` marks
+    agent_dropout and ``communication_radius`` limited_radius only when they hold a value; malformed declarations
+    are refused."""
+    data, _ = inst("collective_flock", first_seed("collective_flock", "agent_dropout"))
+    plain = {k: v for k, v in data.items() if k != "stopped"}
+    band = c.flock_size_band(plain)
+    assert any(a == b for a, b in zip(plain["starts"], plain["goals"]))
+    for undeclared in (plain, dict(data, stopped=None), dict(data, stopped=[])):
+        assert c.flock_subregion(undeclared) == band and c._flock_event(undeclared) is None
+    assert c.flock_subregion(data) == item("collective_flock").subregion(data) == "agent_dropout"
+    moving = next(i for i in range(len(data["starts"])) if i not in data["stopped"])
+    for bad in ([moving], [data["stopped"][0]] * 2, [len(data["starts"])], ["0"], 0):
+        with pytest.raises(c.GenomeError):
+            c.flock_subregion(dict(data, stopped=bad))
+    ring, _ = inst("collective_flock", first_seed("collective_flock", "ring_swap"))
+    assert c.flock_subregion(dict(ring, communication_radius=None)) == c.flock_size_band(ring)
+    assert c._flock_event(dict(ring, communication_radius=None)) is None
+    assert c.flock_subregion(dict(ring, communication_radius=4.0)) == "limited_radius"
+    for bad in (c.FLOCK_SENSE - 0.5, "far", math.inf):
+        with pytest.raises(c.GenomeError):
+            c.flock_subregion(dict(ring, communication_radius=bad))

@@ -110,3 +110,12 @@ PYTHONPATH=. taskset -c 0 python -m greg.cognition.genomes.admission --run 2026-
 ```
 
 The harness refuses with `FROZEN_INPUT_CHANGED` if any frozen input differs, and refuses to overwrite `results.json`.
+
+## Erratum (2026-10-14, after an independent review of the run)
+
+These corrections change no number in `results.json` and no status the frozen rule assigned. They correct what the statuses can be taken to mean.
+
+- **`forecast_quantile`'s held-out data were not fresh.** The genome draws `pool[(seed * 7919) % 241]` from a finite pool of 241 M4 weekly series. Seeds 1100-1129 are new numbers, and their series are distinct from the development seeds and from v1. But all 30 were in P8's forecasting cycle (2026-10-08), as training or held-out series: that cycle split all 201 series left after development and v1. The P8 candidate was rejected and nothing it learned entered the genome, so the genome was not fitted to these series. Still, "never generated" (the pre-registration commit `8e37cd8`) is true of the seed numbers only, not of the data. Read `forecast_quantile`'s v2 DEFAULT as a replication on data already used elsewhere in the project. Its edge over the Theta competitor was 15-15, so DEFAULT here rests on latency. Independent evidence on genuinely fresh data is P6 v3 (F6, real bank arrivals): staffing to its q* quantiles covered 0.675 / 0.911 / 0.966 of blocks against nominal 0.667 / 0.900 / 0.967.
+- **The harness now refuses this** (`209f72c`). The freeze compares data identities (`instance_key`) with development seeds, earlier admissions and completed P8 cycles. P8 splits exclude every admission's series. No unused weekly series remains, so a further forecast admission needs new data.
+- **"All 32 genomes carry evidence at their current version" held at this run's commit only.** `basal_bayes_filter` became 1.0.1 in `d05c1dc`: a stricter verifier and an abstention at a one-sample dwell, the solver unchanged otherwise. Its DEFAULT, measured at 1.0.0, is stale until re-admitted. The compiler routes it as UNEVALUATED and says so.
+- **The "11-1 under high noise" in the genome's declaration** (`1ac299b`) misquoted v1: that was the HMM competitor's 11-1 against the Schmitt genome overall. This run measured 13-1-2 under high noise, which the declaration now cites.

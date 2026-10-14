@@ -1,0 +1,10 @@
+{
+  "verifier": "manual-pytest",
+  "ts_utc": "2026-10-02T11:37:27+00:00",
+  "command": "/tmp/greg-venv/bin/python -I -m pytest tests/unit -q",
+  "head_commit": "68b484bb45a681655274c8b23d7722424bb99488",
+  "tracked_tree": "modified",
+  "exit_code": 1,
+  "summary": "1 failed, 1820 passed, 6 skipped in 642.62s",
+  "note": "test_reserved_claims_name_registered_disabled_families: the verbatim register still called cortex.graph.search reserved after the genome seeded it at 0.2.0. Fixed by updating register rows A09/A10/A46/B08/B09 (dispositions, notes, evidence). Timestamp from /tmp/full_suite.log mtime. (Run recorded retroactively this session; ts_utc reconstructed from the session clock or log mtime, not from a live recorder.)"
+}

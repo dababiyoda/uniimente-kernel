@@ -1,0 +1,18 @@
+{
+  "verifier": "fresh-clone-unit-suite-replication",
+  "ts_utc": "2026-10-02T15:15:11.751854+00:00",
+  "command": "git clone --depth=1 --branch kimi/cortex-formed-function-routing-20261002 (tip 88bc7135); fresh venv from requirements-cortex.txt only; python -I -m pytest tests/unit -q",
+  "head_commit": "88bc713579e34b27c8e61f16e2ccec231c3f18f7",
+  "tracked_tree": "7014edf46d14d2356fecf0bb2d7e97a58237d464 (pushed branch tip 88bc7135; git ls-tree -r vs local tip fe895fc: empty diff, 975 files)",
+  "exit_code": 1,
+  "passes": [],
+  "skips": [
+    "18 skipped total: the expected 6 plus 12 module-level skips because requirements-cognition.txt dependencies (sympy, networkx, scipy) were not yet installed in the new venv"
+  ],
+  "failures": [
+    "tests/unit/test_greg_cognition.py x7: organs reported 'dependency unavailable: sympy' (CAPABILITY_DEFICIT) because the fresh venv lacked requirements-cognition.txt; environment defect, not a branch defect",
+    "tests/unit/test_migration_spec_frozen.py::test_the_subject_class_is_byte_identical_to_the_frozen_hash and ::test_continuity_baseline_is_true_right_now: git show against historical commits fails in a depth-1 clone",
+    "tests/unit/test_repair_spec_frozen.py::test_continuity_hashes_describe_the_real_artifacts_now: same shallow-history cause",
+    "result line: 10 failed, 1720 passed, 18 skipped in 405.62s"
+  ]
+}

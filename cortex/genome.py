@@ -356,6 +356,58 @@ SEED_ORGANS = {
         lineage=("greg/cognition/solvers.py#optimization (PR #140)", "cortex reserved family 0.1.0 (PR #141)"),
         acceptance=["every returned assignment satisfies every source constraint under python re-evaluation",
                     "FEASIBLE is never reported as OPTIMAL", "agrees with z3 on the frozen parity cases"]),
+    "cortex.graph.search": dict(
+        # 0.2.0 (cortex 0.3.0, issue #117, PR #143 handoff): implemented. It supersedes the reserved,
+        # disabled 0.1.0 profile of the same family, which stays registered as SUPERSEDED lineage.
+        # The organ recruits the formed functions Capability Genesis qualified (graph.shortest_path,
+        # graph.max_flow); it owns no engine and trusts none.
+        version="0.2.0",
+        description="Shortest paths and maximum flow through the founder-attached formed functions; "
+                    "every engine answer accepted only on GREG's own exact certificate (feasible "
+                    "potentials / no residual path with an equal-capacity cut).",
+        role="solver", layer="solver_macro_cognitive", geometries=("optimization",),
+        proofs=("optimization",), observations=("graph payload", "mechanism card", "certificate"),
+        state="one isolated package run per call; package digest re-pinned before every call",
+        update="none",
+        recruitment="recruited when a graph payload names shortest_path or max_flow",
+        inhibition="inhibited when the formed function is detached or absent, the package changed since "
+                   "qualification, or the certificate fails",
+        evidence=("founder-attached formed function", "GREG certificate on every answer"),
+        ceiling="external_contact", diversity="graph_search",
+        deps=("formed:graph.shortest_path", "formed:graph.max_flow"), lifecycle="SANDBOXED", enabled=True,
+        abstain=("formed function detached or absent", "package digest changed since qualification",
+                 "certificate failed", "outside the function's competence envelope"),
+        failures=("engine bug caught by the certificate", "package changed since qualification",
+                  "malformed graph"),
+        lineage=("cortex reserved family 0.1.0", "PR #143 capability genesis", "issue #117"),
+        acceptance=["no answer without a GREG certificate that shares no code with the engine",
+                    "a lying engine yields INCONCLUSIVE with the claim withheld",
+                    "a detached formed function yields DEPENDENCY_UNAVAILABLE, a genesis trigger"]),
+    "cortex.optimization.continuous": dict(
+        # 0.1.0 (cortex 0.3.0, issue #117, PR #143 handoff): continuous linear programs via the formed
+        # lp.optimize function. Complements cortex.optimization.cpsat, whose fragment is integer-only.
+        description="Continuous linear programs through the founder-attached formed lp.optimize function; "
+                    "primal and dual feasibility with zero duality gap on every optimum; engine claims of "
+                    "infeasible/unbounded are proved by GREG's follow-up solves or withheld.",
+        role="solver", layer="solver_macro_cognitive", geometries=("optimization",),
+        proofs=("optimization",), observations=("linear program payload", "mechanism card",
+                                                "duality certificate"),
+        state="one isolated package run per call; package digest re-pinned before every call",
+        update="none",
+        recruitment="recruited when a linear_program payload is supplied",
+        inhibition="inhibited when the formed function is detached or absent, the package changed since "
+                   "qualification, or the certificate fails",
+        evidence=("founder-attached formed function", "GREG duality certificate on every answer"),
+        ceiling="external_contact", diversity="continuous_linear_programming",
+        deps=("formed:lp.optimize",), lifecycle="SANDBOXED", enabled=True,
+        abstain=("formed function detached or absent", "package digest changed since qualification",
+                 "certificate failed", "negative claim too large to prove here"),
+        failures=("engine bug caught by the certificate", "package changed since qualification",
+                  "malformed program"),
+        lineage=("PR #143 capability genesis", "issue #117"),
+        acceptance=["no optimum without a duality certificate checked in exact arithmetic",
+                    "infeasible/unbounded claims are proved by follow-up solves or withheld",
+                    "a detached formed function yields DEPENDENCY_UNAVAILABLE, a genesis trigger"]),
     "cortex.extraction.schedule": dict(
         # 0.1.0 (cortex 0.2.0, directive section 7 seed composition): words -> declarative model.
         description="Bounded scheduling request in words -> declarative constraints: controlled-language parser "

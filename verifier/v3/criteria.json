@@ -1,0 +1,27 @@
+{
+  "version": "v3",
+  "created_utc": "2026-10-02T00:00:00Z",
+  "source": "PR #143 handoff slice: route cortex-dialect graph/linear_program payloads to organs recruiting founder-attached formed functions (issue #117); GREG-certified answers only, engines never trusted",
+  "checks": [
+    {
+      "id": "V1",
+      "rule": "Layering: cortex/organs/formed.py, graphsearch.py, continuous.py exist and never import greg (the cortex package stays GREG-free; formed callables are injected by the worker)"
+    },
+    {
+      "id": "V2",
+      "rule": "Regression: all executable unit tests pass: python3 -m pytest tests/unit -q (includes tests/unit/test_cortex_formed_organs.py)"
+    },
+    {
+      "id": "V3",
+      "rule": "Truthful deficit: with nothing attached, graph and linear_program payloads route to the new organs and return DEPENDENCY_UNAVAILABLE with no answer (the body's genesis trigger, CAPABILITY_DEFICIT), never a fabricated claim"
+    },
+    {
+      "id": "V4",
+      "rule": "Certificate control: a certificate failure or an unproven engine claim yields INCONCLUSIVE with the answer withheld and the engine's claim labeled unproven; nothing is asserted"
+    },
+    {
+      "id": "V5",
+      "rule": "Certified path: a certified formed answer through the one entry produces a schema-valid cortex receipt with a GREG certificate in the proof, formed: and package: dependencies, and authority_created false"
+    }
+  ]
+}

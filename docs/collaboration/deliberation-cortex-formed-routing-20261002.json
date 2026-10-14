@@ -1,0 +1,93 @@
+{
+  "record_id": "DELIB-KIMI-2026-10-02-001",
+  "classification": "standard",
+  "contributor": "kimi",
+  "decision_owner": "alfonso_lopez",
+  "title": "Implement the PR #143 handoff slice: route cortex graph/linear_program payloads to organs recruiting founder-attached formed functions, engines never trusted, certificates on every answer",
+  "roles": {
+    "founder_intent_steward": "The directive's executable target is the Competency Compiler: recognize a problem, determine which epistemic methods can answer it, recruit the smallest competent mechanism, produce typed evidence, respect authority, observe outcomes, improve future selection. PR #143 built Capability Genesis (qualify an installed package behind a frozen oracle, issue a Mechanism Card, founder attaches it); its stated handoff is this slice: the cortex must actually recruit those formed functions. The meniscus translation controls the design: the strongest defensible operating frontier is certificates over engine trust and truthful deficits over fabricated claims — proximity to an uncertain boundary is not a performance objective, so competence envelopes deficit-out rather than stretch. Building != installation != activation: the organs serve only what the founder attached.",
+    "systems_architect": "Layering is preserved: cortex/organs/{formed,graphsearch,continuous}.py never import greg; the bridge (body side) serializes Mechanism Card fields plus the qualified runner source into the worker request; the worker rebuilds the qualified execution path, re-pins the package digest and runner hash before every call, and runs the engine in a nested no-network interpreter. Cortex contracts advance 0.2.0 -> 0.3.0 with payload keys graph/linear_program, routing policy cortex-route-policy/0.3.0, catalog and MATRIX versions coupled, examples regenerated, seed freeze freeze-v0.3.0.json created. The reserved-family supersession pattern (cpsat precedent) is followed: the register rows that named cortex.graph.search reserved now read implemented, with evidence.",
+    "adversarial_reviewer": "Strongest attacks, each with an executable control: (1) a lying engine serves a false shortest path — the certificate (feasible potentials realised by predecessor chains, exact arithmetic, no shared code) rejects it and the organ returns INCONCLUSIVE with the claim withheld; covered end-to-end through the real network-isolated worker by monkeypatching the runner before manifest qualification. (2) The package changes after qualification — digest re-pin fails closed to DEPENDENCY_UNAVAILABLE. (3) The runner source drifts between qualification and serving — the runner's sha256 is pinned in the card and the serialized source is re-hashed in the worker. (4) A detached function keeps serving — founder DETACH resolves to a truthful deficit at both the organ registry and the function registry. (5) The slice could overclaim genesis autonomy — attach remains founder-only; receipts carry authority_created false. Residual honesty note: the crossgeo evaluation's FROZEN_CODE now lists the new organ files while freeze-crossgeo-v0.3.json's results bind the old code hash; re-freezing in place would silently rewrite the baseline, so v0.4 (a fresh heldout sample spend) is left founder-gated and flagged in the PR.",
+    "operator_maintainer": "Operational surface: two new enabled seed organs that resolve to DEPENDENCY_UNAVAILABLE (a truthful genesis trigger) until the founder attaches formed functions — zero behavior change on unattached deployments beyond new payload keys. CPU is bounded (max 20s per formed call mapped from the route budget); the 64 KiB request bound keeps every certified answer inside the 512 KiB receipt bound, no truncation path. Rollback is closing the draft PR unmerged, reverting the merge commit if merged, or founder DETACH of the formed functions (instant, converts the routes to truthful deficits). The runner_source serialization fix was forced by a real test failure (lie did not cross the process boundary); that failure is preserved below, not edited away.",
+    "evidence_welfare_guardian": "No external effects, no participants, no data subjects; read-only computation. Evidence tiers marked per item; the strongest tier here is unit_test/sandbox_execution (network-isolated worker subprocesses), never promoted. Negative evidence preserved: the initial lying-engine e2e returned OK (the monkeypatched lie lived only in the test process while the worker re-imported the honest catalog), which forced carrying the qualified runner source with the card; the first full-suite run failed test_reserved_claims_name_registered_disabled_families because the verbatim register still called the seeded families reserved; the baseline environment failures (sympy absent, tarball worktree without .git) were recovered before any slice test ran. Nothing was deleted."
+  },
+  "alternatives": [
+    {"kind": "proposed_design", "name": "Cortex organs recruit founder-attached formed functions through bridge-serialized Mechanism Cards; worker re-pins package digest and runner hash; certificates on every answer", "benefits": "One entry (cognition.solve); genesis trigger preserved (deficit, never fabrication); engines never trusted; founder attach/detach respected at both layers; layering intact (cortex never imports greg)", "liabilities": "Cross-process serialization adds a card contract to maintain; crossgeo FROZEN_CODE coverage changes require a founder-gated v0.4 cycle", "evidence": "unit_test: 24 formed-organ tests; full suite 1821 passed; verifier v3 V1-V5", "rollback": "Close draft PR unmerged; revert merge commit if merged; founder DETACH converts routes to deficits", "kill_criteria": "If a served answer is ever shown to rely on engine trust rather than GREG's certificate, kill the route"},
+    {"kind": "do_nothing", "name": "Leave the PR #143 handoff unimplemented; genesis-formed functions exist but no cortex route recruits them", "benefits": "Zero new code; zero new risk surface", "liabilities": "Issue #117 (VEPMC bottleneck) stays open; the Competency Compiler target stalls at capability formation without recruitment; PR #143's value is unrealized", "evidence": "model_output: projection", "rollback": "n/a", "kill_criteria": "n/a"},
+    {"kind": "strongest_competitor", "name": "Implement shortest-path/max-flow/LP engines directly inside cortex organs (no GREG formed functions)", "benefits": "No cross-process card serialization; cortex self-contained", "liabilities": "Duplicates Capability Genesis inside the cortex (parallel mechanism for the same competence); founder attach/detach would need a second implementation; breaks the one-entry competence-ledger story; engines would still need certificates — the expensive part is identical", "evidence": "model_output: architecture comparison", "rollback": "n/a", "kill_criteria": "n/a"},
+    {"kind": "reversible_experiment", "name": "This slice is itself the reversible experiment: organs ship enabled but resolve to truthful deficits until the founder attaches each formed function, so production behavior is unchanged until explicit founder action", "benefits": "Tests the routing, deficit honesty, and certificate path in review with zero irreversibility; each attach is an independent, reversible founder decision", "liabilities": "None beyond review attention", "evidence": "sandbox_execution: verifier v3 V3 demonstrates deficit-on-unattached; unit_test e2e demonstrates certified serving when attached", "rollback": "Founder never attaches, or detaches; or close the draft PR", "kill_criteria": "If a deficit is ever fabricated into a claim on these routes, kill and re-issue"}
+  ],
+  "passes": [
+    {
+      "pass": 1,
+      "summary": "Intended outcome independent of mechanism: a graph or continuous-LP question in cortex dialect is answered only with a GREG certificate, and every failure mode (missing, detached, drifted, lying, out-of-envelope) becomes a truthful typed state that feeds Capability Genesis rather than a fabricated answer. Advantages compound: each formed function becomes recruitable by the one entry without new cortex code. Reversal condition: if the card serialization became a channel for untrusted code into the worker, the slice reverses into a liability; controls are hash pins, the no-network worker, and the certificate.",
+      "disadvantages": [
+        {"id": "D1", "text": "A lying engine could serve false paths or optima", "handling": "resolved by design: GREG-owned certificates (exact arithmetic, no shared code) gate every answer; lying-engine e2e through the real worker expects INCONCLUSIVE with the claim withheld"},
+        {"id": "D2", "text": "Package or runner drift after qualification could silently change behavior", "handling": "fail-closed re-pin: package digest and runner sha256 are re-verified before every call; mismatch is DEPENDENCY_UNAVAILABLE (re-qualification trigger), never a served answer"},
+        {"id": "D3", "text": "Bridge-serialized cards widen the body->worker channel", "handling": "bounded: only Mechanism Card fields plus the qualified runner source cross; the registry never crosses; the worker re-hashes the source against the card before executing"},
+        {"id": "D4", "text": "crossgeo FROZEN_CODE now covers the new organ files while v0.3 frozen results bind the old code hash", "handling": "made observable: no in-place re-freeze; v0.4 (fresh heldout sample spend) is founder-gated and flagged in the PR"},
+        {"id": "D5", "text": "The slice could be read as GREG self-installing capabilities", "handling": "converted into a constraint: attach is founder-only; unattached routes are deficits; receipts carry authority_created false and expenditure 0 USD"}
+      ]
+    },
+    {
+      "pass": 2,
+      "summary": "Re-attacked as deployed. Bureaucracy: no new ceremony — one verifier version, two records, one draft PR. Centralization: routing centralizes recruitment, not authority; attach stays with the founder. Fragility: version couplings (contracts 0.3.0, policy 0.3.0, catalog, MATRIX, examples, freeze) are machine-checked by the traceability suite (159 passed). Gaming: an engine cannot game the certificate because it shares no code and uses exact arithmetic; a compromised runner qualified by mistake is still caught at serve time by the certificate, and drift by the hash pin. Dependence on one model: every claim cites an executable test or verifier check runnable by any contributor.",
+      "dispositions": [
+        {"id": "D1", "disposition": "resolved", "note": "test_a_lying_engine_is_withheld_through_the_worker passes end-to-end; verifier v3 V4 repeats the control"},
+        {"id": "D2", "disposition": "resolved", "note": "test_a_changed_package_is_a_deficit and the runner hash pin in worker._formed_callable; both fail closed to DEPENDENCY_UNAVAILABLE"},
+        {"id": "D3", "disposition": "accepted", "owner": "alfonso_lopez", "threshold": "any proposal to let the worker accept card fields beyond the frozen _FORMED_CARD_FIELDS set + runner_source requires founder review"},
+        {"id": "D4", "disposition": "accepted", "owner": "alfonso_lopez", "threshold": "crossgeo v0.4 re-freeze (fresh heldout sample spend) happens only on explicit founder approval"},
+        {"id": "D5", "disposition": "resolved", "note": "genome acceptance criteria name 'a detached formed function yields DEPENDENCY_UNAVAILABLE, a genesis trigger'; detach e2e passes"}
+      ],
+      "residual_risk": "Competence envelopes (size caps, non-negative weights for shortest paths, 20s CPU ceiling) mean large real instances deficit-out rather than solve; that is the intended frontier behavior, and each deficit is a genesis trigger with its reason."
+    }
+  ],
+  "dissent": {
+    "material": true,
+    "strongest_objection": "Certificates make answers trustworthy, but the formed functions themselves were qualified against a frozen oracle of small cases; a mechanism that is correct on the oracle and wrong on a class the oracle missed will still be caught only if the certificate covers that class. For LP the duality certificate is complete; for shortest paths the potentials certificate is complete; for max flow the cut certificate is complete — completeness rests on the mathematics, not the oracle. Residual exposure is normalize() accepting an encoding of a different problem than the user asked (requirement_encoding is labeled 'request is the requirement; no separate encoding' — the organ cannot detect a mis-encoded payload).",
+    "resolution_threshold": "Any served answer shown to diverge from the asker's intent while certificates pass triggers review of the payload schemas and the cortex-dialect documentation, not of the engines.",
+    "review_trigger": "first certificate-passing answer that is wrong about the world (mis-encoded requirement), or founder request"
+  },
+  "evidence": [
+    {"id": "E1", "description": "tests/unit/test_cortex_formed_organs.py: 24 passed — routing, geometry, budget refusal, truthful negatives (deficit/detach/lying/changed-package/timeout/invalid/unproven), bridge _formed resolution, three e2e through the network-isolated worker (networkx shortest path, networkx max flow, scipy LP), detach->CAPABILITY_DEFICIT e2e, lying-engine INCONCLUSIVE e2e, drift guard", "source_type": "unit_test", "claimed_tier": "unit_test"},
+    {"id": "E2", "description": "Full unit suite on the final tree: pytest tests/unit -q = 1824 passed, 6 skipped (baseline before the slice: 1795 passed, 8 skipped); both runs recorded in verifier/runs", "source_type": "unit_test", "claimed_tier": "unit_test"},
+    {"id": "E3", "description": "verifier/v3 run: V1 layering (organs never import greg), V2 suite green, V3 truthful deficit on unattached, V4 INCONCLUSIVE withholding with engine_claim labeled unproven, V5 schema-valid certified receipt with authority_created false", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"},
+    {"id": "E4", "description": "Skill validators: validate_intent_ledger.py VALID over INTENT-0035; validate_deliberation.py VALID over this record", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"},
+    {"id": "E5", "description": "PR #143 head 68b484b, issue #117, and the genesis/mechanisms/capabilities modules read directly from the fetched branch this session", "source_type": "deterministic_fixture", "claimed_tier": "deterministic_fixture"}
+  ],
+  "negative_evidence": {
+    "deleted": "",
+    "preserved": [
+      "First lying-engine e2e returned OK, not INCONCLUSIVE: the monkeypatched runner lived only in the test process while the worker subprocess re-imported the honest catalog. Fix: the qualified runner source is serialized with the card and hash-pinned; the lie now crosses and is caught by the certificate. Recorded here and in INTENT-0035 failure_evidence.",
+      "First full-suite run after the slice: 1820 passed, 1 failed — test_reserved_claims_name_registered_disabled_families: the verbatim register still called cortex.graph.search reserved after the genome seeded it. Fixed by updating register rows A09/A10/A46/B08/B09 with dispositions and evidence (register rule: changed dispositions carry their reason).",
+      "Baseline environment failures recovered before slice testing: sympy 1.14.0 installed; tarball worktree given a git object store via fetch of refs/pull/143/head and repair-subject commit 3e059c20; baseline then 1795 passed, 8 skipped.",
+      "A verifier-preflight harness misfire wrote one run record with a mocked V2 and a wrong root; it was deleted as not-a-verifier-run and is disclosed here so the trail's deletion is itself on record."
+    ]
+  },
+  "rollback": "Close the draft PR unmerged (no merge authority exercised; merge is founder-only). If merged: revert the single merge commit. Independently, founder DETACH of any formed function instantly converts its route to a truthful CAPABILITY_DEFICIT with no code change.",
+  "authority": {
+    "introduces_new_authority_source": false,
+    "creates_parallel_canon": false,
+    "founder_authorization": true,
+    "founder_authorization_ref": "founder goal-mode directive 2026-10-01 (resumed 2026-10-02): build the PR #143 handoff slice inside the safety/legality envelope",
+    "note": "Attach/detach authority over formed functions is unchanged and remains founder-only; this slice creates no activation path. Cortex contracts were extended in place (0.2.0 -> 0.3.0, versioned), not paralleled."
+  },
+  "implementation": {"performed": true, "note": "Code, tests, verifier v3, register updates, and records complete on the work branch; delivered as a draft PR against claude/greg-seed-genome-build-y43kmg. No merge, no attach, no activation."},
+  "github_ops": [
+    {"op": "create_branch", "target_branch": "kimi/cortex-formed-function-routing-20261002", "protected": false, "explicit_authorization": true},
+    {"op": "push_files", "target_branch": "kimi/cortex-formed-function-routing-20261002", "protected": false, "explicit_authorization": true},
+    {"op": "create_pull_request (draft)", "target_branch": "claude/greg-seed-genome-build-y43kmg", "protected": false, "explicit_authorization": true, "note": "draft PR into the PR #143 frontier branch per the standing draft-PR-only rule; references issue #117"}
+  ],
+  "inspected_sources": [
+    {"source": "uniimente-kernel PR #143 head 68b484b (fetched refs/pull/143/head): cortex package, greg/cognition, greg/genesis.py, greg/mechanisms.py, greg/capabilities.py, tests/, verifier/, docs/cortex/", "inspected": true},
+    {"source": "uniimente-kernel issue #117 (VEPMC bottleneck)", "inspected": true},
+    {"source": "founder goal-mode directive text (2026-10-01 session, resumed 2026-10-02)", "inspected": true},
+    {"source": "skill validators and schemas (install-recursive-founder-intent-collaboration-protocol/scripts)", "inspected": true}
+  ],
+  "not_inspected": [
+    "PR #143 slices beyond the stated handoff (other organs' internals reviewed only where the slice touches them)",
+    "the production deployment environment (no production exists for these routes)",
+    "crossgeo heldout sample contents (frozen; v0.4 spend is founder-gated)"
+  ],
+  "decision": "RETAIN"
+}

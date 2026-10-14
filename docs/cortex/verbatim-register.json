@@ -160,23 +160,27 @@
       "evidence": [
         "tests/unit/test_cortex_routes.py::TestFormalOptimization::test_optimum_matches_brute_force_and_carries_a_certificate",
         "cortex/genome.py",
+        "cortex/organs/continuous.py",
+        "tests/unit/test_cortex_formed_organs.py",
         "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
       ],
       "backcast": "N4",
-      "notes": "Formal 0.2.0 solves small integer/real optimization with an optimality certificate and maps solver states to explicit abstention states. A dedicated OR engine (CP-SAT/LP/MIP) remains the reserved cortex.optimization.cpsat.",
+      "notes": "Formal 0.2.0 solves small integer/real optimization with an optimality certificate and maps solver states to explicit abstention states. CP-SAT 0.2.0 is implemented; v0.3.0 adds cortex.optimization.continuous 0.1.0, a continuous LP organ with a duality certificate on every optimum through founder-attached formed functions. MIP and matching remain reserved.",
       "items": null
     },
     {
       "id": "A10",
       "pass": "A",
       "anchor": "10. Graph and search intelligence",
-      "disposition": "reserved_profile",
+      "disposition": "implemented_partial",
       "evidence": [
         "cortex/genome.py",
+        "cortex/organs/graphsearch.py",
+        "tests/unit/test_cortex_formed_organs.py",
         "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
       ],
       "backcast": "N4",
-      "notes": "cortex.graph.search and cortex.search.heuristic reserved.",
+      "notes": "cortex.graph.search seeded at 0.2.0: shortest path and maximum flow through founder-attached formed functions, every answer accepted only on GREG's certificate. cortex.search.heuristic remains reserved; classifying which graph problem a question is belongs to a later geometry compiler.",
       "items": null
     },
     {
@@ -652,11 +656,14 @@
       "evidence": [
         "cortex/genome.py",
         "cortex/organs/cpsat.py",
+        "cortex/organs/graphsearch.py",
+        "cortex/organs/continuous.py",
         "tests/unit/test_cortex_formal_engines.py",
+        "tests/unit/test_cortex_formed_organs.py",
         "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
       ],
       "backcast": null,
-      "notes": "Each listed capability is mapped below. v0.2.0 implements CP-SAT (fault-diverse second engine behind the same formal_model contract); the v0.1 reserved family of the same name is SUPERSEDED with lineage.",
+      "notes": "Each listed capability is mapped below. v0.2.0 implements CP-SAT (fault-diverse second engine behind the same formal_model contract); the v0.1 reserved family of the same name is SUPERSEDED with lineage. v0.3.0 seeds cortex.graph.search 0.2.0 and cortex.optimization.continuous 0.1.0: both recruit founder-attached formed functions and accept an answer only on GREG's own certificate.",
       "items": [
         {
           "text": "semantic LLM reasoning;",
@@ -731,16 +738,16 @@
         {
           "text": "LP/MIP;",
           "status": "implemented",
-          "where": "integer linear models: CP-SAT 0.2.0 with Z3 optimality certificate; Formal 0.2.0 certified optimization; continuous LP/MIP remains reserved"
+          "where": "integer linear models: CP-SAT 0.2.0 with Z3 optimality certificate; Formal 0.2.0 certified optimization; continuous LP implemented by cortex.optimization.continuous 0.1.0 with a duality certificate; continuous MIP remains reserved"
         },
         {
           "text": "graph algorithms;",
-          "status": "reserved",
+          "status": "implemented",
           "where": "cortex.graph.search"
         },
         {
           "text": "network flow;",
-          "status": "reserved",
+          "status": "implemented",
           "where": "cortex.graph.search"
         },
         {
@@ -1194,23 +1201,28 @@
       "disposition": "implemented_partial",
       "evidence": [
         "tests/unit/test_cortex_routes.py::TestFormalOptimization::test_optimum_matches_brute_force_and_carries_a_certificate",
-        "cortex/genome.py"
+        "cortex/genome.py",
+        "cortex/organs/continuous.py",
+        "cortex/organs/graphsearch.py",
+        "tests/unit/test_cortex_formed_organs.py"
       ],
       "backcast": "N4",
-      "notes": "Certified small-scale optimization in Formal 0.2.0; dedicated OR (CP-SAT, LP/MIP, flows, matching) reserved.",
+      "notes": "Certified small-scale optimization in Formal 0.2.0; CP-SAT 0.2.0 implemented; v0.3.0 seeds continuous LP (cortex.optimization.continuous) and network flow (cortex.graph.search) through founder-attached formed functions, GREG-certified answers only; MIP and matching remain reserved.",
       "items": null
     },
     {
       "id": "B09",
       "pass": "B",
       "anchor": "9. Organ family 5: Graph intelligence",
-      "disposition": "reserved_profile",
+      "disposition": "implemented_partial",
       "evidence": [
         "cortex/genome.py",
+        "cortex/organs/graphsearch.py",
+        "tests/unit/test_cortex_formed_organs.py",
         "tests/unit/test_cortex_gates_genome.py::TestIntelligenceGenomeProjection::test_reserved_families_are_registered_disabled_and_ineligible"
       ],
       "backcast": "N4",
-      "notes": "cortex.graph.search reserved; classifying which graph problem a question is belongs to a later geometry compiler.",
+      "notes": "cortex.graph.search seeded at 0.2.0 (founder-attached formed functions; GREG certificates only, engines never trusted); classifying which graph problem a question is belongs to a later geometry compiler.",
       "items": null
     },
     {

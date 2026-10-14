@@ -42,6 +42,18 @@
       ]
     },
     {
+      "route": "cortex.graph.search@0.2.0",
+      "why_not": [
+        "does not support semantic"
+      ]
+    },
+    {
+      "route": "cortex.optimization.continuous@0.1.0",
+      "why_not": [
+        "does not support semantic"
+      ]
+    },
+    {
       "route": "cortex.optimization.cpsat@0.2.0",
       "why_not": [
         "does not support semantic"
@@ -108,6 +120,22 @@
     },
     {
       "eligible": false,
+      "key": "cortex.graph.search@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support semantic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.optimization.continuous@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support semantic"
+      ]
+    },
+    {
+      "eligible": false,
       "key": "cortex.optimization.cpsat@0.2.0",
       "may_recommend": false,
       "reasons": [
@@ -124,7 +152,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 1,
-    "seconds": 0.021026,
+    "seconds": 0.135269,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -252,7 +280,7 @@
         ],
         "expenditure": {
           "model_calls": 1,
-          "seconds": 0.020741,
+          "seconds": 0.134894,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -283,12 +311,12 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:d4d4a6c32d16e08ede02d09e9839c9518ba3af6d4d27e5e370e3657bf212c80c",
+  "receipt_id": "sha256:359c77c0bcb1dcf33497a87af60d52b9e24fc857de5eabc5fd210a9196a43b85",
   "route": {
     "attempts": [],
     "composition": false,
     "formal_plan": null,
-    "policy": "cortex-route-policy/0.2.1",
+    "policy": "cortex-route-policy/0.3.0",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
       "cortex.semantic@0.1.0"
@@ -321,8 +349,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.1",
-    "policy": "cortex-route-policy/0.2.1",
+    "cortex": "0.3.0",
+    "policy": "cortex-route-policy/0.3.0",
     "routes": {
       "cortex.semantic@0.1.0": "0.1.0"
     }

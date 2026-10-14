@@ -1,0 +1,10 @@
+{
+  "verifier": "manual-pytest",
+  "ts_utc": "2026-10-02T11:54:13+00:00",
+  "command": "/tmp/greg-venv/bin/python -I -m pytest tests/unit -q",
+  "head_commit": "68b484bb45a681655274c8b23d7722424bb99488",
+  "tracked_tree": "modified",
+  "exit_code": 0,
+  "summary": "1824 passed, 6 skipped in 521.83s",
+  "note": "Full unit suite green on the final tree (HEAD 68b484b + slice changes, uncommitted at run time). Timestamp from /tmp/full_suite2.log mtime. (Run recorded retroactively this session; ts_utc reconstructed from the session clock or log mtime, not from a live recorder.)"
+}

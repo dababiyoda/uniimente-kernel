@@ -1,0 +1,10 @@
+{
+  "verifier": "manual-pytest",
+  "ts_utc": "2026-10-02T11:21:00+00:00",
+  "command": "/tmp/greg-venv/bin/python -I -m pytest tests/unit/test_cortex_formed_organs.py -x -q",
+  "head_commit": "68b484bb45a681655274c8b23d7722424bb99488",
+  "tracked_tree": "modified",
+  "exit_code": 1,
+  "summary": "1 failed, 22 passed",
+  "note": "test_a_lying_engine_is_withheld_through_the_worker returned OK, not INCONCLUSIVE: the monkeypatched runner lived only in the test process while the worker subprocess re-imported the honest catalog. Fixed by serializing the qualified runner source with the card (bridge) and hash-pinning it (worker). (Run recorded retroactively this session; ts_utc reconstructed from the session clock or log mtime, not from a live recorder.)"
+}

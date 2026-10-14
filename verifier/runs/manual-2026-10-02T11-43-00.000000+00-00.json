@@ -1,0 +1,10 @@
+{
+  "verifier": "manual-pytest",
+  "ts_utc": "2026-10-02T11:43:00+00:00",
+  "command": "/tmp/greg-venv/bin/python -I -m pytest tests/unit/test_cortex_register.py -q",
+  "head_commit": "68b484bb45a681655274c8b23d7722424bb99488",
+  "tracked_tree": "modified",
+  "exit_code": 0,
+  "summary": "99 passed in 1.88s",
+  "note": "Register rows now truthful: graph algorithms and network flow implemented via cortex.graph.search; continuous LP noted implemented via cortex.optimization.continuous; A10/B09 dispositions implemented_partial. (Run recorded retroactively this session; ts_utc reconstructed from the session clock or log mtime, not from a live recorder.)"
+}

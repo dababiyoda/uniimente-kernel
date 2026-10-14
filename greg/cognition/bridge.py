@@ -76,9 +76,20 @@ ORGANS = {
     "cortex.semantic@0.1.0": "cognition.cortex.semantic",
     "cortex.deterrence.accountability@0.1.0": "cognition.cortex.deterrence.accountability",
     "cortex.extraction.schedule@0.1.0": "cognition.cortex.extraction.schedule",
+    "cortex.graph.search@0.2.0": "cognition.cortex.graph.search",
+    "cortex.optimization.continuous@0.1.0": "cognition.cortex.optimization.continuous",
 }
 CAPABILITY_OF = dict(ORGANS)
 ORGAN_OF = {cid: key for key, cid in ORGANS.items()}
+# cortex organ key -> the formed GREG functions it may recruit (issue #117, PR #143 handoff).
+# Only package-formed (DEPEND) manifests qualify; builder-formed functions never execute here.
+FORMED_NEEDS = {
+    "cortex.graph.search@0.2.0": ("graph.shortest_path", "graph.max_flow"),
+    "cortex.optimization.continuous@0.1.0": ("lp.optimize",),
+}
+_GRAPH_KIND = {"shortest_path": "graph.shortest_path", "max_flow": "graph.max_flow"}
+_FORMED_CARD_FIELDS = ("distribution", "module", "runner", "runner_sha256", "pinned_paths",
+                       "location", "version", "package_digest", "license")
 MAX_REQUEST_BYTES = 64 * 1024
 _LEVEL = {"none": 0.0, "low": 0.25, "medium": 0.5, "high": 0.75, "critical": 1.0, "unknown": None}
 _HARM_TO_VECTOR = {"physical": "physical", "financial": "financial", "rights": "rights", "privacy": "privacy",
@@ -127,6 +138,56 @@ def withheld(registry, *, forced: str | None = None) -> dict:
     return out
 
 
+def _formed(registry, problem: dict) -> dict:
+    """Resolve the founder-attached formed functions this payload could route to.
+
+    Returns {function: {"entry": card | None, "why": str | None}}. An entry is the
+    Mechanism Card fields the worker needs to re-pin and re-run the qualified package,
+    plus the qualified runner source itself, so the worker executes exactly what the
+    founder attested (hash-pinned by the card) rather than whatever its own import of
+    the genesis catalog would yield; the GREG registry never crosses into the worker. A missing, detached, quarantined or
+    non-package function is reported with its reason so the organ can state a truthful
+    DEPENDENCY_UNAVAILABLE — the genesis trigger — instead of a claim. Payloads without
+    graph/linear_program keys resolve nothing (no registry access, no new failure modes
+    on existing routes).
+    """
+    payload = problem["payload"]
+    needs: list[str] = []
+    graph = payload.get("graph")
+    if isinstance(graph, dict) and graph.get("kind") in _GRAPH_KIND:
+        needs.append(_GRAPH_KIND[graph["kind"]])
+    if isinstance(payload.get("linear_program"), dict):
+        needs.append("lp.optimize")
+    out = {}
+    for function in dict.fromkeys(needs):
+        entry, why = None, "no attached formed function"
+        for manifest in registry.by_function(function):
+            ok, reason = registry.usable(manifest.capability_id)
+            if not ok:
+                why = f"{manifest.capability_id}: {reason}"
+                continue
+            prov = manifest.provenance or {}
+            if prov.get("mode") != "DEPEND":
+                why = f"{manifest.capability_id}: not a package-formed function (mode {prov.get('mode')})"
+                continue
+            missing = [k for k in _FORMED_CARD_FIELDS if not prov.get(k)]
+            if missing:
+                why = f"{manifest.capability_id}: mechanism card incomplete ({missing})"
+                continue
+            from greg.genesis import CATALOG as GENESIS_CATALOG
+            source = (GENESIS_CATALOG.get(function) or {}).get("runners", {}).get(prov["runner"])
+            if not isinstance(source, str):
+                why = f"{manifest.capability_id}: unknown runner {prov['runner']}"
+                continue
+            entry = {"function": function, "capability_id": manifest.capability_id,
+                     "runner_source": source,
+                     **{k: prov[k] for k in _FORMED_CARD_FIELDS}}
+            why = None
+            break
+        out[function] = {"entry": entry, "why": why}
+    return out
+
+
 def _semantic_model(model_config, problem) -> dict | None:
     """Only a founder-selected local Ollama model, and only when the problem has sources or a
     free-text schedule request the controlled grammar may not cover."""
@@ -138,10 +199,11 @@ def _semantic_model(model_config, problem) -> dict | None:
 
 
 def run_worker(problem: dict, records: list, *, withheld_organs: dict, semantic_model: dict | None,
-               cpu_seconds: float, created_at: str) -> dict:
+               cpu_seconds: float, created_at: str, formed: dict | None = None) -> dict:
     from greg.capabilities import CapabilityError, run_isolated
     request = {"problem": problem, "records": records, "withheld": withheld_organs,
-               "semantic_model": semantic_model, "cpu_seconds": cpu_seconds, "created_at": created_at}
+               "semantic_model": semantic_model, "cpu_seconds": cpu_seconds, "created_at": created_at,
+               "formed": formed or {}}
     try:
         proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), "__cortex__",
                              canonical(request)], cwd=ROOT, isolate_network=semantic_model is None,
@@ -292,7 +354,8 @@ def reason_cortex(params, *, registry, journal=None, model_config=None, forced=N
     try:
         receipt = run_worker(problem, records, withheld_organs=withheld(registry, forced=forced),
                              semantic_model=_semantic_model(model_config, problem), cpu_seconds=cpu,
-                             created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+                             created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                             formed=_formed(registry, problem))
         check_receipt(receipt)
         if receipt["versions"]["cortex"] != CORTEX_VERSION:
             raise CognitionError(f"worker ran cortex {receipt['versions']['cortex']}, body expects {CORTEX_VERSION}")

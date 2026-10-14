@@ -40,6 +40,18 @@
       ]
     },
     {
+      "route": "cortex.graph.search@0.2.0",
+      "why_not": [
+        "does not support legal"
+      ]
+    },
+    {
+      "route": "cortex.optimization.continuous@0.1.0",
+      "why_not": [
+        "does not support legal"
+      ]
+    },
+    {
       "route": "cortex.optimization.cpsat@0.2.0",
       "why_not": [
         "does not support legal"
@@ -114,6 +126,22 @@
     },
     {
       "eligible": false,
+      "key": "cortex.graph.search@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support legal"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.optimization.continuous@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support legal"
+      ]
+    },
+    {
+      "eligible": false,
       "key": "cortex.optimization.cpsat@0.2.0",
       "may_recommend": false,
       "reasons": [
@@ -132,7 +160,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.000183,
+    "seconds": 0.001366,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -257,12 +285,12 @@
   "proof_artifacts": [],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:812c836e1cbe6cf03714b8c2e00cfd7582386836afb4c110072a8941bbcdea9e",
+  "receipt_id": "sha256:63fae2820c6091ef2bbd4d5e471a9cdbb934019b957c6bffd5b4080a6bb40e4f",
   "route": {
     "attempts": [],
     "composition": false,
     "formal_plan": null,
-    "policy": "cortex-route-policy/0.2.1",
+    "policy": "cortex-route-policy/0.3.0",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": []
   },
@@ -293,8 +321,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.1",
-    "policy": "cortex-route-policy/0.2.1",
+    "cortex": "0.3.0",
+    "policy": "cortex-route-policy/0.3.0",
     "routes": {}
   }
 }

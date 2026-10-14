@@ -42,6 +42,18 @@
       ]
     },
     {
+      "route": "cortex.graph.search@0.2.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "route": "cortex.optimization.continuous@0.1.0",
+      "why_not": [
+        "does not support strategic"
+      ]
+    },
+    {
       "route": "cortex.optimization.cpsat@0.2.0",
       "why_not": [
         "does not support strategic"
@@ -119,6 +131,22 @@
     },
     {
       "eligible": false,
+      "key": "cortex.graph.search@0.2.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
+      "key": "cortex.optimization.continuous@0.1.0",
+      "may_recommend": false,
+      "reasons": [
+        "does not support strategic"
+      ]
+    },
+    {
+      "eligible": false,
       "key": "cortex.optimization.cpsat@0.2.0",
       "may_recommend": false,
       "reasons": [
@@ -135,7 +163,7 @@
   "execution_authority": "none",
   "expenditure": {
     "model_calls": 0,
-    "seconds": 0.100598,
+    "seconds": 0.144956,
     "solver_calls": 0,
     "usd": 0.0
   },
@@ -297,7 +325,7 @@
         ],
         "expenditure": {
           "model_calls": 0,
-          "seconds": 0.098084,
+          "seconds": 0.14069,
           "solver_calls": 0,
           "usd": 0.0
         },
@@ -512,12 +540,12 @@
   ],
   "protection": null,
   "ranking": null,
-  "receipt_id": "sha256:b1de9d7ca5637d25901ce5dc8693cf60c814cee4131e6a825db4d5562753d25a",
+  "receipt_id": "sha256:0d1f974d0a30be17bc892a2ca18bc95775c21ae901b5c697b2d4db8f109467ad",
   "route": {
     "attempts": [],
     "composition": false,
     "formal_plan": null,
-    "policy": "cortex-route-policy/0.2.1",
+    "policy": "cortex-route-policy/0.3.0",
     "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
     "selected": [
       "cortex.deterrence.accountability@0.1.0"
@@ -563,8 +591,8 @@
     "verifier": "cortex.verifier.adversarial@0.1.0"
   },
   "versions": {
-    "cortex": "0.2.1",
-    "policy": "cortex-route-policy/0.2.1",
+    "cortex": "0.3.0",
+    "policy": "cortex-route-policy/0.3.0",
     "routes": {
       "cortex.deterrence.accountability@0.1.0": "0.1.0"
     }

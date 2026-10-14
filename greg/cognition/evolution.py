@@ -139,15 +139,17 @@ def immune_target() -> Target:
 
 
 def immune_split() -> tuple[dict, dict, list[str]]:
-    """Seeded negative-selection instances reserved for P8, disjoint from every admission seed."""
+    """Seeded negative-selection instances reserved for P8, disjoint from every admission seed. They come from the
+    Gaussian generator that cycle 2 (2026-10-09) sampled, kept byte-identical when the admission generator gained
+    native regimes (collective.BENCHMARK_REVISION), with that cycle's dimension buckets."""
     from .genomes import admission, collective
     reserved = set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS)
     if reserved & (set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS)):
         raise EvolutionError("P8 immune seeds overlap the admission seeds")
 
     def item(seed):
-        data, truth = collective.immune_instance(seed)
-        return f"s{seed}", {"data": data, "truth": truth, "category": collective.immune_subregion(data)}
+        data, truth = collective.immune_gaussian_instance(seed)
+        return f"s{seed}", {"data": data, "truth": truth, "category": collective.immune_dimension_band(data)}
     return (dict(item(s) for s in IMMUNE_TRAIN_SEEDS), dict(item(s) for s in IMMUNE_HELDOUT_SEEDS),
             sorted(f"s{s}" for s in reserved))
 

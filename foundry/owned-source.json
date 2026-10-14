@@ -20,6 +20,7 @@
     "capabilities/README.md",
     "capabilities/__init__.py",
     "capabilities/genome.py",
+    "capabilities/router.py",
     "capital/README.md",
     "capital/__init__.py",
     "capital/acquisition-gates.yaml",

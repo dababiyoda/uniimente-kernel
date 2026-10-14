@@ -4,6 +4,11 @@ Each test reproduced a defect on the branch before the controller existed. The c
 ``latency_budget`` was handed to every inner run whole: the answer, the premises check and up to four sensitivity
 re-runs could each take all of it, so one request could spend its budget six times. Nothing weighed whether an
 optional re-run fitted, no stop reason was kept, and local compute was recorded as a ceiling, not a measurement.
+
+The budget's clock is fake, but each inner run's latency limit is a real solver deadline (the solver gets 45% of
+it). Just after a container restore, a first solve outlasted the 2.25s a default 5s limit gives the solver and
+correctly came back UNKNOWN (TIMEOUT). The budgets below therefore give every inner run a real limit of 20s or
+more, and the fake clock alone decides what is spent (tests/evidence/seed-genome-residuals-2026-10-13/cold-start.log).
 """
 from types import SimpleNamespace
 
@@ -48,7 +53,7 @@ def no_index(tmp_path, monkeypatch):
 @pytest.fixture
 def timed(monkeypatch):
     """Every inner cortex run takes ``cost`` seconds on the budget's clock; real computation still runs."""
-    state = SimpleNamespace(cost=4.0, clock=Clock(), limits=[])
+    state = SimpleNamespace(cost=16.0, clock=Clock(), limits=[])
     monkeypatch.setattr(compiler, "CLOCK", state.clock)
     original = cortex.reason
 
@@ -91,19 +96,19 @@ def test_required_steps_are_never_priced_away_and_optional_ones_must_fit_their_m
 
 
 def test_one_budget_covers_the_whole_compiled_decision(registry, timed, monkeypatch):
-    r = compile_(registry, {**SENSITIVE, "latency_budget": 10}, MODEL)
+    r = compile_(registry, {**SENSITIVE, "latency_budget": 40}, MODEL)
     assert r["state"] == "WORLD_UNVERIFIED" and isinstance(r["result"], dict)
     sens, budget = r["sensitivity"], r["resource_use"]["budget"]
-    # answer 4s (6 left), first re-run 4s (2 left), then the 4s tail no longer fits: two inputs stay untested
+    # answer 16s (24 left), first re-run 16s (8 left), then the 16s tail no longer fits: two inputs stay untested
     assert list(sens["inputs"]) == ["constraints"] and set(sens["not_run"]) == {"objective", "variables"}
-    assert timed.limits == [10, 6]                       # every inner run got only what remained, never the whole
+    assert timed.limits == [30, 24]                      # the 30s step ceiling, then only what remained
     assert len(r["intermediate_receipts"]) == 1 + len(sens["inputs"])
     assert any("not tested within the thinking budget" in d for d in r["dissent"])
-    assert budget["total_source"] == "declared latency_budget" and budget["spent_s"] == 8
+    assert budget["total_source"] == "declared latency_budget" and budget["spent_s"] == 32
     assert [s["decision"] for s in budget["steps"]] == ["RUN", "RUN", "STOP", "STOP"]
     # with room for every re-run, all of them run: the budget narrows only when it binds
     timed.clock.now, timed.limits[:] = 0.0, []
-    wide = compile_(registry, {**SENSITIVE, "latency_budget": 30}, MODEL)
+    wide = compile_(registry, {**SENSITIVE, "latency_budget": 70}, MODEL)
     assert set(wide["sensitivity"]["inputs"]) == {"constraints", "objective", "variables"}
     assert wide["sensitivity"]["not_run"] == {}
 
@@ -112,8 +117,8 @@ def test_a_spent_budget_narrows_the_result_instead_of_skipping_required_evidence
     claim = {"variables": {"x": [0, 10], "y": [0, 10]},
              "constraints": [{"coefficients": {"x": 1, "y": 1}, "op": "<=", "rhs": 10}],
              "property": {"coefficients": {"x": 1}, "op": "<=", "rhs": 10}}
-    timed.cost = 9.95
-    r = compile_(registry, {"geometry": "deductive", "latency_budget": 10}, {"claim": claim})
+    timed.cost = 29.95
+    r = compile_(registry, {"geometry": "deductive", "latency_budget": 30}, {"claim": claim})
     # the claim holds within the model, but the vacuity check had no budget: the verdict says so
     assert r["result"]["claim"] == "HOLDS_WITHIN_MODEL"
     assert r["result"]["premises"].startswith("UNDECIDED (BUDGET_EXHAUSTED")
@@ -124,13 +129,17 @@ def test_a_spent_budget_narrows_the_result_instead_of_skipping_required_evidence
 
 
 def test_local_compute_is_measured_not_assumed_free(registry, monkeypatch):
-    r = cortex.reason({"problem_id": "cpu", "operation": "optimize", "data": dict(MODEL)}, registry=registry)
+    roomy = {"latency_limit": 30}
+    r = cortex.reason({"problem_id": "cpu", "operation": "optimize", "data": dict(MODEL), "geometry": roomy},
+                      registry=registry)
+    assert r["output"] is not None
     cost = r["compute_cost"]
     assert cost["cpu_seconds"] > 0 and cost["peak_memory"] == "unmeasured" and cost["energy"] == "unmeasured"
     # where a platform offers no resource accounting, the receipt says unmeasured instead of crashing or saying 0
     with monkeypatch.context() as m:
         m.setattr(cortex, "_cpu_seconds", lambda: None)
-        blind = cortex.reason({"problem_id": "cpu2", "operation": "optimize", "data": dict(MODEL)}, registry=registry)
+        blind = cortex.reason({"problem_id": "cpu2", "operation": "optimize", "data": dict(MODEL), "geometry": roomy},
+                              registry=registry)
     assert blind["compute_cost"]["cpu_seconds"] == "unmeasured" and blind["output"] == r["output"]
     compiled = compile_(registry, {"geometry": "optimization", "consequence_class": "internal_write"}, MODEL)
     budget = compiled["resource_use"]["budget"]

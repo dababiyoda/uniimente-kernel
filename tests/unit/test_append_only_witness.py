@@ -259,3 +259,34 @@ def test_capability_genome_is_complete_and_read_only():
     assert genome.authority.max_consequence_class == "read_only"
     registry = GenomeRegistry()
     registry.register(genome)
+
+
+# --- durable witness state ---------------------------------------------------
+
+def test_restarted_witness_keeps_its_view_and_refuses_a_rewrite(tmp_path):
+    state = str(tmp_path / "auditor.json")
+    Witness("auditor", b"k", state_path=state).cosign(_cp("kernel", HASHES, 10))
+    restarted = Witness("auditor", b"k", state_path=state)
+    assert restarted.last_seen["kernel"] == (10, merkle_root(HASHES[:10]))
+    forged = list(HASHES[:20])
+    forged[2] = "sha256:" + "b" * 64
+    with pytest.raises(WitnessRefused):
+        restarted.cosign(Checkpoint("kernel", 20, merkle_root(forged)), prove_consistency(forged, 10))
+    again = Witness("auditor", b"k", state_path=state)
+    assert again.refusals and again.refusals[0].offered_root == merkle_root(forged)
+    assert again.last_seen["kernel"][0] == 10
+
+
+def test_witness_without_state_path_forgets_on_restart():
+    """Documented failure mode, kept visible: no state_path, no memory."""
+    Witness("auditor", b"k").cosign(_cp("kernel", HASHES, 10))
+    fresh = Witness("auditor", b"k")
+    assert fresh.last_seen == {}
+
+
+@pytest.mark.parametrize("content", ["{not json", '{"version": 1, "witness_id": "someone-else", "last_seen": {}}'])
+def test_corrupt_or_foreign_state_fails_closed(tmp_path, content):
+    state = tmp_path / "w.json"
+    state.write_text(content)
+    with pytest.raises(ValueError):
+        Witness("auditor", b"k", state_path=str(state))

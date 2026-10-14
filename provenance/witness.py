@@ -22,14 +22,18 @@ rewritten history, and an auditor needs only (size, root) to check it.
 Signatures use per-witness HMAC-SHA256, matching provenance/commit_witness.py.
 Limitation: an HMAC verifier holds the witness key, so cosignatures are not
 publicly transferable; an asymmetric scheme is a drop-in replacement for
-`_mac` once the Kernel adopts one. Witness state is in memory; a persistent
-witness must store `last_seen` durably or it reverts to first-use trust.
+`_mac` once the Kernel adopts one. A persistent
+witness must be given `state_path`; without it a restart reverts to
+first-use trust. State is written (fsync + atomic rename) before a
+cosignature is returned.
 """
 from __future__ import annotations
 
 import hashlib
 import hmac
-from dataclasses import dataclass, field
+import json
+import os
+from dataclasses import asdict, dataclass, field
 
 from provenance.consistency import ConsistencyProof, verify_consistency
 
@@ -84,20 +88,53 @@ class Witness:
     proof from the last cosigned size.
     """
 
-    def __init__(self, witness_id: str, key: bytes):
+    def __init__(self, witness_id: str, key: bytes, *, state_path: str | None = None):
         if not key:
             raise ValueError("witness key required")
         self.witness_id = witness_id
         self._key = key
+        self.state_path = state_path
         self.last_seen: dict[str, tuple[int, str]] = {}
         self.first_use: set[str] = set()
         self.refusals: list[SplitViewEvidence] = []
+        if state_path and os.path.exists(state_path):
+            self._load()
+
+    # Durable state: a restarted witness must not fall back to first-use
+    # trust. A corrupt or foreign state file fails closed (raises) rather
+    # than being treated as empty.
+    def _load(self) -> None:
+        with open(self.state_path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        if data.get("witness_id") != self.witness_id or data.get("version") != 1:
+            raise ValueError("witness state belongs to another witness or version")
+        self.last_seen = {o: (int(v[0]), str(v[1])) for o, v in data["last_seen"].items()}
+        self.first_use = set(data.get("first_use", []))
+        self.refusals = [SplitViewEvidence(**{**r, "proof": ConsistencyProof(
+            r["proof"]["old_size"], r["proof"]["new_size"], tuple(r["proof"]["path"]))
+            if r.get("proof") else None}) for r in data.get("refusals", [])]
+
+    def _persist(self) -> None:
+        if not self.state_path:
+            return
+        data = {"version": 1, "witness_id": self.witness_id,
+                "last_seen": {o: list(v) for o, v in self.last_seen.items()},
+                "first_use": sorted(self.first_use),
+                "refusals": [{**asdict(r), "proof": asdict(r.proof) if r.proof else None}
+                             for r in self.refusals]}
+        tmp = f"{self.state_path}.tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, sort_keys=True)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp, self.state_path)
 
     def _refuse(self, cp: Checkpoint, seen: tuple[int, str], reason: str,
                 proof: ConsistencyProof | None) -> None:
         evidence = SplitViewEvidence(cp.origin, self.witness_id, seen[0], seen[1],
                                      cp.tree_size, cp.root, reason, proof)
         self.refusals.append(evidence)
+        self._persist()
         raise WitnessRefused(evidence)
 
     def cosign(self, cp: Checkpoint, proof: ConsistencyProof | None = None) -> str:
@@ -118,6 +155,7 @@ class Witness:
             if not valid:
                 self._refuse(cp, seen, "no valid append-only proof from last cosigned checkpoint", proof)
         self.last_seen[cp.origin] = (cp.tree_size, cp.root)
+        self._persist()  # state is durable before any signature leaves
         signature = _mac(self._key, cp.note)
         cp.cosignatures[self.witness_id] = signature
         return signature
@@ -180,7 +218,7 @@ def capability_genome():
             "first-use trust: a witness with no prior state cosigns whatever it sees first",
             "quorum of fresh witnesses accepts a fork they never saw the original of",
             "HMAC cosignatures are verifiable only by key holders (not publicly transferable)",
-            "in-memory witness state is lost on restart unless persisted",
+            "witness state is durable only when state_path is given; without it a restart reverts to first-use trust",
             "sizes are authenticated by the cosigned note, not by the consistency proof",
         ],
         recovery_path=("Detach: stop consulting QuorumPolicy; existing inclusion proofs and "

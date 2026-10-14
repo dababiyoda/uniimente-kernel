@@ -125,9 +125,9 @@ Verdict:
 
 - The test expecting `(old, new+1)` relabelling to fail was wrong. RFC 9162 verification binds roots, not sizes. The test was corrected, not deleted.
 - HMAC cosignatures are not publicly verifiable.
-- Witness state is in memory.
+- Witness state is durable when `state_path` is given: fsync and atomic rename happen before any cosignature, and corrupt or foreign state fails closed. Without `state_path` a restart reverts to first-use trust, and a test keeps that failure visible.
 - No live witness is deployed.
-- The organs (WMI, DALEOBANKS) are not wired to cosign. This is building, not installation or activation.
+- `scripts/cross_organ_mission.py` runs DALEOBANKS and WMI as witnesses inside their own interpreters, with their own keys and state files, against a real three-process episode (`tests/evidence/cross-organ-mission-20261014/`). Neither organ's own runtime calls the witness yet. This is building and exercising, not installation or activation.
 - The REA findings are static inference from the shipped artifact. They are not runtime proof of Sigstore behaviour.
 
 ## 9. Authority

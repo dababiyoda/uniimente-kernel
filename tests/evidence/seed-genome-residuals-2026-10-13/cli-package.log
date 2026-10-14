@@ -1,0 +1,158 @@
+$ greg cognition package --mission m:evidence-package --recipient 'Example Operations Desk' --purpose '...' --remedy '...' --reveal output --out <dir>
+{
+  "package_digest": "sha256:e09aa6c2a9cad43beea8062443e804ab2d69882c9c3d95966096702469f83bef",
+  "items": 1,
+  "contradictions": [],
+  "revealed": [
+    "abstention_state",
+    "assumptions",
+    "authority_created",
+    "consequence_class",
+    "epistemic_class",
+    "evaluator",
+    "evaluator_result",
+    "falsification_condition",
+    "formal_validity",
+    "method",
+    "method_version",
+    "missing_information",
+    "outcome_state",
+    "output",
+    "policy_version",
+    "proof_type",
+    "reason_code",
+    "schema_version",
+    "strongest_counterargument",
+    "uncertainty"
+  ],
+  "holder": "<dir>/holder.json",
+  "presentation": "<dir>/presentation.json",
+  "presentation_verifies": true,
+  "sent": false,
+  "note": "nothing was sent; share presentation.json yourself, keep holder.json private"
+}
+
+exit=0
+
+$ greg cognition verify-package presentation.json
+{
+  "valid": true,
+  "problems": [],
+  "items": [
+    {
+      "revealed": {
+        "abstention_state": "NONE",
+        "assumptions": [
+          "Input and model validity are not established by computation"
+        ],
+        "authority_created": false,
+        "consequence_class": "read_only",
+        "epistemic_class": "optimization",
+        "evaluator": "greg.cognition.verification/0.1.0",
+        "evaluator_result": {
+          "artifact_digest": "sha256:f9a2747e6afec62cc82e5a8f0cf1f36df765b1cf27a05286eadccc86c65b27e2",
+          "checks": {
+            "artifact_constraints_match_input": true,
+            "artifact_objective_matches_input": true,
+            "artifact_solution_matches_output": true,
+            "artifact_status_matches_output": true,
+            "artifact_variables_match_input": true,
+            "bounded_solution": true,
+            "constraint_substitution": true,
+            "integer_domain": true,
+            "native_status_contract": true,
+            "objective_substitution": true,
+            "optimality_cross_engine": true,
+            "requirement_coverage": true,
+            "solution_variable_set": true,
+            "typed_artifact": true
+          },
+          "cross_checks": {
+            "optimality_cross_engine": "unsat"
+          },
+          "dissent": [
+            "Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding."
+          ],
+          "execution_contract": "separate network-denied process, scrubbed environment, bounded CPU/RAM",
+          "inconclusive": [],
+          "independence": "separate verification functions in reviewed Kernel code; CP-SAT optimality and infeasibility claims are re-checked by Z3 where it is installed; no independent external evaluator",
+          "verdict": "STRUCTURALLY_VERIFIED"
+        },
+        "falsification_condition": "independent recomputation, invalid assumptions, counterexample or observed outcome contradicts this receipt",
+        "formal_validity": "VALID_CONDITIONAL_ON_MODEL",
+        "method": "cognition.optimization",
+        "method_version": "0.2.0",
+        "missing_information": [],
+        "outcome_state": "ANSWERED_WITHIN_SCOPE",
+        "output": {
+          "objective_value": 12.0,
+          "solution": {
+            "crew_a": 0,
+            "crew_b": 6
+          },
+          "solver_status": "OPTIMAL"
+        },
+        "policy_version": "seed-static/0.2",
+        "proof_type": "optimization_certificate",
+        "reason_code": null,
+        "schema_version": "greg-cognition/0.2",
+        "strongest_counterargument": "Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding.",
+        "uncertainty": {
+          "conditional_on_input": true,
+          "world_confidence": null
+        }
+      },
+      "withheld_or_decoy": 28
+    }
+  ],
+  "contradictions": [],
+  "proves": "the revealed values are the ones GREG committed to in this package",
+  "does_not_prove": [
+    "Not factual truth: computation and formal validity hold within the encoded model and stated assumptions.",
+    "Not legitimacy: no law, consent, rights or authority question is settled by this package.",
+    "Not inclusion proof by itself: ledger membership needs the ledger or an exported witness bundle.",
+    "Not acceptance: the recipient may dispute the data, model, jurisdiction, completeness or relevance, or decline; its response is recorded, never presumed."
+  ]
+}
+
+exit=0
+
+$ greg cognition verify-package tampered.json  (remedy text edited after packaging)
+pt",
+        "formal_validity": "VALID_CONDITIONAL_ON_MODEL",
+        "method": "cognition.optimization",
+        "method_version": "0.2.0",
+        "missing_information": [],
+        "outcome_state": "ANSWERED_WITHIN_SCOPE",
+        "output": {
+          "objective_value": 12.0,
+          "solution": {
+            "crew_a": 0,
+            "crew_b": 6
+          },
+          "solver_status": "OPTIMAL"
+        },
+        "policy_version": "seed-static/0.2",
+        "proof_type": "optimization_certificate",
+        "reason_code": null,
+        "schema_version": "greg-cognition/0.2",
+        "strongest_counterargument": "Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding.",
+        "uncertainty": {
+          "conditional_on_input": true,
+          "world_confidence": null
+        }
+      },
+      "withheld_or_decoy": 28
+    }
+  ],
+  "contradictions": [],
+  "proves": "the revealed values are the ones GREG committed to in this package",
+  "does_not_prove": [
+    "Not factual truth: computation and formal validity hold within the encoded model and stated assumptions.",
+    "Not legitimacy: no law, consent, rights or authority question is settled by this package.",
+    "Not inclusion proof by itself: ledger membership needs the ledger or an exported witness bundle.",
+    "Not acceptance: the recipient may dispute the data, model, jurisdiction, completeness or relevance, or decline; its response is recorded, never presumed."
+  ]
+}
+
+exit=1

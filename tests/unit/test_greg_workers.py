@@ -207,13 +207,19 @@ def test_claude_worker_argv_is_bounded():
     assert not any(a == "Bash" for a in argv[argv.index("--allowedTools") + 1:argv.index("--disallowedTools")])
 
 
+# A forged order either replaces the acceptance commands or drops them all. Dropping them matters on a host
+# without the worker envelope: the separate appraiser process then runs no acceptance command, so only the
+# canonical commission receipt (reached through the journal) can tell the forgery from the commission.
+@pytest.mark.parametrize("forged_acceptance", [{"tests": [["python", "-c", "pass"]]},
+                                               {"tests": [], "run_changed_tests": False}],
+                         ids=["replaced", "dropped"])
 @pytest.mark.parametrize("readdress", [False, True])
-def test_appraisal_binds_acceptance_to_the_original_commission(tmp_path, monkeypatch, readdress):
+def test_appraisal_binds_acceptance_to_the_original_commission(tmp_path, monkeypatch, readdress, forged_acceptance):
     home, _, _, _, _ = run_mission(tmp_path, monkeypatch, GOOD)
     root = Layout(home).workspace / "m_work-add-sub" / "work-orders" / "add-sub"
     evidence_path = root / "evidence.json"
     evidence = json.loads(evidence_path.read_text())
-    evidence["order"]["acceptance"]["tests"] = [["python", "-c", "pass"]]
+    evidence["order"]["acceptance"].update(forged_acceptance)
     if readdress:
         forged = workers.WorkOrder(**evidence["order"]).digest()
         evidence["order_digest"] = forged

@@ -601,9 +601,14 @@ def status(home: str | Path) -> dict:
         requests = [e.payload for e in journal.replay("decision.requested") if e.payload["request_id"] not in answered]
         founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
         boots = journal.replay("body.booted")
+        # The same states the body uses: catalog initial state, then every recorded transition.
+        from greg.cognition.catalog import initial_state
         registry = CapabilityRegistry()
         for manifest, adapter in BUILTINS.values():
-            registry.register(manifest, adapter, state="ATTACHED")
+            registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
+        for event in journal.replay("capability.state"):
+            if event.payload["capability_id"] in registry.manifests:
+                registry.set_state(event.payload["capability_id"], event.payload["state"])
         ok, chain = ledger.verify_chain()
         return {
             "body_id": config["body_id"], "version": config["version"],

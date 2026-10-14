@@ -797,3 +797,73 @@ def constructed_question(*, function: str, params: dict, horizon_days: float = 2
 
 
 TEMPLATES["constructed-question"] = constructed_question
+
+
+FIRST_MISSION_WORDS = re.compile(r"\b(first mission|where (?:am i|i am) (?:trying to go|going)|highest[- ]value "
+                                 r"(?:work|opportunit)|what should (?:greg|you) (?:work on|do) next)\b", re.I)
+
+
+def first_mission(*, kernel_root: str, effort_budget: int = 8, run: str | None = None, horizon_days: float = 1,
+                  founder_expression: str | None = None) -> dict:
+    """The Founder's First Mission: one signed mission across Mind, Hands, Foundry and appraisal.
+
+    survey (read the authorized sources, reconstruct the objective, route founder-only items to the
+    decision queue) -> select (``cognition.dp_knapsack``: exact selection under the signed effort
+    budget, with its own verifier) and compose (which existing machinery advances each candidate,
+    and what is missing) -> dossier (one private deliverable to the founder's delivery root) ->
+    ``institution.appraise`` as the success sensor: an independent re-survey, a different exact
+    algorithm and a greedy replay. Steps hand typed outputs to each other through ``bind`` edges,
+    so nobody relays data by hand and a crash resumes from retained receipts without repeating
+    a completed step. Nothing is sent, published, spent or merged.
+    """
+    if not isinstance(effort_budget, int) or isinstance(effort_budget, bool) or not 1 <= effort_budget <= 200:
+        raise ValueError("effort_budget is an integer in [1, 200]")
+    root = str(Path(kernel_root).expanduser().resolve())
+    run = run or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M")
+    digest = hashlib.sha256(json.dumps([root, effort_budget, run]).encode()).hexdigest()[:10]
+    mission_id = f"m:first-mission-{digest}"
+    base = {"kernel_root": root}
+    return {
+        "mission_id": mission_id,
+        "founder_expression": founder_expression or (
+            "Understand where I am trying to go, find the highest-value unfinished work you can advance now, "
+            "compare the ways to do it, produce something useful, verify it and tell me what is next."),
+        "intended_effect": "one private dossier whose objective, selection, composition and next step an "
+                           "independent appraisal re-derives from the sources",
+        "priority": 70, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "dossier-verified",
+                            "description": "an independent re-survey and a different exact algorithm reproduce the "
+                                           "dossier's objective, optimal selection and baseline",
+                            "sensor": {"capability": "institution.appraise", "target": "institution:first-mission",
+                                       "params": base},
+                            "predicate": {"op": "equals", "field": "verdict", "value": "VERIFIED"}}],
+        "strategies": [
+            {"action_id": "survey", "capability": "institution.survey", "target": "institution:first-mission",
+             "params": {**base, "effort_budget": effort_budget}, "advances": ["dossier-verified"],
+             "rationale": "read GREG's own path and Foundry contract; founder-only items go to the decision queue"},
+            {"action_id": "select", "capability": "cognition.dp_knapsack", "target": f"cognition:first-mission-{digest}",
+             "params": {"problem_id": f"first-mission-{digest}", "operation": "knapsack_01_select"},
+             "bind": [{"param": "data", "from": {"action_id": "survey", "field": "knapsack"}, "type": "object"}],
+             "advances": ["dossier-verified"],
+             "rationale": "exact 0/1 selection under the signed effort budget; the genome verifies itself"},
+            {"action_id": "compose", "capability": "institution.compose", "target": "institution:first-mission",
+             "params": dict(base),
+             "bind": [{"param": "candidates", "from": {"action_id": "survey", "field": "candidates"}, "type": "array", "max_bytes": 65536}],
+             "advances": ["dossier-verified"],
+             "rationale": "start from existing capabilities and Foundry systems; name each CapabilityDeficit"},
+            {"action_id": "dossier", "capability": "institution.dossier", "target": "deliver:first-mission",
+             "params": {},
+             "bind": [{"param": "survey", "from": {"action_id": "survey", "field": ""}, "type": "object", "max_bytes": 65536},
+                      {"param": "selection", "from": {"action_id": "select", "field": "output"}, "type": "object", "max_bytes": 65536},
+                      {"param": "composition", "from": {"action_id": "compose", "field": ""}, "type": "object", "max_bytes": 65536}],
+             "advances": ["dossier-verified"],
+             "rationale": "one private deliverable to the founder; nothing is sent, published, spent or merged"}],
+        "light_cone": {"capabilities": ["institution.survey", "institution.compose", "institution.dossier",
+                                        "institution.appraise", "cognition.dp_knapsack"],
+                       "targets": ["institution:*", "cognition:*", "deliver:*"],
+                       "max_consequence_class": "internal_write", "budget_usd": 0,
+                       "horizon": _horizon(horizon_days)},
+    }
+
+
+TEMPLATES["first-mission"] = first_mission

@@ -38,7 +38,7 @@ STYLE = """
 @media (prefers-color-scheme:dark){:root{--bg:#121719;--fg:#e4e9eb;--muted:#9aa7ad;--card:#1b2226;--line:#2d383d;
 --accent:#7ab7e0;--warn:#f0a07a;--ok:#8fd19e}}
 *{box-sizing:border-box}body{margin:0;font:15px/1.5 system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg)}
-main{max-width:1000px;margin:0 auto;padding:16px}h1{font-size:22px;margin:4px 0 12px}h2{font-size:17px;margin:0 0 8px}
+main{max-width:1000px;margin:0 auto;padding:16px;overflow-wrap:anywhere}h1{font-size:22px;margin:4px 0 12px}h2{font-size:17px;margin:0 0 8px}
 section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:12px 0}
 .muted{color:var(--muted)}.warn{color:var(--warn)}.ok{color:var(--ok)}table{border-collapse:collapse;width:100%}
 td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
@@ -48,7 +48,7 @@ button.secondary{background:transparent;color:var(--accent)}button.danger{border
 button[disabled]{opacity:.45;cursor:not-allowed}form.inline{display:inline}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}
 .pill{display:inline-block;padding:1px 8px;border-radius:99px;border:1px solid var(--line);font-size:13px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}.stat b{display:block;font-size:20px}
-@media (max-width:600px){td,th{padding:4px}main{padding:10px}}
+@media (max-width:600px){td,th{padding:4px}main{padding:10px}textarea,input,button{font-size:16px}}
 """
 
 
@@ -144,6 +144,23 @@ class Console:
             self.proposals[pid] = {"text": text, "proposal": proposal, "at": time.time()}
             for old in sorted(self.proposals, key=lambda k: self.proposals[k]["at"])[:-20]:
                 self.proposals.pop(old)
+        return pid
+
+    def first_mission(self, effort_budget: str) -> str:
+        """Draft the Founder's First Mission for review; nothing runs until it is signed."""
+        try:
+            effort = int(effort_budget)
+        except (TypeError, ValueError):
+            raise ValueError("the effort budget is a whole number from 1 to 200") from None
+        text = (f"Run the Founder's First Mission with effort budget {effort}: understand where I am trying to go, "
+                "find the highest-value unfinished work you can advance now, compare the ways to do it, produce "
+                "something useful, verify it and tell me what is next.")
+        proposal = planner._first_mission_route(text, self.context()) if 1 <= effort <= 200 else {
+            "status": "NEEDS_INPUT", "origin": "template:first-mission",
+            "questions": ["An effort budget is a whole number of units from 1 to 200."]}
+        pid = secrets.token_urlsafe(9)
+        with self.lock:
+            self.proposals[pid] = {"text": text, "proposal": proposal, "at": time.time()}
         return pid
 
     def attach(self, request_id: str, capability_id: str) -> Path:
@@ -300,7 +317,12 @@ def render_owned_page(console: Console, mission_id: str, name: str, version: int
     return output["html"].encode()
 
 
-def render_home(console: Console) -> bytes:
+def home_parts(console: Console) -> dict:
+    """The classic page's sections by name; Mission Control reuses the actionable ones."""
+    parts = {}
+
+    def add(name, html_text):
+        parts[name] = parts.get(name, "") + html_text
     snap = console.snapshot()
     st = snap["status"]
     heartbeat = st.get("background") or {}
@@ -314,18 +336,18 @@ def render_home(console: Console) -> bytes:
     signer = ("<span class=ok>founder key unlocked in this console</span>" if console.key is not None
               else "<span class=warn>read-only (start with --key to sign)</span>")
     can = console.key is not None
-    out = [f"<h1>GREG</h1><p class=muted>Body {_e(st['body_id'])} · {body_state} · {signer} · "
-           f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'}</p>"]
+    add("header", f"<h1>GREG</h1><p class=muted>Body {_e(st['body_id'])} · {body_state} · {signer} · "
+           f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'}</p>")
     for message in console.flash[-3:]:
-        out.append(f"<section class=ok>{_e(message)}</section>")
+        add("flash", f"<section class=ok>{_e(message)}</section>")
     console.flash.clear()
     vepmc = snap["vepmc"]
-    out.append("<section><div class=grid>"
+    add("stats", "<section><div class=grid>"
                f"<div class=stat><b>{vepmc['VEPMC']}</b>verified persistent closures</div>"
                f"<div class=stat><b>{len(snap['missions'])}</b>missions</div>"
                f"<div class=stat><b>{len(st['decisions_required'])}</b>decisions waiting</div>"
                f"<div class=stat><b>{len(snap['deliveries'])}</b>recent deliveries</div></div></section>")
-    out.append("<section><h2>Ask GREG</h2><form method=post action=/ask><input type=hidden name=csrf "
+    add("ask", "<section><h2>Ask GREG</h2><form method=post action=/ask><input type=hidden name=csrf "
                f"value='{_e(console.csrf)}'><textarea name=text rows=3 maxlength=4000 placeholder='For example: "
                "Every morning tell me which of my pull requests are failing checks and what is stale.'></textarea>"
                "<p><button>Propose a mission</button> <span class=muted>Nothing runs until you review and sign."
@@ -349,7 +371,7 @@ def render_home(console: Console) -> bytes:
             rows.append(f"<tr><td><span class=pill>{_e(r['kind'])}</span></td><td>{_e(r['why_now'])}<br>"
                         f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r)}</td>"
                         f"<td>{actions}</td></tr>")
-        out.append("<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>")
+        add("decisions", "<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>")
     closures = [r for r in vepmc["missions"]]
     if closures:
         rows = []
@@ -358,7 +380,7 @@ def render_home(console: Console) -> bytes:
                       _form(console, "/accept", {"event_id": r["closure_event_id"]}, "Accept result", disabled=not can))
             rows.append(f"<tr><td>{_e(r['mission_id'])}</td><td>{'counts' if r['counts'] else 'missing: ' + _e(', '.join(r['missing']))}"
                         f"</td><td>{accept}</td></tr>")
-        out.append("<section><h2>Closures (VEPMC)</h2><table>" + "".join(rows) + "</table>"
+        add("closures", "<section><h2>Closures (VEPMC)</h2><table>" + "".join(rows) + "</table>"
                    "<p class=muted>A closure counts only when every condition holds, including your acceptance "
                    "and a run on the body you designated as your first body.</p></section>")
     if snap["missions"]:
@@ -367,7 +389,7 @@ def render_home(console: Console) -> bytes:
             f"<td>{_e(m['status'])}{' (paused)' if m['paused'] else ''}</td>"
             f"<td>{_e((m['blocker'] or {}).get('why', '')) if m['blocker'] else _e(m['next_observe_at'] or '')}</td>"
             f"<td>{m['actions_done']}</td></tr>" for m in snap["missions"])
-        out.append("<section><h2>Missions</h2><table><tr><th>Mission</th><th>State</th><th>Blocker / next look"
+        add("missions", "<section><h2>Missions</h2><table><tr><th>Mission</th><th>State</th><th>Blocker / next look"
                    "</th><th>Actions</th></tr>" + rows + "</table></section>")
     cognitive = snap['status'].get('cognition', {}).get('receipts', [])
     if cognitive:
@@ -380,7 +402,7 @@ def render_home(console: Console) -> bytes:
                         f"{_e(r['next_step'])}<details><summary>Evidence and limits</summary>"
                         f"<p>{_e(explanation)}</p><pre>{_e(json.dumps(r['claims'], indent=2))}</pre>"
                         f"<p>{_e(r['cost_limits'])}; {_e(r['elapsed_ms'])} ms</p></details></td></tr>")
-        out.append('<section><h2>Checked reasoning</h2><p>These results check computation and source binding. '
+        add("reasoning", '<section><h2>Checked reasoning</h2><p>These results check computation and source binding. '
                    'Real-world assumptions and consequential decisions still need review.</p><table>' + ''.join(rows) + '</table></section>')
     if snap.get("cognitive"):
         cards = []
@@ -392,21 +414,46 @@ def render_home(console: Console) -> bytes:
                          _e(answer["uncertainty"]) + "</p><p>Time: " + _e(answer["latency"]) + " seconds · Cost: $" +
                          _e(answer["money_cost"]) + "</p><p>Next permitted step: " +
                          _e('; '.join(answer["missing_information"] or []) or "Review this scoped result; any effect still requires the existing authority path.") + "</p></section>")
-        out.extend(cards)
+        add("cognitive", "".join(cards))
     if snap["deliveries"]:
         links = "".join(f"<li><a href='/delivery/{quote(n)}'>{_e(n)}</a></li>" for n in snap["deliveries"])
-        out.append(f"<section><h2>Deliveries</h2><ul>{links}</ul></section>")
-    out.append("<section><h2>Recent history</h2><table>" + "".join(
+        add("deliveries", f"<section><h2>Deliveries</h2><ul>{links}</ul></section>")
+    add("history", "<section><h2>Recent history</h2><table>" + "".join(
         f"<tr><td class=muted>{_e(r['at'][11:19])}</td><td>{_e(r['type'])}</td><td>{_e(r['mission_id'] or '')}</td>"
         f"<td>{_e(r['summary'])}</td></tr>" for r in snap["recent"]) + "</table>"
         "<p><a href=/morning>Morning report</a> · <a href=/api/state>JSON state</a> · <a href=/owned>Owned content</a></p></section>")
-    out.append("<section><h2>Stop</h2><p class=muted>Shutdown always wins. A signed stop is recorded as your "
+    add("stop", "<section><h2>Stop</h2><p class=muted>Shutdown always wins. A signed stop is recorded as your "
                "command; the local stop file works even without a key.</p>" +
                _form(console, "/stop", {"mode": "signed"}, "Stop GREG (signed)", cls="danger", disabled=not can,
                      confirm="Stop the GREG body?") + " " +
                _form(console, "/stop", {"mode": "local"}, "Stop GREG (local stop file)", cls="danger",
                      confirm="Write the local STOP file?") + "</section>")
-    return _page("GREG", "".join(out), refresh=True)
+    return parts
+
+
+def render_home(console: Console) -> bytes:
+    """The classic page, kept whole as the baseline Mission Control is measured against."""
+    return _page("GREG", "".join(home_parts(console).values()), refresh=True)
+
+
+def render_mission_control(console: Console, view: str = "overview") -> bytes:
+    """The founder's first page: five questions answered from retained state, with the real controls."""
+    from greg import mission_control
+    if view not in dict(mission_control.VIEWS):
+        raise FileNotFoundError(view)
+    parts = home_parts(console)
+    body = parts.get("flash", "") + mission_control.render_view(console, view, parts)
+    body += "<p class=muted><a href=/classic>Classic page</a> · <a href=/morning>Morning report</a> · <a href=/api/mc>JSON</a></p>"
+    return _page("GREG Mission Control", f"<style>{mission_control.STYLE_EXTRA}</style>" + body,
+                 refresh=view == "overview")
+
+
+def render_first_mission(console: Console, name: str) -> bytes:
+    folder = (console.deliver_root() / "first-mission").resolve()
+    path = (folder / name).resolve()
+    if path.parent != folder or not path.is_file() or path.suffix != ".md":
+        raise FileNotFoundError(name)
+    return _page(name, f"<p><a href=/>Mission Control</a></p><section><pre>{_e(path.read_text(errors='replace'))}</pre></section>")
 
 
 def render_proposal(console: Console, pid: str) -> bytes:
@@ -494,7 +541,17 @@ def make_handler(console: Console):
             path = urlsplit(self.path).path
             try:
                 if path == "/":
+                    return self._send(200, render_mission_control(console))
+                if path == "/classic":
                     return self._send(200, render_home(console))
+                if path.startswith("/mc/"):
+                    return self._send(200, render_mission_control(console, path.split("/", 2)[2]))
+                if path == "/api/mc":
+                    from greg.mission_control import projection
+                    return self._send(200, json.dumps(projection(console), default=str).encode(), "application/json")
+                if path.startswith("/first-mission/"):
+                    from urllib.parse import unquote
+                    return self._send(200, render_first_mission(console, unquote(path.split("/", 2)[2])))
                 if path.startswith("/proposal/"):
                     return self._send(200, render_proposal(console, path.split("/", 2)[2]))
                 if path.startswith("/delivery/"):
@@ -539,6 +596,8 @@ def make_handler(console: Console):
             try:
                 if path == "/ask":
                     return self._send(303, b"", location="/proposal/" + console.ask(form.get("text", "")[:4000]))
+                if path == "/first-mission":
+                    return self._send(303, b"", location="/proposal/" + console.first_mission(form.get("effort_budget", "8")))
                 if path == "/sign":
                     target = console.sign_proposal(form.get("proposal", ""))
                     console.flash.append(f"Signed and sent: {target.name}. You can close this window.")
@@ -556,6 +615,15 @@ def make_handler(console: Console):
                                               "evidence_type": "founder_judgment",
                                               "text": "accepted in the GREG console after review"})
                     console.flash.append("Acceptance signed.")
+                elif path == "/body":
+                    kind = {"pause": "BODY_PAUSE", "resume": "BODY_RESUME"}[form["mode"]]
+                    console.sign(kind, {})
+                    console.flash.append(f"Signed {kind.replace('_', ' ').lower()} sent.")
+                elif path == "/lifecycle":
+                    state = {"pause": "PAUSED", "resume": "ACTIVE", "revoke": "ABANDONED"}[form["action"]]
+                    console.sign("LIFECYCLE", {"mission_id": form["mission_id"], "state": state,
+                                               "reason": "founder decision in Mission Control"})
+                    console.flash.append(f"Signed: mission {form['mission_id']} -> {state}.")
                 elif path == "/stop":
                     if form.get("mode") == "local":
                         console.layout.stop_file.touch()

@@ -1,0 +1,17 @@
+{
+ "classic": {
+  "questions_answered": 2,
+  "detail": {
+   "What is GREG?": false,
+   "What can it actually do right now?": false,
+   "What is it doing?": true,
+   "What valuable work can I command?": false,
+   "What needs my authority?": true
+  },
+  "first_mission_start": "type a sentence the planner recognizes, then review"
+ },
+ "mission_control": {
+  "questions_answered": 5,
+  "first_mission_start": "one button with a visible effort budget, then review"
+ }
+}

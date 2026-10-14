@@ -2,6 +2,15 @@
 
 # Founder Intent Ledger
 
+## Whole-machine convergence and the Founder's First Mission — 2026-10-14
+
+The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`.
+
+- The Mind line is the canonical base. #160 and #132 are joined, and #132's Foundry modules keep the Mind-line modules as registered alternates behind one dispatch rule.
+- #159 is ported. #157's worker isolation is the named next extraction.
+- The executable Founder's First Mission and the five-question Mission Control are on the one mission path. `greg rehearse` runs both without credentials.
+- State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
+
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
 
 `INTENT-20261013-FRONTIER-LEAP-RECOMBINE` ([record](intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json), [full directive, verbatim](intent/sources/FRONTIER-LEAP-DIRECTIVE-2026-10-13-source.md)): stop treating Capability Genesis as part replacement and make it construct new, integrated capabilities from harvested mechanisms, on GREG's one path. Founder instructions A-D are preserved verbatim in the record's `founder_quotations` and in the source file. They are read under INTENT-0030. "Meniscus", "impermeable shield" and "systemic dominance" keep the 2026-10-07 executable interpretation. They authorize no crossing of legal boundaries, no coercion and no immunity from shutdown.

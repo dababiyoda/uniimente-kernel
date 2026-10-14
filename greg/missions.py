@@ -323,7 +323,12 @@ class MissionBook:
                     else:
                         # Surprise: executed, yet the world did not change. Replan
                         # instead of repeating; eligible again after a later pass.
-                        m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
+                        # A producer whose output another strategy binds changed its consumers' input,
+                        # not the world: it is done, not ineffective, and is not re-run either.
+                        if any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
+                            m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
+                        else:
+                            m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
                     if not checks:
                         m.pending_effect.pop(aid, None)
             elif kind == "mission.action":
@@ -463,7 +468,7 @@ class MissionEngine:
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
+                                 manifest.capability_id.startswith(("artifact.", "cognition.", "institution.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
                                  cognition_model=getattr(self, "cognition_model", None))

@@ -532,6 +532,10 @@ STRENGTHENS = {
     "daleobanks.verify": ("proof", "eligibility"),
     "daleobanks.publish": ("settlement", "routing"),
     "daleobanks.outcome": ("proof", "settlement"),
+    "institution.survey": ("routing", "eligibility", "proof"),
+    "institution.compose": ("capability_formation", "routing", "compounding"),
+    "institution.dossier": ("settlement", "routing", "compounding"),
+    "institution.appraise": ("proof", "reliability"),
 }
 
 
@@ -802,6 +806,48 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                     tests=("tests/unit/test_greg_daleobanks_bridge.py",)),
                            _lazy("greg.daleobanks_bridge", "publish_status")),
 }
+
+_INSTITUTION_TESTS = ("tests/unit/test_greg_institution.py", "tests/integration/test_greg_first_mission.py")
+_INSTITUTION_SOURCE = {"source": "uniimente-kernel/greg/institution.py",
+                       "mechanism_from": "greg/path.py developmental position; foundry/completion.yaml; "
+                                         "cognition.dp_knapsack (exact selection)"}
+BUILTINS.update({
+    "institution.survey": (_builtin("institution.survey", "institution.survey",
+                                    "Reconstruct the primary objective from GREG's developmental path and score the "
+                                    "open buildable opportunities by a declared prior; founder-only items go to the "
+                                    "decision queue", "api", "read_only", "institution:",
+                                    {"kernel_root": "path", "effort_budget": "int 1..200"},
+                                    {"objective": "dict", "founder_decisions": "list", "candidates": "list",
+                                     "knapsack": "{values, weights, capacity}", "authority_created": "false"},
+                                    filesystem="read-scoped", retry_safe=True, data_classes=("project_sources",),
+                                    tests=_INSTITUTION_TESTS, provenance=_INSTITUTION_SOURCE),
+                           _lazy("greg.institution", "survey")),
+    "institution.compose": (_builtin("institution.compose", "institution.compose",
+                                     "For each candidate: the existing capabilities, Foundry systems and code that "
+                                     "advance it, and its CapabilityDeficits", "api", "read_only", "institution:",
+                                     {"kernel_root": "path", "candidates": "list"},
+                                     {"plans": "list", "composable": "int", "deficits": "int"},
+                                     filesystem="read-scoped", retry_safe=True, data_classes=("project_sources",),
+                                     tests=_INSTITUTION_TESTS, provenance=_INSTITUTION_SOURCE),
+                            _lazy("greg.institution", "compose")),
+    "institution.dossier": (_builtin("institution.dossier", "institution.dossier",
+                                     "Deliver one private founder dossier: objective, decisions, exact selection "
+                                     "against the greedy baseline, composition, frozen next work order, next step",
+                                     "api", "internal_write", "deliver:",
+                                     {"survey": "dict", "selection": "dict", "composition": "dict"},
+                                     {"delivered": "path", "json": "path", "sha256": "str", "selected": "list"},
+                                     filesystem="deliver-write", data_classes=("project_sources",),
+                                     tests=_INSTITUTION_TESTS, provenance=_INSTITUTION_SOURCE),
+                            _lazy("greg.institution", "dossier")),
+    "institution.appraise": (_builtin("institution.appraise", "institution.appraise",
+                                      "Independent sensor: re-survey the sources, re-prove optimality by a "
+                                      "different algorithm, replay the baseline, refute a dossier that does not hold",
+                                      "api", "read_only", "institution:", {"kernel_root": "path"},
+                                      {"verdict": "VERIFIED|REFUTED|ABSENT", "findings": "list", "checked": "int"},
+                                      filesystem="read-scoped", retry_safe=True, data_classes=("project_sources",),
+                                      tests=_INSTITUTION_TESTS, provenance=_INSTITUTION_SOURCE),
+                             _lazy("greg.institution", "appraise")),
+})
 
 # Cognitive families are the SAME capability manifests/genomes, lazily executed.
 # No second intelligence registry, event store, runtime, policy or model router.

@@ -149,6 +149,51 @@ def _verify_route(text: str, ctx: PlannerContext) -> dict:
                             "digest matches"])
 
 
+EFFORT = re.compile(r"\b(?:effort|budget)\D{0,20}(\d{1,3})\b", re.I)
+
+
+def kernel_checkouts(ctx: PlannerContext) -> list[Path]:
+    """UNIIMENTE kernel checkouts inside the read roots: the sources the First Mission reads."""
+    def children(directory: Path, limit: int) -> list[Path]:
+        try:
+            return sorted(d for d in directory.iterdir() if d.is_dir() and not d.name.startswith("."))[:limit]
+        except OSError:
+            return []
+
+    found, candidates = [], []
+    for root in (Path(r) for r in ctx.read_roots if Path(r).is_dir()):   # the root and two levels below, bounded
+        level1 = children(root, 64)
+        candidates += [root, *level1, *[d for c in level1 for d in children(c, 16)]]
+    candidates += [Path(r["path"]) for r in ctx.repos().values()]
+    for candidate in candidates:
+        if (candidate / "greg/path.json").is_file() and (candidate / "foundry/completion.yaml").is_file():
+            if candidate.resolve() not in found:
+                found.append(candidate.resolve())
+    return found
+
+
+def _first_mission_route(text: str, ctx: PlannerContext) -> dict:
+    kernels = kernel_checkouts(ctx)
+    if not kernels:
+        return {"status": "NEEDS_INPUT", "origin": "template:first-mission",
+                "questions": ["Which UNIIMENTE kernel checkout should GREG read? Add it to the read roots "
+                              "(it must contain greg/path.json and foundry/completion.yaml)."]}
+    budget = EFFORT.search(text)
+    effort = int(budget.group(1)) if budget else 8
+    if not 1 <= effort <= 200:
+        return {"status": "NEEDS_INPUT", "origin": "template:first-mission",
+                "questions": ["An effort budget is a whole number of units from 1 to 200."]}
+    spec = templates.first_mission(kernel_root=str(kernels[0]), effort_budget=effort, founder_expression=text)
+    return _proposal(spec, "template:first-mission", notes=[
+        f"reads {kernels[0]} (greg/path.json and foundry/completion.yaml) and writes one private dossier to "
+        "your delivery folder; nothing is sent, published, spent or merged",
+        f"effort budget: {effort} units" + ("" if budget else " (default; say 'effort budget 12' to change it)"),
+        "the selection uses GREG's exact knapsack engine; if it is not attached yet the mission stops and asks "
+        "you to attach it (read-only)",
+        "the scores are a declared prior over the sources, shown in the dossier; you can change them",
+        "an independent appraisal re-derives the dossier before the mission counts as achieved"])
+
+
 def template_route(text: str, ctx: PlannerContext) -> dict | None:
     lowered = text.lower()
     if (work := CODE_WORK.match(text)):    # software-development work: a temporary coding worker, appraised
@@ -193,6 +238,8 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
             "GLOP), qualifies it, and asks you to attach it, showing its version and license",
             "the plan counts only if GREG's own duality certificate proves no plan does better; if no plan meets "
             "every limit, GREG proves that and names the limits in conflict"])
+    if templates.FIRST_MISSION_WORDS.search(text):      # the founder's first mission: where am I going, what next
+        return _first_mission_route(text, ctx)
     if BRIEF.search(text):
         repos = ctx.repos()
         named = {n: r for n, r in repos.items() if n.lower() in lowered}

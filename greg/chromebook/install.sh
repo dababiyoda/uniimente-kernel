@@ -205,12 +205,13 @@ fi
 
 cat <<EOF
 
-GREG is installed. Next, the first mission (greg/CHROMEBOOK_FIRST_MISSION.md, step 2):
+GREG is installed. Open Mission Control (greg/CHROMEBOOK_FIRST_MISSION.md, steps 2 and 4):
   greg console --key $KEY --no-model     then open http://localhost:8766/ in Chrome
   Ask: "Brief me on the state of my repositories." Review, sign, close the tab.
   greg status        note the PID, then: kill -9 <PID>   (the service restarts GREG)
   Approve the one waiting delivery in the console, read the brief in $DELIVER_ROOT/briefs/, accept or reject it.
   greg vepmc ; greg morning ; greg presence --hours 2 ; greg path
+Then the Founder's First Mission from Mission Control (step 4), and: greg acceptance
 To stop: greg stop --local && systemctl --user stop greg-body.service
 To run again after a stop: greg start --local && systemctl --user start greg-body.service
 EOF

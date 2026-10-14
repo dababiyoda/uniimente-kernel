@@ -163,6 +163,21 @@ class Console:
             self.proposals[pid] = {"text": text, "proposal": proposal, "at": time.time()}
         return pid
 
+    def venture_rehearsal(self) -> str:
+        """Draft the FIXTURE commerce rehearsal of the latest First Mission dossier, for review before signing."""
+        from greg.venture_rehearsal import latest_canon, venture_rehearsal
+        canon, source = latest_canon(self.deliver_root())
+        text = f"[FIXTURE] Rehearse selling and delivering my latest First Mission dossier ({Path(source).name})."
+        proposal = {"status": "PROPOSED", "origin": "template:venture-rehearsal", "spec": venture_rehearsal(canon=canon),
+                    "notes": ["FIXTURE: the buyer is a published test key and the consideration is a fixture amount; "
+                              "no payment rail is called and nothing is published",
+                              "every step runs through the Foundry bridge inside this mission's workspace",
+                              "the appraisal re-observes the company, the delivery, the acceptance and the books"]}
+        pid = secrets.token_urlsafe(9)
+        with self.lock:
+            self.proposals[pid] = {"text": text, "proposal": proposal, "at": time.time()}
+        return pid
+
     def attach(self, request_id: str, capability_id: str) -> Path:
         """Sign CAPABILITY_ATTACH only for a verified candidate that an open capability ask names."""
         open_asks = {r["request_id"]: r for r in status(self.home)["decisions_required"]}
@@ -494,12 +509,13 @@ def render_home(console: Console) -> bytes:
     return _page("GREG", "".join(home_parts(console).values()), refresh=True)
 
 
-def render_mission_control(console: Console, view: str = "overview") -> bytes:
+def render_mission_control(console: Console, view: str = "overview", query: str = "") -> bytes:
     """The founder's first page: five questions answered from retained state, with the real controls."""
     from greg import mission_control
     if view not in dict(mission_control.VIEWS):
         raise FileNotFoundError(view)
     parts = home_parts(console)
+    parts["_query"] = query[:200]
     body = parts.get("flash", "") + mission_control.render_view(console, view, parts)
     body += "<p class=muted><a href=/classic>Classic page</a> · <a href=/morning>Morning report</a> · <a href=/api/mc>JSON</a></p>"
     return _page("GREG Mission Control", f"<style>{mission_control.STYLE_EXTRA}</style>" + body,
@@ -526,6 +542,15 @@ def render_proposal(console: Console, pid: str) -> bytes:
         detail = p.get("why") or "; ".join(p.get("questions", []))
         problems = "".join(f"<li>{_e(x)}</li>" for x in p.get("problems", []))
         out.append(f"<section><p>{_e(detail)}</p><ul>{problems}</ul><a href=/>Back</a></section>")
+        from greg.discover import discover
+        found = discover(entry["text"], limit=6)
+        if found:
+            out.append("<section><h2>Machinery your words name</h2><p class=muted>GREG could not draft a mission from "
+                       "this sentence. These installed paths, capabilities and Foundry systems match its words; "
+                       "lexical matching, not a feasibility judgment.</p><ul>" + "".join(
+                           f"<li>{_e(r['kind'])} <code>{_e(r['id'])}</code>: {_e(r['title'])} "
+                           f"<span class=muted>({_e(r['state'] or 'see the capability map')})</span></li>" for r in found)
+                       + f"</ul><p><a href='/mc/organs?q={quote(entry['text'][:200])}'>Explore in Mission Control</a></p></section>")
         return _page("GREG proposal", "".join(out))
     spec = p["spec"]
     summary = planner.authority_summary(spec, console.context().capabilities)
@@ -603,7 +628,8 @@ def make_handler(console: Console):
                 if path == "/classic":
                     return self._send(200, render_home(console))
                 if path.startswith("/mc/"):
-                    return self._send(200, render_mission_control(console, path.split("/", 2)[2]))
+                    q = parse_qs(urlsplit(self.path).query).get("q", [""])[0]
+                    return self._send(200, render_mission_control(console, path.split("/", 2)[2], q))
                 if path == "/api/mc":
                     from greg.mission_control import projection
                     return self._send(200, json.dumps(projection(console), default=str).encode(), "application/json")
@@ -671,6 +697,11 @@ def make_handler(console: Console):
             try:
                 if path == "/ask":
                     return self._send(303, b"", location="/proposal/" + console.ask(form.get("text", "")[:4000]))
+                if path == "/venture-rehearsal":
+                    try:
+                        return self._send(303, b"", location="/proposal/" + console.venture_rehearsal())
+                    except FileNotFoundError as exc:
+                        return self._send(409, str(exc).encode())
                 if path == "/first-mission":
                     return self._send(303, b"", location="/proposal/" + console.first_mission(form.get("effort_budget", "8")))
                 if path == "/sign":

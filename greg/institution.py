@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -158,6 +159,26 @@ def reconstruct(root: Path, journal=None) -> dict:
             "sources": {"greg/path.json": _sha(path_bytes), "foundry/completion.yaml": _sha(contract_bytes)}}
 
 
+def previous_dossier(journal, mission_id: str = "") -> dict | None:
+    """The latest dossier another First Mission delivered, from receipts retained on the ledger (survives restart)."""
+    if journal is None:
+        return None
+    latest = None
+    for event in journal.replay("mission.action"):
+        data = event.payload
+        if (data.get("capability") == "institution.dossier" and data.get("status") == "DONE"
+                and data.get("mission_id") != mission_id and data.get("receipt")):
+            latest = data
+    if latest is None:
+        return None
+    record = journal.ledger.find(latest["receipt"])
+    output = ((record.payload.get("result") or {}).get("output") or {}) if record is not None else {}
+    if not isinstance(output, dict) or "selected" not in output:
+        return None
+    return {"mission_id": latest["mission_id"], "receipt": latest["receipt"], "selected": list(output["selected"]),
+            "value": output.get("value"), "sha256": output.get("sha256"), "lesson": output.get("lesson")}
+
+
 def survey(params: dict, ctx: InvocationContext) -> dict:
     root = _kernel_root(params, ctx)
     capacity = params.get("effort_budget", 8)
@@ -167,6 +188,7 @@ def survey(params: dict, ctx: InvocationContext) -> dict:
     if not state["candidates"]:
         raise CapabilityError("no buildable opportunity is open; every remaining item needs a founder decision")
     return {**state, "kernel_root": str(root), "scoring_model": SCORING_MODEL, "effort_budget": capacity,
+            "since_last": previous_dossier(ctx.journal, ctx.mission_id),
             "knapsack": {"values": [c["value"] for c in state["candidates"]],
                          "weights": [c["effort"] for c in state["candidates"]], "capacity": capacity},
             "authority_created": False}
@@ -285,7 +307,16 @@ def _render(d: dict) -> str:
                   f"- Capability deficits: {'; '.join(plan['capability_deficits']) or 'none'}", ""]
     lines += ["## Frozen acceptance contract for the next work order", "", "```json",
               json.dumps(d["next_work_order"], indent=1, ensure_ascii=False), "```", "",
-              "## How sure this is", "", f"- {d['uncertainty']}", "", "## Next authorized step", "", f"- {d['next_step']}", ""]
+              "## How sure this is", "", f"- {d['uncertainty']}", ""]
+    s = d.get("since_last")
+    lines += ["## What changed since last time", ""] + ([
+        f"- Previous First Mission: `{s['previous_mission']}` (receipt `{s['previous_receipt'][:19]}`)",
+        f"- Newly selected: {', '.join(s['newly_selected']) or 'none'}",
+        f"- No longer selected: {', '.join(s['no_longer_selected']) or 'none'}",
+        f"- Still selected: {', '.join(s['still_selected']) or 'none'}",
+        f"- Lesson retained then: {s['previous_lesson'] or 'none recorded'}", ""] if s else
+        ["- This is the first First Mission on this body; nothing to compare yet.", ""])
+    lines += ["## Lesson retained", "", f"- {d['lesson']}", "", "## Next authorized step", "", f"- {d['next_step']}", ""]
     return "\n".join(lines)
 
 
@@ -313,6 +344,23 @@ def dossier(params: dict, ctx: InvocationContext) -> dict:
                        "must_not": ["create authority", "contact anyone", "spend", "publish", "merge"],
                        "verifier": "independent appraisal re-derives the claim from sources"},
         "uses": head["plan"]["uses_capabilities"][:8], "deficits_to_resolve_first": head["plan"]["capability_deficits"]}
+    canon_id = params.get("canon_id")
+    if canon_id is not None and (not isinstance(canon_id, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{2,120}", canon_id)):
+        raise CapabilityError("canon_id is a lowercase page name")
+    previous = survey_out.get("since_last")
+    now_ids = [c["id"] for c in selected]
+    since_last = None if not previous else {
+        "previous_mission": previous["mission_id"], "previous_receipt": previous["receipt"],
+        "newly_selected": [i for i in now_ids if i not in previous["selected"]],
+        "no_longer_selected": [i for i in previous["selected"] if i not in now_ids],
+        "still_selected": [i for i in now_ids if i in previous["selected"]],
+        "previous_lesson": previous.get("lesson")}
+    exact_value = sum(ks["values"][i] for i in chosen)
+    lesson = (f"With {len(cands)} candidates and an effort budget of {ks['capacity']}, the exact selection gained "
+              f"{exact_value - gval} value over the greedy baseline ({exact_value} vs {gval})."
+              if exact_value > gval else
+              f"With {len(cands)} candidates and an effort budget of {ks['capacity']}, the greedy baseline matched the "
+              f"exact optimum ({gval}); the simpler method suffices at this scale.")
     doc = {"kind": "founders-first-mission/1", "mission_id": ctx.mission_id, "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
            "objective": survey_out["objective"], "founder_decisions": survey_out["founder_decisions"],
            "sources": survey_out["sources"], "scoring_model": survey_out["scoring_model"],
@@ -327,15 +375,28 @@ def dossier(params: dict, ctx: InvocationContext) -> dict:
                            "value correctly is the open question your review answers."),
            "next_step": ("Review the selection; sign the next work order as a mission to execute it, or change the effort "
                          "budget or the scoring weights and run the mission again. Founder decisions above stay with you."),
-           "authority_created": False}
+           "authority_created": False, "since_last": since_last, "lesson": lesson}
     folder = Path(ctx.deliver_root) / "first-mission"
     folder.mkdir(parents=True, exist_ok=True)
     stem = _stem(ctx.mission_id)
     body = _canon(doc)
     (folder / f"{stem}.json").write_bytes(body)
     (folder / f"{stem}.md").write_text(_render(doc))
+    copy = None
+    if ctx.workspace is not None:              # a copy inside the mission workspace, so artifact.store may retain it
+        Path(ctx.workspace).mkdir(parents=True, exist_ok=True)
+        copy = Path(ctx.workspace) / "dossier.json"
+        copy.write_bytes(body)
+    summary = (f"Primary objective {doc['objective']['node']}: {doc['objective']['title']}. "
+               f"Selected under an effort budget of {ks['capacity']}: " + "; ".join(_clip(c["title"], 140) for c in selected)
+               + f". {lesson} Founder decisions waiting: {len(doc['founder_decisions'])}. Next: {doc['next_step']}")
+    canon = None if canon_id is None else {
+        "canon_id": canon_id, "title": _clip("Founder's First Mission: " + doc["objective"]["title"], 250),
+        "body": _clip(summary, 4000), "source_refs": [f"{k} {v}" for k, v in doc["sources"].items()] + [f"dossier {_sha(body)}"],
+        "rights": "Private founder deliverable generated by GREG from the founder's own repository; not published."}
     return {"delivered": str(folder / f"{stem}.md"), "json": str(folder / f"{stem}.json"), "sha256": _sha(body),
-            "selected": [c["id"] for c in selected], "value": doc["selection"]["value"],
+            "selected": now_ids, "value": doc["selection"]["value"], "lesson": lesson,
+            "workspace_copy": str(copy) if copy else None, "canon": canon,
             "exact_beats_greedy": doc["selection"]["exact_beats_greedy"], "authority_created": False}
 
 
@@ -404,5 +465,15 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
     checked += 1
     if doc.get("authority_created") is not False:
         findings.append("the dossier claims authority")
+    retained = None
+    if params.get("require_retained"):        # the dossier's exact bytes are in the body's content-addressed store
+        retained = False
+        if ctx.artifact_root is not None:
+            from greg.artifacts import ArtifactStore
+            try:
+                retained = ArtifactStore(Path(ctx.artifact_root)).read(_sha(path.read_bytes())) == path.read_bytes()
+            except (CapabilityError, OSError):
+                retained = False
     return {"verdict": "VERIFIED" if not findings else "REFUTED", "findings": findings, "checked": checked,
+            "retained": retained,
             "dossier_sha256": _sha(path.read_bytes()), "independent_method": "fresh survey + DP over profit + greedy replay"}

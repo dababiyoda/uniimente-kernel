@@ -220,8 +220,19 @@ would remove F7's lift. That is an expectation, not evidence.
 
 ## 10. Five review responsibilities
 
-One agent performed these as separate passes, not as five independent people. Dissent is preserved, not
-averaged.
+This PR's builder performed all five as separate passes, which is not independent review. Dissent is preserved,
+not averaged.
+
+Independent review is pending. The PR #158 session (`session_01GRT2jX7cQXwvMkn64ZgvLk`) has taken the
+Adversarial Reviewer and Evidence/Welfare Guardian roles on these commits, from outside the builder role. From
+read-only snapshots it is building:
+
+- its own inventory and reconciliation map;
+- its own F7 audit against parametric min-cost flow;
+- P8 adversarial probes against both evolution engines.
+
+Its findings, posted on the PR, take precedence over roles 3 and 5 below wherever they differ. The two F7
+audits are deliberately independent: agreement between them is evidence, and disagreement is a finding.
 
 1. **Founder-Intent Steward.** The directive's requirements map to code or to a named residual (sections 13 and 15).
    - The founder's six effect examples all sit on the one Backcast GPS.

@@ -173,3 +173,26 @@ def test_inventory_applies_the_compilers_version_rule(monkeypatch):
     assert lib.admission_of(family, index)[0] == "REJECTED"
     index["genomes"][family].update(status="DEFAULT_FOR_GEOMETRY", version=item.genome.version)
     assert lib.admission_of(family, index)[0] == "DEFAULT_FOR_GEOMETRY"
+
+
+def test_the_reconciliation_map_covers_every_file_either_lineage_changed():
+    """One entry per file changed by either lineage since the merge base, each in the founder's closed vocabulary."""
+    import json
+    record = json.loads((ROOT / "docs/collaboration/MIND-LINEAGE-RECONCILIATION-MAP-2026-10-14.json").read_text())
+    vocabulary = set(record["vocabulary"])
+    assert vocabulary == {"complementary", "interchangeable", "semantic incompatibility", "duplicate",
+                          "historical evidence", "unresolved"}
+    paths = [e["path"] for e in record["entries"]]
+    assert len(paths) == len(set(paths))
+    assert all(e["classification"] in vocabulary and e["disposition"] and e["note"] for e in record["entries"])
+    collided = {e["path"] for e in record["entries"] if e["classification"] == "semantic incompatibility"}
+    assert collided == set(COLLIDED)
+    heads = [record["base"], record["pr155"], record["pr158"]]
+    if any(subprocess.run(["git", "cat-file", "-e", f"{c}^{{commit}}"], cwd=ROOT, capture_output=True,
+                          timeout=30).returncode for c in heads):
+        pytest.skip("git history does not hold the lineage heads: map coverage not verified on this checkout")
+    changed = set()
+    for head in heads[1:]:
+        changed |= set(subprocess.run(["git", "diff", "--name-only", record["base"], head], cwd=ROOT,
+                                      capture_output=True, text=True, timeout=60).stdout.split())
+    assert set(paths) == changed

@@ -2,7 +2,7 @@
  "schema": "mind-lineage-reconciliation-map/1",
  "base": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
  "pr155": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
- "pr158": "a832c7382630464db70ea92d990899d502170ae1",
+ "pr158": "047549f352c74ac5f098ec04762b8095f44c9fde",
  "vocabulary": [
   "complementary",
   "interchangeable",
@@ -12,6 +12,16 @@
   "unresolved"
  ],
  "rule": "one entry per file changed by either lineage since the merge base; canonical selection by evidence, never by lineage",
+ "convergence_created": [
+  "greg/cognition/evolution_routing.py",
+  "tests/unit/test_greg_evolution_routing.py",
+  "tests/unit/test_greg_mind_convergence.py",
+  "docs/collaboration/lineage-archive/",
+  "cortex/evaluation/pr155_f7_audit/",
+  "docs/evidence/pr155-f7-audit/2026-10-14/",
+  "tests/unit/test_pr155_f7_audit.py",
+  "docs/collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md"
+ ],
  "entries": [
   {
    "path": "contracts/lawful-leverage.schema.json",
@@ -924,6 +934,13 @@
    "note": "#155's family checks and #158's genome_certificate branch on one verifier"
   },
   {
+   "path": "greg/cognition/worlds.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "F2b declared SIMULATED"
+  },
+  {
    "path": "greg/dataplane.py",
    "lineage": "pr158",
    "classification": "complementary",
@@ -997,8 +1014,8 @@
    "path": "scripts/mind_status.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "NO_GAIN labels as a demotion like REGRESSION"
   },
   {
    "path": "scripts/prepare_m4_weekly.py",
@@ -1009,6 +1026,13 @@
   },
   {
    "path": "scripts/refresh_owned_source.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/fixtures/graph_matching_highs_regressions.json",
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "kept",
@@ -1068,7 +1092,7 @@
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "note": "#158's checks; older P4/P6 records now cite #155's frozen runs"
   },
   {
    "path": "tests/unit/test_genomes_basal.py",

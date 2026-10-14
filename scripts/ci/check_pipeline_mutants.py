@@ -3,7 +3,7 @@ from pathlib import Path
 import os, shutil, subprocess, sys, tempfile
 ROOT=Path(__file__).resolve().parents[2]
 MUTANTS=[
-    ('mission boundary','data.get("mission_id") == mission_id','True'),
+    ('mission boundary','data.get("mission_id") != mission_id or data.get("action_id")','False or data.get("action_id")'),
     ('typed output','if type(output) not in (wanted if isinstance(wanted, tuple) else (wanted,)):','if False:'),
     ('authority scope','if protected or set(value) != {"$from_action"}:','if set(value) != {"$from_action"}:')]
 

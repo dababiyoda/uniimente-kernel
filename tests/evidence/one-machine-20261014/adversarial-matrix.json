@@ -206,6 +206,105 @@
    "tests": [
     "tests/unit/test_greg_model_identity_policy.py::test_a_withheld_substitution_is_still_booked_against_the_budget"
    ]
+  },
+  {
+   "attack": "an isolated child rewrites the network filter on disk so later children run with network",
+   "expected": "later isolated children still run with the filter already in the body's memory; network denied",
+   "tests": [
+    "tests/unit/test_greg_organs.py::test_a_child_that_rewrites_the_network_filter_cannot_disable_isolation_for_later_children"
+   ]
+  },
+  {
+   "attack": "an organ stage reaches another organ's code, Kernel sources or the body's home",
+   "expected": "Landlock confines each stage to its own code snapshot, interpreter and the organ store",
+   "tests": [
+    "tests/unit/test_greg_organs.py::test_a_confined_organ_stage_reaches_only_its_code_and_the_store"
+   ]
+  },
+  {
+   "attack": "founder STOP during an organ exchange",
+   "expected": "the supervised stage is killed within a poll; nothing is recorded",
+   "tests": [
+    "tests/unit/test_greg_organs.py::test_founder_stop_ends_an_in_flight_organ_exchange"
+   ]
+  },
+  {
+   "attack": "the Kernel signs as an organ's isolated identity when per-organ keys are configured",
+   "expected": "the re-derivation reuses the organ's own signed message; the exchange still reproduces",
+   "tests": [
+    "tests/unit/test_greg_organs.py::test_live_exchange_never_signs_as_an_organ_when_per_organ_keys_are_configured"
+   ]
+  },
+  {
+   "attack": "malformed or off-contract organ output",
+   "expected": "a receipted refusal before anything is recorded, never an uncertain effect",
+   "tests": [
+    "tests/unit/test_greg_organs.py::test_malformed_or_off_contract_organ_output_is_a_clean_refusal"
+   ]
+  },
+  {
+   "attack": "a host outage (timeout, unavailable isolation) treated as a capability fault",
+   "expected": "the capability stays attached; no quarantine, no new deficit, no build spend",
+   "tests": [
+    "tests/integration/test_greg_capability_recovery.py::test_an_outage_is_not_a_capability_fault_and_opens_no_deficit"
+   ]
+  },
+  {
+   "attack": "a fallback chain spends past the signed budget or under-books refused attempts",
+   "expected": "the bound covers every attempt; every billed iteration is booked",
+   "tests": [
+    "tests/unit/test_greg_model_identity_policy.py::test_the_spend_bound_covers_every_attempt_of_the_fallback_chain"
+   ]
+  },
+  {
+   "attack": "a response naming no model is reported as the requested model",
+   "expected": "served model and substitution are reported unknown, never invented",
+   "tests": [
+    "tests/unit/test_greg_model_identity_policy.py::test_a_response_naming_no_model_is_unknown_not_the_requested_model"
+   ]
+  },
+  {
+   "attack": "a billed build attempt with no candidate escapes the build budget",
+   "expected": "the attempt's cost is booked against the founder-signed build budget",
+   "tests": [
+    "tests/unit/test_greg_model_identity_policy.py::test_a_withheld_build_attempt_is_booked_against_the_signed_build_budget"
+   ]
+  },
+  {
+   "attack": "a founder reconciliation of a function-named strategy crashes the founder's views",
+   "expected": "the reconciliation names the dispatched capability; resilience and the tribunal render",
+   "tests": [
+    "tests/unit/test_greg_reconciliation.py::test_reconciling_a_function_named_strategy_names_the_dispatched_capability"
+   ]
+  },
+  {
+   "attack": "a paid dispatch reconciled as executed books no spend",
+   "expected": "the signed cap is booked; a later action past the budget needs approval",
+   "tests": [
+    "tests/unit/test_greg_reconciliation.py::test_a_paid_action_reconciled_as_executed_books_its_signed_cap_against_the_budget"
+   ]
+  },
+  {
+   "attack": "a binding falls back to an older receipt after a reconciled execution",
+   "expected": "the consumer is held (Unbound / BindingError) and the founder is asked",
+   "tests": [
+    "tests/unit/test_greg_reconciliation.py::test_a_signed_binding_never_falls_back_past_a_reconciled_execution",
+    "tests/unit/test_greg_reconciliation.py::test_a_pipeline_input_never_falls_back_past_a_reconciled_execution"
+   ]
+  },
+  {
+   "attack": "a forged Goal Gravity ranking (priority not the signed one, or not following its rule)",
+   "expected": "the verifier re-derives the ranking from the signed specs and refuses it",
+   "tests": [
+    "tests/integration/test_goal_gravity_orders_missions.py::test_a_forged_ranking_is_detected_against_the_signed_specs"
+   ]
+  },
+  {
+   "attack": "a fixture (simulated) closure counted toward VEPMC",
+   "expected": "never counted, even with all nine conditions met; the conditions are unchanged",
+   "tests": [
+    "tests/unit/test_greg_one_machine_gates.py::test_fixture_evidence_never_moves_vepmc_even_when_every_condition_holds"
+   ]
   }
  ],
  "observed": "see observed-run.json (pytest outcome of every listed test on the trunk head)"

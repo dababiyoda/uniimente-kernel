@@ -47,7 +47,9 @@
     "No routed decision has executed against reality; calibration data is empty outside tests",
     "Router is not yet wired into the founder loop, which remains PREPARED_NOT_RUN (docs/founder-loop-entry-gate.json)",
     "CMC and VDM remain zero",
-    "Process failure: parallel implementation created by skipping open-PR search; corrected by relabelling, not by deleting work"
+    "Process failure: parallel implementation created by skipping open-PR search; corrected by relabelling, not by deleting work",
+    "2026-10-14 (draft PR #160): the router is wired into the Goal Gravity loop as inert library code; no service, scheduler or grant is installed and docs/founder-loop-entry-gate.json remains HOLD_ACTIVATION; calibration data outside tests is still empty",
+    "Router property found while wiring (recorded for the router owner): under the Beta(1,1) prior one verified success scores 0.667, so any min_reliability above 2/3 rejects a once-successful mechanism while admitting an unproven one, and a rejected mechanism can never earn the trials that would restore it. The Goal Gravity seam therefore uses DEFAULT_MIN_RELIABILITY rather than the policy evidence floors."
   ],
   "dependencies": [
     "capabilities/genome.py GenomeRegistry and authority envelopes",
@@ -57,15 +59,22 @@
   "conflicts": [
     "Founder wording favors maximum pressure; doctrine requires margin from uncertain boundaries. The interpretation the founder supplied resolves this in favor of margin.",
     "CANONICAL_EXECUTION_ORDER item 5 builds the router only when it is the active bottleneck; the active bottleneck remains mediated side-effect coverage of the first loop. This record is the founder's explicit direction to build it now, kept minimal and inert.",
-    "Duplication: capabilities/router.py (#165) was built and merged after searching only main, not open PRs; #143 already implemented a far stronger Competency Compiler from the same directive. Recorded as counterevidence of a process failure (search open lineages before building). Disposition: retained, labelled non-canonical; convergence or retirement is a founder decision."
+    "Duplication: capabilities/router.py (#165) was built and merged after searching only main, not open PRs; #143 already implemented a far stronger Competency Compiler from the same directive. Recorded as counterevidence of a process failure (search open lineages before building). Disposition: retained, labelled non-canonical; convergence or retirement is a founder decision.",
+    "This record says runtime composition waits on founder-loop entry gate G1-G6, and #165 said wiring waits on the entry gate. The 2026-10-13/14 directive section 32.8 says 'Connect it to the existing persistent GREG runtime'. Draft PR #160 reads both: it connects the router in code behind an optional constructor argument and activates nothing (G1 adoption and G5 trigger selection stay with the founder). Whether that reading is right is a founder decision.",
+    "Earlier lineages implement the same intent and are not credited by #165: draft #158 greg/cognition/compiler.py ('Layer 5 Competency Compiler') and draft #143's cortex routing. They remain substrate; reconciliation is a founder merge decision.",
+    "Draft PR #160 (third increment) mounts capabilities/router.py in the Goal Gravity loop through egregore/competency.py, behind an optional constructor argument that is off by default; tests mount it as the reference mechanism. #170 says the router must not be wired in as a second Competency Compiler. Both are preserved: #160 activates nothing, the seam's contract (RoutingView) is mechanism-neutral, and whether the loop mounts the router, the #143 lineage through an adapter, or nothing is a founder decision that #160 does not pre-empt."
   ],
-  "next_review_trigger": "Founder decision on the Competency Compiler convergence lineage (#143 / #145 / #154); at that point absorb or retire capabilities/router.py.",
+  "next_review_trigger": "Founder decision on the Competency Compiler convergence lineage (#143 / #145 / #154); at that point absorb or retire capabilities/router.py. Also: founder ruling on draft PR #160's optional mount of the router in the Goal Gravity loop, which conflicts with #170 until that decision.",
   "supersedes": [],
   "superseded_by": [],
   "implementation_refs": [
     "Canonical candidate: Kernel draft PR #143 (greg/cognition/, cortex/) — not on main",
     "Non-canonical alternative on main: capabilities/router.py, tests/unit/test_capability_router.py",
     "DALEOBANKS services/capability.py (grant narrowing, serialized consumption)",
-    "DALEOBANKS docs/FIRST_LOOP.md"
+    "DALEOBANKS docs/FIRST_LOOP.md",
+    "egregore/competency.py (draft PR #160: the router mounted on the Goal Gravity loop as loop.competency)",
+    "egregore/gps.py admissible_evidence + egregore/experience.py method typing (typed evidence clears typed gates)",
+    "egregore/acquisition.py (draft PR #160: plan, qualify, founder attach, resume; no builder)",
+    "tests/unit/test_goal_gravity_competency.py, tests/unit/test_goal_gravity_acquisition.py (draft PR #160)"
   ]
 }

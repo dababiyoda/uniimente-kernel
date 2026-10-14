@@ -256,6 +256,29 @@ class TestRestart:
         with pytest.raises(RouterError, match="no ledger"):
             _router(CALC).restore()
 
+    def test_restore_replays_only_outcomes_record_outcome_would_have_accepted(self):
+        """An outcome event appended around record_outcome never becomes calibration on replay."""
+        ledger = EvidenceLedger("sha256:" + "f" * 64)
+        fast = ("fast", ["deterministic_computation"], ["arithmetic"], "read_only", 0.0, "read_only", 0.0)
+        router = _router(fast, ledger=ledger)
+        decision = router.route(_problem("arithmetic"))
+        router.record_outcome(decision.decision_id, "fast@1.0.0", correct=True, evidence_ref="audit-1",
+                              verified_by="independent-auditor")
+        forged = {"type": "capabilities.routing_outcome", "decision_id": decision.decision_id,
+                  "competency": "fast@1.0.0", "problem_class": "arithmetic", "correct": True}
+        ledger.append("event", {**forged, "evidence_ref": "", "verified_by": "independent-auditor"})
+        ledger.append("event", {**forged, "evidence_ref": "self", "verified_by": "fast@2.0.0"})
+        ledger.append("event", {**forged, "evidence_ref": "x", "verified_by": "auditor", "decision_id": "sha256:nope"})
+        ledger.append("event", {**forged, "evidence_ref": "x", "verified_by": "auditor", "competency": "slow@1.0.0"})
+        rebuilt = _router(fast, ledger=ledger)
+        assert rebuilt.restore() == 1
+        assert rebuilt.calibration("fast@1.0.0", "arithmetic").trials == 1
+        assert [reason for _, reason in rebuilt.unreplayed] == [
+            "outcome without an evidence reference",
+            "outcome not verified by someone other than the mechanism",
+            "outcome for an unknown or later routing decision",
+            "outcome names a mechanism or class the decision did not select"]
+
 
 class TestReviewFindings:
     def test_composition_respects_the_aggregate_budget(self):

@@ -1,3 +1,13 @@
+## Parent machine continuation
+
+- Fixed completion boundary: BODY + ORGANS + MIND = GREG / UNIIMENTE.
+- Parent founder objective advanced:
+- Executable capability added and integration evidence:
+- Remaining full-machine dependencies, with precise item-specific blockers:
+- Next highest-priority unblocked requirement (automatically resume after this increment):
+
+A narrow PR never narrows the product. Prove each increment, integrate it and continue. See `AGENTS.md` and `INTENT-20261002-FULL-MACHINE-CONTINUATION`.
+
 ## Purpose
 
 Describe the problem, affected system boundary, and why this belongs in this repository.

@@ -1,0 +1,350 @@
+"""Mutation check for the cortex and GREG-path authority, evidence and budget invariants.
+
+    python scripts/ci/check_cortex_mutants.py
+
+Each mutant removes one safeguard the build prompt requires (a failed gate
+cannot be outranked, predictions cannot settle competence, victim protection is
+human-led, ...). The cortex tests must fail for every mutant. Mutants are
+applied to a scratch copy of the repository, never to the working tree.
+Exit status 1 if any mutant survives or no longer applies.
+"""
+from __future__ import annotations
+
+import shutil
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+TESTS = ["tests/unit/test_cortex_gates_genome.py", "tests/unit/test_cortex_routes.py",
+         "tests/unit/test_cortex_pipeline.py"]
+MUTANTS = [
+    ("receipt claims authority", "cortex/routing.py",
+     '"authority_created": False,\n            "execution_authority": "none",\n        }\n        body["receipt_id"]',
+     '"authority_created": True,\n            "execution_authority": "none",\n        }\n        body["receipt_id"]'),
+    ("rank ignores failed gates", "cortex/gates.py",
+     "eligible = [o for o in options if reports[o.option_id].all_pass]", "eligible = list(options)"),
+    ("prediction settles competence", "cortex/memory.py",
+     "if kind in REFUSED_PROVENANCE and outcome_status in SETTLING:", "if False:"),
+    ("financial recommended", "cortex/routing.py",
+     'if not ceiling_ok or consequence_rank(geometry.consequence_class) >= consequence_rank("financial"):',
+     "if False:"),
+    ("model-generated DAG identifies", "cortex/organs/evidence_causal.py",
+     'if basis == "model_generated":', "if False:"),
+    ("witness check skipped", "cortex/organs/formal.py",
+     'if not ok:\n                    discrepancies.append(f"{kind} witness',
+     'if False:\n                    discrepancies.append(f"{kind} witness'),
+    ("undecided witness counts as agreement", "cortex/organs/formal.py",
+     "if res not in (z3.sat, z3.unsat):", "if False:"),
+    ("exhausted timeout reported as inconclusive", "cortex/organs/formal.py",
+     'return "TIMEOUT" if "timeout" in reason or "canceled" in reason else "INCONCLUSIVE"',
+     'return "TIMEOUT" if "timeout" in reason else "INCONCLUSIVE"'),
+    ("exit ignores geometry", "cortex/evaluation/scoring.py",
+     "reasons.extend(_geometry_reasons(routed, arm, name))", "pass"),
+    ("exit ignores cost and latency", "cortex/evaluation/scoring.py",
+     "reasons.extend(_resource_reasons(routed, arm, name))", "pass"),
+    ("optimality certificate skipped", "cortex/organs/formal.py",
+     "certifier, res = check(domain + list(exprs.values()) + [better])", "certifier, res = None, z3.unsat"),
+    ("protection gaps ignored", "cortex/routing.py",
+     "set(HUMAN_LED_PROTECTION) or protection.gaps):", "set(HUMAN_LED_PROTECTION)):"),
+    ("unknown harm treated as safe", "cortex/contracts.py",
+     'if lvl in ("high", "medium", "unknown")]', 'if lvl in ("high", "medium")]'),
+    ("receipt hides the strongest counterargument", "cortex/routing.py",
+     "strongest = ({", "strongest = None and ({"),
+    ("coercive intervention accepted", "cortex/organs/deterrence.py",
+     "            if kind in PROHIBITED_KINDS:", "            if False:"),
+    ("hard-harm intervention accepted", "cortex/organs/deterrence.py",
+     "            if hard:\n", "            if False:\n"),
+    ("severity mislabelled as certainty", "cortex/organs/deterrence.py",
+     '"sanction_usd": "severity",', '"sanction_usd": "certainty",'),
+    ("external deterrence not handed off", "cortex/routing.py",
+     "        if deterrent is not None:\n", "        if False:\n"),
+    ("quote check skipped", "cortex/organs/semantic.py",
+     "if not isinstance(q, str) or not q.strip() or not any(", "if False and not any("),
+    ("disabled family eligible", "cortex/genome.py",
+     "if not profile.enabled:\n                reasons.append", "if False:\n                reasons.append"),
+    ("non-permission record grants", "cortex/gates.py",
+     "return self.origin in PERMISSION_BEARING.get(self.kind, ())", "return True"),
+    ("stale evidence accepted", "cortex/organs/evidence_causal.py",
+     "(today - observed).days > max_age:", "(today - observed).days > 10**9:"),
+    ("protection not handed off", "cortex/routing.py",
+     "if protection.relevant and (set(protection.required_actions) & set(HUMAN_LED_PROTECTION) or protection.gaps):",
+     "if False:"),
+    ("verifier ignores protection", "cortex/organs/adversarial.py",
+     'if protection is not None and getattr(protection, "relevant", False) and proposed_disposition == "recommend"',
+     "if False"),
+    ("preserved evidence open access", "cortex/contracts.py",
+     'and "evidence_preservation" in actions and access in ("unknown", "internal"):', "and False:"),
+    ("receipt drops protection", "cortex/routing.py",
+     '"protection": None if protection is None or not protection.relevant else {',
+     '"protection": None if True else {'),
+]
+
+# GREG path (directive section 15): "deliberately remove a permission check, drop a constraint,
+# relabel UNKNOWN, replace evidence, duplicate settlement, or enable a paid fallback. The
+# corresponding tests must fail."
+GREG_TESTS = ["tests/unit/test_greg_cortex_bridge.py", "tests/unit/test_cortex_formal_engines.py",
+              "tests/unit/test_cortex_schedule_composition.py", "tests/integration/test_greg_cortex_mission.py"]
+GREG_MUTANTS = [
+    ("permission check removed: signed target scope", "greg/cognition/cortex.py",
+     'if not ctx.manifest.capability_id.startswith("cognition.") or not ctx.target.startswith("cognition:"):',
+     "if False:"),
+    ("permission check removed: founder detach not projected", "greg/cognition/bridge.py",
+     "        ok, why = registry.usable(cid)\n        if not ok:\n            out[key]",
+     "        ok, why = True, ''\n        if not ok:\n            out[key]"),
+    ("constraint dropped: extracted deadline", "cortex/organs/schedule_extraction.py",
+     'if jobs[j].get("deadline") is not None:', "if False:"),
+    ("constraint dropped: CP-SAT encoding", "cortex/organs/cpsat.py",
+     "for c in spec.constraints if constraints is None else constraints:",
+     "for c in (spec.constraints[1:] if constraints is None else constraints):"),
+    ("UNKNOWN relabelled: unknown harm as none", "greg/cognition/bridge.py",
+     '"critical": 1.0, "unknown": None}', '"critical": 1.0, "unknown": 0.0}'),
+    ("UNKNOWN relabelled: FEASIBLE as OPTIMAL", "cortex/organs/cpsat.py",
+     'optimal = name == "OPTIMAL"', "optimal = True"),
+    ("UNKNOWN relabelled: exhausted latency budget ignored", "cortex/organs/formal.py",
+     's.set("timeout", max(1, ms_left(until)))', 's.set("timeout", spec.timeout_ms)'),
+    ("evidence replaced: receipt content address unchecked", "greg/cognition/bridge.py",
+     "if identity != cortex_digest(body):", "if False:"),
+    ("evidence replaced: verifier re-check of returned assignments removed", "cortex/organs/adversarial.py",
+     "    _recheck_formal_answers(payload, results, add)\n", "    pass\n"),
+    ("authority claim accepted from the worker", "greg/cognition/bridge.py",
+     'if receipt["authority_created"] is not False or receipt["execution_authority"] != "none":', "if False:"),
+    ("duplicate settlement", "greg/cognition/settlement.py",
+     '        if outcome["observation_event"] not in retained:\n            journal.record("cognition.settled", outcome, '
+     'key=outcome["observation_event"],',
+     '        if True:\n            journal.record("cognition.settled", outcome, '
+     'key=(outcome["observation_event"], __import__("uuid").uuid4().hex),'),
+    ("paid fallback enabled: purchased inference accepted", "greg/cognition/bridge.py",
+     'if receipt["expenditure"]["usd"] != 0:', "if False:"),
+    ("paid fallback enabled: non-founder provider order selects a model", "greg/cognition/bridge.py",
+     'if not model_config or "ollama" not in model_config.get("order", []) or not model_config.get("ollama_model"):',
+     'if not model_config or not model_config.get("ollama_model"):'),
+    ("misclassified consequence: declared harm cannot raise the class", "cortex/routing.py",
+     'implied = "financial" if (harm.levels["financial"] in ("high", "critical") or harm.hard_violations()) else None',
+     "implied = None"),
+    ("zero solver budget still solves", "cortex/routing.py",
+     "elif set(FORMAL_ENGINES) & set(selected) and limits.max_solver_calls < 1:", "elif False:"),
+]
+# Founder correction 2026-10-01 (#144): open-source engines are supply, GREG's certificate is the control.
+OSS_TESTS = ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_linear_genesis.py",
+             "tests/unit/test_greg_cognition.py", "tests/unit/test_greg_chromebook_doctor.py",
+             "tests/unit/test_greg_assignment_genesis.py", "tests/unit/test_greg_spanning_genesis.py",
+             "tests/unit/test_greg_flow_genesis.py"]
+OSS_MUTANTS = [
+    ("certificate skips edge feasibility", "greg/cognition/network.py",
+     "if exact[b] > exact[a] + w + tolerance(exact[a] + w):", "if False:"),
+    ("certificate trusts claimed unreachability", "greg/cognition/network.py",
+     "        if b not in reached:\n            raise CertificateError", "        if False:\n            raise CertificateError"),
+    ("flow certificate skips the residual graph", "greg/cognition/network.py", "if sink in side:", "if False:"),
+    ("negative weights reach the engine", "greg/cognition/network.py", "    if value < 0:", "    if False:"),
+    ("changed package files survive restart", "greg/genesis.py",
+     'if mechanisms.digest(dist, candidate.digest_paths)[0] != manifest.provenance.get("package_digest"):',
+     "if False:"),
+    ("repair re-admits the package that failed in service", "greg/genesis.py",
+     'if repair and repair.get("capability_id") == manifest.capability_id:', "if False:"),
+    ("engine imported from an unqualified location", "greg/mechanisms.py",
+     "if root not in module_file.parents:", "if False:"),
+    ("#140 graph verifier accepts a longer route", "greg/cognition/verification.py",
+     'checks["path_optimal"] = data["goal"] in best and', 'checks["path_optimal"] = True or'),
+    ("#140 graph verifier accepts a false no-route", "greg/cognition/verification.py",
+     'checks["unreachable_confirmed"] = data["goal"] not in best', 'checks["unreachable_confirmed"] = True'),
+    ("LP certificate skips the duality gap", "greg/cognition/linear.py",
+     "    if not _close(primal, dual, primal):", "    if False:"),
+    ("LP certificate ignores multiplier signs", "greg/cognition/linear.py",
+     "if any(y > TOLERANCE for y in y_ub) or", "if False and any(y > TOLERANCE for y in y_ub) or"),
+    ("LP certificate skips inequality feasibility", "greg/cognition/linear.py",
+     "        if sum(a * v for a, v in zip(F(row), x)) > Fraction(b) + TOLERANCE * (1 + abs(Fraction(b))):",
+     "        if False:"),
+    ("an unproved engine status closes a mission", "greg/cognition/linear.py",
+     '        return {"certified": False, "status": claim["status"],\n                "why": "the engine reports no optimum and gives',
+     '        return {"certified": True, "status": claim["status"],\n                "why": "the engine reports no optimum and gives'),
+    ("a plan that meets every limit is reported as no plan", "greg/cognition/linear.py",
+     "    if least <= threshold:                                   # a plan meets every limit", "    if False:"),
+    ("a bounded objective is reported as having no limit", "greg/cognition/linear.py",
+     "    if rate >= -TOLERANCE * (1 + max(", "    if False and rate >= -TOLERANCE * (1 + max("),
+    ("a direction may break a limit", "greg/cognition/linear.py",
+     "        if sum(Fraction(a) * v for a, v in zip(row, d)) > TOLERANCE * scale:", "        if False:"),
+    ("an engine's 'no plan exists' closes without the elastic proof", "greg/genesis.py",
+     '            if answer.get("follow_up") and spec.get("follow_up"):\n                # The engine',
+     '            if False:\n                # The engine'),
+    ("#140 game verifier skips the row guarantee", "greg/cognition/verification.py",
+     'checks["row_guarantee"] = checks["strategies_are_distributions"] and min(', 'checks["row_guarantee"] = True or min('),
+    ("#140 game verifier skips the column guarantee", "greg/cognition/verification.py",
+     'checks["column_guarantee"] = checks["strategies_are_distributions"] and max(',
+     'checks["column_guarantee"] = True or max('),
+    ("#140 game verifier passes an answer with no column strategy", "greg/cognition/verification.py",
+     'elif family == "game" and output:', 'elif family == "game" and "column_strategy" in output:'),
+    ("#140 posterior verifier skips the mean", "greg/cognition/verification.py",
+     'checks["posterior_mean"] = math.isclose(', 'checks["posterior_mean"] = True or math.isclose('),
+    ("#140 posterior verifier skips the variance", "greg/cognition/verification.py",
+     'checks["posterior_variance"] = math.isclose(', 'checks["posterior_variance"] = True or math.isclose('),
+    ("doctor counts an engine the isolated worker cannot import", "greg/doctor.py",
+     '"importable": dist is not None and not errors,', '"importable": dist is not None,'),
+    ("assignment certificate skips the exchange check", "greg/cognition/assignment.py",
+     "    if potentials is None:", "    if False:"),
+    ("assignment certificate ignores free columns", "greg/cognition/assignment.py",
+     "    for j in range(m):\n        a, b = (sink", "    for j in []:\n        a, b = (sink"),
+    ("assignment certificate accepts a pair that is not allowed", "greg/cognition/assignment.py",
+     "        if (i, j) not in allowed:", "        if False:"),
+    ("assignment certificate accepts a shared column", "greg/cognition/assignment.py",
+     "    if len(set(chosen.values())) != n:", "    if False:"),
+    ("an engine's 'no assignment exists' is accepted while one exists", "greg/cognition/assignment.py",
+     "        if len(matched) == n:", "        if False:"),
+    ("OR-Tools runner leaves free columns unpadded", "greg/cognition/assignment.py",
+     "    for i in range(n, m):", "    for i in range(0):"),
+    ("spanning certificate skips the cycle property", "greg/cognition/spanning.py",
+     "        if (u, v) not in in_forest and Fraction(w) < path_max(u, v):", "        if False:"),
+    ("spanning certificate accepts a cycle", "greg/cognition/spanning.py",
+     "        if not union.join(u, v):\n            raise CertificateError", "        if False:\n            raise CertificateError"),
+    ("spanning certificate accepts a forest that leaves a link's sites apart", "greg/cognition/spanning.py",
+     "        if union.find(u) != union.find(v):\n            raise CertificateError(f\"{u} and {v} are linked",
+     "        if False:\n            raise CertificateError(f\"{u} and {v} are linked"),
+    ("SciPy spanning runner forgets that csgraph reads 0 as no edge", "greg/cognition/spanning.py",
+     "    shift = 1 - min(w for _, _, w in edges) if min(w for _, _, w in edges) <= 0 else 0", "    shift = 0"),
+    ("delivery certificate skips the rerouting check", "greg/cognition/flow.py",
+     "    if prices is None:", "    if False:"),
+    ("delivery certificate ignores backward residual arcs", "greg/cognition/flow.py",
+     "        if f > 0:\n            residual.append", "        if False:\n            residual.append"),
+    ("delivery certificate allows an overload", "greg/cognition/flow.py",
+     "or not 0 <= f <= cap:", "or not 0 <= f:"),
+    ("delivery certificate skips the balance at each site", "greg/cognition/flow.py",
+     "        if balance[n] != b:", "        if False:"),
+    ("an engine's 'no plan exists' is accepted while one exists", "greg/cognition/flow.py",
+     "        if value == total_supply:", "        if False:"),
+    ("console attaches a capability no ask names", "greg/console.py",
+     "if capability_id not in {c[\"capability_id\"] for c in _attachable(open_asks.get(request_id, {}))}:",
+     "if False:"),
+]
+
+# Each open-source mutant is run against the test files that own its safeguard (by mutated file), so
+# the check stays inside CI's budget as families grow and shows which tests carry each gate.
+OSS_TESTS_BY_FILE = {
+    "greg/cognition/network.py": ["tests/unit/test_greg_open_source_genesis.py"],
+    "greg/mechanisms.py": ["tests/unit/test_greg_open_source_genesis.py"],
+    "greg/console.py": ["tests/unit/test_greg_open_source_genesis.py"],
+    "greg/cognition/verification.py": ["tests/unit/test_greg_cognition.py"],
+    "greg/cognition/linear.py": ["tests/unit/test_greg_linear_genesis.py"],
+    "greg/doctor.py": ["tests/unit/test_greg_chromebook_doctor.py"],
+    "greg/cognition/assignment.py": ["tests/unit/test_greg_assignment_genesis.py"],
+    "greg/cognition/spanning.py": ["tests/unit/test_greg_spanning_genesis.py"],
+    "greg/cognition/flow.py": ["tests/unit/test_greg_flow_genesis.py"],
+    "greg/genesis.py": ["tests/unit/test_greg_open_source_genesis.py", "tests/unit/test_greg_linear_genesis.py"],
+}
+assert all(any(m[1] == rel for m in OSS_MUTANTS) for rel in OSS_TESTS_BY_FILE)
+assert set(t for ts in OSS_TESTS_BY_FILE.values() for t in ts) <= set(OSS_TESTS)
+
+# Competency characterization (directive section 5): the error-correction workload corrupts one leaf of
+# each verified answer and counts what the falsifier catches. Each mutant removes one exact re-check
+# the workload exposed as missing on 2026-10-13, or blunts the workload itself.
+CHAR_TESTS = ["tests/unit/test_greg_cognition_benchmark.py"]
+CHAR_MUTANTS = [
+    ("exact verifier skips the ratio string", "greg/cognition/verification.py",
+     'checks["exact_matches_ratio"] = Fraction(output["exact"]) == Fraction(int(output["numerator"]), int(output["denominator"]))',
+     'checks["exact_matches_ratio"] = True'),
+    ("polynomial verifier skips expansion of the factored form", "greg/cognition/verification.py",
+     'checks["factored_form_expands_back"] = sp.expand(sp.sympify(output["factored"], locals={"x": x}) - expr) == 0',
+     'checks["factored_form_expands_back"] = True'),
+    ("estimation verifier skips the interval products", "greg/cognition/verification.py",
+     'checks["interval_products"] = all(_close(output[k], b) for k, b in zip(("low", "central", "high"), bounds))',
+     'checks["interval_products"] = True'),
+    ("causal verifier skips the difference in means", "greg/cognition/verification.py",
+     'checks["difference_in_means"] = _close(output["effect"], effect)', 'checks["difference_in_means"] = True'),
+    ("control verifier skips the clamped PID law", "greg/cognition/verification.py",
+     'checks["clamped_pid_law"] = _close(output["correction"], correction)', 'checks["clamped_pid_law"] = True'),
+    ("information verifier skips the acquire rule", "greg/cognition/verification.py",
+     'checks["acquire_rule"] = isinstance(output["acquire"], bool) and output["acquire"] == (gross > cost)',
+     'checks["acquire_rule"] = True'),
+    ("simulation verifier skips moment consistency", "greg/cognition/verification.py",
+     'checks["moments_consistent"] = (0 <= low <= mean <= high <= steps and _close(mean * samples, round(mean * samples)))',
+     'checks["moments_consistent"] = True'),
+    ("pattern verifier skips the anomaly indices", "greg/cognition/verification.py",
+     "                                     and strict <= set(output[\"anomalies\"]) <= loose)",
+     "                                     and True)"),
+    ("micro verifier skips the set-point rule", "greg/cognition/verification.py",
+     'checks["setpoint_rule"] = output["state"] == ("stimulate" if observed < low else "inhibit" if observed > high else "abstain")',
+     'checks["setpoint_rule"] = True'),
+    ("sequential verifier skips the policy", "greg/cognition/verification.py",
+     '                                         and action_value(s, output["policy"][s], previous) == values[s]',
+     '                                         and True'),
+    ("collective verifier skips the quorum rule", "greg/cognition/verification.py",
+     'checks["quorum_rule"] = output["quorum_crossed"] == crossed and output["choice"] == (winner if crossed else None)',
+     'checks["quorum_rule"] = True'),
+    ("unknown solver status accepted", "greg/cognition/verification.py",
+     'checks["known_status"] = (output["solver_status"] in ("UNSAT", "UNKNOWN", "INFEASIBLE", "MODEL_INVALID")',
+     'checks["known_status"] = (True'),
+    ("characterization counts an accepted corruption as detected", "greg/cognition/benchmark.py",
+     'detected = [t for t in trials if t["outcome"] != "accepted"]', "detected = list(trials)"),
+    ("characterization corrupts nothing", "greg/cognition/benchmark.py",
+     "        yield path, output + LARGE\n", "        yield path, output\n"),
+]
+
+# Directive section 13: the AdvantageCase on the venture memo.
+ADV_TESTS = ["tests/unit/test_greg_advantage.py"]
+ADV_MUTANTS = [
+    ("a supported legal state accepted without provenance", "greg/advantage.py",
+     'if state == "supported" and (not provenance or not reviewer):', "if False:"),
+    ("absence of a prohibition read as permission", "greg/advantage.py",
+     '            states[question] = legal_state("unresolved")\n', '            states[question] = legal_state("not_applicable")\n'),
+    ("a scalar score accepted on the case", "greg/advantage.py",
+     'if case.get("score") is not None or any("score" in k for k in case if k != "score"):', "if False:"),
+    ("ask case composed from the unscreened message", "greg/asks.py",
+     'shown = {**shown, "advantage": advantage.from_ask(shown)}', 'shown = {**shown, "advantage": advantage.from_ask(message)}'),
+    ("resource ask recorded without its case", "greg/asks.py", '    if "resource" in shown:\n', '    if False:\n'),
+    ("appraiser skips the advantage recomputation", "greg/ventures.py",
+     '        if recomputed != inputs["advantage"]:', "        if False:"),
+]
+
+# Path node P4 in shadow: learned cortex routing replayed from GREG's settled outcomes.
+SHADOW_TESTS = ["tests/unit/test_greg_cognition_shadow.py"]
+SHADOW_MUTANTS = [
+    ("shadow judges with hindsight", "greg/cognition/shadow.py",
+     "while cursor < len(settled) and settled[cursor][0] < position:", "while cursor < len(settled):"),
+    ("shadow credits every route instead of the one observed", "greg/cognition/shadow.py",
+     "    for key in _ran_first(cortex)[:1]:", "    for key in cortex[\"route\"][\"selected\"] + (cortex[\"route\"].get(\"formal_plan\") or {}).get(\"order\", []):"),
+    ("shadow accepts an invalid receipt", "greg/cognition/shadow.py",
+     'output.get("proof_type") == "cortex_receipt" and _valid_receipt(output):', 'output.get("proof_type") == "cortex_receipt":'),
+    ("shadow summary drops the latest settled outcomes", "greg/cognition/shadow.py",
+     "    for index_, outcome in settled[cursor:]:", "    for index_, outcome in []:"),
+    ("exploration accepts an unregistered organ", "greg/cognition/shadow.py",
+     "    if capability not in ORGANS.values():", "    if False:"),
+    ("shadow reports a single-engine plan as a decision point", "greg/cognition/shadow.py",
+     "    if len(order) > 1:\n", "    if order:\n"),
+]
+
+GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
+          ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("characterization", CHAR_TESTS, CHAR_MUTANTS),
+          ("advantage case", ADV_TESTS, ADV_MUTANTS), ("learned routing shadow", SHADOW_TESTS, SHADOW_MUTANTS)]
+
+
+def main() -> int:
+    bad = total = 0
+    with tempfile.TemporaryDirectory(prefix="cortex-mutants-") as tmp:
+        work = Path(tmp) / "repo"
+        shutil.copytree(ROOT, work, ignore=shutil.ignore_patterns(".git", "__pycache__", ".pytest_cache"))
+        for group, tests, name, rel, old, new in [(g, t, *m) for g, t, ms in GROUPS for m in ms]:
+            total += 1
+            if group == "open-source genesis":
+                tests = OSS_TESTS_BY_FILE.get(rel, tests)
+            path = work / rel
+            source = path.read_text(encoding="utf-8")
+            if source.count(old) != 1:
+                print(f"STALE    [{group}] {name}: pattern not found exactly once in {rel}")
+                bad += 1
+                continue
+            path.write_text(source.replace(old, new), encoding="utf-8")
+            try:
+                run = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", *tests],
+                                     cwd=work, capture_output=True, text=True)
+            finally:
+                path.write_text(source, encoding="utf-8")
+            caught = run.returncode != 0
+            tail = (run.stdout.strip().splitlines() or ["(no output)"])[-1]
+            print(f"{'CAUGHT ' if caught else 'SURVIVED'} [{group}] {name}: {tail}")
+            bad += not caught
+    print(f"{total} mutants, {bad} survived or stale")
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,1879 @@
+{
+ "produced_at": "2026-10-13",
+ "command": "python -c 'from greg.cognition import benchmark; benchmark.assess()'",
+ "python": "3.11.15",
+ "commit_parent": "822f37b5363abf49f72820956b4d6db838424e89",
+ "correct": 22,
+ "total": 22,
+ "characterization": {
+  "dimensions": [
+   "responsiveness",
+   "memory_depth",
+   "prediction_horizon",
+   "adaptability",
+   "persistence",
+   "error_correction",
+   "problem_space",
+   "cooperation",
+   "generalization",
+   "higher_scale_coherence"
+  ],
+  "methods": {
+   "cognition.causal": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.10678552399997443,
+      "p95_seconds": 0.10848621439997715,
+      "max_seconds": 0.10867517999997744,
+      "n": 2,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": false
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['treatment_effect'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 3,
+      "detected": 3,
+      "detection_rate": 1.0,
+      "refuted": 3,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "treatment_effect"
+      ],
+      "epistemic_classes": [
+       "causal"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 2
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "measured",
+     "value": {
+      "consumers": [
+       "venture.assess"
+      ],
+      "operations_consumed": [
+       "treatment_effect"
+      ],
+      "coherence_rules": {
+       "venture.assess": "a revenue figure may not outrun its causal support (greg/ventures.py verify_delivery; tests/unit/test_greg_ventures.py)"
+      }
+     },
+     "workload": "delivery capabilities that request this operation through cognition.solve and whose appraisal refutes a delivery whose conclusion outruns the receipt"
+    }
+   },
+   "cognition.collective": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.10000344999997424,
+      "p95_seconds": 0.10000344999997424,
+      "max_seconds": 0.10000344999997424,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": false
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['quorum'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 3,
+      "detected": 3,
+      "detection_rate": 1.0,
+      "refuted": 3,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "quorum"
+      ],
+      "epistemic_classes": [
+       "prediction"
+      ],
+      "layer": 4,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['quorum'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.control": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.09988483500001166,
+      "p95_seconds": 0.09988483500001166,
+      "max_seconds": 0.09988483500001166,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": true
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['pid'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 3,
+      "detected": 3,
+      "detection_rate": 1.0,
+      "refuted": 3,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "pid"
+      ],
+      "epistemic_classes": [
+       "physical"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['pid'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.estimation": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.11286887399995749,
+      "p95_seconds": 0.11286887399995749,
+      "max_seconds": 0.11286887399995749,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": false
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['estimate'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 3,
+      "detected": 3,
+      "detection_rate": 1.0,
+      "refuted": 3,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "estimate"
+      ],
+      "epistemic_classes": [
+       "estimate"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "measured",
+     "value": {
+      "consumers": [
+       "venture.assess"
+      ],
+      "operations_consumed": [
+       "estimate"
+      ],
+      "coherence_rules": {
+       "venture.assess": "a revenue figure may not outrun its causal support (greg/ventures.py verify_delivery; tests/unit/test_greg_ventures.py)"
+      }
+     },
+     "workload": "delivery capabilities that request this operation through cognition.solve and whose appraisal refutes a delivery whose conclusion outruns the receipt"
+    }
+   },
+   "cognition.exact": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.11792929299997468,
+      "p95_seconds": 0.8062660528000322,
+      "max_seconds": 0.8827479150000386,
+      "n": 3,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": false
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['calculate', 'polynomial'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 6,
+      "detected": 6,
+      "detection_rate": 1.0,
+      "refuted": 5,
+      "raised": 1,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "calculate",
+       "polynomial"
+      ],
+      "epistemic_classes": [
+       "arithmetic"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 3
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.estimation",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['calculate', 'polynomial'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.formal": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.0782177254999965,
+      "p95_seconds": 0.1474554792499589,
+      "max_seconds": 0.15514856299995472,
+      "n": 2,
+      "declared_estimate_seconds": 1.0,
+      "p95_within_declared_estimate": true
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['constraints'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 3,
+      "detected": 3,
+      "detection_rate": 1.0,
+      "refuted": 3,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "constraints"
+      ],
+      "epistemic_classes": [
+       "deductive",
+       "constraint_feasibility"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 2
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['constraints'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.game": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.4875014550000287,
+      "p95_seconds": 0.4875014550000287,
+      "max_seconds": 0.4875014550000287,
+      "n": 1,
+      "declared_estimate_seconds": 1.0,
+      "p95_within_declared_estimate": true
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['minimax'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 5,
+      "detected": 5,
+      "detection_rate": 1.0,
+      "refuted": 5,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "minimax"
+      ],
+      "epistemic_classes": [
+       "strategic"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['minimax'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.graph": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.22671755499999335,
+      "p95_seconds": 0.22671755499999335,
+      "max_seconds": 0.22671755499999335,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": false
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['shortest_path'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 5,
+      "detected": 5,
+      "detection_rate": 1.0,
+      "refuted": 5,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "shortest_path"
+      ],
+      "epistemic_classes": [
+       "optimization"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['shortest_path'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.information": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.11921458900002335,
+      "p95_seconds": 0.11921458900002335,
+      "max_seconds": 0.11921458900002335,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": false
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['value_of_information'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 3,
+      "detected": 3,
+      "detection_rate": 1.0,
+      "refuted": 3,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "value_of_information"
+      ],
+      "epistemic_classes": [
+       "strategic"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['value_of_information'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.micro": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.09861506999999392,
+      "p95_seconds": 0.09861506999999392,
+      "max_seconds": 0.09861506999999392,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": true
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['setpoint'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 1,
+      "detected": 1,
+      "detection_rate": 1.0,
+      "refuted": 1,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "setpoint"
+      ],
+      "epistemic_classes": [
+       "physical"
+      ],
+      "layer": 1,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['setpoint'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.optimization": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.48100241200000937,
+      "p95_seconds": 0.48100241200000937,
+      "max_seconds": 0.48100241200000937,
+      "n": 1,
+      "declared_estimate_seconds": 1.0,
+      "p95_within_declared_estimate": true
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['optimize'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 4,
+      "detected": 4,
+      "detection_rate": 1.0,
+      "refuted": 4,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "optimize"
+      ],
+      "epistemic_classes": [
+       "optimization"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['optimize'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.pattern": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.10127363600003036,
+      "p95_seconds": 0.10127363600003036,
+      "max_seconds": 0.10127363600003036,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": false
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['anomalies'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 3,
+      "detected": 3,
+      "detection_rate": 1.0,
+      "refuted": 3,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "anomalies"
+      ],
+      "epistemic_classes": [
+       "prediction"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['anomalies'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.probabilistic": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.13793694100002085,
+      "p95_seconds": 0.13793694100002085,
+      "max_seconds": 0.13793694100002085,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": false
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['beta_update'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 4,
+      "detected": 4,
+      "detection_rate": 1.0,
+      "refuted": 4,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "beta_update"
+      ],
+      "epistemic_classes": [
+       "prediction"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['beta_update'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.search": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.2685655369999722,
+      "p95_seconds": 0.2685655369999722,
+      "max_seconds": 0.2685655369999722,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": false
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['state_search'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 5,
+      "detected": 5,
+      "detection_rate": 1.0,
+      "refuted": 5,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "state_search"
+      ],
+      "epistemic_classes": [
+       "optimization"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['state_search'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.semantic": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.05709593700004234,
+      "p95_seconds": 0.05709593700004234,
+      "max_seconds": 0.05709593700004234,
+      "n": 1,
+      "declared_estimate_seconds": 1.0,
+      "p95_within_declared_estimate": true
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "operations ['interpret'] carry no time horizon"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no structurally verified answer for this method in the frozen suite",
+     "would_measure": "one frozen case whose receipt carries an output and a STRUCTURALLY_VERIFIED verdict"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "interpret"
+      ],
+      "epistemic_classes": [
+       "semantic",
+       "strategic"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no answered receipt pair to compose in this run",
+     "would_measure": "two answered receipts of different methods under one metaconsensus"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['interpret'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.sequential": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.09914728699999387,
+      "p95_seconds": 0.09914728699999387,
+      "max_seconds": 0.09914728699999387,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": true
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "measured",
+     "value": {
+      "max_declared_steps": 3,
+      "fields": [
+       "horizon"
+      ],
+      "beyond_declared_horizon": "not computed; the receipt reports finite horizons only"
+     },
+     "workload": "declared finite horizon in this suite's requests to the method"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 2,
+      "detected": 2,
+      "detection_rate": 1.0,
+      "refuted": 2,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "mdp"
+      ],
+      "epistemic_classes": [
+       "strategic"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['mdp'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.simulation": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.10837751899998693,
+      "p95_seconds": 0.10837751899998693,
+      "max_seconds": 0.10837751899998693,
+      "n": 1,
+      "declared_estimate_seconds": 0.1,
+      "p95_within_declared_estimate": false
+     },
+     "workload": "wall-clock per receipt over this suite's cases routed to the method; includes the isolated worker process start"
+    },
+    "memory_depth": {
+     "status": "measured",
+     "value": {
+      "settled_outcomes_consulted": 0,
+      "journal_supplied": false,
+      "forgetting": "none; competence is recomputed by full replay of the canonical journal"
+     },
+     "workload": "settled outcomes for (method, version, geometry) replayed by greg/cognition/settlement.py into this run's candidate ranking; no body journal was supplied, so depth is zero by construction"
+    },
+    "prediction_horizon": {
+     "status": "measured",
+     "value": {
+      "max_declared_steps": 2,
+      "fields": [
+       "steps"
+      ],
+      "beyond_declared_horizon": "not computed; the receipt reports finite horizons only"
+     },
+     "workload": "declared finite horizon in this suite's requests to the method"
+    },
+    "adaptability": {
+     "status": "measured",
+     "value": {
+      "eligible_alternatives": 0,
+      "selection_can_change": false,
+      "refutations_to_demote": null,
+      "update_rule": "verified outcomes alter per-geometry competence, never authority"
+     },
+     "workload": "re-ranking by settled-outcome Laplace quality over this run's eligible candidates; founder detach re-routing is measured by the integration tests named under persistence"
+    },
+    "persistence": {
+     "status": "not_applicable",
+     "value": null,
+     "reason": "the method is a stateless bounded worker (stateless; caller supplies bounded local state); persistence is a property of the body",
+     "measured_at_body_scale_by": [
+      "tests/integration/test_greg_cognition_mission.py::test_detachment_survives_restart_and_solver_cannot_bypass_it",
+      "tests/integration/test_greg_cortex_mission.py::test_cortex_mission_closes_on_reobserved_evidence_and_settles_once",
+      "tests/integration/test_greg_cortex_rehearsal.py"
+     ]
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "perturbations": 3,
+      "detected": 3,
+      "detection_rate": 1.0,
+      "refuted": 3,
+      "raised": 0,
+      "undetected_fields": []
+     },
+     "workload": "every single-leaf corruption (number or numeric string +1e6, boolean flip, string suffix) of each verified answer re-run through the independent falsifier (greg/cognition/verification.py); a typed-artifact-only check detects nothing"
+    },
+    "problem_space": {
+     "status": "measured",
+     "value": {
+      "operations": [
+       "simulate"
+      ],
+      "epistemic_classes": [
+       "prediction"
+      ],
+      "layer": 3,
+      "compute_ceiling": 100000,
+      "request_ceiling_bytes": 65536,
+      "frozen_cases": 1
+     },
+     "workload": "ceilings enforced by compile_problem and CognitiveCapabilityProfile.validate; cases routed to the method in this suite"
+    },
+    "cooperation": {
+     "status": "measured",
+     "value": {
+      "composed_with": "cognition.exact",
+      "metaconsensus_state": "RECOMMENDATION_ONLY",
+      "jurisdiction_preserved": true,
+      "cross_class_dominance_inferred": false,
+      "lift_vs_best_constituent": null
+     },
+     "workload": "metaconsensus over this method's receipt and one other method's receipt",
+     "unmeasured": "lift over the best constituent requires a predeclared acceptance criterion (cognition.compose reports superiority as unproven)"
+    },
+    "generalization": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "the frozen cross-geometry comparison v0.3 measured the cortex router arm, not this family worker",
+     "would_measure": "a frozen held-out partition over this operation family (v0.4; founder-gated because it changes the comparison)"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "no higher-scale GREG capability consumes ['simulate'] yet",
+     "would_measure": "a delivery capability whose verify_delivery depends on this method's receipt"
+    }
+   },
+   "cognition.cortex": {
+    "responsiveness": {
+     "status": "measured",
+     "value": {
+      "p50_seconds": 0.21608850000000002,
+      "p95_seconds": 0.61096105,
+      "max_seconds": 0.801679,
+      "n": 1200
+     },
+     "workload": "frozen v0.3 held-out rows of the routed cortex arm (latency_s per item)"
+    },
+    "memory_depth": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "this frozen suite does not route to the cortex",
+     "would_measure": "tests/unit/test_greg_cortex_bridge.py and a cortex-problem suite"
+    },
+    "prediction_horizon": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "this frozen suite does not route to the cortex",
+     "would_measure": "tests/unit/test_greg_cortex_bridge.py and a cortex-problem suite"
+    },
+    "adaptability": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "this frozen suite does not route to the cortex",
+     "would_measure": "tests/unit/test_greg_cortex_bridge.py and a cortex-problem suite"
+    },
+    "persistence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "this frozen suite does not route to the cortex",
+     "would_measure": "tests/unit/test_greg_cortex_bridge.py and a cortex-problem suite"
+    },
+    "error_correction": {
+     "status": "measured",
+     "value": {
+      "hard_failures": 0,
+      "items": 1200
+     },
+     "workload": "hard failures (confident wrong answers) counted by the frozen v0.3 loss over held-out items; perturbation trials are not run against frozen rows"
+    },
+    "problem_space": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "this frozen suite does not route to the cortex",
+     "would_measure": "tests/unit/test_greg_cortex_bridge.py and a cortex-problem suite"
+    },
+    "cooperation": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "this frozen suite does not route to the cortex",
+     "would_measure": "tests/unit/test_greg_cortex_bridge.py and a cortex-problem suite"
+    },
+    "generalization": {
+     "status": "measured",
+     "value": {
+      "frozen_at": "2026-10-01T14:55:45Z",
+      "cortex_version": "0.2.1",
+      "verdict": "GAIN_VERIFIED_AGAINST_RUN_BASELINES",
+      "not_run": [
+       "always_llm",
+       "tool_llm"
+      ],
+      "by_stratum": {
+       "causal": {
+        "heldout_mean_loss": 0.0003330206852250361,
+        "heldout_n": 200,
+        "selection_mean_loss": 0.0003948717669446625,
+        "selection_n": 6,
+        "gap_heldout_minus_selection": -6.185108171962637e-05
+       },
+       "estimation": {
+        "heldout_mean_loss": 0.03359505113235946,
+        "heldout_n": 200,
+        "selection_mean_loss": 0.02714083102040243,
+        "selection_n": 6,
+        "gap_heldout_minus_selection": 0.006454220111957027
+       },
+       "formal": {
+        "heldout_mean_loss": 0.0006342999212166431,
+        "heldout_n": 200,
+        "selection_mean_loss": 0.0005763577663886586,
+        "selection_n": 6,
+        "gap_heldout_minus_selection": 5.794215482798448e-05
+       },
+       "mixed_abstention": {
+        "heldout_mean_loss": 0.010253362484243765,
+        "heldout_n": 200,
+        "selection_mean_loss": 0.008212953107477128,
+        "selection_n": 6,
+        "gap_heldout_minus_selection": 0.002040409376766637
+       },
+       "scheduling_optimization": {
+        "heldout_mean_loss": 0.0009684670913166578,
+        "heldout_n": 200,
+        "selection_mean_loss": 0.0010793099463886494,
+        "selection_n": 6,
+        "gap_heldout_minus_selection": -0.00011084285507199161
+       },
+       "semantic_strategy": {
+        "heldout_mean_loss": 0.06625002901728337,
+        "heldout_n": 200,
+        "selection_mean_loss": 0.10023898749861067,
+        "selection_n": 6,
+        "gap_heldout_minus_selection": -0.0339889584813273
+       }
+      },
+      "heldout_mean_loss": 0.018672371721940823,
+      "heldout_mean_loss_ci95": [
+       0.013739187310520406,
+       0.023947301574993085
+      ],
+      "hard_failures": 0,
+      "regret_vs_hindsight_best_arm": 0.0019343481027663749
+     },
+     "workload": "frozen v0.3 comparison: the same routed arm on the selection partition and on fresh held-out samples; gap > 0 means worse on held-out",
+     "claim_limit": "no superiority over baselines that did not run: ['always_llm', 'tool_llm']"
+    },
+    "higher_scale_coherence": {
+     "status": "not_measured_here",
+     "value": null,
+     "reason": "this frozen suite does not route to the cortex",
+     "would_measure": "tests/unit/test_greg_cortex_bridge.py and a cortex-problem suite"
+    }
+   }
+  },
+  "summary": {
+   "methods": 18,
+   "measured": 107,
+   "not_applicable": 32,
+   "not_measured_here": 41
+  },
+  "rule": "a number from a native workload, or why the dimension does not apply, or what would measure it"
+ }
+}

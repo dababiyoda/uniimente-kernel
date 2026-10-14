@@ -6,7 +6,7 @@
  "subject_source_commit": "07af5758197501662df81ff05e2b34ce8224a322",
  "artifact": "policy/consequence_gate.py",
  "pinned_sha256": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e",
- "hardened_sha256": "69622372948fd206f46f79a1ce44af92707ffda5c9576ca11e5794b9fdf47976",
+ "hardened_sha256": "732607ba97130fc9a95d842ada22b276138151884dda8434219e070ae482ef61",
  "hardening": [
   {
    "port": "#55 commit-window escalation",
@@ -27,6 +27,11 @@
    "port": "#55 follow-up: frozen admission copy",
    "effect": "the Gate deep-copies the proposal at admission and witnesses, claims, executes and records that copy; a change to the caller's object is refused at commit and again inside the ledger lock before the dispatch claim; an uncanonicalisable proposal is refused instead of raising; proposal_id joins the commit-window digest",
    "sha256_after": "69622372948fd206f46f79a1ce44af92707ffda5c9576ca11e5794b9fdf47976"
+  },
+  {
+   "port": "#12 follow-up: sealed issuer records, lineage, delegation",
+   "effect": "GrantIssuer keeps sealed records and hands out copies (get, get_meta) or a published copy it refreshes on revocation, so a holder's edit is an altered grant; every ancestor must be known, unrevoked, unexpired and unconsumed at minting, admission and commit; children together hold at most the parent's limit and the parent spends only what it has not delegated; a child may not raise the consequence class or change the action class or objective; revocation propagates to descendants; costs must be finite and non-negative",
+   "sha256_after": "732607ba97130fc9a95d842ada22b276138151884dda8434219e070ae482ef61"
   }
  ],
  "direction": "subtractive only: every change refuses more and authorizes nothing new",

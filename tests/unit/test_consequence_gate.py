@@ -159,14 +159,28 @@ def test_revoked_grant_fails_at_commit(stack):
     assert "executing" not in [t["state"] for t in rec.trajectory]
 
 
-def test_expired_grant_fails_at_commit(stack):
+def _issued_ago(monkeypatch, gate, proposal, minutes):
+    """Issuer-side clock fixture: a grant the issuer minted ``minutes`` ago (TTL 15 minutes).
+    Holders cannot expire or extend a grant by editing their copy (bypass review of c692ba9)."""
+    import policy.consequence_gate as cg
+    real = cg._now
+    with monkeypatch.context() as m:
+        m.setattr(cg, "_now", lambda: real() - timedelta(minutes=minutes))
+        return gate.grants.issue_single_action(proposal=proposal, policy_version="1.0.0")
+
+
+def test_expired_grant_fails_at_commit(stack, monkeypatch):
     gate, passports, ledger, actor, _ = stack
     p = make_proposal(actor.passport_id)
-    g = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
-    g["expires_at"] = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat().replace("+00:00", "Z")
+    g = _issued_ago(monkeypatch, gate, p, minutes=16)
     rec = gate.run(p, executor=GOOD, standing_grant=g)
     assert rec.state in ("refused", "expired")
     assert any("expired" in r for r in rec.refusal_reasons)
+    # The original form of this test edited the holder's dict; that is now an altered grant.
+    fresh = gate.grants.issue_single_action(proposal=make_proposal(actor.passport_id), policy_version="1.0.0")
+    fresh["expires_at"] = (datetime.now(timezone.utc) - timedelta(minutes=1)).isoformat().replace("+00:00", "Z")
+    rec = gate.run(make_proposal(actor.passport_id), executor=GOOD, standing_grant=fresh)
+    assert rec.state == "refused" and "executing" not in [t["state"] for t in rec.trajectory]
 
 
 def test_single_use_grant_cannot_be_replayed(stack):
@@ -525,17 +539,18 @@ def test_child_grant_subset_ok(stack):
 
 
 @pytest.mark.parametrize("state", ["unknown", "revoked", "expired", "consumed"])
-def test_child_of_an_unknown_revoked_expired_or_consumed_parent_is_refused(stack, state):
+def test_child_of_an_unknown_revoked_expired_or_consumed_parent_is_refused(stack, state, monkeypatch):
     gate, passports, ledger, actor, _ = stack
-    parent = _parent(gate, actor.passport_id)
+    if state == "expired":       # issuer-side clock: editing the holder's copy no longer reaches the issuer
+        parent = _issued_ago(monkeypatch, gate, make_proposal(actor.passport_id, estimated_cost_usd=3.0), 16)
+    else:
+        parent = _parent(gate, actor.passport_id)
     parent_id = parent["grant_id"]
     if state == "unknown":
         parent_id = "not-issued-here"
     elif state == "revoked":
         gate.grants.revoke(parent_id, reason="adversarial", revoker="alfonso")
-    elif state == "expired":
-        parent["expires_at"] = (datetime.now(timezone.utc) - timedelta(seconds=1)).isoformat().replace("+00:00", "Z")
-    else:
+    elif state == "consumed":
         gate.grants.mark_used(parent_id)
     with pytest.raises(ValueError, match="parent grant"):
         _child(gate, actor.passport_id, parent_id, estimated_cost_usd=1.0)
@@ -544,10 +559,11 @@ def test_child_of_an_unknown_revoked_expired_or_consumed_parent_is_refused(stack
 def test_child_inherits_parent_prohibitions_and_cannot_take_a_prohibited_action(stack):
     gate, passports, ledger, actor, _ = stack
     parent = _parent(gate, actor.passport_id)
-    parent["prohibited"] = ["draft.publish"]
+    sealed = gate.grants._sealed[parent["grant_id"]]   # issuer-side fixture: a root grant carries none
+    sealed["prohibited"] = ["draft.publish"]
     with pytest.raises(ValueError, match="prohibited by the parent"):
         _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=1.0)
-    parent["prohibited"] = ["material_debt"]
+    sealed["prohibited"] = ["material_debt"]
     child = _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=1.0)
     assert child["prohibited"] == ["material_debt"]
 
@@ -727,3 +743,159 @@ def test_register_key_aliasing_a_different_valid_packet_is_refused(stack):
     grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
     rec = gate.run(p, executor=GOOD, standing_grant=grant)
     assert rec.state == "refused" and any("does not match the reference" in r for r in rec.refusal_reasons)
+
+
+# ---------- #12 follow-up: the issuer's record is the issuer's; lineage, delegation, class ----------
+# Bypass review of c692ba9 (secscratch attacks/bypass/test_bypass_child_grant.py): each of
+# these executed on 0c4849b.
+
+def test_revoking_a_parent_revokes_its_children_and_they_do_not_execute(stack):
+    gate, passports, ledger, actor, _ = stack
+    parent = _parent(gate, actor.passport_id)
+    cp = make_proposal(actor.passport_id, context={"parent_grant": parent["grant_id"]}, estimated_cost_usd=1.0)
+    child = gate.grants.issue_single_action(proposal=cp, policy_version="1.0.0")
+    gate.grants.revoke(parent["grant_id"], reason="founder revoked the parent", revoker="alfonso")
+    assert gate.grants.get(child["grant_id"])["revoked"] is True and child["revoked"] is True
+    calls = []
+    rec = gate.run(cp, executor=lambda p: calls.append(p) or GOOD(p), standing_grant=child)
+    assert rec.state in ("refused", "revoked") and calls == []
+
+
+def test_a_child_that_survives_its_parents_revocation_is_still_refused_at_commit(stack):
+    """Propagation is also enforced by walking the lineage, not only by the cascade."""
+    gate, passports, ledger, actor, _ = stack
+    parent = _parent(gate, actor.passport_id)
+    cp = make_proposal(actor.passport_id, context={"parent_grant": parent["grant_id"]}, estimated_cost_usd=1.0)
+    child = gate.grants.issue_single_action(proposal=cp, policy_version="1.0.0")
+    sign = gate.signer.sign
+
+    def revoke_parent_only(witness):          # the parent's record changes in the commit window
+        gate.grants._sealed[parent["grant_id"]].update(revoked=True, revoked_at="2026-10-14T00:00:00Z",
+                                                       revocation_reason="synthetic")
+        return sign(witness)
+
+    gate.signer.sign = revoke_parent_only
+    calls = []
+    rec = gate.run(cp, executor=lambda p: calls.append(p) or GOOD(p), standing_grant=child)
+    assert rec.state == "revoked" and calls == []
+    assert any("ancestor grant" in r and "revoked" in r for r in rec.refusal_reasons)
+
+
+def test_child_of_a_consumed_single_use_parent_does_not_execute(stack):
+    gate, passports, ledger, actor, _ = stack
+    pp = make_proposal(actor.passport_id, estimated_cost_usd=2.0)
+    parent = gate.grants.issue_single_action(proposal=pp, policy_version="1.0.0")
+    cp = make_proposal(actor.passport_id, context={"parent_grant": parent["grant_id"]}, estimated_cost_usd=1.0,
+                       payload={"text": "child effect"})
+    child = gate.grants.issue_single_action(proposal=cp, policy_version="1.0.0")
+    pp.estimated_cost_usd = 1.0                   # the parent spends only what it did not delegate
+    assert gate.run(pp, executor=GOOD, standing_grant=parent).state == "recorded"
+    calls = []
+    rec = gate.run(cp, executor=lambda p: calls.append(p) or GOOD(p), standing_grant=child)
+    assert rec.state == "refused" and calls == []
+    assert any("already consumed" in r for r in rec.refusal_reasons)
+
+
+def test_a_revoked_root_stops_new_grandchildren(stack):
+    gate, passports, ledger, actor, _ = stack
+    root = _parent(gate, actor.passport_id)
+    child = _child(gate, actor.passport_id, root["grant_id"], estimated_cost_usd=2.0)
+    gate.grants.revoke(root["grant_id"], reason="founder revoked the root", revoker="alfonso")
+    with pytest.raises(ValueError, match="parent grant"):
+        _child(gate, actor.passport_id, child["grant_id"], estimated_cost_usd=1.0)
+    gate.grants._sealed[child["grant_id"]].update(revoked=False)    # even if the cascade had missed it
+    with pytest.raises(ValueError, match="lineage: ancestor grant .* is revoked"):
+        _child(gate, actor.passport_id, child["grant_id"], estimated_cost_usd=1.0)
+
+
+def test_children_of_one_parent_together_hold_at_most_the_parent_limit(stack):
+    gate, passports, ledger, actor, _ = stack
+    pp = make_proposal(actor.passport_id, estimated_cost_usd=3.0)
+    parent = gate.grants.issue_single_action(proposal=pp, policy_version="1.0.0")
+    first = _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=2.0)
+    with pytest.raises(ValueError, match="what remains of the parent spending limit"):
+        _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=1.5)
+    second = _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=1.0,
+                    payload={"text": "second"})
+    assert first["spending_limit_usd"] + second["spending_limit_usd"] == parent["spending_limit_usd"]
+    # the parent delegated all 3.0, so its own 3.0 action no longer fits
+    rec = gate.run(pp, executor=GOOD, standing_grant=parent)
+    assert rec.state == "refused" and any("not delegated" in r for r in rec.refusal_reasons)
+    for bad in (float("nan"), float("inf"), -1.0):
+        with pytest.raises(ValueError, match="finite non-negative"):
+            _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=bad)
+
+
+def test_the_parent_may_spend_only_what_it_has_not_delegated(stack):
+    gate, passports, ledger, actor, _ = stack
+    pp = make_proposal(actor.passport_id, estimated_cost_usd=3.0)
+    parent = gate.grants.issue_single_action(proposal=pp, policy_version="1.0.0")
+    child = _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=1.0)
+    assert gate.grants.get_meta(parent["grant_id"])["delegated_usd"] == 1.0 and child
+    cheaper = make_proposal(actor.passport_id, estimated_cost_usd=2.0)    # a new grant, same authority
+    assert gate.run(cheaper, executor=GOOD,
+                    standing_grant=gate.grants.issue_single_action(proposal=cheaper, policy_version="1.0.0")
+                    ).state == "recorded"
+
+
+def test_a_holder_cannot_widen_or_unrevoke_a_grant_it_was_given(stack):
+    gate, passports, ledger, actor, _ = stack
+    pp = make_proposal(actor.passport_id, estimated_cost_usd=3.0)
+    parent = gate.grants.issue_single_action(proposal=pp, policy_version="1.0.0")
+    gate.grants.revoke(parent["grant_id"], reason="founder revoked", revoker="alfonso")
+    parent["revoked"] = False                                   # the holder's copy only
+    parent["spending_limit_usd"] = 5000.0
+    parent["permitted_actions"].append("funds.transfer")
+    assert gate.grants.get(parent["grant_id"])["revoked"] is True
+    assert gate.grants.get(parent["grant_id"])["spending_limit_usd"] == 3.0
+    with pytest.raises(ValueError, match="parent grant is revoked"):
+        _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=5000.0,
+               requested_capability="funds.transfer")
+    rec = gate.run(pp, executor=GOOD, standing_grant=parent)
+    assert rec.state == "refused" and "executing" not in [t["state"] for t in rec.trajectory]
+    # un-revoking alone is not trusted either: the copy no longer equals the issuer's record
+    other = make_proposal(actor.passport_id)
+    g = gate.grants.issue_single_action(proposal=other, policy_version="1.0.0")
+    gate.grants.revoke(g["grant_id"], reason="founder revoked", revoker="alfonso")
+    g["revoked"] = False
+    rec = gate.run(other, executor=GOOD, standing_grant=g)
+    assert rec.state == "refused" and any("altered grant" in r for r in rec.refusal_reasons)
+    assert "executing" not in [t["state"] for t in rec.trajectory]
+
+
+def test_get_and_get_meta_hand_out_copies(stack):
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id)
+    g = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    assert gate.run(p, executor=GOOD, standing_grant=g).state == "recorded"
+    gate.grants.get_meta(g["grant_id"])["used"] = False           # edits a copy
+    gate.grants.get(g["grant_id"])["expires_at"] = "2999-01-01T00:00:00Z"
+    replay = make_proposal(actor.passport_id, proposal_id="replay-" + p.proposal_id)
+    rec = gate.run(replay, executor=GOOD, standing_grant=g)
+    assert rec.state == "refused" and any("already consumed" in r for r in rec.refusal_reasons)
+
+
+@pytest.mark.parametrize("kw, why", [
+    ({"consequence_class": "financial"}, "raises the parent's consequence class"),
+    ({"consequence_class": "no_such_class"}, "raises the parent's consequence class"),
+    ({"action_class": "message.send", "payload": {"to": "everyone@example.com"}}, "action class"),
+    ({"objective": "another.objective"}, "objective"),
+])
+def test_child_may_not_raise_class_or_change_action_class_or_objective(stack, kw, why):
+    gate, passports, ledger, actor, _ = stack
+    parent = _parent(gate, actor.passport_id, estimated_cost_usd=0.0)
+    with pytest.raises(ValueError, match=why):
+        _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=0.0, **kw)
+    lower = _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=0.0,
+                   consequence_class="internal_write")
+    assert lower["parent_grant"] == parent["grant_id"]
+
+
+@pytest.mark.parametrize("cost", [float("nan"), -1.0])
+def test_a_non_finite_or_negative_cost_never_executes(stack, cost):
+    """Pin: the grant contract (minimum 0, JSON-compliant numbers) already refuses these;
+    delegation arithmetic additionally refuses them for children."""
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id, estimated_cost_usd=cost)
+    rec = authorized_run(gate, p, executor=GOOD)
+    assert rec.state == "refused" and "executing" not in [t["state"] for t in rec.trajectory]

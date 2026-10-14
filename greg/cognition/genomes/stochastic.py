@@ -10,27 +10,29 @@ where it is natively competent, what it is compared against and what its verifie
   pilot block and applied to the independent main block (unbiased), and an iid CLT interval. Verified by
   recomputing, in pure Python from the declared uniform stream, every inverse-CDF transform, f value and
   control; the pilot's least-squares normal equations at the certificate's coefficients; the main block's
-  adjusted mean, its standard error and the interval arithmetic. The verifier cannot certify that the
+  adjusted mean and its standard error (each to a small fraction of the recomputed standard error, all in units
+  of mean |f|) and the interval arithmetic. The verifier cannot certify that the
   interval covers the true expectation: that coverage is asymptotic and is measured against analytic truth
   only by ``score``.
 * ``bootstrap_ci`` (``bca_bootstrap_interval``): bias-corrected and accelerated bootstrap interval for the
-  mean or median of an iid sample (``scipy.stats.bootstrap``, method BCa). Verified by regenerating the
-  declared resample indices from the seed and recomputing the bootstrap distribution, the bias correction,
-  the jackknife acceleration, the adjusted levels and the type-7 percentiles with its own code. Coverage of
+  mean or median of an iid sample (``scipy.stats.bootstrap``'s resampling and BCa formulas, with each
+  replicate's side of the estimate decided exactly and the mean's jackknife centred). Verified by regenerating
+  the declared resample indices from the seed and recomputing the bootstrap distribution, the exact bias
+  correction, the jackknife acceleration in exact integer arithmetic, the adjusted levels and the type-7
+  percentiles with its own code. Coverage of
   the true parameter is not certifiable from one sample; it is measured over seeds by ``score``.
 * ``milp_optimize`` (``milp_integer_optimize``): bounded pure-integer linear programs with integer data by
-  ``scipy.optimize.milp`` (HiGHS). Verified with exact integer arithmetic (integrality, bounds, every row,
-  the objective). Optimality is certified only when an exact LP-relaxation dual bound (sign-feasible
-  multipliers from ``linprog`` marginals, evaluated in rational arithmetic) meets the objective after
-  rounding, or by the verifier's own exhaustive enumeration of a small box; otherwise the answer claims
-  feasibility only and reports the proven gap.
+  ``scipy.optimize.milp`` (HiGHS, zero relative gap). Verified with exact integer arithmetic (integrality,
+  bounds, every row, the objective). Optimality is certified only when an exact LP-relaxation dual bound
+  (sign-feasible multipliers from ``linprog`` marginals, evaluated in rational arithmetic) meets the objective
+  after rounding, or when the solver's own scan of a small box agrees and the verifier's own enumeration
+  confirms it; otherwise the answer claims feasibility only and reports the proven gap.
 
 Everything is read-only computation: no files, network, subprocesses or environment access, and no output
 of any method here creates authority.
 """
 from __future__ import annotations
 
-from bisect import bisect_left, bisect_right
 from fractions import Fraction
 import math
 import random
@@ -80,12 +82,21 @@ MC_INPUT_DIM, MC_NATIVE_DIM = 32, 8
 MC_NATIVE_EVALUATIONS = (1024, 16384)  # below: too few for a pilot fit; above: over the verifier's budget
 MC_BASELINE_N = 1000                   # the baseline's fixed sample size
 MC_REPLICATES = 16                     # independent scrambled Sobol sequences in the competitor's t interval
-MC_MIN_HITS = 20                       # an indicator with fewer hits (or misses) is a rare event: UNKNOWN
+MC_MIN_HITS = 20                       # fewer indicator hits (or misses), or positive call payoffs: UNKNOWN
 MC_U_FLOOR = 2.0 ** -53                # uniforms are floored so 0 never reaches an inverse CDF
 # Floating-point floor on the standard error, relative to mean |f|: the pairs of an odd f cancel to rounding
 # noise, so |pair mean| is no scale for it.
 MC_SE_FLOOR = 1e-12
 MC_POWER_MAX = 6
+# Everything after the draws is computed in units of mean |f|, so no square or sum overflows. A certificate's
+# intercept and control coefficients are bounded in those units before any arithmetic: an honest pilot fit is
+# many orders of magnitude inside the bound, and with it every intermediate stays far below the overflow threshold.
+MC_COEF_MAX = 1e12
+# Recomputation tolerances, as fractions of the recomputed standard error. A shift of 1% of a standard error changes
+# the interval's coverage by under 0.1 percentage points and is still about 45 units in the last place of mean |f|
+# when the floor sets the standard error; the solver and this verifier differed by at most 3.3e-4 (estimate) and
+# 1.3e-7 (standard error) of a standard error over dev seeds, review seeds 3000-3999 and fuzzed inputs.
+MC_EST_TOL, MC_SE_TOL = 1e-2, 1e-4
 
 
 def _mc(data):
@@ -249,27 +260,44 @@ def mc_solve(data, budget):
         if min(hits, evaluations - hits) < MC_MIN_HITS:
             return _unknown(f"rare event: {hits} of {evaluations} evaluations hit; a CLT interval on so few hits is "
                             "unreliable (importance sampling is the native method)", hits=hits)
-    y = 0.5 * (fx + fa)
+    if family == "call_on_sum":
+        paying = int(np.count_nonzero(fx) + np.count_nonzero(fa))
+        if paying < MC_MIN_HITS:
+            return _unknown(f"rare event: {paying} of {evaluations} payoffs are positive; a CLT interval on so few is "
+                            "unreliable (importance sampling is the native method)", paying=paying)
+    # In units of mean |f| (halved before any sum), so no square or sum overflows double precision.
+    fabs = 0.5 * np.abs(fx) + 0.5 * np.abs(fa)
+    peak = float(fabs.max())
+    if peak == 0.0:
+        return _unknown("f is zero on every declared draw: the sample has no spread to put an interval on")
+    scale = peak * float((fabs / peak).mean())
+    y = (0.5 * fx + 0.5 * fa) / scale
     names, controls = _mc_controls_np(coords, base, base_a)
     pilot = _mc_pilot(m, len(names))
     # Coefficients fitted on the pilot block only and applied to the independent main block: the estimate is
     # unbiased and its interval an iid CLT interval (fitting on the same draws biases it by O(1/n); on development
     # and review seeds that bias reached -0.28 standard errors on cos_product).
     coef = np.linalg.lstsq(np.column_stack([np.ones(pilot), controls[:pilot]]), y[:pilot], rcond=None)[0]
+    if not np.all(np.abs(coef) <= MC_COEF_MAX):
+        return _unknown("the pilot least-squares fit is degenerate (a coefficient beyond the certifiable bound)")
     beta = coef[1:]
     adjusted = y[pilot:] - controls[pilot:] @ beta
     main = m - pilot
-    est, s = float(adjusted.mean()), float(adjusted.std(ddof=1))
-    se = math.hypot(s / math.sqrt(main), MC_SE_FLOOR * float(0.5 * (np.abs(fx) + np.abs(fa)).mean()))
+    est_s, s_s = float(adjusted.mean()), float(adjusted.std(ddof=1))
+    est, s = est_s * scale, s_s * scale
+    se = math.hypot(s_s / math.sqrt(main), MC_SE_FLOOR) * scale
     z = float(ndtri(0.5 + level / 2.0))
-    return answer({"estimate": est, "interval": [est - z * se, est + z * se], "std_error": se, "level": level,
-                   "evaluations": 2 * m},
+    interval = [est - z * se, est + z * se]
+    alpha, beta = float(coef[0]) * scale, [float(b) * scale for b in beta]
+    if not (se > 0.0 and all(math.isfinite(v) for v in (est, s, se, *interval, alpha, *beta))):
+        return _unknown("the estimate, its interval or the fitted coefficients exceed double precision")
+    return answer({"estimate": est, "interval": interval, "std_error": se, "level": level, "evaluations": 2 * m},
                   {"method": "antithetic pairs (u, 1 - u) through inverse CDFs; control coefficients by OLS of the "
                              "pilot block's pair means on pair-averaged centred moment controls; estimate = mean of "
                              "the main block's control-adjusted pair means",
                    "rng": "numpy default_rng(seed).random((pairs, dimension)), floored at 2^-53",
                    "seed": seed, "pairs": m, "pilot_pairs": pilot, "controls": names,
-                   "pilot_intercept": float(coef[0]), "control_coefficients": [float(b) for b in beta],
+                   "pilot_intercept": alpha, "control_coefficients": beta,
                    "main_sd": s, "z": z, "truth_certified": False,
                    "coverage": "asymptotic (CLT) at the stated level under the declared model; not a guarantee",
                    "model": "independent coordinates with the declared distributions; not established here"})
@@ -295,7 +323,10 @@ def _mc_f_py(family, params, x):
         return math.prod(v ** k for v, k in zip(x, params["powers"]))
     s = math.fsum(w * v for w, v in zip(params["weights"], x))
     if family == "exp_linear":
-        return math.exp(s) if s < 709.0 else math.inf
+        try:
+            return math.exp(s)
+        except OverflowError:                  # the same double-precision threshold as the solver's exp
+            return math.inf
     if family == "call_on_sum":
         return max(s - params["strike"], 0.0)
     return 1.0 if s > params["threshold"] else 0.0
@@ -330,7 +361,7 @@ def mc_verify(data, output, certificate):
               "claims_no_truth_certificate": certificate.get("truth_certified") is False}
     if not (bound and native):
         return checks
-    ys, ctrl, fabs, fsq = [], [], [], []
+    ys, ctrl, fs = [], [], []
     for row in np.random.default_rng(seed).random((m, d)).tolist():
         x, xa, c = [], [], []
         for (kind, a, b), v in zip(coords, row):
@@ -352,17 +383,31 @@ def mc_verify(data, output, certificate):
                 xa.append(ea / a)
                 c += [0.5 * (e + ea) - 1.0, 0.5 * ((e - 1.0) ** 2 + (ea - 1.0) ** 2) - 1.0]
         f, fa = _mc_f_py(family, params, x), _mc_f_py(family, params, xa)
-        ys.append(0.5 * (f + fa))
-        fabs.append(0.5 * (abs(f) + abs(fa)))
-        fsq.append(0.5 * (f * f + fa * fa))
+        fs.append((f, fa))
         ctrl.append(c)
-    if not all(math.isfinite(y) for y in ys):
+    if not all(math.isfinite(f) and math.isfinite(fa) for f, fa in fs):
         return {**checks, "values_finite": False}
+    # an indicator needs hits and misses, a call positive payoffs: with fewer the CLT interval is meaningless
+    nonzero = sum((f != 0.0) + (fa != 0.0) for f, fa in fs)
+    hits = min(nonzero, evaluations - nonzero) if family == "indicator_sum" else nonzero
+    checks = {**checks, "values_finite": True,
+              "event_not_rare": family not in ("indicator_sum", "call_on_sum") or hits >= MC_MIN_HITS}
+    # Everything below is in units of the verifier's own mean |f| (halved before summing, so nothing overflows).
+    fabs = [0.5 * abs(f) + 0.5 * abs(fa) for f, fa in fs]
+    peak = max(fabs)
+    if peak == 0.0:
+        return {**checks, "f_not_identically_zero": False}
+    scale = peak * (math.fsum(v / peak for v in fabs) / m)
     est, se = output["estimate"], output["std_error"]
-    pilot, alpha = certificate["pilot_pairs"], certificate["pilot_intercept"]
+    pilot = certificate["pilot_pairs"]
+    alpha, beta = certificate["pilot_intercept"] / scale, [b / scale for b in beta]
+    if not all(math.isfinite(v) and abs(v) <= MC_COEF_MAX for v in (alpha, *beta)):
+        return {**checks, "coefficients_within_bound": False}
+    ys = [(0.5 * f + 0.5 * fa) / scale for f, fa in fs]
     resid = [y - alpha - math.fsum(bj * cj for bj, cj in zip(beta, c)) for y, c in zip(ys[:pilot], ctrl[:pilot])]
     # rounding noise scales with the evaluations, not with their (possibly cancelling) pair means
-    slack = math.sqrt(math.fsum(e * e for e in resid)) + 1e-7 * math.sqrt(math.fsum(fsq[:pilot]))
+    fsq = [0.5 * ((f / scale) * (f / scale) + (fa / scale) * (fa / scale)) for f, fa in fs[:pilot]]
+    slack = math.sqrt(math.fsum(e * e for e in resid)) + 1e-7 * math.sqrt(math.fsum(fsq))
     # least-squares normal equations on the pilot block: its residual is orthogonal to the intercept and each control
     fitted = abs(math.fsum(resid)) <= 1e-7 * math.sqrt(pilot) * slack
     for j in range(len(names)):
@@ -372,18 +417,16 @@ def mc_verify(data, output, certificate):
     adjusted = [y - math.fsum(bj * cj for bj, cj in zip(beta, c)) for y, c in zip(ys[pilot:], ctrl[pilot:])]
     main = m - pilot
     est_v = math.fsum(adjusted) / main
-    s = math.sqrt(math.fsum((w - est_v) ** 2 for w in adjusted) / (main - 1))
-    scale = math.fsum(fabs) / m
-    se_v = math.hypot(s / math.sqrt(main), MC_SE_FLOOR * scale)
+    s = math.sqrt(math.fsum((w - est_v) * (w - est_v) for w in adjusted) / (main - 1))
+    se_v = math.hypot(s / math.sqrt(main), MC_SE_FLOOR)          # >= the floor, so every tolerance below is real
     half = _N.inv_cdf(0.5 + level / 2.0) * se
     lo, hi = output["interval"]
-    width_tol = 1e-12 * (abs(est) + half)
-    hits = round(2 * math.fsum(ys)) if family == "indicator_sum" else None
-    return {**checks, "values_finite": True,
-            "indicator_not_rare": hits is None or min(hits, evaluations - hits) >= MC_MIN_HITS,
+    # the solver's interval is est -+ z se rounded once: a few units in the last place, never a share of |est|
+    width_tol = 1e-9 * half + 4.0 * math.ulp(abs(est) + half)
+    return {**checks, "coefficients_within_bound": True,
             "pilot_least_squares_normal_equations_hold": fitted,
-            "estimate_is_the_main_block_adjusted_mean": abs(est - est_v) <= 1e-9 * (abs(est_v) + s) + 1e-13 * scale,
-            "std_error_recomputed": abs(se - se_v) <= 1e-5 * se_v + 1e-11 * scale,
+            "estimate_is_the_main_block_adjusted_mean": abs(est / scale - est_v) <= MC_EST_TOL * se_v,
+            "std_error_recomputed": abs(se / scale - se_v) <= MC_SE_TOL * se_v,
             "interval_is_estimate_plus_minus_z_std_error": lo < est < hi
             and abs(lo - (est - half)) <= width_tol and abs(hi - (est + half)) <= width_tol}
 
@@ -559,6 +602,10 @@ BOOT_INPUT_N, BOOT_NATIVE_MIN_N = 5000, 15
 BOOT_NATIVE_MIN_RESAMPLES = 1000
 BOOT_MAX_WORK = 600_000                # resamples x observations the pure-Python verifier recomputes
 BOOT_MIN_DISTINCT = 5
+# The sample's range must span at least 2^20 units in the last place of its largest magnitude (a relative spread of
+# about 2e-10): below that double precision quantises the data, and the few units in the last place that any honest
+# recomputation of an endpoint needs would be a material share of the bootstrap spread.
+BOOT_RESOLUTION = 2 ** 20
 
 
 def _boot(data):
@@ -578,11 +625,13 @@ def _boot(data):
     return x, statistic, level, resamples, seed, independent
 
 
+def _sign(value):
+    return (value > 0) - (value < 0)
+
+
 def boot_solve(data, budget):
-    import warnings
     import numpy as np
     from scipy.special import ndtr, ndtri
-    from scipy.stats import bootstrap
     x, statistic, level, resamples, seed, independent = _boot(data)
     n = len(x)
     if not independent:
@@ -598,26 +647,51 @@ def boot_solve(data, budget):
     if len(set(x)) < BOOT_MIN_DISTINCT:
         return _abstain(f"fewer than {BOOT_MIN_DISTINCT} distinct values: a discrete sample makes the bootstrap "
                         "distribution lumpy and the bias correction unstable")
-    fn = np.mean if statistic == "mean" else np.median
     arr = np.asarray(x, dtype=float)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        res = bootstrap((arr,), fn, n_resamples=resamples, method="BCa", confidence_level=level,
-                        rng=np.random.default_rng(seed), vectorized=True)
-    lower, upper = float(res.confidence_interval.low), float(res.confidence_interval.high)
-    theta = float(fn(arr))
-    dist = np.asarray(res.bootstrap_distribution)
-    share = (np.count_nonzero(dist < theta) + np.count_nonzero(dist <= theta)) / (2 * resamples)
-    if not 0.0 < share < 1.0 or not math.isfinite(lower) or not math.isfinite(upper):
+    if float(arr.max() - arr.min()) < BOOT_RESOLUTION * math.ulp(float(np.abs(arr).max())):
+        return _abstain(f"the sample's range is below {BOOT_RESOLUTION} units in the last place of its largest value: "
+                        "double precision cannot resolve it")
+    # scipy.stats.bootstrap's resampling scheme and BCa formulas, computed here so that floating point never
+    # decides them: scipy rounds every replicate at the scale of the values (a common offset of 1e9 costs it about
+    # 1e-7) before comparing it with the estimate and before its jackknife subtracts nearly equal numbers.
+    rows = np.random.default_rng(seed).integers(0, n, (resamples, n))
+    if statistic == "mean":
+        ref = float(np.sort(arr)[n // 2])     # an observation: differences from it are exact or nearly so
+        cen = arr - ref
+        values, centre_c = cen[rows].mean(axis=1), float(cen.mean())
+        theta, offset = ref + centre_c, ref
+        side = np.sign(values - centre_c)
+        # a replicate within the summation error bound of the estimate is placed by exact rational sums
+        mag = np.abs(cen)
+        bound = 4.0 * (n + 2) * 2.0 ** -53 * (mag[rows].mean(axis=1) + float(mag.mean()))
+        unsure = np.flatnonzero(np.abs(values - centre_c) <= bound)
+        if unsure.size:
+            total = sum(map(Fraction, x))
+            for j in unsure.tolist():
+                side[j] = _sign(sum(map(Fraction, arr[rows[j]].tolist())) - total)
+        dev = cen - centre_c
+        dev = dev - dev.mean()                 # x_i - mean: the jackknife deviations of the mean, centred twice
+    else:
+        values, theta, offset = np.median(arr[rows], axis=1), float(np.median(arr)), 0.0
+        side = np.sign(values - theta)
+        if n % 2 == 0:                         # equal rounded midpoints: compare the exact sums of the two middles
+            k = n // 2
+            middle = np.sort(arr)[k - 1:k + 1].tolist()
+            for j in np.flatnonzero(values == theta).tolist():
+                pair = np.partition(arr[rows[j]], (k - 1, k))[k - 1:k + 1].tolist()
+                side[j] = _sign(Fraction(pair[0]) + Fraction(pair[1]) - Fraction(middle[0]) - Fraction(middle[1]))
+        loo = np.array([np.median(np.delete(arr, i)) for i in range(n)])
+        w = loo - loo[n // 2]
+        dev = -(w - w.mean())                  # (n - 1)(mean of leave-one-out medians - each), up to a positive factor
+    share = (2 * np.count_nonzero(side < 0) + np.count_nonzero(side == 0)) / (2 * resamples)
+    if not 0.0 < share < 1.0:
         return _unknown("the bootstrap distribution lies entirely on one side of the estimate: the bias correction "
                         "is infinite", seed=seed)
     z0 = float(ndtri(share))
-    loo = np.array([fn(np.delete(arr, i)) for i in range(n)])
-    dev = (n - 1) * (loo.mean() - loo)
-    s2 = float(np.sum(dev ** 2))
+    s2 = float(np.sum(dev * dev))
     if s2 == 0.0:
         return _unknown("every leave-one-out statistic is equal: the jackknife acceleration is undefined")
-    accel = float(np.sum(dev ** 3)) / (6.0 * s2 ** 1.5)
+    accel = float(np.sum(dev * dev * dev)) / (6.0 * s2 ** 1.5)
     zq = float(ndtri((1.0 - level) / 2.0))
     adjusted = []
     for q in (zq, -zq):
@@ -628,27 +702,37 @@ def boot_solve(data, budget):
     if min(adjusted) * resamples < 1.0 or (1.0 - max(adjusted)) * resamples < 1.0:
         return _unknown("an adjusted BCa level falls beyond the resample range: more resamples are needed",
                         adjusted_levels=adjusted)
+    lower, upper = (offset + float(v) for v in np.quantile(values, adjusted, method="linear"))
     return answer({"lower": lower, "upper": upper, "level": level, "statistic": statistic, "estimate": theta,
                    "resamples": resamples, "method": "BCa"},
-                  {"implementation": "scipy.stats.bootstrap(method='BCa', vectorized)", "seed": seed,
-                   "resamples": resamples,
+                  {"implementation": "scipy.stats.bootstrap's BCa (resampling scheme, bias correction, jackknife "
+                                     "acceleration, adjusted type-7 percentiles), with exact side-of-estimate counts "
+                                     "and the mean's replicates and jackknife centred on an observation",
+                   "seed": seed, "resamples": resamples,
                    "resample_indices": "numpy default_rng(seed).integers(0, n, (resamples, n))",
                    "bias_correction_z0": z0, "acceleration": accel, "adjusted_levels": adjusted,
                    "percentiles": "linear interpolation between order statistics (Hyndman-Fan type 7)",
-                   "bootstrap_standard_error": float(res.standard_error), "truth_certified": False,
+                   "bootstrap_standard_error": float(np.std(values, ddof=1)), "truth_certified": False,
                    "coverage": "second-order accurate as n grows, not exact; with skewed small samples it is "
                                "typically a few points below nominal",
                    "model": "independent, identically distributed observations; not established here"})
 
 
-def _boot_mean(values):
-    return math.fsum(values) / len(values)
-
-
-def _boot_median(values):
-    s = sorted(values)
-    k = len(s) // 2
-    return s[k] if len(s) % 2 else (s[k - 1] + s[k]) / 2
+def _exact_acceleration(stats, orientation):
+    """Verifier's jackknife acceleration sum(d^3) / (6 sum(d^2)^1.5) in exact integer arithmetic, d the deviations of
+    the given floats from their exact mean (each float is an integer multiple of one power-of-two unit); orientation
+    +1 for x_i - mean (the mean's jackknife), -1 for (n - 1)(mean - t_i) (leave-one-out statistics). None if every
+    value is equal."""
+    ratios = [v.as_integer_ratio() for v in stats]
+    unit = max(den for _, den in ratios)
+    ints = [num * (unit // den) for num, den in ratios]
+    total, n = sum(ints), len(ints)
+    v = [n * t - total for t in ints]          # n (t_i - mean) in that unit, exactly
+    s2 = sum(w * w for w in v)
+    if s2 == 0:
+        return None
+    s3 = sum(w * w * w for w in v)
+    return orientation * math.copysign(math.sqrt(s3 * s3 / s2 ** 3) / 6.0, s3)
 
 
 def _loo_medians(x):
@@ -689,8 +773,9 @@ def boot_verify(data, output, certificate):
             or not output["lower"] <= output["upper"]):
         return {"output_shape": False}
     n = len(x)
+    resolvable = max(x) - min(x) >= BOOT_RESOLUTION * math.ulp(max(abs(v) for v in x))
     native = (independent and n >= BOOT_NATIVE_MIN_N and resamples >= BOOT_NATIVE_MIN_RESAMPLES
-              and len(set(x)) >= BOOT_MIN_DISTINCT)
+              and len(set(x)) >= BOOT_MIN_DISTINCT and resolvable)
     checks = {"output_shape": True, "bootstrap_preconditions_hold": native,
               "independent_check_within_bounds": resamples * n <= BOOT_MAX_WORK,
               "request_echoed": output["level"] == level and output["statistic"] == statistic
@@ -698,24 +783,40 @@ def boot_verify(data, output, certificate):
               "claims_no_truth_certificate": certificate.get("truth_certified") is False}
     if not (native and checks["independent_check_within_bounds"]):
         return checks
-    stat = _boot_mean if statistic == "mean" else _boot_median
-    theta = stat(x)
-    replicates = sorted(stat([x[i] for i in row])
-                        for row in np.random.default_rng(seed).integers(0, n, (resamples, n)).tolist())
-    share = (bisect_left(replicates, theta) + bisect_right(replicates, theta)) / (2 * resamples)
+    k = n // 2
+    if statistic == "mean":
+        theta, negated = math.fsum(x) / n, [-v for v in x]
+    else:
+        ordered = sorted(x)
+        theta = ordered[k] if n % 2 else (ordered[k - 1] + ordered[k]) / 2
+    # Each replicate's side of the estimate is decided exactly: for the mean by the exactly rounded difference of
+    # the sums (replicates are kept relative to the estimate), for the median by comparing order statistics and,
+    # when two rounded midpoints coincide, the exact sums of the middle pairs.
+    below = ties = 0
+    values = []
+    for row in np.random.default_rng(seed).integers(0, n, (resamples, n)).tolist():
+        vals = [x[i] for i in row]
+        if statistic == "mean":
+            d = math.fsum(vals + negated)
+            values.append(d / n)
+        else:
+            vals.sort()
+            m = vals[k] if n % 2 else (vals[k - 1] + vals[k]) / 2
+            d = m - theta
+            if d == 0.0 and not n % 2:
+                d = math.fsum((vals[k - 1], vals[k], -ordered[k - 1], -ordered[k]))
+            values.append(m)
+        below += d < 0.0
+        ties += d == 0.0
+    values.sort()
+    centre = theta if statistic == "mean" else 0.0
+    share = (2 * below + ties) / (2 * resamples)
     if not 0.0 < share < 1.0:
         return {**checks, "bias_correction_finite": False}
     z0 = _N.inv_cdf(share)
-    if statistic == "mean":
-        dev = [v - theta for v in x]           # (n - 1)(mean of leave-one-out means - leave-one-out mean), exactly
-    else:
-        loo = _loo_medians(x)
-        bar = math.fsum(loo) / n
-        dev = [(n - 1) * (bar - t) for t in loo]
-    s2 = math.fsum(u * u for u in dev)
-    if s2 == 0.0:
+    accel = _exact_acceleration(x, 1.0) if statistic == "mean" else _exact_acceleration(_loo_medians(x), -1.0)
+    if accel is None:
         return {**checks, "bias_correction_finite": True, "acceleration_defined": False}
-    accel = math.fsum(u * u * u for u in dev) / (6.0 * s2 ** 1.5)
     zq = _N.inv_cdf((1.0 - level) / 2.0)
     adjusted = []
     for q in (zq, -zq):
@@ -723,8 +824,10 @@ def boot_verify(data, output, certificate):
         adjusted.append(_N.cdf(z0 + (z0 + q) / den) if den > 0.0 else math.nan)
     if not all(math.isfinite(p) for p in adjusted):
         return {**checks, "bias_correction_finite": True, "acceleration_defined": True, "levels_monotone": False}
-    spread = replicates[-1] - replicates[0]
-    tol = 1e-9 * (spread + abs(theta)) + 1e-300
+    lower, upper = centre + _type7(values, adjusted[0]), centre + _type7(values, adjusted[1])
+    # Independent summation orders and the final rounding of an endpoint differ by a few units in its last place;
+    # the resolution precondition keeps those far below the bootstrap spread. Never a share of |estimate|.
+    tol = 1e-9 * (values[-1] - values[0]) + 8.0 * math.ulp(max(abs(lower), abs(upper), abs(theta)))
     claimed = certificate.get("adjusted_levels")
     cert_ok = (certificate.get("seed") == seed and certificate.get("resamples") == resamples
                and _real(certificate.get("bias_correction_z0")) and abs(certificate["bias_correction_z0"] - z0) <= 1e-9
@@ -733,9 +836,9 @@ def boot_verify(data, output, certificate):
                and isinstance(claimed, list) and len(claimed) == 2 and all(_real(p) for p in claimed)
                and all(abs(p - q) <= 1e-9 for p, q in zip(claimed, adjusted)))
     return {**checks, "bias_correction_finite": True, "acceleration_defined": True, "levels_monotone": True,
-            "estimate_recomputed": abs(output["estimate"] - theta) <= 1e-12 * (abs(theta) + spread) + 1e-300,
-            "lower_is_the_bca_percentile": abs(output["lower"] - _type7(replicates, adjusted[0])) <= tol,
-            "upper_is_the_bca_percentile": abs(output["upper"] - _type7(replicates, adjusted[1])) <= tol,
+            "estimate_recomputed": abs(output["estimate"] - theta) <= tol,
+            "lower_is_the_bca_percentile": abs(output["lower"] - lower) <= tol,
+            "upper_is_the_bca_percentile": abs(output["upper"] - upper) <= tol,
             "certificate_matches_recomputation": cert_ok}
 
 
@@ -960,8 +1063,10 @@ def milp_solve(data, budget):
     high = [rhs if op in ("<=", "==") else np.inf for _, op, rhs in rows]
     sign = -1.0 if sense == "max" else 1.0
     limit = max(1.0, min(10.0, float(budget.get("latency_s", 5.0)) if isinstance(budget, dict) else 5.0))
+    # A zero relative gap: at HiGHS's default (1e-4) branch and cut stops at an incumbent it reports as optimal. The
+    # absolute gap stays at HiGHS's default 1e-6, below the unit step of an integer objective.
     res = milp(sign * np.asarray(obj, dtype=float), constraints=[LinearConstraint(a, low, high)] if m else (),
-               bounds=Bounds(lo, hi), integrality=np.ones(n), options={"time_limit": limit})
+               bounds=Bounds(lo, hi), integrality=np.ones(n), options={"time_limit": limit, "mip_rel_gap": 0.0})
     if res.x is None:
         return _unknown(f"HiGHS found no integer solution ({res.message}); infeasibility is not independently "
                         "certified here", solver_status=int(res.status))
@@ -974,20 +1079,44 @@ def milp_solve(data, budget):
     floor = _dual_bound_floor(rows, lo, hi, c_max, y)
     dual_bound = floor if sense == "max" else -floor
     box = _box(lo, hi, MILP_ENUM_MAX)
-    certified = ("lp_dual" if dual_bound == value else "enumeration" if res.status == 0 and box <= MILP_ENUM_MAX
+    # HiGHS's status is never the evidence: an enumeration claim needs this solver's own scan of the box to agree.
+    certified = ("lp_dual" if dual_bound == value
+                 else "enumeration" if box <= MILP_ENUM_MAX and _scan_box(lo, hi, a, rows, obj, sense) == value
                  else "none")
     optimal = certified != "none"
     return answer({"values": x, "objective": value, "optimal": optimal, "certified_by": certified,
                    "dual_bound": dual_bound, "gap": 0 if optimal else abs(dual_bound - value)},
                   {"variables": names, "solver": "scipy.optimize.milp (HiGHS branch and cut)",
                    "solver_status": str(res.message), "solver_reports_optimal": res.status == 0,
-                   "time_limit_s": limit, "row_duals": y,
+                   "time_limit_s": limit, "mip_rel_gap": 0.0, "row_duals": y,
                    "dual_convention": "max form: y >= 0 on <= rows, y <= 0 on >= rows, free on == rows; bound = "
                                       "sum y b + sum_j max(r_j low_j, r_j high_j), r = c - A'y (c negated for min)",
                    "lp_relaxation_value": lp_value if sense == "max" or lp_value is None else -lp_value,
                    "box_points": box if box <= MILP_ENUM_MAX else None,
-                   "optimality": "certified only by the exact LP dual bound or the verifier's enumeration; HiGHS's "
-                                 "own optimality status is recorded but not trusted"})
+                   "optimality": "claimed only from the exact LP dual bound or from this solver's own scan of a box "
+                                 "of at most 2^16 points, and re-checked by the verifier's enumeration; HiGHS's own "
+                                 "optimality status is recorded but not trusted"})
+
+
+def _scan_box(lo, hi, a, rows, obj, sense):
+    """The solver's own exhaustive optimum over a box of at most 2^16 points (None if none is feasible), on the dense
+    float64 matrix: every activity and objective value is an integer of magnitude below 150 x 10^12 < 2^53 here, so
+    the arithmetic is exact."""
+    import numpy as np
+    free = [j for j, (low, high) in enumerate(zip(lo, hi)) if low < high]
+    fixed = [j for j, (low, high) in enumerate(zip(lo, hi)) if low == high]
+    grid = np.meshgrid(*(np.arange(lo[j], hi[j] + 1, dtype=float) for j in free), indexing="ij")
+    points = np.stack([g.ravel() for g in grid], axis=1) if free else np.zeros((1, 0))
+    constant = np.asarray([lo[j] for j in fixed], dtype=float)
+    ok = np.ones(len(points), dtype=bool)
+    for i, (_, op, rhs) in enumerate(rows):
+        act = points @ a[i, free] + float(a[i, fixed] @ constant)
+        ok &= (act <= rhs) if op == "<=" else (act >= rhs) if op == ">=" else (act == rhs)
+    if not ok.any():
+        return None
+    c = np.asarray(obj, dtype=float)
+    values = points[ok] @ c[free] + float(c[fixed] @ constant)
+    return int(values.max() if sense == "max" else values.min())
 
 
 def _verify_bound(rows, lo, hi, c_max, duals):
@@ -1297,15 +1426,20 @@ INTELLIGENCES = [
                                  "mean of the remaining pairs' control-adjusted values; iid CLT interval",
             parameters={"native_dimension": MC_NATIVE_DIM, "native_evaluations": list(MC_NATIVE_EVALUATIONS),
                         "pilot": "max(pairs // 8, 8 (controls + 1)) pairs", "min_indicator_hits": MC_MIN_HITS,
-                        "standard_error_floor": MC_SE_FLOOR},
+                        "min_positive_call_payoffs": MC_MIN_HITS, "standard_error_floor": MC_SE_FLOOR,
+                        "coefficient_bound_in_mean_abs_f": MC_COEF_MAX,
+                        "recomputation_tolerance_in_standard_errors": {"estimate": MC_EST_TOL,
+                                                                       "std_error": MC_SE_TOL}},
             composition_inputs=("distribution model", "payoff or loss function"),
             composition_outputs=("estimate", "interval"),
             evidence_type="statistical_estimate",
             verification_method="pure-Python recomputation from the declared uniform stream (regenerated from the "
-                                "seed): NormalDist inverse CDFs, every f value and control, the pilot block's "
-                                "least-squares normal equations at the certificate's coefficients, the main block's "
-                                "adjusted mean and standard error, z from its own quantile and the interval "
-                                "arithmetic; the moment preconditions",
+                                "seed): NormalDist inverse CDFs, every f value and control, then in units of its own "
+                                "mean |f| the pilot block's least-squares normal equations at the certificate's "
+                                "(bounded) coefficients, the main block's adjusted mean (to 1% of the recomputed "
+                                "standard error) and standard error (to 0.01%), z from its own quantile and the "
+                                "interval arithmetic (to a few units in the last place); the moment and rare-event "
+                                "preconditions",
             confidence_semantics="an asymptotic (CLT) interval at the stated level under the declared model; the "
                                  "verifier certifies the arithmetic and the fit on the declared draws, never that "
                                  "the interval covers the true expectation (about 1 - level of honest intervals "
@@ -1318,15 +1452,19 @@ INTELLIGENCES = [
                              "every number is recomputable from the declared stream"),
             known_failure_modes=("the CLT interval undercovers for heavy-tailed f at small budgets",
                                  "scrambled Sobol points at the same budget usually reach a smaller error on this "
-                                 "benchmark (review seeds 3000-3119: 23 candidate wins, 95 losses), and in about a "
-                                 "third of the latency",
-                                 "rare-event indicators: few hits make the interval meaningless (it returns UNKNOWN)"),
+                                 "benchmark (review seeds 3000-3119: 23 candidate wins, 95 losses), at about five to "
+                                 "nine times the candidate's solve latency (verification excluded, as the admission "
+                                 "harness measures it)",
+                                 "rare events (indicators with few hits or misses, calls with few positive payoffs) "
+                                 "make the interval meaningless (it returns UNKNOWN)"),
             counterindications=("rare events (use mc_importance)", "infinite-variance functions",
                                 "smooth integrands of very low dimension where quadrature or QMC is exact enough"),
             abstention_conditions=(f"dimension above {MC_NATIVE_DIM}",
                                    f"evaluations outside {MC_NATIVE_EVALUATIONS[0]}-{MC_NATIVE_EVALUATIONS[1]}",
                                    "exp(w x) of an exponential coordinate with 4 w >= rate (no finite fourth moment)",
-                                   f"fewer than {MC_MIN_HITS} indicator hits or misses (UNKNOWN)"),
+                                   f"fewer than {MC_MIN_HITS} indicator hits or misses (UNKNOWN)",
+                                   f"fewer than {MC_MIN_HITS} positive call payoffs (UNKNOWN)",
+                                   "an estimate, interval or coefficient beyond double precision (UNKNOWN)"),
             benchmark_suite="exp_linear, cos_product, power_product (mixed normal/uniform/exponential coordinates), "
                             "call_on_sum and indicator_sum (normal coordinates); dimension 1-8; 8192 evaluations; "
                             "analytic truth; seeds 0-9 dev / held-out seeds frozen by the admission harness",
@@ -1342,24 +1480,32 @@ INTELLIGENCES = [
         genome=IntelligenceGenome(
             intelligence_id="solver.bootstrap.bca_interval", version="1.0.0", family="bootstrap_ci", layer=3,
             operation="bca_bootstrap_interval", epistemic_class="estimate",
-            subgeometry="confidence interval for the mean or median of a skewed iid sample, 15-400 observations",
+            subgeometry=f"confidence interval for the mean or median of a skewed iid sample, {BOOT_NATIVE_MIN_N}-"
+                        f"{BOOT_MAX_WORK // 2000} observations at the default 2000 resamples (resamples x "
+                        f"observations <= {BOOT_MAX_WORK}: up to {BOOT_MAX_WORK // BOOT_NATIVE_MIN_RESAMPLES} at "
+                        f"{BOOT_NATIVE_MIN_RESAMPLES})",
             source_provenance="Efron (1987) bias-corrected and accelerated bootstrap; Efron and Tibshirani (1993) "
-                              "ch. 14; scipy.stats.bootstrap",
+                              "ch. 14; scipy.stats.bootstrap's resampling scheme and BCa formulas",
             native_representation="sample values, statistic (mean or median), level, resample count and seed",
             required_inputs=("sample", "statistic", "seed"),
             output_contract={"lower": "float", "upper": "float", "level": "float", "statistic": "str",
                              "estimate": "float", "resamples": "int", "method": "str"},
-            algorithm_or_runtime="scipy.stats.bootstrap(method='BCa'): resample indices from the seeded generator, "
-                                 "bias correction from the share of replicates below the estimate, jackknife "
-                                 "acceleration, adjusted type-7 percentiles",
+            algorithm_or_runtime="scipy.stats.bootstrap's BCa computed in numpy: resample indices from the seeded "
+                                 "generator, bias correction from the share of replicates below the estimate (each "
+                                 "replicate's side decided exactly: rational sums inside the rounding bound), "
+                                 "jackknife acceleration (the mean's centred on an observation), adjusted type-7 "
+                                 "percentiles",
             parameters={"native_min_observations": BOOT_NATIVE_MIN_N, "min_resamples": BOOT_NATIVE_MIN_RESAMPLES,
-                        "verifier_work_bound": BOOT_MAX_WORK},
+                        "verifier_work_bound": BOOT_MAX_WORK, "min_range_in_ulps_of_largest_value": BOOT_RESOLUTION},
             composition_inputs=("observed outcomes",), composition_outputs=("lower", "upper"),
             evidence_type="statistical_estimate",
             verification_method="regenerates the declared resample indices from the seed and recomputes, in pure "
-                                "Python, every replicate statistic, the bias correction, the jackknife acceleration "
+                                "Python, every replicate statistic and its exact side of the estimate (exactly "
+                                "rounded sums for the mean, order statistics and exact midpoint sums for the median), "
+                                "the bias correction, the jackknife acceleration in exact integer arithmetic "
                                 "(closed form for the mean, index arithmetic for leave-one-out medians), the "
-                                "adjusted levels with its own normal quantiles and the type-7 percentiles",
+                                "adjusted levels with its own normal quantiles and the type-7 percentiles; endpoints "
+                                "agree to 1e-9 of the bootstrap spread plus 8 units in their last place",
             confidence_semantics="a BCa interval: second-order accurate, not exact; the verifier certifies that the "
                                  "interval is the BCa interval of this sample and seed, never that it covers the "
                                  "true parameter (coverage is measured over seeds against analytic truth)",
@@ -1378,7 +1524,11 @@ INTELLIGENCES = [
             abstention_conditions=("independent is false", f"fewer than {BOOT_NATIVE_MIN_N} observations",
                                    f"fewer than {BOOT_NATIVE_MIN_RESAMPLES} resamples",
                                    f"fewer than {BOOT_MIN_DISTINCT} distinct values",
-                                   f"resamples x observations above {BOOT_MAX_WORK}"),
+                                   f"resamples x observations above {BOOT_MAX_WORK}",
+                                   f"a sample range below {BOOT_RESOLUTION} units in the last place of its largest "
+                                   "value (double precision cannot resolve it)",
+                                   "all leave-one-out statistics equal, or the bootstrap distribution on one side of "
+                                   "the estimate (UNKNOWN)"),
             benchmark_suite="lognormal, exponential and Pareto (tail index 2.2-4.5) samples of 15-120, mean and "
                             "median, level 0.9, 2000 resamples; interval score against the analytic parameter; "
                             "seeds 0-9 dev / held-out seeds frozen by the admission harness",
@@ -1401,8 +1551,10 @@ INTELLIGENCES = [
             required_inputs=("variables", "constraints", "objective"),
             output_contract={"values": "[int] in sorted variable-name order", "objective": "int", "optimal": "bool",
                              "certified_by": "lp_dual | enumeration | none", "dual_bound": "int", "gap": "int"},
-            algorithm_or_runtime="scipy.optimize.milp (HiGHS) with a time limit; LP relaxation by linprog for "
-                                 "multipliers; the exact dual bound in rational arithmetic",
+            algorithm_or_runtime="scipy.optimize.milp (HiGHS) with a time limit and a zero relative gap; LP "
+                                 "relaxation by linprog for multipliers; the exact dual bound in rational "
+                                 "arithmetic; its own float64 scan (exact on this data) of a box of at most 2^16 "
+                                 "points before any enumeration claim",
             parameters={"native_variables": MILP_NATIVE_VARS, "native_rows": MILP_NATIVE_ROWS,
                         "enumeration_box": MILP_ENUM_MAX, "max_abs_data": MILP_MAX_ABS},
             composition_inputs=("compiled integer model",), composition_outputs=("values", "objective"),
@@ -1420,8 +1572,12 @@ INTELLIGENCES = [
                              "an honest proven gap otherwise"),
             known_failure_modes=("knapsack and covering relaxations are often loose: larger instances are returned "
                                  "feasible-only with a gap even when HiGHS proved optimality internally",
+                                 "at HiGHS's default relative gap (1e-4) branch and cut reports suboptimal incumbents "
+                                 "as optimal (87 of 300 large-coefficient 16-binary knapsacks on review seeds): the "
+                                 "gap is set to zero and HiGHS's status is never the evidence",
                                  "HiGHS's branch-and-cut setup dominates small instances: CP-SAT reached the same "
-                                 "optima in roughly a fifth of the wall time on review seeds",
+                                 "optima in about a seventh to a fifteenth of the candidate's solve time on review "
+                                 "seeds 3000-3119 (medians 2-3 ms against 19-32 ms)",
                                  "a time limit can stop branch and cut with a weaker incumbent",
                                  "infeasible models return UNKNOWN (infeasibility is not independently certified)"),
             counterindications=("continuous or fractional data (the model must be integer)",

@@ -54,10 +54,18 @@ Progress 2026-10-14 (measured, frozen, negative results kept):
   - every lift costs latency (1.5-5.2x);
   - routing adds nothing within a family;
   - no practitioner pipeline was beaten where one was measured.
+- **P6 v4** ([evidence](evidence/greg-composition-lift/2026-10-14-v4/README.md)): F7 was pre-registered with every section-16 element (`888003c`, checked by `validate_preregistration`) and frozen at `14ec7a6`. It is surge capacity leasing on 20 held-out SNDlib backbones with real topologies, lengths, demand pairs and ECMP loads.
+  - **It lifts:** the composition was optimal on 200 of 200 items against greedy's 108 (92-0), at 5.3x the latency inside the declared 10x. It also beat the shortest-path-upgrade practitioner 130-0, the first practitioner pipeline beaten in any run.
+  - **It was tied:** parametric min-cost flow, the truth algorithm, ties it on every item. The lift is over GREG's repertoire, not over an OR practitioner. Routed, static and compiled answers were identical.
+  - **The residual capability is built:** `flow_expansion_mcf`, one certified intelligence, registered and withheld.
+  - Natural families are now 2 of 3. F7's truth is a computed optimum, not a realised outcome.
+- **Layer 5 defects fixed, each with a regression test that fails on the old code:**
+  - the compiler answered a capacity-expansion request with `max_flow`, which ignores the budget; relaxations are now rejected;
+  - compiled requests never settled; they now credit the executed method through its own receipt, and outcome links are projected;
+  - a Goal Gravity turn recorded an ask on the body; it now writes nothing and reports measured trust.
 - **Next gate:**
-  - re-admit `basal_bayes_filter` 1.0.1;
-  - a composition family that uses an admitted Layer 1 genome;
-  - P8 cycle 3;
+  - one pre-registered admission v3 on fresh seeds 1200-1229 for every new or version-bumped genome (promoted competitors, Layer 3 packs A-C, `flow_expansion_mcf`, the Layer 2 native regimes, `basal_bayes_filter` 1.0.1, `develop_constraint_release` 1.2.0);
+  - a composition family that uses an admitted Layer 1 or Layer 2 genome;
   - new data before any further forecast admission.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07

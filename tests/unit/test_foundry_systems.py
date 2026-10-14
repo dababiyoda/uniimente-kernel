@@ -1111,6 +1111,19 @@ def test_convergent_implementations_dispatch_by_declared_op_deterministically():
     assert all(isinstance(v, tuple) and v for v in ALTERNATES.values())
 
 
+def test_every_system_the_contract_promises_to_greg_stays_registered():
+    # A convergence merge once adopted a registry that had dropped #9 ("oci") while the contract row still
+    # promised GREG "foundry.query inspect (system9)": the signed Body was refused at dispatch. Every row whose
+    # interface names a GREG capability must resolve, and every lineage's registered module stays reachable.
+    from foundry.systems import ALTERNATES, SYSTEMS, module
+    for sid, row in completion.contract().items():
+        interface = str(row.get("interface", ""))
+        if "foundry.query" in interface or "foundry.apply" in interface:
+            assert sid in SYSTEMS, f"system {sid} is promised to GREG but not registered"
+            assert module(sid).__name__ == f"foundry.systems.{SYSTEMS[sid]}"
+    assert SYSTEMS[9] == "oci" and not ALTERNATES.get(9)
+
+
 def test_alternate_evidence_is_rederived_and_a_forged_record_fails(tmp_path, monkeypatch):
     rows = completion.contract()
     alt = rows[35]["alternates"][0]

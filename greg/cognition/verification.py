@@ -8,6 +8,13 @@ import time
 from .contracts import CognitionError, ProofArtifact, digest
 
 
+def _holds(op, lhs, rhs):
+    """One comparison table for every re-check: exact rationals and Z3 terms alike. Strict < and > are the
+    exact negations the inversion operator produces; a re-check that lacks them would crash the verifier."""
+    return {"<=": lambda: lhs <= rhs, ">=": lambda: lhs >= rhs, "==": lambda: lhs == rhs,
+            "!=": lambda: lhs != rhs, "<": lambda: lhs < rhs, ">": lambda: lhs > rhs}[op]()
+
+
 def _native_numeric_checks(family, data, answer):
     """Failure-diverse source checks; no solver call, authority or learned evaluator.
 
@@ -249,8 +256,7 @@ def verify(family, data, answer, proof_class):
         for c in data["constraints"]:
             lhs = sum(Fraction(str(co)) * values[n] for n, co in c["coefficients"].items())
             rhs = Fraction(str(c["rhs"]))
-            valid &= {"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs,
-                      "<": lhs < rhs, ">": lhs > rhs}[c["op"]]
+            valid &= _holds(c["op"], lhs, rhs)
         checks["constraint_substitution"] = bool(valid)
         if family == "optimization":
             checks["integer_domain"] = all(v.denominator == 1 for v in values.values())
@@ -411,7 +417,7 @@ def _z3_integer_check(data, *, strictly_better_than=None, budget_s=CROSS_CHECK_B
         for c in data["constraints"]:
             lhs = z3.Sum([whole(co) * vs[n] for n, co in c["coefficients"].items()]) if c["coefficients"] else z3.IntVal(0)
             rhs = whole(c["rhs"])
-            solver.add({"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs}[c["op"]])
+            solver.add(_holds(c["op"], lhs, rhs))
         if strictly_better_than is not None:
             objective = data["objective"]
             expr = z3.Sum([whole(co) * vs[n] for n, co in objective["coefficients"].items()])
@@ -448,7 +454,7 @@ def _z3_core_check(data, core, budget_s=CROSS_CHECK_BUDGET_S):
             lhs = (z3.Sum([z3.RealVal(str(co)) * vs[n] for n, co in c["coefficients"].items()])
                    if c["coefficients"] else z3.RealVal(0))
             rhs = z3.RealVal(str(c["rhs"]))
-            solver.add({"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs}[c["op"]])
+            solver.add(_holds(c["op"], lhs, rhs))
         return _status(z3, solver.check())
 
     try:

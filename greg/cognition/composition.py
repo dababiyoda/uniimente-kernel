@@ -41,16 +41,27 @@ realised rate) -> erlang_c_staffing on that rate. Because the Erlang requirement
 the arrival rate, staffing to the q* forecast quantile is the expected-cost minimiser under the
 predictive distribution; neither intelligence can produce it alone (the forecaster has no queueing model,
 the queueing model has no predictive distribution).
+
+0.4 (P6 v5) adds ``track_then_staff``, the first recipe whose first stage is a Layer 1 (basal) genome:
+kalman_track follows today's demand multiplier z_j = N_j / plan_j against a standing plan (the observed blocks
+whose plan is at least half the day's mean plan; fewer than 3 such blocks abstains), and the q* = 1 - c/P
+quantile of the predicted multiplier, m = position + z(q*) sqrt(position variance + r), scales the plan of the
+decision block into an arrival rate -> erlang_c_staffing at that rate. The tracker has no queueing model; the
+queueing model has no view of how today departs from the plan. An observed count may be null: a block with no
+observation (for example the local hour that does not exist when daylight saving time starts) gives no measurement,
+never a zero. The staffing plan's own numbers (block length, agent cost, shortage penalty) are checked before any
+stage runs, and a critical fractile that rounds to 0 or 1 is refused: both staffing recipes share that check.
 """
 from __future__ import annotations
 
 import copy
 import math
+from statistics import NormalDist, fmean
 import time
 
 from .contracts import CognitionError, canonical, digest, strict_data
 
-SCHEMA = "greg-composition/0.3"
+SCHEMA = "greg-composition/0.4"
 MAX_REQUEST_BYTES = 192 * 1024
 DECL = {"consequence_class": "read_only", "reversibility": "reversible"}
 
@@ -77,6 +88,10 @@ RECIPES = {
     "forecast_then_staff": {"requires": ("arrival_histories", "staffing"),
                             "stages": ("forecast", "staff"),
                             "operations": ("forecast_distribution", "erlang_c_staffing")},
+    # Basal tracker of today's multiplier against a standing plan -> critical-fractile rate -> Erlang C staffing.
+    "track_then_staff": {"requires": ("observed_today", "standing_plan", "staffing"),
+                         "stages": ("track", "staff"),
+                         "operations": ("kalman_track", "erlang_c_staffing")},
 }
 OPERATION_STAGE_LATENCY_S = 20.0
 
@@ -255,16 +270,43 @@ def _forecast_then_allocate(payload, pid, kw, receipt, finish):
     return finish("ANSWERED", None, {"plan": allocation, "products": [p["name"] for p in products]})
 
 
+def _real(x, name) -> float:
+    """A finite real number given as a JSON number: never a bool, a string or a non-finite float."""
+    if isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x):
+        raise CognitionError(f"{name} must be a finite number")
+    return float(x)
+
+
 def staffing_quantile(plan: dict) -> float:
-    """Critical fractile of the staffing cost: agent cost c, shortage penalty P per missing agent (P > c)."""
-    c, penalty = float(plan["agent_cost"]), float(plan["shortage_penalty"])
+    """Critical fractile of the staffing cost: agent cost c, shortage penalty P per missing agent (P > c).
+
+    The fractile is rounded to 6 decimals, and a rounded fractile of 0 or 1 is refused: no normal quantile exists
+    there, so a penalty barely above the agent cost or vastly above it is not a staffing plan GREG can price."""
+    c, penalty = _real(plan["agent_cost"], "agent_cost"), _real(plan["shortage_penalty"], "shortage_penalty")
     if not (c > 0 and penalty > c):
         raise CognitionError("staffing needs agent_cost > 0 and shortage_penalty > agent_cost")
-    return round(1.0 - c / penalty, 6)
+    level = round(1.0 - c / penalty, 6)
+    if not 0.0 < level < 1.0:
+        raise CognitionError(f"the critical fractile 1 - agent_cost / shortage_penalty rounds to {level:g}; it must "
+                             "lie strictly between 0 and 1")
+    return level
 
 
 STAFF_KEYS = {"block_seconds", "mean_service_time", "target_wait", "max_wait_probability", "agent_cost",
               "shortage_penalty"}
+
+
+def staffing_plan(plan, recipe: str) -> tuple[float, float]:
+    """(block seconds, critical fractile) of a staffing plan, checked before any stage runs (shared by
+    ``forecast_then_staff`` and ``track_then_staff``): exactly ``STAFF_KEYS``, a block length that is a finite
+    number above 0, and a fractile strictly between 0 and 1. The service time, waiting target and waiting
+    probability are the Erlang genome's own inputs and are checked by its contract."""
+    if not isinstance(plan, dict) or set(plan) != STAFF_KEYS:
+        raise CognitionError(f"{recipe} takes a staffing plan with exactly {sorted(STAFF_KEYS)}")
+    seconds = _real(plan["block_seconds"], "block_seconds")
+    if not seconds > 0:
+        raise CognitionError("block_seconds must be above 0")
+    return seconds, staffing_quantile(plan)
 
 
 def _forecast_then_staff(payload, pid, kw, receipt, finish):
@@ -275,7 +317,7 @@ def _forecast_then_staff(payload, pid, kw, receipt, finish):
                                                  for b in blocks)):
         raise CognitionError("forecast_then_staff takes 1-48 {block, history} arrival histories and a staffing "
                              f"plan with exactly {sorted(STAFF_KEYS)}")
-    level = staffing_quantile(plan)
+    block_seconds, level = staffing_plan(plan, "forecast_then_staff")
     receipt["bindings"].append({"slot": "staffing costs -> critical fractile", "bound": level})
     agents = []
     for b in blocks:
@@ -285,7 +327,7 @@ def _forecast_then_staff(payload, pid, kw, receipt, finish):
         if not _answered(f):
             return finish("STAGE_ABSTAINED", f"forecast {b['block']}: {f['abstention_state']}")
         arrivals = f["output"]["quantiles"][f"{level:g}"][0]
-        rate = arrivals / float(plan["block_seconds"])
+        rate = arrivals / block_seconds
         if not (math.isfinite(rate) and rate > 0):
             receipt["translation_failures"].append(f"{b['block']}: forecast quantile {arrivals} is not a rate")
             return finish("TRANSLATION_FAILED", "forecast quantile cannot become an arrival rate")
@@ -302,8 +344,112 @@ def _forecast_then_staff(payload, pid, kw, receipt, finish):
                                      "quantile_level": level})
 
 
+TRACK_NULL_FRACTION = 0.5          # a block whose plan is below half the day's mean plan gives no measurement
+TRACK_MIN_MEASUREMENTS = 3          # fewer usable blocks than this: the tracker abstains
+TRACK_FLOOR_MULTIPLIER = 0.05       # the staffed rate never falls below 5% of the plan
+TRACKER_KEYS = {"q", "r", "prior"}
+
+
+def _count(x, name) -> float:
+    if isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x) or x < 0:
+        raise CognitionError(f"{name} must be a finite non-negative number")
+    return float(x)
+
+
+def _observed(x) -> float | None:
+    """An observed block count, or null for a block with no observation (it gives no measurement, never a zero)."""
+    return None if x is None else _count(x, "an observed count")
+
+
+def track_measurements(payload: dict) -> tuple[dict, int, float]:
+    """The kalman_track request a track_then_staff payload implies: (data, usable measurements, decision-block plan).
+
+    z_j = N_j / plan_j for each observed block j, null where plan_j is below half the day's mean plan (or zero) and
+    where the observed count is null (a block with no observation, such as the local hour that does not exist when
+    daylight saving time starts: its structural zero is not demand). The standing plan covers the whole day; its
+    decision block must come after every observed block (a payload holding the count it is asked to staff for is
+    refused). q, r and the prior come from ``tracker``; a missing
+    noise declaration is passed through so the Kalman genome's own contract abstains on it."""
+    observed, plan, tracker = payload["observed_today"], payload["standing_plan"], payload.get("tracker", {})
+    if not isinstance(observed, list) or not 1 <= len(observed) <= 999:
+        raise CognitionError("observed_today lists 1-999 completed block counts (null: not observed), from the start "
+                             "of the day")
+    if (not isinstance(plan, dict) or set(plan) != {"blocks", "decision_block"} or not isinstance(plan["blocks"], list)
+            or not 2 <= len(plan["blocks"]) <= 1000):
+        raise CognitionError("standing_plan is {blocks: the day's planned count per block, decision_block: index}")
+    block = plan["decision_block"]
+    if isinstance(block, bool) or not isinstance(block, int) or not len(observed) <= block < len(plan["blocks"]):
+        raise CognitionError("the decision block is a block of the plan after every observed block")
+    if not isinstance(tracker, dict) or set(tracker) - TRACKER_KEYS:
+        raise CognitionError(f"tracker takes only {sorted(TRACKER_KEYS)}")
+    counts = [_observed(n) for n in observed]
+    blocks = [_count(p, "a planned count") for p in plan["blocks"]]
+    zs = plan_ratios(counts, blocks)
+    data = {"dt": 1.0, "measurements": zs, **{k: tracker[k] for k in sorted(TRACKER_KEYS) if k in tracker}}
+    return data, sum(z is not None for z in zs), blocks[block]
+
+
+def plan_ratios(counts: list, blocks: list) -> list:
+    """N_j / plan_j for the counted blocks; null where N_j is null (not observed) and where plan_j is zero or below
+    half the day's mean plan."""
+    floor = TRACK_NULL_FRACTION * fmean(blocks)
+    return [n / p if n is not None and p > 0 and p >= floor else None for n, p in zip(counts, blocks)]
+
+
+def tracked_multiplier(output: dict, r: float, level: float) -> float:
+    """The q* quantile of the decision block's multiplier: position + z(q*) sqrt(position variance + r)."""
+    return _quantile_multiplier(output, r, NormalDist().inv_cdf(level))
+
+
+def _quantile_multiplier(output: dict, r: float, z: float) -> float:
+    return output["positions"][-1] + z * math.sqrt(output["final_position_variance"] + r)
+
+
+def _track_then_staff(payload, pid, kw, receipt, finish):
+    from .cortex import reason
+    plan = payload["staffing"]
+    block_seconds, level = staffing_plan(plan, "track_then_staff")
+    data, usable, planned = track_measurements(payload)
+    receipt["bindings"].append({"slot": "staffing costs -> critical fractile", "bound": level})
+    if usable < TRACK_MIN_MEASUREMENTS:
+        return finish("STAGE_ABSTAINED", f"track: {usable} usable measurements, at least {TRACK_MIN_MEASUREMENTS} "
+                                         f"required (a block planned below {TRACK_NULL_FRACTION} x the day's mean "
+                                         "gives none)")
+    tracked = _operation(reason, f"{pid}/track", "kalman_track", data, **kw)
+    receipt["stages"].append(_op_summary("track", tracked))
+    if not _answered(tracked):
+        return finish("STAGE_ABSTAINED", f"track: {tracked['abstention_state']}")
+    out = tracked["output"]
+    z = multiplier = rate = math.nan
+    try:
+        z = NormalDist().inv_cdf(level)
+        multiplier = _quantile_multiplier(out, float(data["r"]), z)
+        rate = planned * max(multiplier, TRACK_FLOOR_MULTIPLIER) / block_seconds
+    except (KeyError, TypeError, ValueError, IndexError, OverflowError) as exc:
+        multiplier = rate = math.nan
+        receipt["translation_failures"].append(f"tracker output cannot become a multiplier: {type(exc).__name__}")
+    receipt["bindings"].append({"slot": f"kalman position, variance -> q{level:g} multiplier", "bound": multiplier,
+                                "z": z, "r": data.get("r")})
+    if not (math.isfinite(rate) and rate > 0):
+        receipt["translation_failures"].append(f"multiplier {multiplier} x plan {planned} is not an arrival rate")
+        return finish("TRANSLATION_FAILED", "the tracked multiplier cannot become an arrival rate")
+    receipt["bindings"].append({"slot": f"multiplier x plan[{payload['standing_plan']['decision_block']}] -> "
+                                        "arrival_rate", "bound": rate, "floor": TRACK_FLOOR_MULTIPLIER})
+    staffed = _operation(reason, f"{pid}/staff", "erlang_c_staffing",
+                         {"arrival_rate": rate, "mean_service_time": plan["mean_service_time"],
+                          "target_wait": plan["target_wait"], "max_wait_probability": plan["max_wait_probability"]},
+                         **kw)
+    receipt["stages"].append(_op_summary("staff", staffed))
+    if not _answered(staffed):
+        return finish("STAGE_ABSTAINED", f"staff: {staffed['abstention_state']}")
+    return finish("ANSWERED", None, {"agents": staffed["output"]["agents"],
+                                     "block": payload["standing_plan"]["decision_block"], "quantile_level": level,
+                                     "multiplier": multiplier, "arrival_rate": rate})
+
+
 OPERATION_RECIPES = {"graph_then_allocate": _graph_then_allocate, "bayes_then_voi": _bayes_then_voi,
-                     "forecast_then_allocate": _forecast_then_allocate, "forecast_then_staff": _forecast_then_staff}
+                     "forecast_then_allocate": _forecast_then_allocate, "forecast_then_staff": _forecast_then_staff,
+                     "track_then_staff": _track_then_staff}
 
 
 def validate(params) -> tuple[str, dict]:

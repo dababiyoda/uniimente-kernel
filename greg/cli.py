@@ -436,13 +436,17 @@ def main(argv=None) -> int:
                 data = {"reality_status": "NO_BODY_LEDGER", "note": "measure on the body"}
             print(json.dumps(data, indent=1, default=str))
         elif args.cmd == "gravity":
+            from foundry.lawful_leverage import LeverageRefused
             from greg import gravity
             situation = json.loads(Path(args.situation).read_text())
-            if Layout(home).ledger.exists():
-                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
-                    data = gravity.step(situation, journal=journal)
-            else:
-                data = gravity.step(situation)
+            try:
+                if Layout(home).ledger.exists():
+                    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                        data = gravity.step(situation, journal=journal)
+                else:
+                    data = gravity.step(situation)
+            except (gravity.GravityError, LeverageRefused) as exc:     # a refusal, reported like any other
+                raise BodyError(f"gravity refused the situation: {exc}") from exc
             print(json.dumps(data, indent=1))
         elif args.cmd == "presence":
             from greg import presence

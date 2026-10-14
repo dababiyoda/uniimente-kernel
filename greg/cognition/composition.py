@@ -34,6 +34,13 @@ CognitiveReceipt per stage; families from the executable IntelligenceGenome libr
                              optimize (sample-average approximation under a shared capacity).
 
 v1's two recipes execute exactly as before.
+
+0.3 (P6 v3) adds ``forecast_then_staff``: forecast_distribution per arrival block at the critical
+fractile q* = 1 - c/P of a staffing cost (c per agent, P per agent short of the Erlang requirement at the
+realised rate) -> erlang_c_staffing on that rate. Because the Erlang requirement rises monotonically with
+the arrival rate, staffing to the q* forecast quantile is the expected-cost minimiser under the
+predictive distribution; neither intelligence can produce it alone (the forecaster has no queueing model,
+the queueing model has no predictive distribution).
 """
 from __future__ import annotations
 
@@ -43,7 +50,7 @@ import time
 
 from .contracts import CognitionError, canonical, digest, strict_data
 
-SCHEMA = "greg-composition/0.2"
+SCHEMA = "greg-composition/0.3"
 MAX_REQUEST_BYTES = 192 * 1024
 DECL = {"consequence_class": "read_only", "reversibility": "reversible"}
 
@@ -63,6 +70,9 @@ RECIPES = {
     # Calibrated predictive distribution -> SAA newsvendor allocation under shared capacity.
     "forecast_then_allocate": {"requires": ("demand_histories", "newsvendor"),
                                "stages": ("forecast", "compile", "optimize")},
+    # Predictive arrival distribution -> critical-fractile rate -> Erlang C staffing per block.
+    "forecast_then_staff": {"requires": ("arrival_histories", "staffing"),
+                            "stages": ("forecast", "staff")},
 }
 OPERATION_STAGE_LATENCY_S = 20.0
 
@@ -240,8 +250,55 @@ def _forecast_then_allocate(payload, pid, kw, receipt, finish):
     return finish("ANSWERED", None, {"plan": allocation, "products": [p["name"] for p in products]})
 
 
+def staffing_quantile(plan: dict) -> float:
+    """Critical fractile of the staffing cost: agent cost c, shortage penalty P per missing agent (P > c)."""
+    c, penalty = float(plan["agent_cost"]), float(plan["shortage_penalty"])
+    if not (c > 0 and penalty > c):
+        raise CognitionError("staffing needs agent_cost > 0 and shortage_penalty > agent_cost")
+    return round(1.0 - c / penalty, 6)
+
+
+STAFF_KEYS = {"block_seconds", "mean_service_time", "target_wait", "max_wait_probability", "agent_cost",
+              "shortage_penalty"}
+
+
+def _forecast_then_staff(payload, pid, kw, receipt, finish):
+    from .cortex import reason
+    blocks, plan = payload["arrival_histories"], payload["staffing"]
+    if (not isinstance(blocks, list) or not 1 <= len(blocks) <= 48 or not isinstance(plan, dict)
+            or set(plan) != STAFF_KEYS or not all(isinstance(b, dict) and set(b) == {"block", "history"}
+                                                 for b in blocks)):
+        raise CognitionError("forecast_then_staff takes 1-48 {block, history} arrival histories and a staffing "
+                             f"plan with exactly {sorted(STAFF_KEYS)}")
+    level = staffing_quantile(plan)
+    receipt["bindings"].append({"slot": "staffing costs -> critical fractile", "bound": level})
+    agents = []
+    for b in blocks:
+        f = _operation(reason, f"{pid}/forecast-{b['block']}", "forecast_distribution",
+                       {"history": b["history"], "horizon": 1, "levels": [level]}, **kw)
+        receipt["stages"].append(_op_summary(f"forecast:{b['block']}", f))
+        if not _answered(f):
+            return finish("STAGE_ABSTAINED", f"forecast {b['block']}: {f['abstention_state']}")
+        arrivals = f["output"]["quantiles"][f"{level:g}"][0]
+        rate = arrivals / float(plan["block_seconds"])
+        if not (math.isfinite(rate) and rate > 0):
+            receipt["translation_failures"].append(f"{b['block']}: forecast quantile {arrivals} is not a rate")
+            return finish("TRANSLATION_FAILED", "forecast quantile cannot become an arrival rate")
+        receipt["bindings"].append({"slot": f"forecast q{level:g} {b['block']} -> arrival_rate", "bound": rate})
+        staffed = _operation(reason, f"{pid}/staff-{b['block']}", "erlang_c_staffing",
+                             {"arrival_rate": rate, "mean_service_time": plan["mean_service_time"],
+                              "target_wait": plan["target_wait"], "max_wait_probability": plan["max_wait_probability"]},
+                             **kw)
+        receipt["stages"].append(_op_summary(f"staff:{b['block']}", staffed))
+        if not _answered(staffed):
+            return finish("STAGE_ABSTAINED", f"staff {b['block']}: {staffed['abstention_state']}")
+        agents.append(staffed["output"]["agents"])
+    return finish("ANSWERED", None, {"agents": agents, "blocks": [b["block"] for b in blocks],
+                                     "quantile_level": level})
+
+
 OPERATION_RECIPES = {"graph_then_allocate": _graph_then_allocate, "bayes_then_voi": _bayes_then_voi,
-                     "forecast_then_allocate": _forecast_then_allocate}
+                     "forecast_then_allocate": _forecast_then_allocate, "forecast_then_staff": _forecast_then_staff}
 
 
 def validate(params) -> tuple[str, dict]:

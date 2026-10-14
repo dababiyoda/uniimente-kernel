@@ -427,7 +427,9 @@ def pid_verify(data, output, certificate):
               "limit_run_recomputed": cert.get("longest_limit_run") == sim["longest_limit_run"],
               "seed_bound": cert.get("seed") == p["seed"] and cert.get("delay_samples") == p["delay"],
               "no_divergence": sim["max_abs_error"] <= PID_DIVERGE * _pid_span(p),
-              "no_persistent_saturation": sim["longest_limit_run"] <= PID_SAT_FRACTION * p["steps"]}
+              "no_persistent_saturation": sim["longest_limit_run"] <= PID_SAT_FRACTION * p["steps"],
+              # the genome's answer is a SIMC PI controller; any other law (an on/off relay) is not that answer
+              "controller_is_declared_pid": ctrl["law"] == "pid"}
     if ctrl["law"] == "pid":
         rho = _pid_eig_radius(p, ctrl)
         checks["linear_loop_stable"] = rho < 1.0
@@ -1165,6 +1167,105 @@ def hysteresis_hmm(data):
     return {"states": _hmm_states(sig, lo, hi, sigma, dwell, s0, best[1]), "margin": best[1]}
 
 
+def _hmm_tuning(lo, hi, sigma, dwell, states_fn):
+    """Margin selection shared by solve and verify's replay: four synthetic 1500-sample runs of the declared
+    model (seed 7919), mean cost per change for each margin in HY_HMM_MARGINS; the argmin (ties: smaller)."""
+    rnd = random.Random(7919)
+    runs = []
+    for _ in range(HY_HMM_TUNING_RUNS):
+        syn, truth = _hy_signal(rnd, lo, hi, sigma, dwell, 1500, 0)
+        changes = [k for k in range(1, len(truth)) if truth[k] != truth[k - 1]]
+        runs.append((syn, "".join(map(str, truth)), changes))
+    costs = {c: sum(_hy_cost(states_fn(syn, c), ts, ch, 0)[0] / max(1, len(ch)) for syn, ts, ch in runs)
+             for c in HY_HMM_MARGINS}
+    return min(costs, key=lambda c: (costs[c], c)), costs
+
+
+def bayes_filter_solve(data, budget):
+    """Layer 1 Bayesian filter: two-state HMM forward (Wonham) filter with the declared levels, noise sd and mean
+    dwell; switch when the posterior log-odds cross +/- margin, the margin tuned by simulating the declared
+    model. Unlike the hysteresis genome's competitor it never estimates an undeclared noise level."""
+    sig, lo, hi, thr, sigma, dwell, s0 = _hy_inputs(data)
+    if sigma is None:
+        return answer(None, {"reason": "noise level not declared"}, status="ABSTAIN",
+                      missing=["noise_sd must be declared: the filter's likelihoods depend on it"])
+    margin, costs = _hmm_tuning(lo, hi, sigma, dwell, lambda x, c: _hmm_states(x, lo, hi, sigma, dwell, 0, c))
+    states = _hmm_states(sig, lo, hi, sigma, dwell, s0, margin)
+    return answer({"states": states, "switch_count": sum(1 for a, b in zip(str(s0) + states, states) if a != b)},
+                  {"margin": margin, "switch_probability": min(1.0, 1.0 / dwell), "noise_sd": sigma,
+                   "tuning": {"seed": 7919, "runs": HY_HMM_TUNING_RUNS, "samples": 1500,
+                              "cost_per_change": {f"{c:g}": round(v, 9) for c, v in costs.items()}},
+                   "model": "two-state HMM, geometric dwell, i.i.d. Gaussian noise; causal forward filter"})
+
+
+def _forward_log_odds(sig, lo, hi, sigma, dwell, s0):
+    """Verifier's own filter: the normalised two-state forward recursion in log space (log-sum-exp over the
+    transition), returning the posterior log-odds of state 1 after each sample."""
+    switch = min(1.0, 1.0 / dwell)
+    stay, move = math.log1p(-switch) if switch < 1 else -math.inf, math.log(switch)
+    a0, a1 = (math.log(1e-12), math.log1p(-1e-12)) if s0 == 1 else (math.log1p(-1e-12), math.log(1e-12))
+    out = []
+
+    def lse(x, y):
+        m = max(x, y)
+        return m if m == -math.inf else m + math.log(math.exp(x - m) + math.exp(y - m))
+    for x in sig:
+        p0 = lse(a0 + stay, a1 + move) - (x - lo) ** 2 / (2 * sigma * sigma)
+        p1 = lse(a1 + stay, a0 + move) - (x - hi) ** 2 / (2 * sigma * sigma)
+        norm = lse(p0, p1)
+        a0, a1 = p0 - norm, p1 - norm
+        out.append(a1 - a0)
+    return out
+
+
+def _decisions(log_odds, s0, margin):
+    state, out = s0, []
+    for o in log_odds:
+        if state == 0 and o > margin:
+            state = 1
+        elif state == 1 and o < -margin:
+            state = 0
+        out.append(state)
+    return out
+
+
+def bayes_filter_verify(data, output, certificate):
+    """Replay with the verifier's own forward recursion: every switch must follow a posterior log-odds crossing
+    of the declared margin (a crossing within 1e-7 of the margin may go either way), the margin must be the
+    tuning argmin (re-executed with the verifier's filter), and the switch count must match."""
+    sig, lo, hi, thr, sigma, dwell, s0 = _hy_inputs(data)
+    out = output if isinstance(output, dict) else {}
+    cert = certificate if isinstance(certificate, dict) else {}
+    states, margin = out.get("states"), cert.get("margin")
+    if (sigma is None or not isinstance(states, str) or len(states) != len(sig) or not set(states) <= {"0", "1"}
+            or type(margin) not in (int, float) or margin not in HY_HMM_MARGINS):
+        return {"shape": False}
+    odds = _forward_log_odds(sig, lo, hi, sigma, dwell, s0)
+    ok, state = True, s0
+    for k, ch in enumerate(states):
+        cur = int(ch)
+        expected = _decisions([odds[k]], state, margin)[0]      # from the output's own previous state
+        if cur != expected and abs(abs(odds[k]) - margin) > 1e-7:
+            ok = False                                          # only a floating-point tie at the margin may differ
+            break
+        state = cur
+    selected, _ = _hmm_tuning(lo, hi, sigma, dwell,
+                              lambda x, c: "".join(map(str, _decisions(_forward_log_odds(x, lo, hi, sigma, dwell, 0),
+                                                                       0, c))))
+    return {"shape": True, "switches_follow_posterior_crossings": ok,
+            "margin_is_the_tuning_selection": selected == margin,
+            "noise_and_switch_probability_bound": _close(_num(cert.get("noise_sd")), sigma)
+            and _close(_num(cert.get("switch_probability")), min(1.0, 1.0 / dwell)),
+            "switch_count": out.get("switch_count") == sum(1 for a, b in zip(str(s0) + states, states) if a != b)}
+
+
+def bayes_filter_schmitt(data):
+    """Competitor: the admitted Schmitt trigger with run-length confirmation (deployable; abstains without a
+    declared noise level)."""
+    out = hysteresis_solve(data, {})
+    return out["output"]
+
+
 def hysteresis_subregion(data):
     return "low_noise" if data["noise_sd"] / (data["levels"][1] - data["levels"][0]) < 0.2 else "high_noise"
 
@@ -1617,7 +1718,7 @@ def _genome(version="1.0.0", **kw):
 INTELLIGENCES = [
     Executable(
         genome=_genome(
-            intelligence_id="basal.control.simc_pi", version="1.0.1", family="basal_pid", operation="pid_track",
+            intelligence_id="basal.control.simc_pi", version="1.0.2", family="basal_pid", operation="pid_track",
             epistemic_class="physical",
             subgeometry="setpoint tracking and load rejection of a declared first-order-plus-dead-time plant",
             source_provenance="Skogestad (2003) SIMC rules; Astrom & Hagglund (2004) AMIGO; Ziegler & Nichols (1942); "
@@ -1747,6 +1848,47 @@ INTELLIGENCES = [
                                          "filter for a declared two-level Gaussian model (dev mean quality "
                                          "-0.32 against -1.16 for the median; one synthetic tuning run instead "
                                          "of four gave -0.48)"}),
+    Executable(
+        genome=_genome(
+            intelligence_id="basal.filter.hmm_forward", family="basal_bayes_filter", operation="regime_filter",
+            epistemic_class="physical", subgeometry="two-regime detection in a noisy scalar signal",
+            source_provenance="Wonham (1964) filter; Rabiner (1989) HMM forward algorithm; decision margin tuned "
+                              "by simulating the declared model",
+            native_representation="sampled signal + two declared levels + noise sd + mean dwell",
+            required_inputs=("signal", "levels", "noise_sd", "mean_dwell"),
+            output_contract={"states": "string of 0/1 per sample", "switch_count": "int"},
+            algorithm_or_runtime="two-state HMM forward filter in log-odds; switch at posterior log-odds +/- margin; "
+                                 "margin = argmin of mean cost per change over four simulated runs",
+            parameters={"margins": list(HY_HMM_MARGINS), "tuning_runs": HY_HMM_TUNING_RUNS,
+                        "false_switch_weight": HY_W_FALSE, "miss_weight": HY_W_MISS},
+            memory_model="one posterior probability + one decision bit", learning_rule="none",
+            composition_inputs=("signal",), composition_outputs=("regime_states",),
+            evidence_type="heuristic_trace",
+            verification_method="independent replay with a normalised log-sum-exp forward recursion: every switch "
+                                "follows a posterior crossing of the declared margin; the margin re-selected by "
+                                "re-executing the tuning with the verifier's filter",
+            confidence_semantics="posterior is exact only for the declared two-level Gaussian HMM; the trace is "
+                                 "an audit, not a proof of correct regimes",
+            resource_profile="O(n) per pass; 17 margins x 4 runs x 1500 samples to tune",
+            latency_profile="tens of milliseconds",
+            known_strengths=("dominates memoryless switching at high noise (11-1 against the Schmitt trigger as "
+                             "its competitor on the 2026-10-13 held-out run)", "uses the dwell prior"),
+            known_failure_modes=("misspecified levels, noise or dwell", "heavy-tailed noise",
+                                 "about 50x the Schmitt trigger's latency at low noise, where both are exact"),
+            counterindications=("drifting levels", "undeclared noise level"),
+            abstention_conditions=("noise sd not declared",),
+            benchmark_suite="the hysteresis benchmark: seeded two-level regime signals, noise/separation 0.05-0.6, "
+                            "dwell 60-200; score -(capped delay + 5 x false switches + 50 x misses) per change",
+            baseline="single threshold at the midpoint",
+            competitor="admitted Schmitt trigger with run-length confirmation (basal_hysteresis)"),
+        solve=bayes_filter_solve, verify=bayes_filter_verify, instance=hysteresis_instance, score=hysteresis_score,
+        baseline=hysteresis_single_threshold, competitor=bayes_filter_schmitt, subregion=hysteresis_subregion,
+        tolerance=1e-9,
+        notes={"lineage": "promoted from the hysteresis genome's competitor (hysteresis_hmm) after the 2026-10-13 "
+                          "audit; that competitor estimates an undeclared noise level, this genome abstains",
+               "alternative_competitor": "hysteresis_median (causal moving median, window tuned on the declared "
+                                         "model) is the weaker alternative; the deployable Schmitt trigger is the "
+                                         "admitted method this filter must not lose to"}),
     Executable(
         genome=_genome(
             intelligence_id="basal.allocate.thompson_bernoulli", family="basal_bandit", operation="bandit_allocate",

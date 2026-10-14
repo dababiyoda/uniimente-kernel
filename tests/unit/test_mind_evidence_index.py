@@ -18,8 +18,10 @@ def test_admission_statuses_reach_the_index_in_the_harness_shape(tmp_path, monke
     monkeypatch.setattr(B, "ROOT", tmp_path)
     index = B.build()
     assert index["genomes"] == {
-        "basal_kalman": {"status": "DEFAULT_FOR_GEOMETRY", "evidence": f"{B.ADMISSION}/run-x/results.json#genomes.basal_kalman"},
-        "collective_market": {"status": "SUPERSEDED", "evidence": f"{B.ADMISSION}/run-x/results.json#genomes.collective_market"}}
+        "basal_kalman": {"status": "DEFAULT_FOR_GEOMETRY", "version": None,
+                         "evidence": f"{B.ADMISSION}/run-x/results.json#genomes.basal_kalman"},
+        "collective_market": {"status": "SUPERSEDED", "version": None,
+                              "evidence": f"{B.ADMISSION}/run-x/results.json#genomes.collective_market"}}
     assert not any("admission" in m for m in index["missing_sources"])
 
 

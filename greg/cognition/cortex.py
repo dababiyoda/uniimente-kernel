@@ -197,6 +197,9 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
             evaluator = independent_verify(chosen["family"], params["data"], answer, chosen["proof_class"], replace(geometry, latency_limit=min(30, remaining)))
             if evaluator["verdict"] == "REFUTED":
                 state = "REFUTED"
+            elif answer["status"] == "ANSWER" and answer.get("output") is None:
+                # an answer is its output: one without it is a contract violation, never a settled answer
+                state, missing = "ABSTAIN", ["answer without output: the solver claimed ANSWER and returned none"]
             elif answer["status"] != "ANSWER":
                 state, missing = answer["status"], answer["missing_information"]
             elif high:
@@ -252,7 +255,7 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
                                 "review": "encoded property only; general completeness undecidable"},
         contribution_attribution=[{"method": chosen["method"], "role": "calculation", "uncertainty": "not causal credit"}] if chosen else [],
         causal_credit=[{"method": chosen["method"], "role": "solver"}, {"method": "greg.cognition.verification", "role": "falsifier"}] if chosen else [],
-        outcome=classify_greg(state, has_output=answer is not None))
+        outcome=classify_greg(state, has_output=answered))
     return receipt.to_dict()
 
 

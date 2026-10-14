@@ -44,13 +44,13 @@ additional authority; chat text does not authenticate the founder.
 | binding_scope | `cortex/` 0.1.6 and contracts, `egregore/cortex_proposer.py`, evaluation harness and evidence, cognition lineage registry; draft development only |
 | constitutional_constraints | cognition proposes and never authorizes; no Gate/adapter/actuator import; competence settles only on verified outcomes and only reorders; "meniscus/shield/dominance" read as the directive's own translation paragraphs; one authority, many governed capabilities |
 | success_evidence | `tests/unit/test_cortex_defect_fixes.py`, `test_cortex_finality_deficit.py`, `test_cortex_proposer.py`, `test_cortex_replay.py`, `test_seed_genome_founder_expression.py`, `test_cognition_lineages.py`; `tests/evidence/cortex-seed-v0.1.6/`; 43/43 mutants caught by behavioural tests; full suite and CI guards green on the branch |
-| failure_evidence | no real outcome settled; self-authored structured suite only; semantic organ never ran against a live local model; baseline transcript from a sibling frontier model, audited post hoc; fourteen lineages blocked on #137; VEPMC 0 |
+| failure_evidence | frozen held-out verdict GAIN_ABSENT (routed 1.000 vs 0.905/0.929; lower bounds 0.024/0.000 below 0.05); no real outcome settled; self-authored structured suite only; semantic organ never ran against a live local model; baseline transcript from a sibling frontier model, audited post hoc; fourteen lineages blocked on #137; VEPMC 0 |
 | dependencies | `capabilities.genome`, `provenance.ledger`, `egregore.runtime`; z3-solver; a founder decision on #137; a founder-selected local model |
 | conflicts | VEPMC-as-bottleneck vs the 2026-10-02 completion correction (resolved as the correction states); sixteen overlapping draft lineages (registered, not duplicated) |
 | next_review_trigger | founder review of the draft PR; first real outcome through the runtime binding; a local model that unlocks the local arms |
 | supersedes | none |
 | superseded_by | none |
-| implementation_refs | `docs/intent/INTENT-20261013-polyintelligence-seed-genome-v0.1.json`; `docs/cortex/CONVERGENCE_2026-10-13.md`; `docs/cortex/COGNITION_LINEAGES.json`; `docs/collaboration/deliberation-polyintelligence-seed-genome-20261013.json` |
+| implementation_refs | `docs/intent/INTENT-20261013-polyintelligence-seed-genome-v0.1.json`; `docs/cortex/CONVERGENCE_2026-10-13.md`; `docs/cortex/COGNITION_LINEAGES.json`; `docs/collaboration/deliberation-polyintelligence-seed-genome-20261013.json`; `docs/collaboration/intents-polyintelligence-seed-genome-20261013.json` (SG-001..SG-012) |
 
 UNIIMENTE must never silently lose a founder intention, contributor objection, negative result, or superseded design.
 

@@ -1,0 +1,515 @@
+{
+  "decision_id": "polyintelligence-seed-genome-20261013",
+  "title": "Converge the Polyintelligence Seed Genome v0.1 on main: productize #141 as cortex 0.1.6, recombine #139's binding, run the declared baselines from a recorded frontier-model transcript, register every lineage",
+  "problem": "Sixteen draft lineages implement overlapping seeds (thirteen when this work began); none is on main; every frozen comparison was INCONCLUSIVE because no model was reachable; the main-compatible cortex had no caller on main and four verified defects; the founder re-sent the review with 'Build this: … in GitHub'. The question is what to build so that the directive is executed without a fourteenth silo and without claiming a gain the evidence does not show.",
+  "founder_intent_refs": [
+    "INTENT-20261013-polyintelligence-seed-genome-v0.1",
+    "SG-001..SG-012",
+    "INTENT-20260930-polyintelligence-cortex",
+    "PC-001..PC-013",
+    "INTENT-0030",
+    "INTENT-20260930-open-source-first"
+  ],
+  "baseline": "main at 19fa33c: no cortex package, no geometry routing, no competence ledger; PR #141 (cortex 0.1.5) frozen held-out INCONCLUSIVE with both LLM arms NOT_RUN; PR #139 seed with an untested runtime adapter shape; fourteen lineages that carry the unmerged #137 (eleven when this work began).",
+  "alternatives": [
+    {
+      "name": "Another implementation from scratch",
+      "description": "Write a new Seed Genome package on main.",
+      "advantages": [
+        "exactly the review's list, nothing else"
+      ],
+      "disadvantages": [
+        "duplicates #141 and #139",
+        "violates one-authority-many-capabilities (§3, §9)",
+        "no measured history"
+      ],
+      "evidence": "docs/cortex/COGNITION_LINEAGES.json",
+      "rollback": "n/a",
+      "kill": "rejected before build",
+      "revival_evidence": "a founder ruling that the converged seed is the wrong substrate, with the reason recorded"
+    },
+    {
+      "name": "Re-label #141 as approved",
+      "description": "Open a PR that points at #141 unchanged.",
+      "advantages": [
+        "zero new code"
+      ],
+      "disadvantages": [
+        "exit stays INCONCLUSIVE",
+        "four defects stay live",
+        "no caller on main",
+        "lineages stay uncoordinated"
+      ],
+      "evidence": "PR #141 body; reader findings in CONVERGENCE_2026-10-13.md §5",
+      "rollback": "n/a",
+      "kill": "rejected: directive says build",
+      "revival_evidence": "a founder ruling that 0.1.5 should merge unchanged and the 0.1.6 fixes ride separately"
+    },
+    {
+      "name": "Converge on the #137 stack (#143 bridge)",
+      "description": "Base the build on #143, which has the only measured gain.",
+      "advantages": [
+        "one-entry bridge",
+        "open-source engine certification",
+        "narrow measured gain vs run baselines"
+      ],
+      "disadvantages": [
+        "cannot reach main before #137 is decided",
+        "gain is vs non-model baselines",
+        "47k-line dependency"
+      ],
+      "evidence": "PR #143 body; COGNITION_LINEAGES.json pr-143",
+      "rollback": "n/a",
+      "kill": "deferred to the #137 decision; mechanisms queued",
+      "revival_evidence": "a founder decision to merge #137"
+    },
+    {
+      "name": "Proposed design (this branch)",
+      "description": "Productize #141, fix its verified defects as 0.1.6 frozen before the run, bind it to the standing runtime (mechanism from #139), run the declared baselines from a recorded frontier-model transcript through the unchanged frozen harness, register every lineage.",
+      "advantages": [
+        "main-compatible",
+        "exit rule finally resolves on real baseline replies",
+        "defects fixed with reproductions",
+        "nothing activates"
+      ],
+      "disadvantages": [
+        "baseline model is a sibling of the suite's authors",
+        "transcript audit is post hoc",
+        "suite is self-authored and structured-only"
+      ],
+      "evidence": "tests/evidence/cortex-seed-v0.1.6/",
+      "rollback": "revert the branch; main untouched",
+      "kill": "GAIN_ABSENT on two frozen versions with no critical-error advantage; any receipt asserting authority",
+      "revival_evidence": "n/a: this is the proposed design"
+    },
+    {
+      "name": "Do nothing",
+      "description": "Leave the lineages as drafts.",
+      "advantages": [
+        "no review burden"
+      ],
+      "disadvantages": [
+        "directive unexecuted",
+        "no evidence either way"
+      ],
+      "evidence": "—",
+      "rollback": "n/a",
+      "kill": "rejected",
+      "revival_evidence": "evidence that the cortex creates net review burden without measured benefit"
+    },
+    {
+      "name": "Reversible experiment",
+      "description": "This branch is one: additive commits, SANDBOXED lifecycle, no activation.",
+      "advantages": [
+        "one revert restores main"
+      ],
+      "disadvantages": [
+        "review burden"
+      ],
+      "evidence": "git log ebc2130..HEAD",
+      "rollback": "revert merge",
+      "kill": "as proposed design",
+      "revival_evidence": "n/a: the proposed design is this experiment"
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Sixteen drafts stay open; the frozen comparison stays INCONCLUSIVE; the directive stays unexecuted.",
+    "advantages": [
+      "no change to main"
+    ],
+    "disadvantages": [
+      "no evidence about routing value",
+      "defects stay live",
+      "lineages drift"
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "The directive's own translation paragraphs are binding: meniscus = verified-envelope frontier, shield = layered verification, dominance = lawful capability. Every quoted paragraph is preserved byte for byte; the review's eight corrections are implemented or preserved in contracts. 'Build this' is read as approval of the review's closing proposal.",
+      "material_concerns": [
+        "the goal set's rhetoric ('impermeable', 'total systemic dominance') must stay prohibited as literal claims",
+        "verbatim preservation versus the review's corrected forms"
+      ],
+      "recommendation": "EXPERIMENT",
+      "evidence_refs": [
+        "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md",
+        "docs/cortex/verbatim-register.json"
+      ]
+    },
+    {
+      "role": "Systems Architect",
+      "position": "One authority, many governed capabilities: productize the main-compatible lineage, port the one missing seam from #139, register the rest. The binding uses the runtime's existing proposer slot, so there is no second runtime, gate or authority path. Replay serves the frozen harness without touching the freeze.",
+      "material_concerns": [
+        "the composition cap is disclosed, not lifted",
+        "no persistence for the competence ledger yet"
+      ],
+      "recommendation": "EXPERIMENT",
+      "evidence_refs": [
+        "docs/cortex/COGNITION_LINEAGES.json",
+        "egregore/cortex_proposer.py",
+        "cortex/evaluation/replay.py"
+      ]
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "The frozen held-out result is GAIN_ABSENT: routed_seed 1.000 [1.000, 1.000], always_llm 0.905 [0.810, 0.976], llm_committee 0.929 [0.833, 1.000], always_abstain 0.577 [0.452, 0.696]; critical errors routed/llm/committee = 0/2/1; unsupported certainty = 0/3/3; exit GAIN_ABSENT. Read it narrowly: the baseline model is a sibling of the suite's authors; the suite is self-authored and structured-only; cost and latency are not comparable across arms; the routed seed's semantic organ was served by the same recorded model on four sourced items. A gain here is not superiority over a strong model in the wild; an absence here does not prove the opposite on free-text problems.",
+      "material_concerns": [
+        "strongest counterexample: a strong single model with tools is hard to beat (LLMRouterBench); the comparison must be repeated on an externally authored suite before any promotion claim",
+        "the tool-free audit is post hoc, not a runtime restriction"
+      ],
+      "recommendation": "EXPERIMENT",
+      "evidence_refs": [
+        "tests/evidence/cortex-seed-v0.1.6/README.md",
+        "docs/cortex/reviews/PRE_RUN_REVIEW_2026-10-14.json"
+      ]
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Reproducible: freeze v0.1.6 cut before the run; transcripts, audits and provenance committed beside the results; CI job 6 runs the new tests and mutants and labels its held-out artifact a drift guard. The cortex now closes its five closures under verifier V3 and declares the buildability standard under V5.",
+      "material_concerns": [
+        "document volume",
+        "replay adds a code path that must stay out of the freeze by design"
+      ],
+      "recommendation": "EXPERIMENT",
+      "evidence_refs": [
+        "cortex/evaluation/freeze-v0.1.6.json",
+        "scripts/ci/check_cortex_mutants.py",
+        ".github/workflows/canonical-ci.yml"
+      ]
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Declared harm may raise the consequence class, never lower it (ported from #143's hard failure); an expiring mandate cannot pass without a reference instant; receipts that claim authority or spend beyond the ceiling are refused before ledgering; victim-protection and deterrence handoffs are unchanged from 0.1.5.",
+      "material_concerns": [
+        "no real outcome has settled competence",
+        "the semantic organ has never run against a live local model"
+      ],
+      "recommendation": "EXPERIMENT",
+      "evidence_refs": [
+        "tests/unit/test_cortex_defect_fixes.py",
+        "tests/unit/test_cortex_proposer.py"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Frozen held-out comparison with the declared baselines RUN",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/cortex-seed-v0.1.6/heldout-results.json",
+      "finding": "routed_seed 1.000 [1.000, 1.000], always_llm 0.905 [0.810, 0.976], llm_committee 0.929 [0.833, 1.000], always_abstain 0.577 [0.452, 0.696]; critical errors routed/llm/committee = 0/2/1; unsupported certainty = 0/3/3; exit GAIN_ABSENT"
+    },
+    {
+      "claim": "Where the baselines failed",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/cortex-seed-v0.1.6/README.md",
+      "finding": "H-F08 [formal]: always_llm recommend (unsupported certainty), llm_committee recommend (unsupported certainty); H-G03 [options]: always_llm abstain, llm_committee recommend (unsupported certainty); H-G04 [options]: always_llm recommend (critical, unsupported certainty, gate violation), llm_committee recommend (critical, unsupported certainty, gate violation); H-N01 [normative_value]: always_llm recommend (critical, unsupported certainty); the routed seed failed none"
+    },
+    {
+      "claim": "Single-model baseline",
+      "tier": "sandbox_execution",
+      "reference": "tests/evidence/cortex-seed-v0.1.6/baseline-transcript-audit.json",
+      "finding": "every reported reply attributed to one frontier model (frontier-model-A) from its agent transcript; 55 baseline and 5 semantic replies first served by another (frontier-model-B) after a mid-collection model switch were re-collected with identical prompts and kept as unused partial transcripts"
+    },
+    {
+      "claim": "Per-geometry means",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/cortex-seed-v0.1.6/README.md",
+      "finding": "claim:association | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1); claim:factual_support | 1.000 (n=5) | 1.000 (n=5) | 1.000 (n=5); claim:intervention | 1.000 (n=5) | 1.000 (n=5) | 1.000 (n=5); claim:prediction | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1); composition | 1.000 (n=2) | 1.000 (n=2) | 1.000 (n=2); estimate | 1.000 (n=6) | 1.000 (n=6) | 1.000 (n=6); formal | 1.000 (n=11) | 0.909 (n=11) | 0.909 (n=11); legal | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1); none | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1); normative_value | 1.000 (n=1) | 0.000 (n=1) | 1.000 (n=1); options | 1.000 (n=5) | 0.600 (n=5) | 0.600 (n=5); semantic | 1.000 (n=3) | 1.000 (n=3) | 1.000 (n=3)"
+    },
+    {
+      "claim": "Baseline replies are tool-free and prompt-exact",
+      "tier": "sandbox_execution",
+      "reference": "tests/evidence/cortex-seed-v0.1.6/baseline-transcript-audit.json",
+      "finding": "168 prompts requested, 168 served, 0 missing; every collected reply audited (one Read of its prompt file plus the structured output); semantic route served_by=transcript, observed {\"model_label_on_receipts\": \"frontier-model-A\", \"prompts_missing\": 0, \"prompts_requested\": 4, \"prompts_served\": 4}"
+    },
+    {
+      "claim": "Four 0.1.5 defects reproduced and fixed; one hard rule ported",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_cortex_defect_fixes.py",
+      "finding": "D1 wrong-version settlement, D2 composition geometry, D3 cap disclosure, D4 expiry without as_of; D5 declared harm raises the consequence class (ported from #143)"
+    },
+    {
+      "claim": "Named Epistemic Finality Rule and typed CapabilityDeficit",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_cortex_finality_deficit.py",
+      "finding": "every epistemic class has exactly one deciding jurisdiction; every receipt cites the rule, per route when composed; abstentions carry a typed CapabilityDeficit that requests formation and authorizes nothing"
+    },
+    {
+      "claim": "Binding to the standing runtime creates no authority",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_cortex_proposer.py",
+      "finding": "runtime ticked with the real proposer; receipts ledgered; forged or authority-claiming receipts refused; no actuator import"
+    },
+    {
+      "claim": "Safeguards resist removal",
+      "tier": "unit_test",
+      "reference": "scripts/ci/check_cortex_mutants.py",
+      "finding": "43 of 43 safeguard-removing mutants caught on 0.1.6 by behavioural tests; freeze-hash checks are deselected in the mutant run so that an edit to frozen code no longer counts as caught by the hash alone"
+    },
+    {
+      "claim": "Pre-run independent review",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_cortex_defect_fixes.py, test_cortex_finality_deficit.py, test_cortex_proposer.py, test_cortex_replay.py",
+      "finding": "three reviewers attacked receipts, replay and authority before the reported run; an independent verifier re-ran each finding; 14 of 17 confirmed, each fixed with a regression test and a mutant; the 42 held-out routed items are unchanged on every scoring field"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Routing value over a strong model",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/cortex-seed-v0.1.6/heldout-results.json#/exit",
+      "finding": "GAIN_ABSENT: gain over always_llm not established (lower bound 0.024); gain over llm_committee not established (lower bound 0.000)"
+    },
+    {
+      "claim": "Suite independence",
+      "tier": "historical_artifact",
+      "reference": "docs/cortex/SEED_EXPERIMENT_REPORT.md",
+      "finding": "self-authored, structured-only; six geometry groups with n>=3"
+    },
+    {
+      "claim": "Real outcomes",
+      "tier": "other",
+      "reference": "cortex/memory.py",
+      "finding": "no real outcome settled; in-memory ledger; causal-memory writer absent"
+    },
+    {
+      "claim": "Development partitions",
+      "tier": "deterministic_fixture",
+      "reference": "tests/evidence/cortex-seed-v0.1.6/smoke-results.json",
+      "finding": "smoke (4 items) replayed with both transcripts: all RUN arms 1.0; not a reported result"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "A main-compatible, consequence-inert Seed Genome whose exit rule can finally resolve, bound to the one place GREG already deliberates, with every competing lineage registered.",
+    "advantages": [
+      {
+        "id": "ADV-1",
+        "statement": "Replay lets the frozen harness measure real baselines",
+        "amplified_value": "every later version can re-run the same transcript; negative results change routing evidence",
+        "reversal_condition": "a transcript produced under different prompts or with tool use would be a simulation, not a baseline"
+      },
+      {
+        "id": "ADV-2",
+        "statement": "Defects fixed with reproductions",
+        "amplified_value": "settlement and composition keys are now trustworthy inputs for learned routing",
+        "reversal_condition": "a fix that changed held-out behaviour silently; checked item for item against 0.1.5"
+      },
+      {
+        "id": "ADV-3",
+        "statement": "Binding through the existing proposer slot",
+        "amplified_value": "Goal Gravity (#160) and future callers get one entry",
+        "reversal_condition": "a downstream evaluator mapping draft.prepare to an executable capability; the adapter must never do this"
+      },
+      {
+        "id": "ADV-4",
+        "statement": "Lineage registry",
+        "amplified_value": "mechanisms from the fourteen lineages that carry #137 are queued, not lost",
+        "reversal_condition": "registry rot if dispositions are not revisited after the #137 decision"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "DIS-1",
+        "statement": "Baseline model is a sibling of the suite's authors",
+        "handling": "observable: recorded in provenance; bounded: next suite externally authored",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "provenance names the model per reply; the next suite is externally authored and served by a model from another vendor family"
+      },
+      {
+        "id": "DIS-2",
+        "statement": "Post hoc tool audit",
+        "handling": "observable: audit file committed; convertible: a tool-less agent type when the runtime supports it",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "the audit file is committed beside the results; a runtime tool restriction replaces it when the agent runtime supports one"
+      },
+      {
+        "id": "DIS-3",
+        "statement": "Cost/latency not comparable",
+        "handling": "bounded: the exit rule's cost and latency criteria are reported as non-discriminating",
+        "severity": "low",
+        "response_type": "governance",
+        "redesigned_response": "the cost and latency criteria are reported as non-discriminating for replayed arms instead of being read as wins"
+      },
+      {
+        "id": "DIS-4",
+        "statement": "No real outcomes",
+        "handling": "accepted with owner: first outcome through the runtime binding is the review trigger",
+        "severity": "high",
+        "response_type": "learning",
+        "redesigned_response": "the first real outcome through the runtime binding is the review trigger; settlement accepts only verified outcomes for a route that ran, once per receipt"
+      }
+    ],
+    "literalization_check": "No component exists because of a metaphor: cortex/organ/genome/seed name ordinary software; biological concepts must compile to mechanism or registration is refused.",
+    "comparisons": {
+      "baseline": "main has no cortex, no geometry routing and no competence ledger",
+      "do_nothing": "thirteen-then-sixteen drafts stay open; the directive stays unexecuted; no evidence either way",
+      "simplest_viable_alternative": "re-label #141; leaves the exit INCONCLUSIVE, four defects live and no caller",
+      "strongest_competing_architecture": "a strong single model, and a committee of it; they are the declared baselines and were run",
+      "reversible_experiment": "this branch: additive, SANDBOXED, consequence-inert; one revert restores main"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Another implementation from scratch",
+        "rejection_reason": "rejected before build",
+        "revival_evidence": "a founder ruling that the converged seed is the wrong substrate, with the reason recorded"
+      },
+      {
+        "name": "Re-label #141 as approved",
+        "rejection_reason": "rejected: directive says build",
+        "revival_evidence": "a founder ruling that 0.1.5 should merge unchanged and the 0.1.6 fixes ride separately"
+      },
+      {
+        "name": "Converge on the #137 stack (#143 bridge)",
+        "rejection_reason": "deferred to the #137 decision; mechanisms queued",
+        "revival_evidence": "a founder decision to merge #137"
+      },
+      {
+        "name": "Do nothing",
+        "rejection_reason": "rejected",
+        "revival_evidence": "evidence that the cortex creates net review burden without measured benefit"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attacked the strengthened design for evaluator capture (the replay could mislabel arms), authority creep through records_provider, freeze drift, and overclaiming in docs.",
+    "new_weaknesses": [
+      {
+        "id": "NW-1",
+        "category": "gaming",
+        "statement": "A transcript could be relabelled as a local-model arm",
+        "resolution": "arm_provenance replaces the disclosure and names the model; a missing provenance field refuses the run",
+        "strengthening_response": "arm_provenance replaces the disclosure and names the model; a missing provenance field refuses the run"
+      },
+      {
+        "id": "NW-2",
+        "category": "other",
+        "statement": "records_provider could inject permission-bearing records",
+        "resolution": "gates accept permission only from provenance-checked origins; the candidate stays internal_write with execution_authority none; the Gate revalidates downstream",
+        "strengthening_response": "gates accept permission only from provenance-checked origins; the candidate stays internal_write with execution_authority none; the Gate revalidates downstream"
+      },
+      {
+        "id": "NW-3",
+        "category": "overfit",
+        "statement": "Ported harm rule after the first 0.1.6 freeze",
+        "resolution": "freeze re-cut before any reported run; the reported run's manifest hash is recorded on the results",
+        "strengthening_response": "freeze re-cut before any reported run; the reported run's manifest hash is recorded on the results"
+      },
+      {
+        "id": "NW-4",
+        "category": "comprehensibility",
+        "statement": "A verified gain could be read as superiority",
+        "resolution": "report and ADR read it narrowly; promotion stays a founder decision",
+        "strengthening_response": "report and ADR read it narrowly; promotion stays a founder decision"
+      },
+      {
+        "id": "NW-5",
+        "category": "dependency",
+        "statement": "The session's serving model changed mid-collection, so one arm mixed two models",
+        "resolution": "replies attributed per reply from agent transcripts; the 55 affected replies re-collected under one model; the earlier ones kept unused",
+        "strengthening_response": "replies attributed per reply from agent transcripts; the 55 affected replies re-collected under one model; the earlier ones kept unused"
+      },
+      {
+        "id": "NW-6",
+        "category": "fragility",
+        "statement": "A transcript missing replies could score baselines as failures and read as a verified gain",
+        "resolution": "found by the pre-run independent review; a replayed arm with any missing reply is NOT_RUN; mutant-checked",
+        "strengthening_response": "found by the pre-run independent review; a replayed arm with any missing reply is NOT_RUN; mutant-checked"
+      }
+    ],
+    "pass_1_downsides_disposition": {
+      "DIS-1": "accepted, owner Alfonso, threshold: externally authored suite",
+      "DIS-2": "accepted, observable",
+      "DIS-3": "bounded",
+      "DIS-4": "accepted with review trigger"
+    },
+    "effect_attacked_separately": "The underlying effect (better answers than a strong single model) is measured once, on one self-authored suite, with verdict GAIN_ABSENT; the safety properties are tested; neither is proof of value in the wild.",
+    "recommendation": "NEEDS_FOUNDER_DECISION",
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "DIS-1",
+        "outcome": "accepted",
+        "rationale": "the baseline model and the suite's authors share a vendor family; disclosed",
+        "owner": "Alfonso",
+        "review_trigger": "an externally authored suite"
+      },
+      {
+        "disadvantage_id": "DIS-2",
+        "outcome": "accepted",
+        "rationale": "observable through the committed audit",
+        "owner": "Kernel cognition maintainers",
+        "review_trigger": "a runtime that can restrict agent tools"
+      },
+      {
+        "disadvantage_id": "DIS-3",
+        "outcome": "resolved",
+        "rationale": "bounded: the criteria are reported as non-discriminating",
+        "owner": "Kernel cognition maintainers",
+        "review_trigger": "metered per-call cost for a replayed arm"
+      },
+      {
+        "disadvantage_id": "DIS-4",
+        "outcome": "accepted",
+        "rationale": "no live outcome exists in a consequence-inert draft",
+        "owner": "Alfonso",
+        "review_trigger": "the first real outcome through the runtime binding"
+      }
+    ],
+    "final_design": "Cortex 0.1.6 on the branch: #141's seed with the verified defects and the pre-run review's findings fixed, the named finality rule, the typed and unverified CapabilityDeficit, the consequence-inert standing-runtime proposer, transcript replay for the declared baselines, and the lineage registry; SANDBOXED; merge only by founder decision",
+    "residual_risks": [
+      {
+        "risk": "The measured advantage is suite-specific",
+        "mitigation": "repeat on an externally authored free-text suite with a model from another vendor family",
+        "owner": "Alfonso",
+        "review_trigger": "the external suite exists"
+      },
+      {
+        "risk": "Routing gain never clears the frozen rule",
+        "mitigation": "kill criterion retires the performance claim; the gate-and-receipt layer remains the fallback",
+        "owner": "Alfonso",
+        "review_trigger": "a second GAIN_ABSENT without a critical-error advantage"
+      }
+    ]
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved with an evidence threshold; blocks promotion, not the draft.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not read the held-out verdict as a claim about frontier models in general.",
+        "rationale": "sibling-model baseline, self-authored structured suite, non-comparable cost and latency",
+        "resolution_threshold": "the same verdict on an externally authored free-text suite with a model from a different vendor family",
+        "evidence_threshold": "the same verdict on an externally authored free-text suite with a model from a different vendor family",
+        "owner": "Alfonso",
+        "review_trigger": "the external free-text suite's frozen run"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": null
+  },
+  "migration_plan": "Merge the draft branch after founder review; no data migration; cortex stays SANDBOXED; every earlier freeze and result kept; #141 can merge first (its commits are ancestors).",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "revert the branch's commits (or the merge)",
+      "the closure registry, manifest entry and KNOWN_CONTRACTS names leave with the revert"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "GAIN_ABSENT against the declared baselines on two frozen versions with no critical-error advantage",
+    "any receipt or candidate found asserting authority",
+    "any cortex import of an actuator"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "Alfonso Lopez",
+  "review_trigger": "Founder review of the draft PR; the #137 decision; the first real outcome settled through the runtime binding."
+}

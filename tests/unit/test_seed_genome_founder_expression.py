@@ -51,3 +51,20 @@ def test_source_declares_no_authority():
     text = SOURCE.read_text(encoding="utf-8")
     assert "creates no runtime authority" in text
     assert "Repetition creates\n  no additional authority" in text or "Repetition creates no additional authority" in text
+
+
+def test_every_protocol_intent_statement_quotes_the_message_verbatim():
+    import json
+    pass_1 = _verbatim(SOURCES / "POLYINTELLIGENCE-CORTEX-REVIEW-PASS-1-2026-09-30.md")
+    pass_2 = _verbatim(SOURCES / "POLYINTELLIGENCE-CORTEX-REVIEW-PASS-2-2026-09-30.md")
+    message = _preface() + pass_1 + "\n\n" + pass_2.rstrip("\n") + "\n"
+    intents = json.loads((ROOT / "docs/collaboration/intents-polyintelligence-seed-genome-20261013.json")
+                         .read_text(encoding="utf-8"))["intents"]
+    assert len(intents) >= 12
+    for record in intents:
+        assert record["statement"] in message, record["intent_id"]
+        assert record["status"] != "implemented" or record["implementation_refs"], record["intent_id"]
+        for path in record["evidence_refs"] + record["implementation_refs"]:
+            assert (ROOT / path.rstrip("/")).exists(), (record["intent_id"], path)
+    literal = next(r for r in intents if "systemic dominance" in r["statement"])
+    assert literal["status"] == "prohibited"

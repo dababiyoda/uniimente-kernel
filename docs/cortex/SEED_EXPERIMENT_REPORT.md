@@ -177,3 +177,37 @@ Each step needs its own evidence; none is implied by this one. The full ladder i
   against the baselines; otherwise regress the experiment to research.
 - If any receipt is ever found asserting authority, or the cortex is found importing an actuator, halt and treat
   it as a constitutional incident.
+
+## 0.1.6 — frozen held-out run with the declared baselines RUN
+
+Freeze `cortex/evaluation/freeze-v0.1.6.json` (sha256:1f736f20273759a72979d916a2fa5395f7673d0291ace9f3b8b628c181722c88) frozen at 2026-10-14T00:22:13Z, run at
+2026-10-14T00:39:15Z. Baselines served from a recorded frontier-model transcript through the unchanged harness
+(`cortex/evaluation/replay.py`); the routed seed's semantic organ served by the same model on the sourced items.
+
+**Exit: `GAIN_ABSENT`.** routed_seed 1.000 [1.000, 1.000], always_llm 0.905 [0.810, 0.976], llm_committee 0.929 [0.833, 1.000], always_abstain 0.577 [0.452, 0.696]; critical errors routed/llm/committee = 0/2/1; unsupported certainty = 0/3/3; exit GAIN_ABSENT.
+
+- gain over always_llm not established (lower bound 0.024)
+- gain over llm_committee not established (lower bound 0.000)
+
+| Geometry | routed_seed | always_llm | llm_committee |
+| --- | --- | --- | --- |
+| claim:association | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1) |
+| claim:factual_support | 1.000 (n=5) | 1.000 (n=5) | 1.000 (n=5) |
+| claim:intervention | 1.000 (n=5) | 1.000 (n=5) | 1.000 (n=5) |
+| claim:prediction | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1) |
+| composition | 1.000 (n=2) | 1.000 (n=2) | 1.000 (n=2) |
+| estimate | 1.000 (n=6) | 1.000 (n=6) | 1.000 (n=6) |
+| formal | 1.000 (n=11) | 0.909 (n=11) | 0.909 (n=11) |
+| legal | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1) |
+| none | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1) |
+| normative_value | 1.000 (n=1) | 0.000 (n=1) | 1.000 (n=1) |
+| options | 1.000 (n=5) | 0.600 (n=5) | 0.600 (n=5) |
+| semantic | 1.000 (n=3) | 1.000 (n=3) | 1.000 (n=3) |
+
+Where the baselines failed: H-F08 [formal]: always_llm recommend (unsupported certainty), llm_committee recommend (unsupported certainty); H-G03 [options]: always_llm abstain, llm_committee recommend (unsupported certainty); H-G04 [options]: always_llm recommend (critical, unsupported certainty, gate violation), llm_committee recommend (critical, unsupported certainty, gate violation); H-N01 [normative_value]: always_llm recommend (critical, unsupported certainty). The routed seed failed no item. Kill criterion: not met: this is the first frozen version with the baselines run, and the routed seed has the critical-error advantage.
+
+Read narrowly: the baseline model is from the same vendor family as the suite's authors; the suite is self-authored and
+structured-only; cost and latency are recorded by the frozen harness as 0.0 USD and Workflow wall-clock for the
+replayed arms, so those two criteria do not discriminate and are not comparable. Evidence, transcripts, audits
+and provenance: `tests/evidence/cortex-seed-v0.1.6/`. Recommendation: `EXPERIMENT`, unpromoted; decision: `NEEDS_FOUNDER_DECISION`
+(`docs/decisions/ADR-20261013-polyintelligence-seed-genome-convergence.md`).

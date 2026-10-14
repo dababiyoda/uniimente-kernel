@@ -27,16 +27,17 @@
     "tests/unit/test_cortex_replay.py (frozen arms from a transcript; missing replies are errors, not guesses; freeze untouched)",
     "tests/unit/test_seed_genome_founder_expression.py (the 2026-10-13 message rebuilds byte for byte)",
     "tests/unit/test_cognition_lineages.py (every lineage registered with a disposition that creates no authority)",
-    "tests/evidence/cortex-seed-v0.1.6/ (frozen held-out run with the declared baselines served from the recorded frontier-model transcript; verdict as computed by the unchanged exit rule)",
+    "tests/evidence/cortex-seed-v0.1.6/ (frozen held-out run with the declared baselines served from the recorded frontier-model transcript; verdict GAIN_ABSENT as computed by the unchanged exit rule; routed 1.000, 0 critical errors; always_llm 0.905, 2; llm_committee 0.929, 1)",
     "scripts/ci/check_cortex_mutants.py 43/43 caught on 0.1.6 by behavioural tests (freeze-hash checks deselected); the full Kernel suite and CI guard scripts green on the branch"
   ],
   "failure_evidence": [
     "No real outcome has settled competence; the CompetenceLedger has only synthetic settlements (learning_checks)",
     "The held-out suite is self-authored and structured-only (42 items, six geometry groups with n>=3); a free-text, externally authored suite does not exist",
-    "The semantic organ has never run against a live local model in any recorded run (DEPENDENCY_UNAVAILABLE in this container)",
+    "The semantic organ has never run against a live local model; in the reported run it was served by a recorded transcript of the baseline model (frontier-model-A)",
     "The baseline transcript was produced by sibling agents of the same frontier model family under an instruction not to use tools; the audit is post hoc (transcript inspection), not a runtime restriction",
     "The fourteen lineages that carry #137 cannot be merged to main until #137 is decided; their mechanisms are queued, not ported",
-    "VEPMC remains 0: nothing here runs on the founder's Chromebook"
+    "VEPMC remains 0: nothing here runs on the founder's Chromebook",
+    "The frozen held-out verdict is GAIN_ABSENT: the routed seed scored 1.000 with no critical error against 0.905 and 0.929, but the paired-gain lower bounds (0.024, 0.000) did not clear the frozen 0.05 threshold on 42 self-authored items"
   ],
   "dependencies": [
     "capabilities.genome (KNOWN_CONTRACTS carries the five cortex contract names), memory.causal.VALIDATION_WEIGHT, provenance.ledger.EvidenceLedger, egregore.runtime.StandingCognitionRuntime",
@@ -58,6 +59,8 @@
     "egregore/cortex_proposer.py",
     "docs/cortex/CONVERGENCE_2026-10-13.md, docs/cortex/COGNITION_LINEAGES.json",
     "docs/collaboration/deliberation-polyintelligence-seed-genome-20261013.json, docs/decisions/ADR-20261013-polyintelligence-seed-genome-convergence.md",
-    "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md"
+    "docs/intent/sources/POLYINTELLIGENCE-SEED-GENOME-FOUNDER-EXPRESSION-2026-10-13.md",
+    "docs/collaboration/intents-polyintelligence-seed-genome-20261013.json (SG-001..SG-012, protocol format, validated)",
+    "docs/cortex/reviews/PRE_RUN_REVIEW_2026-10-14.json"
   ]
 }

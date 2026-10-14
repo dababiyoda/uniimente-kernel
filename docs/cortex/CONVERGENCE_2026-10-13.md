@@ -65,8 +65,11 @@ Another implementation written from scratch was the obvious move and the wrong o
    recorded transcript: a reply is keyed by `sha256(system + NUL + user)`, so it can only serve the exact prompt
    the frozen arm would have sent; a missing reply is an error on that item, never a guess; the model's provenance
    replaces the harness's local-model disclosure on the results. The replies were produced by tool-free
-   frontier-model agents (one fresh context per item/arm/role) and audited post hoc. The held-out result is in
-   `tests/evidence/cortex-seed-v0.1.6/` and `SEED_EXPERIMENT_REPORT.md` § 0.1.6.
+   frontier-model agents (one fresh context per item/arm/role, every reply from one Anthropic frontier model, labelled frontier-model-A) and audited post
+   hoc. Result on the 42 frozen held-out items: routed seed 1.000 with no critical error; always-LLM 0.905 with two;
+   committee 0.929 with one. The frozen rule needs a paired-gain lower bound above 0.05 and found 0.024 and 0.000, so
+   the verdict is `GAIN_ABSENT`; the kill criterion is not met because the seed holds the critical-error advantage.
+   Details: `tests/evidence/cortex-seed-v0.1.6/` and `SEED_EXPERIMENT_REPORT.md` § 0.1.6.
 2. **Four defects in 0.1.5, found by an independent code read and reproduced before being fixed** (regression
    tests in `tests/unit/test_cortex_defect_fixes.py`): wrong-version settlement; composed routes settled under the
    first part's geometry; routes dropped by the composition cap described as "not required"; an expiring mandate
@@ -93,7 +96,8 @@ this branch — additive commits, no activation, revert restores `main`.
 - The held-out suite is self-authored and structured-only; a free-text, externally authored suite is the next
   evidence step (review C1 exit: "router materially outperforms always-LLM baseline on a frozen cross-geometry
   suite").
-- The semantic organ has never run against a live local model in any recorded run.
+- The semantic organ has never run against a live local model; in the reported run it was served by a recorded
+  transcript of the baseline model.
 - The composition cap (two routes) is now disclosed, not lifted; lifting it is 0.1.7 work with its own freeze.
 - Mechanisms from the lineages that carry #137 (one-entry bridge, open-source engine certification, Layer-5 compile
   with mental-model operators, genome admission harness, lawful leverage foundry, resilience projection, second-engine

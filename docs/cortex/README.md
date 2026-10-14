@@ -8,8 +8,10 @@ their output with an independent verifier, and returns a recommendation, abstent
 together with a content-addressed receipt.
 
 **Status:** cortex 0.1.6 · six seed organs `SANDBOXED` · 28 reserved families registered and disabled ·
-0.1.5 held-out result `INCONCLUSIVE` (declared baselines `NOT_RUN`) · 0.1.6 held-out result: see
-[`SEED_EXPERIMENT_REPORT.md`](SEED_EXPERIMENT_REPORT.md) § 0.1.6 · **not promoted**.
+0.1.5 held-out result `INCONCLUSIVE` (declared baselines `NOT_RUN`) · 0.1.6 held-out result `GAIN_ABSENT` with both
+declared baselines run (routed 1.000, no critical error; always-LLM 0.905, two; committee 0.929, one; paired-gain lower
+bounds 0.024 and 0.000 against the frozen 0.05), see [`SEED_EXPERIMENT_REPORT.md`](SEED_EXPERIMENT_REPORT.md) § 0.1.6 and
+[`tests/evidence/cortex-seed-v0.1.6/`](../../tests/evidence/cortex-seed-v0.1.6/README.md) · **not promoted**.
 Convergence with the other cognition lineages and the standing-runtime binding: [`CONVERGENCE_2026-10-13.md`](CONVERGENCE_2026-10-13.md).
 
 Source of requirements: the verbatim build prompt in
@@ -181,7 +183,8 @@ python -m cortex.evaluation.run --partition heldout --out heldout.json
 
 The LLM baselines (`always_llm`, `llm_committee`) need the configured local model (`egregore.local_model`,
 default `qwen3.5:4b` behind an OpenAI-compatible endpoint on loopback, e.g. Ollama). Without it they are reported
-`NOT_RUN` — never simulated — and the exit stays `INCONCLUSIVE`. To run them:
+`NOT_RUN` — never simulated — and the exit stays `INCONCLUSIVE`. A recorded transcript can serve them instead
+(`cortex/evaluation/replay.py`, see § 0.1.6 additions). To run them against a local model:
 
 ```bash
 ollama pull qwen3.5:4b && ollama serve &

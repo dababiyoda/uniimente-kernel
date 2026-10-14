@@ -72,8 +72,10 @@ class _World:
                     "target": f"workspace:{name}", "advances": advances, "rationale": f"write {name}"}
         return {"mission_id": MID, "founder_expression": "closure check for Goal Gravity on the body",
                 "intended_effect": "the watched note stays healthy", "priority": 50,
-                # The ladder holds c only: d (the founder's out-of-cone decision) never blocks the watch.
-                "closure": {"kind": "infinite", "ladder": [["c"]], "cadence_seconds": 86400},
+                # d is on the ladder, so the mission itself runs w2 once the founder approves (a goal may only
+                # ask for a move its mission pursues); while that decision is open a goal's pull still lets the
+                # mission re-observe and repair c in its cone.
+                "closure": {"kind": "infinite", "ladder": [["c"], ["d"]], "cadence_seconds": 86400},
                 "success_checks": [check("c", "c.txt", "ok"), check("d", "d.txt", "shipped")],
                 "strategies": [write("w", "c.txt", "ok", ["c"]), write("w2", "d.txt", "shipped", ["d"])],
                 "light_cone": {"capabilities": ["fs.read", "fs.write"], "targets": ["fs:*", "workspace:c.txt"],

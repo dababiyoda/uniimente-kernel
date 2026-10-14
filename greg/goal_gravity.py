@@ -47,7 +47,7 @@ from greg.authority import PRINCIPAL, AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityManifest
 from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes
 from greg.journal import SOURCE, iso
-from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, strategy_scope
+from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, pursued_checks, strategy_scope
 from provenance.ledger import sha256_json
 
 SCHEMA = "greg-goal-gravity-binding/1"
@@ -445,6 +445,11 @@ def check_goal(facts: FounderFacts, payload: Any, digest_: str, *, signer: str, 
                                f"critique ({m.excluded[scope['action_id']][:120]}); a goal may not ask for it")
         if scope["scope_digest"] in m.rejected_scopes:
             raise MissionError(f"{move.intervention_id}: you already rejected this exact scope")
+        pursued = pursued_checks(m.spec)
+        if not set(scope["strategy"].get("advances", [])) & pursued:
+            raise MissionError(f"{move.intervention_id} names {scope['action_id']}, which advances none of the checks "
+                               f"mission {m.mission_id}'s loop pursues ({', '.join(sorted(pursued))}): the mission "
+                               "would never run it, so your approve could change nothing")
     intent = _intent(spec)
     open_goals = facts.open_goals()
     for gid, other in open_goals.items():
@@ -1254,19 +1259,24 @@ def goal_from_mission(spec: dict, manifests: dict) -> dict:
     metric; the wake condition is the mission id; the ceiling is the mission's light-cone ceiling; the
     only declared moves are the mission's static strategies whose exact scope lies outside its cone
     (these are what the goal may ask about ahead of time). ``manifests`` maps capability id -> manifest
-    (consequence class); strategies on capabilities absent there are left out and listed."""
+    (consequence class); strategies on capabilities absent there, or advancing no check the mission's loop
+    pursues, are left out and listed.
+
+    The wake condition is the mission id: intake that names the mission or its targets wakes the goal on any
+    channel (``BodyRelevanceRouter``), and so does any changed observation of its checks."""
     mid, cone = spec["mission_id"], spec["light_cone"]
     from greg.lightcone import LightCone
     light = LightCone.from_dict(cone)
     ladder = [c for rung in (spec["closure"].get("ladder") or []) for c in rung]
     order = list(dict.fromkeys(ladder + [c["check_id"] for c in spec["success_checks"]]))
     checks = {c["check_id"]: c for c in spec["success_checks"]}
+    pursued = pursued_checks(spec)
     moves, skipped = {}, []
     for s in spec["strategies"]:
         manifest = manifests.get(s.get("capability"))
         if "capability" not in s or s.get("bind") or "$from_action" in json.dumps(s.get("params", {})):
             continue
-        if manifest is None:
+        if manifest is None or not set(s["advances"]) & pursued:   # unregistered, or never run by the mission
             skipped.append(s["action_id"])
             continue
         cost = float(s.get("cost_usd", 0.0))

@@ -305,6 +305,15 @@ class MissionState:
         return [c for c in self.spec["success_checks"] if c["check_id"] in wanted]
 
 
+def pursued_checks(spec: dict) -> set:
+    """The check ids the mission's own loop ever observes and pursues: every rung of an infinite mission's ladder,
+    otherwise every success check. A strategy that advances none of them is never selected, so never run."""
+    ladder = spec["closure"].get("ladder") or []
+    if spec["closure"]["kind"] == "infinite" and ladder:
+        return set().union(*ladder)
+    return {c["check_id"] for c in spec["success_checks"]}
+
+
 def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *, now: datetime) -> dict:
     """The exact Gate scope of one static strategy of mission ``m`` and the reasons it lies outside its cone.
 
@@ -555,11 +564,16 @@ class MissionEngine:
         if scope["scope_digest"] in m.rejected_scopes:
             raise MissionError("the founder already rejected this exact scope")
         # The mission's own selection never picks an excluded or failed strategy (tick: "in m.failed or in
-        # m.excluded"), so it would never ask for one; asking ahead of it must not either.
+        # m.excluded"), nor one that advances no check its loop pursues, so it would never ask for (or run)
+        # one; asking ahead of it must not either: an approve could change nothing.
         if action_id in m.excluded:
             raise MissionError(f"the founder excluded {action_id} by a signed critique: {m.excluded[action_id]}"[:400])
         if action_id in m.failed:
             raise MissionError(f"{action_id} is not selectable now: {m.failed[action_id]}"[:400])
+        pursued = pursued_checks(m.spec)
+        if not set(scope["strategy"].get("advances", [])) & pursued:
+            raise MissionError(f"{action_id} advances {sorted(scope['strategy'].get('advances', []))}, none of which "
+                               f"the mission's loop pursues ({sorted(pursued)}): it would never run it")
         return scope
 
     def ask_refusal(self, mission_id: str, action_id: str, *, now: datetime) -> str | None:

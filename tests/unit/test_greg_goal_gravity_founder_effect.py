@@ -246,6 +246,39 @@ def test_a_founder_narrowing_on_a_completed_goal_is_recorded_and_it_stays_comple
     assert not [r for r in world.rejections() if "completed goal" in r]
 
 
+# -- finding 6: a goal never asks for a move its mission's loop would never run ---------------------------
+
+def test_a_goal_may_not_ask_for_a_move_its_mission_never_runs(world, fast):
+    spec = world.mission_spec()
+    spec["closure"]["ladder"] = [["c"]]                      # d is never observed, so w2 is never selected
+    world.submit("MISSION", spec, "a.json")
+    world.tick()
+    world.submit("GOAL", GOAL(), "b.json")
+    world.tick()
+    assert any("advances none of the checks" in r for r in world.rejections()), world.rejections()
+    assert world.projection()["goals"] == []
+    derived = gg.goal_from_mission(spec, MANIFESTS)
+    assert "w2" in derived["strategies_left_out"]
+    assert [i for n in derived["goal_command"]["goal"]["plan"] for i in n["interventions"]] == []
+    with world.body() as b:
+        with pytest.raises(MissionError, match="would never run it"):
+            b.engine.request_decision(MID, "w2", why="ahead of time", recommendation="approve", now=world.clock.now)
+        assert b.engine.ask_refusal(MID, "w2", now=world.clock.now).startswith("MissionError")
+
+
+def test_the_registered_closure_world_asks_only_for_a_move_its_mission_runs():
+    from closure.gravity_registry import MID as CMID, _World
+    w = _World()
+    w.tick(4)
+    reqs = w.view(lambda b: [e.payload for e in b.journal.replay("decision.requested")])
+    rid = next(r["request_id"] for r in reqs if r["action_id"] == "w2")
+    w.command("DECISION", {"request_id": rid, "answer": "approve", "reason": "ship it"})
+    w.tick(6)
+    actions = w.view(lambda b: [(e.payload["action_id"], e.payload["status"]) for e in b.journal.replay("mission.action")
+                                if e.payload["mission_id"] == CMID])
+    assert ("w2", "DONE") in actions and (w.ws / "d.txt").read_text() == "shipped"
+
+
 # -- missions without goals behave exactly as before ----------------------------------------------------
 
 def test_a_mission_without_a_goal_still_only_waits_on_its_decision(world, fast):

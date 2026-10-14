@@ -23,10 +23,12 @@ implements its reserved mechanism well. Nothing here registers, enables, attache
 from __future__ import annotations
 
 EXECUTED_ON_GREG = {
-    "cortex.graph.search": (("cognition.graph", "cognition.search", "cognition.search_astar"),
-                            "Dijkstra shortest path (networkx) and weighted-grid A*"),
-    "cortex.control.feedback": (("cognition.control", "cognition.basal_pid", "cognition.control_mpc"),
-                                "clamped PID step, SIMC PI tuning and box-constrained linear MPC"),
+    "cortex.graph.search": (("cognition.graph", "cognition.search", "cognition.search_astar", "cognition.grid_dijkstra"),
+                            "Dijkstra shortest path (networkx), weighted-grid A* and SciPy csgraph grid Dijkstra"),
+    "cortex.control.feedback": (("cognition.control", "cognition.basal_pid", "cognition.control_mpc",
+                                 "cognition.pid_simopt"),
+                                "clamped PID step, SIMC PI tuning, simulation-optimised PI tuning and box-constrained "
+                                "linear MPC"),
     "cortex.sequential.bandit": (("cognition.basal_bandit", "cognition.sequential"),
                                  "Thompson sampling and finite-horizon MDP backward induction"),
     "cortex.pattern.anomaly": (("cognition.pattern",), "population z-score anomalies (descriptive only)"),
@@ -34,8 +36,12 @@ EXECUTED_ON_GREG = {
                                 "cognition.info_experiment"),
                                "scenario value of information, beta-binomial preposterior analysis and greedy "
                                "expected-information-gain test selection"),
-    "cortex.game.mechanism": (("cognition.game", "cognition.game_minimax", "cognition.mech_vcg"),
-                              "zero-sum matrix games by LP and the VCG multi-unit mechanism"),
+    "cortex.game.mechanism": (("cognition.game", "cognition.game_minimax", "cognition.game_lp_dual",
+                               "cognition.bimatrix_nash", "cognition.mech_vcg", "cognition.mechanism_check"),
+                              "zero-sum matrix games by LP (with a duality certificate), general-sum bimatrix Nash "
+                              "equilibria by support enumeration, the VCG multi-unit mechanism, and exhaustive "
+                              "dominant-strategy incentive-compatibility and participation checks of declared direct "
+                              "mechanisms"),
     "cortex.human.panel": (("cognition.human",),
                            "a typed route to authenticated human judgment: the family records the panel and "
                            "abstains HUMAN_REVIEW_REQUIRED; it never adjudicates"),
@@ -72,8 +78,9 @@ RESERVED_WITHOUT_EXECUTOR = {
     "cortex.probabilistic.bayes": "closed-form conjugate updates only (cognition.probabilistic, "
                                   "cognition.bayes_interval, cognition.basal_bayes_filter); no probabilistic-"
                                   "programming executor",
-    "cortex.simulation.twin": "cognition.simulation is an uncalibrated iid Bernoulli Monte Carlo; no twin of a "
-                              "strategic or causal system exists",
+    "cortex.simulation.twin": "cognition.simulation is an uncalibrated iid Bernoulli Monte Carlo and "
+                              "cognition.mc_expectation estimates expectations of declared distributions; no twin of "
+                              "a strategic or causal system exists",
     "cortex.collective.swarm_pso": "no particle swarm: cognition.collective_flock is local collision-avoidance "
                                    "rules and cognition.evolutionary is differential evolution",
     "cortex.collective.immune": "partial precursor only: cognition.collective_immune is negative-selection "

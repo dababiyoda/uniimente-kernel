@@ -426,21 +426,166 @@ def test_the_odd_set_dual_refuses_an_uncovered_edge_and_a_lighter_matching_is_re
     ends, weights = [(0, 1), (1, 2), (0, 2), (2, 3)], [5, 5, 5, 1]
     member = [[0], [0], [0], []]
     sets = [frozenset((0, 1, 2))]
-    # y = 0 and z = 5 on {a, b, c} covers the triangle but not c-d: no bound is claimed
-    assert graph_or._exact_dual_bound(ends, weights, member, sets, 4, [0, 0, 0, 0, -5]) is None
-    # y_c = 1 repairs it: a checked bound of 5 * 1 + 1 = 6, the optimum (a-b plus c-d)
+    # y = 0 and z = 5 on {a, b, c} covers the triangle but not c-d: the exact check claims no bound
+    assert graph_or._checked_dual_objective(ends, weights, sets, 4, [0, 0, 0, 0], [5]) is None
+    # from that float dual the bound is built feasible: y_c is raised by c-d's shortfall of 1, so 5 * 1 + 1 = 6,
+    # the optimum (a-b plus c-d); y_c = 1 in the float dual gives the same checked bound
+    assert graph_or._exact_dual_bound(ends, weights, member, sets, 4, [0, 0, 0, 0, -5]) == 6
     assert graph_or._exact_dual_bound(ends, weights, member, sets, 4, [0, 0, -1, 0, -5]) == 6
     assert graph_or._matching_odd_set_dual(edges) == 6
     assert graph_or._matching_odd_set_dual(edges, lower=5) == 6                 # a lighter claim cannot close it
 
 
-def test_when_the_cutting_planes_stall_the_verifier_falls_back_to_branch_and_cut_and_says_so(monkeypatch):
+def _no_float_report(*args, **kwargs):
+    raise AssertionError("optimality rested on a floating-point solver's report")
+
+
+def test_when_the_cutting_planes_do_not_close_optimality_is_not_established_and_highs_is_never_consulted(
+        monkeypatch):
+    import scipy.optimize
     data, _, out = solved("graph_matching", 1)
-    monkeypatch.setattr(graph_or, "MATCH_CUT_ROUNDS", 0)
-    checks = graph_or.matching_verify(data, out["output"], out["certificate"])
-    assert "optimal_by_odd_set_lp_dual" not in checks and checks["optimal_by_highs_branch_and_cut"] is True
     lighter, _ = _corrupt("graph_matching", data, out)
-    assert graph_or.matching_verify(data, lighter, out["certificate"])["optimal_by_highs_branch_and_cut"] is False
+    monkeypatch.setattr(scipy.optimize, "milp", _no_float_report)
+    monkeypatch.setattr(graph_or, "_matching_milp", _no_float_report)
+    monkeypatch.setattr(graph_or, "MATCH_CUT_ROUNDS", 0)
+    for answer in (out["output"], lighter):                 # neither certified nor refuted: not within bounds
+        checks = graph_or.matching_verify(data, answer, out["certificate"])
+        assert checks["independent_check_within_bounds"] is False
+        assert not any(k.startswith("optimal_by_") for k in checks)
+    with pytest.raises(GenomeError, match="not established"):
+        graph_or.matching_instance(1)                       # a benchmark truth is never left uncertified
+
+
+def _regression_graph(name):
+    import pathlib
+    path = pathlib.Path(__file__).resolve().parents[1] / "fixtures" / "graph_matching_highs_regressions.json"
+    record = json.loads(path.read_text())[name]
+    return {"weighted_edges": record["weighted_edges"]}, record
+
+
+def test_a_lighter_matching_that_highs_reports_optimal_is_refuted_and_the_blossom_answer_is_certified(monkeypatch):
+    """Review seed 3248 (71 vertices, 363 edges, weights 0-3 or near 10^6): HiGHS branch-and-cut reported its
+    incumbent, one unit lighter than the optimum, as optimal, and the verifier that trusted that report certified
+    the lighter matching and refuted the blossom answer."""
+    import scipy.optimize
+    data, record = _regression_graph("seed_3248_mixed")
+    edges = graph_or._matching_graph(data)
+    assert graph_or._two_colouring(edges) is None and len(graph_or._vertices(edges)) <= graph_or.MATCH_NATIVE_VERTICES
+    lighter = {"matching": record["highs_incumbent"], "weight": record["highs_incumbent_weight"]}
+    assert graph_or._matching_weight(edges, lighter["matching"]) == record["optimum"] - 1
+    out = graph_or.matching_solve(data, BUDGET)
+    assert out["output"]["weight"] == record["optimum"] == record["cpsat_weight"]
+    monkeypatch.setattr(scipy.optimize, "milp", _no_float_report)
+    right = graph_or.matching_verify(data, out["output"], out["certificate"])
+    assert all(right.values()) and right["optimal_by_odd_set_lp_dual"] is True, right
+    certificate = dict(out["certificate"], matched_pairs=len(lighter["matching"]))
+    wrong = graph_or.matching_verify(data, lighter, certificate)
+    assert wrong["certificate_counts_recomputed"] and wrong["optimal_by_odd_set_lp_dual"] is False, wrong
+    assert graph_or.matching_optimum(edges) == (record["optimum"], "odd_set_lp_dual")    # closes unhinted too
+
+
+def test_a_right_answer_with_weights_near_a_million_is_not_refuted():
+    """Review seed 3456 (65 vertices, 398 edges, weights 999000-1000000): HiGHS's correct objective carried
+    1.15e-6 of float error, an absolute 1e-6 test threw it away and the blossom answer was refuted."""
+    data, record = _regression_graph("seed_3456_big")
+    out = graph_or.matching_solve(data, BUDGET)
+    assert out["output"]["weight"] == record["optimum"] == record["cpsat_weight"]
+    checks = graph_or.matching_verify(data, out["output"], out["certificate"])
+    assert all(checks.values()) and checks["optimal_by_odd_set_lp_dual"] is True, checks
+
+
+def test_the_highs_cross_check_weighs_its_solution_in_integers_without_an_absolute_objective_tolerance(
+        monkeypatch):
+    import types
+
+    import numpy as np
+    import scipy.optimize
+    data, record = _regression_graph("seed_3456_big")
+    edges = graph_or._matching_graph(data)
+    out = graph_or.matching_solve(data, BUDGET)
+    chosen = {frozenset(p) for p in out["output"]["matching"]}
+    x = np.array([1.0 if frozenset((u, v)) in chosen else 0.0 for u, v, _ in edges])
+    # HiGHS's own report on this graph: status 0 and an objective 1.15e-6 away from the integer weight
+    report = types.SimpleNamespace(status=0, x=x, fun=-(record["optimum"] + 1.15e-6))
+    monkeypatch.setattr(scipy.optimize, "milp", lambda *args, **kwargs: report)
+    assert graph_or._matching_milp(edges) == record["optimum"]
+    report.x = np.ones(len(edges))                          # not a matching: no value is reported
+    assert graph_or._matching_milp(edges) is None
+
+
+def _review_graph(seed, weight):
+    """The review's random general graph: 17-80 vertices, n to min(400, n(n-1)/2) edges, review seeds only."""
+    assert 3000 <= seed < 4000
+    r = random.Random(seed)
+    n = r.randint(17, 80)
+    m = r.randint(n, min(400, n * (n - 1) // 2))
+    seen, edges = set(), []
+    while len(edges) < m:
+        i, j = r.sample(range(n), 2)
+        if frozenset((i, j)) not in seen:
+            seen.add(frozenset((i, j)))
+            edges.append([f"v{i}", f"v{j}", weight(r)])
+    return graph_or._matching_graph({"weighted_edges": edges})
+
+
+@pytest.mark.parametrize("seed, weight", [
+    (3413, lambda r: r.choice((1, 1_000_000))),            # two levels: many equally good fractional optima
+    (3441, lambda r: r.randint(999_000, 1_000_000)),
+    (3248, lambda r: r.choice((r.randint(0, 3), r.randint(999_990, 1_000_000)))),
+    (3005, lambda r: 1)])                                   # unit weights: maximum cardinality
+def test_the_checked_odd_set_dual_closes_on_degenerate_and_large_weights(seed, weight):
+    import networkx as nx
+    edges = _review_graph(seed, weight)
+    g = nx.Graph()
+    g.add_weighted_edges_from(edges)
+    blossom = sum(g[u][v]["weight"] for u, v in nx.max_weight_matching(g))
+    assert graph_or._two_colouring(edges) is None
+    assert graph_or._matching_odd_set_dual(edges, lower=blossom) == blossom
+    assert graph_or._matching_odd_set_dual(edges) == blossom
+    assert graph_or._matching_odd_set_dual(edges, lower=blossom - 1) == blossom      # a lighter claim is caught
+
+
+def _cut(cap, side):
+    return sum(c for u in side for v, c in cap[u].items() if v not in side)
+
+
+@pytest.mark.parametrize("seed", range(3400, 3440))
+def test_gomory_hu_tree_and_padberg_rao_separation_match_brute_force(seed):
+    import itertools
+    r = random.Random(seed)
+    n = r.randint(3, 9)
+    cap = {i: {} for i in range(n)}
+    for i in range(n):
+        for j in range(i + 1, n):
+            if r.random() < 0.5:
+                cap[i][j] = cap[j][i] = r.choice((0.5, 1.0, 0.25, r.random()))
+    parent, value = graph_or._gomory_hu(cap, n)
+    for i in range(1, n):                       # each tree edge's fundamental cut is a minimum i-parent cut
+        subtree, stack = set(), [i]
+        while stack:
+            a = stack.pop()
+            subtree.add(a)
+            stack.extend(k for k in range(1, n) if parent[k] == a)
+        others = [v for v in range(n) if v not in (i, parent[i])]
+        best = min(_cut(cap, set(c) | {i}) for k in range(len(others) + 1) for c in itertools.combinations(others, k))
+        assert math.isclose(_cut(cap, subtree), value[i], abs_tol=1e-9) and math.isclose(best, value[i], abs_tol=1e-9)
+    # separation on a point of the degree polytope finds a violated odd set exactly when one exists
+    n = r.randint(3, 11)
+    ends = [(i, j) for i in range(n) for j in range(i + 1, n) if r.random() < 0.45] or [(0, 1)]
+    x = [r.choice((0.0, 0.5, 1.0, r.random())) for _ in ends]
+    degree = [0.0] * n
+    for k, (i, j) in enumerate(ends):
+        degree[i] += x[k]
+        degree[j] += x[k]
+    x = [v / max(1.0, degree[i], degree[j]) for v, (i, j) in zip(x, ends)]
+
+    def mass(s):
+        return sum(v for v, (i, j) in zip(x, ends) if i in s and j in s)
+    violated = [s for k in range(3, n + 1, 2) for s in itertools.combinations(range(n), k)
+                if mass(set(s)) > (k - 1) / 2 + 1e-6]
+    found = graph_or._violated_odd_sets(ends, x, n)
+    assert all(len(s) % 2 and mass(s) > (len(s) - 1) / 2 for s in found)
+    assert bool(found) == bool(violated)
 
 
 @pytest.mark.parametrize("seed", range(3100, 3110))
@@ -467,10 +612,39 @@ def test_critical_path_three_methods_agree(seed):
 
 
 @pytest.mark.parametrize("family", FAMILIES)
-@pytest.mark.parametrize("seed", (0, 1, 2))
+@pytest.mark.parametrize("seed", range(10))
 def test_competitors_are_exact_on_dev_seeds(family, seed):
     data, truth = dev(family, seed)
     assert item(family).score(data, truth, item(family).competitor(data))["category"] == "correct"
+
+
+def test_the_critical_path_competitor_keeps_a_zero_duration_final_milestone():
+    data = {"activities": [{"id": "build", "duration": 5}, {"id": "handover", "duration": 0, "after": ["build"]}]}
+    truth = {"makespan": 5, "earliest_start": {"build": 0, "handover": 5}, "total_float": {"build": 0, "handover": 0}}
+    out = graph_or.cpm_networkx(data)
+    assert out == {"makespan": 5, "critical_path": ["build", "handover"]}
+    assert graph_or.cpm_score(data, truth, out)["category"] == "correct"
+    assert graph_or.cpm_networkx({"activities": [{"id": "only", "duration": 0}]})["critical_path"] == ["only"]
+
+
+def test_the_critical_path_competitor_is_exact_on_review_seeds():
+    wrong = []
+    for seed in range(3000, 3200):              # includes 3020, 3026, 3070 and 3124, which end in a milestone
+        data, truth = item("critical_path").instance(seed)
+        if item("critical_path").score(data, truth, graph_or.cpm_networkx(data))["category"] != "correct":
+            wrong.append(seed)
+    assert wrong == []
+
+
+def test_the_matching_benchmark_suite_states_the_sizes_its_generator_produces():
+    import re
+    suite = item("graph_matching").genome.benchmark_suite
+    most = int(re.search(r"at most (\d+) vertices", suite).group(1))
+    low, high = map(int, re.search(r"\((\d+)-(\d+) vertices on development", suite).groups())
+    sizes = {seed: len(graph_or._vertices(graph_or._matching_graph(item("graph_matching").instance(seed)[0])))
+             for seed in (*range(10), 3750, 3209)}          # 3750: 18 vertices (bipartite); 3209: 66 (odd clusters)
+    assert sizes[3750] == low == 18 and sizes[3209] == high == most == 66
+    assert all(low <= v <= high for v in sizes.values())
 
 
 def test_rectangular_assignment_competitor_routes_through_min_cost_flow():

@@ -34,6 +34,21 @@
    "sha256_after": "732607ba97130fc9a95d842ada22b276138151884dda8434219e070ae482ef61"
   }
  ],
+ "evidence_register": {
+  "status": "UNARMED_ON_CANONICAL_PATHS",
+  "statement": "The #21 refusal of unknown or stale evidence runs only in a ConsequenceGate constructed with evidence=<register>. No production construction passes one, so on every canonical path (GREG AuthorityOffice, closure registries, egregore sandboxes and missions, foundry kernel_stack) evidence refs are still opaque digests checked for presence only, exactly as on 4b0de6a. The hard rule is unarmed there until a register is wired; this record claims no stale-evidence protection for those paths.",
+  "armed_at": [],
+  "unarmed_constructions": [
+   "closure/kernel_registry.py",
+   "closure/commercial_registry.py",
+   "greg/authority.py",
+   "egregore/goal_chase_sandbox.py",
+   "egregore/local_mission.py",
+   "foundry/systems/kernel_stack.py"
+  ],
+  "content_addressed_refs": "A ref of the form sha256:<64 hex> (the form every in-repo producer emits: adapters/daleobanks_opportunity.py, greg/authority.py command digests, closure probes) resolves to the one register packet whose raw_content_hash it is; none, or several different packets, refuses (policy/engine.py evidence_freshness_reasons). A packet-id ref still must equal the packet's packet_id. Relative to a Gate without a register this still refuses more and authorizes nothing new.",
+  "to_arm": "Give the canonical Gate a register of contracts/evidence.schema.json packets whose raw_content_hash covers the refs its producers emit (GREG's command digest needs a packet or an explicit typed exemption), then list the construction in armed_at in the same commit; tests/unit/test_consequence_gate.py::test_the_record_lists_every_gate_that_holds_an_evidence_register checks the list against the code."
+ },
  "direction": "subtractive only: every change refuses more and authorizes nothing new",
  "why_the_pin_is_left": [
   "evolution/repair/subjects.py: subject bindings are reviewed source commitments, not fingerprints measured from running code; tests/unit/test_shared_compatibility.py::test_changed_source_fails_instead_of_learning_a_new_fingerprint",

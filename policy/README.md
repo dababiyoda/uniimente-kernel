@@ -36,10 +36,20 @@ Proposal → identity → legal principal → evidence → policy
 - expired grant / revoked grant at commit → fail closed
 - unknown or stale evidence → fail closed at evaluation and again at commit
   when the Gate is built with an `evidence` register of
-  `contracts/evidence.schema.json` packets: a ref must resolve to a
-  contract-valid packet, and a packet is stale at the earlier of its optional
-  `fresh_until` and `captured_at` + `EVIDENCE_MAX_AGE[consequence class]` (#21).
+  `contracts/evidence.schema.json` packets: a ref must resolve to one
+  contract-valid packet, either by packet id or, for a `sha256:<64 hex>`
+  content address (the form every in-repo producer emits), by the packet's
+  `raw_content_hash` (none, or several different packets, refuses); a packet is
+  stale at the earlier of its optional `fresh_until` and `captured_at` +
+  `EVIDENCE_MAX_AGE[consequence class]` (#21).
   Without a register, evidence refs are opaque digests checked for presence only.
+  **This rule is unarmed on every canonical path today**: no production
+  `ConsequenceGate` construction passes `evidence=` (GREG's AuthorityOffice,
+  the closure registries, the egregore sandboxes and missions, foundry
+  kernel_stack), so those paths have no stale-evidence protection until a
+  register is wired. `docs/decisions/SR002-GATE-HARDENING-01.json`
+  (`evidence_register.armed_at`) lists every armed construction, and a test
+  holds that list to the code.
 - effect mismatch at commit → hard refusal + incident on the ledger
 - consequence class (or any authority-relevant field) changed between
   admission and commit, or REQUIRE_HUMAN at commit without a matching

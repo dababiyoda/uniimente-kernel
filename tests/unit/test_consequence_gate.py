@@ -501,6 +501,103 @@ def test_fresh_until_is_optional_in_the_evidence_contract():
         jsonschema.validate(_packet(fresh_until="tomorrow"), schema, format_checker=checker)
 
 
+
+# ---------- #21 follow-up: content-addressed refs, and an honest record of where the rule is armed ----------
+# Regression review of 7bd304a (secscratch attacks/test_review_gate_legit.py): every in-repo producer of
+# evidence_refs emits 'sha256:<hex>' content addresses, which a register could never resolve (packet_id is
+# a uuid), so wiring a register would have refused all current traffic.
+
+def _content_address(text):
+    from adapters.daleobanks_opportunity import _sha256       # a real producer's ref format
+    return _sha256(text)
+
+
+def test_a_content_addressed_ref_resolves_to_the_packet_holding_that_raw_content(stack):
+    ref = _content_address("https://example.com/report")
+    packet = _packet(raw_content_hash=ref)
+    gate, _ = _evidence_gate(stack, packet)
+    rec = authorized_run(gate, make_proposal(stack[3].passport_id, evidence_refs=[ref]), executor=GOOD)
+    assert rec.state == "recorded", rec.refusal_reasons
+
+
+def test_a_content_addressed_ref_to_stale_evidence_is_refused(stack):
+    ref = _content_address("https://example.com/old-report")
+    gate, _ = _evidence_gate(stack, _packet(raw_content_hash=ref, captured_ago=timedelta(days=8)))
+    rec = authorized_run(gate, make_proposal(stack[3].passport_id, evidence_refs=[ref]), executor=GOOD)
+    assert rec.state == "refused" and any("stale" in r for r in rec.refusal_reasons)
+
+
+def test_a_content_address_held_by_two_different_packets_fails_closed(stack):
+    ref = _content_address("https://example.com/report")
+    fresh, stale = _packet(raw_content_hash=ref), _packet(raw_content_hash=ref, captured_ago=timedelta(days=30))
+    gate, _ = _evidence_gate(stack, fresh, stale)
+    calls = []
+    rec = authorized_run(gate, make_proposal(stack[3].passport_id, evidence_refs=[ref]),
+                         executor=lambda p: calls.append(p) or GOOD(p))
+    assert rec.state == "refused" and calls == []
+    assert any("2 different packets" in r for r in rec.refusal_reasons)
+
+
+def test_one_packet_filed_under_its_id_and_its_content_address_is_one_packet(stack):
+    ref = _content_address("https://example.com/report")
+    packet = _packet(raw_content_hash=ref)
+    gate, register = _evidence_gate(stack, packet)
+    register[ref] = dict(packet)
+    rec = authorized_run(gate, make_proposal(stack[3].passport_id, evidence_refs=[ref]), executor=GOOD)
+    assert rec.state == "recorded", rec.refusal_reasons
+
+
+def test_a_register_key_spelled_as_a_content_address_does_not_alias_other_content(stack):
+    ref = _content_address("https://example.com/report")
+    other = _packet()                                          # raw_content_hash is not ref
+    gate, register = _evidence_gate(stack)
+    register[ref] = other
+    rec = authorized_run(gate, make_proposal(stack[3].passport_id, evidence_refs=[ref]), executor=GOOD)
+    assert rec.state == "refused" and any("unknown evidence id" in r for r in rec.refusal_reasons)
+
+
+def test_a_content_addressed_packet_must_still_be_contract_valid(stack):
+    ref = _content_address("https://example.com/report")
+    gate, register = _evidence_gate(stack)
+    register["x"] = {**_packet(raw_content_hash=ref), "packet_id": ref}     # the reviewer's shape: not a uuid
+    rec = authorized_run(gate, make_proposal(stack[3].passport_id, evidence_refs=[ref]), executor=GOOD)
+    assert rec.state == "refused" and any("not a valid evidence packet" in r for r in rec.refusal_reasons)
+
+
+def _gate_constructions():
+    """Every ConsequenceGate(...) call outside the tests: (file, keyword names)."""
+    import ast
+    from pathlib import Path
+    found = []
+    for path in Path(ROOT).rglob("*.py"):
+        rel = path.relative_to(ROOT).as_posix()
+        if rel.startswith(("tests/", ".git/")) or "/tests/" in rel or "/." in rel:
+            continue
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call) and \
+                    getattr(node.func, "id", getattr(node.func, "attr", None)) == "ConsequenceGate":
+                found.append((rel, {k.arg for k in node.keywords}))
+    return found
+
+
+def test_the_record_lists_every_gate_that_holds_an_evidence_register():
+    """The decision record says where the #21 rule is armed; this holds it to the code, both ways."""
+    import json
+    record = json.load(open(os.path.join(ROOT, "docs", "decisions", "SR002-GATE-HARDENING-01.json")))
+    register = record["evidence_register"]
+    sites = _gate_constructions()
+    assert sites, "no ConsequenceGate construction found"
+    armed = sorted({rel for rel, keywords in sites if "evidence" in keywords or None in keywords})
+    assert armed == sorted(register["armed_at"])
+    unarmed = sorted({rel for rel, keywords in sites} - set(armed))
+    assert unarmed == sorted(register["unarmed_constructions"])
+    assert (register["status"] == "UNARMED_ON_CANONICAL_PATHS") == (not armed)
+
+
 # ---------- #12: a child grant is a strict subset of its parent ----------
 # Re-expressed from refs/remotes/pr/12:sdk-python/tests/test_capability.py test_child_grant_must_be_subset
 # and test_child_grant_subset_ok, retargeted at the one GrantIssuer.

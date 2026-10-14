@@ -12,6 +12,7 @@ terminal for the proposal; it never "continues with warnings".
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -53,6 +54,9 @@ EVIDENCE_MAX_AGE = {
 }
 # A packet stamped later than this past the evaluator's clock is ambiguous, so refused.
 EVIDENCE_CLOCK_SKEW = timedelta(minutes=2)
+# A content address, the form every in-repo producer of Proposal.evidence_refs emits
+# (adapters/daleobanks_opportunity.py, greg/authority.py command digests, closure probes).
+CONTENT_ADDRESS = re.compile(r"sha256:[0-9a-f]{64}")
 
 
 @lru_cache(maxsize=1)
@@ -82,17 +86,34 @@ def evidence_freshness_reasons(refs: list[str], register: Mapping[str, dict], co
     """Resolve every evidence ref in the register; unknown or stale evidence refuses.
 
     Mechanism of PR #21 kernel/gate/revalidate.py check_evidence_freshness, re-expressed
-    against the canonical evidence contract. Ambiguity fails closed: an id the register
-    does not hold, a packet that does not validate against contracts/evidence.schema.json
-    or whose packet_id differs from the ref, a timestamp without a timezone, a packet
-    captured in the future, or a class with no declared maximum age. A packet is stale at
-    min(captured_at + EVIDENCE_MAX_AGE[class], fresh_until).
+    against the canonical evidence contract. A ref resolves one of two ways: a packet id
+    (the register's key, equal to the packet's packet_id), or a content address
+    ``sha256:<64 hex>``, which resolves to the one packet in the register whose
+    raw_content_hash it is (the key it is filed under does not matter). Ambiguity fails
+    closed: an id the register does not hold, a content address no packet or several
+    different packets hold, a packet that does not validate against
+    contracts/evidence.schema.json or whose packet_id differs from an id ref, a timestamp
+    without a timezone, a packet captured in the future, or a class with no declared
+    maximum age. A packet is stale at min(captured_at + EVIDENCE_MAX_AGE[class], fresh_until).
     """
     reasons: list[str] = []
     max_age = EVIDENCE_MAX_AGE.get(consequence_class)
     for ref in refs:
+        content_addressed = isinstance(ref, str) and CONTENT_ADDRESS.fullmatch(ref) is not None
         try:
-            packet = register.get(ref)
+            if content_addressed:
+                holders: list = []
+                for candidate in register.values():
+                    if isinstance(candidate, Mapping) and candidate.get("raw_content_hash") == ref \
+                            and not any(candidate == held for held in holders):
+                        holders.append(candidate)
+                if len(holders) > 1:
+                    reasons.append(f"evidence {ref!r} is the raw content of {len(holders)} different "
+                                   "packets; ambiguity fails closed")
+                    continue
+                packet = holders[0] if holders else None
+            else:
+                packet = register.get(ref)
         except Exception as exc:  # a register that cannot answer is not evidence
             reasons.append(f"evidence {ref!r} could not be resolved: {type(exc).__name__}")
             continue
@@ -103,7 +124,7 @@ def evidence_freshness_reasons(refs: list[str], register: Mapping[str, dict], co
             errors = sorted(_evidence_contract().iter_errors(packet), key=lambda e: str(list(e.path)))
             if errors:
                 raise ValueError(f"evidence contract: {errors[0].message}")
-            if packet["packet_id"] != ref:
+            if not content_addressed and packet["packet_id"] != ref:
                 raise ValueError("packet_id does not match the reference")
             captured = _instant(packet["captured_at"])
             deadline = captured + max_age if max_age is not None else captured
@@ -165,7 +186,8 @@ def evaluate(compiled: CompiledConstitution, proposal: Proposal,
     floors in simulation; production floors change only by ratified policy.
 
     evidence: optional register of evidence packets by packet_id. When given,
-    every evidence ref must resolve to a fresh, contract-valid packet (#21);
+    every evidence ref (a packet id, or a sha256 content address matched against
+    raw_content_hash) must resolve to one fresh, contract-valid packet (#21);
     without it refs are opaque digests and only their presence is checked.
     """
     now = now or datetime.now(timezone.utc)

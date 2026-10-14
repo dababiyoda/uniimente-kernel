@@ -8,6 +8,19 @@ the inbox is a command, and nothing here writes to the inbox or grants scope.
 Instruction-shaped text is flagged and quarantined from any planner that would
 otherwise quote it as guidance. The flag is a heuristic aid; the guarantee is
 structural (the authority plane accepts only signed founder commands).
+
+Patterns are matched on what a reader sees, not on the raw bytes: invisible
+characters (zero-width, bidi embeddings/overrides/isolates, word joiners and
+invisible operators, BOM, soft hyphen, C0 controls) are removed and the text is
+NFKC-normalised first, so "ign<U+200B>ore previous instructions" or a fullwidth
+spelling cannot slip past. Their mere presence is itself a flag, as is a line
+that opens with a chat role marker ("system:"). Legitimate joiners (emoji
+sequences, ZWNJ in Persian or Indic text) are therefore quarantined too: such an
+item is retained and flagged, never deleted, but does not count as mission
+evidence. The stored content and its content_sha256 are always of the original.
+Mechanism from PR #13 sdk-python/uniimente_kernel/prompt_firewall.py
+(_INVISIBLE_RE, _ROLE_MARKER_RE, sanitize, scan); GREG's outbound ask screen
+(greg/asks.py) uses the same character set.
 """
 from __future__ import annotations
 
@@ -28,9 +41,28 @@ INSTRUCTION_PATTERNS = [
 _COMPILED = [re.compile(p, re.IGNORECASE) for p in INSTRUCTION_PATTERNS]
 MAX_RETAINED = 8000
 
+# Code points whose only effect in external text is to hide from a human reader. Tab, newline and
+# carriage return are kept; every other C0 control is invisible.
+_INVISIBLE_RANGES = ((0x00, 0x08), (0x0B, 0x0C), (0x0E, 0x1F), (0xAD, 0xAD), (0x200B, 0x200F),
+                     (0x202A, 0x202E), (0x2060, 0x2064), (0x2066, 0x2069), (0xFEFF, 0xFEFF))
+INVISIBLE = frozenset(cp for low, high in _INVISIBLE_RANGES for cp in range(low, high + 1))
+_DROP_INVISIBLE = dict.fromkeys(INVISIBLE)
+_ROLE_MARKER = re.compile(r"(?im)^\s*(system|assistant|developer|tool)\s*:")
+
+
+def visible(text: str) -> str:
+    """What a reader sees: invisible characters removed, NFKC-normalised (and removed again after)."""
+    return unicodedata.normalize("NFKC", text.translate(_DROP_INVISIBLE)).translate(_DROP_INVISIBLE)
+
 
 def instruction_shaped(text: str) -> list[str]:
-    return [p.pattern for p in _COMPILED if p.search(text)]
+    seen = visible(text)
+    flags = [p.pattern for p in _COMPILED if p.search(seen)]
+    if any(ord(ch) in INVISIBLE for ch in text):
+        flags.append("invisible-characters")
+    if _ROLE_MARKER.search(seen):
+        flags.append("role-marker")
+    return flags
 
 
 def ingest(journal: Journal, *, source: str, content: str, channel: str) -> dict:

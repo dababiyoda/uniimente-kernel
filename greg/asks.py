@@ -36,6 +36,7 @@ from __future__ import annotations
 import re
 import unicodedata
 
+from greg.dataplane import INVISIBLE
 from greg.journal import Journal
 from provenance.ledger import sha256_json
 
@@ -68,7 +69,8 @@ RESOURCE_FIELDS = ("resource", "evidence", "options", "expected_effect", "uncert
 PROSE_FIELDS = ("why_now", "recommendation", "consequence_of_no_response", "expected_effect", "uncertainty",
                 "argued_from")
 NO_COST = "none"      # an option whose cost starts with this needs no money, access, hardware or people
-_INVISIBLE = dict.fromkeys(map(ord, "\u00ad\u200b\u200c\u200d\u200e\u200f\u2060\u2061\u2062\u2063\ufeff"))
+# The data plane's character set: zero-width, bidi embeddings/overrides/isolates, joiners, BOM, C0 (#13).
+_INVISIBLE = dict.fromkeys(INVISIBLE)
 
 _SELF = r"(?:greg|i|me|myself|this body|the body|this machine|this institution|the institution|uniimente|the egregore)"
 _SELF_POSS = r"(?:my|greg'?s|its|the body'?s|this body'?s|the institution'?s|uniimente'?s)"

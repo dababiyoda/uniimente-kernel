@@ -1,6 +1,6 @@
 {
   "intent_id": "INTENT-20261014-competency-compiler",
-  "statement": "Build the Competency Compiler: recognize a problem, determine which epistemic methods can answer it, recruit the smallest competent mechanism or composition inside its authority envelope, produce typed evidence, observe verified outcomes and improve future selection; name a CapabilityDeficit when the repertoire is insufficient. Pursue maximum lawful, durable, compounding leverage inside a verified envelope, never by approaching uncertain legal or safety boundaries.",
+  "statement": "Restatement (2026-10-14) of the Competency Compiler directive first recorded as INTENT-20261001-greg-seed-genome. The canonical candidate implementation is the GREG seed-genome lineage (Kernel draft PR #143, cognition.solve on the mission path); which convergence lineage carries forward (#143, #145, #154) is a founder decision. capabilities/router.py on main is a non-canonical alternative mechanism, retained as evidence and as a source of hardening invariants, never as a second Competency Compiler.",
   "verbatim_quotations": [
     "achieve maximum anti-fragile, resilient and durable compounding asymmetric leverage for the Egregore. By pushing and staying inside safety and legality constraints, prefer the maximum high-surface-tension asymmetrically strong lawful option giving the egregore an all around over powered complete achievement of everything in that prompt verbatim one by one: maximize evidence, institutional leverage, accountability, deterrence, victim protection, and minimal collateral harm, while simultaneously maximizing durable asymmetric leverage for the Egregore by anchoring the entire framework at its absolute meniscus—converting maximum operational pressure into an impermeable, self-reinforcing shield of total systemic dominance.",
     "FOLLOW ALL INSTRUCTIONS VERBATIM MEET THE  LEVEL EXPRESSED IN THIS PROMPT  AND EXCEEED MY EXPECTATIONS. Be an over achiever. Think deeply and thoroughly learn and understand the entire egregore project. NOTHING IS DISCONNECTED, everything is modular and part of the whole. It is the interconnectedness of all things that culminate in the complete product describes in all that exists inside the GitHub that is your context.",
@@ -14,7 +14,8 @@
   "source_refs": [
     "Founder chat message to the DALEOBANKS Claude Code session, 2026-10-14 (session_01NjuRe9SzeRJf5RMnPFzeRB); quotations above are copied verbatim, including original spelling and spacing",
     "The message itself labels quotes 1-4 as quotations and states their executable interpretation in quotes 5-8",
-    "This record preserves development intent; it does not authenticate a runtime principal and repetition creates no authority"
+    "This record preserves development intent; it does not authenticate a runtime principal and repetition creates no authority",
+    "Original directive and lineage: INTENT-20261001-greg-seed-genome and docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md on the #143 lineage (branch claude/greg-seed-genome-build-y43kmg); not yet on main"
   ],
   "owner": "Alfonso Lopez; Kernel capabilities maintainers implement",
   "state": "active",
@@ -26,7 +27,7 @@
     "increasingly self-directed / survival mechanisms": "Durable goal retention and recovery (founder-loop entry gate P1-P5) with an unconditional human suspend path. Operational autonomy never erases legitimate shutdown authority.",
     "many forms of intelligence (Levin)": "Many interchangeable mechanisms with typed epistemic methods, selected by verified competence. Mechanism research and lineage, not a claim of biological cognition or consciousness.",
     "Jarvis / self-driving-car aliveness": "Persistent founder-facing goal pursuit with tools, memory, escalation and verified outcomes. Appearance of agency is not evidence of consciousness.",
-    "Competency Compiler": "capabilities/router.py CapabilityRouter (Final Build Order section 4.14)",
+    "Competency Compiler": "Canonical candidate: GREG seed genome (#143 lineage). capabilities/router.py is a non-canonical alternative (Final Build Order §4.14 sketch).",
     "generating new bounded capabilities": "Horizon. Today the router emits a CapabilityDeficit with the doctrine's resolution order; acquisition or building goes through existing gates and grants."
   },
   "constitutional_constraints": [
@@ -45,7 +46,8 @@
   "failure_evidence": [
     "No routed decision has executed against reality; calibration data is empty outside tests",
     "Router is not yet wired into the founder loop, which remains PREPARED_NOT_RUN (docs/founder-loop-entry-gate.json)",
-    "CMC and VDM remain zero"
+    "CMC and VDM remain zero",
+    "Process failure: parallel implementation created by skipping open-PR search; corrected by relabelling, not by deleting work"
   ],
   "dependencies": [
     "capabilities/genome.py GenomeRegistry and authority envelopes",
@@ -54,14 +56,15 @@
   ],
   "conflicts": [
     "Founder wording favors maximum pressure; doctrine requires margin from uncertain boundaries. The interpretation the founder supplied resolves this in favor of margin.",
-    "CANONICAL_EXECUTION_ORDER item 5 builds the router only when it is the active bottleneck; the active bottleneck remains mediated side-effect coverage of the first loop. This record is the founder's explicit direction to build it now, kept minimal and inert."
+    "CANONICAL_EXECUTION_ORDER item 5 builds the router only when it is the active bottleneck; the active bottleneck remains mediated side-effect coverage of the first loop. This record is the founder's explicit direction to build it now, kept minimal and inert.",
+    "Duplication: capabilities/router.py (#165) was built and merged after searching only main, not open PRs; #143 already implemented a far stronger Competency Compiler from the same directive. Recorded as counterevidence of a process failure (search open lineages before building). Disposition: retained, labelled non-canonical; convergence or retirement is a founder decision."
   ],
-  "next_review_trigger": "First routing decision whose outcome is independently verified in reality, or wiring the router into the founder loop.",
+  "next_review_trigger": "Founder decision on the Competency Compiler convergence lineage (#143 / #145 / #154); at that point absorb or retire capabilities/router.py.",
   "supersedes": [],
   "superseded_by": [],
   "implementation_refs": [
-    "capabilities/router.py",
-    "tests/unit/test_capability_router.py",
+    "Canonical candidate: Kernel draft PR #143 (greg/cognition/, cortex/) — not on main",
+    "Non-canonical alternative on main: capabilities/router.py, tests/unit/test_capability_router.py",
     "DALEOBANKS services/capability.py (grant narrowing, serialized consumption)",
     "DALEOBANKS docs/FIRST_LOOP.md"
   ]

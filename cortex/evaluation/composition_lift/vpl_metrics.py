@@ -41,9 +41,11 @@ import sys
 
 # Practitioner pipelines present in the frozen runs (declared by each run's design, never chosen here).
 PRACTITIONER_ARMS = {"F5": ("historical_mean", "point_forecast_then_optimize"),
-                     "F6": ("weekly_mean_then_staff", "median_forecast_then_staff")}
+                     "F6": ("weekly_mean_then_staff", "median_forecast_then_staff"),
+                     "F7": ("shortest_path_upgrade", "parametric_min_cost_flow")}
 LATENCY_MULTIPLIERS = (1.0, 1.5, 2.0, 5.0)
 COST_FAMILIES = ("F5", "F6")
+CORRECT = ("correct", "optimal")                 # F1-F4 say "correct"; F7 (exact optimum as truth) says "optimal"
 
 
 def _rows(report: dict) -> list[dict]:
@@ -114,7 +116,7 @@ def _sign_p(wins: int, losses: int) -> float:
 
 def _compare(rows: list[dict], family: str, a: str, b: str) -> dict:
     """a against b on the family's own frozen criterion: lower realised cost (F5, F6) or a correct answer where
-    the other's is not (F1-F4). A missing answer loses to any answer."""
+    the other's is not (F1-F4; F7 names a correct answer "optimal"). A missing answer loses to any answer."""
     wins = losses = ties = 0
     for r in rows:
         x, y = r["arms"][a], r["arms"][b]
@@ -123,8 +125,8 @@ def _compare(rows: list[dict], family: str, a: str, b: str) -> dict:
             better = cx is not None and (cy is None or cx < cy - 1e-9)
             worse = cy is not None and (cx is None or cy < cx - 1e-9)
         else:
-            better = x.get("result") == "correct" and y.get("result") != "correct"
-            worse = y.get("result") == "correct" and x.get("result") != "correct"
+            better = x.get("result") in CORRECT and y.get("result") not in CORRECT
+            worse = y.get("result") in CORRECT and x.get("result") not in CORRECT
         wins, losses, ties = wins + better, losses + worse, ties + (not better and not worse)
     return {"wins": wins, "losses": losses, "ties": ties, "sign_test_p_one_sided": round(_sign_p(wins, losses), 6)}
 

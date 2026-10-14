@@ -138,7 +138,8 @@ def _summary(name: str, receipt: dict) -> dict:
     output = receipt.get("output") or {}
     return {"stage": name, "receipt_id": receipt["receipt_id"], "method": receipt["method"],
             "abstention_state": receipt["abstention_state"], "answer": output.get("answer"),
-            "state": output.get("state"), "latency_s": round(receipt["latency"], 4)}
+            "state": output.get("state"), "latency_s": round(receipt["latency"], 4),
+            "counterargument": receipt.get("strongest_counterargument")}
 
 
 def _operation(reason, pid: str, operation: str, data: dict, *, registry, journal, model_config) -> dict:
@@ -152,7 +153,7 @@ def _op_summary(name: str, receipt: dict) -> dict:
     return {"stage": name, "receipt_id": receipt["receipt_id"], "method": receipt["method"],
             "abstention_state": receipt["abstention_state"],
             "verifier": (receipt.get("evaluator_result") or {}).get("verdict"),
-            "latency_s": round(receipt["latency"], 4)}
+            "latency_s": round(receipt["latency"], 4), "counterargument": receipt.get("strongest_counterargument")}
 
 
 def _answered(receipt: dict) -> bool:

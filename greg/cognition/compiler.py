@@ -628,17 +628,35 @@ def _record_once(journal, message: dict, *, quoted=()) -> dict:
     return {"request_id": rid, "kind": shown["kind"], "state": "RECORDED", "scope_digest": shown["scope_digest"]}
 
 
-def _settled_competence(journal, geometry_class) -> dict:
-    """Mean settled correctness per method from the canonical journal (existing settlement), if any."""
+SETTLED_MIN_N = 10              # settled outcomes before live evidence may inhibit a method
+
+
+def _settled_counts(journal) -> dict:
+    """Settled (count, correct) per method from the canonical journal, summed over versions and geometries."""
     if journal is None:
         return {}
     from .settlement import competence
     out = {}
     for (method, _version, _geometry), record in competence(journal).items():
-        n = record.get("count", 0)
-        if n:
-            out[method] = (record.get("correct", 0) + 1) / (n + 2)
-    return out
+        n, k = out.get(method, (0, 0))
+        out[method] = (n + record.get("count", 0), k + record.get("correct", 0))
+    return {m: v for m, v in out.items() if v[0]}
+
+
+def _settled_competence(journal, geometry_class) -> dict:
+    """Mean settled correctness per method (Laplace), from the canonical journal (existing settlement)."""
+    return {m: (k + 1) / (n + 2) for m, (n, k) in _settled_counts(journal).items()}
+
+
+def _settled_inhibition(n: int, k: int) -> str | None:
+    """Live negative evidence: with at least SETTLED_MIN_N settled outcomes, a method whose 95% Wilson upper bound
+    on correctness is below one half is demoted (ranked after every other fit, never deleted)."""
+    if n < SETTLED_MIN_N:
+        return None
+    from .settlement import _wilson
+    upper = _wilson(k, n)[1]
+    return (f"settled outcomes on this body: {k} of {n} correct (95% upper bound {upper:.3f} < 0.5)"
+            if upper < 0.5 else None)
 
 
 # ------------------------------------------------------------------ compile + run
@@ -761,6 +779,15 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         data = inverted
     # 3. candidates by native geometry and inputs; frozen negative evidence excludes
     rows = candidates(data, g, evidence)
+    # the geometry the inputs themselves imply (methods whose native inputs they carry), against the declaration
+    from dataclasses import replace
+    implied = sorted({c for r in candidates(data, replace(g, geometry=None), evidence)
+                      for c in r.get("epistemic_classes", [])})
+    receipt["derived_geometry"] = {"declared": g.geometry, "fits_by_inputs": implied,
+                                   "agrees": not g.geometry or not implied or g.geometry in implied}
+    if not receipt["derived_geometry"]["agrees"]:
+        receipt["dissent"].append(f"declared geometry {g.geometry!r} but the inputs fit methods of {implied}: the "
+                                  f"declaration excludes them (check the declaration before trusting a deficit)")
     receipt["methods_considered"] = [r["method"] for r in rows]
     receipt["methods_rejected"] = [{"method": r["method"], "why": r["rejected"]} for r in rows if r["rejected"]]
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
@@ -785,6 +812,12 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority"}
         return finish("CAPABILITY_DEFICIT")
     competence = _settled_competence(journal, g.geometry)
+    settled = _settled_counts(journal)
+    for r in eligible:
+        inhibited = _settled_inhibition(*settled.get(r["method"], (0, 0)))
+        if inhibited and not r.get("demoted"):
+            r["demoted"] = inhibited                    # live negative evidence changes routing
+    receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
     for r in eligible:
         r["usable"], r["usable_why"] = _usable(registry, r)
@@ -884,6 +917,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         inner = reason({"problem_id": pid, "chain": {"question": g.objective or "compiled", "payload": data}},
                        registry=registry, journal=journal, model_config=model_config)
         receipt["intermediate_receipts"] = [s["receipt_id"] for s in inner["stages"]]
+        receipt["dissent"] += [f"stage {s['stage']} ({s['method']}): {s['counterargument']}"[:400]
+                               for s in inner["stages"] if s.get("counterargument")]
         receipt["translation_checks"] = inner["bindings"] + inner["translation_failures"]
         receipt["resource_use"]["stages"] = len(inner["stages"])
         receipt["verification_method"] = "per-stage independent verifier; cross-intelligence checks where declared"

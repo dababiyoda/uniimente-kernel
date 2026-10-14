@@ -71,18 +71,19 @@ def run_composed(args: dict, root) -> dict:
     already on this store's ledger resumes instead of starting over.
     """
     from events.spine import DurableWorkflow, EventError, EventSpine, WorkflowStep
-    from foundry.systems import module
+    from foundry.systems import OperationError, module, operation
     from provenance.ledger import EvidenceLedger
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
 
     def make(spec):
-        system = module(int(spec["system"]))
-        table = system.APPLY_OPS if spec.get("write") else system.QUERY_OPS
-        if spec["op"] not in table:
-            raise EventError(f"system {spec['system']} has no {'apply' if spec.get('write') else 'query'} op {spec['op']!r}")
+        module(int(spec["system"]))                      # an unregistered system is a KeyError, as before
+        try:
+            fn = operation(int(spec["system"]), "APPLY_OPS" if spec.get("write") else "QUERY_OPS", spec["op"])
+        except OperationError as exc:
+            raise EventError(str(exc)) from None
         store = root.parent / f"system-{int(spec['system']):02d}"
-        return WorkflowStep(spec["name"], lambda state, f=table[spec["op"]], a=spec.get("args", {}): {spec["name"]: f(a, store)},
+        return WorkflowStep(spec["name"], lambda state, f=fn, a=spec.get("args", {}): {spec["name"]: f(a, store)},
                             retry_safe=not spec.get("write"))
 
     steps = [make(s) for s in args["steps"]]

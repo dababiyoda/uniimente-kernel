@@ -122,9 +122,8 @@ class Shell:
         return self.root / "stores" / f"system-{int(system):02d}"
 
     def _run(self, p: dict, store: Path):
-        from foundry.systems import module
-        mod = module(p["system"])
-        op = mod.QUERY_OPS.get(p["op"]) or mod.APPLY_OPS[p["op"]]
+        from foundry.systems import any_operation
+        op = any_operation(p["system"], p["op"])
         return op(json.loads(json.dumps(p["args"])), store)
 
     def _simulate(self, proposal: str):

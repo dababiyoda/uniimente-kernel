@@ -32,6 +32,13 @@ CO_IMPLEMENTATIONS = {31: ("portal",), 32: ("community",), 34: ("journeys",), 35
                       49: ("media_company",), 50: ("journeys",), 54: ("offers",)}
 
 
+class OperationError(KeyError):
+    """An op none of the system's implementations declares, or a bare name several declare."""
+
+    def __str__(self) -> str:
+        return str(self.args[0]) if self.args else ""
+
+
 def module(system_id: int):
     if system_id not in SYSTEMS:
         raise KeyError(f"Foundry system {system_id} is not implemented yet (see foundry/completion.yaml)")
@@ -79,7 +86,30 @@ def operation(system_id: int, table: str, op: str):
     if op not in reachable:
         choices = ambiguous(system_id, table, op)
         if choices:
-            raise LookupError(f"system {system_id} op {op!r} is ambiguous; qualify it as one of {choices}")
-        raise LookupError(f"system {system_id} has no {table.split('_')[0].lower()} op {op!r}")
+            raise OperationError(f"system {system_id} op {op!r} is ambiguous; qualify it as one of {choices}")
+        raise OperationError(f"system {system_id} has no {table.split('_')[0].lower()} op {op!r}")
     name, bare = reachable[op]
     return getattr(importlib.import_module(f"foundry.systems.{name}"), table)[bare]
+
+
+def any_operation(system_id: int, op: str):
+    """Read op if one resolves, else write op: the order composition callers always used."""
+    try:
+        return operation(system_id, "QUERY_OPS", op)
+    except OperationError as read_error:
+        if ambiguous(system_id, "QUERY_OPS", op):
+            raise
+        try:
+            return operation(system_id, "APPLY_OPS", op)
+        except OperationError as write_error:
+            raise write_error if ambiguous(system_id, "APPLY_OPS", op) else OperationError(
+                f"system {system_id} has no op {op!r}") from read_error
+
+
+def op_class(system_id: int, op: str) -> str | None:
+    """'read_only' or 'internal_write' for a reachable op name, None when none resolves."""
+    if op in operations(system_id, "QUERY_OPS"):
+        return "read_only"
+    if op in operations(system_id, "APPLY_OPS"):
+        return "internal_write"
+    return None

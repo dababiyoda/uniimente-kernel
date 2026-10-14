@@ -70,7 +70,7 @@ def form(root: Path, contract: dict, grant: dict, *, registry_root: Path, object
 
 
 def act(root: Path, team_id: str, role: str, *, system: int, op: str, args: dict, cost_usd: float = 0.0) -> dict:
-    from foundry.systems import module
+    from foundry.systems import any_operation, operation
     from foundry.systems.linking import _op_class
     team = _load(root, team_id)
     entry = {"role": role, "system": system, "op": op}
@@ -86,8 +86,7 @@ def act(root: Path, team_id: str, role: str, *, system: int, op: str, args: dict
             raise TeamError(f"{role} is capped at {member['max_consequence']}; {op} is {cls}")
         if team["spent_usd"] + cost_usd > team["budget_usd"] + 1e-9:
             raise TeamError(f"budget {team['budget_usd']} would be exceeded")
-        mod = module(int(system))
-        result = (mod.QUERY_OPS.get(op) or mod.APPLY_OPS[op])(args, Path(root) / "stores" / f"system-{int(system):02d}")
+        result = any_operation(int(system), op)(args, Path(root) / "stores" / f"system-{int(system):02d}")
     except Exception as exc:
         team["journal"].append({**entry, "outcome": f"refused: {exc}"[:300]})
         _save(root, team)
@@ -95,8 +94,8 @@ def act(root: Path, team_id: str, role: str, *, system: int, op: str, args: dict
     team["spent_usd"] += cost_usd
     team["journal"].append({**entry, "outcome": "ok"})
     check = team["objective_check"]
-    probe = module(int(check["system"])).QUERY_OPS[check["op"]](check.get("args", {}),
-                                                                Path(root) / "stores" / f"system-{int(check['system']):02d}")
+    probe = operation(int(check["system"]), "QUERY_OPS", check["op"])(check.get("args", {}),
+                                                                       Path(root) / "stores" / f"system-{int(check['system']):02d}")
     met = float(probe.get(check["field"], 0)) >= float(check["gte"])
     if met:
         team["state"] = "DISSOLVED"

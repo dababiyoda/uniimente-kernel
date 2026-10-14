@@ -1114,3 +1114,25 @@ def test_co_implementation_evidence_is_rederived_and_a_forged_record_fails(tmp_p
     assert any("does not reproduce" in p for p in completion._co_implementation_problems(35, row, "system 35"))
     with pytest.raises(KeyError, match="not registered"):
         completion.run(35, "portal")
+
+
+def test_every_composition_path_resolves_co_implementation_ops_through_the_one_resolver(tmp_path):
+    from foundry.systems import OperationError, any_operation, linking, op_class, shell, teams, workflows
+    # composition callers reach a co-implementation's op by its unique bare name...
+    assert op_class(35, "inspect") == "read_only" and op_class(35, "produce") == "internal_write"
+    assert any_operation(32, "summary") is foundry_systems.operation(32, "QUERY_OPS", "summary")
+    # ...and never resolve a bare name two implementations declare
+    with pytest.raises(OperationError, match="ambiguous"):
+        any_operation(34, "report")
+    with pytest.raises(linking.LinkError, match="ambiguous"):
+        linking._op_class(34, "report")
+    assert linking._op_class(34, "journeys.report") == "read_only"
+    with pytest.raises(KeyError):
+        any_operation(26, "anything")                 # an unregistered system stays a KeyError
+    # the workflow engine refuses an unknown op with its own error type
+    from events.spine import EventError
+    with pytest.raises(EventError, match="no query op"):
+        workflows.run_composed({"steps": [{"name": "s", "system": 35, "op": "nope"}]}, tmp_path / "foundry" / "system-15")
+    with pytest.raises(EventError, match="ambiguous"):
+        workflows.run_composed({"steps": [{"name": "s", "system": 34, "op": "report"}]}, tmp_path / "foundry" / "system-15")
+    assert shell and teams                            # both import the resolver at call time

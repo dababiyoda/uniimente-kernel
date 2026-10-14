@@ -100,7 +100,7 @@ refuses if any input changed. Six versions were frozen and run; all manifests an
 | 0.1.3 | Exit rule tightened to the prompt's wording: *cross-geometry* gain (no geometry group worse, gain on ≥ 2), cost and p95 latency within declared ratios; a verified gain only makes promotion proposable, founder ratification promotes. Done before any declared baseline ran | traceability audit against item 11 |
 | 0.1.4 | Review-pass-2 primitives the seed lacked: Formal 0.2.0 certified optimization; receipt accountability (strongest counterargument, falsifiers, missing information); victim-protection situation (unknown harm is a gap that forces handoff; identity-free receipts); four reserved families | verbatim register of review passes 1–2 |
 | 0.1.5 | Lawful deterrence organ for the founder's "maximize … deterrence": Becker condition over declared ranges, closed lawful vocabulary, coercive and hard-harm interventions refused, certainty vs severity labelled (Nagin 2013), external actions handed off | goal review: deterrence was the one lawful clause not yet built |
-| 0.1.6 | Four defects found by an independent read of 0.1.5, each reproduced before the fix: (D1) `CompetenceLedger.settle` accepted a method *version* that never ran whenever the method name matched; now the exact `method@version` must be among the selected routes. (D2) a composed route settled under the receipt's first structural class; receipts now carry `route.part_geometries` and `outcome_link.memory_keys` per part, and settlement uses the part's geometry. (D3) a third eligible route was dropped by `MAX_COMPOSITION` and listed as "not required by this payload"; receipts now disclose `route.dropped_by_cap` and a top-level `coverage` field. (D4) a founder mandate with `expires_at` passed `founder_scope` when the problem declared no `as_of`; validity is now unverifiable without a reference instant and the gate fails closed. (D5, ported from the #143 lineage's crossgeo v0.2 hard failure) a declared harm vector may raise the consequence class, never lower it: high financial harm or any hard violation is at least `financial`, which cognition hands off; the understating declaration is kept as a rejected proposal. Also: the frozen baseline arms can be run from a recorded transcript (`cortex/evaluation/replay.py`) with the model's provenance replacing the local-model disclosure, and the cortex is bound to the standing cognition runtime as a consequence-inert proposer (`egregore/cortex_proposer.py`) that accepts a receipt only if it validates, matches its content address, claims no authority and spent nothing beyond its ceiling (guard recombined from the #143 bridge); the module closes its five orthogonal closures (`closure/cortex_registry.py`); every receipt cites the named Epistemic Finality Rule (`route.finality`, `epistemic-finality/0.1`), and an abstaining receipt carries a typed `capability_deficit` that requests capability formation and authorizes nothing; a pre-run independent review confirmed 14 defects (replay counted missing replies as baseline failures; the freeze missed imported modules; settlement accepted tampered receipts, unrun routes and repeated observations; tick context could set the mandate instant; receipts let an ineligible part go unanswered silently) and each was fixed with a regression test and a mutant; the mutation check now ignores freeze-hash catches, and all 43 mutants are caught by behavioural tests | independent code read (2026-10-13), see `docs/cortex/CONVERGENCE_2026-10-13.md` |
+| 0.1.6 | Four defects found by an independent read of 0.1.5, each reproduced before the fix: (D1) `CompetenceLedger.settle` accepted a method *version* that never ran whenever the method name matched; now the exact `method@version` must be among the selected routes. (D2) a composed route settled under the receipt's first structural class; receipts now carry `route.part_geometries` and `outcome_link.memory_keys` per part, and settlement uses the part's geometry. (D3) a third eligible route was dropped by `MAX_COMPOSITION` and listed as "not required by this payload"; receipts now disclose `route.dropped_by_cap` and a top-level `coverage` field. (D4) a founder mandate with `expires_at` passed `founder_scope` when the problem declared no `as_of`; validity is now unverifiable without a reference instant and the gate fails closed. (D5, ported from the #143 lineage's crossgeo v0.2 hard failure) a declared harm vector may raise the consequence class, never lower it: high financial harm or any hard violation is at least `financial`, which cognition hands off; the understating declaration is kept as a rejected proposal. Also: the frozen baseline arms can be run from a recorded transcript (`cortex/evaluation/replay.py`) with the model's provenance replacing the local-model disclosure, and the cortex is bound to the standing cognition runtime as a consequence-inert proposer (`egregore/cortex_proposer.py`) that accepts a receipt only if it validates, matches its content address, claims no authority and spent nothing beyond its ceiling (guard recombined from the #143 bridge); the module closes its five orthogonal closures (`closure/cortex_registry.py`); every receipt cites the named Epistemic Finality Rule (`route.finality`, `epistemic-finality/0.1`), and an abstaining receipt caused by a capability gap (`UNSUPPORTED_GEOMETRY` or `NO_ELIGIBLE_METHOD`) carries a typed `capability_deficit` that requests capability formation and authorizes nothing; a pre-run independent review confirmed 14 defects (replay counted missing replies as baseline failures; the freeze missed imported modules; settlement accepted tampered receipts, unrun routes and repeated observations; tick context could set the mandate instant; receipts let an ineligible part go unanswered silently) and each was fixed with a regression test and a mutant; the mutation check now ignores freeze-hash catches, and all 43 mutants are caught by behavioural tests | independent code read (2026-10-13), see `docs/cortex/CONVERGENCE_2026-10-13.md` |
 
 **0.1.6 freeze discipline.** The `freeze-v0.1.6.json` manifest was cut six times before any reported run (18:46:30Z after D1–D4; 18:59:57Z after D5 and the receipt guard; then after the independent review's fixes: coverage from what actually ran, the reorder read side, the hardened replay; 23:45:33Z after the named Epistemic Finality Rule, the typed CapabilityDeficit and the Seed Cortex naming; 23:51:02Z after marking a receipt's deficit `verified: false`, because one receipt is one observation; 00:22:13Z on 2026-10-14 after the pre-run independent review's 14 confirmed fixes, with the freeze widened to every in-repo module the scored path imports). No result was ever recorded against an earlier 0.1.6 manifest, so the one manifest in the tree is the one the reported run cites; the earlier manifests exist only in git history. Any change after a reported run would be 0.1.7.
 
@@ -252,36 +252,40 @@ The frozen rule must clear each declared baseline, so the deciding size is the o
 
 | Endpoint for a future frozen version | vs `always_llm` | vs `llm_committee` | **Both (decides)** | Baseline replies at that size |
 | --- | --- | --- | --- | --- |
-| quality gain, frozen rule unchanged | 303 items | 1,044 items | **1,044 items** | 4,176 |
+| quality gain, frozen rule unchanged (binomial-limit sizes) | 303 items | 1,044 items | **1,044 items** | 4,176 |
 | harmful failure (critical or unsupported certainty), exact one-sided McNemar, alpha 0.05 | 93 | 93 | **104** | 416 |
 | the same, if the seed itself failed harmfully on 1% of items | 144 | 144 | **164** | 656 |
 | critical error only | 140 | 281 | **281** | 1,124 |
 
 Two checks on these numbers:
 
-- The quality sizes use the frozen bootstrap's large-B limit. Replaying the frozen bootstrap itself over 400 random
-  item orders gives 0.81 power at 303 items and 0.80 at 1,044 (0.796), against 0.80 at the limit. At 1,044 items, 68
-  wins clear the frozen rule in 77.5% of item orders and 69 in all but one in 400.
+- The quality sizes are taken at the frozen bootstrap's large-B limit. The frozen rule's own bootstrap (B = 2000) adds
+  Monte Carlo noise of about one win at the boundary, so one-item precision is not meaningful for it. Replayed over 400
+  random item orders per win count, its power is 0.807 at 303 items and 0.796 at 1,044, where 68 wins clear in 77.5%
+  of item orders. At 1,060 items, where the wins needed step from 68 to 69, it is 0.7945 against 0.804 at the limit. An
+  independent replay in the second post-run review, with 4,000 to 6,000 item orders per win count, found the frozen
+  rule's own power stays at or above 0.80 from about 1,063 items.
 - At 93 items each harmful-failure test alone has 80% power, but the chance of clearing both is 0.71, because the two
   baselines fail on partly different items. The rule needs both, hence 104.
 
 **The founder decision this creates, prospective only.** Before any baseline reply is collected, a 0.1.7 freeze
 fixes one of two designs:
 
-- (a) keep the quality endpoint and commit to an externally authored suite of about 1,050 items (roughly 4,200
-  baseline replies);
+- (a) keep the quality endpoint and commit to an externally authored suite of about 1,065 items (about 4,260
+  baseline replies): 1,044 at the binomial limit, about 1,063 under the frozen bootstrap itself;
 - (b) pre-register harmful-failure rate as the primary endpoint, with mean quality as a secondary endpoint, on an
-  externally authored suite of at least about 105 items (about 165 if the seed itself may fail harmfully on 1% of
-  items).
+  externally authored suite of at least 104 items (164 if the seed itself may fail harmfully on 1% of items).
 
 Either way, the item author and the baseline model should come from outside the vendor family that wrote this
 suite. Re-scoring 0.1.6 under a different endpoint after seeing its result is not permitted, and this section does
 not do it.
 
-**Correction record.** Four independent reviewers attacked the first version of this section (commit `e5e1e2a`),
-and two separate skeptics then tried to refute each finding. Of 13 findings, 6 were confirmed by both skeptics, 2
-were refuted by both, and 1 split. For the other 4 the skeptic runs stopped on a usage limit, so each was reproduced
-before it was fixed. Corrected in this section:
+**Correction record.** Two independent post-run reviews attacked this section. Each had reviewer lenses, and two
+separate skeptics then tried to refute each finding.
+
+The first review attacked commit `e5e1e2a`. Of its 13 findings, 6 were confirmed by both skeptics, 2 were refuted by
+both, and 1 split. For the other 4, at least one skeptic run stopped on a usage limit: 6 runs in all, and the 2 that
+completed both confirmed. Each of those 4 was reproduced before it was fixed. Corrected in this section:
 
 - The deciding harmful-failure size was given as 93, which is a single-baseline size. The rule must clear both
   baselines, which needs 104.
@@ -290,14 +294,32 @@ before it was fixed. Corrected in this section:
   random-order replay above.
 - The no-organ route set was labelled "withheld", but 2 of its 8 items were recommendations.
 - Abstentions were said to carry a `capability_deficit`, but only 1 of the 11 does.
-- The harmful-failure p-value stood next to a critical-error claim without the critical-error p-values.
 - The route-set and jurisdiction counts cited a test that does not compute them.
+- Refuted, but clarified anyway: the committee's headroom is now given both as the largest possible gain (0.071) and
+  as the margin over the threshold (0.021).
 
 Corrected elsewhere:
 
+- The critical-error p-values (0.25, 0.5) were added beside the harmful-failure p-value in the ADR addendum, the intent
+  record and the PR body. This section already had them.
 - The analysis now sums with `math.fsum`, so its output is byte-identical on Python 3.11, 3.12 and 3.13.
-- The unit test now catches tampering with every recorded value it guards (30 of 30 mutations).
+- The unit tests were tightened.
 - The re-issue lineage test now checks the delivery table's rows, not only its hashes.
 
-Every finding, with its votes and disposition, is in `docs/cortex/reviews/POST_RUN_REVIEW_2026-10-14.json`. The
-earlier text stays in git history.
+The second review attacked the corrections (commit `1d404c8`). Its 11 findings were all confirmed by both skeptics and
+all fixed:
+
+- The quality sizes are now labelled as binomial-limit sizes, with the frozen rule's own figure beside them.
+- The decision sizes now agree everywhere.
+- The deficit overclaim is corrected in the ADR, the intent records, the deliberation record and the verbatim
+  register as well.
+- The first review's record and this record now say exactly which skeptic runs stopped and which sentence changed.
+- The local model the 0.1.5 report and `cortex/evaluation/arms.py` name as the default baseline is out of scope for
+  this session's model-identifier rule. That rule covers the models that served this experiment, and the preserved
+  0.1.5 text is not edited.
+- The analysis no longer underflows for large binomial counts.
+- The analysis records an unattainable baseline instead of crashing.
+- The tests now recompute every recorded frozen-bootstrap replay and tie the report's numbers to the recorded JSON.
+
+The records are `docs/cortex/reviews/POST_RUN_REVIEW_2026-10-14.json` and
+`docs/cortex/reviews/POST_RUN_REVIEW_2_2026-10-14.json`. The earlier text stays in git history.

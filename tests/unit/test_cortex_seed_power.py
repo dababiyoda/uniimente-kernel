@@ -1,7 +1,8 @@
 """The recorded power analysis (`tests/evidence/cortex-seed-v0.1.6/power-analysis.json`) reads the frozen
 held-out result faithfully, its sample sizes satisfy their own definitions, its exact joint power agrees with
-brute-force enumeration, its frozen-bootstrap replay agrees with the frozen code, and it changes no frozen rule.
-CI job 6 also recomputes the whole file (`python scripts/analysis/cortex_seed_power.py --check`, about 25 s)."""
+brute-force enumeration, every recorded frozen-bootstrap replay recomputes exactly, the report quotes its numbers
+faithfully, and it changes no frozen rule. Prose fields are not checked here; CI job 6 recomputes the whole file
+(`python scripts/analysis/cortex_seed_power.py --check`)."""
 from __future__ import annotations
 
 import importlib.util
@@ -9,6 +10,7 @@ import itertools
 import json
 import math
 import random
+import re
 from pathlib import Path
 
 import pytest
@@ -43,6 +45,7 @@ def _minimal(power, n, full_stay=True):
 # ------------------------------------------------------------------ provenance
 def test_it_changes_no_frozen_rule_and_cites_the_frozen_run():
     assert REC["changes_frozen_rule"] is False
+    assert REC["schema"] == "cortex-seed-power/0.3" and REC["source"] == "tests/evidence/cortex-seed-v0.1.6/heldout-results.json"
     assert REC["freeze_manifest_sha256"] == HELD["freeze_manifest_sha256"]
     fr = REC["frozen_rule"]
     assert fr["min_quality_gain_lower_bound"] == THR and fr["bootstrap_B"] == S.BOOTSTRAP_B
@@ -62,6 +65,7 @@ def test_observed_inputs_reproduce_from_the_frozen_result(name):
     assert ends["harmful_failure"]["baseline_only"] == sum(1 for i in base.values() if i["critical"] or i["unsupported_certainty"])
     assert ends["critical_error"]["baseline_only"] == sum(1 for i in base.values() if i["critical"])
     assert not any(i["critical"] or i["unsupported_certainty"] for i in routed.values())
+    assert all(e["routed_only"] == 0 for e in ends.values())
 
 
 @pytest.mark.parametrize("endpoint,fails", [
@@ -97,21 +101,28 @@ def test_the_column_replay_is_the_frozen_bootstrap_exactly():
             assert P.frozen_lower_bound(cols, wins) == frozen
 
 
-def test_the_frozen_crosscheck_reproduces_and_stays_near_the_binomial_limit():
-    rec = REC["baselines"]["always_llm"]["quality_gain"]["frozen_crosscheck"]
-    p = REC["baselines"]["always_llm"]["observed"]["mean_gain"]
-    assert P.frozen_crosscheck(rec["n"], p, THR) == rec
-    for name in BASELINES:
-        chk = REC["baselines"][name]["quality_gain"]["frozen_crosscheck"]
-        p = REC["baselines"][name]["observed"]["mean_gain"]
+@pytest.mark.parametrize("name", BASELINES)
+def test_every_recorded_frozen_replay_recomputes_exactly(name):
+    q = REC["baselines"][name]["quality_gain"]
+    p = REC["baselines"][name]["observed"]["mean_gain"]
+    n80 = q["items_for_80pct_power"]
+    steps = [n for n in range(n80 + 1, n80 + P.STAY + 1) if P.k_star(n, THR) > P.k_star(n - 1, THR)]
+    assert [c["n"] for c in q["frozen_crosscheck_at_steps"]] == steps
+    for chk in [q["frozen_crosscheck"]] + q["frozen_crosscheck_at_steps"]:
+        assert P.frozen_crosscheck(chk["n"], p, THR) == chk
         rates = {int(k): v for k, v in chk["clear_rate_by_wins"].items()}
         assert chk["edges_settled"] and rates[min(rates)] == 0.0 and rates[max(rates)] == 1.0
-        assert chk["binomial_limit_wins_needed"] == P.k_star(chk["n"], THR) == min(rates) + 2
-        assert chk["binomial_limit_power"] == P.sf(chk["n"], chk["binomial_limit_wins_needed"], p)
-        assert chk["placements_per_win_count"] == P.PLACEMENTS
-        assert chk["frozen_rule_power"] == pytest.approx(
-            math.fsum(P.pmf(chk["n"], k, p) * r for k, r in rates.items()) + P.sf(chk["n"], max(rates) + 1, p))
         assert abs(chk["frozen_rule_power"] - chk["binomial_limit_power"]) < 0.02
+
+
+def test_the_packed_replay_equals_the_plain_replay():
+    rng = random.Random(11)
+    for n in (42, 130):
+        cols = P._frozen_columns(n)
+        packed = P._packed(cols)
+        for k in (1, 5, 17):
+            wins = rng.sample(range(n), k)
+            assert P._lower_from_packed(packed, wins, n) == P.frozen_lower_bound(cols, wins)
 
 
 # ------------------------------------------------------------------ per-baseline sizes
@@ -216,3 +227,79 @@ def test_joint_mcnemar_sizes_meet_their_definition(endpoint):
     hf = REC["joint"]["harmful_failure"]["by_routed_failure_rate"]
     assert REC["binding"]["harmful_failure_items"] == hf["0.0"]["items_for_80pct_power"]
     assert REC["binding"]["harmful_failure_items_if_routed_fails_1pct"] == hf["0.01"]["items_for_80pct_power"]
+
+
+# ------------------------------------------------------------------ robustness (second post-run review)
+def test_the_binomial_pmf_does_not_underflow_for_large_counts():
+    for m, p in ((1500, 0.4), (3000, 0.35), (6000, 0.2)):
+        pmfs = P._pmf_list(m, p)
+        # lgamma near m carries ~1e-12 absolute error, which the mode anchor passes on to every term
+        assert math.fsum(pmfs) == pytest.approx(1.0, abs=1e-9)
+        for t in (int(m * p) - 40, int(m * p), int(m * p) + 40):
+            assert P._tail(m, p, t) == pytest.approx(P.sf(m, t, p), abs=1e-9)
+    assert P.joint_power(1500, 0.4, 0.0, 0.0, 0.0, lambda c: 30, lambda c: 30) == pytest.approx(1.0, abs=1e-9)
+    assert P.joint_power(1500, 0.0, 0.4, 0.0, 0.0, lambda c: 620, lambda c: 0) == pytest.approx(P.sf(1500, 620, 0.4), abs=1e-9)
+
+
+def test_certain_failure_does_not_crash():
+    assert P._pmf_list(5, 1.0) == (0.0, 0.0, 0.0, 0.0, 0.0, 1.0)
+    assert P.joint_power(5, 1.0, 0.0, 0.0, 0.0, lambda c: 3, lambda c: 3) == 1.0
+
+
+def test_an_unattainable_baseline_is_recorded_not_crashed():
+    q = P.quality_section(2 / 42, THR, REPLIES, 42)
+    assert q["attainable"] is False and q["items_for_80pct_power"] is None
+    assert q["baseline_replies_needed"] is None and q["frozen_crosscheck"] is None and q["frozen_crosscheck_at_steps"] == []
+    assert P.mcnemar_size(0.0, 0.0, REPLIES) == {"items_for_80pct_power": None, "baseline_replies_needed": None}
+
+
+# ------------------------------------------------------------------ the report quotes these numbers
+def _section(path, marker):
+    text = (ROOT / path).read_text(encoding="utf-8")
+    return " ".join(text.split(marker, 1)[1].split())
+
+
+def test_the_report_quotes_the_recorded_numbers():
+    sec = _section("docs/cortex/SEED_EXPERIMENT_REPORT.md", "## 0.1.6 — the decisive test")
+    b, j, bind = REC["baselines"], REC["joint"], REC["binding"]
+    a, c = (b[n] for n in BASELINES)
+    pct = lambda x: f"{round(100 * x)}%"  # noqa: E731
+    assert (f"the frozen rule had {pct(a['quality_gain']['power_at_observed_n'])} power to establish the gain over "
+            f"`always_llm`, {pct(c['quality_gain']['power_at_observed_n'])} over `llm_committee`, and "
+            f"{pct(j['quality_gain']['power_at_observed_n'])} over both at once") in sec
+    q = j["quality_gain"]
+    assert (f"| quality gain, frozen rule unchanged (binomial-limit sizes) | {a['quality_gain']['items_for_80pct_power']:,} items | "
+            f"{c['quality_gain']['items_for_80pct_power']:,} items | **{q['items_for_80pct_power']:,} items** | "
+            f"{q['baseline_replies_needed']:,} |") in sec
+    rows = [("harmful failure (critical or unsupported certainty), exact one-sided McNemar, alpha 0.05", "harmful_failure", "0.0"),
+            ("the same, if the seed itself failed harmfully on 1% of items", "harmful_failure", "0.01"),
+            ("critical error only", "critical_error", "0.0")]
+    for label, e, pr in rows:
+        sizes = [x["endpoints"][e]["by_routed_failure_rate"][pr]["items_for_80pct_power"] for x in (a, c)]
+        jr = j[e]["by_routed_failure_rate"][pr]
+        assert (f"| {label} | {sizes[0]:,} | {sizes[1]:,} | **{jr['items_for_80pct_power']:,}** | "
+                f"{jr['baseline_replies_needed']:,} |") in sec, label
+    fa, fc = a["quality_gain"]["frozen_crosscheck"], c["quality_gain"]["frozen_crosscheck"]
+    k = fc["binomial_limit_wins_needed"]
+    assert (f"its power is {fa['frozen_rule_power']:.3f} at {fa['n']:,} items and {fc['frozen_rule_power']:.3f} at "
+            f"{fc['n']:,}, where {k} wins clear in {100 * fc['clear_rate_by_wins'][str(k)]:.1f}% of item orders") in sec
+    step = c["quality_gain"]["frozen_crosscheck_at_steps"][0]
+    assert (f"At {step['n']:,} items, where the wins needed step from {step['binomial_limit_wins_needed'] - 1} to "
+            f"{step['binomial_limit_wins_needed']}, it is {step['frozen_rule_power']:.4f} against "
+            f"{step['binomial_limit_power']:.3f} at the limit") in sec
+    hf = j["harmful_failure"]["by_routed_failure_rate"]["0.0"]
+    assert f"the chance of clearing both is {hf['power_at_largest_single_baseline_size']:.2f}" in sec
+    assert f"hence {bind['harmful_failure_items']}" in sec
+    assert (f"at least {bind['harmful_failure_items']} items ({bind['harmful_failure_items_if_routed_fails_1pct']} if the "
+            f"seed itself may fail harmfully on 1% of items)") in sec
+    assert f"{bind['quality_gain_items']:,} at the binomial limit" in sec
+
+
+def test_the_adr_and_intent_record_quote_the_same_sizes():
+    bind = REC["binding"]
+    adr = _section("docs/decisions/ADR-20261013-polyintelligence-seed-genome-convergence.md", "Addendum, 2026-10-14")
+    intent = json.loads((ROOT / "docs/intent/INTENT-20261013-polyintelligence-seed-genome-v0.1.json").read_text(encoding="utf-8"))
+    for text in (adr, intent["next_review_trigger"]):
+        assert f"{bind['quality_gain_items']:,} at the binomial limit" in text
+        assert f"{bind['harmful_failure_items']} items" in text
+        assert re.search(rf"\b{bind['harmful_failure_items_if_routed_fails_1pct']} if the seed itself fail", text)

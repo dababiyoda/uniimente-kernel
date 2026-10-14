@@ -247,7 +247,7 @@
       "status": "active",
       "authority_level": "active_requirement",
       "consequence_class": "material",
-      "intended_outcome": "An abstaining receipt names the gap as a typed, unverified CapabilityDeficit; a recurrence-verified formation loop (PR #129) consumes such deficits.",
+      "intended_outcome": "An abstaining receipt caused by a capability gap (UNSUPPORTED_GEOMETRY or NO_ELIGIBLE_METHOD) names the gap as a typed, unverified CapabilityDeficit; a recurrence-verified formation loop (PR #129) consumes such deficits.",
       "affected_systems": [
         "uniimente-kernel/cortex",
         "uniimente-kernel/egregore"

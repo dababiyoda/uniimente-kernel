@@ -233,7 +233,7 @@
       "claim": "Named Epistemic Finality Rule and typed CapabilityDeficit",
       "tier": "unit_test",
       "reference": "tests/unit/test_cortex_finality_deficit.py",
-      "finding": "every epistemic class has exactly one deciding jurisdiction; every receipt cites the rule, per route when composed; abstentions carry a typed CapabilityDeficit that requests formation and authorizes nothing"
+      "finding": "every epistemic class has exactly one deciding jurisdiction; every receipt cites the rule, per route when composed; an abstention caused by a capability gap (UNSUPPORTED_GEOMETRY or NO_ELIGIBLE_METHOD) carries a typed, unverified CapabilityDeficit that requests formation and authorizes nothing"
     },
     {
       "claim": "Binding to the standing runtime creates no authority",

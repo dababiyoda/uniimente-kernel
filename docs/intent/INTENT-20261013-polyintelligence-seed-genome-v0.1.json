@@ -22,7 +22,7 @@
   ],
   "success_evidence": [
     "tests/unit/test_cortex_defect_fixes.py (four 0.1.5 defects reproduced and fixed in 0.1.6, plus D5: a declared harm vector may raise the consequence class, ported from the #143 lineage)",
-    "tests/unit/test_cortex_finality_deficit.py (the named Epistemic Finality Rule cited by every receipt; abstention emits a typed CapabilityDeficit that authorizes nothing)",
+    "tests/unit/test_cortex_finality_deficit.py (the named Epistemic Finality Rule cited by every receipt; an abstention caused by a capability gap emits a typed, unverified CapabilityDeficit that authorizes nothing)",
     "tests/unit/test_cortex_proposer.py (cortex bound to StandingCognitionRuntime; receipts ledgered; abstain/handoff/recommend paths; no actuator import)",
     "tests/unit/test_cortex_replay.py (frozen arms from a transcript; missing replies are errors, not guesses; freeze untouched)",
     "tests/unit/test_seed_genome_founder_expression.py (the 2026-10-13 message rebuilds byte for byte)",
@@ -51,7 +51,7 @@
     "Sixteen open draft lineages implement overlapping seeds (thirteen when this work began; #161-#163 opened the same day); this branch productizes the main-compatible #141 and registers the rest instead of adding a fourteenth silo",
     "The review's five-layer naming (L1-L5) versus the build prompt's five layers: both preserved through REVIEW_LAYER_MAP, unchanged here"
   ],
-  "next_review_trigger": "Founder review of the draft PR; or the first real outcome settled through the standing-runtime binding; or a founder-selected local model that unlocks the local baseline arms and the semantic organ; or a founder choice of the 0.1.7 primary endpoint (frozen quality rule on about 1,044 externally authored items, or harmful-failure rate on about 104 to 164), fixed before any baseline reply is collected.",
+  "next_review_trigger": "Founder review of the draft PR; or the first real outcome settled through the standing-runtime binding; or a founder-selected local model that unlocks the local baseline arms and the semantic organ; or a founder choice of the 0.1.7 primary endpoint (frozen quality rule on about 1,065 externally authored items, 1,044 at the binomial limit, or harmful-failure rate on 104 items, 164 if the seed itself fails harmfully on 1% of items), fixed before any baseline reply is collected.",
   "supersedes": [],
   "superseded_by": [],
   "implementation_refs": [

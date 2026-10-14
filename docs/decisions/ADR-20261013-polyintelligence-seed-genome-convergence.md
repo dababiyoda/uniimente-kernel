@@ -54,12 +54,13 @@ this suite (0 against 2 and 1). That reduction is observed but not established: 
 0.5 for critical errors, and 0.125 against each baseline for harmful failures (critical or unsupported certainty).
 At 42 items the frozen rule had 10% power to establish the observed gain over `always_llm`, 3% over `llm_committee`
 and 3% over both, which the rule requires. A future frozen version that decides the question needs either about
-1,044 items on the frozen quality rule (0.80 power at the binomial limit, 0.796 under the replayed frozen bootstrap),
-or 104 items on a harmful-failure endpoint (164 if the seed itself failed harmfully on 1% of items). The endpoint
+1,065 items on the frozen quality rule (1,044 at the binomial limit; the frozen bootstrap's own replay holds 80% power
+only from about 1,063), or 104 items on a harmful-failure endpoint (164 if the seed itself failed harmfully on 1% of
+items). The endpoint
 must be fixed before any baseline reply is collected, and that choice is the founder's. The full reasoning is in
 `docs/cortex/SEED_EXPERIMENT_REPORT.md` (section "the decisive test, kill condition 1, and what would decide the
-gain"). The numbers are in `tests/evidence/cortex-seed-v0.1.6/power-analysis.json`, and the review that corrected an
-earlier 93-item figure is `docs/cortex/reviews/POST_RUN_REVIEW_2026-10-14.json`.
+gain"). The numbers are in `tests/evidence/cortex-seed-v0.1.6/power-analysis.json`, and the two reviews that corrected
+this addendum are `docs/cortex/reviews/POST_RUN_REVIEW_2026-10-14.json` and `POST_RUN_REVIEW_2_2026-10-14.json`.
 
 Read narrowly: the baseline model is from the same vendor family as the suite's authors; the suite is self-authored and
 structured-only; 42 items give wide intervals; cost and latency are not comparable across arms. Full limits:
@@ -75,7 +76,7 @@ structured-only; 42 items give wide intervals; cost and latency are not comparab
 | Per-geometry means | deterministic_fixture | `tests/evidence/cortex-seed-v0.1.6/README.md` | claim:association | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1); claim:factual_support | 1.000 (n=5) | 1.000 (n=5) | 1.000 (n=5); claim:intervention | 1.000 (n=5) | 1.000 (n=5) | 1.000 (n=5); claim:prediction | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1); composition | 1.000 (n=2) | 1.000 (n=2) | 1.000 (n=2); estimate | 1.000 (n=6) | 1.000 (n=6) | 1.000 (n=6); formal | 1.000 (n=11) | 0.909 (n=11) | 0.909 (n=11); legal | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1); none | 1.000 (n=1) | 1.000 (n=1) | 1.000 (n=1); normative_value | 1.000 (n=1) | 0.000 (n=1) | 1.000 (n=1); options | 1.000 (n=5) | 0.600 (n=5) | 0.600 (n=5); semantic | 1.000 (n=3) | 1.000 (n=3) | 1.000 (n=3) |
 | Baseline replies are tool-free and prompt-exact | sandbox_execution | `tests/evidence/cortex-seed-v0.1.6/baseline-transcript-audit.json` | 168 prompts requested, 168 served, 0 missing; every collected reply audited (one Read of its prompt file plus the structured output); semantic route served_by=transcript, observed {"model_label_on_receipts": "frontier-model-A", "prompts_missing": 0, "prompts_requested": 4, "prompts_served": 4} |
 | Four 0.1.5 defects reproduced and fixed; one hard rule ported | unit_test | `tests/unit/test_cortex_defect_fixes.py` | D1 wrong-version settlement, D2 composition geometry, D3 cap disclosure, D4 expiry without as_of; D5 declared harm raises the consequence class (ported from #143) |
-| Named Epistemic Finality Rule and typed CapabilityDeficit | unit_test | `tests/unit/test_cortex_finality_deficit.py` | every epistemic class has exactly one deciding jurisdiction; every receipt cites the rule, per route when composed; abstentions carry a typed CapabilityDeficit that requests formation and authorizes nothing |
+| Named Epistemic Finality Rule and typed CapabilityDeficit | unit_test | `tests/unit/test_cortex_finality_deficit.py` | every epistemic class has exactly one deciding jurisdiction; every receipt cites the rule, per route when composed; an abstention caused by a capability gap (UNSUPPORTED_GEOMETRY or NO_ELIGIBLE_METHOD) carries a typed, unverified CapabilityDeficit that requests formation and authorizes nothing (1 of the 11 held-out abstentions) |
 | Binding to the standing runtime creates no authority | unit_test | `tests/unit/test_cortex_proposer.py` | runtime ticked with the real proposer; receipts ledgered; forged or authority-claiming receipts refused; no actuator import |
 | Safeguards resist removal | unit_test | `scripts/ci/check_cortex_mutants.py` | 43 of 43 safeguard-removing mutants caught on 0.1.6 by behavioural tests; freeze-hash checks are deselected in the mutant run so that an edit to frozen code no longer counts as caught by the hash alone |
 | Pre-run independent review | unit_test | `tests/unit/test_cortex_defect_fixes.py, test_cortex_finality_deficit.py, test_cortex_proposer.py, test_cortex_replay.py` | three reviewers attacked receipts, replay and authority before the reported run; an independent verifier re-ran each finding; 14 of 17 confirmed, each fixed with a regression test and a mutant; the 42 held-out routed items are unchanged on every scoring field |

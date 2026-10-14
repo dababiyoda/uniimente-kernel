@@ -1063,7 +1063,7 @@
         "docs/cortex/examples/receipt-gates-incomparable.json"
       ],
       "backcast": "N3",
-      "notes": "Epistemic type, geometry, light cone and consequence class, eligibility, budget, route or compose, typed proofs, adversarial verification, abstain/test/recommend, Kernel authority path and outcome hooks exist. Metaconsensus, value-of-information budgeting and capability genesis are later stages; abstaining receipts already emit the typed CapabilityDeficit that genesis would consume.",
+      "notes": "Epistemic type, geometry, light cone and consequence class, eligibility, budget, route or compose, typed proofs, adversarial verification, abstain/test/recommend, Kernel authority path and outcome hooks exist. Metaconsensus, value-of-information budgeting and capability genesis are later stages; an abstaining receipt caused by a capability gap (UNSUPPORTED_GEOMETRY or NO_ELIGIBLE_METHOD) already emits the typed CapabilityDeficit that genesis would consume; abstentions for missing or malformed input, an exhausted budget or an unavailable dependency carry none.",
       "items": null
     },
     {
@@ -1408,7 +1408,7 @@
         "tests/unit/test_cortex_finality_deficit.py::test_a_class_whose_only_route_is_disabled_names_the_gap_and_the_disabled_families"
       ],
       "backcast": "N4",
-      "notes": "Deficit -> contract -> search -> compose -> generate -> test -> retain is Node 4 (Developmental Cortex). Its input exists: an abstaining receipt carries a typed capability_deficit record (state, geometry, jurisdiction, disabled families, resolution order) marked unverified, because one receipt is one observation; it requests formation and authorizes nothing. Verification by recurrence, diagnosis and the ladder exist in PR #129's Capability Genesis Loop, which merges cleanly with this branch.",
+      "notes": "Deficit -> contract -> search -> compose -> generate -> test -> retain is Node 4 (Developmental Cortex). Its input exists: an abstaining receipt caused by a capability gap (UNSUPPORTED_GEOMETRY or NO_ELIGIBLE_METHOD) carries a typed capability_deficit record (state, geometry, jurisdiction, disabled families, resolution order) marked unverified, because one receipt is one observation; it requests formation and authorizes nothing. Verification by recurrence, diagnosis and the ladder exist in PR #129's Capability Genesis Loop, which merges cleanly with this branch.",
       "items": null
     },
     {

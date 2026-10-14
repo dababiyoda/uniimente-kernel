@@ -15,6 +15,7 @@ future, separately frozen version and is a founder decision.
 """
 from __future__ import annotations
 
+import array
 import functools
 import json
 import math
@@ -64,15 +65,27 @@ def sf(n: int, k: int, p: float) -> float:
 
 @functools.lru_cache(maxsize=None)
 def _pmf_list(m: int, p: float) -> tuple[float, ...]:
-    """Binomial(m, p) pmf from 0 until the remaining mass is negligible (recurrence, no cancellation)."""
+    """Binomial(m, p) pmf from 0 until the remaining mass is negligible.
+
+    Anchored at the mode in log space and recursed outward, so no term underflows for large m * p (a recurrence
+    started at (1 - p) ** m would). Terms below the mode that fall under 1e-300 are returned as 0."""
     if m <= 0 or p <= 0.0:
         return (1.0,)
-    out = [math.exp(m * math.log1p(-p))]
+    if p >= 1.0:
+        return (0.0,) * m + (1.0,)
+    mode = min(m, int((m + 1) * p))
     ratio = p / (1.0 - p)
-    k = 0
-    while k < m and (k <= m * p or out[-1] > 1e-18):
-        out.append(out[-1] * (m - k) / (k + 1) * ratio)
+    top = math.exp(_logpmf(m, mode, p))
+    down, k = [top], mode
+    while k > 0 and down[-1] > 1e-300:
+        down.append(down[-1] * k / ((m - k + 1) * ratio))
+        k -= 1
+    out = [0.0] * k + down[::-1]
+    k, cur = mode, top
+    while k < m and (k <= m * p or cur > 1e-18):
+        cur = cur * (m - k) / (k + 1) * ratio
         k += 1
+        out.append(cur)
     return tuple(out)
 
 
@@ -120,7 +133,7 @@ def quality_power(n: int, p: float, threshold: float) -> float:
 @functools.lru_cache(maxsize=None)
 def mcnemar_threshold(c: int) -> int:
     """Fewest baseline-only failures b that reject at ALPHA when the routed seed alone failed c items."""
-    b = 0
+    b = c          # for b <= c the p-value is at least 0.5, so the search can start at c
     while sf(b + c, b, 0.5) > ALPHA:
         b += 1
     return b
@@ -137,6 +150,11 @@ def mcnemar_power(n: int, pb: float, pr: float) -> float:
 
 
 # ---------------------------------------------------------------- both baselines at once, exact
+def _ratio(part: float, rest: float) -> float:
+    """A conditional probability part / rest, clamped to [0, 1] against rounding."""
+    return min(1.0, max(0.0, part / rest)) if rest > 0 else 0.0
+
+
 def joint_power(n: int, q_both: float, q_a: float, q_c: float, r: float, t_a, t_c) -> float:
     """P(the test clears against baseline A AND baseline C) over n items.
 
@@ -148,11 +166,11 @@ def joint_power(n: int, q_both: float, q_a: float, q_c: float, r: float, t_a, t_
     px1, px2, px3 = q_both * (1 - r), q_a * (1 - r), q_c * (1 - r)
     py1, py2, py3 = q_n * r, q_a * r, q_c * r          # routed fails: neither / A also / C also
     total = []
-    for y2, w2 in enumerate(_pmf_list(n, py2)):
+    for y2, w2 in enumerate(_pmf_list(n, min(1.0, py2))):
         rest2 = 1.0 - py2
-        for y3, w3 in enumerate(_pmf_list(n - y2, py3 / rest2 if rest2 > 0 else 0.0)):
+        for y3, w3 in enumerate(_pmf_list(n - y2, _ratio(py3, rest2))):
             rest3 = rest2 - py3
-            for y1, w1 in enumerate(_pmf_list(n - y2 - y3, py1 / rest3 if rest3 > 0 else 0.0)):
+            for y1, w1 in enumerate(_pmf_list(n - y2 - y3, _ratio(py1, rest3))):
                 wy = w2 * w3 * w1
                 if wy < 1e-18:
                     continue
@@ -160,9 +178,9 @@ def joint_power(n: int, q_both: float, q_a: float, q_c: float, r: float, t_a, t_
                 rest = rest3 - py1
                 need_a, need_c = t_a(y1 + y3), t_c(y1 + y2)
                 s = []
-                for x1, v1 in enumerate(_pmf_list(m, px1 / rest if rest > 0 else 0.0)):
+                for x1, v1 in enumerate(_pmf_list(m, _ratio(px1, rest))):
                     rest_1 = rest - px1
-                    p2 = px2 / rest_1 if rest_1 > 0 else 0.0
+                    p2 = _ratio(px2, rest_1)
                     if px3 == 0.0:      # C never fails alone: its test depends on x1 only, A's on the tail of x2
                         if x1 >= need_c:
                             s.append(v1 * _tail(m - x1, p2, need_a - x1))
@@ -171,7 +189,7 @@ def joint_power(n: int, q_both: float, q_a: float, q_c: float, r: float, t_a, t_
                         if x1 + x2 < need_a:
                             continue
                         rest_2 = rest_1 - px2
-                        p3 = px3 / rest_2 if rest_2 > 0 else 0.0
+                        p3 = _ratio(px3, rest_2)
                         s.append(v1 * v2 * _tail(m - x1 - x2, p3, need_c - x1))
                 total.append(wy * math.fsum(s))
     return min(1.0, math.fsum(total))
@@ -200,6 +218,19 @@ def _frozen_columns(n: int) -> list[list[int]]:
     return cols
 
 
+def _packed(cols: list[list[int]]) -> list[int]:
+    """Each column as one integer with a 16-bit field per resample, so a placement's per-resample win counts are a
+    sum of k integers (exact while every field stays below 65536, i.e. always: a field is at most n)."""
+    return [int.from_bytes(array.array("H", col).tobytes(), sys.byteorder) for col in cols]
+
+
+def _lower_from_packed(packed: list[int], wins: list[int], n: int) -> float:
+    total = sum(packed[i] for i in wins)
+    counts = array.array("H")
+    counts.frombytes(total.to_bytes(2 * S.BOOTSTRAP_B, sys.byteorder))
+    return sorted(counts)[int(0.025 * S.BOOTSTRAP_B)] / n
+
+
 def frozen_lower_bound(cols: list[list[int]], wins: list[int]) -> float:
     """The frozen _bootstrap_mean lower bound for a 0/1 vector whose 1s sit at the indices in `wins`."""
     n = len(cols)
@@ -210,12 +241,14 @@ def frozen_lower_bound(cols: list[list[int]], wins: list[int]) -> float:
 def frozen_crosscheck(n: int, p: float, threshold: float) -> dict:
     """At size n, the share of random item orders in which k wins clear the frozen rule, for k around the
     binomial-limit boundary, and the frozen rule's power that follows (pmf-weighted)."""
-    cols = _frozen_columns(n)
+    if n >= 1 << 16:
+        raise ValueError("packed replay needs n < 65536")
+    packed = _packed(_frozen_columns(n))
     rng = random.Random(PLACEMENT_SEED + n)
     ks = k_star(n, threshold)
     rates = {}
     for k in range(ks - 2, ks + 3):
-        clear = sum(frozen_lower_bound(cols, rng.sample(range(n), k)) > threshold for _ in range(PLACEMENTS))
+        clear = sum(_lower_from_packed(packed, rng.sample(range(n), k), n) > threshold for _ in range(PLACEMENTS))
         rates[k] = clear / PLACEMENTS
     lo, hi = min(rates), max(rates)
     power = math.fsum(pmf(n, k, p) * r for k, r in rates.items()) + sf(n, hi + 1, p)
@@ -236,8 +269,38 @@ def _pattern(routed, base_a, base_c, fails) -> dict:
             "rates": [both / n, only_a / n, only_c / n]}
 
 
-def analyse() -> dict:
-    held = json.loads((EVIDENCE / "heldout-results.json").read_text(encoding="utf-8"))
+def _times(n: int | None, k: int) -> int | None:
+    return None if n is None else n * k
+
+
+def quality_section(p: float, threshold: float, replies_per_item: int, n_obs: int) -> dict:
+    """The frozen quality rule against one baseline whose observed routed-only win rate is p.
+
+    The sizes are binomial-limit sizes. The frozen bootstrap (B = 2000) is replayed at the deciding size and at every
+    size inside its 25-size stay window where the wins needed step up, because that is where its Monte Carlo noise
+    pulls the frozen rule's own power furthest below the limit. If p <= threshold no size can clear the rule."""
+    out = {"attainable": p > threshold, "power_at_observed_n": quality_power(n_obs, p, threshold)}
+    n80 = first_n(lambda n: quality_power(n, p, threshold)) if out["attainable"] else None
+    out.update(items_for_80pct_power=n80, wins_needed_at_that_n=None if n80 is None else k_star(n80, threshold),
+               baseline_replies_needed=_times(n80, replies_per_item))
+    if n80 is None:
+        out.update(frozen_crosscheck=None, frozen_crosscheck_at_steps=[])
+        return out
+    steps = [n for n in range(n80 + 1, n80 + STAY + 1) if k_star(n, threshold) > k_star(n - 1, threshold)]
+    out.update(frozen_crosscheck=frozen_crosscheck(n80, p, threshold),
+               frozen_crosscheck_at_steps=[frozen_crosscheck(n, p, threshold) for n in steps])
+    return out
+
+
+def mcnemar_size(pb: float, pr: float, replies_per_item: int) -> dict:
+    """Smallest size for the exact one-sided McNemar test against one baseline; none if the baseline never fails."""
+    n = first_n(lambda m: mcnemar_power(m, pb, pr)) if pb > 0 else None
+    return {"items_for_80pct_power": n, "baseline_replies_needed": _times(n, replies_per_item)}
+
+
+def analyse(held: dict | None = None) -> dict:
+    if held is None:
+        held = json.loads((EVIDENCE / "heldout-results.json").read_text(encoding="utf-8"))
     arms = held["arms"]
     names = S.THRESHOLDS["declared_baselines"]
     if names != ["always_llm", "llm_committee"]:
@@ -252,7 +315,7 @@ def analyse() -> dict:
     harmful = lambda i: bool(i["critical"] or i["unsupported_certainty"])  # noqa: E731
     endpoints = {"harmful_failure": harmful, "critical_error": lambda i: bool(i["critical"])}
     out = {
-        "schema": "cortex-seed-power/0.2",
+        "schema": "cortex-seed-power/0.3",
         "source": "tests/evidence/cortex-seed-v0.1.6/heldout-results.json",
         "freeze_manifest_sha256": held["freeze_manifest_sha256"],
         "changes_frozen_rule": False,
@@ -262,8 +325,9 @@ def analyse() -> dict:
             "equal this suite's",
             "the routed seed failed no item here; the quality analysis keeps that (0/1 paired differences); the McNemar "
             "endpoints also show a routed harmful-failure rate of 1%",
-            "quality: the frozen bootstrap lower bound is taken at its large-B binomial limit; frozen_crosscheck replays "
-            "the frozen bootstrap itself over random item orders at the deciding sizes",
+            "quality: sizes are taken at the frozen bootstrap's large-B binomial limit; frozen_crosscheck replays the "
+            "frozen bootstrap itself over random item orders at the deciding size and at the sizes in its stay window "
+            "where the wins needed step up, where the frozen rule's own power falls furthest below the limit",
             "McNemar: exact one-sided test at alpha 0.05 against each baseline; the routed seed's failures are "
             "independent of the baselines'",
             "every size is the smallest n whose power reaches 0.8 and stays there for the next 25 sizes, scanned one "
@@ -281,26 +345,18 @@ def analyse() -> dict:
         if any(routed[k]["score"] - base[name][k]["score"] not in (0.0, 1.0) for k in routed):
             raise SystemExit(f"{name}: non-binary paired differences; the binomial limit does not apply")
         p = wins / n_obs
-        n80 = first_n(lambda n, p=p: quality_power(n, p, threshold))
         row = {
             "observed": {"n": n_obs, "routed_only_wins": wins, "mean_gain": p,
                          "frozen_lower_bound": arms[name]["paired_gain_vs_routed"]["ci95"][0],
                          "binomial_limit_lower_bound": lower_bound(n_obs, wins),
                          "baseline_quality": arms[name]["summary"]["mean_quality"]},
-            "quality_gain": {"attainable": p > threshold, "power_at_observed_n": quality_power(n_obs, p, threshold),
-                             "items_for_80pct_power": n80, "wins_needed_at_that_n": k_star(n80, threshold),
-                             "baseline_replies_needed": n80 * replies_per_item,
-                             "frozen_crosscheck": frozen_crosscheck(n80, p, threshold)},
+            "quality_gain": quality_section(p, threshold, replies_per_item, n_obs),
             "endpoints": {},
         }
         for label, fails in endpoints.items():
             b = sum(1 for k in routed if fails(base[name][k]))
             pb = b / n_obs
-            by_rate = {}
-            for pr in ROUTED_FAILURE_RATES:
-                n_needed = first_n(lambda n, pb=pb, pr=pr: mcnemar_power(n, pb, pr))
-                by_rate[str(pr)] = {"items_for_80pct_power": n_needed,
-                                    "baseline_replies_needed": n_needed * replies_per_item}
+            by_rate = {str(pr): mcnemar_size(pb, pr, replies_per_item) for pr in ROUTED_FAILURE_RATES}
             row["endpoints"][label] = {"baseline_only": b, "routed_only": 0, "observed_rate_baseline": pb,
                                        "observed_exact_one_sided_p": mcnemar_p(b, 0),
                                        "power_at_observed_n": mcnemar_power(n_obs, pb, 0.0),
@@ -309,22 +365,28 @@ def analyse() -> dict:
     # ---- both baselines at once (what the frozen rule requires)
     a, c = names
     qual = _pattern(routed, base[a], base[c], lambda i: i["score"] == 0.0)
-    start = max(out["baselines"][x]["quality_gain"]["items_for_80pct_power"] for x in names)
+    starts = [out["baselines"][x]["quality_gain"]["items_for_80pct_power"] for x in names]
 
     def q_joint(n):
-        return joint_power(n, *qual["rates"], 0.0, lambda _: k_star(n, threshold), lambda _: k_star(n, threshold))
-    nq = first_n(q_joint, start)
+        ks = k_star(n, threshold)
+        return 0.0 if ks is None else joint_power(n, *qual["rates"], 0.0, lambda _: ks, lambda _: ks)
+    nq = None if None in starts else first_n(q_joint, max(starts))   # joint power never exceeds either marginal
     out["joint"]["quality_gain"] = {"pattern": qual, "power_at_observed_n": q_joint(n_obs),
-                                    "items_for_80pct_power": nq, "baseline_replies_needed": nq * replies_per_item}
+                                    "items_for_80pct_power": nq, "baseline_replies_needed": _times(nq, replies_per_item)}
     for label, fails in endpoints.items():
         pat = _pattern(routed, base[a], base[c], fails)
         by_rate = {}
         for pr in ROUTED_FAILURE_RATES:
-            start = max(out["baselines"][x]["endpoints"][label]["by_routed_failure_rate"][str(pr)]["items_for_80pct_power"]
-                        for x in names)
+            starts = [out["baselines"][x]["endpoints"][label]["by_routed_failure_rate"][str(pr)]["items_for_80pct_power"]
+                      for x in names]
+            if None in starts:
+                by_rate[str(pr)] = {"items_for_80pct_power": None, "baseline_replies_needed": None,
+                                    "power_at_largest_single_baseline_size": None}
+                continue
+            start = max(starts)
             n_needed = first_n(lambda n, pr=pr: joint_power(n, *pat["rates"], pr, mcnemar_threshold, mcnemar_threshold),
                                start)
-            by_rate[str(pr)] = {"items_for_80pct_power": n_needed, "baseline_replies_needed": n_needed * replies_per_item,
+            by_rate[str(pr)] = {"items_for_80pct_power": n_needed, "baseline_replies_needed": _times(n_needed, replies_per_item),
                                 "power_at_largest_single_baseline_size": joint_power(
                                     start, *pat["rates"], pr, mcnemar_threshold, mcnemar_threshold)}
         out["joint"][label] = {"pattern": pat,

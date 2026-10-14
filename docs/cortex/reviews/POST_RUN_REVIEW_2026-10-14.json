@@ -10,7 +10,8 @@
   "refuted_by_both": 2,
   "split": 1,
   "reproduced_by_author": 4,
-  "fixed": 11
+  "fixed": 11,
+  "clarified_without_defect": 1
  },
  "checked_and_held": {
   "statistics": [
@@ -44,7 +45,7 @@
    "Power at 42 items checked against the frozen bootstrap, not only the binomial limit: 7 wins are needed in both. Power is 0.100 against always_llm and 0.028 against llm_committee, matching 10% and 3%.",
    "McNemar exact one-sided p-values: 0.125 for harmful failures (3 vs 0, each baseline), and 0.25 and 0.5 for critical errors. Sample sizes match power-analysis.json: 93 items (144 at a 1% routed failure rate), critical-only 140 and 281, quality 303 and 1,045, replies at 4 per item: 372, 576, 1,124, 1,212 and 4,180.",
    "These numbers are consistent across the ADR addendum, the intent JSON (failure_evidence and next_review_trigger '1,045 … 93 to 144'), the ledger row (10%/3%) and the PR body (10%/3%, 1,045, 93, p = 0.125, five of six clauses met).",
-   "Claim that the 0.05 threshold was set against an expected small local model: freeze-v0.1.json (2026-09-30T22:05:19Z) already has 0.05, and arms.py names qwen3.5:4b as the default baseline. The claim holds.",
+   "Claim that the 0.05 threshold was set against an expected small local model: freeze-v0.1.json (2026-09-30T22:05:19Z) already has 0.05, and arms.py names a small local model as the default baseline. The claim holds.",
    "'Unreachable above a baseline quality of 0.95' holds under the stated assumption that the routed seed scores 1.0, since the lower bound is always below the mean gain, which would be at most 0.05.",
    "Working tree is unchanged after all checks; HEAD is still e5e1e2a."
   ],
@@ -152,8 +153,8 @@
    ],
    "skeptic_runs_stopped_by_usage_limit": 0,
    "verdict": "refuted_by_both",
-   "disposition": "no_change",
-   "resolution": "both skeptics found the two headroom figures measure different things (gain ceiling over the baseline versus margin over the threshold); the report now states both explicitly"
+   "disposition": "clarified_without_defect",
+   "resolution": "both skeptics found the two headroom figures measure different things (gain ceiling over the baseline versus margin over the threshold), so there was no defect; the report sentence was nevertheless reworded to state both"
   },
   {
    "id": "POST-doctrine-0",
@@ -201,7 +202,7 @@
    "skeptic_runs_stopped_by_usage_limit": 0,
    "verdict": "confirmed_by_both",
    "disposition": "fixed",
-   "resolution": "the critical-error p-values (0.25, 0.5) now stand beside the harmful-failure p-value (0.125) in the report, ADR, intent record and PR body"
+   "resolution": "the critical-error p-values (0.25, 0.5) now stand beside the harmful-failure p-value (0.125) in the ADR addendum, the intent record and the PR body; the report section already had them"
   },
   {
    "id": "POST-doctrine-2",
@@ -249,7 +250,7 @@
    "skeptic_runs_stopped_by_usage_limit": 0,
    "verdict": "confirmed_by_both",
    "disposition": "fixed",
-   "resolution": "the report now says an abstention caused by a capability gap carries the deficit: 1 of the 11 held-out abstentions (H-S03)"
+   "resolution": "the report now says an abstention caused by a capability gap carries the deficit: 1 of the 11 held-out abstentions (H-S03); the second post-run review found the same overclaim in the ADR evidence row, the intent record, the deliberation record, the SG-intent record and two verbatim-register notes, and those were corrected too (POST_RUN_REVIEW_2_2026-10-14.json)"
   },
   {
    "id": "POST-doctrine-4",
@@ -273,7 +274,7 @@
    "skeptic_runs_stopped_by_usage_limit": 0,
    "verdict": "split",
    "disposition": "fixed_with_statistics_1",
-   "resolution": "both skeptics agreed 0.77 is not the frozen rule's power; they disagreed on the proposed 1,150-item fix, which came from the same worst-of-three artifact; the report now gives 1,044 items at the binomial limit, 0.796 under the replayed frozen bootstrap, and about 1,050 items for option (a)"
+   "resolution": "both skeptics agreed 0.77 is not the frozen rule's power; they disagreed on the proposed 1,150-item fix, which came from the same worst-of-three artifact; the report now gives 1,044 items at the binomial limit, 0.796 under the replayed frozen bootstrap, and about 1,050 items for option (a); the second post-run review then found that the frozen rule's own power, replayed over thousands of item orders, holds 0.80 only from about 1,063 items, so option (a) now says about 1,065"
   },
   {
    "id": "POST-doctrine-5",
@@ -373,5 +374,11 @@
    "disposition": "fixed",
    "resolution": "both skeptic runs stopped on a usage limit; sums now use math.fsum, so the recorded JSON is byte-identical when regenerated on Python 3.11 and 3.13 and --check passes on 3.12; the docstring no longer blames libm"
   }
+ ],
+ "corrections_after_second_review": [
+  "POST-doctrine-1: the resolution no longer implies the report changed; it already had the critical-error p-values.",
+  "POST-statistics-2: the disposition is clarified_without_defect, because the report sentence was reworded although no defect was found.",
+  "The lineage lens's scan statement in checked_and_held ('the only hit is the commit's required attribution trailer') missed the small local model that the preserved 0.1.5 report text and cortex/evaluation/arms.py name as the default baseline. Both pre-date this session and are left unchanged. This session's model-identifier rule covers the models that served this experiment.",
+  "The report, the commit and the PR said 'the skeptic runs stopped' for the 4 author-reproduced findings. In fact 6 of their 8 skeptic runs stopped, and the 2 that completed both confirmed. The method field above was already exact."
  ]
 }

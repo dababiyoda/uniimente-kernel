@@ -567,8 +567,23 @@ class MissionEngine:
             return self._watch_while_blocked(m, now)
         if m.blocker:
             resolved, why = self._blocker_resolved(m)
+            if not resolved and m.blocker["type"] == "capability" and m.blocker.get("shared_ask") \
+                    and self._closed(m.blocker["request_id"]):
+                # the shared body-level ask was answered or withdrawn without an attach this mission can use: its
+                # need is still open, so it is asked about on its own (or on another open ask naming a candidate)
+                self._escalate_capability(m, m.blocker["function"], m.blocker.get("capability_id"),
+                                          self._deficit_purpose(m, m.blocker["function"]), now)
+                return {"state": "BLOCKED", "blocker": m.blocker}
             if not resolved:
                 return {"state": "WAITING", "blocker": m.blocker, "why": why}
+            if m.blocker["type"] == "capability" and not m.blocker.get("shared_ask") \
+                    and not self._closed(m.blocker["request_id"]):
+                # this mission's own attach ask is moot once a capability resolves it; a shared ask stays open for
+                # its other uses
+                rid = m.blocker["request_id"]
+                self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id,
+                                                           "why": f"resolved: {why}", "evidence": [], "at": iso(now)},
+                                    key=[rid, "withdrawn", "resolved"])
             if m.blocker["type"] == "reconciliation":
                 answer = self.book.answers[m.blocker["request_id"]]["answer"]
                 aid = m.blocker["action_id"]
@@ -817,23 +832,32 @@ class MissionEngine:
                 return capability
         return self._escalate_capability(m, function, spec.get("capability"), purpose, now)
 
+    def _deficit_purpose(self, m: MissionState, function: str) -> str:
+        opened = [e.payload for e in self.journal.replay("deficit.opened")
+                  if e.payload["mission_id"] == m.mission_id and e.payload["function"] == function]
+        return opened[-1]["purpose"] if opened else f"a capability for {function}"
+
     def _attach_candidates(self, m: MissionState, function: str) -> list[str]:
         """Withheld capabilities Genesis found for a cognition deficit (they carry other function names)."""
         return self.genesis.attach_candidates(m.mission_id, function) if self.genesis is not None else []
 
+    def _closed(self, request_id: str) -> bool:
+        return request_id in self.book.answers or request_id in self.book.withdrawn
+
     def _shared_attach_ask(self, candidates: list[str]) -> str | None:
-        """A body-level attach ask already recorded (the Competency Compiler records one per method) that names every
-        candidate as verified: the mission waits on it instead of asking the founder a second time. Another
-        mission's ask is never shared, since that mission may withdraw it."""
+        """A body-level attach ask already recorded (the Competency Compiler records one per method, for its best
+        fit) that is still open and names one of the candidates as verified: the mission waits on it, keeping every
+        candidate in its blocker, instead of asking the founder about the same attach a second time. An answered or
+        withdrawn ask is never shared: this mission's need would then wait on a closed request that no open ask
+        names. Another mission's ask is never shared either, since that mission may withdraw it."""
         if not candidates:
             return None
-        withdrawn = {e.payload["request_id"] for e in self.journal.replay("decision.withdrawn")}
         for event in self.journal.replay("decision.requested"):
             ask = event.payload
             named = {c.get("capability_id") for c in (ask.get("evidence") or {}).get("registered") or []
                      if isinstance(c, dict) and c.get("state") == "VERIFIED"}
             if ask.get("kind") == "CAPABILITY_ATTACH" and ask.get("mission_id") is None \
-                    and ask["request_id"] not in withdrawn and set(candidates) <= named:
+                    and not self._closed(ask["request_id"]) and named & set(candidates):
                 return ask["request_id"]
         return None
 

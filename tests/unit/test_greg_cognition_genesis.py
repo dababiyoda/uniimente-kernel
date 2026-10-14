@@ -255,7 +255,12 @@ def test_an_assignment_deficit_forms_scipy_on_a_card_and_asks_the_founder_exactl
         assert opened["acceptance"]["oracle"] == {A.FUNCTION: G.CATALOG[A.FUNCTION]["oracle_kind"]}
         routes = [(e.payload["route"], e.payload["result"], e.payload["capability_id"])
                   for e in body.journal.replay("genesis.route")]
-        assert ("genome_library", "no registered intelligence has this geometry and these inputs", None) in routes
+        assert ("genome_library", "no registered intelligence fits: none of geometry optimization takes its native "
+                                  "inputs from ['costs']", None) in routes
+        # the registered same-engine genome is reported with why it does not fit, never passed over in silence
+        [lsa] = [r for r in routes if r[0] == "existing_project" and r[2] == "cognition.assignment_lsa"]
+        assert "same engine" in lsa[1] and "reads cost_matrix" in lsa[1]
+        assert body.registry.state["cognition.assignment_lsa"] == "VERIFIED"
         assert ("installed_package", "acquired", SCIPY) in routes
         assert any(r[1].startswith("networkx: ") for r in routes)          # the same engine, not counted twice
         [verified] = [e.payload for e in body.journal.replay("genesis.verified")]
@@ -280,6 +285,15 @@ def test_an_assignment_deficit_forms_scipy_on_a_card_and_asks_the_founder_exactl
         assert answered["result"]["total"] == A.brute_force({"costs": COSTS}) == 8
         assert answered["result"]["engine"].startswith("scipy ")
         assert len(attach_asks(body)) == 1                                # no further ask
+        [closed] = [e.payload for e in body.journal.replay("decision.withdrawn")]
+        assert closed["request_id"] == ask["request_id"] and closed["why"].startswith("resolved: ")
+        assert ask["request_id"] not in {r["request_id"] for r in body.engine.book.open_requests()}
+        # the formed mechanism's answer settles, credited by capability id and pinned package version
+        settled = [e.payload for e in body.journal.replay("cognition.settled")]
+        assert [(o["method"], o["correct"]) for o in settled] == [(SCIPY, True)]
+        assert settled[0]["method_version"] == mechanisms.installed("scipy").version
+        assert settled[0]["compile_receipt"] == answered["receipt_id"]
+        assert settled[0]["cognitive_receipt"] == answered["selected_receipt"]["receipt_id"]
     with Body(home, clock=clock) as body:                                  # restart: the pinned card holds
         assert body.registry.state[SCIPY] == "ATTACHED"
 
@@ -375,13 +389,188 @@ def test_without_the_compiler_genesis_alone_names_the_withheld_genome_in_the_one
         assert [c["capability_id"] for c in _attachable(ask)] == ["cognition.queue_erlang"]
         assert any(s["route"] == "genome_library" and "NICHE_CAPABILITY" in s["result"]
                    for s in ask["evidence"]["searched"])
-        # frozen negative evidence: a superseded family is reported, never offered
+        # frozen negative evidence arriving later, on the same open deficit: the family is reported, no longer offered
         index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "SUPERSEDED",
                                                                    "version": item.genome.version}},
                                      "recipes": {}, "routing": {}}))
-        other = body.genesis.resolve(mission=m, function="cognition.prediction:queue", purpose="queue", now=clock(),
-                                     deficit={**deficit, "function": "cognition.prediction:queue"})
-        assert other is None
-        assert body.genesis.attach_candidates("m:direct", "cognition.prediction:queue") == []
+        assert body.genesis.resolve(mission=m, function=deficit["function"], purpose="staffing", now=clock(),
+                                    deficit=deficit) is None
+        assert len(list(body.journal.replay("deficit.opened"))) == 1          # the same deficit, a new pass
+        assert body.genesis.attach_candidates("m:direct", deficit["function"]) == []
+        assert body.engine._capability_ask(m, deficit["function"], "staffing")["evidence"]["registered"] == []
         assert any(e.payload["result"] == "cognition.queue_erlang fits but is not a candidate: frozen admission "
                                           "status SUPERSEDED" for e in body.journal.replay("genesis.route"))
+        # re-admitted later: offered again on the same deficit
+        index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "NICHE_CAPABILITY",
+                                                                   "version": item.genome.version}},
+                                     "recipes": {}, "routing": {}}))
+        body.genesis.resolve(mission=m, function=deficit["function"], purpose="staffing", now=clock(), deficit=deficit)
+        assert body.genesis.attach_candidates("m:direct", deficit["function"]) == ["cognition.queue_erlang"]
+
+
+# -- review fixes: asks, candidates, the authority guard, the residual record, settlement -------------
+
+def test_a_body_level_ask_the_founder_already_answered_is_never_shared(tmp_path, index):
+    """An answered or withdrawn body-level ask is closed. A mission sharing it would wait on a closed request that no
+    open ask names, so the founder would never be asked about its deficit: it asks on its own instead, and so does a
+    mission that shared the ask before the founder answered it."""
+    item = library.executables()["queue_erlang"]
+    index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "DEFAULT_FOR_GEOMETRY",
+                                                               "version": item.genome.version}},
+                                 "recipes": {}, "routing": {}}))
+    home, key, body_id, _ = make_body(tmp_path)
+    geometry = {"geometry": item.genome.epistemic_class, "subgeometry": "staffing"}
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:first", geometry, item.instance(2)[0])))
+        ticks(body, clock, 1)
+        [shared] = attach_asks(body)                                       # the compiler's body-level ask
+        assert shared["mission_id"] is None
+        assert body.engine.book.missions["m:first"].blocker["request_id"] == shared["request_id"]
+        body.apply(signed(key, body_id, "DECISION", {"request_id": shared["request_id"], "answer": "reject",
+                                                      "reason": "keep it withheld for now"}))
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:staff", geometry, item.instance(3)[0])))
+        for _ in range(3):
+            body.tick()
+            clock.advance(31)
+        book = body.engine.book
+        open_asks = {r["request_id"]: r for r in book.open_requests()}
+        for mid in ("m:first", "m:staff"):
+            blocker = book.missions[mid].blocker
+            assert blocker["request_id"] not in book.answers and "shared_ask" not in blocker
+            assert blocker["attach_candidates"] == ["cognition.queue_erlang"]
+            assert open_asks[blocker["request_id"]]["mission_id"] == mid      # an open ask names this mission
+        assert body.registry.state["cognition.queue_erlang"] == "VERIFIED"
+
+
+def test_genesis_offers_exactly_what_the_compiler_would_route_and_never_a_relaxation(tmp_path, index):
+    """flow_maxflow reads only the edges, source and sink of a capacity-expansion request: the compiler rejects it as
+    a relaxation. Offering it would let an attach unblock the mission while the compiler still refuses it."""
+    data, _ = library.executables()["flow_expansion_mcf"].instance(1)        # development seed
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission(
+        "m:expand", {"geometry": "optimization", "subgeometry": "expansion"}, data)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock, 3)[-1]["state"] in ("BLOCKED", "WAITING")
+        rejected = {r["method"]: r["why"] for r in compilations(body)[-1]["methods_rejected"]}
+        assert rejected["cognition.flow_maxflow"].startswith("answers a relaxation")
+        candidates = body.engine.book.missions["m:expand"].blocker["attach_candidates"]
+        assert "cognition.flow_maxflow" not in candidates and "cognition.flow_expansion_mcf" in candidates
+        assert any(e.payload["result"].startswith("cognition.flow_maxflow fits but is not a candidate: answers a "
+                                                  "relaxation") for e in body.journal.replay("genesis.route"))
+        rows = compiler.family_rows(set(data), compiler.CompetencyGeometry(geometry="optimization"),
+                                    compiler.evidence_index())
+        assert sorted(candidates) == sorted({r["method"] for r in rows if not r["rejected"]
+                                             and body.registry.state.get(r["method"]) == "VERIFIED"})
+
+
+def test_auto_attach_inside_an_admitting_cone_never_attaches_a_mechanism_formed_for_cognition(tmp_path, index):
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = compile_mission("m:assign", {"geometry": "optimization"}, {"costs": COSTS}, auto_attach=True)
+    spec["light_cone"]["capabilities"] = ["cognition.solve", "acquired.*"]     # the cone admits the mechanism
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock, 3)[-1]["state"] in ("BLOCKED", "WAITING")
+        assert body.engine.book.missions["m:assign"].cone._capability_inside(SCIPY)
+        assert body.registry.state[SCIPY] == "VERIFIED"
+        assert not [e for e in body.journal.replay("capability.state")
+                    if e.payload["capability_id"] == SCIPY and e.payload["state"] == "ATTACHED"]
+        [awaiting] = [e.payload for e in body.journal.replay("deficit.awaiting_attach")
+                      if e.payload["capability_id"] == SCIPY]
+        assert awaiting["why"] == "a capability formed for cognition is attached only by the founder's own command"
+        assert not [c for c in compilations(body) if c["state"] == "ANSWERED"]
+
+
+def test_auto_attach_never_attaches_a_withheld_genome_named_directly(tmp_path, index):
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        spec = compile_mission("m:direct", {"geometry": "prediction"}, {"x": 1}, auto_attach=True)
+        spec["light_cone"]["capabilities"] = ["cognition.*"]               # the cone admits every genome
+        body.apply(signed(key, body_id, "MISSION", spec))
+        body.engine.book.rebuild()
+        m = body.engine.book.missions["m:direct"]
+        assert m.cone._capability_inside("cognition.queue_erlang")
+        assert body.registry.state["cognition.queue_erlang"] == "VERIFIED"
+        assert body.engine._deficit(m, {"function": "cognition.queue_erlang"}, clock(), purpose="staffing") is None
+        assert body.registry.state["cognition.queue_erlang"] == "VERIFIED"
+        assert not [e for e in body.journal.replay("capability.state") if e.payload["state"] == "ATTACHED"]
+        [awaiting] = [e.payload for e in body.journal.replay("deficit.awaiting_attach")
+                      if e.payload["capability_id"] == "cognition.queue_erlang"]
+        assert awaiting["why"] == "a capability formed for cognition is attached only by the founder's own command"
+
+
+def test_the_residual_keeps_the_compilers_geometry_and_every_input(tmp_path, index):
+    """Genesis matches the residual exactly as the compiler will: a declared geometry that is not an epistemic class
+    matches nothing, and an input is never dropped (beyond the bounds the residual is matched to nothing)."""
+    record = G.cognition_record("cognition.assignment:unspecified",
+                                {"required_inputs": ["costs"], "geometry": {"geometry": "assignment"}})
+    assert record["geometry"] == "assignment" and G.cognition_mechanisms(record["required_inputs"], "assignment") == []
+    undeclared = G.cognition_record("cognition.unknown:unspecified", {"required_inputs": ["costs"], "geometry": {}})
+    assert undeclared["geometry"] is None and G.cognition_mechanisms(["costs"], None) == [A.FUNCTION]
+    extra = "budget_that_the_total_assignment_cost_must_not_exceed_in_dollars_x"   # 66 characters
+    long = G.cognition_record("cognition.optimization:assignment",
+                              {"required_inputs": ["costs", extra], "geometry": {"geometry": "optimization"}})
+    assert not long["inputs_known"] and long["required_inputs"] == [] and "1-64 characters" in long["inputs_refused"]["why"]
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission("m:class", {"geometry": "assignment"}, {"costs": COSTS})))
+    drop(home, signed(key, body_id, "MISSION", compile_mission("m:long", {"geometry": "optimization"},
+                                                                {"costs": COSTS, extra: 5})))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        for _ in range(3):
+            body.tick()
+            clock.advance(31)
+        opened = {e.payload["mission_id"]: e.payload["cognition"] for e in body.journal.replay("deficit.opened")}
+        assert opened["m:class"]["geometry"] == "assignment" and not opened["m:long"]["inputs_known"]
+        assert not list(body.journal.replay("genesis.verified")) and SCIPY not in body.registry.state
+        for mid in ("m:class", "m:long"):
+            blocker = body.engine.book.missions[mid].blocker
+            assert blocker["type"] == "capability" and "attach_candidates" not in blocker
+
+
+def test_several_withheld_genomes_fit_and_the_founder_is_asked_once(tmp_path, index):
+    data, _ = library.executables()["dp_knapsack"].instance(2)               # development seed
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission("m:pack", {"geometry": "optimization"}, data)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock, 3)[-1]["state"] in ("BLOCKED", "WAITING")
+        blocker = body.engine.book.missions["m:pack"].blocker
+        assert blocker["attach_candidates"] == ["cognition.dp_knapsack", "cognition.knapsack_bnb"]
+        [ask] = attach_asks(body)                                          # the compiler's ask, shared
+        assert blocker["shared_ask"] and blocker["request_id"] == ask["request_id"]
+        assert ask["authority_requested"]["attach"] in blocker["attach_candidates"]
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": ask["authority_requested"]["attach"]}))
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+        assert len(attach_asks(body)) == 1
+
+
+def test_a_formed_answer_carries_its_own_receipt_and_poor_settled_outcomes_demote_it(tmp_path, monkeypatch, index):
+    from greg.cognition import settlement
+    registry = attached_registry(tmp_path)
+    request = {"geometry": {"geometry": "optimization"}, "data": {"costs": COSTS}}
+    r = reason({"problem_id": "assign", "compile": request}, registry=registry)
+    inner = r["selected_receipt"]
+    assert inner["method"] == SCIPY and inner["method_version"] == mechanisms.installed("scipy").version
+    assert r["intermediate_receipts"] == [inner["receipt_id"]] and settlement._valid_receipt(inner)
+    assert inner["evaluator_result"]["verdict"] == "STRUCTURALLY_VERIFIED" and inner["output"] == r["result"]
+    assert inner["abstention_state"] == "NONE" and settlement._compiled(r) is r
+    # credited only as the identity Genesis's registration pinned, never through BUILTINS
+    assert settlement._known_method(inner, r, {}, {(SCIPY, inner["method_version"])})
+    assert not settlement._known_method(inner, r, {}, set())
+    assert not settlement._known_method(inner, r, {}, {(SCIPY, "0.0.0")})
+    # live negative evidence demotes it, never deletes it: nothing else fits, so it still serves, with dissent
+    monkeypatch.setattr(compiler, "_settled_counts", lambda journal: {SCIPY: (12, 1)})
+    demoted = reason({"problem_id": "assign", "compile": request}, registry=registry)
+    assert demoted["state"] == "ANSWERED" and demoted["method_or_composition_selected"] == SCIPY
+    assert [d["method"] for d in demoted["methods_demoted"]] == [SCIPY]
+    assert any(d.startswith(f"{SCIPY}: settled outcomes on this body: 1 of 12") for d in demoted["dissent"])

@@ -29,6 +29,8 @@ def registry_view(journal=None):
     for manifest, adapter in BUILTINS.values():
         registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
     if journal is not None:
+        from greg.genesis import project_formed
+        project_formed(registry, journal)          # mechanisms Capability Genesis formed on this body
         for event in journal.replay("capability.state"):
             if event.payload["capability_id"] in registry.manifests:
                 registry.set_state(event.payload["capability_id"], event.payload["state"])

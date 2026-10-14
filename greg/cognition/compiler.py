@@ -355,10 +355,35 @@ def evidence_index(path: Path | None = None) -> dict:
 
 
 def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
-    from .catalog import FAMILIES
     from .composition import RECIPES, route
+    rows = family_rows(set(data), g, evidence, data)
+    rows += _organ_rows(data, g, evidence)
+    recipe = route(data)
+    if recipe:
+        verdict = evidence["recipes"].get(recipe, {})
+        row = {"method": f"composition:{recipe}", "operation": recipe, "kind": "composition",
+               "status": "VPL_LIFT" if verdict.get("lift") else verdict.get("status", "UNEVALUATED"),
+               "stages": list(RECIPES[recipe]["stages"]), "rejected": None}
+        if verdict.get("lift") is False:
+            # Demoted, not deleted: a recipe without verified lift ranks after every other method that fits,
+            # because the simpler constituent wins ties; it stays the route when nothing else fits (P6 F5:
+            # 8.5% cheaper, not significant, and its comparison arm is not an invocable method).
+            row["status"] = "NO_LIFT"
+            row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
+                              f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
+        rows.append(row)
+    return rows
+
+
+def family_rows(keys, g: CompetencyGeometry, evidence: dict, data: dict | None = None) -> list[dict]:
+    """One row per catalogued or genome family operation whose native inputs are all among ``keys``, with the
+    compiler's own verdict in ``rejected``: native geometry, composition stage, frozen admission status, or a
+    relaxation of a fuller fitting method. Capability Genesis reads these same rows for a cognition deficit, so it
+    names exactly the families this compiler would route to once attached. ``data`` (the request's values) only
+    places a row in its measured subregion; no verdict depends on it."""
+    from .catalog import FAMILIES
     from .genomes import library
-    rows, keys = [], set(data)
+    rows, keys = [], set(keys)
     genomes = library.executables()
     # a superseded genome's competitor promoted into a registered genome of its own (same geometry and inputs)
     promoted = {old: new for old, new in library.promotions().items() if new in FAMILIES}
@@ -396,7 +421,7 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                    **({"stale_evidence": stale} if stale else {})}
             if family in genomes and not stale and evidence["genomes"].get(family, {}).get("median_seconds") is not None:
                 row["median_seconds"] = evidence["genomes"][family]["median_seconds"]   # held-out, this version
-            if family in genomes and not stale:
+            if family in genomes and not stale and data is not None:
                 # subregion verdicts bind the version they were measured at, like the status they refine
                 measured = _subregion_evidence(genomes[family], data, evidence["genomes"].get(family, {}))
                 if measured:
@@ -414,21 +439,6 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                 row["promotes"] = f"cognition.{genomes[family].promotes}"
             rows.append(row)
     _reject_relaxations(rows)
-    rows += _organ_rows(data, g, evidence)
-    recipe = route(data)
-    if recipe:
-        verdict = evidence["recipes"].get(recipe, {})
-        row = {"method": f"composition:{recipe}", "operation": recipe, "kind": "composition",
-               "status": "VPL_LIFT" if verdict.get("lift") else verdict.get("status", "UNEVALUATED"),
-               "stages": list(RECIPES[recipe]["stages"]), "rejected": None}
-        if verdict.get("lift") is False:
-            # Demoted, not deleted: a recipe without verified lift ranks after every other method that fits,
-            # because the simpler constituent wins ties; it stays the route when nothing else fits (P6 F5:
-            # 8.5% cheaper, not significant, and its comparison arm is not an invocable method).
-            row["status"] = "NO_LIFT"
-            row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
-                              f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
-        rows.append(row)
     return rows
 
 
@@ -601,20 +611,28 @@ def _state(registry, method: str) -> str | None:
         return None
 
 
-def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool, receipt: dict):
+def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool, receipt: dict, *, pid: str,
+            vector, journal=None):
     """Directive section 24, after the founder's attach: a mechanism Capability Genesis formed for a residual
     geometry (an installed open-source engine qualified on GREG's frozen oracle; ``greg.genesis``) serves it.
 
     Reached only when no catalogued method fits or can run. The founder's attach is the only way such a mechanism
     becomes usable; every answer is accepted only on GREG's own certificate, which shares no code with the engine.
     A refusal (input outside competence, a changed package, a failed certificate) is recorded and the deficit
-    stands. Returns ``(state, result)`` or None."""
+    stands. An answer carries the mechanism's own receipt (``selected_receipt``), which settlement credits by
+    capability id and pinned package version; a mechanism whose settled outcomes on this body are significantly
+    poor is demoted after every other formed mechanism, as a catalogued method is. Returns ``(state, result)`` or
+    None."""
     try:
         from greg import genesis
         formed = genesis.formed_cognition(registry, data, g.geometry)
     except Exception as exc:          # a registry object without the views Genesis reads: recorded, not fatal
         receipt["dissent"].append(f"formed mechanisms not consulted: {type(exc).__name__}: {exc}"[:300])
         return None
+    settled = _settled_counts(journal) if formed else {}
+    inhibited = {m.capability_id: _settled_inhibition(*settled.get(m.capability_id, (0, 0))) for m, _ in formed}
+    receipt["methods_demoted"] += [{"method": cid, "why": why} for cid, why in inhibited.items() if why]
+    formed.sort(key=lambda pair: bool(inhibited[pair[0].capability_id]))      # stable: demoted, never deleted
     for manifest, adapter in formed:
         cid, spec = manifest.capability_id, genesis.CATALOG[manifest.function]
         receipt["methods_considered"].append(cid)
@@ -625,23 +643,73 @@ def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool,
             return "FORMALIZATION_INCOMPLETE", None
         if body.get("execute") is False:
             return "PLANNED", None
+        started = time.monotonic()
         try:
             answer = genesis.run_formed(manifest, adapter, data)
         except Exception as exc:
             receipt["abstentions"].append(f"{cid} refused: {exc}"[:300])
             receipt["method_or_composition_selected"] = receipt["selection_level"] = None
             continue
+        inner = _formed_receipt(pid, manifest, spec, g, vector, data, answer, time.monotonic() - started, high,
+                                [m.capability_id for m, _ in formed])
+        if inhibited[cid]:
+            receipt["dissent"].append(f"{cid}: {inhibited[cid]}")
         receipt.update(proof_artifacts=[{"type": "genesis_mechanism_certificate",
                                          "evidence_type": spec["evidence_type"]}],
                        verification_method=f"GREG-owned certificate sharing no code with {answer.get('engine')}: "
                                            f"{answer['certificate']['kind']}",
-                       confidence_type=spec["evidence_type"],
+                       confidence_type=spec["evidence_type"], intermediate_receipts=[inner["receipt_id"]],
+                       selected_receipt=inner,
                        uncertainty="exact for the declared inputs; whether they describe the world is not verified")
         receipt["resource_use"]["stages"] = 1
         if receipt.get("withheld_best_fit"):
             receipt["withheld_best_fit"]["served_by"] = cid
         return ("WORLD_UNVERIFIED" if high else "ANSWERED"), answer
     return None
+
+
+def _formed_receipt(pid: str, manifest, spec: dict, g: CompetencyGeometry, vector, data: dict, answer: dict,
+                    latency: float, high: bool, considered: list) -> dict:
+    """The formed mechanism's own CognitiveReceipt. Its method is the capability id and its version the package
+    version pinned on the Mechanism Card (settlement checks both against Genesis's registration, never against
+    BUILTINS). Its evaluator is GREG's certificate, which the adapter checked before this answer existed."""
+    from cortex.outcomes import classify_greg
+    from .contracts import CognitiveReceipt, ProblemGeometry
+    klass = g.geometry or spec["signature"]["classes"][0]
+    geometry = ProblemGeometry(epistemic_class=klass, consequence_class=g.consequence_class or "read_only",
+                               optimization_question=klass == "optimization")
+    signature = spec["signature"]
+    read = {k: data[k] for k in (*signature["required"], *signature["optional"]) if k in data}
+    state = "WORLD_UNVERIFIED" if high else "NONE"
+    engine = str(answer.get("engine"))
+    return CognitiveReceipt(
+        problem_id=pid, geometry=asdict(geometry), consequence_class=geometry.consequence_class,
+        consequence_vector=asdict(vector), method=manifest.capability_id,
+        method_version=str(manifest.provenance.get("version")), epistemic_class=klass,
+        input_digest=digest({"problem_id": pid, "mechanism": manifest.capability_id, "data": read}),
+        evidence_refs=[], assumptions=["Input and model validity are not established by computation"],
+        excluded_variables=[], output=answer, uncertainty={"conditional_on_input": True, "world_confidence": None},
+        proof_type=None, proof_artifact=None, alternative_methods_considered=[{"method": c} for c in considered],
+        method_selection_reason="founder-attached mechanism Capability Genesis formed for this residual geometry; no "
+                                "catalogued method fits or can run",
+        strongest_counterargument="the declared inputs may not describe the world; the engine is untrusted and its "
+                                  "answer stands only on GREG's certificate",
+        falsification_condition="GREG's certificate fails on recomputation, or an observed outcome contradicts this "
+                                "receipt",
+        abstention_state=state,
+        missing_information=["empirical conditions and legitimate consequence authority require separate "
+                             "verification"] if high else [],
+        compute_cost={"engine": engine, "model_calls": 0, "energy": "unmeasured"}, money_cost=0.0,
+        latency=max(0.0, latency), evaluator="GREG-owned certificate (greg.genesis)",
+        evaluator_result={"verdict": "STRUCTURALLY_VERIFIED", "certificate": answer["certificate"]["kind"],
+                          "independence": f"GREG-owned certificate sharing no code with {engine}"},
+        reason_code="WORLD_UNVERIFIED" if high else None,
+        outcome_state="CONDITIONAL_RESULT" if high else "ANSWERED_WITHIN_SCOPE",
+        contribution_attribution=[{"method": manifest.capability_id, "role": "calculation",
+                                   "uncertainty": "not causal credit"}],
+        causal_credit=[{"method": manifest.capability_id, "role": "solver"},
+                       {"method": "greg.genesis certificate", "role": "falsifier"}],
+        outcome=classify_greg(state, has_output=True)).to_dict()
 
 
 def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> dict:
@@ -892,7 +960,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                    and not r["superseded_by"].get("promoted_as")]
     high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
     if not eligible:
-        formed = _formed(registry, data, g, body, high, receipt)
+        formed = _formed(registry, data, g, body, high, receipt, pid=pid, vector=vector, journal=journal)
         if formed is not None:
             return finish(*formed)
         if superseding:
@@ -942,7 +1010,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             except Exception as exc:      # the optional ask never aborts routing; its failure is recorded
                 receipt["founder_attach_ask"] = {"state": "NOT_PREPARED", "why": f"{type(exc).__name__}: {exc}"[:300]}
     if not runnable:
-        formed = _formed(registry, data, g, body, high, receipt)
+        formed = _formed(registry, data, g, body, high, receipt, pid=pid, vector=vector, journal=journal)
         if formed is not None:
             return finish(*formed)
         receipt["capability_deficit"] = {

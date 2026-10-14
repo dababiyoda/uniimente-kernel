@@ -13,8 +13,9 @@ registry carries that status only when the cortex's next version re-freezes (``f
 
 ``EXECUTED_ON_GREG`` names executors as ``cognition.<family>`` (a catalog family) or ``module:symbol``; each note
 states the coverage, because executing is not succeeding (admission verdicts live in
-docs/evidence/greg-mind-evidence-index.json). ``RESERVED_WITHOUT_EXECUTOR`` says why every other reserved family
-still has no executor anywhere; a partial precursor does not execute the declared mechanism.
+docs/evidence/greg-mind-evidence-index.json), and names any partial precursor that is not an executor.
+``RESERVED_WITHOUT_EXECUTOR`` says why every other reserved family still has no executor anywhere; a partial
+precursor does not execute the declared mechanism.
 tests/unit/test_cortex_reserved_drift.py reconciles both tables with ``library.executables()`` and the catalog.
 
 Verified here: nothing; this is data plus a read-only projection. Not verified anywhere: that an executor
@@ -52,7 +53,10 @@ EXECUTED_ON_GREG = {
     "cortex.meta.metaconsensus": (("greg.cognition.verification:metaconsensus",),
                                   "jurisdiction-preserving metaconsensus over receipts; never a majority vote"),
     "cortex.collective.hive_quorum": (("cognition.collective_quorum",),
-                                      "evidence accumulation with cross-inhibition and a quorum threshold"),
+                                      "evidence accumulation with cross-inhibition and a quorum threshold; "
+                                      "cognition.collective (operation quorum) is a partial precursor only: a "
+                                      "weighted-vote quorum threshold over independent observers, with no evidence "
+                                      "accumulation or cross-inhibition"),
     "cortex.collective.stigmergy": (("cognition.collective_aco",),
                                     "MAX-MIN ant system with evaporating pheromone on symmetric TSP"),
     "cortex.collective.slime_network": (("cognition.collective_physarum",),
@@ -75,20 +79,25 @@ EXECUTED_ON_GREG = {
 }
 
 RESERVED_WITHOUT_EXECUTOR = {
-    "cortex.probabilistic.bayes": "closed-form conjugate updates only (cognition.probabilistic, "
-                                  "cognition.bayes_interval, cognition.basal_bayes_filter); no probabilistic-"
-                                  "programming executor",
+    "cortex.probabilistic.bayes": "conjugate Beta-binomial updates (cognition.probabilistic, "
+                                  "cognition.bayes_interval) and exact two-state HMM forward filtering "
+                                  "(cognition.basal_bayes_filter) only; no probabilistic-programming executor",
     "cortex.simulation.twin": "cognition.simulation is an uncalibrated iid Bernoulli Monte Carlo and "
                               "cognition.mc_expectation estimates expectations of declared distributions; no twin of "
                               "a strategic or causal system exists",
     "cortex.collective.swarm_pso": "no particle swarm: cognition.collective_flock is local collision-avoidance "
                                    "rules and cognition.evolutionary is differential evolution",
-    "cortex.collective.immune": "partial precursor only: cognition.collective_immune is negative-selection "
-                                "detection under a false-alarm tolerance; the incident-driven tolerance update and "
-                                "the quarantine, revoke, repair and recouple loop are not implemented",
-    "cortex.collective.ecology_market": "partial precursor only: cognition.collective_market allocates capacity "
-                                        "among tasks by a clock auction; methods do not bid for problems or settle "
-                                        "reputation, and conditional routing was demoted (P4 v3 REGRESSION)",
+    "cortex.collective.immune": "partial precursors only: cognition.collective_immune is negative-selection "
+                                "detection under a fixed false-alarm tolerance, and greg.genesis.Genesis.repair "
+                                "quarantines a formed capability that fails in service and re-forms its function "
+                                "through Capability Genesis; no anomaly-tolerance family updates its tolerance from "
+                                "verified incidents or feeds its detections into that quarantine and repair",
+    "cortex.collective.ecology_market": "partial precursors only: cognition.collective_market allocates capacity "
+                                        "among tasks by a clock auction, and the Competency Compiler settles each "
+                                        "method's outcomes on the body and re-ranks and demotes methods by them "
+                                        "(greg.cognition.compiler._settled_competence, _settled_inhibition); methods "
+                                        "do not bid for problems, no market allocates problems among methods, and "
+                                        "conditional routing was demoted (P4 v3 REGRESSION)",
     "cortex.developmental.molecular_micro": "cognition.micro is a ternary set-point rule with no association or "
                                             "decay",
     "cortex.meta.global_workspace": "no module competition or selective broadcast exists",

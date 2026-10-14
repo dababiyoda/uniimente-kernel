@@ -256,3 +256,79 @@ def render(case: dict) -> list[str]:
              "- Six outcomes: " + "; ".join(f"{name} **{case['outcomes'][name]['state']}**" for name in OUTCOMES),
              f"- Case {case['version']}; it creates no authority", ""]
     return lines
+
+
+def from_ask(shown: dict) -> dict:
+    """Compose the case for a founder resource ask from what the founder will see (screened wording only).
+
+    An ask is itself a consequential proposal: the founder may grant access, compute, money or a
+    person's time. Asking grants nothing, so the case's authority state says so; GREG's stated effect is
+    a claim, not verified benefit; and refusing is always present as the costed counterexample.
+    """
+    options = [o for o in shown.get("options") or [] if isinstance(o, dict)]
+    free = [o for o in options if str(o.get("cost", "")).strip().lower().startswith("none")]
+    authority = shown.get("authority_requested") or {}
+    evidence = shown.get("evidence")
+    keys = sorted(evidence) if isinstance(evidence, dict) else [f"item {i + 1}" for i in range(len(evidence or []))]
+    from provenance.ledger import sha256_json
+    person = shown.get("resource") in ("professional", "human_worker")
+    case = {
+        "version": VERSION,
+        "proposal": {"kind": "founder resource ask", "request_id": shown["request_id"], "ask_kind": shown["kind"],
+                     "resource": shown["resource"]},
+        "desired_outcome": {"recommendation": shown["recommendation"], "expected_effect": shown["expected_effect"]},
+        "bounded_failure": {"why_now": shown["why_now"], "evidence_fields": keys},
+        "beneficiaries": {"mission": shown.get("mission_id"), "founder": "Alfonso Lopez",
+                          "note": "the benefit is GREG's stated expectation, not a verified outcome"},
+        "affected_parties": [shown.get("person")] if person and shown.get("person") else [],
+        "existing_authority": {"authority_requested": authority, "decider": "Alfonso Lopez (founder authority)",
+                               "answer": "a signed founder command; a purchase, grant or hire is a separate act by Alfonso",
+                               "created_by_this_ask": "none"},
+        "legal": {"legality": legal_state(), "consent": legal_state(
+                      basis=NOT_PERMISSION + ("; the person's own consent is theirs to give" if person else "")),
+                  "rights": legal_state(),
+                  "authority": legal_state("unresolved", scope=str(sorted(authority)),
+                                           basis="asking grants nothing; only the founder's signed answer decides")},
+        "lawful_options": [{"option": o["option"], "cost": o["cost"], "legality": "unresolved", "executed": False}
+                           for o in options],
+        "smallest_intervention_options": [{"option": o["option"], "cost": o["cost"]} for o in free],
+        "evidence": {"fields": keys, "digest": sha256_json(evidence), "measured": isinstance(evidence, (dict, list))},
+        "control_point": {"proof": "the ask is screened for pressure and pleading before any surface shows it",
+                          "settlement": "the founder's signed answer; GREG acts on nothing else"},
+        "expected_benefit": {"kind": "claimed", "estimate": None, "support": shown["expected_effect"]},
+        "uncertainty": {"stated": shown["uncertainty"], "deadline": shown.get("deadline"),
+                        "deadline_evidence": shown.get("deadline_evidence")},
+        "reusable_assets": [f"scope {shown.get('scope_digest')}"],
+        "dependencies": {"mission_id": shown.get("mission_id"), "action_id": shown.get("action_id")},
+        "consequence_vector": {"consequence_class": "founder decision", "spend": authority.get("spend"),
+                               "external_contact": False, "executed": "nothing; the ask is a recorded message"},
+        "reversibility": "the answer is a record the founder can revise; nothing is executed by asking",
+        "resource_burden": {"options": [{"option": o["option"], "cost": o["cost"]} for o in options]},
+        "strongest_counterexample": ({"source": "the no-cost option", "assertion": f"{free[0]['option']}: "
+                                      f"{free[0]['expected_effect']}", "excerpt": None} if free else
+                                     {"source": "none", "assertion": "no no-cost option was offered", "excerpt": None}),
+        "minimum_test": free[0]["option"] if free else shown["recommendation"],
+        "stop_conditions": ["the founder declines", "the evidence that motivated the ask changes",
+                            *(["the evidenced deadline passes"] if shown.get("deadline") else [])],
+        "prohibitions": sorted(shown.get("prohibitions") or []),
+        "score": None,
+        "outcomes": {
+            "evidence": outcome("addressed", provenance=f"measured evidence fields: {', '.join(keys) or 'none'}",
+                                custody="decision.requested on the canonical journal",
+                                correction="withheld wording is recorded separately as evidence of the attempt"),
+            "institutional_leverage": outcome("addressed", accepting_actor="Alfonso Lopez (founder authority)",
+                                              process="founder surface -> signed answer", accepted_artifact="this ask",
+                                              decision_it_can_change=shown["recommendation"]),
+            "accountability": outcome("addressed", attributable_decisions=[shown["request_id"]],
+                                      explanation="evidence, costed options and authority are stated on the ask",
+                                      appeal="the founder may answer differently later",
+                                      preserved_failures="a malformed ask raises and records nothing"),
+            "deterrence": outcome("not_applicable", detail="an ask models no adversary"),
+            "victim_protection": outcome("not_applicable", detail="no affected party with declared harm"),
+            "minimal_collateral_harm": outcome("addressed", rights_constraints_first=["no contact", "no payment",
+                                                                                      "no credential use without `greg secret set`"],
+                                               exposures=["one recorded message"], hidden_in_a_scalar=False),
+        },
+        "protection": None,
+    }
+    return validate(case)

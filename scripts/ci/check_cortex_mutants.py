@@ -288,6 +288,9 @@ ADV_MUTANTS = [
      '            states[question] = legal_state("unresolved")\n', '            states[question] = legal_state("not_applicable")\n'),
     ("a scalar score accepted on the case", "greg/advantage.py",
      'if case.get("score") is not None or any("score" in k for k in case if k != "score"):', "if False:"),
+    ("ask case composed from the unscreened message", "greg/asks.py",
+     'shown = {**shown, "advantage": advantage.from_ask(shown)}', 'shown = {**shown, "advantage": advantage.from_ask(message)}'),
+    ("resource ask recorded without its case", "greg/asks.py", '    if "resource" in shown:\n', '    if False:\n'),
     ("appraiser skips the advantage recomputation", "greg/ventures.py",
      '        if recomputed != inputs["advantage"]:', "        if False:"),
 ]

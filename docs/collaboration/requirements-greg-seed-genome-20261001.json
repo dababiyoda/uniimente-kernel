@@ -4239,7 +4239,7 @@
    "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (section 13)",
    "source_date": "2026-10-01",
    "intended_effect": "Every consequential proposal carries an inspectable lawful-advantage case; legality, consent, rights and authority are evidence-backed states; no unvalidated leverage score; six outcomes tracked individually",
-   "interpretation": "greg/advantage.py composes the 19-field case deterministically from the venture memo's receipted inputs; the memo renders it and the appraiser recomputes it. 'supported' needs provenance and a reviewer, 'prohibited' a basis; no detected prohibition stays 'unresolved'. A protection case with the sixteen fields and the proportionate sequence turns on when an affected party with declared harm appears. First consumer: venture.assess; other consequential proposals (asks, deliveries) are the next consumers.",
+   "interpretation": "greg/advantage.py composes the 19-field case deterministically from the venture memo's receipted inputs; the memo renders it and the appraiser recomputes it. 'supported' needs provenance and a reviewer, 'prohibited' a basis; no detected prohibition stays 'unresolved'. A protection case with the sixteen fields and the proportionate sequence turns on when an affected party with declared harm appears. Consumers: venture.assess (recomputed by the appraiser) and every founder resource ask (composed in greg/asks.py record() from the screened message the founder sees, shown on the console).",
    "canonical_owner": "greg (Kernel)",
    "lifecycle_state": "implemented",
    "implementation_state": "VERIFIED_IN_TESTED_ENVIRONMENT",
@@ -4249,17 +4249,20 @@
    ],
    "implementation_refs": [
     "greg/advantage.py",
-    "greg/ventures.py"
+    "greg/ventures.py",
+    "greg/asks.py",
+    "greg/console.py"
    ],
    "tests": [
     "tests/unit/test_greg_advantage.py",
-    "tests/unit/test_greg_ventures.py"
+    "tests/unit/test_greg_ventures.py",
+    "tests/unit/test_greg_founder_asks.py"
    ],
    "evidence_refs": [
     "scripts/ci/check_cortex_mutants.py"
    ],
    "failure_condition": "a case validates with a 'supported' state lacking provenance, a scalar score, a missing field or outcome; or the appraiser accepts a memo whose case differs from its inputs",
-   "next_gate": "a second consumer (founder asks or brief deliveries); reviewer-supplied legal states from a qualified human",
+   "next_gate": "reviewer-supplied legal states from a qualified human; brief deliveries as a third consumer",
    "owner": "Alfonso Lopez (founder authority); cortex and GREG maintainers implement",
    "review_trigger": "a new frozen comparison, a founder correction, or the named gate's exit evidence",
    "negative_evidence": "Two first-draft test checks were wrong (an over-broad 'score' text check; minimal inputs whose verdict-change line was not derived) and the appraiser first checked the case before the ledger, masking the more basic refusal; both fixed before commit."

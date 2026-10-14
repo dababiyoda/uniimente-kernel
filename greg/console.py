@@ -207,6 +207,12 @@ def _ask_details(r: dict) -> str:
     if r.get("resource"):
         parts.append("<br><span class=muted>Authority needed: "
                      + _e("; ".join(f"{k}: {v}" for k, v in r["authority_requested"].items())) + "</span>")
+    case = r.get("advantage")
+    if case:
+        states = ", ".join(f"{q} {v['state']}" for q, v in case["legal"].items())
+        parts.append("<br><span class=muted>Advantage case (section 13, no score): " + _e(states)
+                     + "; no detected prohibition is not permission. Strongest counterexample: "
+                     + _e(case["strongest_counterexample"]["assertion"]) + "</span>")
     return "".join(parts)
 
 

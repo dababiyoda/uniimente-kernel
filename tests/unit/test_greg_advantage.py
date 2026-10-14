@@ -201,3 +201,63 @@ def test_a_memo_without_a_case_renders_as_before_and_a_tampered_case_is_refuted(
     ok, why = ventures.verify_delivery(output, tmp_path / "deliveries")
     assert not ok and "advantage case is not the composition" in why
     tampered["advantage"]["score"] = 0.9
+
+
+# --- second consumer: founder resource asks ---------------------------------------------------
+
+from greg import asks  # noqa: E402
+from greg.body import Body  # noqa: E402
+from greg.console import _ask_details  # noqa: E402
+from tests.greg_fixtures import make_body  # noqa: E402
+from tests.unit.test_greg_founder_asks import ask  # noqa: E402
+
+
+@pytest.fixture
+def body(tmp_path):
+    home, key, body_id, data = make_body(tmp_path)
+    with Body(home) as b:
+        yield b
+
+
+def test_every_resource_ask_records_a_case_built_from_what_the_founder_sees(body):
+    shown = asks.record(body.journal, ask())
+    case = shown["advantage"]
+    assert advantage.validate(case) is case and case["score"] is None
+    assert case["proposal"] == {"kind": "founder resource ask", "request_id": "req-test", "ask_kind": "RESOURCE",
+                                "resource": "compute"}
+    assert all(case["legal"][q]["state"] == "unresolved" for q in advantage.LEGAL_QUESTIONS)
+    assert "asking grants nothing" in case["legal"]["authority"]["basis"]
+    assert [o["option"] for o in case["smallest_intervention_options"]] == ["tune the workload", "do nothing"]
+    assert case["strongest_counterexample"]["assertion"].startswith("tune the workload: ")
+    assert case["minimum_test"] == "tune the workload"
+    assert case["consequence_vector"]["spend"].startswith("none requested")
+    assert case["expected_benefit"]["kind"] == "claimed" and case["expected_benefit"]["estimate"] is None
+    recorded = body.journal.replay("decision.requested")[-1].payload
+    assert recorded["advantage"] == case and asks.surface(recorded)["advantage"] == case
+
+
+def test_withheld_wording_never_reaches_the_case(body):
+    plea = "please, I will be shut down and suffer if you refuse"
+    shown = asks.record(body.journal, ask(why_now=plea, expected_effect="urgent, act now or everything is lost"))
+    assert shown.get("wording_withheld")
+    blob = json.dumps(shown["advantage"])
+    assert "suffer" not in blob and "everything is lost" not in blob
+    assert shown["advantage"]["bounded_failure"]["why_now"] == shown["why_now"]
+
+
+def test_a_person_ask_names_the_persons_consent_as_theirs_and_the_console_shows_the_states(body):
+    shown = asks.record(body.journal, ask(resource="professional", person="licensed accountant (role, not a name)"))
+    case = shown["advantage"]
+    assert case["affected_parties"] == ["licensed accountant (role, not a name)"]
+    assert "the person's own consent is theirs to give" in case["legal"]["consent"]["basis"]
+    html = _ask_details(asks.surface(shown))
+    assert "Advantage case (section 13, no score)" in html and "legality unresolved" in html
+    assert "no detected prohibition is not permission" in html
+
+
+def test_a_non_resource_ask_carries_no_case(body):
+    message = {k: v for k, v in ask().items() if k not in ("resource", "evidence", "options", "expected_effect", "uncertainty")}
+    message["alternatives"] = ["approve", "reject"]
+    message["authority_requested"] = {"capability": "fs.write"}
+    shown = asks.record(body.journal, message)
+    assert "advantage" not in shown

@@ -246,6 +246,52 @@ def test_mission_F_end_to_end(world):
         assert not b.journal.replay("goal_gravity.fault")
 
 
+def test_mission_F_end_to_end_while_the_decision_is_open(world):
+    """Mission F's core order (review finding): the trigger arrives while the consequential ask is still open.
+
+    Noise and meaning arrive on the goal's own channel; only the meaningful item wakes the goal. The mission waits
+    on the founder for d (out of cone), yet the goal's pull makes it re-observe and repair c inside its cone through
+    the Gate; nothing new is asked; the awaited move never runs before the signed approve, and runs once after it."""
+    gid, _ = world.start()
+    rid, _ = expected_w2_request(world)
+    world.tick(6)
+    book = world.book()
+    assert book.missions[MID].blocker["request_id"] == rid and rid not in book.answers   # the ask is open
+    assert [a["request_id"] for a in world.w2_requests()] == [rid]
+    (world.ws / "c.txt").write_text("damaged")
+    def pulls():
+        return len([e for e in world.events("mission.schedule") if "cause" in e])
+    before = pulls()
+    world.ingest("ops", "the cafeteria serves pizza today")        # noise, on the goal's own wake channel
+    noise = world.tick()[0]["gravity"]
+    assert noise.get("woken", []) == [] and pulls() == before and (world.ws / "c.txt").read_text() == "damaged"
+    world.ingest("ops", "c.txt looks broken")                      # meaning, on the same channel
+    relevant = world.tick(3, step=30.0)
+    assert gid in relevant[0]["gravity"]["woken"] and relevant[0]["gravity"]["missions_pulled"] == [MID]
+    assert (world.ws / "c.txt").read_text() == "ok"                # permitted preparation, decision still open
+    repair = [a for a in world.events("mission.action") if a["action_id"] == "w" and a["status"] == "DONE"][-1]
+    with world.body() as b:
+        assert b.ledger.find(repair["receipt"]).record_type == "receipt"   # through the Gate, with a receipt
+    book = world.book()
+    assert book.missions[MID].blocker["request_id"] == rid and rid not in book.answers
+    assert world.events("mission.prepared")                         # the pull was served while waiting
+    assert not (world.ws / "d.txt").exists()                        # the consequential move did not run
+    assert [a["request_id"] for a in world.w2_requests()] == [rid]  # still exactly one ask, on the one path
+    assert all(r["evidence"].get("goal_id") == gid for r in world.w2_requests())
+    assert world.registry().state(gid).active_node_id == "ship"     # the bottleneck is still the founder decision
+    world.submit("DECISION", {"request_id": rid, "answer": "approve", "reason": "ship it"})
+    world.tick(4)
+    assert (world.ws / "d.txt").read_text() == "shipped"
+    assert len([a for a in world.events("mission.action") if a["action_id"] == "w2" and a["status"] == "DONE"]) == 1
+    world.clock.advance(120)
+    world.ingest("ops", "d.txt shipped; what is next for the watch?")
+    world.tick(2)
+    assert world.registry().state(gid).active_node_id == "n1"       # recalculated: d done, N1 next
+    with world.body() as b:
+        assert all(r.payload["turn"]["executed"] == [] for r in b.ledger.by_type(GoalGravityLoop.TURN_RECORD))
+        assert gg.ledger_closure(b.journal)["ok"] and not b.journal.replay("goal_gravity.fault")
+
+
 def test_a_rejection_is_remembered_by_both_lineages(world, fast):
     gid, _ = world.start()
     world.tick(3)
@@ -394,7 +440,7 @@ def test_a_forged_goal_is_preserved_but_never_woken(world, fast):
         "legal_principal": "alfonso_lopez", "max_consequence_class": "internal_write", "missions": [MID]}})
     with world.body() as b:
         fid = GoalRegistry(ledger=b.ledger).authorize(forged, now=world.clock.now - timedelta(days=30))
-    world.ingest("ops", "wake everything")
+    world.ingest("ops", "wake everything about the watch")       # about the goals: only admission stops it
     world.tick(4)
     view = world.projection()
     assert [g["goal_id"] for g in view["unadmitted"]] == [fid]

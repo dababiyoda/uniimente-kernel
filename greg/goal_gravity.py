@@ -26,6 +26,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 import json
+import re
+from types import SimpleNamespace
 from typing import Any
 
 from cryptography.exceptions import InvalidSignature
@@ -35,10 +37,12 @@ from egregore.attention import AttentionItem
 from egregore.contracts import ContractError, SignalEnvelope, digest, require_text
 from egregore.goals import CONSEQUENCE_CLASSES, PREFERENCE_KINDS, PRIORITIES, GoalRegistry, GoalSpec, InterventionSpec, \
     PlanNode, WakeCondition
+from egregore.gps import metric_error
 from egregore.gravity import GoalGravityLoop
+from egregore.relevance import GoalRelevanceRouter, score_signal
 from egregore.resources import ResourceGovernor
 from events.spine import EventError
-from greg import asks, path as devpath
+from greg import asks, dataplane, path as devpath
 from greg.authority import PRINCIPAL, AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityManifest
 from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes
@@ -627,6 +631,78 @@ class BodyAttentionStore:
         raise ContractError("founder answers on a GREG body arrive only as signed DECISION commands")
 
 
+# -- untrusted intake judged by what it is about, not only by the channel it arrived on ----------------------
+
+MIN_TERM_CHARS = 3
+
+
+def _norm(text: str) -> str:
+    return dataplane._normal(str(text))     # casefolded words, punctuation collapsed (the intake clustering key)
+
+
+def _mission_terms(spec: dict) -> set[str]:
+    """Words that name a signed mission's world: its id, the id's last segment, and the base name of every sensor
+    and strategy target (``fs:c.txt`` -> ``c txt``). Wildcards and terms under three characters never count."""
+    names = [spec["mission_id"], re.split(r"[:/]", spec["mission_id"])[-1]]
+    targets = [(c.get("sensor") or {}).get("target") for c in spec.get("success_checks", [])]
+    targets += [s.get("target") for s in spec.get("strategies", [])]
+    names += [re.split(r"[:/]", t)[-1] for t in targets if isinstance(t, str)]
+    return {_norm(n) for n in names if "*" not in n and len(_norm(n).replace(" ", "")) >= MIN_TERM_CHARS}
+
+
+def goal_subjects(spec: GoalSpec) -> set[str]:
+    """What a goal is about: its signed missions, its relevant entities and the subjects it wakes on."""
+    return (set(spec.authority.get("missions", [])) | set(spec.relevant_entities)
+            | {c.match for c in spec.wake_conditions if c.kind == "subject"})
+
+
+def intake_about(content: str, book: MissionBook, registry: GoalRegistry) -> tuple[list[str], list[str]]:
+    """(subjects, matched terms): the missions and goal subjects an intake item's text names, as whole words."""
+    text = f" {_norm(content)} "
+    about, matched = set(), set()
+    for mid, m in book.missions.items():
+        hits = {t for t in _mission_terms(m.spec) if f" {t} " in text}
+        if hits:
+            about.add(mid)
+            matched |= hits
+    for gid in registry.goals():
+        for subject in goal_subjects(registry.get(gid)):
+            term = _norm(subject)
+            if len(term.replace(" ", "")) >= MIN_TERM_CHARS and f" {term} " in text:
+                about.add(subject)
+                matched.add(term)
+    return sorted(about), sorted(matched)
+
+
+@dataclass(frozen=True)
+class _Mention:
+    """An intake item names this subject. Scoring input only: never integrated as a belief or evidence."""
+    subject: str
+    value: bool = True
+
+    @property
+    def key(self) -> str:
+        return f"{self.subject}.intake_mention"
+
+
+class BodyRelevanceRouter(GoalRelevanceRouter):
+    """The GREG body's relevance router: untrusted intake counts for a goal by what its content is about.
+
+    An intake item that names a goal's subject (a bound mission's id or targets, a relevant entity) matches the
+    goal's subject conditions on any channel, and its channel (domain, tag) counts too. An item that names none
+    of them is noise for that goal whatever channel it came on. Every other signal scores exactly as in egregore."""
+
+    def score(self, spec: GoalSpec, signal: SignalEnvelope, observations):
+        about = signal.payload.get("about")
+        if not signal.payload.get("intake") or not isinstance(about, list):
+            return super().score(spec, signal, observations)
+        named = sorted(goal_subjects(spec) & set(about))
+        if not named:
+            bare = {k: v for k, v in signal.payload.items() if k not in ("domain", "tags")}
+            return score_signal(spec, SimpleNamespace(payload=bare), observations)
+        return score_signal(spec, signal, list(observations) + [_Mention(s) for s in named])
+
+
 @dataclass
 class _Binding:
     loop: GoalGravityLoop
@@ -643,6 +719,7 @@ def binding_for(body) -> _Binding:
         loop = GoalGravityLoop(ledger=body.ledger, compiled=body.compiled, passports=body.passports,
                                actor=body.identity.passport_id, legal_principal=PRINCIPAL,
                                genomes=_Genomes(body.registry), body_mode=True, attention_store=store)
+        loop.router = BodyRelevanceRouter(loop.registry)   # same registry; content-aware scoring of intake only
         store.registry = loop.registry
         held = _Binding(loop=loop, store=store)
         body._goal_gravity = held
@@ -816,8 +893,9 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
             latest[(p["mission_id"], "appraised_verified")] = (rec.payload["event_id"], rec.ts_utc, rec.hash,
                                                                p["verdict"] == "VERIFIED", "attributed")
         elif t == "greg.external.ingested" and not p.get("quarantined"):
+            about, terms = intake_about(p.get("content", ""), book, loop.registry)
             emit(rec.payload["event_id"], p["at"], rec.hash, trust="untrusted", tags=[p["channel"]],
-                 domain=p["channel"])
+                 domain=p["channel"], intake=True, about=about, matched_terms=terms)
     for (subject, attribute), (event_id, at, record_hash, value, trust) in latest.items():
         if changed(subject, attribute, value, trust):
             emit(event_id, at, record_hash, [{"subject": subject, "attribute": attribute, "value": value,

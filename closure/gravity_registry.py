@@ -188,7 +188,7 @@ def greg_goal_gravity_closures() -> ModuleClosures:
             goal_gravity.binding_for(body).loop.registry.record_preference(
                 gid, kind="stop_pushing", value=False, actor="alfonso_lopez", reason="unsigned resume", now=w.now)
         w.view(forge_resume)
-        w.ingest("ops", "wake up")
+        w.ingest("ops", "wake up: is c.txt still ok?")      # about the goal: only the signed stop holds it
         result = w.tick()[0]["gravity"]
         status = w.view(lambda b: GoalRegistry(ledger=b.ledger).state(gid).status)
         ok = status == "paused" and gid not in result.get("woken", [])

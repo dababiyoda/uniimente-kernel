@@ -77,6 +77,12 @@ class GoalRelevanceRouter:
     def execution_authority(self) -> str:
         return "none"
 
+    def score(self, spec: GoalSpec, signal: SignalEnvelope, observations: Sequence[Observation]) -> tuple[float, tuple[str, ...]]:
+        """Score one signal for one goal. A host may refine how a signal counts for a goal (the GREG body
+        judges untrusted intake by what its content is about, greg/goal_gravity.py); muting, stops and
+        closed goals are still decided here, after scoring."""
+        return score_signal(spec, signal, observations)
+
     def route(self, signal: SignalEnvelope, *, observations: Sequence[Observation] | None = None) -> dict[str, RelevanceVerdict]:
         if observations is None:
             observations = WorldModel.observations_from_signal(signal)
@@ -85,7 +91,7 @@ class GoalRelevanceRouter:
         for goal_id in self.registry.goals():
             spec = self.registry.get(goal_id)
             state = self.registry.state(goal_id)
-            score, matched = score_signal(spec, signal, observations)
+            score, matched = self.score(spec, signal, observations)
             if score <= 0:
                 continue
             if self.registry.domain_muted(goal_id, domain):

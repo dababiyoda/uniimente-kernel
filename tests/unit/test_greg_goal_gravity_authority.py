@@ -326,12 +326,12 @@ def test_an_unsigned_record_cannot_unmute_or_drop_any_signed_narrowing(world, fa
                                        ("revoke_capability", "net.http"))):
         world.submit("GOAL_CONTROL", {"goal_id": gid, "kind": kind, "value": value, "reason": "narrow"}, f"c{n}.json")
     world.tick()
-    world.ingest("ops", "noise on ops")
+    world.ingest("ops", "noise on ops about the watch")              # about the goal: only the mute stops it
     assert gid not in world.tick()[0]["gravity"].get("woken", [])        # the signed mute works
     _forge_state(world, gid, preferences={"do_not_monitor": [], "never_use_tactic": [], "ask_before": [],
                                           "forgotten_routes": [], "revoked_capabilities": []})
     world.clock.advance(120)
-    world.ingest("ops", "more on ops")
+    world.ingest("ops", "more on ops about the watch")
     gravity = world.tick()[0]["gravity"]
     assert gid not in gravity.get("woken", [])                            # restored before the turn
     prefs = world.registry().state(gid).preferences

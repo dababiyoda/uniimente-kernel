@@ -140,6 +140,60 @@ def test_a_pulled_mission_awaiting_an_approval_repairs_in_cone_and_never_runs_th
     assert not world.events("goal_gravity.fault")
 
 
+# -- finding 3: intake wakes a goal by what it names, not by its channel alone ---------------------------
+
+def test_intake_wakes_a_goal_by_what_its_content_names_not_by_its_channel(world, fast):
+    gid, _ = world.start()
+    world.tick(6)
+
+    def woken(channel, content):
+        world.clock.advance(120)
+        world.ingest(channel, content)
+        return gid in world.tick()[0]["gravity"].get("woken", [])
+    assert not woken("ops", "the cafeteria serves pizza today")         # the goal's channel, content about nothing
+    assert woken("weather", "m:watch c.txt is broken, repair it now")   # another channel, content about the watch
+    assert not woken("ops", "pizza again on friday")
+    assert woken("ops", "C.TXT LOOKS BROKEN")                           # whole words, case-folded
+    assert not woken("ops", "abc.txt and cc.txt are fine")              # never a substring of another word
+
+
+def test_a_channel_only_goal_wakes_only_on_content_about_it(world, fast):
+    world.submit("MISSION", world.mission_spec(), "a.json")
+    world.tick()
+    world.submit("GOAL", _goal(MID, "ops watcher", moves=False, wake=(WakeCondition.build(kind="domain", match="ops"),),
+                               nodes=[PlanNode.build(node_id="n1", outcome="developmental node N1", gate="VEPMC",
+                                                     sbm="greg.path.N1", sbm_direction="eq", sbm_target=True)]),
+                 "b.json")
+    world.tick(6)
+    gid = _gid(world, "ops watcher")
+
+    def woken(channel, content):
+        world.clock.advance(120)
+        world.ingest(channel, content)
+        return gid in world.tick()[0]["gravity"].get("woken", [])
+    assert not woken("ops", "the cafeteria serves pizza today")    # its channel, but not about its mission
+    assert not woken("weather", "c.txt looks broken")              # about its mission, but not on its channel
+    assert woken("ops", "c.txt looks broken")                      # its channel and about its mission
+
+
+# -- finding 4: a goal derived without code wakes on external evidence -----------------------------------
+
+def test_a_goal_derived_without_code_wakes_on_external_evidence_and_its_mission_repairs(world, fast):
+    world.submit("MISSION", world.mission_spec(), "a.json")
+    world.tick()
+    derived = gg.goal_from_mission(world.mission_spec(), MANIFESTS)["goal_command"]
+    assert [c["kind"] for c in derived["goal"]["wake_conditions"]] == ["subject"]   # no hand-written channel
+    world.submit("GOAL", derived, "b.json")
+    world.tick(6)
+    gid = world.projection()["goals"][0]["goal_id"]
+    (world.ws / "c.txt").write_text("damaged")
+    before = _pulls(world)
+    world.ingest("support-inbox", json.dumps({"note": "c.txt broken on m:watch"}))
+    out = world.tick(3, step=30.0)
+    assert gid in out[0]["gravity"]["woken"] and out[0]["gravity"]["missions_pulled"] == [MID]
+    assert _pulls(world) > before and (world.ws / "c.txt").read_text() == "ok"
+
+
 # -- missions without goals behave exactly as before ----------------------------------------------------
 
 def test_a_mission_without_a_goal_still_only_waits_on_its_decision(world, fast):

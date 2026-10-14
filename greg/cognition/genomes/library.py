@@ -29,6 +29,7 @@ MODULES = (
     "greg.cognition.genomes.collective",    # L2 distributed / collective intelligences
     "greg.cognition.genomes.solvers_b",     # L3 further direct mathematical intelligences (batch B)
     "greg.cognition.genomes.solvers_c",     # L3 mechanism design, verification, control, causal (batch C)
+    "greg.cognition.genomes.strategic",     # L3 pack C: bimatrix Nash, mechanism DSIC/IR check, fair liveness
     "greg.cognition.genomes.developmental",  # L4 developmental / target-state repair
 )
 PROOF_CLASS = "genome_certificate"

@@ -38,7 +38,10 @@ def test_financial_means_require_a_founder_grant_and_commodity_gaps_backcast_to_
     out = A.compile_map(MAP, REQUEST)
     settle = next(c for c in out["candidates"] if c["operator"] == "settlement_on_proof")
     assert settle["consequence_class"] == "financial" and "founder grant" in settle["authority_required"]
-    assert settle["buildability"] == "BUILDABLE_NOW"
+    # cognition.evidence is built but has no native benchmark yet, so the operator is EXPERIMENTAL_NOW;
+    # the absent escrow is commodity: it backcasts to acquisition, not research.
+    assert settle["buildability"] == "EXPERIMENTAL_NOW"
+    assert any(s["capability"] == "cognition.evidence" and "native benchmark" in s["step"] for s in settle["backcast"])
     assert any(s["capability"] == "payments.escrow" and "Capability Genesis" in s["step"] for s in settle["backcast"])
 
 

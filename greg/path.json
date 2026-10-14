@@ -1334,7 +1334,7 @@
         "intent_ref": "docs/intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json",
         "previous": "Verified Cross-Geometry Routing Gain"
       },
-      "current": "VPL = 1 of 2 measured families (P6, 2026-10-07). P4 conditional memory: INCONCLUSIVE (57 vs 56 of 66; learned bin packing -> CP-SAT, knapsack -> Z3). Seed Genome v5: INCONCLUSIVE, gain 0.0.",
+      "current": "VPL = 4 distinct families with lift (P6 v1 F1; P6 v2 F2b, X1, X2). P4 conditional memory: v3 NO_GAIN (111 = 111 of 130) - not currently worth its complexity; shadow mode retained for real-mission evidence. Seed Genome v5: INCONCLUSIVE, gain 0.0.",
       "nodes": [
         {
           "id": "P0",
@@ -1408,7 +1408,7 @@
           "id": "P4",
           "title": "Cognitive settlement and learned routing",
           "requirement": "Use eligibility, routing, proof, and outcomes to earn conditional defaults. Exit: learned routing beats the static baseline on held-out tasks without new authority.",
-          "status": "active",
+          "status": "active (learned mode demoted; shadow observation only)",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P3 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1418,13 +1418,14 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "repeat each held-out run 3x and score the majority (timing noise), raise held-out n so >= 6 discordant items are possible, and learn latency as well as decided/correct",
+          "smallest_next_experiment": "none on synthetic suites (three frozen comparisons exhausted); review when 20 settled real-mission outcomes in one geometry exist from shadow mode",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:565",
-          "reality": "conditional competence memory (features + hierarchical fallback) IMPLEMENTED, INTEGRATED, TESTED; frozen v2: INCONCLUSIVE (57 vs 56 of 66, p=0.5); learned per-sub-region orders, margin within timing noise; exit not met",
+          "reality": "conditional competence memory IMPLEMENTED, INTEGRATED, TESTED; frozen v1 INCONCLUSIVE, v2 INCONCLUSIVE (57 vs 56), v3 decisive retest NO_GAIN (111 vs 111 of 130, 3/3 discordant, all split-run timing noise; class-pooled REGRESSION 109). Founder rule applied: conditional solver learning is not currently worth its complexity for this repertoire; exit not met",
           "exit_met": false,
           "implementation_refs": [
             "cortex/evaluation/learned_routing/run.py",
             "cortex/evaluation/learned_routing/run_v2.py",
+            "cortex/evaluation/learned_routing/run_v3.py",
             "greg/cognition/bridge.py",
             "greg/cognition/conditional_competence.py",
             "greg/cognition/learned_routing.py",
@@ -1432,7 +1433,7 @@
             "tests/integration/test_greg_conditional_competence.py",
             "tests/integration/test_greg_learned_routing.py"
           ],
-          "evidence": "docs/evidence/greg-learned-routing/2026-10-07/README.md: v1 INCONCLUSIVE (order = static); v2 conditional INCONCLUSIVE (57 vs 56, bin packing 9 vs 7, knapsack kept 9/9)"
+          "evidence": "docs/evidence/greg-learned-routing/2026-10-07/README.md: v1 INCONCLUSIVE; v2 INCONCLUSIVE; v3 NO_GAIN (results-v3.json)"
         },
         {
           "id": "P5",

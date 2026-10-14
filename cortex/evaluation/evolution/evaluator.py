@@ -27,7 +27,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT))
 
-from greg.cognition.conditional_competence import ConditionalCompetence, conditions  # noqa: E402
+from greg.cognition.conditional_competence import ConditionalCompetence  # noqa: E402
 
 Z3, CPSAT = "cortex.formal.z3@0.2.0", "cortex.optimization.cpsat@0.2.0"
 DEV_LOG = ROOT / "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json"

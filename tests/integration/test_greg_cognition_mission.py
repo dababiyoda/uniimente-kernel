@@ -108,7 +108,7 @@ def test_goal_gravity_pulls_an_unattached_family_with_its_admission_evidence(tmp
         assert "greg attach cognition.crowd" in ask["recommendation"]
         family = next(f for f in ask["evidence"]["families"] if f["capability"] == "cognition.crowd")
         assert family["layer"] == 2 and family["admission"]
-        assert ask["requested"]["spend"] == "none requested"
+        assert ask["authority_requested"]["spend"] == "none requested"
         assert not body.registry.usable("cognition.crowd")[0]           # asking attached nothing
         body.tick()
         assert len([e for e in body.journal.replay("decision.requested") if e.payload["kind"] == "CAPABILITY_ATTACH"]) == 1

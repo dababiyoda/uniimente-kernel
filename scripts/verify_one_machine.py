@@ -19,7 +19,9 @@ What it re-derives, and from what (the producer's claims are inputs to check, ne
    retained WealthMachine answer; both organs' messages must be transport-verified on one trace,
    bound to a DONE exchange receipt, and judged REPRODUCED. Without a WealthMachine checkout the
    verdict is NOT_REDERIVED: a skipped re-derivation is never a pass.
-5. Exactly one DONE commission and one worker commit, despite the interruption.
+5. Exactly one receipted DONE commission and one worker commit, despite the interruption, which the
+   founder reconciled (either answer) instead of a blind retry. A commission reconciled as executed has
+   no receipt, so its work is reported as not re-derivable, never counted as the commission.
 6. VEPMC stays 0: this is sandbox integration proof, not a founder-accepted closure.
 
 Limits: it runs on the same host as the body and reads the same files; it is a separate process
@@ -40,7 +42,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from greg import metrics, organ_bridge  # noqa: E402
+from greg import metrics, organ_bridge, routing  # noqa: E402
 from greg.body import Layout, observe  # noqa: E402
 
 SUMMARY = ("go_no_go", "opportunity_score", "market_alignment", "risk_level", "legal_readiness",
@@ -82,6 +84,20 @@ def feasible(problem: dict, assignment: list) -> bool:
         served[order] = served.get(order, 0) + units
     return all(used[w] <= workers[w]["capacity"] for w in used) and \
         all(served[o] <= orders[o]["demand"] for o in served)
+
+
+def commission_outcomes(actions: list[dict], ledger) -> dict:
+    """The commission's records, judged by retained evidence: a DONE counts only with its receipt on the
+    ledger; a founder reconciliation of either answer shows the interruption was not retried blind."""
+    ours = [x for x in actions if x["action_id"] == "commission"]
+
+    def receipted(x) -> bool:
+        record = ledger.find(x["receipt"]) if x.get("receipt") else None
+        return record is not None and record.record_type == "receipt"
+    executed = [x for x in ours if x["status"] == "DONE" and routing.founder_reconciled(x)]
+    return {"done": [x for x in ours if x["status"] == "DONE" and receipted(x)],
+            "reconciled": [x for x in ours if x["status"] == "RECONCILED_NOT_EXECUTED"] + executed,
+            "reconciled_executed": executed}
 
 
 def run(cmd, **kw):
@@ -127,11 +143,14 @@ def main(argv=None) -> int:
         if not checks["mind_answer_is_optimal"]:
             findings.append(f"certified staffed={result.get('staffed')} but the exhaustive optimum is {truth}")
 
-        # 5. exactly one DONE commission despite the interruption
-        done = [x for x in actions if x["action_id"] == "commission" and x["status"] == "DONE"]
-        reconciled = [x for x in actions if x["action_id"] == "commission" and x["status"] == "RECONCILED_NOT_EXECUTED"]
+        # 5. exactly one receipted DONE commission despite the interruption
+        commissions = commission_outcomes(actions, ledger)
+        done = commissions["done"]
         checks["one_commission_done"] = len(done) == 1
-        checks["interruption_reconciled_not_retried_blind"] = len(reconciled) >= 1
+        checks["interruption_reconciled_not_retried_blind"] = len(commissions["reconciled"]) >= 1
+        for x in commissions["reconciled_executed"]:
+            findings.append(f"commission attempt {x.get('attempt')} was reconciled by the founder as executed "
+                            "without a receipt; its work cannot be re-derived from retained evidence")
         receipt = ledger.find(done[0]["receipt"]).payload["result"]["output"] if done else {}
         work = strategies["commission"]["params"]
 

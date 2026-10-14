@@ -6,8 +6,6 @@ that same attempt: it names the capability the dispatch used, books the signed s
 the founder says it executed, counts once in routing, and is never a receipted execution that
 routing can blame or a consumer can bind from. The founder key is a per-test key, not Alfonso's.
 """
-import json
-
 from types import SimpleNamespace
 
 import pytest
@@ -41,8 +39,8 @@ def tick(body, clock, n):
 
 def reconcile(body, key, body_id, clock, answer, *, after=6):
     [request] = [r for r in body.engine.book.open_requests() if r["kind"] == "RECONCILIATION"]
-    drop(body.layout.home, signed(key, body_id, "DECISION", {"request_id": request["request_id"], "answer": answer,
-                                                             "reason": "inspected the retained evidence"}))
+    drop(body.layout.home, signed(key, body_id, "DECISION", {
+        "request_id": request["request_id"], "answer": answer, "reason": "inspected the retained evidence"}))
     tick(body, clock, after)
     return request
 
@@ -200,8 +198,8 @@ def test_a_reconciled_brief_cannot_be_labelled_because_it_retained_no_inputs(tmp
     from greg import improvement, tribunal
     home, key, body_id, _ = make_body(tmp_path)
     with Body(home) as body:
-        body.journal.record("mission.action", {**reconciled_done("m:brief", "deliver", 0, improvement.CAPABILITY),
-                                               "dispatch_route": "builtin"}, key=["m:brief", "reconciled"])
+        body.journal.record("mission.action", reconciled_done("m:brief", "deliver", 0, improvement.CAPABILITY),
+                            key=["m:brief", "reconciled"])
         target = body.journal.replay("mission.action")[-1]
         for evidence in ({"attention": {"missed": [], "noise": ["acme/kernel#1"]}},
                          {"failure_claim": {"missed_failing": ["acme/kernel#2"]}}):
@@ -238,6 +236,45 @@ def test_sop_extraction_excludes_founder_reconciled_steps_consistently(tmp_path)
     assert procedures == {f"m:reconcile-sop-{n}": ["fs.write"] for n in (1, 2, 3)}
     assert len(proposed) == 1 and proposed[0]["occurrences"] == 3
     assert "founder-reconciled steps" in proposed[0]["evidence_level"]
+
+
+def _verifier():
+    import importlib.util
+    from pathlib import Path
+    path = Path(__file__).resolve().parents[2] / "scripts" / "verify_one_machine.py"
+    spec = importlib.util.spec_from_file_location("verify_one_machine", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class Ledger:
+    def __init__(self, *hashes):
+        self.records = {h: SimpleNamespace(record_type="receipt", payload={"result": {"output": {"patch": h}}})
+                        for h in hashes}
+
+    def find(self, record_hash):
+        return self.records.get(record_hash)
+
+
+def test_the_one_machine_verifier_counts_only_receipted_commissions_and_either_reconciliation():
+    outcomes = _verifier().commission_outcomes
+    uncertain = {"mission_id": "m", "action_id": "commission", "attempt": 0, "status": "UNCERTAIN", "receipt": None}
+    executed = reconciled_done("m", "commission", 0, "worker.commission")
+    legacy = {"mission_id": "m", "action_id": "commission", "attempt": 0, "status": "DONE", "cost_usd": 0.0,
+              "reasons": ["founder reconciliation: reconcile_executed"]}
+    not_executed = {**executed, "status": "RECONCILED_NOT_EXECUTED",
+                    "reasons": ["founder reconciliation: reconcile_not_executed"]}
+    rerun = {**uncertain, "attempt": 1, "status": "DONE", "receipt": "sha256:rerun"}
+    ledger = Ledger("sha256:rerun")
+    retried = outcomes([uncertain, not_executed, rerun], ledger)
+    assert retried["done"] == [rerun] and retried["reconciled"] == [not_executed]
+    assert retried["reconciled_executed"] == []
+    for said_executed in (executed, legacy):     # no receipt: reported, never counted or dereferenced
+        judged = outcomes([uncertain, said_executed], ledger)
+        assert judged["done"] == [] and judged["reconciled"] == judged["reconciled_executed"] == [said_executed]
+    forged = {**rerun, "receipt": "sha256:not-on-the-ledger"}
+    assert outcomes([forged], ledger)["done"] == []
 
 
 class Journal:

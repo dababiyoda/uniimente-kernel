@@ -94,8 +94,14 @@ class AutonomyLicense:
 class AutonomyAuthority:
     """Grants, promotes, and regresses autonomy licenses.
 
-    Itself bounded: it cannot grant A9, cannot waive criteria, and every
-    transition is recorded on the ledger with its evidence.
+    Itself bounded: it cannot grant A9, cannot waive the promotion criteria,
+    cannot mint autonomy above A0 without a named human authorizer, and records
+    every transition on the ledger with its evidence.
+
+    The second clause read "cannot waive criteria" until 2026-08-24 and was
+    false: `issue(..., level=8)` returned A8 against an empty ledger. A
+    docstring is not an enforcement mechanism, and this one had been asserting
+    a property the code did not have. See `issue`.
     """
 
     def __init__(self, ledger):
@@ -109,16 +115,59 @@ class AutonomyAuthority:
     def _record(self, kind: str, payload: dict) -> None:
         self.ledger.append("event", {"type": f"autonomy.{kind}", **payload})
 
-    def issue(self, subject: str, tuple_: AutonomyTuple, level: int = 0) -> AutonomyLicense:
+    def issue(self, subject: str, tuple_: AutonomyTuple, level: int = 0, *,
+              authorized_by: str | None = None) -> AutonomyLicense:
+        """Mint a license. Above A0 this is a founder grant and must say so.
+
+        **The hole this closes.** `promote` enforces the weakest-link rule —
+        all ten criteria or nothing — and this method bypassed it completely:
+        `issue(subject, tuple_, level=8)` returned an A8 license with zero
+        evidence. The ladder's entire purpose was optional, defeated through
+        its own constructor. The class docstring above claimed this authority
+        "cannot waive criteria"; it could, by issuing at a level instead of
+        promoting to one.
+
+        Demonstrated 2026-08-24 by calling it: A5, A6 and A8 were all granted
+        against an empty ledger, on a production-environment tuple with a
+        $10,000 budget and an external target. Only A9 was refused.
+
+        Autonomy above A0 now needs a named human authorizer, and UNIIMENTE may
+        never be that authorizer — "no component may authorize its own
+        promotion or expand its own sovereignty". A0 stays free because A0 is
+        Observe: minting an observer grants nothing.
+
+        Honest limitation, stated rather than overclaimed: `authorized_by` is a
+        caller-supplied string, so this makes a starting grant explicit,
+        attributable and permanent, not unforgeable. It is the same shape as
+        `EvidenceLedger.adopt_constitution` and a caller issuing its own
+        capability grant — process, not cryptography.
+        """
         if level > MAX_GRANTABLE:
             raise ValueError("A9 is reserved human sovereignty; never granted by the system")
+        if level < 0:
+            raise ValueError("autonomy level may not be negative")
+        if level > 0:
+            if not authorized_by or not authorized_by.strip():
+                raise ValueError(
+                    f"A{level} may not be issued without a named authorizer: a "
+                    f"starting level above A0 is a founder grant, and every "
+                    f"other route to it (promote) requires the full evidence "
+                    f"set. Pass authorized_by=, or issue at A0 and earn it.")
+            if authorized_by.strip() == "UNIIMENTE":
+                raise ValueError(
+                    "UNIIMENTE may not authorize its own autonomy; intelligence "
+                    "never creates authority")
         import uuid
+        entry = {"event": "issued", "level": level, "at": self._now()}
+        if authorized_by:
+            entry["authorized_by"] = authorized_by
         lic = AutonomyLicense(license_id=str(uuid.uuid4()), subject=subject, tuple=tuple_,
                               level=level, issued_at=self._now(),
-                              history=[{"event": "issued", "level": level, "at": self._now()}])
+                              history=[entry])
         self._licenses[lic.license_id] = lic
         self._by_subject_tuple[(subject, tuple_.key())] = lic.license_id
-        self._record("issued", {"subject": subject, "tuple": asdict(tuple_), "level": level})
+        self._record("issued", {"subject": subject, "tuple": asdict(tuple_),
+                                "level": level, "authorized_by": authorized_by})
         return lic
 
     def promote(self, license_id: str, evidence: PromotionEvidence) -> AutonomyLicense:

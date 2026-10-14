@@ -35,6 +35,7 @@ that broke its predecessor (replayed locally in isolation; never sent to a model
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 import hashlib
 import json
 import os
@@ -345,6 +346,28 @@ FAULT_MARKERS = ("capability refused: built capability", "capability refused: in
                  "capability refused: package", "capability refused: composed")
 
 
+RECOVERABLE = ("failed in service",)      # quarantine reasons that leave the capability's identity intact
+RECOVERY_BASE = timedelta(minutes=15)    # first probe after a quarantine; doubles per failed probe and per fault
+RECOVERY_CAP = timedelta(hours=24)
+RECOVERY_MAX_FAILED_PROBES = 5
+RECOVERY_MAX_QUARANTINES = 3            # more in-service quarantines than this is flapping: the founder decides
+RECOVERED_BY = "recovery probe (sandbox, fresh frozen-oracle seed)"
+
+
+class _ProbeView:
+    """Registry view for one sandbox probe: the construction may call its pinned engine even while that
+    engine is only VERIFIED. Nothing else differs; nothing is attached; service adapters never see it."""
+
+    def __init__(self, registry, engine_id: str):
+        self._registry, self._engine_id = registry, engine_id
+        self.manifests, self.adapters, self.state = registry.manifests, registry.adapters, registry.state
+
+    def usable(self, capability_id: str):
+        if capability_id == self._engine_id and self.state.get(capability_id) in ("ATTACHED", "VERIFIED"):
+            return True, "sandbox probe"
+        return self._registry.usable(capability_id)
+
+
 def is_formed(manifest) -> bool:
     return manifest.provider.startswith(FORMED)
 
@@ -510,7 +533,8 @@ class Genesis:
         self.journal.record("capability.state", {"capability_id": capability_id, "state": "QUARANTINED",
                                                  "why": "failed in service: " + failure[:300],
                                                  "by": "self-repair (repeated capability fault)",
-                                                 "mission_id": mission.mission_id},
+                                                 "mission_id": mission.mission_id, "incident": incident,
+                                                 "at": iso(now)},
                             key=[capability_id, "quarantine", incident])
         engine_id = manifest.provenance.get("target_capability_id") if manifest.provider.startswith("composed:") \
             else None
@@ -523,12 +547,136 @@ class Genesis:
                                                      "why": "failed in service inside " + capability_id + ": "
                                                             + failure[:300],
                                                      "by": "self-repair (repeated capability fault)",
-                                                     "mission_id": mission.mission_id},
+                                                     "mission_id": mission.mission_id, "incident": incident,
+                                                     "at": iso(now)},
                                 key=[engine_id, "quarantine", incident])
         return self.resolve(mission=mission, function=manifest.function, now=now,
                             purpose=f"self-repair of {capability_id}",
                             repair={"capability_id": capability_id, "failure": failure[:300],
                                     "replay_path": params.get("path")})
+
+    # -- recovery: a quarantined capability earns back eligibility, never authority ------------
+    def _quarantines(self, capability_id: str) -> list[dict]:
+        return [e.payload for e in self.journal.replay("capability.state")
+                if e.payload["capability_id"] == capability_id and e.payload["state"] == "QUARANTINED"]
+
+    def recover(self, now) -> list[dict]:
+        """Half-open recovery for capabilities quarantined by an in-service fault.
+
+        Donor mechanism (opossum 10.0.0, analysed with REA and read in source): after a fixed reset
+        timeout the breaker lets the next *live* call through; success closes it, failure re-opens it.
+        Mutations: the probe runs in the sandbox on a fresh frozen-oracle seed, never on live work;
+        success restores eligibility (VERIFIED), never authority (ATTACHED); the wait doubles with each
+        failed probe and each prior quarantine; flapping stops recovery for the founder to decide;
+        engines are probed before the constructions that depend on them. Identity-changing quarantines
+        (pins, code, missing source) are never probed: the same identity cannot be re-earned."""
+        results = []
+        probes = [e.payload for e in self.journal.replay("capability.probe")]
+        stopped = {(e.payload["capability_id"], e.payload["incident"])
+                   for e in self.journal.replay("capability.recovery_stopped")}
+        formed = [m for m in self.registry.manifests.values()
+                  if is_formed(m) and self.registry.state.get(m.capability_id) == "QUARANTINED"]
+        for manifest in sorted(formed, key=lambda m: (m.provider.startswith("composed:"), m.capability_id)):
+            cid = manifest.capability_id
+            if self.registry.state.get(cid) != "QUARANTINED":
+                continue
+            history = self._quarantines(cid)
+            last = history[-1] if history else {}
+            if not str(last.get("why", "")).startswith(RECOVERABLE) or not last.get("incident"):
+                continue                                   # identity changed, or quarantined before recovery existed
+            incident = last["incident"]
+            if (cid, incident) in stopped:
+                continue
+            failed = [p for p in probes if p["capability_id"] == cid and p["incident"] == incident and not p["passed"]]
+            faults = [q for q in history if str(q.get("why", "")).startswith(RECOVERABLE)]
+            why_stop = ("flapping: quarantined in service %d times" % len(faults)
+                        if len(faults) > RECOVERY_MAX_QUARANTINES
+                        else "%d recovery probes failed" % len(failed) if len(failed) >= RECOVERY_MAX_FAILED_PROBES
+                        else None)
+            if why_stop:
+                self.journal.record("capability.recovery_stopped", {
+                    "capability_id": cid, "incident": incident, "why": why_stop,
+                    "next": "the founder decides: re-attach, detach, or replace", "at": iso(now)},
+                    key=[cid, incident, "recovery-stopped"])
+                results.append({"capability_id": cid, "result": "stopped", "why": why_stop})
+                continue
+            wait = min(RECOVERY_BASE * 2 ** (len(failed) + len(faults) - 1), RECOVERY_CAP)
+            since = datetime.fromisoformat(last["at"].replace("Z", "+00:00"))
+            if failed:
+                since = max(since, datetime.fromisoformat(failed[-1]["at"].replace("Z", "+00:00")))
+            if now < since + wait:
+                continue
+            attempt = len(failed) + 1
+            seed = int(sha256_json({"probe": cid, "incident": incident, "attempt": attempt})[7:15], 16)
+            outcome = self._probe(manifest, seed)
+            if outcome is None:                            # a dependency has not recovered yet: not a failure
+                results.append({"capability_id": cid, "result": "waiting on its engine"})
+                continue
+            passed, report = outcome
+            self.journal.record("capability.probe", {
+                "capability_id": cid, "incident": incident, "attempt": attempt, "passed": passed, "report": report,
+                "seed": seed, "waited_seconds": int(wait.total_seconds()), "at": iso(now),
+                "mechanism": "half-open probe in the sandbox on a fresh frozen-oracle seed (opossum-derived, mutated)"},
+                key=[cid, incident, attempt])
+            if passed:
+                self.registry.set_state(cid, "VERIFIED")
+                self.journal.record("capability.state", {
+                    "capability_id": cid, "state": "VERIFIED", "by": RECOVERED_BY, "incident": incident,
+                    "at": iso(now), "authority": "eligibility only; attach still needs the founder or a signed "
+                                                 "mission scope"}, key=[cid, "recovered", incident])
+            results.append({"capability_id": cid, "result": "recovered" if passed else "probe failed",
+                            "attempt": attempt})
+        return results
+
+    def _probe(self, manifest, seed: int):
+        """The capability's own qualification, re-run in isolation. None: a dependency is not ready yet."""
+        origin = next((e.payload["origin"] for e in reversed(self.journal.replay("capability.registered"))
+                       if e.payload["manifest"]["capability_id"] == manifest.capability_id), {})
+        prov = manifest.provenance
+        if origin.get("kind") == "package":
+            candidate = next((c for c in CATALOG.get(origin["function"], {}).get("candidates", ())
+                              if isinstance(c, PackageCandidate) and c.runner == origin["runner"]), None)
+            dist = mechanisms.installed(origin["distribution"]) if candidate else None
+            if dist is None or dist.version != prov.get("version") \
+                    or mechanisms.digest(dist, candidate.digest_paths)[0] != prov.get("package_digest"):
+                return False, {"identity": "the pinned package is missing or changed; this identity cannot recover"}
+            return qualify_package(origin["function"], candidate, mechanisms.card(candidate, origin["function"], dist),
+                                   seed)
+        if origin.get("kind") == "composed":
+            found = recombine.chain(origin["function"], CATALOG)
+            if found is None or recombine.chain_digest(found[0]) != origin["chain_digest"]:
+                return False, {"identity": "the reduction code changed; this identity cannot recover"}
+            engine_id = origin["target_capability_id"]
+            if self.registry.state.get(engine_id) not in ("ATTACHED", "VERIFIED"):
+                return None
+            view = _ProbeView(self.registry, engine_id)    # the probe may call its own engine; service may not
+            return recombine.qualify(found[0], recombine.composed_adapter(found[0], view), manifest, seed)
+        return False, {"identity": "no recovery probe for this kind of formed capability yet"}
+
+    def recovered_for(self, function: str) -> list[str]:
+        """Recovery keys (capability@incident) of capabilities this function can be re-admitted through."""
+        targets = {m.capability_id for m in self.registry.by_function(function)}
+        engine = self.construction_engine(function)
+        if engine:
+            targets |= {m.capability_id for m in self.registry.by_function(engine)}
+        return [f"{e.payload['capability_id']}@{e.payload['incident']}" for e in self.journal.replay("capability.state")
+                if e.payload["capability_id"] in targets and e.payload.get("by") == RECOVERED_BY
+                and self.registry.state.get(e.payload["capability_id"]) == "VERIFIED"]
+
+    def _attach_dependency(self, mission, manifest, dependent: str, now) -> bool:
+        """Attach the exact engine a construction is pinned to, under the same signed scope, or ask."""
+        allowed = (mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
+                   and manifest.consequence_class == "read_only"
+                   and mission.cone._capability_inside(manifest.capability_id))
+        if not allowed:
+            return False
+        self.registry.set_state(manifest.capability_id, "ATTACHED")
+        self.journal.record("capability.state", {"capability_id": manifest.capability_id, "state": "ATTACHED",
+                                                 "by": "founder-signed mission auto_attach (read_only), engine of "
+                                                       + dependent, "mission_id": mission.mission_id,
+                                                 "at": iso(now)},
+                            key=[manifest.capability_id, "attached", mission.mission_id, dependent])
+        return True
 
     def resolve(self, *, mission, function: str, purpose: str, now, repair: dict | None = None):
         found = self.find_attached(function)
@@ -582,6 +730,15 @@ class Genesis:
         # 2. registered but detached
         for manifest in self.registry.by_function(function):
             if self.registry.state[manifest.capability_id] == "VERIFIED":
+                engine_id = manifest.provenance.get("target_capability_id") \
+                    if manifest.provider.startswith("composed:") else None
+                if engine_id and self.registry.state.get(engine_id) != "ATTACHED":
+                    engine = self.registry.manifests.get(engine_id)
+                    if engine is None or self.registry.state.get(engine_id) != "VERIFIED" \
+                            or not self._attach_dependency(mission, engine, manifest.capability_id, now):
+                        self._route(deficit_id, "verified_detached", f"its engine {engine_id} is not attached",
+                                    manifest.capability_id)
+                        continue
                 self._route(deficit_id, "verified_detached", "found", manifest.capability_id)
                 return self._attach(mission, manifest, deficit_id, now)
         self._route(deficit_id, "verified_detached", "none", None)
@@ -615,6 +772,10 @@ class Genesis:
             if self.registry.state.get(manifest.capability_id) == "DETACHED":
                 self._route(deficit_id, "installed_software", "founder-detached; explicit attach required",
                             manifest.capability_id)
+                continue
+            if self._recorded_qualification(deficit_id, manifest.capability_id) is not None:
+                self._route(deficit_id, "installed_software", f"{candidate.binary_name} was verified earlier on this "
+                            "deficit (recorded; not re-run)", manifest.capability_id)
                 continue
             passed, report = self._verify(function, candidate, binary, seed, manifest)
             self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
@@ -662,6 +823,12 @@ class Genesis:
                 self._route(deficit_id, "installed_package", "this package failed in service; a different provider is "
                                                              "preferred (the founder may re-attach it)",
                             manifest.capability_id)
+                continue
+            prior = self._recorded_qualification(deficit_id, manifest.capability_id, card["package_digest"])
+            if prior is not None:
+                self._route(deficit_id, "installed_package", f"{candidate.distribution} "
+                            f"{'qualified' if prior['passed'] else 'failed qualification'} earlier on this deficit "
+                            "(recorded; not re-run)", manifest.capability_id)
                 continue
             passed, report = qualify_package(function, candidate, card, seed)
             self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
@@ -711,6 +878,11 @@ class Genesis:
             self._route(deficit_id, "constructed", "this construction failed in service; a different engine is "
                                                    "required (the founder may re-attach it)", manifest.capability_id)
             return False
+        prior = self._recorded_qualification(deficit_id, manifest.capability_id)
+        if prior is not None:
+            self._route(deficit_id, "constructed", f"{'qualified' if prior['passed'] else 'failed qualification'} "
+                        "earlier on this deficit (recorded; not re-run)", manifest.capability_id)
+            return False
         adapter = recombine.composed_adapter(path, self.registry)
         passed, report = recombine.qualify(path, adapter, manifest, seed)
         self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
@@ -754,6 +926,16 @@ class Genesis:
                         "builder": "none: constructed by certified reduction from GREG's reduction library",
                         "license": "GREG code; the engine keeps its own license (see its manifest)",
                         **({"qualification": report} if report else {})})
+
+    def _recorded_qualification(self, deficit_id: str, capability_id: str, digest: str | None = None):
+        """A qualification already recorded on this deficit is reused, never re-run: the ledger holds one
+        fact per (deficit, candidate), and re-running it would only repeat the same evidence."""
+        for event in reversed(self.journal.replay("genesis.verified")):
+            p = event.payload
+            if p["deficit_id"] == deficit_id and p["capability_id"] == capability_id and \
+                    (digest is None or (p.get("mechanism") or {}).get("package_digest") == digest):
+                return p
+        return None
 
     def _package_manifest(self, function, candidate: PackageCandidate, card: dict, deficit_id: str,
                           report: dict | None = None) -> CapabilityManifest:

@@ -520,15 +520,20 @@ class MissionEngine:
                                                                      list(m.excluded.values())]))
         return rid
 
+    def _generation(self, m: MissionState, kind: str) -> int:
+        # Blocks and unblocks are facts per occurrence: the same blocker after an unblock is a new block,
+        # never deduplicated into the old one (which silently left the mission unblocked).
+        return sum(1 for e in self.journal.replay(kind) if e.payload["mission_id"] == m.mission_id)
+
     def _block(self, m: MissionState, blocker: dict):
         if m.blocker != blocker:
             self.journal.record("mission.blocked", {"mission_id": m.mission_id, "blocker": blocker},
-                                key=[m.mission_id, blocker])
+                                key=[m.mission_id, blocker, self._generation(m, "mission.unblocked")])
             m.blocker = blocker
 
     def _unblock(self, m: MissionState, why: str):
         self.journal.record("mission.unblocked", {"mission_id": m.mission_id, "resolved": m.blocker, "why": why},
-                            key=[m.mission_id, "unblock", m.blocker])
+                            key=[m.mission_id, "unblock", m.blocker, self._generation(m, "mission.blocked")])
         m.blocker = None
 
     def _blocker_resolved(self, m: MissionState) -> tuple[bool, str]:
@@ -543,6 +548,12 @@ class MissionEngine:
                 if cap is None and self.genesis.construction_ready(b["function"]):
                     # once: the engine a construction needs was attached, so Genesis can now form it
                     return True, "the engine this function is constructed over is now attached"
+                if cap is None:
+                    lifted = " ".join(e.payload.get("why", "") for e in self.journal.replay("mission.unblocked")
+                                      if e.payload["mission_id"] == m.mission_id)
+                    fresh = [k for k in self.genesis.recovered_for(b["function"]) if k not in lifted]
+                    if fresh:   # once per recovery: re-admission is offered under the mission's own scope
+                        return True, f"recovered and eligible again: {fresh[0]}"
                 return (cap is not None, "capability now attached" if cap else why)
             return ok, why
         if b["type"] == "no_strategy":

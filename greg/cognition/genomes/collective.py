@@ -2259,6 +2259,19 @@ def immune_subregion(data):
     return support
 
 
+def immune_competitor(data):
+    """The strongest reasonable competitor of each regime, declared before the first re-admission that measures the
+    native regimes. The Gaussian benchmark (no ``self_support``) keeps the exact Gaussian prediction ellipsoid,
+    which is the likelihood-optimal region for Gaussian self data. The declared non-Gaussian supports get the 5-NN
+    split-conformal detector, because an ellipsoid is mismatched there by construction and would flatter the
+    candidate (builder measurement on development and review seeds: the candidate beat Hotelling 17-18 to 0 there,
+    but led the kNN detector only 11-5, 16-0 and 14-2)."""
+    if data.get("self_support") is None:
+        return immune_prediction_region(data)
+    immune_subregion(data)                    # an unknown declaration is refused exactly as the subregion refuses it
+    return immune_knn_conformal(data)
+
+
 # ============================================================================ 5. ascending clock auction
 def _market_inputs(data):
     _require_dict(data)
@@ -3185,10 +3198,11 @@ INTELLIGENCES = [
                             "hole, in the concavity) and outside it, each >= 6 noise units off the self support; dev "
                             "0-9, held-out seeds recorded by each admission freeze",
             baseline="per-feature z-score, Bonferroni threshold",
-            competitor="exact Gaussian prediction ellipsoid (Hotelling: sample mean/covariance, F quantile) at the "
-                       "same 0.75 x tolerance target (scipy for the quantile)")),
+            competitor="per regime (immune_competitor): on the Gaussian benchmark the exact Gaussian prediction "
+                       "ellipsoid (Hotelling: sample mean/covariance, F quantile); on the declared non-Gaussian "
+                       "supports the 5-NN split-conformal detector; both at the same 0.75 x tolerance target")),
         solve=immune_solve, verify=immune_verify, instance=immune_instance, score=immune_score,
-        baseline=immune_zscore, competitor=immune_prediction_region, subregion=immune_subregion, tolerance=1e-9,
+        baseline=immune_zscore, competitor=immune_competitor, subregion=immune_subregion, tolerance=1e-9,
         notes={"score": "F1 on the non-self class; false alarms above the 95% binomial bound of the tolerance = "
                         "wrong (-1); abstain 0",
                "alternative_competitor": "immune_mahalanobis (asymptotic chi-square at the full tolerance), the "
@@ -3207,14 +3221,13 @@ INTELLIGENCES = [
                                      "17-0, 17-0; no wrong answer from the candidate (Hotelling 3, z-score 2, all "
                                      "false-alarm overshoots, all on multimodal_self); median latency candidate "
                                      "0.23 s, Hotelling 0.0015 s",
-               "alternative_competitor_native": "immune_knn_conformal (5-NN distance in the self-standardised "
-                                                "frame, split-conformal at the same 0.75 x tolerance target), on the "
-                                                "same seeds: candidate 8-8 (2 ties) gaussian_ellipsoid, 11-5 (2) "
-                                                "multimodal_self, 16-0 (1) annular_self, 14-2 (1) nonconvex_self; "
-                                                "it overshot the false-alarm limit twice. A nonparametric detector is "
-                                                "the stronger reasonable competitor on the native regimes; whether it "
-                                                "should replace Hotelling there is a decision for before the "
-                                                "re-admission freeze"}),
+               "native_competitor": "immune_knn_conformal (5-NN distance in the self-standardised frame, "
+                                    "split-conformal at the same 0.75 x tolerance target) is the competitor on the "
+                                    "native regimes (immune_competitor), decided before the re-admission freeze. "
+                                    "Builder measurement on the same seeds: candidate 8-8 (2 ties) "
+                                    "gaussian_ellipsoid, 11-5 (2) multimodal_self, 16-0 (1) annular_self, 14-2 (1) "
+                                    "nonconvex_self; it overshot the false-alarm limit twice. The Gaussian benchmark "
+                                    "keeps Hotelling, the likelihood-optimal region for Gaussian self data"}),
     Executable(
         genome=IntelligenceGenome(**_common(
             intelligence_id="collective.market.clock_auction", version="1.1.0", family="collective_market",

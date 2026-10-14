@@ -728,6 +728,24 @@ def test_flock_competitor_is_online_replanning_in_the_native_regimes():
     assert unlimited["makespan"] == 66 and unlimited["trajectories"] != out["trajectories"]
 
 
+def test_the_immune_competitor_is_the_strongest_reasonable_one_per_regime():
+    """Declared before the re-admission freeze: Hotelling (likelihood-optimal for Gaussian self data) on the Gaussian
+    benchmark, the 5-NN split-conformal detector on the declared non-Gaussian supports; an unknown declaration is
+    refused, never silently compared against the wrong competitor."""
+    item_ = item("collective_immune")
+    seen = set()
+    for seed in range(10):
+        data, _ = inst("collective_immune", seed)
+        support = data.get("self_support")
+        expected = c.immune_prediction_region(data) if support is None else c.immune_knn_conformal(data)
+        assert item_.competitor(data) == expected, seed
+        seen.add(support)
+    assert None in seen and len(seen) >= 2
+    native = next(d for d, _ in (inst("collective_immune", s) for s in range(10)) if d.get("self_support"))
+    with pytest.raises(c.GenomeError):
+        item_.competitor({**native, "self_support": "spherical_cow"})
+
+
 def test_a_plan_that_moves_a_declared_stopped_agent_is_wrong():
     """A dropped-out agent is a static disc. A plan that steps it away and back passes the unchanged kinematic audit
     and ``flock_score``; the benchmark score (``flock_regime_score``) marks it wrong. Holding still is not movement,
@@ -738,19 +756,23 @@ def test_a_plan_that_moves_a_declared_stopped_agent_is_wrong():
         solved = c.flock_solve(copy.deepcopy(data), BUDGET)
         assert solved["status"] == "ANSWER", seed
         assert score(data, truth, solved["output"])["category"] == "correct"
+        for i in data["stopped"]:                                    # every stopped agent, not only the first
+            x, y = data["starts"][i]
+            for step in (0.25, 0.01):                                # a small step is movement too
+                for k in range(16):
+                    a = k * math.pi / 8
+                    moved = copy.deepcopy(solved["output"])
+                    moved["trajectories"][i] = [x, y, round(x + step * math.cos(a), 5),
+                                                round(y + step * math.sin(a), 5), x, y]
+                    moved["arrival_steps"][i] = 2
+                    if all(c.flock_verify(data, moved, solved["certificate"]).values()):
+                        break
+                else:
+                    pytest.fail(f"seed {seed} agent {i}: no heading clear of the crowd")
+                assert c.flock_score(data, truth, moved)["category"] == "correct"   # kinematics alone cannot see it
+                assert score(data, truth, moved) == {"quality": -1.0, "category": "wrong"}, (seed, i, step)
         i = data["stopped"][0]
         x, y = data["starts"][i]
-        for k in range(16):
-            a = k * math.pi / 8
-            moved = copy.deepcopy(solved["output"])
-            moved["trajectories"][i] = [x, y, round(x + 0.25 * math.cos(a), 5), round(y + 0.25 * math.sin(a), 5), x, y]
-            moved["arrival_steps"][i] = 2
-            if all(c.flock_verify(data, moved, solved["certificate"]).values()):
-                break
-        else:
-            pytest.fail(f"seed {seed}: no heading clear of the crowd")
-        assert c.flock_score(data, truth, moved)["category"] == "correct"        # kinematics alone cannot see it
-        assert score(data, truth, moved) == {"quality": -1.0, "category": "wrong"}, seed
         held = copy.deepcopy(solved["output"])
         held["trajectories"][i] = [x, y, x, y, x, y]
         held["arrival_steps"][i] = 2

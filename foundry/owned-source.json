@@ -341,6 +341,7 @@
     "greg/cognition/genomes/developmental.py",
     "greg/cognition/genomes/flow.py",
     "greg/cognition/genomes/forecasting.py",
+    "greg/cognition/genomes/graph_or.py",
     "greg/cognition/genomes/library.py",
     "greg/cognition/genomes/solvers_b.py",
     "greg/cognition/genomes/solvers_c.py",

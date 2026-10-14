@@ -8,8 +8,8 @@
                     anything else is preserved and quarantined (narrowing only)
         guard       every signed closure (revoke, supersede), stop or change, narrowing preference and priority
                     floor is restored if an unsigned record widened it
-        sense       Gate receipts (check predicate recomputed), separate-process appraisals, greg.path,
-                    non-quarantined intake (untrusted): only new or changed evidence
+        sense       Gate receipts of each check's own sensor read (check predicate recomputed), separate-process
+                    appraisals, greg.path, non-quarantined intake (untrusted): only new or changed evidence
         loop        egregore GoalGravityLoop.turn in body mode: no gate, no executor, no grant
                       awake goal  -> MissionEngine.observe_now for its signed missions (timing only)
                       decision    -> MissionEngine.request_decision (the engine's own APPROVAL, exact scope)
@@ -39,7 +39,7 @@ from egregore.gravity import GoalGravityLoop
 from egregore.resources import ResourceGovernor
 from events.spine import EventError
 from greg import asks, path as devpath
-from greg.authority import PRINCIPAL
+from greg.authority import PRINCIPAL, AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityManifest
 from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes
 from greg.journal import SOURCE, iso
@@ -770,6 +770,7 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
 
     latest: dict[tuple, tuple] = {}            # one reading per (subject, attribute): the latest in ledger order
     path_changed = cursor == 0
+    gate: dict = {}                            # grant_issued and witness records, read once if needed
     for rec in records:
         if rec.record_type != "event":
             continue
@@ -778,9 +779,9 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
             path_changed = True
         if t == "greg.mission.observed" and p.get("receipt"):
             m = book.missions.get(p["mission_id"])
-            receipt = body.ledger.find(p["receipt"])
             check = next((c for c in (m.spec["success_checks"] if m else []) if c["check_id"] == p["check_id"]), None)
-            if receipt is None or receipt.record_type != "receipt" or check is None:
+            receipt = None if check is None else _sensor_receipt(body.ledger, gate, m, check, p["receipt"])
+            if receipt is None:               # missing, or not this check's own sensor read: never evidence
                 continue
             value, _ = evaluate_predicate(check["predicate"], receipt.payload.get("result", {}).get("output"))
             trust = "attributed" if value == p["passed"] else "untrusted"
@@ -803,6 +804,38 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
                 emit(f"greg.path:{node}:{met}:{end}", iso(body.clock()), body.ledger.head,
                      [{"subject": "greg.path", "attribute": node, "value": met, "confidence": 1.0}])
     return out, end
+
+
+def _sensor_receipt(ledger, gate: dict, m, check: dict, receipt_hash: str):
+    """The Gate receipt of this check's own sensor read for this mission, or None.
+
+    An observation may cite only the receipt of the read its check names: a grant issued under this
+    mission's signed command, witnessed on the sensor's capability and target, and (for static params)
+    for exactly the scope AuthorityOffice derives for that read. Any other receipt, however genuine,
+    measured something else."""
+    receipt = ledger.find(receipt_hash)
+    if receipt is None or receipt.record_type != "receipt":
+        return None
+    if not gate:
+        gate["issued"] = {r.payload.get("grant_id"): r.payload for r in ledger.by_type("event")
+                          if r.payload.get("type") == "greg.authority.grant_issued"}
+        gate["witness"] = {r.payload.get("witness_id"): r.payload for r in ledger.by_type("witness")}
+    grant = gate["issued"].get(receipt.payload.get("grant_id"))
+    witness = gate["witness"].get(receipt.payload.get("witness_id"))
+    sensor = check.get("sensor") or {}
+    if grant is None or witness is None or grant.get("authority_ref") != m.command_digest \
+            or witness.get("grant_id") != grant.get("grant_id") or witness.get("target") != sensor.get("target"):
+        return None
+    capability = sensor.get("capability")          # absent: a function sensor resolved to an attached capability
+    if capability is not None:
+        if witness.get("capability") != capability:
+            return None
+        params = sensor.get("params", {})
+        if "$from_action" not in json.dumps(params) and grant.get("scope_digest") != AuthorityOffice.scope_digest(
+                mission_id=m.mission_id, capability_id=capability, params=params, target=sensor["target"],
+                consequence_class="read_only", cost_usd=0.0):
+            return None
+    return receipt
 
 
 def _activate(body, held: _Binding, turn, at: datetime) -> list[str]:

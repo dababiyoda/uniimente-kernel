@@ -297,37 +297,42 @@ class Destination:
     effect: str                      # the compiled, falsifiable effect
     capabilities: tuple[tuple[str, str], ...]
     falsifier: str
+    horizon: str                     # its horizon on the one Backcast GPS (greg/path.json)
 
 
+# The Founder Effect Compiler's six examples. Each is placed on greg/path.json (``horizon``): this table is a live
+# buildability view of those horizons from the genome inventory, not a second Backcast GPS.
 DESTINATIONS = (
     Destination("Become omniscient about my businesses", "SCIENCE_FICTION_DESCENDANT",
                 "minimise decision-relevant unknowns with authorized data, freshness and stated uncertainty",
                 (("brief.freshness", "present"), ("memory.precedents", "present"), ("cognition.evidence", "present"),
                  ("connectors.business_data", "commodity")),
-                "a founder decision made with a material fact GREG had authorized access to but did not surface"),
+                "a founder decision made with a material fact GREG had authorized access to but did not surface",
+                "decision_relevant_knowledge"),
     Destination("Make UNIIMENTE immortal", "SCIENCE_FICTION_DESCENDANT",
                 "intent and capability survive component failure: durable ledger, backups, replaceable models, succession",
                 (("artifact.store", "present"), ("cognition.cortex", "present"), ("backup.offsite", "commodity"),
                  ("succession.legal", "commodity")),
-                "a restore drill loses founder intent, ledger history or the ability to swap the model"),
+                "a restore drill loses founder intent, ledger history or the ability to swap the model", "continuity"),
     Destination("Heal yourself", "BUILDABLE_NOW",
                 "detect lost function, localise it, repair or replace it, verify restoration, resume work",
                 (("worker.appraise", "present"), ("repo.integration_audit", "present"), ("worker.commission", "present")),
-                "an injected fault is not detected, or the mission does not resume after repair"),
+                "an injected fault is not detected, or the mission does not resume after repair", "capability_genesis"),
     Destination("Grow a new organ", "BUILDABLE_NOW",
                 "a recurring deficit becomes a bounded subsystem with contracts, tests, lifecycle and shutdown",
                 (("cognition.compose", "present"), ("foundry.apply", "present")),
-                "a formed capability is used once and never again, or bypasses founder attach"),
+                "a formed capability is used once and never again, or bypasses founder attach", "persistent_organs"),
     Destination("Give UNIIMENTE an immune system", "BUILDABLE_NOW",
                 "detect, contain, recover from and learn from attacks and failures without autoimmune refusal",
                 (("cognition.robust_pattern", "present"), ("cognition.protection", "present"),
                  ("intrusion.detection", "commodity")),
-                "a replayed incident is missed, or legitimate novelty is quarantined"),
+                "a replayed incident is missed, or legitimate novelty is quarantined", "immune_function"),
     Destination("Watch over and protect me in the physical world", "SCIENCE_FICTION_DESCENDANT",
                 "lawful situational awareness from public and consented data with early warning and escalation",
                 (("http.get", "present"), ("feeds.public_safety", "commodity"), ("location.consented", "commodity"),
                  ("perception.ubiquitous", "science_fiction")),
-                "a public, available warning relevant to the founder's consented location is not surfaced"),
+                "a public, available warning relevant to the founder's consented location is not surfaced",
+                "situational_awareness"),
 )
 
 
@@ -336,7 +341,8 @@ def backcast(destination: Destination) -> dict:
     real = tuple(c for c in destination.capabilities if c[1] != "science_fiction")
     level, steps = buildability(real, present)
     _, full = buildability(destination.capabilities, present)
-    return {"expression": destination.expression, "literal": destination.literal, "effect": destination.effect,
+    return {"expression": destination.expression, "horizon": destination.horizon, "literal": destination.literal,
+            "effect": destination.effect,
             "compiled_effect_buildability": level, "backcast": full, "falsifier": destination.falsifier,
             "kept_on_horizon": [s["capability"] for s in full if "science_fiction" in s["state"]]}
 

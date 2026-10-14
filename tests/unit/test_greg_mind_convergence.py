@@ -136,3 +136,40 @@ def test_one_landlock_grant_path_covers_both_lineages_runtime_libraries():
     assert not hasattr(isolation, "GLIBC_RUNTIME")
     pr158 = ("libc", "libm", "librt", "libdl", "libpthread", "libutil")
     assert {f"{name}.so*" for name in pr158} <= set(isolation.RUNTIME_LIBRARIES)
+
+
+def test_every_founder_effect_destination_sits_on_the_one_backcast_gps():
+    """PR #155's six destination backcasts are a view of greg/path.json horizons, never a second GPS."""
+    from greg import path
+    from greg.cognition.advantage import DESTINATIONS, backcast
+    horizons = {h["id"]: h for h in path.load()["horizons"]}
+    for destination in DESTINATIONS:
+        assert destination.horizon in horizons, destination.expression
+        assert backcast(destination)["horizon"] == destination.horizon
+    assert len({d.horizon for d in DESTINATIONS}) == len(DESTINATIONS)
+
+
+def test_archival_copies_carry_the_digests_the_source_manifest_records():
+    import json
+    manifest = json.loads((ROOT / "docs/collaboration/MIND-LINEAGE-SOURCE-MANIFEST-2026-10-14.json").read_text())
+    assert "byte-identical archival copies" in manifest["archival_copies"]["label"]
+    for row in manifest["frozen_path_collisions"]:
+        for lineage, folder in (("pr155", "pr155-ef5f078"), ("pr158", "pr158-a832c73")):
+            copy = ARCHIVE / folder / row["path"]
+            assert hashlib.sha256(copy.read_bytes()).hexdigest() == row["lineages"][lineage]["sha256"], (folder, row["path"])
+
+
+def test_inventory_applies_the_compilers_version_rule(monkeypatch):
+    """Genome admission stays bound to the exact tested version in the inventory too: positive evidence measured at
+    another version reads EXPERIMENTAL; negative evidence persists."""
+    from greg.cognition import genome_library as lib
+    from greg.cognition.genomes import library
+    family, item = next((f, x) for f, x in library.executables().items())
+    index = {"genomes": {family: {"status": "DEFAULT_FOR_GEOMETRY", "version": "0.0.0-other",
+                                  "evidence": "x.json#genomes." + family}}, "operations": {}}
+    status, raw, _ = lib.admission_of(family, index)
+    assert status == "EXPERIMENTAL" and "stale" in raw
+    index["genomes"][family]["status"] = "REJECTED"
+    assert lib.admission_of(family, index)[0] == "REJECTED"
+    index["genomes"][family].update(status="DEFAULT_FOR_GEOMETRY", version=item.genome.version)
+    assert lib.admission_of(family, index)[0] == "DEFAULT_FOR_GEOMETRY"

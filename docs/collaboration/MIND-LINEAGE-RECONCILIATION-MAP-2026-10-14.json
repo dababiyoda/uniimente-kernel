@@ -1,0 +1,1298 @@
+{
+ "schema": "mind-lineage-reconciliation-map/1",
+ "base": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
+ "pr155": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
+ "pr158": "a832c7382630464db70ea92d990899d502170ae1",
+ "vocabulary": [
+  "complementary",
+  "interchangeable",
+  "semantic incompatibility",
+  "duplicate",
+  "historical evidence",
+  "unresolved"
+ ],
+ "rule": "one entry per file changed by either lineage since the merge base; canonical selection by evidence, never by lineage",
+ "entries": [
+  {
+   "path": "contracts/lawful-leverage.schema.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "cortex/evaluation/closure.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/freeze-v2.json",
+   "lineage": "both",
+   "classification": "semantic incompatibility",
+   "disposition": "archived:both",
+   "note": "two different frozen artifacts at one path; both kept byte-identical under docs/collaboration/lineage-archive/{pr155-ef5f078,pr158-a832c73}/; #158's occupies the original path because #158's live tests import those runners"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/freeze-v3.json",
+   "lineage": "both",
+   "classification": "semantic incompatibility",
+   "disposition": "archived:both",
+   "note": "two different frozen artifacts at one path; both kept byte-identical under docs/collaboration/lineage-archive/{pr155-ef5f078,pr158-a832c73}/; #158's occupies the original path because #158's live tests import those runners"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/freeze-v4.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/prereg-v4.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/run_v2.py",
+   "lineage": "both",
+   "classification": "semantic incompatibility",
+   "disposition": "archived:both",
+   "note": "two different frozen artifacts at one path; both kept byte-identical under docs/collaboration/lineage-archive/{pr155-ef5f078,pr158-a832c73}/; #158's occupies the original path because #158's live tests import those runners"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/run_v3.py",
+   "lineage": "both",
+   "classification": "semantic incompatibility",
+   "disposition": "archived:both",
+   "note": "two different frozen artifacts at one path; both kept byte-identical under docs/collaboration/lineage-archive/{pr155-ef5f078,pr158-a832c73}/; #158's occupies the original path because #158's live tests import those runners"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/run_v4.py",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v2.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v3.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v4.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/vpl_metrics.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "cortex/evaluation/data/bank_calls_halfhour.json.gz",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/data/build_bank_calls.py",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/data/build_sndlib_networks.py",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/data/m4_weekly.json.gz",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/data/sndlib_networks.json.gz",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/developmental_sweep/__init__.py",
+   "lineage": "pr155",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr155)"
+  },
+  {
+   "path": "cortex/evaluation/developmental_sweep/freeze-v1.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/developmental_sweep/run.py",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/evolution/__init__.py",
+   "lineage": "pr155",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr155)"
+  },
+  {
+   "path": "cortex/evaluation/evolution/evaluator.py",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/evolution/freeze-v1.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/evolution/run.py",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/genome_admission/__init__.py",
+   "lineage": "pr155",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr155)"
+  },
+  {
+   "path": "cortex/evaluation/genome_admission/freeze-v1.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/genome_admission/freeze-v2.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/genome_admission/run.py",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/genome_admission/run_v2.py",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/learned_routing/freeze-v3.json",
+   "lineage": "both",
+   "classification": "semantic incompatibility",
+   "disposition": "archived:both",
+   "note": "two different frozen artifacts at one path; both kept byte-identical under docs/collaboration/lineage-archive/{pr155-ef5f078,pr158-a832c73}/; #158's occupies the original path because #158's live tests import those runners"
+  },
+  {
+   "path": "cortex/evaluation/learned_routing/run_v3.py",
+   "lineage": "both",
+   "classification": "semantic incompatibility",
+   "disposition": "archived:both",
+   "note": "two different frozen artifacts at one path; both kept byte-identical under docs/collaboration/lineage-archive/{pr155-ef5f078,pr158-a832c73}/; #158's occupies the original path because #158's live tests import those runners"
+  },
+  {
+   "path": "cortex/evaluation/learned_routing/suite-v3.json",
+   "lineage": "both",
+   "classification": "semantic incompatibility",
+   "disposition": "archived:both",
+   "note": "two different frozen artifacts at one path; both kept byte-identical under docs/collaboration/lineage-archive/{pr155-ef5f078,pr158-a832c73}/; #158's occupies the original path because #158's live tests import those runners"
+  },
+  {
+   "path": "cortex/evaluation/pr155_crowd_sparse/__init__.py",
+   "lineage": "pr155",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr155)"
+  },
+  {
+   "path": "cortex/evaluation/pr155_crowd_sparse/freeze-v1.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "cortex/evaluation/pr155_crowd_sparse/run.py",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/FOUNDER_INTENT_LEDGER.md",
+   "lineage": "both",
+   "classification": "complementary",
+   "disposition": "merged",
+   "note": "both lineages' entries kept; the convergence entry is added on top"
+  },
+  {
+   "path": "docs/collaboration/MIND-LINEAGE-SOURCE-MANIFEST-2026-10-14.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-08/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-accounting/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-accounting/accounting.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v3/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v3/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/development-v4.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14/README.md",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14/results-v2.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14/results-v3.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-developmental-sweep/2026-10-14/README.md",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-developmental-sweep/2026-10-14/results.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-13-v1/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-14-v2/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-14/README-v2.md",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-14/README.md",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-14/results.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-learned-routing/2026-10-07/README.md",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-learned-routing/2026-10-07/results-v3.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-learned-routing/2026-10-08/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-learned-routing/2026-10-08/run-v3-interrupted-at-item-149.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-learned-routing/2026-10-08/run-v3.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-mind-evidence-index.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "rebuilt",
+   "note": "derived index; genome, recipe and routing rows unchanged; operations and three sources added"
+  },
+  {
+   "path": "docs/evidence/greg-polyintelligence-mind/2026-10-07/baseline-suite-at-92bc6e3.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-08/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-08/cycle-forecast-1.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-09/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-09/cycle-immune-2.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-09/cycle-immune-2.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-14/README.md",
+   "lineage": "both",
+   "classification": "semantic incompatibility",
+   "disposition": "archived:both",
+   "note": "two different frozen artifacts at one path; both kept byte-identical under docs/collaboration/lineage-archive/{pr155-ef5f078,pr158-a832c73}/; #158's occupies the original path because #158's live tests import those runners"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-14/results.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/pr155-crowd-sparse/2026-10-14/README.md",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/pr155-crowd-sparse/2026-10-14/results.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "founder source or intent record"
+  },
+  {
+   "path": "docs/intent/INTENT-20261014-MIND-LINEAGE-CONVERGENCE.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "founder source or intent record"
+  },
+  {
+   "path": "docs/intent/sources/FULL-POLYINTELLIGENCE-MIND-CONTINUATION-2026-10-07-source.md",
+   "lineage": "pr155",
+   "classification": "duplicate",
+   "disposition": "historical",
+   "note": "a 90-line excerpt of the same 2026-10-07 directive; #158's POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md (1,954 lines, complete) is the canonical verbatim source"
+  },
+  {
+   "path": "docs/intent/sources/MIND-LINEAGE-CONVERGENCE-2026-10-14-source.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "founder source or intent record"
+  },
+  {
+   "path": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "founder source or intent record"
+  },
+  {
+   "path": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-REISSUE-2026-10-13-source.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "founder source or intent record"
+  },
+  {
+   "path": "examples/cognition/frozen-suite-v2.json",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "foundry/lawful_leverage.py",
+   "lineage": "pr158",
+   "classification": "interchangeable",
+   "disposition": "selected:pr158",
+   "note": "canonical lawful intervention generator (see greg/cognition/advantage.py)"
+  },
+  {
+   "path": "foundry/owned-source.json",
+   "lineage": "both",
+   "classification": "complementary",
+   "disposition": "regenerated",
+   "note": "derived inventory of tracked owned sources; regenerated with scripts/refresh_owned_source.py"
+  },
+  {
+   "path": "greg/asks.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/body.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cli.py",
+   "lineage": "both",
+   "classification": "complementary",
+   "disposition": "merged",
+   "note": "both command sets kept (genomes, advantage, destinations; calibration, gravity, leverage)"
+  },
+  {
+   "path": "greg/cognition/advantage.py",
+   "lineage": "pr155",
+   "classification": "interchangeable",
+   "disposition": "alternative:isolated",
+   "note": "intervention generation overlaps #158's foundry/lawful_leverage.py (canonical: consent and harm gates, Monte Carlo estimates, independent review); #155's operator library stays a registered alternative with no outcome evidence; its destinations are now views of greg/path.json horizons"
+  },
+  {
+   "path": "greg/cognition/assignment.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/benchmark.py",
+   "lineage": "both",
+   "classification": "interchangeable",
+   "disposition": "selected:pr158",
+   "note": "#158's version-pinned frozen-suite-v2.json selected (frozen suite, v1 kept); #155's RECONCILED evaluation-view table superseded"
+  },
+  {
+   "path": "greg/cognition/catalog.py",
+   "lineage": "both",
+   "classification": "complementary",
+   "disposition": "merged",
+   "note": "#155's four repertoire families and #158's genome projection on one catalog; names disjoint (tested)"
+  },
+  {
+   "path": "greg/cognition/compiler.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "canonical Layer 5 entry; now applies #155's operation-family verdicts from the index"
+  },
+  {
+   "path": "greg/cognition/composition.py",
+   "lineage": "both",
+   "classification": "complementary",
+   "disposition": "merged",
+   "note": "#158's operation recipes dispatch first; #155's typed-dataflow derive handles estimate/identify chains"
+  },
+  {
+   "path": "greg/cognition/contracts.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/cortex.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/evolution.py",
+   "lineage": "both",
+   "classification": "interchangeable",
+   "disposition": "selected:pr158",
+   "note": "#158's controller is canonical (confined candidates, sealed evaluator, recurring-failure trigger, three REJECT cycles); #155's routing-genome mechanism kept as greg/cognition/evolution_routing.py, imported only by its historical runner"
+  },
+  {
+   "path": "greg/cognition/evolution_sandbox.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genome_library.py",
+   "lineage": "pr155",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "now reads the Mind evidence index for every family (one admission source with the compiler)"
+  },
+  {
+   "path": "greg/cognition/genomes/__init__.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/admission.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/basal.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/collective.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/competitors.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/contract.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/decision.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/developmental.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/flow.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/forecasting.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/graph_or.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/library.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/solvers_b.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/solvers_c.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/stochastic.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/genomes/strategic.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/human.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/repertoire.py",
+   "lineage": "pr155",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "four Layer 1/2/4 families beside #158's genomes; reachable by operation and, for unambiguous inputs, by the compiler"
+  },
+  {
+   "path": "greg/cognition/reserved.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/settlement.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/cognition/solvers.py",
+   "lineage": "both",
+   "classification": "complementary",
+   "disposition": "merged",
+   "note": "one SOLVERS table: genome families then the #155 repertoire; names disjoint (tested)"
+  },
+  {
+   "path": "greg/cognition/verification.py",
+   "lineage": "both",
+   "classification": "complementary",
+   "disposition": "merged",
+   "note": "#155's family checks and #158's genome_certificate branch on one verifier"
+  },
+  {
+   "path": "greg/dataplane.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/founder.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/genesis.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/gravity.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/isolation.py",
+   "lineage": "both",
+   "classification": "duplicate",
+   "disposition": "unified",
+   "note": "two fixes of the same CI defect (#158 1ea2209, #155 bfb9c04); one grant path: #155's superset with the ancestor guard covers #158's glibc list (tested)"
+  },
+  {
+   "path": "greg/missions.py",
+   "lineage": "both",
+   "classification": "complementary",
+   "disposition": "merged",
+   "note": "two Goal Gravity hooks with disjoint outputs: #158's compiler deficit -> Genesis, #155's unattached-family attach ask; one asks contract"
+  },
+  {
+   "path": "greg/path.json",
+   "lineage": "both",
+   "classification": "complementary",
+   "disposition": "merged",
+   "note": "#158's values; #155's records as pr155_lineage on P4, P6, P8 and the workstream; immune_function horizon added"
+  },
+  {
+   "path": "greg/path.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "greg/resilience.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "scripts/build_mind_evidence_index.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "operations section from #155's admission runs; genome glob skips another harness's files"
+  },
+  {
+   "path": "scripts/mind_status.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "scripts/prepare_m4_weekly.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "scripts/refresh_owned_source.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/integration/test_greg_cognition_mission.py",
+   "lineage": "both",
+   "classification": "complementary",
+   "disposition": "merged",
+   "note": "#158's file plus #155's goal-gravity test"
+  },
+  {
+   "path": "tests/integration/test_greg_cognitive_composition.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/integration/test_greg_composition_v2.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/integration/test_greg_composition_v3.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/integration/test_greg_composition_v4.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_cognition_seed_gates.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_cortex_reserved_drift.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_frontier_backcasts.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_basal.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_collective.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_collective_native.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_competitors.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_developmental.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_flow_mcf.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_graph_or.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_library.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_solvers_b.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_solvers_c.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_stochastic.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_genomes_strategic.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_greg_advantage_compiler.py",
+   "lineage": "pr155",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr155)"
+  },
+  {
+   "path": "tests/unit/test_greg_cognition_genesis.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_greg_community_evidence.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_greg_competency_compiler.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_greg_genome_library.py",
+   "lineage": "pr155",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr155)"
+  },
+  {
+   "path": "tests/unit/test_greg_gravity.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_greg_human_judgment.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_greg_inversion_operator.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_greg_landlock.py",
+   "lineage": "pr155",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr155)"
+  },
+  {
+   "path": "tests/unit/test_greg_outcome_calibration.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_greg_protected_evolution.py",
+   "lineage": "both",
+   "classification": "interchangeable",
+   "disposition": "selected:pr158",
+   "note": "#158's tests at the path; #155's moved to tests/unit/test_greg_evolution_routing.py"
+  },
+  {
+   "path": "tests/unit/test_greg_repertoire.py",
+   "lineage": "pr155",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr155)"
+  },
+  {
+   "path": "tests/unit/test_greg_resilience.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_lawful_leverage.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_mind_evidence_index.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "operation verdicts and the shared admission directory"
+  },
+  {
+   "path": "tests/unit/test_mind_evidence_sources.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "extended",
+   "note": "re-derives operation rows from their cited files"
+  },
+  {
+   "path": "tests/unit/test_mind_lineage_manifest.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_mind_status.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "tests/unit/test_vpl_metrics.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158)"
+  },
+  {
+   "path": "verifier/runs/v2-2026-10-14T12-42-27.914489+00-00.json",
+   "lineage": "pr155",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  }
+ ]
+}

@@ -1074,6 +1074,29 @@
       "founder_sources": [
         "INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION"
       ]
+    },
+    {
+      "id": "immune_function",
+      "covers": [
+        "immune system (detect, contain, recover from and learn from attacks and failures)"
+      ],
+      "intended_effect": "Attacks and failures are detected, contained, recovered from and learned from, and legitimate novelty is not quarantined (no autoimmune refusal)",
+      "node": "N2",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED mechanisms, not one integrated function: Landlock confinement of candidates and workers (greg/isolation.py), resilience checks (greg/resilience.py), negative-selection detection (cognition.collective_immune, EXPERIMENTAL in the evidence index) and robust anomaly detection (cognition.robust_pattern, EXPERIMENTAL); no incident drill has been run on a body",
+      "nearest_precursor": [
+        "greg/isolation.py",
+        "greg/resilience.py",
+        "greg/cognition/genomes/collective.py",
+        "greg/cognition/repertoire.py"
+      ],
+      "prerequisite": "Body 1 operating (N1) and a ledgered incident record type for detection, containment and recovery",
+      "activation_evidence": "a replayed incident (an injected fault or intrusion) on the body is detected, contained and recovered, the interrupted mission resumes, and a legitimate novel request in the same drill is not quarantined",
+      "founder_sources": [
+        "INTENT-0030",
+        "docs/FOUNDER_EFFECT_COMPILER.md#give-uniimente-an-immune-system"
+      ],
+      "placement": "added by the 2026-10-14 Mind-lineage convergence: the Founder Effect Compiler's immune-system example had no horizon on the one Backcast GPS (PR #155's advantage.DESTINATIONS carried it in code only)"
     }
   ],
   "workstreams": [

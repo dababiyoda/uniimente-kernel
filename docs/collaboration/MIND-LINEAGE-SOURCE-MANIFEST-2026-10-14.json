@@ -224,5 +224,13 @@
       "verifier/runs/"
     ]
   },
-  "coordination_rule": "Neither session overwrites, regenerates, renames or silently supersedes the other's frozen evidence. New evaluations use uniquely identified paths that name their lineage or run id. Shared live-code conflicts are resolved in the dedicated convergence PR by comparative evidence, not branch priority. Neither lineage is automatically canonical."
+  "coordination_rule": "Neither session overwrites, regenerates, renames or silently supersedes the other's frozen evidence. New evaluations use uniquely identified paths that name their lineage or run id. Shared live-code conflicts are resolved in the dedicated convergence PR by comparative evidence, not branch priority. Neither lineage is automatically canonical.",
+  "archival_copies": {
+    "label": "byte-identical archival copies, not the original frozen locations; a frozen artifact stays authoritative only at (source commit, original path, sha256)",
+    "root": "docs/collaboration/lineage-archive/",
+    "pr155": "pr155-ef5f078/<original path>",
+    "pr158": "pr158-a832c73/<original path>",
+    "added_by": "Track B convergence PR (claude/greg-mind-lineage-convergence)",
+    "verified_by": "tests/unit/test_greg_mind_convergence.py (archive bytes = git show <commit>:<path>; tree path = pr158 copy) and tests/unit/test_mind_lineage_manifest.py (digests below)"
+  }
 }

@@ -445,6 +445,7 @@
     "identity/machine_passport.py",
     "identity/organ-registry.yaml",
     "identity/service-identities.yaml",
+    "identity/text.py",
     "linker/README.md",
     "linker/__init__.py",
     "linker/linker.py",

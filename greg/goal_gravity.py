@@ -2,9 +2,12 @@
 
     founder-signed GOAL --Body.apply (Ed25519, nonce, TTL)--> egregore GoalRegistry on the body ledger
     Body.tick --> tick() before the mission engine; no goal record means no work and no record:
-        admission   retained GOAL envelope re-verified under the key valid at its ledger position and
-                    rebuilt byte for byte; anything else is preserved and quarantined (narrowing only)
-        guard       a signed founder stop/change/revoke is restored if an unsigned record undid it
+        admission   founder_facts: each retained GOAL / GOAL_CONTROL re-judged at its own ledger position (key
+                    valid there, this body, unused nonce, accepted inside its signed validity, and the command
+                    path's own check_goal / check_control on the mission book and facts as they stood there);
+                    anything else is preserved and quarantined (narrowing only)
+        guard       every signed closure (revoke, supersede), stop or change, narrowing preference and priority
+                    floor is restored if an unsigned record widened it
         sense       Gate receipts (check predicate recomputed), separate-process appraisals, greg.path,
                     non-quarantined intake (untrusted): only new or changed evidence
         loop        egregore GoalGravityLoop.turn in body mode: no gate, no executor, no grant
@@ -663,7 +666,10 @@ def command(body, kind: str, payload: dict, digest_: str, *, signer: str = "foun
 # -- one turn on the body ------------------------------------------------------------------------------
 
 def _guard(body, reg: GoalRegistry, facts: FounderFacts, at: datetime) -> list[str]:
-    """Narrowing only: unadmitted goals never pull; a signed stop/change/revoke is never undone unsigned."""
+    """Narrowing only. Unadmitted goals never pull; for an admitted goal every authority-relevant fact is
+    re-derived from signed commands and restored when an unsigned record widened it: a signed revoke or
+    supersede closes it, a signed stop or change keeps it stopped, every signed narrowing preference stays,
+    and its priority is never above both the signed spec and the lowest priority the founder signed."""
     quarantined = []
     ok = facts.admitted
     for gid in reg.goals():
@@ -689,14 +695,29 @@ def _guard(body, reg: GoalRegistry, facts: FounderFacts, at: datetime) -> list[s
 def _restore(reg: GoalRegistry, facts: FounderFacts, gid: str, at: datetime) -> None:
     state = reg.state(gid)
     closed = facts.closed.get(gid)
-    if closed is not None and closed["status"] == "revoked" and state.status != "revoked":
-        reg.revoke(gid, actor=f"restoring signed {closed['principal']} control {closed['by'][7:19]}",
-                   reason="signed revoke", now=at)
+    if closed is not None:
+        if state.status != closed["status"]:
+            actor = f"restoring signed {closed['principal']} {closed['status']} {closed['by'][7:19]}"
+            if closed["status"] == "revoked":
+                reg.revoke(gid, actor=actor, reason="signed revoke", now=at)
+            else:
+                reg.supersede(gid, reg.get(closed["superseded_by"]), actor=actor, reason="signed supersede", now=at)
         return
+    if state.status in ("revoked", "superseded", "completed"):
+        return                       # closed by no signed command: narrowing, preserved, labelled in the views
     stop = facts.stopped(gid)
     if stop is not None and state.status not in CLOSED:
         reg.record_preference(gid, kind="stop_pushing", value=True, reason="signed stop", now=at,
                               actor=f"restoring signed {stop['principal']} control {stop['by'][7:19]}")
+    for key, values in facts.narrowing.get(gid, {}).items():
+        for value in values:
+            if value not in reg.state(gid).preferences.get(key, []):
+                reg.record_preference(gid, kind=NARROWING_KIND[key], value=value, reason="signed narrowing", now=at,
+                                      actor="restoring a signed founder narrowing")
+    floor = facts.floor.get(gid)
+    if floor is not None and reg.effective_priority(gid) < floor:
+        reg.record_preference(gid, kind="lower_priority", value=floor, reason="signed priority", now=at,
+                              actor="restoring the signed priority ceiling")
 
 
 def _settle(body, reg: GoalRegistry, facts: FounderFacts, at: datetime) -> list[str]:

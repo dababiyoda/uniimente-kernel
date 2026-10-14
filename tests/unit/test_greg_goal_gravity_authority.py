@@ -271,3 +271,85 @@ def test_the_goal_ask_path_refuses_a_strategy_the_mission_would_not_select(world
         with pytest.raises(MissionError, match="not selectable now"):
             b.engine.request_decision(MID, "w2", why="goal", recommendation="approve", now=world.clock.now)
     assert world.w2_requests() == []
+
+
+# -- the guard restores every signed narrowing an unsigned record widened -----------------------------------
+
+def _forge_state(world, gid, **changes):
+    with world.body() as b:                                  # an unsigned, in-process goal-state record
+        state = GoalRegistry(ledger=b.ledger).state(gid).to_dict()
+        prefs = changes.pop("preferences", None)
+        state.update(changes)
+        if prefs is not None:
+            state["preferences"] = {**state["preferences"], **prefs}
+        state["version"] += 1
+        b.ledger.append(GoalRegistry.TRANSITION_RECORD, {"source": "in-process", "goal_id": gid,
+                                                         "reason": "unsigned", "state": state})
+
+
+def test_an_unsigned_record_cannot_resurrect_a_founder_superseded_goal(world, fast):
+    old, _ = world.start()
+    world.tick(3)
+    world.submit("GOAL", GOAL(intent="ship d first", supersedes=old), "change.json")
+    world.tick()
+    assert world.registry().state(old).status == "superseded"
+    _forge_state(world, old, status="dormant")               # unsigned: undo the founder's signed supersede
+
+    def wakes():
+        return [r for r in world.records(GoalRegistry.TRANSITION_RECORD)
+                if r["goal_id"] == old and r["reason"].startswith("wake")]
+    before = len(wakes())
+    world.clock.advance(120)
+    world.ingest("ops", "is the watch healthy?")
+    gravity = world.tick()[0]["gravity"]
+    assert old not in gravity["woken"] and len(wakes()) == before
+    assert world.registry().state(old).status == "superseded"            # restored from the signed GOAL
+    world.tick(3)
+    assert world.registry().state(old).status == "superseded"
+
+
+def test_an_unsigned_record_cannot_undo_a_founder_revoke(world, fast):
+    gid, _ = world.start()
+    world.submit("GOAL_CONTROL", {"goal_id": gid, "kind": "revoke", "reason": "drop it"}, "rev.json")
+    world.tick()
+    _forge_state(world, gid, status="dormant")
+    world.ingest("ops", "is the watch healthy?")
+    assert gid not in world.tick()[0]["gravity"].get("woken", [])
+    assert world.registry().state(gid).status == "revoked"
+
+
+def test_an_unsigned_record_cannot_unmute_or_drop_any_signed_narrowing(world, fast):
+    gid, _ = world.start()
+    world.tick(3)
+    for n, (kind, value) in enumerate((("do_not_monitor", "ops"), ("never_use_tactic", "cold outreach"),
+                                       ("ask_before", "spend"), ("forget_route", "sha256:" + "f" * 64),
+                                       ("revoke_capability", "net.http"))):
+        world.submit("GOAL_CONTROL", {"goal_id": gid, "kind": kind, "value": value, "reason": "narrow"}, f"c{n}.json")
+    world.tick()
+    world.ingest("ops", "noise on ops")
+    assert gid not in world.tick()[0]["gravity"].get("woken", [])        # the signed mute works
+    _forge_state(world, gid, preferences={"do_not_monitor": [], "never_use_tactic": [], "ask_before": [],
+                                          "forgotten_routes": [], "revoked_capabilities": []})
+    world.clock.advance(120)
+    world.ingest("ops", "more on ops")
+    gravity = world.tick()[0]["gravity"]
+    assert gid not in gravity.get("woken", [])                            # restored before the turn
+    prefs = world.registry().state(gid).preferences
+    assert prefs["do_not_monitor"] == ["ops"] and prefs["never_use_tactic"] == ["cold outreach"]
+    assert prefs["ask_before"] == ["spend"] and prefs["forgotten_routes"] == ["sha256:" + "f" * 64]
+    assert prefs["revoked_capabilities"] == ["net.http"]
+
+
+def test_an_unsigned_record_cannot_raise_priority_above_what_the_founder_signed(world, fast):
+    gid, _ = world.start()
+    world.tick(3)
+    _forge_state(world, gid, preferences={"priority_override": 1})       # above the signed spec's 2
+    world.tick()
+    assert world.registry().effective_priority(gid) == 2
+    world.submit("GOAL_CONTROL", {"goal_id": gid, "kind": "lower_priority", "value": 5, "reason": "later"})
+    world.tick()
+    assert world.registry().effective_priority(gid) == 5
+    _forge_state(world, gid, preferences={"priority_override": 1})       # undo the signed lower
+    world.tick(3)
+    assert world.registry().effective_priority(gid) == 5
+    assert next(g for g in world.projection()["goals"] if g["goal_id"] == gid)["priority"] == 5

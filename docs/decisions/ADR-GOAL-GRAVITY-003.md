@@ -104,6 +104,19 @@ three) ran against the uncommitted increment before push. Its findings and dispo
 commit that follows the implementation commit, as in the third increment. See the PR body's fourth-increment section for
 the table.
 
+**Outcome.** Seven reviewer agents raised 49 findings (deduplicated); the skeptic stage ran for two of them before the
+account's usage limit stopped the rest (one full three-skeptic confirmation, one single confirmation). Every finding was
+disposed, each with a regression test that fails on `eae807d` and passes on the fixed tree
+(`tests/evidence/goal-gravity-20261013/review-probes-increment-4.log`). The fixes: the hashed body is a pure function of records
+dated at or before the window end (an unhashed `as_of_now` envelope carries present state); asks and answers fold in ledger
+order; prepared moves are one per route with `times_prepared`; completions are status changes; accountable resolutions are
+listed on their own and never as Gate executions or refusals; reviews and resolutions by accountable parties are not founder
+activity; refused and muted signals are not integrated; guard pass-throughs are not classifier decisions; the headline never
+opens with "Nothing happened" over a window with activity; the schedule lists awake goals, scopes deferred asks to goals that
+can wake, uses a `resurface` clock, and the loop wakes a goal whose deferred ask re-surfaces; the typed capability deficit is
+recorded at the gate level; `status()` never lists an open or executed route as next autonomous work; the guard keeps the
+seam's `selected_by_deliberation`; the closure's honesty conjuncts are behavioural.
+
 ## Evidence tier
 
 IMPLEMENTED, UNIT-TESTED, INTEGRATION-TESTED on synthetic JSONL ledgers with test passports, the development witness key,

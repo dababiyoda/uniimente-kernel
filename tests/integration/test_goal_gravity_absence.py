@@ -132,13 +132,13 @@ def test_founder_return_report_after_a_multi_day_absence_with_restarts():
         report = out["report"]
         fa = report["founder_activity"]
         assert fa["away"] is True and fa["answers"] == 0 and fa["goals_authorized"] == 0
-        assert report["goals"]["total"] == 3 and report["goals"]["active_in_window"] == 3
+        assert report["goals"]["authorized_as_of_until"] == 3 and report["goals"]["active_in_window"] == 3
         assert report["turns"]["count"] == 3
         # Executed: the brief, with a receipt on the chain; the prepared outreach is not executed.
         assert [e["intervention_id"] for e in report["executed"]] == ["compile-brief"]
         receipt = ledger.find(report["executed"][0]["receipt_hash"])
         assert receipt is not None and receipt.record_type == "receipt"
-        assert report["executed"][0]["reconciled"] is True and report["executed"][0]["verification"] is None
+        assert report["executed"][0]["executor_reported_match"] is True and report["executed"][0]["verification"] is None
         assert {p["intervention_id"] for p in report["prepared"]} >= {"contact-engineers"}
         # Blocked by policy at the Gate, with the Gate's reasons; unknown attempt open and never retried.
         assert [r["intervention_id"] for r in report["refused_by_gate"]] == ["assemble-package"]
@@ -151,12 +151,12 @@ def test_founder_return_report_after_a_multi_day_absence_with_restarts():
         # Money: declared estimates with reconciliation flags, never settlement.
         assert report["money"]["estimated_cost_usd_executed"] == 0.04
         assert report["money"]["estimated_cost_usd_prepared_not_spent"] == 0.5
-        assert report["money"]["treasury_or_business_events_on_ledger_all_time"] == 0
+        assert report["money"]["treasury_or_business_events_dated_as_of_until"] == 0
         # Retained and learned.
         assert report["retained"]["retentions"] >= 1 and report["retained"]["assets_by_kind"]["evidence"] >= 1
         assert report["learned"]["experiences_integrated"] >= 4 and report["learned"]["independent_verifications"] == 0
         text = " ".join(report["headline"])
-        for phrase in ("3 of 3 authorized goal(s) were active", "1 move(s) executed through the Consequence Gate with receipts",
+        for phrase in ("3 of 3 goal(s) authorized by the window end were active in it", "1 move(s) executed through the Consequence Gate (1 with receipts)",
                        "1 refused by the Gate or policy at commit", "1 dispatched move(s) have an unknown outcome",
                        "not a bank statement", "This report requests nothing", "You answered nothing in this window",
                        "executor claims are not verification"):
@@ -187,7 +187,8 @@ def test_founder_return_report_after_a_multi_day_absence_with_restarts():
                             evidence_refs=[report["executed"][0]["receipt_hash"]], note="brief present", now=NEXT_DAY)
         after = loop.return_report(since=RETURN, until=NEXT_DAY)["report"]
         assert after["founder_activity"]["away"] is False and after["founder_activity"]["answers"] == 1
-        assert after["founder_activity"]["accountable_resolutions"] == 1 and after["reconciliations"][0]["to"] == "failed"
+        assert after["accountable_parties"]["accountable_resolutions"] == 1 and after["reconciliations"][0]["to"] == "failed"
+        assert after["closed_by_accountable_resolution"][0]["resolved_state"] == "failed" and after["refused_by_gate"] == []
         assert after["open_attempts_as_of_until"] == [] and after["verifications"][0]["verdict"] == "confirmed"
         assert ask["item_id"] not in {w["item_id"] for w in after["decisions_waiting_as_of_until"]}
         # The execution itself happened on day 1 and stays in the day-1 window, now reported as verified as of NEXT_DAY.

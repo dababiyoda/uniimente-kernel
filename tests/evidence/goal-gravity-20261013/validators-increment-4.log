@@ -1,4 +1,4 @@
-# validators — increment 4 — 2026-10-14T17:00:36Z
+# validators — increment 4 (after review fixes) — 2026-10-14T21:30:04Z
 # first run (16:58:59Z) failed on two records: audit record status active with advisory authority -> set to needs_evidence; fourth-increment deliberation EXPERIMENT marked requires_authorized_human with pending approval -> the experiment (code on a draft branch) requires no approval; adoption into main stays NEEDS_FOUNDER_DECISION per DELIB-GOAL-GRAVITY-2026-10-13-001
 ## validate_intent_ledger.py docs/intent/INTENT-20261014-egregore-synthesis-materials.json
 VALID: 14 Founder Intent record(s)

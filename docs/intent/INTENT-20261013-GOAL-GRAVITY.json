@@ -52,7 +52,10 @@
         "tests/unit/test_goal_gravity_schedule.py",
         "tests/integration/test_goal_gravity_absence.py",
         "tests/evidence/goal-gravity-20261013/defect-repro-increment-4.log",
-        "docs/collaboration/deliberation-goal-gravity-fourth-increment-2026-10-14.json"
+        "docs/collaboration/deliberation-goal-gravity-fourth-increment-2026-10-14.json",
+        "tests/evidence/goal-gravity-20261013/review-increment-4.json",
+        "tests/evidence/goal-gravity-20261013/review-probes-increment-4.log",
+        "tests/unit/test_goal_gravity_guard.py"
       ],
       "implementation_refs": [
         "egregore/goals.py",

@@ -114,7 +114,7 @@ goals active, moves executed through the Gate with receipt hashes and reconcilia
 executed, Gate refusals with the Gate's reasons, classifier withholding, dispatched moves whose outcome is unknown as of
 the window end, reconciliations, discrepancies, independent verifications, decisions waiting / deferred / information
 items as of the window end, founder activity in the window (`away` when none), money as declared estimates with
-reconciliation flags and the sentence "this is not a bank statement", retained assets, what changed in the world model,
+the executor's expected-vs-observed flag (the executor's own report, never verification) and the sentence "this is not a bank statement", retained assets, what changed in the world model,
 deficits, intersections, advancement reports and a deterministic headline. Every number is a fold of records with logical
 time inside the window; prepared is never counted as executed; an executor's `validation_status` is never counted as
 verification; the report is `information`, `requests_nothing`, and is recorded once per identical content
@@ -125,6 +125,22 @@ nothing and runs nothing. Writing the report's tests reproduced a defect in the 
 re-classified a route with an open attempt, hid it from `_latest_by_route` and later allowed a second dispatch); a route
 whose latest record is an open or completed attempt is now never re-classified, re-asked or re-dispatched
 (`tests/evidence/goal-gravity-20261013/defect-repro-increment-4.log`; ADR-GOAL-GRAVITY-003).
+
+The fourth increment's adversarial review (`tests/evidence/goal-gravity-20261013/review-increment-4.json`, 49 findings, every
+one disposed with a regression test) changed the report and the schedule in these ways. The hashed, recorded body is a pure
+function of records dated at or before the window end: goals are folded from authorization, transition and preference records
+as of `until` (`authorized_as_of_until`, `status_as_of_until`), and registry state at report time is returned beside the report
+as an unhashed, unrecorded `as_of_now` envelope, so a closed window re-reported after the ledger grew is the same report under
+the same id. Asks and answers are folded in ledger order, so a deferred ask the router re-opened is waiting again, not
+deferred. A move prepared on every wake is one prepared move with `times_prepared`. A completion is a status change, never a
+repeated `completed` transition. A person's accountable resolution is listed under `closed_by_accountable_resolution`, never as
+a Gate execution or refusal, and reviews and resolutions by accountable parties are reported in `accountable_parties`, never as
+founder activity. Signals the turn refused or muted are not `signals_integrated`; guard pass-throughs are not classifier
+decisions. The headline opens with "Nothing happened" only when every section is empty. The schedule lists awake goals as due
+now, lists deferred asks only for goals that can wake (others under `stale_deferred`), uses a `resurface` clock for them, and the
+loop wakes a sleeping goal when a deferred ask's resurface time has elapsed, so a turn at the suggested time is never silent.
+On the loop side the typed capability deficit is recorded at the gate level, `status()` never lists an open or executed route
+as next autonomous work, and the guard keeps the standing-cognition seam contract.
 
 ## 2. Evidence tier per target (section 26 vocabulary)
 

@@ -103,6 +103,18 @@ class InterventionClassifier:
             "lifecycle": "DISCOVERED", "disposition": "goal_blocked_not_closed", "detected_at": at,
             "resume": "original_goal"}
 
+    @staticmethod
+    def capability_deficit(spec: GoalSpec, fix: GPSFix, *, at: str) -> dict[str, Any]:
+        """The typed capability deficit for a gate whose required capability is missing. Recorded by the loop at the
+        gate level (so a route that is already executed or open still names its deficit) and by ``classify``."""
+        return {
+            "deficit_id": digest({"kind": "egregore-capability-deficit", "goal_id": spec.goal_id,
+                                  "active_node_id": fix.active_node_id, "missing": sorted(fix.missing_capabilities)}),
+            "goal_id": spec.goal_id, "active_node_id": fix.active_node_id,
+            "missing_capabilities": list(fix.missing_capabilities), "founder_intent": spec.founder_intent,
+            "resolution_order": list(RESOLUTION_ORDER), "lifecycle": "DISCOVERED",
+            "disposition": "goal_blocked_not_closed", "detected_at": at, "resume": "original_goal"}
+
     def _record_deficit(self, spec: GoalSpec, deficit: Mapping[str, Any]) -> None:
         """One typed record per open deficit (both origins), deduped by deficit id while open."""
         deficit = canonical_copy(dict(deficit))
@@ -197,15 +209,7 @@ class InterventionClassifier:
             decision = "WAIT"
             reasons = [f"capability deficit: {', '.join(fix.missing_capabilities)}; original goal retained"]
             if record:
-                deficit = {
-                    "deficit_id": digest({"kind": "egregore-capability-deficit", "goal_id": spec.goal_id,
-                                          "active_node_id": fix.active_node_id,
-                                          "missing": sorted(fix.missing_capabilities)}),
-                    "goal_id": spec.goal_id, "active_node_id": fix.active_node_id,
-                    "missing_capabilities": list(fix.missing_capabilities), "founder_intent": spec.founder_intent,
-                    "resolution_order": list(RESOLUTION_ORDER), "lifecycle": "DISCOVERED",
-                    "disposition": "goal_blocked_not_closed", "detected_at": classified_at, "resume": "original_goal"}
-                self._record_deficit(spec, deficit)
+                self._record_deficit(spec, self.capability_deficit(spec, fix, at=classified_at))
         else:
             identity_ok, why = self.passports.verify(self.actor)
             if not identity_ok:

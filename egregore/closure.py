@@ -160,10 +160,19 @@ def goal_gravity_closures() -> ModuleClosures:
                   resources=ResourceGovernor(max_model_calls=2, max_estimated_cost_usd=0.01), evidence_confidence=0.9)
         # The founder's return report is folded from these records and requests nothing: prepared work is never
         # counted as executed, and the report is information, not an ask.
-        report = loop.return_report(since="2026-10-13T00:00:00Z", until="2026-10-13T02:00:00Z", record=True)["report"]
-        honest = (report["executed"] == [] and len(report["prepared"]) >= 1 and report["requests_nothing"] is True
-                  and report["kind"] == "information" and "options" not in report
+        asks_before = [a["item_id"] for a in loop.attention.open_asks()]
+        records_before = len(ledger.records)
+        out = loop.return_report(since="2026-10-13T00:00:00Z", until="2026-10-13T02:00:00Z", record=True)
+        report = out["report"]
+        appended = ledger.records[records_before:]
+        honest = (report["executed"] == [] and len(report["prepared"]) >= 1
                   and report["founder_activity"]["goals_authorized"] == 1
+                  # behavioural: exactly one record appended, the report itself; no ask opened or closed by reporting
+                  and len(appended) == 1 and appended[0].record_type == AbsenceReporter.REPORT_RECORD
+                  and [a["item_id"] for a in loop.attention.open_asks()] == asks_before
+                  and len(ledger.by_type(AbsenceReporter.REPORT_RECORD)) == 1
+                  # the same window re-reported after the ledger grew is the same report, recorded once
+                  and loop.return_report(since="2026-10-13T00:00:00Z", until="2026-10-13T02:00:00Z", record=True)["report_id"] == out["report_id"]
                   and len(ledger.by_type(AbsenceReporter.REPORT_RECORD)) == 1)
         ok, msg = ledger.verify_chain()
         return ok and len(names) == 12 and honest, (f"positive, negative, contradictory and refused evidence have record types; "

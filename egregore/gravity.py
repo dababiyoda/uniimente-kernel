@@ -698,6 +698,10 @@ class GoalGravityLoop:
                 if goal_id not in planned_ids:
                     wake_plan.append((goal_id, "review cadence elapsed", []))
                     planned_ids.add(goal_id)
+            for goal_id in self.schedule.due_resurfaces(at):
+                if goal_id not in planned_ids:
+                    wake_plan.append((goal_id, "deferred founder ask re-surfaces", []))
+                    planned_ids.add(goal_id)
             for goal_id in self.registry.by_status("awake"):
                 if goal_id not in planned_ids:
                     wake_plan.append((goal_id, "", []))
@@ -792,6 +796,12 @@ class GoalGravityLoop:
             deficits: list[dict[str, Any]] = []
             for cap in fix.missing_capabilities:
                 deficits.append(self._record_deficit(goal_id, "capability", cap, now=at))
+                blockers.append(f"capability deficit: {cap}")
+            if fix.missing_capabilities:
+                # The typed deficit (what acquisition reads) is a property of the gate, not of a move's classification:
+                # a route that is already executed or open passes the prior-attempt guard without classify(), and the
+                # deficit must still be on the ledger and the blocker still named.
+                self.classifier._record_deficit(spec, self.classifier.capability_deficit(spec, fix, at=at))
             for rel in fix.missing_relationships:
                 deficits.append(self._record_deficit(goal_id, "relationship", f"no established relationship with {rel}", now=at))
                 blockers.append(f"relationship deficit: {rel}")
@@ -829,6 +839,7 @@ class GoalGravityLoop:
             decisions: list[dict[str, Any]] = []
             executed_this_goal = False
             for intervention in moves:
+                selected = None if self.cognition is None else (intervention.route_hash == selected_route)
                 prior = self._already_attempted(goal_id, intervention.route_hash)
                 if prior is not None:
                     # A route whose latest record is an open attempt (attempted/unknown) or a completed one
@@ -840,7 +851,7 @@ class GoalGravityLoop:
                     decisions.append({"intervention_id": intervention.intervention_id, "decision": prior["decision"],
                                       "reasons": ["route already attempted; no re-classification, no new ask, "
                                                   "no duplicate consequential action"],
-                                      "selected_by_deliberation": None, "evidence_confidence": confidence,
+                                      "selected_by_deliberation": selected, "evidence_confidence": confidence,
                                       "evidence_basis": evidence_basis, "evidence_state": prior["evidence_state"],
                                       "note": "already attempted; no duplicate consequential action",
                                       "disposition": ("reconciliation required before any further move on this route" if open_attempt
@@ -854,7 +865,6 @@ class GoalGravityLoop:
                 if grant is not None and intervention.estimated_cost_usd > float(grant.get("spending_limit_usd", 0.0)):
                     deficits.append(self._record_deficit(goal_id, "resource",
                                                          f"{intervention.intervention_id}: estimated cost exceeds grant spending limit", now=at))
-                selected = None if self.cognition is None else (intervention.route_hash == selected_route)
                 classification = self.classifier.classify(
                     spec, state, intervention, fix=fix, grant=grant, grant_view=grant_view,
                     evidence_refs=evidence_refs, evidence_confidence=confidence, now=at, selected=selected,
@@ -1394,8 +1404,13 @@ class GoalGravityLoop:
         autonomous, waiting = [], []
         for raw in fix.next_interventions:
             decision = latest_decision.get(raw["route_hash"])
+            route_state = evidence_state.get(raw["route_hash"])
             if state.status == "paused":
                 waiting.append({"intervention_id": raw["intervention_id"], "why": "goal paused by founder"})
+            elif route_state in OPEN_ATTEMPT_STATES:
+                waiting.append({"intervention_id": raw["intervention_id"], "why": "reconciliation required; outcome unknown"})
+            elif route_state in DONE_STATES:
+                waiting.append({"intervention_id": raw["intervention_id"], "why": "already executed; not re-proposed"})
             elif decision in (None, "EXECUTE_AUTONOMOUSLY"):
                 autonomous.append(raw)
             elif decision in ("PREPARE_FOR_FOUNDER", "ESCALATE"):

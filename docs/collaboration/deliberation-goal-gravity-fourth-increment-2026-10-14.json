@@ -223,14 +223,14 @@
         "statement": "status_now fields and the all-time treasury count mix clocks with windowed facts",
         "severity": "low",
         "response_type": "evidence",
-        "redesigned_response": "Every non-windowed field carries 'now' or 'all_time' in its name and the money note states the basis"
+        "redesigned_response": "Resolved after the adversarial review: the hashed, recorded body is a pure function of records dated at or before the window end (goals folded as of until); registry state at report time is returned beside the report as an unhashed, unrecorded as_of_now envelope; the money basis names the executor's expected-vs-observed flag as the executor's report (test_a_closed_window_is_the_same_report_however_the_ledger_grows)"
       },
       {
         "id": "D3",
         "statement": "The loop guard skips classification and could hide a legitimate re-evaluation",
         "severity": "medium",
         "response_type": "protective",
-        "redesigned_response": "The guard applies only when the route's latest record is an open or completed attempt; reconcile() releases failed routes; two regression tests pin both directions; an independent review attacks the path"
+        "redesigned_response": "The guard applies only when the route's latest record is an open or completed attempt; reconcile() releases failed routes; two regression tests pin both directions; an independent review attacks the path. The review found the one hidden dependency: the typed capability deficit was written only inside classify(), so a route already executed or open starved it; it is now recorded at the gate level, status() reads evidence state before the decision map, and the guard carries selected_by_deliberation (tests/unit/test_goal_gravity_guard.py)"
       },
       {
         "id": "D4",

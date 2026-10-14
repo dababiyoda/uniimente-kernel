@@ -1,4 +1,4 @@
-# scripts/ci/check_sealed_developmental.py — fourth increment — 2026-10-14T17:02:11Z
+# scripts/ci/check_sealed_developmental.py — fourth increment (after review fixes) — 2026-10-14T21:27:17Z
   ok   external_effects = 0 (required 0)
   ok   authorization_state = 'SIMULATED_NOT_AUTHORIZED' (required 'SIMULATED_NOT_AUTHORIZED')
   ok   exact_restoration_attempts = 0 (required 0)

@@ -284,8 +284,9 @@ read those projections.
 
 **Not claimed.** The loop never executes on a body; missions do all execution through the Gate. Goal completion is
 observation-tier (attributed ledger observations recomputed from Gate receipts and appraisals), never external
-verification. A goal never pulls a paused or terminal mission; a mission waiting on your decision is pulled only to
-re-observe and repair its other checks inside its cone. Intake relevance is a lexical match on names the signed
+verification. A goal never pulls a paused or terminal mission; a mission waiting on your answer to an APPROVAL is
+pulled only to re-observe and repair its other checks inside its cone, and one waiting on any other decision (scope
+renewal, sensor scope, capability) keeps waiting. Intake relevance is a lexical match on names the signed
 mission and goal declare, not an understanding of the text. Evidence for this section:
 `tests/unit/test_greg_goal_gravity.py` (including `test_mission_F_end_to_end_while_the_decision_is_open`),
 `tests/unit/test_greg_goal_gravity_authority.py`, `tests/unit/test_greg_goal_gravity_founder_effect.py`,

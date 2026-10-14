@@ -40,6 +40,16 @@ whereas ``StandingCognitionRuntime.tick`` must never accept an executor. The
 runtime proposes; the loop is the accountable projection that submits a
 selected, policy-allowed move to the Gate. ``goal_gravity_closures`` verifies
 that no component retains an executor, a gate or a grant between turns.
+
+Body mode. On a GREG body ledger (one carrying ``greg.founder.enrolled``), or
+when constructed with ``body_mode=True``, the body owns authority: founder
+commands are Ed25519-signed, missions execute through the AuthorityOffice and
+its Gate, and founder asks have one path. There the loop refuses any gate,
+executor or grant in ``turn`` (it can wake, backcast, classify, prepare and
+route attention, never execute), its attention store writes no founder ask or
+answer of its own, unhydratable goal records are quarantined instead of
+faulting every turn, and a goal with no world evidence gets confidence 0
+labelled ``no_world_evidence`` instead of the caller's attestation.
 """
 from __future__ import annotations
 
@@ -47,11 +57,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable, Mapping, Sequence
 
-from .attention import AttentionItem, AttentionPolicy, FounderAttentionRouter, Routing
+from .attention import (AttentionItem, AttentionPolicy, FounderAttentionRouter, LedgerAttentionStore,
+                        MemoryAttentionStore, Routing)
 from .cognition_seam import GoalProposer, cadence_signal, candidate_to_intervention, goal_context
 from .contracts import ContractError, IntegrityConflict, SignalEnvelope, canonical_copy, digest, require_text
 from .experience import WorldModel
-from .goals import CONSEQUENCE_CLASSES, GoalRegistry, GoalSpec, InterventionSpec, iso, parse_time
+from .goals import CONSEQUENCE_CLASSES, GoalRegistry, GoalSpec, InterventionSpec, body_ledger_scan, iso, parse_time
 from .gps import BackcastGPSAdapter, GPSFix
 from .intersections import FavorableIntersectionDetector, IntersectionReport
 from .interventions import Classification, InterventionClassifier
@@ -85,19 +96,23 @@ class GravityTurn:
     experience_surface: dict[str, Any]
     deliberation: str = "declared_moves"   # or "standing_cognition"
     deferred: tuple[str, ...] = ()         # goals not woken because the governor is conserving
+    wake_refused: tuple[dict[str, Any], ...] = ()   # goals whose wake the registry refused (isolated, recorded)
 
     @property
     def execution_authority(self) -> str:
         return "none"
 
     def to_dict(self) -> dict[str, Any]:
-        return canonical_copy({
+        out = {
             "turn_id": self.turn_id, "trigger_id": self.trigger_id, "request_hash": self.request_hash,
             "status": self.status, "at": self.at, "signal_ids": list(self.signal_ids), "woken": list(self.woken),
             "processed": list(self.processed), "executed": list(self.executed), "prepared": list(self.prepared),
             "escalated": list(self.escalated), "routing": self.routing, "resource_snapshot": self.resource_snapshot,
             "experience_surface": self.experience_surface, "deliberation": self.deliberation,
-            "deferred": list(self.deferred), "execution_authority": "none"})
+            "deferred": list(self.deferred), "execution_authority": "none"}
+        if self.wake_refused:   # absent when empty: earlier turn records keep their exact shape
+            out["wake_refused"] = list(self.wake_refused)
+        return canonical_copy(out)
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "GravityTurn":
@@ -108,7 +123,8 @@ class GravityTurn:
                    routing=canonical_copy(value["routing"]), resource_snapshot=canonical_copy(value["resource_snapshot"]),
                    experience_surface=canonical_copy(value["experience_surface"]),
                    deliberation=value.get("deliberation", "declared_moves"),
-                   deferred=tuple(value.get("deferred", ())))
+                   deferred=tuple(value.get("deferred", ())),
+                   wake_refused=tuple(value.get("wake_refused", ())))
 
 
 class GoalGravityLoop:
@@ -122,14 +138,20 @@ class GoalGravityLoop:
     DISCREPANCY_RECORD = "egregore.outcome_discrepancy"
     RECONCILIATION_RECORD = "egregore.reconciliation"
     VERIFICATION_RECORD = "egregore.outcome_verified"
+    WAKE_REFUSED_RECORD = "egregore.goal_wake_refused"
 
     def __init__(self, *, ledger: Any, compiled: Any, passports: Any, actor: str, legal_principal: str,
                  genomes: Any = None, cognition: Any = None, memory: Any = None,
                  attention_policy: AttentionPolicy | None = None,
-                 source: str = "spiffe://uniimente.internal/egregore/goal-gravity"):
+                 source: str = "spiffe://uniimente.internal/egregore/goal-gravity",
+                 body_mode: bool = False, attention_store: Any = None):
         if not hasattr(ledger, "append") or not hasattr(ledger, "by_type") or not hasattr(ledger, "records"):
             raise ContractError("ledger must provide append(), by_type() and records")
         self.ledger = ledger
+        # Body mode is decided by the ledger as well as the constructor: a loop on a GREG body ledger is
+        # hosted whatever its caller asked for, so no caller can hand it a gate, an executor or a grant.
+        hosted, self._host_scanned = body_ledger_scan(ledger)
+        self._body_mode = bool(body_mode) or hosted
         self.source = require_text("source", source)
         if cognition is not None:
             proposers = getattr(cognition, "proposers", {})
@@ -142,7 +164,8 @@ class GoalGravityLoop:
             from memory.causal import CausalMemory
             memory = CausalMemory(ledger)
         self.memory = memory
-        self.registry = GoalRegistry(ledger=ledger, source=source)
+        self.registry = GoalRegistry(ledger=ledger, source=source,
+                                     quarantine_unhydratable=True if self._body_mode else None)
         self.world = WorldModel(ledger=ledger, source=source)
         self.genomes = genomes
         self.router = GoalRelevanceRouter(self.registry)
@@ -152,7 +175,10 @@ class GoalGravityLoop:
                                                  source=source)
         self.detector = FavorableIntersectionDetector(ledger=ledger, world=self.world, source=source)
         self.retention = AsymmetryRetention(ledger=ledger, registry=self.registry, genomes=genomes, source=source) if genomes is not None else None
-        self.attention = FounderAttentionRouter(ledger=ledger, registry=self.registry, policy=attention_policy, source=source)
+        if attention_store is None and self._body_mode:
+            attention_store = MemoryAttentionStore()
+        self.attention = FounderAttentionRouter(ledger=ledger, registry=self.registry, policy=attention_policy,
+                                                source=source, store=attention_store)
         self._turns: dict[str, GravityTurn] = {}
         self._interventions: list[dict[str, Any]] = []
         self._decisions: dict[tuple[str, str], str] = {}   # (goal_id, route_hash) -> latest classification
@@ -162,6 +188,20 @@ class GoalGravityLoop:
     @property
     def execution_authority(self) -> str:
         return "none"
+
+    @property
+    def body_mode(self) -> bool:
+        """Hosted on a GREG body (or constructed so): proposal-only, whatever a caller passes to ``turn``."""
+        if not self._body_mode:
+            hosted, self._host_scanned = body_ledger_scan(self.ledger, start=self._host_scanned)
+            if hosted:   # a founder enrolled after construction: hosted from now on
+                self._body_mode = True
+                self.registry.quarantine_unhydratable = True
+                if isinstance(self.attention.store, LedgerAttentionStore):
+                    inert = MemoryAttentionStore()
+                    inert._open = dict(self.attention.store._open)   # keep dedupe of what was already routed
+                    self.attention.store = inert
+        return self._body_mode
 
     # ------------------------------------------------------------ ledger projection
     def _sync(self) -> None:
@@ -231,6 +271,9 @@ class GoalGravityLoop:
         caller = float(caller_confidence)
         if refs:
             return all_refs, round(min(caller, derived), 6), "world_model_capped_by_caller"
+        if self._body_mode:   # refreshed by ``turn`` through the body_mode property
+            # Hosted: nothing observed for this goal means no evidence, whatever the caller attests.
+            return all_refs, 0.0, "no_world_evidence"
         return all_refs, round(caller, 6), "caller_attested_only"
 
     @staticmethod
@@ -388,6 +431,9 @@ class GoalGravityLoop:
              gate: Any = None, executor: Callable[[Any], dict] | None = None,
              evidence_confidence: float = 0.0, call_costs: Mapping[str, float] | None = None) -> GravityTurn:
         trigger_id = require_text("trigger_id", trigger_id)
+        if self.body_mode and (gate is not None or executor is not None or grants):
+            raise ContractError("a body-hosted Goal Gravity loop takes no gate, executor or grants: the body's "
+                                "missions execute through its AuthorityOffice and Consequence Gate")
         if not isinstance(resources, ResourceGovernor):
             raise ContractError("resources must be a ResourceGovernor")
         if gate is not None and getattr(gate, "ledger", None) is not self.ledger:
@@ -452,6 +498,7 @@ class GoalGravityLoop:
         #    conserving only priority 1-2 goals wake and every deferral is recorded.
         woken: list[str] = []
         deferred: list[str] = []
+        wake_refused: list[dict[str, Any]] = []
         if not hibernating:
             wake_plan: list[tuple[str, str, list[str]]] = []
             for goal_id, signal_ids in wake_requests.items():
@@ -472,7 +519,16 @@ class GoalGravityLoop:
                     self._record_deficit(goal_id, "resource", "resource governor conserving; non-critical goal not woken", now=at)
                     continue
                 if reason and self.registry.state(goal_id).status != "awake":
-                    self.registry.wake(goal_id, reason=reason, now=at, signal_ids=signal_ids)
+                    try:
+                        self.registry.wake(goal_id, reason=reason, now=at, signal_ids=signal_ids)
+                    except ContractError as exc:   # one goal's refusal never faults the turn for the others
+                        refused = {"goal_id": goal_id, "reason": reason, "signal_ids": list(signal_ids),
+                                   "error": f"{type(exc).__name__}: {exc}"[:300]}
+                        self.ledger.append(self.WAKE_REFUSED_RECORD, {"source": self.source, "trigger_id": trigger_id,
+                                                                      **refused, "at": at,
+                                                                      "disposition": "not_woken_retained"})
+                        wake_refused.append(refused)
+                        continue
                 woken.append(goal_id)
         woken = sorted(dict.fromkeys(woken), key=lambda g: (self.registry.effective_priority(g), g))
 
@@ -723,7 +779,7 @@ class GoalGravityLoop:
             escalated=tuple(escalated), routing=routing.to_dict(), resource_snapshot=resources.snapshot().to_dict(),
             experience_surface=self.world.experience_surface(goals=[self.registry.get(g) for g in self.registry.goals()], now=at),
             deliberation="standing_cognition" if self.cognition is not None else "declared_moves",
-            deferred=tuple(deferred))
+            deferred=tuple(deferred), wake_refused=tuple(wake_refused))
         self.ledger.append(self.TURN_RECORD, {"source": self.source, "turn": turn.to_dict(), "disposition": "proposal_only"})
         self._sync()
         return turn

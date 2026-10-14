@@ -3,7 +3,8 @@
 Deterministic matching of a signal's observations, tags and domain against
 each goal's declared wake conditions. The score is the sum of matched
 condition weights; a goal wakes when the score reaches its wake threshold.
-Founder mutes (``do_not_monitor``) and ``stop_pushing`` are respected.
+Founder mutes (``do_not_monitor``) and ``stop_pushing`` are respected; completed, revoked,
+paused and superseded goals never wake.
 """
 from __future__ import annotations
 
@@ -90,7 +91,9 @@ class GoalRelevanceRouter:
             if self.registry.domain_muted(goal_id, domain):
                 verdicts[goal_id] = RelevanceVerdict(goal_id, signal.signal_id, score, matched, False, "domain muted by founder")
                 continue
-            if state.status in ("completed", "revoked", "paused") or state.preferences.get("stop_pushing"):
+            # A superseded goal is closed like a revoked one: its replacement carries the founder's intent,
+            # and GoalRegistry.wake refuses it (waking it would fault the turn for every other goal).
+            if state.status in ("completed", "revoked", "paused", "superseded") or state.preferences.get("stop_pushing"):
                 verdicts[goal_id] = RelevanceVerdict(goal_id, signal.signal_id, score, matched, False, f"goal is {state.status}")
                 continue
             wake = score >= spec.wake_threshold

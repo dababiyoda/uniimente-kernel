@@ -1,0 +1,52 @@
+{
+  "seed": 20261014,
+  "trials": 400,
+  "log_sizes": "old 4..600, growth 1..600",
+  "attack": "rewrite one record covered by the auditor's last checkpoint",
+  "arms": {
+    "B0_no_change": {
+      "attacks": 211,
+      "attacks_detected": 0,
+      "honest": 189,
+      "honest_accepted": 189,
+      "detection_rate": 0.0,
+      "honest_acceptance_rate": 1.0,
+      "mean_auditor_state_bytes": 40.0,
+      "mean_bytes_transferred": 331.8,
+      "mean_ms": 1.5504
+    },
+    "B1_full_copy": {
+      "attacks": 211,
+      "attacks_detected": 211,
+      "honest": 189,
+      "honest_accepted": 189,
+      "detection_rate": 1.0,
+      "honest_acceptance_rate": 1.0,
+      "mean_auditor_state_bytes": 22352.6,
+      "mean_bytes_transferred": 43054.4,
+      "mean_ms": 0.0117
+    },
+    "B2_donor_any_one": {
+      "attacks": 211,
+      "attacks_detected": 0,
+      "honest": 189,
+      "honest_accepted": 189,
+      "detection_rate": 0.0,
+      "honest_acceptance_rate": 1.0,
+      "mean_auditor_state_bytes": 40.0,
+      "mean_bytes_transferred": 108.0,
+      "mean_ms": 0.0274
+    },
+    "NEW_witness_quorum": {
+      "attacks": 211,
+      "attacks_detected": 211,
+      "honest": 189,
+      "honest_accepted": 189,
+      "detection_rate": 1.0,
+      "honest_acceptance_rate": 1.0,
+      "mean_auditor_state_bytes": 40.0,
+      "mean_bytes_transferred": 607.4,
+      "mean_ms": 1.8429
+    }
+  }
+}

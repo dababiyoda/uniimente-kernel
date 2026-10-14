@@ -23,7 +23,17 @@ Witness. Signed receipts for high-consequence records.
   proofs for any committed record against that root — verification needs
   only root + proof, never trust in the ledger host. Domain-separated
   hashing (leaf/node prefixes); odd leaves promote, never duplicate.
-  Tampering with any committed record fails its proof.
+  Tampering with any committed record fails its proof. Caveat: the root
+  itself comes from the host; inclusion alone cannot detect a host that
+  rewrites history and re-checkpoints (see `witness.py`).
+- `consistency.py` — RFC 9162 consistency proofs: the tree of the first
+  m records is a prefix of the tree of the first n, in O(log n) hashes.
+  The existing tree is RFC 6962-shaped, so roots are unchanged.
+- `witness.py` — witnesses cosign a checkpoint only with a valid
+  append-only proof from the last one they cosigned (refusals retained as
+  `SplitViewEvidence`); `QuorumPolicy` accepts a checkpoint only with
+  k-of-n distinct witness cosignatures, never the host's own. Mechanism
+  card: `docs/mechanisms/MC-0001-append-only-witness.md`.
 
 ## The proof sentence
 

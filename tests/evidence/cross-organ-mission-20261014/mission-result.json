@@ -1,0 +1,144 @@
+{
+  "appraisal": {
+    "invariants": {
+      "assessment_answers_this_packet": true,
+      "committee_has_bull_bear_do_nothing": true,
+      "finance_flag_forces_review": true,
+      "human_approval_required": true,
+      "no_revenue_promise": true
+    },
+    "reproduced": {
+      "go_no_go": true,
+      "legal_readiness": true,
+      "market_alignment": true,
+      "opportunity_score": true,
+      "reasons": true,
+      "requires_human_approval": true,
+      "risk_level": true,
+      "validation_plan": true
+    },
+    "tier": "multi-process reproduction + invariant check; not external acceptance",
+    "verdict": "internally_appraised"
+  },
+  "attacks": {
+    "equivocating_checkpoint": {
+      "forged": true,
+      "quorum_accepted": false,
+      "quorum_reason": "only 0 of 2 required witnesses cosigned",
+      "root": "c721caa8c8e9df1501c90445094e24255ac6c53c33b16df57e2f1ba696ca4ab5",
+      "tree_size": 7,
+      "witnesses": {
+        "daleobanks": {
+          "cosigned": false,
+          "reason": "two roots for one tree size (equivocation)"
+        },
+        "wealthmachine": {
+          "cosigned": false,
+          "reason": "two roots for one tree size (equivocation)"
+        }
+      }
+    },
+    "replayed_packet": "refused: nonce replay refused",
+    "rewritten_and_extended": {
+      "forged": true,
+      "quorum_accepted": false,
+      "quorum_reason": "only 0 of 2 required witnesses cosigned",
+      "root": "902b26d8426d1f95972699e51d783fc5e05d90e5d024358dfe4048caee8f9178",
+      "tree_size": 8,
+      "witnesses": {
+        "daleobanks": {
+          "cosigned": false,
+          "reason": "no valid append-only proof from last cosigned checkpoint"
+        },
+        "wealthmachine": {
+          "cosigned": false,
+          "reason": "no valid append-only proof from last cosigned checkpoint"
+        }
+      }
+    },
+    "tampered_assessment": "refused: signature verification failed"
+  },
+  "checkpoint_0": {
+    "forged": false,
+    "quorum_accepted": true,
+    "quorum_reason": "2 of 2 required witnesses cosigned",
+    "root": "c7b63e2bcc6e41801513cea03e91b5f5f3d48d7a6f31b462c386ccf1400b6a59",
+    "tree_size": 1,
+    "witnesses": {
+      "daleobanks": {
+        "cosigned": true,
+        "this_cosign_was_first_use": true
+      },
+      "wealthmachine": {
+        "cosigned": true,
+        "this_cosign_was_first_use": true
+      }
+    }
+  },
+  "checkpoint_1": {
+    "forged": false,
+    "quorum_accepted": true,
+    "quorum_reason": "2 of 2 required witnesses cosigned",
+    "root": "23f96004b82ef5834ccb3541445d420868dac987a64091d20b1b618b61f9ebad",
+    "tree_size": 7,
+    "witnesses": {
+      "daleobanks": {
+        "cosigned": true,
+        "this_cosign_was_first_use": false
+      },
+      "wealthmachine": {
+        "cosigned": true,
+        "this_cosign_was_first_use": false
+      }
+    }
+  },
+  "mission_trace": {
+    "accepted_by_recipient": null,
+    "authorized": "no consequence was requested; nothing required authorization",
+    "components": [
+      "daleobanks",
+      "kernel",
+      "kernel-appraiser",
+      "wealthmachine"
+    ],
+    "executed_externally": false,
+    "ledger_chain_detail": "chain intact: 8 records",
+    "ledger_chain_ok": true,
+    "outcome_verified": "internally_appraised",
+    "remaining_obligations": [
+      "founder approval of the recommended next action",
+      "unresolved packet fields: ['governing_bottleneck']"
+    ],
+    "resources": {
+      "daleobanks_seconds": 0.0663,
+      "reported_spend_usd": 0.0,
+      "spend_verified": "no paid calls were made by this script",
+      "wealthmachine_seconds": 0.0621
+    },
+    "unknowns": [
+      "whether any buyer wants the offer",
+      "whether the founder approves",
+      "real-world effect of the recommended validation action"
+    ],
+    "what_happened": [
+      "bridge.signal_observed",
+      "bridge.opportunity_adapted",
+      "bridge.assessment_adapted",
+      "bridge.assessment_appraised"
+    ]
+  },
+  "stages": {
+    "daleobanks": {
+      "drafts": 4,
+      "packet_sha256": "c9a027b4c70057f3afc1bdb489c43ec9f456f94eb4762aec2e8ea8c0e98af16e",
+      "seconds": 0.0663,
+      "thesis": "Financial independence is not selfish."
+    },
+    "wealthmachine": {
+      "assessment_sha256": "fdd1d439c6ff726c5027e7cdf75df7fdbd6a72709298e336b36bf8bcb1ed7a9e",
+      "seconds": 0.0621,
+      "verified_sender": "daleobanks"
+    }
+  },
+  "trace_id": "mission-14d40534c8699182"
+}

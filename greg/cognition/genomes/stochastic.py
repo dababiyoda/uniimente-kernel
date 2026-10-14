@@ -95,6 +95,11 @@ MC_SE_FLOOR = 1e-12
 # (eight summands, ndtri against inv_cdf measured to 11 units of |z|); 64 keeps a factor of two.
 MC_NOISE_C = 64.0
 _EPS = 2.0 ** -53
+# Below the normal range a result's rounding is absolute: an exp or a sum whose result is subnormal differs between
+# implementations by units of 2^-1074 whatever its size (numpy's and libm's exp: 1 unit, measured; a sum of subnormal
+# products depends on where it is rounded). Every rounding bound carries MC_NOISE_C of them on top of its share of the
+# magnitudes.
+_MC_TINY = MC_NOISE_C * 2.0 ** -1074
 _LN_MAX = math.log(sys.float_info.max)   # exp(s) overflows above this
 MC_POWER_MAX = 6
 # Everything after the draws is computed in units of mean |f|, so no square or sum overflows. A certificate's
@@ -112,6 +117,11 @@ MC_EST_TOL, MC_SE_TOL = 1e-2, 1e-4
 # of two. When control variates leave only rounding noise (f nearly a quadratic in the base coordinates, large
 # cancelling terms in w . x) this, not MC_SE_FLOOR, sets the standard error.
 MC_NOISE_SE = 2.0 / MC_EST_TOL
+# Below the smallest normal double a number's rounding is a fixed 2^-1075, not a share of it. Every recomputation
+# tolerance is a fraction of the standard error, so an answer needs a normal standard error (the solver keeps a factor
+# of two). An estimate, a fitted coefficient or a value of f may be subnormal: the checks bound their absolute rounding.
+# The rule is on the standard error, not on mean |f|: f near 1e-300 has a standard error that keeps its last places.
+_MC_UNDERFLOW = "the standard error underflows double precision's normal range (below 2.2e-308)"
 
 
 def _mc(data):
@@ -241,14 +251,19 @@ def _mc_mags_np(coords, base, x):
 
 def _mc_rounding_np(family, params, x, mags, f):
     """Per evaluation, a bound on how far two faithful double-precision evaluations of f at that point can differ
-    (absolute; MC_NOISE_C units of 2^-53 times the magnitudes f is computed from). Continuous in the point, so two
-    independent computations of the bound agree to rounding. An indicator is exact (0 or 1) once its threshold
-    decisions agree, which the reference evaluation guarantees."""
+    (absolute; MC_NOISE_C units of 2^-53 times the magnitudes f is computed from, plus _MC_TINY for a result below the
+    normal range). Continuous in the point, so two independent computations of the bound agree to rounding. An
+    indicator is exact (0 or 1) once its threshold decisions agree, which the reference evaluation guarantees."""
+    import numpy as np
+    if family == "indicator_sum":
+        return np.zeros(len(f))
+    return _mc_relative_rounding_np(family, params, x, mags, f) + _MC_TINY
+
+
+def _mc_relative_rounding_np(family, params, x, mags, f):
     import numpy as np
     unit = MC_NOISE_C * _EPS
     with np.errstate(over="ignore", invalid="ignore"):
-        if family == "indicator_sum":
-            return np.zeros(len(f))
         if family == "cos_product":
             phases = sum(map(abs, params["phases"]))
             return unit * (mags @ np.abs(np.array(params["frequencies"])) + phases + mags.shape[1])
@@ -349,7 +364,7 @@ def mc_solve(data, budget):
         edge = {"indicator_sum": params.get("threshold"), "call_on_sum": params.get("strike")}.get(family, _LN_MAX)
         absw = np.abs(np.array(params["weights"]))
         for uu, xx, gg, ff in ((u, x, mags, fx), (ua, xa, mags_a, fa)):
-            near = np.abs(_mc_sum_np(params, xx) - edge) <= MC_NOISE_C * _EPS * (gg @ absw + abs(edge))
+            near = np.abs(_mc_sum_np(params, xx) - edge) <= MC_NOISE_C * _EPS * (gg @ absw + abs(edge)) + _MC_TINY
             for i in np.flatnonzero(near).tolist():
                 ff[i] = _mc_reference_f(coords, family, params, uu[i].tolist())
     if not (np.all(np.isfinite(fx)) and np.all(np.isfinite(fa))):
@@ -370,11 +385,8 @@ def mc_solve(data, budget):
     if peak == 0.0:
         return _unknown("f is zero on every declared draw: the sample has no spread to put an interval on")
     scale = peak * float((fabs / peak).mean())
-    if scale * MC_SE_FLOOR < 2.0 * sys.float_info.min:
-        # the standard error's floor would be subnormal: it, and the estimate's last places, would carry far less
-        # precision than the recomputation needs (the verifier refutes below half this margin)
-        return _unknown("mean |f| is too close to the underflow threshold for a standard error in double precision",
-                        mean_abs_f=scale)
+    if not scale > 0.0:
+        return _unknown(_MC_UNDERFLOW, mean_abs_f=scale)
     noise = 0.5 * (_mc_rounding_np(family, params, x, mags, fx)
                    + _mc_rounding_np(family, params, xa, mags_a, fa)) / scale
     y = (0.5 * fx + 0.5 * fa) / scale
@@ -393,6 +405,11 @@ def mc_solve(data, budget):
     est, s = est_s * scale, s_s * scale
     floor = max(MC_SE_FLOOR, MC_NOISE_SE * float(noise.sum()) / main)
     se = math.hypot(s_s / math.sqrt(main), floor) * scale
+    if se < 2.0 * sys.float_info.min:
+        # every recomputation tolerance is a fraction of the standard error; below the smallest normal double the
+        # reported numbers' fixed absolute rounding (2^-1075) is no longer negligible against it (the verifier refutes
+        # below half this margin)
+        return _unknown(_MC_UNDERFLOW, std_error=se, mean_abs_f=scale)
     z = float(ndtri(0.5 + level / 2.0))
     half = z * se
     interval = [est - half, est + half]
@@ -446,10 +463,14 @@ def _mc_f_py(family, params, x):
 def _mc_rounding_py(family, params, x, mags, f):
     """Verifier's own bound on how far two faithful double-precision evaluations of f at one point can differ:
     MC_NOISE_C units of 2^-53 times the magnitudes f is computed from (mags: |a| + |b z| for a normal coordinate,
-    |x| otherwise)."""
-    unit = MC_NOISE_C * _EPS
+    |x| otherwise), plus _MC_TINY for a result below the normal range."""
     if family == "indicator_sum":
         return 0.0
+    return _mc_relative_rounding_py(family, params, x, mags, f) + _MC_TINY
+
+
+def _mc_relative_rounding_py(family, params, x, mags, f):
+    unit = MC_NOISE_C * _EPS
     if family == "cos_product":
         return unit * (math.fsum(abs(w) * g + abs(p) for w, p, g in zip(params["frequencies"], params["phases"], mags))
                        + len(x))
@@ -543,9 +564,8 @@ def mc_verify(data, output, certificate):
     if peak == 0.0:
         return {**checks, "f_not_identically_zero": False}
     scale = peak * (math.fsum(v / peak for v in fabs) / m)
-    if scale * MC_SE_FLOOR < sys.float_info.min:
-        # a subnormal standard error floor: the reported numbers cannot carry the precision these checks need
-        return {**checks, "mean_abs_f_above_underflow": False}
+    if not scale > 0.0:
+        return {**checks, "std_error_above_underflow": False}
     est, se = output["estimate"], output["std_error"]
     pilot = certificate["pilot_pairs"]
     rounding = [r / scale for r in rounding]                  # per pair, in units of mean |f|
@@ -554,18 +574,21 @@ def mc_verify(data, output, certificate):
         return {**checks, "coefficients_within_bound": False}
     ys = [(0.5 * f + 0.5 * fa) / scale for f, fa in fs]
     resid = [y - alpha - math.fsum(bj * cj for bj, cj in zip(beta, c)) for y, c in zip(ys[:pilot], ctrl[:pilot])]
-    # rounding noise scales with the evaluations, not with their (possibly cancelling) pair means
-    fsq = [0.5 * ((f / scale) * (f / scale) + (fa / scale) * (fa / scale)) for f, fa in fs[:pilot]]
-    slack = math.sqrt(math.fsum(e * e for e in resid)) + 1e-7 * math.sqrt(math.fsum(fsq))
-    # two faithful evaluations of the pilot's f may differ by up to its rounding bound: Cauchy-Schwarz bounds what that
-    # moves each normal equation by
-    wobble = math.sqrt(math.fsum(r * r for r in rounding[:pilot]))
+    # Norms by math.hypot, which scales before squaring: the pilot's values can be far below mean |f|, and their
+    # squares would underflow. Rounding noise scales with the evaluations, not with their (possibly cancelling) pair
+    # means.
+    slack = math.hypot(*resid) + 1e-7 * math.hypot(*(f / scale for pair in fs[:pilot] for f in pair)) / math.sqrt(2.0)
+    # Two faithful evaluations of the pilot's f may differ by up to its rounding bound, and each reported coefficient
+    # was rounded once in absolute units (below the normal range by up to 2^-1075, not a share of it): per residual,
+    # what that moves it by; Cauchy-Schwarz bounds what that moves each normal equation by.
+    wobble = math.hypot(*(r + math.ulp(0.0) * (1.0 + math.fsum(map(abs, c))) / scale
+                          for r, c in zip(rounding[:pilot], ctrl[:pilot])))
     # least-squares normal equations on the pilot block: its residual is orthogonal to the intercept and each control
     fitted = abs(math.fsum(resid)) <= math.sqrt(pilot) * (1e-7 * slack + wobble)
     for j in range(len(names)):
         col = [c[j] for c in ctrl[:pilot]]
         fitted = fitted and abs(math.fsum(e * v for e, v in zip(resid, col))) <= (
-            math.sqrt(math.fsum(v * v for v in col)) * (1e-7 * slack + wobble))
+            math.hypot(*col) * (1e-7 * slack + wobble))
     adjusted = [y - math.fsum(bj * cj for bj, cj in zip(beta, c)) for y, c in zip(ys[pilot:], ctrl[pilot:])]
     main = m - pilot
     est_v = math.fsum(adjusted) / main
@@ -574,6 +597,10 @@ def mc_verify(data, output, certificate):
     noise = math.fsum(rounding) / main
     # >= the floors, so every tolerance below is real and the estimate's (1% of it) covers the rounding noise twice
     se_v = math.hypot(s / math.sqrt(main), max(MC_SE_FLOOR, MC_NOISE_SE * noise))
+    if se_v * scale < sys.float_info.min:
+        # a subnormal standard error: the reported numbers' absolute rounding (2^-1075) is no longer negligible against
+        # the tolerances below, which are fractions of it
+        return {**checks, "coefficients_within_bound": True, "std_error_above_underflow": False}
     half = _N.inv_cdf(0.5 + level / 2.0) * se
     lo, hi = output["interval"]
     # est -+ z se must be representable (the solver returns UNKNOWN otherwise); the solver's interval is it rounded
@@ -581,7 +608,7 @@ def mc_verify(data, output, certificate):
     elo, ehi = est - half, est + half
     representable = math.isfinite(half) and math.isfinite(elo) and math.isfinite(ehi)
     width_tol = 1e-9 * half + 4.0 * math.ulp(max(abs(est), half)) if representable else 0.0
-    return {**checks, "mean_abs_f_above_underflow": True, "coefficients_within_bound": True,
+    return {**checks, "std_error_above_underflow": True, "coefficients_within_bound": True,
             "pilot_least_squares_normal_equations_hold": fitted,
             "estimate_is_the_main_block_adjusted_mean": abs(est / scale - est_v) <= MC_EST_TOL * se_v,
             "std_error_recomputed": abs(se / scale - se_v) <= MC_SE_TOL * se_v + 2.0 * noise,
@@ -1604,6 +1631,8 @@ INTELLIGENCES = [
                         "pilot": "max(pairs // 8, 8 (controls + 1)) pairs", "min_indicator_hits": MC_MIN_HITS,
                         "min_positive_call_payoffs": MC_MIN_HITS, "standard_error_floor": MC_SE_FLOOR,
                         "evaluation_rounding_bound_units_of_2^-53": MC_NOISE_C,
+                        "evaluation_rounding_bound_units_of_2^-1074": MC_NOISE_C,
+                        "min_std_error": "twice the smallest normal double (the verifier: once)",
                         "standard_error_floor_over_rounding_noise": MC_NOISE_SE,
                         "coefficient_bound_in_mean_abs_f": MC_COEF_MAX,
                         "recomputation_tolerance_in_standard_errors": {"estimate": MC_EST_TOL,
@@ -1619,7 +1648,7 @@ INTELLIGENCES = [
                                 "never below 200 times the estimate's rounding noise) and standard error (to 0.01% "
                                 "plus twice that noise), z from its own quantile and the interval arithmetic (a "
                                 "representable est -+ z se, to a few units in the last place); the moment, "
-                                "rare-event and underflow preconditions",
+                                "rare-event and underflow (a normal standard error) preconditions",
             confidence_semantics="an asymptotic (CLT) interval at the stated level under the declared model; the "
                                  "verifier certifies the arithmetic and the fit on the declared draws, never that "
                                  "the interval covers the true expectation (about 1 - level of honest intervals "

@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import json
 import math
+import sys
 import time
 
 import pytest
@@ -941,12 +942,84 @@ def test_mc_mean_abs_f_near_underflow_is_unknown_and_refuted(mean, sd):
             "function": {"family": "exp_linear", "weights": [50.0]}, "evaluations": 4096, "seed": 0}
     out = stochastic.mc_solve(data, BUDGET)
     assert out["status"] == "UNKNOWN" and "underflow" in out["missing"][0]
-    # any answer on these draws fails the verifier's own precondition (a certificate bound to the same stream)
+    # an answer on these draws fails the verifier's own precondition: its recomputed standard error is subnormal (a
+    # certificate bound to the same stream, with coefficients inside the bound so the check is reached)
     template = stochastic.mc_solve(dict(data, coordinates=[{"distribution": "normal", "mean": 0.0, "sd": sd}]), BUDGET)
+    certificate = dict(template["certificate"], pilot_intercept=0.0,
+                       control_coefficients=[0.0] * len(template["certificate"]["control_coefficients"]))
     forged = {"estimate": 3e-311, "interval": [2e-311, 4e-311], "std_error": 5e-312, "level": 0.95,
               "evaluations": 4096}
-    checks = stochastic.mc_verify(data, forged, template["certificate"])
-    assert checks.get("mean_abs_f_above_underflow") is False, checks
+    checks = stochastic.mc_verify(data, forged, certificate)
+    assert checks.get("std_error_above_underflow") is False, checks
+
+
+@pytest.mark.parametrize("mean", [-13.7, -13.8, -13.9])
+def test_mc_answers_near_underflow_while_the_standard_error_is_normal(mean):
+    # third review: the underflow precondition was keyed on mean |f| (UNKNOWN below about 4.45e-296), twelve orders of
+    # magnitude above the precision problem. f = exp(50 x) here has mean |f| from 2e-302 to 4e-298 and a standard error
+    # from 5e-306 to 1e-301, all normal doubles: the answer keeps its last places and must be given and verified
+    data = {"coordinates": [{"distribution": "normal", "mean": mean, "sd": 0.01}],
+            "function": {"family": "exp_linear", "weights": [50.0]}, "evaluations": 4096, "seed": 3000}
+    out = stochastic.mc_solve(data, BUDGET)
+    assert out["status"] == "ANSWER", out["missing"]
+    checks = stochastic.mc_verify(data, out["output"], out["certificate"])
+    assert all(checks.values()) and checks["std_error_above_underflow"], checks
+    est, se = out["output"]["estimate"], out["output"]["std_error"]
+    assert se >= 2.0 * sys.float_info.min
+    assert abs(est - math.exp(50.0 * mean + 1250.0 * 0.01 ** 2)) <= 4.0 * se
+
+
+@pytest.mark.parametrize("data", [
+    {"coordinates": [{"distribution": "normal", "mean": -16.902, "sd": 1.2}],
+     "function": {"family": "exp_linear", "weights": [50.0]}, "evaluations": 1024, "seed": 2},
+    {"coordinates": [{"distribution": "normal", "mean": -18.96, "sd": 1.6}],
+     "function": {"family": "exp_linear", "weights": [50.0]}, "evaluations": 4096, "seed": 0}])
+def test_mc_honest_answer_verifies_when_its_pilot_coefficients_are_subnormal(data):
+    # third review: f = exp(50 x) with w sd = 60-80 is so heavy-tailed that the pilot block's values are subnormal while
+    # the main block's largest set a normal standard error. The certificate reports the pilot fit in absolute units,
+    # where it is subnormal and rounded by up to 2^-1075, not by a share of itself: the normal-equations check, a
+    # relative tolerance, refuted the solver's own answer
+    out = stochastic.mc_solve(data, BUDGET)
+    assert out["status"] == "ANSWER", out["missing"]
+    assert abs(out["certificate"]["pilot_intercept"]) < sys.float_info.min
+    checks = stochastic.mc_verify(data, out["output"], out["certificate"])
+    assert all(checks.values()), checks
+
+
+def _exactly_rounded_sums(params, x):
+    """w . x accumulated exactly and rounded once: a faithful evaluation that differs from fsum of rounded products
+    by units of 2^-1074 when the products are subnormal."""
+    import numpy as np
+    from fractions import Fraction
+    w = [Fraction(v) for v in params["weights"]]
+    return np.array([float(sum((wj * Fraction(v) for wj, v in zip(w, row)), Fraction(0))) for row in x.tolist()])
+
+
+def test_mc_rounding_bound_covers_faithful_evaluations_below_the_normal_range(monkeypatch):
+    # third review: the rounding bound was a share of the magnitudes only. Below the normal range rounding is absolute:
+    # numpy's and libm's exp differ by a unit of 2^-1074 on subnormal results, and a sum of subnormal products depends
+    # on where it is rounded. Every bound now carries units of 2^-1074 as well
+    import numpy as np
+    s = np.random.default_rng(3).uniform(-745.0, -708.5, 200_000)
+    by_numpy, by_libm = np.exp(s), np.array([math.exp(v) for v in s.tolist()])
+    params = {"weights": [1.0]}
+    bound_np = stochastic._mc_rounding_np("exp_linear", params, s[:, None], np.abs(s)[:, None], by_numpy)
+    for i in range(len(s)):
+        bound_py = stochastic._mc_rounding_py("exp_linear", params, [s[i]], [abs(s[i])], by_libm[i])
+        assert abs(by_numpy[i] - by_libm[i]) <= min(bound_np[i], bound_py), (s[i], by_numpy[i], by_libm[i])
+        if by_libm[i] < sys.float_info.min:
+            assert min(bound_np[i], bound_py) >= math.ulp(0.0)
+    # A threshold decision on sums of subnormal products: with w . x rounded once (faithful, unlike fsum of rounded
+    # products), the solver's points within the bound of the threshold must take the reference arithmetic
+    data = {"coordinates": [{"distribution": "uniform", "low": 0.0, "high": 2e-323}] * 3,
+            "function": {"family": "indicator_sum", "weights": [0.4, 0.4, 0.4], "threshold": 0.0},
+            "evaluations": 4096, "seed": 7}
+    monkeypatch.setattr(stochastic, "_mc_sum_np", _exactly_rounded_sums)
+    monkeypatch.setattr(stochastic, "_mc_f_np",
+                        lambda family, params, x: (_exactly_rounded_sums(params, x) > params["threshold"]).astype(float))
+    out = stochastic.mc_solve(data, BUDGET)
+    assert out["status"] == "ANSWER", out["missing"]
+    assert all(stochastic.mc_verify(data, out["output"], out["certificate"]).values())
 
 
 @pytest.mark.parametrize("data", [

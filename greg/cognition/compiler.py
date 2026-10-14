@@ -474,7 +474,8 @@ def _run_constructed(chosen: dict, data: dict, pid: str, registry, receipt: dict
         except CapabilityError as exc:
             if str(exc).startswith("capability refused:"):
                 # the mission's two-strike repair re-forms a construction that faults in service
-                receipt["capability_fault"] = {"capability_id": manifest.capability_id, "detail": str(exc)[:300]}
+                receipt["capability_fault"] = {"capability_id": manifest.capability_id, "detail": str(exc)[:300],
+                                               "failure_class": getattr(exc, "failure_class", "executor_error")}
             receipt["abstentions"].append(f"ABSTAIN: {str(exc)[:300]}")
             return finish("ABSTAIN")
     receipt["resource_use"]["stages"] = 1

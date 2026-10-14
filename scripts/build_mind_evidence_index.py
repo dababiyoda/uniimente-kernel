@@ -89,6 +89,10 @@ def build() -> dict:
                 # the version the status was measured at: a later code change needs re-admission
                 index["genomes"][family] = {"status": row["status"], "evidence": f"{rel}#genomes.{family}",
                                             "version": row.get("version"), "history": history}
+                seconds = ((row.get("arms") or {}).get("candidate") or {}).get("median_seconds")
+                if seconds is not None:
+                    # held-out median latency at this version: a tie-break within one status, never a status
+                    index["genomes"][family]["median_seconds"] = seconds
                 subs = {name: {"n": sub["n"], **{k: sub["vs_competitor"][k]
                                                  for k in ("wins", "losses", "ties", "p_better", "p_worse")}}
                         for name, sub in (row.get("subregions") or {}).items()}

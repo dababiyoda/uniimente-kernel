@@ -387,6 +387,8 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             row = {"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
                    "epistemic_classes": list(classes), "rejected": reason,
                    **({"stale_evidence": stale} if stale else {})}
+            if family in genomes and not stale and evidence["genomes"].get(family, {}).get("median_seconds") is not None:
+                row["median_seconds"] = evidence["genomes"][family]["median_seconds"]   # held-out, this version
             if family in genomes and not stale:
                 # subregion verdicts bind the version they were measured at, like the status they refine
                 measured = _subregion_evidence(genomes[family], data, evidence["genomes"].get(family, {}))
@@ -398,6 +400,7 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                                         "deployable": bool(getattr(item, "competitor_deployable", True)),
                                         "evidence": evidence["genomes"].get(family, {}).get("evidence")}
             rows.append(row)
+    rows += _organ_rows(data, g, evidence)
     recipe = route(data)
     if recipe:
         verdict = evidence["recipes"].get(recipe, {})
@@ -412,6 +415,26 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
                               f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
         rows.append(row)
+    return rows
+
+
+def _organ_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
+    """Cortex organs (Z3, CP-SAT, Fermi, evidence/causal, semantic, deterrence, schedule extraction) for payload
+    parts they serve, named by the cortex's own deterministic route policy and run through the canonical problem
+    path. Their status comes from the evidence index's ``organs`` section when it has one, else UNEVALUATED."""
+    from cortex.routing import _route_parts      # the cortex's route policy, reused rather than re-implemented
+    from .bridge import _CLASS, ORGANS
+    rows = []
+    for key, cls in _route_parts(data):
+        cid = ORGANS.get(key)
+        if cid is None:
+            continue
+        klass = _CLASS.get(cls, cls)
+        status = (evidence.get("organs") or {}).get(cid, {}).get("status", "UNEVALUATED")
+        reason = (f"native geometry {klass} does not include {g.geometry}" if g.geometry and g.geometry != klass
+                  else f"frozen status {status}" if status in EXCLUDED else None)
+        rows.append({"method": cid, "operation": "problem", "kind": "problem", "status": status, "organ": key,
+                     "epistemic_classes": [klass], "rejected": reason})
     return rows
 
 
@@ -444,10 +467,12 @@ def _rank(row: dict, prefer: list, competence: dict) -> tuple:
     preferred = 0 if (row["operation"] in prefer or row["method"] in prefer) else 1
     settled = -competence.get(row["method"], 0.5)
     region = SUBREGION_RANK.get((row.get("subregion") or {}).get("verdict"), 1)
+    latency = row.get("median_seconds")
     # Frozen negative evidence outranks an operator's preference: evidence over heuristics. Within one status,
-    # the measured subregion verdict orders fits before settled competence.
+    # the measured subregion verdict orders fits before settled competence, then measured held-out latency
+    # (unmeasured last), then operations before compositions and organs.
     return (1 if row.get("demoted") else 0, preferred, status, region, settled,
-            0 if row["kind"] == "operation" else 1, row["method"])
+            latency if latency is not None else float("inf"), 0 if row["kind"] == "operation" else 1, row["method"])
 
 
 NEGATION = {"<=": ">", ">=": "<", "<": ">=", ">": "<=", "==": "!=", "!=": "=="}
@@ -506,6 +531,16 @@ def _usable(registry, row: dict) -> tuple[bool, str]:
     """Whether the row can run now: an operation's capability must be attached; a composition needs an
     attached capability for every operation stage it declares (problem-path stages are routed on the canonical
     path and checked there)."""
+    if row["kind"] == "problem":
+        from .bridge import ROUTER
+        for cid in (ROUTER, row["method"]):
+            try:
+                ok, why = registry.usable(cid) if cid in registry.manifests else (False, "not registered")
+            except Exception as exc:
+                ok, why = False, f"registry: {type(exc).__name__}"
+            if not ok:
+                return False, f"{cid}: {why}"
+        return True, "organ attached behind the attached cortex router"
     if row["kind"] != "operation":
         from .composition import RECIPES
         missing = [op for op in RECIPES[row["operation"]].get("operations", ()) if not _operation_usable(registry, op)]
@@ -638,7 +673,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     evidence = evidence_index()
     plan = {"requirements": [], "prefer": [], "notes": [], "dissent": [], "evaluate": []}
     receipt = {"schema": SCHEMA, "problem_id": pid, "inputs_digest": digest(params), "geometry": g.known(),
-               "subgeometry": g.subgeometry, "consequence_class": g.consequence_class or "read_only",
+               "subgeometry": g.subgeometry, "consequence_class": g.consequence_class or "undeclared",
                "methods_considered": [], "methods_rejected": [], "methods_demoted": [],
                "method_or_composition_selected": None,
                "selection_level": None, "conditional_competence_basis": None,
@@ -659,8 +694,14 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         receipt["receipt_id"] = digest({k: v for k, v in receipt.items() if k != "receipt_id"})
         return receipt
 
+    from .contracts import ConsequenceVector
+    try:
+        vector = ConsequenceVector(**consequence)
+    except TypeError as exc:
+        raise CognitionError("compile.consequence takes ConsequenceVector fields (harm levels 0-1, lawful, "
+                             "consent, exposure_details)") from exc
     # 1. constitutional pre-filter: hard eligibility before any optimisation
-    if consequence.get("lawful") is False or consequence.get("consent") is False or (consequence.get("rights") or 0) > 0:
+    if vector.prohibited:
         receipt["abstentions"].append("law, consent and rights constraints are eligibility gates; upside cannot compensate")
         return finish("PROHIBITED")
     if g.human_judgment_required or g.legal_content or g.rights_impact or g.geometry in HUMAN_CLASSES:
@@ -747,7 +788,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                         else None, **({"subregion": best["subregion"]} if best.get("subregion")
                                                       else {})}
         state = _state(registry, best["method"])
-        if best["kind"] != "operation" or state != "VERIFIED":
+        if best["kind"] == "composition" or state != "VERIFIED":
             # only a verified, withheld capability is attachable by the founder's attach command; a quarantined,
             # detached or attached-but-unavailable one is not asked about here
             receipt["founder_attach_ask"] = {"state": "NOT_PREPARED",
@@ -799,7 +840,30 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         return finish("PLANNED")
     # 4. execute through the same canonical reason. High consequence raises the proof requirement on this path
     # exactly as on the direct canonical path (FORMALIZATION_INCOMPLETE for formal/optimisation methods).
-    high = g.consequence_class in HIGH_CONSEQUENCE or bool(consequence.get("high"))
+    high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
+    extra = {"consequences": consequence} if consequence else {}
+    if chosen["kind"] == "problem":
+        from cortex.routing import FORMAL_ENGINES
+        if high and chosen["organ"] in FORMAL_ENGINES and data.get("formalization_complete") is not True:
+            receipt["abstentions"].append("FORMALIZATION_INCOMPLETE: complete formal model plus independently "
+                                          "verified world assumptions")
+            return finish("FORMALIZATION_INCOMPLETE")
+        inner = reason({"problem_id": pid, "problem": {"question": g.objective or g.epistemic_question or pid,
+                                                       "payload": data}},
+                       registry=registry, journal=journal, model_config=model_config)
+        receipt["intermediate_receipts"] = [inner["receipt_id"]]
+        receipt["proof_artifacts"] = [{"type": inner.get("proof_type"),
+                                       "evidence_type": (inner.get("proof_artifact") or {}).get("evidence_type")}]
+        receipt["verification_method"] = (inner.get("evaluator_result") or {}).get("independence") or \
+            "cortex adversarial verifier"
+        receipt["confidence_type"] = receipt["proof_artifacts"][0]["evidence_type"] or inner.get("proof_type")
+        receipt["uncertainty"] = inner.get("uncertainty")
+        receipt["resource_use"]["stages"] = 1
+        if not _has_answer(inner):
+            receipt["abstentions"].append(f"{inner['abstention_state']}: {inner.get('missing_information')}")
+            return finish(inner["abstention_state"])
+        return finish("WORLD_UNVERIFIED" if high or inner["abstention_state"] == "WORLD_UNVERIFIED" else "ANSWERED",
+                      inner["output"])
     if chosen["kind"] == "composition":
         from .composition import RECIPES
         if high and "optimize" in RECIPES[chosen["operation"]]["stages"] and data.get("formalization_complete") is not True:
@@ -819,8 +883,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         return finish("ANSWERED", inner["answer"])
     geometry_hint = {"latency_limit": min(30.0, float(g.latency_budget or 20.0)),
                      **({"consequence_class": g.consequence_class} if g.consequence_class else {})}
-    inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint},
-                   registry=registry, journal=journal, model_config=model_config)
+    inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint,
+                    **extra}, registry=registry, journal=journal, model_config=model_config)
     receipt["intermediate_receipts"] = [inner["receipt_id"]]
     receipt["proof_artifacts"] = [{"type": inner["proof_type"],
                                    "evidence_type": (inner.get("proof_artifact") or {}).get("evidence_type")}]
@@ -841,11 +905,11 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         verdict = claim_verdict(inner["output"])
         if verdict["claim"] == "HOLDS_WITHIN_MODEL":
             verdict = _premises_check(pid, chosen["operation"], body["data"]["claim"], geometry_hint, verdict,
-                                      registry, journal, model_config, receipt)
+                                      registry, journal, model_config, receipt, extra)
         return finish(done, verdict)
     if "sensitivity" in plan["evaluate"]:
         receipt["sensitivity"] = _sensitivity_runs(pid, chosen["operation"], data, inner["output"], geometry_hint,
-                                                   registry, journal, model_config, receipt)
+                                                   registry, journal, model_config, receipt, extra)
     return finish(done, inner["output"])
 
 
@@ -855,14 +919,14 @@ def _has_answer(inner: dict) -> bool:
     return inner["abstention_state"] in ("NONE", "WORLD_UNVERIFIED") and isinstance(inner.get("output"), dict)
 
 
-def _premises_check(pid, operation, claim, hint, verdict, registry, journal, model_config, receipt) -> dict:
+def _premises_check(pid, operation, claim, hint, verdict, registry, journal, model_config, receipt, extra) -> dict:
     """An UNSAT negation proves the claim only if the constraints are satisfiable on their own; otherwise every
     property 'holds' vacuously and the claim is PREMISES_INCONSISTENT."""
     from .cortex import reason
     if not claim["constraints"]:
         return {**verdict, "premises": "SATISFIABLE (no constraints)"}
     check = reason({"problem_id": f"{pid}/premises"[:96], "operation": operation, "data": premises(claim),
-                    "geometry": hint}, registry=registry, journal=journal, model_config=model_config)
+                    "geometry": hint, **extra}, registry=registry, journal=journal, model_config=model_config)
     receipt["intermediate_receipts"].append(check["receipt_id"])
     status = check["output"].get("solver_status") if _has_answer(check) else None
     if status == "UNSAT":
@@ -897,7 +961,7 @@ def _scaled(value, factor):
     return [_scaled(v, factor) for v in value]
 
 
-def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, model_config, receipt) -> dict:
+def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, model_config, receipt, extra) -> dict:
     """Perturb each numeric top-level input by +10% (at most four) and re-run the same method on the one path."""
     from .cortex import reason
     keys = [k for k in sorted(data) if _numbers(data[k])][:4]
@@ -906,7 +970,7 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
     for key in keys:
         varied = {**data, key: _scaled(data[key], 1.1)}
         out = reason({"problem_id": f"{pid}/sens/{key}"[:128], "operation": operation, "data": varied,
-                      "geometry": hint}, registry=registry, journal=journal, model_config=model_config)
+                      "geometry": hint, **extra}, registry=registry, journal=journal, model_config=model_config)
         receipt["intermediate_receipts"].append(out["receipt_id"])
         if not _has_answer(out):
             rows[key] = {"state": out["abstention_state"]}

@@ -10,6 +10,7 @@
      "version": "1.0.0"
     }
    ],
+   "median_seconds": 0.008349,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "few_arms": {
@@ -41,6 +42,7 @@
      "version": "1.0.0"
     }
    ],
+   "median_seconds": 0.061786,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "high_noise": {
@@ -72,6 +74,7 @@
      "version": "1.0.0"
     }
    ],
+   "median_seconds": 0.00101,
    "status": "NICHE_CAPABILITY",
    "subregions_vs_competitor": {
     "long_outages": {
@@ -103,6 +106,7 @@
      "version": "1.0.0"
     }
    ],
+   "median_seconds": 0.001063,
    "status": "NICHE_CAPABILITY",
    "subregions_vs_competitor": {
     "high_noise": {
@@ -134,6 +138,7 @@
      "version": "1.0.0"
     }
    ],
+   "median_seconds": 0.000144,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "complete": {
@@ -170,6 +175,7 @@
      "version": "1.0.2"
     }
    ],
+   "median_seconds": 0.001241,
    "status": "SUPERSEDED",
    "subregions_vs_competitor": {
     "balanced": {
@@ -209,6 +215,7 @@
      "version": "1.0.2"
     }
    ],
+   "median_seconds": 0.00028,
    "status": "NICHE_CAPABILITY",
    "subregions_vs_competitor": {
     "boundary_count": {
@@ -253,6 +260,7 @@
      "version": "1.2.0"
     }
    ],
+   "median_seconds": 0.00103,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "continuous_covariates": {
@@ -292,6 +300,7 @@
      "version": "1.0.1"
     }
    ],
+   "median_seconds": 0.13489,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "exact_truth_n_le_12": {
@@ -323,6 +332,7 @@
      "version": "1.0.2"
     }
    ],
+   "median_seconds": 0.026846,
    "status": "SUPERSEDED",
    "subregions_vs_competitor": {
     "four_to_five_agents": {
@@ -354,6 +364,7 @@
      "version": "1.0.2"
     }
    ],
+   "median_seconds": 0.202813,
    "status": "EXPERIMENTAL",
    "subregions_vs_competitor": {
     "low_dim_2_3": {
@@ -390,6 +401,7 @@
      "version": "1.1.0"
     }
    ],
+   "median_seconds": 0.000173,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "oversubscribed": {
@@ -421,6 +433,7 @@
      "version": "1.0.1"
     }
    ],
+   "median_seconds": 0.040944,
    "status": "NICHE_CAPABILITY",
    "subregions_vs_competitor": {
     "high_fault_weight": {
@@ -452,6 +465,7 @@
      "version": "1.0.1"
     }
    ],
+   "median_seconds": 0.000109,
    "status": "EXPERIMENTAL",
    "subregions_vs_competitor": {
     "dominant_faction": {
@@ -483,6 +497,7 @@
      "version": "1.0.0"
     }
    ],
+   "median_seconds": 0.045696,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "big_steps:no_preview": {
@@ -566,6 +581,7 @@
      "version": "1.0.2"
     }
    ],
+   "median_seconds": 8.2e-05,
    "status": "COMPOSITION_ONLY",
    "version": "1.0.2"
   },
@@ -584,6 +600,7 @@
      "version": "1.1.1"
     }
    ],
+   "median_seconds": 0.07038,
    "status": "NICHE_CAPABILITY",
    "subregions_vs_competitor": {
     "loose_due_dates": {
@@ -620,6 +637,7 @@
      "version": "1.1.1"
     }
    ],
+   "median_seconds": 0.026847,
    "status": "NICHE_CAPABILITY",
    "subregions_vs_competitor": {
     "reliable_controller": {
@@ -651,6 +669,7 @@
      "version": "1.0.1"
     }
    ],
+   "median_seconds": 0.000332,
    "status": "SUPERSEDED",
    "subregions_vs_competitor": {
     "strongly_correlated": {
@@ -697,6 +716,7 @@
      "version": "1.0.1"
     }
    ],
+   "median_seconds": 9e-05,
    "status": "COMPOSITION_ONLY",
    "version": "1.0.1"
   },
@@ -709,6 +729,7 @@
      "version": "1.0.1"
     }
    ],
+   "median_seconds": 0.001672,
    "status": "DEFAULT_FOR_GEOMETRY",
    "version": "1.0.1"
   },
@@ -721,6 +742,7 @@
      "version": "1.0.0"
     }
    ],
+   "median_seconds": 0.000811,
    "status": "SUPERSEDED",
    "version": "1.0.0"
   },
@@ -738,6 +760,7 @@
      "version": "1.1.0"
     }
    ],
+   "median_seconds": 0.01236,
    "status": "DEFAULT_FOR_GEOMETRY",
    "version": "1.1.0"
   },
@@ -751,6 +774,7 @@
      "version": "1.0.1"
     }
    ],
+   "median_seconds": 0.00366,
    "status": "SUPERSEDED",
    "subregions_vs_competitor": {
     "mixed": {
@@ -782,6 +806,7 @@
      "version": "1.1.0"
     }
    ],
+   "median_seconds": 0.007366,
    "status": "NICHE_CAPABILITY",
    "subregions_vs_competitor": {
     "length_3": {
@@ -821,6 +846,7 @@
      "version": "1.0.1"
     }
    ],
+   "median_seconds": 0.000282,
    "status": "NICHE_CAPABILITY",
    "subregions_vs_competitor": {
     "terms_11_plus": {
@@ -860,6 +886,7 @@
      "version": "1.1.0"
     }
    ],
+   "median_seconds": 8.7e-05,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "moderate": {
@@ -895,6 +922,7 @@
      "version": "1.0.2"
     }
    ],
+   "median_seconds": 6.6e-05,
    "status": "COMPOSITION_ONLY",
    "version": "1.0.2"
   },
@@ -913,6 +941,7 @@
      "version": "1.0.3"
     }
    ],
+   "median_seconds": 1.3e-05,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "load_10_100": {
@@ -952,6 +981,7 @@
      "version": "1.0.2"
     }
    ],
+   "median_seconds": 0.001149,
    "status": "SUPERSEDED",
    "subregions_vs_competitor": {
     "obstacle_uniform": {
@@ -991,6 +1021,7 @@
      "version": "1.0.0"
     }
    ],
+   "median_seconds": 0.014948,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "comparator": {
@@ -1038,6 +1069,7 @@
      "version": "1.1.0"
     }
    ],
+   "median_seconds": 0.001048,
    "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "bounded_buffer": {

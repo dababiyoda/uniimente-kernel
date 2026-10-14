@@ -239,10 +239,11 @@ class CapabilityRouter:
             requested_budget_usd=competency.cost_usd)
         if not ok:
             raise RouterError(f"competency exceeds its genome envelope: {reason}")
-        self._competencies[competency.key] = competency
+        # Ledger first: if the record cannot be written, nothing changes.
         self._record("capabilities.competency_registered", {
             "competency": competency.key, "methods": list(competency.methods),
             "problem_classes": list(competency.problem_classes)})
+        self._competencies[competency.key] = competency
         return competency
 
     def calibration(self, key: str, problem_class: str) -> Calibration:
@@ -298,14 +299,14 @@ class CapabilityRouter:
                                         "deficit": deficit.deficit_id if deficit else None,
                                         "calibration": [(c.key, c.trials, c.reliability)
                                                         for c in selected]})
-        self._decisions[decision.decision_id] = (problem.problem_class,
-                                                 frozenset(c.key for c in selected))
         self._record("capabilities.routing_decision", {
             "decision_id": decision.decision_id, "problem_id": problem.problem_id,
             "problem_class": problem.problem_class,
             "selected": [c.key for c in selected],
             "deficit": deficit.deficit_id if deficit else None,
             "human_escalation": human_needed, "exploratory": decision.exploratory})
+        self._decisions[decision.decision_id] = (problem.problem_class,
+                                                 frozenset(c.key for c in selected))
         return decision
 
     def _rejection(self, comp: Competency, problem: ProblemSpec, admissible: set) -> str:
@@ -395,12 +396,15 @@ class CapabilityRouter:
         if not verified_by or verified_by == competency_key or \
                 verified_by.split("@", 1)[0] == competency_key.split("@", 1)[0]:
             raise RouterError("outcomes must be verified by someone other than the mechanism")
-        cal = self._bump(competency_key, problem_class, bool(correct))
+        # Stage the new record, ledger it, and only then make it current, so
+        # in-memory selection never trusts an outcome history lacks.
+        cal = self._next(competency_key, problem_class, bool(correct))
         self._record("capabilities.routing_outcome", {
             "decision_id": decision_id, "competency": competency_key,
             "problem_class": problem_class, "correct": bool(correct),
             "evidence_ref": evidence_ref, "verified_by": verified_by,
             "reliability": round(cal.reliability, 4), "trials": cal.trials})
+        self._calibration[(competency_key, problem_class)] = cal
         return cal
 
     # ------------------------------------------------------------- restart
@@ -429,10 +433,13 @@ class CapabilityRouter:
                 replayed += 1
         return replayed
 
-    def _bump(self, key: str, problem_class: str, correct: bool) -> Calibration:
+    def _next(self, key: str, problem_class: str, correct: bool) -> Calibration:
         old = self._calibration.get((key, problem_class), Calibration())
-        new = Calibration(old.correct + (1 if correct else 0),
-                          old.incorrect + (0 if correct else 1))
+        return Calibration(old.correct + (1 if correct else 0),
+                           old.incorrect + (0 if correct else 1))
+
+    def _bump(self, key: str, problem_class: str, correct: bool) -> Calibration:
+        new = self._next(key, problem_class, correct)
         self._calibration[(key, problem_class)] = new
         return new
 

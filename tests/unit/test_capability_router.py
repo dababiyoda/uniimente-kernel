@@ -289,3 +289,40 @@ class TestReviewFindings:
             snapshot.correct = 1000  # frozen: no silent promotion
         assert router.calibration("calc@1.0.0", "arithmetic").correct == 0
         assert router.calibration("calc@1.0.0", "arithmetic").incorrect == 1
+
+    def test_a_failed_ledger_write_changes_nothing(self):
+        class RefusingLedger:
+            refuse = False
+
+            def append(self, record_type, payload):
+                if self.refuse:
+                    raise RuntimeError("ledger requires reconciliation")
+
+        ledger = RefusingLedger()
+        router = _router(CALC, ledger=ledger)
+        decision = router.route(_problem("arithmetic"))
+        ledger.refuse = True
+
+        with pytest.raises(RuntimeError):
+            router.record_outcome(decision.decision_id, "calc@1.0.0", correct=True,
+                                  evidence_ref="audit", verified_by="auditor")
+        assert router.calibration("calc@1.0.0", "arithmetic").trials == 0
+
+        unrecorded = _problem("arithmetic", problem_id="p-unrecorded")
+        with pytest.raises(RuntimeError):
+            router.route(unrecorded)
+        # Decisions are deterministic, so a twin router reproduces the id the
+        # failed route would have used. That decision was never ledgered and
+        # must not accept outcomes.
+        lost_id = _router(CALC).route(unrecorded).decision_id
+        ledger.refuse = False
+        with pytest.raises(RouterError, match="unknown"):
+            router.record_outcome(lost_id, "calc@1.0.0", correct=True,
+                                  evidence_ref="audit", verified_by="auditor")
+
+        router.genomes.register(_genome("late"))
+        ledger.refuse = True
+        with pytest.raises(RuntimeError):
+            router.register(Competency("late", "1.0.0", ("retrieval",), ("fact_lookup",)))
+        ledger.refuse = False
+        assert "late@1.0.0" not in router.route(_problem("fact_lookup")).rejected

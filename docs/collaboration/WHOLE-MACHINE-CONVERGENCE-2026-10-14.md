@@ -320,8 +320,15 @@ AppArmor setting is not changed, because that would weaken an execution-environm
    founder-signed STOP commands are authenticated. A signed STOP from the console or the phone kills the running
    child and is persisted, with no other command applied. A forged STOP is rejected and cannot stop the body
    (#157's `test_greg_inflight_stop.py`, ported).
-3. **Paid-attempt scope binding.** Approval of one paid attempt must not approve another after spend changed the
-   remaining mandate.
+3. **Paid-attempt scope binding** — done in increment 5. A paid action's approval digest now includes the mission's
+   spend and budget at approval time, so one approval can never fund a second paid attempt after spend or a
+   reserved cap changed the remaining mandate. Free reads keep a stable scope. A retained dispatch under the
+   earlier scope form is still reused exactly once (no redispatch).
+   - **Also from #157, the light cone:** a NaN, infinite or boolean budget is refused. Before, a NaN budget admitted
+     any spend, because no comparison with NaN is true. Invalid cost or spend values are refused. After an overrun
+     only zero-cost reads stay admitted, so the mission can still observe itself; nothing that writes or spends is.
+   - Tests: `test_greg_paid_scope.py` and #157's `test_greg_budget_observation.py`. The budget test failed 8 of 11
+     on the branch before this change.
 4. `greg/dataflow.py` duplicates this branch's typed bind edges, so its disposition is RETAIN_AS_EVIDENCE. The other
    #157 changes (cortex, browser readiness and documentation) are outside this increment.
 

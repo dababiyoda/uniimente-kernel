@@ -249,3 +249,79 @@ What the new attacks showed:
   middle of a self-repair. The malicious-page attack uses `http.get`, not GREG's computer-use browser.
 - **Measures.** #26 stays PARTIAL: `github.pulls`, the browser capabilities and coding workers are not launched
   through the relay. #9 and #10 stay PARTIAL pending the founder's host decision. VEPMC is 0.
+
+## Increment 4 (same day): #157 worker isolation extracted onto the canonical worker path
+
+### What changed for GREG
+
+- **Workers run in an OS envelope or not at all.** `greg/worker_isolation.py` is extracted from #157 (commit
+  `9f5ff18`). Every coding worker gets:
+  - a scrubbed environment: only its provider's variables and transport settings, never GREG's keys, cloud
+    secrets, `LD_PRELOAD` or `PYTHONPATH`;
+  - a private HOME and private temporary directories;
+  - a narrow private copy of that provider's credential file only;
+  - rlimits, no-new-privileges and death with its parent;
+  - bubblewrap user, PID, IPC and UTS namespaces.
+
+  On a host that cannot provide the envelope, `worker.commission` refuses before dispatch, and no spend occurs.
+  Provider network access remains, and is reported as such; this is not a network-isolation claim.
+- **Worker-written acceptance tests are untrusted code.** They now run in bubblewrap with no network, no
+  credentials and no view of the body. Without the envelope they are refused and recorded as failed; they never
+  run with GREG's own reach. Previously they ran with network denied but with full filesystem access.
+- **GREG's git no longer executes what a worker planted.** Trusted `.git` metadata is copied out before the worker
+  runs and restored before GREG's collection touches the clone. GREG's git also runs with
+  `core.hooksPath=/dev/null`, `core.fsmonitor=false` and no global configuration.
+  - **Measured on the branch before this increment:** an executable `post-commit` hook planted by a worker ran
+    inside GREG's collection process, and a planted `.git/config` filter survived into the collected clone.
+  - **After:** neither occurs (`test_an_executable_hook_planted_by_the_worker_never_runs_in_gregs_collection`, and
+    #157's `test_parent_collection_restores_trusted_git_metadata_before_filters_or_hooks_can_run`).
+- **Bounded, cancellable supervision.** Worker output is file-backed and capped at 1 MiB per stream. STOP terminates
+  the worker's whole process namespace.
+- **An interrupted worker is reconciled.** The action becomes UNCERTAIN with the signed cap reserved, its receipt is
+  kept, and it is never blindly retried; the founder reconciles it. This was ported into `greg/missions.py` beside
+  the existing metered-spend booking, which stays canonical.
+- **Collector refusals instead of exceptions.** These now FAIL the collection, and the appraisal rejects any
+  collection that did not complete:
+  - over-cap or invalid spend;
+  - an oversized diff;
+  - a deliverable outside the workspace.
+- **Document orders can require a verbatim quote** of the frozen source context, checked byte for byte by the
+  appraisal.
+- **The doctor reports whether this host can confine workers,** with the fix. It is never a body prerequisite. The
+  Chromebook runbook gains an optional `sudo apt install -y bubblewrap`.
+
+### Kept from this branch, not from #157
+
+- The #159 canonical-receipt binding checks are stricter here and remain: exactly one commission receipt, the same
+  order name and mission, and the worker's cost.
+- Mission spend is still booked through `metered_spend`.
+- Work-order inputs may still come from the mission's own workspace.
+
+### Tests
+
+#157's isolation tests and new worker tests are ported:
+- **With bubblewrap:** 81 pass.
+- **Without bubblewrap:** governance tests still run, using an envelope labelled `scripted-test-envelope`; the
+  real-isolation tests skip and say why, and fail when `GREG_REQUIRE_WORKER_ISOLATION=1`.
+
+Two of #157's tests were made host-independent:
+- One inherited this sandbox's proxy CA from `SSL_CERT_FILE`, which lies outside the supported certificate roots.
+  That refusal is correct and has its own test.
+- #157's `support()` probe accepted Landlock alone, although dispatch always requires bubblewrap.
+
+CI now installs bubblewrap, reports whether the runner can use it, and runs the worker tests with skip reasons
+shown. No CI run has yet shown that GitHub's Ubuntu runners permit bubblewrap's user namespaces. The runner's
+AppArmor setting is not changed, because that would weaken an execution-environment security policy.
+
+### Not extracted yet from #157, in priority order
+
+1. **Console owner authentication.** Today any local process that can reach the loopback console can read its CSRF
+   token and submit a command, and the console signs it with the founder's unlocked key. A confined worker keeps
+   host networking for its provider, so it is such a process. #157's private owner link and session cookie close
+   this. Next.
+2. **BODY_STOP during a running worker.** Authenticate pending STOP commands while a worker is supervised. The STOP
+   *file* already interrupts it.
+3. **Paid-attempt scope binding.** Approval of one paid attempt must not approve another after spend changed the
+   remaining mandate.
+4. `greg/dataflow.py` duplicates this branch's typed bind edges, so its disposition is RETAIN_AS_EVIDENCE. The other
+   #157 changes (cortex, browser readiness and documentation) are outside this increment.

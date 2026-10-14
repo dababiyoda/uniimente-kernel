@@ -7,7 +7,12 @@
 The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`.
 
 - The Mind line is the canonical base. #160 and #132 are joined, and #132's Foundry modules keep the Mind-line modules as registered alternates behind one dispatch rule.
-- #159 is ported. #157's worker isolation is the named next extraction.
+- #159 is ported.
+- #157's worker isolation is extracted (increment 4):
+  - workers and their acceptance tests run in bubblewrap envelopes or not at all;
+  - GREG's git never runs a worker-planted hook or filter;
+  - an interrupted worker is reconciled as UNCERTAIN.
+- Next is #157's console owner authentication.
 - The executable Founder's First Mission and the five-question Mission Control are on the one mission path. `greg rehearse` runs both without credentials.
 - Increment 3 adds:
   - discovery by intention;

@@ -13,7 +13,10 @@ def test_chromebook_doctor_ready_only_when_linux_user_service_is_available(monke
         return SimpleNamespace(returncode=0)
     monkeypatch.setattr(doctor.subprocess, "run", service)
     ready = doctor.chromebook()
-    assert ready["ready_for_linux_service"] and calls == [["systemctl", "--user", "show-environment"]]
+    service_probe = ["systemctl", "--user", "show-environment"]
+    # the only other command is the worker-isolation probe, which runs /usr/bin/true in a bubblewrap namespace
+    assert ready["ready_for_linux_service"] and calls[0] == service_probe
+    assert all(c == service_probe or (c[0].endswith("bwrap") and c[-1] == "/usr/bin/true") for c in calls)
     assert "VM restart at login" in ready["not_verified"] and "founder identity" in ready["not_verified"]
     assert "ChromeOS host identity and ownership" in ready["not_verified"]
     monkeypatch.setattr(doctor.subprocess, "run", lambda *a, **kw: SimpleNamespace(returncode=1))
@@ -44,3 +47,20 @@ def test_engines_are_reported_with_version_and_license_but_never_made_prerequisi
     row = doctor.chromebook()["engines"]["engines"][0]
     assert row == {"distribution": "z3-solver", "installed": True, "version": "9.9", "license": "MIT",
                    "serves": doctor.ENGINE_USES["z3-solver"]}
+
+
+def test_worker_isolation_is_reported_never_a_prerequisite(monkeypatch):
+    from greg import worker_isolation as isolation
+    monkeypatch.setattr(doctor.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(doctor.shutil, "which", lambda binary: "/usr/bin/" + binary)
+    monkeypatch.setattr(doctor.subprocess, "run", lambda *a, **kw: SimpleNamespace(returncode=0))
+
+    def unavailable(**_):
+        raise isolation.WorkerIsolationError("worker OS filesystem isolation unavailable: bubblewrap is unavailable")
+    monkeypatch.setattr(isolation, "_backend", unavailable)
+    report = doctor.chromebook()
+    assert report["ready_for_linux_service"]                               # the body does not need workers
+    assert report["worker_isolation"]["workers_can_run_confined"] is False
+    assert "bubblewrap" in report["worker_isolation"]["fix"]
+    monkeypatch.setattr(isolation, "_backend", lambda **_: ("bubblewrap", None, "/usr/bin/bwrap", []))
+    assert doctor.chromebook()["worker_isolation"] == {"workers_can_run_confined": True, "mechanism": "bubblewrap"}

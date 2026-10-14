@@ -354,6 +354,8 @@ class MissionBook:
             elif kind == "mission.action":
                 aid = data["action_id"]
                 m.attempts[aid] = data["attempt"] + 1
+                if data.get("cost_reserved") and data["status"] == "UNCERTAIN":
+                    m.spent_usd += data.get("cost_usd", 0.0)      # unknown spend holds the signed cap
                 if data["status"] == "DONE":
                     m.actions_done += 1
                     m.spent_usd += data.get("cost_usd", 0.0)
@@ -1060,6 +1062,13 @@ class MissionEngine:
             evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
             spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)))
+        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
+            # Extracted from #157: the Gate completed collection, but the cancellable worker stopped after
+            # possible partial effects and spend. Keep its receipt and route it through the same
+            # no-blind-retry reconciliation as any uncertain act, with the signed cap reserved.
+            outcome.status = "UNCERTAIN"
+            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,
@@ -1067,6 +1076,10 @@ class MissionEngine:
                   "scope_digest": outcome.scope_digest, "routing": routing_decision, "at": iso(now)}
         if outcome.status == "DONE" and float(s.get("cost_usd", 0.0)) > 0:
             record.update(metered_spend(manifest.capability_id, outcome.output, outcome.cost_usd))
+        elif outcome.status == "UNCERTAIN" and manifest.capability_id == "worker.commission":
+            cap = float(s.get("cost_usd", 0.0))
+            record.update(cost_usd=cap, cost_cap_usd=cap, cost_reserved=True, provider_reported_usd=None,
+                          spend_basis="signed_cap: worker outcome or spend unknown; reserved")
         if bindings:
             record["bindings"] = bindings
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):

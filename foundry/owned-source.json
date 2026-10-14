@@ -431,6 +431,7 @@
     "greg/tribunal.py",
     "greg/venture_rehearsal.py",
     "greg/ventures.py",
+    "greg/worker_isolation.py",
     "greg/workers.py",
     "identity/README.md",
     "identity/__init__.py",

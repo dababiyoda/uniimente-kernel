@@ -67,3 +67,61 @@ def vepmc(journal: Journal) -> dict:
                      "missing": [c for c in CONDITIONS if not row[c]]})
     return {"VEPMC": sum(r["counts"] for r in rows), "missions": rows, "conditions": list(CONDITIONS),
             "external_confirmation_required": "ledger checks cannot prove physical ownership or personal presence"}
+
+
+# -- the founder tier: whose signature a closure carries ---------------------------------------
+#
+# A ledger can prove that a closure was signed by the key enrolled on this body. It cannot tell
+# Alfonso's key from a test key, a fixture's key or the throwaway key of a --no-passphrase
+# rehearsal, and N1's own kill condition forbids counting a closure "with a test key". The
+# founder tier is the one ledger fact that separates them. The key that signed the mission had
+# already signed a FOUNDER_TIER attestation, which the CLI signs only after decrypting a
+# passphrase-protected key file (``greg body designate`` / ``greg founder attest``). The tier grants
+# nothing: no capability, budget or command depends on it. Path predicates read it to decide whether
+# a structurally complete closure moves the founder's path (met) or stays a STRUCTURAL_CANDIDATE.
+# Residual: whoever controls the body's filesystem enrolls the founder key (trust on first use,
+# greg/founder.py). Someone who deliberately generates and protects a key there can attest it.
+# The tier excludes accidents (test keys, fixtures, rehearsals), not a forged enrollment.
+
+FOUNDER_TIER = "FOUNDER_TIER"
+STRUCTURAL_CANDIDATE = "STRUCTURAL_CANDIDATE"
+NOT_FOUNDER_TIER = ("its signing key never attested passphrase custody: a test key, a fixture's key or a "
+                    "--no-passphrase rehearsal never moves the founder's path")
+
+
+def founder_tier(journal: Journal | None) -> dict:
+    """mission_id -> {"tier", "key_id", "why_not"?}: whether the mission's signature is at the founder tier.
+
+    At the founder tier means all of the following. The mission was registered by an accepted MISSION
+    command. That command's signer was the founder key enrolled on this body, never a delegated device
+    key. The same key had signed an accepted FOUNDER_TIER attestation before the mission was registered.
+    """
+    if journal is None:
+        return {}
+    from greg.founder import FOUNDER_TIER_BODY
+    seq = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
+    commands, attested = {}, {}
+    for event in journal.replay("command.accepted"):
+        command = event.payload
+        commands.setdefault(command.get("digest"), command)
+        if (command.get("kind") == "FOUNDER_TIER" and command.get("signer") == "founder"
+                and command.get("body") == FOUNDER_TIER_BODY):
+            attested.setdefault(command.get("founder_key_id"), seq[event.event_id])
+    out = {}
+    for event in journal.replay("mission.registered"):
+        mid = event.payload["mission_id"]
+        command = commands.get(event.payload.get("command_digest")) or {}
+        key = command.get("founder_key_id")
+        if command.get("kind") != "MISSION":
+            why = "no accepted founder-signed MISSION command registered it"
+        elif command.get("signer") != "founder":
+            why = f"signed by {command.get('signer')}, a delegation, not the founder key"
+        elif key not in attested:
+            why = NOT_FOUNDER_TIER
+        elif attested[key] > seq[event.event_id]:
+            why = "its key attested passphrase custody only after this mission was registered"
+        else:
+            why = None
+        out.setdefault(mid, {"tier": STRUCTURAL_CANDIDATE if why else FOUNDER_TIER, "key_id": key,
+                             **({"why_not": why} if why else {})})
+    return out

@@ -51,7 +51,12 @@ COMMAND_KINDS = (
     "DEVICE_REVOKE",
     "ANCHOR_CONFIGURE",   # enable/disable RFC 3161 anchoring of the ledger head at a pinned TSA
     "TREASURY_REQUIREMENTS",  # per-tier obligation and reserve amounts for one venture's books; moves no money
+    "FOUNDER_TIER",       # the signing key attests passphrase custody; grants nothing (greg/metrics.py founder_tier)
 )
+# FOUNDER_TIER's only body. The CLI signs it only from a passphrase-encrypted key file (``greg founder attest``,
+# and ``greg body designate`` when the key is protected); a --no-passphrase key, a test fixture's key and the
+# ``greg rehearse`` throwaway key never sign it, so their closures stay structural evidence on the founder's path.
+FOUNDER_TIER_BODY = {"key_custody": "passphrase"}
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only
 # answer, criticize, pause, resume or stop. Missions, capabilities, key rotation and device

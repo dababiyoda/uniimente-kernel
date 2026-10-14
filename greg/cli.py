@@ -10,7 +10,9 @@
     greg pause|resume|stop --key K            (or: greg stop --local, touching STOP)
     greg run                                  the host loop (normally started by the supervisor)
     greg service install --platform macos|linux|supervisord [--remote]
-    greg body designate --key K                   founder signs the intended first body
+    greg body designate --key K                   founder signs the intended first body (and, with a
+                                                  passphrase-protected key, the founder-tier attestation)
+    greg founder attest --key K                   founder-tier attestation alone (e.g. after key rotation)
     greg device enroll --pubkey HEX --label phone --key K   delegate a narrow key to a phone
     greg serve                                   loopback remote channel for the phone
     greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
@@ -68,6 +70,29 @@ def _secret_value(name: str) -> str:
 def _drop(home: str, kind: str, body: dict, args) -> Path:
     key = load_founder_key(args.key, _passphrase(args))
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
+
+
+NO_FOUNDER_TIER = ("the founder tier needs a passphrase-protected founder key: a --no-passphrase key is for tests "
+                   "and rehearsals, and its closures never move the founder's path (greg path)")
+
+
+def _drop_attested(home: str, kind: str, body: dict, args, *, require: bool = False) -> list:
+    """Sign ``kind`` and, when the key file is passphrase-encrypted, a FOUNDER_TIER attestation with it.
+
+    Loading succeeds with a passphrase only for an encrypted PKCS8 file, so the attestation states a
+    fact this process just checked; it grants nothing (greg/metrics.py founder_tier). An unprotected
+    key signs ``kind`` alone, or is refused when ``require`` (``greg founder attest``).
+    """
+    from greg.founder import FOUNDER_TIER_BODY
+    passphrase = _passphrase(args)
+    if passphrase is None and require:
+        raise BodyError(NO_FOUNDER_TIER)
+    key = load_founder_key(args.key, passphrase)
+    ttl = timedelta(hours=getattr(args, "ttl_hours", 24))
+    dropped = [send_signed(home, key, kind, body, ttl=ttl)] if kind else []
+    if passphrase is not None:
+        dropped.append(send_signed(home, key, "FOUNDER_TIER", dict(FOUNDER_TIER_BODY), ttl=ttl))
+    return dropped
 
 
 def _slot_value(declared: dict, assignment: str):
@@ -153,6 +178,9 @@ def main(argv=None) -> int:
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
+    at = fs.add_parser("attest", help="sign a founder-tier attestation from a passphrase-protected key (grants nothing)")
+    at.add_argument("--key", required=True); at.add_argument("--no-passphrase", action="store_true")
+    at.add_argument("--ttl-hours", type=int, default=24)
     b = sub.add_parser("body", help="founder designation of the first physical execution body")
     bs = b.add_subparsers(dest="body_cmd", required=True)
     bd = bs.add_parser("designate"); bd.add_argument("--key", required=True)
@@ -454,8 +482,12 @@ def main(argv=None) -> int:
         elif args.cmd == "accept":
             print(_drop(home, "CRITIQUE", {"target_event_id": args.event_id, "verdict": "accept",
                                            "evidence_type": "founder_judgment", "text": args.text}, args))
+        elif args.cmd == "founder" and args.founder_cmd == "attest":
+            print(*_drop_attested(home, None, {}, args, require=True), sep="\n")
         elif args.cmd == "body" and args.body_cmd == "designate":
-            print(_drop(home, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, args))
+            # With a protected key the same signature session also attests the founder tier, so the
+            # installer's designation step is the one place Alfonso types his passphrase for both.
+            print(*_drop_attested(home, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, args), sep="\n")
         elif args.cmd == "model" and args.model_cmd == "set":
             from greg.models import validate_route_selection
             if args.off and (args.route or args.local_model):

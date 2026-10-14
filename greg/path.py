@@ -125,6 +125,43 @@ def genesis_closure(journal: Journal) -> dict:
             "generality": "unproven until a second closure on an unrelated function"}
 
 
+# -- the founder tier gate for N3, N4, N6 and N7 -----------------------------------------------
+# These predicates prove a closure's structure from the ledger, and each returns that as
+# ``structurally_met``. A structure built with a test key, a fixture or a --no-passphrase rehearsal is
+# real evidence that the machinery works. It is not the founder's closure, and N1's own kill condition
+# forbids counting it. ``met``, the only field ``position`` reads, therefore also needs every closure the
+# result rests on to be signed by the enrolled founder key at the founder tier (greg/metrics.py
+# founder_tier). Short of that the result is a STRUCTURAL_CANDIDATE that names why each closure was
+# refused. (#137 verifier condition; N1 and N2 are #138's structural-candidate port and are not
+# changed here.)
+FOUNDER_TIER_RULE = ("the founder's path moves only on a closure signed by the enrolled founder key at the founder "
+                     "tier; a test key, a fixture or a --no-passphrase rehearsal is structural evidence only")
+
+
+def _at_founder_tier(journal: Journal | None, groups: dict) -> tuple[list, dict]:
+    """(names of evidence groups whose every mission is at the founder tier, {mission: why not} for the rest)."""
+    tiers = metrics.founder_tier(journal)
+    passed, refused = [], {}
+    for name, missions in groups.items():
+        why = {m: (tiers.get(m) or {}).get("why_not", "not registered on this ledger") for m in missions
+               if (tiers.get(m) or {}).get("tier") != metrics.FOUNDER_TIER}
+        if missions and not why:
+            passed.append(name)
+        refused.update(why)
+    return passed, refused
+
+
+def _tiered(result: dict, *, structural: bool, passed: list, refused: dict) -> dict:
+    met = bool(structural and passed)
+    out = {**result, "met": met, "structurally_met": bool(structural),
+           "evidence_level": metrics.FOUNDER_TIER if met else
+           (metrics.STRUCTURAL_CANDIDATE if structural else "NONE")}
+    if structural and not met:
+        out["blocker"] = FOUNDER_TIER_RULE
+        out["not_founder_tier"] = refused or {"(none)": "the result names no closure to attest"}
+    return out
+
+
 # A business case need not stop for an approval or survive a deliberate interruption to be real;
 # it must be the founder's, on his body, appraised and accepted (N3, PR #68 node 4 definition).
 N3_CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
@@ -171,9 +208,11 @@ def business_loop_closed(journal: Journal) -> dict:
             missing.append("human_work_not_observed")
         (incomplete if missing else cases).append({"mission_id": mid, **({"missing": missing} if missing else {}),
                                                    "human_steps": len(human)})
-    return {"met": bool(cases), "value": len(cases), "cases": cases, "incomplete": incomplete,
-            "reality": "order, reconciliation and GREG's own effects are proven from the ledger; that the buyer "
-                       "is a real customer is attested by Alfonso's acceptance, not provable here"}
+    passed, refused = _at_founder_tier(journal, {c["mission_id"]: [c["mission_id"]] for c in cases})
+    return _tiered({"value": len(passed), "structural_value": len(cases), "cases": cases, "incomplete": incomplete,
+                    "reality": "order, reconciliation and GREG's own effects are proven from the ledger; that the "
+                               "buyer is a real customer is attested by Alfonso's acceptance, not provable here"},
+                   structural=bool(cases), passed=passed, refused=refused)
 
 
 N4_CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
@@ -192,7 +231,7 @@ def sop_compounding(journal: Journal) -> dict:
     """
     from greg import sop
     rows = {r["mission_id"]: r for r in metrics.vepmc(journal)["missions"]}
-    met, incomplete = [], []
+    met, incomplete, evidence = [], [], {}
     for p in sop.trend(journal)["procedures"]:
         runs = [r["mission_id"] for r in p.get("sop_runs", {}).get("missions", [])]
         off_body = sorted({c for mid in runs for c in N4_CONDITIONS if not rows.get(mid, {}).get(c)})
@@ -202,11 +241,15 @@ def sop_compounding(journal: Journal) -> dict:
                    **({"after": {k: v for k, v in p["sop_runs"].items() if k != "missions"}}
                       if "sop_runs" in p else {})}
         (incomplete if missing else met).append({**summary, **({"missing": missing} if missing else {})})
-    return {"met": bool(met), "value": len(met), "procedures": met, "incomplete": incomplete,
-            **({} if met or incomplete else {"missing": ["no SOP proposed yet: three verified closures of one "
-                                                         "procedure come first"]}),
-            "reality": "interventions, model cost and appraisal are measured from the ledger; whether the "
-                       "outcomes mattered in the world is the founder's critique, not provable here"}
+        if not missing:                   # the closures that taught it and the runs from it: all carry the tier
+            evidence[p["procedure_id"]] = [r["mission_id"] for r in p["baseline"].get("missions", [])] + runs
+    passed, refused = _at_founder_tier(journal, evidence)
+    return _tiered({"value": len(passed), "structural_value": len(met), "procedures": met, "incomplete": incomplete,
+                    **({} if met or incomplete else {"missing": ["no SOP proposed yet: three verified closures of "
+                                                                 "one procedure come first"]}),
+                    "reality": "interventions, model cost and appraisal are measured from the ledger; whether the "
+                               "outcomes mattered in the world is the founder's critique, not provable here"},
+                   structural=bool(met), passed=passed, refused=refused)
 
 
 OBSERVED = "the deliverable is observed"
@@ -262,10 +305,12 @@ def human_work_shared(journal: Journal) -> dict:
             missing.append(f"greg_external_action:{','.join(map(str, external))}")
         (incomplete if missing else cases).append({"mission_id": mid, **({"missing": missing} if missing else {}),
                                                    "person_steps": len(person)})
-    return {"met": bool(cases), "value": len(cases), "cases": cases, "incomplete": incomplete,
-            "reality": "handoff order, observed evidence, honored refusals and GREG's own effects are proven from the "
-                       "ledger; that the person is real and the relationship lawful is attested by Alfonso's "
-                       "acceptance, not provable here"}
+    passed, refused = _at_founder_tier(journal, {c["mission_id"]: [c["mission_id"]] for c in cases})
+    return _tiered({"value": len(passed), "structural_value": len(cases), "cases": cases, "incomplete": incomplete,
+                    "reality": "handoff order, observed evidence, honored refusals and GREG's own effects are proven "
+                               "from the ledger; that the person is real and the relationship lawful is attested by "
+                               "Alfonso's acceptance, not provable here"},
+                   structural=bool(cases), passed=passed, refused=refused)
 
 
 def venture_compounding(journal: Journal) -> dict:
@@ -294,10 +339,18 @@ def venture_compounding(journal: Journal) -> dict:
     if proven and not funded:
         missing.append("the second venture's verified revenue leaves no surplus after signed obligations and "
                        "reserves (or none were signed)")
-    return {"met": not missing, "value": len(funded), "transfers": moved, "books": ledgers,
-            **({"missing": missing} if missing else {}),
-            "reality": "transfer, reconciliation and the waterfall are computed from the ledger; GREG moves no money; "
-                       "whether the second venture could stand alone is Alfonso's judgment"}
+    # Every closure the result rests on carries the tier: the runs that taught the procedure, the runs in
+    # the second venture, and the cases whose revenue funds that venture's books.
+    into = {b["venture"] for b in funded}
+    evidence = sorted({m for t in proven if t["to_venture"] in into
+                       for m in [*t.get("taught", []), *t.get("missions", [])]}
+                      | {m for b in funded for m in b.get("cases", [])})
+    passed, refused = _at_founder_tier(journal, {"N7": evidence})
+    return _tiered({"value": len(funded) if passed else 0, "structural_value": len(funded), "transfers": moved,
+                    "books": ledgers, **({"missing": missing} if missing else {}),
+                    "reality": "transfer, reconciliation and the waterfall are computed from the ledger; GREG moves no "
+                               "money; whether the second venture could stand alone is Alfonso's judgment"},
+                   structural=not missing, passed=passed, refused=refused)
 
 
 PREDICATES = {"vepmc_at_least_one": vepmc_at_least_one, "genesis_closure": genesis_closure,

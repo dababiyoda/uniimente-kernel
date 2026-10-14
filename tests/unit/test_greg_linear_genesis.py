@@ -268,7 +268,7 @@ def test_an_answered_capability_ask_still_leaves_the_founder_an_attach_in_the_co
     offered no way forward. The phone can approve but can never attach, so it stranded missions too.
     """
     from greg.body import status
-    from greg.console import Console, render_home
+    from greg.console import Console, render_home, render_mission_control
     home, key, body_id, _ = make_body(tmp_path)
     drop(home, signed(key, body_id, "MISSION", plan_in_words(text=PLAN)))      # no auto_attach: the founder decides
     clock = Clock()
@@ -289,6 +289,8 @@ def test_an_answered_capability_ask_still_leaves_the_founder_an_attach_in_the_co
         assert waiting["mission_id"] == plan_in_words(text=PLAN)["mission_id"]
         page = render_home(console).decode()
         assert "Waiting for an attach" in page and f"Attach {waiting['capability_id']}" in page
+        mc = render_mission_control(console).decode()                     # the founder's first page shows it too
+        assert "Waiting for an attach" in mc and f"Attach {waiting['capability_id']}" in mc
         with pytest.raises(ValueError):
             console.attach("", "acquired.not.waiting.anywhere")              # still only verified candidates
         console.attach("", waiting["capability_id"])                        # the signed CAPABILITY_ATTACH

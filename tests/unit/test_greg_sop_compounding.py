@@ -22,7 +22,9 @@ from greg import path as devpath, planner, sop, templates
 from greg.body import Body
 from greg.missions import validate_mission
 from greg.tribunal import morning_report
-from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
+from greg.metrics import NOT_FOUNDER_TIER
+from tests.greg_fixtures import (TEST_PASSPHRASE, Clock, attest_founder_tier, drop, make_body, mission, note_check,
+                                 signed, workspace, write_strategy)
 
 ROOT = Path(__file__).resolve().parents[2]
 CHECKS = {c: True for c in sop.REQUIRED_CHECKS}
@@ -216,13 +218,18 @@ def achieved(body, mid):
     return any(e.payload["mission_id"] == mid for e in body.journal.replay("mission.achieved"))
 
 
-def test_a_ratified_procedure_runs_without_a_model_or_an_approval_stop_and_closes_n4(tmp_path):
-    home, key, body_id, _ = make_body(tmp_path)
+@pytest.mark.parametrize("founder_tier", [False, True], ids=["test-key", "founder-tier-attested"])
+def test_a_ratified_procedure_runs_without_a_model_or_an_approval_stop_and_closes_n4(tmp_path, monkeypatch,
+                                                                                     founder_tier):
+    passphrase = TEST_PASSPHRASE if founder_tier else None
+    home, key, body_id, _ = make_body(tmp_path, passphrase=passphrase)
     clock = Clock()
     body = Body(home, clock=clock).open()
     body.boot()
     try:
         drop(home, signed(key, body_id, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, now=clock.now))
+        if founder_tier:                                  # as `greg founder attest` does, before any run is signed
+            attest_founder_tier(home, tmp_path / "founder.pem", passphrase, monkeypatch)
         tick(body, clock, 1)
         for n in range(3):                              # three runs taught by hand: each stops to ask
             mid = f"m:weekly-note-{n}"
@@ -255,11 +262,19 @@ def test_a_ratified_procedure_runs_without_a_model_or_an_approval_stop_and_close
             assert achieved(body, spec["mission_id"]) and asks(body, spec["mission_id"]) == []
             assert (workspace(home, spec["mission_id"]) / "n.txt").read_text() == f"from the sop {n}"
             measured = devpath.sop_compounding(body.journal)
-            assert measured["met"] is (n == 2), measured
+            assert measured["structurally_met"] is (n == 2), measured
+            # Reason (#137 verifier): runs signed with a test key never move the founder's path.
+            assert measured["met"] is (founder_tier and n == 2), measured
         [done] = measured["procedures"]
         assert done["before"]["interventions_per_outcome"] == 1.0 and done["after"]["interventions_per_outcome"] == 0.0
         assert done["after"]["model_calls_per_outcome"] == 0.0 and done["after"]["quality_failures"] == []
         assert len(body.journal.replay("sop.proposed")) == 1
+        if founder_tier:
+            assert measured["evidence_level"] == "FOUNDER_TIER" and measured["value"] == 1
+        else:                                       # all six closures (three taught, three runs) are refused
+            assert measured["evidence_level"] == "STRUCTURAL_CANDIDATE" and measured["value"] == 0
+            assert len(measured["not_founder_tier"]) == 6
+            assert set(measured["not_founder_tier"].values()) == {NOT_FOUNDER_TIER}
         where = devpath.position(body.journal)      # N4 measured does not skip the path: N1 stays primary
         assert where["active"]["id"] == "N1" and "N4" not in where["achieved"]
     finally:

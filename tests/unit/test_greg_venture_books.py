@@ -17,7 +17,8 @@ import sys
 
 import pytest
 
-from greg import path as devpath, sop, venture_books
+from greg import metrics, path as devpath, sop, venture_books
+from greg.metrics import NOT_FOUNDER_TIER
 from greg.body import Body
 from greg.founder import COMMAND_KINDS, DEVICE_KINDS
 from greg.missions import validate_mission
@@ -143,7 +144,7 @@ def run_case(home, key, body_id, clock, body, spec) -> str:
 
 
 def test_a_procedure_from_one_venture_makes_a_second_cheaper_and_its_revenue_funds_reserves_first(
-        tmp_path):
+        tmp_path, monkeypatch):
     home, key, body_id, _ = make_body(tmp_path)
     clock = Clock()
     body = Body(home, clock=clock).open()
@@ -184,7 +185,17 @@ def test_a_procedure_from_one_venture_makes_a_second_cheaper_and_its_revenue_fun
                           now=clock.now))
         tick(body, clock, 1)
         after = devpath.venture_compounding(body.journal)
-        assert after["met"] is True, after
+        assert after["structurally_met"] is True, after
+        # Reason (#137 verifier): every closure here is signed with a test key, so N7 is structural evidence only.
+        assert after["met"] is False and after["evidence_level"] == "STRUCTURAL_CANDIDATE" and after["value"] == 0
+        refused = set(after["not_founder_tier"])
+        assert refused == set(taught) | set(moved) and set(after["not_founder_tier"].values()) == {NOT_FOUNDER_TIER}
+        tiers = metrics.founder_tier(body.journal)        # the same evidence, every closure at the founder tier
+        monkeypatch.setattr(metrics, "founder_tier", lambda journal: {
+            m: {**row, "tier": metrics.FOUNDER_TIER} for m, row in tiers.items()})
+        tiered = devpath.venture_compounding(body.journal)
+        assert tiered["met"] is True and tiered["evidence_level"] == "FOUNDER_TIER" and tiered["value"] == 1
+        monkeypatch.undo()
         [audits] = [b for b in after["books"] if b["venture"] == "audits"]
         assert audits["verified_revenue"] == "600.00" and audits["surplus_for_reinvestment"] == "400.00"
         [leases] = [b for b in after["books"] if b["venture"] == "leases"]
@@ -270,5 +281,11 @@ def test_n7_needs_surplus_in_the_venture_the_capability_moved_into(monkeypatch):
     result = devpath.venture_compounding(None)
     assert result["met"] is False and "no surplus" in result["missing"][0]
     monkeypatch.setattr(venture_books, "books", lambda journal: [
-        {"venture": "audits", "currency": "USD", "surplus_for_reinvestment": "0.01"}])
+        {"venture": "audits", "currency": "USD", "surplus_for_reinvestment": "0.01", "cases": ["c1"]}])
+    funded = devpath.venture_compounding(None)
+    # Reason (#137 verifier): surplus in the right venture is the structural exit; with no ledger, no closure
+    # it rests on is at the founder tier, so the founder's path does not move.
+    assert funded["structurally_met"] is True and funded["met"] is False
+    assert funded["not_founder_tier"] == {"c1": "not registered on this ledger"}
+    monkeypatch.setattr(metrics, "founder_tier", lambda journal: {"c1": {"tier": metrics.FOUNDER_TIER}})
     assert devpath.venture_compounding(None)["met"] is True

@@ -229,10 +229,26 @@ COMMIT_CHAIN_MUTANTS = [
      "        intact, why = self.ledger.verify_incremental()\n        if not intact:"),
 ]
 
+# 2026-10-14 installed-body merge (#137 verifier): a test-key closure is structural evidence, never the founder's path.
+FOUNDER_TIER_TESTS = ["tests/unit/test_greg_founder_tier.py", "tests/unit/test_greg_business_case.py"]
+FOUNDER_TIER_MUTANTS = [
+    ("a structural closure moves the founder's path", "greg/path.py",
+     "    met = bool(structural and passed)\n", "    met = bool(structural)\n"),
+    ("an unattested key reaches the founder tier", "greg/metrics.py",
+     "        elif key not in attested:\n            why = NOT_FOUNDER_TIER\n",
+     "        elif False:\n            why = NOT_FOUNDER_TIER\n"),
+    ("an attestation reaches back to earlier missions", "greg/metrics.py",
+     "        elif attested[key] > seq[event.event_id]:", "        elif False:"),
+    ("the CLI attests an unprotected key", "greg/cli.py",
+     "    if passphrase is None and require:\n        raise BodyError(NO_FOUNDER_TIER)",
+     "    if False:\n        raise BodyError(NO_FOUNDER_TIER)"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
-          ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS)]
+          ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
+          ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS)]
 
 
 def main() -> int:

@@ -131,7 +131,7 @@
         "commercial order enforced by strategy preconditions and re-checked by the separate appraiser",
         "founder acceptance attests that the buyer is real"
       ],
-      "smallest_next_build": "done agent-side (2026-10-01, full-machine correction): `greg mission new business-case` runs one customer case in commercial order on the body; tests/unit/test_greg_business_case.py closes it end to end and the predicate is met only after founder acceptance. Remains founder-only: a real buyer and their consent, the legal operator, and the payment account whose statement GREG reconciles"
+      "smallest_next_build": "done agent-side (2026-10-01, full-machine correction): `greg mission new business-case` runs one customer case in commercial order on the body; tests/unit/test_greg_business_case.py closes it end to end; the predicate is structurally met only after founder acceptance, and met (the path moves) only when the case was signed by the enrolled founder key at the founder tier (greg/metrics.py founder_tier), never with a test key or a --no-passphrase rehearsal. Remains founder-only: a real buyer and their consent, the legal operator, and the payment account whose statement GREG reconciles"
     },
     {
       "id": "N4",
@@ -162,7 +162,7 @@
         "`greg sop run` instantiates a run with zero model calls; Alfonso signs every run",
         "per-procedure trend of founder interventions, model calls and model cost per verified outcome, before and after ratification (greg/sop.py trend)"
       ],
-      "smallest_next_build": "done agent-side: `greg sop show|ratify|run|trend`; tests/unit/test_greg_sop_compounding.py closes N4 on a booted, designated body. Remains founder-only: three verified closures of one real procedure on Body 1, your ratification, then three runs from it"
+      "smallest_next_build": "done agent-side: `greg sop show|ratify|run|trend`; tests/unit/test_greg_sop_compounding.py reaches N4's structural exit on a booted, designated body; it moves the path only when every closure it rests on was signed at the founder tier. Remains founder-only: three verified closures of one real procedure on Body 1, your ratification, then three runs from it"
     },
     {
       "id": "N5",
@@ -198,7 +198,7 @@
       "exit_evidence": [
         "handoff, review and outcome recorded; human refusal honored as legitimate"
       ],
-      "evidence_source": "ledger",
+      "evidence_source": "external",
       "predicate": "human_work_shared",
       "evidence_status": "verified_by_execution",
       "evidence_refs": [
@@ -213,7 +213,7 @@
         "a refusal observed through declined_if is honored: the ask is withdrawn, the step is never asked again, Alfonso chooses the next move (greg/missions.py)",
         "GREG records the outcome; its own actions stay internal; Alfonso's acceptance attests the person and the relationship"
       ],
-      "smallest_next_build": "done agent-side: `greg mission new shared-work`; tests/unit/test_greg_shared_work.py closes N6 on a booted, designated body and honors refusals. Remains founder-only: a real person, their consent, and the contract or employment you arrange and pay"
+      "smallest_next_build": "done agent-side: `greg mission new shared-work`; tests/unit/test_greg_shared_work.py reaches N6's structural exit on a booted, designated body and honors refusals; it moves the path only on a case signed at the founder tier. Remains founder-only: a real person, their consent, and the contract or employment you arrange and pay"
     },
     {
       "id": "N7",
@@ -230,7 +230,7 @@
         "capability transplant makes the second venture faster or cheaper, measured",
         "revenue reconciled against obligations and reserves"
       ],
-      "evidence_source": "ledger",
+      "evidence_source": "external",
       "predicate": "venture_compounding",
       "evidence_status": "verified_by_execution",
       "evidence_refs": [
@@ -244,7 +244,7 @@
         "founder-only TREASURY_REQUIREMENTS signs per-tier obligation and reserve amounts for one venture and currency",
         "reconciled revenue from closed N3 cases runs through the Kernel's own waterfall (capital/treasury.py over capital/allocation-policy.yaml); surplus exists only after every tier above reinvestment is fully funded; GREG moves no money"
       ],
-      "smallest_next_build": "done agent-side: `greg mission new business-case --venture --approve-writes`, `greg sop run --venture`, `greg treasury set|books`; tests/unit/test_greg_venture_books.py closes N7 on a booted, designated body. Remains founder-only: two real ventures with real buyers, your signed obligations and reserves, and the judgment that the second venture could stand alone"
+      "smallest_next_build": "done agent-side: `greg mission new business-case --venture --approve-writes`, `greg sop run --venture`, `greg treasury set|books`; tests/unit/test_greg_venture_books.py reaches N7's structural exit on a booted, designated body; it moves the path only when every closure it rests on was signed at the founder tier. Remains founder-only: two real ventures with real buyers, your signed obligations and reserves, and the judgment that the second venture could stand alone"
     },
     {
       "id": "N8",

@@ -20,7 +20,8 @@ from greg import path as devpath
 from greg.body import Body
 from greg.missions import MissionError, validate_mission
 from greg.templates import shared_work
-from tests.greg_fixtures import Clock, drop, make_body, signed, workspace
+from greg.metrics import NOT_FOUNDER_TIER
+from tests.greg_fixtures import TEST_PASSPHRASE, Clock, attest_founder_tier, drop, make_body, signed, workspace
 
 ROOT = Path(__file__).resolve().parents[2]
 REF = "WORK-DESIGN-THE-GREG-LOGO"
@@ -68,12 +69,15 @@ def tick(body, clock, ticks=3, advance=4000):
         clock.advance(1)
 
 
-def start(tmp_path):
-    home, key, body_id, _ = make_body(tmp_path)
+def start(tmp_path, monkeypatch=None, *, founder_tier=False):
+    passphrase = TEST_PASSPHRASE if founder_tier else None
+    home, key, body_id, _ = make_body(tmp_path, passphrase=passphrase)
     clock = Clock()
     body = Body(home, clock=clock).open()
     body.boot()
     drop(home, signed(key, body_id, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, now=clock.now))
+    if founder_tier:                                          # as `greg founder attest` does, before the work is signed
+        attest_founder_tier(home, Path(tmp_path) / "founder.pem", passphrase, monkeypatch)
     tick(body, clock, 1, 0)
     spec = work_spec(home)
     drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
@@ -81,8 +85,9 @@ def start(tmp_path):
     return home, key, body_id, clock, body, spec["mission_id"], workspace(home, spec["mission_id"])
 
 
-def test_a_named_person_agrees_delivers_is_reviewed_and_the_outcome_is_recorded(tmp_path):
-    home, key, body_id, clock, body, mid, folder = start(tmp_path)
+@pytest.mark.parametrize("founder_tier", [False, True], ids=["test-key", "founder-tier-attested"])
+def test_a_named_person_agrees_delivers_is_reviewed_and_the_outcome_is_recorded(tmp_path, monkeypatch, founder_tier):
+    home, key, body_id, clock, body, mid, folder = start(tmp_path, monkeypatch, founder_tier=founder_tier)
     try:
         handoff = (folder / "handoff.md").read_text()
         assert REF in handoff and "Dana Reyes" in handoff and "You may decline" in handoff
@@ -118,7 +123,13 @@ def test_a_named_person_agrees_delivers_is_reviewed_and_the_outcome_is_recorded(
                           now=clock.now))
         tick(body, clock, 1, 0)
         after = devpath.human_work_shared(body.journal)
-        assert after["met"] is True and after["cases"] == [{"mission_id": mid, "person_steps": 2}]
+        assert after["structurally_met"] is True and after["cases"] == [{"mission_id": mid, "person_steps": 2}]
+        if founder_tier:
+            assert after["met"] is True and after["evidence_level"] == "FOUNDER_TIER" and after["value"] == 1
+        else:
+            # Reason (#137 verifier): a closure signed with a test key never moves the founder's path.
+            assert after["met"] is False and after["evidence_level"] == "STRUCTURAL_CANDIDATE"
+            assert after["not_founder_tier"] == {mid: NOT_FOUNDER_TIER} and after["value"] == 0
     finally:
         body.close()
 

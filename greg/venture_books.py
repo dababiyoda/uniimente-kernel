@@ -185,7 +185,8 @@ def transfers(journal: Journal) -> list[dict]:
                       and list(m.values())[1] > list(m.values())[0] and f != "hours_to_close"]
             quality = not entry["sop_runs"]["quality_failures"]
             row = {"procedure_id": entry["procedure_id"], "from_venture": source, "to_venture": target,
-                   "runs": len(runs), "missions": [r["mission_id"] for r in runs], "per_outcome": measures,
+                   "runs": len(runs), "missions": [r["mission_id"] for r in runs],
+                   "taught": [r["mission_id"] for r in taught], "per_outcome": measures,
                    "lower": lower, "quality_held": quality,
                    "faster_or_cheaper": bool(lower) and not higher and quality and len(runs) >= MIN_TRANSFER_RUNS}
             if not row["faster_or_cheaper"]:

@@ -325,6 +325,12 @@ class Body:
             return compute.enroll_node(self.journal, body, digest)
         if kind == "SOP_RATIFY":
             return sop.ratify(self.journal, body, digest)
+        if kind == "FOUNDER_TIER":               # founder key only (DEVICE_KINDS excludes it)
+            from greg.founder import FOUNDER_TIER_BODY
+            if body != FOUNDER_TIER_BODY:
+                raise MissionError(f"a founder-tier attestation is exactly {FOUNDER_TIER_BODY}")
+            # The accepted command (its signer and key id) is the record greg.metrics.founder_tier reads.
+            return {**FOUNDER_TIER_BODY, "authority_changed": False}
         if kind == "TREASURY_REQUIREMENTS":      # founder key only (DEVICE_KINDS excludes it)
             from greg.venture_books import validate_requirements
             declared = validate_requirements(body)

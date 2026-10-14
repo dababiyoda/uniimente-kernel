@@ -87,7 +87,14 @@ Choose your own passphrase; do not give the private key to an agent. Make sure
 you recognize the new body ID and that this is the device you intend to use.
 The next command queues a founder-signed **designation**, which the body must
 accept before your first mission. It does not grant GREG new capabilities or
-permissions.
+permissions. Because your key is protected by your passphrase, the same command
+also queues a **founder-tier attestation**: the ledger's record that the key
+signing your missions is a passphrase-protected founder key, not a test key or a
+`--no-passphrase` rehearsal. It grants nothing either. Without it, closures from
+N3 onward stay *structural candidates* and never move `greg path`. If you rotate
+your key, or your body was designated before this existed, run
+`greg founder attest --key ~/.greg-founder.pem` once, before signing the missions
+that should count.
 
 ```bash
 greg service install --platform linux
@@ -190,7 +197,9 @@ greg mission new business-case --case "lease review 01" --buyer "Acme Property L
 
 `greg path` measures N3 from the ledger: a founder-signed case on this body, payment reconciled,
 every outward step done by a person, GREG's own actions internal only, appraised VERIFIED and
-accepted by you. Your acceptance is what attests the buyer is real; the ledger cannot prove it.
+accepted by you, signed with your key at the founder tier (a case signed with a test key or a
+`--no-passphrase` rehearsal shows as `structurally_met` with `evidence_level: STRUCTURAL_CANDIDATE`
+and never moves the path). Your acceptance is what attests the buyer is real; the ledger cannot prove it.
 What no build session can supply: a real buyer and their consent, the legal operator, and your
 payment account.
 
@@ -220,7 +229,9 @@ greg sop trend                                  # before and after, per verified
   procedure:
   - closed on this body, each appraised VERIFIED, none rejected or abandoned;
   - asked you less per verified outcome than the runs that taught it;
-  - used no more model spend.
+  - used no more model spend;
+  - and every closure it rests on (the three that taught it and the three runs) was signed at the
+    founder tier; otherwise it is a structural candidate only.
 
 ## The seventh node (N7): a second venture, and books that pay obligations first
 
@@ -255,7 +266,8 @@ greg treasury books
 - **Surplus is what remains** after every tier above reinvestment is fully funded.
 - **GREG moves and allocates no money;** these are books.
 - **`greg path` measures N7.** It is met when a procedure taught by one venture made at least two
-  closed cases in another cheaper or faster per outcome, and that venture's books show surplus.
+  closed cases in another cheaper or faster per outcome, and that venture's books show surplus,
+  with every closure that rests on signed at the founder tier.
 - **Your judgment remains:** whether the second venture could stand alone.
 
 ## The sixth node (N6): one piece of work with a named person
@@ -288,9 +300,11 @@ greg mission new shared-work --task "Design the GREG logo" --person "Dana Reyes"
 - the handoff written before anything was asked;
 - every step of the person's, and your review, observed;
 - GREG's own actions internal only;
-- the closure appraised VERIFIED and accepted by you.
+- the closure appraised VERIFIED and accepted by you;
+- the mission signed with your key at the founder tier.
 
-Your acceptance is what attests that the person is real and the relationship lawful.
+Your acceptance is what attests that the person is real and the relationship lawful; N6's gate stays
+external evidence, and the ledger measures only its own side.
 
 ## 3. What "persistent" means on this Chromebook
 

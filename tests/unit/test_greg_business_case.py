@@ -17,7 +17,8 @@ from greg.business_loop import parse_amount, reconcile
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext
 from greg.missions import validate_mission
 from greg.templates import business_case
-from tests.greg_fixtures import Clock, drop, make_body, signed, workspace
+from greg.metrics import NOT_FOUNDER_TIER
+from tests.greg_fixtures import TEST_PASSPHRASE, Clock, attest_founder_tier, drop, make_body, signed, workspace
 
 REF = "CASE-LEASE-REVIEW-01"
 HEADER = "date,description,amount,currency\n"
@@ -93,13 +94,17 @@ def run(body, clock, ticks=3, advance=4000):
         clock.advance(1)
 
 
-def test_a_case_closes_in_commercial_order_with_people_doing_every_outward_act(tmp_path):
-    home, key, body_id, _ = make_body(tmp_path)
+@pytest.mark.parametrize("founder_tier", [False, True], ids=["test-key", "founder-tier-attested"])
+def test_a_case_closes_in_commercial_order_with_people_doing_every_outward_act(tmp_path, monkeypatch, founder_tier):
+    passphrase = TEST_PASSPHRASE if founder_tier else None
+    home, key, body_id, _ = make_body(tmp_path, passphrase=passphrase)
     clock = Clock()
     body = Body(home, clock=clock).open()
     body.boot()
     try:
         drop(home, signed(key, body_id, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, now=clock.now))
+        if founder_tier:                                      # as `greg founder attest` does, before the case is signed
+            attest_founder_tier(home, tmp_path / "founder.pem", passphrase, monkeypatch)
         run(body, clock, 1, 0)
         spec = case_spec(home)
         mid = spec["mission_id"]
@@ -147,7 +152,17 @@ def test_a_case_closes_in_commercial_order_with_people_doing_every_outward_act(t
                                                      "text": "accepted after reading the settlement"}, now=clock.now))
         run(body, clock, 1, 0)
         after = devpath.business_loop_closed(body.journal)
-        assert after["met"] is True and after["cases"] == [{"mission_id": mid, "human_steps": 4}]
+        assert after["structurally_met"] is True and after["cases"] == [{"mission_id": mid, "human_steps": 4}]
+        if founder_tier:
+            assert after["met"] is True and after["evidence_level"] == "FOUNDER_TIER" and after["value"] == 1
+            return
+        # Reason (#137 verifier): a closure signed with a test key never moves the founder's path (N1 kill condition).
+        assert after["met"] is False and after["evidence_level"] == "STRUCTURAL_CANDIDATE" and after["value"] == 0
+        assert after["not_founder_tier"] == {mid: NOT_FOUNDER_TIER} and "founder tier" in after["blocker"]
+        drop(home, signed(key, body_id, "FOUNDER_TIER", {"key_custody": "passphrase"}, now=clock.now))
+        run(body, clock, 1, 0)                                 # an attestation after the fact does not reach back
+        late = devpath.business_loop_closed(body.journal)
+        assert late["met"] is False and "only after this mission was registered" in late["not_founder_tier"][mid]
     finally:
         body.close()
 

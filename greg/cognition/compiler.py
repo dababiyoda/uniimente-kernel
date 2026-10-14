@@ -259,7 +259,7 @@ OPERATORS = (
         ("misread incentives", "unmodelled actors"), ("cooperative single-owner problems",), "game_model",
         "one LP", "sub-second", "game_minimax admission",
         lambda g, r: bool(g.multi_actor) and (g.adversarial_pressure or 0) > 0,
-        _prefer("cognition.game", "cognition.game_minimax", "minimax"), "candidate_set"),
+        _prefer("cognition.game", "cognition.game_minimax", "cognition.game_lp_dual", "minimax"), "candidate_set"),
     _op("mechanism_design", ("allocation among actors with private information",),
         "prefers incentive-compatible allocation (truthful rules) over guessing reported values",
         ("multi_actor", "objective_type"), ("prefer",), ("actors may misreport",), ("collusion outside the model",),
@@ -272,7 +272,8 @@ OPERATORS = (
         ("model mismatch", "actuator limits"), ("one-shot decisions",), "control_trace", "one simulation",
         "milliseconds", "basal_pid and control_mpc admission",
         lambda g, r: g.static_or_dynamic == "dynamic",
-        _prefer("cognition.control", "cognition.basal_pid", "cognition.control_mpc", "cognition.basal_kalman"),
+        _prefer("cognition.control", "cognition.basal_pid", "cognition.pid_simopt", "cognition.control_mpc",
+                "cognition.basal_kalman"),
         "candidate_set"),
     _op("falsification", ("a claim that will inform action",),
         "requires a stated falsifier and a verifier independent of the solver", (), ("requirements",),
@@ -357,6 +358,8 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     from .genomes import library
     rows, keys = [], set(data)
     genomes = library.executables()
+    # a superseded genome's competitor promoted into a registered genome of its own (same geometry and inputs)
+    promoted = {old: new for old, new in library.promotions().items() if new in FAMILIES}
     for family, (_, ops, classes, _, _) in FAMILIES.items():
         for op in ops:
             stale = None
@@ -399,6 +402,12 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                 row["superseded_by"] = {"mechanism": item.genome.competitor,
                                         "deployable": bool(getattr(item, "competitor_deployable", True)),
                                         "evidence": evidence["genomes"].get(family, {}).get("evidence")}
+                if family in promoted:
+                    # the mechanism is already a registered genome: its own row and record govern it, and
+                    # attaching it is the founder's decision (never a Genesis acquisition)
+                    row["superseded_by"]["promoted_as"] = f"cognition.{promoted[family]}"
+            if family in genomes and genomes[family].promotes in FAMILIES:
+                row["promotes"] = f"cognition.{genomes[family].promotes}"
             rows.append(row)
     rows += _organ_rows(data, g, evidence)
     recipe = route(data)
@@ -572,6 +581,14 @@ def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> d
                                   "measured_version": record.get("version"),
                                   "subregion": best.get("subregion"), "current_state": best["usable_why"]}.items()
                 if v is not None}
+    if best.get("promotes"):
+        # the frozen evidence that made this mechanism worth promoting, labelled for what it measured
+        former = evidence.get("genomes", {}).get(best["promotes"].removeprefix("cognition."), {})
+        measured["promotes"] = {k: v for k, v in {
+            "superseded_method": best["promotes"], "superseded_status": former.get("status"),
+            "supersession_evidence": former.get("evidence"),
+            "scope": "that evidence measured this mechanism as the superseded genome's competitor arm, not this "
+                     "genome's code; this genome's own status is admission_status"}.items() if v is not None}
     served = fallback["method"] if fallback else "no attached method"
     measured["registered"] = [{"capability_id": best["method"], "state": "VERIFIED"}]
     # one ask per method and measured version, however many requests need it (never one per request)
@@ -796,7 +813,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                     "evidence": r["superseded_by"]["evidence"],
                     "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority",
                     "authority": "none: a candidate to acquire, never an attached method"}
-                   for r in rows if r.get("superseded_by", {}).get("deployable")]
+                   for r in rows if r.get("superseded_by", {}).get("deployable")
+                   and not r["superseded_by"].get("promoted_as")]
     if not eligible:
         if superseding:
             # the method that fits was superseded on frozen held-out evidence by a deployable mechanism: name it
@@ -829,7 +847,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         receipt["withheld_best_fit"] = {"method": best["method"], "state": best["usable_why"],
                                         "status": best["status"], "served_by": runnable[0]["method"] if runnable
                                         else None, **({"subregion": best["subregion"]} if best.get("subregion")
-                                                      else {})}
+                                                      else {}),
+                                        **({"promotes": best["promotes"]} if best.get("promotes") else {})}
         state = _state(registry, best["method"])
         if best["kind"] == "composition" or state != "VERIFIED":
             # only a verified, withheld capability is attachable by the founder's attach command; a quarantined,

@@ -2,7 +2,8 @@
 
 Each module listed in ``MODULES`` exports ``INTELLIGENCES`` (a list of ``Executable``). This library:
 
-* validates every genome and refuses duplicate ids, families or operations;
+* validates every genome and refuses duplicate ids, families or operations, and any promotion (``promotes``)
+  that would not answer the promoted family's requests;
 * projects each onto the existing family catalog (``greg/cognition/catalog.py``) as
   ``(layer, (operation,), (epistemic_class,), "genome_certificate", dependency)``, so the existing
   CapabilityRegistry, eligibility, isolated worker, independent verifier, receipt and competence
@@ -30,6 +31,7 @@ MODULES = (
     "greg.cognition.genomes.solvers_b",     # L3 further direct mathematical intelligences (batch B)
     "greg.cognition.genomes.solvers_c",     # L3 mechanism design, verification, control, causal (batch C)
     "greg.cognition.genomes.developmental",  # L4 developmental / target-state repair
+    "greg.cognition.genomes.competitors",   # L3 promoted competitors of SUPERSEDED genomes (own genomes)
 )
 PROOF_CLASS = "genome_certificate"
 PROOF_FIELDS = ("intelligence_id", "version", "evidence_type", "inputs_digest", "certificate", "limits")
@@ -46,7 +48,7 @@ def _import(name: str):
 
 @lru_cache(maxsize=1)
 def executables() -> dict[str, Executable]:
-    """family -> Executable, validated, with ids, families and operations unique."""
+    """family -> Executable, validated, with ids, families and operations unique and every promotion checked."""
     out, ids, ops = {}, set(), set()
     for name in MODULES:
         module = _import(name)
@@ -59,7 +61,30 @@ def executables() -> dict[str, Executable]:
             out[g.family] = item
             ids.add(g.intelligence_id)
             ops.add(g.operation)
+    check_promotions(out)
     return out
+
+
+def check_promotions(items: dict[str, Executable]) -> None:
+    """A promotion must answer the promoted family's requests: same native geometry, no input that family did not
+    need, and a deployable competitor to promote (an oracle reference is not a mechanism); one promotion per family
+    and no chains. Raises GenomeError otherwise."""
+    promoted = [x.promotes for x in items.values() if x.promotes is not None]
+    for family, item in items.items():
+        if item.promotes is None:
+            continue
+        former = items.get(item.promotes)
+        if (former is None or item.promotes == family or former.promotes is not None
+                or promoted.count(item.promotes) > 1
+                or former.genome.epistemic_class != item.genome.epistemic_class
+                or not set(item.genome.required_inputs) <= set(former.genome.required_inputs)
+                or not former.competitor_deployable):
+            raise GenomeError(f"{item.genome.intelligence_id}: invalid promotion of {item.promotes!r}")
+
+
+def promotions() -> dict[str, str]:
+    """family whose competitor was promoted -> the family that promotes it into a genome of its own."""
+    return {x.promotes: family for family, x in executables().items() if x.promotes is not None}
 
 
 def catalog_families() -> dict[str, tuple]:

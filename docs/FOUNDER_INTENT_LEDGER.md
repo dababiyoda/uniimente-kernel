@@ -70,8 +70,11 @@ Both intent `.json` records carry the new implementation references and conflict
 **Evidence tier.** IMPLEMENTED, UNIT-TESTED and INTEGRATION-TESTED on synthetic ledgers with synthetic verifiers. No
 routing decision has an outcome verified in reality.
 
-**Open conflict.** Entry gate G1 may treat wiring inert code in a draft PR as "runtime composition". That conflict is
-preserved as dissent, and adoption into `main` is the founder's decision.
+**Open conflicts.** Entry gate G1 may treat wiring inert code in a draft PR as "runtime composition". PR #170 on
+`main` labels the router non-canonical, names the #143 seed-genome lineage as the canonical Competency Compiler
+candidate, and says the router must not be wired in as a second one. Draft PR #160 therefore keeps the mount
+optional and off by default. Both conflicts are preserved, and which compiler the loop mounts, if any, is the
+founder's decision.
 
 **Blocked, not dropped.** These remain open, each named with its dependency in the ADR:
 

@@ -1,8 +1,15 @@
-"""Competency Compiler seam: route each awake goal's active gate through ``capabilities/router.py``.
+"""Competency Compiler seam: route each awake goal's active gate through a mounted competency router.
 
-The router on ``main`` (PR #165) answers *which registered mechanism can know this, inside its
-envelope, at the smallest competent size?* and learns only from independently verified outcomes.
-It was inert: nothing called it. This module is the one caller from the founder loop:
+Status. ``main`` labels ``capabilities/router.py`` a NON-CANONICAL alternative that must not be wired
+in as a second Competency Compiler (PR #170); the canonical candidate is the GREG seed-genome lineage
+(draft PR #143). This seam therefore mounts nothing by default: ``GoalGravityLoop(capability_router=None)``
+is the default, and tests mount the router as the reference mechanism. The seam's contract toward the
+loop is ``RoutingView``, which is mechanism-neutral; mounting the #143 lineage instead would need an
+adapter that produces it. Which compiler the founder loop mounts, if any, is a founder decision.
+
+The router (PR #165) answers *which registered mechanism can know this, inside its envelope, at the
+smallest competent size?* and learns only from independently verified outcomes. Mounted, this module is
+its one caller from the founder loop:
 
     active gate --(PlanNode.problem_class)--> ProblemSpec --> CapabilityRouter.route
         routed      -> moves proceed; the decision id and recruited mechanisms ride on every record

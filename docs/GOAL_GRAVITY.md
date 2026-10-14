@@ -66,6 +66,8 @@ mode and every record says so.
 11. **Recalculate.** Goal state (position, active node, gate, SBM, blockers, evidence) is written as a ledgered
     transition; the goal returns to dormant or blocked; the turn is recorded and replayable.
 
+**Status against `main`.** PR #170 labels `capabilities/router.py` non-canonical and says it must not be wired in as a second Competency Compiler; the canonical candidate is the #143 seed-genome lineage. The mount described next is optional, off by default and used by tests. Which compiler the loop mounts, if any, is a founder decision (ADR-GOAL-GRAVITY-002, "Conflict with main").
+
 **The Competency Compiler on the loop (third increment, 2026-10-14).** The router on `main` (`capabilities/router.py`,
 PR #165) is mounted as `loop.competency` (`egregore/competency.py`) when a `CapabilityRouter` sharing the ledger and
 genome registry is passed. A plan node that declares a `problem_class` routes its gate: the router names the

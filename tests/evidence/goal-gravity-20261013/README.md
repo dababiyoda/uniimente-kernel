@@ -15,7 +15,7 @@ EXTERNALLY VERIFIED, not FOUNDER-ACCEPTED).
 | `validators-increment-2.log` | deliberation and intent-record validators |
 | `pytest-full-suite-increment-3.log` | third increment (Competency Compiler wiring plus its review fixes): full suite, Python 3.13 |
 | `pytest-full-suite-py311-increment-3.log` | the same tree on Python 3.11, the interpreter CI uses |
-| `verifier-v2-increment-3.log` | verifier V1–V5 after the third increment; run record `verifier/runs/v2-2026-10-14T11-15-34.044978+00-00.json` |
+| `verifier-v2-increment-3.log` | verifier V1–V5 after the third increment; run records `verifier/runs/v2-2026-10-14T11-15-34.044978+00-00.json` (review fixes) and `verifier/runs/v2-2026-10-14T11-20-31.555889+00-00.json` (after merging main #170) |
 | `ci-check-*-increment-3.log` | schema references, authority singleton and sealed-developmental checks after the third increment |
 | `validators-increment-3.log` | both deliberation records and both intent records; main's competency-compiler record fails the skill schema identically on `main` (format conflict, noted in the log) |
 | `review-probes-increment-3.log` | every adversarial-review reproduction run against a clean checkout of `81c90c7` (each finding reproduces) and against the fixed tree (none does), with the expected passes explained |

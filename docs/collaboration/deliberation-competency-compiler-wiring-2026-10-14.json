@@ -201,6 +201,12 @@
       "tier": "unit_test",
       "reference": "tests/unit/test_goal_gravity_review.py; tests/evidence/goal-gravity-20261013/review-probes-increment-3.log",
       "finding": "Refuted. An adversarial review raised 35 findings that reproduced on 81c90c7, including two blocking: a low-trust corroborator could relabel a trusted reading's method, and a re-dispatched attempt could be reconciled from an earlier attempt's Gate events. Others: attach without a founder answer, forged outcome events replayed into calibration, one goal's founder decision clearing another goal's gate. All are fixed with regression tests. The refuting verifiers and the completeness critic did not run (usage limit), so the findings were confirmed by re-running each reproduction, not by an independent verifier."
+    },
+    {
+      "claim": "capabilities/router.py is the Competency Compiler the loop should mount",
+      "tier": "primary_source",
+      "reference": "main d64a6c9 (#170): capabilities/router.py docstring, capabilities/README.md, docs/intent/INTENT-20261014-competency-compiler.json",
+      "finding": "Contested by main. #170 labels the router a non-canonical alternative that must not be wired in as a second Competency Compiler and names the #143 seed-genome lineage as the canonical candidate. This branch keeps the mount optional and off by default; the choice of compiler is a founder decision."
     }
   ],
   "pass_1": {

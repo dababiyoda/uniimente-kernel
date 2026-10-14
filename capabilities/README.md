@@ -42,7 +42,9 @@ instantiate.
 
 Verified by `closure/kernel_registry.py` → module `capabilities`.
 
-## Capability Router — the Competency Compiler (§4.14)
+## Capability Router — non-canonical alternative (§4.14 sketch)
+
+> **Not the Competency Compiler.** The canonical candidate is the GREG seed-genome lineage (Kernel draft PR #143). This module is retained as an alternative mechanism and evidence; nothing on `main` calls it, and it must not be wired in as a second Competency Compiler. Convergence or retirement is a founder decision. Draft PR #160 mounts it in the Goal Gravity loop behind an optional, off-by-default argument; the conflict is recorded in the intent record and ADR-GOAL-GRAVITY-002. `restore()` replays only outcome events `record_outcome` would accept and lists the rest in `unreplayed`.
 
 `router.py` — `CapabilityRouter` answers "which mechanism can actually know
 this?":

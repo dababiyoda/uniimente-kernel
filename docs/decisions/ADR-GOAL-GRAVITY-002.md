@@ -1,7 +1,10 @@
 # ADR: Wire the Competency Compiler into the Goal Gravity loop
 
 - Decision ID: ADR-GOAL-GRAVITY-002 (linked to ADR-GOAL-GRAVITY-001)
-- Status: proposed (draft PR #160, third increment; adoption into `main` is a founder decision)
+- Status: proposed, and in conflict with `main` (draft PR #160, third increment). PR #170 merged to `main` on
+  2026-10-14 labels `capabilities/router.py` non-canonical, names the GREG seed-genome lineage (draft PR #143) as the
+  canonical Competency Compiler candidate, and says the router must not be wired in as a second Competency Compiler.
+  This ADR's mount is therefore optional, off by default and used only by tests; adoption is a founder decision.
 - Date: 2026-10-14
 - Decision owner: Alfonso Lopez
 - Deliberation level: Constitutional (shared contracts, evidence semantics, a founder-gated attach path)
@@ -136,10 +139,29 @@ completeness critic never ran. Areas no reviewer examined in depth are `egregore
 - **Boundary package (adapters owner).** `adapters/` ships in the pinned boundary package. Organ-observation
   adapters live in `egregore/` so the package never depends on `egregore`.
 
+## Conflict with `main` (#170)
+
+#170 arrived on `main` after this increment was built. Its position and this ADR's are both preserved.
+
+- **What #170 says.** The router was built after searching `main` only. The #143 lineage already implements the
+  founder's Competency Compiler more fully (`cognition.solve` on the mission path, cross-certified solvers, a
+  competence ledger, open-source capability genesis, learned routing in shadow). The router must not become a
+  second Competency Compiler, and convergence (#143, #145, #154) is the founder's decision.
+- **What this branch does about it.** The mount stays optional and off by default (`capability_router=None`). The
+  loop's contract toward any compiler is `RoutingView`, which names a decision, selected mechanisms, expected
+  evidence, human escalation and a deficit; mounting #143 instead needs an adapter that produces it. The typed
+  evidence rule (method-based admissibility, per-goal founder decisions) reads the router's method table, which
+  both lineages share in substance. The acquisition ladder, the review fixes and the `restore()` hardening stand
+  on their own.
+- **Options for the founder.** Retire the mount and keep the loop compiler-free; keep the router as the test
+  reference until convergence; or re-target the seam to the #143 lineage after convergence. This branch does not
+  choose among them.
+
 ## Dissent
 
 - Adversarial reviewer. #165 sequenced the router as inert until the entry gate opens, and wiring it in a draft
-  pre-empts that. Threshold: a founder ruling that wiring counts as runtime composition under G1. Owner: Alfonso.
+  pre-empts that. #170 strengthens this: `main` now forbids wiring the router as a second Competency Compiler.
+  Threshold: any default path that mounts the router, or a founder ruling either way. Owner: Alfonso.
 - Evidence guardian. `qualify()` is a subprocess, not isolation, and must never be described as sandboxed
   verification. Threshold: any document or ask that does so. Owner: kernel maintainers.
 

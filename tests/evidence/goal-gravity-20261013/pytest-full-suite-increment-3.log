@@ -1,4 +1,4 @@
-$ python3 -m pytest -q   (Python 3.13.16, tree: 81c90c7 + review fixes)
+$ python3 -m pytest -q   (Python 3.13.16; tree: fc15b9c merged with main d64a6c9 (#170))
 .........ssss........................................................... [ 93%]
 ...................................................                      [100%]
-767 passed, 4 skipped in 38.95s
+767 passed, 4 skipped in 40.31s

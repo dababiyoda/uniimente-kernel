@@ -1,8 +1,8 @@
 $ python3 verifier/v2/verify.py
 PASS V1: all v1 canonical artifacts present (45/45)
-PASS V2: pytest tests/unit: 742 passed, 4 skipped in 36.64s
+PASS V2: pytest tests/unit: 742 passed, 4 skipped in 36.25s
 PASS V3: all modules closed: advantage_foundry, autonomy, business, capabilities, compiler, consequence_gate, developmental_substrate, egregore-goal-gravity, egregore-standing-cognition, embassy, events, evidence_ledger, evolution, foundry, identity, linker, loom, memory, omnimorph, proof, treasury, twins
 PASS V4: false closure -> FALSELY_CLOSED; gate loops -> CLOSED
 PASS V5: 19 module READMEs declare the buildability standard
-run recorded -> verifier/runs/v2-2026-10-14T11-15-34.044978+00-00.json :: PASS
+run recorded -> verifier/runs/v2-2026-10-14T11-20-31.555889+00-00.json :: PASS
 exit 0

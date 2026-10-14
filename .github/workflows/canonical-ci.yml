@@ -11,6 +11,9 @@ name: Canonical CI
 # the research assembly against pinned real consumer source checkouts. A sixth
 # runs the Polyintelligence Cortex seed with its solver dependency and replays
 # the frozen held-out evaluation (it refuses if any frozen input changed).
+# An eighth runs one founder-signed mission through the whole machine across processes
+# (Mind, Genesis, the real DALEOBANKS and WealthMachine code, a worker, SIGKILL and founder
+# reconciliation, independent re-derivation) with its hostile cases, and never skips.
 # The two pre-existing workflows (tests.yml, ade1-standing-cognition.yml) are
 # preserved but reduced to manual dispatch so they cannot double-execute.
 # They are not deleted: UNIIMENTE_FINAL_BUILD_ORDER §2 and §12 forbid
@@ -226,3 +229,55 @@ jobs:
           name: research-line-synthetic-preview
           path: research-preview.json
           retention-days: 14
+
+  one_machine:
+    name: "8 · One machine: a signed mission across Mind, Genesis, organs, Hands, interruption and independent appraisal"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: kernel
+          fetch-depth: 0
+          persist-credentials: false
+      # The organs at the heads the whole-machine evidence was recorded against.
+      - uses: actions/checkout@v4
+        with:
+          repository: dababiyoda/DALEOBANKS
+          ref: 667439f49442bd898d3655666a389f53114f1412
+          path: organs/daleobanks
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: dababiyoda/WealthMachineIntelligence
+          ref: ec82b8027d987c865dc123215afb53d20916908f
+          path: organs/wealthmachine
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Kernel environment
+        run: pip install -r kernel/requirements-dev.txt -r kernel/requirements-cognition.txt
+      - name: Each organ in its own environment, from its own requirements
+        run: |
+          python -m venv organs/daleobanks-venv
+          organs/daleobanks-venv/bin/pip install -q -r organs/daleobanks/requirements.txt
+          python -m venv organs/wealthmachine-venv
+          organs/wealthmachine-venv/bin/pip install -q -r organs/wealthmachine/requirements.txt
+      - name: Whole-machine mission, organ capabilities and hostile cases (organs required, no skips)
+        working-directory: kernel
+        env:
+          UNIIMENTE_REQUIRE_ORGANS: "1"
+          UNIIMENTE_DALEOBANKS_ROOT: "${{ github.workspace }}/organs/daleobanks"
+          UNIIMENTE_DALEOBANKS_PYTHON: "${{ github.workspace }}/organs/daleobanks-venv/bin/python"
+          UNIIMENTE_WEALTHMACHINE_ROOT: "${{ github.workspace }}/organs/wealthmachine"
+          UNIIMENTE_WEALTHMACHINE_PYTHON: "${{ github.workspace }}/organs/wealthmachine-venv/bin/python"
+          UNIIMENTE_ONE_MACHINE_EVIDENCE: "${{ github.workspace }}/one-machine-evidence"
+        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: one-machine-evidence
+          path: one-machine-evidence/
+          if-no-files-found: warn
+          retention-days: 30

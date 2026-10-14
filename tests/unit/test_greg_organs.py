@@ -27,7 +27,10 @@ SEED = ("Financial independence is not selfish. It is protection from systems th
 
 def live_organs():
     if not all(os.environ.get(k) for k in ORGAN_ENV):
-        pytest.skip("organ checkouts not configured (" + ", ".join(ORGAN_ENV) + ")")
+        why = "organ checkouts not configured (" + ", ".join(ORGAN_ENV) + ")"
+        if os.environ.get("UNIIMENTE_REQUIRE_ORGANS") == "1":   # the CI gate: a skip would be a silent pass
+            pytest.fail(why)
+        pytest.skip(why)
     return {"daleobanks_root": os.environ["UNIIMENTE_DALEOBANKS_ROOT"],
             "daleobanks_python": os.environ["UNIIMENTE_DALEOBANKS_PYTHON"],
             "wealthmachine_root": os.environ["UNIIMENTE_WEALTHMACHINE_ROOT"],

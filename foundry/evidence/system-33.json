@@ -1,0 +1,60 @@
+{
+ "command": "python -m foundry.completion --run 33",
+ "name": "Federated protocols",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "alpha_journal_kinds": [
+   "account.moved",
+   "actor.created",
+   "dead_lettered",
+   "delivered",
+   "follower.added",
+   "follower.removed"
+  ],
+  "follow": {
+   "alpha_followers": 1,
+   "beta_following_confirmed": true,
+   "delivered": true
+  },
+  "portability": {
+   "export_verifies": true,
+   "follower_now_follows_new": true,
+   "forged_import": "export bundle signature does not verify; refusing to import ",
+   "move_delivered_to_follower": true,
+   "move_without_alias": "the new actor does not name this one in alsoKnownAs; move re",
+   "new_actor_also_known_as_old": true,
+   "new_instance_followers": [
+    true
+   ],
+   "old_actor_moved_to_new": true,
+   "old_instance_lost_follower": true,
+   "post_from_new_instance_reached_follower": true,
+   "publish_after_move_refused": true,
+   "tampered_export_rejected": true
+  },
+  "private_key_in_export": false,
+  "publish": {
+   "dead_inbox_dead_lettered": true,
+   "dead_letters": 1,
+   "delivered_to_reader": true,
+   "inbox_content": "First note from an owned instance.",
+   "inbox_verified_signer": true,
+   "remote_outbox_items": 1
+  },
+  "refusals": {
+   "create_from_unfollowed_actor": 403,
+   "digest_mismatch": 401,
+   "forged_key_claim": 401,
+   "replayed_after_window": 401,
+   "unfetchable_key": 401,
+   "unsigned": 401
+  },
+  "webfinger": {
+   "self_link_is_actor": true,
+   "status": 200,
+   "unknown": 404
+  }
+ },
+ "result_sha256": "sha256:d2d7646e1600a5239d871609397033741e535b8c9c448a71331f152ec79ac1e3",
+ "system": 33
+}

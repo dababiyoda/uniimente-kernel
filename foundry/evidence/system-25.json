@@ -1,0 +1,41 @@
+{
+ "command": "python -m foundry.completion --run 25",
+ "name": "Cognitive router",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "after_provider_loss": [
+   "openai:gpt",
+   "local:llama"
+  ],
+  "by_cost": [
+   "local:llama",
+   "openai:gpt",
+   "anthropic:opus"
+  ],
+  "by_quality": [
+   "anthropic:opus",
+   "openai:gpt",
+   "local:llama"
+  ],
+  "decisions_recorded": 7,
+  "failover_answered_by": "openai:gpt",
+  "failover_tried": [
+   "failed",
+   "ok"
+  ],
+  "local_only": [
+   "local:llama"
+  ],
+  "local_only_excluded": [
+   "anthropic:opus",
+   "openai:gpt"
+  ],
+  "memory_kept_after_loss": true,
+  "refusals": {
+   "nothing_fits_budget_and_privacy": "no route satisfies the request: {'anthropic:opus': 'privacy contracted < require",
+   "refusal_is_terminal": "Refusal"
+  }
+ },
+ "result_sha256": "sha256:cac67bd3f83ce890ae3bd21916829a46d7f2902a2b6091b149a29997e7f68565",
+ "system": 25
+}

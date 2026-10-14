@@ -18,8 +18,8 @@ server = MCPServer("uniimente-foundry")
 @server.tool()
 def foundry_query(system: int, op: str, args_json: str = "{}") -> str:
     """Run a read-only Foundry op and return its JSON result."""
-    from foundry.systems import module
-    ops = module(int(system)).QUERY_OPS
+    from foundry.systems import module_for
+    ops = module_for(int(system), op).QUERY_OPS
     if op not in ops:
         raise ValueError(f"system {system} has no read-only op {op!r}")
     root = Path(os.environ.get("FOUNDRY_MCP_ROOT", ".")) / f"system-{int(system):02d}"

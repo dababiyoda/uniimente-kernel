@@ -1,0 +1,53 @@
+{
+ "command": "python -m foundry.completion --run 50",
+ "name": "Rabbit Hole Engine",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "alternatives": [
+   "disputes"
+  ],
+  "depth_cap_stops": true,
+  "door_stats": {
+   "audit-kit->offer": {
+    "completed": 0,
+    "good": 4,
+    "left": 0,
+    "owned": 4,
+    "taken": 6
+   },
+   "pod-basics->audit-kit": {
+    "completed": 0,
+    "good": 4,
+    "left": 0,
+    "owned": 4,
+    "taken": 6
+   },
+   "why-proof->disputes": {
+    "completed": 0,
+    "good": 0,
+    "left": 2,
+    "owned": 0,
+    "taken": 3
+   },
+   "why-proof->pod-basics": {
+    "completed": 4,
+    "good": 4,
+    "left": 0,
+    "owned": 4,
+    "taken": 6
+   }
+  },
+  "exit_ramp_always_present": true,
+  "from_disputes": "audit-kit",
+  "owned_ground": "portal:/portal/<customer>/",
+  "refusals": {
+   "dark_pattern": "node refused: [\"prohibited pattern 'act now'\", 'prohibited pattern \"se"
+  },
+  "routed_from_entry": "pod-basics",
+  "routed_why": "observed door value 0.83 from why-proof",
+  "territory_valid": true,
+  "weak_node_never_offered": true
+ },
+ "result_sha256": "sha256:9d345e8f3a0d79c5c74b95a25e1e1d9073f4a1657b9ea8b62ebd89d9e35afdc3",
+ "system": 50
+}

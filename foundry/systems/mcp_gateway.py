@@ -167,11 +167,11 @@ def _query(args, root):
     if args["tool"] not in {"foundry_query", "price_quote"}:
         raise GatewayError("unlisted first-party MCP tool")
     if args["tool"] == "foundry_query":
-        from foundry.systems import module
+        from foundry.systems import module_for
         request = args.get("args") or {}
         if not isinstance(request, dict) or "system" not in request or "op" not in request:
             raise GatewayError("read-only Foundry query needs system and op")
-        if request["op"] not in module(int(request["system"])).QUERY_OPS:
+        if request["op"] not in module_for(int(request["system"]), request["op"]).QUERY_OPS:
             raise GatewayError(f"system {request['system']} has no read-only op {request['op']!r}")
     provider = {**FOUNDRY, "env": {"FOUNDRY_MCP_ROOT": str(Path(root).parent)}}
     return asyncio.run(_call(provider, args["tool"], args.get("args", {})))

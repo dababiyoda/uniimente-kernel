@@ -394,3 +394,28 @@ def test_on_the_body_a_withheld_best_fit_is_asked_for_once_per_method_and_the_fo
         requested = [e.payload for e in b.journal.replay("decision.requested")]
     assert len(requested) == 1 and requested[0]["kind"] == "CAPABILITY_ATTACH"
     assert [c["capability_id"] for c in _attachable(requested[0])] == ["cognition.flow_maxflow"]
+
+
+def test_settled_failures_on_the_body_demote_a_method_and_a_few_do_not(registry, no_index, monkeypatch):
+    """Section 31 item 13: live negative evidence changes routing. Ten or more settled outcomes whose 95% upper
+    bound on correctness is below one half demote the method (ranked after every other fit, never deleted)."""
+    both = {**R.f3(3)["payload"], **maxflow_instance(3)[0]}
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"}},
+                                    "recipes": {}, "routing": {}}))
+    geometry = {"geometry": "optimization"}
+    monkeypatch.setattr(compiler, "_settled_counts", lambda journal: {"cognition.flow_maxflow": (12, 2)})
+    r = compile_(registry, geometry, both, execute=False)
+    assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
+    assert any("2 of 12 correct" in d["why"] for d in r["methods_demoted"])
+    monkeypatch.setattr(compiler, "_settled_counts", lambda journal: {"cognition.flow_maxflow": (6, 0)})
+    assert compile_(registry, geometry, both, execute=False)["method_or_composition_selected"] == \
+        "cognition.flow_maxflow"                                     # too few outcomes to inhibit
+    assert compiler._settled_inhibition(12, 8) is None
+
+
+def test_an_executed_composition_keeps_each_stages_counterargument_as_dissent(registry):
+    """Audit 2026-10-14 (section 12): the composition branch dropped every stage's strongest counterargument."""
+    r = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"])
+    assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
+    stages = [d for d in r["dissent"] if d.startswith("stage ")]
+    assert len(stages) == len(r["intermediate_receipts"]) >= 2

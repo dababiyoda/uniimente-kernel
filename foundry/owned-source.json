@@ -86,6 +86,7 @@
     "cortex/evaluation/composition_lift/suite-v2.json",
     "cortex/evaluation/composition_lift/suite-v3.json",
     "cortex/evaluation/composition_lift/suite.json",
+    "cortex/evaluation/composition_lift/vpl_metrics.py",
     "cortex/evaluation/crossgeo.py",
     "cortex/evaluation/crossgeo_arms.py",
     "cortex/evaluation/crossgeo_loss.py",

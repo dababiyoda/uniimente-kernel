@@ -26,7 +26,9 @@ def test_tamper_detection():
     l = EvidenceLedger("sha256:" + "0" * 64)
     l.append("event", {"balance": 100})
     l.append("event", {"balance": 90})
-    l.records[1].payload["balance"] = 1_000_000
+    l.records[1].payload["balance"] = 1_000_000  # a reader's copy: retained evidence is unchanged
+    assert l.verify_chain()[0] and l.records[1].payload["balance"] == 100
+    l._records[1].payload["balance"] = 1_000_000  # tampering with what the ledger retains
     ok, msg = l.verify_chain()
     assert not ok and "hash mismatch" in msg
 
@@ -35,7 +37,7 @@ def test_chain_break_detection():
     l = EvidenceLedger("sha256:" + "0" * 64)
     l.append("event", {"a": 1})
     l.append("event", {"b": 2})
-    l.records[2].prev_hash = "sha256:" + "e" * 64
+    l._records[2].prev_hash = "sha256:" + "e" * 64
     ok, msg = l.verify_chain()
     assert not ok
 

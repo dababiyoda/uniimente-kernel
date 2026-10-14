@@ -153,7 +153,7 @@ def decide(item, rows) -> tuple[str, dict]:
         status = "REJECTED"
     elif not beats_baseline:
         status = "EXPERIMENTAL"
-    elif not item.competitor_deployable:
+    elif not getattr(item, "competitor_deployable", True):
         status = "DEFAULT_FOR_GEOMETRY"          # the best deployable method here; the oracle gap is reported
     elif vk["p_worse"] < ALPHA:
         status = "NICHE_CAPABILITY" if vk["wins"] > 0 else "SUPERSEDED"
@@ -172,7 +172,7 @@ def decide(item, rows) -> tuple[str, dict]:
             subregions[name] = {"n": len(sub), "vs_baseline": compare(sub, "candidate", "baseline", tol),
                                 "vs_competitor": compare(sub, "candidate", "competitor", tol)}
     detail = {"arms": stats, "vs_baseline": vb, "vs_competitor": vk, "subregions": subregions}
-    if not item.competitor_deployable:
+    if not getattr(item, "competitor_deployable", True):
         detail["competitor_role"] = "reference upper bound (not deployable): gap reported, never superseding"
     return status, detail
 

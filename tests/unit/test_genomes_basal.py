@@ -13,9 +13,9 @@ import pytest
 from greg.cognition.genomes import basal, library
 from greg.cognition.genomes.contract import GenomeError, IntelligenceGenome
 
-FAMILIES = ("basal_pid", "basal_kalman", "basal_hysteresis", "basal_bandit", "basal_breaker")
+FAMILIES = ("basal_pid", "basal_kalman", "basal_hysteresis", "basal_bayes_filter", "basal_bandit", "basal_breaker")
 OPS = {"basal_pid": "pid_track", "basal_kalman": "kalman_track", "basal_hysteresis": "hysteresis_switch",
-       "basal_bandit": "bandit_allocate", "basal_breaker": "circuit_break"}
+       "basal_bayes_filter": "regime_filter", "basal_bandit": "bandit_allocate", "basal_breaker": "circuit_break"}
 _CACHE: dict = {}
 
 
@@ -97,7 +97,7 @@ def _corrupt(family, output, certificate):
         out["kc"] *= 1.5
     elif family == "basal_kalman":
         out["positions"][len(out["positions"]) // 2] += 1.0
-    elif family == "basal_hysteresis":
+    elif family in ("basal_hysteresis", "basal_bayes_filter"):
         k = len(out["states"]) // 3
         out["states"] = out["states"][:k] + ("1" if out["states"][k] == "0" else "0") + out["states"][k + 1:]
     elif family == "basal_bandit":
@@ -155,6 +155,8 @@ INVALID = {
                      lambda d: d["measurements"].__setitem__(0, "x"), lambda d: d.update(r=float("inf"))],
     "basal_hysteresis": [lambda d: d.update(levels=[1.0, 0.0]), lambda d: d.update(signal=[0.0] * 5),
                          lambda d: d.update(initial_state=2), lambda d: d.update(threshold=1e6)],
+    "basal_bayes_filter": [lambda d: d.update(levels=[1.0, 0.0]), lambda d: d.update(signal=[0.0] * 5),
+                           lambda d: d.update(initial_state=2), lambda d: d.update(threshold=1e6)],
     "basal_bandit": [lambda d: d.update(horizon=5000), lambda d: d["outcomes"][0].pop(),
                      lambda d: d.update(outcomes=[[0, 1]]), lambda d: d["outcomes"][0].__setitem__(0, 2)],
     "basal_breaker": [lambda d: d.update(outcomes="0120"), lambda d: d.update(background_failure=1.5),
@@ -222,7 +224,7 @@ def _false_answer(family, data, truth):
         return {"law": "pid", "kc": 40 * basal.simc_pi(basal._pid_inputs(data))[0]["kc"], "ti": 1.0}
     if family == "basal_kalman":
         return {"positions": [x + 10.0 * math.sqrt(data["r"]) for x in truth["positions"]]}
-    if family == "basal_hysteresis":
+    if family in ("basal_hysteresis", "basal_bayes_filter"):
         return {"states": ("01" * len(data["signal"]))[:len(data["signal"])]}
     if family == "basal_bandit":
         worst = truth["means"].index(min(truth["means"]))
@@ -269,6 +271,7 @@ def test_declared_competitors_are_the_reviewed_strongest_alternatives():
     assert item("basal_pid").competitor is basal.pid_sim_optimised
     assert item("basal_kalman").competitor is basal.kalman_alpha_beta
     assert item("basal_hysteresis").competitor is basal.hysteresis_hmm
+    assert item("basal_bayes_filter").competitor is basal.bayes_filter_schmitt
     assert item("basal_bandit").competitor is basal.bandit_klucb_plus
     assert item("basal_breaker").competitor is basal.breaker_consecutive
     for family in FAMILIES:
@@ -401,3 +404,19 @@ def test_pid_verify_refuses_an_on_off_relay_offered_as_the_simc_answer():
                 overshoot=over, settling_time=settle)
     assert basal.pid_verify(data, forged, cert)["controller_is_declared_pid"] is False
     assert all(basal.pid_verify(data, out["output"], out["certificate"]).values())
+
+
+def test_bayes_filter_verify_refutes_a_flipped_state_and_an_unselected_margin():
+    item = next(x for x in basal.INTELLIGENCES if x.genome.family == "basal_bayes_filter")
+    data, _ = item.instance(1)
+    out = item.solve(data, {})
+    assert all(item.verify(data, out["output"], out["certificate"]).values())
+    k = len(out["output"]["states"]) // 2
+    flipped = out["output"]["states"][:k] + ("1" if out["output"]["states"][k] == "0" else "0") + \
+        out["output"]["states"][k + 1:]
+    assert item.verify(data, {**out["output"], "states": flipped}, out["certificate"])[
+        "switches_follow_posterior_crossings"] is False
+    other = next(m for m in basal.HY_HMM_MARGINS if m != out["certificate"]["margin"])
+    assert item.verify(data, out["output"], {**out["certificate"], "margin": other})[
+        "margin_is_the_tuning_selection"] is False
+    assert item.solve({**data, "noise_sd": None}, {})["status"] == "ABSTAIN"

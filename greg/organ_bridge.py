@@ -13,8 +13,10 @@ What it deliberately does not do:
   `verify_headers` succeeds. A verified sender is still untrusted content.
 * It never emits `mission.achieved`, so it cannot move VEPMC.
 * It never emits a `VERIFIED` appraisal. Reproduction by a second run is
-  recorded as `REPRODUCED`, which routing treats as neutral and #44 counts as
-  not verified.
+  recorded as `REPRODUCED` under its own event type, `organ.appraised`. It is
+  never a `mission.appraised` fact: that type is the body's independent closure
+  appraisal, and an organ-level fact under it would make the body skip the
+  closure appraisal and shadow the mission's verdict in VEPMC and routing.
 * It emits no `mission.action`: an organ message is an observation, not an
   action GREG executed, so it cannot inflate any capability's track record.
 """
@@ -87,7 +89,7 @@ def record_appraisal(journal: Journal, *, mission_id: str, reproduced: dict, inv
             "appraiser": appraiser, "checks": {**{f"reproduced:{k}": v for k, v in reproduced.items()},
                                                **{f"invariant:{k}": v for k, v in invariants.items()}},
             "tier": "multi-process reproduction + invariant check; not external acceptance"}
-    journal.record("mission.appraised", data, key=[mission_id, "organ-bridge-appraisal", data["verdict"]])
+    journal.record("organ.appraised", data, key=[mission_id, "organ-bridge-appraisal", data["verdict"]])
     return data
 
 

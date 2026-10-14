@@ -155,7 +155,7 @@ def main() -> int:
     (out / "organ-bridge-live.json").write_text(json.dumps(result, indent=2, sort_keys=True, default=str) + "\n")
     print(json.dumps(result, indent=2, default=str))
     ok = (appraisal["verdict"] == "REPRODUCED" and replay_refused and result["vepmc"] == 0
-          and result["routing_track_records"] == {} and result["system_44_metrics"]["verified_rate"] == 0.0
+          and result["routing_track_records"] == {} and result["system_44_metrics"]["verified_rate"] is None
           and result["organs_observed"] == ["daleobanks", "wealthmachine"] and result["ledger_chain"][0])
     print("RESULT:", "PASS" if ok else "FAIL")
     return 0 if ok else 1

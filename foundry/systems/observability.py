@@ -49,7 +49,7 @@ def correlate(events: list[dict], mission_id: str | None = None) -> dict:
             last_capability[mid] = p.get("capability")
             span.update(capability=p.get("capability"), status=p.get("status"), receipt=p.get("receipt"),
                         cost_usd=float(p.get("cost_usd") or 0.0))
-        elif kind == "mission.appraised":
+        elif kind in ("mission.appraised", "organ.appraised"):   # organ.appraised: an organ exchange's own check
             span.update(verdict=p.get("verdict"))
         elif kind in ("mission.blocked", "mission.lifecycle"):
             span.update(reason=p.get("reason") or p.get("state"))

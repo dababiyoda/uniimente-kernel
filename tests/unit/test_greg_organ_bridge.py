@@ -56,7 +56,7 @@ def test_exchange_is_traced_per_mission_by_system_44(journal):
     organ_bridge.record_appraisal(journal, mission_id=MISSION, reproduced={"go_no_go": True},
                                   invariants={"human_approval_required": True}, appraiser="kernel-appraiser")
     spans = observability.correlate(_events(journal), MISSION)["missions"][MISSION]["spans"]
-    assert [s["kind"] for s in spans] == ["mission.observed", "mission.observed", "mission.appraised"]
+    assert [s["kind"] for s in spans] == ["mission.observed", "mission.observed", "organ.appraised"]
     assert spans[-1]["verdict"] == "REPRODUCED"
     observed = [e.payload for e in journal.replay("mission.observed")]
     assert {o["organ"] for o in observed} == {"daleobanks", "wealthmachine"}
@@ -68,7 +68,35 @@ def test_reproduction_is_not_counted_as_verified(journal):
     _record_both(journal, bt.NonceCache())
     organ_bridge.record_appraisal(journal, mission_id=MISSION, reproduced={"go_no_go": True},
                                   invariants={"human_approval_required": True}, appraiser="kernel-appraiser")
-    assert observability.metrics(_events(journal))["verified_rate"] == 0.0
+    # not a closure appraisal at all: no denominator, so no verified rate (and never a 1.0)
+    assert observability.metrics(_events(journal))["verified_rate"] is None
+    assert journal.replay("mission.appraised") == []
+
+
+def test_an_organ_appraisal_never_stands_in_for_the_bodys_closure_appraisal(tmp_path):
+    """Regression for the merge of #171 into the canonical body: the body skips a mission whose
+    id already has a mission.appraised fact, so an organ appraisal under that type would have
+    suppressed the independent closure appraisal and shadowed VEPMC and routing."""
+    from greg.body import Body
+    from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:organ-shadow"
+    note = workspace(home, mid) / "note.txt"
+    spec = mission(mid, checks=[note_check("note", note, "done")],
+                   strategies=[write_strategy("w", "note.txt", "done", ["note"])],
+                   capabilities=["fs.read", "fs.write"])
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        organ_bridge.record_appraisal(body.journal, mission_id=mid, reproduced={"go_no_go": True},
+                                      invariants={"human_approval_required": True}, appraiser="kernel-appraiser")
+        for _ in range(3):
+            body.tick()
+            clock.advance(31)
+        closure = [e.payload for e in body.journal.replay("mission.appraised") if e.payload["mission_id"] == mid]
+        assert len(closure) == 1 and closure[0]["verdict"] == "VERIFIED", closure
+        assert [e.payload["verdict"] for e in body.journal.replay("organ.appraised")] == ["REPRODUCED"]
 
 
 def test_exchange_cannot_move_vepmc_or_track_records(journal):

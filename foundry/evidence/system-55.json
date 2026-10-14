@@ -1,0 +1,37 @@
+{
+ "command": "python -m foundry.completion --run 55",
+ "name": "Regenerative Treasury",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "allocation": {
+   "family_stability_and_basic_protection": 2500.0,
+   "payroll_and_participant_obligations": 2500.0,
+   "taxes_and_binding_legal_obligations": 3000.0
+  },
+  "books_balance": true,
+  "budget_expansion_blocked_by_debt": true,
+  "evidenceless_repayment_refused": true,
+  "last_tier_starved_first": true,
+  "policy_version": 1,
+  "reconciled_to_the_cent": true,
+  "treasury_trial_balance": 0.0,
+  "unallocated_cents": 0,
+  "unblocked_after_evidenced_repair": true,
+  "unknown_tier_refused": true,
+  "waterfall": [
+   "taxes_and_binding_legal_obligations",
+   "payroll_and_participant_obligations",
+   "family_stability_and_basic_protection",
+   "emergency_liquidity_and_operating_reserves",
+   "security_insurance_compliance_restitution_reliability",
+   "high_return_reinvestment_in_validated_operations",
+   "prudent_debt_reduction",
+   "diversified_productive_assets",
+   "strategic_acquisitions",
+   "humanitarian_and_public_benefit_deployment",
+   "family_education_and_long_term_stewardship"
+  ]
+ },
+ "result_sha256": "sha256:a8c7fe7f0be85b33bc43e8eb399a8c8d58572fcbfabcdc300f849ca34329b088",
+ "system": 55
+}

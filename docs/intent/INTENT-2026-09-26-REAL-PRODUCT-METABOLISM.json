@@ -1,0 +1,93 @@
+{
+  "intent_id": "INTENT-2026-09-26-REAL-PRODUCT-METABOLISM",
+  "title": "Metabolize project history into the real GREG product; verification is subordinate to product capability",
+  "statement": "The complete UNIIMENTE corpus is developmental substrate for the real product. Stop optimizing for experiments, simulations, documents, architecture count, test count, agent count, or subsystem count. Inspect current truth, extract reusable causal mechanisms from failures and duplicates, recombine complementary mechanisms when that creates a stronger capability, acquire mature external mechanisms before rebuilding them, and implement the residual capability directly on the canonical GREG path. Tests, simulations and sandboxes remain mandatory where useful for verification and safety, but they are evidence around product code rather than the product milestone. Every substantial session must identify and report what the actual GREG can now do that it could not do before.",
+  "source": "Direct founder messages across the Artificial Egregore / UNIIMENTE project, latest explicit steering 2026-09-26",
+  "source_location": "docs/intent/sources/REAL-PRODUCT-METABOLISM-2026-09-26-source.md",
+  "source_date_or_version": "2026-09-26",
+  "state": "active",
+  "status": "active",
+  "authority_level": "active_requirement",
+  "consequence_class": "architectural",
+  "binding_scope": "Repository interpretation, prioritization, reversible implementation, testing and draft review. It creates no merge, deployment, credential, spending, publishing, customer-contact, or external-consequence authority.",
+  "owner": "Alfonso Lopez (founder authority); coding agents and maintainers implement under the Kernel authority model",
+  "extends": [
+    "INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING",
+    "INTENT-2026-09-25-EGREGORE-ECOLOGY",
+    "INTENT-2026-09-22-FIRST-BODY",
+    "INTENT-GREG-EMBODIED-2026-09-11",
+    "INTENT-0030"
+  ],
+  "supersedes": [],
+  "superseded_by": [],
+  "constitutional_constraints": [
+    "Alfonso remains root human authority; intelligence never manufactures authority",
+    "building != installation != activation != consequence authority",
+    "shutdown and legitimate refusal always win",
+    "preserve provenance, dissent, failures and negative evidence",
+    "effect-not-metaphor remains binding: make the intended effects literally real; do not build decorative biological simulations",
+    "six-month developmental work does not become production merely because tests pass"
+  ],
+  "product_selection_rule": {
+    "governing_question": "What can the actual GREG do after this session that it could not do before?",
+    "priority": "real integrated capability > verified product closure > reusable product mechanism > experiment needed to unblock product > documentation",
+    "anti_cathedral": "A session whose principal output is another architecture, experiment, simulation, benchmark or test suite without a corresponding product-path capability does not satisfy this intent.",
+    "acquire_before_invent": "existing capability -> composition -> commodity -> open source -> API/plugin/service -> authorized computer use -> small adapter -> coding agent -> mechanism recombination -> genuinely new architecture"
+  },
+  "repository_metabolism": {
+    "rule": "Treat every repository, branch, PR, experiment, failure, simulation and duplicate as possible mechanism substrate rather than an architecture that must survive.",
+    "dispositions": [
+      "PRODUCTIZE",
+      "EXTRACT",
+      "RECOMBINE",
+      "RETAIN_AS_EVIDENCE",
+      "ARCHIVE",
+      "KILL_ACTIVE_COMPLEXITY"
+    ],
+    "invariant": "Preserve history and provenance even when executable complexity is removed from the canonical path.",
+    "recombination_requirement": "When multiple implementations contain complementary strengths, extract causal invariants, mutate roles as needed, and recombine into one stronger canonical capability. Do not add an abstraction layer merely to avoid choosing."
+  },
+  "single_bottleneck_metric": {
+    "name": "Verified Embodied Persistent Mission Closures",
+    "abbreviation": "VEPMC",
+    "current": 0,
+    "target": 1,
+    "anti_gaming": "Tests, ticks, documents, generated code, fixture payments, simulated missions and merge counts do not increment VEPMC."
+  },
+  "success_evidence": [
+    "A founder-signed bounded mission is durably recorded through the GREG-facing interface.",
+    "The visible interface can close while the supervised body continues.",
+    "At least one real capability is invoked.",
+    "A deliberate interruption is reconciled without duplicating a completed effect.",
+    "Approval boundaries wait rather than bypass.",
+    "Completion is based on re-observed evidence or a precise truthful blocker.",
+    "Founder receives an inspectable evidence-backed appraisal.",
+    "Subsequent sessions add actual integrated capabilities rather than only laboratory artifacts."
+  ],
+  "failure_evidence": [
+    "VEPMC remains 0 until Alfonso completes the founder-owned Mac run.",
+    "The project has repeatedly accumulated sophisticated experiments and architecture without an installable, founder-used complete GREG product.",
+    "Passing tests and internal simulations have previously been mistaken for progress toward the whole product."
+  ],
+  "dependencies": [
+    "canonical Kernel authority/evidence owners",
+    "greg/ product path",
+    "founder-owned Mac verification for VEPMC 0 -> 1"
+  ],
+  "conflicts": [
+    "Founder wording 'stop experimenting, stop simulating' could be misread as prohibiting tests. Resolved by the surrounding repeated demand: stop making experiments/simulations the deliverable; verification remains required around real product code.",
+    "Large historical architecture may conflict with the simplest current product path. Preserve its mechanisms and evidence, but historical sunk cost does not grant canonical ownership."
+  ],
+  "next_review_trigger": "First founder-used VEPMC closure, or evidence that a different bottleneck is more constraining than VEPMC.",
+  "implementation_refs": [
+    "greg/",
+    "docs/collaboration/REPOSITORY-METABOLISM-2026-09-25.json",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md"
+  ],
+  "source_refs": [
+    "docs/intent/sources/REAL-PRODUCT-METABOLISM-2026-09-26-source.md",
+    "docs/intent/sources/SPIDER-WEB-2026-09-25-source.md",
+    "docs/intent/sources/EGREGORE-2026-09-25-source.md"
+  ]
+}

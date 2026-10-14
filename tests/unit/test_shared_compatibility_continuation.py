@@ -53,7 +53,9 @@ def test_invalid_migration_never_appends_a_v2_checkpoint(attack):
     if attack == "fabricated":
         source_hash = "DOES_NOT_EXIST"
     elif attack == "altered":
-        source.payload["state"]["a"] = 999
+        source.payload["state"]["a"] = 999  # a reader's copy; the retained checkpoint is unchanged
+        assert sp.ledger.find(source.hash).payload["state"]["a"] != 999
+        sp.ledger._records[source.seq].payload["state"]["a"] = 999  # so alter the retained one
     elif attack == "missing_plan":
         # Rebuild a valid chain with no plan: hashing alone is insufficient.
         sp = EventSpine(EvidenceLedger("sha256:isolated-compatibility-fixture"))

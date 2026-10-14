@@ -1,0 +1,60 @@
+{
+ "command": "python -m foundry.completion --run 48",
+ "name": "Agent swarm architectures",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "analyst_read": "a",
+  "formed": {
+   "analyst": {
+    "capabilities": [
+     "foundry.query"
+    ],
+    "max_consequence": "read_only"
+   },
+   "writer": {
+    "capabilities": [
+     "foundry.apply",
+     "foundry.query"
+    ],
+    "max_consequence": "internal_write"
+   }
+  },
+  "journal": [
+   "ok",
+   "refused: analyst holds ['foundry.query']",
+   "refused: budget 0.0 would be exceeded",
+   "ok",
+   "objective met; team dissolved",
+   "refused: team offer-sprint is DISSOLVED"
+  ],
+  "narrow_grant_members": {
+   "analyst": {
+    "capabilities": [
+     "foundry.query"
+    ],
+    "max_consequence": "read_only"
+   },
+   "writer": {
+    "capabilities": [
+     "foundry.apply",
+     "foundry.query"
+    ],
+    "max_consequence": "read_only"
+   }
+  },
+  "refusals": {
+   "after_dissolution": "team offer-sprint is DISSOLVED",
+   "analyst_writes": "analyst holds ['foundry.query'], not foundry.apply",
+   "competence_not_registered": "role analyst needs competence 'analyst' attached in the registry",
+   "grant_caps_writer": "writer is capped at read_only; put is internal_write",
+   "grant_without_role_capability": "role analyst has no capability inside the grant",
+   "over_budget": "budget 0.0 would be exceeded"
+  },
+  "writer_wrote_and_dissolved": [
+   true,
+   "DISSOLVED"
+  ]
+ },
+ "result_sha256": "sha256:f4f256b36ed7e7af3cf8061791dc8e383efa467c5776d0a7f1b136a15812f309",
+ "system": 48
+}

@@ -15,6 +15,7 @@ from .contracts import (
 )
 from .resources import ResourceExhausted, ResourceGovernor, ResourceMode
 from .runtime import CognitionCycle, CycleStatus, StandingCognitionRuntime
+from .leverage import propose_institutional_leverage
 
 __all__ = [
     "Assessment",
@@ -29,4 +30,5 @@ __all__ = [
     "ResourceMode",
     "SignalEnvelope",
     "StandingCognitionRuntime",
+    "propose_institutional_leverage",
 ]

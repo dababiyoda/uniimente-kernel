@@ -1,0 +1,23 @@
+{
+ "command": "python -m foundry.completion --run 53",
+ "name": "Self-hosting toolchains",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "files": true,
+  "identical_across_processes": true,
+  "one_byte_changes_hash": true,
+  "smoke": {
+   "output": "True 55",
+   "ran_from_bundle": true
+  },
+  "toolchain_pins": [
+   "PyYAML",
+   "cryptography",
+   "jsonschema",
+   "pytest"
+  ],
+  "verify": true
+ },
+ "result_sha256": "sha256:0dc5812319884ae8dc990992715be578b8e7157ff955f91c0fc6d1c2597324b4",
+ "system": 53
+}

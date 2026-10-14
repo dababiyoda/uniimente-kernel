@@ -1,0 +1,108 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "-m", "tests.greg_proof_observer", "tests/evidence/greg-proof/adopted-repositories", "/workspace/scratch/fa1437d21e0f/repos/kernel", "/workspace/scratch/fa1437d21e0f/repos/dale", "/workspace/scratch/fa1437d21e0f/repos/wmi"]
+{
+  "interface": {
+    "host_pid": 12,
+    "interface_pid": 11
+  },
+  "interface_exited_at": 1789084265.469109,
+  "interface_exited_before_due": true,
+  "host": {
+    "attempt_limit": 3,
+    "host_cpu_seconds": 0.08101699999999999,
+    "host_elapsed_seconds": 2.225455876000069,
+    "next_reconsideration": null,
+    "status": "COMPLETE",
+    "worker_exits": [
+      75,
+      0
+    ],
+    "worker_pids": [
+      13,
+      27
+    ]
+  },
+  "ledger_head": "sha256:d1e9c1f09d48fbf93ac11e6b34f5f6b843147b15caf7b67d55becd557f56698a",
+  "dispatch_count": 1,
+  "receipt_count": 1,
+  "outcome_count": 1,
+  "closure": {
+    "status": "VERIFIED_LOCAL_AUDIT",
+    "mission_id": "greg-proof:1d284372-c950-4dae-8e1a-5a27cf3a19b0",
+    "receipt": "sha256:dfc774dec7013464467e94bddcf2564059e0de700d110105eb4799ac5a1a72dc",
+    "appraisal": {
+      "evidence_tier": "actual local sources; separate-process appraisal",
+      "external_publication": false,
+      "head": "sha256:e78bef635ef62b7bd7f9fa7e593bca7e2ae04c75b462e6066eb3677c109777b5",
+      "receipt": "sha256:dfc774dec7013464467e94bddcf2564059e0de700d110105eb4799ac5a1a72dc",
+      "report": {
+        "compatible": true,
+        "rows": [
+          {
+            "blob": "79b88d15ce352ae97e25964446d406b92c839bb3",
+            "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+            "file": "pyproject.toml",
+            "matches": true,
+            "pins": [
+              [
+                "4999acff1a69502c05af455fbccfca380cad18ee"
+              ]
+            ],
+            "role": "dale"
+          },
+          {
+            "blob": "97de7a4bebd8179979478b8509fcab117f17ebbb",
+            "commit": "e2f1ebed37407b06ea70cbffb404fd39858e13b5",
+            "file": "requirements.txt",
+            "matches": true,
+            "pins": [
+              [
+                "4999acff1a69502c05af455fbccfca380cad18ee"
+              ]
+            ],
+            "role": "dale"
+          },
+          {
+            "blob": "f89429bd840c0ce496b0022c4942fb37eb22be6b",
+            "commit": "b2f101a98d01d31e594018bc71b9d8d16e64d797",
+            "file": "pyproject.toml",
+            "matches": true,
+            "role": "kernel",
+            "version": "0.1.2"
+          },
+          {
+            "blob": "9a7f9743a023b7cc1f3492e2764cf420aeea0904",
+            "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+            "file": "pyproject.toml",
+            "matches": true,
+            "pins": [
+              [
+                "4999acff1a69502c05af455fbccfca380cad18ee"
+              ]
+            ],
+            "role": "wmi"
+          },
+          {
+            "blob": "65ac54b19b76e675d94d588df927fe819a8010af",
+            "commit": "ec82b8027d987c865dc123215afb53d20916908f",
+            "file": "requirements.txt",
+            "matches": true,
+            "pins": [
+              [
+                "4999acff1a69502c05af455fbccfca380cad18ee"
+              ]
+            ],
+            "role": "wmi"
+          }
+        ],
+        "source_scope": "cached local Git snapshots"
+      }
+    },
+    "CMC": 0,
+    "VDM": 0,
+    "founder_authenticated": false
+  },
+  "authority": "synthetic test provisioning; not authenticated Alfonso",
+  "environment": "development Linux; OS network denial supplied by offline launcher",
+  "hardware_activation": false
+}

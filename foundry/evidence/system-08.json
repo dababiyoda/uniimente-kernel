@@ -1,0 +1,17 @@
+{
+ "command": "python -m foundry.completion --run 8",
+ "name": "Capability security",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "first_use": "recorded",
+  "other_target": "refused",
+  "other_target_executed": false,
+  "overspend": "refused",
+  "replay": "refused",
+  "replay_executed": false,
+  "revoked": "refused",
+  "revoked_executed": false
+ },
+ "result_sha256": "sha256:9ef27a93f2a6710a1e11236dc71f135c9c3c0e703da276a6ef67953fef23418b",
+ "system": 8
+}

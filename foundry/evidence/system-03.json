@@ -1,0 +1,23 @@
+{
+ "command": "python -m foundry.completion --run 3",
+ "name": "Git and version control",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "diff_1_2": "--- capital-policy@1\n+++ capital-policy@2\n@@ -1,4 +1,4 @@\n {\n  \"max_single_bet_usd\": 0,\n- \"reserve_pct\": 20\n+ \"reserve_pct\": 30\n }",
+  "head_content": {
+   "max_single_bet_usd": 0,
+   "reserve_pct": 20
+  },
+  "reasonless_refused": true,
+  "rollback_is_new_version": true,
+  "stale_writer_refused": true,
+  "v2_still_retrievable": true,
+  "versions": [
+   3,
+   2,
+   1
+  ]
+ },
+ "result_sha256": "sha256:361ee54a793be929fb768704e355165f52e2b30871cf3d4930bd30af112f7c33",
+ "system": 3
+}

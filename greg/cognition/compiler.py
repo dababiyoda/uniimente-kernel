@@ -354,11 +354,12 @@ def evidence_index(path: Path | None = None) -> dict:
     return json.loads(path.read_text())
 
 
-def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
+def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool = True) -> list[dict]:
     from .catalog import FAMILIES
     from .composition import RECIPES, route
     from .genomes import library
     rows, keys = [], set(data)
+    unfit = []          # catalogued methods whose inputs the request does not all carry (the relaxation rule)
     genomes = library.executables()
     # a superseded genome's competitor promoted into a registered genome of its own (same geometry and inputs)
     promoted = {old: new for old, new in library.promotions().items() if new in FAMILIES}
@@ -382,7 +383,11 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                 need = NATIVE_INPUTS.get(op)
                 status = "UNEVALUATED"
                 standalone = True
-            if need is None or not set(need) <= keys:
+            if need is None:
+                continue
+            if not set(need) <= keys:
+                unfit.append({"method": f"cognition.{family}", "inputs": sorted(need), "outputs": outputs,
+                              "epistemic_classes": list(classes)})
                 continue
             reason = None
             if g.geometry and g.geometry not in classes:
@@ -413,7 +418,7 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             if family in genomes and genomes[family].promotes in FAMILIES:
                 row["promotes"] = f"cognition.{genomes[family].promotes}"
             rows.append(row)
-    _reject_relaxations(rows)
+    _reject_relaxations(rows, unfit, keys, g.geometry)
     rows += _organ_rows(data, g, evidence)
     recipe = route(data)
     if recipe:
@@ -429,7 +434,32 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
                               f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
         rows.append(row)
+        if parts:
+            rows += _part_rows(data, recipe, g, evidence)
     return rows
+
+
+def _part_rows(data: dict, recipe: str, g: CompetencyGeometry, evidence: dict) -> list[dict]:
+    """A composition request whose one typed part is the whole question (``{"capacity_network": {...}}``, the shape
+    graph_then_allocate reads) asks that question of every method whose native inputs the part carries: the flat
+    network is exactly what flow_expansion_mcf answers alone. Those operation rows are offered beside the recipe,
+    each marked with the part it reads; ranking, the relaxation rule and attachment decide as for any row. A
+    recipe of several parts is a joint question no single part answers, so it offers none."""
+    from .composition import RECIPES
+    required = RECIPES[recipe]["requires"]
+    if len(required) != 1 or set(data) - {required[0], *PART_FLAGS} or not isinstance(data[required[0]], dict):
+        return []
+    part = required[0]
+    return [{**row, "part": part} for row in candidates(_part_data(data, part), g, evidence, parts=False)
+            if row["kind"] == "operation"]
+
+
+PART_FLAGS = ("formalization_complete",)        # request-level flags a part-addressed method reads with its part
+
+
+def _part_data(data: dict, part: str) -> dict:
+    """What a part-addressed method reads: the part, with the request-level flags (``formalization_complete``)."""
+    return {**data[part], **{k: data[k] for k in PART_FLAGS if k in data}}
 
 
 def _same_decision(row: dict, fuller: dict) -> bool:
@@ -438,24 +468,48 @@ def _same_decision(row: dict, fuller: dict) -> bool:
     return row["outputs"] is not None and fuller["outputs"] is not None and set(fuller["outputs"]) <= set(row["outputs"])
 
 
-def _reject_relaxations(rows: list[dict]) -> None:
-    """A method that fits only because it reads a strict subset of the inputs another fitting method consumes,
-    and does not produce that method's decision, answers a relaxed question: max_flow ignores the budget, prices
-    and increment limit of a capacity-expansion request and returns no increments; a feasibility check ignores
-    an objective. It is rejected with that reason rather than allowed to answer a question that was not asked.
-    The fuller method decides even when it is itself unusable: the request then ends in an honest deficit or
-    attach ask, never in an answer to the relaxation. A method producing the same decision from less side
-    information is not a relaxation; it competes on evidence. Families without a declared output contract
-    (native cortex families) are compared on inputs alone."""
+def _lacks(missing: list[dict]) -> str:
+    """'[inputs] for [methods]', once per distinct set of missing inputs."""
+    grouped = {}
+    for m in missing:
+        grouped.setdefault(tuple(m["missing_inputs"]), set()).add(m["method"])
+    return "; ".join(f"{list(inputs)} for {sorted(methods)}" for inputs, methods in sorted(grouped.items()))
+
+
+def _reject_relaxations(rows: list[dict], unfit: list[dict], keys: set, geometry: str | None) -> None:
+    """A method that reads a strict subset of the inputs another catalogued method consumes, while the request
+    carries some of those further inputs, and that does not produce that method's decision, answers a relaxed
+    question: max_flow ignores the budget, prices and increment limit of a capacity-expansion request and
+    returns no increments; a feasibility check ignores an objective. It is rejected with that reason rather
+    than allowed to answer a question that was not asked.
+
+    The fuller method decides even when it is itself unusable (withheld, or excluded by its admission status):
+    the request then ends in an honest deficit or attach ask, never in an answer to the relaxation. It decides
+    too when the request carries only part of its inputs (budget and prices without max_increment): the
+    rejection names what the request lacks for it, and the request ends asking for that information. A fuller
+    method whose native geometry the declared geometry excludes does not decide: a request declared
+    constraint_feasibility asks the feasibility question even when its model also carries an objective. A
+    method producing the same decision from less side information is not a relaxation; it competes on
+    evidence. Families without a declared output contract (native cortex families) are compared on inputs
+    alone."""
+    def fuller_than(row, other):
+        return (other is not row and set(row["inputs"]) < set(other["inputs"]) and not _same_decision(row, other)
+                and not (geometry and geometry not in other["epistemic_classes"]))
     for row in rows:
         if row["rejected"]:
             continue
         mine = set(row["inputs"])
-        fuller = [r for r in rows if r is not row and mine < set(r["inputs"]) and not _same_decision(row, r)]
-        if fuller:
-            ignored = sorted(set().union(*(set(r["inputs"]) for r in fuller)) - mine)
+        fuller = [r for r in rows if fuller_than(row, r)]
+        # catalogued methods the request supplies in part: it carries some of their further inputs, not all
+        partial = [r for r in unfit if fuller_than(row, r) and (set(r["inputs"]) - mine) & keys]
+        if fuller or partial:
+            ignored = sorted((set().union(*(set(r["inputs"]) for r in fuller + partial)) & keys) - mine)
             row["rejected"] = (f"answers a relaxation: ignores declared inputs {ignored} that "
-                               f"{sorted(r['method'] for r in fuller)} consume")
+                               f"{sorted(r['method'] for r in fuller + partial)} consume")
+            if partial:
+                row["missing_for_fuller"] = [{"method": r["method"], "missing_inputs": sorted(set(r["inputs"]) - keys)}
+                                             for r in sorted(partial, key=lambda r: r["method"])]
+                row["rejected"] += "; the request lacks " + _lacks(row["missing_for_fuller"])
 
 
 def _organ_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
@@ -895,6 +949,13 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         formed = _formed(registry, data, g, body, high, receipt)
         if formed is not None:
             return finish(*formed)
+        missing = [m for r in rows for m in r.get("missing_for_fuller", [])]
+        if missing:
+            # the method that answers the question asked exists; the request lacks some of its inputs. That is
+            # missing information, not a capability deficit: Capability Genesis is not asked to build it again
+            receipt["missing_information"] = missing
+            receipt["abstentions"].append("missing information: the request lacks " + _lacks(missing))
+            return finish("ABSTAIN")
         if superseding:
             # the method that fits was superseded on frozen held-out evidence by a deployable mechanism: name it
             receipt["acquisition_candidates"] = superseding
@@ -902,7 +963,10 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             "function": f"cognition.{g.geometry or 'unknown'}:{g.subgeometry or 'unspecified'}",
             "purpose": g.objective or g.epistemic_question or "cognitive request",
             "required_inputs": sorted(data), "geometry": g.known(),
-            "verification": {"failed": "no catalogued, admitted, attached-or-attachable method fits this geometry",
+            "verification": {"failed": ("every catalogued method that reads these inputs is ineligible here "
+                                        "(unserviceable lists why)" if rows else
+                                        f"the request's shape (keys {sorted(data)}) matches no catalogued method's "
+                                        f"native inputs"),
                              "unserviceable": receipt["methods_rejected"] or "no method declares these inputs",
                              "verified": True},
             "search_order": list(GENESIS_SEARCH),
@@ -1031,6 +1095,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         return finish("ANSWERED", inner["answer"])
     geometry_hint = {"latency_limit": min(30.0, float(g.latency_budget or 20.0)),
                      **({"consequence_class": g.consequence_class} if g.consequence_class else {})}
+    if chosen.get("part"):
+        receipt["payload_part"] = chosen["part"]          # the method reads this part of the request: the question
+        data = _part_data(data, chosen["part"])
     inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint,
                     **extra}, registry=registry, journal=journal, model_config=model_config)
     receipt["intermediate_receipts"] = [inner["receipt_id"]]

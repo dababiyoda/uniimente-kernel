@@ -95,8 +95,13 @@ def test_a_composition_without_verified_lift_yields_to_any_other_fit(registry, n
     assert any(x["method"] == "composition:graph_then_allocate" and "no lift" in x["why"]
                for x in r["methods_demoted"])
     assert r["method_or_composition_selected"] == "cognition.flow_maxflow"
+    # the recipe's one-part request is also asked of the operations its part fits: the constituent the frozen
+    # verdict prefers serves it, reading that part
     alone = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"], execute=False)
-    assert alone["method_or_composition_selected"] == "composition:graph_then_allocate"   # the only fit stays
+    assert alone["method_or_composition_selected"] == "cognition.flow_reinforce_greedy"
+    registry.set_state("cognition.flow_reinforce_greedy", "VERIFIED")             # withheld: no operation can run
+    only = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"], execute=False)
+    assert only["method_or_composition_selected"] == "composition:graph_then_allocate"   # the only runnable fit stays
 
 
 def test_a_demoted_composition_stays_the_route_when_nothing_else_fits(registry, no_index):
@@ -445,8 +450,10 @@ def test_settled_failures_on_the_body_demote_a_method_and_a_few_do_not(registry,
     assert compiler._settled_inhibition(12, 8) is None
 
 
-def test_an_executed_composition_keeps_each_stages_counterargument_as_dissent(registry):
+def test_an_executed_composition_keeps_each_stages_counterargument_as_dissent(registry, no_index):
     """Audit 2026-10-14 (section 12): the composition branch dropped every stage's strongest counterargument."""
+    no_index.write_text(json.dumps({"genomes": {"flow_reinforce_greedy": {"status": "SUPERSEDED"}}, "routing": {},
+                                    "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}}))
     r = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"])
     assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
     stages = [d for d in r["dissent"] if d.startswith("stage ")]
@@ -490,3 +497,78 @@ def test_a_method_that_answers_a_relaxation_is_rejected_not_allowed_to_answer():
     formal = {"variables": {"x": [0, 5]}, "constraints": [], "objective": {"coefficients": {"x": 1}, "sense": "max"}}
     rows = compiler.candidates(formal, compiler.CompetencyGeometry.parse({}), compiler.evidence_index())
     assert "answers a relaxation" in next(row["rejected"] for row in rows if row["method"] == "cognition.formal")
+
+
+def test_a_declared_feasibility_question_is_not_a_relaxation_of_an_optimisation_it_excludes():
+    """Review 2026-10-14: a request declared constraint_feasibility (or deductive) whose model also carries an
+    objective ended in CAPABILITY_DEFICIT: formal was rejected as a relaxation of optimisation methods that the
+    declared geometry itself excludes, and Genesis was asked for a capability that exists and is attached."""
+    data = {"variables": {"x": [0, 5], "y": [0, 5]},
+            "constraints": [{"coefficients": {"x": 1, "y": 1}, "op": "<=", "rhs": 4}],
+            "objective": {"coefficients": {"x": 1}, "sense": "max"}}
+    for declared in ("constraint_feasibility", "deductive"):
+        r = reason({"problem_id": "feas", "compile": {"geometry": {"geometry": declared,
+                                                                  "consequence_class": "read_only"}, "data": data}},
+                   registry=registry_view())
+        assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.formal", declared
+        assert r["capability_deficit"] is None
+        assert not any(m["method"] == "cognition.formal" for m in r["methods_rejected"])
+    undeclared = compiler.candidates(data, compiler.CompetencyGeometry.parse({}), compiler.evidence_index())
+    assert "answers a relaxation" in next(row["rejected"] for row in undeclared if row["method"] == "cognition.formal")
+
+
+def test_a_request_that_omits_one_input_of_the_fuller_method_is_not_answered_by_the_relaxation():
+    """Review 2026-10-14: a capacity-expansion request with budget and prices but no max_increment was ANSWERED by
+    max_flow, which ignores both and returns no plan. The fuller method decides although the request supplies only
+    part of its inputs; the request ends asking for the missing input, not in a capability deficit."""
+    from greg.cognition.genomes import library
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)
+    partial = {k: v for k, v in data.items() if k != "max_increment"}
+    attached = registry_view()
+    for cid in ("cognition.flow_expansion_mcf", "cognition.flow_maxflow"):
+        attached.set_state(cid, "ATTACHED")
+    r = reason({"problem_id": "partial", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                     "data": partial}}, registry=attached)
+    assert r["state"] == "ABSTAIN" and r["result"] is None and r["capability_deficit"] is None
+    assert r["method_or_composition_selected"] is None and not r["intermediate_receipts"]
+    why = {m["method"]: m["why"] for m in r["methods_rejected"]}
+    assert "answers a relaxation" in why["cognition.flow_maxflow"]
+    assert "budget" in why["cognition.flow_maxflow"] and "unit_cost" in why["cognition.flow_maxflow"]
+    assert {"method": "cognition.flow_expansion_mcf", "missing_inputs": ["max_increment"]} in r["missing_information"]
+    assert any("max_increment" in a for a in r["abstentions"])
+    plain = {k: data[k] for k in ("edges", "source", "sink")}          # a max-flow question asks nothing more
+    r = reason({"problem_id": "plain", "compile": {"geometry": {"consequence_class": "read_only"}, "data": plain}},
+               registry=attached)
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.flow_maxflow"
+
+
+def test_a_one_part_composition_request_reaches_the_single_method_that_answers_its_part(no_index):
+    """Review 2026-10-14: a request in the graph_then_allocate shape ({capacity_network: {...}}) never reached
+    flow_expansion_mcf; with mcf attached and the recipe's stages withheld it ended in a deficit saying no method
+    fit. The part is offered to the methods whose native inputs it carries; a lifted recipe still ranks first."""
+    from greg.cognition.genomes import library
+    data, truth = library.executables()["flow_expansion_mcf"].instance(3)
+    shaped = {"capacity_network": data}
+    only_mcf = registry_view()
+    only_mcf.set_state("cognition.flow_expansion_mcf", "ATTACHED")
+    r = reason({"problem_id": "shape", "compile": {"geometry": {"consequence_class": "read_only"}, "data": shaped}},
+               registry=only_mcf)
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+    assert r["payload_part"] == "capacity_network" and r["result"]["flow_value"] == truth["optimum"]
+    assert r["selected_receipt"]["method"] == "cognition.flow_expansion_mcf"
+    rejected = {m["method"]: m["why"] for m in r["methods_rejected"]}
+    assert "answers a relaxation" in rejected["cognition.flow_maxflow"]        # the rule holds inside the part
+    nothing = reason({"problem_id": "shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                         "data": shaped}}, registry=registry_view())
+    assert nothing["state"] == "CAPABILITY_DEFICIT"
+    assert "registered but not attached" in nothing["capability_deficit"]["verification"]["failed"]
+    unknown = reason({"problem_id": "odd", "compile": {"geometry": {}, "data": {"mystery_field": 1}}},
+                     registry=registry_view())
+    assert "matches no catalogued method's native inputs" in unknown["capability_deficit"]["verification"]["failed"]
+    no_index.write_text(json.dumps({"genomes": {}, "routing": {},
+                                    "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}}))
+    for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow"):
+        only_mcf.set_state(cid, "ATTACHED")
+    lifted = reason({"problem_id": "shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                        "data": shaped, "execute": False}}, registry=only_mcf)
+    assert lifted["method_or_composition_selected"] == "composition:graph_then_allocate"   # measured lift ranks first

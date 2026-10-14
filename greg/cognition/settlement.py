@@ -47,15 +47,17 @@ def _valid_receipt(value):
 COMPILE_SCHEMAS = ("greg-competency-compilation/0.2",)
 
 
-def _compiled(value):
+def _compiled(value, states=("ANSWERED",)):
     """A retained compile receipt whose selected method answered, or None. Its identity digest must hold, it creates
-    no authority, and the method it executed is credited through its own receipt (``selected_receipt``), never
-    through the compiler's label. Compositions and abstentions settle nothing here."""
+    no authority, its state is one of ``states``, and the method it executed is credited through its own receipt
+    (``selected_receipt``, listed among its intermediate receipts), never through the compiler's label.
+    Compositions and abstentions settle nothing here. Competence settles ANSWERED compilations only: a
+    WORLD_UNVERIFIED one is a conditional result even when the organ it ran answered NONE."""
     if not isinstance(value, dict) or value.get("schema") not in COMPILE_SCHEMAS:
         return None
     copy = dict(value)
     identity = copy.pop("receipt_id", None)
-    if (identity != digest(copy) or value.get("authority_created") is not False or value.get("state") != "ANSWERED"
+    if (identity != digest(copy) or value.get("authority_created") is not False or value.get("state") not in states
             or not isinstance(value.get("selected_receipt"), dict)
             or value["selected_receipt"].get("receipt_id") not in value.get("intermediate_receipts", [])):
         return None
@@ -213,9 +215,10 @@ def record_realization(journal, *, receipt: str, realized, source: str, note: st
     one finite number per forecast horizon step, observed after the forecast was made. The source is labelled,
     never upgraded: a founder-reported value is evidence of that report, not a sensor reading. No authority."""
     record = journal.ledger.find(receipt)
-    cognitive = (record.payload.get("result", {}).get("output") if record is not None and
-                 record.record_type == "receipt" else None)
-    if not _forecast_receipt(cognitive):
+    retained = (record.payload.get("result", {}).get("output") if record is not None and
+                record.record_type == "receipt" else None)
+    cognitive, compiled = _forecast_of(retained)
+    if cognitive is None:
         raise ValueError("realizations bind only to a retained, valid, unrefuted forecast receipt")
     horizon = len(cognitive["output"]["point"])
     if (not isinstance(realized, list) or len(realized) != horizon
@@ -225,6 +228,7 @@ def record_realization(journal, *, receipt: str, realized, source: str, note: st
         raise ValueError(f"source is one of {list(REALIZATION_SOURCES)}")
     payload = {"receipt": receipt, "cognitive_receipt": cognitive["receipt_id"], "realized": list(realized),
                "source": source, "note": str(note)[:300], "authority_created": False,
+               **({"compile_receipt": compiled["receipt_id"]} if compiled else {}),
                **({"command_digest": command_digest} if command_digest else {})}
     journal.record("cognition.realization", payload, key=receipt, sensitivity="confidential")
     return payload
@@ -240,6 +244,20 @@ def _forecast_receipt(cognitive) -> bool:
             and isinstance((cognitive.get("output") or {}).get("quantiles"), dict))
 
 
+COMPILED_FORECAST_STATES = ("ANSWERED", "WORLD_UNVERIFIED")     # the compile states of USABLE_STATES answers
+
+
+def _forecast_of(retained) -> tuple:
+    """(forecast receipt, compile receipt or None) for a retained receipt, else (None, None). A forecast made
+    through the Competency Compiler is the selected method's own receipt inside the compile receipt: it is
+    scored as that method's forecast, and the compile receipt is kept as the link."""
+    compiled = _compiled(retained, COMPILED_FORECAST_STATES)
+    cognitive = compiled["selected_receipt"] if compiled is not None else retained
+    if not _forecast_receipt(cognitive):
+        return None, None
+    return cognitive, compiled
+
+
 def _forecast_identity(cognitive) -> tuple:
     """One forecast is one (method, version, inputs): re-running it mints a new receipt id (latency is part of
     the receipt), never a new observation."""
@@ -253,12 +271,13 @@ def awaiting_realization(journal) -> list[dict]:
     bound = {e.payload["receipt"] for e in journal.replay("cognition.realization")}
     out = []
     for record in journal.ledger.by_type("receipt"):
-        cognitive = (record.payload.get("result") or {}).get("output")
-        if record.hash in bound or not _forecast_receipt(cognitive):
+        cognitive, compiled = _forecast_of((record.payload.get("result") or {}).get("output"))
+        if record.hash in bound or cognitive is None:
             continue
         out.append({"receipt": record.hash, "recorded_at": record.ts_utc, "method": cognitive["method"],
                     "method_version": cognitive["method_version"], "problem_id": cognitive.get("problem_id"),
                     "horizon": len(cognitive["output"]["point"]),
+                    **({"compile_receipt": compiled["receipt_id"]} if compiled else {}),
                     "report_with": f"greg realize {record.hash} --value <v1> ... --value <vH> --key <founder key>"})
     return out
 
@@ -290,9 +309,10 @@ def outcome_calibration(journal, *, alpha: float = 0.05):
     for event in journal.replay("cognition.realization"):
         data = event.payload
         record = journal.ledger.find(data["receipt"])
-        cognitive = (record.payload.get("result", {}).get("output")
-                     if record is not None and record.record_type == "receipt" else None)
-        if not _forecast_receipt(cognitive) or cognitive["receipt_id"] != data.get("cognitive_receipt"):
+        cognitive, compiled = _forecast_of(record.payload.get("result", {}).get("output")
+                                           if record is not None and record.record_type == "receipt" else None)
+        if (cognitive is None or cognitive["receipt_id"] != data.get("cognitive_receipt")
+                or data.get("compile_receipt") != (compiled["receipt_id"] if compiled else None)):
             continue
         identity = _forecast_identity(cognitive)
         prior = forecasts.get(identity)

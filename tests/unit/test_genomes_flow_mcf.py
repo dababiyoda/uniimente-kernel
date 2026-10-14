@@ -91,3 +91,54 @@ def test_on_the_canonical_path_it_answers_with_an_optimality_certificate_and_no_
     assert r["authority_created"] is False
     withheld = reason({"problem_id": "mcf", "operation": "expand_capacity_mcf", "data": data}, registry=registry_view())
     assert withheld["abstention_state"] == "CAPABILITY_DEFICIT"                     # registered, not attached
+
+
+# one priced edge s->t: buying one unit for exactly the budget is affordable, so the optimum is 1 and a zero plan is
+# wrong. Each certificate below is the boundary or the side condition a verifier must refuse (review 2026-10-14).
+ONE_EDGE = {"edges": [["s", "t", 0]], "source": "s", "sink": "t", "unit_cost": {"s->t": 1}, "max_increment": 5,
+            "budget": 1}
+ZERO_PLAN = {"increments": {"s->t": 0}, "flow_value": 0, "spent": 0}
+
+
+def test_a_dual_bound_equal_to_the_budget_does_not_certify_optimality():
+    """C(V+1) == budget means one more unit is affordable: only a bound strictly above the budget certifies."""
+    assert flow.expansion_truth(ONE_EDGE) == 1
+    at_budget = {"kind": "budget", "next_volume": 1, "potentials": {"s": 0, "t": 1}}       # LB = 1 * 1 = budget
+    checks = MCF.verify(ONE_EDGE, ZERO_PLAN, at_budget)
+    assert checks["within_budget_and_bounds"] and not checks["optimal_by_dual_bound"]
+    above = dict(ONE_EDGE, budget=0)                       # the same bound now exceeds the budget: certified
+    assert all(MCF.verify(above, ZERO_PLAN, at_budget).values())
+
+
+def test_a_cut_must_hold_the_source_and_not_the_sink():
+    assert not MCF.verify(ONE_EDGE, ZERO_PLAN, {"kind": "capacity", "source_side": ["s", "t"]})["optimal_by_cut"]
+    assert not MCF.verify(ONE_EDGE, ZERO_PLAN, {"kind": "capacity", "source_side": []})["optimal_by_cut"]
+    # a two-edge path whose middle edge has no capacity and no increment: {s, m} is a valid zero cut
+    closed = {"edges": [["s", "m", 3], ["m", "t", 0]], "source": "s", "sink": "t",
+              "unit_cost": {"s->m": 1, "m->t": 1}, "max_increment": 0, "budget": 10}
+    assert all(MCF.verify(closed, {"increments": {"s->m": 0, "m->t": 0}, "flow_value": 0, "spent": 0},
+                          {"kind": "capacity", "source_side": ["s", "m"]}).values())
+    assert not MCF.verify(closed, {"increments": {"s->m": 0, "m->t": 0}, "flow_value": 0, "spent": 0},
+                          {"kind": "capacity", "source_side": ["m"]})["optimal_by_cut"]       # s left out
+
+
+@pytest.mark.parametrize("family", ["flow_expansion_mcf", "flow_reinforce_greedy", "flow_capacity_plan"])
+def test_distinct_edges_sharing_one_u_to_v_name_are_refused_at_input(family):
+    """('a->b', 'c') and ('a', 'b->c') are both named 'a->b->c': one increment and one price would stand for two
+    edges, and the mcf solver's own plan overspent (10 against a budget of 5) before its verifier refuted it."""
+    data = {"edges": [["s", "a->b", 10], ["a->b", "c", 0], ["c", "t", 10],
+                      ["s", "a", 10], ["a", "b->c", 0], ["b->c", "t", 10]],
+            "source": "s", "sink": "t",
+            "unit_cost": {"s->a->b": 0, "a->b->c": 1, "c->t": 0, "s->a": 0, "b->c->t": 0},
+            "max_increment": 5, "budget": 5}
+    genome = library.executables()[family]
+    with pytest.raises(GenomeError, match="share one 'u->v' name"):
+        genome.solve(data, None)
+    with pytest.raises(GenomeError, match="share one 'u->v' name"):
+        genome.verify(data, {"increments": {}, "flow_value": 0, "spent": 0}, {})
+    renamed = copy.deepcopy(data)                          # the same network, unambiguous names: answered
+    rename = {"a->b": "ab", "b->c": "bc"}
+    renamed["edges"] = [[rename.get(u, u), rename.get(v, v), c] for u, v, c in data["edges"]]
+    renamed["unit_cost"] = {f"{u}->{v}": (1 if (u, v) in (("ab", "c"), ("a", "bc")) else 0)
+                            for u, v, _ in renamed["edges"]}
+    assert genome.solve(renamed, None)["status"] == "ANSWER"

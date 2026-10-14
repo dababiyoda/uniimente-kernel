@@ -94,9 +94,17 @@ def test_every_cited_verdict_matches_the_source_it_cites():
         if cited is None:
             continue
         lift = bool(cited["lift"])
+        exact = _sign_p(cited["routed_wins"], cited["routed_losses"])
+        if round(exact, 6) != cited["sign_test_p_one_sided"]:
+            problems.append(f"recipe {recipe}: the source's p {cited['sign_test_p_one_sided']} is not its counts' "
+                            f"exact p {exact} rounded to six decimals")
         expected = {"lift": lift, "status": "VPL_LIFT" if lift else "NO_LIFT", "wins": cited["routed_wins"],
                     "losses": cited["routed_losses"], "p_one_sided": cited["sign_test_p_one_sided"],
                     "prefer": None if lift else cited["best_constituent"]}
+        if "p_one_sided_as_recorded" in row:
+            # the builder recomputes the exact p from the counts; the source's rounded value is kept beside it.
+            # An index built before that copies the rounded value (0.0 for F7's 92-0) and is checked as a copy.
+            expected.update(p_one_sided=exact, p_one_sided_as_recorded=cited["sign_test_p_one_sided"])
         observed = {k: row.get(k) for k in expected}
         if observed != expected:
             problems.append(f"recipe {recipe}: index {observed} but source {expected}")
@@ -122,6 +130,13 @@ def test_every_source_names_a_commit_present_in_this_repository():
         pytest.skip(f"shallow clone: {len(absent)} source commit(s) outside the fetched depth were not verified: "
                     f"{absent}")
     assert not absent, f"source commits absent from a full clone: {absent}"
+
+
+def _sign_p(wins: int, losses: int) -> float:
+    """Exact one-sided sign test, this test's own code: P(X >= wins), X ~ Binomial(wins + losses, 1/2)."""
+    from math import comb
+    n = wins + losses
+    return 1.0 if n == 0 else sum(comb(n, k) for k in range(wins, n + 1)) / 2 ** n
 
 
 def _flip_genome_status(index):

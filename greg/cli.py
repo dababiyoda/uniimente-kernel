@@ -202,6 +202,10 @@ def main(argv=None) -> int:
             q.add_argument("--price", help="business-case: price, e.g. 250 or 249.99")
             q.add_argument("--currency", default="USD", help="business-case: three-letter currency code")
             q.add_argument("--acceptance", help="business-case: the acceptance terms, fixed before anything runs")
+            q.add_argument("--task", help="shared-work: the work, in your words")
+            q.add_argument("--person", help="shared-work: the named person who will do it")
+            q.add_argument("--relationship", choices=["contract", "employment"],
+                           help="shared-work: the engagement you arrange and pay yourself")
             q.add_argument("--statement", default="statement.csv",
                            help="business-case: file name of the payment statement you export into the case folder")
             q.add_argument("--print-only", action="store_true", help="show the mission without signing")
@@ -356,6 +360,14 @@ def main(argv=None) -> int:
                                                    price=args.price, currency=args.currency,
                                                    acceptance=args.acceptance, statement=args.statement,
                                                    workspace_root=Layout(home).workspace)
+                elif args.target == "shared-work":
+                    missing = [f for f in ("task", "person", "relationship", "function", "acceptance")
+                               if not getattr(args, f)]
+                    if missing:
+                        raise BodyError("shared-work needs " + ", ".join("--" + f for f in missing))
+                    spec = templates.shared_work(task=args.task, person=args.person, relationship=args.relationship,
+                                                 function=args.function, deliverable=args.deliverable,
+                                                 acceptance=args.acceptance, workspace_root=Layout(home).workspace)
                 elif args.target == "human-work":
                     if not (args.function and args.purpose):
                         raise BodyError("human-work needs --function and --purpose")

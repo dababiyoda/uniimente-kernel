@@ -193,15 +193,27 @@
         "name": "verified human+AI closures",
         "baseline": 0,
         "target": 1,
-        "measured_by": null
+        "measured_by": "greg.path.human_work_shared"
       },
       "exit_evidence": [
         "handoff, review and outcome recorded; human refusal honored as legitimate"
       ],
-      "evidence_source": "external",
-      "predicate": null,
-      "evidence_status": "unresolved",
-      "evidence_refs": []
+      "evidence_source": "ledger",
+      "predicate": "human_work_shared",
+      "evidence_status": "verified_by_execution",
+      "evidence_refs": [
+        "tests/unit/test_greg_shared_work.py",
+        "greg/templates.py",
+        "greg/missions.py"
+      ],
+      "components": [
+        "founder-signed shared-work mission naming the person, a contract or employment Alfonso arranges and pays, the deliverable and the acceptance terms (greg/templates.py shared_work)",
+        "GREG writes the handoff, including the person's right to decline, before anyone is asked anything",
+        "the person's agreement and deliverable and Alfonso's review each close one HUMAN_WORK ask only when observed in the case folder",
+        "a refusal observed through declined_if is honored: the ask is withdrawn, the step is never asked again, Alfonso chooses the next move (greg/missions.py)",
+        "GREG records the outcome; its own actions stay internal; Alfonso's acceptance attests the person and the relationship"
+      ],
+      "smallest_next_build": "done agent-side: `greg mission new shared-work`; tests/unit/test_greg_shared_work.py closes N6 on a booted, designated body and honors refusals. Remains founder-only: a real person, their consent, and the contract or employment you arrange and pay"
     },
     {
       "id": "N7",

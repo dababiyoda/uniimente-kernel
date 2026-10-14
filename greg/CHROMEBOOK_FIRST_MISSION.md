@@ -210,6 +210,40 @@ greg sop trend                                  # before and after, per verified
   - asked you less per verified outcome than the runs that taught it;
   - used no more model spend.
 
+## The sixth node (N6): one piece of work with a named person
+
+When work needs a person (a designer, a bookkeeper, a lawyer), sign a mission that names them, the
+relationship you arrange and pay yourself (`contract` or `employment`), the deliverable and the
+acceptance terms:
+
+```bash
+greg mission new shared-work --task "Design the GREG logo" --person "Dana Reyes" \
+  --relationship contract --function human.design_logo --deliverable logo.png \
+  --acceptance "a square PNG, 1024 px, two colors"
+```
+
+- GREG writes `handoff.md` first, with the task, the terms, a reference such as
+  `WORK-DESIGN-THE-GREG-LOGO` and the person's right to decline. **You** send it; GREG contacts,
+  hires and pays no one.
+- You save into the case folder, in order:
+  - `consent.txt`: their written agreement, carrying the reference;
+  - their deliverable;
+  - `review.txt`: `ACCEPT <reference>`, or what to revise (the mission waits).
+
+  GREG then writes `outcome.md`.
+- **A refusal is honored.** If they decline, save `declined.txt` with the reference:
+  - GREG withdraws its ask and never asks that step again;
+  - it asks you to choose: name someone else in a new mission, do it yourself, or abandon.
+
+`greg path` measures N6 from the ledger. It needs:
+
+- the handoff written before anything was asked;
+- every step of the person's, and your review, observed;
+- GREG's own actions internal only;
+- the closure appraised VERIFIED and accepted by you.
+
+Your acceptance is what attests that the person is real and the relationship lawful.
+
 ## 3. What "persistent" means on this Chromebook
 
 ChromeOS stops the Linux environment when you sign out and, by Google's design,

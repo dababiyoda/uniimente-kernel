@@ -408,3 +408,56 @@ socket of its own, through the relay and the mandated proxy, exactly as `http.ge
   `test_a_confined_fetch_refuses_header_injection_before_launch` covers the refusals.
 - **Still PARTIAL.** The browser capabilities still run unconfined. Coding workers run in bubblewrap but keep host
   networking for their provider instead of the relay. Confined egress is still opt-in.
+
+### Five roles and two passes for increments 4–6 (authority boundaries changed)
+
+**Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local
+process, worker-planted hooks running in GREG, unconfined acceptance code, a NaN budget admitting any spend, and
+GitHub reads from the body process. Each fix reuses an existing mechanism (#157's modules, the #26 relay, the
+Gate) instead of adding a parallel one.
+
+**Adversary.**
+- **The owner link can leak through its output channel.** It is printed once. If `greg console` runs under a
+  supervisor that captures stdout to a log, any unconfined process of the same user could read the log and spend
+  the link before the founder does. The founder would then see the link refused, so this is detected but not
+  prevented. A confined worker cannot read it, because its filesystem view is private.
+- **A confined worker can still talk to its provider and nothing proves the provider honest;** the appraisal
+  re-derives every acceptance claim independently.
+
+**Operator.**
+- bubblewrap becomes a dependency for coding workers only, and the doctor reports it.
+- GitHub's Ubuntu runners have not yet been shown to allow bubblewrap's user namespaces.
+- Restarting the console invalidates the old session, so the founder opens a new link.
+
+**Beneficiary representative.**
+- **Added friction:** one link per console start.
+- **Gained:** no program on the machine can obtain the founder's signature through the console.
+- The phone channel is unchanged.
+
+**Constitutional reviewer.**
+- No authority is added. The session only decides who may ask the console to sign; every command still carries
+  the founder's Ed25519 signature and passes the body and Gate.
+- Paid approvals became narrower, bound to the spend state.
+- Nothing was merged, published or spent.
+
+**Pass 1 (structural inversion).**
+- Owner authentication turns the console from "reachable means trusted" into "possessing the founder's private
+  link means trusted". That is the property the founder intends when he signs from his own browser.
+- Fail-closed worker dispatch turns a missing sandbox from a silent risk into a visible ask (the doctor fix), and a
+  refusal before any spend.
+- The disadvantage is friction. It is bounded to a single link per console start, with no passwords.
+
+**Pass 2 (adversarial compounding), against the deployed result.**
+- **The link-leak path.**
+  - **Mitigation now:** single use; the session scoped to a random path; HttpOnly and SameSite=Strict; workers
+    have a private filesystem view.
+  - **Residual, accepted with the founder as owner:** an unconfined same-user process that reads the console's
+    captured output first.
+  - **Kill condition:** a reproduced theft of a fresh link by a confined component.
+- **A stale owner session in a long-lived browser tab.** It dies with the console process: the session is
+  per-process.
+- **Paid-scope binding could over-ask.** A pre-approved second paid action is asked again after the first one
+  spends. This is accepted as conservative; it never under-asks.
+
+**Dissent kept.** The repository has no review of #157's choice to require bubblewrap even where Landlock exists.
+It is kept because Landlock cannot deny same-UID ptrace or signals to the body on the Landlock versions in use.

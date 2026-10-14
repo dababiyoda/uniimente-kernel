@@ -205,8 +205,10 @@ class Console:
 
     def attach(self, request_id: str, capability_id: str) -> Path:
         """Sign CAPABILITY_ATTACH only for a verified candidate that an open capability ask names."""
-        open_asks = {r["request_id"]: r for r in status(self.home)["decisions_required"]}
-        if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))}:
+        st = status(self.home)
+        open_asks = {r["request_id"]: r for r in st["decisions_required"]}
+        waiting = {w["capability_id"] for w in st.get("attach_waiting", [])}   # an answered ask's mission (#168)
+        if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))} | waiting:
             raise ValueError("that capability is not a verified candidate of an open capability ask")
         return self.sign("CAPABILITY_ATTACH", {"capability_id": capability_id})
 
@@ -392,11 +394,17 @@ def home_parts(console: Console) -> dict:
                "Every morning tell me which of my pull requests are failing checks and what is stale.'></textarea>"
                "<p><button>Propose a mission</button> <span class=muted>Nothing runs until you review and sign."
                "</span></p></form></section>")
-    if st["decisions_required"]:
+    asked = {c["capability_id"] for r in st["decisions_required"] for c in _attachable(r)}
+    waiting = [w for w in st.get("attach_waiting", []) if w["capability_id"] not in asked]
+    if st["decisions_required"] or waiting:
         rows = []
         for r in st["decisions_required"]:
-            actions = (_form(console, "/decide", {"request_id": r["request_id"], "answer": "approve"}, "Approve",
-                             disabled=not can) + " " +
+            # On a capability ask Approve would only record an answer, never attach (greg/asks.py), and answering
+            # removes the ask; offer Attach and Reject instead (#168).
+            approve = "" if _attachable(r) else _form(console, "/decide", {"request_id": r["request_id"],
+                                                                           "answer": "approve"}, "Approve",
+                                                      disabled=not can) + " "
+            actions = (approve +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reject"}, "Reject",
                              cls="secondary", disabled=not can)) if r["kind"] != "RECONCILIATION" else (
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_executed"},
@@ -411,7 +419,17 @@ def home_parts(console: Console) -> dict:
             rows.append(f"<tr><td><span class=pill>{_e(r['kind'])}</span></td><td>{_e(r['why_now'])}<br>"
                         f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r)}</td>"
                         f"<td>{actions}</td></tr>")
-        add("decisions", "<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>")
+        html = ("<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>") if rows else ""
+        if waiting:
+            html += "<section><h2>Waiting for an attach</h2><table>" + "".join(
+                f"<tr><td><span class=pill>ATTACH</span></td><td>{_e(w['mission_id'] or '')} is waiting for "
+                f"{_e(w['capability_id'])}<br><span class=muted>Verified by Genesis; your earlier answer did not "
+                "attach it. Attaching is a signed command.</span></td><td>"
+                + _form(console, "/attach", {"request_id": "", "capability_id": w["capability_id"]},
+                        f"Attach {w['capability_id']}", disabled=not can,
+                        confirm=f"Sign CAPABILITY_ATTACH for {w['capability_id']}?") + "</td></tr>"
+                for w in waiting) + "</table></section>"
+        add("decisions", html)
     closures = [r for r in vepmc["missions"]]
     if closures:
         rows = []

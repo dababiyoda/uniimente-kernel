@@ -606,6 +606,30 @@ def morning_projection(home: str | Path) -> dict:
         return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat)
 
 
+def _attach_waiting(journal, achieved: set) -> list[dict]:
+    """Verified capabilities Genesis is waiting for the founder to attach, whatever the ask's answer.
+
+    Ported from #168 (``8531595``). An Approve on a capability ask only records an answer (greg/asks.py);
+    attaching is its own signed command. Derived from the ledger, so a mission stays unblockable from the console
+    after an answer given there or on the phone (which can never attach)."""
+    mission_of = {e.payload["deficit_id"]: e.payload.get("mission_id") for e in journal.replay("deficit.opened")}
+    resolved = {e.payload["deficit_id"] for e in journal.replay("deficit.resolved")}
+    latest = {}
+    for e in journal.replay("capability.state"):
+        latest[e.payload["capability_id"]] = e.payload["state"]
+    waiting = {}
+    for e in journal.replay("deficit.awaiting_attach"):
+        p = e.payload
+        mission_id = mission_of.get(p["deficit_id"])
+        if p["deficit_id"] in resolved or mission_id in achieved or latest.get(p["capability_id"]) in (
+                "ATTACHED", "QUARANTINED", "DETACHED"):
+            continue
+        waiting[(p["deficit_id"], p["capability_id"])] = {"deficit_id": p["deficit_id"],
+                                                          "capability_id": p["capability_id"],
+                                                          "mission_id": mission_id, "why": p.get("why")}
+    return list(waiting.values())
+
+
 def status(home: str | Path) -> dict:
     """Read-only projection for the founder; safe while the body runs."""
     layout = Layout(home)
@@ -646,6 +670,7 @@ def status(home: str | Path) -> dict:
                        "closure": spec["closure"]["kind"], "achieved": mid in achieved}
                       for mid, spec in registered.items()],
             "decisions_required": [asks.surface(r) for r in requests],
+            "attach_waiting": _attach_waiting(journal, achieved),
             "capabilities": registry.inventory(), "permissions": {"read_roots": config["read_roots"]},
             "compute": compute.sample(layout.home),
             "secret_handles": SecretBroker(layout.secrets).names(),

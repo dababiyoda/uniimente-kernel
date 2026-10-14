@@ -133,9 +133,10 @@ class ModelSubstitution(RouteError):
     """The provider answered with a model the founder did not select. Terminal: the answer is
     withheld, and no other route is asked (the substitution may itself follow a refusal)."""
 
-    def __init__(self, message: str = "", *, requested=None, served=None):
+    def __init__(self, message: str = "", *, requested=None, served=None, cost_usd=None):
         super().__init__(message, kind=MODEL_SUBSTITUTION)
-        self.requested, self.served = requested, served
+        # The withheld answer was still billed: its cost is carried so the budget books it.
+        self.requested, self.served, self.cost_usd = requested, served, cost_usd
 
 
 class Unbounded(RouteError):
@@ -229,6 +230,12 @@ class AnthropicRoute:
         # the API may report a dated snapshot of the alias that was requested
         return served == wanted or re.fullmatch(re.escape(wanted) + r"-\d{8}", served or "") is not None
 
+    @staticmethod
+    def _cost(usage, price):
+        if usage is None or not price:
+            return None
+        return (usage.input_tokens * price[0] + usage.output_tokens * price[1]) / 1e6
+
     def complete(self, system: str, user: str, *, budget_usd=None) -> dict:
         max_tokens = _output_bound(self._bound_price(), system, user, budget_usd)
         request = dict(model=self.model, max_tokens=max_tokens, system=system,
@@ -252,13 +259,16 @@ class AnthropicRoute:
         else:
             answered_by = next((m for m in self.fallback_models if self._same_model(served, m)), None)
             if answered_by is None:
+                # Billed at the served model's list price when known, else at the dearest known price:
+                # an unknown substitute is over-booked, never under-booked.
+                known = next((p for m, p in ANTHROPIC_PRICES.items() if self._same_model(served, m)), None)
+                worst = max([p for p in (self._bound_price(), *ANTHROPIC_PRICES.values()) if p], key=lambda p: p[1])
                 raise ModelSubstitution(f"requested {self.model}, served {served}: outside the founder's model "
-                                        f"policy; the answer is withheld", requested=self.model, served=served)
+                                        f"policy; the answer is withheld", requested=self.model, served=served,
+                                        cost_usd=self._cost(usage, known or worst))
             price = self.fallback_price[answered_by]
         text = "".join(block.text for block in response.content if block.type == "text")
-        cost = None
-        if usage is not None and price:
-            cost = (usage.input_tokens * price[0] + usage.output_tokens * price[1]) / 1e6
+        cost = self._cost(usage, price)
         # the provider's own report of the model that answered, next to the one we asked for
         return {"text": text, "cost_usd": cost, "served_model": served, "requested_model": self.model,
                 "substituted": answered_by != self.model, "fallback_policy": list(self.fallback_models)}
@@ -479,8 +489,10 @@ class ModelRouter:
                 self.last = {"route": route.name, "tried": tried, "cost_usd": spent, "refusal_class": exc.kind}
                 raise
             except ModelSubstitution as exc:   # terminal: an unselected model's answer is not ours to use
+                spent += float(exc.cost_usd or 0.0)    # withheld, but billed: the budget still books it
                 tried.append({"route": route.name, "outcome": "substituted", "class": exc.kind,
-                              "requested": exc.requested, "served": exc.served, "why": str(exc)[:200]})
+                              "requested": exc.requested, "served": exc.served, "cost_usd": exc.cost_usd,
+                              "why": str(exc)[:200]})
                 self._note(route, "substituted", at, str(exc), exc.kind)
                 self.last = {"route": route.name, "tried": tried, "cost_usd": spent, "refusal_class": exc.kind}
                 raise

@@ -75,6 +75,25 @@ def test_unselected_served_model_is_withheld_and_terminal():
     assert witness.last["tried"][0]["outcome"] == "substituted"
 
 
+def test_a_withheld_substitution_is_still_booked_against_the_budget():
+    """The provider billed the substituted call even though GREG withholds its answer, so the router's
+    spend must include it, at the served model's price (1k in + 1k out tokens of claude-opus-4-8)."""
+    router = models.ModelRouter([models.AnthropicRoute("k", model="claude-opus-5-5",
+                                                       client=Client(served="claude-opus-4-8"))])
+    with pytest.raises(models.ModelSubstitution) as info:
+        router.complete("s", "u")
+    assert info.value.cost_usd == pytest.approx((1000 * 5.0 + 1000 * 25.0) / 1e6)
+    assert router.last["cost_usd"] == pytest.approx(info.value.cost_usd)
+
+
+def test_an_unknown_substitute_is_booked_at_the_dearest_known_price():
+    route = models.AnthropicRoute("k", model="claude-haiku-5-5", client=Client(served="claude-mystery-9"))
+    with pytest.raises(models.ModelSubstitution) as info:
+        route.complete("s", "u")
+    dearest = max(models.ANTHROPIC_PRICES.values(), key=lambda p: p[1])
+    assert info.value.cost_usd == pytest.approx((1000 * dearest[0] + 1000 * dearest[1]) / 1e6)
+
+
 def test_fallback_message_with_matching_name_still_counts_as_substitution():
     # a fallback iteration means another attempt answered, even if the name were reused
     iterations = [NS(type="message"), NS(type="fallback_message")]

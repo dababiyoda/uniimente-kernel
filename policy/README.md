@@ -42,6 +42,12 @@ Proposal → identity → legal principal → evidence → policy
 - consequence class (or any authority-relevant field) changed between
   admission and commit, or REQUIRE_HUMAN at commit without a matching
   approval → hard refusal; authority mismatches raise an incident (#55)
+- from admission on the Gate acts on its own deep copy of the proposal: the
+  witness, the dispatch claim's effect digest, the executor's argument and the
+  outcome are all the admitted proposal's. A change to the caller's object is
+  refused at commit and again inside the ledger lock before the dispatch claim;
+  after the claim it cannot reach the effect. A proposal that cannot be
+  canonicalised (e.g. mixed key types) is refused, never raised (#55 follow-up)
 - child grant beyond its parent (actions, spending, counterparties, legal
   actor, prohibitions, lifetime) or of an unknown/revoked/expired/consumed
   parent → refused at issuance (`GrantRefused`, #12)

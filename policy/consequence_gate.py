@@ -22,6 +22,10 @@ Hard rules:
     authority change at commit     -> hard refusal and incident: only ALLOW, or
                                       REQUIRE_HUMAN covered by a human approval
                                       held for this exact proposal, executes
+    proposal changed after admission -> refused up to the dispatch claim; the
+                                      Gate witnesses, claims and executes its
+                                      own frozen copy, so a later change to the
+                                      caller's object never reaches the effect
     missing outcome record         -> blocks autonomy promotion
     any failure                    -> fails toward silence, never toward
                                       uncontrolled external action
@@ -32,6 +36,7 @@ recommend. This code authorizes.
 """
 from __future__ import annotations
 
+import copy
 import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone, timedelta
@@ -52,17 +57,28 @@ GRANT_TTL = timedelta(minutes=15)           # single-action grants are short-liv
 # is bound separately by bound_effect_hash.
 GRANT_AUTHORITY_FIELDS = ("actor", "legal_principal", "objective", "action_class",
                           "consequence_class", "requested_capability")
-# Everything policy read when this run admitted the proposal. Proposal is a
-# mutable dataclass, so the run snapshots these at admission and refuses at
-# commit if any changed in between (#55, CASE 27: an escalation in the commit
-# window must not execute on an earlier evaluation).
+# Everything policy read when this run admitted the proposal, and the identity
+# its dispatch is claimed under. Proposal is a mutable dataclass, so the run
+# snapshots these at admission and refuses at commit if any changed in between
+# (#55, CASE 27: an escalation in the commit window must not execute on an
+# earlier evaluation). From admission on the Gate also acts on its own frozen
+# copy of the proposal, never on the caller's object (see ConsequenceGate.run).
 COMMIT_WINDOW_FIELDS = GRANT_AUTHORITY_FIELDS + (
     "payload", "target", "estimated_cost_usd", "evidence_confidence", "evidence_refs",
-    "expected_outcome", "context")
+    "expected_outcome", "context", "proposal_id")
 
 
 def _authority_digest(proposal: Proposal, fields: tuple[str, ...]) -> str:
     return sha256_obj({name: getattr(proposal, name) for name in fields})
+
+
+def _digest_or_none(proposal: Proposal) -> str | None:
+    """The commit-window digest, or None when the proposal cannot be canonicalised
+    (e.g. a dict with mixed key types). None never equals an admitted digest."""
+    try:
+        return _authority_digest(proposal, COMMIT_WINDOW_FIELDS)
+    except Exception:  # noqa: BLE001 - an uncanonicalisable proposal is refused, not raised
+        return None
 
 
 def _now() -> datetime:
@@ -288,6 +304,18 @@ class ConsequenceGate:
         if not ok:
             return self._refuse(rec, "refused", [f"identity: {why}"])
 
+        # Admission (#55). The caller's Proposal is a mutable object the caller
+        # still holds. The Gate digests it and takes its own deep copy here;
+        # everything after admission (policy, budget, witness, commit check,
+        # dispatch claim, executor argument, outcome) reads the frozen copy, and
+        # a change to the caller's object is refused up to the dispatch claim.
+        # A proposal that cannot be canonicalised cannot be bound: refused.
+        try:
+            admitted = _authority_digest(proposal, COMMIT_WINDOW_FIELDS)
+            frozen = copy.deepcopy(proposal)
+        except Exception as exc:  # noqa: BLE001 - fail closed, never raise out of the Gate
+            return self._refuse(rec, "refused", [f"proposal is not canonicalizable: {type(exc).__name__}: {exc}"])
+
         # A supplied object is not authority: resolve it against the existing
         # issuer, validate its contract and bind actor/objective/target. No new
         # issuer, credentials or founder authentication is introduced here.
@@ -298,22 +326,21 @@ class ConsequenceGate:
                 managed = self.grants.get(standing_grant['grant_id'])
                 if managed is None or managed != standing_grant:
                     raise ValueError('unregistered or altered grant')
-                if (managed['grantee'] != proposal.actor
-                        or managed['objective'] != proposal.objective
-                        or proposal.target not in managed.get('counterparties', [])):
+                if (managed['grantee'] != frozen.actor
+                        or managed['objective'] != frozen.objective
+                        or frozen.target not in managed.get('counterparties', [])):
                     raise ValueError('grant actor/objective/target mismatch')
                 if (self.grants.get_meta(managed['grant_id']).get('bound_authority_hash')
-                        != _authority_digest(proposal, GRANT_AUTHORITY_FIELDS)):
+                        != _authority_digest(frozen, GRANT_AUTHORITY_FIELDS)):
                     raise ValueError('grant authority binding mismatch: consequence class, '
                                      'capability or principal differs from what was granted')
             except (ValueError, KeyError, TypeError) as exc:
                 return self._refuse(rec, 'refused', [f'grant: {exc}'])
 
         # 3-5. legal principal + evidence + policy -----------------------
-        admitted = _authority_digest(proposal, COMMIT_WINDOW_FIELDS)
         approval: dict | None = None
         eval_grant = self._eval_view(standing_grant) if standing_grant else None
-        decision = evaluate(self.compiled, proposal, identity_ok=ok, grant=eval_grant,
+        decision = evaluate(self.compiled, frozen, identity_ok=ok, grant=eval_grant,
                             thresholds=self.evidence_thresholds, evidence=self.evidence)
         if decision.verdict == Verdict.DENY:
             return self._refuse(rec, "refused", decision.reasons)
@@ -326,13 +353,13 @@ class ConsequenceGate:
             approved, why = approver(proposal, decision.reasons)
             if not approved:
                 return self._refuse(rec, "denied", [f"human decision: {why}"])
-            if _authority_digest(proposal, COMMIT_WINDOW_FIELDS) != admitted:
+            if _digest_or_none(proposal) != admitted:
                 return self._refuse(rec, "refused", ["proposal changed during human approval; "
                                                      "the approval covers only the evaluated proposal"])
             # The approval covers exactly these reasons for exactly this proposal.
             approval = {"authority_digest": admitted, "reasons": list(decision.reasons)}
             self._transition(rec, "evaluating", {"step": "policy_recheck_after_approval"})
-            decision = evaluate(self.compiled, proposal, identity_ok=True, grant=eval_grant,
+            decision = evaluate(self.compiled, frozen, identity_ok=True, grant=eval_grant,
                                 thresholds=self.evidence_thresholds, evidence=self.evidence)
             if decision.verdict == Verdict.DENY:
                 return self._refuse(rec, "refused", decision.reasons)
@@ -351,26 +378,26 @@ class ConsequenceGate:
 
         # 8. budget reservation ---------------------------------------------
         try:
-            reservation = self.budget.reserve(grant["grant_id"], proposal.estimated_cost_usd,
+            reservation = self.budget.reserve(grant["grant_id"], frozen.estimated_cost_usd,
                                               float(grant.get("spending_limit_usd", 0)))
         except ValueError as e:
             return self._refuse(rec, "refused", [f"budget: {e}"])
 
         # 9. Commit Witness ---------------------------------------------------
         witness = new_witness(
-            actor=proposal.actor, legal_principal=proposal.legal_principal,
-            action_class=proposal.action_class, payload=proposal.payload, target=proposal.target,
+            actor=frozen.actor, legal_principal=frozen.legal_principal,
+            action_class=frozen.action_class, payload=frozen.payload, target=frozen.target,
             policy_version=self.policy_version, constitution_hash=self.compiled.constitution_hash,
-            grant_id=grant["grant_id"], capability=proposal.requested_capability,
+            grant_id=grant["grant_id"], capability=frozen.requested_capability,
             budget_reservation_id=reservation["reservation_id"],
-            expected_outcome=proposal.expected_outcome, evidence_refs=proposal.evidence_refs)
+            expected_outcome=frozen.expected_outcome, evidence_refs=frozen.evidence_refs)
         self.signer.sign(witness)
         rec.witness_id = witness.witness_id
         self.ledger.append("witness", asdict(witness))
 
         # 10. commit-time revalidation ---------------------------------------
-        problem = self._reauthorize_at_commit(proposal, grant, witness,
-                                              admitted=admitted, approval=approval)
+        problem = self._reauthorize_at_commit(frozen, grant, witness, admitted=admitted,
+                                              approval=approval, live=proposal)
         if problem is not None:
             self.budget.release(reservation["reservation_id"])
             state, reasons = problem
@@ -387,19 +414,29 @@ class ConsequenceGate:
         # 11. execution --------------------------------------------------------
         # Reserve a durable dispatch identity BEFORE invoking anything. An
         # exception can mean an effect occurred: retain reservation and claim.
+        # The claim, the executed effect and the outcome are all the frozen
+        # copy's; the caller's object is checked one last time before the claim.
+        effect_digest = sha256_obj({'payload': frozen.payload, 'target': frozen.target,
+                                    'action_class': frozen.action_class})
         with self.ledger._lock:
+            if _digest_or_none(proposal) != admitted:
+                self.budget.release(reservation['reservation_id'])
+                rec.incident = "authority_mismatch_at_commit"
+                reasons = ["authority mismatch before dispatch: proposal changed after the commit check"]
+                self.ledger.append("event", {"type": "incident.authority_mismatch",
+                                             "action_id": rec.action_id, "reasons": reasons})
+                return self._refuse(rec, "refused", reasons)
             claims = self.ledger.by_type('grant_dispatch')
-            if any(r.payload['proposal_id'] == proposal.proposal_id or
+            if any(r.payload['proposal_id'] == frozen.proposal_id or
                    r.payload['grant_id'] == grant['grant_id'] for r in claims):
                 self.budget.release(reservation['reservation_id'])
                 return self._refuse(rec, 'reconciliation_required', ['dispatch already claimed; no blind retry'])
-            self.ledger.append('grant_dispatch', {'proposal_id': proposal.proposal_id,
+            self.ledger.append('grant_dispatch', {'proposal_id': frozen.proposal_id,
                 'grant_id': grant['grant_id'], 'witness_id': witness.witness_id,
-                'effect_digest': sha256_obj({'payload': proposal.payload, 'target': proposal.target,
-                                            'action_class': proposal.action_class})})
+                'effect_digest': effect_digest})
         self._transition(rec, "executing", {"witness_id": witness.witness_id})
         try:
-            result = executor(proposal)
+            result = executor(copy.deepcopy(frozen))
         except Exception as e:  # fail toward silence + preservation
             rec.incident = f"executor_exception:{type(e).__name__}"
             return self._refuse(rec, "reconciliation_required", [f"executor raised {type(e).__name__}: {e}; outcome unknown"])
@@ -420,18 +457,18 @@ class ConsequenceGate:
 
         # 13. postcondition + 14. reconciliation -------------------------------
         observed = result.get("observed_outcome", "unreported")
-        reconciled = observed == proposal.expected_outcome
+        reconciled = observed == frozen.expected_outcome
         outcome = {
             "outcome_id": str(uuid.uuid4()),
             "action_ref": rec.action_id,
             "recorded_at": _rfc(_now()),
-            "recorded_by": proposal.actor,
+            "recorded_by": frozen.actor,
             "external_observation": observed,
             "result_class": result.get("result_class", "inconclusive"),
-            "expected_vs_actual": f"expected={proposal.expected_outcome!r} actual={observed!r} "
+            "expected_vs_actual": f"expected={frozen.expected_outcome!r} actual={observed!r} "
                                   f"reconciled={reconciled}",
             "metrics": result.get("metrics"),
-            "evidence_refs": proposal.evidence_refs,
+            "evidence_refs": frozen.evidence_refs,
             "learning": result.get("learning"),
             "validation_status": result.get("validation_status", "internally_observed"),
             "feeds": ["causal_memory", "calibration"],
@@ -444,17 +481,26 @@ class ConsequenceGate:
 
     def _reauthorize_at_commit(self, proposal: Proposal, grant: dict, witness, *,
                                admitted: str | None = None,
-                               approval: dict | None = None) -> tuple[str, list[str]] | None:
+                               approval: dict | None = None,
+                               live: Proposal | None = None) -> tuple[str, list[str]] | None:
         """Authority is ALWAYS revalidated at the durability boundary.
 
         Only ALLOW passes. REQUIRE_HUMAN passes only when this run holds a human
         approval given for this exact proposal and for every reason now raised;
         anything else (DENY, an unapproved REQUIRE_HUMAN, an unknown verdict)
-        refuses. The proposal must still equal what was admitted and granted.
+        refuses. ``proposal`` is the Gate's frozen admission copy; ``live`` is
+        the caller's object it was frozen from. Both must still equal what was
+        admitted and granted; when the caller's object changed it is judged too,
+        so the refusal names what the change would have needed.
         """
         reasons: list[str] = []
-        current = _authority_digest(proposal, COMMIT_WINDOW_FIELDS)
-        if admitted is None or current != admitted:
+        current = _digest_or_none(proposal)
+        subjects = [proposal]
+        changed = admitted is None or current != admitted
+        if live is not None and live is not proposal and _digest_or_none(live) != admitted:
+            changed = True
+            subjects.append(live)
+        if changed:
             reasons.append("authority mismatch at commit: proposal changed after admission "
                            "(consequence class, cost, evidence, effect or context)")
         # witness signature must verify
@@ -472,6 +518,21 @@ class ConsequenceGate:
             reasons.append("single-use grant already consumed")
         if _now() >= datetime.fromisoformat(g["expires_at"].replace("Z", "+00:00")):
             reasons.append("expired grant at commit")
+        for subject in subjects:
+            try:
+                found = self._commit_reasons(subject, g, meta, approval)
+            except Exception as exc:  # noqa: BLE001 - an unjudgeable proposal is refused
+                found = [f"authority mismatch at commit: proposal cannot be re-evaluated ({type(exc).__name__})"]
+            reasons.extend(r for r in found if r not in reasons)
+        if reasons:
+            state = "revoked" if any("revoked" in r for r in reasons) else "refused"
+            return state, reasons
+        return None
+
+    def _commit_reasons(self, proposal: Proposal, grant: dict, meta: dict,
+                        approval: dict | None) -> list[str]:
+        """Effect and authority bindings, identity and policy for one proposal at commit."""
+        reasons: list[str] = []
         bound = meta.get("bound_effect_hash")
         if bound and bound != sha256_obj(
                 {"payload": proposal.payload, "target": proposal.target,
@@ -487,19 +548,16 @@ class ConsequenceGate:
         # policy must still allow, with the identical input. The evaluation view
         # merges the wire contract with gate-managed stage metadata (the contract
         # records initial_stage; the runtime stage is promoted by the decision).
-        decision = evaluate(self.compiled, proposal, identity_ok=True, grant=self._eval_view(g),
+        decision = evaluate(self.compiled, proposal, identity_ok=True, grant=self._eval_view(grant),
                             thresholds=self.evidence_thresholds, evidence=self.evidence)
         if decision.verdict == Verdict.DENY:
             reasons.extend(f"commit-time policy refusal: {r}" for r in decision.reasons)
         elif decision.verdict == Verdict.REQUIRE_HUMAN:
-            held = (approval is not None and approval.get("authority_digest") == current
+            held = (approval is not None and approval.get("authority_digest") == _digest_or_none(proposal)
                     and set(decision.reasons) <= set(approval.get("reasons", ())))
             if not held:
                 reasons.extend(f"commit-time policy requires a human approval this run does not hold: {r}"
                                for r in decision.reasons)
         elif decision.verdict != Verdict.ALLOW:
             reasons.append(f"commit-time policy verdict {decision.verdict!r} is not allow")
-        if reasons:
-            state = "revoked" if any("revoked" in r for r in reasons) else "refused"
-            return state, reasons
-        return None
+        return reasons

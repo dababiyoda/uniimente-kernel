@@ -6,7 +6,7 @@
  "subject_source_commit": "07af5758197501662df81ff05e2b34ce8224a322",
  "artifact": "policy/consequence_gate.py",
  "pinned_sha256": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e",
- "hardened_sha256": "812384a85552f8b449bb9d8eadffb43a07a43b23b4beb3cd62b45e60e2115fab",
+ "hardened_sha256": "69622372948fd206f46f79a1ce44af92707ffda5c9576ca11e5794b9fdf47976",
  "hardening": [
   {
    "port": "#55 commit-window escalation",
@@ -22,6 +22,11 @@
    "port": "#12 child-grant subset",
    "effect": "GrantIssuer refuses a child grant of an unknown, revoked, expired or consumed parent, or one exceeding the parent's permitted actions, spending limit, counterparties, legal actor or prohibitions; children inherit prohibitions and never outlive the parent",
    "sha256_after": "812384a85552f8b449bb9d8eadffb43a07a43b23b4beb3cd62b45e60e2115fab"
+  },
+  {
+   "port": "#55 follow-up: frozen admission copy",
+   "effect": "the Gate deep-copies the proposal at admission and witnesses, claims, executes and records that copy; a change to the caller's object is refused at commit and again inside the ledger lock before the dispatch claim; an uncanonicalisable proposal is refused instead of raising; proposal_id joins the commit-window digest",
+   "sha256_after": "69622372948fd206f46f79a1ce44af92707ffda5c9576ca11e5794b9fdf47976"
   }
  ],
  "direction": "subtractive only: every change refuses more and authorizes nothing new",

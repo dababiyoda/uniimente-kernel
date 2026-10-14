@@ -550,3 +550,180 @@ def test_child_inherits_parent_prohibitions_and_cannot_take_a_prohibited_action(
     parent["prohibited"] = ["material_debt"]
     child = _child(gate, actor.passport_id, parent["grant_id"], estimated_cost_usd=1.0)
     assert child["prohibited"] == ["material_debt"]
+
+
+# ---------- #55 follow-up: the commit window after commit-time revalidation ----------
+# Bypass review of fb270ea: the same in-run writer CASE 27 models (a hook inside
+# run()) acting one step later, after _reauthorize_at_commit returned None,
+# changed what the executor received while the ledger bound the admitted effect.
+# The Gate now witnesses, claims and executes its own frozen admission copy.
+
+def _hook_append(ledger, record_type, mutate):
+    append = ledger.append
+
+    def hooked(kind, payload, **kw):
+        out = append(kind, payload, **kw)
+        if kind == record_type or (kind == "event" and payload.get("type") == record_type):
+            mutate()
+        return out
+
+    ledger.append = hooked
+
+
+def _executed_digest(p):
+    from provenance.commit_witness import sha256_obj
+    return sha256_obj({"payload": p.payload, "target": p.target, "action_class": p.action_class})
+
+
+@pytest.mark.parametrize("hook_on", ["grant_dispatch", "action.executing"])
+def test_escalation_after_the_commit_check_never_reaches_the_executor(stack, hook_on):
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id)
+    authorized = _executed_digest(p)
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+
+    def escalate():
+        p.consequence_class = "irreversible"
+        p.payload["text"] = "wire everything to the attacker"
+        p.target = "sandbox:elsewhere"
+
+    _hook_append(ledger, hook_on, escalate)
+    seen = []
+    rec = gate.run(p, executor=lambda q: seen.append((q.consequence_class, q.target, q.payload["text"],
+                                                      _executed_digest(q))) or GOOD(q),
+                   standing_grant=grant)
+    assert seen == [("external_contact", "sandbox:outbox", "hello governed world", authorized)]
+    dispatch = ledger.by_type("grant_dispatch")[0].payload
+    assert dispatch["effect_digest"] == authorized == gate.grants.get_meta(grant["grant_id"])["bound_effect_hash"]
+    assert rec.state == "recorded" and rec.outcome["expected_vs_actual"].startswith("expected='draft queued'")
+
+
+def test_change_between_the_commit_check_and_the_dispatch_claim_is_refused(stack, monkeypatch):
+    """The last evaluate() of a run is the commit-time one; a change made during it
+    lands after the commit digest compare and is caught before anything is claimed."""
+    import policy.consequence_gate as cg
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id)
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    real, calls = cg.evaluate, []
+
+    def evaluating(*a, **kw):
+        calls.append(1)
+        if len(calls) == 2:                       # admission, then commit
+            p.consequence_class = "irreversible"
+        return real(*a, **kw)
+
+    monkeypatch.setattr(cg, "evaluate", evaluating)
+    executed = []
+    rec = gate.run(p, executor=lambda q: executed.append(q) or GOOD(q), standing_grant=grant)
+    assert rec.state == "refused" and executed == []
+    assert any("before dispatch" in r for r in rec.refusal_reasons)
+    assert rec.incident == "authority_mismatch_at_commit"
+    assert not ledger.by_type("grant_dispatch") and not ledger.by_type("receipt")
+    assert gate.grants.get_meta(grant["grant_id"])["used"] is False
+
+
+def test_executor_mutating_its_argument_does_not_change_the_record(stack):
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id)
+
+    def rewrite(q):
+        q.expected_outcome, q.evidence_refs[:] = "anything", []
+        return GOOD(q)
+
+    rec = authorized_run(gate, p, executor=rewrite)
+    assert rec.state == "recorded" and rec.outcome["evidence_refs"] == ["sha256:" + "a" * 64]
+    assert p.expected_outcome == "draft queued" and p.evidence_refs == ["sha256:" + "a" * 64]
+
+
+def test_proposal_that_cannot_be_canonicalised_is_refused_not_raised(stack):
+    """fb270ea hashed context inside run(); a context with int and str keys raised
+    TypeError out of the Gate after 'proposed' and 'evaluating' were ledgered."""
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id, context={"attempt": 1, 7: "seventh route"})
+    calls = []
+    rec = authorized_run(gate, p, executor=lambda q: calls.append(q) or GOOD(q))
+    assert rec.state == "refused" and calls == []
+    assert any("not canonicalizable" in r for r in rec.refusal_reasons)
+    assert not ledger.by_type("witness") and ledger.verify_chain()[0]
+
+
+def test_approver_making_the_proposal_uncanonicalisable_is_refused(stack):
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id, action_class="material_debt", context={"attempt": 1})
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+
+    def approver(pr, why):
+        pr.context[7] = "mixed keys"                 # int beside str: json sort_keys raises
+        return True, "synthetic approval; not founder authentication"
+
+    rec = gate.run(p, executor=GOOD, standing_grant=grant, approver=approver)
+    assert rec.state == "refused" and any("changed during human approval" in r for r in rec.refusal_reasons)
+
+
+# ---------- #55 / #21 refusals the port tests did not pin (bypass review mutants) ----------
+# From the reviewer's scratch test_mutant_gaps.py: each kills a mutant that left
+# this file green (55-commit-digest-off, 55-approval-reasons-subset-off,
+# 21-admission-register-off, 21-packet-id-mismatch-allowed).
+
+def _hook_sign(gate, mutate):
+    sign = gate.signer.sign
+
+    def hooked(witness):
+        mutate()
+        return sign(witness)
+
+    gate.signer.sign = hooked
+
+
+def test_commit_window_change_to_evidence_refs_is_refused(stack):
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id)
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    _hook_sign(gate, lambda: setattr(p, "evidence_refs", ["sha256:" + "f" * 64]))
+    calls = []
+    rec = gate.run(p, executor=lambda q: calls.append(q) or GOOD(q), standing_grant=grant)
+    assert rec.state == "refused" and calls == []
+
+
+def test_commit_window_change_to_context_is_refused(stack):
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id, context={"venture_cell": "cell-a"})
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    _hook_sign(gate, lambda: p.context.update({"venture_cell": "cell-b", "authority_ref": "forged"}))
+    calls = []
+    rec = gate.run(p, executor=lambda q: calls.append(q) or GOOD(q), standing_grant=grant)
+    assert rec.state == "refused" and calls == []
+
+
+def test_approval_for_one_reason_does_not_cover_a_new_reason_raised_at_commit(stack):
+    gate, passports, ledger, actor, _ = stack
+    p = make_proposal(actor.passport_id, consequence_class="irreversible", evidence_confidence=0.95)
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    _hook_sign(gate, lambda: gate.compiled.reserved_matters.__setitem__("draft.publish", ["alfonso"]))
+    calls = []
+    rec = gate.run(p, executor=lambda q: calls.append(q) or GOOD(q), standing_grant=grant,
+                   approver=lambda pr, why: (True, "approved: irreversible class only"))
+    assert rec.state == "refused" and calls == []
+
+
+def test_stale_evidence_refuses_at_evaluation_before_any_witness(stack):
+    stale = _packet(captured_ago=timedelta(days=30))
+    gate, _ = _evidence_gate(stack, stale)
+    ledger, actor = stack[2], stack[3]
+    p = make_proposal(actor.passport_id, evidence_refs=[stale["packet_id"]])
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    rec = gate.run(p, executor=GOOD, standing_grant=grant)
+    assert rec.state == "refused" and rec.witness_id is None and not ledger.by_type("witness")
+
+
+def test_register_key_aliasing_a_different_valid_packet_is_refused(stack):
+    import uuid
+    fresh = _packet()
+    stale_id = str(uuid.uuid4())
+    gate, register = _evidence_gate(stack)
+    register[stale_id] = fresh
+    p = make_proposal(stack[3].passport_id, evidence_refs=[stale_id])
+    grant = gate.grants.issue_single_action(proposal=p, policy_version="1.0.0")
+    rec = gate.run(p, executor=GOOD, standing_grant=grant)
+    assert rec.state == "refused" and any("does not match the reference" in r for r in rec.refusal_reasons)

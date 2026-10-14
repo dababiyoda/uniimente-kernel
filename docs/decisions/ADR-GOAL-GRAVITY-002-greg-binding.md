@@ -29,10 +29,14 @@ the recommended ones, as `greg/goal_gravity.py` plus additive lines elsewhere:
 founder-signed GOAL --Body.apply (Ed25519, nonce, TTL)--> egregore GoalRegistry on the one body ledger
 Body.tick -> goal_gravity.tick (before the mission engine; no goal record = no work, no record)
    admission  founder_facts: every retained GOAL / GOAL_CONTROL re-judged at its own ledger position (key valid
-              there, this body, unused nonce, accepted inside its signed validity, goal record dated inside it,
-              and the command path's own check_goal / check_control); anything else preserved and quarantined
+              there, this body, unused nonce (only a record that verified at its position spends one; the per-record
+              rule greg.founder.spent_nonce is the body's), accepted inside its signed validity, goal record dated
+              inside it, every bound mission registered by a verified founder MISSION for exactly that spec, and the
+              command path's own check_goal / check_control); anything else preserved and quarantined
    guard      every signed closure (revoke, supersede), stop / change, narrowing preference and priority floor is
-              restored if an unsigned record widened it (narrowing only)
+              restored if an unsigned record widened it, on a completed goal too (narrowing only)
+   release    a pending goal pull of a mission no admitted, open, unstopped goal binds is released unserved
+              (MissionEngine.release_pull); a faulted turn releases every pending pull (fail closed)
    settle     a DECISION for exactly that request and answer, signature-verified, becomes the goal's route
               refusal (both lineages remember)
    sense      the Gate receipt of each check's own sensor read with the check predicate recomputed,
@@ -41,9 +45,12 @@ Body.tick -> goal_gravity.tick (before the mission engine; no goal record = no w
    reopen     a completed goal whose plan node an attributed observation shows regressed is dormant again
    loop       egregore GoalGravityLoop.turn in body mode: no gate, no executor, no grants (ContractError otherwise)
                 awake goal  -> MissionEngine.observe_now for its signed missions (timing only, rate-limited); a
-                               mission awaiting an APPROVAL then prepares in cone while the decision stays open
-                decision    -> MissionEngine.request_decision: the engine's own APPROVAL, exact scope, same id
-                               (refused while the mission is paused or closed: one notice, never a fault)
+                               mission awaiting an APPROVAL then prepares in cone while the decision stays open,
+                               and withdraws the ask as moot if it observes the awaited checks already pass
+                decision    -> MissionEngine.request_decision: the engine's own APPROVAL, exact scope, same id,
+                               only for the move the mission's own selection would run next for those checks and
+                               only while no other APPROVAL for them is open (refused while the mission is paused
+                               or closed: one notice, never a fault)
                 information -> greg.goal.notice
 MissionEngine -> AuthorityOffice -> ConsequenceGate stays the only execution path.
 ```
@@ -131,7 +138,10 @@ A second reviewer judged the binding against the founder effect itself (Mission 
 do not literalize the metaphor) rather than its authority. Target effect: a persistent goal ignores noise, wakes on
 meaningful evidence judged by content, recalculates the bottleneck, has its missions do permitted in-cone
 preparation through the Gate even while a consequential decision is pending, and asks Alfonso only for that
-decision, once, on the one ask path; approval executes once. Mechanisms chosen are the simplest that produce it:
+decision, once, on the one ask path; the approve then executes it. (An earlier version of this paragraph said
+"approval executes once"; that was wrong: an approve is a standing approval of that exact scope for the mission's
+lifetime, the mission engine's semantics, which the binding does not change; see fix stage 3, finding 5.)
+Mechanisms chosen are the simplest that produce it:
 a lexical relevance rule over names the founder already signed (no model), the mission engine's own loop and Gate
 for preparation (no new executor), observation-tier reopening (no new goal status). Each fix has a regression test
 in `tests/unit/test_greg_goal_gravity_founder_effect.py` (unless named) that fails on `e75ad3b`.
@@ -171,6 +181,54 @@ stop remain what keeps the goal asleep.
   assertion (re-deriving the identical goal is refused) is intended behaviour, and its last (`--supersedes x` exits 2)
   also holds for the fix's refusal of an unknown prefix. Supersede is proven by `test_a_goal_is_superseded_without_code`.
 
+## Fix stage 3: re-attack of the fixed binding (2026-10-14)
+
+Reviewers re-attacked the binding after fix stages 1 and 2 (`da4e539`): the thirteen stage-1 defect tests and the
+stage-2 probes now fail as intended (a1's control still passes, as it should), and eight new findings reproduced
+(`gg_attacks/round2/test_s1..s5`, `test_r6..r8`). Governing rule unchanged: authority-relevant goal facts come only
+from signature-verified founder commands at their ledger position, and a goal changes timing and asks, never
+authority. Regression tests are in `tests/unit/test_greg_goal_gravity_reattack.py` (19 tests). The 17 that assert a
+corrected behaviour fail on `da4e539` (the pre-fix head); on `e75ad3b` 16 of them fail and the key-rotation case of
+finding 1 passes, because that defect came with fix stage 1. The other two are controls that pass on `da4e539` and
+after: a forged record spending the pending nonce makes the body refuse and the tick agree (it needs
+`founder_facts`, absent at `e75ad3b`), and the stricter closure flags nothing on a genuine body (passes on `e75ad3b`
+too).
+
+| Finding | Severity | Fix | Regression test |
+|---|---|---|---|
+| An unverified `command.accepted` put its `envelope.nonce` into `founder_facts`' nonce set, so the founder's signed revoke / stop / key rotation that `Body.apply` applied was refused there as a replay; unsigned records then resurrected the goal or kept the retired key valid | blocking | One per-record rule, `greg.founder.spent_nonce` (an accepted record's own `nonce`, a rejected record's `consumed` nonce, never a nonce inside another field), used by `Body.consumed_nonces` and `founder_facts`. The body counts every record (fail closed); `founder_facts` counts an accepted record's nonce only when its envelope verified at its position and the record carries that envelope's nonce, so its spent set is the body's restricted to verified records and can never refuse what the body applied | `test_an_unverified_record_cannot_hide_a_signed_revoke_or_stop_from_the_guard[revoke,stop]`, `test_an_unverified_record_cannot_hide_a_key_rotation_so_the_retired_key_admits_nothing`, `test_body_and_tick_share_one_nonce_rule_and_an_envelope_field_spends_nothing`; control `test_a_forged_record_spending_the_pending_nonce_makes_the_body_refuse_and_the_tick_agrees` |
+| An older-signed GOAL superseding a goal undid a later-signed stop or narrowing of that goal | major | `check_goal` (command path and re-derivation alike) refuses a GOAL whose `supersedes` target has a counted signed control issued after the GOAL (`FounderFacts.controlled_at`): "a later-signed control on the goal it replaces is in force; sign a new GOAL" | `test_an_older_goal_cannot_supersede_away_a_later_signed_stop` (a GOAL signed after the stop still supersedes), `test_an_older_goal_cannot_supersede_away_a_later_signed_mute` |
+| A goal's pending pull outlived the founder's signed revoke / stop: the mission kept doing goal-driven in-cone writes while waiting on its APPROVAL | major | The tick (after the guard, before any turn) releases the pending pull of every mission no admitted, open, unstopped goal binds, through the engine's `release_pull` (`greg.mission.pull_released`); a founder LIFECYCLE pause clears a pull in the fold; a faulted turn releases every pending pull | `test_a_revoked_or_stopped_goals_pending_pull_is_released_unserved[revoke,stop]`, `test_a_founder_pause_of_the_mission_ends_its_pending_pull`, `test_a_faulted_turn_serves_no_goal_pull` |
+| The binding admitted, derived ("your signed mission") and closed over a goal bound to an unsigned, in-process `mission.registered` | major | `signed_mission()`: a bound mission's registration must cite a verified founder MISSION whose envelope body equals the registered spec (mission id included); used by `check_goal` and by `authorize --from-mission` (`signed_mission_spec`). `ledger_closure` also requires each grant's cone to be the light cone of the MISSION it cites and the missions that used the grant's receipt to be that MISSION's mission | `test_a_goal_is_never_derived_admitted_or_vouched_for_on_an_unsigned_mission`; control `test_the_closure_of_a_genuine_body_stays_ok` |
+| A goal asked for every out-of-cone alternative of a check; approving one the mission would not select ran nothing | major | `missions.rank_key` / `first_choice`: the mission's own selection order, shared by `_pursue`. `MissionEngine._askable` (so `request_decision` and `ask_refusal`) refuses any strategy but the first choice for the checks it advances, and any ask while another APPROVAL for those checks is open; `goal_from_mission` declares one move per check (the first choice; others listed as `alternatives_not_declared`) | `test_two_alternatives_give_one_ask_and_its_approve_ships_once`, `test_a_goal_declaring_only_the_alternative_gets_a_notice_not_a_second_ask` |
+| One signed approve executed the out-of-cone move twice (after a regression), contrary to the ADR's "approval executes once" | minor | **Recorded, semantics pinned, not changed**: approvals are the mission engine's standing approvals of an exact scope (`MissionState.approved_scopes`), shared by missions no goal is bound to, which must behave as before. The claim is corrected above, and the goal's ask (`evidence.approve_means`), `greg gravity goals` (`approve_means`) and `greg gravity evidence` (each ask's `approve_means`) state it. The reviewer's `test_s4_one_approval_executes_twice.py` still reproduces, by design | `test_an_approve_is_a_standing_approval_and_every_goal_surface_says_so` |
+| A founder-stopped goal was woken after an unsigned `completed` record plus a regressed plan node (`_restore` returned early for `completed`, then `_reopen` ran) | minor | `_restore` restores a signed stop, narrowing or priority floor on a completed goal as the command path records a control on one (reopen to record, completed again unless stopped); `_reopen` never reopens a goal under a signed stop | `test_an_unsigned_completed_record_cannot_carry_a_founder_stopped_goal_into_a_wake`, `test_an_unsigned_record_cannot_unmute_a_completed_goal` |
+| Preparation observed the awaited check already passing, yet the APPROVAL stayed open and the mission stayed blocked on it | minor | `_prepare` withdraws the request as moot (`decision.withdrawn`, as `_watch_while_blocked` does) when every check the awaited move advances is observed passing, then unblocks; otherwise the ask stays open | `test_preparation_withdraws_an_ask_the_world_made_moot` |
+
+No existing test was changed in this stage. Missions without goals are unchanged: `spent_nonce` yields exactly the
+nonces `consumed_nonces` collected before; the extracted ranking computes the same candidate tuple `_pursue` built;
+`release_pull`, `_prepare`'s withdrawal and the pause rule act only on a pull, which only a goal sets.
+
+### Known limitations after fix stage 3
+
+- **Standing approvals (finding 5, recorded).** An approve lets the mission run that exact scope whenever its own loop
+  selects it again until the mission closes or its horizon passes; a reject after an approve is refused by the
+  engine, so ending it early means a signed critique excluding the strategy or a LIFECYCLE pause / abandon. The
+  mission's own spend ask still says "runs once" for a paid action; changing that wording or consuming approvals would
+  change missions no goal is bound to. Owner: Alfonso (mission semantics). Trigger: a founder ruling that approvals
+  are single-use, applied to the mission engine for every mission.
+- **Ranking is live.** The ask path ranks with the body's track record; `goal_from_mission` ranks with none, so a
+  declared move may later not be the first choice (one `ask_not_recorded` notice) and an undeclared alternative may
+  become it (the mission then asks for it itself, never twice for one check through the goal). The mission's own loop
+  does not prefer an already approved alternative; if the ranking flips after an approve it asks for the new first
+  choice (unchanged mission behaviour).
+- **Denial by an in-process writer.** A writer that can append ledger records can still make the body refuse or skip a
+  founder command (a record spending its nonce makes `Body.apply` refuse it; a copy of its envelope under a different
+  record nonce makes `Body.apply` report `ALREADY_APPLIED` while nothing counts it), as it could delete the inbox file.
+  Both are refusals of a founder act, never a widening, and the founder views show the goal unchanged.
+- **Mission-side P2 still open.** A forged `mission.registered` still dispatches through the Gate under the digest it
+  cites; the binding no longer vouches for it anywhere (admission, CLI, closure), and the closure now reports it.
+
 ## Alternatives
 
 - **Do nothing.** Persistent goals stay off the only authenticated body. Rejected: Mission F cannot run.
@@ -187,7 +245,7 @@ stop remain what keeps the goal asleep.
 
 | Role | Position | Material concern | Recommendation |
 |---|---|---|---|
-| Builder | Mission F runs end to end on a real body with a real Ed25519 test key, in both orders: with the ask still open, noise on the goal's own channel is silent, meaningful text on it wakes the goal, the mission repairs `c` in cone through the Gate, nothing new is asked and the awaited move does not run; then approve executes once and the bottleneck re-fixes to N1 | goal-level moves must restate a static mission strategy the mission pursues; relevance is lexical | EXPERIMENT |
+| Builder | Mission F runs end to end on a real body with a real Ed25519 test key, in both orders: with the ask still open, noise on the goal's own channel is silent, meaningful text on it wakes the goal, the mission repairs `c` in cone through the Gate, nothing new is asked and the awaited move does not run; then the approve executes it (a standing approval of that exact scope: a later regression re-runs it with no new ask, as every surface now says) and the bottleneck re-fixes to N1 | goal-level moves must restate a static mission strategy the mission pursues; relevance is lexical | EXPERIMENT |
 | Adversary | forged goal, smuggled acceptance, backdated envelope, over-ceiling GOAL, duplicate intent, device-signed GOAL, unsigned un-pause, retired-key GOAL, revoked-device DECISION, forged founder answer, forged executor pass: all refused or not mirrored (tests) | in-process writers can still narrow goals (stop, supersede) and the mission fold still trusts unsigned `decision.answered` (P2) | EXPERIMENT with P2 as a named follow-up |
 | Operator | one ledger file; idle body writes nothing; dormant goal writes nothing; faults contained once per reason; one CLI entry | O(commands) signature checks per tick; ledger growth per non-dormant turn | EXPERIMENT; cache by digest if measured hot |
 | Beneficiary Representative | the founder signs a pre-filled GOAL from a mission instead of writing JSON; asks keep the section-60 contract and wording screen; a phone can only quiet a goal | attention defaults have no founder-signed quiet hours yet | EXPERIMENT |

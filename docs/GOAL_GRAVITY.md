@@ -195,10 +195,13 @@ Body.tick: ingest inbox -> stop/pause -> goal_gravity.tick -> MissionEngine.tick
 goal_gravity.tick (nothing at all without a goal record):
   admission  founder_facts: each retained GOAL / GOAL_CONTROL is re-judged at its own ledger position (key valid
              there, this body, nonce unused, accepted inside its signed validity, and the same check_goal /
-             check_control Body.apply ran); anything else stays on the ledger, quarantined (stop_pushing by the
-             admission check)
+             check_control Body.apply ran); only a record that verified at its position spends a nonce (one
+             per-record rule with the body, greg.founder.spent_nonce); anything else stays on the ledger,
+             quarantined (stop_pushing by the admission check)
   guard      every signed closure (revoke, supersede), stop / change, narrowing preference and priority floor is
-             restored if an unsigned record widened it
+             restored if an unsigned record widened it, on a completed goal too
+  release    a pending goal pull of a mission that no admitted, open, unstopped goal binds is released unserved
+             (greg.mission.pull_released); a faulted turn releases every pending pull
   settle     a signature-verified DECISION for exactly that request and answer, rejecting a goal move's exact
              scope, is also the goal's route refusal
   sense      mission observations (check predicate recomputed from the Gate receipt of that check's own sensor
@@ -209,8 +212,9 @@ goal_gravity.tick (nothing at all without a goal record):
                awake goal  -> MissionEngine.observe_now(mission): its next read-only look, sooner (timing only);
                               a mission waiting on your APPROVAL then re-observes and repairs its other checks
                               inside its cone while the decision stays open
-               decision    -> MissionEngine.request_decision: the mission's own APPROVAL for the exact scope
-                              (refused, and noticed once, while the mission is paused or closed)
+               decision    -> MissionEngine.request_decision: the mission's own APPROVAL for the exact scope,
+                              only for the move the mission's own selection would run next for those checks
+                              (refused, and noticed once, otherwise or while the mission is paused or closed)
                information -> greg.goal.notice (no ask)
 MissionEngine -> AuthorityOffice -> ConsequenceGate remains the only execution path.
 ```
@@ -230,16 +234,22 @@ MissionEngine -> AuthorityOffice -> ConsequenceGate remains the only execution p
 
 **GOAL body** (founder key only):
 `{"goal": <GoalSpec fields without goal_id/authority/execution_authority>, "missions": [<signed mission ids>],
-"max_consequence_class": <no higher than the bound missions' cones>}`. The body derives the authority block from the
+"max_consequence_class": <no higher than the bound missions' cones>}`. Each bound mission must be registered by a
+verified founder MISSION for exactly that spec (an in-process `mission.registered` binds nothing, and
+`authorize --from-mission` refuses it). The body derives the authority block from the
 signature (`authorization_ref` = command digest, `authorized_at` = body clock). Each declared move must name
 `{"mission_id", "action_id"}` of a static strategy of a bound mission, restate its capability, target, manifest
 consequence class and cost exactly, and lie **outside** that mission's cone (inside-cone work is the mission's own).
 A move may not name a strategy the founder excluded by a signed critique or a scope the founder rejected, and its
 strategy must advance a check the mission's own loop pursues (any rung of an infinite mission's ladder, otherwise
-any success check): the mission would never run anything else, so an approve of it could change nothing. An
-identical intent is refused, and so is a GOAL signed before the founder revoked or superseded a goal with the same
-intent; `supersedes` replaces an admitted goal and keeps the old one as `superseded`. A GOAL or GOAL_CONTROL the body
-verifies and then rejects consumes its nonce, so the retained file cannot be re-dropped later.
+any success check): the mission would never run anything else, so an approve of it could change nothing. When the
+goal asks, the move must also be the one the mission's own selection ranks first for the checks it advances, and no
+other APPROVAL for those checks may be open: one decision is one ask (otherwise one `ask_not_recorded` notice);
+`authorize --from-mission` declares one move per check. An identical intent is refused, and so is a GOAL signed
+before the founder revoked or superseded a goal with the same intent; `supersedes` replaces an admitted goal and
+keeps the old one as `superseded`, and is refused when the founder signed a control of that goal after the GOAL (a
+late-delivered older replacement cannot undo a newer stop or mute). A GOAL or GOAL_CONTROL the body verifies and then
+rejects consumes its nonce, so the retained file cannot be re-dropped later.
 
 **GOAL_CONTROL body**: `{"goal_id", "kind", "value"?, "reason"?}` with kind in the egregore preference kinds plus
 `revoke`. A delegated device key may only narrow (`stop_pushing` true, `lower_priority`, `never_use_tactic`,
@@ -256,9 +266,18 @@ channel it came on. Matching is whole words after case-folding; it is lexical, n
 **Preparation while you decide.** When a goal wakes and its mission is waiting on your answer to an APPROVAL, the
 pull lets the mission re-observe its current checks through the Gate and repair the failing checks the awaited move
 does not advance, using only static strategies inside its signed cone. Nothing new is asked, the blocker stays,
-and the awaited move runs only after your signed approve, once. One pull is pending at a time; it is served
-(`greg.mission.prepared`) once nothing more can be prepared, and another needs another wake. A mission no goal is
-bound to waits exactly as before.
+and the awaited move runs only after your signed approve. If it observes that the checks the awaited move advances
+already pass, the ask is withdrawn as moot (`greg.decision.withdrawn`) and the mission resumes its own loop. One pull
+is pending at a time; it is served (`greg.mission.prepared`) once nothing more can be prepared, and another needs
+another wake; it is released unserved (`greg.mission.pull_released`) as soon as no admitted, open, unstopped goal
+binds the mission (you revoked, superseded or stopped it) or a goal turn faults, and your signed pause of the mission
+(LIFECYCLE PAUSED) ends it too. A mission no goal is bound to waits exactly as before.
+
+**An approve is standing.** Approving an ask approves that exact scope for the mission's lifetime (the mission
+engine's semantics, unchanged by goals): the mission runs it whenever its own loop selects it again, for example
+after the check regresses, with no new ask, until the mission closes or its signed horizon passes. To end it sooner,
+exclude the strategy with a signed critique, or pause or abandon the mission. The goal's ask, `greg gravity goals`
+and `greg gravity evidence` say so (`approve_means`).
 
 **Completion.** Completion is observation-tier and never terminal: a completed goal is reopened when an attributed
 observation shows one of its plan nodes regressed (for a goal of an infinite mission the surfaces say "holding").
@@ -290,6 +309,6 @@ renewal, sensor scope, capability) keeps waiting. Intake relevance is a lexical 
 mission and goal declare, not an understanding of the text. Evidence for this section:
 `tests/unit/test_greg_goal_gravity.py` (including `test_mission_F_end_to_end_while_the_decision_is_open`),
 `tests/unit/test_greg_goal_gravity_authority.py`, `tests/unit/test_greg_goal_gravity_founder_effect.py`,
-`tests/unit/test_goal_gravity_body_mode.py` and the `greg-goal-gravity`
+`tests/unit/test_greg_goal_gravity_reattack.py`, `tests/unit/test_goal_gravity_body_mode.py` and the `greg-goal-gravity`
 closures (IMPLEMENTED / UNIT-TESTED on temporary bodies with a test key; no external effect; nothing activates until
 the founder signs a GOAL on a real body).

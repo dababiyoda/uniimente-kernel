@@ -567,10 +567,14 @@ class MissionEngine:
             return self._watch_while_blocked(m, now)
         if m.blocker:
             resolved, why = self._blocker_resolved(m)
-            if not resolved and m.blocker["type"] == "capability" and m.blocker.get("shared_ask") \
-                    and self._closed(m.blocker["request_id"]):
-                # the shared body-level ask was answered or withdrawn without an attach this mission can use: its
-                # need is still open, so it is asked about on its own (or on another open ask naming a candidate)
+            shared = m.blocker.get("request_id") if m.blocker.get("shared_ask") else None
+            if not resolved and m.blocker["type"] == "capability" and shared \
+                    and shared in self.book.withdrawn and shared not in self.book.answers:
+                # the shared body-level ask was withdrawn before the founder answered it: this mission's need was
+                # never decided, so it is asked about on its own (or on another open ask naming a candidate). The
+                # founder's answer to a shared ask is this mission's answer, as for its own ask: an approve waits for
+                # the signed attach (approving only records the answer), and a reject is never followed by another
+                # ask about the same attach (section 60)
                 self._escalate_capability(m, m.blocker["function"], m.blocker.get("capability_id"),
                                           self._deficit_purpose(m, m.blocker["function"]), now)
                 return {"state": "BLOCKED", "blocker": m.blocker}
@@ -849,7 +853,8 @@ class MissionEngine:
         fit) that is still open and names one of the candidates as verified: the mission waits on it, keeping every
         candidate in its blocker, instead of asking the founder about the same attach a second time. An answered or
         withdrawn ask is never shared: this mission's need would then wait on a closed request that no open ask
-        names. Another mission's ask is never shared either, since that mission may withdraw it."""
+        names. Once shared, the founder's answer to it is this mission's answer too (``_step``). Another mission's
+        ask is never shared either, since that mission may withdraw it."""
         if not candidates:
             return None
         for event in self.journal.replay("decision.requested"):

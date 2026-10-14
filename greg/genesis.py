@@ -241,9 +241,11 @@ for _spec in CATALOG.values():
 
 COGNITION_SEARCH = ["attached", "verified_detached", "genome_library", "installed_package", "builder", "founder"]
 CONTROL_INPUTS = ("formalization_complete",)        # compiler-level flags carried in data; no method reads them
-# Bounds on a residual's input names. The count is the compiler's own data bound (contracts.strict_data); a deficit
-# beyond either bound is not matched at all, never matched on a filtered subset of its inputs.
-MAX_INPUTS, MAX_INPUT_NAME = 1000, 64
+# The compiler's own bound on a request's inputs (contracts.strict_data): a deficit naming more did not come from it
+# and is matched to nothing. Input names are never bounded or filtered: a family fits when its native inputs are among
+# the request's, so an extra name never stops a fit, and a formed mechanism serves only an exact set of names, so an
+# extra name always does, exactly as in the compiler. SHOWN_NAME bounds only how a name is quoted in a route.
+MAX_INPUTS, SHOWN_NAME = 1000, 64
 
 
 def is_cognition_deficit(function: str) -> bool:
@@ -262,33 +264,47 @@ def cognition_record(function: str, deficit: dict | None = None) -> dict:
 
     Built from the compiler's ``capability_deficit`` when the mission engine passes it, exactly as reported: the
     declared geometry is kept as given (one that is not an epistemic class matches no family and no mechanism,
-    which is the compiler's own result; an undeclared one matches by inputs alone, as in the compiler), and the
-    inputs are kept whole. Inputs beyond the bounds are refused, not filtered: the residual is then matched to
-    nothing. Without a deficit the record comes from the function name alone, with no inputs (nothing then matches
-    by inputs, so the search ends with the founder)."""
+    which is the compiler's own result; an undeclared one matches by inputs alone, as in the compiler), and every
+    input name is kept whole, whatever its length. An entry that is not a name (a receipt keeps a name longer than
+    its text bound as a digest) is counted in ``unnamed_inputs``: it is no family's native input, so the family fit
+    is unchanged, and no formed mechanism reads it, so none is matched. More inputs than the compiler's bound are
+    refused: the residual is then matched to nothing. Without a deficit the record comes from the function name
+    alone, with no inputs (nothing then matches by inputs, so the search ends with the founder)."""
     head, _, sub = function.removeprefix("cognition.").partition(":")
     raw = deficit if isinstance(deficit, dict) else {}
     geometry = raw.get("geometry") if isinstance(raw.get("geometry"), dict) else None
     # the compiler names an undeclared geometry "unknown" in the function; its own geometry is then None
     declared = geometry.get("geometry") if geometry is not None else (None if head == "unknown" else head)
-    inputs, refused = raw.get("required_inputs"), None
-    if isinstance(inputs, list):
-        if len(inputs) > MAX_INPUTS:
-            refused = f"{len(inputs)} inputs exceed the bound of {MAX_INPUTS}"
-        elif any(not isinstance(x, str) or not 0 < len(x) <= MAX_INPUT_NAME for x in inputs):
-            refused = f"an input name is not a string of 1-{MAX_INPUT_NAME} characters"
-    known = isinstance(inputs, list) and refused is None
+    inputs = raw.get("required_inputs")
+    known = isinstance(inputs, list) and len(inputs) <= MAX_INPUTS
     named = raw.get("acquisition_candidates") if isinstance(raw.get("acquisition_candidates"), list) else []
     record = {"geometry": declared,
               "subgeometry": str((geometry or {}).get("subgeometry") or sub or "")[:120] or None,
-              "required_inputs": sorted(set(inputs)) if known else [],
+              "required_inputs": sorted({x for x in inputs if isinstance(x, str)}) if known else [],
               "inputs_known": known,
               "named_by_compiler": [{"mechanism": str(c.get("mechanism"))[:200],
                                      "supersedes": str(c.get("supersedes") or c.get("subregion") or "")[:120]}
                                     for c in named[:5] if isinstance(c, dict)]}
-    if refused:
-        record["inputs_refused"] = {"why": refused, "inputs_digest": sha256_json({"inputs": inputs})}
+    unnamed = sum(1 for x in inputs if not isinstance(x, str)) if known else 0
+    if unnamed:
+        record["unnamed_inputs"] = unnamed
+    if isinstance(inputs, list) and not known:
+        record["inputs_refused"] = {"why": f"{len(inputs)} inputs exceed the compiler's bound of {MAX_INPUTS}",
+                                    "inputs_digest": sha256_json({"inputs": inputs})}
     return record
+
+
+def residual_mechanisms(record: dict) -> list[str]:
+    """Catalogued installed mechanisms that serve a residual record exactly as the compiler would route to them: a
+    mechanism reads an exact set of input names, so an input that is not a name leaves none."""
+    if record.get("unnamed_inputs"):
+        return []
+    return cognition_mechanisms(record["required_inputs"], record["geometry"])
+
+
+def shown(names, n: int = 12) -> list[str]:
+    """Up to ``n`` input names as a route quotes them: a name longer than SHOWN_NAME keeps a prefix and its length."""
+    return [x if len(x) <= SHOWN_NAME else f"{x[:SHOWN_NAME - 24]}... ({len(x)} characters)" for x in list(names)[:n]]
 
 
 def cognition_mechanisms(inputs, geometry: str | None) -> list[str]:
@@ -736,7 +752,7 @@ class Genesis:
         record = (existing or {}).get("cognition") or cognition_record(function, deficit)
         if existing is not None:
             repair = existing.get("repair") or repair
-        mechanisms = cognition_mechanisms(record["required_inputs"], record["geometry"])
+        mechanisms = residual_mechanisms(record)
         contract = next((c for c in mission.spec.get("capability_specs", []) if c["function"] == function), None)
         seed = int(sha256_json({"deficit": deficit_id})[7:15], 16)
         if existing is None:
@@ -786,8 +802,11 @@ class Genesis:
             self._route(deficit_id, "installed_package", "the deficit names no usable inputs, so no mechanism can be "
                                                          "matched to it", None)
         elif not matched:
+            unnamed = record.get("unnamed_inputs")
             self._route(deficit_id, "installed_package", "no catalogued open-source mechanism serves this geometry "
-                                                         f"with inputs {record['required_inputs'][:12]}", None)
+                                                         f"with inputs {shown(record['required_inputs'])}"
+                                                         + (f" and {unnamed} input(s) known only by digest, which no "
+                                                            "mechanism reads" if unnamed else ""), None)
         for mechanism in matched:                 # formed for an earlier deficit and still awaiting the founder
             for manifest in self.registry.by_function(mechanism):
                 if is_formed(manifest) and self.registry.state[manifest.capability_id] == "VERIFIED":
@@ -868,7 +887,7 @@ class Genesis:
         if not found and not noted and not near:
             self._route(deficit_id, "genome_library", "no registered intelligence fits: none "
                                                       f"{'of geometry ' + declared + ' ' if declared else ''}takes "
-                                                      f"its native inputs from {sorted(provided)[:12]}", None)
+                                                      f"its native inputs from {shown(sorted(provided))}", None)
         return found
 
     def _package_route(self, mission, function, spec, deficit_id, seed, repair, now, offered=None):

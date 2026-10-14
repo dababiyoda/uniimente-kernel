@@ -412,8 +412,8 @@ def test_without_the_compiler_genesis_alone_names_the_withheld_genome_in_the_one
 
 def test_a_body_level_ask_the_founder_already_answered_is_never_shared(tmp_path, index):
     """An answered or withdrawn body-level ask is closed. A mission sharing it would wait on a closed request that no
-    open ask names, so the founder would never be asked about its deficit: it asks on its own instead, and so does a
-    mission that shared the ask before the founder answered it."""
+    open ask names, so the founder would never be asked about its deficit: it asks on its own instead. A mission that
+    shared the ask before the founder answered it takes the answer as its own and is not asked again (section 60)."""
     item = library.executables()["queue_erlang"]
     index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "DEFAULT_FOR_GEOMETRY",
                                                                "version": item.genome.version}},
@@ -436,11 +436,13 @@ def test_a_body_level_ask_the_founder_already_answered_is_never_shared(tmp_path,
             clock.advance(31)
         book = body.engine.book
         open_asks = {r["request_id"]: r for r in book.open_requests()}
-        for mid in ("m:first", "m:staff"):
-            blocker = book.missions[mid].blocker
-            assert blocker["request_id"] not in book.answers and "shared_ask" not in blocker
-            assert blocker["attach_candidates"] == ["cognition.queue_erlang"]
-            assert open_asks[blocker["request_id"]]["mission_id"] == mid      # an open ask names this mission
+        staff = book.missions["m:staff"].blocker                           # arrived after the answer: asks on its own
+        assert staff["request_id"] not in book.answers and "shared_ask" not in staff
+        assert staff["attach_candidates"] == ["cognition.queue_erlang"]
+        assert open_asks[staff["request_id"]]["mission_id"] == "m:staff"
+        first = book.missions["m:first"].blocker                           # shared it before: the reject is its answer
+        assert first.get("shared_ask") and first["request_id"] == shared["request_id"]
+        assert [a["mission_id"] for a in attach_asks(body)] == [None, "m:staff"]   # never asked again for m:first
         assert body.registry.state["cognition.queue_erlang"] == "VERIFIED"
 
 
@@ -508,7 +510,8 @@ def test_auto_attach_never_attaches_a_withheld_genome_named_directly(tmp_path, i
 
 def test_the_residual_keeps_the_compilers_geometry_and_every_input(tmp_path, index):
     """Genesis matches the residual exactly as the compiler will: a declared geometry that is not an epistemic class
-    matches nothing, and an input is never dropped (beyond the bounds the residual is matched to nothing)."""
+    matches nothing, and an input is never dropped, whatever its name (beyond the compiler's own count bound the
+    residual is matched to nothing)."""
     record = G.cognition_record("cognition.assignment:unspecified",
                                 {"required_inputs": ["costs"], "geometry": {"geometry": "assignment"}})
     assert record["geometry"] == "assignment" and G.cognition_mechanisms(record["required_inputs"], "assignment") == []
@@ -517,7 +520,20 @@ def test_the_residual_keeps_the_compilers_geometry_and_every_input(tmp_path, ind
     extra = "budget_that_the_total_assignment_cost_must_not_exceed_in_dollars_x"   # 66 characters
     long = G.cognition_record("cognition.optimization:assignment",
                               {"required_inputs": ["costs", extra], "geometry": {"geometry": "optimization"}})
-    assert not long["inputs_known"] and long["required_inputs"] == [] and "1-64 characters" in long["inputs_refused"]["why"]
+    assert long["inputs_known"] and long["required_inputs"] == sorted(["costs", extra])
+    assert G.residual_mechanisms(long) == []                       # SciPy does not read the extra input
+    assert G.residual_mechanisms(record) == [] and G.residual_mechanisms(undeclared) == [A.FUNCTION]
+    # a receipt keeps a name beyond its text bound as a digest: no mechanism reads it, so none is matched
+    digest = G.cognition_record("cognition.optimization:assignment", {
+        "required_inputs": ["costs", {"prefix": "x", "truncated": True, "sha256": "0" * 64, "length": 20000}],
+        "geometry": {"geometry": "optimization"}})
+    assert digest["inputs_known"] and digest["required_inputs"] == ["costs"] and digest["unnamed_inputs"] == 1
+    assert G.residual_mechanisms(digest) == []
+    beyond = G.cognition_record("cognition.optimization:assignment",
+                                {"required_inputs": [f"k{i}" for i in range(G.MAX_INPUTS + 1)],
+                                 "geometry": {"geometry": "optimization"}})
+    assert not beyond["inputs_known"] and beyond["required_inputs"] == []
+    assert "bound of 1000" in beyond["inputs_refused"]["why"]
     home, key, body_id, _ = make_body(tmp_path)
     drop(home, signed(key, body_id, "MISSION", compile_mission("m:class", {"geometry": "assignment"}, {"costs": COSTS})))
     drop(home, signed(key, body_id, "MISSION", compile_mission("m:long", {"geometry": "optimization"},
@@ -529,11 +545,95 @@ def test_the_residual_keeps_the_compilers_geometry_and_every_input(tmp_path, ind
             body.tick()
             clock.advance(31)
         opened = {e.payload["mission_id"]: e.payload["cognition"] for e in body.journal.replay("deficit.opened")}
-        assert opened["m:class"]["geometry"] == "assignment" and not opened["m:long"]["inputs_known"]
+        assert opened["m:class"]["geometry"] == "assignment" and extra in opened["m:long"]["required_inputs"]
         assert not list(body.journal.replay("genesis.verified")) and SCIPY not in body.registry.state
         for mid in ("m:class", "m:long"):
             blocker = body.engine.book.missions[mid].blocker
             assert blocker["type"] == "capability" and "attach_candidates" not in blocker
+
+
+@pytest.mark.parametrize("extra", ["x" * 66, ""])
+def test_an_extra_input_of_any_name_never_stops_the_compilers_withheld_genome_being_offered(tmp_path, index, extra):
+    """A family fits when its native inputs are among the request's, so the compiler fits queue_erlang to a request that
+    also carries an input with a long or empty name. Genesis offers the same family on the compiler's own ask, and the
+    founder's attach closes the mission; the mission never asks a second time about it."""
+    item = library.executables()["queue_erlang"]
+    index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "DEFAULT_FOR_GEOMETRY",
+                                                               "version": item.genome.version}},
+                                 "recipes": {}, "routing": {}}))
+    data = dict(item.instance(2)[0])                                       # development seed
+    data[extra] = 5
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission(
+        "m:staff", {"geometry": item.genome.epistemic_class, "subgeometry": "staffing"}, data)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock, 3)[-1]["state"] in ("BLOCKED", "WAITING")
+        assert compilations(body)[-1]["withheld_best_fit"]["method"] == "cognition.queue_erlang"
+        [record] = [e.payload["cognition"] for e in body.journal.replay("deficit.opened")]
+        assert record["inputs_known"] and record["required_inputs"] == sorted(data)
+        blocker = body.engine.book.missions["m:staff"].blocker
+        assert blocker["attach_candidates"] == ["cognition.queue_erlang"] and blocker["shared_ask"]
+        [ask] = attach_asks(body)                                          # the compiler's ask, shared
+        assert ask["mission_id"] is None and ask["request_id"] == blocker["request_id"]
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.queue_erlang"}))
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+        assert len(attach_asks(body)) == 1
+
+
+@pytest.mark.parametrize("answer", ["approve", "reject"])
+def test_the_founders_answer_to_a_shared_ask_is_never_followed_by_another_ask(tmp_path, index, answer):
+    """asks.py: approving only records the answer, and attaching is its own signed command. A mission that shares the
+    compiler's ask takes the founder's answer as its own, as for its own ask: after an approve it waits for the attach,
+    after a reject it is not asked again (section 60). Only an ask withdrawn unanswered is asked about again."""
+    item = library.executables()["queue_erlang"]
+    index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "DEFAULT_FOR_GEOMETRY",
+                                                               "version": item.genome.version}},
+                                 "recipes": {}, "routing": {}}))
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission(
+        "m:staff", {"geometry": item.genome.epistemic_class, "subgeometry": "staffing"}, item.instance(2)[0])))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 2)
+        [ask] = attach_asks(body)
+        blocker = body.engine.book.missions["m:staff"].blocker
+        assert blocker["shared_ask"] and blocker["request_id"] == ask["request_id"]
+        body.apply(signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": answer,
+                                                      "reason": "the founder's answer"}))
+        assert [s["state"] for s in ticks(body, clock, 3)] == ["WAITING"] * 3
+        assert len(attach_asks(body)) == 1 and body.engine.book.open_requests() == []
+        assert body.engine.book.missions["m:staff"].blocker == blocker
+        if answer == "approve":
+            body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.queue_erlang"}))
+            assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+            assert len(attach_asks(body)) == 1
+
+
+def test_a_shared_ask_withdrawn_unanswered_is_asked_about_on_the_missions_own(tmp_path, index):
+    """The founder never decided a shared ask that was withdrawn unanswered: the mission's need is asked about once."""
+    item = library.executables()["queue_erlang"]
+    index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "DEFAULT_FOR_GEOMETRY",
+                                                               "version": item.genome.version}},
+                                 "recipes": {}, "routing": {}}))
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission(
+        "m:staff", {"geometry": item.genome.epistemic_class, "subgeometry": "staffing"}, item.instance(2)[0])))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 2)
+        [ask] = attach_asks(body)
+        body.journal.record("decision.withdrawn", {"request_id": ask["request_id"], "mission_id": None,
+                                                   "why": "withdrawn by the body", "evidence": [], "at": "2026-01-01"},
+                            key=[ask["request_id"], "withdrawn"])
+        ticks(body, clock, 2)
+        blocker = body.engine.book.missions["m:staff"].blocker
+        assert "shared_ask" not in blocker and blocker["attach_candidates"] == ["cognition.queue_erlang"]
+        assert [r["mission_id"] for r in body.engine.book.open_requests()] == ["m:staff"]
+        assert [a["mission_id"] for a in attach_asks(body)] == [None, "m:staff"]
 
 
 def test_several_withheld_genomes_fit_and_the_founder_is_asked_once(tmp_path, index):

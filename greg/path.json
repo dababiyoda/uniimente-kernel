@@ -1832,7 +1832,13 @@
       "risk": "split-brain authority",
       "authority_implications": "no body may enroll itself; enrollment is founder-signed",
       "activation_condition": "founder-signed enrollment plus the N8 exit",
-      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26"
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26",
+      "buildability_review": {
+        "question": "2026-10-14 re-check (directive section 31 item 16): does the label describe the destination, not the precursor?",
+        "finding": "kept BUILDABLE_NOW. Section 25 classifies against current reliable technology; one GREG across several bodies with one ledger, one authority path and survival of a body's loss needs only mature technology (consensus-replicated logs, durable-execution engines, fencing and idempotent effects). The blocker is a second founder-authorized body and founder-signed enrollment, which missing_capabilities, dependencies and activation_condition carry. The destination is not built: NODE_ENROLL is a precursor, untested on a second machine",
+        "source_check": "section 26 lists 'reliable multi-body agency' among the frontier goals to backcast without classifying it; the source does not support a different label",
+        "label_changed": false
+      }
     },
     {
       "id": "advanced_robotic_embodiment",
@@ -1913,7 +1919,13 @@
       "risk": "labour exploitation and dependency",
       "authority_implications": "humans keep refusal rights; GREG contacts and pays no one without founder authority",
       "activation_condition": "the N6 exit",
-      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26"
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26",
+      "buildability_review": {
+        "question": "2026-10-14 re-check (directive section 31 item 16): does the label describe the destination, not the precursor?",
+        "finding": "kept BUILDABLE_NOW. Typed contracts, evidence, payment rails and consent records are current reliable technology, and platforms already coordinate human work with machine checking at scale. The blockers are legal operator structures, institutional capacity and economic scale (horizon human_work_fabric: REQUIRES_LEGAL_INSTITUTIONAL_CAPACITY), not technology. The destination is not built: greg/asks.py can ask for a human worker, and no human+AI closure exists",
+        "source_check": "section 26 lists 'large-scale human-machine institutional coordination' among the frontier goals to backcast without classifying it; the source does not support a different label",
+        "label_changed": false
+      }
     },
     {
       "id": "jarvis_environmental_awareness",
@@ -1971,6 +1983,168 @@
       "authority_implications": "no automatic capital allocation; the founder decides",
       "activation_condition": "the N7 exit plus a founder decision",
       "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26"
+    },
+    {
+      "id": "robust_unscripted_organ_formation",
+      "horizon": "persistent_organs",
+      "node": "N5",
+      "destination": "a recurring verified deficit yields a bounded, persistent specialist organ (contracts, state, tests, lifecycle, shutdown) assembled from validated components without a scripted blueprint, robustly across unrelated deficits, and retained only while it beats simpler baselines",
+      "current_precursor": [
+        "greg/sop.py",
+        "greg/genesis.py",
+        "greg/cognition/genomes/developmental.py"
+      ],
+      "precursor_mechanisms": [
+        "cognition.develop_repair"
+      ],
+      "missing_capabilities": [
+        "deciding that a deficit recurs enough to justify an organ (greg/sop.py counts repeated closures; it does not draw organ boundaries)",
+        "assembly of a new bounded subsystem from validated components without a scripted blueprint (greg/genesis.py acquires or builds against a frozen contract; develop_repair repairs one simulated lattice target)",
+        "robustness: formation that succeeds across unrelated deficits, not on one benchmark",
+        "a lifecycle that retires a formed organ when it stops beating simpler baselines"
+      ],
+      "active_gate": "P9 exit (constraint-release discovery), then N5 (persistent organs)",
+      "gate_crossing_evidence": "on held-out recurring deficits, an organ absent from every candidate library forms, beats the scripted Genesis route on verified closures per unit cost, and replicates independently on an unrelated deficit",
+      "dependencies": [
+        "N2 novel capability closure",
+        "N4 SOP compounding",
+        "P8 protected evaluator",
+        "P9 constraint-release discovery"
+      ],
+      "single_bottleneck_metric": "unscripted organs that beat the scripted Genesis baseline on held-out recurring deficits",
+      "nearest_falsifiable_experiment": "freeze a set of recurring deficits from the body's ledger and compare local assembly from validated capabilities (develop_repair's local rules lifted to capability topology) with greg.genesis scripted acquisition on held-out deficits",
+      "buildability_status": "EXPERIMENTAL_NOW",
+      "buildability_basis": "the founder's own classification in directive section 7 (Morphogenetic horizon), quoted verbatim in source_quote",
+      "risk": "a scripted pipeline relabelled as unscripted formation; organ sprawl that adds complexity without verified closures",
+      "authority_implications": "a formed organ is a capability, never an authority: it starts registered and withheld, and attaching it stays a founder decision",
+      "activation_condition": "P9 exit plus a founder attach of the formed organ",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#7",
+      "source_quote": [
+        "Experimental:",
+        "* robust unscripted organ formation;"
+      ]
+    },
+    {
+      "id": "cross_substrate_developmental_compilation",
+      "horizon": "developmental_research",
+      "node": "N2",
+      "destination": "one developmental specification (target function, local rules, signals, repair objective) compiles to materially different substrates and restores the same verified target function on each, with no per-substrate re-implementation",
+      "current_precursor": [
+        "developmental/mica.py",
+        "developmental/cdpe.py",
+        "greg/cognition/genomes/developmental.py"
+      ],
+      "precursor_mechanisms": [
+        "cognition.develop_repair"
+      ],
+      "missing_capabilities": [
+        "a substrate-neutral developmental specification (develop_repair's rules are written for one 4-neighbour lattice)",
+        "a compiler to a second substrate (graph diffusion or a cellular automaton beside the lattice)",
+        "an equivalence check of restored function that is independent of either substrate"
+      ],
+      "active_gate": "P10 exit (functional morphogenesis), then P12 (substrate-plural execution)",
+      "gate_crossing_evidence": "one frozen developmental specification compiled to two materially different substrates restores the same target function on the same held-out damage seeds, with receipts checked by a verifier independent of both substrates",
+      "dependencies": [
+        "P10 functional morphogenesis",
+        "sealed developmental laboratory",
+        "P12 substrate-plural execution"
+      ],
+      "single_bottleneck_metric": "substrates on which one frozen developmental specification restores verified target function",
+      "nearest_falsifiable_experiment": "state TARGET_FORM_001's transport target once, compile it to the lattice (develop_repair) and to a graph-diffusion substrate, and compare restored function on the same held-out damage seeds",
+      "buildability_status": "EXPERIMENTAL_NOW",
+      "buildability_basis": "the founder's own classification in directive section 7 (Morphogenetic horizon), quoted verbatim in source_quote",
+      "risk": "a re-implementation per substrate presented as compilation; reading simulated substrates as biological ones",
+      "authority_implications": "none: compilation yields simulations and candidate structures, never effects",
+      "activation_condition": "P10 exit plus a founder decision to admit a second substrate",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#7",
+      "source_quote": [
+        "Experimental:",
+        "* cross-substrate developmental compilation."
+      ]
+    },
+    {
+      "id": "open_ended_cognitive_organization_generation",
+      "horizon": "cognitive_ecology",
+      "node": "N5",
+      "destination": "GREG reliably and open-endedly generates entirely new cognitive organizations (topologies of methods, communication and resource rules) found in no library, each admitted only when it beats the strongest existing organization on its geometry and replicates independently",
+      "current_precursor": [
+        "greg/cognition/evolution.py",
+        "greg/cognition/composition.py",
+        "greg/cognition/genomes/developmental.py"
+      ],
+      "precursor_mechanisms": [
+        "cognition.develop_constraint_release",
+        "cognition.evolutionary"
+      ],
+      "missing_capabilities": [
+        "a P8 cycle that keeps an improvement (cycles 1-3 were rejected under the sealed evaluator)",
+        "P9 constraint-release discovery (deferred)",
+        "generation beyond a closed configuration space",
+        "sustained novelty without evaluator capture or runaway resource use"
+      ],
+      "active_gate": "P8 exit (repeated held-out gains under a sealed evaluator), then P9 exit (a previously unlisted organization beats the baseline and replicates)",
+      "gate_crossing_evidence": "generated organizations absent from every library are admitted repeatedly on held-out seeds against the strongest existing organization, with the sealed evaluator digest unchanged, and replicate independently across unrelated geometries",
+      "dependencies": [
+        "P8",
+        "P9",
+        "P11 open cognitive ecology",
+        "IntelligenceGenome admission"
+      ],
+      "single_bottleneck_metric": "generated organizations admitted per evaluation budget",
+      "nearest_falsifiable_experiment": "a first P9 cycle: recombine admitted genomes' operators under altered rules (develop_constraint_release's search) on a frozen task and compare with the best library composition on held-out seeds",
+      "buildability_status": "FRONTIER_RESEARCH",
+      "buildability_basis": "the founder's own classification in directive section 7 (Morphogenetic horizon), quoted verbatim in source_quote",
+      "risk": "evaluator capture; novelty without usefulness; runaway resource use",
+      "authority_implications": "a generated organization inherits no authority: it is registered withheld and attaching it stays a founder decision",
+      "activation_condition": "P8 and P9 exits plus a founder attach",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#7",
+      "source_quote": [
+        "Frontier:",
+        "* reliable open-ended generation of entirely new cognitive organizations."
+      ]
+    },
+    {
+      "id": "substrate_independent_developmental_intelligence",
+      "horizon": "developmental_research",
+      "node": "N2",
+      "destination": "extremely general substrate-independent developmental intelligence with the reliability, generality, embodiment flexibility, and autonomy implied by the strongest Levin-inspired vision (the founder's words); preserved as a descendant, never claimed to exist",
+      "current_precursor": [
+        "developmental/mica.py",
+        "developmental/cdpe.py",
+        "greg/cognition/genomes/developmental.py"
+      ],
+      "precursor_mechanisms": [
+        "cognition.develop_repair",
+        "cognition.develop_constraint_release"
+      ],
+      "missing_capabilities": [
+        "every preceding developmental frontier: robust unscripted organ formation, generalized repair across domains, cross-substrate developmental compilation, open-ended organization generation",
+        "a demonstrated mechanism for substrate-independent developmental competence",
+        "embodiment beyond simulation"
+      ],
+      "active_gate": "none reachable from present evidence: the preceding developmental frontiers (P10 to P13 exits) must cross first",
+      "gate_crossing_evidence": "a developmental intelligence restores and extends function on unseen substrates, damage and embodiments, generalizes across unrelated domains, and replicates independently; no present experiment can produce this evidence",
+      "dependencies": [
+        "robust_unscripted_organ_formation",
+        "generalized_morphogenetic_repair",
+        "cross_substrate_developmental_compilation",
+        "open_ended_cognitive_organization_generation",
+        "P13 poly-embodied developmental institution"
+      ],
+      "single_bottleneck_metric": "preceding developmental frontiers whose gates have crossed (0 today)",
+      "nearest_falsifiable_experiment": "none of its own; the nearest falsifiable step is cross_substrate_developmental_compilation's lattice-versus-graph experiment",
+      "buildability_status": "SCIENCE_FICTION_DESCENDANT",
+      "buildability_basis": "the founder's own classification in directive section 7 (Morphogenetic horizon), quoted verbatim in source_quote",
+      "risk": "claiming it exists; claiming biological equivalence; reading 'autonomy' as authority",
+      "authority_implications": "none: a preserved destination creates no authority, and autonomy never includes resisting pause, revocation or shutdown",
+      "activation_condition": "never by claim: only if every preceding developmental gate crosses with independent replication and the founder decides",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#7",
+      "source_quote": [
+        "Science-fiction descendant:",
+        "* extremely general substrate-independent developmental intelligence with the reliability, generality, embodiment flexibility, and autonomy implied by the strongest Levin-inspired vision.",
+        "Preserve the descendant.",
+        "Do not falsely claim it exists."
+      ]
     }
   ]
 }

@@ -127,6 +127,11 @@ def stamp(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _version_one(value) -> bool:
+    """Exactly the integer 1: JSON ``true`` and ``1.0`` compare equal to 1 in Python."""
+    return type(value) is int and value == 1
+
+
 def _instant(value) -> datetime:
     try:
         parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
@@ -165,7 +170,7 @@ def verify_envelope(envelope, keys: dict[str, str], kind: str) -> dict:
     """The envelope's body if a listed key signed exactly this record; else raise."""
     if not isinstance(envelope, dict) or set(envelope) != ENVELOPE_FIELDS:
         raise IntegrityRecordError("integrity record needs exactly " + ", ".join(sorted(ENVELOPE_FIELDS)))
-    if envelope["version"] != 1 or envelope["kind"] != kind or envelope["scope"] != SCOPE:
+    if not _version_one(envelope["version"]) or envelope["kind"] != kind or envelope["scope"] != SCOPE:
         raise IntegrityRecordError(f"not a version-1 {kind} record for {SCOPE}")
     kid = envelope["founder_key_id"]
     if not isinstance(kid, str) or kid not in keys:
@@ -246,7 +251,7 @@ class Manifest:
 
 def load_manifest(root: str = KERNEL_ROOT) -> Manifest:
     raw = _load(root, MANIFEST)
-    if not isinstance(raw, dict) or raw.get("version") != 1 or not isinstance(raw.get("artifacts"), list) \
+    if not isinstance(raw, dict) or not _version_one(raw.get("version")) or not isinstance(raw.get("artifacts"), list) \
             or set(raw) - {"version", "purpose", "baseline_source", "artifacts"}:
         raise IntegrityRecordError(f"{MANIFEST} must be a version-1 object with an artifacts list")
     baseline: dict[str, str] = {}
@@ -312,7 +317,7 @@ def load_founder_keys(root: str = KERNEL_ROOT) -> FounderKeys:
 
 def founder_keys_from(raw) -> FounderKeys:
     """Replay the key log: genesis (the founder's own commit), then signed changes."""
-    if not isinstance(raw, dict) or raw.get("version") != 1 or \
+    if not isinstance(raw, dict) or not _version_one(raw.get("version")) or \
             not {"genesis", "changes"} <= set(raw) or set(raw) - {"version", "purpose", "genesis", "changes"}:
         raise IntegrityRecordError(f"{FOUNDER_KEYS} must be a version-1 object with genesis and changes")
     genesis = _key_entries(raw["genesis"], f"{FOUNDER_KEYS} genesis")
@@ -365,7 +370,7 @@ def load_authorizations(root: str = KERNEL_ROOT) -> list:
 
 
 def authorizations_from(raw) -> list:
-    if not isinstance(raw, dict) or raw.get("version") != 1 or not isinstance(raw.get("authorizations"), list) \
+    if not isinstance(raw, dict) or not _version_one(raw.get("version")) or not isinstance(raw.get("authorizations"), list) \
             or set(raw) - {"version", "purpose", "authorizations"}:
         raise IntegrityRecordError(f"{AUTHORIZATIONS} must be a version-1 object with an authorizations list")
     return raw["authorizations"]

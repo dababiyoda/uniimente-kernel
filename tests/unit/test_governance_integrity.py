@@ -320,7 +320,7 @@ def _signed_as_is(key, envelope):
     return envelope
 
 
-@pytest.mark.parametrize("variant", ["scope", "kind", "extra", "nonce"])
+@pytest.mark.parametrize("variant", ["scope", "kind", "extra", "nonce", "version"])
 def test_a_validly_signed_record_of_the_wrong_shape_is_refused(tree, tmp_path, variant):
     """Signed by the enrolled key, yet for another repository, another record
     kind, with an extra field, or with a short nonce: none of them authorizes."""
@@ -330,7 +330,8 @@ def test_a_validly_signed_record_of_the_wrong_shape_is_refused(tree, tmp_path, v
     good = sign_envelope(key, AUTHORIZE, {"artifact": GATE, "previous_sha256": _sha(_git_show(SR002_WITNESS, GATE)),
                                           "new_sha256": observed, "reason": "x"})
     shape = {"scope": {"scope": "dababiyoda/DALEOBANKS/governance/integrity"}, "kind": {"kind": KEYS},
-             "extra": {"approved_by": "Alfonso Lopez"}, "nonce": {"nonce": "ab" * 4}}[variant]
+             "extra": {"approved_by": "Alfonso Lopez"}, "nonce": {"nonce": "ab" * 4},
+             "version": {"version": True}}[variant]
     forged = _signed_as_is(key, {**good, **shape})
     (tree / AUTHORIZATIONS).write_text(json.dumps({"version": 1, "authorizations": [forged]}))
     with pytest.raises(IntegrityRecordError):
@@ -471,6 +472,9 @@ def test_an_authorization_by_a_removed_key_stops_counting(tree, tmp_path):
     (FOUNDER_KEYS, '{"version": 1, "genesis": [], "changes": [], "trusted": true}'),
     (FOUNDER_KEYS, '{"version": 1, "genesis": [], "changes": [], "purpose": NaN}'),
     (MANIFEST, json.dumps({**MANIFEST_RAW, "authorized_by": "Alfonso Lopez"})),
+    (MANIFEST, json.dumps({**MANIFEST_RAW, "version": True})),
+    (FOUNDER_KEYS, json.dumps({"version": 1.0, "genesis": [], "changes": []})),
+    (AUTHORIZATIONS, json.dumps({"version": True, "authorizations": []})),
     (FOUNDER_KEYS, json.dumps({"version": 1, "genesis": [{"public_key": "zz", "label": "x"}], "changes": []})),
 ])
 def test_an_unsound_record_gives_no_verdict(tree, rel, content):

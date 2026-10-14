@@ -1,0 +1,141 @@
+{
+  "intent_id": "INTENT-20261007-COHERENT-FULL-MIND-COMPLETION",
+  "statement": "Optimize for completion of the largest coherent portion of the intended BODY + ORGANS + MIND machine that present evidence, dependencies, permissions and technology allow. Build the full currently achievable Polyintelligence Mind, verify and integrate its capabilities, then immediately continue each next unfinished coherent portion. Prioritize P6 verified cognitive composition lift, P4 conditional competence memory, P8 protected evolutionary cognition and executable IntelligenceGenome family expansion. All five functional Mind layers remain simultaneous obligations.",
+  "source_refs": [
+    {
+      "source_date": "2026-10-03",
+      "local_source": "docs/intent/sources/FULL-POLYINTELLIGENCE-MIND-20261003.txt",
+      "github_attribution": "https://github.com/dababiyoda/uniimente-kernel/blob/91703729a64e27ac6045360e36539ca8839f45b4/docs/collaboration/founder-directive-full-polyintelligence-mind-2026-10-03.txt",
+      "sha256": "723805607469b43e49ac2752538c9fc0c9fbd26f34ecbc194dfb9056d354581e",
+      "source_status": "Attributed founder record supplied from inspected GitHub/source handoff; source lineage and content integrity, not cryptographic founder authentication or runtime authority."
+    },
+    {
+      "source_date": "2026-10-07",
+      "local_source": "docs/intent/sources/FOUNDER-VPL-REVIEW-20261007.md",
+      "github_attribution": "https://github.com/dababiyoda/uniimente-kernel/pull/155",
+      "sha256": "a52e27bbd5efb3571b09ff017e3c8c16b846e9868dfc3729740d1ac75169268c",
+      "source_status": "Attributed founder record supplied from inspected GitHub/source handoff; source lineage and content integrity, not cryptographic founder authentication or runtime authority."
+    }
+  ],
+  "owner": "Alfonso Lopez",
+  "operational_owner": "Canonical GREG, Kernel, Cortex and organ maintainers",
+  "state": "active",
+  "implementation_state": "in_progress_not_complete",
+  "binding_scope": "Complete currently achievable Body + Organs + Mind; work grouping, Mind priority, source preservation and evidence claims on all agent/build/PR guidance.",
+  "constitutional_constraints": [
+    "Capability growth does not create authority growth.",
+    "Preserve canonical Kernel/GREG/mission/routing/evidence/learning owners; no parallel authority plane.",
+    "Human policy, signed grants, consent, budgets, refusal, pause, revocation and shutdown remain effective; no new merge, deployment, spend, publishing or contact authority.",
+    "Frozen evaluations and historical evidence remain unchanged; attribution and content hashes do not authenticate a founder or authorize effects."
+  ],
+  "success_evidence": [],
+  "failure_evidence": [
+    "Existing active AGENTS and Copilot work selection still chose the smallest rigorous increment after the October 3 coherent-portion correction.",
+    "The October 7 attributed review distinguishes P6 orchestration from unproven cognitive lift, coarse P4 from conditional learning and implemented spend code from old retained live booking evidence."
+  ],
+  "dependencies": [
+    "Current canonical executable code and source evidence",
+    "Item-specific authority, hardware, data, resource, technology or external dependencies only; continue independently achievable work"
+  ],
+  "conflicts": [
+    "October 3 changes work grouping without changing the fixed October 2 product boundary or authority; internal rigorous increments remain sequencing units.",
+    "October 7 refines Mind priority and its functional layer projection without deleting October 3 intelligence families or organizational Levels.",
+    "VPL and native baseline requirements constrain qualified claims/admission, not independent implementation or the full-machine destination."
+  ],
+  "next_review_trigger": "After each proven integration, coherent-portion selection, new source, held-out result, real outcome or genuine item-specific blocker",
+  "supersedes": [
+    "Active work-selection interpretations that optimize smallest provable slices rather than largest coherent buildable portions",
+    "P8 before finer P4 in the reviewed Mind next-work ordering",
+    "Interpretations that completion of P4/P6 or solver-only work fulfills the five-layer Mind"
+  ],
+  "superseded_by": null,
+  "implementation_refs": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".github/copilot-instructions.md",
+    ".github/pull_request_template.md",
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/UNIIMENTE_FINAL_BUILD_ORDER.md",
+    "docs/BUILD_ORDER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/RECURSIVE_COLLABORATION_PROTOCOL.md"
+  ],
+  "evidence_refs": [
+    "docs/collaboration/COHERENT-FULL-MIND-RECONCILIATION-20261007.md"
+  ],
+  "fixed_completion_boundary": "BODY + ORGANS + MIND = GREG / UNIIMENTE",
+  "build_grouping": "Largest coherent currently buildable portion; bounded rigorous internal increments sequence work and never justify stopping after a green slice.",
+  "mind_priority": [
+    "P6: verify cognitive composition lift versus best constituent, static composition and geometry-routed composition",
+    "P4: conditional competence memory with sparse-data hierarchical fallback",
+    "P8: protected evolutionary cognition under frozen independently protected evaluator and held-out adversarial checks",
+    "Expand executable IntelligenceGenome families in coherent dependency-aware batches; all intended families/layers remain binding"
+  ],
+  "mind_layers": [
+    "Primitive / basal intelligence",
+    "Distributed / collective intelligence",
+    "Solver / macro-cognitive intelligence",
+    "Developmental / morphogenetic intelligence",
+    "Meta-intelligence / institutional collective cognition"
+  ],
+  "organizational_levels_preserved": [
+    "Primitive / microintelligence",
+    "Bounded competency cells",
+    "Specialized intelligence organs",
+    "Collective + developmental intelligence",
+    "Metacognitive institutional intelligence"
+  ],
+  "layer_reconciliation": "October 3 organizational Levels describe how competencies form and compose; October 7 functional layers separate distributed/collective and developmental functions. Bounded cells carry contract/evidence/cost/verifier interfaces across functional layers. Preserve both projections; no phase sequencing or deletion of either meaning.",
+  "verified_polyintelligence_lift": "Number/proportion of held-out problem families where geometry routing or composition verifiably improves over the strongest single available intelligence, net of cost/latency, without increasing false answers or unauthorized effects.",
+  "conditional_competence_surface": [
+    "method",
+    "method_version",
+    "problem_geometry",
+    "subgeometry",
+    "problem_size",
+    "constraint_density",
+    "objective_type",
+    "data_quality",
+    "uncertainty",
+    "latency_budget",
+    "resource_budget",
+    "evidence_requirement",
+    "consequence_class",
+    "observed_result",
+    "cost",
+    "latency",
+    "verification_status"
+  ],
+  "sparse_data_fallback": [
+    "exact condition",
+    "neighboring condition",
+    "geometry class",
+    "global prior"
+  ],
+  "protected_evolution_loop": [
+    "detect cognitive failure",
+    "identify residual geometry",
+    "generate alternative configurations",
+    "frozen protected evaluator",
+    "independent adversarial evaluation",
+    "held-out test",
+    "retain/reject",
+    "record lineage"
+  ],
+  "evidence_constraints": [
+    "A pipeline running proves orchestration; cognitive lift needs comparative correctness/abstention, translation failures, cost and latency.",
+    "Signed outcomes and separate appraisal may reorder already eligible methods only; learning cannot add engines, change authority/budget or bypass verification.",
+    "Implementation/testing of exact provider spend cannot retroactively change a retained P6 live run that conservatively booked the old authorization cap.",
+    "Each newly admitted family needs comparison against the simpler baseline on its native geometry; negative and inconclusive evidence remain retained.",
+    "Zero or inconclusive VPL is not the completed Mind and cannot stop unrelated buildable portions."
+  ],
+  "protocol_application": "Available canonical Recursive Collaboration Protocol: five analytical roles and exactly two strengthening passes recorded in the reconciliation. No assertion that an unavailable named SKILL.md was loaded.",
+  "prior_source_preservation": [
+    "docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261002.md",
+    "docs/intent/INTENT-20261002-FULL-MACHINE-CONTINUATION.json"
+  ],
+  "authority_delta": "none",
+  "main_copy_scope": "Main-compatible source/guidance propagation only; no draft-only runtime imports, no default writes and no publication."
+}

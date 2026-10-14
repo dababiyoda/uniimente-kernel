@@ -1,0 +1,65 @@
+{
+  "intent_id": "INTENT-20261002-FULL-MACHINE-CONTINUATION",
+  "exact_source_excerpt": "UNIIMENTE — FULL-MACHINE COMPLETION CORRECTION\n\nApply @install-recursive-founder-intent-collaboration-protocol.\n\nA systemic execution error has been identified:\n\nThe project is optimizing for the smallest provable increment instead of completing the intended machine.\n\nCorrect this across all agent instructions, build orders, founder-intent records, active PR guidance, and execution doctrine.\n\nControlling founder intent\n\nThe fixed product boundary is:\n\nBODY + ORGANS + MIND = GREG / UNIIMENTE\n\nThe objective is to build the complete currently achievable autonomous machine before Alfonso begins the sustained real-world use, critique, and refinement phase.\n\nA seed, experiment, sandbox, benchmark, PR, milestone, or “smallest falsifiable build” is only an intermediate engineering step.\n\nIT IS NEVER A STOPPING CONDITION AND MUST NEVER REDEFINE OR NARROW THE FINAL MACHINE.\n\nMandatory execution correction\n\nReplace this implicit behavior:\n\nFind the smallest defensible thing → build it → prove it → stop.\n\nWith:\n\nReconstruct the full Body + Organs + Mind completion boundary → identify the highest-priority unfinished dependency → build the smallest rigorous increment needed to advance it → prove it → integrate it → immediately continue to the next unblocked requirement → repeat until every currently achievable requirement of the complete machine is implemented and integrated.\n\nThe smallest falsifiable next build is a sequencing unit, not the objective.\n\nAfter a successful experiment, the agent MUST resume the parent founder objective automatically.\n\nAnti-narrowing rule\n\nNever convert:\n\n* not implemented yet into not intended;\n* future family into permission to leave it permanently unbuilt;\n* sandboxed into complete;\n* registered into implemented;\n* seed into final architecture;\n* tested component into complete system;\n* VEPMC or any other milestone into the total product definition.\n\nA narrow PR may have narrow scope.\n\nThe project may not have narrow scope.\n\nCompletion behavior\n\nContinue implementation until one of these is true:\n\n1. the currently achievable Body + Organs + Mind is integrated and executable;\n2. a requirement depends on Alfonso performing an inherently founder-only action;\n3. a genuine external dependency blocks further work;\n4. current technology cannot achieve the requirement at the demanded level, in which case preserve the destination and build the strongest technically defensible approximation/backcast path.\n\nDo not fill unfinished capability with documentation, placeholders, registries, or architecture prose when executable implementation is feasible.\n\nFounder-use evidence may remain pending until Alfonso actually begins using the machine. That does not justify leaving buildable machinery unfinished before handoff.\n\nRequired correction now\n\nAudit the active repository instructions and current PRs for this local-optimization failure.\n\nUpdate the canonical agent guidance so every future agent understands:\n\nWe are not building disconnected proofs. We are completing one machine. Body + Organs + Mind are the fixed completion boundary. Prove each step, integrate it, and keep building.\n\nThen resume implementation from the highest-leverage unfinished dependency of that complete machine.\n\nDo not respond with only a plan or another architecture document when executable work is possible.\n",
+  "source_location": "docs/intent/sources/FULL-MACHINE-COMPLETION-CORRECTION-20261002.md",
+  "source_date": "2026-10-02",
+  "intended_effect": "Complete the currently achievable integrated Body + Organs + Mind before sustained founder use. Rigorous increments sequence delivery and automatically resume the parent objective.",
+  "interpretation": "Latest explicit founder correction supersedes interpretations that stop buildable machinery at a seed, experiment, narrow PR or VEPMC gate. Live effects retain existing authenticated authority.",
+  "canonical_owner": "Canonical Kernel instructions and active GREG/organ development workstreams",
+  "lifecycle_state": "active",
+  "implementation_state": "guidance_implemented_in_review_branch; whole_machine_in_progress_not_complete",
+  "authority_scope": "Authorized reversible implementation and review. No merger, deployment, paid service, contact, publication or live authority expansion.",
+  "dependencies": [
+    "Existing canonical GREG branch and institutional contracts",
+    "Only genuine item-specific founder/external/technology gates"
+  ],
+  "implementation_refs": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".github/copilot-instructions.md",
+    ".github/pull_request_template.md",
+    ".github/ISSUE_TEMPLATE/agent-implementation-task.md",
+    "docs/FOUNDER_INTENT_LEDGER.md",
+    "docs/FOUNDER_EFFECT_COMPILER.md",
+    "docs/RECURSIVE_COLLABORATION_PROTOCOL.md",
+    "docs/UNIIMENTE_FINAL_BUILD_ORDER.md",
+    "docs/CANONICAL_EXECUTION_ORDER.md",
+    "docs/BUILD_ORDER.md"
+  ],
+  "tests": [],
+  "evidence_refs": [
+    "docs/collaboration/FULL-MACHINE-CORRECTION-20261002.md"
+  ],
+  "failure_condition": "An intermediate proof or unresolved founder-use milestone silently becomes a stopping condition for unrelated achievable machinery.",
+  "next_gate": "Reconstruct the complete current machine, implement the highest-priority unfinished dependency, prove and integrate it, and immediately continue every next unblocked requirement.",
+  "owner": "Alfonso Lopez",
+  "review_trigger": "Every completed increment, next requirement selection, PR handoff, genuine blocker or founder correction",
+  "named_skill": "Requested install-recursive-founder-intent-collaboration-protocol. Original SKILL.md was not found in accessible workspace/user-skill paths or the enabled executor skill catalog during this session. Existing canonical RECURSIVE_COLLABORATION_PROTOCOL.md, intent ledger and effect compiler are the available repository implementation. Prior October 1 application claims are historical, not current availability evidence.",
+  "user_supplied_identifier": "01a0f6ab-f59b-76a8-b6a2-bb6408f710fa",
+  "identifier_status": "User-supplied unverified identifier; not authenticated founder identity, conversation metadata, or runtime authority.",
+  "source_refs": [
+    "Current user message, 2026-10-02",
+    "docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json"
+  ],
+  "supersedes": [
+    "Residual interpretations that block reversible buildable machinery behind VEPMC, seed comparisons, single-product-delta session exits, or future-family labels"
+  ],
+  "superseded_by": null,
+  "failure_evidence": [
+    "Active SOP section 8 retained a fixed VEPMC bottleneck; sections 20/22 treated one product delta as an exit; Cortex backcast globally gated composition/genesis/future mechanisms on seed comparison and real-use exits."
+  ],
+  "success_evidence": [
+    "Self-contained correction against main; all referenced local instruction paths exist. Default-branch merge remains pending founder review."
+  ],
+  "conflicts": [
+    "Historical frozen experiment and use/promotion standards remain intact; their claimed superiority and authentic-use evidence cannot be inferred from implementation progress."
+  ],
+  "constitutional_constraints": [
+    "Alfonso remains root authority; building does not grant live deployment, consequence, spending, publication, credential or merge authority."
+  ],
+  "binding_scope": "Canonical engineering instructions, build sequencing, active PR guidance and all achievable Body + Organs + Mind machinery; item-specific live authority and authentic-use requirements remain separate.",
+  "statement": "UNIIMENTE — FULL-MACHINE COMPLETION CORRECTION\n\nApply @install-recursive-founder-intent-collaboration-protocol.\n\nA systemic execution error has been identified:\n\nThe project is optimizing for the smallest provable increment instead of completing the intended machine.\n\nCorrect this across all agent instructions, build orders, founder-intent records, active PR guidance, and execution doctrine.\n\nControlling founder intent\n\nThe fixed product boundary is:\n\nBODY + ORGANS + MIND = GREG / UNIIMENTE\n\nThe objective is to build the complete currently achievable autonomous machine before Alfonso begins the sustained real-world use, critique, and refinement phase.\n\nA seed, experiment, sandbox, benchmark, PR, milestone, or “smallest falsifiable build” is only an intermediate engineering step.\n\nIT IS NEVER A STOPPING CONDITION AND MUST NEVER REDEFINE OR NARROW THE FINAL MACHINE.\n\nMandatory execution correction\n\nReplace this implicit behavior:\n\nFind the smallest defensible thing → build it → prove it → stop.\n\nWith:\n\nReconstruct the full Body + Organs + Mind completion boundary → identify the highest-priority unfinished dependency → build the smallest rigorous increment needed to advance it → prove it → integrate it → immediately continue to the next unblocked requirement → repeat until every currently achievable requirement of the complete machine is implemented and integrated.\n\nThe smallest falsifiable next build is a sequencing unit, not the objective.\n\nAfter a successful experiment, the agent MUST resume the parent founder objective automatically.\n\nAnti-narrowing rule\n\nNever convert:\n\n* not implemented yet into not intended;\n* future family into permission to leave it permanently unbuilt;\n* sandboxed into complete;\n* registered into implemented;\n* seed into final architecture;\n* tested component into complete system;\n* VEPMC or any other milestone into the total product definition.\n\nA narrow PR may have narrow scope.\n\nThe project may not have narrow scope.\n\nCompletion behavior\n\nContinue implementation until one of these is true:\n\n1. the currently achievable Body + Organs + Mind is integrated and executable;\n2. a requirement depends on Alfonso performing an inherently founder-only action;\n3. a genuine external dependency blocks further work;\n4. current technology cannot achieve the requirement at the demanded level, in which case preserve the destination and build the strongest technically defensible approximation/backcast path.\n\nDo not fill unfinished capability with documentation, placeholders, registries, or architecture prose when executable implementation is feasible.\n\nFounder-use evidence may remain pending until Alfonso actually begins using the machine. That does not justify leaving buildable machinery unfinished before handoff.\n\nRequired correction now\n\nAudit the active repository instructions and current PRs for this local-optimization failure.\n\nUpdate the canonical agent guidance so every future agent understands:\n\nWe are not building disconnected proofs. We are completing one machine. Body + Organs + Mind are the fixed completion boundary. Prove each step, integrate it, and keep building.\n\nThen resume implementation from the highest-leverage unfinished dependency of that complete machine.\n\nDo not respond with only a plan or another architecture document when executable work is possible.\n",
+  "operational_owner": "GREG and organ maintainers",
+  "state": "active",
+  "next_review_trigger": "Every completed increment, next requirement selection, PR handoff, genuine blocker or founder correction"
+}

@@ -428,3 +428,33 @@ def test_the_geometry_the_inputs_imply_is_recorded_and_a_contradicting_declarati
     wrong = compile_(registry, {"geometry": "causal"}, maxflow_instance(3)[0], execute=False)
     assert wrong["derived_geometry"]["agrees"] is False and wrong["state"] == "CAPABILITY_DEFICIT"
     assert any("declared geometry 'causal'" in d for d in wrong["dissent"])
+
+
+def test_a_method_that_answers_a_relaxation_is_rejected_not_allowed_to_answer():
+    """A capacity-expansion request (budget, prices, increment limit) was answered by max_flow, which ignores all
+    three and returns no plan. A strict-input-subset method that does not produce the fuller method's decision is
+    rejected; one producing the same decision from less side information still competes."""
+    from greg.cognition.genomes import library
+    mcf = library.executables()["flow_expansion_mcf"]
+    data, truth = mcf.instance(3)
+    attached = registry_view()
+    for cid in ("cognition.flow_expansion_mcf", "cognition.flow_maxflow"):
+        attached.set_state(cid, "ATTACHED")
+    r = reason({"problem_id": "relax", "compile": {"geometry": {"consequence_class": "read_only"}, "data": data}},
+               registry=attached)
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+    assert r["result"]["flow_value"] == truth["optimum"]
+    why = {m["method"]: m["why"] for m in r["methods_rejected"]}
+    assert "answers a relaxation" in why["cognition.flow_maxflow"] and "budget" in why["cognition.flow_maxflow"]
+    only_maxflow = registry_view()
+    only_maxflow.set_state("cognition.flow_maxflow", "ATTACHED")                    # the fuller method withheld
+    r = reason({"problem_id": "relax2", "compile": {"geometry": {"consequence_class": "read_only"}, "data": data}},
+               registry=only_maxflow)
+    assert r["method_or_composition_selected"] != "cognition.flow_maxflow" and r["state"] != "ANSWERED"
+    signal = library.executables()["basal_bayes_filter"].instance(0)[0]
+    rows = compiler.candidates(signal, compiler.CompetencyGeometry.parse({}), compiler.evidence_index())
+    eligible = {row["method"] for row in rows if not row["rejected"]}
+    assert {"cognition.basal_hysteresis", "cognition.basal_bayes_filter"} <= eligible   # same decision: they compete
+    formal = {"variables": {"x": [0, 5]}, "constraints": [], "objective": {"coefficients": {"x": 1}, "sense": "max"}}
+    rows = compiler.candidates(formal, compiler.CompetencyGeometry.parse({}), compiler.evidence_index())
+    assert "answers a relaxation" in next(row["rejected"] for row in rows if row["method"] == "cognition.formal")

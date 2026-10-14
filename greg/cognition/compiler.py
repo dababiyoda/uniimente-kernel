@@ -360,8 +360,10 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     for family, (_, ops, classes, _, _) in FAMILIES.items():
         for op in ops:
             stale = None
+            outputs = None
             if family in genomes:
                 need = genomes[family].genome.required_inputs
+                outputs = sorted(genomes[family].genome.output_contract)
                 record = evidence["genomes"].get(family, {})
                 status = record.get("status", "UNEVALUATED")
                 standalone = genomes[family].genome.standalone_decision
@@ -385,7 +387,7 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             elif status in EXCLUDED:
                 reason = f"frozen admission status {status}"
             row = {"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
-                   "epistemic_classes": list(classes), "rejected": reason,
+                   "epistemic_classes": list(classes), "rejected": reason, "inputs": sorted(need), "outputs": outputs,
                    **({"stale_evidence": stale} if stale else {})}
             if family in genomes and not stale and evidence["genomes"].get(family, {}).get("median_seconds") is not None:
                 row["median_seconds"] = evidence["genomes"][family]["median_seconds"]   # held-out, this version
@@ -400,6 +402,7 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                                         "deployable": bool(getattr(item, "competitor_deployable", True)),
                                         "evidence": evidence["genomes"].get(family, {}).get("evidence")}
             rows.append(row)
+    _reject_relaxations(rows)
     rows += _organ_rows(data, g, evidence)
     recipe = route(data)
     if recipe:
@@ -416,6 +419,32 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                               f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
         rows.append(row)
     return rows
+
+
+def _same_decision(row: dict, fuller: dict) -> bool:
+    """True when ``row`` produces every output the fuller method does: it decides the same question with less
+    side information (hysteresis vs the Bayesian regime filter, which also reads a dwell prior) and competes."""
+    return row["outputs"] is not None and fuller["outputs"] is not None and set(fuller["outputs"]) <= set(row["outputs"])
+
+
+def _reject_relaxations(rows: list[dict]) -> None:
+    """A method that fits only because it reads a strict subset of the inputs another fitting method consumes,
+    and does not produce that method's decision, answers a relaxed question: max_flow ignores the budget, prices
+    and increment limit of a capacity-expansion request and returns no increments; a feasibility check ignores
+    an objective. It is rejected with that reason rather than allowed to answer a question that was not asked.
+    The fuller method decides even when it is itself unusable: the request then ends in an honest deficit or
+    attach ask, never in an answer to the relaxation. A method producing the same decision from less side
+    information is not a relaxation; it competes on evidence. Families without a declared output contract
+    (native cortex families) are compared on inputs alone."""
+    for row in rows:
+        if row["rejected"]:
+            continue
+        mine = set(row["inputs"])
+        fuller = [r for r in rows if r is not row and mine < set(r["inputs"]) and not _same_decision(row, r)]
+        if fuller:
+            ignored = sorted(set().union(*(set(r["inputs"]) for r in fuller)) - mine)
+            row["rejected"] = (f"answers a relaxation: ignores declared inputs {ignored} that "
+                               f"{sorted(r['method'] for r in fuller)} consume")
 
 
 def _organ_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:

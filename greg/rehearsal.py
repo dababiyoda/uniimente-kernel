@@ -22,8 +22,22 @@ import time
 REHEARSAL = "REHEARSAL"
 
 
+def settle(home: Path, mission_id: str, max_ticks: int = 12) -> str:
+    from greg.body import Body
+    state = "UNKNOWN"
+    with Body(home) as body:
+        body.boot()
+        for _ in range(max_ticks):
+            state = {m["mission_id"]: m["state"] for m in body.tick()["missions"]}.get(mission_id, state)
+            if state in ("ACHIEVED", "BLOCKED"):
+                break
+        if state == "ACHIEVED" and body.appraise(mission_id)["verdict"] != "VERIFIED":
+            state = "ACHIEVED_BUT_REFUTED"
+    return state
+
+
 def rehearse(*, directory: Path | None = None, kernel_root: Path | None = None, effort_budget: int = 8,
-             max_ticks: int = 12) -> dict:
+             max_ticks: int = 12, with_venture: bool = True) -> dict:
     from greg.body import Body, init_body, send_signed
     from greg.founder import generate_founder_key, load_founder_key
     from greg.templates import first_mission
@@ -60,12 +74,29 @@ def rehearse(*, directory: Path | None = None, kernel_root: Path | None = None, 
         chain_ok, _ = body.ledger.verify_chain()
     done = [a["action_id"] for a in actions if a["status"] == "DONE"]
     dossiers = sorted((home / "deliveries" / "first-mission").glob("*.md"))
+    venture = second = None
+    if trace and trace[-1] and trace[-1][0]["state"] == "ACHIEVED" and with_venture:
+        from greg.venture_rehearsal import books, latest_canon, venture_rehearsal
+        canon, _ = latest_canon(home / "deliveries")
+        vspec = venture_rehearsal(canon=canon)
+        send_signed(home, key, "MISSION", vspec)
+        state = settle(home, vspec["mission_id"], max_ticks)
+        venture = {"mission_id": vspec["mission_id"], "state": state, "books": books(home, vspec["mission_id"])}
+        # A second First Mission reads the first one's retained result: memory across missions, not a cache.
+        again = first_mission(kernel_root=str(kernel), effort_budget=effort_budget, run=REHEARSAL.lower() + "-2",
+                              founder_expression=f"[{REHEARSAL}] Run the Founder's First Mission again.")
+        send_signed(home, key, "MISSION", again)
+        second_state = settle(home, again["mission_id"], max_ticks)
+        doc = json.loads(next((home / "deliveries" / "first-mission").glob(again["mission_id"].replace(":", "_") + ".json")).read_text())
+        second = {"mission_id": again["mission_id"], "state": second_state, "since_last": doc.get("since_last"),
+                  "lesson": doc.get("lesson")}
     return {"label": REHEARSAL, "directory": str(work), "home": str(home), "throwaway_key": str(keyfile),
             "kernel_root": str(kernel), "mission_id": spec["mission_id"],
             "state": trace[-1][0]["state"] if trace and trace[-1] else "UNKNOWN",
             "steps_done": done, "steps_repeated": sorted({a for a in done if done.count(a) > 1}),
             "appraisal": appraisals[-1]["verdict"] if appraisals else None,
-            "dossier": str(dossiers[-1]) if dossiers else None, "ledger_chain_verified": chain_ok,
+            "dossier": str(dossiers[0]) if dossiers else None, "ledger_chain_verified": chain_ok,
+            "venture_rehearsal": venture, "second_first_mission": second,
             "elapsed_seconds": round(time.monotonic() - started, 2),
             "counts_toward_vepmc": False, "authenticates_founder": False,
             "used": {"network": False, "models": False, "money": False, "messages": False}}
@@ -87,4 +118,7 @@ def main(args) -> int:
             pass
         finally:
             server.server_close()
-    return 0 if result["state"] == "ACHIEVED" and result["appraisal"] == "VERIFIED" else 1
+    ok = result["state"] == "ACHIEVED" and result["appraisal"] == "VERIFIED"
+    ok = ok and (result["venture_rehearsal"] or {}).get("state") == "ACHIEVED"
+    ok = ok and (result["second_first_mission"] or {}).get("state") == "ACHIEVED"
+    return 0 if ok else 1

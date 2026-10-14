@@ -235,6 +235,7 @@ class InvocationContext:
     stop_check: object | None = None
     capability_registry: object | None = None  # read-only view for consequence-inert solver eligibility
     cognition_model: dict | None = None       # effective founder-selected local model; never a paid fallback
+    egress: object | None = None              # #26 relay when the body confines egress; never a grant of hosts
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)
@@ -349,13 +350,27 @@ def http_get(params, ctx: InvocationContext) -> dict:
     parts = urllib.parse.urlsplit(url)
     if parts.scheme != "https" or parts.hostname not in ctx.manifest.egress_allowlist:
         raise CapabilityError(f"egress to {parts.hostname!r} not in allowlist")
-    request = urllib.request.Request(url, headers={"User-Agent": "uniimente-greg/0.1"})
-    with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - allowlisted https only
-        body = response.read(MAX_READ_BYTES + 1)
+    if ctx.egress is not None:
+        # #26: the fetch runs in a component with no socket of its own; the body's relay enforces this capability's
+        # allowlist again and journals the decision. TLS is verified inside the confined component.
+        from foundry.systems.segmentation import SegmentationError, confined_fetch
+        ctx.workspace.mkdir(parents=True, exist_ok=True)
+        try:
+            out = confined_fetch(url, identity=ctx.manifest.capability_id, relay=ctx.egress, cwd=ctx.workspace,
+                                 max_bytes=MAX_READ_BYTES)
+        except (SegmentationError, PermissionError) as exc:
+            raise CapabilityError(f"confined egress refused: {exc}") from None
+        status, body, route = out["status"], out["body"], "confined-relay"
+    else:
+        request = urllib.request.Request(url, headers={"User-Agent": "uniimente-greg/0.1"})
+        with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - allowlisted https only
+            body = response.read(MAX_READ_BYTES + 1)
+            status = response.status
+        route = "body-process"
     if len(body) > MAX_READ_BYTES:
         raise CapabilityError("response exceeds read ceiling")
-    return {"url": url, "status": response.status, "sha256": hashlib.sha256(body).hexdigest(),
-            "text": body.decode("utf-8", errors="replace"), "trust": "untrusted-external-data"}
+    return {"url": url, "status": status, "sha256": hashlib.sha256(body).hexdigest(),
+            "text": body.decode("utf-8", errors="replace"), "trust": "untrusted-external-data", "egress": route}
 
 
 CHROME_CANDIDATES = (

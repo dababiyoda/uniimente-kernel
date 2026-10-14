@@ -94,7 +94,8 @@ DEFAULT_BIND_BYTES = 16 * 1024
 
 
 # Capabilities whose network access runs behind the body's #26 relay when the body confines egress.
-CONFINED_EGRESS = frozenset({"http.get", "github.pulls", "brief.engineering"})
+CONFINED_EGRESS = frozenset({"http.get", "github.pulls", "brief.engineering", "browser.render",
+                             "worker.commission"})
 
 
 class Unbound(Exception):

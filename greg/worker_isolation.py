@@ -187,7 +187,7 @@ def _install_landlock(read_paths: list[Path], write_paths: list[Path]) -> None:
 
 
 def prepare_worker(argv, cwd, timeout_seconds, provider, reviewed=False, config_files=None,
-                   *, source_env=None, network=True, file_bytes=512 * 1024 ** 2) -> dict:
+                   *, source_env=None, network=True, file_bytes=512 * 1024 ** 2, door=None) -> dict:
     """Prepare a confined argv/env/preexec envelope; callers must execute returned argv.
 
     ``config_files`` maps the provider's one supported HOME-relative credential
@@ -195,7 +195,11 @@ def prepare_worker(argv, cwd, timeout_seconds, provider, reviewed=False, config_
     No full HOME, configuration directory, source checkout or body is mounted/copied.
     ``network=False`` is for independent acceptance, requires full bubblewrap
     process/network/filesystem isolation, and carries no provider authentication.
+    ``door`` (#26, a ``foundry.systems.relay_door.Door``): the provider keeps its authentication but runs in a
+    network namespace whose only way out is the body relay; callers pass the returned ``pass_fds``.
     """
+    if door is not None and not network:
+        raise WorkerIsolationError("a relay door is for provider networking; acceptance runs with no network at all")
     if reviewed is not True:
         raise WorkerIsolationError("unreviewed worker provider refused before dispatch")
     if not isinstance(argv, (list, tuple)) or not argv or not all(isinstance(a, str) for a in argv):
@@ -244,7 +248,8 @@ def prepare_worker(argv, cwd, timeout_seconds, provider, reviewed=False, config_
            "XDG_CACHE_HOME": str(home / ".cache"), "XDG_DATA_HOME": str(home / ".local" / "share"),
            "GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0"}
     inherited = os.environ if source_env is None else source_env
-    for name in (*_TRANSPORT_ENV, *_PROVIDER_ENV.get(provider, ())) if network else ():
+    transport = tuple(n for n in _TRANSPORT_ENV if "proxy" not in n.lower()) if door is not None else _TRANSPORT_ENV
+    for name in (*transport, *_PROVIDER_ENV.get(provider, ())) if network else ():
         if name in inherited:
             env[name] = inherited[name]
     for name in _CERT_ENV:
@@ -312,9 +317,15 @@ def prepare_worker(argv, cwd, timeout_seconds, provider, reviewed=False, config_
             _install_landlock(read_paths, [cwd, runtime])
 
     confined_argv = [str(executable), *argv[1:]]
+    if door is not None:
+        if backend != "bubblewrap":
+            raise WorkerIsolationError("a relay door needs a bubblewrap network namespace")
+        from foundry.systems.relay_door import door_argv
+        read_paths += _runtime_paths(Path(sys.executable).absolute())
+        confined_argv = door_argv(sys.executable, door.fd, confined_argv)
     if backend == "bubblewrap":
         confined_argv = _bubblewrap_argv(bwrap, list(dict.fromkeys(read_paths)), cwd, runtime,
-                                        network=network) + ["--", *confined_argv]
+                                        network=network and door is None) + ["--", *confined_argv]
     evidence = {"status": "prepared", "filesystem": "os-confined", "mechanism": backend,
                 "landlock_abi": abi, "unavailable_mechanisms": unavailable,
                 "network": "provider-network-required" if network else "isolated-network-namespace",
@@ -333,5 +344,8 @@ def prepare_worker(argv, cwd, timeout_seconds, provider, reviewed=False, config_
     evidence["process_isolation"] = "private-pid-user-ipc-uts-namespaces" if backend == "bubblewrap" else "not-isolated"
     evidence["descendant_cleanup"] = ("bubblewrap namespace dies with parent" if backend == "bubblewrap"
                                       else "caller process-group cleanup required; parent-death signal covers direct child")
+    if door is not None:
+        evidence.update(network=f"relay-door: {door.identity}", network_isolated=True,
+                        network_reason="provider traffic leaves only through the body relay, allowlisted and journaled")
     return {"argv": confined_argv, "env": env, "preexec_fn": preexec,
-            "evidence": evidence, "runtime_root": runtime}
+            "evidence": evidence, "runtime_root": runtime, "pass_fds": [door.fd] if door is not None else []}

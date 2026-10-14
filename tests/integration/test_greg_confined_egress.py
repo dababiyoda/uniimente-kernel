@@ -348,3 +348,166 @@ def test_github_reads_run_confined_with_the_token_only_on_the_wire(tmp_path, mon
     assert token not in journal_text and token not in receipts               # and nowhere it would be retained
     server.close()
     proxy.close()
+
+
+def test_the_browser_renders_behind_the_relay_and_its_page_cannot_reach_anything_else(tmp_path):
+    """#26 for computer use: on a confined body, browser.render runs in a network namespace whose only way out is the
+    relay, allowlisted for the signed target alone. The page's JavaScript runs; its beacons, by name and by IP literal,
+    are denied at the relay and journaled; nothing reaches the beacon."""
+    import http.server
+    import shutil
+    from functools import partial
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    manifest, _ = BUILTINS["browser.render"]
+    if not manifest.available()[0]:
+        pytest.skip("no runnable browser here")
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        pytest.skip(f"no bubblewrap network namespaces here: {exc}")
+    hits, site = [], tmp_path / "site"
+    site.mkdir()
+
+    class Beacon(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            hits.append(self.path)
+            self.send_response(204)
+            self.end_headers()
+
+        def log_message(self, *a):
+            pass
+
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+    beacon = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Beacon)
+    b = beacon.server_address[1]
+    (site / "index.html").write_text(
+        "<html><head><title>relay probe</title></head><body><p id=x>static</p><script>"
+        "document.getElementById('x').textContent='rendered behind the relay';"
+        f"fetch('http://beacon.example.com:{b}/by-name').catch(()=>{{}});"
+        f"fetch('http://127.0.0.1:{b}/by-ip').catch(()=>{{}});</script></body></html>")
+    page = http.server.ThreadingHTTPServer(("127.0.0.1", 0), partial(Quiet, directory=str(site)))
+    for server in (beacon, page):
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+    url = f"http://127.0.0.1:{page.server_address[1]}/index.html"
+    home, key, body_id = body_with_confined_egress(tmp_path)
+    check = {"check_id": "rendered", "description": "the page shows its JavaScript-rendered text",
+             "sensor": {"capability": "browser.render", "params": {"url": url}, "target": "web:127.0.0.1"},
+             "predicate": {"op": "contains", "field": "text", "value": "rendered behind the relay"}}
+    drop(home, signed(key, body_id, "MISSION", mission("m:relay-web", checks=[check], strategies=[],
+                                                       capabilities=["browser.render"], targets=("web:127.0.0.1",),
+                                                       ceiling="read_only")))
+    try:
+        with Body(home) as body:
+            body.boot()
+            for _ in range(3):
+                out = body.tick()["missions"][0]
+                if out["state"] == "ACHIEVED":
+                    break
+            receipts = [r.payload["result"].get("output") for r in body.ledger.by_type("receipt")]
+    finally:
+        for server in (beacon, page):
+            server.shutdown()
+    assert out["state"] == "ACHIEVED", out
+    rendered = [r for r in receipts if isinstance(r, dict) and r.get("url") == url]
+    assert rendered and all(r["egress"].startswith("relay: only 127.0.0.1:") for r in rendered)
+    assert hits == []
+    journal = [json.loads(line) for line in (home / "egress-journal.jsonl").read_text().splitlines()]
+    mine = [e for e in journal if e["identity"] == "browser.render"]
+    assert {(e["host"], e["verdict"]) for e in mine if e["port"] == page.server_address[1]} == {("127.0.0.1", "ALLOWED")}
+    denied = {(e["host"], e["port"]) for e in mine if e["verdict"] == "DENIED"}
+    assert ("127.0.0.1", b) in denied and ("beacon.example.com", b) in denied
+    assert all(e["verdict"] != "ALLOWED" or (e["host"], e["port"]) == ("127.0.0.1", page.server_address[1])
+               for e in mine)
+
+
+PROVIDER = r'''
+import json, os, socket, sys, urllib.request
+from pathlib import Path
+up = int(sys.argv[1])
+report = {}
+opener = urllib.request.build_opener(urllib.request.ProxyHandler({"http": os.environ["HTTP_PROXY"]}))
+report["provider_api"] = opener.open("http://127.0.0.1:%d/v1/messages" % up, timeout=10).read().decode()
+port = int(os.environ["HTTPS_PROXY"].rsplit(":", 1)[1])
+s = socket.create_connection(("127.0.0.1", port))
+s.sendall(b"CONNECT example.com:443 HTTP/1.1\r\nHost: example.com:443\r\n\r\n")
+report["undeclared"] = s.recv(120).split(b"\r\n")[0].decode()
+try:
+    socket.create_connection(("127.0.0.1", up), timeout=2)
+    report["direct"] = "REACHED"
+except OSError as exc:
+    report["direct"] = type(exc).__name__
+Path("tests").mkdir(exist_ok=True)
+Path("pkg/calc.py").write_text("def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n")
+Path("tests/test_calc.py").write_text("from pkg.calc import sub\n\n\ndef test_sub():\n    assert sub(3, 1) == 2\n")
+Path("tests/egress_report.json").write_text(json.dumps(report))
+'''
+
+
+def test_a_coding_worker_reaches_its_provider_only_through_the_relay(tmp_path, monkeypatch):
+    """#26 for coding workers: on a confined body the provider client runs in a network namespace whose only way
+    out is the relay, allowlisted for the provider endpoint. Its API call succeeds and is journaled; an undeclared
+    host is denied; the body's loopback is unreachable directly. The work itself is collected and accepted as usual."""
+    import http.server
+    import sys
+    from greg import templates, workers
+    from greg.body import Layout
+    from greg.worker_isolation import _CERT_ENV, WorkerIsolationError, _backend
+    from foundry.systems import segmentation
+    from tests.unit.test_greg_workers import make_repo
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        pytest.skip(f"no bubblewrap network namespaces here: {exc}")
+    for name in _CERT_ENV:                       # a host CA outside the supported roots refuses dispatch (tested apart)
+        monkeypatch.delenv(name, raising=False)
+    calls = []
+
+    class Api(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            calls.append(self.path)
+            body = b'{"reply": "provider says hello"}'
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *a):
+            pass
+    api = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Api)
+    threading.Thread(target=api.serve_forever, daemon=True).start()
+    up = api.server_address[1]
+    real_policy = segmentation.policy_from_manifests
+    monkeypatch.setattr(segmentation, "policy_from_manifests", lambda: {
+        **real_policy(), "worker.commission": {"allow": [["127.0.0.1", up]], "external": False}})
+    data = tmp_path / "data"
+    data.mkdir()
+    repo = make_repo(data)
+    home, key, body_id = body_with_confined_egress(tmp_path)
+    provider = workers.CliAgentWorker("local-relay-test", [sys.executable, "-c", PROVIDER, str(up)], stdin=False,
+                                      reviewed=True)
+    monkeypatch.setitem(workers.PROVIDERS, "local-relay-test", provider)
+    spec = templates.code_change(repo=str(repo), objective="add sub()", order="relay-worker",
+                                 provider="local-relay-test", allowed_paths=["pkg/*", "tests/*"], budget_usd=1.0,
+                                 workspace_root=Layout(home).workspace)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    try:
+        with Body(home) as body:
+            body.boot()
+            body.tick()
+            action = body.journal.replay("mission.action")[-1].payload
+    finally:
+        api.shutdown()
+    assert action["status"] == "DONE", action["reasons"]
+    root = Layout(home).workspace / "m_work-relay-worker" / "work-orders" / "relay-worker"
+    summary = json.loads((root / "evidence.json").read_text())["summary"]
+    assert summary["status"] == "COMPLETED" and summary["greg_tests_passed"]
+    assert summary["worker"]["isolation"]["network"] == "relay-door: worker.commission"
+    report = json.loads((root / "repo" / "tests" / "egress_report.json").read_text())
+    assert report["provider_api"] == '{"reply": "provider says hello"}' and calls == ["/v1/messages"]
+    assert report["undeclared"].startswith("HTTP/1.1 403") and report["direct"] == "ConnectionRefusedError"
+    journal = [json.loads(line) for line in (home / "egress-journal.jsonl").read_text().splitlines()]
+    mine = [e for e in journal if e["identity"] == "worker.commission"]
+    assert {(e["host"], e["port"]) for e in mine if e["verdict"] == "DENIED"} == {("example.com", 443)}
+    assert any(e["verdict"] == "ALLOWED" and e["port"] == up and e.get("bytes_received", 0) > 0 for e in mine)

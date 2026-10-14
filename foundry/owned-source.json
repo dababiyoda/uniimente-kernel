@@ -308,6 +308,7 @@
     "foundry/systems/queue.py",
     "foundry/systems/rabbit_hole.py",
     "foundry/systems/registry.py",
+    "foundry/systems/relay_door.py",
     "foundry/systems/repair.py",
     "foundry/systems/reputation.py",
     "foundry/systems/sandbox.py",

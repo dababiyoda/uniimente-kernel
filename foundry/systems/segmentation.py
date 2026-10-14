@@ -18,8 +18,10 @@ founder has not granted. This mechanism needs none:
 
 Inter-organ traffic is the same thing: an organ's allowlist names the loopback endpoints of the organs it may call.
 
-Limits, stated: only components launched through ``run_confined`` are covered; capabilities that run inside the body
-process itself (``github.pulls``, ``http.get``, the browser) are not yet routed through the relay. External upstream
+Limits, stated: only components launched through ``run_confined``, or behind ``relay_door`` in a network namespace,
+are covered. On a body with confined egress that is ``http.get``, ``github.pulls`` and ``brief.engineering`` (here) and
+``browser.render`` and coding workers (the door). Still outside: ``browser.session`` (Playwright), the paid model
+routes called from the body process, anchoring, and the DALEOBANKS bridge. External upstream
 connections are refused unless the policy marks the identity ``external: true``: the relay opens them from the body
 process, and in an environment whose egress must traverse a mandated proxy the relay must chain to it first (the
 2026-09-30 negative evidence: a direct connection bypassed the configured proxy). The filter needs Linux and
@@ -197,8 +199,12 @@ class Relay:
 
     MAX_REQUESTS = 64          # per control channel: a compromised component cannot exhaust the relay
 
-    def serve(self, identity: str, control: socket.socket):
-        """One component's control channel, until it closes."""
+    def serve(self, identity: str, control: socket.socket, *, max_requests: int | None = None):
+        """One component's control channel, until it closes. A browser or provider client opens many connections, so
+        its door may raise the per-channel limit; it stays a bound."""
+        limit = self.MAX_REQUESTS if max_requests is None else max_requests
+        if type(limit) is not int or not 1 <= limit <= 4096:
+            raise SegmentationError("max_requests is an integer from 1 to 4096")
         with control:
             buf, requests = b"", 0
             while True:
@@ -212,7 +218,7 @@ class Relay:
                 while b"\n" in buf:
                     line, buf = buf.split(b"\n", 1)
                     requests += 1
-                    if requests > self.MAX_REQUESTS:
+                    if requests > limit:
                         self.journal.append({"identity": identity, "verdict": "DENIED", "why": "request limit"})
                         return
                     self._request(identity, control, line)

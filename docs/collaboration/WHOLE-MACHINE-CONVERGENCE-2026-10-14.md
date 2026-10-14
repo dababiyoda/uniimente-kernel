@@ -202,7 +202,7 @@ mission. Three attacks were added this increment; the rest existed and were loca
 |---|---|---|
 | Compromised or lying cognitive provider | `test_greg_adversarial_machine::test_lying_solver_is_caught_by_the_independent_profit_dp`; `test_greg_recombine::test_a_lying_engine_is_caught_through_the_construction_and_both_are_replaced`; `test_greg_missions::test_genesis_rejects_a_lying_tool_and_escalates` | INTEGRATED |
 | Conflicting outputs from two qualified intelligences | **new** `test_greg_adversarial_machine::test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_voted` | INTEGRATED |
-| Malicious page and prompt injection | **new** `test_greg_confined_egress::test_a_malicious_page_fetched_by_a_mission_stays_data`; `test_greg_adversarial_machine::test_prompt_injection_in_sources_stays_data` | INTEGRATED (page fetched by `http.get`; GREG's computer-use browser is not exercised) |
+| Malicious page and prompt injection | **new** `test_greg_confined_egress::test_a_malicious_page_fetched_by_a_mission_stays_data`; **new (increment 8)** `test_the_browser_renders_behind_the_relay_and_its_page_cannot_reach_anything_else`; `test_greg_adversarial_machine::test_prompt_injection_in_sources_stays_data` | INTEGRATED (pages fetched by `http.get` and rendered by `browser.render`; the Playwright `browser.session` is not exercised) |
 | Worker modifying its acceptance criteria | `test_greg_workers::test_no_test_change_means_no_acceptance`, `test_appraisal_binds_acceptance_to_the_original_commission`, `test_a_change_to_a_protected_surface_is_never_accepted` | INTEGRATED (signed mission on a real body, real git clone; corrected from COMPONENT in increment 5) |
 | Crash during an unknown external outcome | `test_greg_capabilities::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused`; `test_greg_local_mission::test_lost_host_claim_requires_reconciliation`; `test_greg_first_mission::test_crash_after_survey_resumes_without_repeating_a_completed_step` | INTEGRATED |
 | Duplicate payment or publication | `test_greg_adversarial_machine::test_duplicate_fixture_order_does_not_double_book`; `test_greg_community_journeys::test_journeys_measure_sequences_separate_tiers_and_refuse_duplicate_money` | INTEGRATED (FIXTURE) |
@@ -464,6 +464,62 @@ new test fails on the old code.
   matches". The test asserts the binding reason. All three mutants are caught with and without bubblewrap.
 - **What this confirms.** This is CI evidence for an open item: the GitHub runner does not provide the worker
   envelope to the appraiser. Worker missions there are refuted, not accepted, which fails closed.
+
+## Increment 8 (same day): the browser and coding workers behind the #26 relay
+
+### The mechanism
+
+`run_confined`'s seccomp filter denies every socket call. A browser or a provider client cannot run under it.
+`foundry/systems/relay_door.py` gives them the same single way out without the filter:
+
+- **Namespace.** The program runs in a bubblewrap network namespace (`--unshare-net`, no privilege). Only its own
+  loopback exists. The body's loopback and every outside address are unreachable directly.
+- **Door.** Inside the namespace, before the program starts, a small front listens on that loopback as an HTTP
+  proxy (CONNECT for TLS, absolute-form requests for plain-http loopback pages). Each request becomes one
+  `CONNECT <host> <port>` line on an inherited control socket.
+- **Relay.** The body's relay decides each request against the identity's exact allowlist and journals it in the
+  hash chain. It opens the upstream, through the mandated proxy where there is one, and passes back a data socket.
+- **Program.** The program starts with `HTTPS_PROXY`/`HTTP_PROXY` naming the door. A program that ignores those
+  settings simply has no network.
+
+This was prototyped first, outside the repository. An inherited socket survives bubblewrap, loopback is up in the
+new namespace, and the outside is unreachable.
+
+### On the mission path (a body initialised with `--confined-egress`)
+
+- **`browser.render`.** It runs Chromium behind the door. A per-call relay is allowlisted for the signed target
+  alone and shares the body relay's journal and mandated proxy. On a signed mission the page's JavaScript runs, its
+  beacons (by name and by IP literal) are DENIED and journaled, and nothing reaches them. The journal also shows
+  Chromium's own background calls to Google hosts, DENIED. In the unconfined route those went silently to a dead
+  proxy.
+- **Coding workers.** They keep their provider authentication but run behind the door as identity
+  `worker.commission`, allowlisted for the provider endpoint declared in the capability manifest. On a signed
+  code-change mission the provider call succeeds and is journaled. An undeclared host is refused with 403, the
+  body's loopback is unreachable directly, and the work is collected and accepted as before. The isolation evidence
+  reads `relay-door: worker.commission`. Acceptance tests still run with no network at all.
+- **Both new mission tests fail on the old code.**
+
+### Negative evidence
+
+- **The first browser run failed.** `--host-resolver-rules=MAP * ~NOTFOUND` also mapped the door's own
+  `127.0.0.1`, so Chromium never reached it and rendered `ERR_PROXY_CONNECTION_FAILED`. A direct adapter call had
+  hidden this, because I checked only the route string and not the page text. The rule now exempts the namespace
+  loopback, where nothing but the door exists.
+- **Chromium runs without its own sandbox here.** It cannot nest its user namespace inside GREG's, and as root it
+  cannot sandbox at all. The receipt reports `os_sandboxed: false`. The namespace and the read-only root are GREG's
+  containment.
+
+### #26 stays PARTIAL
+
+Still outside the relay:
+
+- `browser.session` (Playwright);
+- the paid model routes, called from the body process;
+- anchoring;
+- the DALEOBANKS bridge.
+
+Confined egress is also still opt-in. The second acceptance criterion ("a compromised component cannot reach
+undeclared hosts") therefore does not hold machine-wide.
 
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 

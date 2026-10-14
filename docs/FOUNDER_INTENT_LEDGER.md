@@ -2,6 +2,82 @@
 
 # Founder Intent Ledger
 
+## Convergence of the two Mind lineages — 2026-10-14
+
+`INTENT-20261014-MIND-LINEAGE-CONVERGENCE` ([record](intent/INTENT-20261014-MIND-LINEAGE-CONVERGENCE.json), [verbatim source](intent/sources/MIND-LINEAGE-CONVERGENCE-2026-10-14-source.md), [source-location manifest](collaboration/MIND-LINEAGE-SOURCE-MANIFEST-2026-10-14.json)): two sessions implemented the 2026-10-07 directive in parallel (PR #158 and PR #155) and froze different evaluations at eight identical paths. Neither session is the winner; both contribute to one GREG Mind.
+
+- **Track A:** restore CI on #158 by retargeting it to a branch pinned at its original base `92bc6e3`. Both lineages are snapshotted at full SHAs. Every frozen artifact keeps its identity as (source commit, original path, sha256) and is never renamed or rewritten. CI on the pinned base is evidence for that lineage only.
+- **Track B:** build the converged Mind now, in a dedicated draft PR on the latest verified #155 head. Inventory both lineages and disposition every conflict. Select canonical mechanisms by evidence. Keep unresolved alternatives isolated and withheld, with one cognition entry point, one authority system and one evolution controller. Run five review responsibilities and exactly two strengthening passes, and pre-register a fresh freeze for every integrated evaluation.
+- **Coordination:** neither session overwrites, regenerates, renames or supersedes the other's frozen evidence, and new evaluations use uniquely identified paths.
+
+State: active. Authority delta: none.
+
+## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
+
+`INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.
+
+Progress 2026-10-08 (measured, frozen, negative results kept):
+
+- **P6 v2:** VPL is 3 of 4. F2R, F3 and F4 lift; the natural M4 family F5 does not (8.5% cheaper, not significant).
+- **P4 decisive retest:** REGRESSION, 160 vs 162. All discordant items used identical orders, so this is timing noise. Conditional routing is demoted and the shadow default stays.
+- **P8 cycle 1:** REJECT. The overfit was caught under a sealed evaluator.
+- **Built:**
+  - Competency Compiler with 15 typed mental-model operators, including executable sensitivity analysis;
+  - frozen-evidence routing;
+  - Lawful Leverage Foundry, hardened after an adversarial review;
+  - Goal Gravity (`greg gravity`).
+- **Backcast GPS:** nine frontier backcasts added.
+
+Progress 2026-10-13 (measured, frozen, negative results kept):
+
+- **P8 cycle 2** (negative-selection detector): REJECT on a genuine scarce-sample fragility.
+- **Genome admission** ([evidence](evidence/greg-genome-admission/2026-10-13-v1/README.md)): 31 executable genomes across L1-L4 on held-out seeds, pre-registered at `496c85b`:
+  - 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED;
+  - none attached; attaching any is the founder's decision.
+- **Admitted:** 20 of the 31 (DEFAULT or NICHE): L1 5, L2 2, L3 11, L4 2. SUPERSEDED genomes are excluded from routing, not kept as fallbacks; `collective_market` is SUPERSEDED only against an oracle competitor, which leaves the market geometry unroutable (see the evidence erratum).
+- **Verifiers hardened before the freeze:** a mutation audit (an uncommitted five-seed sweep) found over 1,000 accepted or crashing corruptions of valid answers. After the fix no non-equivalent mutant survives on dev seeds 0-9; equivalent ones (raised non-binding bounds) are accepted by design.
+- **Second Foundry/Gravity/resilience review, by the building agent:** 9 defects plus a cortex abstention crash, fixed with regression tests. They included a consent gap, a hidden-bottleneck map, a lookalike legal operator, paused-mission authority and stale asks.
+- **Independent review (2026-10-13):** five lenses by separate agents found verifier, Gravity, Foundry, resilience, community-evidence and cortex defects, each reproduced and fixed with a regression test that fails on the old code (`4d99fb0`, `ed0f00b`, `9a799ed`). The evidence lens confirmed the admission evidence and corrected its prose (erratum in the admission README).
+- **Next gate:** P6 v3, VPL re-measured with the admitted genomes on a new natural family.
+
+Progress 2026-10-14 (measured, frozen, negative results kept):
+
+- **P6 v3** ([evidence](evidence/greg-composition-lift/2026-10-14-v3/README.md)): the natural call-centre family F6 (real bank arrivals, forecast quantile -> Erlang C staffing) **lifts**: 74-16 against the best constituent, 6.1% cheaper, no infeasible plan. Natural families are now 1 of 2.
+  - The lift is composition, not routing: the router chose the static recipe on all 90 days.
+  - Composition does not beat the weekly-mean practitioner pipeline on day count (40-50).
+- **Genome admission v2** ([evidence](evidence/greg-genome-admission/2026-10-14-v2/README.md)): ten families re-measured on fresh seeds 1100-1129. Six replicated.
+  - `basal_pid` is SUPERSEDED (0-30); `develop_constraint_release` fell to NICHE (5-15 against random restart).
+  - New: `basal_bayes_filter` is DEFAULT (13-1-2 under high noise).
+  - `forecast_quantile`'s held-out series had been used by P8. The seeds were fresh, the data were not; this is recorded in an erratum, and the harness now checks data identity.
+  - 21 of 32 genomes are admitted. None is attached.
+- **Independent review of `bb65d6f..8e37cd8`:** 15 reproduced defects, all fixed with regression tests.
+  - High severity: any signed founder answer to any request decided a human-judgment question. Human judgment is now bound to its own recorded question, and only the founder's signed answer to that request decides.
+  - The "miscalibrated" forecast claim was a multiple-testing artefact; it is corrected.
+- **Product delta:** forecast calibration is live through a founder-signed `greg realize`, and `greg cognition calibration` reports it.
+- **After the directive audit:**
+  - The Competency Compiler now reaches the cortex organs (Z3, CP-SAT, Fermi, evidence/causal, semantic).
+  - It records its attach and human-judgment asks on the body, once each.
+  - It demotes methods whose settled outcomes on the body are significantly poor.
+  - It reports the geometry a request's inputs imply.
+- **P8 cycle 3** ([evidence](evidence/greg-protected-evolution/2026-10-14/README.md)) targeted the constraint-release search policy. It was **REJECTED** at the adversarial gate: the candidate was 20% better on training, but 6.3% worse when validation was cut to four cases. Protected evolution has still never kept an improvement.
+- **VPL accounting** ([post hoc](evidence/greg-composition-lift/2026-10-14-accounting/README.md)):
+  - every lift costs latency (1.5-5.2x);
+  - routing adds nothing within a family;
+  - no practitioner pipeline was beaten where one was measured.
+- **P6 v4** ([evidence](evidence/greg-composition-lift/2026-10-14-v4/README.md)): F7 was pre-registered with every section-16 element (`888003c`, checked by `validate_preregistration`) and frozen at `14ec7a6`. It is surge capacity leasing on 20 held-out SNDlib backbones with real topologies, lengths, demand pairs and ECMP loads.
+  - **It lifts:** the composition was optimal on 200 of 200 items against greedy's 108 (92-0), at 5.3x the latency inside the declared 10x. It also beat the shortest-path-upgrade practitioner 130-0, the first practitioner pipeline beaten in any run.
+  - **It was tied:** parametric min-cost flow, the truth algorithm, ties it on every item. The lift is over GREG's repertoire, not over an OR practitioner. Routed, static and compiled answers were identical.
+  - **The residual capability is built:** `flow_expansion_mcf`, one certified intelligence, registered and withheld.
+  - Natural families are now 2 of 3. F7's truth is a computed optimum, not a realised outcome.
+- **Layer 5 defects fixed, each with a regression test that fails on the old code:**
+  - the compiler answered a capacity-expansion request with `max_flow`, which ignores the budget; relaxations are now rejected;
+  - compiled requests never settled; they now credit the executed method through its own receipt, and outcome links are projected;
+  - a Goal Gravity turn recorded an ask on the body; it now writes nothing and reports measured trust.
+- **Next gate:**
+  - one pre-registered admission v3 on fresh seeds 1200-1229 for every new or version-bumped genome (promoted competitors, Layer 3 packs A-C, `flow_expansion_mcf`, the Layer 2 native regimes, `basal_bayes_filter` 1.0.1, `develop_constraint_release` 1.2.0);
+  - a composition family that uses an admitted Layer 1 or Layer 2 genome;
+  - new data before any further forecast admission.
+
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 
 `INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT` ([record](intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json), [verbatim source](intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md)): founder review of PR #155. P4 learned routing and P6 typed composition are Layer 5 substrate, not the Polyintelligence Mind; all five layers (basal, collective, solver, developmental, meta) remain obligations. Metric: held-out problem families where geometry routing or composition beats the strongest single available intelligence, net of cost/latency, with no added false answers or unauthorized effects; 0 means "a sophisticated router". Sequence: P6 cognitive composition lift → P4 conditional competence memory (hierarchical fallback) → P8 protected evolutionary cognition → IntelligenceGenome library expansion, each family admitted only when it beats simpler baselines on its native geometry. State: active. VPL: 0. Authority delta: none.

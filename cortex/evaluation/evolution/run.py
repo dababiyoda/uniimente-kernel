@@ -26,8 +26,8 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT))
 
-from greg.cognition.evolution import (BASELINE, MutationRefused, ProtectedEvaluator, evolve, sha256,  # noqa: E402
-                                      validate)
+from greg.cognition.evolution_routing import (BASELINE, MutationRefused, ProtectedEvaluator, evolve,  # noqa: E402
+                                              sha256, validate)
 
 EVALUATOR = HERE / "evaluator.py"
 MANIFEST = HERE / "freeze-v1.json"

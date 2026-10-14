@@ -82,7 +82,9 @@ def confine(root, public_files):
                                           for p in (user_site, code, root)):
             grants[directory] = grants.get(directory, 0) | READ_FILE | READ_DIR
     # C runtime libraries an extension module imported after confinement may link against (CI:
-    # librt.so.1). Exact public library files, never a whole host library directory.
+    # librt.so.1). Exact public library files, never a whole host library directory. One grant path:
+    # the 2026-10-14 Mind-lineage convergence unified #158's 1ea2209 (glibc family) and #155's bfb9c04
+    # (this superset with the ancestor guard above).
     for base in (Path("/lib"), Path("/lib64"), Path("/usr/lib"), Path("/usr/lib64")):
         for sub in ("", "x86_64-linux-gnu/", "aarch64-linux-gnu/"):
             for name in RUNTIME_LIBRARIES:

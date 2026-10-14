@@ -519,6 +519,9 @@ class MissionEngine:
             return (answer is not None, f"founder answered {answer['answer']}" if answer else "awaiting founder")
         if b["type"] == "capability":
             ok, why = self.registry.usable(b["capability_id"]) if b.get("capability_id") else (False, "none")
+            attached = next((cid for cid in b.get("attach_candidates", ()) if self.registry.usable(cid)[0]), None)
+            if not ok and attached:          # a cognition deficit's candidate carries another function name
+                return True, f"attach candidate {attached} is now attached"
             if not ok and self.genesis is not None and b.get("function"):
                 cap = self.genesis.find_attached(b["function"])
                 return (cap is not None, "capability now attached" if cap else why)
@@ -750,8 +753,9 @@ class MissionEngine:
         rid = m.blocker["request_id"]
         why = ("the deliverable is observed: the checks this work advances now pass, and GREG took no action for it"
                if human else "world re-observed: every failing check now passes without any GREG action")
-        self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
-                                                   "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
+        if not m.blocker.get("shared_ask"):      # an ask this mission only shares stays open for its other uses
+            self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                       "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
         self._unblock(m, why)
         self.book.rebuild()
         if failing:                                  # other checks remain: pursue them from the next step
@@ -800,28 +804,54 @@ class MissionEngine:
             return None, None, cid
         return self.registry.manifests[cid], self.registry.adapters[cid], None
 
-    def _deficit(self, m: MissionState, spec: dict, now: datetime, *, purpose: str):
+    def _deficit(self, m: MissionState, spec: dict, now: datetime, *, purpose: str, cognition: dict | None = None):
         function = spec.get("function") or self.registry.manifests.get(spec.get("capability"), None)
         function = function.function if hasattr(function, "function") else (function or spec.get("capability"))
         resource = asks.human_work(function)
         if resource is not None:                  # never searched, built or attached: a person does this work
             return self._escalate_human(m, spec, function, resource, purpose, now)
         if self.genesis is not None:
-            capability = self.genesis.resolve(mission=m, function=function, purpose=purpose, now=now)
+            capability = self.genesis.resolve(mission=m, function=function, purpose=purpose, now=now,
+                                              **({"deficit": cognition} if cognition is not None else {}))
             if capability is not None:
                 return capability
         return self._escalate_capability(m, function, spec.get("capability"), purpose, now)
 
+    def _attach_candidates(self, m: MissionState, function: str) -> list[str]:
+        """Withheld capabilities Genesis found for a cognition deficit (they carry other function names)."""
+        return self.genesis.attach_candidates(m.mission_id, function) if self.genesis is not None else []
+
+    def _shared_attach_ask(self, candidates: list[str]) -> str | None:
+        """A body-level attach ask already recorded (the Competency Compiler records one per method) that names every
+        candidate as verified: the mission waits on it instead of asking the founder a second time. Another
+        mission's ask is never shared, since that mission may withdraw it."""
+        if not candidates:
+            return None
+        withdrawn = {e.payload["request_id"] for e in self.journal.replay("decision.withdrawn")}
+        for event in self.journal.replay("decision.requested"):
+            ask = event.payload
+            named = {c.get("capability_id") for c in (ask.get("evidence") or {}).get("registered") or []
+                     if isinstance(c, dict) and c.get("state") == "VERIFIED"}
+            if ask.get("kind") == "CAPABILITY_ATTACH" and ask.get("mission_id") is None \
+                    and ask["request_id"] not in withdrawn and set(candidates) <= named:
+                return ask["request_id"]
+        return None
+
     def _escalate_capability(self, m: MissionState, function: str, capability_id, purpose: str, now: datetime):
-        rid = self._request(m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json({"function": function}),
-                            action_id=None, why=f"missing capability for {purpose}",
-                            recommendation="attach a verified capability for this function, or revise the mission",
-                            requested={"function": function,
-                                       "spend": "none requested; any account, license or purchase is yours to make"},
-                            now=now, resource=self._capability_ask(m, function, purpose))
+        candidates = self._attach_candidates(m, function)
+        shared = self._shared_attach_ask(candidates)
+        rid = shared or self._request(
+            m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json({"function": function}), action_id=None,
+            why=f"missing capability for {purpose}",
+            recommendation="attach a verified capability for this function, or revise the mission",
+            requested={"function": function,
+                       "spend": "none requested; any account, license or purchase is yours to make"},
+            now=now, resource=self._capability_ask(m, function, purpose))
         self._block(m, {"type": "capability", "function": function, "capability_id": capability_id,
                         "request_id": rid, "why": f"no attached capability for {function}",
-                        "reconsider": "a verified capability for this function is attached"})
+                        "reconsider": "a verified capability for this function is attached",
+                        **({"attach_candidates": candidates} if candidates else {}),
+                        **({"shared_ask": True} if shared else {})})
         return None
 
     def _escalate_human(self, m: MissionState, spec: dict, function: str, resource: str, purpose: str,
@@ -878,13 +908,16 @@ class MissionEngine:
         deficit_id = opened[-1]["deficit_id"] if opened else None
         routes = [{"route": e.payload["route"], "result": e.payload["result"]}
                   for e in self.journal.replay("genesis.route") if deficit_id and e.payload["deficit_id"] == deficit_id]
+        listed = self.registry.by_function(function)
+        listed += [self.registry.manifests[cid] for cid in self._attach_candidates(m, function)
+                   if cid in self.registry.manifests and all(c.capability_id != cid for c in listed)]
         evidence = {"function": function, "required_by": purpose, "deficit_id": deficit_id,
                     "searched": routes or [{"route": "genesis", "result": "not available on this body"
                                             if self.genesis is None else "no route recorded"}],
                     "registered": [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id],
                                     **({"mechanism": _mechanism_summary(c.provenance)}
                                        if c.provider.startswith("installed:python:") else {})}
-                                   for c in self.registry.by_function(function)]}
+                                   for c in listed]}
         return {"resource": "capability", "evidence": evidence,
                 "expected_effect": f"the blocked step ({purpose}) proceeds once a verified capability for "
                                    f"{function} is attached",
@@ -1108,9 +1141,22 @@ class MissionEngine:
             return {"state": "BLOCKED", "blocker": m.blocker}
         if outcome.status == "DONE" and isinstance(outcome.output, dict) and outcome.output.get("access_gap"):
             self._access_ask(m, aid, manifest, outcome.output["access_gap"], now)
+        # A plain cognition receipt that abstained because built families are unattached (PR #155 lineage):
+        # one informational attach ask. Compiler deficits naming a missing function go to Genesis below.
         if outcome.status == "DONE" and isinstance(outcome.output, dict) \
                 and outcome.output.get("abstention_state") == "CAPABILITY_DEFICIT":
             self._cognition_ask(m, aid, outcome.output, now)
+        deficit = outcome.output.get("capability_deficit") if outcome.status == "DONE" and \
+            isinstance(outcome.output, dict) and outcome.output.get("state") == "CAPABILITY_DEFICIT" else None
+        if isinstance(deficit, dict) and deficit.get("function"):
+            # Directive 2026-10-07 section 24: no current intelligence fits the residual geometry, so the one
+            # Capability Genesis loop searches for it under this mission's authority, else asks the founder once.
+            # The deficit is the missing function, not the (attached) solver that reported it: only a capability
+            # attached for that function or one of the candidates Genesis named for it clears the blocker.
+            cognition = {**deficit, "acquisition_candidates": outcome.output.get("acquisition_candidates") or []}
+            if self._deficit(m, {"function": deficit["function"]}, now, cognition=cognition,
+                             purpose=f"cognition for {deficit.get('purpose', 'a cognitive request')}"[:200]) is None:
+                return {"state": "BLOCKED", "blocker": m.blocker}
         # DONE: re-observe next tick to verify the effect in the world; REFUSED/
         # UNAVAILABLE: the failure is retained and an alternative is tried next.
         return {"state": "ACTED" if outcome.status == "DONE" else "REPLANNING", "action": aid,

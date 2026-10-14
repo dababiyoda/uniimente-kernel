@@ -151,6 +151,11 @@ def independent_verify(family, data, answer, proof_class, geometry):
 
 
 def reason(params, *, registry, journal=None, model_config=None, forced_family=None):
+    if isinstance(params, dict) and "compile" in params:
+        # Layer 5 Competency Compiler: geometry -> smallest competent method or composition, run back
+        # through this same entry; constitutional pre-filter and human route before any optimisation.
+        from .compiler import run as run_compiler
+        return run_compiler(params, registry=registry, journal=journal, model_config=model_config)
     if isinstance(params, dict) and "chain" in params:
         # Composite problem (P6): geometry-routed chain of cortex stages with typed translation.
         from .composition import run as run_composition
@@ -192,6 +197,9 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
             evaluator = independent_verify(chosen["family"], params["data"], answer, chosen["proof_class"], replace(geometry, latency_limit=min(30, remaining)))
             if evaluator["verdict"] == "REFUTED":
                 state = "REFUTED"
+            elif answer["status"] == "ANSWER" and answer.get("output") is None:
+                # an answer is its output: one without it is a contract violation, never a settled answer
+                state, missing = "ABSTAIN", ["answer without output: the solver claimed ANSWER and returned none"]
             elif answer["status"] != "ANSWER":
                 state, missing = answer["status"], answer["missing_information"]
             elif high:
@@ -221,6 +229,7 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
     if missing and "POLICY_REFUSAL" in missing[0]:
         reason_code = "POLICY_REFUSAL"
     dissent = evaluator.get("dissent", [])
+    answered = bool(answer) and answer.get("output") is not None
     receipt = CognitiveReceipt(
         problem_id=params["problem_id"], geometry=asdict(geometry), consequence_class=geometry.consequence_class,
         consequence_vector=asdict(consequences), method=chosen["method"] if chosen else "none", method_version=chosen["version"] if chosen else "none",
@@ -228,7 +237,10 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         assumptions=params.get("assumptions", []) + ["Input and model validity are not established by computation"],
         excluded_variables=params.get("excluded_variables", []), output=answer.get("output") if answer else None,
         uncertainty={"conditional_on_input": True, "world_confidence": None},
-        proof_type=chosen["proof_class"] if answer else None, proof_artifact=answer.get("proof") if answer else None,
+        # A proof artifact accompanies an output and only an output: an abstention without one (a genome that
+        # declined) carries its reasons in missing_information. Attaching the certificate to no output made the
+        # receipt reject an honest abstention; a native non-answer that does return an output keeps its proof.
+        proof_type=chosen["proof_class"] if answered else None, proof_artifact=answer.get("proof") if answered else None,
         alternative_methods_considered=rows, method_selection_reason="eligible operation/epistemic class; outcome competence, cost, latency, stable tie-break",
         strongest_counterargument="; ".join(dissent) or "Missing or incomplete evidence prevents a stronger conclusion.",
         falsification_condition="independent recomputation, invalid assumptions, counterexample or observed outcome contradicts this receipt",
@@ -243,7 +255,7 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
                                 "review": "encoded property only; general completeness undecidable"},
         contribution_attribution=[{"method": chosen["method"], "role": "calculation", "uncertainty": "not causal credit"}] if chosen else [],
         causal_credit=[{"method": chosen["method"], "role": "solver"}, {"method": "greg.cognition.verification", "role": "falsifier"}] if chosen else [],
-        outcome=classify_greg(state, has_output=answer is not None))
+        outcome=classify_greg(state, has_output=answered))
     return receipt.to_dict()
 
 

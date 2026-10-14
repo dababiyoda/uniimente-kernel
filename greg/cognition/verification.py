@@ -88,7 +88,8 @@ def verify(family, data, answer, proof_class):
         for c in data["constraints"]:
             lhs = sum(Fraction(str(co)) * values[n] for n, co in c["coefficients"].items())
             rhs = Fraction(str(c["rhs"]))
-            valid &= {"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs}[c["op"]]
+            valid &= {"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs,
+                      "<": lhs < rhs, ">": lhs > rhs}[c["op"]]
         checks["constraint_substitution"] = bool(valid)
         if family == "optimization":
             checks["integer_domain"] = all(v.denominator == 1 for v in values.values())
@@ -193,6 +194,13 @@ def verify(family, data, answer, proof_class):
         checks["independent_fitness"] = math.isclose(f(x), output["fitness"], rel_tol=1e-9, abs_tol=1e-12)
         checks["evaluation_budget"] = output["evaluations"] <= budget
         dissent.append("A heuristic search returns the best point it evaluated; no global-optimality certificate.")
+    elif proof_class == "genome_certificate":
+        # IntelligenceGenome library: the genome's own independent check (never its solve path) plus
+        # identity, evidence-type and input bindings of the envelope.
+        from .genomes import library
+        checks.update(library.check(family, data, output, answer["proof"]))
+        dissent.append(f"Evidence type {answer['proof']['evidence_type']}: valid within the genome's native model; "
+                       "real-world applicability requires separate outcome evidence.")
     else:
         dissent.append("Typed artifact verified; solver quality and real-world applicability require separate outcome evidence.")
     if family in ("formal", "optimization"):

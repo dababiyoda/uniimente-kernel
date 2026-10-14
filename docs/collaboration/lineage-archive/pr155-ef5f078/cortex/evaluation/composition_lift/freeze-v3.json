@@ -1,0 +1,32 @@
+{
+  "frozen_at": "2026-10-14T12:13:23.983929+00:00",
+  "inputs": {
+    "code": {
+      "cortex/evaluation/composition_lift/run_v3.py": "sha256:4d667a349d72e9a3d5510f68c39ff021e840f2189e9c2d6429a990ded477a911",
+      "cortex/evaluation/composition_lift/run.py": "sha256:e64f2d1ce25e36d7343a0343dc6cb3d92b227cebf05bbb546f58b8eb09dfa633",
+      "greg/cognition/composition.py": "sha256:83103928e59503d73817c86ea6b9d3dd296a4016bddca165a33c42de63517371",
+      "greg/cognition/cortex.py": "sha256:18f3451c146b3a27ceb1f2f24aa2a0676f785be3290a28add4d60792e8558a36",
+      "greg/cognition/bridge.py": "sha256:6307ec2e41193ec7692042df2353c583903d3c308f47f0d61d4fe338772b941c",
+      "cortex/routing.py": "sha256:68538e463bba2c3f34c6d812ebea94e2d5aab65ff3281924ab6e31dfd1c00271",
+      "cortex/genome.py": "sha256:e6aa73cd9e20bb3e8d7d8fef2ce15ba5e26a7ea902d0dc0f8dbda815a4d701c0",
+      "cortex/organs/estimation.py": "sha256:a7eb0c2709c54aedc0f9df23428a12b5274110ee6564ebcd061ced8eba6a9d8e",
+      "cortex/organs/formal.py": "sha256:b0a1f64e6fa9c24c4cef7594d042ae4038e58421b6e078e79bca6fadc0fb92cd",
+      "cortex/organs/cpsat.py": "sha256:192d2508f1e464cbfb4c5192df8207f17c6cb543e7282ef34a1059ab2b735162",
+      "cortex/organs/evidence_causal.py": "sha256:7569d74b10ffafed3b51aacbb854ff41d76d398cdd6f0b48e465e9cf9b66456e",
+      "cortex/evaluation/generators.py": "sha256:2b302d0d01b8051eae604dec7214726c53fe6bce7deb90d4e55b5cdcc544c362"
+    },
+    "seeds": [
+      101,
+      148
+    ],
+    "arms": [
+      "estimate_alone",
+      "identify_alone",
+      "optimize_naive_point",
+      "recipe_estimate",
+      "recipe_identify",
+      "routed"
+    ],
+    "verdict_rule": "family lift: routed correct > best constituent correct, routed wrong <= best constituent wrong, one-sided exact sign test p < 0.05, routed median latency <= 60 s; VPL = families with lift"
+  }
+}

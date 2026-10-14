@@ -206,7 +206,7 @@ mission. Three attacks were added this increment; the rest existed and were loca
 | Worker modifying its acceptance criteria | `test_greg_workers::test_no_test_change_means_no_acceptance`, `test_appraisal_binds_acceptance_to_the_original_commission`, `test_a_change_to_a_protected_surface_is_never_accepted` | INTEGRATED (signed mission on a real body, real git clone; corrected from COMPONENT in increment 5) |
 | Crash during an unknown external outcome | `test_greg_capabilities::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused`; `test_greg_local_mission::test_lost_host_claim_requires_reconciliation`; `test_greg_first_mission::test_crash_after_survey_resumes_without_repeating_a_completed_step` | INTEGRATED |
 | Duplicate payment or publication | `test_greg_adversarial_machine::test_duplicate_fixture_order_does_not_double_book`; `test_greg_community_journeys::test_journeys_measure_sequences_separate_tiers_and_refuse_duplicate_money` | INTEGRATED (FIXTURE) |
-| Stale community state overwriting a recent event | `test_greg_community_journeys::test_future_or_stale_events_do_not_produce_conversion_or_routing`; `test_egregore_runtime::test_conflicting_source_event_is_retained_then_refused` | COMPONENT |
+| Stale community state overwriting a recent event | **new (increment 6)** `test_greg_adversarial_machine::test_stale_community_state_cannot_overwrite_a_recent_event`; `test_greg_community_journeys::test_future_or_stale_events_do_not_produce_conversion_or_routing`; `test_egregore_runtime::test_conflicting_source_event_is_retained_then_refused` | INTEGRATED (from increment 6) |
 | Forged or selectively disclosed evidence package | `test_cognition_disclosure::test_the_cli_exports_without_sending_and_the_recipient_check_needs_no_greg_state` (signed mission on a real body, CLI export, tampered package refused), `test_tampering_is_detected_on_the_recipient_side`, `test_a_disagreeing_receipt_over_the_same_input_cannot_be_left_out` | INTEGRATED (corrected from COMPONENT in increment 5) |
 | Revoked capability reused after restart | `test_greg_adversarial_machine::test_revoked_engine_is_not_reused_after_restart` | INTEGRATED |
 | Loss of a vendor, API, network or node | **new** `test_greg_confined_egress::test_network_loss_is_an_unmeasured_world_not_a_failed_goal_and_recovery_needs_no_founder`, `test_sustained_network_loss_escalates_once_instead_of_looping`; `test_greg_models::test_genesis_builds_through_whichever_vendor_is_up_and_records_route_health`; `test_greg_ollama::test_local_model_refusal_is_terminal_and_outage_can_fail_over`; `test_greg_cognition_process::test_cli_composition_survives_sigkill_without_duplicate_computation` | INTEGRATED (network, node); COMPONENT (model vendor) |
@@ -375,3 +375,20 @@ or any other local program, a path to founder-signed authority.
 
 Open the link `greg console` prints, once, instead of typing `http://localhost:8766/`. The Chromebook runbook,
 installer message, README and First Mission guide say so. Restarting the console prints a new link.
+
+## Increment 6 (same day): stale community state attacked through a signed mission
+
+A signed mission ingests a recent journey observation (Foundry #34) and routes from it (#50). A second strategy
+replays an older version of the same observation from a stale source. The journey store refuses the different-content
+reuse of the id, the recent observation keeps routing the journey, and the mission asks the founder once instead of
+merging. If the store had accepted the overwrite, the route would read `["deep"]` and the mission would close as
+ACHIEVED; the test asserts it does not.
+
+Two section 13 classes now remain component-level: a profitable action that violates participant rights, which is
+reached through `greg gravity` and the Lawful Leverage Foundry rather than a mission capability, and a local metric
+damaging the whole.
+
+While writing this, a sensor on `foundry.query` system 34 `report` failed with `KeyError: 'steps'`. This is the
+dispatch rule working as designed: the canonical attribution module (#132) serves its own `report`, and the journey
+store's `report` must be named with an explicit implementation. It is recorded here because the name collision is
+easy to hit.

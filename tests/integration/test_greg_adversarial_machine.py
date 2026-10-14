@@ -229,3 +229,51 @@ def test_an_interrupted_capability_construction_resumes_once_and_serves_nothing_
     assert len(composed) == 1 and registered == composed                 # one construction, registered once
     assert len(attached) == 1                                            # attached once, never twice
     assert final and all(a["certified"] and a["staffed"] == 8 for a in final)
+
+
+def test_stale_community_state_cannot_overwrite_a_recent_event(tmp_path):
+    """Directive section 13: stale community state overwriting a recent event, through a signed mission. A backfill
+    replays an older version of an observed event under the same id. The store refuses it, the recent observation
+    keeps routing the journey, and the conflict reaches the founder instead of being merged silently."""
+    import datetime
+    from tests.greg_fixtures import mission
+    from tests.unit.test_greg_community_journeys import event, territory
+    home, key, body_id, _ = make_body(tmp_path)
+    now = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
+    iso = lambda t: t.isoformat().replace("+00:00", "Z")
+    recent = event("visit-1", "view", node="deep", at=iso(now - datetime.timedelta(minutes=10)))
+    stale = event("visit-1", "view", node="entry", at=iso(now - datetime.timedelta(hours=3)),
+                  source_ref="fixture:stale-backfill")
+    route = {"capability": "foundry.query", "target": "foundry:journeys",
+             "params": {"system": 50, "op": "route", "args": {"subject": "visitor", "tier": "fixture",
+                                                              "territory": territory(),
+                                                              "now": iso(now + datetime.timedelta(minutes=1))}}}
+    checks = [{"check_id": "fresh", "description": "the journey routes from the recent observation",
+               "sensor": route, "predicate": {"op": "equals", "field": "result.next", "value": ["offer"]}},
+              {"check_id": "backfilled", "description": "the journey reflects the backfilled history",
+               "sensor": route, "predicate": {"op": "equals", "field": "result.next", "value": ["deep"]}}]
+    strategies = [{"action_id": "observe", "capability": "foundry.apply", "target": "foundry:journeys",
+                   "params": {"system": 34, "op": "ingest", "args": {"events": [recent]}},
+                   "advances": ["fresh"], "rationale": "retain the recent observation"},
+                  {"action_id": "backfill", "capability": "foundry.apply", "target": "foundry:journeys",
+                   "params": {"system": 34, "op": "ingest", "args": {"events": [stale]}}, "requires": ["fresh"],
+                   "advances": ["backfilled"], "rationale": "a stale source replays history"}]
+    spec = mission("m:journey-stale", checks=checks, strategies=strategies,
+                   capabilities=["foundry.query", "foundry.apply"], targets=("foundry:*",), ceiling="internal_write")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    from tests.greg_fixtures import Clock
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        states = []
+        for _ in range(6):
+            states.append(body.tick()["missions"][0]["state"])
+            clock.advance(30)
+        acts = {e.payload["action_id"]: e.payload for e in body.journal.replay("mission.action")}
+        fresh = [e.payload for e in body.journal.replay("mission.observed") if e.payload["check_id"] == "fresh"]
+        asked = [e.payload for e in body.journal.replay("decision.requested")]
+    assert acts["observe"]["status"] == "DONE"
+    assert acts["backfill"]["status"] != "DONE"                                  # the stale replay was refused
+    assert "reused with different content" in " ".join(acts["backfill"]["reasons"])
+    assert fresh and fresh[-1]["passed"]                                         # the recent state still routes
+    assert "ACHIEVED" not in states and len(asked) == 1                           # surfaced once, never merged

@@ -20,9 +20,22 @@ def score(receipt, case, *, require_method=True):
     return all(output.get(k) == v for k, v in expected.get("output", {}).items())
 
 
+def evaluation_view():
+    """Measure solver correctness, not activation: a throwaway in-memory projection in which every built and
+    VERIFIED cognition family is attached. The body's registry and journal are untouched; on a fresh body
+    those families abstain with CAPABILITY_DEFICIT until the founder attaches them (tests/unit/test_greg_cognition.py)."""
+    registry = registry_view()
+    attached = sorted(cid for cid in registry.manifests
+                      if cid.startswith("cognition.") and registry.state[cid] == "VERIFIED")
+    for cid in attached:
+        registry.set_state(cid, "ATTACHED")
+    return registry, attached
+
+
 def assess(*, suite=SUITE, baselines=None):
     raw = json.loads(Path(suite).read_text())
-    registry, rows = registry_view(), []
+    registry, evaluation_attached = evaluation_view()
+    rows = []
     baseline_rows = {name: [] for name in (baselines or {})}
     for case in raw["cases"]:
         receipt = reason(case["request"], registry=registry)
@@ -40,6 +53,8 @@ def assess(*, suite=SUITE, baselines=None):
     measured = (set(raw["baseline_required_for_superiority"]) <= set(baseline_rows) and
                 all(all(r["cost_usd"] is not None for r in b) for b in baseline_rows.values()))
     return {"suite_digest": digest(raw), "cases": rows, "correct": sum(r["correct"] for r in rows), "total": len(rows),
+            "registry_view": {"kind": "evaluation-only in-memory attach of built, VERIFIED families",
+                              "attached_for_evaluation": evaluation_attached, "body_registry_changed": False},
             "baselines": baseline_rows, "superiority_status": "COMPARISON_REQUIRES_PREDECLARED_ACCEPTANCE" if measured else "UNMEASURED",
             "cross_geometry_regret": None, "characterization": {"responsiveness": "per-case measured latency",
                 "memory_depth": "canonical receipt/mission history; restart integration tested separately",

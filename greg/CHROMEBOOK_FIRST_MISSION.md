@@ -100,8 +100,9 @@ accept before your first mission. It does not grant GREG new capabilities or
 permissions. Because your key is protected by your passphrase, the same command
 also queues a **founder-tier attestation**: the ledger's record that the key
 signing your missions is a passphrase-protected founder key, not a test key or a
-`--no-passphrase` rehearsal. It grants nothing either. Without it, closures from
-N3 onward stay *structural candidates* and never move `greg path`. If you rotate
+`--no-passphrase` rehearsal. It grants nothing either. Without it, every closure,
+your first one (N1) included, stays a *structural candidate* and never moves
+`greg path`. If you rotate
 your key, or your body was designated before this existed, run
 `greg founder attest --key ~/.greg-founder.pem` once, before signing the missions
 that should count.
@@ -158,9 +159,19 @@ Chromebook is Alfonso's or that Alfonso was physically present. A real founder
 run and inspection are required before anyone reports an externally verified
 VEPMC increase. A fixture with a test key never counts.
 
+`greg vepmc` keeps `VEPMC` as the compatibility name of `structural_candidate_count`;
+each row's `evidence_level` says `STRUCTURAL_CANDIDATE` or, when the mission was signed
+with your attested key, `FOUNDER_TIER` (`founder_tier_count`). `greg path` leaves N1
+only on a founder-tier closure; a `--no-passphrase` rehearsal that satisfies all nine
+ledger checks stays at N1 with `structurally_met: true`. Neither level is an external
+verification: the ledger still cannot prove this Chromebook or this key is yours, so
+your inspection and acceptance remain the external check. This does not stop the
+signed mission runtime or delete later capability nodes.
+
 ## After the first closure: the second node (N2), still without a model
 
-`greg path` now shows N2: a closure that needed a capability GREG did not have. Put a file you
+If your first closure was signed at the founder tier, `greg path` now shows N2: a closure that
+needed a capability GREG did not have. Put a file you
 downloaded (with its published SHA-256) under `~/src`, then ask in the console:
 **"Verify ~/src/<file> against sha256 <the 64 hex characters>"**. GREG has no hashing
 capability, so it finds the installed `sha256sum`, checks it against a frozen oracle before

@@ -230,7 +230,8 @@ COMMIT_CHAIN_MUTANTS = [
 ]
 
 # 2026-10-14 installed-body merge (#137 verifier): a test-key closure is structural evidence, never the founder's path.
-FOUNDER_TIER_TESTS = ["tests/unit/test_greg_founder_tier.py", "tests/unit/test_greg_business_case.py"]
+FOUNDER_TIER_TESTS = ["tests/unit/test_greg_founder_tier.py", "tests/unit/test_greg_business_case.py",
+                      "tests/unit/test_developmental_inheritance.py"]
 FOUNDER_TIER_MUTANTS = [
     ("a structural closure moves the founder's path", "greg/path.py",
      "    met = bool(structural and passed)\n", "    met = bool(structural)\n"),
@@ -242,13 +243,29 @@ FOUNDER_TIER_MUTANTS = [
     ("the CLI attests an unprotected key", "greg/cli.py",
      "    if passphrase is None and require:\n        raise BodyError(NO_FOUNDER_TIER)",
      "    if False:\n        raise BodyError(NO_FOUNDER_TIER)"),
+    # #138 port (673726a, on the one rule): N1 and N2 move the path only at the founder tier.
+    ("N1 counts a test-key VEPMC closure", "greg/path.py",
+     "    passed, refused = _at_founder_tier(journal, {m: [m] for m in counted})\n",
+     "    passed, refused = counted, {}\n"),
+    ("N2 counts a test-key genesis closure", "greg/path.py",
+     '    passed, refused = _at_founder_tier(journal, {c["mission_id"]: [c["mission_id"]] for c in closures})\n',
+     '    passed, refused = [c["mission_id"] for c in closures], {}\n'),
+]
+
+# The VEPMC row's own label, through the real product path (a supervised body, both key kinds).
+FOUNDER_TIER_BODY_TESTS = ["tests/integration/test_greg_vepmc_path.py"]
+FOUNDER_TIER_BODY_MUTANTS = [
+    ("a VEPMC row labels itself founder-tier without its signer's attestation", "greg/metrics.py",
+     "FOUNDER_TIER if tier.get(\"tier\") == FOUNDER_TIER else STRUCTURAL_CANDIDATE",
+     "FOUNDER_TIER"),
 ]
 
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
           ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
-          ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS)]
+          ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
+          ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS)]
 
 
 def main() -> int:

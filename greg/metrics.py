@@ -16,6 +16,12 @@ activity counts. A closure counts when EVERY condition holds for one mission:
 The ledger can check key possession, designation, and process history. It cannot
 establish the physical owner's identity or verify hardware ownership by itself.
 Fixture results are structural tests, never external VEPMC evidence.
+
+``VEPMC`` stays the compatibility name of ``structural_candidate_count`` (#138, 673726a):
+a row with all nine conditions is a STRUCTURAL_CANDIDATE. It is at the FOUNDER_TIER
+(``founder_tier_count``) only when its mission was signed by the enrolled founder key
+after that key attested passphrase custody (``founder_tier`` below); only then does it
+move the founder's path (greg/path.py). Neither level is an external verification.
 """
 from __future__ import annotations
 
@@ -39,6 +45,7 @@ def vepmc(journal: Journal) -> dict:
     recoveries = [seq[e.event_id] for e in journal.replay("body.recovered")]
     accepted_targets = {e.payload["target_event_id"] for e in journal.replay("critique.recorded")
                         if e.payload["verdict"] == "accept"}
+    tiers = founder_tier(journal)
     rows = []
     for mid, (event, done_seq) in achieved.items():
         appraisal = appraised.get(mid)
@@ -62,10 +69,24 @@ def vepmc(journal: Journal) -> dict:
                                 and designation_seq < registered.get(mid, 0)
                                 for d, designation_seq in designations),
         }
+        counts = all(row[c] for c in CONDITIONS)
+        tier = tiers.get(mid) or {}
         rows.append({"mission_id": mid, "closure_event_id": event.event_id, **row,
-                     "counts": all(row[c] for c in CONDITIONS),
-                     "missing": [c for c in CONDITIONS if not row[c]]})
-    return {"VEPMC": sum(r["counts"] for r in rows), "missions": rows, "conditions": list(CONDITIONS),
+                     "counts": counts,
+                     "missing": [c for c in CONDITIONS if not row[c]],
+                     # #138 (673726a): nine ledger conditions are a structural candidate; the founder tier
+                     # (below) is what lets one move the founder's path. Never an external verification.
+                     "evidence_level": ("NONE" if not counts else
+                                        FOUNDER_TIER if tier.get("tier") == FOUNDER_TIER else STRUCTURAL_CANDIDATE),
+                     **({"not_founder_tier": tier.get("why_not", "not registered on this ledger")}
+                        if counts and tier.get("tier") != FOUNDER_TIER else {})})
+    candidates = sum(r["counts"] for r in rows)
+    at_tier = sum(r["evidence_level"] == FOUNDER_TIER for r in rows)
+    return {"VEPMC": candidates,  # compatibility alias of structural_candidate_count; not an external count
+            "structural_candidate_count": candidates,
+            "founder_tier_count": at_tier,
+            "evidence_level": FOUNDER_TIER if at_tier else (STRUCTURAL_CANDIDATE if candidates else "NONE"),
+            "missions": rows, "conditions": list(CONDITIONS),
             "external_confirmation_required": "ledger checks cannot prove physical ownership or personal presence"}
 
 

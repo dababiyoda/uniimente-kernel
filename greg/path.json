@@ -68,7 +68,7 @@
         "tests/integration/test_greg_vepmc_path.py",
         "greg/CHROMEBOOK_FIRST_MISSION.md"
       ],
-      "smallest_next_build": "done agent-side: greg/chromebook/install.sh, and the runbook rehearsed as written (tests/integration/test_greg_chromebook_rehearsal.py ends at a structurally complete VEPMC row and greg path moving to N2); only the founder's run remains",
+      "smallest_next_build": "done agent-side: greg/chromebook/install.sh, and the runbook rehearsed as written (tests/integration/test_greg_chromebook_rehearsal.py ends at a structurally complete VEPMC row that stays a STRUCTURAL_CANDIDATE: its --no-passphrase key never reaches the founder tier, so greg path stays at N1, as the kill condition requires; #138 673726a). The path moves only on a closure signed by the enrolled founder key at the founder tier (greg/metrics.py founder_tier; tests/integration/test_greg_vepmc_path.py shows a passphrase-protected key moving it). Remains: the founder's run on Body 1 and his inspection; the ledger cannot prove whose machine or key it is",
       "pivot_condition": "If ChromeOS Linux cannot be enabled (managed device), Alfonso chooses another body he owns or rents; GREG may research candidates only as a read-only mission",
       "kill_condition": "A closure counted with a test key, a fixture or a human manually ticking after interruption",
       "founder_attention": "about one hour on the Chromebook, once"
@@ -99,7 +99,7 @@
       "pivot_condition": "If model-built candidates keep failing verification, prefer installed software or open-source acquisition routes before any new builder",
       "kill_condition": "Ported from PR #68 node 1: if a candidate can read or alter its evaluator, stop; the result would be worthless",
       "founder_attention": "sign one mission and one capability contract",
-      "smallest_next_build": "done agent-side: strategy preconditions (`requires`) and two no-model genesis missions (`verify-download`, `word-limit`), rehearsed on one body to N3 (tests/integration/test_greg_chromebook_rehearsal.py); remains: the founder's run on Body 1"
+      "smallest_next_build": "done agent-side: strategy preconditions (`requires`) and two no-model genesis missions (`verify-download`, `word-limit`), rehearsed on one body as two structural genesis closures on unrelated functions (tests/integration/test_greg_chromebook_rehearsal.py); the rehearsal's test key keeps them STRUCTURAL_CANDIDATEs, and they move the path only when signed at the founder tier (greg/metrics.py founder_tier); remains: the founder's run on Body 1"
     },
     {
       "id": "N3",

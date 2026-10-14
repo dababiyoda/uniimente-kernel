@@ -6,7 +6,9 @@ INHERITANCE). Every founder-intended capability horizon stays on it at the node 
 it becomes buildable, classified by present feasibility, never claimed as present.
 
 Exactly one node is operationally primary: the first whose exit evidence does not
-hold. Exit evidence comes from the body's ledger where a predicate exists; a node
+hold. A ledger predicate reports structural evidence, not external founder/body
+verification, and it moves the path only at the founder tier (one rule, N1-N7).
+Exit evidence comes from the body's ledger where a predicate exists; a node
 without a predicate is never counted as passed, however much code exists for it.
 Repository-attested nodes (N0) are labeled as such. Nothing here writes history,
 grants authority or changes the destination.
@@ -96,16 +98,21 @@ def validate(data: dict) -> None:
 # -- ledger predicates: exit evidence the body itself holds --------------------------------
 
 def vepmc_at_least_one(journal: Journal) -> dict:
+    """N1: one VEPMC closure (all nine conditions) whose mission was signed at the founder tier."""
     result = metrics.vepmc(journal)
     rows = result["missions"]
     best = min(rows, key=lambda r: len(r["missing"])) if rows else None
-    return {"met": result["VEPMC"] >= 1, "value": result["VEPMC"],
-            "closest_closure": ({"mission_id": best["mission_id"], "missing": best["missing"]} if best else None),
-            "external_confirmation_required": result["external_confirmation_required"]}
+    counted = [r["mission_id"] for r in rows if r["counts"]]
+    passed, refused = _at_founder_tier(journal, {m: [m] for m in counted})
+    return _tiered({"value": len(passed), "structural_value": len(counted),
+                    "closest_closure": ({"mission_id": best["mission_id"], "missing": best["missing"]}
+                                        if best else None),
+                    "external_confirmation_required": result["external_confirmation_required"]},
+                   structural=bool(counted), passed=passed, refused=refused)
 
 
 def genesis_closure(journal: Journal) -> dict:
-    """A VEPMC-counting closure whose mission first resolved a genuinely absent capability."""
+    """N2: a VEPMC-counting closure whose mission first resolved a genuinely absent capability."""
     from greg.capabilities import BUILTINS
     seq = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
     counted = {r["mission_id"]: r for r in metrics.vepmc(journal)["missions"] if r["counts"]}
@@ -119,21 +126,25 @@ def genesis_closure(journal: Journal) -> dict:
                 and data.get("capability_id") not in BUILTINS and mid in counted
                 and seq[event.event_id] < achieved.get(mid, -1)):
             closures.append({"mission_id": mid, "capability_id": data["capability_id"]})
-    functions = {c["capability_id"] for c in closures}
-    return {"met": bool(closures), "value": len(closures), "closures": closures,
-            "distinct_capabilities": len(functions),
-            "generality": "unproven until a second closure on an unrelated function"}
+    passed, refused = _at_founder_tier(journal, {c["mission_id"]: [c["mission_id"]] for c in closures})
+    founders = [c for c in closures if c["mission_id"] in passed]
+    return _tiered({"value": len(founders), "structural_value": len(closures), "closures": closures,
+                    "distinct_capabilities": len({c["capability_id"] for c in founders}),
+                    "structural_distinct_capabilities": len({c["capability_id"] for c in closures}),
+                    "generality": "unproven until a second closure on an unrelated function"},
+                   structural=bool(closures), passed=passed, refused=refused)
 
 
-# -- the founder tier gate for N3, N4, N6 and N7 -----------------------------------------------
-# These predicates prove a closure's structure from the ledger, and each returns that as
-# ``structurally_met``. A structure built with a test key, a fixture or a --no-passphrase rehearsal is
-# real evidence that the machinery works. It is not the founder's closure, and N1's own kill condition
-# forbids counting it. ``met``, the only field ``position`` reads, therefore also needs every closure the
-# result rests on to be signed by the enrolled founder key at the founder tier (greg/metrics.py
-# founder_tier). Short of that the result is a STRUCTURAL_CANDIDATE that names why each closure was
-# refused. (#137 verifier condition; N1 and N2 are #138's structural-candidate port and are not
-# changed here.)
+# -- the founder tier gate, one rule for N1 through N7 -----------------------------------------
+# Every ledger predicate proves a closure's structure, and each returns that as ``structurally_met``.
+# A structure built with a test key, a fixture or a --no-passphrase rehearsal is real evidence that the
+# machinery works. It is not the founder's closure, and N1's own kill condition forbids counting it.
+# ``met``, the only field ``position`` reads, therefore also needs every closure the result rests on to
+# be signed by the enrolled founder key at the founder tier (greg/metrics.py founder_tier). Short of that
+# the result is a STRUCTURAL_CANDIDATE that names why each closure was refused. (#137 verifier condition
+# for N3, N4, N6 and N7; #138's structural-candidate gate for N1 and N2 (673726a) uses the same rule
+# instead of a hardcoded ``met=False``, so a genuine founder run can still clear N1.) Neither tier is an
+# external verification: the ledger cannot prove whose machine this is or who held the key.
 FOUNDER_TIER_RULE = ("the founder's path moves only on a closure signed by the enrolled founder key at the founder "
                      "tier; a test key, a fixture or a --no-passphrase rehearsal is structural evidence only")
 

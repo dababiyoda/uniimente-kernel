@@ -113,9 +113,15 @@ def test_n6_and_n7_gates_stay_external_and_every_later_predicate_reports_its_str
     nodes = {n["id"]: n for n in devpath.load()["nodes"]}
     assert nodes["N6"]["evidence_source"] == "external" and nodes["N6"]["predicate"] == "human_work_shared"
     assert nodes["N7"]["evidence_source"] == "external" and nodes["N7"]["predicate"] == "venture_compounding"
-    for node in ("N3", "N4", "N6", "N7"):
+    for node in ("N1", "N2", "N3", "N4", "N6", "N7"):           # #138 port: N1 and N2 share the one rule
         assert "founder tier" in nodes[node]["smallest_next_build"]
     empty = type("J", (), {"replay": lambda self, *a: [], "ledger": type("L", (), {"by_type": lambda s, t: []})()})()
-    for name in ("business_loop_closed", "sop_compounding", "human_work_shared", "venture_compounding"):
+    for name in ("vepmc_at_least_one", "genesis_closure", "business_loop_closed", "sop_compounding",
+                 "human_work_shared", "venture_compounding"):
         result = devpath.PREDICATES[name](empty)
         assert result["met"] is False and result["structurally_met"] is False and result["evidence_level"] == "NONE"
+    assert set(devpath.PREDICATES) == {"vepmc_at_least_one", "genesis_closure", "business_loop_closed",
+                                       "sop_compounding", "human_work_shared", "venture_compounding"}
+    vepmc = metrics.vepmc(empty)
+    assert vepmc["VEPMC"] == vepmc["structural_candidate_count"] == vepmc["founder_tier_count"] == 0
+    assert vepmc["evidence_level"] == "NONE"

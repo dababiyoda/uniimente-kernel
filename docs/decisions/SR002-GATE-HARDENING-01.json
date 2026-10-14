@@ -6,12 +6,17 @@
  "subject_source_commit": "07af5758197501662df81ff05e2b34ce8224a322",
  "artifact": "policy/consequence_gate.py",
  "pinned_sha256": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e",
- "hardened_sha256": "15bee53b28928c585827556175af1b4caae399b9ec562f626305b77f2f0885a0",
+ "hardened_sha256": "490ded58ea9605d4cd02d8eddbeb7d2b16bbbba7f175c0ff5c8d8eb815c14ac6",
  "hardening": [
   {
    "port": "#55 commit-window escalation",
    "effect": "refuse at commit unless policy is ALLOW, or REQUIRE_HUMAN covered by a human approval held for this exact proposal; bind consequence class, capability and principal into the grant; refuse any authority-relevant proposal change after admission",
    "sha256_after": "15bee53b28928c585827556175af1b4caae399b9ec562f626305b77f2f0885a0"
+  },
+  {
+   "port": "#21 stale evidence at commit",
+   "effect": "a Gate holding an evidence register resolves every evidence ref to a contract-valid evidence packet and refuses unknown or stale evidence at evaluation and again at commit",
+   "sha256_after": "490ded58ea9605d4cd02d8eddbeb7d2b16bbbba7f175c0ff5c8d8eb815c14ac6"
   }
  ],
  "direction": "subtractive only: every change refuses more and authorizes nothing new",
@@ -42,7 +47,8 @@
   "tests/unit/test_shared_compatibility.py::test_changed_source_fails_instead_of_learning_a_new_fingerprint"
  ],
  "other_pins_moved": [
-  "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json and cortex/evaluation/composition_lift/freeze-v3.json hash policy/consequence_gate.py in their frozen inputs; a later --run of those freezes reports FROZEN_INPUT_CHANGED by design. Their documented path is a new run id, not an edit of the freeze."
+  "docs/evidence/greg-genome-admission/2026-10-14-v2/freeze.json and cortex/evaluation/composition_lift/freeze-v3.json hash policy/consequence_gate.py and policy/engine.py in their frozen inputs; a later --run of those freezes reports FROZEN_INPUT_CHANGED by design. Their documented path is a new run id, not an edit of the freeze.",
+  "tests/evidence/adoption-20260910/package-012-source-manifest.json records the pre-#21 digest of contracts/evidence.schema.json (9fbda9f1...); it is historical evidence of that package and is not rewritten."
  ],
  "resolution": "Alfonso ratifies (signed decision) a successor subject binding SR-003 recorded on the successor with predecessor sr002-0.1.0, exact source commit and per-artifact digests, as SR-002 was; or rejects the hardening and the gate returns to the pinned bytes. Until then the dependent tests stay red and say so.",
  "kill_condition": "any SR002 artifact other than policy/consequence_gate.py drifts, or the gate drifts from hardened_sha256 without this record changing in the same commit",

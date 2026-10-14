@@ -11,10 +11,13 @@ terminal for the proposal; it never "continues with warnings".
 """
 from __future__ import annotations
 
+import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
+from functools import lru_cache
+from typing import Mapping
 
 from compiler.ucl_compiler import CompiledConstitution, KERNEL_INVARIANT_REQUIREMENTS
 
@@ -36,6 +39,89 @@ EVIDENCE_THRESHOLDS = {
 
 # Consequence classes that always wait for a human, per doctrine.
 ALWAYS_HUMAN_CLASSES = ("irreversible",)
+
+# Maximum age of an evidence packet (contracts/evidence.schema.json captured_at)
+# per consequence class, applied when the Gate holds an evidence register. A
+# packet's own fresh_until can only shorten it. Bounded, declared defaults:
+# production ages change only by ratified policy, like EVIDENCE_THRESHOLDS.
+EVIDENCE_MAX_AGE = {
+    "read_only": timedelta(days=365),
+    "internal_write": timedelta(days=30),
+    "external_contact": timedelta(days=7),
+    "financial": timedelta(days=1),
+    "irreversible": timedelta(days=1),
+}
+# A packet stamped later than this past the evaluator's clock is ambiguous, so refused.
+EVIDENCE_CLOCK_SKEW = timedelta(minutes=2)
+
+
+@lru_cache(maxsize=1)
+def _evidence_contract():
+    from importlib.resources import files
+    from jsonschema import Draft202012Validator, FormatChecker
+    schema = json.loads(files("contracts").joinpath("evidence.schema.json").read_bytes())
+    Draft202012Validator.check_schema(schema)
+    checker = FormatChecker()
+    if {"date-time", "uuid"} - checker.checkers.keys():
+        # Without them jsonschema passes every timestamp; a smaller install must not weaken this.
+        raise ValueError("evidence contract format implementation unavailable")
+    return Draft202012Validator(schema, format_checker=checker)
+
+
+def _instant(value) -> datetime:
+    if not isinstance(value, str):
+        raise ValueError("timestamp is not a string")
+    instant = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if instant.tzinfo is None:
+        raise ValueError("timestamp has no timezone")
+    return instant
+
+
+def evidence_freshness_reasons(refs: list[str], register: Mapping[str, dict], consequence_class: str,
+                               now: datetime) -> list[str]:
+    """Resolve every evidence ref in the register; unknown or stale evidence refuses.
+
+    Mechanism of PR #21 kernel/gate/revalidate.py check_evidence_freshness, re-expressed
+    against the canonical evidence contract. Ambiguity fails closed: an id the register
+    does not hold, a packet that does not validate against contracts/evidence.schema.json
+    or whose packet_id differs from the ref, a timestamp without a timezone, a packet
+    captured in the future, or a class with no declared maximum age. A packet is stale at
+    min(captured_at + EVIDENCE_MAX_AGE[class], fresh_until).
+    """
+    reasons: list[str] = []
+    max_age = EVIDENCE_MAX_AGE.get(consequence_class)
+    for ref in refs:
+        try:
+            packet = register.get(ref)
+        except Exception as exc:  # a register that cannot answer is not evidence
+            reasons.append(f"evidence {ref!r} could not be resolved: {type(exc).__name__}")
+            continue
+        if packet is None:
+            reasons.append(f"unknown evidence id {ref!r}; ambiguity fails closed")
+            continue
+        try:
+            errors = sorted(_evidence_contract().iter_errors(packet), key=lambda e: str(list(e.path)))
+            if errors:
+                raise ValueError(f"evidence contract: {errors[0].message}")
+            if packet["packet_id"] != ref:
+                raise ValueError("packet_id does not match the reference")
+            captured = _instant(packet["captured_at"])
+            deadline = captured + max_age if max_age is not None else captured
+            if packet.get("fresh_until") is not None:
+                deadline = min(deadline, _instant(packet["fresh_until"]))
+        except (ValueError, TypeError, KeyError) as exc:
+            reasons.append(f"evidence {ref!r} is not a valid evidence packet: {exc}")
+            continue
+        if captured > now + EVIDENCE_CLOCK_SKEW:
+            reasons.append(f"evidence {ref!r} is captured in the future ({packet['captured_at']}); "
+                           "ambiguity fails closed")
+        elif max_age is None:
+            reasons.append(f"no evidence age declared for consequence class {consequence_class!r}")
+        elif now >= deadline:
+            reasons.append(f"evidence {ref!r} is stale: relied on until "
+                           f"{deadline.isoformat().replace('+00:00', 'Z')}, now "
+                           f"{now.isoformat().replace('+00:00', 'Z')}")
+    return reasons
 
 
 @dataclass
@@ -69,13 +155,18 @@ class PolicyDecision:
 def evaluate(compiled: CompiledConstitution, proposal: Proposal,
              *, identity_ok: bool, grant: dict | None,
              now: datetime | None = None,
-             thresholds: dict | None = None) -> PolicyDecision:
+             thresholds: dict | None = None,
+             evidence: Mapping[str, dict] | None = None) -> PolicyDecision:
     """Evaluate a proposal. Pure function of (compiled doctrine, proposal,
-    identity verdict, current grant). Deny by default.
+    identity verdict, current grant, evidence register). Deny by default.
 
     thresholds: optional evidence-floor override per consequence class
     (defaults to EVIDENCE_THRESHOLDS). Evolution cycles may test candidate
     floors in simulation; production floors change only by ratified policy.
+
+    evidence: optional register of evidence packets by packet_id. When given,
+    every evidence ref must resolve to a fresh, contract-valid packet (#21);
+    without it refs are opaque digests and only their presence is checked.
     """
     now = now or datetime.now(timezone.utc)
     floors = thresholds or EVIDENCE_THRESHOLDS
@@ -163,6 +254,11 @@ def evaluate(compiled: CompiledConstitution, proposal: Proposal,
     if not proposal.evidence_refs and floor > 0:
         reasons.append("no evidence references supplied")
         missing.append("sufficient_evidence")
+    if evidence is not None:
+        stale = evidence_freshness_reasons(proposal.evidence_refs, evidence, proposal.consequence_class, now)
+        if stale:
+            reasons.extend(stale)
+            missing.append("fresh_evidence")
     law.append("evidence.schema.json")
 
     if reasons:

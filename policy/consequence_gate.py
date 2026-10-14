@@ -14,7 +14,10 @@ Lifecycle states (workflows/approval-lifecycle.yaml):
 Hard rules:
     expired approval at commit     -> fail closed and re-request
     revoked grant at commit        -> fail closed
-    stale evidence at commit       -> fail closed and refresh
+    unknown or stale evidence      -> fail closed at evaluation and again at
+                                      commit, for a Gate holding an evidence
+                                      register; without one, evidence refs are
+                                      opaque digests checked for presence only
     effect mismatch at commit      -> hard refusal and incident
     authority change at commit     -> hard refusal and incident: only ALLOW, or
                                       REQUIRE_HUMAN covered by a human approval
@@ -32,7 +35,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone, timedelta
-from typing import Callable, Any
+from typing import Callable, Any, Mapping
 
 from compiler.ucl_compiler import CompiledConstitution
 from identity.machine_passport import PassportRegistry
@@ -193,7 +196,8 @@ class ConsequenceGate:
                  ledger: EvidenceLedger, signer: WitnessSigner,
                  grants: GrantIssuer | None = None, budget: BudgetOffice | None = None,
                  policy_version: str = "1.0.0",
-                 evidence_thresholds: dict | None = None):
+                 evidence_thresholds: dict | None = None,
+                 evidence: Mapping[str, dict] | None = None):
         self.compiled = compiled
         self.passports = passports
         self.ledger = ledger
@@ -202,6 +206,10 @@ class ConsequenceGate:
         self.budget = budget or BudgetOffice()
         self.policy_version = policy_version
         self.evidence_thresholds = evidence_thresholds
+        # Register of contracts/evidence.schema.json packets by packet_id. When
+        # present, every evidence ref must resolve to a fresh packet at
+        # evaluation and again at commit (#21); unknown or stale refuses.
+        self.evidence = evidence
 
     # -- internal helpers -------------------------------------------------
     def _transition(self, rec: ActionRecord, state: str, detail: dict | None = None) -> None:
@@ -263,7 +271,8 @@ class ConsequenceGate:
         admitted = _authority_digest(proposal, COMMIT_WINDOW_FIELDS)
         approval: dict | None = None
         eval_grant = self._eval_view(standing_grant) if standing_grant else None
-        decision = evaluate(self.compiled, proposal, identity_ok=ok, grant=eval_grant, thresholds=self.evidence_thresholds)
+        decision = evaluate(self.compiled, proposal, identity_ok=ok, grant=eval_grant,
+                            thresholds=self.evidence_thresholds, evidence=self.evidence)
         if decision.verdict == Verdict.DENY:
             return self._refuse(rec, "refused", decision.reasons)
 
@@ -281,7 +290,8 @@ class ConsequenceGate:
             # The approval covers exactly these reasons for exactly this proposal.
             approval = {"authority_digest": admitted, "reasons": list(decision.reasons)}
             self._transition(rec, "evaluating", {"step": "policy_recheck_after_approval"})
-            decision = evaluate(self.compiled, proposal, identity_ok=True, grant=eval_grant, thresholds=self.evidence_thresholds)
+            decision = evaluate(self.compiled, proposal, identity_ok=True, grant=eval_grant,
+                                thresholds=self.evidence_thresholds, evidence=self.evidence)
             if decision.verdict == Verdict.DENY:
                 return self._refuse(rec, "refused", decision.reasons)
 
@@ -435,7 +445,8 @@ class ConsequenceGate:
         # policy must still allow, with the identical input. The evaluation view
         # merges the wire contract with gate-managed stage metadata (the contract
         # records initial_stage; the runtime stage is promoted by the decision).
-        decision = evaluate(self.compiled, proposal, identity_ok=True, grant=self._eval_view(g), thresholds=self.evidence_thresholds)
+        decision = evaluate(self.compiled, proposal, identity_ok=True, grant=self._eval_view(g),
+                            thresholds=self.evidence_thresholds, evidence=self.evidence)
         if decision.verdict == Verdict.DENY:
             reasons.extend(f"commit-time policy refusal: {r}" for r in decision.reasons)
         elif decision.verdict == Verdict.REQUIRE_HUMAN:

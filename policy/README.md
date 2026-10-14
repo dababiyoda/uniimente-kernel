@@ -17,6 +17,7 @@ Proposal → identity → legal principal → evidence → policy
 - `engine.py` — policy evaluator. Deny by default, structured refusal
   reasons, `explain()` states which law applies, who is authorized, what
   remains missing, what may happen, what must not happen, and why.
+  `evidence_freshness_reasons()` resolves evidence refs against a register.
 - `consequence_gate.py` — the gate: lifecycle states from
   `workflows/approval-lifecycle.yaml`, `GrantIssuer` (single-action grants,
   contract-exact), `BudgetOffice` (explicit reservations, released on every
@@ -28,7 +29,13 @@ Proposal → identity → legal principal → evidence → policy
 
 ## Hard rules (enforced in tests)
 
-- expired grant / revoked grant / stale evidence at commit → fail closed
+- expired grant / revoked grant at commit → fail closed
+- unknown or stale evidence → fail closed at evaluation and again at commit
+  when the Gate is built with an `evidence` register of
+  `contracts/evidence.schema.json` packets: a ref must resolve to a
+  contract-valid packet, and a packet is stale at the earlier of its optional
+  `fresh_until` and `captured_at` + `EVIDENCE_MAX_AGE[consequence class]` (#21).
+  Without a register, evidence refs are opaque digests checked for presence only.
 - effect mismatch at commit → hard refusal + incident on the ledger
 - consequence class (or any authority-relevant field) changed between
   admission and commit, or REQUIRE_HUMAN at commit without a matching

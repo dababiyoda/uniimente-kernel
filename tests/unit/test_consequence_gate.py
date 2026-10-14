@@ -378,3 +378,110 @@ def test_human_approval_held_for_this_proposal_survives_commit(stack):
     rec = gate.run(p, executor=_counting(calls), standing_grant=grant,
                    approver=lambda pr, why: (True, "synthetic approval; not founder authentication"))
     assert rec.state == "recorded" and calls == ["irreversible"]
+
+
+# ---------- #21: unknown or stale evidence fails closed, at evaluation and at commit ----------
+# Re-expressed from refs/remotes/pr/21:tests/gate/test_gate_hostile.py::test_04_stale_evidence_refused
+# against the canonical evidence contract (contracts/evidence.schema.json) and the one Gate.
+
+def _packet(*, captured_ago=timedelta(minutes=5), fresh_for=None, **overrides):
+    import uuid
+    now = datetime.now(timezone.utc)
+    stamp = lambda dt: dt.isoformat().replace("+00:00", "Z")  # noqa: E731
+    packet = {
+        "packet_id": str(uuid.uuid4()), "captured_at": stamp(now - captured_ago),
+        "captured_by": "spiffe://uniimente.internal/organ/evidence-browser",
+        "source": {"uri": "https://example.com/report", "retrieval_path": "GET /report",
+                   "source_authority": "primary"},
+        "raw_content_hash": "sha256:" + "c" * 64, "raw_content_location": "vault://reports/1",
+        "claims": [], "instruction_shaped_content": {"detected": False, "quarantined": True}}
+    if fresh_for is not None:
+        packet["fresh_until"] = stamp(now - captured_ago + fresh_for)
+    packet.update(overrides)
+    return packet
+
+
+def _evidence_gate(stack, *packets):
+    gate, passports, ledger, actor, compiled = stack
+    register = {p["packet_id"]: p for p in packets}
+    return ConsequenceGate(compiled=compiled, passports=passports, ledger=ledger, signer=gate.signer,
+                           evidence=register), register
+
+
+def test_04_stale_evidence_refused(stack):
+    stale = _packet(captured_ago=timedelta(hours=2), fresh_for=timedelta(hours=1))
+    gate, _ = _evidence_gate(stack, stale)
+    _, _, ledger, actor, _ = stack
+    calls = []
+    rec = authorized_run(gate, make_proposal(actor.passport_id, evidence_refs=[stale["packet_id"]]),
+                         executor=lambda p: calls.append(p) or GOOD(p))
+    assert rec.state == "refused" and calls == []
+    assert any("stale" in r for r in rec.refusal_reasons)
+    assert ledger.verify_chain()[0]
+
+
+def test_unknown_evidence_id_fails_closed(stack):
+    gate, _ = _evidence_gate(stack, _packet())
+    actor = stack[3]
+    rec = authorized_run(gate, make_proposal(actor.passport_id, evidence_refs=["sha256:" + "a" * 64]),
+                         executor=GOOD)
+    assert rec.state == "refused"
+    assert any("unknown evidence id" in r for r in rec.refusal_reasons)
+
+
+def test_evidence_older_than_its_class_allows_is_stale_without_fresh_until(stack):
+    old = _packet(captured_ago=timedelta(days=8))                 # external_contact allows 7 days
+    gate, _ = _evidence_gate(stack, old)
+    rec = authorized_run(gate, make_proposal(stack[3].passport_id, evidence_refs=[old["packet_id"]]),
+                         executor=GOOD)
+    assert rec.state == "refused" and any("stale" in r for r in rec.refusal_reasons)
+
+
+def test_evidence_going_stale_in_the_commit_window_refuses_at_commit(stack):
+    packet = _packet(fresh_for=timedelta(hours=1))
+    gate, register = _evidence_gate(stack, packet)
+    sign = gate.signer.sign
+
+    def expire(witness):     # the freshness deadline passes between evaluation and commit
+        register[packet["packet_id"]] = {**packet, "fresh_until": packet["captured_at"]}
+        return sign(witness)
+
+    gate.signer.sign = expire
+    calls = []
+    rec = authorized_run(gate, make_proposal(stack[3].passport_id, evidence_refs=[packet["packet_id"]]),
+                         executor=lambda p: calls.append(p) or GOOD(p))
+    assert rec.state == "refused" and calls == []
+    assert any(r.startswith("commit-time policy refusal: evidence") and "stale" in r for r in rec.refusal_reasons)
+
+
+@pytest.mark.parametrize("bad", [
+    {"captured_at": "2026-10-14T00:00:00"},                      # no timezone
+    {"captured_at": "2999-01-01T00:00:00Z"},                     # captured in the future
+    {"packet_id": "not-the-ref"},                                # register key and packet disagree
+    {"claims": "not a list"},                                    # contract-invalid
+])
+def test_ambiguous_evidence_packets_fail_closed(stack, bad):
+    packet = _packet()
+    ref = packet["packet_id"]
+    gate, register = _evidence_gate(stack)
+    register[ref] = {**packet, **bad}
+    rec = authorized_run(gate, make_proposal(stack[3].passport_id, evidence_refs=[ref]), executor=GOOD)
+    assert rec.state == "refused"
+
+
+def test_fresh_contract_valid_evidence_passes(stack):
+    packet = _packet(fresh_for=timedelta(days=1))
+    gate, _ = _evidence_gate(stack, packet)
+    rec = authorized_run(gate, make_proposal(stack[3].passport_id, evidence_refs=[packet["packet_id"]]),
+                         executor=GOOD)
+    assert rec.state == "recorded"
+
+
+def test_fresh_until_is_optional_in_the_evidence_contract():
+    import json, jsonschema
+    schema = json.load(open(os.path.join(ROOT, "contracts", "evidence.schema.json")))
+    checker = jsonschema.FormatChecker()
+    jsonschema.validate(_packet(), schema, format_checker=checker)                   # existing producers
+    jsonschema.validate(_packet(fresh_for=timedelta(hours=1)), schema, format_checker=checker)
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(_packet(fresh_until="tomorrow"), schema, format_checker=checker)

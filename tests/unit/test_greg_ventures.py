@@ -410,6 +410,8 @@ def test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forg
         memo = next((Layout(home).home / "deliveries" / "ventures").glob("venture-*.md"))
         text = memo.read_text()
         assert "**stated**" in text and "randomized difference in means 5" in text and "randomization" in text
+        assert "## Advantage case (section 13" in text and "Expected benefit: **stated**" in text
+        assert "legality: **unresolved**" in text, "no detected prohibition is not permission"
         receipt = [r for r in body.ledger.by_type("receipt")
                    if "inputs" in ((r.payload["result"].get("output") or {}) if isinstance(r.payload["result"].get("output"), dict) else {})][-1]
         output = json.loads(json.dumps(receipt.payload["result"]["output"]))

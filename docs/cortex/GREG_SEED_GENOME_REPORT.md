@@ -246,6 +246,12 @@ Done after the correction:
   now refute all of them (1.0 on every measured family; 14 mutants). Persistence stays a body-scale
   measurement; semantic stays unmeasured without a founder-selected local model.
   `tests/evidence/greg-characterization-2026-10-13/`.
+- **Section 13 AdvantageCase on every venture memo** (`greg/advantage.py`). Nineteen fields composed
+  from the memo's own receipted inputs; legality, consent, rights and authority as evidence-backed
+  states (a missing prohibition stays `unresolved`, and `supported` needs provenance and a reviewer);
+  no scalar score; the six outcomes one by one; a protection case with the proportionate sequence when
+  an affected party with declared harm appears. The appraiser recomputes the case and refutes a memo
+  whose case differs. Four mutants caught.
 
 Next mechanisms:
 

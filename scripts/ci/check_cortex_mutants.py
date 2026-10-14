@@ -279,8 +279,22 @@ CHAR_MUTANTS = [
      "        yield path, output + LARGE\n", "        yield path, output\n"),
 ]
 
+# Directive section 13: the AdvantageCase on the venture memo.
+ADV_TESTS = ["tests/unit/test_greg_advantage.py"]
+ADV_MUTANTS = [
+    ("a supported legal state accepted without provenance", "greg/advantage.py",
+     'if state == "supported" and (not provenance or not reviewer):', "if False:"),
+    ("absence of a prohibition read as permission", "greg/advantage.py",
+     '            states[question] = legal_state("unresolved")\n', '            states[question] = legal_state("not_applicable")\n'),
+    ("a scalar score accepted on the case", "greg/advantage.py",
+     'if case.get("score") is not None or any("score" in k for k in case if k != "score"):', "if False:"),
+    ("appraiser skips the advantage recomputation", "greg/ventures.py",
+     '        if recomputed != inputs["advantage"]:', "        if False:"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
-          ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("characterization", CHAR_TESTS, CHAR_MUTANTS)]
+          ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("characterization", CHAR_TESTS, CHAR_MUTANTS),
+          ("advantage case", ADV_TESTS, ADV_MUTANTS)]
 
 
 def main() -> int:

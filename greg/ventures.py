@@ -22,6 +22,11 @@ identification-gated). The memo's revenue section is rendered only from those re
 no identified causal effect means an estimate is shown and no revenue conclusion is drawn.
 The appraiser re-derives the section and checks every receipt against the ledger.
 
+Third, directive section 13: each memo carries an inspectable AdvantageCase (``greg/advantage.py``)
+composed from these same inputs. Legality, consent, rights and authority are evidence-backed states
+(no detected prohibition is ``unresolved``, not permission); there is no scalar score; the six outcomes
+are listed one by one. The appraiser recomputes the case and refutes a memo whose case differs.
+
 Each organ runs from its own checkout (inside the body's read roots) in a separate
 Python process that receives no GREG secrets, keys or ledger. The appraiser
 re-renders the memo from the receipt and re-runs both organs to confirm the
@@ -229,6 +234,9 @@ def render(inputs: dict) -> str:
              f"- Requires your approval: yes. GREG executed nothing beyond reading sources and running both organs.",
              "", "## What would change the verdict", "", inputs["flip"], ""]
     lines += _render_revenue(inputs)
+    if inputs.get("advantage") is not None:
+        from greg import advantage
+        lines += advantage.render(inputs["advantage"])
     lines += ["## Governing transaction", "", appraisal["transaction"], "",
              f"Failure layer: {appraisal['failure']['layer']} — {appraisal['failure']['description']}", "",
              "## Evidence (source bytes verified; assertions not independently verified)", ""]
@@ -313,6 +321,8 @@ def assess(params, ctx: InvocationContext) -> dict:
               "flip": flip_condition(receipt["appraisal"], assessment["go_no_go"], verdict),
               "organs": {"railscout_head": _git_head(p["railscout_root"]), "wmi_head": _git_head(p["wmi_root"])},
               "paths": {k: str(v) for k, v in p.items()}}
+    from greg import advantage
+    inputs["advantage"] = advantage.from_venture(inputs)      # section 13; composed from the inputs above only
     text = render(inputs)
     path = _deliver(text, ctx, f"venture-{receipt['receipt_sha256'][:16]}")
     return {"path": str(path), "sha256": hashlib.sha256(text.encode()).hexdigest(), "bytes": len(text.encode()),
@@ -366,6 +376,14 @@ def verify_delivery(output: dict, deliver_root: Path | None, ledger=None) -> tup
         if ledger is not None and not any(((r.payload.get("result") or {}).get("output") or {}).get("receipt_id")
                                           == receipt["receipt_id"] for r in ledger.by_type("receipt")):
             return False, f"the {role} receipt is not on the canonical ledger"
+    if inputs.get("advantage") is not None:
+        from greg import advantage
+        try:
+            recomputed = advantage.from_venture({k: v for k, v in inputs.items() if k != "advantage"})
+        except advantage.AdvantageCaseError as exc:
+            return False, f"the advantage case is invalid: {exc}"
+        if recomputed != inputs["advantage"]:
+            return False, "the advantage case is not the composition of the receipted inputs"
     paths = {k: Path(v) for k, v in inputs["paths"].items()}
     try:
         manifest_bytes = paths["manifest"].read_bytes()

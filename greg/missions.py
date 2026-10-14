@@ -93,6 +93,10 @@ BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "bool
 DEFAULT_BIND_BYTES = 16 * 1024
 
 
+# Capabilities whose network access runs behind the body's #26 relay when the body confines egress.
+CONFINED_EGRESS = frozenset({"http.get"})
+
+
 class Unbound(Exception):
     """A bound input is not available yet (or no longer matches its declared type)."""
 
@@ -203,6 +207,22 @@ def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
                 "spend_basis": "signed_cap: provider report outside [0, cap]"}
     return {"cost_usd": round(float(reported), 6), "cost_cap_usd": cap, "provider_reported_usd": float(reported),
             "spend_basis": "provider_reported"}
+
+
+def disagreement(output) -> dict | None:
+    """The views behind a composition that reported CONFLICT, kept side by side for the founder: which question,
+    which method said what (a digest and a short preview of each output), and the dissent. Nothing is ranked."""
+    meta = output.get("metaconsensus") if isinstance(output, dict) else None
+    if not isinstance(meta, dict) or meta.get("state") != "CONFLICT":
+        return None
+    questions = {(q.get("problem_id"), q.get("epistemic_class")) for q in meta.get("conflicting_questions") or []}
+    views = [{"problem_id": r.get("problem_id"), "method": r.get("method"), "receipt_id": r.get("receipt_id"),
+              "output_digest": sha256_json(r.get("output")), "output_preview": json.dumps(r.get("output"),
+                                                                                         default=str)[:160]}
+             for r in output.get("receipts") or [] if isinstance(r, dict)
+             and (r.get("problem_id"), r.get("epistemic_class")) in questions]
+    return {"questions": sorted(f"{p}" for p, _ in questions), "views": views,
+            "dissent": [str(d)[:200] for d in meta.get("dissent") or []][:4], "vote_taken": False}
 
 
 def _field(output, path: str):
@@ -471,7 +491,8 @@ class MissionEngine:
                                  manifest.capability_id.startswith(("artifact.", "cognition.", "institution.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
-                                 cognition_model=getattr(self, "cognition_model", None))
+                                 cognition_model=getattr(self, "cognition_model", None),
+                                 egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
@@ -675,6 +696,7 @@ class MissionEngine:
         failing, evidence = set(), []
         sensor_errors = self.sensor_errors = set()
         self.capability_faults = {}
+        self.disagreements = {}
         for check in m.current_checks():
             sensor = check["sensor"]
             manifest, adapter, missing = self._resolve(sensor)
@@ -713,6 +735,9 @@ class MissionEngine:
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
+                views = disagreement(outcome.output)
+                if views and not passed:
+                    self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
@@ -991,17 +1016,24 @@ class MissionEngine:
             candidates.append((-expected, route, index, s, estimate))
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
-            rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None,
-                                why=("the remaining strategies wait on checks that observation says fail: "
-                                     + ", ".join(sorted({c for cs in held.values() for c in cs})))
-                                if held else "every strategy for the failing checks is exhausted, refused or excluded",
-                                recommendation="add or revise strategies, widen scope, or abandon the mission",
+            split = {c: v for c, v in sorted(getattr(self, "disagreements", {}).items()) if c in failing}
+            why = (("the remaining strategies wait on checks that observation says fail: "
+                    + ", ".join(sorted({c for cs in held.values() for c in cs})))
+                   if held else "every strategy for the failing checks is exhausted, refused or excluded")
+            if split:
+                why = (f"qualified intelligences disagree on {', '.join(split)}; GREG keeps every view and does not "
+                       f"vote, so it cannot close on either; " + why)
+            rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None, why=why,
+                                recommendation=("review both views and decide, or add an independent verifier that "
+                                                "can settle the question" if split else
+                                                "add or revise strategies, widen scope, or abandon the mission"),
                                 alternatives=["add or revise strategies for the failing checks", "widen the scope",
                                               "abandon the mission"],
                                 requested={"failing_checks": sorted(failing)}, now=now,
                                 evidence={"failing_checks": sorted(failing), "failed": dict(sorted(m.failed.items())),
                                           "excluded": dict(sorted(m.excluded.items())),
-                                          **({"held_by_precondition": held} if held else {})})
+                                          **({"held_by_precondition": held} if held else {}),
+                                          **({"disagreement": split} if split else {})})
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}

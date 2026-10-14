@@ -91,7 +91,7 @@ def _private_write(path: Path, data: bytes):
 
 
 def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None,
-              local_model: str | None = None) -> dict:
+              local_model: str | None = None, confined_egress: bool = False) -> dict:
     """Create a new body directory. Refuses to overwrite an existing body.
 
     ``deliver_root`` is the founder-visible folder where deliverables (briefs,
@@ -121,6 +121,8 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
               "version": BODY_VERSION}
     if local_model is not None:
         config["models"] = {"order": ["ollama"], "ollama_model": local_model}
+    if confined_egress:
+        config["confined_egress"] = True
     _private_write(layout.config, json.dumps(config, indent=2).encode())
     return config
 
@@ -173,7 +175,18 @@ class Body:
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
+        self.engine.egress = self._egress_relay()
         return self
+
+    def _egress_relay(self):
+        """#26: one relay per body when the founder enabled confined egress; refused (fail closed) where the kernel
+        filter is unavailable, and chained through a mandated proxy when the environment declares one."""
+        if not self.config.get("confined_egress"):
+            return None
+        from foundry.systems.segmentation import Journal as EgressJournal, Relay, policy_from_manifests, \
+            proxy_from_environment
+        return Relay(policy_from_manifests(), EgressJournal(self.layout.home / "egress-journal.jsonl"),
+                     proxy=proxy_from_environment())
 
     def _refresh_builder(self):
         """Replace the model adapter, never the mission engine, ledger or authority office."""

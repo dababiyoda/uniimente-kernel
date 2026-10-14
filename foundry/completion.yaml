@@ -454,17 +454,19 @@
   gap: 'Non-privileged mechanism implemented (foundry/systems/segmentation.py): components launched through run_confined
     run under the Kernel seccomp filter (no socket of any family, no connect/io_uring/pidfd_getfd/setns; kernel-enforced)
     and reach only identity-allowlisted endpoints through one relay that journals every decision in a hash chain;
-    exercised on loopback and RFC 5737 TEST-NET only. Not COMPLETE: capabilities that run inside the body process
-    (github.pulls, http.get, browser) and coding workers are not yet launched through the relay, so the second criterion
-    does not hold machine-wide; external upstreams are refused unless declared, and in an environment with a mandated
-    egress proxy the relay must chain to it (2026-09-30 negative evidence: a direct connection bypassed the configured
-    proxy). The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
+    exercised on loopback and RFC 5737 TEST-NET only. The relay chains through a mandated HTTP CONNECT proxy
+    (HTTPS_PROXY; credentials never journaled), the 2026-09-30 negative evidence being that a direct connection bypassed
+    the configured proxy. http.get runs as a confined component behind the body relay when the body is initialized with
+    --confined-egress (TLS verified inside the confined child; tests/integration/test_greg_confined_egress.py, loopback
+    fake proxy and TLS server only). Not COMPLETE: github.pulls, browser capabilities and coding workers still run
+    unconfined, and confined egress is opt-in, so the second criterion does not hold machine-wide. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
   implementation:
   - foundry/systems/segmentation.py
   - tools/offline_test.py
   interface: foundry.query policy|journal (system 26); run_confined/egress_connect for components the body launches
   tests:
   - tests/unit/test_foundry_segmentation.py
+  - tests/integration/test_greg_confined_egress.py
   limitations: Linux with libseccomp only (refused elsewhere). Exact host/port allowlists; no wildcard. Covers only
     components launched through run_confined.
   recovery: A refused or unavailable filter refuses the launch (fail closed); a broken journal chain is reported, never

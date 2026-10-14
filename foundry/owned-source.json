@@ -391,6 +391,7 @@
     "greg/console.py",
     "greg/daleobanks_bridge.py",
     "greg/dataplane.py",
+    "greg/discover.py",
     "greg/doctor.py",
     "greg/founder.py",
     "greg/foundry_bridge.py",

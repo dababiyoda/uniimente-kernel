@@ -451,12 +451,13 @@ def render_home(console: Console) -> bytes:
     return _page("GREG", "".join(home_parts(console).values()), refresh=True)
 
 
-def render_mission_control(console: Console, view: str = "overview") -> bytes:
+def render_mission_control(console: Console, view: str = "overview", query: str = "") -> bytes:
     """The founder's first page: five questions answered from retained state, with the real controls."""
     from greg import mission_control
     if view not in dict(mission_control.VIEWS):
         raise FileNotFoundError(view)
     parts = home_parts(console)
+    parts["_query"] = query[:200]
     body = parts.get("flash", "") + mission_control.render_view(console, view, parts)
     body += "<p class=muted><a href=/classic>Classic page</a> · <a href=/morning>Morning report</a> · <a href=/api/mc>JSON</a></p>"
     return _page("GREG Mission Control", f"<style>{mission_control.STYLE_EXTRA}</style>" + body,
@@ -483,6 +484,15 @@ def render_proposal(console: Console, pid: str) -> bytes:
         detail = p.get("why") or "; ".join(p.get("questions", []))
         problems = "".join(f"<li>{_e(x)}</li>" for x in p.get("problems", []))
         out.append(f"<section><p>{_e(detail)}</p><ul>{problems}</ul><a href=/>Back</a></section>")
+        from greg.discover import discover
+        found = discover(entry["text"], limit=6)
+        if found:
+            out.append("<section><h2>Machinery your words name</h2><p class=muted>GREG could not draft a mission from "
+                       "this sentence. These installed paths, capabilities and Foundry systems match its words; "
+                       "lexical matching, not a feasibility judgment.</p><ul>" + "".join(
+                           f"<li>{_e(r['kind'])} <code>{_e(r['id'])}</code>: {_e(r['title'])} "
+                           f"<span class=muted>({_e(r['state'] or 'see the capability map')})</span></li>" for r in found)
+                       + f"</ul><p><a href='/mc/organs?q={quote(entry['text'][:200])}'>Explore in Mission Control</a></p></section>")
         return _page("GREG proposal", "".join(out))
     spec = p["spec"]
     summary = planner.authority_summary(spec, console.context().capabilities)
@@ -560,7 +570,8 @@ def make_handler(console: Console):
                 if path == "/classic":
                     return self._send(200, render_home(console))
                 if path.startswith("/mc/"):
-                    return self._send(200, render_mission_control(console, path.split("/", 2)[2]))
+                    q = parse_qs(urlsplit(self.path).query).get("q", [""])[0]
+                    return self._send(200, render_mission_control(console, path.split("/", 2)[2], q))
                 if path == "/api/mc":
                     from greg.mission_control import projection
                     return self._send(200, json.dumps(projection(console), default=str).encode(), "application/json")

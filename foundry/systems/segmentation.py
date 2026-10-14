@@ -130,11 +130,53 @@ class Journal:
 
 # -- relay -------------------------------------------------------------------------------------------------------
 
+def proxy_from_environment(environ=None) -> dict | None:
+    """The mandated egress proxy, if this environment declares one (HTTPS_PROXY / https_proxy).
+
+    Returned as {host, port, authorization}; the authorization header value is never journaled."""
+    import base64
+    from urllib.parse import unquote, urlsplit
+    environ = os.environ if environ is None else environ
+    raw = environ.get("HTTPS_PROXY") or environ.get("https_proxy")
+    if not raw:
+        return None
+    parts = urlsplit(raw if "://" in raw else "http://" + raw)
+    if parts.scheme != "http" or not parts.hostname:
+        raise SegmentationError("only an http:// CONNECT proxy can be chained")
+    auth = None
+    if parts.username is not None:
+        token = f"{unquote(parts.username)}:{unquote(parts.password or '')}".encode()
+        auth = "Basic " + base64.b64encode(token).decode()
+    return {"host": parts.hostname, "port": parts.port or 80, "authorization": auth}
+
+
+def _via_proxy(proxy: dict, host: str, port: int, connect) -> socket.socket:
+    """Open a tunnel to host:port through the mandated proxy with HTTP CONNECT (RFC 9110 section 9.3.6)."""
+    sock = connect((proxy["host"], proxy["port"]), timeout=10)
+    request = f"CONNECT {host}:{port} HTTP/1.1\r\nHost: {host}:{port}\r\n"
+    if proxy.get("authorization"):
+        request += f"Proxy-Authorization: {proxy['authorization']}\r\n"
+    sock.sendall((request + "\r\n").encode())
+    head = b""
+    while b"\r\n\r\n" not in head:
+        chunk = sock.recv(1)
+        if not chunk or len(head) > 8192:
+            sock.close()
+            raise OSError("proxy closed or sent an oversized CONNECT response")
+        head += chunk
+    status = head.split(b"\r\n", 1)[0].split()
+    if len(status) < 2 or status[1] != b"200":
+        sock.close()
+        raise OSError("proxy refused the tunnel: " + head.split(b"\r\n", 1)[0].decode("latin-1")[:120])
+    return sock
+
+
 class Relay:
-    def __init__(self, policy: dict, journal: Journal, *, connect=socket.create_connection):
+    def __init__(self, policy: dict, journal: Journal, *, connect=socket.create_connection, proxy: dict | None = None):
         self.policy = normalize_policy(policy)
         self.journal = journal
         self.connect = connect             # injectable only so tests can prove a denied request never connects
+        self.proxy = proxy                 # external upstreams go through it; loopback never does
         self.pumps: list[threading.Thread] = []
 
     def drain(self, timeout: float = 10.0):
@@ -190,17 +232,22 @@ class Relay:
             self.journal.append({"identity": identity, "host": host, "port": port, "verdict": "DENIED", "why": why})
             control.sendall(b"DENIED " + why.encode() + b"\n")
             return
+        via = "direct"
         try:
-            upstream = self.connect((host, port), timeout=10)
+            if self.proxy and not _loopback(host):
+                via = f"proxy {self.proxy['host']}:{self.proxy['port']}"
+                upstream = _via_proxy(self.proxy, host, port, self.connect)
+            else:
+                upstream = self.connect((host, port), timeout=10)
         except OSError as exc:
             self.journal.append({"identity": identity, "host": host, "port": port, "verdict": "UPSTREAM_FAILED",
-                                 "why": type(exc).__name__})
+                                 "via": via, "why": f"{type(exc).__name__}: {exc}"[:200]})
             control.sendall(b"FAILED upstream\n")
             return
         mine, theirs = socket.socketpair()
         socket.send_fds(control, [b"OK\n"], [theirs.fileno()])
         theirs.close()
-        entry = {"identity": identity, "host": host, "port": port, "verdict": "ALLOWED"}
+        entry = {"identity": identity, "host": host, "port": port, "verdict": "ALLOWED", "via": via}
         pump = threading.Thread(target=self._pump, args=(entry, mine, upstream), daemon=True)
         self.pumps.append(pump)
         pump.start()
@@ -276,6 +323,53 @@ def egress_connect(host: str, port: int) -> socket.socket:
     if not msg.startswith(b"OK"):
         raise PermissionError(msg.decode().strip())
     return socket.socket(fileno=fds[0])
+
+
+FETCH = r'''
+import base64, json, os, ssl, sys
+from foundry.systems.segmentation import egress_connect
+host, port, path, limit = sys.argv[1], int(sys.argv[2]), sys.argv[3], int(sys.argv[4])
+context = ssl.create_default_context(cafile=os.environ.get("GREG_EGRESS_CAFILE") or None)
+try:
+    raw = egress_connect(host, port)
+except PermissionError as exc:
+    print(json.dumps({"denied": str(exc)}))
+    sys.exit(0)
+with context.wrap_socket(raw, server_hostname=host) as tls:
+    tls.sendall(f"GET {path} HTTP/1.1\r\nHost: {host}\r\nUser-Agent: uniimente-greg/0.1\r\nConnection: close\r\n\r\n".encode())
+    data = b""
+    while len(data) <= limit + 65536:
+        chunk = tls.recv(65536)
+        if not chunk:
+            break
+        data += chunk
+head, _, body = data.partition(b"\r\n\r\n")
+status = int(head.split(b"\r\n", 1)[0].split()[1])
+print(json.dumps({"status": status, "body": base64.b64encode(body[:limit + 1]).decode(), "peer_verified": True}))
+'''
+
+
+def confined_fetch(url: str, *, identity: str, relay: Relay, cwd: Path, max_bytes: int, timeout: int = 30) -> dict:
+    """HTTPS GET performed by a component that holds no socket of its own: TLS (and certificate verification)
+    happens inside the confined child, the bytes cross only the relay, and the relay journals the decision."""
+    from urllib.parse import urlsplit
+    parts = urlsplit(url)
+    if parts.scheme != "https" or not parts.hostname:
+        raise SegmentationError("confined fetch is HTTPS only")
+    path = (parts.path or "/") + (("?" + parts.query) if parts.query else "")
+    env = {}
+    if os.environ.get("GREG_EGRESS_CAFILE"):
+        env["GREG_EGRESS_CAFILE"] = os.environ["GREG_EGRESS_CAFILE"]
+    proc = run_confined([sys.executable, "-s", "-c", FETCH, parts.hostname, str(parts.port or 443), path,
+                         str(max_bytes)], identity=identity, relay=relay, cwd=cwd, timeout=timeout, env=env)
+    relay.drain()
+    if proc.returncode != 0:
+        raise SegmentationError("confined fetch failed: " + proc.stderr.decode("utf-8", "replace")[-300:])
+    out = json.loads(proc.stdout)
+    if "denied" in out:
+        raise PermissionError(out["denied"])
+    import base64
+    return {"status": out["status"], "body": base64.b64decode(out["body"])}
 
 
 # -- Foundry contract --------------------------------------------------------------------------------------------

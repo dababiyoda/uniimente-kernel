@@ -5,6 +5,8 @@ in isolation. A per-test Ed25519 key stands in for the founder.
 """
 import json
 
+import pytest
+
 from greg.body import Body
 from greg.templates import first_mission
 from tests.greg_fixtures import drop, make_body, signed
@@ -139,3 +141,91 @@ def test_duplicate_fixture_order_does_not_double_book(tmp_path):
     assert books(home, spec["mission_id"])["totals"]["revenue"] == 1200
     with Body(home) as body:
         assert body.appraise(spec["mission_id"])["verdict"] == "VERIFIED"
+
+
+def test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_voted(tmp_path, monkeypatch):
+    """Directive section 13: conflicting outputs from two qualified intelligences. The second mind answers the same
+    question differently. GREG keeps both receipts, takes no vote, cannot close, and asks once with both views."""
+    from greg.cognition import cortex
+    home, key, body_id, _ = make_body(tmp_path)
+    real, calls = cortex.reason, {"n": 0}
+
+    def second_mind(params, **kw):
+        out = real(params, **kw)
+        calls["n"] += 1
+        if calls["n"] % 2 == 0:                                     # the second of each pair disagrees
+            out = {**json.loads(json.dumps(out)), "output": {"value": 41}}
+        return out
+    monkeypatch.setattr(cortex, "reason", second_mind)
+    question = {"problem_id": "q:answer", "operation": "calculate", "data": {"expression": "6*7"}}
+    params = {"requests": [question, dict(question)]}
+    check = {"check_id": "agreed", "description": "the intelligences agree",
+             "sensor": {"capability": "cognition.compose", "params": params, "target": "cognition:answer"},
+             "predicate": {"op": "equals", "field": "metaconsensus.state", "value": "RECOMMENDATION_ONLY"}}
+    from tests.greg_fixtures import mission
+    spec = mission("m:two-minds", checks=[check],
+                   strategies=[{"action_id": "ask-both", "capability": "cognition.compose", "params": params,
+                                "target": "cognition:answer", "advances": ["agreed"], "rationale": "two minds"}],
+                   capabilities=["cognition.compose"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        states = [body.tick()["missions"][0]["state"] for _ in range(5)]
+        asked = [e.payload for e in body.journal.replay("decision.requested")]
+        observed = [e.payload["detail"] for e in body.journal.replay("mission.observed")]
+    assert "ACHIEVED" not in states and states[-1] in ("BLOCKED", "WAITING")
+    assert observed and all("CONFLICT" in d for d in observed)          # the conflict was measured, not averaged
+    assert len(asked) == 1 and "disagree" in asked[0]["why_now"] and "does not vote" in asked[0]["why_now"]
+    split = asked[0]["evidence"]["disagreement"]["agreed"]
+    assert split["vote_taken"] is False and len(split["views"]) == 2
+    assert len({v["output_digest"] for v in split["views"]}) == 2      # both answers shown, neither discarded
+
+
+class ProcessDeath(BaseException):
+    """The body process dies here; nothing in GREG catches it, exactly like SIGKILL between two statements."""
+
+
+@pytest.mark.parametrize("kill", ["before_attach", "after_attach"])
+def test_an_interrupted_capability_construction_resumes_once_and_serves_nothing_half_built(tmp_path, monkeypatch,
+                                                                                           kill):
+    """Directive section 13: an interrupted capability-construction cycle. The body dies inside Capability Genesis,
+    after the construction was verified and registered, either before or after its attach was journaled. A new
+    process finishes the cycle once, serves no answer from the dead process, and resumes the original mission."""
+    pytest.importorskip("networkx")
+    pytest.importorskip("scipy")
+    from greg import genesis as genesis_mod
+    from greg.templates import constructed_question
+    from tests.greg_fixtures import Clock
+    from tests.unit.test_greg_recombine import STAFFING, answers, ticks
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", constructed_question(function="assignment.staffing",
+                                                                    params=STAFFING, auto_attach=True)))
+    real = genesis_mod.Genesis._attach
+
+    def dying(self, mission, manifest, deficit_id, now):
+        if not manifest.capability_id.startswith("composed."):
+            return real(self, mission, manifest, deficit_id, now)
+        if kill == "before_attach":
+            raise ProcessDeath()
+        real(self, mission, manifest, deficit_id, now)
+        raise ProcessDeath()
+    monkeypatch.setattr(genesis_mod.Genesis, "_attach", dying)
+    clock = Clock()
+    with pytest.raises(ProcessDeath):
+        with Body(home, clock=clock) as body:
+            body.boot()
+            ticks(body, clock, 3)
+    monkeypatch.setattr(genesis_mod.Genesis, "_attach", real)
+    with Body(home, clock=clock) as body:
+        assert not answers(body)                                         # the dead process served nothing
+        body.boot()
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 4)]
+        composed = sorted(c for c in body.registry.manifests if c.startswith("composed."))
+        registered = [e.payload["manifest"]["capability_id"] for e in body.journal.replay("capability.registered")
+                      if e.payload["manifest"]["capability_id"].startswith("composed.")]
+        attached = [e.payload for e in body.journal.replay("capability.state")
+                    if e.payload["capability_id"].startswith("composed.") and e.payload["state"] == "ATTACHED"]
+        final = answers(body)
+    assert len(composed) == 1 and registered == composed                 # one construction, registered once
+    assert len(attached) == 1                                            # attached once, never twice
+    assert final and all(a["certified"] and a["staffed"] == 8 for a in final)

@@ -76,9 +76,11 @@ def test_first_mission_from_the_front_page_to_a_verified_dossier(running):
     http(port, "/sign", {"csrf": token(review), "proposal": url.rsplit("/", 1)[1]})
     with Body(home) as body:
         body.boot()
-        for _ in range(8):
-            if body.tick()["missions"][0]["state"] == "ACHIEVED":
+        for _ in range(12):
+            out = body.tick()["missions"][0]
+            if out["state"] == "ACHIEVED":
                 break
+    assert out["state"] == "ACHIEVED", out
     _, page = http(port, "/")
     assert "First Mission dossiers" in page
     name = re.search(r"/first-mission/([^'\"]+\.md)", page).group(1)
@@ -137,3 +139,19 @@ def test_commerce_rehearsal_from_the_ventures_view(running):
                 break
     _, page = http(port, "/mc/ventures")
     assert "1200 cents" in page and "balanced" in page and "FIXTURE" in page
+    _, authority = http(port, "/mc/authority")                  # money columns stay distinct; fixtures moved nothing
+    assert "Money, kept in separate columns" in authority and "1200 cents" in authority
+    assert "Unknown (booked at cap)" in authority and "FIXTURE (no money moved)" in authority
+    _, proof = http(port, "/mc/proof")
+    assert "Recovery and learning" in proof and "Projection failed" not in proof
+
+
+def test_outcome_search_and_unplannable_requests_show_real_machinery(running):
+    _, _, _, console, port = running
+    _, page = http(port, "/mc/organs?q=" + "sell+a+product+and+reconcile+the+revenue")
+    assert "What outcome do you want?" in page and "#38" in page and "Payment systems" in page
+    _, page = http(port, "/mc/organs?q=isolate+untrusted+generated+code")
+    assert "#10" in page and "PARTIAL" in page
+    _, page = http(port, "/")
+    url, review = http(port, "/ask", {"csrf": token(page), "text": "Compose a symphony about payment reconciliation"})
+    assert "/proposal/" in url and "Machinery your words name" in review and "#38" in review

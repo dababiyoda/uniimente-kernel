@@ -62,3 +62,42 @@ def test_sandbox_stages_are_bound_to_the_capability_they_name(tmp_path):
     journal.record("mission.achieved", {"mission_id": mid}, key=[mid, "achieved"])
     [row] = metrics.sandbox_whole_machine(journal)["missions"]
     assert row["worker_accepted"] is False and row["mind_certified_without_model"] is False
+
+
+def closure(journal, mid, output):
+    """A synthetic closure meeting all nine VEPMC conditions, with one receipted observation."""
+    designation = journal.record("command.accepted", {"kind": "BODY_DESIGNATE", "signer": "founder", "digest": "d1"},
+                                 key=["designate"])
+    journal.record("body.designated", {"command_digest": "d1", "body_id": "b1", "platform": "Linux",
+                                       "purpose": "first_founder_body"}, key=["designated"])
+    assert designation
+    journal.record("mission.registered", {"mission_id": mid, "spec": {"strategies": [], "success_checks": []}},
+                   key=[mid, "registered"])
+    journal.record("body.recovered", {"at": "x"}, key=[mid, "recovered"])
+    receipt = journal.ledger.append("receipt", {"result": {"output": output}}).hash
+    journal.record("mission.observed", {"mission_id": mid, "check_id": "c", "passed": True, "receipt": receipt},
+                   key=[mid, "observed"])
+    achieved = journal.record("mission.achieved", {"mission_id": mid}, key=[mid, "achieved"])
+    journal.record("mission.closure_context", {"mission_id": mid, "hosted": True, "body_id": "b1",
+                                               "platform": "Linux"}, key=[mid, "context"])
+    journal.record("mission.appraised", {"mission_id": mid, "verdict": "VERIFIED", "checks": {
+        "founder_signature_verified": True, "arrived_via_inbox": True, "approval_boundary_encountered": True,
+        "approval_boundaries_honored": True}}, key=[mid, "appraised"])
+    journal.record("critique.recorded", {"verdict": "accept", "target_event_id": achieved.event_id},
+                   key=[mid, "accepted"])
+
+
+def test_fixture_evidence_never_moves_vepmc_even_when_every_condition_holds(tmp_path):
+    """Founder rule: VEPMC must not change through simulation. A closure meeting all nine conditions
+    counts; the same closure whose receipt carries fixture-mode output (a fixture sale) does not, and
+    the nine conditions themselves are unchanged."""
+    def ledger_with(output, name):
+        journal = Journal(EventSpine(EvidenceLedger("sha256:" + "3" * 64, path=str(tmp_path / f"{name}.jsonl"))),
+                          actor="spiffe://uniimente.internal/test/vepmc")
+        closure(journal, "m:closure", output)
+        return metrics.vepmc(journal)
+    real = ledger_with({"verdict": "ACCEPTED"}, "real")
+    assert real["VEPMC"] == 1 and real["conditions"] == list(metrics.CONDITIONS) and len(metrics.CONDITIONS) == 9
+    fixture = ledger_with({"result": {"order": {"mode": "fixture", "id": "fixture-order-1"}}}, "fixture")
+    [row] = fixture["missions"]
+    assert fixture["VEPMC"] == 0 and row["fixture_evidence"] is True and row["missing"] == ["no_fixture_evidence"]

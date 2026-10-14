@@ -15,7 +15,9 @@ activity counts. A closure counts when EVERY condition holds for one mission:
 
 The ledger can check key possession, designation, and process history. It cannot
 establish the physical owner's identity or verify hardware ownership by itself.
-Fixture results are structural tests, never external VEPMC evidence.
+Fixture results are structural tests, never external VEPMC evidence: a closure whose
+receipts carry fixture-mode or fixture-tier output is reported with its conditions but
+never counted, whatever else holds (the nine conditions themselves are unchanged).
 """
 from __future__ import annotations
 
@@ -24,6 +26,18 @@ from greg.journal import Journal
 
 CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
               "approval_boundary", "interruption_survived", "appraised_verified", "founder_accepted", "founder_body")
+
+
+def _fixture(value) -> bool:
+    """Whether a receipted output carries a fixture stamp anywhere (``mode`` or ``tier`` "fixture",
+    the marks fixture offers, journeys and media-company outputs put on everything they produce)."""
+    if isinstance(value, dict):
+        if str(value.get("mode", "")).lower() == "fixture" or str(value.get("tier", "")).lower() == "fixture":
+            return True
+        return any(_fixture(v) for v in value.values())
+    if isinstance(value, list):
+        return any(_fixture(v) for v in value)
+    return False
 
 
 def vepmc(journal: Journal) -> dict:
@@ -63,9 +77,17 @@ def vepmc(journal: Journal) -> dict:
                                 and designation_seq < registered.get(mid, 0)
                                 for d, designation_seq in designations),
         }
+        # The Gate receipts behind this closure's observations and actions: simulated (fixture) evidence
+        # never moves the Single Bottleneck Metric, even when every condition is met.
+        evidence = [e.payload.get("receipt") for kind in ("mission.observed", "mission.action")
+                    for e in journal.replay(kind) if e.payload.get("mission_id") == mid and e.payload.get("receipt")]
+        fixture = any(_fixture((record.payload.get("result") or {}).get("output"))
+                      for record in (ledger.find(h) for h in evidence)
+                      if record is not None and record.record_type == "receipt")
         rows.append({"mission_id": mid, "closure_event_id": event.event_id, **row,
-                     "counts": all(row[c] for c in CONDITIONS),
-                     "missing": [c for c in CONDITIONS if not row[c]]})
+                     "fixture_evidence": fixture,
+                     "counts": all(row[c] for c in CONDITIONS) and not fixture,
+                     "missing": [c for c in CONDITIONS if not row[c]] + (["no_fixture_evidence"] if fixture else [])})
     return {"VEPMC": sum(r["counts"] for r in rows), "missions": rows, "conditions": list(CONDITIONS),
             "external_confirmation_required": "ledger checks cannot prove physical ownership or personal presence"}
 

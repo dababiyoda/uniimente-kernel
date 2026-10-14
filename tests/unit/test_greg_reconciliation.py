@@ -108,6 +108,34 @@ def test_routing_counts_one_outcome_per_attempt_and_a_reconciliation_is_no_recei
     assert routing.reliability(record) == routing.reliability({**record, "founder_reconciled": 0})
 
 
+def test_a_paid_action_reconciled_as_executed_books_its_signed_cap_against_the_budget(tmp_path):
+    """The founder says the paid dispatch ran, but no provider measured it: the signed cap is spent."""
+    home, key, body_id, _ = make_body(tmp_path)
+    note = workspace(home, "m:reconcile-paid") / "c.txt"
+    spec = mission("m:reconcile-paid", checks=[note_check("c", note, "ok")],
+                   strategies=[write_strategy("a", "c.txt", "ok", ["c"], cost_usd=0.6),
+                               write_strategy("b", "c.txt", "ok, paid again", ["c"], cost_usd=0.6)],
+                   capabilities=["fs.read", "fs.write"], budget=1.0)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        explode_once(body)
+        tick(body, clock, 3)
+        reconcile(body, key, body_id, clock, "reconcile_executed")
+        # a second 0.6 would pass the signed 1.0 budget: it is not run, it is asked for
+        assert not [a for a in actions(body) if a["action_id"] == "b"]
+        [ask] = body.engine.book.open_requests()
+        assert ask["kind"] == "APPROVAL" and ask["action_id"] == "b"
+        m = body.engine.book.missions["m:reconcile-paid"]
+        assert m.spent_usd == pytest.approx(0.6) and m.status == "ACTIVE" and not note.exists()
+        [reconciled] = [a for a in actions(body) if a.get("route") == "founder_reconciliation"]
+        assert reconciled["cost_usd"] == reconciled["cost_cap_usd"] == 0.6
+        assert reconciled["spend_basis"] == "signed_cap: founder reconciled executed; provider spend unknown"
+        from greg.mission_control import cost_rows
+        [row] = cost_rows(actions(body), [{"mission_id": "m:reconcile-paid", "cone": spec["light_cone"]}], [])
+        assert row["booked_usd"] == row["unknown_at_cap_usd"] == 0.6 and row["measured_usd"] == 0.0
+
+
 class Journal:
     """A retained journal as readers see it: append-only payloads, some written before 2026-10-14."""
 

@@ -649,13 +649,19 @@ class MissionEngine:
                                  and e.payload.get("attempt") == attempt
                                  and e.payload.get("status") == "UNCERTAIN"), {})
                 strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), {})
+                cap = float(strategy.get("cost_usd", 0.0))
+                # Executed, but no adapter measured the provider's spend: book the signed cap (metered_spend's
+                # conservative rule), so the budget the founder signed still bounds every later action.
+                spend = {"cost_usd": cap, "cost_cap_usd": cap, "provider_reported_usd": None,
+                         "spend_basis": "signed_cap: founder reconciled executed; provider spend unknown"} \
+                    if answer == "reconcile_executed" and cap > 0 else {}
                 self.journal.record("mission.action", {
                     "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
                     "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
                     "capability": dispatch.get("capability") or strategy.get("capability"),
                     "route": "founder_reconciliation", "dispatch_route": dispatch.get("route"),
                     "receipt": None, "at": iso(now),
-                    "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0},
+                    "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0, **spend},
                     key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
             lifted = m.blocker
             self._unblock(m, why)

@@ -92,7 +92,8 @@ def test_the_immune_target_is_the_shipped_configuration_inside_a_closed_space():
     with pytest.raises(E.EvolutionError):
         target.validate({**target.incumbent, "detectors": 7})
     with pytest.raises(collective.GenomeError):
-        collective.immune_solve_with({**target.incumbent, "whitening": "learned"}, collective.immune_instance(0)[0])
+        collective.immune_solve_with({**target.incumbent, "whitening": "learned"},
+                                    collective.immune_gaussian_instance(0)[0])
 
 
 def test_immune_split_is_fresh_and_disjoint_from_admission():
@@ -106,7 +107,7 @@ def test_immune_split_is_fresh_and_disjoint_from_admission():
 
 def test_full_whitening_is_independently_verified_and_a_forged_factor_is_refuted():
     from greg.cognition.genomes import collective
-    data, _ = collective.immune_instance(3)
+    data, _ = collective.immune_gaussian_instance(3)        # P8's immune items come from this generator
     out = collective.immune_solve_with({**collective.IMMUNE_DEFAULT_CONFIG, "whitening": "full"}, data)
     assert all(collective.immune_verify(data, out["output"], out["certificate"]).values())
     forged = json.loads(json.dumps(out["certificate"]))
@@ -147,7 +148,7 @@ def test_an_infinite_mean_loss_never_yields_a_nan_gain():
 
 def test_abstentions_are_not_counted_as_failed_verification():
     from greg.cognition.genomes import collective
-    data, _ = collective.immune_instance(2)
+    data, _ = collective.immune_gaussian_instance(2)
     good = collective.immune_solve(data, {})
     items = {"a": {"data": data}, "b": {"data": data}}
     abstained = {"output": None, "certificate": {"self_samples": 3}}

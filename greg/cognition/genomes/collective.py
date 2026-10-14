@@ -34,6 +34,24 @@ Independent verification never reuses the solver's code path (recomputed lengths
 probability-space posteriors, equilibrium inequalities, witness-detector geometry, continuous-time kinematic
 audit). Benchmark truth never runs a candidate's code (Held-Karp / a self-contained reference search, generator
 ground truth, dynamic programming, analytic makespan bounds).
+
+Benchmark regimes (``BENCHMARK_REVISION``, 2026-10-14). The admission generators of quorum, physarum, immune and
+flock exercised geometries these mechanisms are not for, so each generator is now a seeded mixture of regimes:
+``REGIMES[family][seed % k]`` picks the regime, and regime 0 (``seed % k == 0``) is the pre-revision generator, kept
+byte-identical under a regime-named function. Subregions are read from the data, never the seed, because the
+Competency Compiler places live requests with them: each native regime is one subregion, marked by what its data
+declare (a failure; a decision time over one dominant faction; a self-support shape; stopped agents or a
+communication radius), and regime 0 keeps its pre-revision subregion bands (``regime_of`` maps them back to regime
+0), so v1 and re-admission verdicts compare band by band and a request without a native marker is placed exactly as
+before. No ``solve`` or ``verify`` changed, so no genome version changed. The native regimes are: immune - self sets
+that are a Gaussian mixture, a ring and a non-convex union, with anomalies inside the convex hull of self (between
+modes, in the hole, in the concavity) as well as outside it; physarum - corridor edges fail at a declared step of
+the run, every arm's realized build + rebuild + disruption cost is scored and the competitor recomputes a Steiner
+tree from scratch at the failure; quorum - a dominant correlated faction that is WRONG arrives first and the
+decision is due at a declared time (early or late); flock - agents drop out mid-crossing (static discs in the
+crowd), or a declared communication radius splits the centralized planner, which replans online. Where the unchanged
+``solve`` cannot take an event (physarum's re-adaptation after the failure, flock's reaction inside one run), the
+regime says so in its notes.
 """
 from __future__ import annotations
 
@@ -49,6 +67,43 @@ from .contract import Executable, GenomeError, IntelligenceGenome, answer, bound
 LINEAGE = ("INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION", "INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT",
            "INTENT-0030 effect-not-metaphor", "greg/cognition/solvers.py quorum (collective family, Layer 2 lineage)")
 SEED_MAX = 2 ** 31 - 1
+BENCHMARK_REVISION = (
+    "2026-10-14: the admission instance generator gained native-geometry regimes, chosen by seed % k (REGIMES). Each "
+    "native regime is its own subregion, placed by a marker its data declare; regime 0 is the earlier generator, "
+    "byte-identical for its seeds, and keeps its earlier subregion bands (regime_of maps them back to it). The "
+    "admission verdicts on record stand for that old regime only: 2026-10-13-v1 measured this family on it, and "
+    "2026-10-14-v2 did not re-measure it. A re-admission on fresh held-out seeds measures the new mixture. No solve "
+    "or verify function changed, so the genome version is unchanged.")
+# family -> generator regimes in seed % k order; regime 0 is the generator before BENCHMARK_REVISION.
+REGIMES = {
+    "collective_quorum": ("mixed_panel", "wrong_faction_early_decision", "wrong_faction_late_decision"),
+    "collective_physarum": ("static_design", "edge_failure_mid_run"),
+    "collective_immune": ("gaussian_ellipsoid", "multimodal_self", "annular_self", "nonconvex_self"),
+    "collective_flock": ("ring_swap", "agent_dropout", "limited_radius"),
+}
+# family -> every subregion name: regime 0's pre-revision bands, then one subregion per native regime (same name).
+SUBREGIONS = {
+    "collective_quorum": ("dominant_faction", "spread_factions", *REGIMES["collective_quorum"][1:]),
+    "collective_physarum": ("high_fault_weight", "low_fault_weight", *REGIMES["collective_physarum"][1:]),
+    "collective_immune": ("low_dim_2_3", "mid_dim_4_6", *REGIMES["collective_immune"][1:]),
+    "collective_flock": ("four_to_five_agents", "six_to_eight_agents", *REGIMES["collective_flock"][1:]),
+}
+
+
+def _regime(family, seed):
+    names = REGIMES[family]
+    return names[seed % len(names)]
+
+
+def regime_of(family, subregion):
+    """The generator regime a subregion name belongs to. Each native regime is its own subregion; the pre-revision
+    bands (the first two names of ``SUBREGIONS[family]``) together make up regime 0, so the old regime stays
+    reachable as one row when a re-admission is read regime by regime."""
+    if subregion in REGIMES[family][1:]:
+        return subregion
+    if subregion in SUBREGIONS[family][:2]:
+        return REGIMES[family][0]
+    raise GenomeError(f"{subregion!r} is not a subregion of {family}")
 
 
 def _require_dict(data):
@@ -300,7 +355,9 @@ def quorum_best_single(data):
     return {"choice": best[3]}
 
 
-def quorum_instance(seed):
+def quorum_mixed_panel_instance(seed):
+    """Regime ``mixed_panel``: the generator before BENCHMARK_REVISION (byte-identical). 4-9 groups, half singletons,
+    factions of 2-9 that copy one shared signal with probability rho, shuffled arrival order."""
     r = random.Random(7_100_000 + seed)
     k = r.choice((2, 3, 3, 4))
     alts = list("ABCD"[:k])
@@ -342,8 +399,75 @@ def quorum_score(data, truth, output):
     return {"quality": -1.0, "category": "wrong"}
 
 
-def quorum_subregion(data):
-    """dominant_faction: one group with shared noise >= 0.5 holds >= 30% of all observers."""
+QUORUM_EARLY_DEADLINE = (0.3, 0.55)    # decision due while most independent observers are still to arrive
+QUORUM_LATE_DEADLINE = (0.65, 1.0)     # decision due after most of them have arrived
+
+
+def quorum_wrong_faction_instance(seed, deadline):
+    """Native regimes ``wrong_faction_early_decision`` / ``wrong_faction_late_decision``: the failure mode
+    cross-inhibition with correlation discounting exists for. One faction of 8-20 members (the largest group by
+    construction: every other group has at most 4) arrives first, in a burst over the first quarter of the window,
+    and every member votes the same WRONG alternative: the instance is the event in which the faction copied one
+    wrong shared signal. Its shared-noise level (the prior probability that it copies, 0.6-0.95) is declared with
+    N(0, 0.08) error. 4-9 further groups (70% singletons, otherwise factions of 2-4 that arrive together) vote as in
+    ``mixed_panel`` and arrive uniformly over the window. The decision is due at a declared time
+    drawn from ``deadline``: the panel holds only the observers that arrived by then, in arrival order, each with its
+    ``arrived_at`` time (the solver reads the order, never the field). Time to decision is therefore a declared
+    property of the instance; every arm decides at the same time, and abstaining means the decision is not taken by
+    its deadline (score 0). Ground truth is the generator's alternative; accuracies are estimated from 40-trial
+    histories, as in ``mixed_panel``."""
+    r = random.Random(7_110_000 + seed)
+    k = r.choice((2, 3, 3, 4))
+    alts = list("ABCD"[:k])
+    truth = r.choice(alts)
+    wrong = r.choice([a for a in alts if a != truth])
+    arrivals = []
+
+    def estimated(acc):                          # accuracy is ESTIMATED from a 40-trial history, not known
+        return round((sum(r.random() < acc for _ in range(40)) + 1) / 42, 4)
+    size = r.randint(8, 20)
+    rho = r.uniform(0.6, 0.95)
+    for j in range(size):
+        acc = r.uniform(1 / k + 0.08, min(0.92, 1 / k + 0.5))
+        arrivals.append((r.uniform(0.0, 0.25), {"observer_id": f"f_{j}", "group": "faction", "accuracy": estimated(acc),
+                                                "vote": wrong}))
+    groups = {"faction": {"shared_noise": round(min(0.95, max(0.0, rho + r.gauss(0, 0.08))), 4)}}
+    for gi in range(r.randint(4, 9)):
+        size = 1 if r.random() < 0.7 else r.randint(2, 4)
+        g_rho = 0.0 if size == 1 else r.uniform(0.3, 0.95)
+        accs = [r.uniform(1 / k + 0.08, min(0.92, 1 / k + 0.5)) for _ in range(size)]
+        shared = size > 1 and r.random() < g_rho
+        signal = truth if r.random() < sum(accs) / size else r.choice([a for a in alts if a != truth])
+        start = r.uniform(0.0, 1.0)
+        g = f"g{gi}"
+        for j, acc in enumerate(accs):
+            vote = signal if shared else (truth if r.random() < acc else r.choice([a for a in alts if a != truth]))
+            arrivals.append((min(1.0, start + r.uniform(0.0, 0.03)),
+                             {"observer_id": f"o{gi}_{j}", "group": g, "accuracy": estimated(acc), "vote": vote}))
+        groups[g] = {"shared_noise": 0.0 if size == 1 else round(min(0.95, max(0.0, g_rho + r.gauss(0, 0.08))), 4)}
+    due = round(r.uniform(*deadline), 4)
+    panel = sorted(((t, o) for t, o in arrivals if t <= due), key=lambda p: (p[0], p[1]["observer_id"]))
+    observers = [dict(o, arrived_at=round(t, 4)) for t, o in panel]
+    present = {o["group"] for o in observers}
+    faction = sum(1 for o in observers if o["group"] == "faction")
+    return ({"alternatives": alts, "observers": observers, "groups": {g: v for g, v in groups.items() if g in present},
+             "quorum": 0.55, "minimum_independent": 3, "decision_time": due},
+            {"truth": truth, "faction_vote": wrong, "faction_share": round(faction / len(observers), 6),
+             "arrived": len(observers), "of": len(arrivals)})
+
+
+def quorum_instance(seed):
+    """Benchmark instance for ``seed``: the regime is ``REGIMES['collective_quorum'][seed % 3]``."""
+    regime = _regime("collective_quorum", seed)
+    if regime == "mixed_panel":
+        return quorum_mixed_panel_instance(seed)
+    return quorum_wrong_faction_instance(seed, QUORUM_EARLY_DEADLINE if regime == "wrong_faction_early_decision"
+                                         else QUORUM_LATE_DEADLINE)
+
+
+def quorum_faction_band(data):
+    """The subregion split before BENCHMARK_REVISION (kept for comparison with the v1 evidence). dominant_faction: one
+    group with shared noise >= 0.5 holds >= 30% of all observers."""
     sizes = {}
     for o in data["observers"]:
         sizes[o["group"]] = sizes.get(o["group"], 0) + 1
@@ -351,6 +475,28 @@ def quorum_subregion(data):
     dominant = any(n / total >= 0.3 and data["groups"].get(g, {}).get("shared_noise", 0) >= 0.5
                    for g, n in sizes.items())
     return "dominant_faction" if dominant else "spread_factions"
+
+
+def _one_dominant_faction(data):
+    """True when one multi-member group holds strictly more of the observers present than any other group (every
+    wrong-faction instance has one by construction: 8-20 members against at most 4). Whether it is wrong is not
+    knowable from the data; that it dominates is."""
+    sizes = {}
+    for o in data["observers"]:
+        sizes[o["group"]] = sizes.get(o["group"], 0) + 1
+    ranked = sorted(sizes.values(), reverse=True)
+    return ranked[0] >= 2 and (len(ranked) == 1 or ranked[0] > ranked[1])
+
+
+def quorum_subregion(data):
+    """A declared decision time (a fraction of the arrival window, 0-1) together with one dominant faction marks the
+    wrong-faction regimes (early: due by 0.55 of the window; late: after it); otherwise the pre-revision faction band
+    (``quorum_faction_band``), so a deadline over a spread panel is placed as before the revision."""
+    due = data.get("decision_time")
+    if due is None or not _one_dominant_faction(data):
+        return quorum_faction_band(data)
+    due = finite(due, low=0.0, high=1.0, name="decision_time (fraction of the arrival window)")
+    return "wrong_faction_early_decision" if due <= QUORUM_EARLY_DEADLINE[1] else "wrong_faction_late_decision"
 
 
 # ============================================================================ 2. ant colony (MMAS) for the TSP
@@ -1158,8 +1304,72 @@ def physarum_multistart_search(data):
     return None if best is None else _edges_out(pairs, best[1])
 
 
-def physarum_instance(seed):
-    r = random.Random(7_300_000 + seed)
+def _best_steiner_tree(n, pairs, cost, terms, length):
+    """The cheapest tree among the classical Steiner heuristics (Kou-Markowsky-Berman and Takahashi-Matsuyama from
+    each terminal, at most 10 roots) under ``cost``; ties broken by ``length``, then by edge set."""
+    best = None
+    for tree in [_kmb_tree(n, pairs, cost, terms)] + [_tm_tree(n, pairs, cost, terms, r) for r in terms[:10]]:
+        if not tree:
+            continue
+        key = (math.fsum(cost[e] for e in tree), math.fsum(length[e] for e in tree), sorted(tree))
+        if best is None or key < best[0]:
+            best = (key, tree)
+    return None if best is None else best[1]
+
+
+def _replan_after_failure(data, pre):
+    """Recompute a Steiner tree from scratch on the surviving graph at the failure: every surviving candidate edge
+    is available, tubes already built and still standing cost nothing (they exist), failed edges are gone."""
+    coords, pairs, lengths, terms, _ = _network_inputs(data)
+    failed = _declared_failure(data)
+    alive = [e for e in range(len(pairs)) if pairs[e] not in failed]
+    sub_pairs = [pairs[e] for e in alive]
+    post = _best_steiner_tree(len(coords), sub_pairs, [0.0 if e in pre else lengths[e] for e in alive], terms,
+                              [lengths[e] for e in alive])
+    if post is None:
+        return None
+    out = _edges_out(pairs, pre)
+    out["after_failure"] = {"edges": [list(p) for p in sorted(sub_pairs[i] for i in post)]}
+    return out
+
+
+def physarum_replan_at_failure(data):
+    """Competitor in ``edge_failure_mid_run``, the reactive strategy (build the minimum, rebuild when it breaks):
+    before the failure, the shortest Steiner tree the classical heuristics find (length only; the failure is not read
+    before it happens); at the failure, a Steiner tree recomputed from scratch on the surviving graph
+    (``_replan_after_failure``). It anticipates nothing; ``physarum_anticipate_then_replan`` is the variant that
+    does."""
+    coords, pairs, lengths, terms, _ = _network_inputs(data)
+    if _declared_failure(data) is None:
+        raise GenomeError("no declared failure to replan at")
+    pre = _best_steiner_tree(len(coords), pairs, lengths, terms, lengths)
+    return None if pre is None else _replan_after_failure(data, set(pre))
+
+
+def physarum_anticipate_then_replan(data):
+    """Alternative competitor for ``edge_failure_mid_run`` (kept for comparison): the static regime's competitor
+    design (multistart search on the declared expected-failure objective) before the failure, then the same
+    from-scratch Steiner recomputation at the failure."""
+    if _declared_failure(data) is None:
+        raise GenomeError("no declared failure to replan at")
+    design = physarum_multistart_search(data)
+    if design is None:
+        return None
+    pairs = _network_inputs(data)[1]
+    index = {p: e for e, p in enumerate(pairs)}
+    return _replan_after_failure(data, {index[(min(e), max(e))] for e in design["edges"]})
+
+
+def physarum_competitor(data):
+    """The competitor of each regime: ``physarum_multistart_search`` (unchanged) when nothing fails,
+    ``physarum_replan_at_failure`` when the data declare a failure."""
+    return physarum_replan_at_failure(data) if "failure" in data else physarum_multistart_search(data)
+
+
+def _physarum_network(r):
+    """5-9 terminals + 25 jittered junctions, k=4 nearest-neighbour candidate graph made connected by Prim, lambda
+    log-uniform over tree-to-redundancy regimes. Returns (points, edges, terminals, scale, ratio, lambda); the draw
+    order is the pre-revision generator's, so ``physarum_static_instance`` stays byte-identical."""
     t = r.randint(5, 9)
     pts = [(r.uniform(0, 100), r.uniform(0, 100)) for _ in range(t)]
     for gx in range(5):
@@ -1198,12 +1408,218 @@ def physarum_instance(seed):
         split_est += len(side) * (t - len(side))
     ratio = math.exp(r.uniform(math.log(0.05), math.log(2.0)))
     lam = round(ratio * scale * len(edges) / (2.5 * split_est), 4)
+    return pts, edges, t, scale, ratio, lam
+
+
+def physarum_static_instance(seed):
+    """Regime ``static_design``: the generator before BENCHMARK_REVISION (byte-identical): design once against the
+    declared expected single-failure objective; nothing fails."""
+    pts, edges, t, scale, ratio, lam = _physarum_network(random.Random(7_300_000 + seed))
     data = {"nodes": [list(p) for p in pts], "edges": [list(e) for e in edges], "terminals": list(range(t)),
             "lambda": lam, "seed": seed}
     return data, {"scale": scale, "ratio": ratio}
 
 
+PHYSARUM_FAILURE_STEPS = (80, 250)      # the declared step at which the failure strikes (the run's default is 250)
+
+
+def _corridor_edges(pts, edges, t):
+    """Generator-only: candidate edges on a shortest path between some pair of terminals in the intact graph
+    (Floyd-Warshall with next hops; shares no code with any arm). Failures strike where traffic flows."""
+    n = len(pts)
+    inf = math.inf
+    dist = [[0.0 if i == j else inf for j in range(n)] for i in range(n)]
+    nxt = [[j if i == j else None for j in range(n)] for i in range(n)]
+    for u, v in edges:
+        w = math.hypot(pts[u][0] - pts[v][0], pts[u][1] - pts[v][1])
+        dist[u][v] = dist[v][u] = w
+        nxt[u][v], nxt[v][u] = v, u
+    for k in range(n):
+        dk = dist[k]
+        for i in range(n):
+            dik = dist[i][k]
+            if dik == inf:
+                continue
+            di, ni = dist[i], nxt[i]
+            for j in range(n):
+                if dik + dk[j] < di[j] - 1e-12:
+                    di[j] = dik + dk[j]
+                    ni[j] = ni[k]
+    out = set()
+    for a in range(t):
+        for b in range(a + 1, t):
+            x = a
+            while x != b:
+                y = nxt[x][b]
+                out.add((min(x, y), max(x, y)))
+                x = y
+    return sorted(out)
+
+
+def physarum_failure_instance(seed):
+    """Native regime ``edge_failure_mid_run``: the same network family, and at a declared step of the run 1-3
+    corridor edges (on a terminal-to-terminal shortest path of the intact graph) fail; the surviving graph still
+    connects every terminal. The data declare ``steps`` = the failure step (the conductance run is caught mid-run)
+    and ``failure`` = {after_step, edges}; no pre-failure design reads the failure (the candidate's solve and every
+    arm's pre-failure design ignore the field; tested). Scoring: ``physarum_score``."""
+    r = random.Random(7_310_000 + seed)
+    pts, edges, t, scale, ratio, lam = _physarum_network(r)
+    corridor = _corridor_edges(pts, edges, t)
+    for _ in range(200):
+        failed = sorted(r.sample(corridor, r.randint(1, min(3, len(corridor)))))
+        find = _score_components(len(pts), [e for e in edges if e not in failed])
+        if len({find(x) for x in range(t)}) == 1:
+            break
+    else:
+        raise GenomeError("could not draw a failure that leaves the terminals connectable")
+    step = r.randint(*PHYSARUM_FAILURE_STEPS)
+    data = {"nodes": [list(p) for p in pts], "edges": [list(e) for e in edges], "terminals": list(range(t)),
+            "lambda": lam, "seed": seed, "steps": step,
+            "failure": {"after_step": step, "edges": [list(e) for e in failed]}}
+    return data, {"scale": scale, "ratio": ratio, "failed": [list(e) for e in failed]}
+
+
+def physarum_instance(seed):
+    """Benchmark instance for ``seed``: the regime is ``REGIMES['collective_physarum'][seed % 2]``."""
+    if _regime("collective_physarum", seed) == "static_design":
+        return physarum_static_instance(seed)
+    return physarum_failure_instance(seed)
+
+
+def _declared_failure(data):
+    """The declared failure as a set of candidate-edge keys, or None when the data declare no failure."""
+    failure = data.get("failure")
+    if failure is None:
+        return None
+    pairs = _network_inputs(data)[1]
+    if not isinstance(failure, dict) or not isinstance(failure.get("edges"), list) or not failure["edges"]:
+        raise GenomeError("failure is {after_step, edges: [[u, v], ...]}")
+    bounded_int(failure.get("after_step"), low=10, high=1000, name="failure step")
+    keys = set()
+    for e in failure["edges"]:
+        if not isinstance(e, list) or len(e) != 2 or not all(type(x) is int for x in e):
+            raise GenomeError("failed edge is [u, v]")
+        key = (min(e), max(e))
+        if key not in set(pairs) or key in keys:
+            raise GenomeError("failed edges must be distinct candidate edges")
+        keys.add(key)
+    return keys
+
+
+def _score_components(n, edges):
+    """Evaluation-side union-find (its own code): node -> component root."""
+    parent = list(range(n))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    for u, v in edges:
+        parent[find(u)] = find(v)
+    return find
+
+
+def _score_repair(coords, candidates, terms, built):
+    """Evaluation-side reaction for every arm that does not replan: reconnect the terminals by cheapest paths over
+    the surviving candidate edges, surviving built tubes free (its own Dijkstra). Returns the added edges, or None
+    when the surviving graph cannot connect them."""
+    n = len(coords)
+    built, added = set(built), set()
+    adj = [[] for _ in range(n)]
+    for u, v in candidates:
+        w = 0.0 if (u, v) in built else math.hypot(coords[u][0] - coords[v][0], coords[u][1] - coords[v][1])
+        adj[u].append((v, w))
+        adj[v].append((u, w))
+    for _ in range(len(terms)):
+        find = _score_components(n, built | added)
+        root = find(terms[0])
+        loose = {x for x in terms if find(x) != root}
+        if not loose:
+            return added
+        best = {x: 0.0 for x in range(n) if find(x) == root}
+        back, heap = {}, [(0.0, x) for x in sorted(best)]
+        reached = None
+        while heap:
+            d, x = heapq.heappop(heap)
+            if d > best[x]:
+                continue
+            if x in loose:
+                reached = x
+                break
+            for y, w in adj[x]:
+                if d + w < best.get(y, math.inf) - 1e-12:
+                    best[y], back[y] = d + w, x
+                    heapq.heappush(heap, (d + w, y))
+        if reached is None:
+            return None
+        while reached in back:
+            prev = back[reached]
+            key = (min(prev, reached), max(prev, reached))
+            if key not in built:
+                added.add(key)
+            reached = prev
+    return None
+
+
+def physarum_failure_cost(data, output):
+    """Realized cost of an arm's design under the declared failure (evaluation side, independent of every arm):
+    build length of the pre-failure design + length newly built after the failure + lambda x terminal pairs
+    disconnected at the failure (before any rebuild; lambda is the declared price of one disconnected pair per
+    failure event, the unit of the design objective). The arm's post-failure network is ``after_failure.edges``
+    when it replans (surviving candidate edges that connect every terminal), else the shared cheapest-path repair.
+    Returns None when either network is invalid."""
+    coords, pairs, _, terms, lam = _network_inputs(data)
+    failed = _declared_failure(data)
+    pre = network_evaluate(data, output)
+    if pre is None:
+        return None
+    design = {(min(e), max(e)) for e in output["edges"]}
+    alive = [p for p in pairs if p not in failed]
+    surviving = design - failed
+    find = _score_components(len(coords), surviving)
+    sizes = {}
+    for x in terms:
+        sizes[find(x)] = sizes.get(find(x), 0) + 1
+    disconnected = (len(terms) * (len(terms) - 1) - sum(s * (s - 1) for s in sizes.values())) // 2
+    after = output.get("after_failure")
+    if after is None:
+        new = _score_repair(coords, alive, terms, surviving)
+        if new is None:
+            return None
+    else:
+        edges = after.get("edges") if isinstance(after, dict) else None
+        if not isinstance(edges, list) or not edges or not all(
+                isinstance(e, list) and len(e) == 2 and all(type(x) is int for x in e) for e in edges):
+            return None
+        post = {(min(e), max(e)) for e in edges}
+        if len(post) != len(edges) or not post <= set(alive):
+            return None
+        find = _score_components(len(coords), post)
+        if len({find(x) for x in terms}) != 1:
+            return None
+        new = post - surviving
+    rebuild = math.fsum(math.hypot(coords[u][0] - coords[v][0], coords[u][1] - coords[v][1]) for u, v in new)
+    return {"total": pre["length"] + rebuild + lam * disconnected, "build": pre["length"], "rebuild": rebuild,
+            "disconnected_pairs": disconnected}
+
+
+def _failure_floor(data):
+    """An upper bound on any valid design's realized cost: every candidate edge built, every candidate edge rebuilt
+    and every terminal pair disconnected (``physarum_score`` puts abstention one unit below it)."""
+    _, _, lengths, terms, lam = _network_inputs(data)
+    return 2 * math.fsum(lengths) + lam * len(terms) * (len(terms) - 1) / 2
+
+
 def physarum_score(data, truth, output):
+    if "failure" in data:
+        floor = -_failure_floor(data) / truth["scale"] - 1.0     # abstaining scores below any valid design
+        if not isinstance(output, dict) or "edges" not in output:
+            return {"quality": floor, "category": "abstain"}
+        cost = physarum_failure_cost(data, output)
+        if cost is None:
+            return {"quality": floor - 1.0, "category": "wrong"}
+        return {"quality": -cost["total"] / truth["scale"], "category": "correct"}
     if not isinstance(output, dict) or "edges" not in output:
         return {"quality": -10.0, "category": "abstain"}
     value = network_evaluate(data, output)
@@ -1212,13 +1628,20 @@ def physarum_score(data, truth, output):
     return {"quality": -value["objective"] / truth["scale"], "category": "correct"}
 
 
-def physarum_subregion(data):
-    """high_fault_weight: one leaf link's expected penalty lambda * (T-1) / |candidates| exceeds 0.15 x the
-    median candidate edge length (the population median of this statistic over generator seeds 100-299, which
-    are neither development nor held-out seeds); low_fault_weight otherwise."""
+def physarum_fault_band(data):
+    """The subregion split before BENCHMARK_REVISION (kept for comparison with the v1 evidence). high_fault_weight: one
+    leaf link's expected penalty lambda * (T-1) / |candidates| exceeds 0.15 x the median candidate edge length (the
+    population median of this statistic over generator seeds 100-299, which are neither development nor held-out
+    seeds); low_fault_weight otherwise."""
     coords, pairs, lengths, terms, lam = _network_inputs(data)
     leaf_penalty = lam * (len(terms) - 1) / len(pairs)
     return "high_fault_weight" if leaf_penalty > 0.15 * statistics.median(lengths) else "low_fault_weight"
+
+
+def physarum_subregion(data):
+    """A declared failure marks ``edge_failure_mid_run``; without one, the pre-revision fault-weight band
+    (``physarum_fault_band``)."""
+    return "edge_failure_mid_run" if "failure" in data else physarum_fault_band(data)
 
 
 # ============================================================================ 4. negative selection detectors
@@ -1564,7 +1987,34 @@ def immune_prediction_region(data):
     return {"flagged": [int(i) for i in np.nonzero(d2 > cut)[0]]}
 
 
-def immune_instance(seed):
+def immune_knn_conformal(data, neighbours=5):
+    """Alternative competitor for the native regimes (kept for comparison; NOT the admission arm): a standard
+    nonparametric novelty detector. Distance to the ``neighbours``-th nearest reference self sample in the
+    self-standardised frame, flagged above the split-conformal quantile of the same distance on held-out self samples
+    (a seeded half/half split) at the candidate's 0.75 x tolerance target, so P(false alarm) <= target. numpy only."""
+    import numpy as np
+    s, x, tol, _ = _immune_inputs(data)
+    a = np.array(s)
+    mean, sd = a.mean(0), a.std(0)
+    sd[sd == 0] = 1.0
+    z, zx = (a - mean) / sd, (np.array(x) - mean) / sd
+    order = np.random.default_rng(_seed(data)).permutation(len(z))
+    ref, cal = z[order[:len(z) // 2]], z[order[len(z) // 2:]]
+    k = min(neighbours, len(ref))
+
+    def distance(points):
+        return np.sort(np.sqrt(((points[:, None, :] - ref[None, :, :]) ** 2).sum(-1)), axis=1)[:, k - 1]
+    rank = math.ceil((1 - IMMUNE_TARGET_FRACTION * tol) * (len(cal) + 1))
+    if rank > len(cal):
+        return None                          # too few held-out self samples for the target: abstain
+    cut = float(np.sort(distance(cal))[rank - 1])
+    return {"flagged": [int(i) for i in np.nonzero(distance(zx) > cut)[0]]}
+
+
+def immune_gaussian_instance(seed):
+    """Regime ``gaussian_ellipsoid``: the generator before BENCHMARK_REVISION (byte-identical). Multivariate-normal
+    self in d 2-6 with a random covariance; correlation-break, Mahalanobis-shift and inflated-variance anomalies.
+    Protected evolution (P8) draws its immune items from this regime only."""
     import numpy as np
     r = random.Random(7_400_000 + seed)
     g = np.random.default_rng(7_400_000 + seed)
@@ -1595,8 +2045,201 @@ def immune_instance(seed):
     return data, {"labels": [lab for _, lab in points], "kinds": kinds}
 
 
-def immune_subregion(data):
+IMMUNE_NATIVE_DIM = (2, 4)    # the native regimes stay in low dimension, where detector coverage is declared to hold
+IMMUNE_ANOMALY_MARGIN = 6.0   # native anomalies sit >= 6 noise units off the self support (density ratio < e^-18)
+
+
+def _immune_package(r, self_s, normal, anomalies, kinds, seed, support):
+    """Shared tail of the native generators: 200 self-distributed and 20-40 anomalous test points, shuffled;
+    tolerance 0.01-0.05; generator labels are the ground truth (the same shape as ``gaussian_ellipsoid``, except that
+    ``kinds`` here lists each anomaly's kind in test-point order, where ``gaussian_ellipsoid`` keeps its pre-revision
+    generation order). The data declare the self-support shape (``self_support``), as an operator who knows normal
+    operation is multimodal, annular or non-convex can; no arm reads it, only ``immune_subregion``."""
+    points = [(p, 0, None) for p in normal] + [(p, 1, kind) for p, kind in zip(anomalies, kinds)]
+    r.shuffle(points)
+    data = {"self_samples": [[round(float(v), 6) for v in p] for p in self_s],
+            "test_points": [[round(float(v), 6) for v in p] for p, _, _ in points],
+            "max_false_alarm_rate": r.choice((0.01, 0.02, 0.05)), "seed": seed, "self_support": support}
+    return data, {"labels": [lab for _, lab, _ in points], "kinds": [kind for _, lab, kind in points if lab]}
+
+
+def _immune_frame(r, g, dim):
+    """A random rotation and offset, so the native shapes are not axis-aligned in the data."""
+    import numpy as np
+    q, _ = np.linalg.qr(g.normal(size=(dim, dim)))
+    return q, g.uniform(-5, 5, dim)
+
+
+def immune_mixture_instance(seed):
+    """Native regime ``multimodal_self``: self is a mixture of 2-4 well-separated Gaussian modes (component spreads
+    0.3-1, means >= 7 apart, Dirichlet weights) in d 2-4. Anomalies: 60% ``between_modes`` (on a segment between two
+    means, inside the convex hull of self: an elliptical model's global ellipsoid covers them; drawn as ``outer``
+    instead when the modes leave no gap) and 40% ``outer``; each is accepted only at Mahalanobis distance >= 6 from
+    EVERY component under that component's own covariance."""
+    import numpy as np
+    r = random.Random(7_410_000 + seed)
+    g = np.random.default_rng(7_410_000 + seed)
+    dim = r.randint(*IMMUNE_NATIVE_DIM)
+    means, covs = [], []
+    for _ in range(r.randint(2, 4)):
+        q, _ = np.linalg.qr(g.normal(size=(dim, dim)))
+        covs.append(q @ np.diag(g.uniform(0.3, 1.0, dim) ** 2) @ q.T)
+        for _attempt in range(10_000):
+            m = g.uniform(-8, 8, dim)
+            if all(np.linalg.norm(m - other) >= 7.0 for other in means):
+                means.append(m)
+                break
+        else:
+            raise GenomeError("multimodal_self: could not separate the modes")
+    weights = g.dirichlet(np.full(len(means), 4.0))
+    inverse = [np.linalg.inv(cv) for cv in covs]
+
+    def draw(count):
+        which = g.choice(len(means), size=count, p=weights)
+        return [g.multivariate_normal(means[k], covs[k]) for k in which]
+
+    def off_support(p):
+        return all(float((p - m) @ iv @ (p - m)) >= IMMUNE_ANOMALY_MARGIN ** 2 for m, iv in zip(means, inverse))
+    self_s, normal = draw(r.randint(300, 500)), draw(200)
+    anomalies, kinds = [], []
+    for _ in range(r.randint(20, 40)):
+        # modes too close (relative to their spreads) to leave a gap 6 units clear: the draw becomes ``outer``
+        for kind in (("between_modes", "outer") if r.random() < 0.6 else ("outer",)):
+            for _attempt in range(500):
+                if kind == "between_modes":
+                    a, b = r.sample(range(len(means)), 2)
+                    p = means[a] + r.uniform(0.35, 0.65) * (means[b] - means[a]) + g.normal(0, 0.3, dim)
+                else:
+                    k = r.randrange(len(means))
+                    u = g.normal(size=dim)
+                    p = means[k] + np.linalg.cholesky(covs[k]) @ (u / np.linalg.norm(u) * r.uniform(7.0, 9.0))
+                if off_support(p):
+                    break
+            else:
+                continue
+            anomalies.append(p)
+            kinds.append(kind)
+            break
+    return _immune_package(r, self_s, normal, anomalies, kinds, seed, "multimodal_self")
+
+
+def immune_ring_instance(seed):
+    """Native regime ``annular_self``: self is a ring of radius R (3-6) and radial spread w (4-10% of R) in a rotated
+    plane, with Gaussian spread s (10-25% of R) along the remaining d - 2 axes (d 2-4). Anomalies: ``hole`` (inside
+    the ring at radius <= R - 6w, extra axes within 2s: inside the convex hull, where an ellipsoid model is densest),
+    ``outer`` (radius R + 6w .. R + 10w) and, when d > 2, ``off_plane`` (on the ring, 6-8 s along an extra axis)."""
+    import numpy as np
+    r = random.Random(7_420_000 + seed)
+    g = np.random.default_rng(7_420_000 + seed)
+    dim = r.randint(*IMMUNE_NATIVE_DIM)
+    q, mu = _immune_frame(r, g, dim)
+    radius = r.uniform(3.0, 6.0)
+    w, s = r.uniform(0.04, 0.10) * radius, r.uniform(0.10, 0.25) * radius
+
+    def place(rho, theta, extra):
+        return mu + q @ np.concatenate(([rho * math.cos(theta), rho * math.sin(theta)], extra))
+
+    def draw(count):
+        return [place(radius + w * g.normal(), g.uniform(0, 2 * math.pi), g.normal(0, s, dim - 2))
+                for _ in range(count)]
+    self_s, normal = draw(r.randint(300, 500)), draw(200)
+    anomalies, kinds = [], []
+    for _ in range(r.randint(20, 40)):
+        kind = r.choice(("hole", "outer", "off_plane") if dim > 2 else ("hole", "outer"))
+        theta = g.uniform(0, 2 * math.pi)
+        extra = np.clip(g.normal(0, s, dim - 2), -2 * s, 2 * s)
+        if kind == "hole":
+            rho = (radius - IMMUNE_ANOMALY_MARGIN * w) * math.sqrt(r.uniform(0.0, 1.0))
+        elif kind == "outer":
+            rho = radius + w * r.uniform(IMMUNE_ANOMALY_MARGIN, 10.0)
+        else:
+            rho = radius + w * g.normal()
+            extra[r.randrange(dim - 2)] = r.choice((-1, 1)) * s * r.uniform(IMMUNE_ANOMALY_MARGIN, 8.0)
+        anomalies.append(place(rho, theta, extra))
+        kinds.append(kind)
+    return _immune_package(r, self_s, normal, anomalies, kinds, seed, "annular_self")
+
+
+def _box_distance(x, y, boxes):
+    return min(math.hypot(max(x0 - x, 0.0, x - x1), max(y0 - y, 0.0, y - y1)) for x0, x1, y0, y1 in boxes)
+
+
+def immune_union_instance(seed):
+    """Native regime ``nonconvex_self``: self is uniform on an L- or U-shaped union of arms (width 1.2-2, length
+    5-8) in a rotated plane, Gaussian (spread 0.3-0.8) along the remaining d - 2 axes (d 2-4). Anomalies:
+    ``concavity`` (0.5 inside the convex hull of the union and >= 1 unit from every arm, extra axes within 2 spreads:
+    the U's hull is its bounding box, the L's is cut by the segment from (length, width) to (width, length)), ``outer``
+    (1-2.5 units outside the union, anywhere) and, when d > 2, ``off_plane`` (on the union, 6-8 spreads along an extra
+    axis). Self has zero density off the union, so every anomaly is off support by construction."""
+    import numpy as np
+    r = random.Random(7_430_000 + seed)
+    g = np.random.default_rng(7_430_000 + seed)
+    dim = r.randint(*IMMUNE_NATIVE_DIM)
+    q, mu = _immune_frame(r, g, dim)
+    width, length, s = r.uniform(1.2, 2.0), r.uniform(5.0, 8.0), r.uniform(0.3, 0.8)
+    boxes = [(0.0, length, 0.0, width), (0.0, width, 0.0, length)]                     # an L
+    if r.random() < 0.5:                                                                 # a U, pocket >= 3 wide
+        length = max(length, 2 * width + 3.0)
+        boxes = [(0.0, length, 0.0, width), (0.0, width, 0.0, length), (length - width, length, 0.0, length)]
+    span = max(x1 for _, x1, _, _ in boxes), max(y1 for _, _, _, y1 in boxes)
+    def in_hull(x, y):                   # 0.5 inside the union's convex hull: the U's box (top edge y = length),
+        if len(boxes) == 3:              # the L's cut by the segment from (length, width) to (width, length)
+            return y <= length - 0.5
+        return x + y <= length + width - 0.5
+
+    def place(x, y, extra):
+        return mu + q @ np.concatenate(([x - span[0] / 2, y - span[1] / 2], extra))
+
+    def sample(low, high, pad, hull=False):   # rejection sampling; every region drawn from has area >= 1/200 of
+        for _ in range(50_000):               # its box (the smallest: an L's in-hull concavity at length 5, width 2)
+            x, y = g.uniform(-pad, span[0] + pad), g.uniform(-pad, span[1] + pad)
+            if low <= _box_distance(x, y, boxes) <= high and (not hull or in_hull(x, y)):
+                return x, y
+        raise GenomeError("nonconvex_self: rejection sampling did not converge")
+
+    def inside():
+        return sample(0.0, 0.0, 0.0)
+
+    def draw(count):
+        return [place(*inside(), g.normal(0, s, dim - 2)) for _ in range(count)]
+    self_s, normal = draw(r.randint(300, 500)), draw(200)
+    anomalies, kinds = [], []
+    for _ in range(r.randint(20, 40)):
+        kind = r.choice(("concavity", "outer", "off_plane") if dim > 2 else ("concavity", "outer"))
+        extra = np.clip(g.normal(0, s, dim - 2), -2 * s, 2 * s)
+        if kind == "off_plane":
+            x, y = inside()
+            extra[r.randrange(dim - 2)] = r.choice((-1, 1)) * s * r.uniform(IMMUNE_ANOMALY_MARGIN, 8.0)
+        else:
+            x, y = sample(1.0, math.inf, 0.0, hull=True) if kind == "concavity" else sample(1.0, 2.5, 2.5)
+        anomalies.append(place(x, y, extra))
+        kinds.append(kind)
+    return _immune_package(r, self_s, normal, anomalies, kinds, seed, "nonconvex_self")
+
+
+def immune_instance(seed):
+    """Benchmark instance for ``seed``: the regime is ``REGIMES['collective_immune'][seed % 4]``."""
+    regime = _regime("collective_immune", seed)
+    return {"gaussian_ellipsoid": immune_gaussian_instance, "multimodal_self": immune_mixture_instance,
+            "annular_self": immune_ring_instance, "nonconvex_self": immune_union_instance}[regime](seed)
+
+
+def immune_dimension_band(data):
+    """The subregion split before BENCHMARK_REVISION (kept for comparison with the v1 evidence; P8's residual
+    geometry buckets on it)."""
     return "low_dim_2_3" if len(data["self_samples"][0]) <= 3 else "mid_dim_4_6"
+
+
+def immune_subregion(data):
+    """A declared self-support shape (``self_support``: multimodal_self, annular_self or nonconvex_self) marks its
+    native regime; without one, the pre-revision dimension band (``immune_dimension_band``). An undeclared shape is
+    placed on the Gaussian benchmark, as every request was before the revision; an unknown declaration is unplaced."""
+    support = data.get("self_support")
+    if support is None:
+        return immune_dimension_band(data)
+    if support not in REGIMES["collective_immune"][1:]:
+        raise GenomeError(f"self_support is one of {REGIMES['collective_immune'][1:]}")
+    return support
 
 
 # ============================================================================ 5. ascending clock auction
@@ -2040,8 +2683,82 @@ def _space_time_astar(start, goal, reserved, waiting, steps, max_expansions=6000
     return None
 
 
-def flock_instance(seed):
-    """Antipodal swap on a ring (the classic hardest symmetric crossing), lightly perturbed."""
+def _comm_groups(pos, radius):
+    """Agents linked by chains of pairwise distances <= ``radius`` (union-find), each group in index order."""
+    parent = list(range(len(pos)))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    for i in range(len(pos)):
+        for j in range(i):
+            if math.dist(pos[i], pos[j]) <= radius:
+                parent[find(i)] = find(j)
+    groups = {}
+    for i in range(len(pos)):
+        groups.setdefault(find(i), []).append(i)
+    return list(groups.values())
+
+
+def flock_online_replan(data):
+    """Competitor in the native regimes: centralized prioritized planning REPLANNED ONLINE (Erdmann & Lozano-Perez
+    planning, the same space-time A* as ``flock_prioritized``). A coordinator can only plan agents it can reach: agents
+    linked by a chain of pairwise distances <= the declared ``communication_radius`` (unlimited when undeclared) form
+    one group; separate groups are planned by separate coordinators, each unaware of the others. Whenever a group
+    holds agents last planned by different coordinators (or not yet planned) it is replanned from the agents' current
+    positions: stopped agents (start = goal: dropped out) and arrived agents are reserved first as static discs, then
+    movers longest remaining trip first. Without a radius and without stopped agents this is exactly one
+    ``flock_prioritized`` plan. Abstains if any replanning fails."""
+    s, g, steps = _flock_inputs(data)
+    radius = data.get("communication_radius")
+    radius = math.inf if radius is None else finite(radius, low=FLOCK_SENSE, high=1e6, name="communication_radius")
+    n = len(s)
+    pos = [tuple(p) for p in s]
+    paths = [[p] for p in pos]
+    done = [math.dist(pos[i], g[i]) <= 1e-9 for i in range(n)]
+    plan, team = [None] * n, [None] * n
+    for t in range(steps):
+        if all(done):
+            break
+        for group in _comm_groups(pos, radius):
+            if team[group[0]] is not None and all(team[i] == team[group[0]] for i in group):
+                continue                                  # planned together already: their plans are coordinated
+            new = {}
+            for i in sorted(group, key=lambda i: (not done[i], -math.dist(pos[i], g[i]), i)):
+                if done[i]:
+                    new[i] = [pos[i]]
+                    continue
+                path = _space_time_astar(pos[i], g[i], [new[j] for j in new],
+                                         [pos[j] for j in group if j != i and j not in new], steps - t)
+                if path is None:
+                    return None
+                new[i] = path
+            for i in group:
+                plan[i], team[i] = new[i], frozenset(group)
+        for i in range(n):
+            if done[i]:
+                continue
+            if len(plan[i]) > 1:
+                plan[i] = plan[i][1:]
+            pos[i] = plan[i][0]
+            paths[i].append(pos[i])
+            done[i] = math.dist(pos[i], g[i]) <= 1e-9
+    if not all(done):
+        return None
+    return _flock_output(paths, "online_replanning")
+
+
+def flock_competitor(data):
+    """The competitor of each regime: ``flock_prioritized`` (unchanged) when nothing happens; ``flock_online_replan``
+    when agents have dropped out or a communication radius is declared."""
+    return flock_prioritized(data) if _flock_event(data) is None else flock_online_replan(data)
+
+
+def flock_ring_swap_instance(seed):
+    """Regime ``ring_swap``: the generator before BENCHMARK_REVISION (byte-identical). Antipodal swap on a ring (the
+    classic hardest symmetric crossing), lightly perturbed."""
     r = random.Random(7_600_000 + seed)
     for attempt in range(100):
         n = r.randint(4, 8)
@@ -2069,8 +2786,96 @@ def flock_score(data, truth, output):
     return {"quality": truth["makespan_lower_bound"] / max(1, audit["makespan"]), "category": "correct"}
 
 
-def flock_subregion(data):
+FLOCK_SNAPSHOT_SPACING = 1.5      # snapshot discs >= this far apart, so no arm is boxed in at its first step
+FLOCK_COMM_RADIUS = (FLOCK_SENSE, 5.0)   # declared radii never undercut the local rules' sensing radius
+
+
+def _flock_swap(r, n):
+    """A perturbed antipodal swap of ``n`` agents on a ring of radius 4 + 0.6 n."""
+    radius = 4.0 + 0.6 * n
+    angles = [2 * math.pi * k / n + r.uniform(-0.2, 0.2) for k in range(n)]
+    starts = [(radius * math.cos(a), radius * math.sin(a)) for a in angles]
+    goals = [(radius * math.cos(a + math.pi + r.uniform(-0.25, 0.25)),
+              radius * math.sin(a + math.pi + r.uniform(-0.25, 0.25))) for a in angles]
+    return starts, goals
+
+
+def _flock_lower_bound(starts, goals):
+    return max(math.ceil(math.dist(a, b) / FLOCK_STEP - 1e-9) for a, b in zip(starts, goals))
+
+
+def flock_dropout_instance(seed):
+    """Native regime ``agent_dropout``: the state at a dropout event. 6-9 agents of a perturbed antipodal swap are
+    caught 15-40% of the way along their straight lines (discs >= 1.5 apart: the crowd is dense, never jammed); 1-2
+    of them have dropped out and stopped where they are (start = goal: static discs inside the crowd); the others
+    must still reach their goals. Every arm plans from this state: the local rules simply keep running, the
+    centralized planner must replan at the event (``flock_online_replan``). The dropout is a snapshot because the
+    unchanged ``solve`` takes no event schedule: the local rules' reaction inside one run is not exercised."""
+    r = random.Random(7_610_000 + seed)
+    for _ in range(500):
+        n = r.randint(6, 9)
+        ring, goals = _flock_swap(r, n)
+        now = [(a[0] + f * (b[0] - a[0]), a[1] + f * (b[1] - a[1]))
+               for a, b, f in zip(ring, goals, [r.uniform(0.15, 0.4) for _ in range(n)])]
+        dropped = sorted(r.sample(range(n), r.randint(1, 2)))
+        starts = [[round(x, 4), round(y, 4)] for x, y in now]
+        targets = [list(starts[i]) if i in dropped else [round(goals[i][0], 4), round(goals[i][1], 4)]
+                   for i in range(n)]
+        if min(math.dist(a, b) for k, a in enumerate(starts) for b in starts[:k]) < FLOCK_SNAPSHOT_SPACING:
+            continue
+        data = {"starts": starts, "goals": targets}
+        try:
+            _flock_inputs(data)
+        except GenomeError:
+            continue
+        return data, {"makespan_lower_bound": _flock_lower_bound(starts, targets), "dropped": dropped}
+    raise GenomeError("could not generate a valid dropout snapshot")
+
+
+def flock_limited_radius_instance(seed):
+    """Native regime ``limited_radius``: the same perturbed antipodal swap of 4-8 agents, with a declared
+    communication radius of 3-5 (never below the local rules' sensing radius of 3, so the local rules respect it).
+    A centralized coordinator reaches only agents linked by in-range chains, so it plans disconnected groups
+    separately and replans online as they meet (``flock_online_replan``)."""
+    r = random.Random(7_620_000 + seed)
+    for _ in range(100):
+        ring, goals = _flock_swap(r, r.randint(4, 8))
+        data = {"starts": [[round(x, 4), round(y, 4)] for x, y in ring],
+                "goals": [[round(x, 4), round(y, 4)] for x, y in goals],
+                "communication_radius": round(r.uniform(*FLOCK_COMM_RADIUS), 3)}
+        try:
+            _flock_inputs(data)
+        except GenomeError:
+            continue
+        return data, {"makespan_lower_bound": _flock_lower_bound(data["starts"], data["goals"])}
+    raise GenomeError("could not generate a valid flock instance")
+
+
+def flock_instance(seed):
+    """Benchmark instance for ``seed``: the regime is ``REGIMES['collective_flock'][seed % 3]``."""
+    return {"ring_swap": flock_ring_swap_instance, "agent_dropout": flock_dropout_instance,
+            "limited_radius": flock_limited_radius_instance}[_regime("collective_flock", seed)](seed)
+
+
+def flock_size_band(data):
+    """The subregion split before BENCHMARK_REVISION (kept for comparison with the v1 evidence)."""
     return "four_to_five_agents" if len(data["starts"]) <= 5 else "six_to_eight_agents"
+
+
+def _flock_event(data):
+    """The native regime the data declare: a communication radius (``limited_radius``), an agent whose start is its
+    goal (stopped: ``agent_dropout``), or None."""
+    if "communication_radius" in data:
+        return "limited_radius"
+    if any(a == b for a, b in zip(data["starts"], data["goals"])):
+        return "agent_dropout"
+    return None
+
+
+def flock_subregion(data):
+    """The declared native regime (``_flock_event``); without one, the pre-revision size band
+    (``flock_size_band``)."""
+    return _flock_event(data) or flock_size_band(data)
 
 
 # ============================================================================ genomes
@@ -2117,8 +2922,14 @@ INTELLIGENCES = [
             abstention_conditions=("multi-member group without a shared-noise declaration",
                                    "fewer independent groups than minimum_independent",
                                    "no alternative reaches quorum"),
-            benchmark_suite="seeded panels: 4-9 groups (half singletons, factions of 2-9 with shared noise "
-                            "0.3-0.95), accuracies estimated from 40-trial histories; dev 0-9 / held-out 1000-1029",
+            benchmark_suite="three regimes by seed % 3 (REGIMES): mixed_panel (the generator before 2026-10-14: 4-9 "
+                            "groups, half singletons, factions of 2-9 with shared noise 0.3-0.95, shuffled; subregions "
+                            "its v1 faction bands), wrong_faction_early_decision and wrong_faction_late_decision (a "
+                            "dominant faction of 8-20 copying ONE WRONG signal arrives first; the decision is due at "
+                            "0.3-0.55 or 0.65-1.0 of the arrival window, declared in decision_time, with only the "
+                            "observers that arrived by then; each its own subregion, placed by a declared "
+                            "decision_time over one dominant faction); accuracies estimated from 40-trial histories; "
+                            "dev 0-9, held-out seeds recorded by each admission freeze",
             baseline="simple majority of all observers (each counted as independent; ties abstain)",
             competitor="one vote per declared independence group (the group's accuracy-weighted majority, "
                        "weighted by the log-odds of its mean accuracy); uses the same grouping and accuracies, "
@@ -2128,8 +2939,26 @@ INTELLIGENCES = [
         notes={"alternative_competitors": "quorum_weighted_majority (group-blind log-odds weights; the competitor "
                                           "before the 2026-10-09 review, mean 0.6 on dev), quorum_best_single (0.4); a "
                                           "design-effect-weighted vote scored 0.8; the group-majority competitor 1.0 "
-                                          "(ties the candidate on every dev seed)",
-               "score": "+1 correct, -1 wrong, 0 abstain; a single decision per seed"}),
+                                          "(ties the candidate on every dev seed); all on dev seeds 0-9 of the "
+                                          "mixed_panel generator, before the benchmark revision",
+               "score": "+1 correct, -1 wrong, 0 abstain; a single decision per seed",
+               "benchmark_revision": BENCHMARK_REVISION,
+               "regimes": "seed % 3: mixed_panel (the v1 generator), wrong_faction_early_decision, "
+                          "wrong_faction_late_decision. Time to decision is a declared property of each instance (its "
+                          "deadline): every arm decides at the same time, abstaining means not deciding by then (0). "
+                          "It is not a scored output: solve's output carries no commit time and the harness scores "
+                          "outputs; the certificate's first_quorum_step is diagnostic only (in 37 of the 41 "
+                          "wrong-faction dev/review panels the candidate traced, the WRONG faction arrived first and "
+                          "alone crossed quorum at step 1, which is why the candidate weighs the whole panel at the "
+                          "deadline instead of committing at the first crossing; the other 5 of 46 had fewer than 3 "
+                          "independent groups by the deadline)",
+               "dev_native_regimes": "builder measurement on dev 0-9 + review 3000-3059 (not held-out evidence): "
+                                     "candidate vs the group-majority competitor mixed_panel 2-0 (22 ties), early "
+                                     "decision 5-3 (15 ties), late decision 3-0 (20 ties); vs simple majority 19-0 in "
+                                     "each wrong-faction regime (majority follows the faction); wrong answers in the "
+                                     "two wrong-faction regimes: candidate 4 + 4, group majority 9 + 7, simple "
+                                     "majority 23 + 23; the candidate abstained on 13 of 70 (fewer than 3 independent "
+                                     "groups by the deadline, or no quorum), the competitor never"}),
     Executable(
         genome=IntelligenceGenome(**_common(
             intelligence_id="collective.ant_colony.tsp_mmas", version="1.0.1", family="collective_aco",
@@ -2202,19 +3031,51 @@ INTELLIGENCES = [
             counterindications=("directed or capacitated networks", "objectives other than length + "
                                 "single-failure disconnection"),
             abstention_conditions=("candidate graph does not connect the terminals",),
-            benchmark_suite="5-9 terminals + 25 jittered junctions, k=4 nearest-neighbour candidate graph, lambda "
-                            "log-uniform over tree-to-redundancy regimes; dev 0-9 / held-out 1000-1029",
-            baseline="minimum spanning Steiner tree (KMB metric-closure MST, expanded and pruned)",
-            competitor="multi-start Steiner heuristics (KMB + Takahashi-Matsuyama from each terminal) each improved "
-                       "by best-improvement local search on the same objective (bridge-bypass paths, single-edge "
-                       "additions and removals)")),
+            benchmark_suite="two regimes by seed % 2 (REGIMES; a declared failure marks the native subregion, regime "
+                            "0 keeps its v1 fault-weight bands), one network family: 5-9 "
+                            "terminals + 25 jittered junctions, k=4 nearest-neighbour candidate graph, lambda "
+                            "log-uniform over tree-to-redundancy regimes. static_design (the generator before "
+                            "2026-10-14): scored on the declared expected single-failure objective. "
+                            "edge_failure_mid_run: 1-3 corridor edges (on terminal-to-terminal shortest paths) fail at "
+                            "a declared step 80-250, where the conductance run is cut; scored on realized build + "
+                            "rebuild + lambda x pairs disconnected at the failure; dev 0-9, held-out seeds recorded by "
+                            "each admission freeze",
+            baseline="minimum spanning Steiner tree (KMB metric-closure MST, expanded and pruned); after a failure "
+                     "it is repaired by the shared cheapest-path rule",
+            competitor="static_design: multi-start Steiner heuristics (KMB + Takahashi-Matsuyama from each terminal) "
+                       "each improved by best-improvement local search on the same objective (bridge-bypass paths, "
+                       "single-edge additions and removals). edge_failure_mid_run: the shortest classical Steiner tree "
+                       "before the failure, recomputed from scratch on the surviving graph at the failure (surviving "
+                       "built tubes free)")),
         solve=physarum_solve, verify=physarum_verify, instance=physarum_instance, score=physarum_score,
-        baseline=physarum_mst, competitor=physarum_multistart_search, subregion=physarum_subregion, tolerance=1e-7,
-        notes={"score": "-(length + lambda * E[disconnected terminal pairs | one uniformly random candidate edge "
-                        "fails]) / Euclidean terminal-MST length",
+        baseline=physarum_mst, competitor=physarum_competitor, subregion=physarum_subregion, tolerance=1e-7,
+        notes={"score": "static_design: -(length + lambda * E[disconnected terminal pairs | one uniformly random "
+                        "candidate edge fails]) / Euclidean terminal-MST length. edge_failure_mid_run: -(build length "
+                        "+ newly built length after the failure + lambda * terminal pairs disconnected at the failure) "
+                        "/ the same scale (physarum_failure_cost); there an abstention scores below any valid design",
                "alternative_competitor": "physarum_mst_augmented (KMB + greedy bridge bypass), the competitor before "
                                          "the 2026-10-09 review: dev 4 wins, 3 losses, 3 ties for the candidate; "
-                                         "its KMB trees lost to the candidate's in the low-fault regime"}),
+                                         "its KMB trees lost to the candidate's in the low-fault regime",
+               "benchmark_revision": BENCHMARK_REVISION,
+               "regimes": "seed % 2: static_design (the v1 generator), edge_failure_mid_run. In the failure regime "
+                          "the conductance run is cut at the declared step (data steps) and, because solve takes no "
+                          "event schedule, the network's own re-adaptation after the failure is NOT exercised: it is "
+                          "repaired by the shared cheapest-path rule, like the baseline. That understates an adaptive "
+                          "network; it is the honest approximation the unchanged mechanism allows. The candidate "
+                          "designs against the declared expected objective (each candidate edge fails with "
+                          "probability 1/|candidates|), the replanning competitor and the KMB baseline for length "
+                          "alone; every arm is then charged the realized event, in which 1-3 corridor edges fail with "
+                          "certainty and lambda prices each disconnected terminal pair once",
+               "dev_native_regimes": "builder measurement on dev 0-9 + review 3000-3059 (not held-out evidence): "
+                                     "edge_failure_mid_run vs the from-scratch replanner 12-13 (10 ties), vs the KMB "
+                                     "baseline 19-10 (6 ties); static_design vs the multistart search 6-17 (12 ties), "
+                                     "vs KMB 25-2 (8 ties); no wrong answer or abstention from any arm; median "
+                                     "latency candidate 0.044 s vs replanner 0.004 s (failure regime), 0.056 s vs "
+                                     "multistart 0.023 s (static regime)",
+               "alternative_competitor_failure_regime": "physarum_anticipate_then_replan (the static regime's "
+                                                        "multistart objective search before the failure, the same "
+                                                        "from-scratch recomputation after it): candidate 12-14 (9 "
+                                                        "ties) on the same seeds"}),
     Executable(
         genome=IntelligenceGenome(**_common(
             intelligence_id="collective.immune.negative_selection", version="1.0.2", family="collective_immune",
@@ -2245,15 +3106,20 @@ INTELLIGENCES = [
             known_strengths=("needs no non-self examples", "every alarm has a geometric witness"),
             known_failure_modes=("its score is only a covered lower bound on distance to self: coverage holes miss "
                                  "anomalies near self", "weak in higher dimension",
-                                 "loses to a covariance model when self is Gaussian (lost every dev seed to the "
-                                 "exact Gaussian prediction region)"),
+                                 "loses to a covariance model when self is Gaussian (lost every dev seed of the "
+                                 "Gaussian generator to the exact Gaussian prediction region)"),
             counterindications=("dimension above 8", "fewer than 60 self samples", "self data known to be Gaussian"),
             abstention_conditions=("dimension above 8", "fewer than 60 self samples",
                                    "more than 300 test points in one call (split the batch)",
                                    "too few self samples for the tolerance: (n + 1) x 0.75 x tolerance < 1"),
-            benchmark_suite="multivariate-normal self (d 2-6, random covariance), anomalies: correlation breaks, "
-                            "shifts of 3-5 Mahalanobis units, inflated variance; tolerance 0.01-0.05; dev 0-9 / "
-                            "held-out 1000-1029",
+            benchmark_suite="four regimes by seed % 4 (REGIMES), tolerance 0.01-0.05: gaussian_ellipsoid (the "
+                            "generator before 2026-10-14: multivariate-normal self, d 2-6, random covariance; "
+                            "correlation breaks, shifts of 3-5 Mahalanobis units, inflated variance; subregions its v1 "
+                            "dimension bands); multimodal_self (a Gaussian mixture), annular_self (a ring) and "
+                            "nonconvex_self (an L or U union), d 2-4, each declared in self_support and its own "
+                            "subregion; their anomalies lie inside the convex hull of self (between modes, in the "
+                            "hole, in the concavity) and outside it, each >= 6 noise units off the self support; dev "
+                            "0-9, held-out seeds recorded by each admission freeze",
             baseline="per-feature z-score, Bonferroni threshold",
             competitor="exact Gaussian prediction ellipsoid (Hotelling: sample mean/covariance, F quantile) at the "
                        "same 0.75 x tolerance target (scipy for the quantile)")),
@@ -2264,7 +3130,27 @@ INTELLIGENCES = [
                "alternative_competitor": "immune_mahalanobis (asymptotic chi-square at the full tolerance), the "
                                          "competitor before the 2026-10-09 review; it ignored estimation error and "
                                          "the candidate's 0.75 safety factor and produced 1 wrong answer on dev, "
-                                         "which is why the candidate's mean once looked higher"}),
+                                         "which is why the candidate's mean once looked higher",
+               "benchmark_revision": BENCHMARK_REVISION,
+               "regimes": "seed % 4: gaussian_ellipsoid (the v1 generator; protected evolution draws only from it), "
+                          "multimodal_self, annular_self, nonconvex_self (declared in the data's self_support, which "
+                          "no arm reads). The arms are unchanged (z-score baseline, Hotelling competitor). On the "
+                          "three native regimes the elliptical competitor is mismatched by construction, so its losses "
+                          "there say nothing about nonparametric detectors: see alternative_competitor_native",
+               "dev_native_regimes": "builder measurement on dev 0-9 + review 3000-3059 (not held-out evidence): "
+                                     "candidate vs Hotelling by regime gaussian_ellipsoid 2-16, multimodal_self "
+                                     "18-0, annular_self 17-0, nonconvex_self 17-0 (no ties); vs z-score 10-8, 18-0, "
+                                     "17-0, 17-0; no wrong answer from the candidate (Hotelling 3, z-score 2, all "
+                                     "false-alarm overshoots, all on multimodal_self); median latency candidate "
+                                     "0.23 s, Hotelling 0.0015 s",
+               "alternative_competitor_native": "immune_knn_conformal (5-NN distance in the self-standardised "
+                                                "frame, split-conformal at the same 0.75 x tolerance target), on the "
+                                                "same seeds: candidate 8-8 (2 ties) gaussian_ellipsoid, 11-5 (2) "
+                                                "multimodal_self, 16-0 (1) annular_self, 14-2 (1) nonconvex_self; "
+                                                "it overshot the false-alarm limit twice. A nonparametric detector is "
+                                                "the stronger reasonable competitor on the native regimes; whether it "
+                                                "should replace Hotelling there is a decision for before the "
+                                                "re-admission freeze"}),
     Executable(
         genome=IntelligenceGenome(**_common(
             intelligence_id="collective.market.clock_auction", version="1.1.0", family="collective_market",
@@ -2329,19 +3215,41 @@ INTELLIGENCES = [
             resource_profile="O(steps x agents^2 x 33), pure Python", latency_profile="~10-30 ms",
             known_strengths=("decentralised: each agent uses only neighbours within 3 units",
                              "never collides in the model; ~35x lower median latency than centralized planning "
-                             "on dev seeds 0-9"),
+                             "on the ring-swap generator's dev seeds 0-9"),
             known_failure_modes=("deadlock or livelock in dense symmetric crowds (then abstains)",
                                  "longer makespan than centralized planning"),
             counterindications=("obstacle-filled maps (no static obstacles modelled)", "more than 10 agents",
                                 "safety-critical physical deployment"),
             abstention_conditions=("any agent short of its goal within the step budget",
                                    "trajectories larger than 60000 bytes (result-size contract)"),
-            benchmark_suite="4-8 agents in perturbed antipodal swaps on a ring; dev 0-9 / held-out 1000-1029",
+            benchmark_suite="three regimes by seed % 3 (REGIMES): ring_swap (the generator before 2026-10-14: 4-8 "
+                            "agents in perturbed antipodal swaps on a ring; subregions its v1 size bands), "
+                            "agent_dropout (the state at a dropout event: 6-9 agents 15-40% along their swap, 1-2 "
+                            "stopped in the crowd as static discs) and limited_radius (a ring swap of 4-8 with a "
+                            "declared communication radius 3-5), each its own subregion; dev 0-9, held-out seeds "
+                            "recorded by each admission freeze",
             baseline="straight-to-goal at full speed (ignores the others)",
             competitor="centralized prioritized planning: space-time A* per agent (longest trip first) around "
-                       "earlier agents' reserved trajectories")),
+                       "earlier agents' reserved trajectories; in agent_dropout and limited_radius the same planner "
+                       "replanned online (stopped and arrived agents reserved first; one coordinator per group of "
+                       "agents linked within the communication radius, groups replanned jointly when they meet)")),
         solve=flock_solve, verify=flock_verify, instance=flock_instance, score=flock_score,
-        baseline=flock_straight, competitor=flock_prioritized, subregion=flock_subregion, tolerance=1e-9,
+        baseline=flock_straight, competitor=flock_competitor, subregion=flock_subregion, tolerance=1e-9,
         notes={"score": "makespan lower bound / makespan; any contact, speed violation or unreached goal = wrong "
-                        "(-1); abstain 0"}),
+                        "(-1); abstain 0",
+               "benchmark_revision": BENCHMARK_REVISION,
+               "regimes": "seed % 3: ring_swap (the v1 generator), agent_dropout, limited_radius. agent_dropout is a "
+                          "snapshot at the dropout event because solve takes no event schedule: the local rules' "
+                          "reaction inside one run is not exercised, every arm plans from the event. In limited_radius "
+                          "the radius binds only the centralized competitor (the local rules sense within 3 <= radius)",
+               "competitor_by_regime": "flock_prioritized (unchanged) on ring_swap, flock_online_replan otherwise; on "
+                                       "ring_swap the two produce identical trajectories (tested on its dev seeds)",
+               "dev_native_regimes": "builder measurement on dev 0-9 + review 3000-3059 (not held-out evidence): "
+                                     "candidate vs the competitor ring_swap 0-24, agent_dropout 0-23, limited_radius "
+                                     "1-22; vs straight-to-goal 70-0; the candidate abstained on 19 of 70 (6, 4 and 9 "
+                                     "by regime: deadlock in a dense crowd), the competitor on 1 (limited_radius); "
+                                     "median latency candidate 0.023 s, competitor 0.54 s. Online replanning recovers "
+                                     "from dropout and from limited range well enough that the native regimes did not "
+                                     "change the comparison: the local rules' measured edge stays latency and "
+                                     "decentralisation, not makespan"}),
 ]

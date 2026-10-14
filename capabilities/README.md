@@ -42,7 +42,9 @@ instantiate.
 
 Verified by `closure/kernel_registry.py` → module `capabilities`.
 
-## Capability Router — the Competency Compiler (§4.14)
+## Capability Router — non-canonical alternative (§4.14 sketch)
+
+> **Not the Competency Compiler.** The canonical candidate is the GREG seed-genome lineage (Kernel draft PR #143). This module is retained as an alternative mechanism and evidence; nothing calls it, and it must not be wired in as a second Competency Compiler. Convergence or retirement is a founder decision.
 
 `router.py` — `CapabilityRouter` answers "which mechanism can actually know
 this?":

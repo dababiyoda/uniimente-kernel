@@ -1,4 +1,14 @@
-"""Capability Router — the Competency Compiler (Final Build Order §4.14).
+"""Capability Router — a NON-CANONICAL alternative (Final Build Order §4.14 sketch).
+
+This is not UNIIMENTE's Competency Compiler. The canonical candidate is the
+GREG seed-genome lineage (Kernel draft PR #143: `cognition.solve` on the
+mission path, INTENT-20261001-greg-seed-genome); which convergence lineage
+carries forward is a founder decision. This module was built after searching
+only `main` and is retained as an alternative mechanism and a source of
+tested invariants (aggregate budget, fewest-mechanism cover, immutable
+calibration, ledger-before-state). Nothing calls it, and it must not be
+wired in as a second Competency Compiler. See
+docs/intent/INTENT-20261014-competency-compiler.json.
 
 Founder name: *Competency Compiler*. Target effect: given a problem, decide
 which kinds of knowing can actually answer it, recruit the smallest

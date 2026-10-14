@@ -1236,20 +1236,21 @@
           "id": "P4",
           "title": "Cognitive settlement and learned routing",
           "maps_to": "N4",
-          "status": "SHADOW: learned cortex routing replayed from GREG's settled outcomes without hindsight (greg/cognition/shadow.py, `greg cognition shadow`); live routing unchanged; not shown better than static; founder-pinned exploration missions exist (`greg cognition mission --organ formal.z3`) and settle into the shadow's cells",
+          "status": "SHADOW: learned cortex routing replayed from GREG's settled outcomes without hindsight (greg/cognition/shadow.py, `greg cognition shadow`); live routing unchanged; not shown better than static; founder-pinned exploration missions exist (`greg cognition mission --organ formal.z3`) and settle into the shadow's cells; frozen shadow-versus-static comparison v0.1: NO_GAIN (equal correctness; the ledger cannot see latency, and Z3-first would drop the cross-engine certificate)",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P3 plus settled outcomes from real missions (real-mission outcomes gate the claim; the machinery is buildable now)",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
           "review_trigger": "20 settled real-mission outcomes in one geometry",
           "falsification": "learned routing does not beat the frozen static router",
-          "smallest_next_experiment": "run nine pinned Z3 and nine default missions on one geometry, then read `greg cognition shadow` for the first ready decision point",
+          "smallest_next_experiment": "freeze v0.2 with certificate-aware loss on a fresh seed; run once",
           "exit": "learned routing beats the static baseline on held-out tasks without new authority",
           "evidence_refs": [
-            "tests/unit/test_greg_cognition_shadow.py"
+            "tests/unit/test_greg_cognition_shadow.py",
+            "tests/evidence/greg-shadow-vs-static-v0.1/results.json"
           ],
           "completion": {
             "class": "BUILDABLE_NOW",
-            "build_now": "a frozen shadow-versus-static comparison on a new suite (the held-out spend stays founder-gated)",
+            "build_now": "v0.2: a loss that prices the independent certificate, declared before running, and a measured Z3-first route that still obtains a CP-SAT certificate",
             "claim_gate": "'beats the static baseline on real missions' needs settled founder missions (FOUNDER_USE); a crossgeo v0.4 held-out spend needs founder approval (#151)"
           }
         },

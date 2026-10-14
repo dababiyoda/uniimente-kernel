@@ -260,6 +260,12 @@ Done after the correction:
   ledger cannot move a default on its own; founder-pinned organ missions are the lawful exploration.
   Four mutants caught. Learned routing is not shown better than static.
 
+- **Learned routing does not beat the fixed policy yet (frozen v0.1, NO_GAIN).** On 60 held-out schedules
+  both engines were always correct, so the ledger never reordered. Z3 was faster on every problem, but only
+  the fixed CP-SAT-first route carries Z3's independent optimality certificate; trading it for 0.36 s would
+  game the loss. The fixed policy stays; v0.2 must price the certificate.
+  `tests/evidence/greg-shadow-vs-static-v0.1/`.
+
 Next mechanisms:
 
 1. A cognition deficit with no installed engine, closed through the builder route against a

@@ -3255,7 +3255,7 @@
    "source_location": "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md (Appendix A, row B53)",
    "source_date": "2026-10-01",
    "intended_effect": "P4 cognitive Spider-Web",
-   "interpretation": "Routing memory exists (cortex/memory.py). Since 2026-10-14 GREG replays it in shadow over its own settled cortex outcomes (greg/cognition/shadow.py, `greg cognition shadow`): per receipt, from earlier outcomes only, the order the ledger would have chosen, whether it differs, and whether every compared cell has the evidence a reorder needs. Live routing stays the fixed policy; promotion is a founder decision. Ordinary missions never explore the second formal engine; founder-pinned organs do. Learned routing is not yet shown better than static. Since 2026-10-14 the founder can sign that exploration: `greg cognition mission --organ <organ>` pins one registered cortex organ and its outcome settles into the shadow's cells.",
+   "interpretation": "Routing memory exists (cortex/memory.py). Since 2026-10-14 GREG replays it in shadow over its own settled cortex outcomes (greg/cognition/shadow.py, `greg cognition shadow`): per receipt, from earlier outcomes only, the order the ledger would have chosen, whether it differs, and whether every compared cell has the evidence a reorder needs. Live routing stays the fixed policy; promotion is a founder decision. Ordinary missions never explore the second formal engine; founder-pinned organs do. Learned routing is not yet shown better than static. Since 2026-10-14 the founder can sign that exploration: `greg cognition mission --organ <organ>` pins one registered cortex organ and its outcome settles into the shadow's cells. Frozen comparison v0.1 (2026-10-14): NO_GAIN against the fixed policy; diagnosis and the decision not to trade the cross-engine certificate for latency are in the evidence README.",
    "canonical_owner": "greg/cognition + cortex (Kernel)",
    "lifecycle_state": "active",
    "implementation_state": "PARTIAL",
@@ -3269,13 +3269,18 @@
     "docs/cortex/SPIDER_WEB_CORTEX.md",
     "greg/cognition/settlement.py",
     "greg/cognition/shadow.py",
-    "greg/cli.py"
+    "greg/cli.py",
+    "greg/cognition/routing_eval.py"
    ],
    "tests": [
     "tests/unit/test_cortex_pipeline.py",
-    "tests/unit/test_greg_cognition_shadow.py"
+    "tests/unit/test_greg_cognition_shadow.py",
+    "tests/unit/test_greg_routing_eval.py"
    ],
-   "evidence_refs": [],
+   "evidence_refs": [
+    "tests/evidence/greg-shadow-vs-static-v0.1/freeze.json",
+    "tests/evidence/greg-shadow-vs-static-v0.1/results.json"
+   ],
    "failure_condition": "the horizon is dropped from greg/path.json or activated without its gate",
    "next_gate": "P4 exit: learned routing beats the frozen static router on held-out tasks without new authority",
    "owner": "Alfonso Lopez (founder authority); cortex and GREG maintainers implement",

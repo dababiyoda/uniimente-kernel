@@ -194,6 +194,18 @@ def _rank(situation: dict, report: dict) -> dict:
             "note": "CandidateProposals for the existing Consequence Gate; not submitted, not executed"}
 
 
+class _ReadOnlyJournal:
+    """The canonical journal for reading only. Goal Gravity writes no ledger event; handing the compiler this view
+    (replay and ledger, no ``record``) makes any ask it would record come back prepared instead."""
+
+    def __init__(self, journal):
+        self._journal = journal
+        self.ledger = getattr(journal, "ledger", None)
+
+    def replay(self, prefix=""):
+        return self._journal.replay(prefix)
+
+
 def _voi(report: dict, registry, journal) -> dict:
     """Ask the Mind (Competency Compiler) whether to test before acting, through the one cognition path."""
     voi = report["value_of_information"]
@@ -202,6 +214,7 @@ def _voi(report: dict, registry, journal) -> dict:
     from greg.cognition.compiler import run
     from greg.cognition.cortex import registry_view
     registry = registry if registry is not None else registry_view(journal)
+    journal = _ReadOnlyJournal(journal) if journal is not None else None
     test = next(r for r in report["candidates"] if r["candidate_id"] == voi["test"])
     receipt = run({"problem_id": f"{report['problem_id']}-voi"[:96], "compile": {
         "geometry": {"geometry": "strategic", "decision_type": "act_or_test", "uncertainty_structure": "posterior",
@@ -213,6 +226,11 @@ def _voi(report: dict, registry, journal) -> dict:
     out = {"state": receipt["state"], "method": receipt["method_or_composition_selected"],
            "receipt_id": receipt["receipt_id"], "result": receipt["result"],
            "requirements": receipt["requirements"], "abstentions": receipt["abstentions"]}
+    attach = receipt.get("founder_attach_ask") or {}
+    if attach.get("state") == "PREPARED_NOT_RECORDED":
+        out["attach_ask_prepared"] = {"request_id": attach.get("request_id"), "kind": attach.get("kind"),
+                                      "state": "PREPARED_NOT_RECORDED",
+                                      "note": "the turn records nothing; the compiler records it when run on the body"}
     if receipt["state"] in ("ANSWERED", "WORLD_UNVERIFIED") and isinstance(receipt["result"], dict):
         # WORLD_UNVERIFIED is the canonical path's conditional result for a high-consequence geometry: the
         # arithmetic is checked; the world assumptions and the consequence authority are not
@@ -226,6 +244,32 @@ def _voi(report: dict, registry, journal) -> dict:
                           "attaching it is the founder's decision; the Foundry's banded estimate stands "
                           "uncorroborated")
     return out
+
+
+def _measured_trust(journal) -> dict:
+    """What GREG's own record says about trusting its predictions this turn: forecast calibration from receipt-
+    bound realizations, settled competence, and the forecasts still waiting for a realization (what the founder or
+    a sensor can report). Read-only; a MISCALIBRATED or unmeasured forecaster is shown, never hidden."""
+    if journal is None or getattr(journal, "ledger", None) is None:
+        return {"source": "no body ledger here: no retained receipts to measure", "forecast_calibration": "unmeasured",
+                "settled_outcomes": 0}
+    from greg.cognition.settlement import awaiting_realization, competence, outcome_calibration
+    calibration = outcome_calibration(journal)
+    by_method = {}
+    for row in calibration.get("levels", []):
+        key = f"{row['method']}@{row['method_version']}"
+        states = by_method.setdefault(key, set())
+        states.add(row["state"])
+    rows = competence(journal)
+    return {"source": "greg.cognition.settlement over the canonical journal",
+            "forecast_calibration": calibration["verdict"], "forecasts_scored": calibration["n"],
+            "per_method": {k: ("MISCALIBRATED" if "MISCALIBRATED" in v else "INSUFFICIENT_EVIDENCE"
+                               if "INSUFFICIENT_EVIDENCE" in v else "CALIBRATED") for k, v in sorted(by_method.items())},
+            "conflicting_realizations": len(calibration.get("conflicts", [])),
+            "awaiting_realization": len(awaiting_realization(journal)),
+            "settled_outcomes": sum(r["count"] for r in rows.values()),
+            "settled_correct": sum(r["correct"] for r in rows.values()),
+            "note": "competence and calibration are evidence about methods, never authority"}
 
 
 def _immune(journal) -> dict:
@@ -291,7 +335,7 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
                      "runner_up": report["runner_up"], "value_tradeoffs": report["value_tradeoffs_for_founder"],
                      "generated": report["generated"],
                      "rejected": {r["candidate_id"]: r["reasons"] for r in report["candidates"] if r["reasons"]}},
-        "mind": {"value_of_information": voi},
+        "mind": {"value_of_information": voi, "measured_trust": _measured_trust(journal)},
         "immune_signals": _immune(journal),
         "gate": ranked, "disposition": disposition, "founder_ask": ask, "preparable": report["preparable"],
         "asset_line": report["asset_line"], "dissent": dissent,

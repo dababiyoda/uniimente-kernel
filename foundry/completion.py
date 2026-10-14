@@ -14,6 +14,7 @@ module makes the states binding:
     python -m foundry.completion --status          # N/55 and every open obligation
     python -m foundry.completion --audit           # exit 1 on any unsupported claim
     python -m foundry.completion --run 36          # run one system's exercise
+    python -m foundry.completion --run 35 media    # run a registered co-implementation's exercise
     python -m foundry.completion --record 36       # (re)write its evidence record
 """
 from __future__ import annotations
@@ -40,11 +41,12 @@ EVIDENCE_TIERS = ("INTENDED", "DESIGNED", "IMPLEMENTED", "INTEGRATED", "UNIT_VER
                   "COMMERCIAL_OUTCOME_VERIFIED", "BLOCKED_WITH_REASON")
 
 
-def _co_implementation_problems(sid: int, row: dict, label: str) -> list[str]:
+def _co_implementation_problems(sid: int, row: dict, label: str, rerun: bool = True) -> list[str]:
     """Every registered co-implementation is declared in its row and vice versa.
 
     A co-implementation keeps its own state and gap; it cannot claim COMPLETE,
-    because the row's evidence record is re-derived from the primary only.
+    because the row's evidence record is re-derived from the primary only. A
+    co-implementation that names its own evidence record must reproduce it.
     """
     from foundry.systems import CO_IMPLEMENTATIONS
     problems: list[str] = []
@@ -64,6 +66,12 @@ def _co_implementation_problems(sid: int, row: dict, label: str) -> list[str]:
         for path in list(record.get("implementation", [])) + list(record.get("existing", [])) + list(record.get("tests", [])):
             if ":" not in path and not (ROOT / path).exists():
                 problems.append(f"{name}: path {path!r} not found")
+        if record.get("evidence"):
+            evidence_path = ROOT / str(record["evidence"])
+            if not evidence_path.is_file():
+                problems.append(f"{name}: evidence record {record['evidence']!r} not found")
+            elif rerun and record.get("module") in registered and not _reproduces(evidence_path, run(sid, record["module"])):
+                problems.append(f"{name}: evidence does not reproduce (re-run differs from the record)")
     return problems
 
 
@@ -75,11 +83,25 @@ def _hash(result) -> str:
     return "sha256:" + hashlib.sha256(json.dumps(result, sort_keys=True, default=str).encode()).hexdigest()
 
 
-def run(system_id: int) -> dict:
-    from foundry.systems import module
+def run(system_id: int, implementation: str | None = None) -> dict:
+    """Run the primary's exercise, or a registered co-implementation's when named."""
+    import importlib
+    from foundry.systems import implementations, module
+    if implementation is None:
+        system = module(system_id)
+    elif implementation in implementations(system_id):
+        system = importlib.import_module(f"foundry.systems.{implementation}")
+    else:
+        raise KeyError(f"{implementation!r} is not registered for Foundry system {system_id}")
     with tempfile.TemporaryDirectory(prefix=f"foundry-{system_id:02d}-") as scratch:
-        result = module(system_id).exercise(Path(scratch))
+        result = system.exercise(Path(scratch))
     return {"system": system_id, "result": result, "result_sha256": _hash(result)}
+
+
+def _reproduces(record_path: Path, fresh: dict) -> bool:
+    claimed = json.loads(record_path.read_text())
+    as_recorded = json.loads(json.dumps(fresh["result"], sort_keys=True, default=str))  # tuples -> lists
+    return fresh["result_sha256"] == claimed.get("result_sha256") and as_recorded == claimed.get("result")
 
 
 def record(system_id: int) -> Path:
@@ -119,7 +141,7 @@ def audit(rows: dict[int, dict] | None = None, *, rerun: bool = True) -> list[st
         tier = row.get("evidence_tier")
         if tier is not None and tier not in EVIDENCE_TIERS:
             problems.append(f"{label}: evidence_tier {tier!r} is not in the directive vocabulary")
-        problems.extend(_co_implementation_problems(sid, row, label))
+        problems.extend(_co_implementation_problems(sid, row, label, rerun))
         if state != "COMPLETE":
             continue
         for key in ("implementation", "tests", "interface", "evidence", "limitations", "recovery"):
@@ -140,12 +162,8 @@ def audit(rows: dict[int, dict] | None = None, *, rerun: bool = True) -> list[st
         if not evidence_path.is_file():
             problems.append(f"{label}: evidence record {row.get('evidence')!r} not found")
             continue
-        claimed = json.loads(evidence_path.read_text())
-        if rerun:
-            fresh = run(sid)
-            as_recorded = json.loads(json.dumps(fresh["result"], sort_keys=True, default=str))  # tuples -> lists
-            if fresh["result_sha256"] != claimed.get("result_sha256") or as_recorded != claimed.get("result"):
-                problems.append(f"{label}: evidence does not reproduce (re-run differs from the record)")
+        if rerun and not _reproduces(evidence_path, run(sid)):
+            problems.append(f"{label}: evidence does not reproduce (re-run differs from the record)")
     return problems
 
 
@@ -174,6 +192,9 @@ def main(argv=None) -> int:
     if argv[0] in ("--run", "--record") and len(argv) == 2:
         sid = int(argv[1])
         print(json.dumps(run(sid), indent=1, default=str) if argv[0] == "--run" else str(record(sid)))
+        return 0
+    if argv[0] == "--run" and len(argv) == 3:              # a registered co-implementation's exercise
+        print(json.dumps(run(int(argv[1]), argv[2]), indent=1, default=str))
         return 0
     print(__doc__)
     return 2

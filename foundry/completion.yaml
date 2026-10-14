@@ -546,10 +546,35 @@
   adopt:
   - A2A protocol v1 with signed Agent Cards
   existing:
-  - embassy/gate.py
   - tests/unit/test_embassy.py
-  gap: Foreign agents are admitted as minimum-privilege guests in-process; no wire protocol.
-  state: PARTIAL
+  evidence: foundry/evidence/system-29.json
+  implementation:
+  - foundry/systems/embassy_wire.py
+  - embassy/gate.py
+  - foundry/systems/webserver.py
+  - foundry/systems/reputation.py
+  - foundry/systems/accounting.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: JSON-RPC 2.0 over loopback HTTP at /rpc (embassy/challenge, embassy/present, tasks/list, tasks/claim, tasks/submit,
+    tasks/get, embassy/standing) plus the embassy's Agent Card at /.well-known/agent.json; foundry.query standing|tasks|receipts
+    (system 29). Posting work and admitting agents are operator acts on a running embassy.
+  tests:
+  - tests/unit/test_foundry_systems.py
+  limitations: 'A2A-shaped (JSON-RPC methods, signed Agent Cards), not a conformance claim; the embassy binds loopback only,
+    so a foreign agent reaches it through the operator''s own perimeter, and no external agent has connected yet. Three bounded
+    work kinds (factor, sort, classify) with two acceptance methods: a deterministic invariant cheaper than the work, or agreement
+    of two independent scripted models (real independent models would be routed through #25). Accepted work books a payable
+    in #39; paying it out is an operator act on #38, not performed here. Negative evidence from the substrate: PumpStation''s
+    wallet connect verifies one fixed message (`ethers.verifyMessage(CONNECT_MESSAGE, signature)`, server/index.js), a replayable
+    credential; this protocol uses a single-use nonce bound to the key and the audience, and signs every later request with
+    a strictly increasing sequence.'
+  recovery: Nonces are single-use and expire; a guest's suspension after a refuted result persists until an operator clears
+    it; every claim and submission is a Consequence Gate action in the Kernel ledger, so the embassy's state (embassy.json)
+    can be reconciled against the ledger; a refuted task returns to the open pool with no price.
+  state: COMPLETE
+  evidence_tier: SANDBOX_VERIFIED
+  open_beyond_boundary: 'From the #158 line: Foreign agents are admitted as minimum-privilege guests in-process; no wire protocol.'
 30:
   acceptance:
   - Every external consequence crosses one gate with commit-time revalidation
@@ -618,14 +643,48 @@
   adopt:
   - Discourse
   - Ghost memberships
-  existing:
-  - foundry/systems/community.py
+  evidence: foundry/evidence/system-32.json
+  implementation:
+  - foundry/systems/owned_community.py
+  - foundry/systems/federation.py
+  - foundry/systems/webserver.py
+  - foundry/systems/reputation.py
+  - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  - tests/unit/test_greg_community_journeys.py
-  interface: foundry.apply ingest; foundry.query export, summary, view, render (system 32)
-  gap: Portable signed member identities, posts, edits, reactions, departures and complete history export/import are implemented through GREG. Private loopback posts and portable JSON export now bind current history to successful canonical mutation receipts. Network enrollment, moderation operations, public serving and real member use remain unfinished.
-  limitations: Private local community records; member keys confer no kernel authority. Signatures prove key possession, not real-world identity. No external contact or publication.
-  state: PARTIAL
+  interface: Community.join|link_actor|post|react|report|moderate|grant_tier|standing|publish_feed|export_member|export_all|import_followers_csv
+    (signed member and operator acts); foundry.query members|feed|moderation (system 32)
+  tests:
+  - tests/unit/test_foundry_systems.py
+  limitations: 'Members are Ed25519 keys the members hold; there is no password or email account layer, so a hosted front
+    end (Discourse, Ghost) would sit on this substrate rather than replace it, and none is wired. Standing counts only helpful
+    marks from other members (#41 lower bound); it is not a trust score for anything beyond this community. Tiers are granted
+    only against a settled charge read from the #38 rail store; recurring billing and lapse are not modelled. The Mastodon
+    follower CSV import creates invitations with claim codes, not members. Substrate noted from RESEARCH-IN apps/community:
+    a JWT-authenticated comment service weighting voices by verified ORCID; its shared development secret as the identity
+    root is the pattern this design avoids by giving each member a key. No real member has joined.'
+  recovery: Every write is a signed message kept with its signature, so the history is re-verifiable; removal is a tombstone
+    that keeps the content hash and lineage; the full and per-member exports are signed by the community key and carry no
+    private material, so the community can be rebuilt elsewhere from its own export.
+  state: COMPLETE
+  evidence_tier: SANDBOX_VERIFIED
+  co_implementations:
+  - module: community
+    lineage: '#158 owned community records with portable member signatures and complete export (SQLite store)'
+    existing:
+    - foundry/systems/community.py
+    - greg/foundry_bridge.py
+    - tests/unit/test_greg_community_journeys.py
+    interface: foundry.apply ingest; foundry.query export, summary, view, render (system 32)
+    limitations: Private local community records; member keys confer no kernel authority. Signatures prove key possession,
+      not real-world identity. No external contact or publication.
+    gap: Portable signed member identities, posts, edits, reactions, departures and complete history export/import are implemented
+      through GREG. Private loopback posts and portable JSON export now bind current history to successful canonical mutation
+      receipts. Network enrollment, moderation operations, public serving and real member use remain unfinished.
+    state: PARTIAL
+  open_beyond_boundary: 'From the #158 line: Portable signed member identities, posts, edits, reactions, departures and complete
+    history export/import are implemented through GREG. Private loopback posts and portable JSON export now bind current history
+    to successful canonical mutation receipts. Network enrollment, moderation operations, public serving and real member use
+    remain unfinished.'
 33:
   acceptance:
   - Publishes and reads through a federated protocol (ActivityPub/AT) with portable identity
@@ -634,8 +693,31 @@
   - AT Protocol PDS
   existing:
   - DALEOBANKS:services/mastodon_client.py
-  gap: Publishes to ActivityPub through a client; no owned instance, portable identity or follower export.
-  state: PARTIAL
+  evidence: foundry/evidence/system-33.json
+  implementation:
+  - foundry/systems/federation.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: Instance.create_actor|follow|publish|read_remote_outbox|inbox_stream|export_account|import_account|move on a
+    served instance (WebFinger, actor documents, inbox/outbox/followers collections over HTTP); foundry.query actors|journal|dead_letters
+    (system 33). Publishing and following are external acts on an operated instance.
+  tests:
+  - tests/unit/test_foundry_systems.py
+  limitations: 'An owned ActivityPub instance implemented on the protocol''s primitives (WebFinger, actor documents with RSA
+    keys, HTTP Signatures over (request-target) host date digest, Follow/Accept/Undo/Create/Move, OrderedCollections, alsoKnownAs/movedTo
+    migration) and federated only with its own kind on loopback: no interoperability test against Mastodon or GoToSocial has
+    been run, no public hostname or TLS exists, and HTTP Signature draft/RFC 9421 variants that other servers may require
+    are not negotiated. DALEOBANKS still publishes through its client stub; pointing it at this instance is the next integration.
+    AT Protocol (PDS, DID-based identity) is not implemented; portable identity here is the ActivityPub Move flow plus a self-signed
+    export bundle. The exported bundle carries the public key only.'
+  recovery: Every inbound refusal and every delivery is journaled; a dead inbox is retried and dead-lettered with its last
+    error, never dropped; state is reloaded after each network round trip so a handler writing concurrently is not clobbered
+    (the first implementation lost the Accept this way and is recorded as negative evidence); the follower list survives a
+    move because the new actor and the old one must confirm each other before any follower switches.
+  state: COMPLETE
+  evidence_tier: SANDBOX_VERIFIED
+  open_beyond_boundary: 'From the #158 line: Publishes to ActivityPub through a client; no owned instance, portable identity
+    or follower export.'
 34:
   acceptance:
   - Maps which content sequences produced subscribers/customers from observed events
@@ -685,19 +767,50 @@
   - FFmpeg
   - Remotion
   - Godot
-  gap: Deterministic image, tone audio, AVI motion graphics and interactive card production is implemented with
-    immutable provenance. Synthesized narration, cinematic/game generation and broader media-quality integration
-    remain open; no publication or rights verification is claimed.
-  state: PARTIAL
-  existing:
-  - foundry/systems/media.py
-  - greg/artifacts.py
+  evidence: foundry/evidence/system-35.json
+  implementation:
+  - foundry/systems/media_engine.py
+  - foundry/company.py
+  - foundry/systems/cas.py
+  - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  interface: foundry.apply produce; foundry.query inspect (system 35)
-  limitations: Local deterministic graphic compositions and tone cues only. Declared canon source/rights are not
-    independently verified.
+  interface: Engine.produce(kind, brief) for image|audio|video|interactive under a canon that must carry the editorial constitution;
+    Engine.verify(bytes, manifest); canon_from_persona; foundry.query assets|manifest|verify (system 35)
   tests:
-  - tests/unit/test_greg_media.py
+  - tests/unit/test_foundry_systems.py
+  limitations: 'Engines adopted: Pillow (stills and frames) and FFmpeg 7 via the imageio-ffmpeg static build (libx264 + AAC
+    in MP4; GIF and WAV muxers available); audio is synthesized PCM from note names, not speech or music generation; the interactive
+    asset is a self-contained HTML/SVG reveal, not a Remotion composition or a Godot scene (those remain the adopted routes
+    for motion design and interactive worlds and are not wired). Provenance is a C2PA-shaped manifest signed with the engine''s
+    Ed25519 key and stored beside the asset in #36; it is not embedded in the file containers and is not a C2PA conformance
+    claim. The disclosure is drawn in-frame on visual assets and shown on the page; audio carries it in the manifest only.
+    Encoded video bytes are not asserted identical across builds; the evidence checks decoded frame count, resolution, codec,
+    audio presence and a sampled pixel instead.'
+  recovery: Assets and manifests are content-addressed, so a substituted file or an edited manifest fails verify(); every
+    asset traces to its canon hash and brief hash and can be re-rendered from them; the engine refuses a canon without the
+    required editorial rules before anything is produced.
+  state: COMPLETE
+  evidence_tier: SANDBOX_VERIFIED
+  co_implementations:
+  - module: media
+    lineage: '#158 canon-bound deterministic SVG/PNG/WAV/AVI/HTML production on GREG''s ArtifactStore'
+    existing:
+    - foundry/systems/media.py
+    - greg/artifacts.py
+    - greg/foundry_bridge.py
+    interface: foundry.apply produce; foundry.query inspect (system 35)
+    tests:
+    - tests/unit/test_greg_media.py
+    limitations: Local deterministic graphic compositions and tone cues only. Declared canon source/rights are not independently
+      verified.
+    gap: Deterministic image, tone audio, AVI motion graphics and interactive card production is implemented with immutable
+      provenance. Synthesized narration, cinematic/game generation and broader media-quality integration remain open; no publication
+      or rights verification is claimed.
+    state: PARTIAL
+    evidence: foundry/evidence/system-35-co-media.json
+  open_beyond_boundary: 'From the #158 line: Deterministic image, tone audio, AVI motion graphics and interactive card production
+    is implemented with immutable provenance. Synthesized narration, cinematic/game generation and broader media-quality integration
+    remain open; no publication or rights verification is claimed.'
 36:
   acceptance:
   - Artifacts are addressed by SHA-256 of content; writes are atomic and deduplicated
@@ -964,32 +1077,71 @@
   - tests/unit/test_foundry_systems.py
 49:
   acceptance:
-  - 'Synthetic media company loop: identity, canon, production, distribution, products, community, finance, performance
-    memory, operated end to end in sandbox'
+  - 'Synthetic media company loop: identity, canon, production, distribution, products, community, finance, performance memory,
+    operated end to end in sandbox'
   adopt:
   - existing DALEOBANKS persona and clients
-  existing:
+  evidence: foundry/evidence/system-49.json
+  implementation:
+  - foundry/systems/company_loop.py
   - foundry/company.py
   - foundry/distribution.py
-  - tests/unit/test_foundry.py
-  - DALEOBANKS:services/x_client.py
-  - DALEOBANKS:persona.json
-
-  state: PARTIAL
-  gap: Native charter/canon/media/private portal/offers/signed community/performance/delivery/fixture books now operate in an integrated GREG loop, with receipt-bound independent appraisal. Operational founder ratification, public distribution, real subscription/payment rails, treasury effect execution and live evidence remain unfinished.
-  interface: foundry.apply assemble/ingest/reconcile; foundry.query inspect (system49)
-  implementation:
-  - foundry/systems/media_company.py
-  - foundry/systems/offers.py
-  - foundry/systems/media.py
-  - foundry/systems/portal.py
-  - foundry/systems/community.py
-  - foundry/systems/journeys.py
-  - foundry/systems/accounting.py
-  - greg/console.py
-  limitations: Private synthetic fixture loop; no public activation, operational ratification, money movement or invented users/outcomes.
+  - foundry/territory.py
+  - foundry/systems/media_engine.py
+  - foundry/systems/federation.py
+  - foundry/systems/owned_community.py
+  - foundry/systems/payments.py
+  - foundry/systems/treasury.py
+  - foundry/systems/attribution.py
+  - foundry/systems/rabbit_hole.py
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: CompanyLoop.charter|ratify|check_draft|open_ground|open_rail|publish_node|cycle|next_plan (operator acts on a
+    running company; every publish crosses the Consequence Gate); foundry.query memory|plan (system 49)
   tests:
-  - tests/unit/test_greg_owned_company.py
+  - tests/unit/test_foundry_systems.py
+  limitations: 'Operated end to end in the sandbox only: the fediverse is three loopback #33 instances, the rail is the #38
+    emulator, visitors are scripted journeys through the #50 territory, and the persona is the DALEOBANKS persona file rather
+    than a live DALEOBANKS client (its mastodon client remains a stub; pointing it at the owned instance is the integration
+    left open). Compliance rules are extracted from WMI src/services/influencer_company.py (disclosure, topic bounds, prohibited
+    patterns, escalation, kill criteria) and re-stated here because the organ repositories are not importable from the Kernel.
+    The two territory implementations (foundry/territory.py for publish governance, #50 for routing and journeys) are both
+    used; unifying them is a later metabolism step. No real audience, revenue or founder use.'
+  recovery: Every cycle appends to memory.json and the next plan is read from it; a kill condition pauses publishing and the
+    pause survives in memory; the charter, canon, assets, community export and books all remain exportable after a kill; a
+    cycle that cannot publish a node records the refusal rather than skipping it silently.
+  state: COMPLETE
+  evidence_tier: SANDBOX_VERIFIED
+  co_implementations:
+  - module: media_company
+    lineage: '#158 media-company assembly over offers, media, portal, community and journeys with fixture books'
+    implementation:
+    - foundry/systems/media_company.py
+    - foundry/systems/offers.py
+    - foundry/systems/media.py
+    - foundry/systems/portal.py
+    - foundry/systems/community.py
+    - foundry/systems/journeys.py
+    - foundry/systems/accounting.py
+    - greg/console.py
+    existing:
+    - foundry/company.py
+    - foundry/distribution.py
+    - tests/unit/test_foundry.py
+    - DALEOBANKS:services/x_client.py
+    - DALEOBANKS:persona.json
+    interface: foundry.apply assemble/ingest/reconcile; foundry.query inspect (system49)
+    tests:
+    - tests/unit/test_greg_owned_company.py
+    limitations: Private synthetic fixture loop; no public activation, operational ratification, money movement or invented
+      users/outcomes.
+    gap: Native charter/canon/media/private portal/offers/signed community/performance/delivery/fixture books now operate
+      in an integrated GREG loop, with receipt-bound independent appraisal. Operational founder ratification, public distribution,
+      real subscription/payment rails, treasury effect execution and live evidence remain unfinished.
+    state: PARTIAL
+  open_beyond_boundary: 'From the #158 line: Native charter/canon/media/private portal/offers/signed community/performance/delivery/fixture
+    books now operate in an integrated GREG loop, with receipt-bound independent appraisal. Operational founder ratification,
+    public distribution, real subscription/payment rails, treasury effect execution and live evidence remain unfinished.'
 50:
   acceptance:
   - Territory graph routes a person from curiosity to deeper content and offers based on observed behavior
@@ -1034,12 +1186,36 @@
   - Claude Code
   - Claude Agent SDK
   existing:
-  - .github/pull_request_template.md
   - .github/workflows/canonical-ci.yml
   - tests/unit/test_founder_effect_doctrine.py
-  gap: External coding agents work through branches, PR templates and CI; no internal commissioning of agents against
-    frozen contracts.
-  state: PARTIAL
+  evidence: foundry/evidence/system-51.json
+  implementation:
+  - foundry/systems/commissioning.py
+  - greg/builders.py
+  - greg/genesis.py
+  - foundry/systems/cas.py
+  - .github/pull_request_template.md
+  - foundry/systems/__init__.py
+  - greg/foundry_bridge.py
+  interface: Commission.freeze|run (operator acts on a repository) with pluggable builders (AgentSDKBuilder on the Claude
+    Agent SDK, greg.builders.ClaudeCodeBuilder, StaticFilesBuilder); foundry.query contracts|commissions|proposal (system
+    51)
+  tests:
+  - tests/unit/test_foundry_systems.py
+  limitations: 'The Claude Agent SDK route is adopted and configured (worktree cwd, file tools only, no shell or network,
+    turn and spend caps, acceptEdits) but not executed in the evidence run: it needs the founder''s own authenticated Claude
+    Code, which is never read from the environment; the sandbox builder is a scripted file set. The write cone is a path allow-list
+    and the pre-CI screen is a pattern screen for shell, socket, environment and dynamic-execution primitives, not a sandbox:
+    the CI commands themselves run as ordinary subprocesses with a scrubbed environment and a timeout (the #9/#10 containment
+    question is separate and paused). The exercise commissions against a temporary repository; the engine is repository-agnostic
+    and the same contract shape applies to this one. Merging is never performed by the system.'
+  recovery: A contract is frozen once and never edited; its held-out tests are content-addressed and revealed only at CI time,
+    then removed from the branch so the proposal diff never contains them. Every round is journaled; a refused round resets
+    the worktree; failed commissions keep their branch as evidence; the main checkout is verified untouched after every run.
+  state: COMPLETE
+  evidence_tier: SANDBOX_VERIFIED
+  open_beyond_boundary: 'From the #158 line: External coding agents work through branches, PR templates and CI; no internal
+    commissioning of agents against frozen contracts.'
 52:
   acceptance:
   - A failure yields diagnosis, competing patches, regression test and updated recovery procedure

@@ -887,3 +887,230 @@ def test_contract_rejects_undeclared_or_overclaimed_co_implementations():
     assert any("must be PARTIAL or OUTSTANDING" in p for p in completion.audit(overclaimed, rerun=False))
     bad_tier = {**rows, 25: {**rows[25], "evidence_tier": "PRODUCTION"}}
     assert any("not in the directive vocabulary" in p for p in completion.audit(bad_tier, rerun=False))
+
+
+# -- increment 8 (part): the embassy on a wire -----------------------------------------------------
+
+from foundry.systems import embassy_wire
+
+
+def test_embassy_wire_admits_by_challenge_verifies_before_acceptance_and_exposes_no_interior(tmp_path):
+    result = embassy_wire.exercise(tmp_path)
+    assert result["card_served"] and all(result["card_proof"].values())
+    assert set(result["methods_exposed"]) == set(embassy_wire.METHODS) and len(result["methods_exposed"]) == 7
+    assert result["admitted_ceiling"] == "internal_write" and result["admitted_budget_usd"] == 0.0
+    assert result["negotiation"] == {"countered": "countered", "counter_cents": 500, "then": "accepted"}
+    assert result["accepted"] == {"status": "accepted", "verification": "VERIFIED", "method": "deterministic_invariant"}
+    assert result["receipt_verifies"] and result["sort_accepted"] == "accepted" and result["classify_accepted"] == "accepted"
+    assert result["undecidable"] == {"status": "claimed", "verdict": "UNDECIDABLE"} and result["undecidable_earned_no_verdict"]
+    assert result["rejected"]["status"] == "rejected" and result["rejected"]["suspended"] and result["refuted_task_reopened"]
+    assert result["standing"]["loki@embassy:factor"]["incidents"] == 1 and result["standing"]["atlas@embassy:factor"]["incidents"] == 0
+    assert result["ledger"]["admitted"] == 3 and result["ledger"]["routed_through_gate"] >= 8, "every claim and submission crossed the gate"
+    assert result["books"] == {"equation_holds": True, "payable_to_agents_cents": 950}
+    assert set(result["refusals"]) >= {"interior_path", "foundry_op_over_the_wire", "unsigned_before_admission", "card_not_signed_by_its_key",
+                                       "wrong_audience", "expired_nonce", "replayed_nonce", "replayed_sequence", "forged_request_signature",
+                                       "unknown_method_signed", "claim_already_claimed_task", "submit_unclaimed", "submit_twice",
+                                       "claim_while_suspended"}
+    assert all(result["refusals"].values())
+    # the acceptance checks are invariants, not trust: a plausible-looking wrong factorization is refuted
+    assert embassy_wire.verify_result("factor", {"n": 221}, {"factors": [1, 221]})["verdict"] == "REFUTED"
+    assert embassy_wire.verify_result("factor", {"n": 221}, {"factors": [17, 13]})["verdict"] == "REFUTED", "canonical order is part of the contract"
+    assert embassy_wire.verify_result("sort", {"items": [2, 1]}, {"sorted": [1, 2, 2]})["verdict"] == "REFUTED"
+    with pytest.raises(embassy_wire.RpcError):
+        embassy_wire.verify_result("mine", {}, {})
+    assert embassy_wire.Embassy.verify_receipt("00" * 32, {"task_id": "t", "signature": "00" * 64}) is False
+    tasks = foundry_bridge.query({"system": 29, "op": "tasks", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert tasks["result"]["tasks"] == [], "a fresh workspace has no embassy work posted"
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 29, "op": "post_task", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): commissioning agents in isolated branches -----------------------------------
+
+from foundry.systems import commissioning
+
+
+def test_commissioning_freezes_contracts_isolates_branches_and_proposes_only_green_changes(tmp_path):
+    result = commissioning.exercise(tmp_path)
+    vat = result["vat"]
+    assert vat["status"] == "proposed" and vat["rounds"][0][1] == "red" and vat["rounds"][1][1] == "green"
+    assert vat["rounds"][0][2] == ["tests/held_out/test_vat_rounding.py::test_half_rounds_up",
+                                   "tests/held_out/test_vat_rounding.py::test_negative_rate_refused"], "the public tests passed; the held-out ones decided"
+    assert all(f.startswith("held-out or public test failed: test_") for f in vat["feedback_named_tests_not_bodies"])
+    assert vat["proposal_files"] == ["README.md", "pkg/tax.py", "tests/test_vat.py"] and vat["held_out_not_in_proposal"]
+    assert vat["held_out_matches_contract"] and vat["secret_scrubbed_from_ci"] and vat["body_from_repo_template"] and vat["merged"] is False
+    assert result["cone_breach"]["status"] == "abandoned" and len(result["cone_breach"]["problems"]) == 2
+    assert result["shell"]["problems"] == ["pkg/tax.py: names subprocess"]
+    assert result["nodocs"]["status"] == "abandoned" and result["nodocs"]["tests_green"], "green tests without the required docs is not a proposal"
+    assert result["branches_kept"] == ["commission/cone", "commission/nodocs", "commission/shell", "commission/vat"]
+    assert result["main_untouched"] and result["main_tree_unchanged"]
+    sdk = result["agent_sdk"]
+    assert sdk["configured"] and "Bash" not in sdk["allowed_tools"] and sdk["permission_mode"] == "acceptEdits" and sdk["live_route_run"] is False
+    assert all(result["refusals"].values()) and set(result["refusals"]) == {"refreeze", "contract_without_held_out", "run_unfrozen"}
+    # the screen alone
+    assert commissioning.screen({"../escape.py": ""}, ["x.py"]) and commissioning.screen({"x.py": "import os\nos.environ['A']"}, ["x.py"])
+    assert commissioning.screen({"x.py": "def f():\n    return 1\n"}, ["x.py"]) == []
+    with pytest.raises(commissioning.CommissionError, match="not a git repository"):
+        commissioning.Commission(tmp_path / "e", tmp_path / "not-a-repo")
+    # the SDK builder refuses to run without the CLI rather than pretending
+    builder = commissioning.AgentSDKBuilder(cli_path=None)
+    builder.available = lambda: False
+    with pytest.raises(commissioning.CommissionError, match="cannot run here"):
+        builder.build({"contract": {}, "worktree": str(tmp_path)}, None)
+    listing = foundry_bridge.query({"system": 51, "op": "commissions", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert listing["result"]["commissions"] == []
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 51, "op": "run", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): an owned instance on the fediverse ------------------------------------------
+
+from foundry.systems import federation
+
+
+def test_federation_owns_actors_verifies_signatures_and_moves_accounts_with_followers(tmp_path):
+    result = federation.exercise(tmp_path)
+    assert result["webfinger"] == {"status": 200, "self_link_is_actor": True, "unknown": 404}
+    assert result["follow"] == {"delivered": True, "alpha_followers": 1, "beta_following_confirmed": True}
+    pub = result["publish"]
+    assert pub["delivered_to_reader"] and pub["remote_outbox_items"] == 1 and pub["inbox_verified_signer"]
+    assert pub["dead_inbox_dead_lettered"] and pub["dead_letters"] == 1, "a dead follower is dead-lettered, not dropped"
+    assert result["refusals"] == {"unsigned": 401, "digest_mismatch": 401, "forged_key_claim": 401, "create_from_unfollowed_actor": 403,
+                                  "replayed_after_window": 401, "unfetchable_key": 401}
+    port = result["portability"]
+    assert port["export_verifies"] and port["tampered_export_rejected"] and port["forged_import"].startswith("export bundle signature")
+    assert port["move_without_alias"].startswith("the new actor does not name this one")
+    assert port["new_actor_also_known_as_old"] and port["old_actor_moved_to_new"] and port["move_delivered_to_follower"]
+    assert port["follower_now_follows_new"] and port["new_instance_followers"] == [True] and port["old_instance_lost_follower"]
+    assert port["publish_after_move_refused"] and port["post_from_new_instance_reached_follower"]
+    assert "dead_lettered" in result["alpha_journal_kinds"] and result["private_key_in_export"] is False
+    # the digest and signature helpers stand alone
+    assert federation._digest(b"x") == "SHA-256=" + __import__("base64").b64encode(__import__("hashlib").sha256(b"x").digest()).decode()
+    inst = federation.Instance(tmp_path / "solo", clock=lambda: "2026-10-13T15:00:00Z")
+    ok, why, _ = inst.verify_request("POST", "/users/a/inbox", {}, b"{}")
+    assert not ok and why == "unsigned"
+    ok, why, _ = inst.verify_request("POST", "/users/a/inbox", {"Signature": "garbage"}, b"{}")
+    assert not ok and "malformed" in why
+    actors = foundry_bridge.query({"system": 33, "op": "actors", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert actors["result"]["actors"] == []
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 33, "op": "publish", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): the owned community -----------------------------------------------------------
+
+from foundry.systems import owned_community as community
+
+
+def test_community_holds_identity_history_and_exports_under_signed_rules(tmp_path):
+    result = community.exercise(tmp_path)
+    assert result["members"] == 5 and result["linked_actor_verified"] and result["posts"] == 9 and result["rate_limit_resets"]
+    assert result["reports"] == [1, 2, 3] and result["held_at_third_report"] and result["released_can_post"] and result["tombstone_keeps_hash"]
+    assert result["alice_rated_by_four_helpful_marks"] and result["supporter_tier_from_settled_charge"] and result["feed_served_with_provenance"]
+    assert result["member_export"] == {"verifies": True, "posts": 6, "received": 3, "reports_made": 1}, "exported before the fourth mark"
+    full = result["full_export"]
+    assert full["verifies"] and full["tampered_rejected"] and full["members"] == 4 and full["posts"] == 9 and full["private_keys_absent"]
+    assert result["platform_import"] == {"invitations_added": 2, "invitations_total": 2, "invited_member_claimed": True}
+    assert set(result["refusals"]) >= {"join_twice", "join_forged", "link_actor_without_alias", "rate_limit", "reply_to_unknown", "non_member_post",
+                                       "forged_member_signature", "self_mark", "duplicate_reaction", "post_while_held", "moderate_without_role",
+                                       "moderator_cannot_promote", "react_to_tombstone", "tier_on_declined_charge", "tier_on_claimed_charge"}
+    assert all(result["refusals"].values())
+    # a bad platform export is refused, and a fresh community has only its owner
+    key = Ed25519PrivateKey.from_private_bytes(bytes(32 * [7]))
+    c = community.Community(tmp_path / "fresh", name="x", key_seed=bytes(32 * [8]), owner_public_hex=public_bytes(key.public_key()).hex())
+    with pytest.raises(community.CommunityError, match="Account address"):
+        c.import_followers_csv("name,url\nx,y\n", source="other", now="2026-10-13T15:00:00Z")
+    assert [m["role"] for m in c._state()["members"].values()] == ["owner"]
+    members = foundry_bridge.query({"system": 32, "op": "members", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert members["result"]["members"] == []
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 32, "op": "post", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+# -- increment 8 (part): the media engine -----------------------------------------------------------
+
+from foundry.systems import media_engine as media
+
+
+def test_media_engine_renders_from_canon_with_disclosure_and_signed_provenance(tmp_path):
+    result = media.exercise(tmp_path)
+    assert result["image"]["width"] == 640 and result["image"]["format"] == "PNG" and result["image_bg_is_canon_bg"] and result["image_mark_is_canon_accent"]
+    assert result["audio"] == {"duration_s": 3.0, "sample_rate": 22050, "channels": 1, "peak": 19660}
+    assert result["video"] == {"width": 320, "height": 180, "frames": 36, "has_audio": True, "video_codec": "h264"}, "decoded, not assumed"
+    assert result["video_first_frame_near_canon_bg"]
+    assert result["interactive"] == {"self_contained": True, "has_disclosure": True, "interactive_steps": 3}
+    assert result["every_manifest_discloses"] and result["ingredients_trace_to_canon"] and result["assets_indexed"] == 4
+    assert result["verify_image"] == {"hash_matches": True, "signature_ok": True, "disclosed": True}
+    assert result["verify_substituted_bytes"]["hash_matches"] is False and result["verify_tampered_manifest"]["signature_ok"] is False
+    assert set(result["refusals"]) == {"canon_without_disclosure_rule", "canon_without_palette", "brief_without_title", "brief_omitting_disclosure",
+                                       "unknown_kind", "unknown_note", "odd_video_dimensions"} and all(result["refusals"].values())
+    # the engine's own checks and the bridge
+    engine = media.Engine(tmp_path / "ws" / "foundry" / "system-35" / "engine", key_seed=bytes(32 * [3]), clock=lambda: "t",
+                          canon=media.canon_from_persona(media.demo_persona(), palette={"bg": "#000000", "fg": "#ffffff", "accent": "#ff0000"},
+                                                         mark="X", editorial_rules=list(media.REQUIRED_EDITORIAL_RULES)))
+    png = engine.render_image({"title": "t", "size": (64, 32)})
+    assert engine.inspect("image", png)["bg_pixel"] == [0, 0, 0]
+    produced = engine.produce("interactive", {"title": "t", "lines": ["a"]})
+    verified = foundry_bridge.query({"system": 35, "op": "verify", "args": {"asset": produced["asset"], "manifest": produced["manifest_address"]}},
+                                    _ctx(tmp_path, "foundry.query"))
+    assert verified["result"] == {"hash_matches": True, "signature_ok": True, "disclosed": True}, "GREG can verify an asset through the bridge"
+    assets = foundry_bridge.query({"system": 35, "op": "assets", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert [a["kind"] for a in assets["result"]["assets"]] == ["interactive"]
+    # this engine renders only as an operator act under a ratified canon: it declares no write op, and its
+    # qualified name is refused. The #158 co-implementation's deterministic local "produce" stays reachable
+    # under a foundry.apply grant (the policy split is recorded for the founder in the convergence ADR).
+    assert media.APPLY_OPS == {}
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 35, "op": "media_engine.produce", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+    from foundry import systems as registry
+    assert registry.operations(35, "APPLY_OPS")["produce"] == ("media", "produce")
+
+
+# -- increment 8 (part): the company loop end to end ------------------------------------------------
+
+from foundry.systems import company_loop
+
+
+def test_company_loop_runs_charter_to_kill_with_owned_distribution_products_finance_and_memory(tmp_path):
+    result = company_loop.exercise(tmp_path)
+    assert result["charter_ratified"] and result["followers_on_owned_actor"] == 2
+    w1, w2, w3 = result["cycles"]
+    assert w1["published"] == ["why-proof", "pod-basics", "audit-kit"] and result["weak_node_refused_at_publish"]
+    assert w1["impressions"] == 6 and w1["owned_relationships"] == 3 and w1["useful_actions"] == {"completed_node": 4, "joined_community": 1, "purchased": 2}
+    assert w1["informed_return"] == 1.75 and w1["closure"] == "CLOSED" and w1["revenue_cents"] == 18000 and w1["surplus_usd"] == 165.0
+    assert w1["treasury_policy_version"] == 1 and w1["treasury_reconciled"] and w1["decision"] == "continue"
+    assert w2["closure"] == "FALSELY_CLOSED" and w2["decision"] == "revise" and w2["treasury_policy_version"] is None, "no surplus, no allocation"
+    assert w3["decision"] == "kill" and result["killed"] and result["memory_cycles"] == 3
+    assert result["plan_after_cycle1"]["action"] == "continue" and result["plan_after_cycle1"]["least_attributed_node"] == "disputes"
+    assert result["plan_after_kill"]["action"] == "stopped"
+    assert result["owned_copies_in_outbox"] == 9 and result["reader_inbox_posts"] == 9 and result["every_post_discloses"]
+    assert result["assets_with_provenance"] == 11 and result["community_members"] == 2 and result["community_export_verifies"]
+    assert result["books"] == {"reconciled_to_processor": True, "equation_holds": True, "gross_cents": 18000}
+    assert result["ledger"] == {"foundry.charter_submitted": 1, "foundry.charter_ratified": 1, "foundry.distribution_evaluated": 3}
+    assert set(result["refusals"]) == {"publish_before_ratification", "off_topic_draft", "undisclosed_draft", "prohibited_pattern", "escalation_topic",
+                                       "escalation_topic_even_if_allowed", "cycle_after_kill", "publish_after_kill"} and all(result["refusals"].values())
+    assert company_loop.plan_from_memory({"cycles": [], "kill": None})["action"] == "start"
+    plan = foundry_bridge.query({"system": 49, "op": "plan", "args": {}}, _ctx(tmp_path, "foundry.query"))
+    assert plan["result"]["action"] == "start", "a fresh workspace has no company memory"
+    with pytest.raises(CapabilityError, match="no apply op"):
+        foundry_bridge.apply({"system": 49, "op": "cycle", "args": {}}, _ctx(tmp_path, "foundry.apply"))
+
+
+def test_co_implementation_evidence_is_rederived_and_a_forged_record_fails(tmp_path, monkeypatch):
+    rows = completion.contract()
+    co = rows[35]["co_implementations"][0]
+    assert co["module"] == "media" and co["evidence"] == "foundry/evidence/system-35-co-media.json"
+    assert completion._co_implementation_problems(35, rows[35], "system 35") == []
+    forged = json.loads((completion.ROOT / co["evidence"]).read_text())
+    forged["result_sha256"] = "sha256:" + "0" * 64
+    (tmp_path / "forged.json").write_text(json.dumps(forged))
+    monkeypatch.setattr(completion, "ROOT", tmp_path)
+    (tmp_path / "foundry" / "systems").mkdir(parents=True)
+    for path in co.get("existing", []) + co.get("tests", []) + co.get("implementation", []):
+        if ":" not in path:
+            (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
+            (tmp_path / path).write_text("")
+    row = {**rows[35], "co_implementations": [{**co, "evidence": "forged.json"}]}
+    assert any("does not reproduce" in p for p in completion._co_implementation_problems(35, row, "system 35"))
+    with pytest.raises(KeyError, match="not registered"):
+        completion.run(35, "portal")

@@ -255,3 +255,37 @@ class TestRestart:
     def test_restore_refuses_without_a_ledger(self):
         with pytest.raises(RouterError, match="no ledger"):
             _router(CALC).restore()
+
+
+class TestReviewFindings:
+    def test_composition_respects_the_aggregate_budget(self):
+        calc = ("calc8", ["deterministic_computation"], ["code_correctness"],
+                "read_only", 8.0, "read_only", 8.0)
+        review = ("review8", ["adversarial_review"], ["code_correctness"],
+                  "read_only", 8.0, "read_only", 8.0)
+        router = _router(calc, review)
+        tight = router.route(_problem("code_correctness", budget_usd=10.0))
+        assert not tight.routed and tight.selected == []
+        assert tight.deficit.missing_methods == ["no composition within budget $10.0"]
+        roomy = router.route(_problem("code_correctness", budget_usd=16.0))
+        assert sorted(c.key for c in roomy.selected) == ["calc8@1.0.0", "review8@1.0.0"]
+
+    def test_one_full_mechanism_beats_a_cheaper_partial_plus_another(self):
+        partial = ("partial", ["deterministic_computation"], ["code_correctness"],
+                   "read_only", 0.0, "read_only", 0.0)
+        full = ("full", ["deterministic_computation", "adversarial_review"],
+                ["code_correctness"], "read_only", 1.0, "read_only", 1.0)
+        router = _router(partial, full)
+        decision = router.route(_problem("code_correctness", budget_usd=1.0))
+        assert [c.key for c in decision.selected] == ["full@1.0.0"]
+
+    def test_calibration_is_a_snapshot_not_a_handle(self):
+        router = _router(CALC)
+        decision = router.route(_problem("arithmetic"))
+        router.record_outcome(decision.decision_id, "calc@1.0.0", correct=False,
+                              evidence_ref="audit", verified_by="auditor")
+        snapshot = router.calibration("calc@1.0.0", "arithmetic")
+        with pytest.raises(Exception):
+            snapshot.correct = 1000  # frozen: no silent promotion
+        assert router.calibration("calc@1.0.0", "arithmetic").correct == 0
+        assert router.calibration("calc@1.0.0", "arithmetic").incorrect == 1

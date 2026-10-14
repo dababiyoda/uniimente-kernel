@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from itertools import combinations
 from dataclasses import asdict, dataclass
 from typing import Optional
 
@@ -130,9 +131,11 @@ class Competency:
         return f"{self.genome_name}@{self.genome_version}"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Calibration:
-    """Beta(1,1)-prior track record from independently verified outcomes."""
+    """Beta(1,1)-prior track record from independently verified outcomes.
+    Immutable: callers get a snapshot, and only `record_outcome` (evidence,
+    independent verifier, ledger event) or ledger replay can change it."""
     correct: int = 0
     incorrect: int = 0
 
@@ -274,7 +277,7 @@ class CapabilityRouter:
                 reliability=round(cal.reliability, 4), trials=cal.trials,
                 proven=cal.trials > 0 and cal.reliability >= problem.min_reliability))
 
-        selected, missing = self._compose(spec, eligible, human_needed)
+        selected, missing = self._compose(spec, eligible, human_needed, problem.budget_usd)
         deficit = None
         if missing:
             deficit = CapabilityDeficit(problem_id=problem.problem_id,
@@ -332,34 +335,49 @@ class CapabilityRouter:
         return (not c.proven, CONSEQUENCE_CLASSES.index(c.consequence_class),
                 c.cost_usd, -c.reliability, c.key)
 
-    def _compose(self, spec: dict, eligible: list[Candidate],
-                 human_needed: list[str]) -> tuple[list[Candidate], list[str]]:
+    def _compose(self, spec: dict, eligible: list[Candidate], human_needed: list[str],
+                 budget_usd: float) -> tuple[list[Candidate], list[str]]:
         """Cover one `any_of` method plus every `all_of` method with the
-        fewest, smallest mechanisms. Human-only methods are escalated, not
-        covered."""
+        fewest, smallest mechanisms whose combined cost fits the problem
+        budget. Searched exactly, not greedily, so one mechanism that covers
+        everything beats a cheaper partial one plus another. Human-only
+        methods are escalated, not covered."""
         machine_all = [m for m in spec["all_of"] if m not in HUMAN_ONLY_METHODS]
         machine_any = [m for m in spec["any_of"] if m not in HUMAN_ONLY_METHODS]
         if not machine_any and not machine_all:
             return [], []  # wholly human question: escalation, not a deficit
-        ranked = sorted(eligible, key=self._rank)
-        chosen: list[Candidate] = []
-        missing: list[str] = []
 
-        if machine_any:
-            pick = next((c for c in ranked if set(c.methods) & set(machine_any)), None)
-            if pick is None:
-                missing.append("one of: " + "|".join(machine_any))
-            else:
-                chosen.append(pick)
-        for method in machine_all:
-            if any(method in c.methods for c in chosen):
-                continue
-            pick = next((c for c in ranked if method in c.methods and c not in chosen), None)
-            if pick is None:
-                missing.append(method)
-            else:
-                chosen.append(pick)
-        return chosen, missing
+        def covers(group) -> bool:
+            methods = {m for c in group for m in c.methods}
+            return ((not machine_any or bool(methods & set(machine_any)))
+                    and all(m in methods for m in machine_all))
+
+        # Name what no eligible mechanism can supply at any price.
+        offered = {m for c in eligible for m in c.methods}
+        missing = []
+        if machine_any and not offered & set(machine_any):
+            missing.append("one of: " + "|".join(machine_any))
+        missing += [m for m in machine_all if m not in offered]
+        if missing:
+            return [], missing
+
+        # The cover needs at most one mechanism per required slot.
+        max_size = (1 if machine_any else 0) + len(machine_all)
+        best = None
+        for size in range(1, max_size + 1):
+            for group in combinations(sorted(eligible, key=self._rank), size):
+                total = sum(c.cost_usd for c in group)
+                if total > budget_usd or not covers(group):
+                    continue
+                key = (sum(1 for c in group if not c.proven),
+                       max(CONSEQUENCE_CLASSES.index(c.consequence_class) for c in group),
+                       total, -min(c.reliability for c in group),
+                       tuple(sorted(c.key for c in group)))
+                if best is None or key < best[0]:
+                    best = (key, list(group))
+            if best is not None:
+                return best[1], []  # fewest mechanisms wins before anything else
+        return [], [f"no composition within budget ${budget_usd}"]
 
     # ------------------------------------------------------------ outcomes
     def record_outcome(self, decision_id: str, competency_key: str, *, correct: bool,
@@ -377,11 +395,7 @@ class CapabilityRouter:
         if not verified_by or verified_by == competency_key or \
                 verified_by.split("@", 1)[0] == competency_key.split("@", 1)[0]:
             raise RouterError("outcomes must be verified by someone other than the mechanism")
-        cal = self._calibration.setdefault((competency_key, problem_class), Calibration())
-        if correct:
-            cal.correct += 1
-        else:
-            cal.incorrect += 1
+        cal = self._bump(competency_key, problem_class, bool(correct))
         self._record("capabilities.routing_outcome", {
             "decision_id": decision_id, "competency": competency_key,
             "problem_class": problem_class, "correct": bool(correct),
@@ -410,14 +424,17 @@ class CapabilityRouter:
                 self._decisions[payload["decision_id"]] = (
                     payload["problem_class"], frozenset(payload["selected"]))
             elif kind == "capabilities.routing_outcome":
-                cal = self._calibration.setdefault(
-                    (payload["competency"], payload["problem_class"]), Calibration())
-                if payload["correct"]:
-                    cal.correct += 1
-                else:
-                    cal.incorrect += 1
+                self._bump(payload["competency"], payload["problem_class"],
+                           bool(payload["correct"]))
                 replayed += 1
         return replayed
+
+    def _bump(self, key: str, problem_class: str, correct: bool) -> Calibration:
+        old = self._calibration.get((key, problem_class), Calibration())
+        new = Calibration(old.correct + (1 if correct else 0),
+                          old.incorrect + (0 if correct else 1))
+        self._calibration[(key, problem_class)] = new
+        return new
 
     def _record(self, event_type: str, payload: dict) -> None:
         if self.ledger is not None:

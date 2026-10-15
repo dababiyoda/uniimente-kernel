@@ -223,6 +223,53 @@ def test_the_bound_claims_contract_is_validated_before_any_worker_runs(tmp_path,
         workers.WorkOrder.from_params(params, ctx(tmp_path, "worker.commission"))
 
 
+def test_inputs_are_decoded_as_utf8_whatever_the_bodys_locale(tmp_path, monkeypatch):
+    """Non-ASCII text in GREG's copy of the input is read exactly, so a faithful quote of it is found."""
+    monkeypatch.setitem(workers.PROVIDERS, "scripted", Scripted(files([("Café sales did not fall.",
+                                                                        "Café sales did not fall.")])))
+    params = order(tmp_path)
+    (tmp_path / "source.txt").write_text("Café sales did not fall. Costs rose — by 3%.", encoding="utf-8")
+    workers.commission(params, ctx(tmp_path, "worker.commission"))
+    out = workers.appraise({"order": "depot-note", "bound_claims": CONTRACT}, ctx(tmp_path, "worker.appraise"))
+    assert out["verdict"] == "ACCEPTED", out["findings"]
+
+
+@pytest.mark.parametrize("target", ["post.txt", "inputs"])
+def test_bytes_that_are_not_text_are_a_finding_never_a_crash(tmp_path, monkeypatch, target):
+    worker_files = files(FAITHFUL)
+    monkeypatch.setitem(workers.PROVIDERS, "scripted", Scripted({} if target == "post.txt" else worker_files))
+    params = order(tmp_path)
+    if target == "inputs":
+        (tmp_path / "source.txt").write_bytes(b"\xff\xfe not text")
+    else:
+        class Binary(Scripted):
+            def run(self, order_, cwd):
+                (cwd / "post.txt").write_bytes(b"\xff\xfe")
+                (cwd / "post.claims.json").write_text(worker_files["post.claims.json"])
+                return super().run(order_, cwd)
+        monkeypatch.setitem(workers.PROVIDERS, "scripted", Binary({}))
+    workers.commission(params, ctx(tmp_path, "worker.commission"))
+    out = workers.appraise({"order": "depot-note", "bound_claims": CONTRACT}, ctx(tmp_path, "worker.appraise"))
+    assert out["verdict"] == "REJECTED" and any("not UTF-8 text" in f for f in out["findings"])
+
+
+def test_a_malformed_signed_contract_is_rejected_and_never_used(tmp_path, monkeypatch):
+    monkeypatch.setitem(workers.PROVIDERS, "scripted", Scripted(files(FAITHFUL)))
+    workers.commission(order(tmp_path), ctx(tmp_path, "worker.commission"))
+    out = workers.appraise({"order": "depot-note", "bound_claims": {"claims": "post.claims.json"}},
+                           ctx(tmp_path, "worker.appraise"))
+    assert out["verdict"] == "REJECTED" and "signed acceptance contract" in out["findings"][0]
+
+
+def test_bound_claims_needs_inputs_with_distinct_names(tmp_path):
+    params = order(tmp_path)
+    (tmp_path / "other").mkdir()
+    (tmp_path / "other" / "source.txt").write_text(SOURCE)
+    for inputs in ([], [str(tmp_path / "source.txt"), str(tmp_path / "other" / "source.txt")]):
+        with pytest.raises(workers.WorkerError, match="at least one input, each with its own file name"):
+            workers.WorkOrder.from_params({**params, "inputs": inputs}, ctx(tmp_path, "worker.commission"))
+
+
 # -- on a signed body mission ----------------------------------------------------------------------------------
 
 STUB = {

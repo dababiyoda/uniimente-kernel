@@ -141,11 +141,11 @@ MUTANTS = [
   '            if spec is not None:', '            if False:',
   'test_a_document_that_changes_what_its_input_says_is_rejected_with_the_minds_reason', FABRIC),
  ("the inputs are read from the worker's tree", 'greg/workers.py',
-  'shown = _git(fresh, "show", f"{base}:inputs/{name}", check=False)',
-  'shown = _git(fresh, "show", f":inputs/{name}", check=False)',
+  'shown = _git(fresh, "show", f"{base}:inputs/{name}", check=False, text=False)',
+  'shown = _git(fresh, "show", f":inputs/{name}", check=False, text=False)',
   'test_the_worker_cannot_make_a_distortion_supported_by_editing_its_copy_of_the_input', FABRIC),
  ('the signed contract is not compared with the record', 'greg/workers.py',
-  'if signed is not None and signed != order["acceptance"].get("bound_claims"):', 'if False:',
+  'if signed != order["acceptance"].get("bound_claims"):', 'if False:',
   'test_an_edited_record_rejects_even_a_faithful_document', FABRIC),
  ("the record's contract replaces the signed one", 'greg/workers.py',
   'spec = signed if signed is not None else order["acceptance"].get("bound_claims")',
@@ -163,6 +163,13 @@ MUTANTS = [
  ('the publish request skips the Mind-appraised acceptance', 'greg/templates.py',
   'gates = [c["check_id"] for c in checks]', 'gates = ["draft_verified"]',
   'test_a_worker_drafted_post_that_drops_a_hedge_never_reaches_the_publish_request', FABRIC),
+ ("a worker's non-text bytes crash the commission", 'greg/workers.py',
+  'patch = _git(clone, "diff", "--cached", "--binary", base_commit, text=False).stdout',
+  'patch = _git(clone, "diff", "--cached", "--binary", base_commit).stdout',
+  'test_bytes_that_are_not_text_are_a_finding_never_a_crash', FABRIC),
+ ("GREG's copy of an input is read in another encoding", 'greg/workers.py',
+  'text = shown.stdout.decode("utf-8")', 'text = shown.stdout.decode("latin-1")',
+  'test_inputs_are_decoded_as_utf8_whatever_the_bodys_locale', FABRIC),
 ]
 
 

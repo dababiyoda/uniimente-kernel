@@ -34,7 +34,8 @@
     "The ten-step proof on 9a7776c failed at its organ step: #169's appraiser passes confined= and this branch's alternate organ exchange did not accept it; that exchange also kept the body's network on a confined body (d965bb7)",
     "CI on PR #184 failed #178's one-mission proof on a host without bubblewrap: its verifier's appraisal request lacked the body's worker posture (67cae30; reproduced locally by hiding bubblewrap)",
     "Three earlier ten-step runs used stand-in organs for step 6 because the runner did not set GREG_TEST_DALEOBANKS and GREG_TEST_WMI; the final runs used the real checkouts (evidence README, negative result 3)",
-    "The freight proof-of-delivery Venture Cell has no demand evidence; the organ said 'demand asserted, not shown'"
+    "The freight proof-of-delivery Venture Cell has no demand evidence; the organ said 'demand asserted, not shown'",
+    "An adversarial review of this branch (12 findings confirmed by separate skeptics who reproduced each) found a kill window that retried a non-retry-safe act blind after restart, supervision applied to workers the envelope could confine, a worker-modifiable acceptance script run outside the envelope, the confined organ exchange still on the body's network on the mission path, receipts stating supervision that did not happen, and two goal-ask mismatches (paid scope digest, mcp.act reach). Findings 1 and 5 were fixed by #178's per-attempt question (44f7c35), 6 and 7 by #178's billing carried onto the confined child (8cb4043), the rest in 3ded0a7"
   ],
   "dependencies": [
     "INTENT-20261014-ONE-MACHINE (#178)",
@@ -59,6 +60,9 @@
     "d965bb7 greg/organ_exchange.py organs run with no network on a confined body; verify_delivery(confined=)",
     "c2a50ba merge #169 5244cb9 (mcp.act, npm MCP servers)",
     "67cae30 Body.appraisal_request; scripts/verify_one_machine.py builds the same request (worker posture, confined egress)",
+    "8cb4043 merge #178 44f7c35 (refusal and empty-answer billing on both model paths; per-attempt reconciliation; freeze-v9.json)",
+    "3ded0a7 greg/missions.py unsettled UNCERTAIN resumed after restart, organs.exchange in CONFINED_EGRESS, paid goal-ask digest, mcp.act reach on goal asks; greg/worker_isolation.py envelope_cannot_confine and workspace executables; greg/workers.py positive supervision statement",
+    "cd8046a merge #178 baf630d (Goal Gravity joined with the trunk)",
     "greg/improvement.py",
     "greg/organ_exchange.py",
     "tests/integration/test_one_machine_ten_steps.py",

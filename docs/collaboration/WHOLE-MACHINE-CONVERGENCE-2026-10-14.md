@@ -820,6 +820,26 @@ The probe and a confined body have not yet been observed on the founder's Chrome
 acceptance step. A body made without the installer stays opt-in, and a host without bubblewrap and libseccomp
 cannot confine.
 
+## Increment 14 (2026-10-15): a third founder-runbook defect ported from #168
+
+A second cross-lineage handoff on PR #169 (2026-10-14 22:05, measured at `28c3e9c`) reported one more defect from
+rehearsing the runbook on #168's installed body. I reproduced it here first.
+
+- **The defect.** A person's step never said where the work goes, and an answer hid it.
+  - The HUMAN_WORK ask told the founder to "put the deliverable where the mission's check reads it". The file and
+    folder lived only in `evidence.deliverable_observed_by`, which no surface rendered.
+  - An answer to the ask is only recorded and changes nothing for the mission. Yet `status()`, the morning report
+    and the phone (which reads `status()`) dropped answered asks.
+  - So one Approve left the mission waiting on a file, with no instruction anywhere.
+- **The fix** (`3c92bc9` on #168):
+  - `asks.open_requests` is the one open-ask rule, used by `status()` and the morning report. An answered HUMAN_WORK
+    ask stays open, marked with the answer, until GREG withdraws it on seeing the work or its mission ends.
+  - The classic page and Mission Control (which reuses its decisions block) say which file and which folder GREG
+    reads. They say that an answer was only recorded, and offer no Approve or Reject button on these asks.
+- **Tests.** `test_greg_human_work.py`, the last two tests, adapted to cover Mission Control too:
+  - before the fix, both failed here: neither page named the file, and after an answer the ask left `status()`;
+  - with only `tribunal.py` reverted, the morning-report assertion fails.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

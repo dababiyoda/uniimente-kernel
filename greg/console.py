@@ -36,7 +36,7 @@ import threading
 import time
 from urllib.parse import parse_qs, quote, urlsplit
 
-from greg import metrics, planner
+from greg import asks, metrics, planner
 from greg.body import Layout, morning_projection, observe, send_signed, status
 
 MAX_BODY = 16 * 1024
@@ -247,6 +247,17 @@ def _ask_details(r: dict) -> str:
     if r.get("wording_withheld"):
         parts.append("<br><b>GREG's wording was withheld</b> (" + _e(", ".join(r["wording_withheld"]["rules"]))
                      + "); the facts and options below are unchanged.")
+    places = [p for p in (r.get("evidence") or {}).get("deliverable_observed_by") or []
+              if isinstance((p.get("params") or {}).get("path"), str)]
+    if places:
+        # The only thing that moves a person's step forward: say exactly which file, and where (#168, 3c92bc9).
+        parts.append("<br><b>Where GREG looks:</b><ul>" + "".join(
+            f"<li>save <code>{_e(Path(p['params']['path']).name)}</code> in "
+            f"<code>{_e(str(Path(p['params']['path']).parent))}</code>"
+            + (f": {_e(p['description'])}" if p.get("description") else "") + "</li>" for p in places) + "</ul>")
+    if r.get("answered") is not None:
+        parts.append(f"<br><b>You answered {_e(r['answered'])}; that is only recorded.</b> "
+                     "The mission still waits for the file above.")
     if r.get("answer_effect"):
         parts.append("<br><b>What your answer does:</b> " + _e(r["answer_effect"]))
     if r.get("expected_effect"):
@@ -408,7 +419,11 @@ def home_parts(console: Console) -> dict:
             approve = "" if _attachable(r) else _form(console, "/decide", {"request_id": r["request_id"],
                                                                            "answer": "approve"}, "Approve",
                                                       disabled=not can) + " "
-            actions = (approve +
+            if r["kind"] in asks.OPEN_UNTIL_OBSERVED:
+                # Answering changes nothing for the mission; only the file does. No button to mistake for it.
+                actions = "<span class=muted>Nothing to click: save the file, and GREG notices it.</span>"
+            else:
+                actions = (approve +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reject"}, "Reject",
                              cls="secondary", disabled=not can)) if r["kind"] != "RECONCILIATION" else (
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_executed"},

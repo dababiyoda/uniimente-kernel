@@ -306,11 +306,47 @@ ANSWER_ONLY_RECORDS = {
 }
 
 
+# An answer to these is only recorded and the mission keeps waiting until GREG observes the work, so
+# the ask (and where the work goes) stays on every surface until it is withdrawn. Closing it on an
+# answer left the founder, or a phone tap, with a blocked mission and no instruction (ported from #168, 3c92bc9).
+OPEN_UNTIL_OBSERVED = ("HUMAN_WORK",)
+
+
+def open_requests(events) -> list[dict]:
+    """Asks still waiting on the founder, in request order, from decision.* and mission events.
+
+    An answer or a withdrawal closes an ask, except that an answered ask in OPEN_UNTIL_OBSERVED stays
+    open, marked with the recorded answer, until it is withdrawn or its mission has ended.
+    """
+    requested, answers, withdrawn, ended = [], {}, set(), set()
+    for e in events:
+        kind, p = e.type[len("greg."):], e.payload
+        if kind == "decision.requested":
+            requested.append(p)
+        elif kind == "decision.answered":
+            answers[p["request_id"]] = p.get("answer")
+        elif kind == "decision.withdrawn":
+            withdrawn.add(p["request_id"])
+        elif kind == "mission.achieved" or (kind == "mission.lifecycle"
+                                            and p.get("state") in ("ABANDONED", "SUPERSEDED")):
+            ended.add(p.get("mission_id"))
+    still_open = []
+    for r in requested:
+        if r["request_id"] in withdrawn:
+            continue
+        if r["request_id"] in answers:
+            if r.get("kind") not in OPEN_UNTIL_OBSERVED or r.get("mission_id") in ended:
+                continue
+            r = {**r, "answered": answers[r["request_id"]]}
+        still_open.append(r)
+    return still_open
+
+
 def surface(request: dict) -> dict:
     """The fields every founder surface (console, phone, status, morning report) shows."""
     keys = ("request_id", "kind", "mission_id", "resource", "why_now", "recommendation", "expected_effect",
             "options", "alternatives", "uncertainty", "authority_requested", "evidence",
-            "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld")
+            "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld", "answered")
     shown = {k: request[k] for k in keys if k in request}
     if request.get("kind") in ANSWER_ONLY_RECORDS:
         shown["answer_effect"] = ANSWER_ONLY_RECORDS[request["kind"]]

@@ -11,17 +11,17 @@ SR-002 founder-ratified continuity artifact (authorized digest `1c189be5…`).
 
 ## Part 1 — landed on PR #173 (no gate change)
 
-These eleven commits were cherry-picked with `-x`, so their lineage is retained. On the resulting tree
+These eleven commits were cherry-picked with `-x`, so their lineage is retained. Hashes here are the commits as they stand on PR #173 (Part 1) and PR #182 (Part 2). Each commit's `(cherry picked from commit …)` line names its original on the local security line, which was never pushed. On the resulting tree
 `python -m governance.integrity --check` exits **0**: 13 protected artifacts, all as authorized, and no
 founder key enrolled.
 
 | Port | Commits | Effect | Regression |
 | --- | --- | --- | --- |
-| #26 egress | `c47600e`, `0c4849b`, `417c406` | `greg/egress.py` is the one opener. Every redirect hop is re-checked: https only, an exact allowlist host, at most 3 hops. Credentials stay on the origin. A request with a body is never re-sent. `Location` is repaired as urllib repairs it. The OCI registry client is routed through the opener. | `tests/unit/test_greg_egress.py` plus the egress cases in the briefs, anchor and capabilities suites; on `4b0de6a` the GitHub token reached a redirect host |
-| #87 autonomy | `1ad75be`, `d57f58d` | `issue()` above A0 needs a named human authorizer. UNIIMENTE, the subject itself, look-alike spellings and workload URIs are refused. Levels are ints from A0 to A8. The ledger is written first. Copies are handed out. | `tests/unit/test_autonomy.py`: on `4b0de6a`, A8 was minted with no authorizer |
-| #13 data plane | `e9a3062`, `eb044cf` | Injection is matched on every reading of the text: what a person sees and what a model may read. `identity/text.py` derives the invisible set from Unicode properties. Only instruction patterns are quarantined, or concealment together with a role marker; anything else is flagged. | `tests/unit/test_greg_dataplane_invisible.py`: on `4b0de6a`, three evasions produced 0 flags |
-| Option A, historical half | `703f328` | `evolution/repair/continuity/` holds byte-identical, content-addressed copies of the twelve continuity artifacts per subject. SR-001, SR-002 and Package 3 read history; the live twelve must stay unchanged across a run. | `tests/unit/test_repair_continuity_history.py`: a tampered or missing copy refuses |
-| Option A, live half | `891ec58`, `9a834ba`, `2d5572c` | `governance/integrity`: a live check over the SR-002 baseline. A change counts as authorized only by an `INTEGRITY_AUTHORIZE` envelope signed by an enrolled founder Ed25519 key. `founder-keys.json` is committed empty (Alfonso enrolls himself by his own commit). Committed records only grow. CI job 3 runs the check with `fetch-depth: 0`. | `tests/unit/test_governance_integrity.py` |
+| #26 egress | `5413e2b`, `0f0d548`, `69ae77f` | `greg/egress.py` is the one opener. Every redirect hop is re-checked: https only, an exact allowlist host, at most 3 hops. Credentials stay on the origin. A request with a body is never re-sent. `Location` is repaired as urllib repairs it. The OCI registry client is routed through the opener. | `tests/unit/test_greg_egress.py` plus the egress cases in the briefs, anchor and capabilities suites; on `4b0de6a` the GitHub token reached a redirect host |
+| #87 autonomy | `0d35a9b`, `aa6d08e` | `issue()` above A0 needs a named human authorizer. UNIIMENTE, the subject itself, look-alike spellings and workload URIs are refused. Levels are ints from A0 to A8. The ledger is written first. Copies are handed out. | `tests/unit/test_autonomy.py`: on `4b0de6a`, A8 was minted with no authorizer |
+| #13 data plane | `7daef2b`, `67aec70` | Injection is matched on every reading of the text: what a person sees and what a model may read. `identity/text.py` derives the invisible set from Unicode properties. Only instruction patterns are quarantined, or concealment together with a role marker; anything else is flagged. | `tests/unit/test_greg_dataplane_invisible.py`: on `4b0de6a`, three evasions produced 0 flags |
+| Option A, historical half | `3af77fc` | `evolution/repair/continuity/` holds byte-identical, content-addressed copies of the twelve continuity artifacts per subject. SR-001, SR-002 and Package 3 read history; the live twelve must stay unchanged across a run. | `tests/unit/test_repair_continuity_history.py`: a tampered or missing copy refuses |
+| Option A, live half | `a0b8c16`, `f381d4a`, `a4f13a2` | `governance/integrity`: a live check over the SR-002 baseline. A change counts as authorized only by an `INTEGRITY_AUTHORIZE` envelope signed by an enrolled founder Ed25519 key. `founder-keys.json` is committed empty (Alfonso enrolls himself by his own commit). Committed records only grow. CI job 3 runs the check with `fetch-depth: 0`. | `tests/unit/test_governance_integrity.py` |
 
 Known trade-offs, carried with the ports:
 
@@ -32,17 +32,17 @@ Known trade-offs, carried with the ports:
 - `federation.py` and `embassy_wire.py` keep `urlopen`. They are loopback test-harness clients with no
   bearer credential.
 
-## Part 2 — the gate hardening: separate draft PR, pending Alfonso's signature
+## Part 2 — the gate hardening: draft PR #182, pending Alfonso's signature
 
 These eight commits change `policy/consequence_gate.py` (hardened digest `732607ba97130fc9…`), or are
 inseparable from commits that do:
 
 | Port | Commits | Effect |
 | --- | --- | --- |
-| #55 CASE 27 | `fb270ea`, `3a68f91` | At commit, only ALLOW passes (REQUIRE_HUMAN passes only with this run's approval covering every reason). Authority fields are bound in the grant. The Gate executes its frozen admission copy, never the caller's mutable object. |
-| #21 evidence | `7bd304a`, `7e4bac4` | An optional evidence register refuses unknown, invalid or stale evidence at evaluation and at commit. It is **unarmed on every canonical path today**, and the decision record says so (an AST-checked test holds the record to the code). |
-| #12 grants | `c692ba9`, `05d2866`, `e255458` | A child grant is a strict subset of a live lineage. The issuer keeps sealed records. Spending is delegated, not copied. Revocation propagates. |
-| record | `8fc2dcf` | `docs/decisions/SR002-GATE-HARDENING-01.json`: the historical tripwire is retired per Option A, and the live check carries the founder decision. |
+| #55 CASE 27 | `422d131`, `60eceb7` | At commit, only ALLOW passes (REQUIRE_HUMAN passes only with this run's approval covering every reason). Authority fields are bound in the grant. The Gate executes its frozen admission copy, never the caller's mutable object. |
+| #21 evidence | `f1c6c8d`, `848c805` | An optional evidence register refuses unknown, invalid or stale evidence at evaluation and at commit. It is **unarmed on every canonical path today**, and the decision record says so (an AST-checked test holds the record to the code). |
+| #12 grants | `7f13f40`, `2048f7a`, `2906228` | A child grant is a strict subset of a live lineage. The issuer keeps sealed records. Spending is delegated, not copied. Revocation propagates. |
+| record | `2f6a5b5` | `docs/decisions/SR002-GATE-HARDENING-01.json`: the historical tripwire is retired per Option A, and the live check carries the founder decision. |
 
 On that branch the live check exits **1** and names only `policy/consequence_gate.py`
 (authorized `1c189be5…`, observed `732607ba…`). That is correct behaviour: the hardening is not authorized

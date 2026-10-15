@@ -1879,7 +1879,7 @@
      "state": "OPEN",
      "buildable_now": false,
      "dependency": "founder",
-     "next": "Alfonso enrolls his key and signs INTEGRITY_AUTHORIZE for the hardened digest (steps in docs/collaboration/SECURITY-PORTS-2026-10-15.md), or rejects it."
+     "next": "Alfonso enrolls his key and signs INTEGRITY_AUTHORIZE for the hardened digest on draft PR #182 (steps in docs/collaboration/SECURITY-PORTS-2026-10-15.md), or rejects it by closing #182."
     },
     {
      "id": "G2",

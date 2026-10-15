@@ -106,10 +106,10 @@
    "recovery": "Executor exceptions fail closed with evidence retained; an unknown completion is reconciled, never retried blindly.",
    "resources": "Per-commit whole-chain verification before the witness.",
    "next_work": [
-    "Land the gate hardening once Alfonso signs INTEGRITY_AUTHORIZE"
+    "Land the gate hardening (draft PR #182) once Alfonso signs INTEGRITY_AUTHORIZE"
    ],
    "blocking": [
-    "Founder signature for the hardened gate digest (docs/collaboration/SECURITY-PORTS-2026-10-15.md)"
+    "Founder signature for the hardened gate digest (draft PR #182; docs/collaboration/SECURITY-PORTS-2026-10-15.md)"
    ]
   },
   {

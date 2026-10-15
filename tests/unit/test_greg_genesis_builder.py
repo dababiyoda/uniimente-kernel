@@ -444,3 +444,38 @@ def test_a_build_and_the_paid_act_it_enables_are_admitted_against_one_cone(tmp_p
         assert "APPROVAL" in [e.payload["kind"] for e in body.journal.replay("decision.requested")]
     finally:
         body.close()
+
+
+def test_a_paid_candidate_that_used_the_whole_budget_is_still_judged_after_an_outage(tmp_path, monkeypatch):
+    """Fix verification (regressions): the budget gates ran before pending candidates were judged, so a
+    candidate whose own bill used up the budget was never judged after an outage."""
+    from greg.capabilities import CapabilityError
+
+    class WholeBudget(builders.StaticBuilder):
+        max_budget_usd = 1.0
+
+        def build(self, request, feedback=None):
+            return {**super().build(request, feedback), "cost_usd": self.max_budget_usd}
+
+    home, key, body_id, data = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", _mission(data)))
+    builder = WholeBudget(GOOD, GOOD, identity="paid")
+    real, calls = builders.verify, []
+
+    def outage_once(path, vectors):
+        calls.append(path)
+        if len(calls) == 1:
+            raise CapabilityError("the isolated verifier did not finish within 10s", failure_class="transient")
+        return real(path, vectors)
+
+    monkeypatch.setattr(builders, "verify", outage_once)
+    body, states = _run(home, builder, ticks=1)
+    try:
+        clock = body.clock
+        for _ in range(6):
+            clock.advance(600)
+            states.append(body.tick()["missions"][0]["state"])
+        assert "ACHIEVED" in states and len(builder.calls) == 1
+        assert [e.payload["passed"] for e in body.journal.replay("genesis.verified")] == [True]
+    finally:
+        body.close()

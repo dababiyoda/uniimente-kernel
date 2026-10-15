@@ -1111,19 +1111,23 @@ class MissionEngine:
             mission=m, function=function, purpose=purpose, now=now), purpose=purpose, attempt=b.get("attempt", 0))
         if deferred:
             return {"state": "BLOCKED", "blocker": m.blocker}
+        rid = b.get("request_id")
+        if rid and rid not in self.book.answers and rid not in self.book.withdrawn:
+            # The founder was told the host kept failing; the search ran on a working host now, so that ask
+            # is moot: the capability is formed, or a real escalation with current evidence replaces it.
+            self.journal.record("decision.withdrawn", {
+                "request_id": rid, "mission_id": m.mission_id, "at": iso(now),
+                "why": f"the host recovered and the search for {function} ran: " + (
+                    f"formed {formed.capability_id}" if formed is not None else "nothing qualified; asked anew"),
+                "evidence": {"capability_id": getattr(formed, "capability_id", None)}}, key=[rid, "withdrawn"])
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
         if formed is None:
             waiting = [c.capability_id for c in self.registry.by_function(function)
                        if self.registry.state[c.capability_id] == "VERIFIED"]
             self._escalate_capability(m, function, waiting[-1] if waiting else None, purpose, now,
                                       awaiting=bool(waiting))
             return {"state": "BLOCKED", "blocker": m.blocker}
-        rid = b.get("request_id")
-        if rid and rid not in self.book.answers and rid not in self.book.withdrawn:
-            # The founder was told the host kept failing; the capability is formed now, so that ask is moot.
-            self.journal.record("decision.withdrawn", {
-                "request_id": rid, "mission_id": m.mission_id, "at": iso(now),
-                "why": f"{function} was formed once the host recovered: {formed.capability_id}",
-                "evidence": {"capability_id": formed.capability_id}}, key=[rid, "withdrawn"])
         return {"state": "FORMED", "function": function, "capability": formed.capability_id}
 
     def _capability_request(self, m: MissionState, function: str, purpose: str, now: datetime,

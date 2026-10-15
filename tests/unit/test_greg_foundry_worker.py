@@ -161,7 +161,7 @@ def test_store_edited_outside_foundry_apply_is_neither_served_nor_laundered(tmp_
     assert foundry_bridge.query(get, query_ctx)["result"]["text"] == "retained"
     (tmp_path / "ws" / "foundry" / "system-36" / "forged.txt").write_text("edited outside the Gate")
     for call, ctx in ((foundry_bridge.query, query_ctx), (foundry_bridge.apply, apply_ctx)):
-        with pytest.raises(CapabilityError, match="differs from this mission's last canonical foundry.apply") as exc:
+        with pytest.raises(CapabilityError, match="is not a state this mission's canonical foundry.apply") as exc:
             call(get if call is foundry_bridge.query else {"system": 36, "op": "put", "args": {"text": "x"}}, ctx)
         assert exc.value.failure_class == "verifier_insufficient"     # unbound evidence, not a capability fault
     assert foundry_bridge.query(get, context(tmp_path, "foundry.query"))["result"]["text"] == "retained"  # standalone

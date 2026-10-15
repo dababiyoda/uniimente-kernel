@@ -4,7 +4,7 @@ A founder reconciliation of an interrupted foundry.apply as executed anchors the
 fact; compensation receipts are canonical facts too. The founder key is a per-test key, not Alfonso's.
 """
 from greg.body import Body
-from tests.greg_fixtures import Clock, drop, make_body, mission, signed
+from tests.greg_fixtures import Clock, drop, make_body, mission, signed, workspace
 from tests.integration.test_greg_compensation import abandon, facts, tick
 from tests.unit.test_greg_reconciliation import reconcile
 
@@ -22,9 +22,7 @@ def put(aid, text, advances, compensate=None):
             **({"compensate": compensate} if compensate else {})}
 
 
-def test_an_interrupted_apply_reconciled_as_executed_anchors_the_store_and_the_mission_closes(tmp_path):
-    """Every later foundry call was refused forever: a receipt-less reconciliation left the expected state
-    unknown. The first later call now anchors the store under the founder's reconciliation."""
+def _interrupted(tmp_path, *, edit_while_deliberating=False):
     home, key, body_id, _ = make_body(tmp_path)
     drop(home, signed(key, body_id, "MISSION", mission(
         "m:foundry", checks=[check("stored", 1)], strategies=[put("put", "retained", ["stored"])],
@@ -41,13 +39,29 @@ def test_an_interrupted_apply_reconciled_as_executed_anchors_the_store_and_the_m
             return out
         body.registry.adapters["foundry.apply"] = adapter
         tick(body, clock, 3)
+        if edit_while_deliberating:      # a same-UID writer adds an object while the founder decides
+            store = next((workspace(home, "m:foundry") / "foundry").glob("system-*"))
+            (store / "planted").write_text("never produced by a receipt")
         reconcile(body, key, body_id, clock, "reconcile_executed", after=3)
         for _ in range(4):
             body.tick()
             clock.advance(900)
-        assert body.engine.book.missions["m:foundry"].status == "ACHIEVED"
-        [anchor] = [e.payload for e in body.journal.replay("foundry.anchored")]
-        assert anchor["mission_id"] == "m:foundry" and anchor["state"].startswith("sha256:")
+        return body.engine.book.missions["m:foundry"], [e.payload for e in body.journal.replay("foundry.committing")], \
+            [e.payload for e in body.journal.replay("mission.observed")]
+
+
+def test_an_interrupted_apply_reconciled_as_executed_admits_its_write_ahead_state_and_the_mission_closes(tmp_path):
+    """Every later foundry call was refused forever: a receipt-less reconciliation left the expected state
+    unknown. The apply now records the digest it is about to publish; the reconciliation admits exactly it."""
+    m, committing, _ = _interrupted(tmp_path)
+    assert m.status == "ACHIEVED" and committing[0]["after"].startswith("sha256:")
+
+
+def test_an_edit_made_while_the_founder_deliberates_is_never_admitted(tmp_path):
+    """Fix verification (regressions): anchoring at the first later call accepted any edit made between the
+    interrupted commit and the founder's answer. Only the write-ahead digest is admitted now."""
+    m, _, observed = _interrupted(tmp_path, edit_while_deliberating=True)
+    assert m.status != "ACHIEVED" and "is not a state this mission's canonical" in observed[-1]["detail"]
 
 
 def test_every_signed_foundry_compensation_runs_on_the_state_the_previous_one_left(tmp_path):

@@ -522,3 +522,30 @@ def test_a_persistent_outage_backs_off_to_a_day_and_recovery_resumes_when_the_ho
             clock.advance(24 * 3600)
             ticks(body, clock, 1)
         assert [p["passed"] for p in probes(body)] == [True]
+
+
+def test_when_the_host_recovers_but_nothing_qualifies_the_outage_ask_gives_way_to_a_real_one(tmp_path, monkeypatch):
+    """Fix verification (regressions): the ask raised after five outages shared its identity with the real
+    escalation, so an answered outage ask silenced it. It now has its own identity and is withdrawn when the
+    search runs on a working host; the real escalation is a fresh, open ask."""
+    import subprocess
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", network_in_words(text=FLOW, auto_attach=True)))
+    clock = Clock()
+
+    def down(argv, **kw):
+        raise subprocess.TimeoutExpired(argv, kw.get("timeout", 1))
+
+    real = mechanisms.run_isolated
+    monkeypatch.setattr(mechanisms, "run_isolated", down)
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 70)
+        [outage_ask] = [r for r in body.engine.book.open_requests() if r["kind"] == "CAPABILITY_ATTACH"]
+        monkeypatch.setattr(mechanisms, "run_isolated", real)
+        monkeypatch.setitem(network.RUNNERS, "networkx.max_flow", lie("networkx.max_flow"))   # nothing qualifies
+        monkeypatch.setitem(network.RUNNERS, "scipy.max_flow", lie("scipy.max_flow"))
+        ticks(body, clock, 4, step=1800)
+        assert outage_ask["request_id"] in body.engine.book.withdrawn
+        [real_ask] = [r for r in body.engine.book.open_requests() if r["kind"] == "CAPABILITY_ATTACH"]
+        assert real_ask["request_id"] != outage_ask["request_id"] and "host failed" not in real_ask["why_now"]

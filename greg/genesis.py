@@ -1029,7 +1029,10 @@ class Genesis:
         # Spend is every billed attempt: built candidates and attempts that produced none (genesis.unbuilt).
         spent = sum(e.payload.get("cost_usd") or 0.0 for kind in ("genesis.built", "genesis.unbuilt")
                     for e in self.journal.replay(kind) if e.payload["deficit_id"] in generations | {deficit_id})
-        if contract["build_budget_usd"] <= 0 or spent >= contract["build_budget_usd"]:
+        # A paid candidate an outage left unjudged is judged first and never paid for again; judging costs
+        # nothing, so it is judged even when its own bill used up the budget.
+        pending = self._unjudged_builds(deficit_id)
+        if not pending and (contract["build_budget_usd"] <= 0 or spent >= contract["build_budget_usd"]):
             self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
             self._route(deficit_id, "founder", "escalated", None)
             return None
@@ -1037,7 +1040,7 @@ class Genesis:
         # than the cone has left (MissionBook books every build on it).
         cone_left = mission.cone.budget_usd - getattr(mission, "spent_usd", 0.0)
         spent_at_entry = spent
-        if cone_left <= 0:
+        if not pending and cone_left <= 0:
             self._route(deficit_id, "builder", "the mission's light cone has no budget left for a build", None)
             self._route(deficit_id, "founder", "escalated", None)
             return None
@@ -1048,8 +1051,6 @@ class Genesis:
                      "it must handle arbitrary real input without raising"] if repair else None)
         replay = self._replay_text(repair)
         self.store.mkdir(parents=True, exist_ok=True)
-        # A paid candidate an outage left unjudged is judged first, never paid for again.
-        pending = self._unjudged_builds(deficit_id)
         try:
             builders.isolation_ready()          # an outage defers here, before any paid attempt
         except CapabilityError as exc:
@@ -1124,8 +1125,9 @@ class Genesis:
                 try:
                     replayed = builders.execute(path, [replay])[0]
                 except subprocess.TimeoutExpired as exc:
-                    raise CapabilityError(f"the service replay did not finish within {exc.timeout}s",
-                                          failure_class="transient") from None
+                    builders.isolation_ready()       # raises (no verdict) only when the host cannot run either
+                    replayed = {"ok": False, "error": f"did not finish within {exc.timeout}s on the live input "
+                                                      "while the host was healthy"}
                 except CapabilityError as exc:
                     if exc.failure_class == "transient":
                         raise

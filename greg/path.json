@@ -1300,7 +1300,7 @@
           "id": "P8",
           "title": "Evolutionary cognition",
           "maps_to": "N4",
-          "status": "IMPLEMENTED, TESTED; exit not met: three frozen cycles under a sealed evaluator, three REJECTs: cycle 1 (forecasting, 2026-10-08) REJECT at the held-out gate (overfit caught), cycle 2 (negative-selection detector, 2026-10-09) REJECT at the scarce-sample stress gate, cycle 3 (constraint-release search policy, 2026-10-14) REJECT at the stress gate; protected evolution has never kept an improvement; a HORIZON placeholder here until the founder's 2026-10-07 directive activated it in polyintelligence_cortex, its current record",
+          "status": "IMPLEMENTED, TESTED; exit not met: four frozen cycles under a sealed evaluator, four REJECTs: cycle 1 (forecasting, 2026-10-08) REJECT at the held-out gate (overfit caught), cycle 2 (negative-selection detector, 2026-10-09) REJECT at the scarce-sample stress gate, cycle 3 (constraint-release search policy, 2026-10-14) REJECT at the stress gate, cycle 4 (constraint-release search policy on a fresh split, 2026-10-15) REJECT at the held-out gate (overfit caught); protected evolution has never kept an improvement; a HORIZON placeholder here until the founder's 2026-10-07 directive activated it in polyintelligence_cortex, its current record",
           "current_record": {
             "workstream": "polyintelligence_cortex",
             "node": "P8"
@@ -1318,7 +1318,9 @@
             "docs/evidence/greg-protected-evolution/2026-10-09/README.md",
             "docs/evidence/greg-protected-evolution/2026-10-09/cycle-immune-2.json",
             "docs/evidence/greg-protected-evolution/2026-10-14/README.md",
-            "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.json"
+            "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.json",
+            "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/cycle-cr-4.json"
           ]
         },
         {
@@ -1602,16 +1604,17 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "a separately pre-registered cycle on a target with measured headroom, under the unchanged frozen rule and stress tolerance (never a re-run of cycle 3 with a relaxed tolerance)",
+          "smallest_next_experiment": "a separately pre-registered cycle whose closed space can reach the measured headroom (cycle 4 showed random restart beating every configuration it searched), on a fresh split under the unchanged frozen rule and stress tolerance; never a re-run with a relaxed tolerance",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:578",
-          "reality": "protected evolutionary cognition IMPLEMENTED, TESTED: closed configuration space, Landlock-confined candidates, sealed evaluator (a digest of the evaluator class, the score function, the rule, outcomes and inputs; until 2026-10-15 never compared with a pre-registered value, and the candidate method's code was outside it; since then a cycle that writes a record must match a committed freeze of every trusted file, the rule, the settings, the split and both seals, re-checked before each evaluation, and the parent checks the method module each sandbox imported), protected-term guard, held-out sign test, canary and rollback; three frozen cycles, three REJECTs, each at a different gate: cycle 1 (forecasting, 2026-10-08) REJECT at the held-out gate: train -5.2% but held-out 42 wins / 59 losses (p=0.96), overfit caught, the forecasting held-out split is spent; cycle 2 (negative-selection detector, 2026-10-09) REJECT at the scarce-sample stress gate (a false-alarm violation on 80 self samples), held-out set unspent; cycle 3 (constraint-release search policy, 2026-10-14) REJECT at the stress gate: train loss 20% lower but 6.3% worse with validation cut to four cases (frozen tolerance 5%), held-out set unspent; protected evolution has never kept an improvement",
+          "reality": "protected evolutionary cognition IMPLEMENTED, TESTED: closed configuration space, Landlock-confined candidates, sealed evaluator (a digest of the evaluator class, the score function, the rule, outcomes and inputs; until 2026-10-15 never compared with a pre-registered value, and the candidate method's code was outside it; since then a cycle that writes a record must match a committed freeze of every trusted file, the rule, the settings, the split and both seals, re-checked before each evaluation, and the parent checks the method module each sandbox imported), protected-term guard, held-out sign test, canary and rollback; four frozen cycles, four REJECTs: cycle 1 (forecasting, 2026-10-08) REJECT at the held-out gate: train -5.2% but held-out 42 wins / 59 losses (p=0.96), overfit caught, the forecasting held-out split is spent; cycle 2 (negative-selection detector, 2026-10-09) REJECT at the scarce-sample stress gate (a false-alarm violation on 80 self samples), held-out set unspent; cycle 3 (constraint-release search policy, 2026-10-14) REJECT at the stress gate: train loss 20% lower but 6.3% worse with validation cut to four cases (frozen tolerance 5%), held-out set unspent; cycle 4 (constraint-release search policy on a fresh split, 2026-10-15, the first under a committed freeze) REJECT at the held-out gate: train loss 23.7% lower and both stress sets better, but held-out 26 wins / 37 losses (p=0.94, mean loss 46% worse), overfit caught; random restart beat both configurations there; protected evolution has never kept an improvement",
           "exit_met": false,
           "implementation_refs": [
             "greg/cognition/evolution.py",
             "greg/cognition/evolution_sandbox.py",
             "docs/evidence/greg-protected-evolution/2026-10-08/README.md",
             "docs/evidence/greg-protected-evolution/2026-10-09/README.md",
-            "docs/evidence/greg-protected-evolution/2026-10-14/README.md"
+            "docs/evidence/greg-protected-evolution/2026-10-14/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/README.md"
           ],
           "activation_note": "activated by the founder's 2026-10-07 directive (section 32 step 5); proposals stay PROPOSED_NOT_APPLIED"
         },
@@ -2131,7 +2134,7 @@
         "cognition.evolutionary"
       ],
       "missing_capabilities": [
-        "a P8 cycle that keeps an improvement (cycles 1-3 were rejected under the sealed evaluator)",
+        "a P8 cycle that keeps an improvement (cycles 1-4 were rejected under the sealed evaluator)",
         "P9 constraint-release discovery (deferred)",
         "generation beyond a closed configuration space",
         "sustained novelty without evaluator capture or runaway resource use"

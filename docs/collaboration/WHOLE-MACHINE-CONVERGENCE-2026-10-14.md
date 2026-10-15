@@ -1507,6 +1507,85 @@ that was also wrongly signed.
 - **Negative evidence kept:** none of the namespace-dependent `mcp.act`, `mcp.call` or remote tests run in CI; their
   evidence is local only. CI checks the refusals, the planner, discovery and the CLI.
 
+## Increment 23 (2026-10-15): the founder logs GREG in to a hosted MCP server (OAuth), and approved calls keep it alive
+
+Most hosted MCP servers accept only OAuth, not a pasted token. Now the founder logs GREG in once, and approved calls
+use, and when needed renew, that login.
+
+- **`greg mcp login <name> <url>`** (`greg/mcp_login.py`), run by the founder in a terminal like `greg secret set`.
+  - **The SDK runs the flow.** GREG prints the authorization link; the founder signs in at the service and approves;
+    the service redirects to a one-shot page on `127.0.0.1` that the command serves. Metadata discovery, dynamic
+    client registration, PKCE and the code exchange are the official MCP SDK's `OAuthClientProvider`. GREG adds
+    only broker-backed storage, the loopback page, and a record of the token endpoint.
+  - **The tokens go to the body's secret broker under `mcp:<name>`.** Only the server, the token endpoint's host,
+    the scope and the expiry are ever shown.
+  - **Refused, with one line and nothing stored:** a name that is not a lowercase handle, a URL that is not https,
+    and a token endpoint that is not https on 443.
+- **Using the login is still a decision.** An `mcp.act` naming the handle as `bearer` waits for the founder's
+  approval like any remote call (increment 22).
+- **An expired login renews once, inside the approved call.** GREG's confined client sends one standard refresh
+  (RFC 6749 section 6, with the RFC 8707 resource) to the endpoint recorded at login, through the same door. The
+  renewed tokens, with the refresh token rotated, go back to the broker and appear in nothing GREG records.
+  - Renewal is allowed only at the server's own host or at a host the approved call names in `hosts`, which the
+    decision shows. A login that expired without a refresh token, or that renews at an unnamed host, is refused
+    before anything starts and tells the founder to log in again or name the host.
+- **Found on the way:** a refused login printed a Python traceback; it now prints one line and exits 2. The login
+  test also showed that the container carries both `HTTPS_PROXY` and lowercase `https_proxy`. A login, which runs in
+  the founder's own terminal, follows whichever their environment has.
+
+### Evidence
+
+- **`tests/integration/test_greg_mcp_oauth.py`,** against the official SDK's `MCPServer` with an OAuth
+  authorization server (an in-memory provider that approves at once, standing in for the founder's sign-in) on
+  `https://service.test`, behind the fake CONNECT proxy, with tokens bound to that server
+  (`validate_token_resource`):
+  - the login runs the SDK's full flow, and the simulated browser is redirected only to GREG's loopback page;
+  - an approved call uses the stored token as it is;
+  - after the access token expires and the service forgets it, the next approved call renews once, closes the
+    mission on GREG's own check, and leaves a rotated refresh token in the broker;
+  - none of the four tokens is in any file of the body home except the secret store.
+- **`tests/unit/test_greg_mcp_login.py` (13 tests):**
+  - four refusals before anything starts (renewal at an unnamed host, no refresh token, hosts beyond the server and
+    its renewal, an extra host without a login) and three admitted cases that stop only at the namespace probe;
+  - the shown record has no token;
+  - a renewal rotates what the service sent and keeps the rest;
+  - a plain token is not a login;
+  - bad names and http URLs are refused before any link is opened, and the CLI says so in one line.
+- **Mutants: 6 of 7 fail the tests:** renewal at any host; hosts beyond the server and its renewal; the renewed
+  login not kept; renewed tokens recorded; an expired login used as it is; the shown record carrying a token.
+  The seventh, the refresh without the RFC 8707 resource, is equivalent against the SDK's server, which binds a
+  renewed token to the original grant's resource either way. The parameter stays, because the MCP authorization
+  specification requires clients to send it.
+
+### What this does not cover
+
+- **Not tried against a real hosted service.** No hosted server, account or browser of the founder's was used.
+- **The login runs in the founder's terminal, not behind the relay.** It is the founder's own act, like signing in
+  with their browser.
+- **Credential files** (some servers want a key file) have no path. Remote servers are not yet discovered or
+  proposed from words.
+
+### Five roles and two passes (a credential-acquisition path)
+
+- **Builder:** the whole OAuth flow is the SDK's; GREG owns storage, the loopback page and the renewal rule.
+- **Adversary:**
+  - A malicious service could advertise a token endpoint elsewhere. The endpoint must be https on 443, renewal
+    happens there only when the server's host matches or the approval names it, and the relay enforces the host.
+  - A stolen broker file holds a refresh token. It sits beside every other secret, at mode 0600, hidden from every
+    door program since increment 16.
+- **Operator:** an expired login that cannot renew says exactly what to run next; renewals need no founder action.
+- **Beneficiary representative:** the founder signs in where they already sign in; GREG never sees their password.
+- **Constitutional reviewer:** a login grants nothing by itself; each use is an approved call; the scope is whatever
+  the founder granted at the service's consent screen.
+- **Pass 1.** Advantage: hosted services become usable without pasting long-lived tokens, and renewal keeps
+  overnight missions working. Reverses if renewal widened reach; it cannot, because it adds only the recorded host
+  and only when the approval allows it. Disadvantage: the refresh token lives in the broker; bounded by the
+  existing secret rules, and revocable at the service.
+- **Pass 2.** A service that rotates refresh tokens and a call that fails after renewing could lose the new token;
+  the renewal is stored even when the call fails, for that reason. **Dissent kept:** run the login itself behind
+  the relay on a confined body. Not built: the login is the founder's act in their own terminal, and its browser
+  half cannot be confined by GREG anyway.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

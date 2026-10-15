@@ -409,6 +409,7 @@
     "greg/journal.py",
     "greg/lightcone.py",
     "greg/mac/verify_mac_body.sh",
+    "greg/mcp_login.py",
     "greg/mcp_remote.py",
     "greg/mcp_tools.py",
     "greg/mechanisms.py",

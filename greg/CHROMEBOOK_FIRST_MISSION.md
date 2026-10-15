@@ -249,9 +249,10 @@ only when it reads the file itself and finds the text. Words do not grant hosts 
 signed by hand.
 
 A hosted MCP server (a URL rather than something installed) works the same way, and every call to it waits for
-you: the decision names the server, its one host and the credential handle. Store its token with
-`greg secret set mcp:<name>`, and make the token as narrow as the service allows, because an approved call can do
-whatever the token permits. GREG's words do not propose remote calls yet; such a mission is signed by hand.
+you: the decision names the server, its one host and the credential handle. If the service signs in with OAuth,
+run `greg mcp login <name> <url>` and approve GREG in your browser; otherwise store its token with
+`greg secret set mcp:<name>`. Either way, grant only what the service lets you narrow, because an approved call can
+do whatever the login permits. GREG's words do not propose remote calls yet; such a mission is signed by hand.
 
 ## 7. Founder control
 

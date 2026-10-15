@@ -282,8 +282,7 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
     if ctx.target != f"mcp:{server}":
         raise CapabilityError(f"the signed target {ctx.target!r} does not name server {server!r}")
     host = remote_url(params["url"])
-    if [str(h).lower() for h in params.get("hosts") or [host]] != [host]:
-        raise CapabilityError(f"a remote server reaches exactly its own host ({host})")
+    named = [str(h).lower() for h in params.get("hosts") or [host]]
     if params.get("writable") or params.get("readable") or params.get("secrets"):
         raise CapabilityError("a remote server is given no local paths and no environment; its credential is bearer")
     arguments = params.get("arguments") or {}
@@ -292,10 +291,30 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
     bearer = params.get("bearer")
     if bearer is not None and not HANDLE.fullmatch(str(bearer)):
         raise CapabilityError("bearer names an mcp:<name> credential handle")
+    from greg import mcp_login
+    login = mcp_login.record(ctx.secrets, str(bearer)) if bearer else None     # reading the broker contacts nobody
+    renew_at = mcp_login.public(login)["renews_at"] if login else None
+    if host not in named or any(h not in (host, renew_at) for h in named):
+        raise CapabilityError(f"a remote server reaches exactly its own host ({host})"
+                              + (f", and its login renews at {renew_at}" if renew_at and renew_at != host else ""))
     if ctx.egress is None:
         raise CapabilityError("a remote server is reached only from a body with confined egress (its connections "
                               "cross the relay); this body has none")
-    token = ctx.secrets.resolve(str(bearer), declared=(str(bearer),)) if bearer else ""
+    renewal = None
+    if login:
+        token = login["tokens"]["access_token"]
+        if mcp_login.expired(login):
+            if not login["tokens"].get("refresh_token"):
+                raise CapabilityError(f"the login {bearer} has expired and cannot renew; run greg mcp login again")
+            if renew_at != host and renew_at not in named:
+                raise CapabilityError(f"the login {bearer} has expired and renews at {renew_at}, which this approved "
+                                      "call does not name in hosts; name it, or run greg mcp login again")
+            renewal = {"token_endpoint": login["token_endpoint"], "refresh_token": login["tokens"]["refresh_token"],
+                       "client_id": login["client"]["client_id"],
+                       **({"client_secret": login["client"]["client_secret"]}
+                          if login["client"].get("client_secret") else {})}
+    else:
+        token = ctx.secrets.resolve(str(bearer), declared=(str(bearer),)) if bearer else ""
     try:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:
@@ -304,7 +323,8 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
     scratch = Path(tempfile.mkdtemp(prefix=f"mcp-{server}-", dir=ctx.workspace))
     sockets = Path(tempfile.mkdtemp(prefix="greg-door-"))
     cafile = os.environ.get("GREG_EGRESS_CAFILE")
-    scoped = Relay({"mcp.act": {"allow": [[host, 443]], "external": True}}, ctx.egress.journal,
+    allowed = sorted({host, *([renew_at] if renewal else [])})
+    scoped = Relay({"mcp.act": {"allow": [[h, 443] for h in allowed], "external": True}}, ctx.egress.journal,
                    connect=ctx.egress.connect, proxy=ctx.egress.proxy)
     try:
         with Door(scoped, "mcp.act", path=sockets / "door.sock") as door:
@@ -315,6 +335,7 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
                               [sys.executable, "-m", "greg.mcp_remote", "call", str(params["url"]), tool])
             env = {"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(scratch / "home"), "TMPDIR": str(scratch),
                    "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1", "GREG_MCP_BEARER": token,
+                   **({"GREG_MCP_RENEW": json.dumps(renewal)} if renewal else {}),
                    **({"GREG_EGRESS_CAFILE": cafile} if cafile else {})}
             done = subprocess.run(argv, input=json.dumps(arguments), capture_output=True, text=True, env=env,
                                   timeout=180)
@@ -325,6 +346,8 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
         shutil.rmtree(sockets, ignore_errors=True)
     try:
         answer = json.loads(done.stdout.strip().splitlines()[-1])
+        if answer.get("renewed") and login:          # the renewed login goes back to the broker, never the record
+            mcp_login.store_renewal(ctx.secrets, str(bearer), login, answer.pop("renewed"))
     except (ValueError, IndexError):
         tail = " ".join(done.stderr.split())[-300:].replace(token, "[credential]") if token else done.stderr[-300:]
         raise CapabilityError(f"MCP server {server}: GREG's client failed (exit {done.returncode}): {tail}") from None
@@ -337,5 +360,6 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
     return {"server": server, "tool": tool, "result": value, "text": text,
             "result_sha256": "sha256:" + hashlib.sha256(text.encode()).hexdigest(),
             "trust": "untrusted-external-data", "server_claims_read_only": answer["ok"]["provider_claims_read_only"],
-            "confinement": {"network": f"only {host} through the relay", "writable": [], "shown": [],
-                            "secrets": [str(bearer)] if bearer else [], "remote": str(params["url"])}}
+            "confinement": {"network": f"only {', '.join(allowed)} through the relay", "writable": [], "shown": [],
+                            "secrets": [str(bearer)] if bearer else [], "remote": str(params["url"]),
+                            **({"login_renewed": True} if renewal else {})}}

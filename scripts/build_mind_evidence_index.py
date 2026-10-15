@@ -134,22 +134,29 @@ ERRATA = {
 
 
 def _measured_code(family: str, commit: str | None) -> dict | None:
-    """The family's solver at the run's source commit: its current path and function name, the digest of that
-    function's source as committed then (git show), and the digest of its static dependency closure then
-    (greg.cognition.code_binding). A positive verdict is bound to the closure; None when there is no solver."""
+    """The family's solver as its run dispatched it: the function ``SOLVERS`` bound the family to at the run's
+    source commit (resolved statically, review of #179 B1), the digest of that function's source then, and the
+    digest of its static dependency closure then (greg.cognition.code_binding). A positive verdict is bound to that
+    closure, never to whatever function the family points at today. None when there is no solver now."""
     import subprocess
     from greg.cognition.compiler import function_digest, solver_code
     now = solver_code(family)
     if now is None:
         return None
-    from greg.cognition.code_binding import at_commit, closure
+    from greg.cognition.code_binding import at_commit, closure, dispatch
     code = {"path": now["path"], "function": now["function"], "sha256": None, "closure_sha256": None,
-            "closure_members": None}
+            "closure_members": None, "dispatched": None}
     if commit:
-        out = subprocess.run(["git", "show", f"{commit}:{now['path']}"], cwd=ROOT, capture_output=True, text=True)
+        read = at_commit(commit)
+        then = dispatch("greg/cognition/solvers.py", "SOLVERS", family, read)
+        code["dispatched"] = then
+        if then is None or then.get("function") is None:
+            return code                    # the run's dispatch cannot be resolved: nothing positive is bound
+        code["path"], code["function"] = then["path"], then["function"]
+        out = subprocess.run(["git", "show", f"{commit}:{then['path']}"], cwd=ROOT, capture_output=True, text=True)
         if out.returncode == 0:
-            code["sha256"] = function_digest(out.stdout, now["function"])      # entry function (historical scope)
-        measured = closure(now["path"], now["function"], at_commit(commit))      # the executable closure measured
+            code["sha256"] = function_digest(out.stdout, then["function"])      # entry function (historical scope)
+        measured = closure(then["path"], then["function"], read)              # the executable closure measured
         if measured is not None:
             code["closure_sha256"], code["closure_members"] = measured["sha256"], measured["members"]
     return code

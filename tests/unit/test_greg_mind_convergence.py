@@ -744,7 +744,14 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
     from greg.cognition import compiler as C
     index = C.evidence_index()
     assert all("code" in row for row in index["recipes"].values())
-    assert C.recipe_stale("track_then_staff", index["recipes"]["track_then_staff"]) is None
+    # with the complete closure (review B2), every lift measured on a lineage's freeze commit is stale on the
+    # converged tree: the compiler, composition and genesis it reaches have changed since. It routes as UNEVALUATED
+    # until a fresh pre-registered run measures the converged Mind (record section 8)
+    assert all(C.recipe_stale(r, v) for r, v in index["recipes"].items() if v.get("lift")), \
+        "a lift routes on code that differs from what it measured"
+    honest = copy.deepcopy(index["recipes"]["track_then_staff"])
+    honest["code"] = C.recipe_code("track_then_staff")                 # as if measured on today's code
+    assert C.recipe_stale("track_then_staff", honest) is None
     changed = copy.deepcopy(index["recipes"]["track_then_staff"])
     changed["code"]["closure_sha256"] = "sha256:" + "3" * 64
     assert "needs re-measurement" in C.recipe_stale("track_then_staff", changed)
@@ -785,3 +792,77 @@ def test_a_historical_result_that_its_runner_could_rewrite_is_pinned():
     path = ROOT / "docs/evidence/greg-developmental-sweep/2026-10-14/results.json"
     assert hashlib.sha256(path.read_bytes()).hexdigest() == \
         "ea771ded75fac7ba5a04214bd26f31c5d6ac51fffea2090c65a235de1d12d80d"
+
+
+# ---------------------------------------------------------------- closure-binding review (B1, B2)
+def test_a_rebuilt_index_never_binds_a_function_its_run_did_not_call(monkeypatch):
+    """B1: the builder took the family's solver from today's SOLVERS and bound that function's closure as
+    measured, so a family re-pointed to another solver kept its positive verdict after a rebuild. The builder now
+    resolves the dispatch at the run's commit, and a dispatch that changed routes as UNEVALUATED."""
+    import importlib.util
+    from greg.cognition import compiler as C
+    from greg.cognition import solvers
+    spec = importlib.util.spec_from_file_location("_builder_b1", ROOT / "scripts" / "build_mind_evidence_index.py")
+    B = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(B)
+    record = dict(C.evidence_index()["operations"]["control"])
+    commit = next(s["source_commit"] for s in C.evidence_index()["sources"]
+                  if s["path"] == record["evidence"].partition("#")[0])
+    if subprocess.run(["git", "cat-file", "-e", f"{commit}^{{commit}}"], cwd=ROOT, capture_output=True).returncode:
+        pytest.skip("the measuring commit is not in this clone")
+    honest = B._measured_code("control", commit)
+    assert honest["function"] == "control" and C.operation_status("control", {**record, "code": honest})[0] == \
+        "DEFAULT_FOR_GEOMETRY"
+    monkeypatch.setitem(solvers.SOLVERS, "control", solvers.SOLVERS["graph"])        # a later re-pointing
+    C.solver_code.cache_clear()
+    try:
+        rebuilt = B._measured_code("control", commit)
+        status, why = C.operation_status("control", {**record, "code": rebuilt})
+    finally:
+        monkeypatch.undo()
+        C.solver_code.cache_clear()
+    assert rebuilt["function"] == "control" and rebuilt["dispatched"]["function"] == "control"
+    assert status == "UNEVALUATED" and "now dispatches to" in why
+
+
+B2_CASES = {
+    "in-body import": ({"pkg/b.py": "def helper(x):\n    return x + 1\n",
+                        "pkg/a.py": "def f(x):\n    from pkg.b import helper\n    return helper(x)\n"},
+                       ("pkg/b.py", "return x + 1", "return x + 2")),
+    "later subscript mutation": ({"pkg/a.py": "TABLE = {'i': 1}\nTABLE['j'] = 2\n\ndef f(k):\n    return TABLE[k]\n"},
+                                 ("pkg/a.py", "{'i': 1}", "{'i': 9}")),
+    "update call": ({"pkg/a.py": "TABLE = {}\nTABLE.update({'i': 1})\n\ndef f(k):\n    return TABLE[k]\n"},
+                    ("pkg/a.py", "{'i': 1}", "{'i': 9}")),
+    "global": ({"pkg/a.py": "LIMIT = 3\n\ndef f(x):\n    global LIMIT\n    LIMIT = LIMIT + x\n    return LIMIT\n"},
+               ("pkg/a.py", "LIMIT = 3", "LIMIT = 4")),
+    "dotted chain": ({"pkg/__init__.py": "", "pkg/b.py": "def helper(x):\n    return x + 1\n",
+                      "pkg/a.py": "import pkg.b\n\ndef f(x):\n    return pkg.b.helper(x)\n"},
+                     ("pkg/b.py", "return x + 1", "return x + 2")),
+    "per-method locals": ({"pkg/a.py": "def scale(x):\n    return 2 * x\n\nclass C:\n    def g(self, scale):\n"
+                                       "        return scale\n    def h(self, x):\n        return scale(x)\n\n"
+                                       "def f(x):\n    return C().h(x)\n"},
+                          ("pkg/a.py", "return 2 * x", "return 3 * x")),
+}
+
+
+@pytest.mark.parametrize("case", sorted(B2_CASES))
+def test_each_static_closure_gap_now_changes_the_digest(case):
+    """B2: six dependency forms the static closure dropped, so a behaviour-changing mutation left the digest
+    unchanged. Each mutation now changes it."""
+    from greg.cognition.code_binding import closure
+    files, (path, old, new) = B2_CASES[case]
+    mutated = {**files, path: files[path].replace(old, new, 1)}
+    assert mutated[path] != files[path]
+    before = closure("pkg/a.py", "f", files.get)
+    after = closure("pkg/a.py", "f", mutated.get)
+    assert before is not None and before["sha256"] != after["sha256"], (case, before["members"])
+
+
+def test_the_dispatch_of_every_positive_operation_verdict_resolves_to_the_function_it_routes_to():
+    from greg.cognition import compiler as C
+    from greg.cognition.code_binding import dispatch
+    for family, row in C.evidence_index()["operations"].items():
+        if C.operation_status(family, row)[0] in ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY"):
+            now = C.solver_code(family)
+            assert row["code"]["dispatched"]["function"] == row["code"]["function"] == now["function"], family
+            assert dispatch("greg/cognition/solvers.py", "SOLVERS", family)["function"] == now["function"], family

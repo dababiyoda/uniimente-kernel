@@ -207,7 +207,8 @@ def test_composition_families_are_declared_as_the_frozen_runs_describe_them_and_
         assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "SIMULATED"), recipe
     for recipe in ("forecast_then_staff", "graph_then_allocate", "track_then_staff"):        # F6, F7, F8: real data
         assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "HELDOUT_SUPPORTED"), recipe
-    assert rows["recipe.track_then_staff"]["label"] == "HELDOUT_SUPPORTED"           # its code is unchanged
+    # the complete closure (review of #179, B2) shows the code F8 measured has changed on the converged tree
+    assert rows["recipe.track_then_staff"]["label"] == "BUILT"
 
 
 def test_a_version_bump_makes_positive_evidence_stale_while_negative_evidence_persists(tmp_path):

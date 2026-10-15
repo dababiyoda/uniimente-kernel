@@ -409,6 +409,10 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
                                "needs re-admission against a competitor")
     code, now = record.get("code") or {}, solver_code(family) or {}
     measured = code.get("closure_sha256")
+    if measured is not None and (code.get("path"), code.get("function")) != (now.get("path"), now.get("function")):
+        # the family now dispatches to another function than the one its run called (review of #179, B1)
+        return "UNEVALUATED", (f"{status} was measured on {code.get('path')}::{code.get('function')}; the family now "
+                               f"dispatches to {now.get('path')}::{now.get('function')}; needs re-admission")
     if measured is None:
         return "UNEVALUATED", (f"{status} is bound to the solver's entry function only "
                                f"({code.get('sha256') or 'not recorded'}), not its dependency closure; "

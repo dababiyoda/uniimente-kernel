@@ -542,7 +542,7 @@ What an agent can do without those decisions:
 | no rejected P8 configuration promoted | met | nothing attached; P8 `exit_met` false (`test_frontier_backcasts.py`) |
 | no NO_GAIN presented as positive lift | met | P4 row and status label; `forecast_then_allocate` NO_LIFT demoted |
 | strong standalone and practitioner baselines included | met where measured | F7 PMCF and SP-upgrade; F6 weekly mean; crowd-sparse one-step vote; F7 audit |
-| genome admission bound to the exact tested version | met | genomes: compiler stale guard on the genome version. #155's operation families: each positive verdict is bound to the solver's static dependency closure at the run's source commit (`greg/cognition/code_binding.py`). The closure covers the function, the repository helpers, classes and module constants it reaches, and excludes locals that shadow them. A changed member routes the family as UNEVALUATED and names the member; a verdict bound to the entry function only is not trusted; negative verdicts keep their scope. Helper and constant mutations are tested, and the closures are re-derived from git. Not covered: third-party package versions, dynamic dispatch by string, data files opened by path. All 11 current positive verdicts match their measured closures. |
+| genome admission bound to the exact tested version | met | genomes: compiler stale guard on the genome version. #155's operation families: each positive verdict is bound to the solver's static dependency closure at the run's source commit (`greg/cognition/code_binding.py`). The closure covers the function, the repository helpers, classes and module constants it reaches, repository names imported inside a function body, names declared `global`, dotted module chains, and every top-level statement that binds or mutates a name (so an edited literal that a later statement mutates still counts). Locals are computed per method. The bound function is the one `SOLVERS` dispatched the family to at the run's commit, resolved statically, never today's target (review of #179 closure-binding findings B1, B2). A changed member routes the family as UNEVALUATED and names the member; a verdict bound to the entry function only is not trusted; negative verdicts keep their scope. Helper and constant mutations are tested, and the closures are re-derived from git. Not covered: third-party package versions, dynamic dispatch by string, data files opened by path. All 11 current positive verdicts match their measured closures. |
 | interruption and restart do not duplicate consequential actions | met in tests | `test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation`, `test_greg_cognition_mission.py::test_detachment_survives_restart...` |
 | Kernel, event spine, authority, shutdown and founder boundaries preserved | met | no change to `policy/`, `provenance/`, `authority/`, `greg/founder.py` or the Gate |
 | no live deployment or external consequence | met | draft PR only |
@@ -662,3 +662,18 @@ the row says otherwise.
 | L20 | The Systems Architect role is recorded as not independently reviewed (section 15). |
 | L21 | Escalation 3 is replaced by the pre-registered admission verdict; the omitted items are added to section 15. |
 | L22 | The developmental-sweep result is pinned by sha256 in a test. |
+
+**Closure-binding review (#158 session, comment on #179, 2026-10-15).**
+
+| finding | disposition |
+|---|---|
+| B1 (high) | Fixed. The builder resolves `SOLVERS[family]` statically at the run's commit, including `T[k] = f`, `T.update({...})`, an imported dict literal and `__import__(...).f`. It binds that function's closure. `operation_status` routes a family whose dispatch changed as UNEVALUATED. Regression: re-pointing `control` to `graph`, then rebuilding, no longer keeps the verdict. |
+| B2 (medium, latent) | Fixed, with all six cases as regressions: in-body imports, a later subscript mutation, `.update(...)`, `global`, dotted chains and per-method locals. |
+
+**Consequence, stated rather than hidden.** With the complete closure, every recipe lift measured on a lineage's
+freeze commit is stale on this converged tree. `track_then_staff` (F8) is now stale too, because the compiler,
+composition and genesis it reaches have changed since #158's freeze. Recipe lifts therefore route as UNEVALUATED,
+and `mind_status` reports them as BUILT, until a fresh pre-registered run measures the converged Mind. All nine
+positive operation verdicts keep their status: their dispatch and closures are unchanged since their run.
+Non-literal table updates (the genome comprehension) are counted, not resolved. They cannot rebind a literal key
+they do not name.

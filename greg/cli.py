@@ -106,7 +106,7 @@ def main(argv=None) -> int:
     css.add_parser("inventory")
     css.add_parser("knowledge")
     css.add_parser("genomes", help="every intelligence GREG can or intends to recruit: layer, admission, evidence")
-    ca = css.add_parser("advantage", help="lawful candidate interventions at the evidenced bottlenecks of a control map")
+    ca = css.add_parser("advantage", help="historical read-only view (#155): candidate interventions at a control map's bottlenecks; the canonical generator is the Foundry (greg gravity)")
     ca.add_argument("--map", required=True, help="institutional-leverage map JSON (nodes, links)")
     ca.add_argument("--outcome", required=True, help="outcome node id")
     ca.add_argument("--objective", required=True)

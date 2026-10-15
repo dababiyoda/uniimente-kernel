@@ -369,6 +369,13 @@ class MissionBook:
         return [r for rid, r in self.requests.items() if rid not in self.answers and rid not in self.withdrawn]
 
 
+def _named_verified(ask: dict) -> set[str]:
+    """The verified (withheld, attachable) capabilities an attach ask names: what the founder's answer to it decides,
+    and what the console offers to attach from it."""
+    return {c.get("capability_id") for c in (ask.get("evidence") or {}).get("registered") or []
+            if isinstance(c, dict) and c.get("state") == "VERIFIED"}
+
+
 def _mechanism_summary(provenance: dict) -> dict:
     """What the founder needs to decide whether GREG may depend on an open-source package."""
     qualification = provenance.get("qualification") or {}
@@ -519,12 +526,12 @@ class MissionEngine:
             return (answer is not None, f"founder answered {answer['answer']}" if answer else "awaiting founder")
         if b["type"] == "capability":
             ok, why = self.registry.usable(b["capability_id"]) if b.get("capability_id") else (False, "none")
-            attached = next((cid for cid in b.get("attach_candidates", ()) if self.registry.usable(cid)[0]), None)
-            if not ok and attached:          # a cognition deficit's candidate carries another function name
-                return True, f"attach candidate {attached} is now attached"
             if not ok and self.genesis is not None and b.get("function"):
-                cap = self.genesis.find_attached(b["function"])
-                return (cap is not None, "capability now attached" if cap else why)
+                # the rule that decides whether a mission arriving now has this need (Genesis.serving), never only
+                # what this blocker offered: a fitting method that could not run when the mission blocked (founder-
+                # detached, unregistered, unavailable) serves it once it can, whatever its function name
+                served = self.genesis.serving(m.mission_id, b["function"])
+                return (served is not None, f"{served} now serves {b['function']}" if served else why)
             return ok, why
         if b["type"] == "no_strategy":
             return True, "re-evaluate strategies at cadence"
@@ -567,8 +574,24 @@ class MissionEngine:
             return self._watch_while_blocked(m, now)
         if m.blocker:
             resolved, why = self._blocker_resolved(m)
+            if not resolved and self._shared_ask_lapsed(m):
+                # the shared ask no longer stands for this mission's need and part of it was never decided: that part
+                # is asked about once, on another standing ask naming an undecided candidate or on the mission's own
+                # ask naming only those; an attach of any method that fits the need still resolves it
+                self._escalate_capability(m, m.blocker["function"], m.blocker.get("capability_id"),
+                                          self._deficit_purpose(m, m.blocker["function"]), now,
+                                          keep=m.blocker.get("attach_candidates", ()))
+                return {"state": "BLOCKED", "blocker": m.blocker}
             if not resolved:
                 return {"state": "WAITING", "blocker": m.blocker, "why": why}
+            if m.blocker["type"] == "capability" and not m.blocker.get("shared_ask") \
+                    and not self._closed(m.blocker["request_id"]):
+                # this mission's own attach ask is moot once a capability resolves it; a shared ask stays open for
+                # its other uses
+                rid = m.blocker["request_id"]
+                self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id,
+                                                           "why": f"resolved: {why}", "evidence": [], "at": iso(now)},
+                                    key=[rid, "withdrawn", "resolved"])
             if m.blocker["type"] == "reconciliation":
                 answer = self.book.answers[m.blocker["request_id"]]["answer"]
                 aid = m.blocker["action_id"]
@@ -817,29 +840,86 @@ class MissionEngine:
                 return capability
         return self._escalate_capability(m, function, spec.get("capability"), purpose, now)
 
+    def _deficit_purpose(self, m: MissionState, function: str) -> str:
+        opened = [e.payload for e in self.journal.replay("deficit.opened")
+                  if e.payload["mission_id"] == m.mission_id and e.payload["function"] == function]
+        return opened[-1]["purpose"] if opened else f"a capability for {function}"
+
     def _attach_candidates(self, m: MissionState, function: str) -> list[str]:
         """Withheld capabilities Genesis found for a cognition deficit (they carry other function names)."""
         return self.genesis.attach_candidates(m.mission_id, function) if self.genesis is not None else []
 
-    def _shared_attach_ask(self, candidates: list[str]) -> str | None:
-        """A body-level attach ask already recorded (the Competency Compiler records one per method) that names every
-        candidate as verified: the mission waits on it instead of asking the founder a second time. Another
-        mission's ask is never shared, since that mission may withdraw it."""
-        if not candidates:
+    def _closed(self, request_id: str) -> bool:
+        return request_id in self.book.answers or request_id in self.book.withdrawn
+
+    def _rejected_for(self, m: MissionState, function: str) -> dict[str, str]:
+        """What the founder already answered for this mission's need, by candidate: every verified candidate named by
+        an attach ask this mission waited on (its own, or a body-level one it shared) that the founder rejected,
+        mapped to that ask. An answer decides exactly what its ask named, never more: none of these is asked about
+        again for this need (section 60), and a candidate no answered ask named is still undecided."""
+        waited = dict.fromkeys(e.payload["blocker"].get("request_id") for e in self.journal.replay("mission.blocked")
+                               if e.payload["mission_id"] == m.mission_id
+                               and e.payload["blocker"].get("type") == "capability"
+                               and e.payload["blocker"].get("function") == function)
+        return {cid: rid for rid in waited if (self.book.answers.get(rid) or {}).get("answer") == "reject"
+                for cid in sorted(_named_verified(self.book.requests.get(rid) or {}))}
+
+    def _undecided(self, m: MissionState, function: str) -> list[str]:
+        """The candidates of this mission's need that no founder act has decided: still withheld (an attach resolves
+        the need; a founder detach is a decision against that candidate) and named by no ask this mission waited on
+        that the founder rejected. Only these are ever asked about again for this need."""
+        rejected = self._rejected_for(m, function)
+        return [c for c in self._attach_candidates(m, function) if c not in rejected]
+
+    def _stands(self, ask: dict, undecided: list[str]) -> bool:
+        """Whether a body-level attach ask still stands for a need whose undecided candidates are ``undecided``: it
+        names one of them, and the founder can still answer it (open) or has said yes to it (approved; the signed
+        attach then resolves every mission waiting on it, since approving only records the answer). A rejected or
+        withdrawn ask does not stand, nor does an open or approved ask whose named candidates have all been decided
+        since (a founder detach decides a candidate without any answer to the ask)."""
+        rid = ask["request_id"]
+        answer = (self.book.answers.get(rid) or {}).get("answer")       # None while the ask is open
+        return rid not in self.book.withdrawn and answer in (None, "approve") \
+            and bool(_named_verified(ask) & set(undecided))
+
+    def _shared_ask_lapsed(self, m: MissionState) -> bool:
+        """Whether a mission waiting on a shared body-level ask must be asked about the rest of its need: the ask no
+        longer stands for it (``_stands``, the same rule that decides whether a mission arriving now would share it)
+        and a candidate remains undecided. The founder's answer to a shared ask is this mission's answer for exactly
+        what the ask named, as for its own ask; it decides nothing the ask did not name (the compiler's ask names its
+        best fit alone, while the blocker keeps every candidate). So the mission waits while the ask is open or
+        approved and names an undecided candidate. Once it does not (rejected, withdrawn unanswered, or every
+        candidate it named decided, answered or not), the mission is asked once more, only about the undecided
+        candidates. Being open is not standing: an open ask about a detached candidate is moot for this need."""
+        b = m.blocker
+        if b["type"] != "capability" or not b.get("shared_ask"):
+            return False
+        undecided = self._undecided(m, b["function"])
+        return bool(undecided) and not self._stands(self.book.requests[b["request_id"]], undecided)
+
+    def _shared_attach_ask(self, undecided: list[str]) -> str | None:
+        """A body-level attach ask already recorded (the Competency Compiler records one per method, for its best
+        fit) that stands for one of the undecided candidates (``_stands``). The mission waits on it, keeping every
+        candidate in its blocker, instead of asking the founder about the same attach a second time. A rejected or
+        withdrawn ask is never shared: this mission's need would then wait on a closed request that no open ask
+        names, and a reject given before this mission existed did not answer its need. Once shared, the founder's
+        answer to it is this mission's answer for what it named (``_shared_ask_lapsed``). Another mission's ask is
+        never shared either, since that mission may withdraw it."""
+        if not undecided:
             return None
-        withdrawn = {e.payload["request_id"] for e in self.journal.replay("decision.withdrawn")}
         for event in self.journal.replay("decision.requested"):
             ask = event.payload
-            named = {c.get("capability_id") for c in (ask.get("evidence") or {}).get("registered") or []
-                     if isinstance(c, dict) and c.get("state") == "VERIFIED"}
             if ask.get("kind") == "CAPABILITY_ATTACH" and ask.get("mission_id") is None \
-                    and ask["request_id"] not in withdrawn and set(candidates) <= named:
+                    and self._stands(ask, undecided):
                 return ask["request_id"]
         return None
 
-    def _escalate_capability(self, m: MissionState, function: str, capability_id, purpose: str, now: datetime):
+    def _escalate_capability(self, m: MissionState, function: str, capability_id, purpose: str, now: datetime,
+                             keep=()):
+        """Ask once about this need's undecided candidates. The blocker records every candidate the mission waited
+        on (``keep``: those of a lapsed blocker, no longer offered); what resolves it is ``_blocker_resolved``."""
         candidates = self._attach_candidates(m, function)
-        shared = self._shared_attach_ask(candidates)
+        shared = self._shared_attach_ask(self._undecided(m, function))
         rid = shared or self._request(
             m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json({"function": function}), action_id=None,
             why=f"missing capability for {purpose}",
@@ -847,6 +927,7 @@ class MissionEngine:
             requested={"function": function,
                        "spend": "none requested; any account, license or purchase is yours to make"},
             now=now, resource=self._capability_ask(m, function, purpose))
+        candidates = list(dict.fromkeys([*candidates, *keep]))
         self._block(m, {"type": "capability", "function": function, "capability_id": capability_id,
                         "request_id": rid, "why": f"no attached capability for {function}",
                         "reconsider": "a verified capability for this function is attached",
@@ -908,16 +989,20 @@ class MissionEngine:
         deficit_id = opened[-1]["deficit_id"] if opened else None
         routes = [{"route": e.payload["route"], "result": e.payload["result"]}
                   for e in self.journal.replay("genesis.route") if deficit_id and e.payload["deficit_id"] == deficit_id]
-        listed = self.registry.by_function(function)
+        rejected = self._rejected_for(m, function)     # already answered for this need: listed, never offered again
+        listed = [c for c in self.registry.by_function(function) if c.capability_id not in rejected]
         listed += [self.registry.manifests[cid] for cid in self._attach_candidates(m, function)
-                   if cid in self.registry.manifests and all(c.capability_id != cid for c in listed)]
+                   if cid in self.registry.manifests and cid not in rejected
+                   and all(c.capability_id != cid for c in listed)]
         evidence = {"function": function, "required_by": purpose, "deficit_id": deficit_id,
                     "searched": routes or [{"route": "genesis", "result": "not available on this body"
                                             if self.genesis is None else "no route recorded"}],
                     "registered": [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id],
                                     **({"mechanism": _mechanism_summary(c.provenance)}
                                        if c.provider.startswith("installed:python:") else {})}
-                                   for c in listed]}
+                                   for c in listed],
+                    **({"already_answered": [{"capability_id": cid, "request_id": rid, "answer": "reject"}
+                                             for cid, rid in rejected.items()]} if rejected else {})}
         return {"resource": "capability", "evidence": evidence,
                 "expected_effect": f"the blocked step ({purpose}) proceeds once a verified capability for "
                                    f"{function} is attached",
@@ -989,7 +1074,9 @@ class MissionEngine:
                      "layer": library[cid].layer if cid in library else None,
                      "detail": library[cid].detail[:200] if cid in library else "",
                      "evidence_refs": list(library[cid].evidence_refs) if cid in library else []} for cid in waiting]
-        order = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "NOT_INVENTORIED")
+        # never recommend a composition stage on its own: the compiler rejects it as a standalone decision, so
+        # the hook's admissible set follows the compiler's rule (review of #179, M2)
+        order = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "EXPERIMENTAL", "NOT_INVENTORIED")
         admissible = sorted((f for f in families if f["admission"] in order), key=lambda f: order.index(f["admission"]))
         best = admissible[0] if admissible else None
         return self._request(

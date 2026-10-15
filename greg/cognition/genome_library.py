@@ -48,7 +48,9 @@ P8_ROUTING = "docs/evidence/greg-protected-evolution/2026-10-14/results.json"
 FAMILY_LAYER = {"micro": 1, "control": 1, "pattern": 1, "robust_pattern": 1, "collective": 2, "human": 2, "crowd": 2,
                 "swarm": 2, "evolutionary": 4, "blackbox": 4}
 # Admission-run structural statuses mapped into the directive's vocabulary.
-STRUCTURAL = {"ALIAS": "SUPERSEDED", "SUPERSEDED_BY_CANONICAL_ORGAN": "SUPERSEDED",
+# Structural labels are not held-out verdicts: they are reported as EXPERIMENTAL (UNEVALUATED for routing) with
+# the raw label kept beside them, never as SUPERSEDED (review of #179, M16).
+STRUCTURAL = {"ALIAS": "EXPERIMENTAL", "SUPERSEDED_BY_CANONICAL_ORGAN": "EXPERIMENTAL",
               "NOT_BENCHMARKED": "EXPERIMENTAL", "NOT_RUN": "EXPERIMENTAL", "ROUTE_ONLY": "EXPERIMENTAL"}
 # Findings recorded next to a frozen verdict without changing it (see the cited README).
 NOTES = {
@@ -151,25 +153,13 @@ def admission_of(family: str, index: dict) -> tuple[str, str, str | None]:
     version measured, so a bumped version is EXPERIMENTAL until re-admitted; negative evidence persists. Any
     other family reads ``operations`` with the same rule applied to its solver code digest. No index row means
     no frozen run: EXPERIMENTAL, labelled UNEVALUATED."""
-    from .compiler import NOT_POSITIVE
-    from .genomes import library
-    genomes = library.executables()
-    if family in genomes:
-        record = (index.get("genomes") or {}).get(family)
-        if not record:
-            return "EXPERIMENTAL", "UNEVALUATED", None
-        raw, ref = record["status"], record["evidence"].partition("#")[0]
-        current = genomes[family].genome.version
-        if record.get("version") and record["version"] != current and raw not in NOT_POSITIVE:
-            return "EXPERIMENTAL", f"{raw}@{record['version']} (stale at {current})", ref
-        return raw, raw, ref
-    record = (index.get("operations") or {}).get(family)
-    if not record:
+    from .compiler import family_status
+    admission = family_status(family, index)            # the compiler's one status function (review H2/M16)
+    raw, ref = admission["raw"], (admission["evidence"] or "").partition("#")[0] or None
+    if raw is None:
         return "EXPERIMENTAL", "UNEVALUATED", None
-    from .compiler import operation_status
-    raw, ref = record["raw_status"], record["evidence"].partition("#")[0]
-    if operation_status(family, record)[1]:            # positive evidence measured on other solver code
-        return "EXPERIMENTAL", f"{raw} (stale: the solver changed since it was measured)", ref
+    if admission["stale"]:
+        return "EXPERIMENTAL", f"{raw} (stale: {admission['stale']})", ref
     return STRUCTURAL.get(raw, raw), raw, ref
 
 
@@ -199,29 +189,38 @@ def _acquired() -> list[GenomeEntry]:
                        "open-source mechanism formed by Capability Genesis; GREG certificate check; attach is "
                        "the founder's", ("tests/evidence/greg-open-source-genesis-2026-10-01",))
            for engine in genesis.CATALOG]
-    from .compiler import evidence_index
+    from .compiler import evidence_index, recipe_stale
     recipes = evidence_index().get("recipes") or {}
     # PR #155 lineage lift on further families for the same recipe: corroboration, not the routing verdict
     corroboration = {"estimate_then_optimize": ("PR #155: X1 48/48", (P6_V1, P6_V2)),
-                     "identify_then_optimize": ("PR #155: F2b lift 11/3, p=0.029", (P6_V2,))}
+                     "identify_then_optimize": ("PR #155: F2b 11/3, p=0.029, a same-instance re-run of F2R "
+                                                "(reproducibility, not replication)", (P6_V2,))}
     for recipe in composition.RECIPES:
         verdict = recipes.get(recipe)
         extra, extra_refs = corroboration.get(recipe, ("", ()))
         if verdict is None:
             status, detail, refs = "EXPERIMENTAL", "no held-out lift measured", ()
         else:
-            status = "DEFAULT_FOR_GEOMETRY" if verdict["lift"] else "EXPERIMENTAL"
+            stale = recipe_stale(recipe, verdict) if verdict["lift"] else None
+            status = "DEFAULT_FOR_GEOMETRY" if verdict["lift"] and not stale else "EXPERIMENTAL"
             detail = (f"index {verdict['status']} on {verdict['family']} ({verdict['wins']}/{verdict['losses']}, "
                       f"p={verdict['p_one_sided']})" + ("" if verdict["lift"] else
-                                                        f"; prefer {verdict['prefer']}"))
+                                                        f"; prefer {verdict['prefer']}")
+                      + (f"; stale: {stale}" if stale else "")
+                      # the frozen run's practitioner arms (review of #179, H4 and L11): the lift is over GREG's
+                      # best constituent, not over these
+                      + (f"; tied on every item by {', '.join(verdict['tied_by'])}" if verdict.get("tied_by") else "")
+                      + (f"; loses on item count to {', '.join(verdict['loses_to'])}"
+                         if verdict.get("loses_to") else ""))
             refs = (verdict["evidence"].partition("#")[0],)
         out.append(GenomeEntry(f"composition.{recipe}", "composition_recipe", 5, True, True, "BUILDABLE_NOW",
                                status, detail + (f"; {extra}" if extra else ""), refs + extra_refs))
     out += [
         GenomeEntry("mechanism.conditional_competence", "mechanism", 5, True, True, "BUILDABLE_NOW", "EXPERIMENTAL",
-                    "P4 conditional memory, observed in shadow and never applied by default. Two pre-registered "
-                    "decisive retests found no gain: #158 v3 REGRESSION 160 vs 162; #155 v3 NO_GAIN 111 = 111 of "
-                    "130. Conditional solver learning is not currently worth its complexity",
+                    "P4 conditional memory, observed in shadow and never applied by default. #158's pre-registered "
+                    "decisive retest found REGRESSION 160 vs 162 of 191; #155's NO_GAIN 111 = 111 re-measured 130 "
+                    "of the same payloads (a same-instance re-run: reproducibility, not replication). Conditional "
+                    "solver learning is not currently worth its complexity",
                     (P4_V2, P4_V3_PR158, P4_V3_PR155)),
         GenomeEntry("mechanism.protected_evolution", "mechanism", 5, True, False, "BUILDABLE_NOW", "EXPERIMENTAL",
                     "P8 canonical controller (greg.cognition.evolution): Landlock-confined candidates, sealed "
@@ -304,10 +303,45 @@ def matrix(entries: list[GenomeEntry] | None = None) -> dict:
     return dict(sorted(rows.items()))
 
 
+# where an admitted label comes from (review of #179, H4): only the first is an admission under #158's
+# pre-registered rule at the current version; the others are reported, never summed into one "admitted" number
+PROVENANCE = {
+    "rule_admitted": "#158 genome admission under the pre-registered rule (git freeze before the run), held-out "
+                     "seeds, against a named competitor, bound to the measured version",
+    "lineage_operation_verdict": "#155 operation-family admission runs: held-out, but not pre-registered in git "
+                                 "(freeze, runner and results land in one commit); a DEFAULT with no competitor "
+                                 "routes as UNEVALUATED",
+    "recipe_lift": "a composition's lift over its own constituents on one frozen family: not an admission",
+    "organ_label": "a hand-coded cortex-organ label from router evidence: not an admission",
+}
+LINEAGE_ADMISSION_DIR = "docs/evidence/greg-genome-admission/2026-10-14/"
+
+
+def provenance(e: GenomeEntry) -> str | None:
+    if e.admission not in ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY"):
+        return None
+    if e.source == "composition_recipe":
+        return "recipe_lift"
+    if e.source == "cortex_organ":
+        return "organ_label"
+    if any(r.startswith(LINEAGE_ADMISSION_DIR) for r in e.evidence_refs):
+        return "lineage_operation_verdict"
+    return "rule_admitted"
+
+
+def admitted_by_provenance(entries: list[GenomeEntry] | None = None) -> dict:
+    counts = {k: 0 for k in PROVENANCE}
+    for e in entries if entries is not None else inventory():
+        if (kind := provenance(e)) is not None:
+            counts[kind] += 1
+    return {"counts": counts, "meaning": PROVENANCE}
+
+
 def export() -> dict:
     entries = inventory()
     return {"schema": "greg-genome-library/0.1", "entries": [asdict(e) for e in entries],
-            "matrix": matrix(entries), "problems": check(entries)}
+            "matrix": matrix(entries), "admitted_by_provenance": admitted_by_provenance(entries),
+            "problems": check(entries)}
 
 
 if __name__ == "__main__":

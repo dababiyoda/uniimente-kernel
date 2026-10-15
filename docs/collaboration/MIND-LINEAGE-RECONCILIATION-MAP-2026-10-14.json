@@ -2,7 +2,7 @@
  "schema": "mind-lineage-reconciliation-map/1",
  "base": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
  "pr155": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
- "pr158": "41a85383c969437741d5c55c6751e7a8334758bf",
+ "pr158": "f8e8fd2d294f9d79dbd623c065feb17fd1744a18",
  "vocabulary": [
   "complementary",
   "interchangeable",
@@ -30,8 +30,8 @@
    "path": "contracts/lawful-leverage.schema.json",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "#158 schema plus purpose-bound consent (for_mechanisms) and revoked_at (founder point 3)"
   },
   {
    "path": "cortex/evaluation/closure.py",
@@ -240,8 +240,8 @@
    "path": "cortex/evaluation/evolution/run.py",
    "lineage": "pr155",
    "classification": "historical evidence",
-   "disposition": "kept",
-   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+   "disposition": "modified",
+   "note": "import retargeted from greg.cognition.evolution to greg.cognition.evolution_routing (2d1ddd3); it still pins #158's evolution.py and suite-v3.json, so it refuses with FROZEN_INPUT_CHANGED. Original bytes (sha256 e8ce3540...) archived at lineage-archive/pr155-ef5f078/cortex/evaluation/evolution/run.py (review of #179, M20)"
   },
   {
    "path": "cortex/evaluation/genome_admission/__init__.py",
@@ -331,8 +331,15 @@
    "path": "docs/collaboration/MIND-LINEAGE-SOURCE-MANIFEST-2026-10-14.json",
    "lineage": "pr158",
    "classification": "complementary",
+   "disposition": "extended",
+   "note": "#158's manifest with archival-copy labels appended (review of #179, M20)"
+  },
+  {
+   "path": "docs/collaboration/reviews/PR179-INDEPENDENT-REVIEW-2026-10-15.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
    "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
   },
   {
    "path": "docs/evidence/greg-composition-lift/2026-10-08/README.md",
@@ -559,6 +566,48 @@
    "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
   },
   {
+   "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/make_readme_tables.py",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
    "path": "docs/evidence/greg-learned-routing/2026-10-07/README.md",
    "lineage": "pr155",
    "classification": "historical evidence",
@@ -605,7 +654,7 @@
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "rebuilt",
-   "note": "derived index; genome, recipe and routing rows unchanged; operations and three sources added"
+   "note": "rebuilt by scripts/build_mind_evidence_index.py from every frozen source of both lineages: genomes (with #158's admission v3), recipes, routing and #155's operation-family verdicts. Recipes and routing changed relative to either lineage (identify_then_optimize decided by F2R, conditional_competence by #158's REGRESSION; review of #179, H1 and L3), and practitioner arms (tied_by, loses_to) are carried"
   },
   {
    "path": "docs/evidence/greg-polyintelligence-mind/2026-10-07/baseline-suite-at-92bc6e3.log",
@@ -678,6 +727,41 @@
    "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
   },
   {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/cycle-cr-4.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/cycle-cr-4.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
+  },
+  {
    "path": "docs/evidence/pr155-crowd-sparse/2026-10-14/README.md",
    "lineage": "pr155",
    "classification": "historical evidence",
@@ -744,8 +828,8 @@
    "path": "foundry/lawful_leverage.py",
    "lineage": "pr158",
    "classification": "interchangeable",
-   "disposition": "selected:pr158",
-   "note": "canonical lawful intervention generator; extended with the seven #155 operator classes it lacked (PORTED_FROM; accountability as four legal channels with a lawful-basis review packet), one evidentiary standard for every template, every-pair recombination without surface overwrite, evidence-first ceiling with deferred routes, purpose-bound and revocable consent (see greg/cognition/advantage.py)"
+   "disposition": "extended",
+   "note": "#158's Foundry is canonical, extended with #155's seven operator classes, surface-instance identity, purpose-bound consent, legal channels and the evidence-first pool (founder points 1-3)"
   },
   {
    "path": "foundry/owned-source.json",
@@ -778,9 +862,9 @@
   {
    "path": "greg/cognition/advantage.py",
    "lineage": "pr155",
-   "classification": "interchangeable",
+   "classification": "unresolved",
    "disposition": "superseded:generator",
-   "note": "intervention generation overlaps #158's foundry/lawful_leverage.py, the canonical generator (consent and harm gates, Monte Carlo estimates, ranker hand-off); every #155 operator now maps to Foundry mechanisms (FOUNDRY_MECHANISM): five equivalents, seven classes ported; compile_map is a historical read-only view with its operator table pinned and its destinations are views of greg/path.json horizons"
+   "note": "#155's typed mental-model operator library: superseded as a generator (every operator maps to a Foundry mechanism; seven ported into foundry/lawful_leverage.py). Its relative merit is unmeasured, so the classification is unresolved (review of #179, L19). Deciding experiment: real control maps with outcomes, the Foundry and this view compared on the same bottlenecks. Its CLI output names foundry.lawful_leverage as the canonical generator and itself as a read-only historical view"
   },
   {
    "path": "greg/cognition/assignment.py",
@@ -836,14 +920,14 @@
    "lineage": "both",
    "classification": "interchangeable",
    "disposition": "selected:pr158",
-   "note": "#158's controller is canonical (confined candidates, sealed evaluator, recurring-failure trigger, three REJECT cycles); #155's routing-genome mechanism kept as greg/cognition/evolution_routing.py, imported only by its historical runner"
+   "note": "#158's controller is canonical (confined candidates, sealed evaluator, recurring-failure trigger, three REJECT cycles); #155's routing-genome mechanism kept as greg/cognition/evolution_routing.py, imported only by its historical runner; at #158's head f8e8fd2, whose af258bf fixes review M14/L5/L6 (freeze, module check, parent-probed confinement). This branch's parallel fix (1da022a) is superseded and kept in history only"
   },
   {
    "path": "greg/cognition/evolution_sandbox.py",
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "note": "present in one lineage only (pr158); at #158's head f8e8fd2, whose af258bf fixes review M14/L5/L6 (freeze, module check, parent-probed confinement). This branch's parallel fix (1da022a) is superseded and kept in history only"
   },
   {
    "path": "greg/cognition/genome_library.py",
@@ -912,8 +996,8 @@
    "path": "greg/cognition/genomes/flow.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "flow_expansion_mcf known_strengths no longer claims PMCF's F7 tie (review L10); mechanism level (review L14): graph_then_allocate (composition), flow_expansion_mcf (single exact genome) and expansion_truth (the harness truth, duplicated by run_v4's PMCF) are interchangeable implementations of budgeted capacity expansion. #158's admission v3 (pre-registered 878f76c) admits flow_expansion_mcf 1.0.0 DEFAULT_FOR_GEOMETRY against the composition twin, so it is the canonical routed default for that geometry; the composition stays a registered alternative; attaching remains the founder's"
   },
   {
    "path": "greg/cognition/genomes/forecasting.py",
@@ -975,8 +1059,8 @@
    "path": "greg/cognition/repertoire.py",
    "lineage": "pr155",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "four Layer 1/2/4 families beside #158's genomes; reachable by operation and, for unambiguous inputs, by the compiler"
+   "disposition": "extended",
+   "note": "#155 repertoire; proofs carry the crowd model for independent recomputation (review H3)"
   },
   {
    "path": "greg/cognition/reserved.py",
@@ -1005,6 +1089,13 @@
    "classification": "complementary",
    "disposition": "merged",
    "note": "#155's family checks and #158's genome_certificate branch on one verifier"
+  },
+  {
+   "path": "greg/cognition/worker.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 41a8538, merged at its head f8e8fd2 (review of #179, M18)"
   },
   {
    "path": "greg/cognition/worlds.py",
@@ -1038,15 +1129,15 @@
    "path": "greg/gravity.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "#158 Goal Gravity plus the LEGAL_REVIEW disposition and selection basis (founder point 3)"
   },
   {
    "path": "greg/isolation.py",
    "lineage": "both",
    "classification": "duplicate",
    "disposition": "unified",
-   "note": "two fixes of the same CI defect (#158 1ea2209, #155 bfb9c04); one grant path: #155's superset with the ancestor guard covers #158's glibc list (tested)"
+   "note": "two fixes of the same CI defect (#158 1ea2209, #155 bfb9c04); one grant path: #155's superset with the ancestor guard covers #158's glibc list (tested). #158's f8e8fd2 adds Landlock ABI >= 6 signal and abstract-socket scoping and list_code (af258bf, review of #179 L5): ported onto the unified grant path; #158's separate glibc list is not re-introduced"
   },
   {
    "path": "greg/missions.py",
@@ -1122,8 +1213,8 @@
    "path": "tests/integration/test_greg_cognitive_composition.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "#158 tests plus derived-chain reachability and ambiguity tests (review M7-M9)"
   },
   {
    "path": "tests/integration/test_greg_composition_v2.py",
@@ -1283,8 +1374,8 @@
    "path": "tests/unit/test_greg_competency_compiler.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "#158 tests plus evidence-index and relaxation tests from the convergence"
   },
   {
    "path": "tests/unit/test_greg_genome_library.py",
@@ -1333,14 +1424,14 @@
    "lineage": "both",
    "classification": "interchangeable",
    "disposition": "selected:pr158",
-   "note": "#158's tests at the path; #155's moved to tests/unit/test_greg_evolution_routing.py"
+   "note": "#158's tests at the path; #155's moved to tests/unit/test_greg_evolution_routing.py; at #158's head f8e8fd2, whose af258bf fixes review M14/L5/L6 (freeze, module check, parent-probed confinement). This branch's parallel fix (1da022a) is superseded and kept in history only"
   },
   {
    "path": "tests/unit/test_greg_repertoire.py",
    "lineage": "pr155",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr155)"
+   "disposition": "extended",
+   "note": "#155 tests plus verifier-forgery regressions (review H3, M4-M6)"
   },
   {
    "path": "tests/unit/test_greg_resilience.py",
@@ -1381,8 +1472,8 @@
    "path": "tests/unit/test_mind_status.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "#158 tests updated for recipe code binding (review H5)"
   },
   {
    "path": "tests/unit/test_vpl_metrics.py",

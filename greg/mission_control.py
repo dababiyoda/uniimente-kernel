@@ -394,6 +394,15 @@ def _tool_servers_section(console, p, form) -> str:
            "change anything; its own claims are not trusted. A tool that writes or reaches the network runs as "
            "<code>mcp.act</code>, and only after you approve its exact scope: the folders it may write, the hosts it "
            "may reach through the relay, and the credential handles it receives.</p>")
+    hosted = [c for c in p.get("credentials") or [] if c.get("kind") == "OAuth login"]
+    if hosted:
+        out += ("<h3>Hosted servers GREG is logged in to</h3><p class=reality>Their tools as each server listed them "
+                "when you logged in (its claim, not trusted). Every call to one waits for your approval.</p>"
+                + _table(["Server", "Handle", "Tools (listed at login)"], [
+                    [f"<code>{_e(c['server'])}</code>", f"<code>{_e(c['handle'])}</code>",
+                     "; ".join(f"<code>{_e(t['name'])}</code>" + (f": {_e(t['description'][:80])}" if t.get("description")
+                                                                  else "") for t in c.get("tools") or []) or "none listed"]
+                    for c in hosted]))
     answers = p.get("tool_answers") or []
     if answers:
         out += ("<h3>Latest answers</h3>" + _table(["Server · tool", "Answer (untrusted data)", "Receipt"], [

@@ -38,7 +38,8 @@ def record(broker, handle: str) -> dict | None:
 def public(login: dict) -> dict:
     """What may be shown: never a token or a client secret."""
     return {"server": login["server"], "renews_at": urlsplit(login["token_endpoint"]).hostname,
-            "scope": login.get("scope"), "expires_at": login.get("expires_at")}
+            "scope": login.get("scope"), "expires_at": login.get("expires_at"),
+            "tools": login.get("tools", []), "listed_at": login.get("listed_at")}
 
 
 def expired(login: dict, *, now: float | None = None, margin: float = 60.0) -> bool:
@@ -135,7 +136,7 @@ async def login(name: str, url: str, broker, *, open_url, cafile: str | None = N
         async with httpx2.AsyncClient(auth=provider, verify=verify, trust_env=True,
                                       timeout=httpx2.Timeout(30.0, read=60.0)) as http:
             async with Client(streamable_http_client(url, http_client=http), read_timeout_seconds=60) as client:
-                tools = len((await client.list_tools()).tools)
+                listed = (await client.list_tools()).tools
     finally:
         server.close()
     if "tokens" not in storage.data:
@@ -148,5 +149,13 @@ async def login(name: str, url: str, broker, *, open_url, cafile: str | None = N
     except CapabilityError:
         raise CapabilityError(f"the service's token endpoint {endpoint} is not https on 443; nothing was stored") from None
     storage.data["token_endpoint"] = endpoint
+    # What the server said it offers when the founder logged in: shown as its claim, so nothing has to contact it
+    # outside an approved call to list them again.
+    storage.data["tools"] = [{"name": t.name, "description": (t.description or "").strip().split("\n")[0][:200],
+                              "needs": list((getattr(t, "input_schema", None) or getattr(t, "inputSchema", None)
+                                             or {}).get("required", [])),
+                              "claims_read_only": getattr(t.annotations, "read_only_hint", None)
+                              if t.annotations is not None else None} for t in listed[:100]]
+    storage.data["listed_at"] = time.time()
     broker.put(handle, json.dumps(storage.data))
-    return {**public(storage.data), "handle": handle, "tools_offered": tools}
+    return {**public(storage.data), "handle": handle, "tools_offered": len(listed)}

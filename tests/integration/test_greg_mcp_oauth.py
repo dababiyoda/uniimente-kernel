@@ -166,6 +166,7 @@ def test_the_founder_logs_greg_in_and_an_approved_call_uses_and_renews_the_login
     out = asyncio.run(mcp_login.login("notes", "https://service.test/mcp", broker, open_url=browser(hosted["cert"]),
                                       cafile=str(hosted["cert"])))
     assert out["handle"] == "mcp:notes" and out["renews_at"] == "service.test" and out["tools_offered"] == 1
+    assert [t["name"] for t in out["tools"]] == ["add_note"] and out["tools"][0]["needs"] == ["text"]
     login = mcp_login.record(broker, "mcp:notes")
     first = login["tokens"]["access_token"]
     assert first in hosted["provider"].access and "access_token" not in json.dumps(out)

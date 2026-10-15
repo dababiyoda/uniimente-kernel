@@ -1641,6 +1641,22 @@ HTTP". Testing it found a product defect in the third case.
 - The console's own planner route (used when drafting proposals) is a separate router and is not benched by this.
 - A vendor that refuses a key only for some models (403 entitlement) is benched for the route that was refused.
 
+## Increment 26 (2026-10-15): the hosted servers GREG is logged in to, and their tools, in Mission Control
+
+After `greg mcp login`, nothing in Mission Control showed the hosted server or what it offers. Listing its tools
+again would contact the server outside an approved call, so the login now keeps what the server listed when the
+founder logged in: each tool's name, first line of description, required arguments and read-only claim, with the
+time. Mission Control's Command view shows each logged-in hosted server with its handle and those tools, marked as
+the server's claim, not trusted, and as needing approval for every call. Nothing contacts the server to render it.
+
+Evidence:
+- the OAuth integration test now checks that the login kept `add_note` and its required `text`;
+- `tests/integration/test_greg_credentials_view.py` gains a test over real HTTP: the Command view lists the hosted
+  server, its handle and its tool, and no token value.
+
+Not covered: a hosted server used with a plain token (`greg secret set`) is not listed, because GREG never asked it
+for its tools.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

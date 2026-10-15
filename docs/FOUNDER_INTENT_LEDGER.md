@@ -40,6 +40,7 @@ The founder's OPUS MAXIMUS continuation directive is implemented on draft branch
 - Increment 23 lets the founder log GREG in to a hosted MCP server with OAuth (`greg mcp login`): the official SDK runs the flow, the founder approves at the service, and the tokens stay in the body's secret broker. Approved calls use the login; an expired one renews once inside the approved call, only at the server's host or a host the approval names, and the rotated tokens never enter GREG's records. Not yet tried against a real hosted service.
 - Increment 24 shows the founder, in Mission Control's Authority view, every credential GREG holds: by name and kind, for a login the server, renewal host and expiry, and how to revoke each. Values never leave the secret broker.
 - Increment 25 tests a model vendor that is slow, cuts its answer off or refuses the key, over real HTTP through the real SDKs: the mission closes through the vendor that answers each time. It found that a refused key was retried like an outage forever; a refused key is now benched until the founder stores a new one, and Mission Control says which key and what to run.
+- Increment 26 shows, in Mission Control, the hosted servers GREG is logged in to and the tools each listed at login, as the server's claim, without contacting it again.
 - State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
 
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13

@@ -93,6 +93,8 @@ P6_FAMILIES = {
     "F6": (NATURAL, "real bank call arrivals and real outcomes; the staffing decision layer is declared"),
     "F7": (NATURAL, "real SNDlib topologies, lengths, demands and loads; truth is the exact optimum of the declared "
                     "planning problem"),
+    "F8": (NATURAL, "real NYC 2015 pickups and real outcomes (TLC records via FOIL); the staffing decision layer and the "
+                    "Erlang C requirement are declared"),
 }
 
 ORGANS: dict[str, tuple[str, str]] = {}

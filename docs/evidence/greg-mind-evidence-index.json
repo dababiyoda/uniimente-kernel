@@ -1638,6 +1638,16 @@
    "prefer": null,
    "status": "VPL_LIFT",
    "wins": 11
+  },
+  "track_then_staff": {
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json#summary.F8",
+   "family": "F8",
+   "lift": true,
+   "losses": 204,
+   "p_one_sided": 0.0,
+   "prefer": null,
+   "status": "VPL_LIFT",
+   "wins": 1589
   }
  },
  "routing": {
@@ -1694,6 +1704,11 @@
    "path": "docs/evidence/greg-composition-lift/2026-10-14/results-v3.json",
    "sha256": "sha256:9dc7287ce4071287d7e2d3d9652c1b6e83fa72a5acd5daee2f538d8b7065ab8a",
    "source_commit": "6d5dadedf0d0ca8fb75a87622d6875c00dff91b4"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json",
+   "sha256": "sha256:1d2a488063598a155620ec243ce174297501d467166644e92bfee76c949d438a",
+   "source_commit": "202b932b015c2623798229db085f68728468b8b6"
   },
   {
    "path": "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",

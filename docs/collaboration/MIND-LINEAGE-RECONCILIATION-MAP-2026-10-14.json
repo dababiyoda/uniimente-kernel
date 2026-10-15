@@ -2,7 +2,7 @@
  "schema": "mind-lineage-reconciliation-map/1",
  "base": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
  "pr155": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
- "pr158": "202b932b015c2623798229db085f68728468b8b6",
+ "pr158": "41a85383c969437741d5c55c6751e7a8334758bf",
  "vocabulary": [
   "complementary",
   "interchangeable",
@@ -403,6 +403,34 @@
   },
   {
    "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/run.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/development-v5.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "frozen evaluation input, runner or result; authoritative only at its source commit"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/run.log",
    "lineage": "pr158",
    "classification": "historical evidence",
    "disposition": "kept",

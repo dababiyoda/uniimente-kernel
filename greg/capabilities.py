@@ -332,12 +332,30 @@ def run_cli(params, ctx: InvocationContext, *, isolate_network: bool = True, tim
             "stderr": proc.stderr[-4000:].decode("utf-8", errors="replace")}
 
 
+READ_ONLY_GIT_ENV = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "GIT_CONFIG_NOSYSTEM": "1",
+                     "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0",
+                     "GIT_NO_LAZY_FETCH": "1"}
+
+
+def read_only_git(repo: Path, *args, home: Path, timeout: int = 20) -> subprocess.CompletedProcess:
+    """git for a read-only sensor: nothing a repository's own config names is executed. A planted fsmonitor or hook
+    is switched off, and every clean/process filter driver the config defines is blanked (git skips an empty filter
+    command), so ``git status`` cannot run code from the repository it reads. Measured 2026-10-15: before this,
+    git.inspect on a repository whose local config set core.fsmonitor ran that command."""
+    base = ["git", "--no-pager", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null"]
+    env = {**READ_ONLY_GIT_ENV, "HOME": str(home)}
+    drivers = subprocess.run(base + ["-C", str(repo), "config", "--get-regexp", r"^filter\..*\.(clean|process|smudge)$"],
+                             capture_output=True, text=True, timeout=timeout, env=env)
+    blanks = [a for line in drivers.stdout.splitlines() if line.split(" ", 1)[0]
+              for a in ("-c", line.split(" ", 1)[0] + "=")]
+    return subprocess.run(base + blanks + ["-C", str(repo), *args], capture_output=True, text=True, timeout=timeout,
+                          env=env)
+
+
 def git_inspect(params, ctx: InvocationContext) -> dict:
     repo = _inside(Path(params["path"]), ctx.read_roots)
     def git(*args):
-        return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True,
-                              timeout=20, env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8",
-                                               "GIT_CONFIG_NOSYSTEM": "1", "HOME": str(ctx.workspace)})
+        return read_only_git(repo, *args, home=ctx.workspace)
     head, status, log = git("rev-parse", "HEAD"), git("status", "--porcelain"), git("log", "--oneline", "-10")
     if head.returncode:
         raise CapabilityError("not a git repository")

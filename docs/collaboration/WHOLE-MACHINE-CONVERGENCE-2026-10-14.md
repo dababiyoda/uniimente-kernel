@@ -751,6 +751,75 @@ unchanged tree too, so that crash belongs to its engine versions, not to this ch
 Confined egress is still opt-in, so the second acceptance criterion does not hold machine-wide. Turning it on by
 default is the remaining step; it changes what the founder's body does on a host without namespaces.
 
+## Increment 13 (2026-10-15): confinement on by default for the founder's body; the inventory corrected
+
+### Correction to increment 12
+
+Increment 12 said that on a confined body "every mission-path egress crosses the relay or has none". That was
+wrong. An audit of every process GREG spawns, not only of its network calls, found three more paths:
+
+- `venture.assess` ran the RailScout and WealthMachine organs' own code in a plain subprocess with full network.
+- The separate appraiser re-ran those organs the same way, to re-derive a delivered memo.
+- The Claude Code Genesis builder (`greg run --builder claude-code`) is handed to the body ready-made, so it never
+  received the relay.
+
+All three are now confined:
+
+- **Organs.** An appraisal needs no network, so on a confined body each organ runs in a namespace with no door at
+  all, its checkouts read-only. The appraiser receives `confined_egress` with its request and re-derives under the
+  same confinement.
+- **The builder.** The body hands its relay to any ready builder that can take one. The CLI then runs behind its own
+  door (`genesis.claude-code`).
+
+### Confinement on by default for the founder's body
+
+- **The doctor.** `greg doctor --chromebook` probes confined egress: it installs the Kernel seccomp filter in a
+  throwaway child, and runs `/usr/bin/true` in a bubblewrap network namespace.
+- **The installer.** `greg/chromebook/install.sh` creates the body with `--confined-egress` whenever the probe passes.
+  It prints "Network: confined." When the probe fails, it warns with the reason and the fix (`sudo apt install -y
+  bubblewrap libseccomp2`). `--no-confined-egress` opts out.
+- **Visibility.** `status` gains `egress` (confined or not, relay decisions, denials, chain intact). Mission Control's
+  header shows the same line.
+- **Not changed.** The library default (`init_body`, plain `greg init`) stays opt-in, so other platforms and the
+  test suite are unaffected.
+
+### Found on the way: `git.inspect` ran repository-configured code
+
+`git.inspect` is a read-only sensor, and the appraiser re-observes with it. On a repository whose local config set
+`core.fsmonitor`, inspecting it ran that command; a `.gitattributes` clean filter is the other route `git status`
+takes into repository-chosen code. Now `read_only_git`:
+
+- ignores system and global config;
+- switches off fsmonitor and hooks;
+- blanks every clean, process and smudge filter driver the config defines (git skips an empty filter command).
+
+The regression test plants both. On the previous code the fsmonitor ran once and the filter process twice; now
+nothing runs, and a real modification still reads as dirty.
+
+### Evidence
+
+- `test_greg_chromebook_rehearsal::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model`
+  now also asserts that the installer confined the body exactly when the doctor says it can. The whole runbook
+  (install, N1, N2, the console, supervised restarts) passes on that confined body.
+  `test_the_founder_can_decline_network_confinement_at_install` covers the opt-out.
+- `test_greg_ventures`:
+  - a probe that reaches a listener on the body's loopback unconfined reaches nothing confined, and sees only `lo`;
+  - on a confined body a signed venture mission is ACHIEVED and VERIFIED, with the organ having seen only `lo`;
+  - with the appraiser's re-run left unconfined, the appraisal is REFUTED ("RailScout does not reproduce the
+    receipted appraisal");
+  - the real RailScout (`232f724`, exported read-only) and WealthMachine (`ec82b80`) organs give the same assessment
+    unconfined and with no network, and the confined re-run reproduces it (`GREG_TEST_RAILSCOUT`/`GREG_TEST_WMI`;
+    19/19).
+- `test_the_claude_code_genesis_builder_runs_behind_the_relay_on_a_confined_body`: the body hands the builder its
+  relay. The stand-in CLI reaches the API host as `genesis.claude-code`, is refused at `example.com`, and has no
+  direct route.
+
+### #26 stays PARTIAL
+
+The probe and a confined body have not yet been observed on the founder's Chromebook, which is the remaining
+acceptance step. A body made without the installer stays opt-in, and a host without bubblewrap and libseccomp
+cannot confine.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

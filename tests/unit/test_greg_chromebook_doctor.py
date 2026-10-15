@@ -14,9 +14,18 @@ def test_chromebook_doctor_ready_only_when_linux_user_service_is_available(monke
     monkeypatch.setattr(doctor.subprocess, "run", service)
     ready = doctor.chromebook()
     service_probe = ["systemctl", "--user", "show-environment"]
-    # the only other command is the worker-isolation probe, which runs /usr/bin/true in a bubblewrap namespace
+    # the only other commands are the isolation probes: /usr/bin/true in a bubblewrap namespace, and a throwaway
+    # child that installs the Kernel seccomp filter and exits (the #26 confined-egress probe)
+    import sys
+    from greg.capabilities import KERNEL_ROOT
+
+    def seccomp_probe(c):
+        return (c[:3] == [sys.executable, "-I", "-c"] and "install_filter()" in c[3]
+                and c[4] == str(KERNEL_ROOT / "tools") and len(c) == 5)
     assert ready["ready_for_linux_service"] and calls[0] == service_probe
-    assert all(c == service_probe or (c[0].endswith("bwrap") and c[-1] == "/usr/bin/true") for c in calls)
+    assert all(c == service_probe or (c[0].endswith("bwrap") and c[-1] == "/usr/bin/true") or seccomp_probe(c)
+               for c in calls)
+    assert any(seccomp_probe(c) for c in calls) and ready["confined_egress"]["available"] is True
     assert "VM restart at login" in ready["not_verified"] and "founder identity" in ready["not_verified"]
     assert "ChromeOS host identity and ownership" in ready["not_verified"]
     monkeypatch.setattr(doctor.subprocess, "run", lambda *a, **kw: SimpleNamespace(returncode=1))
@@ -64,3 +73,18 @@ def test_worker_isolation_is_reported_never_a_prerequisite(monkeypatch):
     assert "bubblewrap" in report["worker_isolation"]["fix"]
     monkeypatch.setattr(isolation, "_backend", lambda **_: ("bubblewrap", None, "/usr/bin/bwrap", []))
     assert doctor.chromebook()["worker_isolation"] == {"workers_can_run_confined": True, "mechanism": "bubblewrap"}
+
+
+def test_confined_egress_is_reported_unavailable_with_its_fix_when_a_probe_fails(monkeypatch):
+    monkeypatch.setattr(doctor.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(doctor.subprocess, "run", lambda *a, **kw: SimpleNamespace(returncode=1, stderr="no libseccomp"))
+    from greg import worker_isolation
+
+    def no_namespaces(**kw):
+        raise worker_isolation.WorkerIsolationError("bubblewrap not installed")
+    monkeypatch.setattr(worker_isolation, "_backend", no_namespaces)
+    report = doctor.confined_egress()
+    assert report["available"] is False and "kernel filter" in report["why"] and "network namespaces" in report["why"]
+    assert "bubblewrap" in report["fix"] and "libseccomp" in report["fix"]
+    monkeypatch.setattr(doctor.platform, "system", lambda: "Darwin")
+    assert doctor.confined_egress()["available"] is False

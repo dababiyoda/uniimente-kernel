@@ -179,6 +179,8 @@ class Body:
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
         self.egress = self._egress_relay()      # before the builder: paid model routes reach providers through it
+        if self._builder_factory is None and self.egress is not None and hasattr(self.builder, "egress"):
+            self.builder.egress = self.egress   # a ready builder that reaches a provider (Claude Code) gets it too
         self._refresh_builder()
         self.genesis = Genesis(journal=self.journal, registry=self.registry, workspace_root=self.layout.workspace,
                                builder=self.builder, read_roots=self.config["read_roots"])
@@ -494,7 +496,8 @@ class Body:
                    "head": self.ledger.head, "mission_id": mission_id, "read_roots": self.config["read_roots"],
                    "deliver_root": str(self.deliver_root),
                    "artifact_root": str(self.layout.artifacts),
-                   "workspace": str(self.layout.workspace / mission_id.replace(":", "_"))}
+                   "workspace": str(self.layout.workspace / mission_id.replace(":", "_")),
+                   "confined_egress": bool(self.config.get("confined_egress"))}
         if closure_event:
             request["closure_event"] = closure_event
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
@@ -688,6 +691,7 @@ def status(home: str | Path) -> dict:
                                               if e.payload["quarantined"]),
             "single_bottleneck_metric": metrics.vepmc(journal),
             "external_anchor": anchor.summary(journal),
+            "egress": _egress_summary(layout.home, config),
             "presence": presence.summary(journal, now=utcnow(), since=utcnow() - presence.REVIEW_WINDOW,
                                          heartbeat=heartbeat),
             "designation": [e.payload for e in journal.replay("body.designated")],
@@ -702,6 +706,18 @@ def status(home: str | Path) -> dict:
         }
     finally:
         ledger.close()
+
+
+def _egress_summary(home: Path, config: dict) -> dict:
+    """#26 as the founder sees it: is the network confined, and what has the relay decided (read-only)."""
+    if not config.get("confined_egress"):
+        return {"confined": False, "why": "this body was created without confined egress (greg init --confined-egress)"}
+    from foundry.systems.segmentation import Journal as EgressJournal
+    journal = EgressJournal(Path(home) / "egress-journal.jsonl")
+    rows = journal.read()
+    return {"confined": True, "decisions": len(rows), "denied": sum(1 for r in rows if r.get("verdict") == "DENIED"),
+            "chain_intact": journal.verify()["intact"],
+            "scope": "every mission-path connection crosses the relay or has no network"}
 
 
 def _path_summary(journal: Journal) -> dict:

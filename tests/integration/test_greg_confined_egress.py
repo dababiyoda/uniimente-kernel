@@ -912,3 +912,33 @@ def test_a_compromised_daleobanks_organ_reaches_only_the_platform_hosts_its_capa
     assert {(e["identity"], e["host"], e["verdict"]) for e in entries} == {
         ("daleobanks.verify", "api.twitter.com", "DENIED"), ("daleobanks.publish", "api.twitter.com", "ALLOWED"),
         ("daleobanks.publish", "example.com", "DENIED")}
+
+
+BUILDER_CLI = CLI.replace('report = {"prompt": sys.stdin.read()}', 'report = {"prompt_chars": len(sys.stdin.read())}').replace(
+    'print(json.dumps({"result": json.dumps(report), "total_cost_usd": 0.0, "is_error": False}))',
+    'print(json.dumps({"result": "```python\\nREPORT = " + repr(json.dumps(report)) + "\\n```", '
+    '"total_cost_usd": 0.0, "is_error": False}))')
+
+
+def test_the_claude_code_genesis_builder_runs_behind_the_relay_on_a_confined_body(tmp_path, provider):
+    """Capability Genesis's Claude Code builder is handed to the body ready-made; on a confined body the body gives it
+    the relay, and the CLI reaches the Anthropic API host only through it, as its own identity."""
+    import ast
+    import sys
+    from greg.builders import ClaudeCodeBuilder
+    relay, _, _ = provider("api.anthropic.com", lambda path, body: (200, {}))
+    cli = tmp_path / "claude"
+    cli.write_text(BUILDER_CLI.replace("{python}", sys.executable))
+    cli.chmod(0o755)
+    home, _, _ = body_with_confined_egress(tmp_path)
+    builder = ClaudeCodeBuilder(str(cli))
+    with Body(home, builder=builder) as body:
+        assert builder.egress is body.egress and body.egress is not None
+    builder.egress = relay                  # the provider fixture's relay: same journal shape, the fake proxy behind it
+    built = builder.build({"function": "text.count", "description": "count words", "examples": []})
+    report = json.loads(ast.literal_eval(built["source"].split("REPORT = ", 1)[1].strip()))
+    assert report["api.anthropic.com"].startswith("HTTP/1.1 200") and report["example.com"].startswith("HTTP/1.1 403")
+    assert report["direct"] in ("OSError", "ConnectionRefusedError", "TimeoutError")
+    entries = [json.loads(line) for line in (tmp_path / "egress-journal.jsonl").read_text().splitlines()]
+    assert {(e["identity"], e["host"], e["verdict"]) for e in entries} >= {
+        ("genesis.claude-code", "api.anthropic.com", "ALLOWED"), ("genesis.claude-code", "example.com", "DENIED")}

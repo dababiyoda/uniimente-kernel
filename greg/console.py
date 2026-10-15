@@ -378,8 +378,12 @@ def home_parts(console: Console) -> dict:
     signer = ("<span class=ok>founder key unlocked in this console</span>" if console.key is not None
               else "<span class=warn>read-only (start with --key to sign)</span>")
     can = console.key is not None
+    egress = st.get("egress") or {}
+    network = ((f"network confined: {egress['decisions']} relay decisions, {egress['denied']} denied"
+                + ("" if egress.get("chain_intact") else " · <b class=warn>relay journal FAILED</b>"))
+               if egress.get("confined") else "<span class=warn>network not confined</span>")
     add("header", f"<h1>GREG</h1><p class=muted>Body {_e(st['body_id'])} · {body_state} · {signer} · "
-           f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'}</p>")
+           f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'} · {network}</p>")
     for message in console.flash[-3:]:
         add("flash", f"<section class=ok>{_e(message)}</section>")
     console.flash.clear()

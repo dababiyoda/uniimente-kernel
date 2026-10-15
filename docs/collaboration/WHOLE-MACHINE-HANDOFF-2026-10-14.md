@@ -127,9 +127,11 @@ The 13 holes were:
   - Choose a dedicated host for #9/#10 privileged runtimes, or decline
     (`PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md`).
   - Decide on merging PR #169.
-- **#26 PARTIAL.** `browser.session`, the paid model routes, anchoring and the DALEOBANKS bridge joined the relay in
-  increments 10 to 12. On a confined body, every mission-path egress now crosses the relay or has none (inventory in
-  the convergence record, increment 12). What remains is that confinement is still opt-in.
+- **#26 PARTIAL.** `browser.session`, the paid model routes, anchoring, the DALEOBANKS bridge, the venture organs
+  (with the appraiser's re-run) and the Claude Code Genesis builder joined the relay in increments 10 to 13. The
+  founder's installer now creates the body confined whenever `greg doctor` finds the kernel filter and network
+  namespaces. What remains is to observe that on the founder's Chromebook (`greg doctor --chromebook` shows
+  `confined_egress.available`, and `greg status` shows `egress.confined`).
 - **#9, #10, #28 and #52 PARTIAL** (Foundry 50/55).
 - **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
   `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
@@ -182,5 +184,5 @@ GREG_TEST_RAILSCOUT=<railscout checkout with railscout/appraise.py> GREG_TEST_WM
   - greedy tying the exact solver;
   - the proxy-bypass evidence from 2026-09-30.
 - **Next active dependency.** The founder's first-body run, which is the N1 gate. Until then, the strongest next
-  buildable decision is whether confined egress is on by default, which is the remaining #26 criterion. Every
-  mission-path egress is behind the relay since increment 12.
+  buildable work is the N3 business machinery from #137/#168. Confined egress is on by default for the founder's
+  body since increment 13; observing it on the Chromebook is part of the same founder run.

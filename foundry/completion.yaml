@@ -478,11 +478,17 @@
     DALEOBANKS bridge join it too: the RFC 3161 query is posted by a component with no socket of its own to the
     founder-signed TSA origin alone, and DALEOBANKS''s interpreter runs in a namespace that may reach nothing during
     verify and only its manifest''s declared X API hosts during publish. Every door program now runs in one namespace
-    definition (relay_door.namespace_argv). Inventory 2026-10-15: on a confined body every mission-path egress
-    crosses the relay or has none; Foundry systems on the mission path run in a seccomp worker with no network at all
-    (their Stripe test-mode, OCI registry and federation code is reachable only outside the mission path), and the
-    local Ollama route is a fixed numeric loopback address. Not COMPLETE: confined egress is opt-in, so the second
-    criterion does not hold machine-wide. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
+    definition (relay_door.namespace_argv). The venture organs (RailScout appraiser, WealthMachine intake), in the
+    assessment and in the separate appraiser''s re-run, run in a namespace with no network at all, and the Claude Code
+    Genesis builder runs behind its own door; the first inventory (increment 12) had missed all three. Inventory after
+    an audit of every process GREG spawns (2026-10-15): on a confined body every mission-path connection crosses the
+    relay or has no network; Foundry systems on the mission path run in a seccomp worker with no network at all (their
+    Stripe test-mode, OCI registry and federation code is reachable only outside the mission path), and the local
+    Ollama route is a fixed numeric loopback address. The founder''s installer (greg/chromebook/install.sh) creates
+    the body confined whenever greg doctor finds the kernel filter and network namespaces, says so, and warns with the
+    fix otherwise; status and Mission Control show the relay''s decisions. Not COMPLETE: the probe and a confined body
+    have not yet been observed on the founder''s Chromebook; a body made without the installer stays opt-in; and a
+    host without bubblewrap and libseccomp cannot confine. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
   implementation:
   - foundry/systems/segmentation.py
   - foundry/systems/relay_door.py
@@ -495,7 +501,10 @@
   - tests/unit/test_greg_computer.py
   - tests/unit/test_greg_models.py
   - tests/unit/test_greg_daleobanks_bridge.py
+  - tests/unit/test_greg_ventures.py
+  - tests/unit/test_greg_chromebook_doctor.py
   - tests/integration/test_greg_confined_egress.py
+  - tests/integration/test_greg_chromebook_rehearsal.py
   limitations: Linux with libseccomp only (refused elsewhere); the door also needs bubblewrap network namespaces
     (refused without them). Exact host/port allowlists; no wildcard. Covers only components launched through
     run_confined or behind the door. Inside the namespace Chromium runs without its own sandbox (it cannot nest a user

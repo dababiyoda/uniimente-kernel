@@ -39,6 +39,12 @@ founder key can be.
 | superseded_by | None |
 | implementation_refs | `evolution/repair/continuity/`, `evolution/repair/subjects.py`, `evolution/repair/harness.py`, `governance/integrity/`, Canonical CI job 3 |
 
+## Frontier leap, continued: a goal asks for the capability its plan requires — 2026-10-15
+
+Same intent. A founder-signed goal whose plan node requires `<function>@function` that GREG lacks now asks Capability Genesis to form it under the goal's signed mission. This is formation only: each verified result waits for your signed attach, no builder is commissioned, no mission is blocked, and the goal's deficit closes when an attached implementation serves it.
+
+Evidence: [README](evidence/greg-goal-formation/2026-10-15/README.md). State: active. Authority delta: none. VEPMC: 0.
+
 ## Frontier leap, continued: portfolio decisions and capability perception — 2026-10-15
 
 Same intent (`INTENT-20261013-FRONTIER-LEAP-RECOMBINE`; the directive was re-issued verbatim and its founder instructions A–D stay preserved in that record). Built:

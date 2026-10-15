@@ -390,6 +390,7 @@ class Genesis:
         self.builder_cap = getattr(builder, "max_budget_usd", None)   # the builder's own ceiling, never ratcheted
         self.store = self.workspace_root.parent / "capabilities" / "built"   # content-addressed built sources
         self.objects = ArtifactStore(self.store, legacy_source_suffix=".py")  # preserve existing bodies' paths
+        self._form_only = None   # goal id while forming on a goal's request (form_for_goal)
 
     # -- queries used by the mission engine --------------------------------------
     def find_attached(self, function: str):
@@ -669,6 +670,8 @@ class Genesis:
 
     def _attach_dependency(self, mission, manifest, dependent: str, now) -> bool:
         """Attach the exact engine a construction is pinned to, under the same signed scope, or ask."""
+        if self._form_only:
+            return False
         allowed = (mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"
                    and mission.cone._capability_inside(manifest.capability_id))
@@ -681,6 +684,24 @@ class Genesis:
                                                  "at": iso(now)},
                             key=[manifest.capability_id, "attached", mission.mission_id, dependent])
         return True
+
+    def formable(self, function: str) -> bool:
+        """True when Genesis can form ``function`` without a builder: a catalogued tool or package, or a
+        certified reduction chain onto one (what a goal's plan may ask to have formed)."""
+        return function in CATALOG or self.construction_engine(function) is not None
+
+    def form_for_goal(self, *, goal_id: str, mission, function: str, purpose: str, now):
+        """Form ``function`` because a founder-signed goal's plan requires it, under one of its signed missions.
+
+        Formation only: every verified result waits for the founder's CAPABILITY_ATTACH (no mission
+        auto_attach applies, no engine is attached for it) and no builder is commissioned, so no build
+        budget is spent on a goal's behalf. Returns the attached manifest when one already serves."""
+        prior = self._form_only
+        self._form_only = goal_id
+        try:
+            return self.resolve(mission=mission, function=function, purpose=purpose, now=now)
+        finally:
+            self._form_only = prior
 
     def resolve(self, *, mission, function: str, purpose: str, now, repair: dict | None = None):
         found = self.find_attached(function)
@@ -729,6 +750,8 @@ class Genesis:
                 opened["search_order"] = ["attached", "verified_detached", "constructed", "builder", "founder"]
             if repair is not None:
                 opened["repair"] = repair
+            if self._form_only:
+                opened["requested_by_goal"] = self._form_only
             self.journal.record("deficit.opened", opened, key=deficit_id)
 
         # 2. registered but detached
@@ -976,6 +999,11 @@ class Genesis:
 
     def _builder_route(self, mission, function, deficit_id, now, contract=None, repair=None):
         """Commission the residual capability against the founder-frozen contract, verify, register."""
+        if self._form_only:
+            self._route(deficit_id, "builder", f"goal {self._form_only[:23]} asked for formation: a goal never "
+                                               "commissions a builder or spends a build budget", None)
+            self._route(deficit_id, "founder", "escalated", None)
+            return None
         if self.builder is None or contract is None:
             why = ("no builder attached (coding agent/human/model not connected)" if self.builder is None
                    else "the mission declares no contract for this function; nothing to build against")
@@ -1141,7 +1169,13 @@ class Genesis:
                                "platform": sys.platform})
 
     def _attach(self, mission, manifest: CapabilityManifest, deficit_id: str, now):
-        # Founder-signed pre-authorization only: read-only, and inside the cone.
+        # Founder-signed pre-authorization only: read-only, and inside the cone. Never for a goal's request.
+        if self._form_only:
+            self.journal.record("deficit.awaiting_attach", {
+                "deficit_id": deficit_id, "capability_id": manifest.capability_id,
+                "why": f"formed because goal {self._form_only[:23]} requires {manifest.function}; attaching is "
+                       "your signed CAPABILITY_ATTACH"}, key=[deficit_id, "await", manifest.capability_id])
+            return None
         allowed = (mission.spec.get("auto_attach", {}).get("max_consequence_class") == "read_only"
                    and manifest.consequence_class == "read_only"
                    and mission.cone._capability_inside(manifest.capability_id))

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -201,6 +202,12 @@ def _practitioners(row: dict) -> dict:
     return {k: v for k, v in out.items() if v}
 
 
+def exact_sign_p(wins: int, losses: int) -> float:
+    """One-sided exact sign test over the discordant items: P(X >= wins), X ~ Binomial(wins + losses, 1/2)."""
+    n = wins + losses
+    return 1.0 if n == 0 else sum(math.comb(n, k) for k in range(wins, n + 1)) / 2 ** n   # int / int: correctly rounded
+
+
 def build() -> dict:
     index = {"schema": "greg-mind-evidence-index/0.1", "sources": [], "missing_sources": [],
              "recipes": {}, "routing": {}, "genomes": {}, "operations": {},
@@ -225,7 +232,10 @@ def build() -> dict:
                 "lift": lift, "status": "VPL_LIFT" if lift else "NO_LIFT", "family": family,
                 "prefer": None if lift else row["best_constituent"],
                 "wins": row["routed_wins"], "losses": row["routed_losses"],
-                "p_one_sided": row["sign_test_p_one_sided"], "evidence": f"{rel}#summary.{family}",
+                # exact, from the frozen counts: a harness that rounded to six decimals recorded 0.0 for a p of
+                # about 2e-28 (F7, 92-0); its rounded value is kept beside the exact one, never as the p
+                "p_one_sided": exact_sign_p(row["routed_wins"], row["routed_losses"]),
+                "p_one_sided_as_recorded": row["sign_test_p_one_sided"], "evidence": f"{rel}#summary.{family}",
                 # practitioner and exact-single arms the same frozen run measured (review of #179, L11): a lift
                 # over GREG's best constituent is not a lift over these
                 **_practitioners(row),

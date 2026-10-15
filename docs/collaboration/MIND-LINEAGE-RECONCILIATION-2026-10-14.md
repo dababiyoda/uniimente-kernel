@@ -17,7 +17,7 @@ capability.
 |---|---|---|
 | common base | `92bc6e31e0baa8fd507833e0f272b4a5e532e4d3` | P4 v2 result |
 | PR #155 head | `ef5f078013b549a51458dc9f6b5f34b324ea70b0` | 60 files changed since the base |
-| PR #158 head | `202b932` (merged in this PR); earlier merges at `77b61a1` and `047549f352c74ac5f098ec04762b8095f44c9fde` | 154 files changed since the base |
+| PR #158 head | `f8e8fd2d294f9d79dbd623c065feb17fd1744a18` (merged in this PR, review of #179 M18); earlier merges at `77b61a1`, `047549f`, `202b932` and `41a8538` | 167 files changed since the base |
 | shared paths | 22 | 8 are frozen-path collisions |
 
 Convergence commits:
@@ -31,6 +31,16 @@ Convergence commits:
   arms had not run at that merge.
 - A further merge brings #158 to `41a8538`: F8's frozen result, verified fixes to the promoted competitor genomes,
   and the Backcast GPS record of F8.
+- The last merge brings #158 to `f8e8fd2` (review of #179, M18). It adds genome admission v3, which was
+  pre-registered at `878f76c`, and P8 cycle cr-4, run under a committed freeze. It also adds #158's own fixes for
+  review findings M14, L5 and L6 (`af258bf`), and its compiler's part-addressed rows.
+  - **P8 files:** this branch had fixed the same findings in parallel (`1da022a`). #158's versions of
+    `evolution.py`, `evolution_sandbox.py`, `isolation.py` and their tests are selected, because cr-4's freeze
+    binds those bytes. This branch's variant is history only.
+  - **Compiler:** #158's part rows replace this branch's wrapped-key matching for M10. The one status function
+    over the index (#155's operation verdicts, code binding), the derived chains and the practitioner-tie fields
+    are re-applied on top.
+  - **Map:** the map pins `f8e8fd2`, and a test asserts it is an ancestor of this branch.
 
 The eight collided frozen files are byte-identical at `a832c73`, `77b61a1` and `047549f`.
 
@@ -72,10 +82,10 @@ system and one evolution controller, with every useful capability retained and e
 
 | level | finding |
 |---|---|
-| file | 185 files changed by either lineage. Classified: 97 complementary, 73 historical evidence, 8 semantic incompatibility (the frozen-path collisions), 5 interchangeable, 2 duplicate, 0 unresolved. |
+| file | 209 files changed by either lineage (#158 at `f8e8fd2`). Classified: 99 complementary, 95 historical evidence, 8 semantic incompatibility (the frozen-path collisions), 4 interchangeable, 2 duplicate, 1 unresolved (`advantage.py`, review L19). Each disposition is checked against git: "kept" and "selected" mean the lineage's bytes, while "extended", "merged" and "modified" mean they differ (review M20). |
 | interface | One cognition entry: `greg.cognition.cortex.reason` / `solve` -> catalog -> `SOLVERS` -> isolated worker -> independent verifier -> receipt. One Layer 5 entry above it: the Competency Compiler (`greg/cognition/compiler.py`). Both lineages' families run through it. |
 | contract | One catalog projection (`catalog.FAMILIES`, 72 families). The genome contract is `greg/cognition/genomes/contract.py`. Proof classes: #155's family checks plus #158's `genome_certificate`, on one verifier. |
-| genome | 127 inventoried; 98 implemented; 94 integrated; 28 labelled DEFAULT_FOR_GEOMETRY (19) or NICHE_CAPABILITY (9); 7 COMPOSITION_ONLY; 8 SUPERSEDED; 4 REJECTED; 53 EXPERIMENTAL or unevaluated; 27 FRONTIER_HORIZON. The 28 labels are not one admitted repertoire (review of #179, H4); by provenance: **19 rule-admitted** under #158's pre-registered rule at the current version, 5 #155 operation-family verdicts (held-out, not pre-registered in git), 2 recipe lifts (not admissions), 2 hand-coded organ labels (not admissions). `genome_library.admitted_by_provenance()` reports this split. 8 are attached by default and 0 are attached by any evaluation. On a body, actually exercised is 0 (VEPMC 0); exercised in tests and frozen evaluations only. |
+| genome | 127 inventoried; 98 implemented; 94 integrated; 28 labelled DEFAULT_FOR_GEOMETRY (19) or NICHE_CAPABILITY (9); 7 COMPOSITION_ONLY; 8 SUPERSEDED; 4 REJECTED; 53 EXPERIMENTAL or unevaluated; 27 FRONTIER_HORIZON. The 28 labels are not one admitted repertoire (review of #179, H4); by provenance: **19 rule-admitted** under #158's pre-registered rule at the current version, 5 #155 operation-family verdicts (held-out, not pre-registered in git), 2 recipe lifts (not admissions), 2 hand-coded organ labels (not admissions). `genome_library.admitted_by_provenance()` reports this split. 8 of the 72 catalog families are attached by default, and 0 are attached by any evaluation. Counting every cognition capability, 22 are attached by default (review L4). One of them, `cognition.seed.solve` (#142), runs `cortex.seed` methods on its own worker, with its own verifier and receipts, outside the compiler's evidence routing. It is a registered alternative entry, not a second canonical Mind entry; it stays attached because a shipped mission template (`greg/templates.py`) names it as its compute strategy, and `greg/capabilities.py` registers it as the benchmark twin and fallback, never as a second authority. Withholding it by default would break that template; that change is left for a decision. On a body, actually exercised is 0 (VEPMC 0); exercised in tests and frozen evaluations only. |
 | evaluation | One evidence index (`docs/evidence/greg-mind-evidence-index.json`) carries every frozen admission, P6 and P4 run of both lineages. `tests/unit/test_mind_evidence_sources.py` re-derives every row from the file it cites. |
 | behaviour | Measured on one request per input signature. The compiler now refuses methods that lost on held-out data in either lineage (section 5); every other top choice is unchanged. |
 
@@ -301,23 +311,23 @@ like, the review measured the composition and PMCF equally fast in process (per-
 one-stage exact genome on GREG's path about 4-5x faster than the three-stage chain. An erratum sits beside the
 frozen audit (`docs/evidence/pr155-f7-audit/2026-10-14/ERRATUM-2026-10-15.md`); its README is unchanged.
 
-- It is UNEVALUATED in the index: no frozen admission at its exact version.
-- The compiler routes a flat capacity-expansion request to it as the only fit; it is withheld, so the route ends
-  in an attach ask.
-- A recipe-shaped payload (`capacity_network`) now also reaches it: exact single methods match the problem nested
-  under a recipe's key and compete with the recipe on evidence (review M10). Today the recipe's VPL_LIFT still
-  ranks first, with `tied_by: parametric_min_cost_flow` reported on its row; admission v3 re-derives the order.
-- Admission v3 and the F7 re-measurement should pre-register spend at equal throughput as a declared secondary
-  measure (review M11).
+**Decided by pre-registered evidence, not escalated (review L21).** #158's admission v3 was pre-registered at
+`878f76c` on fresh seeds 1200-1229. It admits `flow_expansion_mcf` 1.0.0 as DEFAULT_FOR_GEOMETRY against the
+`graph_then_allocate` composition twin: equal quality on all 30 instances at about one seventh of the latency.
+Under the frozen rule it is therefore the routed default for budgeted capacity expansion. The composition stays
+a registered alternative. Attaching the genome remains the founder's decision.
 
-The condition is a pre-registered admission of `flow_expansion_mcf` 1.0.0 with the composition as competitor
-on items F7 never used. This PR does not run that admission:
-- #158's ledger already schedules admission v3 for this genome;
-- a second session admitting the same genome would create another verdict collision.
+On this tree, with the composition's stages attached and the genome withheld, a `capacity_network` request names
+`flow_expansion_mcf` as the withheld best fit and records an attach ask, and the composition serves meanwhile.
+Once the genome is attached, the compiler selects it. Both cases are tested.
 
-The founder's VPL definition says "beats the strongest single available intelligence". Once
-`flow_expansion_mcf` is admitted, F7 should be re-measured with it as a constituent. A tie at higher latency
-would remove F7's lift. That is an expectation, not evidence.
+Still open:
+- **F7's VPL lift.** The founder's VPL definition says "beats the strongest single available intelligence", and
+  that single intelligence now exists. F7 needs a re-measurement with `flow_expansion_mcf` as a constituent, on
+  a fresh pre-registration owned by #158. A tie at higher latency would remove F7's lift; that is an
+  expectation, not evidence.
+- **Spend as a secondary measure.** That re-measurement should pre-register spend at equal throughput as a
+  declared secondary measure (review M11).
 
 **F8 and the converged tree.** F8's frozen harness, `run_v5.py`, refuses to report from this tree by design
 (`FROZEN_INPUT_CHANGED`). Twelve files in its frozen code closure differ here, including the converged compiler,
@@ -336,21 +346,18 @@ branch, under a lineage-unique path. It is listed with the remaining falsificati
 | both lineages' colliding frozen files | `docs/collaboration/lineage-archive/` | byte-identical archival copies (tested against git and the manifest's digests) | n/a: evidence |
 | #155's benchmark reconciliation table | git history at `ef5f078` | superseded | n/a |
 
-**P8 controller integrity (review of #179, M14 and L5).** #155's freeze mechanism is now combined into the
-canonical controller. A recorded cycle needs a pre-registered manifest (`evolution.write_freeze`), which covers:
-- the trusted closure's bytes, including the target's method module;
-- the rule and the settings;
-- both evaluator seals.
+**P8 controller integrity (review of #179, M14, L5 and L6).** The canonical controller is #158's at `f8e8fd2`,
+whose `af258bf` combines #155's freeze mechanism into it:
+- a cycle that writes a record must match a committed freeze (trusted-code digests, rule, settings, split and both
+  evaluator seals), re-checked before every evaluation;
+- the parent compares the method module each sandbox imported, and probes the sandbox's confinement itself;
+- choices are type-strict;
+- on Landlock ABI 6 or later, every confined worker is scoped for signals and abstract sockets.
 
-`cycle()` checks the manifest before the run, before every evaluation and before it reports, and it refuses a
-dirty closure. The sandbox reports the bytes of the module it imported, and the parent refuses a mismatch.
-Confinement no longer grants the repository listing. On Landlock ABI 6 or later it scopes signals and abstract
-sockets. Generator seeds reach the sandbox only as a keyed digest. Two limits remain:
-- the parent still relies on the child's own report of its confinement, because Landlock exposes no
-  parent-side query;
-- constraint-release truth can still be regenerated from public generator code and the inputs.
-
-Both stay preconditions before any code-level candidate space is allowed. No cycle has yet run under the freeze.
+Cycle cr-4 ran under such a freeze. This branch built the same fixes in parallel (`1da022a`); that variant is
+history only, because cr-4's freeze binds #158's bytes. Two latent channels remain preconditions before any
+code-level candidate space is allowed: generator seeds that let a candidate regenerate labels, and truth that can
+be regenerated from public generator code.
 
 **Who adopts a P8 RETAIN (review L9, escalated).** Three mechanisms in the tree can decide improvements: the
 Kernel's `evolution/loop.py` ClosureLoop, `greg/improvement.py` (which auto-retains the `brief.attention`
@@ -509,6 +516,13 @@ Each of these remediations needs a separate decision, and none is taken here:
   outside development authority.
 - **Founder:** any merge to `main` or any release that carries an uncleared extract.
 
+**Release guard (review of #179, M19).** `docs/collaboration/RELEASE-EXCLUSIONS.json` lists all 21 tracked files that
+carry values derived from the four uncleared sources. That covers the four extracts plus the suites, freezes,
+results, development files and logs built from them. The extracts alone are only 4 of the 21. The files stay in
+git as frozen evidence. Canonical CI runs `scripts/check_release_exclusions.py` on every change, checking that
+the Python package ships none of them. On a tag, it also checks the tag's source archive and fails if any listed
+path is present. A test finds any new tracked file carrying the same item markers that is missing from the list.
+
 What an agent can do without those decisions:
 - keep provenance and frozen evidence intact;
 - add no further uncleared extract. F8's follow-up takes its fresh data from (c) only once its terms are read;
@@ -520,7 +534,7 @@ What an agent can do without those decisions:
 |---|---|---|
 | both lineages recoverable, evidence inspectable | met | heads above; archives; manifest; `test_mind_lineage_manifest.py` |
 | frozen results unaltered | met | digest tests; archives equal `git show`; #155 runners refuse (`FROZEN_INPUT_CHANGED`) |
-| every conflict has a disposition | met | map JSON (185 entries, coverage test against git) |
+| every conflict has a disposition | met | map JSON (209 entries; the coverage test checks the paths, the #158 head as an ancestor, and every disposition against git) |
 | the branch passes its own CI, contract, integration, security and regression tests | see the PR body for the run on the final commit | full suite plus every CI script step |
 | one canonical cognition entry point | met | section 3; one `SOLVERS` table |
 | alternative engines cannot silently assume live authority | met | 64 of 72 families start VERIFIED (withheld); attach is founder-only (`test_greg_competency_compiler.py`, `test_greg_cognition_genesis.py`); `check_authority_singleton.py` passes; `evolution_routing` has no runtime importer |
@@ -535,15 +549,22 @@ What an agent can do without those decisions:
 
 ## 14. Rollback
 
-- Close the draft PR. Nothing outside the branch `claude/greg-mind-lineage-convergence` changed. #155's and
-  #158's branches and their frozen evidence are untouched by this PR.
-- To undo a single integration step on this branch, revert its commit:
-  - `49b2d58`: index operations, compiler and inventory;
-  - `8bbd3b8`: audit result, horizon and manifest label;
-  - `e21bb5b`: merge of #158 `047549f`;
-  - `6e62b59`: map.
-- Then rebuild the index with `PYTHONPATH=. python scripts/build_mind_evidence_index.py` and run
-  `python -m pytest -q`.
+- **Primary:** close the draft PR. Nothing outside the branch `claude/greg-mind-lineage-convergence` changed.
+  #155's and #158's branches and their frozen evidence are untouched by this PR.
+- **Branch reset (review L18; the per-commit list given earlier did not revert cleanly):** recreate the branch at
+  #155's head and re-apply only what is wanted.
+
+  ```sh
+  git switch -c trackb-rollback ef5f078            # PR #155's head, the PR's base
+  git merge --no-ff f8e8fd2                        # optional: #158's lineage alone, without Track B's work
+  ```
+
+  Track B's own commits, oldest first: `2d1ddd3` (first merge), `49b2d58`, `8bbd3b8`, `6e62b59`, `e21bb5b`
+  (merge), `8a43e70`, `4b445db`, `c7a7ad5`, `d3a5abd`, `1346376`, and the review-of-#179 commits after them (see
+  `git log ef5f078..HEAD --first-parent`).
+- **Per-step revert:** revert in reverse order from the newest commit, with `git revert -m 1` for each merge
+  commit. Then rebuild the index (`python scripts/build_mind_evidence_index.py`) and run `python -m pytest -q`.
+  A revert of a single middle step is not supported, because later steps build on it.
 
 ## 15. Still unverified, and escalations
 
@@ -554,7 +575,16 @@ What an agent can do without those decisions:
 - the SNDlib, M4, fpp3 and NYC TLC data terms (section 12).
 
 **Not done here:**
-- `flow_expansion_mcf` admission and F7 re-measurement (left to #158's scheduled admission v3; see section 8);
+- F7 re-measured with `flow_expansion_mcf` as a constituent (#158 owns it; section 8);
+- a live harness that can re-admit #155's operation families. #155's runners refuse at this head
+  (`FROZEN_INPUT_CHANGED`), and #158's harness enumerates genome executables only. Until those families are
+  wrapped as versioned genomes, their routes are lineage verdicts bound to code closures (review M17);
+- an `independently_verified` field in the inventory, backed by verifier-mutation evidence (review L21);
+- a cross-lineage seed and data-identity registry that the freeze tools consult (review L3). Known overlap:
+  #155's crowd-sparse seeds 3001-3040 and P6 v3's 3101-3148 sit inside the 3000-3999 range used for review and
+  development work;
+- an independent Systems Architect review. The other four roles were reviewed independently by the #158
+  session; that role was performed by the builder (review L20);
 - binding of operation verdicts to third-party package versions, dynamic dispatch and data files (the closure
   covers repository code only);
 - F8's fallback evaluation: proposed to the #158 session as its one owner. A diagnostic on the exposed rows and a
@@ -567,8 +597,10 @@ What an agent can do without those decisions:
 1. Merge of this PR, and of #155 and #158.
 2. Data rights (section 12): an existing public distribution and a release blocker. History rewriting,
    making the repository private, and contacting rights holders are separate founder decisions.
-3. Whether `flow_expansion_mcf` becomes canonical for capacity expansion once admitted (recommended).
-4. Attaching any family (none recommended by this PR).
+3. Attaching any family. `flow_expansion_mcf` is the routed default by admission v3; attaching it is the one
+   attach this record recommends.
+4. Who adopts a P8 RETAIN (section 9): confirm "a reviewed code change recorded as an EvolutionCapsule with a
+   founder decision", or name another decider.
 5. Whether a sign disagreement between lineages' frozen verdicts should go to the founder instead of the
    finish-time rule.
 6. Any accountability channel beyond preparation: a lawful basis established by counsel, then a founder-signed
@@ -592,6 +624,41 @@ Compared with either lineage alone, GREG can now:
   - step removal;
   - accountability, as four legal channels that end in a legal-review request.
 - hold every template to one evidentiary standard, with prior-only selections labelled;
-- bind every positive operation verdict to the code closure it measured.
+- bind every positive operation verdict to the code closure it measured;
+- route budgeted capacity expansion to the single exact genome that #158's pre-registered admission v3 admitted
+  (`flow_expansion_mcf`), asking the founder to attach it while the composition serves;
+- refuse a release that would carry uncleared third-party data.
 
 #158's F7 result is independently verified. The immune-system destination is back on the one Backcast GPS.
+
+## 17. Independent review of #179: dispositions
+
+The review (#158 session, 2026-10-15; `docs/collaboration/reviews/PR179-INDEPENDENT-REVIEW-2026-10-15.md`)
+found 5 high, 20 medium and 22 low defects. Each was reproduced and then fixed with a regression test, unless
+the row says otherwise.
+
+| findings | disposition |
+|---|---|
+| H1 | A same-instance re-run never decides and is labelled as one: F2R decides identify_then_optimize, and #158's REGRESSION decides P4. |
+| H2, M1, M2, M16 | One status function (`compiler.family_status`) serves the compiler, Genesis, the inventory and `mind_status`. Attach asks cite evidence, SUPERSEDED operations name their competitor, and the mission hook drops COMPOSITION_ONLY. M2's second fix (cortex.reason refusing COMPOSITION_ONLY) is not taken: an explicit operation request asks for that output, and geometry routing already refuses it. |
+| H3, M4, M5, M6, L12 | Verifiers recompute instead of trusting the answer. L12 is covered by #158's next harness version. |
+| H4, M3 | Admitted labels are reported by provenance (19 rule-admitted). DEFAULTs without a competitor route as UNEVALUATED. collective is EXPERIMENTAL by erratum. |
+| H5, M15 | Recipe lifts and genome configurations bind the code they measured. A test shows no rejected P8 configuration ships. |
+| M7, M8, M9, M10 | Derived chains are reachable from Layer 5, only when unambiguous. M10 is resolved by #158's part rows, and admission v3 decides the canonical genome. |
+| M11, M12, M13, L2, L10, L11, L13, L15 | Spend diagnostic; like-for-like latency in an erratum beside the frozen audit; F4, F3 and F7 caveats; practitioner ties in the index; ledger erratum. |
+| M14, L5, L6 | #158's `af258bf` is selected (section 9). This branch's parallel fix is history only. |
+| L7, L8, L9 | The single-controller test covers every tree and dynamic import by string. The path.json and ledger overclaims are corrected. The adopting decider is escalated. |
+| M17 | Not fixed: no live harness can re-admit #155's operation families (section 15). |
+| M18 | #158 is merged at `f8e8fd2`. The map pins it, and a test asserts it is an ancestor. |
+| M19 | Release-exclusion list, CI check and test (section 12). |
+| M20 | The original runner is archived; dispositions are checked against git. |
+| L1 | Pointer files in the three #155 evidence directories, and an archive README. The source manifest's #155 head and `evidence_directories` are not edited (#158 owns that file). |
+| L3 | Map note corrected. The seed registry is not built (section 15). Frozen `pr155-` prefixes keep their identity; new convergence evaluations here use the `pr155-` prefix only for work on #155's lineage. |
+| L4 | `cognition.seed.solve` is dispositioned (section 3). |
+| L14 | Mechanism-level map note on `genomes/flow.py`. |
+| L16, L17 | Procedure in the pointer files: extract the tree at the freeze commit. Every frozen runner of both lineages refuses at this head. P6 v1's freeze and results landed in one commit (`e450218`), and the run's `source_commit` lacks the runner. |
+| L18 | Rollback rewritten as a branch reset (section 14). |
+| L19 | `advantage.py` is classified unresolved, and the CLI labels it a historical view. |
+| L20 | The Systems Architect role is recorded as not independently reviewed (section 15). |
+| L21 | Escalation 3 is replaced by the pre-registered admission verdict; the omitted items are added to section 15. |
+| L22 | The developmental-sweep result is pinned by sha256 in a test. |

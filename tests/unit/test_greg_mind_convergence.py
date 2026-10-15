@@ -212,6 +212,29 @@ def test_the_reconciliation_map_covers_every_file_either_lineage_changed():
         changed |= set(subprocess.run(["git", "diff", "--name-only", record["base"], head], cwd=ROOT,
                                       capture_output=True, text=True, timeout=60).stdout.split())
     assert set(paths) == changed
+    # review of #179 (M18): the map, and this branch, carry #158's head named in the map
+    assert subprocess.run(["git", "merge-base", "--is-ancestor", record["pr158"], "HEAD"], cwd=ROOT,
+                          capture_output=True, timeout=60).returncode == 0
+    # review of #179 (M20): a disposition says what the tree holds. "kept" and "selected:<lineage>" are that
+    # lineage's bytes; "merged", "extended" and "modified" differ from them
+    wrong = []
+    for e in record["entries"]:
+        disposition, lineage = e["disposition"], e["lineage"]
+        source = disposition.split(":", 1)[1] if disposition.startswith("selected:") else lineage
+        if source not in ("pr155", "pr158"):
+            continue
+        out = subprocess.run(["git", "show", f"{record[source]}:{e['path']}"], cwd=ROOT, capture_output=True,
+                             timeout=60)
+        theirs = out.stdout if out.returncode == 0 else None
+        here = (ROOT / e["path"]).read_bytes() if (ROOT / e["path"]).exists() else None
+        if (disposition == "kept" or disposition.startswith("selected:")) and here != theirs:
+            wrong.append(f"{e['path']}: {disposition} but differs from {source}")
+        if disposition in ("merged", "extended", "modified") and here == theirs:
+            wrong.append(f"{e['path']}: {disposition} but identical to {source}")
+    assert not wrong, "\n".join(wrong)
+    original = ARCHIVE / "pr155-ef5f078" / "cortex/evaluation/evolution/run.py"
+    assert hashlib.sha256(original.read_bytes()).hexdigest() == _git_blob_sha(record["pr155"],
+                                                                                "cortex/evaluation/evolution/run.py")
 
 
 def test_operation_verdicts_are_bound_to_the_solver_code_they_measured():
@@ -754,3 +777,11 @@ def test_admitted_labels_are_reported_by_provenance_and_practitioner_ties_are_vi
     assert f7["tied_by"] == ["parametric_min_cost_flow"]
     entry = next(e for e in entries if e.genome_id == "composition.graph_then_allocate")
     assert "tied on every item by parametric_min_cost_flow" in entry.detail
+
+
+def test_a_historical_result_that_its_runner_could_rewrite_is_pinned():
+    """Review of #179 (L22): #155's developmental-sweep runner still runs at this head and writes its output with no
+    existence guard. Its committed result is pinned here, so a rerun over it fails CI instead of passing silently."""
+    path = ROOT / "docs/evidence/greg-developmental-sweep/2026-10-14/results.json"
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == \
+        "ea771ded75fac7ba5a04214bd26f31c5d6ac51fffea2090c65a235de1d12d80d"

@@ -9,6 +9,8 @@ recorded so the parent can refuse unconfined runs where confinement is required.
 """
 from __future__ import annotations
 
+import hashlib
+import inspect
 import json
 from pathlib import Path
 import resource
@@ -18,7 +20,6 @@ import tempfile
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-import hashlib  # noqa: E402
 import importlib  # noqa: E402
 from greg.cognition.genomes.contract import GenomeError  # noqa: E402
 from greg import isolation  # noqa: E402
@@ -38,19 +39,20 @@ def main():
         print(json.dumps({"confined": None, "error": "UNKNOWN_TARGET"}))
         return
     module, function, runtime = TARGETS[request["target"]]
-    imported = importlib.import_module(module)                        # imported BEFORE confinement
-    method = getattr(imported, function)
-    # the bytes of the module actually imported, read before confinement: the parent compares them with its
-    # pre-registered freeze, so an edit between the parent's check and this import is refused (review M14)
-    module_sha256 = "sha256:" + hashlib.sha256(Path(imported.__file__).read_bytes()).hexdigest()
+    method = getattr(importlib.import_module(module), function)      # imported BEFORE confinement
     for name in runtime:
         importlib.import_module(name)                                 # lazily used, so preloaded here too
+    # The bytes of the module this process actually imported, read before confinement: the parent compares
+    # them with its pre-registered closure, so an on-disk edit of the method cannot run unnoticed.
+    source = Path(inspect.getsourcefile(sys.modules[module])).resolve()
+    imported = {"module": module, "sha256": "sha256:" + hashlib.sha256(source.read_bytes()).hexdigest()}
     resource.setrlimit(resource.RLIMIT_CPU, (120, 121))
     scratch = tempfile.mkdtemp(prefix="greg-p8-")
     confined = None
     if request.get("confine", True):
         try:
-            confined = isolation.confine(scratch, [], read_code=False)     # no repository listing (review L5)
+            # everything this process runs is already imported: not even the repository's listing is granted
+            confined = isolation.confine(scratch, [], list_code=False)
         except isolation.IsolationError as exc:
             print(json.dumps({"confined": None, "error": f"CONFINEMENT_UNAVAILABLE: {exc}"}))
             return
@@ -68,12 +70,10 @@ def main():
         try:
             out = method(request["config"], problem["data"])
             outputs[problem["id"]] = {"output": out["output"], "certificate": out["certificate"]}
-        except (GenomeError, ValueError, ZeroDivisionError, OverflowError) as exc:
-            outputs[problem["id"]] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
-        except Exception as exc:      # one item's error is that item's, never the whole cycle's (review L6)
-            outputs[problem["id"]] = {"error": f"UNEXPECTED {type(exc).__name__}: {str(exc)[:160]}"}
-    print(json.dumps({"confined": confined, "probe": probe_result, "outputs": outputs,
-                      "method_module": {"module": module, "sha256": module_sha256}}))
+        except Exception as exc:             # recorded per problem (a TypeError once aborted a whole cycle)
+            kind = "GenomeError" if isinstance(exc, GenomeError) else type(exc).__name__
+            outputs[problem["id"]] = {"error": f"{kind}: {str(exc)[:160]}"}
+    print(json.dumps({"confined": confined, "probe": probe_result, "imported": imported, "outputs": outputs}))
 
 
 if __name__ == "__main__":

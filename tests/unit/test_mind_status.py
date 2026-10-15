@@ -212,7 +212,7 @@ def test_composition_families_are_declared_as_the_frozen_runs_describe_them_and_
 
 def test_a_version_bump_makes_positive_evidence_stale_while_negative_evidence_persists(tmp_path):
     def bump(index):
-        for family in ("basal_kalman", "flow_maxflow", "collective_quorum", "flow_reinforce_greedy"):
+        for family in ("basal_kalman", "flow_maxflow", "grid_dijkstra", "flow_reinforce_greedy"):
             index["genomes"][family]["version"] = "0.0.0-old"
     fixture = _fixture(tmp_path, bump)
     rows = _rows(M.status(index_path=fixture))
@@ -220,8 +220,8 @@ def test_a_version_bump_makes_positive_evidence_stale_while_negative_evidence_pe
         row = rows[f"cognition.{family}"]
         assert row["label"] == "BUILT" and row["heldout"]["current"] is False
         assert row["heldout"]["version_measured"] == "0.0.0-old" and "needs re-admission" in row["basis"]
-    assert rows["cognition.collective_quorum"]["label"] == "UNRESOLVED"       # EXPERIMENTAL persists
-    assert "persists until a re-admission" in rows["cognition.collective_quorum"]["basis"]
+    assert rows["cognition.grid_dijkstra"]["label"] == "UNRESOLVED"       # EXPERIMENTAL persists
+    assert "persists until a re-admission" in rows["cognition.grid_dijkstra"]["basis"]
     assert rows["cognition.flow_reinforce_greedy"]["label"] == "BUILT"        # SUPERSEDED persists
     assert "refuted" in rows["cognition.flow_reinforce_greedy"]["basis"]
     # the compiler reads the same fixture the same way
@@ -399,7 +399,7 @@ def test_every_executor_the_reserved_record_names_is_labelled_and_p8_carries_its
     cycles = sorted(ROOT.glob("docs/evidence/greg-protected-evolution/*/cycle-*.json"))
     decisions = [json.loads(p.read_text())["decision"] for p in cycles]
     p8 = rows["greg.cognition.evolution:cycle"]
-    assert len(p8["evidence_outside_index"]) == len(cycles) == 3
+    assert len(p8["evidence_outside_index"]) == len(cycles) == 4
     assert sorted(c["decision"] for c in p8["evidence_outside_index"]) == sorted(decisions)
     assert ("never kept an improvement" in p8["basis"]) == all(d == "REJECT" for d in decisions)
 

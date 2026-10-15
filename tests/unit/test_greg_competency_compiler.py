@@ -95,15 +95,13 @@ def test_a_composition_without_verified_lift_yields_to_any_other_fit(registry, n
     assert any(x["method"] == "composition:graph_then_allocate" and "no lift" in x["why"]
                for x in r["methods_demoted"])
     assert r["method_or_composition_selected"] == "cognition.flow_maxflow"
-    # review of #179 (M10): exact single methods also read the problem nested under the recipe's key, so the
-    # verdict's own preferred constituent answers it once the recipe has no lift
+    # the recipe's one-part request is also asked of the operations its part fits: the constituent the frozen
+    # verdict prefers serves it, reading that part
     alone = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"], execute=False)
     assert alone["method_or_composition_selected"] == "cognition.flow_reinforce_greedy"
-    no_index.write_text(json.dumps({"genomes": {"flow_reinforce_greedy": {"status": "SUPERSEDED"}}, "routing": {},
-                                    "recipes": {"graph_then_allocate": {"lift": False,
-                                                                        "prefer": "flow_reinforce_greedy"}}}))
-    alone = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"], execute=False)
-    assert alone["method_or_composition_selected"] == "composition:graph_then_allocate"   # the only fit stays
+    registry.set_state("cognition.flow_reinforce_greedy", "VERIFIED")             # withheld: no operation can run
+    only = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"], execute=False)
+    assert only["method_or_composition_selected"] == "composition:graph_then_allocate"   # the only runnable fit stays
 
 
 def test_a_demoted_composition_stays_the_route_when_nothing_else_fits(registry, no_index):
@@ -456,8 +454,8 @@ def test_settled_failures_on_the_body_demote_a_method_and_a_few_do_not(registry,
 
 def test_an_executed_composition_keeps_each_stages_counterargument_as_dissent(registry, no_index):
     """Audit 2026-10-14 (section 12): the composition branch dropped every stage's strongest counterargument."""
-    no_index.write_text(json.dumps({"genomes": {"flow_reinforce_greedy": {"status": "SUPERSEDED"}},
-                                    "recipes": {}, "routing": {}}))      # the frozen admission v1 verdict
+    no_index.write_text(json.dumps({"genomes": {"flow_reinforce_greedy": {"status": "SUPERSEDED"}}, "routing": {},
+                                    "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}}))
     r = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"])
     assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
     stages = [d for d in r["dissent"] if d.startswith("stage ")]
@@ -523,3 +521,388 @@ def test_a_tracker_staffing_request_compiles_to_the_basal_tracker_recipe():
     assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "composition:track_then_staff"
     assert len(r["intermediate_receipts"]) == 2 and type(r["result"]["agents"]) is int
     assert r["authority_created"] is False
+
+
+def test_a_declared_feasibility_question_is_not_a_relaxation_of_an_optimisation_it_excludes():
+    """Review 2026-10-14: a request declared constraint_feasibility (or deductive) whose model also carries an
+    objective ended in CAPABILITY_DEFICIT: formal was rejected as a relaxation of optimisation methods that the
+    declared geometry itself excludes, and Genesis was asked for a capability that exists and is attached."""
+    data = {"variables": {"x": [0, 5], "y": [0, 5]},
+            "constraints": [{"coefficients": {"x": 1, "y": 1}, "op": "<=", "rhs": 4}],
+            "objective": {"coefficients": {"x": 1}, "sense": "max"}}
+    for declared in ("constraint_feasibility", "deductive"):
+        r = reason({"problem_id": "feas", "compile": {"geometry": {"geometry": declared,
+                                                                  "consequence_class": "read_only"}, "data": data}},
+                   registry=registry_view())
+        assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.formal", declared
+        assert r["capability_deficit"] is None
+        assert not any(m["method"] == "cognition.formal" for m in r["methods_rejected"])
+    undeclared = compiler.candidates(data, compiler.CompetencyGeometry.parse({}), compiler.evidence_index())
+    assert "answers a relaxation" in next(row["rejected"] for row in undeclared if row["method"] == "cognition.formal")
+
+
+def test_a_request_that_omits_one_input_of_the_fuller_method_is_not_answered_by_the_relaxation():
+    """Review 2026-10-14: a capacity-expansion request with budget and prices but no max_increment was ANSWERED by
+    max_flow, which ignores both and returns no plan. The fuller method decides although the request supplies only
+    part of its inputs; the request ends asking for the missing input, not in a capability deficit."""
+    from greg.cognition.genomes import library
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)
+    partial = {k: v for k, v in data.items() if k != "max_increment"}
+    attached = registry_view()
+    for cid in ("cognition.flow_expansion_mcf", "cognition.flow_maxflow"):
+        attached.set_state(cid, "ATTACHED")
+    r = reason({"problem_id": "partial", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                     "data": partial}}, registry=attached)
+    assert r["state"] == "ABSTAIN" and r["result"] is None and r["capability_deficit"] is None
+    assert r["method_or_composition_selected"] is None and not r["intermediate_receipts"]
+    why = {m["method"]: m["why"] for m in r["methods_rejected"]}
+    assert "answers a relaxation" in why["cognition.flow_maxflow"]
+    assert "budget" in why["cognition.flow_maxflow"] and "unit_cost" in why["cognition.flow_maxflow"]
+    assert {"method": "cognition.flow_expansion_mcf", "missing_inputs": ["max_increment"]} in r["missing_information"]
+    assert any("max_increment" in a for a in r["abstentions"])
+    plain = {k: data[k] for k in ("edges", "source", "sink")}          # a max-flow question asks nothing more
+    r = reason({"problem_id": "plain", "compile": {"geometry": {"consequence_class": "read_only"}, "data": plain}},
+               registry=attached)
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.flow_maxflow"
+
+
+def test_a_one_part_composition_request_that_omits_an_input_asks_for_it(no_index):
+    """Review 2026-10-14 (round 2): the capacity-expansion request without max_increment ends ABSTAIN asking for it
+    when flat, but in the graph_then_allocate shape ({capacity_network: {...}}) it ended in a CAPABILITY_DEFICIT
+    routed to an attach ask or Genesis (mcf attached, the recipe's stages withheld), or in STAGE_ABSTAINED once the
+    stages were attached. The recipe's compile stage reads the part and needs max_increment: the composition is
+    not a fit for a part that lacks its stage's inputs, and the request asks for what it lacks, whatever is
+    attached and whatever the evidence index ranks first."""
+    from greg.cognition.genomes import library
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)
+    partial = {"capacity_network": {k: v for k, v in data.items() if k != "max_increment"}}
+    only_mcf = registry_view()
+    only_mcf.set_state("cognition.flow_expansion_mcf", "ATTACHED")
+    stages = registry_view()
+    for cid in ("cognition.flow_expansion_mcf", "cognition.flow_capacity_plan", "cognition.optimization",
+                "cognition.flow_maxflow"):
+        stages.set_state(cid, "ATTACHED")
+    lifted = json.dumps({"genomes": {}, "routing": {},
+                         "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}})
+    for index in (None, lifted):
+        if index:
+            no_index.write_text(index)
+        for name, registry in (("mcf only", only_mcf), ("stages attached", stages)):
+            r = reason({"problem_id": "partial-shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                                   "data": partial}}, registry=registry)
+            where = (name, bool(index))
+            assert r["state"] == "ABSTAIN" and r["capability_deficit"] is None and r["result"] is None, where
+            assert r["method_or_composition_selected"] is None and not r["intermediate_receipts"], where
+            assert {"method": "composition:graph_then_allocate", "part": "capacity_network",
+                    "missing_inputs": ["max_increment"]} in r["missing_information"], where
+            assert {"method": "cognition.flow_expansion_mcf", "part": "capacity_network",
+                    "missing_inputs": ["max_increment"]} in r["missing_information"], where
+            why = {m["method"]: m["why"] for m in r["methods_rejected"]}
+            assert "max_increment" in why["composition:graph_then_allocate"], where
+            assert any("max_increment" in a for a in r["abstentions"]), where
+    # a part that carries every input of the compile stage keeps the recipe a fit, and a lifted recipe ranks first
+    full = reason({"problem_id": "full-shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                           "data": {"capacity_network": data}, "execute": False}},
+                  registry=stages)
+    assert full["method_or_composition_selected"] == "composition:graph_then_allocate"
+    assert not any(m["method"] == "composition:graph_then_allocate" for m in full["methods_rejected"])
+    # a plain max-flow part asks the max-flow question: answered by max_flow, the recipe is not a fit for it
+    plain = {"capacity_network": {k: data[k] for k in ("edges", "source", "sink")}}
+    r = reason({"problem_id": "plain-shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                         "data": plain}}, registry=stages)
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.flow_maxflow"
+    assert r["payload_part"] == "capacity_network"
+    assert "missing_information" not in r
+    # it asks nothing of the recipe: with max_flow excluded by the declaration, shaped ends like flat, in a deficit
+    for d in (plain, plain["capacity_network"]):
+        r = reason({"problem_id": "plain-arith", "compile": {"geometry": {"geometry": "arithmetic",
+                                                                          "consequence_class": "read_only"},
+                                                             "data": d}}, registry=stages)
+        assert r["state"] == "CAPABILITY_DEFICIT" and "missing_information" not in r, sorted(d)
+
+
+def test_a_one_part_composition_request_reaches_the_single_method_that_answers_its_part(no_index):
+    """Review 2026-10-14: a request in the graph_then_allocate shape ({capacity_network: {...}}) never reached
+    flow_expansion_mcf; with mcf attached and the recipe's stages withheld it ended in a deficit saying no method
+    fit. The part is offered to the methods whose native inputs it carries; a lifted recipe still ranks first."""
+    from greg.cognition.genomes import library
+    data, truth = library.executables()["flow_expansion_mcf"].instance(3)
+    shaped = {"capacity_network": data}
+    only_mcf = registry_view()
+    only_mcf.set_state("cognition.flow_expansion_mcf", "ATTACHED")
+    r = reason({"problem_id": "shape", "compile": {"geometry": {"consequence_class": "read_only"}, "data": shaped}},
+               registry=only_mcf)
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+    assert r["payload_part"] == "capacity_network" and r["result"]["flow_value"] == truth["optimum"]
+    assert r["selected_receipt"]["method"] == "cognition.flow_expansion_mcf"
+    rejected = {m["method"]: m["why"] for m in r["methods_rejected"]}
+    assert "answers a relaxation" in rejected["cognition.flow_maxflow"]        # the rule holds inside the part
+    nothing = reason({"problem_id": "shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                         "data": shaped}}, registry=registry_view())
+    assert nothing["state"] == "CAPABILITY_DEFICIT"
+    assert "registered but not attached" in nothing["capability_deficit"]["verification"]["failed"]
+    unknown = reason({"problem_id": "odd", "compile": {"geometry": {}, "data": {"mystery_field": 1}}},
+                     registry=registry_view())
+    assert "matches no catalogued method's native inputs" in unknown["capability_deficit"]["verification"]["failed"]
+    no_index.write_text(json.dumps({"genomes": {}, "routing": {},
+                                    "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}}))
+    for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow"):
+        only_mcf.set_state(cid, "ATTACHED")
+    lifted = reason({"problem_id": "shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                        "data": shaped, "execute": False}}, registry=only_mcf)
+    assert lifted["method_or_composition_selected"] == "composition:graph_then_allocate"   # measured lift ranks first
+
+
+def test_a_flat_request_that_lacks_an_input_no_fitting_method_reads_asks_for_it(no_index):
+    """Review 2026-10-14 (round 3): a flat capacity-expansion request without sink, source or edges ended in a
+    CAPABILITY_DEFICIT routed to Genesis whose verification said 'no method declares these inputs', although
+    flow_expansion_mcf (attached) reads every key it carries; the same request in the {capacity_network} shape
+    asked for the missing input. Missing information came only from a fitting relaxation, so when nothing fit a
+    near-complete request became a Genesis deficit. A request that carries at least as many of a catalogued
+    method's inputs as it lacks, including one no mechanism it fully supplies reads, asks that method's question;
+    a key shared with a much larger method does not, and a deficit names every mechanism that reads its inputs."""
+    from greg.cognition.genomes import library
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)
+    mcf = registry_view()
+    mcf.set_state("cognition.flow_expansion_mcf", "ATTACHED")
+
+    def compile_on(registry, d, geometry=None):
+        return reason({"problem_id": "lacks", "compile": {"geometry": {"consequence_class": "read_only",
+                                                                       **(geometry or {})}, "data": d}},
+                      registry=registry)
+
+    expansion = ("cognition.flow_capacity_plan", "cognition.flow_expansion_mcf", "cognition.flow_reinforce_greedy")
+    for gone in (("sink",), ("source",), ("edges",), ("sink", "source"), ("edges", "sink", "source")):
+        flat = {k: v for k, v in data.items() if k not in gone}
+        for shape, d in (("flat", flat), ("shaped", {"capacity_network": flat})):
+            r = compile_on(mcf, d)
+            where = (shape, gone)
+            assert r["state"] == "ABSTAIN" and r["capability_deficit"] is None and r["result"] is None, where
+            part = {"part": "capacity_network"} if shape == "shaped" else {}
+            for method in expansion:
+                assert {"method": method, "missing_inputs": sorted(gone), **part} in r["missing_information"], where
+            # max_flow reads a strict subset of what the expansion methods read of the request: not the question
+            assert not any(m["method"] == "cognition.flow_maxflow" for m in r["missing_information"]), where
+            assert any(gone[0] in a for a in r["abstentions"]), where
+    # a fitting max_flow rejected by frozen evidence still reads only part of the request: the budget and prices
+    # it carries make it the expansion question, missing max_increment (it ended in a deficit)
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "REJECTED"}}, "recipes": {},
+                                    "routing": {}}))
+    r = compile_on(mcf, {k: data[k] for k in ("edges", "source", "sink", "budget", "unit_cost")})
+    assert r["state"] == "ABSTAIN"
+    assert {"method": "cognition.flow_expansion_mcf", "missing_inputs": ["max_increment"]} in r["missing_information"]
+    r = compile_on(mcf, {k: data[k] for k in ("edges", "source", "sink")})     # the max-flow question: a deficit
+    assert r["state"] == "CAPABILITY_DEFICIT" and "missing_information" not in r
+    no_index.unlink()
+    # max_flow reads the network the expansion methods read, and the request also carries a budget: they are asked
+    r = compile_on(mcf, {k: data[k] for k in ("edges", "source", "budget")})
+    assert r["state"] == "ABSTAIN"
+    assert {m["method"] for m in r["missing_information"]} == set(expansion)
+    # a method producing the same decision from less side information competes: both are asked for what they lack
+    r = compile_on(mcf, {"signal": [0.1, 0.9, 1.1], "levels": [0.0, 1.0], "mean_dwell": 5})
+    assert r["missing_information"] == [{"method": "cognition.basal_bayes_filter", "missing_inputs": ["noise_sd"]},
+                                        {"method": "cognition.basal_hysteresis", "missing_inputs": ["noise_sd"]}]
+    # one key shared with larger methods is not their question: a deficit that names every reader and why
+    r = compile_on(mcf, {"costs": [[4, 1], [2, 3]], "budget": 5})
+    assert r["state"] == "CAPABILITY_DEFICIT" and "missing_information" not in r
+    verification = r["capability_deficit"]["verification"]
+    readers = {u["method"]: u["why"] for u in verification["unserviceable"]}
+    assert set(expansion) | {"cognition.develop_constraint_release"} <= set(readers)
+    assert "reads ['budget']" in readers["cognition.flow_expansion_mcf"]
+    assert "fewer of its inputs than it lacks" in readers["cognition.flow_expansion_mcf"]
+    assert "not the question asked" in verification["failed"]
+    # a few keys of a request another mechanism reads far more of are not this method's question: a PID tracking
+    # problem declared prediction is not a simulation missing its step probability (simulation reads two of its
+    # twelve keys, the PID controllers nine), whatever the declaration says of the controllers
+    pid, _ = library.executables()["basal_pid"].instance(0)
+    r = compile_on(mcf, pid, {"geometry": "prediction"})
+    assert r["state"] == "CAPABILITY_DEFICIT" and "missing_information" not in r
+    readers = {u["method"]: u["why"] for u in r["capability_deficit"]["verification"]["unserviceable"]}
+    assert "'cognition.basal_pid'" in readers["cognition.simulation"]
+    assert "read more of the request" in readers["cognition.simulation"]
+    # keys no mechanism requires (optional inputs) decide nothing: a hysteresis request without its levels asks
+    # hysteresis for them, beside the Bayesian filter that produces the same decision (its own optional
+    # initial_state and threshold, and the filter's dwell prior, kept it from being asked)
+    hysteresis, _ = library.executables()["basal_hysteresis"].instance(0)
+    r = compile_on(mcf, {k: v for k, v in hysteresis.items() if k != "levels"})
+    assert r["state"] == "ABSTAIN"
+    assert r["missing_information"] == [{"method": "cognition.basal_bayes_filter", "missing_inputs": ["levels"]},
+                                        {"method": "cognition.basal_hysteresis", "missing_inputs": ["levels"]}]
+    # nor do keys no mechanism requires, however many
+    r = compile_on(mcf, {k: v for k, v in data.items() if k != "sink"} | {"note": "pilot", "owner": "ops",
+                                                                           "region": "north", "tier": 2})
+    assert {"method": "cognition.flow_expansion_mcf", "missing_inputs": ["sink"]} in r["missing_information"]
+    # only a mechanism whose question the request could be reads 'more': two grid keys of a twelve-input repair
+    # problem leave a treatment-effect request its question; most of the repair problem's inputs make it that one
+    grid = {"width": 4, "height": 3}
+    r = compile_on(mcf, {"treated": [1.0, 2.0], **grid})
+    assert r["missing_information"] == [{"method": "cognition.causal", "missing_inputs": ["control"]}]
+    repair = {**grid, "sources": [[0, 0]], "sinks": [[2, 3]], "removed": [], "blocked": [], "events": [], "steps": 3}
+    r = compile_on(mcf, {"treated": [1.0, 2.0], **repair})
+    assert r["missing_information"] == [{"method": "cognition.develop_repair", "missing_inputs": ["message_loss",
+                                                                                                  "seed"]}]
+    # a request-level flag and a key no mechanism requires change nothing
+    r = compile_on(mcf, {"treated": [1.0, 2.0], "note": "pilot", "formalization_complete": True})
+    assert r["missing_information"] == [{"method": "cognition.causal", "missing_inputs": ["control"]}]
+    # a declaration that excludes the reader keeps the deficit, and says so
+    r = compile_on(mcf, {k: v for k, v in data.items() if k != "sink"}, {"geometry": "arithmetic"})
+    assert r["state"] == "CAPABILITY_DEFICIT" and "missing_information" not in r
+    readers = {u["method"]: u["why"] for u in r["capability_deficit"]["verification"]["unserviceable"]}
+    assert "does not include arithmetic" in readers["cognition.flow_expansion_mcf"]
+    # 'no method reads these inputs' only when none does
+    r = compile_on(mcf, {"mystery_field": 1})
+    assert r["capability_deficit"]["verification"]["unserviceable"] == \
+        "no catalogued method or recipe reads any of these inputs"
+
+
+def test_every_catalogued_mechanism_a_request_supplies_in_part_is_asked_or_accounted_for(no_index):
+    """Review 2026-10-14 (round 3), the rest of the same class: what the request lacks is judged against every
+    catalogued mechanism that reads its keys, not only operations. A request carrying one typed part of a
+    two-part recipe asks for the other part (it ended in a deficit claiming no method reads its inputs); a
+    mechanism the request fully supplies poses the question its keys ask, whatever its frozen status, and so does
+    a cortex organ (Fermi reads estimation_model); a mechanism the declaration excludes poses none: variables and
+    constraints declared optimization are the optimization question without its objective (they ended in a
+    deficit because the excluded feasibility method was counted as posing the question); and a one-part recipe's
+    part is judged as a flat request is."""
+    from greg.cognition.genomes import library
+    registry = registry_view()
+
+    def compile_on(d, geometry=None):
+        return reason({"problem_id": "mechanisms", "compile": {"geometry": {"consequence_class": "read_only",
+                                                                            **(geometry or {})}, "data": d,
+                                                               "execute": False}}, registry=registry)
+
+    r = compile_on({"formal_template": {"variables": {"x": [0, 4]}}})
+    assert r["state"] == "ABSTAIN" and r["capability_deficit"] is None
+    assert r["missing_information"] == [
+        {"method": "composition:estimate_then_optimize", "missing_inputs": ["estimation_model"]},
+        {"method": "composition:identify_then_optimize", "missing_inputs": ["causal_studies"]}]
+    r = compile_on({"newsvendor": {"products": [], "capacity": 3}})
+    assert r["missing_information"] == [{"method": "composition:forecast_then_allocate",
+                                         "missing_inputs": ["demand_histories"]}]
+    # a declaration that excludes the recipe's stages keeps the deficit, and names the recipe as a reader
+    r = compile_on({"newsvendor": {"products": [], "capacity": 3}}, {"geometry": "causal"})
+    assert r["state"] == "CAPABILITY_DEFICIT" and "missing_information" not in r
+    readers = {u["method"]: u["why"] for u in r["capability_deficit"]["verification"]["unserviceable"]}
+    assert "does not include causal" in readers["composition:forecast_then_allocate"]
+    # the declaration decides which fully supplied mechanism poses the question
+    model = {"variables": {"x": [0, 4]}, "constraints": [{"expr": "x >= 1"}]}
+    r = compile_on(model, {"geometry": "optimization"})
+    assert r["state"] == "ABSTAIN"
+    assert {"method": "cognition.optimization", "missing_inputs": ["objective"]} in r["missing_information"]
+    assert any("check the declaration before trusting a deficit or a request for missing inputs" in d
+               for d in r["dissent"])
+    r = compile_on(model, {"geometry": "constraint_feasibility"})
+    assert r["method_or_composition_selected"] == "cognition.formal" and "missing_information" not in r
+    # an organ the request fully supplies poses the estimation question even when frozen evidence rejects it
+    no_index.write_text(json.dumps({"genomes": {}, "recipes": {}, "routing": {},
+                                    "organs": {"cognition.cortex.estimation.fermi": {"status": "REJECTED"}}}))
+    estimate = {"estimation_model": {"factors": {}}}
+    r = compile_on(estimate)
+    assert r["state"] == "CAPABILITY_DEFICIT" and "missing_information" not in r
+    readers = {u["method"]: u["why"] for u in r["capability_deficit"]["verification"]["unserviceable"]}
+    assert "read by a mechanism the request fully supplies" in readers["composition:estimate_then_optimize"]
+    assert "frozen status REJECTED" in readers["cognition.cortex.estimation.fermi"]
+    r = compile_on(estimate, {"geometry": "optimization"})       # declared optimization: the composite question
+    assert r["missing_information"] == [{"method": "composition:estimate_then_optimize",
+                                         "missing_inputs": ["formal_template"]}]
+    no_index.unlink()
+    # in a one-part recipe's shape the part's question is decided as a flat request's: a causal graph sent as a
+    # capacity network is the causal question (its method reads six of its keys, the recipe's compile stage one),
+    # so declared optimization it ends in the deficit the flat graph ends in, and without its outcome it asks the
+    # causal method for the outcome, not the recipe for five capacity inputs (both of which it did)
+    dag, _ = library.executables()["causal_backdoor"].instance(0)
+    for d in (dag, {"capacity_network": dag}):
+        r = compile_on(d, {"geometry": "optimization"})
+        assert r["state"] == "CAPABILITY_DEFICIT" and "missing_information" not in r, sorted(d)
+    why = {m["method"]: m["why"] for m in r["methods_rejected"]}
+    assert "'cognition.causal_backdoor'" in why["composition:graph_then_allocate"]
+    assert "read more of the part" in why["composition:graph_then_allocate"]
+    r = compile_on({"capacity_network": dag})                   # undeclared: the causal question, never the recipe's
+    assert "missing_information" not in r
+    no_outcome = {k: v for k, v in dag.items() if k != "outcome"}
+    for d, part in ((no_outcome, {}), ({"capacity_network": no_outcome}, {"part": "capacity_network"})):
+        r = compile_on(d)
+        assert r["missing_information"] == [{"method": "cognition.causal_backdoor", "missing_inputs": ["outcome"],
+                                             **part}], sorted(d)
+
+
+def test_a_composition_is_checked_against_the_declared_geometry_like_every_other_method(no_index):
+    """Review 2026-10-14 (round 3): composition rows were never checked against the declared geometry. A
+    capacity-expansion request declared 'arithmetic' ended in a deficit when flat (every flow method is
+    optimization), but in the {capacity_network} shape it was ANSWERED by graph_then_allocate, whose stages are
+    all optimization, and without max_increment it asked for an input of the composition the declaration
+    excludes. A recipe carries its stages' native classes and is rejected when none includes the declaration."""
+    from greg.cognition.composition import RECIPES
+    from greg.cognition.genomes import library
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)
+    partial = {k: v for k, v in data.items() if k != "max_increment"}
+    registry = registry_view()
+    for cid in list(R.EVAL_ATTACH) + ["cognition.flow_expansion_mcf"]:
+        registry.set_state(cid, "ATTACHED")
+
+    def compile_on(d, geometry):
+        return reason({"problem_id": "declared", "compile": {"geometry": {"consequence_class": "read_only",
+                                                                          **geometry}, "data": d}},
+                      registry=registry)
+
+    for label, d in (("full", data), ("no max_increment", partial)):
+        for shape, payload in (("flat", d), ("shaped", {"capacity_network": d})):
+            r = compile_on(payload, {"geometry": "arithmetic"})
+            where = (label, shape)
+            assert r["state"] == "CAPABILITY_DEFICIT" and r["result"] is None, where
+            assert "missing_information" not in r and not r["intermediate_receipts"], where
+            if shape == "shaped":
+                why = {m["method"]: m["why"] for m in r["methods_rejected"]}
+                assert "does not include arithmetic" in why["composition:graph_then_allocate"], where
+    # a declaration native to its stages keeps the recipe a fit (and a lifted recipe ranks first)
+    no_index.write_text(json.dumps({"genomes": {}, "routing": {},
+                                    "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}}))
+    r = compile_on({"capacity_network": data}, {"geometry": "optimization"})
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "composition:graph_then_allocate"
+    # every recipe declares its stages' classes; the declaration is checked against them
+    assert all(compiler.recipe_classes(name) for name in RECIPES)
+    assert compiler.recipe_classes("graph_then_allocate") == ["optimization"]
+    assert compiler.recipe_classes("estimate_then_optimize") == ["estimate", "optimization"]
+    for recipe, payload, native, foreign in (
+            ("forecast_then_staff", {"arrival_histories": {}, "staffing": {}}, "prediction", "optimization"),
+            ("estimate_then_optimize", {"estimation_model": {}, "formal_template": {}}, "estimate", "causal")):
+        for declared, rejected in ((native, False), (foreign, True)):
+            rows = compiler.candidates(payload, compiler.CompetencyGeometry.parse({"geometry": declared}),
+                                       compiler.evidence_index())
+            row = next(r for r in rows if r["method"] == f"composition:{recipe}")
+            assert bool(row["rejected"]) is rejected, (recipe, declared, row["rejected"])
+
+
+def test_a_cortex_organ_reading_one_part_of_a_genome_request_does_not_answer_it():
+    """Review 2026-10-14 (round 3), the same class in the organ path: organ rows were added after the relaxation
+    rule ran, so the semantic organ (routed on ``sources``) served a develop_repair request whenever develop_repair
+    was withheld, and a develop_repair request lacking one input was answered by it instead of asking for the
+    input; in the {capacity_network} shape the same requests ended in the attach route and asked. An organ that
+    reads a strict subset of a catalogued method's inputs, while the request carries the rest, is a relaxation."""
+    from greg.cognition.genomes import library
+    data, _ = library.executables()["develop_repair"].instance(0)
+    registry = registry_view()                                  # develop_repair registered, not attached
+
+    def compile_on(d, geometry=None):
+        return reason({"problem_id": "organ", "compile": {"geometry": {"consequence_class": "read_only",
+                                                                       **(geometry or {})}, "data": d,
+                                                          "execute": False}}, registry=registry)
+
+    partial = {k: v for k, v in data.items() if k != "blocked"}
+    for shape, full, lacking in (("flat", data, partial),
+                                 ("shaped", {"capacity_network": data}, {"capacity_network": partial})):
+        r = compile_on(full)
+        assert r["state"] == "CAPABILITY_DEFICIT" and r["method_or_composition_selected"] is None, shape
+        assert r["withheld_best_fit"]["method"] == "cognition.develop_repair", shape
+        assert r["capability_deficit"]["route"].startswith("founder attach of the prepared ask"), shape
+        r = compile_on(lacking)
+        assert r["state"] == "ABSTAIN", shape
+        assert [(m["method"], m["missing_inputs"]) for m in r["missing_information"]] == \
+            [("cognition.develop_repair", ["blocked"])], shape
+    why = {m["method"]: m["why"] for m in compile_on(data)["methods_rejected"]}
+    assert "answers a relaxation" in why["cognition.cortex.semantic"]
+    assert "['cognition.develop_repair']" in why["cognition.cortex.semantic"]
+    # a declaration that excludes the fuller method leaves the organ its question; an organ alone is untouched
+    assert compile_on(data, {"geometry": "semantic"})["method_or_composition_selected"] == "cognition.cortex.semantic"
+    assert compile_on({"sources": data["sources"]})["method_or_composition_selected"] == "cognition.cortex.semantic"

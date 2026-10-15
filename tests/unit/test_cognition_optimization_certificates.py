@@ -119,6 +119,22 @@ def test_a_suboptimal_plan_whose_bound_is_forged_to_its_objective_is_refuted_by_
                                                                                    OPT)))
 
 
+def test_the_certificate_dissent_reads_as_a_sentence():
+    """Receipts carry this text: it read 'finds no an assignment' (independent review of the fix, 2026-10-15)."""
+    infeasible = {**SMALL, "constraints": SMALL["constraints"] + [{"coefficients": {"x": 1}, "op": ">=", "rhs": 6}]}
+    forged = plan(solve(SMALL), {"x": 1, "y": 2}, 3.0, bound=3.0, optimality_gap=0.0)
+    said = {name: verify("optimization", data, answer, OPT)["dissent"]
+            for name, data, answer in (("optimal", SMALL, solve(SMALL)), ("infeasible", infeasible, solve(infeasible)),
+                                       ("refuted", SMALL, forged))}
+    assert ("OPTIMAL independently certified: Z3, a different engine from CP-SAT, finds no assignment within the bounds "
+            "and constraints with objective > 4.") in said["optimal"]
+    assert ("INFEASIBLE independently certified: Z3, a different engine from CP-SAT, finds no assignment within the "
+            "bounds and constraints.") in said["infeasible"]
+    assert any(d.startswith("Z3 found an assignment within the bounds and constraints with objective > 3: ")
+               for d in said["refuted"])
+    assert not [d for ds in said.values() for d in ds if " no an " in d or " an an " in d]
+
+
 def test_an_inconclusive_certificate_is_never_a_refutation_and_says_so(monkeypatch):
     """Unknown (the deterministic resource limit) leaves an honest claim uncertified, not refuted."""
     monkeypatch.setattr(verification, "Z3_RLIMIT", 1)
@@ -320,6 +336,19 @@ def test_parallel_edges_are_refused_by_every_capacity_expansion_genome(family):
         flow.expansion_value(PARALLEL, {"s->a": 1})
     merged = {**PARALLEL, "edges": [["s", "a", 2], ["a", "t", 3]]}           # the same capacity, merged: answered
     assert genome.solve(merged, None)["status"] == "ANSWER"
+
+
+@pytest.mark.parametrize("field, value, error", [("unit_cost", "bad", "unit_cost maps"),
+                                                 ("max_increment", -1, "max_increment: integer"),
+                                                 ("budget", "x", "budget: integer")])
+def test_flow_expansion_mcf_keeps_its_1_0_0_error_order_on_parallel_edges(field, value, error):
+    """mcf stays at 1.0.0, so moving the parallel-edge refusal into the shared validation must not change which error
+    it raises: it checked parallel edges after every other field (independent review of the fix, 2026-10-15)."""
+    mcf = library.executables()["flow_expansion_mcf"]
+    with pytest.raises(GenomeError, match=error):
+        mcf.solve({**PARALLEL, field: value}, None)
+    with pytest.raises(GenomeError, match=error):
+        mcf.verify({**PARALLEL, field: value}, {"increments": {}}, {})
 
 
 @pytest.mark.parametrize("network", [

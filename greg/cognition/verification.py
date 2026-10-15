@@ -6,11 +6,14 @@ import math
 
 from .contracts import CognitionError, ProofArtifact, digest
 
-# The Z3 check below is bounded by a deterministic resource count (the same answer gets the same verdict); the
-# wall-clock limit is a backstop inside the verifier worker's own CPU and time budget. Calibration (2026-10-15): every
-# composition model on dev and review seeds and F7's development items certifies within 10k units in under 40 ms;
-# 100k certified as many honest random answers (review seeds 3000-3999) as 2M did, and the 8 it leaves UNKNOWN stop
-# within 0.7 s.
+# The Z3 check below is bounded by a deterministic resource count (alone, it gives the same answer the same
+# certificate) and by a wall-clock backstop inside the verifier worker's own CPU and time budget. The backstop is not
+# deterministic: on a loaded machine it can end a check before the resource count does, which leaves the claim UNKNOWN
+# (uncertified and unrefuted; the certificate's reason is 'timeout' rather than 'canceled'). Calibration (2026-10-15,
+# one idle core): every composition model on dev and review seeds and F7's development items certifies within 10k
+# units in under 40 ms. Of the honest random answers on review seeds 3000-3999, 100k leaves 8 UNKNOWN, each reaching
+# the resource limit in 0.06-0.65 s; 2M certifies one of them (seed 3082, in 1.2 s, so only without the 1 s backstop)
+# and stops the other 7 after 5-9 s.
 Z3_RLIMIT = 100_000
 Z3_TIMEOUT_MS = 1000
 
@@ -72,7 +75,7 @@ def _z3_certificate(data, *, integers, better_than=None, sense="max"):
         solver.add(objective > value if sense == "max" else objective < value)
     status = solver.check()
     out = {"engine": "z3", "version": z3.get_version_string(), "limits": limits,
-           "question": ("an assignment within the bounds and constraints" +
+           "question": ("assignment within the bounds and constraints" +
                         (f" with objective {'>' if sense == 'max' else '<'} {better_than}" if better_than is not None
                          else ""))}
     if status == z3.sat:
@@ -280,7 +283,8 @@ def verify(family, data, answer, proof_class):
         settled = certificate["status"] if certificate else None
         why = f"Z3: {certificate.get('reason')}" if certificate else "Z3 did not run"
         if settled == "REFUTED":
-            dissent.append(f"Z3 found {certificate['question']}: {certificate['witness']}; the {claim} claim is false.")
+            dissent.append(f"Z3 found an {certificate['question']}: {certificate['witness']}; the {claim} claim is "
+                           "false.")
         elif settled == "CERTIFIED" and family == "optimization":
             dissent.append(f"{claim} independently certified: Z3, a different engine from CP-SAT, finds no "
                            f"{certificate['question']}.")

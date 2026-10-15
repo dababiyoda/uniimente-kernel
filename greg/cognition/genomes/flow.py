@@ -299,11 +299,6 @@ def _expansion(data):
         # '->', ('a->b', 'c') and ('a', 'b->c')) would share one increment and one price, so a plan could not say
         # what it buys; refused here rather than answered with a plan that means two things
         raise GenomeError("two distinct edges share one 'u->v' name (a node name contains '->'); rename the nodes")
-    if len(pairs) != len(edges):
-        # parallel edges share their name too: the compiled model bought each its own increment, the decoded plan kept
-        # one of them and charged it once per edge, and graph_then_allocate answered an over-budget plan as optimal
-        # (review 2026-10-15)
-        raise GenomeError("parallel edges between one ordered pair are not supported; merge them first")
     costs = data.get("unit_cost")
     if not isinstance(costs, dict):
         raise GenomeError("unit_cost maps 'u->v' to an integer cost")
@@ -312,6 +307,11 @@ def _expansion(data):
         unit[(u, v)] = bounded_int(costs.get(f"{u}->{v}"), low=0, high=10_000, name="unit cost")
     inc = bounded_int(data.get("max_increment"), low=0, high=1000, name="max_increment")
     budget = bounded_int(data.get("budget"), low=0, high=1_000_000, name="budget")
+    if len(pairs) != len(edges):
+        # parallel edges share their name too: the compiled model bought each its own increment, the decoded plan kept
+        # one of them and charged it once per edge, and graph_then_allocate answered an over-budget plan as optimal
+        # (review 2026-10-15). Checked last, where flow_expansion_mcf 1.0.0 checked it, so mcf's errors keep their order
+        raise GenomeError("parallel edges between one ordered pair are not supported; merge them first")
     return edges, s, t, unit, inc, budget
 
 

@@ -219,7 +219,8 @@ def _graph_then_allocate(payload, pid, kw, receipt, finish):
         return finish("TRANSLATION_FAILED", "cross-intelligence flow check disagreed")
     # the composition's certificate is the optimiser's, as strong as its verifier made it: OPTIMAL is proven only
     # when the independent certificate held; FEASIBLE is a feasible plan whose flow the cross-check confirms. The
-    # gap is the verifier's: it recomputes |objective - bound| exactly.
+    # gap is the proof artifact's, copied: the verifier accepted it only within 1/2 of |objective - bound|, computed
+    # exactly from the reported objective and bound (the objectives are integers).
     gap = (solved.get("proof_artifact") or {}).get("optimality_gap")
     return finish("ANSWERED", None, {"increments": increments, "flow_value": claimed,
                                      "control_points": check["output"]["cut_edges"],

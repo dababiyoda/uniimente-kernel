@@ -103,6 +103,20 @@
               },
               "evidence_refs": {
                 "$ref": "#/$defs/refs"
+              },
+              "for_mechanisms": {
+                "type": "array",
+                "maxItems": 32,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/text"
+                },
+                "description": "Foundry mechanism ids this consent was given for. Absent: the surface's primary mechanism only. A non-primary mechanism on the surface needs its own id here (purpose-bound consent)."
+              },
+              "revoked_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When consent was withdrawn. A revoked record clears no mechanism, primary or not; nothing reinstates it but a new record."
               }
             },
             "description": "Consent actually obtained or obtainable: who it covers and the evidence. A surface declaring third_parties is eligible only when every party is covered."

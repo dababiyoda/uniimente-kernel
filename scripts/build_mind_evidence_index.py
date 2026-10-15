@@ -58,18 +58,24 @@ MEASURED = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXP
 
 
 def _measured_code(family: str, commit: str | None) -> dict | None:
-    """The family's solver at the run's source commit: its current path and function name, and the digest of that
-    function's source as committed then (git show). A verdict is bound to this; None when there is no solver."""
+    """The family's solver at the run's source commit: its current path and function name, the digest of that
+    function's source as committed then (git show), and the digest of its static dependency closure then
+    (greg.cognition.code_binding). A positive verdict is bound to the closure; None when there is no solver."""
     import subprocess
     from greg.cognition.compiler import function_digest, solver_code
     now = solver_code(family)
     if now is None:
         return None
-    code = {"path": now["path"], "function": now["function"], "sha256": None}
+    from greg.cognition.code_binding import at_commit, closure
+    code = {"path": now["path"], "function": now["function"], "sha256": None, "closure_sha256": None,
+            "closure_members": None}
     if commit:
         out = subprocess.run(["git", "show", f"{commit}:{now['path']}"], cwd=ROOT, capture_output=True, text=True)
         if out.returncode == 0:
-            code["sha256"] = function_digest(out.stdout, now["function"])
+            code["sha256"] = function_digest(out.stdout, now["function"])      # entry function (historical scope)
+        measured = closure(now["path"], now["function"], at_commit(commit))      # the executable closure measured
+        if measured is not None:
+            code["closure_sha256"], code["closure_members"] = measured["sha256"], measured["members"]
     return code
 
 

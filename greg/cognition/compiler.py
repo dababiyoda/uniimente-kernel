@@ -383,24 +383,36 @@ def solver_code(family: str) -> dict | None:
     fn = SOLVERS.get(family)
     if fn is None:
         return None
+    from .code_binding import closure
     path = Path(inspect.getsourcefile(fn)).resolve()
-    return {"path": path.relative_to(ROOT).as_posix(), "function": fn.__name__,
-            "sha256": function_digest(path.read_text(), fn.__name__)}
+    rel = path.relative_to(ROOT).as_posix()
+    bound = closure(rel, fn.__name__)
+    return {"path": rel, "function": fn.__name__, "sha256": function_digest(path.read_text(), fn.__name__),
+            "closure_sha256": bound["sha256"] if bound else None, "closure_members": bound["members"] if bound else {}}
 
 
 def operation_status(family: str, record: dict) -> tuple[str, str | None]:
     """(routing status, stale reason) for an operation family's frozen verdict (PR #155 lineage).
 
-    Like a genome's version rule: positive evidence binds the solver code measured (its source digest at the
-    run's source commit), so a changed solver routes as UNEVALUATED until re-admitted; negative and
-    inconclusive evidence persists. A positive verdict without a recorded binding is treated as stale."""
+    Like a genome's version rule: positive evidence binds the executable code measured, the static dependency
+    closure of the solver function at the run's source commit (greg.cognition.code_binding: the function, the
+    repository helpers, classes and module constants it reaches). Any changed member routes the family as
+    UNEVALUATED until re-admitted; negative and inconclusive evidence persists with its original scope. A
+    positive verdict bound only to the entry function, or not bound at all, is treated as stale."""
     status = record.get("status", "UNEVALUATED")
     if status in NOT_POSITIVE or status == "UNEVALUATED":
         return status, None
-    measured, now = (record.get("code") or {}).get("sha256"), (solver_code(family) or {}).get("sha256")
-    if measured is None or measured != now:
-        return "UNEVALUATED", (f"{status} was measured on solver code {measured or 'not recorded'}; the code "
-                               f"is now {now}; needs re-admission")
+    code, now = record.get("code") or {}, solver_code(family) or {}
+    measured = code.get("closure_sha256")
+    if measured is None:
+        return "UNEVALUATED", (f"{status} is bound to the solver's entry function only "
+                               f"({code.get('sha256') or 'not recorded'}), not its dependency closure; "
+                               "needs re-admission")
+    if measured != now.get("closure_sha256"):
+        then, current = code.get("closure_members") or {}, now.get("closure_members") or {}
+        changed = sorted(k for k in set(then) | set(current) if then.get(k) != current.get(k))
+        return "UNEVALUATED", (f"{status} was measured on solver closure {measured}; changed since: "
+                               f"{', '.join(changed) or 'unknown'}; needs re-admission")
     return status, None
 
 

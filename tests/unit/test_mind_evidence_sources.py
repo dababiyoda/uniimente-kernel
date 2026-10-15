@@ -322,11 +322,13 @@ def _function_source_digest(text: str, name: str):
 
 def test_every_operation_verdict_is_bound_to_the_solver_code_its_run_measured():
     """PR #155's operation-family verdicts route like genome verdicts, so each is bound to the code it measured:
-    the solver function's source digest at the run's own source commit, recomputed here from git."""
+    the solver function's source digest and its dependency-closure digest at the run's own source commit,
+    recomputed here from git."""
     index = _index()
     commit_of = {s["path"]: s.get("source_commit") for s in index["sources"]}
     unbound = [f for f, row in index["operations"].items()
-               if row["status"] in POSITIVE and not (row.get("code") or {}).get("sha256")]
+               if row["status"] in POSITIVE and not ((row.get("code") or {}).get("sha256")
+                                                      and (row.get("code") or {}).get("closure_sha256"))]
     assert not unbound, f"positive operation verdicts without a solver-code binding: {unbound}"
     if _shallow() is None:
         pytest.skip("git history unavailable: solver-code bindings not re-derived")
@@ -343,6 +345,12 @@ def test_every_operation_verdict_is_bound_to_the_solver_code_its_run_measured():
             continue
         if _function_source_digest(out.stdout, code["function"]) != code["sha256"]:
             problems.append(f"operation {family}: code {code['sha256']} is not {code['function']} at {commit[:12]}")
+        if code.get("closure_sha256"):               # the dependency closure, recomputed at the same commit
+            from greg.cognition.code_binding import at_commit, closure
+            then = closure(code["path"], code["function"], at_commit(commit))
+            if then is None or then["sha256"] != code["closure_sha256"] or then["members"] != code["closure_members"]:
+                problems.append(f"operation {family}: closure {code['closure_sha256']} is not "
+                                f"{code['function']}'s closure at {commit[:12]}")
     if unreachable and _shallow():
         pytest.skip(f"shallow clone: solver code at {sorted(set(unreachable))} not verified")
     assert not unreachable, f"source commits absent from a full clone: {sorted(set(unreachable))}"
@@ -434,6 +442,8 @@ BOUND = test_every_operation_verdict_is_bound_to_the_solver_code_its_run_measure
     (lambda i: i["sources"][0].pop("source_commit"), COMMITS, "without a source commit"),
     (lambda i: i["operations"]["graph"]["code"].update(sha256="sha256:" + "0" * 64), BOUND, "is not graph at"),
     (lambda i: i["operations"]["control"].update(code=None), BOUND, "without a solver-code binding"),
+    (lambda i: i["operations"]["graph"]["code"].update(closure_sha256="sha256:" + "0" * 64), BOUND,
+     "closure sha256:"),
 ])
 def test_the_checks_fail_on_a_corrupted_index(tmp_path, monkeypatch, corrupt, check, needle):
     """Each check is falsifiable: a corrupted copy of the real index must fail it."""

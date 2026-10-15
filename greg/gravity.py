@@ -297,6 +297,7 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
     disposition = {"WITHIN_HELD_AUTHORITY_GATE_REQUIRED": "EXECUTE_THROUGH_GATE",
                    "PREPARABLE_NOW_FOUNDER_DECISION_AT_TRIGGER": "PREPARE",
                    "FOUNDER_DECISION_REQUIRED": "FOUNDER_DECISION",
+                   "LEGAL_BASIS_REVIEW_REQUIRED": "LEGAL_REVIEW",
                    "NO_AUTHORITY_NEEDED": "HOLD"}[authority]
     ask = None
     if report["decision_brief"]:
@@ -309,6 +310,15 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
                "record_with": "greg.asks.record on the body (the one path for decision.requested)"}
         if disposition == "EXECUTE_THROUGH_GATE":
             disposition = "FOUNDER_DECISION"          # value trade-offs need the founder even inside held authority
+    legal = []
+    for kwargs in report["legal_review_packets"]:      # accountability channels: people establish the basis
+        packet = asks.resource_request(**kwargs, mission_id=situation["goal"].get("mission_id"))
+        asks.validate(packet)
+        violations = asks.screen(packet)
+        if violations:
+            raise GravityError(f"GREG's wording failed the ask screen: {violations}")
+        legal.append({**packet, "state": "PREPARED_NOT_RECORDED",
+                      "record_with": "greg.asks.record on the body (the one path for decision.requested)"})
     top = ranked["proposals"][0]["intervention_id"] if ranked["proposals"] else None
     dissent = []
     if top and top != report["selected"]:
@@ -332,12 +342,15 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
                                            situation["leverage_problem"]["institutional_map"].get("interventions", [])],
         "leverage": {"receipt_id": report["receipt_id"], "bottleneck": report["bottleneck"],
                      "selected": report["selected"], "selection_rule": report["selection_rule"],
+                     "selection_basis": report["selection_basis"],
+                     "selection_basis_note": report["selection_basis_note"],
                      "runner_up": report["runner_up"], "value_tradeoffs": report["value_tradeoffs_for_founder"],
                      "generated": report["generated"],
                      "rejected": {r["candidate_id"]: r["reasons"] for r in report["candidates"] if r["reasons"]}},
         "mind": {"value_of_information": voi, "measured_trust": _measured_trust(journal)},
         "immune_signals": _immune(journal),
-        "gate": ranked, "disposition": disposition, "founder_ask": ask, "preparable": report["preparable"],
+        "gate": ranked, "disposition": disposition, "founder_ask": ask, "legal_review_asks": legal,
+        "preparable": report["preparable"],
         "asset_line": report["asset_line"], "dissent": dissent,
         "authority_created": False, "ledger_writes": 0, "executes": False,
         "reality_status": "COMPUTED_PROPOSAL_NOT_AN_OUTCOME",

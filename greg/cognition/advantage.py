@@ -17,6 +17,15 @@ Structural priority (shown, not used as an outcome estimate): bottleneck severit
 then the number of Spider-Web control points strengthened, compounding, reversibility, buildability.
 Building the compiler authorizes nothing: every candidate keeps its consequence class and the founder
 grant it would need.
+
+Track B convergence (2026-10-15): the canonical intervention generator is #158's Lawful Leverage Foundry
+(``foundry.lawful_leverage``), which hard-filters, estimates and hands survivors to the ranker; candidates from
+``compile_map`` stay UNESTIMATED and the ranker drops them. Every operator here now has a canonical Foundry
+mechanism (``FOUNDRY_MECHANISM``): five had an equivalent and seven were ported into the Foundry library
+(``lawful_leverage.PORTED_FROM``), the accountability operator as four legal channels. ``compile_map`` is a
+historical, read-only structural view (``greg cognition advantage``): it generates nothing the Foundry lacks
+and its operator table is pinned. The destinations below remain the live buildability view of the Backcast GPS
+horizons.
 """
 from __future__ import annotations
 
@@ -172,6 +181,25 @@ OPERATORS = (
 )
 
 
+# Each operator's canonical mechanism in the Foundry library (tested both ways in test_greg_mind_convergence.py).
+FOUNDRY_MECHANISM = {"proof_substrate": ("proof.verifiable_receipts",),
+                     "eligibility_packet": ("eligibility.published_standard",),
+                     "settlement_on_proof": ("settlement.milestone_escrow",),
+                     "default_pathway": ("defaults.incumbent_integration",),
+                     "counter_position": ("incentives.counter_position",),
+                     "constraint_to_advantage": ("standards.verified_compliance",),
+                     "aggregate_fragmented": ("coordination.consented_pool",),
+                     "remove_single_point": ("dependency.second_source",),
+                     "data_flywheel": ("routing.evidence_triage",),
+                     # split by legal channel: each has its own lawful basis, access, evidence and authorization
+                     "accountable_transparency": ("proof.evidence_preservation", "proof.confidential_review",
+                                                  "proof.authority_submission", "proof.public_publication"),
+                     "regenerative_incentive": ("incentives.regenerative_benefit",),
+                     "remove_step": ("workflow.remove_step",)}
+# The operator table is historical (Track B): it no longer evolves here. Extend the Foundry library instead; a
+# test pins this digest so an edit to OPERATORS cannot quietly create a second, independently evolving generator.
+
+
 def lawful(operator: Operator) -> list[str]:
     problems = []
     for means in operator.means:
@@ -245,6 +273,7 @@ def compile_map(leverage_map: dict, request: dict, *, operators=OPERATORS) -> di
             consequence = max((CONSEQUENCE[m] for m in op.means), key=RANK.index)
             candidates.append({
                 "id": f"{op.id}@{b['node']}", "operator": op.id, "mental_model": op.model, "node": b["node"],
+                "canonical_foundry_mechanisms": list(FOUNDRY_MECHANISM[op.id]),
                 "label": label, "control_points": list(op.control_points), "mechanism": op.mechanism,
                 "means": list(op.means), "lawful": True, "buildability": level, "backcast": steps,
                 "consequence_class": consequence,
@@ -262,7 +291,10 @@ def compile_map(leverage_map: dict, request: dict, *, operators=OPERATORS) -> di
                                    -c["structural_priority"][4], c["id"]))
     return {"schema": "greg-advantage-compiler/0.1", "objective": request["objective"],
             "bottlenecks": bottlenecks, "candidates": candidates, "refused_operators": refused,
-            "baseline": "do nothing (always kept by the ranker)", "authority_created": False}
+            "baseline": "do nothing (always kept by the ranker)",
+            "canonical_generator": "foundry.lawful_leverage: the same operators, hard-filtered and estimated",
+            "historical_view": "superseded generator kept read-only; use `greg gravity` (the Foundry) to act",
+            "authority_created": False}
 
 
 def to_interventions(candidates: list[dict], estimates: dict) -> list[dict]:

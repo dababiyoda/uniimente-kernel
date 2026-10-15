@@ -1875,7 +1875,7 @@
    "gaps": [
     {
      "id": "G1",
-     "gap": "The Consequence Gate hardening is not on this line: the #55 CASE 27 commit-window escalation (a consequence class raised between grant and commit executed with no human on 4b0de6a), the #21 evidence-freshness register and the #12 child-grant lineage are on a separate draft PR because policy/consequence_gate.py is an SR-002 founder-ratified artifact.",
+     "gap": "The Consequence Gate hardening is not on this line: the #55 CASE 27 commit-window escalation (a consequence class raised between grant and commit executed with no human on 4b0de6a), the #21 evidence-freshness register the #12 child-grant lineage and sealed grant records (on this line the GrantIssuer hands out its own record, so an edited grant is not detectable as altered) are on a separate draft PR because policy/consequence_gate.py is an SR-002 founder-ratified artifact.",
      "state": "OPEN",
      "buildable_now": false,
      "dependency": "founder",

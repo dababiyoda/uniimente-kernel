@@ -44,9 +44,11 @@ failure quoted and passes on this branch.
 2. A paid, retry-safe UNCERTAIN dispatch keeps its reservation until it is settled. This conservative
    reservation can block a later dispatch that the real spend would have allowed. This is accepted:
    under-booking unknown spend is the worse failure.
-3. G1's "unaltered" comparison relies on the Gate registry's stored grant record. On this branch the
-   `GrantIssuer` returns live records. The sealed-record hardening comes with the security line (ports
-   follow-up `05d2866`) and must be carried when that line lands.
+3. G1's "unaltered" comparison relies on the Gate registry's stored grant record. On this line the
+   `GrantIssuer` hands out its own live record, so a holder that edits the grant dict it was handed also
+   edits the issuer's record, and the comparison cannot detect that alteration. Sealed records come with
+   the gate hardening on draft PR #182 (`2048f7a`). The `GrantIssuer` lives in `policy/consequence_gate.py`,
+   an SR-002 founder-ratified artifact, so the fix waits on Alfonso's INTEGRITY_AUTHORIZE.
 4. Every evidence item here is SANDBOX tier. No real customer, processor, worker provider or founder key
    is involved. The G2 labels make that boundary machine-readable: nothing here can be reported as an
    external close.

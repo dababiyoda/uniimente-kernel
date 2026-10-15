@@ -126,8 +126,8 @@ def test_the_certificate_dissent_reads_as_a_sentence():
     said = {name: verify("optimization", data, answer, OPT)["dissent"]
             for name, data, answer in (("optimal", SMALL, solve(SMALL)), ("infeasible", infeasible, solve(infeasible)),
                                        ("refuted", SMALL, forged))}
-    assert ("OPTIMAL independently certified: Z3, a different engine from CP-SAT, finds no assignment within the bounds "
-            "and constraints with objective > 4.") in said["optimal"]
+    assert ("OPTIMAL independently certified: Z3, a different engine from CP-SAT, finds no assignment within the "
+            "bounds and constraints with objective > 4.") in said["optimal"]
     assert ("INFEASIBLE independently certified: Z3, a different engine from CP-SAT, finds no assignment within the "
             "bounds and constraints.") in said["infeasible"]
     assert any(d.startswith("Z3 found an assignment within the bounds and constraints with objective > 3: ")
@@ -145,6 +145,47 @@ def test_an_inconclusive_certificate_is_never_a_refutation_and_says_so(monkeypat
     result = verify("optimization", infeasible, solve(infeasible), OPT)
     assert result["verdict"] == "STRUCTURALLY_VERIFIED" and result["certificate"]["status"] == "UNKNOWN"
     assert any("not conclusive" in d for d in result["dissent"])
+
+
+def test_one_process_asking_again_gets_the_same_certificate(monkeypatch):
+    """The resource count is what makes the certificate deterministic, but in Z3's shared default context the work on
+    one question depends on what the process asked before: one answer re-verified in one process was CERTIFIED,
+    CERTIFIED, then UNKNOWN (found re-measuring the calibration after the fix's independent review, 2026-10-15).
+    Each check now has a fresh context."""
+    import z3
+    work, check = [], z3.Solver.check
+
+    def counted(solver, *args):
+        def used():
+            stats = solver.statistics()
+            return stats.get_key_value("rlimit count") if "rlimit count" in stats.keys() else 0
+        before = used()
+        status = check(solver, *args)
+        work.append(used() - before)
+        return status
+    monkeypatch.setattr(z3.Solver, "check", counted)
+    knapsack = {"variables": {f"x{i}": [0, 3] for i in range(6)},
+                "constraints": [{"coefficients": {f"x{i}": 3 + 2 * i for i in range(6)}, "op": "<=", "rhs": 40}],
+                "objective": {"coefficients": {f"x{i}": 5 + 3 * i - i * i // 2 for i in range(6)}, "sense": "max"}}
+    # INFEASIBLE (review seed 3050's model): in the shared context its check took 3076, 6579, 4689, 6579 units
+    equalities = {"variables": {"x0": [-1, 18], "x1": [5, 18], "x2": [-15, -5], "x3": [1, 19], "x4": [-9, 16]},
+                  "constraints": [{"coefficients": {"x0": -1, "x1": -3, "x2": -6, "x4": -7}, "op": "==", "rhs": 26},
+                                  {"coefficients": {"x0": 1, "x2": 6, "x3": -3, "x4": 6}, "op": "<=", "rhs": 38},
+                                  {"coefficients": {"x0": -5, "x1": 3, "x3": 8, "x4": 7}, "op": ">=", "rhs": 45},
+                                  {"coefficients": {"x0": -6, "x1": 6, "x2": -1, "x4": -7}, "op": "==", "rhs": -58}],
+                  "objective": {"coefficients": {f"x{i}": 0 for i in range(5)}, "sense": "min"}}
+    answers = [(data, solve(data)) for data in (knapsack, equalities, MIN)]
+    assert [answer["output"]["solver_status"] for _, answer in answers] == ["OPTIMAL", "INFEASIBLE", "OPTIMAL"]
+
+    def statuses():
+        return [verify("optimization", data, answer, OPT)["certificate"]["status"]
+                for _ in range(3) for data, answer in answers]
+    assert statuses() == ["CERTIFIED"] * 9
+    assert all(len(set(work[k::3])) == 1 for k in range(3)), work
+    # so a limit just above the work of the first check certifies every later one too; in the shared context a later
+    # check needed more and stopped UNKNOWN
+    monkeypatch.setattr(verification, "Z3_RLIMIT", work[1] + 1)
+    assert statuses()[1::3] == ["CERTIFIED"] * 3
 
 
 def test_a_false_infeasible_and_a_false_unsat_are_refuted_and_honest_ones_are_certified():

@@ -6,14 +6,16 @@ import math
 
 from .contracts import CognitionError, ProofArtifact, digest
 
-# The Z3 check below is bounded by a deterministic resource count (alone, it gives the same answer the same
-# certificate) and by a wall-clock backstop inside the verifier worker's own CPU and time budget. The backstop is not
-# deterministic: on a loaded machine it can end a check before the resource count does, which leaves the claim UNKNOWN
-# (uncertified and unrefuted; the certificate's reason is 'timeout' rather than 'canceled'). Calibration (2026-10-15,
-# one idle core): every composition model on dev and review seeds and F7's development items certifies within 10k
-# units in under 40 ms. Of the honest random answers on review seeds 3000-3999, 100k leaves 8 UNKNOWN, each reaching
-# the resource limit in 0.06-0.65 s; 2M certifies one of them (seed 3082, in 1.2 s, so only without the 1 s backstop)
-# and stops the other 7 after 5-9 s.
+# The Z3 check below is bounded by a deterministic resource count and by a wall-clock backstop inside the verifier
+# worker's own CPU and time budget. The count gives the same answer the same certificate only because each check runs
+# in a fresh Z3 context: in the shared default context Z3's work on a question depends on what the process asked
+# before (one answer re-verified in one process took 1,999,353, then 1,745,208, then over 2,000,000 units). The
+# backstop is not deterministic: on a slow or loaded machine it can end a check before the resource count does, which
+# leaves the claim UNKNOWN (uncertified and unrefuted; the certificate's reason is 'timeout' rather than 'canceled').
+# Calibration (2026-10-15, one core of a shared machine): every composition model on dev and review seeds and F7's
+# development items certifies within 10k units in under 60 ms. Of the honest random answers on review seeds
+# 3000-3999, 100k leaves 8 UNKNOWN, each reaching the resource limit in 0.06-1.0 s, so close to the backstop; 2M
+# certifies one of them (seed 3082, in 1.0-1.3 s, so only without the 1 s backstop) and stops the other 7 after 2-9 s.
 Z3_RLIMIT = 100_000
 Z3_TIMEOUT_MS = 1000
 
@@ -49,17 +51,18 @@ def _z3_certificate(data, *, integers, better_than=None, sense="max"):
     if integers and any(type(x) is not int for x in numbers):
         return {"engine": "z3", "status": "NOT_RUN", "reason": "an integer model with a non-integer number",
                 "limits": limits}
+    ctx = z3.Context()                      # fresh per check, so the resource count is deterministic (above)
 
     def const(x):
         if integers:
-            return z3.IntVal(x)
+            return z3.IntVal(x, ctx)
         x = Fraction(str(x))
-        return z3.Q(x.numerator, x.denominator)
-    vs = {n: (z3.Int if integers else z3.Real)(n) for n in data["variables"]}
+        return z3.Q(x.numerator, x.denominator, ctx)
+    vs = {n: (z3.Int if integers else z3.Real)(n, ctx) for n in data["variables"]}
 
     def linear(coefficients):
         return z3.Sum([const(co) * vs[n] for n, co in coefficients.items()]) if coefficients else const(0)
-    solver = z3.Solver()
+    solver = z3.Solver(ctx=ctx)
     solver.set("rlimit", Z3_RLIMIT)
     solver.set("timeout", Z3_TIMEOUT_MS)
     for n, (lo, hi) in data["variables"].items():
@@ -70,8 +73,8 @@ def _z3_certificate(data, *, integers, better_than=None, sense="max"):
                     "<": lhs < rhs, ">": lhs > rhs}[c["op"]])
     if better_than is not None:
         objective = linear(data["objective"]["coefficients"])
-        value = (z3.IntVal(better_than.numerator) if integers and better_than.denominator == 1
-                 else z3.Q(better_than.numerator, better_than.denominator))
+        value = (z3.IntVal(better_than.numerator, ctx) if integers and better_than.denominator == 1
+                 else z3.Q(better_than.numerator, better_than.denominator, ctx))
         solver.add(objective > value if sense == "max" else objective < value)
     status = solver.check()
     out = {"engine": "z3", "version": z3.get_version_string(), "limits": limits,

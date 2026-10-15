@@ -167,8 +167,10 @@ def _operation(reason, pid: str, operation: str, data: dict, *, registry, journa
 
 
 def _op_summary(name: str, receipt: dict) -> dict:
+    output = receipt.get("output")
+    status = output.get("solver_status") if isinstance(output, dict) else None
     return {"stage": name, "receipt_id": receipt["receipt_id"], "method": receipt["method"],
-            "abstention_state": receipt["abstention_state"],
+            "abstention_state": receipt["abstention_state"], **({"solver_status": status} if status else {}),
             "verifier": (receipt.get("evaluator_result") or {}).get("verdict"),
             "latency_s": round(receipt["latency"], 4), "counterargument": receipt.get("strongest_counterargument")}
 
@@ -203,8 +205,14 @@ def _graph_then_allocate(payload, pid, kw, receipt, finish):
         receipt["translation_failures"].append(f"optimiser claimed flow {claimed}; max-flow organ found "
                                                f"{check['output']['value']}")
         return finish("TRANSLATION_FAILED", "cross-intelligence flow check disagreed")
+    # the composition's certificate is the optimiser's: OPTIMAL with a zero gap is proven (the verifier requires
+    # it), FEASIBLE is a feasible plan whose flow the cross-check confirms but whose optimality is unproven
+    gap = (solved.get("proof_artifact") or {}).get("optimality_gap")
     return finish("ANSWERED", None, {"increments": increments, "flow_value": claimed,
-                                     "control_points": check["output"]["cut_edges"]})
+                                     "control_points": check["output"]["cut_edges"],
+                                     "solver_status": out["solver_status"], "optimality_gap": gap,
+                                     "optimality": "proven" if out["solver_status"] == "OPTIMAL"
+                                     else "unproven (feasible plan; the optimiser stopped before proving it optimal)"})
 
 
 def _bayes_then_voi(payload, pid, kw, receipt, finish):

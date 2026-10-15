@@ -951,3 +951,36 @@ def test_an_admitted_single_genome_that_matched_a_recipes_twin_outranks_the_reci
     for status, version in (("NICHE_CAPABILITY", item.genome.version), ("DEFAULT_FOR_GEOMETRY", "0.0.0-old")):
         index(status, version)                                # a lower or stale verdict matches nothing
         assert run(both, execute=False)["method_or_composition_selected"] == "composition:graph_then_allocate"
+
+
+def test_an_optimal_claim_must_meet_its_own_proven_bound_and_a_composition_carries_its_certificate(registry, no_index):
+    """Review of #179 (M6): the optimisation verifier checked feasibility only. A feasible but suboptimal plan
+    written into the proof with the solver status OPTIMAL verified, although its own proof bound (58) exceeded its
+    objective (55), and the composition's answer dropped the solver status. An OPTIMAL claim must now meet its
+    proven bound and the proof must be the output's; the composition reports how strong its certificate is."""
+    import copy
+    from greg.cognition.catalog import FAMILIES
+    from greg.cognition.solvers import SOLVERS
+    from greg.cognition.verification import verify
+    data = {"variables": {"x": [0, 5], "y": [0, 5]},
+            "constraints": [{"coefficients": {"x": 1, "y": 1}, "op": "<=", "rhs": 4}],
+            "objective": {"coefficients": {"x": 1, "y": 1}, "sense": "max"}}
+    honest = SOLVERS["optimization"](data, {"latency_limit": 10})
+    proof_class = FAMILIES["optimization"][3]
+    assert honest["output"]["solver_status"] == "OPTIMAL" and all(verify("optimization", data, honest, proof_class)
+                                                                   ["checks"].values())
+    forged = copy.deepcopy(honest)
+    forged["output"].update(solution={"x": 1, "y": 2}, objective_value=3.0)       # feasible, one short of optimum
+    forged["proof"]["solution"] = {"x": 1, "y": 2}
+    checks = verify("optimization", data, forged, proof_class)["checks"]
+    assert checks["constraint_substitution"] and checks["objective_substitution"]  # feasibility alone passes
+    assert checks["optimal_objective_meets_its_bound"] is False
+    mismatched = copy.deepcopy(honest)
+    mismatched["output"].update(solution={"x": 1, "y": 2}, objective_value=3.0)   # the proof is another solution's
+    assert verify("optimization", data, mismatched, proof_class)["checks"]["proof_matches_output"] is False
+    no_index.write_text(json.dumps({"genomes": {"flow_reinforce_greedy": {"status": "SUPERSEDED"}}, "routing": {},
+                                    "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}}))
+    r = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"])
+    assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
+    assert r["result"]["solver_status"] == "OPTIMAL" and r["result"]["optimality"] == "proven"
+    assert r["result"]["optimality_gap"] == 0

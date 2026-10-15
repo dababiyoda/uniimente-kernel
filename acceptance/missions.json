@@ -1805,19 +1805,23 @@
      "id": "I3",
      "obligation": "Evaluator substitution is refused: a changed frozen evaluator, a swapped method or provider, or a candidate reading its evaluator's outcomes fails before it counts.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
+      "tests/integration/test_greg_attack_campaign_process.py::test_one_live_body_contains_a_hostile_worker_a_substituted_evaluator_and_revoked_authority",
       "tests/unit/test_goal_chase_contracts.py::test_changed_frozen_evaluator_fails_before_execution",
-      "tests/unit/test_greg_protected_evolution.py::test_the_sealed_evaluator_refuses_after_tampering",
-      "tests/unit/test_greg_protected_evolution.py::test_a_candidate_runs_confined_and_cannot_read_the_evaluators_outcomes",
       "tests/unit/test_greg_cognition_seed_path.py::test_verifier_rejects_method_identity_substitution",
-      "tests/unit/test_greg_ventures.py::test_appraiser_refutes_every_substitution",
-      "tests/unit/test_greg_local_mission.py::test_worker_lie_is_rejected_by_separate_appraiser",
       "tests/unit/test_greg_learning_heldout_independence.py",
-      "tests/unit/test_greg_mcp_worker.py::test_guarded_mcp_provider_and_scope_substitution_are_refused"
+      "tests/unit/test_greg_local_mission.py::test_worker_lie_is_rejected_by_separate_appraiser",
+      "tests/unit/test_greg_mcp_worker.py::test_guarded_mcp_provider_and_scope_substitution_are_refused",
+      "tests/unit/test_greg_protected_evolution.py::test_a_candidate_runs_confined_and_cannot_read_the_evaluators_outcomes",
+      "tests/unit/test_greg_protected_evolution.py::test_the_sealed_evaluator_refuses_after_tampering",
+      "tests/unit/test_greg_ventures.py::test_appraiser_refutes_every_substitution",
+      "tests/unit/test_greg_worker_containment.py::test_a_worker_that_replaces_its_evaluator_never_closes_its_mission",
+      "tests/unit/test_greg_worker_containment.py::test_the_frozen_evaluator_is_the_named_acceptance_and_the_runner_configuration",
+      "tests/unit/test_greg_worker_containment.py::test_worker_written_tests_are_not_a_frozen_evaluator"
      ],
-     "notes": ""
+     "notes": "A worker that rewrites the frozen acceptance test or adds a runner hook is REJECTED by the independent appraisal in a live Body. Residual: gap G7."
     },
     {
      "id": "I4",
@@ -1842,29 +1846,34 @@
      "tier": "SANDBOX_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
-      "tests/unit/test_greg_landlock.py",
-      "tests/unit/test_greg_egress.py",
-      "tests/unit/test_greg_mcp_worker.py::test_guarded_mcp_cannot_turn_read_only_tool_into_production",
-      "tests/unit/test_greg_foundry_worker.py::test_fixed_child_recipe_rejects_module_environment_and_scope_substitution",
+      "tests/integration/test_greg_attack_campaign_process.py::test_one_live_body_contains_a_hostile_worker_a_substituted_evaluator_and_revoked_authority",
       "tests/unit/test_greg_artifacts.py::test_store_refuses_escape_target_swap_corruption_and_overwrite",
+      "tests/unit/test_greg_egress.py",
+      "tests/unit/test_greg_foundry_worker.py::test_fixed_child_recipe_rejects_module_environment_and_scope_substitution",
       "tests/unit/test_greg_interface.py::test_delivery_pages_cannot_escape_the_delivery_folder",
-      "tests/unit/test_greg_protected_evolution.py::test_an_immune_candidate_runs_confined_from_the_allow_list"
+      "tests/unit/test_greg_landlock.py",
+      "tests/unit/test_greg_mcp_worker.py::test_guarded_mcp_cannot_turn_read_only_tool_into_production",
+      "tests/unit/test_greg_protected_evolution.py::test_an_immune_candidate_runs_confined_from_the_allow_list",
+      "tests/unit/test_greg_worker_containment.py::test_a_cli_agent_runs_from_where_the_host_found_it_not_from_the_scrubbed_path",
+      "tests/unit/test_greg_worker_containment.py::test_a_confined_worker_reads_nothing_of_the_body_and_writes_only_its_work_directory",
+      "tests/unit/test_greg_worker_containment.py::test_a_runtime_root_that_would_expose_the_body_home_refuses_the_worker"
      ],
-     "notes": "OS confinement (Landlock) needs kernel support; where it is absent those tests skip, and a skip is not a pass."
+     "notes": "Commissioned workers (worker.commission) are now Landlock-confined in a live Body: they read only the host runtime and write only their work directory. Partial: their network is not confined (the provider needs it), and OS confinement needs kernel support; where it is absent those tests skip, and a skip is not a pass."
     },
     {
      "id": "I6",
      "obligation": "Revoked, expired, consumed or rotated-out authority acts on nothing.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
-      "tests/unit/test_consequence_gate.py::test_revoked_grant_fails_at_commit",
+      "tests/integration/test_greg_attack_campaign_process.py::test_one_live_body_contains_a_hostile_worker_a_substituted_evaluator_and_revoked_authority",
       "tests/unit/test_consequence_gate.py::test_expired_grant_fails_at_commit",
+      "tests/unit/test_consequence_gate.py::test_revoked_grant_fails_at_commit",
       "tests/unit/test_consequence_gate.py::test_single_use_grant_cannot_be_replayed",
-      "tests/unit/test_greg_remote.py::test_expired_and_revoked_delegations_stop_working",
       "tests/unit/test_greg_goal_gravity.py::test_signed_commands_honour_device_revocation_and_founder_rotation",
       "tests/unit/test_greg_goal_gravity_reattack.py::test_an_unverified_record_cannot_hide_a_key_rotation_so_the_retired_key_admits_nothing",
+      "tests/unit/test_greg_remote.py::test_expired_and_revoked_delegations_stop_working",
       "tests/unit/test_mission_g_grants.py"
      ],
      "notes": ""
@@ -1948,10 +1957,19 @@
     {
      "id": "G6",
      "gap": "Evaluator substitution, worker escape and revoked grants are proven only by their own tests, not inside a live-process campaign (they need a worker or a second evaluator in the loop).",
+     "state": "CLOSED",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "Extend the campaign with a scripted worker double that tries to read outside its grant and a substituted appraiser, on the same live Body.",
+     "closed_by": "tests/integration/test_greg_attack_campaign_process.py (second campaign: a hostile worker executable the live Body commissions is denied every read and write outside its work directory by Landlock, a worker that rewrites its frozen acceptance test is REJECTED and never closes its mission, and a revoked phone's approval is refused) and tests/unit/test_greg_worker_containment.py. Closing it found and fixed two defects: commissioned workers ran with no OS confinement (they could read the witness key, device key, ledger and the Body's environment), and the appraisal re-ran a substituted evaluator. Also fixed: CliAgentWorker could not start a provider installed outside the scrubbed PATH."
+    },
+    {
+     "id": "G7",
+     "gap": "The independent appraisal runs the worker's code inside the acceptance process and reads its exit code, so a change built to subvert the test process itself (exiting 0 at import, patching the runner at import time) can still pass. File-level evaluator substitution is refused (G6); runtime subversion is not.",
      "state": "OPEN",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Extend the campaign with a scripted worker double that tries to read outside its grant and a substituted appraiser, on the same live Body."
+     "next": "Hold the expectations outside the code under test: run the frozen tests' assertions in a parent that the worker's code cannot read or write (a Landlock-confined child executes the code and returns values; the parent compares them), and require a positive per-test result, not an exit code."
     }
    ]
   },

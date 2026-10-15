@@ -59,3 +59,22 @@ def test_a_later_family_decides_a_recipe_and_earlier_verdicts_stay_in_its_histor
     row = B.build()["recipes"]["graph_then_allocate"]
     assert (row["family"], row["status"], row["prefer"]) == ("F7", "NO_LIFT", "greedy")
     assert [(h["family"], h["status"], h["wins"]) for h in row["history"]] == [("F3", "VPL_LIFT", 11)]
+
+
+def test_a_p_value_rounded_to_zero_by_its_harness_is_recomputed_exactly_from_the_counts(tmp_path, monkeypatch):
+    """Review 2026-10-14: run_v4 rounds the sign-test p to six decimals, so F7's 92-0 was recorded as 0.0 and the
+    index made 0.0 graph_then_allocate's deciding p. The index recomputes the exact p from the frozen counts and
+    keeps the source's rounded value beside it, never as the p."""
+    runs = (("a.json", "F3", 11, 0, 0.000488), ("b.json", "F7", 92, 0, 0.0))
+    for name, family, wins, losses, rounded in runs:
+        (tmp_path / name).write_text(json.dumps({"source_commit": name, "summary": {family: {
+            "lift": True, "best_constituent": "greedy", "routed_wins": wins, "routed_losses": losses,
+            "sign_test_p_one_sided": rounded}}}))
+    monkeypatch.setattr(B, "ROOT", tmp_path)
+    monkeypatch.setattr(B, "P6_RUNS", (("a.json", {"F3": "graph_then_allocate"}), ("b.json", {"F7": "graph_then_allocate"})))
+    row = B.build()["recipes"]["graph_then_allocate"]
+    assert row["p_one_sided"] == 2.0 ** -92 and row["p_one_sided"] > 0 and row["p_one_sided_as_recorded"] == 0.0
+    [earlier] = row["history"]
+    assert earlier["p_one_sided"] == 2.0 ** -11 and earlier["p_one_sided_as_recorded"] == 0.000488
+    assert B.exact_sign_p(13, 4) == sum(__import__("math").comb(17, k) for k in range(13, 18)) / 2 ** 17
+    assert B.exact_sign_p(0, 0) == 1.0

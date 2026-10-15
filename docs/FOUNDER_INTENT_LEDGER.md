@@ -2,6 +2,16 @@
 
 # Founder Intent Ledger
 
+## Convergence of the two Mind lineages — 2026-10-14
+
+`INTENT-20261014-MIND-LINEAGE-CONVERGENCE` ([record](intent/INTENT-20261014-MIND-LINEAGE-CONVERGENCE.json), [verbatim source](intent/sources/MIND-LINEAGE-CONVERGENCE-2026-10-14-source.md), [source-location manifest](collaboration/MIND-LINEAGE-SOURCE-MANIFEST-2026-10-14.json)): two sessions implemented the 2026-10-07 directive in parallel (PR #158 and PR #155) and froze different evaluations at eight identical paths. Neither session is the winner; both contribute to one GREG Mind.
+
+- **Track A:** restore CI on #158 by retargeting it to a branch pinned at its original base `92bc6e3`. Both lineages are snapshotted at full SHAs. Every frozen artifact keeps its identity as (source commit, original path, sha256) and is never renamed or rewritten. CI on the pinned base is evidence for that lineage only.
+- **Track B:** build the converged Mind now, in a dedicated draft PR on the latest verified #155 head. Inventory both lineages and disposition every conflict. Select canonical mechanisms by evidence. Keep unresolved alternatives isolated and withheld, with one cognition entry point, one authority system and one evolution controller. Run five review responsibilities and exactly two strengthening passes, and pre-register a fresh freeze for every integrated evaluation.
+- **Coordination:** neither session overwrites, regenerates, renames or supersedes the other's frozen evidence, and new evaluations use uniquely identified paths.
+
+State: active. Authority delta: none.
+
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
 
 `INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.
@@ -67,6 +77,28 @@ Progress 2026-10-14 (measured, frozen, negative results kept):
   - one pre-registered admission v3 on fresh seeds 1200-1229 for every new or version-bumped genome (promoted competitors, Layer 3 packs A-C, `flow_expansion_mcf`, the Layer 2 native regimes, `basal_bayes_filter` 1.0.1, `develop_constraint_release` 1.2.0);
   - a composition family that uses an admitted Layer 1 or Layer 2 genome;
   - new data before any further forecast admission.
+
+Progress 2026-10-15 (measured, frozen, negative results kept):
+
+- **P6 v5** ([evidence](evidence/greg-composition-lift/2026-10-14-v5/README.md)): the natural family F8 (real NYC 2015 pickups; basal Kalman tracker -> Erlang C staffing) **lifts** over the best single intelligence, 8.6% cheaper (1589-204 items, 120-2 days). The EWMA-ratio-plus-quantile ablation is 4.7% cheaper still, and all of that comes from the tracker's fallbacks. Natural families are now 3 of 4. The data's redistribution terms are unverified (release blocker).
+- **Genome admission v3** ([evidence](evidence/greg-genome-admission/2026-10-15-v3/README.md)), pre-registered at `878f76c` on fresh seeds 1200-1229, measured 24 families: 15 new, 5 version-bumped and the 4 Layer 2 genomes on their native regimes.
+  - `flow_expansion_mcf` is DEFAULT against the F7 composition twin, with equal quality on all 30 instances at about one seventh of the latency. On F7's geometry the single exact method is canonical, which answers the founder's audit question at an exact version.
+  - Eight DEFAULT verdicts rest on latency at equal quality.
+  - `bootstrap_ci` is REJECTED.
+  - Grid shortest paths have no admitted genome: `grid_dijkstra` is EXPERIMENTAL at 1.22x its baseline's speed, short of 1.25x.
+  - `basal_bayes_filter` fell to NICHE and `develop_constraint_release` rose to DEFAULT. Both crossed a rule boundary, recorded as a replication finding.
+  - All 47 genomes carry current-version evidence: 34 admitted, none attached.
+- **P8 integrity and cycle 4** ([evidence](evidence/greg-protected-evolution/2026-10-15-cr-4/README.md)):
+  - A cycle that writes a record now has to match a committed freeze. The freeze holds the trusted-code digests, the rule, the settings, the split and both seals.
+  - The parent checks the method each sandbox imported, and confinement is scoped.
+  - Cycle 4 is the first cycle run under the freeze. It targeted the constraint-release search policy on a fresh split and was REJECTED at the held-out gate.
+    - On train the candidate was 23.7% better and improved on both stress sets.
+    - On held-out it lost 26-37 (p = 0.94) and its mean loss was 46% worse.
+    - Random restart beat both configurations on held-out.
+  - Protected evolution has still never kept an improvement: 4 cycles, 4 REJECTs.
+- **Fix rounds merged after independent verification:** packs B and C, Capability Genesis (five rounds) and the solo compiler work (three rounds).
+- **Independent review of PR #179** posted, plus a review of its closure binding. A family re-pointed to another solver keeps a positive verdict after an index rebuild (confirmed).
+- **Blocked by the environment:** fresh NYC TLC data for F8's next evaluation. The network policy refuses `data.cityofnewyork.us` and the TLC CDN.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 

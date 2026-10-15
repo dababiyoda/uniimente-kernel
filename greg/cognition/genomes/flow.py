@@ -293,6 +293,12 @@ def maxflow_lp(data):
 # ------------------------------------------------------------------ capacity expansion
 def _expansion(data):
     edges, s, t = _graph(data)
+    pairs = {(u, v) for u, v, _ in edges}
+    if len({f"{u}->{v}" for u, v in pairs}) != len(pairs):
+        # 'u->v' names the plan's increments and prices: two distinct edges with one name (node names holding
+        # '->', ('a->b', 'c') and ('a', 'b->c')) would share one increment and one price, so a plan could not say
+        # what it buys; refused here rather than answered with a plan that means two things
+        raise GenomeError("two distinct edges share one 'u->v' name (a node name contains '->'); rename the nodes")
     costs = data.get("unit_cost")
     if not isinstance(costs, dict):
         raise GenomeError("unit_cost maps 'u->v' to an integer cost")
@@ -648,7 +654,7 @@ INTELLIGENCES = [
         baseline=maxflow_trivial_cut, competitor=maxflow_lp),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.graph.reinforce_min_cut", version="1.0.0", family="flow_reinforce_greedy",
+            intelligence_id="solver.graph.reinforce_min_cut", version="1.0.1", family="flow_reinforce_greedy",
             layer=3, operation="reinforce_min_cut", epistemic_class="optimization",
             subgeometry="budgeted capacity expansion (heuristic)", native_representation="graph + unit costs + budget",
             required_inputs=("edges", "source", "sink", "unit_cost", "max_increment", "budget"),
@@ -664,7 +670,8 @@ INTELLIGENCES = [
             baseline="round-robin spread over source and sink edges",
             competitor="exact optimum via graph_then_allocate composition (compile + CP-SAT)", **_common()),
         solve=greedy_solve, verify=greedy_verify, instance=expansion_instance, score=expansion_score,
-        baseline=uniform_spread, competitor=lambda data: _composed_expansion(data)),
+        baseline=uniform_spread, competitor=lambda data: _composed_expansion(data),
+        competitor_recipe="graph_then_allocate"),
     Executable(
         genome=IntelligenceGenome(
             intelligence_id="solver.graph.capacity_expansion_mcf", version="1.0.0", family="flow_expansion_mcf",
@@ -682,8 +689,10 @@ INTELLIGENCES = [
                                 "potentials whose min-cost-flow dual bound for one more unit exceeds the budget",
             latency_profile="one Bellman-Ford per augmenting path", known_strengths=(
                 "exact with its own certificate", "no 64-variable ceiling (the graph_then_allocate composition "
-                "abstains above 32 edges)", "P6 v4 (F7): the same algorithm as its truth tied the composition on "
-                "200 of 200 real-backbone items"),
+                "abstains above 32 edges)", "admission v3 (2026-10-15, seeds 1200-1229): equal quality to the "
+                "graph_then_allocate twin on 30 of 30 at about a seventh of its latency (DEFAULT_FOR_GEOMETRY)",
+                "not run on F7: there, parametric min-cost flow (the same split-arc formulation, a different and "
+                "uncertified algorithm) tied the composition on 200 of 200 real-backbone items"),
             known_failure_modes=("supplied capacities and prices may be wrong", "single commodity only",
                                  "parallel edges between one ordered pair are refused"),
             counterindications=("multi-commodity or modular (lumpy) capacity",),
@@ -693,10 +702,11 @@ INTELLIGENCES = [
             baseline="greedy min-cut reinforcement (flow_reinforce_greedy's solve)",
             competitor="graph_then_allocate composition twin (compile + CP-SAT), deployable", **_common()),
         solve=mcf_expansion_solve, verify=mcf_expansion_verify, instance=expansion_instance, score=expansion_score,
-        baseline=lambda data: greedy_solve(data, None)["output"], competitor=lambda data: _composed_expansion(data)),
+        baseline=lambda data: greedy_solve(data, None)["output"], competitor=lambda data: _composed_expansion(data),
+        competitor_recipe="graph_then_allocate"),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.graph.capacity_expansion_compiler", version="1.0.1", family="flow_capacity_plan",
+            intelligence_id="solver.graph.capacity_expansion_compiler", version="1.0.2", family="flow_capacity_plan",
             layer=3, operation="compile_capacity_expansion", epistemic_class="optimization",
             subgeometry="graph -> integer program translation", native_representation="graph + unit costs + budget",
             required_inputs=("edges", "source", "sink", "unit_cost", "max_increment", "budget"),

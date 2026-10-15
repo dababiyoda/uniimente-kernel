@@ -95,6 +95,15 @@ def verify(family, data, answer, proof_class):
             checks["integer_domain"] = all(v.denominator == 1 for v in values.values())
             objective = sum(c * values[n] for n, c in data["objective"]["coefficients"].items())
             checks["objective_substitution"] = math.isclose(float(objective), output["objective_value"], abs_tol=1e-6)
+            # Feasibility alone let a suboptimal plan pass as OPTIMAL (review of #179, M6): the proof must be this
+            # output's, and an OPTIMAL claim must meet its own proven bound (zero gap). FEASIBLE claims no bound.
+            checks["proof_matches_output"] = (artifact.get("solver_status") == output["solver_status"]
+                                              and artifact.get("solution") == output["solution"])
+            if output["solver_status"] == "OPTIMAL":
+                bound = artifact.get("bound")
+                checks["optimal_objective_meets_its_bound"] = (
+                    isinstance(bound, (int, float)) and not isinstance(bound, bool) and math.isfinite(bound)
+                    and math.isclose(float(bound), float(output["objective_value"]), rel_tol=1e-9, abs_tol=1e-6))
             if output["solver_status"] == "OPTIMAL" and checks["constraint_substitution"] and checks["integer_domain"]:
                 # A second engine attacks the optimality claim: no feasible assignment may beat it.
                 better = _z3_integer_check(data, strictly_better_than=objective)

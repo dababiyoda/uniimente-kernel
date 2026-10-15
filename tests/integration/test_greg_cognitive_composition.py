@@ -74,7 +74,7 @@ def test_slots_are_typed():
         reason({"problem_id": "x", "chain": {"payload": {}, "recipe": "anything"}}, registry=registry_view())
     assert {"estimate_then_optimize", "identify_then_optimize"} <= set(RECIPES)   # v1 recipes retained
     assert set(RECIPES) == {"estimate_then_optimize", "identify_then_optimize", "graph_then_allocate",
-                            "bayes_then_voi", "forecast_then_allocate", "forecast_then_staff"}
+                            "bayes_then_voi", "forecast_then_allocate", "forecast_then_staff", "track_then_staff"}
 
 
 def test_a_signed_mission_closes_on_a_composed_answer(tmp_path):

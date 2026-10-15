@@ -12,7 +12,8 @@ family with per-item arm results it reports, routed composition against the best
 * ``calibration``          (staffing families only) the share of blocks staffed at or above the realised
                            requirement, per critical fractile q* = 1 - c/P, against q* itself. Staffing to the
                            q* quantile of a calibrated predictive distribution covers about q* of blocks; a
-                           large gap means the forecaster's distribution is miscalibrated on these data.
+                           large gap means the forecaster's distribution is miscalibrated on these data. F8 costs
+                           the safe fallback when an arm declines; its declines count as abstentions here.
 
 Section 16 accounting (``accounting``), computed after the runs and labelled POST_HOC; no frozen verdict changes:
 
@@ -42,9 +43,11 @@ import sys
 # Practitioner pipelines present in the frozen runs (declared by each run's design, never chosen here).
 PRACTITIONER_ARMS = {"F5": ("historical_mean", "point_forecast_then_optimize"),
                      "F6": ("weekly_mean_then_staff", "median_forecast_then_staff"),
-                     "F7": ("shortest_path_upgrade", "parametric_min_cost_flow")}
+                     "F7": ("shortest_path_upgrade", "parametric_min_cost_flow"),
+                     "F8": ("standing_plan_then_staff", "cumulative_ratio_then_staff", "ewma_ratio_then_staff")}
 LATENCY_MULTIPLIERS = (1.0, 1.5, 2.0, 5.0)
-COST_FAMILIES = ("F5", "F6")
+COST_FAMILIES = ("F5", "F6", "F8")
+DECLINED = ("no_decision", "fallback")           # F8 costs the system's safe fallback when an arm declines
 CORRECT = ("correct", "optimal")                 # F1-F4 say "correct"; F7 (exact optimum as truth) says "optimal"
 
 
@@ -76,9 +79,9 @@ def family_metrics(report: dict, family: str) -> dict | None:
                                  sum(abs(x) <= 1e-9 for x in regrets), "items": len(regrets)}
     secs = [(r["arms"][routed]["seconds"], r["arms"][best]["seconds"]) for r in rows]
     out["latency_delta_s"] = round(statistics.median(a for a, _ in secs) - statistics.median(b for _, b in secs), 4)
-    for key, outcome in (("false_answer_delta", "wrong"), ("abstention_delta", "no_decision")):
-        out[key] = (sum(r["arms"][routed]["result"] == outcome for r in rows)
-                    - sum(r["arms"][best]["result"] == outcome for r in rows))
+    for key, outcomes in (("false_answer_delta", ("wrong",)), ("abstention_delta", DECLINED)):
+        out[key] = (sum(r["arms"][routed]["result"] in outcomes for r in rows)
+                    - sum(r["arms"][best]["result"] in outcomes for r in rows))
     if all("required" in r.get("truth", {}) for r in rows):
         out["calibration"] = staffing_calibration(rows, routed, best)
     return out
@@ -93,16 +96,31 @@ def _fractile(item_id: str) -> float | None:
     return round(1 - 1 / (3.0, 10.0, 30.0)[day % 3], 6)
 
 
+# Per-family critical-fractile readers: F6 encodes the day index in the item id; F8 records q* in each item's truth.
+FRACTILE_READERS = {"F8": lambda row: (row.get("truth") or {}).get("quantile_level")}
+
+
+def _row_fractile(row: dict) -> float | None:
+    reader = FRACTILE_READERS.get(row.get("family"))
+    return reader(row) if reader else _fractile(row["item_id"])
+
+
+def _as_list(x):
+    return x if isinstance(x, list) else [x] if type(x) is int else None
+
+
 def staffing_calibration(rows: list[dict], *arms: str) -> dict:
+    """Coverage of the arm's own answers (an F8 arm that declined staffs the fallback and is not counted here)."""
     out = {}
     for arm in arms:
         by_q: dict[float, list[int]] = {}
         for r in rows:
-            q = _fractile(r["item_id"])
-            agents = (r["arms"][arm].get("answer") or {}).get("agents")
-            if q is None or not isinstance(agents, list):
+            q = _row_fractile(r)
+            agents = _as_list((r["arms"][arm].get("answer") or {}).get("agents"))
+            required = _as_list(r["truth"]["required"])
+            if q is None or agents is None or required is None:
                 continue
-            covered = [int(n >= need) for n, need in zip(agents, r["truth"]["required"])]
+            covered = [int(n >= need) for n, need in zip(agents, required)]
             by_q.setdefault(q, []).extend(covered)
         out[arm] = {f"{q:g}": {"nominal": q, "covered": round(statistics.fmean(v), 4), "blocks": len(v),
                                "gap": round(statistics.fmean(v) - q, 4)} for q, v in sorted(by_q.items())}
@@ -143,9 +161,9 @@ def family_accounting(report: dict, family: str) -> dict | None:
                        "ratio": round(med[routed] / med[best], 3) if med[best] > 0 else None,
                        "added_s": round(med[routed] - med[best], 4)}}
     if "static_composition" in rows[0]["arms"]:
-        decided = sum(1 for r in rows if (r["arms"]["static_composition"].get("cost") is not None
-                                          if family in COST_FAMILIES
-                                          else r["arms"]["static_composition"].get("result") != "no_decision"))
+        decided = sum(1 for r in rows if r["arms"]["static_composition"].get("result") not in DECLINED
+                      and (r["arms"]["static_composition"].get("cost") is not None if family in COST_FAMILIES
+                           else True))
         def answer(arm):
             return arm.get("answer", arm.get("plan"))
         same = sum(1 for r in rows if answer(r["arms"]["static_composition"]) is not None

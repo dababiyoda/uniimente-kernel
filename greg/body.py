@@ -282,7 +282,8 @@ class Body:
             payload = record_realization(self.journal, receipt=body.get("receipt"), realized=body.get("realized"),
                                          source=body.get("source", "founder_reported"), note=body.get("note", ""),
                                          command_digest=digest)
-            return {"receipt": payload["receipt"], "cognitive_receipt": payload["cognitive_receipt"]}
+            return {"receipt": payload["receipt"], "cognitive_receipt": payload["cognitive_receipt"],
+                    **({"compile_receipt": payload["compile_receipt"]} if "compile_receipt" in payload else {})}
         if kind == "CRITIQUE":
             record = tribunal.critique(self.journal, self.engine, body, digest)
             if record.get("epistemic"):   # founder evidence advances the held-out learning loop now

@@ -135,6 +135,15 @@ class Executable:
     # held-out data is checked on these identities, never on seed integers (two seeds can draw one series).
     instance_key: Callable[[int], str] | None = None
     notes: Mapping[str, str] = field(default_factory=dict)
+    # The library family whose deployable competitor this genome promotes into a genome of its own (directive
+    # section 15): it keeps that family's native geometry and needs no input that family did not, so the requests a
+    # SUPERSEDED family fitted fit this one. A link for routing and receipts; it carries no admission evidence.
+    promotes: str | None = None
+    # The composition recipe whose in-process twin is this genome's admission competitor: an admitted DEFAULT
+    # verdict at the genome's current version means it matched that recipe's quality at no more than 1.25x its
+    # latency on this geometry, so the single method, not the recipe, is canonical there (Competency Compiler).
+    # Metadata for routing; it changes no behaviour of the genome.
+    competitor_recipe: str | None = None
 
 
 def answer(output, certificate, *, status="ANSWER", missing=()) -> dict:

@@ -168,3 +168,58 @@ def test_a_forged_compile_receipt_settles_nothing():
     swapped = {**r, "selected_receipt": {**r["selected_receipt"], "receipt_id": "sha256:" + "0" * 64}}
     assert _compiled(swapped) is None
     assert _compiled({**r, "authority_created": True}) is None
+
+
+def test_a_re_digested_compile_receipt_must_list_its_selected_receipt():
+    """Review 2026-10-14: no test pinned the 'selected receipt is one of intermediate_receipts' check (the swapped
+    case above is caught by the digest). A compile receipt re-digested after its intermediate receipts were
+    rewritten keeps a valid identity and still names a selected receipt it never ran: it settles nothing."""
+    from greg.cognition.contracts import digest
+    from greg.cognition.settlement import _compiled
+    from greg.cognition.cortex import reason, registry_view
+    r = reason({"problem_id": "listed", "compile": {"geometry": {}, "data": {"expression": "1+1"}}},
+               registry=registry_view())
+    body = {k: v for k, v in r.items() if k != "receipt_id"}
+    body["intermediate_receipts"] = ["sha256:" + "1" * 64]
+    unlisted = {**body, "receipt_id": digest(body)}
+    assert _compiled(unlisted) is None
+    body["intermediate_receipts"] = list(r["intermediate_receipts"])     # control: listed again, it settles
+    assert _compiled({**body, "receipt_id": digest(body)}) is not None
+
+
+def test_a_world_unverified_compile_settles_no_competence_although_its_organ_answered(tmp_path):
+    """Review 2026-10-14: a high-consequence compile that runs a cortex organ ends WORLD_UNVERIFIED while the
+    organ's own receipt answered NONE and verified. Only the compile-state check keeps that conditional result out
+    of settlement, and no test pinned it. The mission is achieved and appraised; nothing is credited."""
+    from greg.cognition.contracts import digest
+    from greg.cognition.settlement import _compiled, measured_outcomes
+    saas = {"target": {"name": "spend", "unit": "USD/year"},
+            "variables": [{"name": "seats", "unit": "count", "low": 40, "high": 80},
+                          {"name": "price", "unit": "USD/count/month", "low": 20, "high": 35}],
+            "expression": ["*", "seats", "price"]}
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "real:conditional", "compile": {"geometry": {"consequence_class": "financial"},
+                                                            "data": {"estimation_model": saas}}}
+    spec = mission("m:conditional", checks=[{
+        "check_id": "conditional", "description": "the compiled estimate is a conditional result",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:conditional", "params": params},
+        "predicate": {"op": "equals", "field": "state", "value": "WORLD_UNVERIFIED"}}],
+        strategies=[{"action_id": "compile", "capability": "cognition.solve", "target": "cognition:conditional",
+                     "params": params, "advances": ["conditional"], "rationale": "compile the estimate"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        assert body.tick()["missions"][0]["state"] == "ACHIEVED"
+        compiled = next(r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
+                        if (r.payload["result"].get("output") or {}).get("problem_id") == "real:conditional")
+        selected = compiled["selected_receipt"]
+        assert compiled["state"] == "WORLD_UNVERIFIED" and selected["method"] == "cognition.cortex.estimation.fermi"
+        assert selected["abstention_state"] == "NONE"
+        assert selected["evaluator_result"]["verdict"] == "STRUCTURALLY_VERIFIED"
+        assert body.journal.replay("mission.appraised")[-1].payload["verdict"] == "VERIFIED"
+        assert body.journal.replay("cognition.settled") == [] and competence(body.journal) == {}
+        assert measured_outcomes(body.journal) == [] and _compiled(compiled) is None
+        relabelled = {k: v for k, v in compiled.items() if k != "receipt_id"}
+        relabelled["state"] = "ANSWERED"                                  # control: only the state differs
+        assert _compiled({**relabelled, "receipt_id": digest(relabelled)}) is not None

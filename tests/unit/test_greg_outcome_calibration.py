@@ -14,11 +14,15 @@ class Ledger:
 
     def add(self, cognitive):
         h = f"sha256:{len(self.records):064x}"
-        self.records[h] = SimpleNamespace(record_type="receipt", payload={"result": {"output": cognitive}})
+        self.records[h] = SimpleNamespace(record_type="receipt", payload={"result": {"output": cognitive}}, hash=h,
+                                          ts_utc=f"t{len(self.records)}")
         return h
 
     def find(self, h):
         return self.records.get(h)
+
+    def by_type(self, kind):
+        return [r for r in self.records.values() if r.record_type == kind]
 
 
 class Journal:
@@ -184,3 +188,82 @@ def test_on_the_body_a_signed_realization_binds_and_the_awaiting_list_empties(tm
         assert settlement.awaiting_realization(b.journal) == []
         assert settlement.outcome_calibration(b.journal)["n"] == 1
         assert any(e.payload["file"] == "short.json" for e in b.journal.replay("command.rejected"))
+
+
+def test_a_forecast_made_through_the_competency_compiler_is_awaited_bound_and_scored():
+    """Review 2026-10-14: a compiled forecast is retained as a compile receipt; awaiting_realization skipped it,
+    record_realization refused it and outcome_calibration never scored it, so Goal Gravity reported nothing to
+    realise on a body whose forecasts all went through the compiler. It is the selected method's forecast."""
+    from greg import gravity
+    from greg.cognition.contracts import digest
+    registry = registry_view()
+    registry.set_state("cognition.forecast_quantile", "ATTACHED")
+    j = Journal()
+    for seed in range(2):                                                     # development seeds only
+        data, truth = F.instance(seed)
+        compiled = reason({"problem_id": f"compiled-{seed}", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                                          "data": data}}, registry=registry)
+        assert compiled["state"] == "ANSWERED" and compiled["method_or_composition_selected"] == \
+            "cognition.forecast_quantile"
+        h = j.ledger.add(compiled)
+        [awaiting] = [a for a in settlement.awaiting_realization(j) if a["receipt"] == h]
+        assert awaiting["method"] == "cognition.forecast_quantile" and awaiting["compile_receipt"] == compiled["receipt_id"]
+        assert gravity._measured_trust(j)["awaiting_realization"] == 1
+        payload = settlement.record_realization(j, receipt=h, realized=truth["actual"], source="external_record")
+        assert payload["cognitive_receipt"] == compiled["selected_receipt"]["receipt_id"]
+        assert payload["compile_receipt"] == compiled["receipt_id"]
+        assert settlement.awaiting_realization(j) == []
+    out = settlement.outcome_calibration(j)
+    assert out["n"] == 2 and {row["method"] for row in out["levels"]} == {"cognition.forecast_quantile"}
+    # a realization re-pointed at another compile receipt's forecast does not score
+    stray = {**j.events[0].payload, "compile_receipt": "sha256:" + "0" * 64}
+    j.events[0] = SimpleNamespace(type="greg.cognition.realization", payload=stray)
+    assert settlement.outcome_calibration(j)["n"] == 1
+    # an abstained compile, and a forged one, carry no forecast
+    data, truth = F.instance(2)
+    forged = {**compiled, "problem_id": "forged"}                             # its identity digest no longer holds
+    with pytest.raises(ValueError, match="unrefuted forecast receipt"):
+        settlement.record_realization(j, receipt=j.ledger.add(forged), realized=truth["actual"],
+                                      source="external_record")
+    abstained = {k: v for k, v in compiled.items() if k != "receipt_id"}
+    abstained["state"] = "ABSTAIN"
+    abstained["receipt_id"] = digest(abstained)
+    with pytest.raises(ValueError, match="unrefuted forecast receipt"):
+        settlement.record_realization(j, receipt=j.ledger.add(abstained), realized=truth["actual"],
+                                      source="external_record")
+
+
+def test_a_high_consequence_compiled_forecast_is_awaited_bound_and_scored():
+    """Review 2026-10-14 (round 2): a forecast compiled under a high consequence class ends WORLD_UNVERIFIED (a
+    conditional result: the forecaster answered, the world assumptions are unverified). Its forecast is still the
+    selected method's own and must be awaited, bound and scored; no test covered that branch, so narrowing the
+    forecast states to ANSWERED, or unwrapping only ANSWERED compilations, dropped these forecasts from the
+    awaiting list, made 'greg realize' refuse them and left them uncalibrated with the suite green."""
+    from greg import gravity
+    registry = registry_view()
+    registry.set_state("cognition.forecast_quantile", "ATTACHED")
+    j = Journal()
+    receipts = []
+    for seed in range(3):                                                     # development seeds only
+        data, truth = F.instance(seed)
+        compiled = reason({"problem_id": f"financial-{seed}",
+                           "compile": {"geometry": {"consequence_class": "financial"}, "data": data}},
+                          registry=registry)
+        assert compiled["state"] == "WORLD_UNVERIFIED" and compiled["result"] is not None
+        assert compiled["method_or_composition_selected"] == "cognition.forecast_quantile"
+        receipts.append((j.ledger.add(compiled), compiled, truth["actual"]))
+    awaiting = {a["receipt"]: a for a in settlement.awaiting_realization(j)}
+    assert set(awaiting) == {h for h, _, _ in receipts}
+    assert gravity._measured_trust(j)["awaiting_realization"] == 3
+    for h, compiled, actual in receipts:
+        assert awaiting[h]["compile_receipt"] == compiled["receipt_id"]
+        assert awaiting[h]["method"] == "cognition.forecast_quantile"
+        payload = settlement.record_realization(j, receipt=h, realized=actual, source="external_record")
+        assert payload["cognitive_receipt"] == compiled["selected_receipt"]["receipt_id"]
+        assert payload["compile_receipt"] == compiled["receipt_id"]
+    assert settlement.awaiting_realization(j) == []
+    out = settlement.outcome_calibration(j)
+    assert out["n"] == 3 and {row["method"] for row in out["levels"]} == {"cognition.forecast_quantile"}
+    # competence still settles ANSWERED compilations only: a conditional result is not credited as an outcome
+    assert settlement._compiled(receipts[0][1]) is None
+    assert settlement._compiled(receipts[0][1], settlement.COMPILED_FORECAST_STATES) is not None

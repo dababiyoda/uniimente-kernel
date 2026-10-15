@@ -88,12 +88,22 @@ def verify(family, data, answer, proof_class):
         for c in data["constraints"]:
             lhs = sum(Fraction(str(co)) * values[n] for n, co in c["coefficients"].items())
             rhs = Fraction(str(c["rhs"]))
-            valid &= {"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs}[c["op"]]
+            valid &= {"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs,
+                      "<": lhs < rhs, ">": lhs > rhs}[c["op"]]
         checks["constraint_substitution"] = bool(valid)
         if family == "optimization":
             checks["integer_domain"] = all(v.denominator == 1 for v in values.values())
             objective = sum(c * values[n] for n, c in data["objective"]["coefficients"].items())
             checks["objective_substitution"] = math.isclose(float(objective), output["objective_value"], abs_tol=1e-6)
+            # Feasibility alone let a suboptimal plan pass as OPTIMAL (review of #179, M6): the proof must be this
+            # output's, and an OPTIMAL claim must meet its own proven bound (zero gap). FEASIBLE claims no bound.
+            checks["proof_matches_output"] = (artifact.get("solver_status") == output["solver_status"]
+                                              and artifact.get("solution") == output["solution"])
+            if output["solver_status"] == "OPTIMAL":
+                bound = artifact.get("bound")
+                checks["optimal_objective_meets_its_bound"] = (
+                    isinstance(bound, (int, float)) and not isinstance(bound, bool) and math.isfinite(bound)
+                    and math.isclose(float(bound), float(output["objective_value"]), rel_tol=1e-9, abs_tol=1e-6))
             if output["solver_status"] == "OPTIMAL" and checks["constraint_substitution"] and checks["integer_domain"]:
                 # A second engine attacks the optimality claim: no feasible assignment may beat it.
                 better = _z3_integer_check(data, strictly_better_than=objective)
@@ -245,14 +255,14 @@ def _z3_integer_check(data, *, strictly_better_than=None, budget_s=CROSS_CHECK_B
         for c in data["constraints"]:
             lhs = z3.Sum([whole(co) * vs[n] for n, co in c["coefficients"].items()]) if c["coefficients"] else z3.IntVal(0)
             rhs = whole(c["rhs"])
-            solver.add({"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs}[c["op"]])
+            solver.add(_relation(c["op"], lhs, rhs))
         if strictly_better_than is not None:
             objective = data["objective"]
             expr = z3.Sum([whole(co) * vs[n] for n, co in objective["coefficients"].items()])
             bound = whole(strictly_better_than)
             solver.add(expr < bound if objective["sense"] == "min" else expr > bound)
-    except (ValueError, TypeError, ArithmeticError):
-        return None  # not the integer model CP-SAT accepts; the second engine stays silent rather than truncate
+    except (ValueError, TypeError, ArithmeticError, KeyError):
+        return None  # not a model this check can pose; the second engine stays silent rather than truncate or guess
     left = _remaining_ms(deadline)
     if left is None:
         return None
@@ -282,7 +292,10 @@ def _z3_core_check(data, core, budget_s=CROSS_CHECK_BUDGET_S):
             lhs = (z3.Sum([z3.RealVal(str(co)) * vs[n] for n, co in c["coefficients"].items()])
                    if c["coefficients"] else z3.RealVal(0))
             rhs = z3.RealVal(str(c["rhs"]))
-            solver.add({"<=": lhs <= rhs, ">=": lhs >= rhs, "==": lhs == rhs, "!=": lhs != rhs}[c["op"]])
+            try:
+                solver.add(_relation(c["op"], lhs, rhs))
+            except KeyError:
+                return None  # an operator this re-check cannot pose is undecided, never a crash
         return _status(z3, solver.check())
 
     try:
@@ -307,6 +320,12 @@ def _z3_core_check(data, core, budget_s=CROSS_CHECK_BUDGET_S):
     return {"core_unsat": True, "minimal": minimal,
             "status": ("re-checked; minimal" if minimal else "re-checked; minimality undecided" if minimal is None
                        else "re-checked; not minimal (a smaller core exists)")}
+
+
+def _relation(op, lhs, rhs):
+    """The constraint operators the solvers accept, strict < and > included (formal models are real-valued)."""
+    return {"<=": lambda: lhs <= rhs, ">=": lambda: lhs >= rhs, "==": lambda: lhs == rhs, "!=": lambda: lhs != rhs,
+            "<": lambda: lhs < rhs, ">": lambda: lhs > rhs}[op]()
 
 
 def _status(z3, result):

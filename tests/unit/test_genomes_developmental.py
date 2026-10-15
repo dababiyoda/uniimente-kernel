@@ -512,3 +512,41 @@ def test_dev_seeds_run_fast_verify_and_never_make_false_claims(family):
         assert out["status"] == "ANSWER"
         assert all(x.verify(data, out["output"], out["certificate"]).values()), seed
         assert x.score(data, truth, out["output"])["category"] == "correct", seed
+
+
+def test_repair_verify_refutes_a_non_ascii_digit_key_instead_of_raising():
+    # review 2026-10-13: str.isdigit() accepts "²", then int() raised inside the verifier
+    data, _ = developmental.repair_instance(0)
+    out = developmental.repair_solve(data, {})
+    hop = dict(out["output"]["next_hop"])
+    hop["²,0"] = next(iter(hop.values()))
+    checks = developmental.repair_verify(data, dict(out["output"], next_hop=hop), out["certificate"])
+    assert checks["pointers_are_lattice_edges"] is False
+
+
+@pytest.mark.parametrize("seed", [0, 7])
+def test_constraint_release_verify_binds_selection_to_the_seeded_training_search(seed):
+    # review 2026-10-13: any reachable configuration with a one-step lineage verified, including the
+    # one-mutation neighbour chosen on the validation split itself
+    D = developmental
+    data, _ = D.constraint_release_instance(seed)
+    out = D.constraint_release_solve(data, {})
+    assert all(D.constraint_release_verify(data, out["output"], out["certificate"]).values())
+    train, validation, _, _, original = D._cr_inputs(data)
+    best = None
+    for kind_seed in range(400):
+        import random
+        cfg, note = D._mutate(original, random.Random(kind_seed))
+        if cfg != original and (best is None or D._utility(cfg, validation) < best[2]):
+            best = (cfg, note, D._utility(cfg, validation))
+    cfg, note, _ = best
+    schedules = [D.run_pipeline(cfg, c) for c in validation]
+    lineage = [out["output"]["lineage"][0],
+               {"id": 1, "config": list(cfg), "parents": [0], "mutations": [note],
+                "train_utility": D._utility(cfg, train)}]
+    val_u = sum(D._tardiness_check(s, c) / sum(a * b for a, b in zip(c[0], c[1]))
+                for s, c in zip(schedules, validation)) / len(validation)
+    forged = dict(out["output"], configuration=list(cfg), lineage=lineage, evaluations=2, retained=True,
+                  validation_utility=val_u)
+    checks = D.constraint_release_verify(data, forged, {"evaluations": 2, "validation_schedules": schedules})
+    assert checks["selection_replays_the_seeded_search"] is False

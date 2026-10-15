@@ -23,7 +23,7 @@ ledger event, executes nothing, contacts no one, spends nothing and creates no a
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from egregore.contracts import ContractError, SignalEnvelope, digest
 from egregore.leverage import propose_institutional_leverage
@@ -33,6 +33,8 @@ from greg import path as backcast
 
 SCHEMA = "greg-goal-gravity/0.1"
 DEFAULT_MAX_AGE = 7 * 86400
+MAX_AGE_CEILING = 31_536_000          # the institutional-leverage ranker's own bound (365 days)
+CLOCK_SKEW = timedelta(minutes=5)
 SITUATION_FIELDS = {"situation_id", "goal", "source", "observed_at", "leverage_problem", "max_evidence_age_seconds"}
 
 
@@ -50,7 +52,18 @@ def _instant(value: str) -> datetime:
     return moment
 
 
-def validate(situation: dict) -> dict:
+def _utcnow() -> datetime:
+    """The trusted clock. A situation's own timestamps are sensed input and never decide expiry or freshness."""
+    return datetime.now(timezone.utc)
+
+
+def decision_instant(situation: dict, now: datetime | None = None) -> datetime:
+    """When the decision is judged: the later of the trusted clock and the situation's declared as_of, so a
+    backdated situation can neither revive an expired light cone nor make old evidence look fresh."""
+    return max(now or _utcnow(), _instant(situation["leverage_problem"]["as_of"]))
+
+
+def validate(situation: dict, now: datetime | None = None) -> dict:
     if not isinstance(situation, dict) or set(situation) - SITUATION_FIELDS:
         raise GravityError(f"a situation takes only {sorted(SITUATION_FIELDS)}")
     for key in ("situation_id", "source", "observed_at"):
@@ -65,10 +78,16 @@ def validate(situation: dict) -> dict:
     observed, as_of = _instant(situation["observed_at"]), _instant(situation["leverage_problem"].get("as_of", ""))
     if observed > as_of:
         raise GravityError("a situation cannot be observed after the decision time it informs")
+    clock = now or _utcnow()
+    if observed > clock + CLOCK_SKEW:
+        raise GravityError("a situation cannot be observed in the future of the trusted clock")
     max_age = situation.get("max_evidence_age_seconds", DEFAULT_MAX_AGE)
-    if type(max_age) is not int or not 0 < max_age <= 366 * 86400:
-        raise GravityError("situation.max_evidence_age_seconds is a positive integer of at most a year")
-    if (as_of - observed).total_seconds() > max_age:
+    if isinstance(max_age, bool) or not isinstance(max_age, (int, float)) or not float(max_age).is_integer() \
+            or not 0 < max_age <= MAX_AGE_CEILING:
+        raise GravityError("situation.max_evidence_age_seconds is a positive whole number of seconds, at most 365 days")
+    situation = {**situation, "max_evidence_age_seconds": int(max_age)} if "max_evidence_age_seconds" in situation \
+        else situation
+    if (decision_instant(situation, clock) - observed).total_seconds() > max_age:
         # The ranker refuses stale evidence; the founder must not be asked to decide on it either.
         raise GravityError("the situation is older than max_evidence_age_seconds at the decision time; sense again")
     return situation
@@ -105,15 +124,16 @@ def signed_authority(journal, mission_id: str | None, at: str | None = None) -> 
     """The authority a founder signed for this goal: the named mission's light cone, or read-only.
 
     A paused mission lends nothing (the pause is the founder's decision), and neither does a cone whose
-    horizon has passed at the decision time ``at`` (the same expiry rule as ``LightCone.admits``)."""
+    horizon has passed at the decision time ``at``; omitted, ``at`` is the trusted clock now, as in
+    ``LightCone.admits``."""
     if journal is not None and mission_id:
         from greg.missions import MissionBook
         m = MissionBook(journal).missions.get(mission_id)
         if m is not None and m.status == "ACTIVE" and m.paused:
             return {"source": f"mission {mission_id} is paused: read-only", "held": list(UNSIGNED_HELD),
                     "budget_usd": 0.0}
-        if (m is not None and m.status == "ACTIVE" and at is not None
-                and _instant(at) >= _instant(m.spec["light_cone"]["horizon"])):
+        moment = _instant(at) if at is not None else _utcnow()
+        if m is not None and m.status == "ACTIVE" and moment >= _instant(m.spec["light_cone"]["horizon"]):
             return {"source": f"mission {mission_id} light cone expired: read-only", "held": list(UNSIGNED_HELD),
                     "budget_usd": 0.0}
         if m is not None and m.status == "ACTIVE":
@@ -174,6 +194,18 @@ def _rank(situation: dict, report: dict) -> dict:
             "note": "CandidateProposals for the existing Consequence Gate; not submitted, not executed"}
 
 
+class _ReadOnlyJournal:
+    """The canonical journal for reading only. Goal Gravity writes no ledger event; handing the compiler this view
+    (replay and ledger, no ``record``) makes any ask it would record come back prepared instead."""
+
+    def __init__(self, journal):
+        self._journal = journal
+        self.ledger = getattr(journal, "ledger", None)
+
+    def replay(self, prefix=""):
+        return self._journal.replay(prefix)
+
+
 def _voi(report: dict, registry, journal) -> dict:
     """Ask the Mind (Competency Compiler) whether to test before acting, through the one cognition path."""
     voi = report["value_of_information"]
@@ -182,6 +214,7 @@ def _voi(report: dict, registry, journal) -> dict:
     from greg.cognition.compiler import run
     from greg.cognition.cortex import registry_view
     registry = registry if registry is not None else registry_view(journal)
+    journal = _ReadOnlyJournal(journal) if journal is not None else None
     test = next(r for r in report["candidates"] if r["candidate_id"] == voi["test"])
     receipt = run({"problem_id": f"{report['problem_id']}-voi"[:96], "compile": {
         "geometry": {"geometry": "strategic", "decision_type": "act_or_test", "uncertainty_structure": "posterior",
@@ -193,7 +226,15 @@ def _voi(report: dict, registry, journal) -> dict:
     out = {"state": receipt["state"], "method": receipt["method_or_composition_selected"],
            "receipt_id": receipt["receipt_id"], "result": receipt["result"],
            "requirements": receipt["requirements"], "abstentions": receipt["abstentions"]}
-    if receipt["state"] == "ANSWERED":
+    attach = receipt.get("founder_attach_ask") or {}
+    if attach.get("state") == "PREPARED_NOT_RECORDED":
+        out["attach_ask_prepared"] = {"request_id": attach.get("request_id"), "kind": attach.get("kind"),
+                                      "state": "PREPARED_NOT_RECORDED",
+                                      "note": "the turn records nothing; the compiler records it when run on the body"}
+    if receipt["state"] in ("ANSWERED", "WORLD_UNVERIFIED") and isinstance(receipt["result"], dict):
+        # WORLD_UNVERIFIED is the canonical path's conditional result for a high-consequence geometry: the
+        # arithmetic is checked; the world assumptions and the consequence authority are not
+        out["conditional"] = receipt["state"] == "WORLD_UNVERIFIED"
         out["recomputation"] = {
             "consistent": bool(receipt["result"]["acquire"]) == bool(voi["test_may_pay"]),
             "nature": "the same EVPI arithmetic re-computed on a stride subsample through the canonical cognition "
@@ -205,6 +246,32 @@ def _voi(report: dict, registry, journal) -> dict:
     return out
 
 
+def _measured_trust(journal) -> dict:
+    """What GREG's own record says about trusting its predictions this turn: forecast calibration from receipt-
+    bound realizations, settled competence, and the forecasts still waiting for a realization (what the founder or
+    a sensor can report). Read-only; a MISCALIBRATED or unmeasured forecaster is shown, never hidden."""
+    if journal is None or getattr(journal, "ledger", None) is None:
+        return {"source": "no body ledger here: no retained receipts to measure", "forecast_calibration": "unmeasured",
+                "settled_outcomes": 0}
+    from greg.cognition.settlement import awaiting_realization, competence, outcome_calibration
+    calibration = outcome_calibration(journal)
+    by_method = {}
+    for row in calibration.get("levels", []):
+        key = f"{row['method']}@{row['method_version']}"
+        states = by_method.setdefault(key, set())
+        states.add(row["state"])
+    rows = competence(journal)
+    return {"source": "greg.cognition.settlement over the canonical journal",
+            "forecast_calibration": calibration["verdict"], "forecasts_scored": calibration["n"],
+            "per_method": {k: ("MISCALIBRATED" if "MISCALIBRATED" in v else "INSUFFICIENT_EVIDENCE"
+                               if "INSUFFICIENT_EVIDENCE" in v else "CALIBRATED") for k, v in sorted(by_method.items())},
+            "conflicting_realizations": len(calibration.get("conflicts", [])),
+            "awaiting_realization": len(awaiting_realization(journal)),
+            "settled_outcomes": sum(r["count"] for r in rows.values()),
+            "settled_correct": sum(r["correct"] for r in rows.values()),
+            "note": "competence and calibration are evidence about methods, never authority"}
+
+
 def _immune(journal) -> dict:
     """Section 22 signals the turn should see: decoupling, common causes, fragile capabilities."""
     if journal is None:
@@ -213,11 +280,14 @@ def _immune(journal) -> dict:
     return {"source": "greg.resilience over the canonical journal", "warnings": resilience.summary(journal)["warnings"]}
 
 
-def step(situation: dict, *, journal=None, registry=None, path_data: dict | None = None) -> dict:
+def step(situation: dict, *, journal=None, registry=None, path_data: dict | None = None,
+         now: datetime | None = None) -> dict:
     """One Goal Gravity turn. Read-only: returns a report and, where needed, one prepared founder ask."""
-    situation = validate(situation)
+    now = now or _utcnow()
+    situation = validate(situation, now)
     position = backcast.position(journal, path_data)
-    signed = signed_authority(journal, situation["goal"].get("mission_id"), situation["leverage_problem"]["as_of"])
+    signed = signed_authority(journal, situation["goal"].get("mission_id"),
+                              decision_instant(situation, now).isoformat())
     problem = _clamped(situation["leverage_problem"], signed)
     report = lawful_leverage.compile(problem)
     ranked = _rank({**situation, "leverage_problem": problem}, report)
@@ -265,7 +335,7 @@ def step(situation: dict, *, journal=None, registry=None, path_data: dict | None
                      "runner_up": report["runner_up"], "value_tradeoffs": report["value_tradeoffs_for_founder"],
                      "generated": report["generated"],
                      "rejected": {r["candidate_id"]: r["reasons"] for r in report["candidates"] if r["reasons"]}},
-        "mind": {"value_of_information": voi},
+        "mind": {"value_of_information": voi, "measured_trust": _measured_trust(journal)},
         "immune_signals": _immune(journal),
         "gate": ranked, "disposition": disposition, "founder_ask": ask, "preparable": report["preparable"],
         "asset_line": report["asset_line"], "dissent": dissent,

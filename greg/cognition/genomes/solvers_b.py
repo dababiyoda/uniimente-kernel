@@ -778,15 +778,20 @@ def _erlang_c_logsum(agents, load):
     return math.exp(last - top) / (sum(math.exp(x - top) for x in logs) + math.exp(last - top))
 
 
+def _erlang_tail(erlang_c, agents, load, aht, target):
+    """Verifier/truth tail, written apart from the solver's: P(W > T) = C * exp(-(c - a) T / AHT), a = lam*AHT."""
+    return math.exp(math.log(erlang_c) - (agents - load) * target / aht) if erlang_c > 0 else 0.0
+
+
 def erlang_verify(data, output, certificate):
     lam, aht, target, alpha, load, abandonment, cv = _queue(data)
     c = output.get("agents") if isinstance(output, dict) else None
     if type(c) is not int or not load < c <= Q_MAX_AGENTS:
         return {"stable_staffing": False}
     erlang_c = _erlang_c_logsum(c, load)
-    p = _p_exceed(erlang_c, c, lam, aht, target)
+    p = _erlang_tail(erlang_c, c, load, aht, target)
     below = c - 1
-    minimal = below <= load or _p_exceed(_erlang_c_logsum(below, load), below, lam, aht, target) > alpha
+    minimal = below <= load or _erlang_tail(_erlang_c_logsum(below, load), below, load, aht, target) > alpha
     claimed, claimed_c, occupancy = (output.get(k) for k in ("p_wait_exceeds_target", "erlang_c", "occupancy"))
     return {"stable_staffing": True, "meets_target": p <= alpha * (1 + 1e-9), "minimal": minimal,
             "probability_recomputed": type(claimed) is float and abs(claimed - p) <= 1e-9 + 1e-6 * p,
@@ -806,7 +811,7 @@ def _erlang_c_poisson(agents, load):
 def erlang_truth(data):
     lam, aht, target, alpha, load, *_ = _queue(data)
     agents = math.floor(load) + 1
-    while _p_exceed(_erlang_c_poisson(agents, load), agents, lam, aht, target) > alpha:
+    while _erlang_tail(_erlang_c_poisson(agents, load), agents, load, aht, target) > alpha:
         agents += 1
     return agents
 
@@ -1012,16 +1017,20 @@ def game_solve(data, budget):
     A = np.array(a, dtype=float)
     # B = 1 + (A - min A) / range lies in [1, 2]: positive (so the game value is positive) and scale-free, so
     # payoffs of any magnitude reach the LP with the same conditioning. Strategies are invariant to this map.
-    spread = float(A.max() - A.min())
-    B = 1.0 + (A - float(A.min())) / (spread if spread > 0 else 1.0)
+    low, spread = float(A.min()), float(A.max() - A.min())
+    scale = spread if spread > 0 else 1.0
+    above = (A - low) / scale
+    B = 1.0 + above
     row = linprog(np.ones(m), A_ub=-B.T, b_ub=-np.ones(n), bounds=[(0, None)] * m, method="highs")
     col = linprog(-np.ones(n), A_ub=B, b_ub=np.ones(m), bounds=[(0, None)] * n, method="highs")
     if not (row.success and col.success):
         return answer(None, {"row_lp": row.message, "column_lp": col.message}, status="UNKNOWN",
                       missing=["the linear programs did not solve"])
     x, y = _clean(row.x), _clean(col.x)
-    lower = float(min(np.array(x) @ A))
-    upper = float(max(A @ np.array(y)))
+    # the guarantees are evaluated on the rescaled matrix and stated as min A + range x guarantee: evaluated on A,
+    # they carried rounding of order max|A| x eps, not range x eps, and drifted with a large common offset
+    lower = low + scale * float(min(np.array(x) @ above))
+    upper = low + scale * float(max(above @ np.array(y)))
     return answer({"row_strategy": x, "column_strategy": y, "value": 0.5 * (lower + upper)},
                   {"method": "row and column linear programs (SciPy HiGHS) on the game rescaled to payoffs in [1, 2]",
                    "lower_bound": lower, "upper_bound": upper, "duality_gap": upper - lower,
@@ -1031,16 +1040,27 @@ def game_solve(data, budget):
 
 
 def _exploitability(a, x, y):
-    """Duality gap max_i (A y)_i - min_j (x A)_j, by plain arithmetic; None if not mixed strategies."""
+    """Both strategies' guarantees measured above the smallest payoff, by plain arithmetic: (min A, min_j (x A')_j,
+    max_i (A' y)_i) with A' = A - min A; None if not mixed strategies. Measured above the minimum, a strategy
+    whose mass is off 1 by d (|d| <= 1e-9 is accepted) moves a guarantee by at most d x the payoff range, never by
+    d x the payoffs' common offset (on raw payoffs that carried a false value through every check of an offset
+    game). Claimed values and bounds are compared above the minimum too (``_above``)."""
     m, n = len(a), len(a[0])
     for vec, size in ((x, m), (y, n)):
         if (not isinstance(vec, list) or len(vec) != size or any(type(p) not in (int, float) or not math.isfinite(p)
                                                                   or p < -1e-12 for p in vec)
                 or abs(sum(vec) - 1.0) > 1e-9):
             return None
-    lower = min(sum(x[i] * a[i][j] for i in range(m)) for j in range(n))
-    upper = max(sum(a[i][j] * y[j] for j in range(n)) for i in range(m))
-    return lower, upper
+    low = min(v for r in a for v in r)
+    above = [[v - low for v in r] for r in a]
+    lower = min(sum(x[i] * above[i][j] for i in range(m)) for j in range(n))
+    upper = max(sum(above[i][j] * y[j] for j in range(n)) for i in range(m))
+    return low, lower, upper
+
+
+def _above(number, low):
+    """A claimed payoff measured above the smallest payoff; infinity (never near anything) unless a finite number."""
+    return number - low if type(number) in (int, float) and math.isfinite(number) else math.inf
 
 
 def _payoff_range(a):
@@ -1056,13 +1076,13 @@ def game_verify(data, output, certificate):
     bounds = _exploitability(a, output.get("row_strategy"), output.get("column_strategy"))
     if bounds is None:
         return {"mixed_strategies": False}
-    lower, upper = bounds
+    low, lower, upper = bounds
     tol = 1e-7 * _payoff_range(a)
     value = output.get("value")
     return {"mixed_strategies": True, "equilibrium_gap_zero": upper - lower <= tol,
-            "value_between_bounds": type(value) is float and lower - tol <= value <= upper + tol,
-            "certificate_bounds": abs(certificate.get("lower_bound", math.inf) - lower) <= tol
-            and abs(certificate.get("upper_bound", math.inf) - upper) <= tol}
+            "value_between_bounds": type(value) is float and lower - tol <= _above(value, low) <= upper + tol,
+            "certificate_bounds": abs(_above(certificate.get("lower_bound"), low) - lower) <= tol
+            and abs(_above(certificate.get("upper_bound"), low) - upper) <= tol}
 
 
 def game_instance(seed):
@@ -1108,11 +1128,11 @@ def game_score(data, truth, output):
     bounds = _exploitability(a, output.get("row_strategy"), output.get("column_strategy"))
     if bounds is None:
         return {"quality": -2.0, "category": "wrong"}
-    lower, upper = bounds
+    low, lower, upper = bounds
     rng = _payoff_range(a)
     gap = max(0.0, upper - lower) / rng
     value = output.get("value")
-    if type(value) not in (int, float) or not lower - 1e-7 * rng <= value <= upper + 1e-7 * rng:
+    if type(value) not in (int, float) or not lower - 1e-7 * rng <= _above(value, low) <= upper + 1e-7 * rng:
         return {"quality": -2.0, "category": "wrong"}          # a claimed value no strategy pair supports
     return {"quality": -gap, "category": "correct" if gap <= 1e-6 else "wrong"}
 
@@ -1309,7 +1329,7 @@ INTELLIGENCES = [
                          "an inflated self-reported SE cannot widen its agreement tolerance"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.queue.erlang_c_staffing", version="1.0.2", family="queue_erlang", layer=3,
+            intelligence_id="solver.queue.erlang_c_staffing", version="1.0.3", family="queue_erlang", layer=3,
             operation="erlang_c_staffing", epistemic_class="prediction",
             subgeometry="M/M/c minimum staffing for a waiting-time service level",
             source_provenance="Erlang (1917) delay formula; Erlang-B recursion (textbook queueing theory)",
@@ -1374,7 +1394,7 @@ INTELLIGENCES = [
                          "non-object input raises GenomeError"}),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.game.zero_sum_lp", version="1.0.1", family="game_minimax", layer=3,
+            intelligence_id="solver.game.zero_sum_lp", version="1.0.2", family="game_minimax", layer=3,
             operation="zero_sum_lp_equilibrium", epistemic_class="strategic",
             subgeometry="two-player finite zero-sum matrix game",
             source_provenance="von Neumann minimax theorem; LP duality (Dantzig); SciPy HiGHS",
@@ -1385,8 +1405,8 @@ INTELLIGENCES = [
             parameters={"native_side": GAME_NATIVE},
             composition_inputs=("payoff model",), composition_outputs=("row_strategy", "column_strategy", "value"),
             evidence_type="optimality_certificate",
-            verification_method="arithmetic exploitability: max_i (A y)_i - min_j (x A)_j must be zero and bracket "
-                                "the claimed value",
+            verification_method="arithmetic exploitability on the payoffs above their minimum: max_i (A' y)_i - "
+                                "min_j (x A')_j must be zero and bracket the claimed value (A' = A - min A)",
             confidence_semantics="exact equilibrium of the supplied matrix (floating point)",
             resource_profile="two LPs with <= 40 variables", latency_profile="milliseconds",
             known_strengths=("exact equilibrium with a duality-gap certificate", "both players' strategies"),
@@ -1406,5 +1426,10 @@ INTELLIGENCES = [
         baseline=game_security, competitor=game_dual_lp, subregion=game_subregion, tolerance=1e-9,
         notes={"review": "1.0.1: LP rescaled to payoffs in [1, 2] (small-magnitude games no longer refute their own "
                          "answer); baseline strengthened to pure security strategies and competitor to the exact "
-                         "single-LP-plus-duals route; fictitious play and uniform play retained as functions"}),
+                         "single-LP-plus-duals route; fictitious play and uniform play retained as functions",
+               "review_1.0.2": "verifier and scorer measure guarantees, claimed value and bounds above the smallest "
+                               "payoff: on raw payoffs a strategy pair whose mass was off 1 by under 1e-9 shifted "
+                               "every guarantee by that much of the common offset, and a false value (49.5% of the "
+                               "range at a 1e9 offset) passed every check and scored correct; the solver states its "
+                               "bounds from the rescaled matrix (min A + range x guarantee)"}),
 ]

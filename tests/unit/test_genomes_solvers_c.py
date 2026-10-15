@@ -579,3 +579,35 @@ def test_dev_seeds_run_within_budget_and_never_answer_falsely(family):
         else:
             assert out["status"] in ("ABSTAIN", "UNKNOWN") and out["missing"]
         assert time.perf_counter() - started < 5.0, (family, seed)
+
+
+@pytest.mark.parametrize("eps", [1e-5, 1e-6, 1e-7])
+def test_causal_regression_verifies_on_nearly_collinear_covariates(eps):
+    # review 2026-10-13: the verifier's normal equations squared cond(X) (about 5e6) and refuted correct
+    # answers; the solver's inv(X'X) raised on still worse designs
+    import random
+    r = random.Random(3200)
+    n = 100
+    z1 = [r.gauss(0, 1) for _ in range(n)]
+    z2 = [a + eps * r.gauss(0, 1) for a in z1]
+    t = [1 if r.random() < 1 / (1 + math.exp(-a)) else 0 for a in z1]
+    y = [2 * ti + a + 3 * b + r.gauss(0, 1) for ti, a, b in zip(t, z1, z2)]
+    data = {"nodes": [{"name": "Z1"}, {"name": "Z2"}, {"name": "T", "type": "binary"}, {"name": "Y"}],
+            "edges": [["Z1", "T"], ["Z1", "Y"], ["Z2", "T"], ["Z2", "Y"], ["T", "Y"]], "treatment": "T",
+            "outcome": "Y", "adjustment_set": ["Z1", "Z2"], "samples": {"Z1": z1, "Z2": z2, "T": t, "Y": y}}
+    out = solvers_c.causal_solve(data, {})
+    assert out["status"] == "ANSWER"
+    assert all(solvers_c.causal_verify(data, out["output"], out["certificate"]).values())
+    worse = {**data, "samples": {**data["samples"], "Z2": [a + 1e-9 * r.gauss(0, 1) for a in z1]}}
+    assert solvers_c.causal_solve(worse, {})["status"] != "ANSWER"            # abstains, never raises
+
+
+def test_causal_verify_binds_every_certificate_claim():
+    # review 2026-10-13: ci95, n, strata_or_columns and the backdoor flags were published but never checked
+    data, _ = solvers_c.causal_instance(0)
+    out = solvers_c.causal_solve(data, {})
+    assert all(solvers_c.causal_verify(data, out["output"], out["certificate"]).values())
+    for forged in ({"ci95": [-1e6, 1e6]}, {"n": 1}, {"strata_or_columns": 999}, {"backdoor": {}},
+                   {"backdoor": {"backdoor_paths_blocked": False}}):
+        cert = {**out["certificate"], **forged}
+        assert solvers_c.causal_verify(data, out["output"], cert)["certificate_claims_recomputed"] is False

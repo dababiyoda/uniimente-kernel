@@ -68,7 +68,10 @@ def test_genomes_validate_and_are_layer_three():
         assert g.layer == 3 and g.buildability == "BUILDABLE_NOW" and g.standalone_decision
         # 1.0.2: verifier strengthened by the library-wide mutation audit (A* steps, Erlang C and occupancy,
         # Jeffreys posterior mean)
-        assert g.version == ("1.0.2" if g.family in ("search_astar", "queue_erlang", "bayes_interval") else "1.0.1")
+        # 1.0.3 (queue_erlang): the verifier and truth use their own tail formula (independent review)
+        # 1.0.2 (game_minimax): verifier, scorer and stated bounds measured above the smallest payoff (review)
+        assert g.version == {"queue_erlang": "1.0.3", "search_astar": "1.0.2", "bayes_interval": "1.0.2",
+                             "game_minimax": "1.0.2"}.get(g.family, "1.0.1")
         assert g.operation == OPS[g.family] and g.epistemic_class == CLASSES[g.family]
         assert g.evidence_type == EVIDENCE[g.family]
         assert "INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION" in g.lineage
@@ -416,6 +419,42 @@ def test_game_solve_verifies_at_any_payoff_magnitude(scale):
     assert all(solvers_b.game_verify({"payoffs": payoffs}, out["output"], out["certificate"]).values())
 
 
+@pytest.mark.parametrize("payoffs,value", (([[1_000_000.01, 999_999.99], [999_999.99, 1_000_000.01]], 1_000_000.0),
+                                          ([[1e9, 1e9 - 2], [1e9 - 2, 1e9]], 1e9 - 1)))
+def test_game_verify_and_score_refute_a_false_value_carried_by_a_common_payoff_offset(payoffs, value):
+    """1.0.1 took best responses on the raw payoffs: strategies scaled by 1 + 0.99e-9 (inside |sum - 1| <= 1e-9)
+    moved every guarantee by 0.99e-9 x the offset, so a value 4.95% (dollars) or 49.5% (billion) of the range away
+    from the truth passed every check and scored correct. 1.0.2 measures them above the smallest payoff."""
+    stretch, span = 1 + 0.99e-9, max(map(max, payoffs)) - min(map(min, payoffs))
+    x = y = [stretch / 2] * 2
+    lower = min(sum(x[i] * payoffs[i][j] for i in range(2)) for j in range(2))
+    upper = max(sum(payoffs[i][j] * y[j] for j in range(2)) for i in range(2))
+    forged = {"row_strategy": x, "column_strategy": y, "value": upper}
+    assert abs(upper - value) >= 0.04 * span
+    checks = solvers_b.game_verify({"payoffs": payoffs}, forged, {"lower_bound": lower, "upper_bound": upper})
+    assert checks["mixed_strategies"] and checks["equilibrium_gap_zero"]
+    assert not checks["value_between_bounds"] and not checks["certificate_bounds"], checks
+    assert solvers_b.game_score({"payoffs": payoffs}, {"value": value}, forged)["category"] == "wrong"
+    out = solvers_b.game_solve({"payoffs": payoffs}, BUDGET)
+    assert out["status"] == "ANSWER" and abs(out["output"]["value"] - value) <= 1e-7 * span
+    assert all(solvers_b.game_verify({"payoffs": payoffs}, out["output"], out["certificate"]).values())
+    assert solvers_b.game_score({"payoffs": payoffs}, {"value": value}, out["output"])["category"] == "correct"
+
+
+def test_game_solve_states_bounds_its_verifier_accepts_under_a_large_common_payoff_offset():
+    """1.0.1 evaluated its strategies' guarantees on the raw payoffs, whose rounding scales with the offset (about
+    1e-7 near 1e9) rather than the range: on payoffs -1e9 + k/4 (range at most 1) its own verifier refuted 108 of
+    200 answers. 1.0.2 evaluates them on the rescaled matrix and states min A + range x guarantee."""
+    import random
+    r = random.Random(3011)                                   # review seed, never an admission seed
+    for _ in range(60):
+        m, n = r.randint(3, 10), r.randint(3, 10)
+        payoffs = [[-1e9 + r.randint(0, 4) * 0.25 for _ in range(n)] for _ in range(m)]
+        out = solvers_b.game_solve({"payoffs": payoffs}, BUDGET)
+        assert out["status"] == "ANSWER"
+        assert all(solvers_b.game_verify({"payoffs": payoffs}, out["output"], out["certificate"]).values())
+
+
 def test_knapsack_verify_refuses_unbounded_work():
     import time
     data = {"values": [10_000] * 500, "weights": [1] * 500, "capacity": 3}
@@ -474,3 +513,17 @@ def test_game_security_baseline_is_exact_only_on_saddle_games():
         data, truth = dev("game_minimax", seed)
         category = solvers_b.game_score(data, truth, solvers_b.game_security(data))["category"]
         assert category == ("correct" if solvers_b.game_subregion(data) == "pure_saddle" else "wrong")
+
+
+def test_erlang_verifier_and_truth_do_not_share_the_solvers_tail_formula(monkeypatch):
+    # review 2026-10-13: verify and truth evaluated P(W > T) with the solver's own _p_exceed, so a defect in
+    # it would have been reproduced everywhere. Corrupting the solver's tail must leave the verifier's and
+    # the truth's judgement unchanged and must get the corrupted solver's answer refuted.
+    data, truth = solvers_b.erlang_instance(5)
+    good = solvers_b.erlang_solve(data, {})
+    monkeypatch.setattr(solvers_b, "_p_exceed", lambda c, agents, lam, aht, target: c * math.exp(-agents / aht * target))
+    assert all(solvers_b.erlang_verify(data, good["output"], good["certificate"]).values())
+    assert solvers_b.erlang_truth(data) == truth["agents"] == good["output"]["agents"]
+    bad = solvers_b.erlang_solve(data, {})
+    assert bad["output"]["agents"] != good["output"]["agents"]
+    assert not all(solvers_b.erlang_verify(data, bad["output"], bad["certificate"]).values())

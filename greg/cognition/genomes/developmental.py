@@ -85,10 +85,10 @@ def _parse_key(key, width, height):
     """'x,y' -> index, or None when malformed / off the lattice."""
     if not isinstance(key, str) or key.count(",") != 1:
         return None
-    a, b = key.split(",")
-    if not (a.isdigit() and b.isdigit()) or len(a) > 3 or len(b) > 3:
+    match = re.fullmatch(r"([0-9]{1,3}),([0-9]{1,3})", key)       # ASCII digits only (str.isdigit admits "²")
+    if match is None:
         return None
-    x, y = int(a), int(b)
+    x, y = int(match.group(1)), int(match.group(2))
     if not (0 <= x < width and 0 <= y < height):
         return None
     return x * height + y
@@ -652,6 +652,27 @@ CR_NATIVE_JOBS = 12
 CR_MAX_CASES = 40
 CR_MAX_BUDGET = 200
 CR_BENCH_BUDGET = 36
+# The search policy as data (P8 may evolve it inside this closed space; a configuration is never code). The default
+# is the admitted search exactly: with p_restart = 0 and tournament = 2 the random stream is the same draw for draw.
+CR_DEFAULT_CONFIG = {"mu": MU, "offspring": LAMBDA, "p_recombine": 0.3, "p_extra_mutation": 0.3,
+                     "p_extra_mutation_recombined": 0.5, "p_restart": 0.0, "tournament": 2}
+CR_CONFIG_SPACE = {"mu": ("choice", (2, 3, 4, 6, 8)), "offspring": ("choice", (2, 4, 6, 8)),
+                   "p_recombine": ("float", (0.0, 0.9)), "p_extra_mutation": ("float", (0.0, 0.9)),
+                   "p_extra_mutation_recombined": ("float", (0.0, 0.9)), "p_restart": ("float", (0.0, 1.0)),
+                   "tournament": ("choice", (1, 2, 3))}
+
+
+def cr_search_config(config) -> dict:
+    """A search configuration inside CR_CONFIG_SPACE, or GenomeError (the verifier refuses anything else)."""
+    if not isinstance(config, dict) or set(config) != set(CR_CONFIG_SPACE):
+        raise GenomeError(f"search configuration sets exactly {sorted(CR_CONFIG_SPACE)}")
+    for key, (kind, values) in CR_CONFIG_SPACE.items():
+        v = config[key]
+        if kind == "choice" and (type(v) is not int or v not in values):
+            raise GenomeError(f"{key}={v!r} is outside the declared space")
+        if kind == "float" and (type(v) not in (int, float) or isinstance(v, bool) or not values[0] <= v <= values[1]):
+            raise GenomeError(f"{key}={v!r} is outside [{values[0]}, {values[1]}]")
+    return dict(config)
 
 
 def _cases(value, name):
@@ -863,15 +884,26 @@ def _cr_output(config, retained, val_u, orig_val_u, lineage, evaluations):
 
 
 def constraint_release_solve(data, budget):
+    return constraint_release_solve_with(CR_DEFAULT_CONFIG, data)
+
+
+def _random_config(rng):
+    return (rng.choice(CONSTRUCTORS),) + tuple(rng.choice(IMPROVERS) for _ in range(rng.randint(0, MAX_PIPELINE - 1)))
+
+
+def constraint_release_solve_with(config, data):
+    """The seeded (mu + lambda) recombination search under one search configuration (the P8 sandbox entry)."""
+    cfg = cr_search_config(config)
+    mu, lam = cfg["mu"], cfg["offspring"]
     train, validation, eval_budget, seed, original = _cr_inputs(data)
     n_max = max(len(c[0]) for c in train + validation)
     if len(train) < 4 or len(validation) < 4:
         return answer(None, {"train": len(train), "validation": len(validation)}, status="ABSTAIN",
                       missing=["at least 4 training and 4 validation cases are needed to select without "
                                "overfitting"])
-    if eval_budget < MU + LAMBDA:
+    if eval_budget < mu + lam:
         return answer(None, {"budget": eval_budget}, status="ABSTAIN",
-                      missing=[f"evaluation budget below one generation ({MU + LAMBDA})"])
+                      missing=[f"evaluation budget below one generation ({mu + lam})"])
     if n_max > CR_NATIVE_JOBS:
         return answer(None, {"jobs": n_max}, status="ABSTAIN",
                       missing=[f"more than {CR_NATIVE_JOBS} jobs per case: outside the validated toy size"])
@@ -883,23 +915,25 @@ def constraint_release_solve(data, budget):
     generations, stall = [], 0
     while len(search.cache) < eval_budget and stall < 50:
         offspring = []
-        for _ in range(LAMBDA):
+        for _ in range(lam):
             def pick():
-                a, b = rng.choice(population), rng.choice(population)
-                return min((a, b), key=lambda c: (search.cache[c], len(c), c))
-            if len(population) >= 2 and rng.random() < 0.3:
+                entrants = [rng.choice(population) for _ in range(cfg["tournament"])]
+                return min(entrants, key=lambda c: (search.cache[c], len(c), c))
+            if cfg["p_restart"] > 0 and rng.random() < cfg["p_restart"]:
+                child, parents, notes = _random_config(rng), [original], ["restart"]
+            elif len(population) >= 2 and rng.random() < cfg["p_recombine"]:
                 pa, pb = pick(), pick()
                 child, note = _recombine(pa, pb, rng)
                 parents = [pa, pb]
                 notes = [note]
-                if rng.random() < 0.5:
+                if rng.random() < cfg["p_extra_mutation_recombined"]:
                     child, extra = _mutate(child, rng)
                     notes.append(extra)
             else:
                 pa = pick()
                 child, note = _mutate(pa, rng)
                 parents, notes = [pa], [note]
-                if rng.random() < 0.3:
+                if rng.random() < cfg["p_extra_mutation"]:
                     child, extra = _mutate(child, rng)
                     notes.append(extra)
             if child in search.cache or len(search.cache) >= eval_budget:
@@ -910,7 +944,7 @@ def constraint_release_solve(data, budget):
                                   "mutations": notes}
             offspring.append(child)
             stall = 0
-        population = sorted(set(population) | set(offspring), key=lambda c: (search.cache[c], len(c), c))[:MU]
+        population = sorted(set(population) | set(offspring), key=lambda c: (search.cache[c], len(c), c))[:mu]
         if offspring:
             generations.append({"generation": len(generations) + 1, "evaluations": len(search.cache),
                                 "best_train_utility": round(search.cache[population[0]], 12)})
@@ -930,7 +964,8 @@ def constraint_release_solve(data, budget):
     certificate = {
         "mechanism": "(mu + lambda) evolutionary recombination of released pipeline operators; retain-or-extinct "
                      "against the original on the validation split",
-        "seed": seed, "budget": eval_budget, "evaluations": len(search.cache), "mu": MU, "lambda": LAMBDA,
+        "seed": seed, "budget": eval_budget, "evaluations": len(search.cache), "mu": mu, "lambda": lam,
+        "search_config": cfg,
         "retain_margin": RETAIN_MARGIN, "generations": generations[:200],
         "original": {"config": list(original), "train_utility": search.cache[original],
                      "validation_utility": orig_val},
@@ -1031,6 +1066,12 @@ def _lineage_replays(lineage, original, train, util):
         else:
             if not 1 <= len(parents) <= 2 or not 1 <= len(notes) <= 2:
                 return False
+            if notes == ["restart"]:
+                # a random restart: any well-formed configuration, recorded as a child of the root
+                if parents != [0]:
+                    return False
+                by_id[ident] = config
+                continue
             if len(parents) == 2:
                 reachable = _recombined(by_id[parents[0]], by_id[parents[1]], notes[0])
             else:
@@ -1072,6 +1113,17 @@ def constraint_release_verify(data, output, certificate):
     evaluations_ok = (type(evaluations) is int and isinstance(certificate, dict)
                       and certificate.get("evaluations") == evaluations and evaluations <= eval_budget
                       and lineage_ok and len(lineage) <= evaluations and lineage[-1]["id"] < evaluations)
+    # Selection: the seeded (mu+lambda) search is deterministic, so it is re-executed on the training split and
+    # the output must be what it selects. This binds the claim that validation only chose among the training
+    # shortlist; it re-executes the search rather than deriving the answer independently.
+    try:
+        declared = cr_search_config((certificate or {}).get("search_config") if isinstance(certificate, dict) else None)
+        replay = constraint_release_solve_with(declared, data)
+    except GenomeError:
+        replay = {"status": "REFUSED"}
+    selection_ok = (replay["status"] == "ANSWER" and replay["output"]["configuration"] == list(config)
+                    and replay["output"]["retained"] is retained and replay["output"]["evaluations"] == evaluations
+                    and replay["output"]["lineage"] == lineage)
     cert_scheds = certificate.get("validation_schedules") if isinstance(certificate, dict) else None
     cert_ok = (isinstance(cert_scheds, list) and len(cert_scheds) == len(validation)
                and all(_is_permutation(s, len(c[0])) for s, c in zip(cert_scheds, validation))
@@ -1080,6 +1132,7 @@ def constraint_release_verify(data, output, certificate):
             "validation_claims_recomputed": claims_ok, "retain_or_extinct_rule_obeyed": rule_ok,
             "lineage_replays_from_original_to_output": lineage_ok,
             "evaluations_within_budget_and_consistent": evaluations_ok,
+            "selection_replays_the_seeded_search": selection_ok,
             "certificate_schedules_match_objective": cert_ok,
             "no_authority_claimed": output.get("authority") == CR_AUTHORITY}
 
@@ -1204,8 +1257,8 @@ def constraint_release_instance(seed):
 
 
 # ============================================================================ genomes
-def _genome(**kw):
-    return IntelligenceGenome(layer=4, buildability="BUILDABLE_NOW", lineage=LINEAGE, version="1.1.0", **kw)
+def _genome(version="1.1.1", **kw):
+    return IntelligenceGenome(layer=4, buildability="BUILDABLE_NOW", lineage=LINEAGE, version=version, **kw)
 
 
 FRONTIER = ("frontier NOT achieved: robust unscripted organ formation",
@@ -1286,7 +1339,8 @@ INTELLIGENCES = [
                              "cross-checks the truth; developmental/ is never modified"}),
     Executable(
         genome=_genome(
-            intelligence_id="developmental.release.recombine_pipeline", family="develop_constraint_release",
+            intelligence_id="developmental.release.recombine_pipeline", version="1.2.0",
+            family="develop_constraint_release",
             operation="release_recombine_pipeline", epistemic_class="optimization",
             subgeometry="re-order, re-wire and recombine validated heuristic operators of a fixed pipeline for an "
                         "instance family of single-machine total-weighted-tardiness cases (<= 12 jobs)",

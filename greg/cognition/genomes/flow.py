@@ -293,6 +293,12 @@ def maxflow_lp(data):
 # ------------------------------------------------------------------ capacity expansion
 def _expansion(data):
     edges, s, t = _graph(data)
+    pairs = {(u, v) for u, v, _ in edges}
+    if len({f"{u}->{v}" for u, v in pairs}) != len(pairs):
+        # 'u->v' names the plan's increments and prices: two distinct edges with one name (node names holding
+        # '->', ('a->b', 'c') and ('a', 'b->c')) would share one increment and one price, so a plan could not say
+        # what it buys; refused here rather than answered with a plan that means two things
+        raise GenomeError("two distinct edges share one 'u->v' name (a node name contains '->'); rename the nodes")
     costs = data.get("unit_cost")
     if not isinstance(costs, dict):
         raise GenomeError("unit_cost maps 'u->v' to an integer cost")
@@ -480,6 +486,132 @@ def compile_verify(data, output, certificate):
                                                                  for i, (u, v, _) in enumerate(edges)}}
 
 
+# ------------------------------------------------------------------ exact expansion by min-cost flow
+def _simple_expansion(data):
+    edges, s, t, unit, inc, budget = _expansion(data)
+    if len({(u, v) for u, v, _ in edges}) != len(edges):
+        raise GenomeError("parallel edges between one ordered pair are not supported; merge them first")
+    return edges, s, t, unit, inc, budget
+
+
+def _arcs(edges, unit, inc):
+    """Expanded arcs: per edge a free arc at its capacity and a priced arc up to ``inc`` (index, tail, head,
+    capacity, cost, edge index, priced)."""
+    arcs = []
+    for i, (u, v, c) in enumerate(edges):
+        arcs.append([u, v, c, 0, i, False])
+        arcs.append([u, v, inc, unit[(u, v)], i, True])
+    return arcs
+
+
+def _residual_distances(nodes, arcs, flow, sources):
+    """Bellman-Ford over the residual graph from ``sources`` (distance 0 each): shortest distances and parents.
+    Residual arcs: forward with spare capacity at +cost, backward with flow at -cost."""
+    dist = {n: (0 if n in sources else None) for n in nodes}
+    parent = {}
+    for _ in range(len(nodes)):
+        changed = False
+        for k, (u, v, cap, cost, _, _) in enumerate(arcs):
+            for a, b, w, ok in ((u, v, cost, flow[k] < cap), (v, u, -cost, flow[k] > 0)):
+                if ok and dist[a] is not None and (dist[b] is None or dist[a] + w < dist[b]):
+                    dist[b], parent[b] = dist[a] + w, (k, a == u)
+                    changed = True
+        if not changed:
+            return dist, parent
+    raise GenomeError("negative residual cycle: the flow is not cost-optimal")      # cannot happen for SSP
+
+
+def mcf_expansion_solve(data, budget):
+    """Successive shortest paths: the cheapest way to carry each next unit is a shortest residual path, and its
+    price never falls (convexity of min-cost flow in the volume). Push while the budget allows, then certify
+    that one unit more is impossible within budget (dual potentials) or at all (a cut)."""
+    edges, s, t, unit, inc, money = _simple_expansion(data)
+    nodes = sorted({n for u, v, _ in edges for n in (u, v)})
+    arcs = _arcs(edges, unit, inc)
+    flow, volume, spent = [0] * len(arcs), 0, 0
+
+    def path(dist, parent):
+        out, v = [], t
+        while v != s:
+            k, forward = parent[v]
+            out.append((k, forward))
+            v = arcs[k][0] if forward else arcs[k][1]
+        return out[::-1]
+    while True:
+        dist, parent = _residual_distances(nodes, arcs, flow, {s})
+        if dist[t] is None:
+            break
+        hops = path(dist, parent)
+        room = min(arcs[k][2] - flow[k] if fw else flow[k] for k, fw in hops)
+        price = dist[t]
+        take = room if price == 0 else min(room, (money - spent) // price)
+        if take <= 0:
+            break
+        for k, fw in hops:
+            flow[k] += take if fw else -take
+        volume, spent = volume + take, spent + take * price
+    increments = {f"{u}->{v}": 0 for u, v, _ in edges}
+    for k, (u, v, _, _, i, priced) in enumerate(arcs):
+        if priced:
+            increments[f"{u}->{v}"] += flow[k]
+    # spend recomputed from the plan (a cheaper re-routing never costs more than the path prices paid)
+    spent = sum(unit[(u, v)] * increments[f"{u}->{v}"] for u, v, _ in edges)
+    dist, parent = _residual_distances(nodes, arcs, flow, {s})
+    if dist[t] is None:
+        side = sorted(n for n in nodes if dist[n] is not None)
+        certificate = {"kind": "capacity", "source_side": side,
+                       "claim": "every s-t cut of the fully expanded network bounds the flow; this one equals it"}
+    else:
+        nxt = list(flow)
+        for k, fw in path(dist, parent):
+            nxt[k] += 1 if fw else -1
+        potentials, _ = _residual_distances(nodes, arcs, nxt, set(nodes))    # virtual root: finite everywhere
+        certificate = {"kind": "budget", "next_volume": volume + 1, "potentials": potentials,
+                       "claim": "weak duality: the cheapest flow of next_volume costs at least the potentials' "
+                                "bound, which exceeds the budget; costs are non-negative, so larger volumes cost "
+                                "no less"}
+    return answer({"increments": increments, "flow_value": volume, "spent": spent}, certificate)
+
+
+def mcf_expansion_verify(data, output, certificate):
+    """Independent of the solver: the plan by budget/bounds arithmetic and an Edmonds-Karp max flow of the
+    reinforced network; optimality by the certificate alone (a cut capacity, or a dual lower bound computed in
+    exact integers from the potentials)."""
+    edges, s, t, unit, inc, budget = _simple_expansion(data)
+    if not isinstance(output, dict) or not isinstance(output.get("increments"), dict):
+        return {"output_well_formed": False}
+    increments = output["increments"]
+    keys = {f"{u}->{v}" for u, v, _ in edges}
+    if (set(increments) - keys or not all(type(x) is int for x in increments.values())
+            or type(output.get("flow_value")) is not int or type(output.get("spent")) is not int):
+        return {"output_well_formed": False}
+    value, spent = expansion_value(data, increments)
+    checks = {"output_well_formed": True, "within_budget_and_bounds": value is not None,
+              "flow_value_recomputed": value == output["flow_value"], "spend_recomputed": spent == output["spent"]}
+    certificate = certificate if isinstance(certificate, dict) else {}
+    claimed = output["flow_value"]
+    if certificate.get("kind") == "capacity":
+        side = certificate.get("source_side")
+        side = set(side) if isinstance(side, list) and all(isinstance(n, str) for n in side) else set()
+        bound = sum(c + inc for u, v, c in edges if u in side and v not in side)
+        checks["optimal_by_cut"] = s in side and t not in side and bound == claimed
+    elif certificate.get("kind") == "budget":
+        p = certificate.get("potentials")
+        nodes = {n for u, v, _ in edges for n in (u, v)}
+        ok = (isinstance(p, dict) and set(p) == nodes and all(type(x) is int for x in p.values())
+              and certificate.get("next_volume") == claimed + 1)
+        if ok:
+            # LB(p) = V (p_t - p_s) - sum_a u_a max(0, p_head - p_tail - cost_a): a lower bound on every flow of
+            # volume V (min-cost flow weak duality), here over the free and the priced arc of each edge
+            lower = (claimed + 1) * (p[t] - p[s]) - sum(
+                c * max(0, p[v] - p[u]) + inc * max(0, p[v] - p[u] - unit[(u, v)]) for u, v, c in edges)
+            ok = lower > budget
+        checks["optimal_by_dual_bound"] = ok
+    else:
+        checks["optimality_certificate_present"] = False
+    return checks
+
+
 def compile_score(data, truth, output):
     """Semantic, evaluation side: the compiled model, solved exactly (SciPy HiGHS), must reach the optimum the
     independent min-cost-flow truth found; a model that verifies but means something else is wrong."""
@@ -522,7 +654,7 @@ INTELLIGENCES = [
         baseline=maxflow_trivial_cut, competitor=maxflow_lp),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.graph.reinforce_min_cut", version="1.0.0", family="flow_reinforce_greedy",
+            intelligence_id="solver.graph.reinforce_min_cut", version="1.0.1", family="flow_reinforce_greedy",
             layer=3, operation="reinforce_min_cut", epistemic_class="optimization",
             subgeometry="budgeted capacity expansion (heuristic)", native_representation="graph + unit costs + budget",
             required_inputs=("edges", "source", "sink", "unit_cost", "max_increment", "budget"),
@@ -538,10 +670,43 @@ INTELLIGENCES = [
             baseline="round-robin spread over source and sink edges",
             competitor="exact optimum via graph_then_allocate composition (compile + CP-SAT)", **_common()),
         solve=greedy_solve, verify=greedy_verify, instance=expansion_instance, score=expansion_score,
-        baseline=uniform_spread, competitor=lambda data: _composed_expansion(data)),
+        baseline=uniform_spread, competitor=lambda data: _composed_expansion(data),
+        competitor_recipe="graph_then_allocate"),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.graph.capacity_expansion_compiler", version="1.0.1", family="flow_capacity_plan",
+            intelligence_id="solver.graph.capacity_expansion_mcf", version="1.0.0", family="flow_expansion_mcf",
+            layer=3, operation="expand_capacity_mcf", epistemic_class="optimization",
+            subgeometry="budgeted capacity expansion (exact, single intelligence)",
+            native_representation="graph + unit costs + budget",
+            required_inputs=("edges", "source", "sink", "unit_cost", "max_increment", "budget"),
+            output_contract={"increments": "{u->v: int}", "flow_value": "int", "spent": "int"},
+            algorithm_or_runtime="successive shortest paths (Bellman-Ford on the residual graph) over a free and a "
+                                 "priced arc per edge, pushing while the budget allows",
+            parameters={}, composition_inputs=("network",), composition_outputs=("increments", "flow_value"),
+            evidence_type="optimality_certificate",
+            verification_method="budget/bounds arithmetic, Edmonds-Karp max flow of the reinforced network, and "
+                                "either an s-t cut of the fully expanded network equal to the flow or integer node "
+                                "potentials whose min-cost-flow dual bound for one more unit exceeds the budget",
+            latency_profile="one Bellman-Ford per augmenting path", known_strengths=(
+                "exact with its own certificate", "no 64-variable ceiling (the graph_then_allocate composition "
+                "abstains above 32 edges)", "admission v3 (2026-10-15, seeds 1200-1229): equal quality to the "
+                "graph_then_allocate twin on 30 of 30 at about a seventh of its latency (DEFAULT_FOR_GEOMETRY)",
+                "not run on F7: there, parametric min-cost flow (the same split-arc formulation, a different and "
+                "uncertified algorithm) tied the composition on 200 of 200 real-backbone items"),
+            known_failure_modes=("supplied capacities and prices may be wrong", "single commodity only",
+                                 "parallel edges between one ordered pair are refused"),
+            counterindications=("multi-commodity or modular (lumpy) capacity",),
+            abstention_conditions=("invalid input", "parallel edges"),
+            benchmark_suite="layered relay networks with unit costs, seeds 0-9 dev; held-out seeds recorded by "
+                            "each admission freeze",
+            baseline="greedy min-cut reinforcement (flow_reinforce_greedy's solve)",
+            competitor="graph_then_allocate composition twin (compile + CP-SAT), deployable", **_common()),
+        solve=mcf_expansion_solve, verify=mcf_expansion_verify, instance=expansion_instance, score=expansion_score,
+        baseline=lambda data: greedy_solve(data, None)["output"], competitor=lambda data: _composed_expansion(data),
+        competitor_recipe="graph_then_allocate"),
+    Executable(
+        genome=IntelligenceGenome(
+            intelligence_id="solver.graph.capacity_expansion_compiler", version="1.0.2", family="flow_capacity_plan",
             layer=3, operation="compile_capacity_expansion", epistemic_class="optimization",
             subgeometry="graph -> integer program translation", native_representation="graph + unit costs + budget",
             required_inputs=("edges", "source", "sink", "unit_cost", "max_increment", "budget"),

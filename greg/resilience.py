@@ -10,8 +10,8 @@ Founder directive 2026-10-07, sections 21-22. Read-only projections over retaine
 * performance after failure per capability (completion rate of the next actions vs the previous ones);
 * an honest per-capability verdict. ANTIFRAGILE_EVIDENCE requires repeated failures, measurably better
   operation afterwards AND a learning artifact attributable to THAT capability, recorded after its first
-  failure: a strategy exclusion for one of its failed actions, or a closed critique regression / evaluated
-  improvement that names the capability. Learning recorded elsewhere, and mere proposals, do not count.
+  failure: a strategy exclusion whose cited critique judged one of its failed actions, or a closed critique
+  regression / evaluated improvement that names the capability or one of its levers. Learning recorded elsewhere, and mere proposals, do not count.
   Ordinary redundancy (several strategies) is reported as recovery diversity and never earns the label;
 * decoupling: a local metric improving while the whole-system outcome degrades (a capability's
   completion rate rising while the share of passing success checks falls) is a critical warning.
@@ -25,7 +25,23 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 import statistics
 
-FAILED_ACTIONS = ("FAILED", "ERROR", "UNCERTAIN")
+# The mission engine's own failure vocabulary (greg/authority.py, greg/routing.py): a capability that ran
+# and failed is REFUSED with a receipt (negative result_class); UNAVAILABLE, UNCERTAIN and
+# RECONCILED_NOT_EXECUTED are failures in any case. A REFUSED without a receipt is a policy or scope refusal,
+# not the capability's failure. FAILED and ERROR are kept for organs and synthetic journals that use them.
+FAILED_ACTIONS = ("FAILED", "ERROR", "UNCERTAIN", "UNAVAILABLE", "RECONCILED_NOT_EXECUTED")
+
+
+def failed(payload: dict) -> bool:
+    status = payload.get("status")
+    return status in FAILED_ACTIONS or (status == "REFUSED" and bool(payload.get("receipt")))
+
+
+def _lever_capability(lever) -> str | None:
+    """Improvements and closed regressions name a lever, not a capability; every lever belongs to the
+    improvement loop's one capability (greg.improvement.CAPABILITY)."""
+    from greg import improvement
+    return improvement.CAPABILITY if lever in improvement.LEVERS else None
 LEARNING_EVENTS = ("critique.regression_closed", "improvement.evaluated", "mission.strategy_excluded")
 MIN_FAILURES = 3
 MATERIAL = 0.1
@@ -75,9 +91,9 @@ def episodes(journal) -> list[dict]:
 
 
 def common_causes(journal, window: timedelta = timedelta(hours=1)) -> list[dict]:
-    failed = [e for e in _events(journal, "mission.action") if e.payload.get("status") in FAILED_ACTIONS]
+    failures = [e for e in _events(journal, "mission.action") if failed(e.payload)]
     by_cap = defaultdict(list)
-    for e in failed:
+    for e in failures:
         by_cap[e.payload.get("capability", "?")].append(e)
     out = []
     for cap, events in sorted(by_cap.items()):
@@ -110,10 +126,15 @@ def after_failure(journal) -> dict:
     by_cap = defaultdict(list)
     for e in _events(journal, "mission.action"):
         status = e.payload.get("status")
-        if status == "DONE" or status in FAILED_ACTIONS:
+        if status == "DONE" or failed(e.payload):
             by_cap[e.payload.get("capability", "?")].append(
                 (_at(e), status == "DONE", (e.payload.get("mission_id"), e.payload.get("action_id"))))
     learned = [(_at(e), kind, e.payload or {}) for kind in LEARNING_EVENTS for e in journal.replay(kind)]
+    # an exclusion counts only through the critique it cites: critique_ref -> critique.recorded ->
+    # target_event_id -> the mission.action the founder judged
+    critiqued = {e.payload.get("critique_id"): e.payload.get("target_event_id")
+                 for e in journal.replay("critique.recorded")}
+    action_by_id = {getattr(e, "event_id", None): e.payload for e in journal.replay("mission.action")}
     out = {}
     for cap, seq in sorted(by_cap.items()):
         failures = [i for i, (_, ok, _) in enumerate(seq) if not ok]
@@ -125,8 +146,12 @@ def after_failure(journal) -> dict:
 
         def attributable(kind, payload):
             if kind == "mission.strategy_excluded":
-                return (payload.get("mission_id"), payload.get("action_id")) in failed_actions
-            return payload.get("capability") == cap
+                target = action_by_id.get(critiqued.get(payload.get("critique_ref")))
+                return (target is not None and target.get("capability") == cap and failed(target)
+                        and (target.get("mission_id"), target.get("action_id")) == (payload.get("mission_id"),
+                                                                                    payload.get("action_id"))
+                        and (payload.get("mission_id"), payload.get("action_id")) in failed_actions)
+            return payload.get("capability") == cap or _lever_capability(payload.get("lever")) == cap
         learning = bool(failures) and any(t >= seq[failures[0]][0] and attributable(kind, payload)
                                           for t, kind, payload in learned)
         if len(failures) < MIN_FAILURES or pre is None or post is None:
@@ -170,7 +195,7 @@ def decoupling_from_journal(journal) -> list[dict]:
     per_cap = defaultdict(lambda: defaultdict(list))
     for e in journal.replay("mission.action"):
         status = e.payload.get("status")
-        if status == "DONE" or status in FAILED_ACTIONS:
+        if status == "DONE" or failed(e.payload):
             per_cap[e.payload.get("capability", "?")][_at(e).date()].append(1.0 if status == "DONE" else 0.0)
     out = []
     for cap, days in sorted(per_cap.items()):

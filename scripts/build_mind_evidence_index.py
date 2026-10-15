@@ -6,7 +6,8 @@ future routing (directive 2026-10-07, section 31 item 13):
 * recipes   P6 composition-lift verdicts per recipe; the latest frozen run for a family wins. A recipe
             without lift names the constituent it lost to, and the compiler prefers that constituent.
 * routing   P4 conditional-competence verdicts and their predeclared consequence.
-* genomes   IntelligenceGenome admission statuses from frozen held-out admission runs.
+* genomes   IntelligenceGenome admission statuses from frozen held-out admission runs; the latest run's
+            status decides, and ``history`` keeps every run's status and version.
 
 Only frozen, committed result files are read; a missing source is listed, never invented. Run:
     PYTHONPATH=. python scripts/build_mind_evidence_index.py
@@ -15,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,6 +28,9 @@ P6_RUNS = (
     ("docs/evidence/greg-composition-lift/2026-10-08/results-v2.json",
      {"F2R": "identify_then_optimize", "F3": "graph_then_allocate", "F4": "bayes_then_voi",
       "F5": "forecast_then_allocate"}),
+    ("docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json", {"F6": "forecast_then_staff"}),
+    ("docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json", {"F7": "graph_then_allocate"}),
+    ("docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json", {"F8": "track_then_staff"}),
 )
 P4_RUNS = ("docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
            "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json")
@@ -34,6 +39,12 @@ ADMISSION = "docs/evidence/greg-genome-admission"
 
 def _sha(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def exact_sign_p(wins: int, losses: int) -> float:
+    """One-sided exact sign test over the discordant items: P(X >= wins), X ~ Binomial(wins + losses, 1/2)."""
+    n = wins + losses
+    return 1.0 if n == 0 else sum(math.comb(n, k) for k in range(wins, n + 1)) / 2 ** n   # int / int: correctly rounded
 
 
 def build() -> dict:
@@ -53,11 +64,18 @@ def build() -> dict:
             if row is None:
                 continue
             lift = bool(row["lift"])
+            prior = index["recipes"].get(recipe)
             index["recipes"][recipe] = {
                 "lift": lift, "status": "VPL_LIFT" if lift else "NO_LIFT", "family": family,
                 "prefer": None if lift else row["best_constituent"],
                 "wins": row["routed_wins"], "losses": row["routed_losses"],
-                "p_one_sided": row["sign_test_p_one_sided"], "evidence": f"{rel}#summary.{family}"}
+                # exact, from the frozen counts: a harness that rounded to six decimals recorded 0.0 for a p of
+                # about 2e-28 (F7, 92-0); its rounded value is kept beside the exact one, never as the p
+                "p_one_sided": exact_sign_p(row["routed_wins"], row["routed_losses"]),
+                "p_one_sided_as_recorded": row["sign_test_p_one_sided"], "evidence": f"{rel}#summary.{family}"}
+            if prior:
+                # the latest family measured for a recipe decides its routing; earlier verdicts stay visible
+                index["recipes"][recipe]["history"] = [*prior.pop("history", []), prior]
     for rel in P4_RUNS:
         path = ROOT / rel
         if not path.exists():
@@ -80,7 +98,24 @@ def build() -> dict:
         # The admission harness (greg/cognition/genomes/admission.py) writes one entry per family under "genomes".
         for family, row in (data.get("genomes") or {}).items():
             if row.get("status"):
-                index["genomes"][family] = {"status": row["status"], "evidence": f"{rel}#genomes.{family}"}
+                # every frozen run's status, oldest first: a status that changed between independent held-out
+                # runs is a sample near a rule boundary, and routing and the founder should see that
+                history = (index["genomes"].get(family) or {}).get("history", []) + [
+                    {"run": path.parent.name, "status": row["status"], "version": row.get("version")}]
+                # the version the status was measured at: a later code change needs re-admission
+                index["genomes"][family] = {"status": row["status"], "evidence": f"{rel}#genomes.{family}",
+                                            "version": row.get("version"), "history": history}
+                seconds = ((row.get("arms") or {}).get("candidate") or {}).get("median_seconds")
+                if seconds is not None:
+                    # held-out median latency at this version: a tie-break within one status, never a status
+                    index["genomes"][family]["median_seconds"] = seconds
+                subs = {name: {"n": sub["n"], **{k: sub["vs_competitor"][k]
+                                                 for k in ("wins", "losses", "ties", "p_better", "p_worse")}}
+                        for name, sub in (row.get("subregions") or {}).items()}
+                if subs:
+                    # measured per native subregion against the competitor: reported in receipts, never a status
+                    index["genomes"][family]["subregions_vs_competitor"] = subs
+                    index["genomes"][family]["competitor"] = row.get("competitor")
     if not base.exists() or not index["genomes"]:
         index["missing_sources"].append(f"{ADMISSION}/*/results.json (no frozen held-out admission run yet)")
     return index

@@ -127,14 +127,31 @@ class Executable:
     baseline: Callable[[dict], Any]
     competitor: Callable[[dict], Any]
     subregion: Callable[[dict], str] | None = None     # native sub-regions for niche analysis
+    # False when the competitor uses information or powers no deployable method has (an oracle upper bound):
+    # it is reported as a reference gap and can neither supersede nor demote the candidate
+    competitor_deployable: bool = True
     tolerance: float = 1e-9                             # quality differences at or below this are ties
+    # For a genome that samples a finite pool of real data: the identity of the data a seed draws. Freshness of
+    # held-out data is checked on these identities, never on seed integers (two seeds can draw one series).
+    instance_key: Callable[[int], str] | None = None
     notes: Mapping[str, str] = field(default_factory=dict)
+    # The library family whose deployable competitor this genome promotes into a genome of its own (directive
+    # section 15): it keeps that family's native geometry and needs no input that family did not, so the requests a
+    # SUPERSEDED family fitted fit this one. A link for routing and receipts; it carries no admission evidence.
+    promotes: str | None = None
+    # The composition recipe whose in-process twin is this genome's admission competitor: an admitted DEFAULT
+    # verdict at the genome's current version means it matched that recipe's quality at no more than 1.25x its
+    # latency on this geometry, so the single method, not the recipe, is canonical there (Competency Compiler).
+    # Metadata for routing; it changes no behaviour of the genome.
+    competitor_recipe: str | None = None
 
 
 def answer(output, certificate, *, status="ANSWER", missing=()) -> dict:
     """The return shape of ``solve``. status: ANSWER, ABSTAIN or UNKNOWN."""
     if status not in ("ANSWER", "ABSTAIN", "UNKNOWN"):
         raise GenomeError("solve status is ANSWER, ABSTAIN or UNKNOWN")
+    if status == "ANSWER" and output is None:
+        raise GenomeError("an ANSWER carries its output; abstain or report UNKNOWN instead")
     return {"output": output, "certificate": certificate, "status": status, "missing": list(missing)}
 
 

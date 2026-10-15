@@ -222,6 +222,24 @@ fixture buyer: offer, signed order, delivery, signed acceptance and books reconc
 published test key and no payment rail is called. It shows the machinery cooperating; it is not evidence that
 anyone would buy anything.
 
+## 6a. Give GREG a tool you install (optional)
+
+GREG can use tools from MCP servers you install, without anyone rebuilding them. A server runs with no network and a
+read-only view of what the mission names, so nothing it does can change anything you own.
+
+```bash
+sudo apt install -y python3-venv
+python3 -m venv ~/src/tools/git && ~/src/tools/git/bin/pip install mcp-server-git
+```
+
+In Mission Control, **Command → Tool servers you installed** now lists `git`; **List its tools** shows what it offers.
+Then ask in words, for example *Use the git server to show the status of ~/src/uniimente-kernel*. Review the
+proposal (read-only, nothing to approve beyond observing), sign it, and the answer appears under **Latest answers**,
+marked as untrusted data with its receipt. Ask it to commit and GREG asks for the commit message, which it does not
+guess from your words. A commit could not happen anyway: the repository is read-only to the server, and git's own
+"Read-only file system" error is what a write gets. `greg mcp list --tools` shows the same in a terminal. A server that needs launch arguments (the filesystem server takes the folders it may serve) reads them
+from a `greg-mcp.json` beside it: `{"args": ["/home/<you>/src/notes"], "readable": ["/home/<you>/src/notes"]}`.
+
 ## 7. Founder control
 
 From Mission Control, **Pause GREG (signed)** then **Resume**; prepare any mission and **Revoke** it before it

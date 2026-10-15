@@ -1,6 +1,14 @@
 {
   "version": "owned-source/1",
   "files": [
+    "acceptance/README.md",
+    "acceptance/__init__.py",
+    "acceptance/__main__.py",
+    "acceptance/_plugin.py",
+    "acceptance/completion-contract.json",
+    "acceptance/contract.schema.json",
+    "acceptance/missions.json",
+    "acceptance/missions.schema.json",
     "adapters/README.md",
     "adapters/__init__.py",
     "adapters/bridge_transport.py",

@@ -78,6 +78,13 @@ BREAKER = "crash-loop breaker"
 RESUME_LIFTS = "a signed BODY_RESUME: the founder key, or a device key the founder delegated BODY_RESUME to"
 HOLD_ASK = "CRASH_LOOP_HOLD"  # no DECISION answers it (greg/missions.py NOT_ANSWERABLE); BODY_RESUME withdraws it
 
+# The separate-process appraiser (greg/appraisal.py) judges a closure VERIFIED or REFUTED. A run killed, timed out
+# or without a readable verdict judged nothing (acceptance H.G7): it is one unavailable attempt, retried on a later
+# tick, and after APPRAISAL_ATTEMPTS of them the closure is recorded appraised UNAVAILABLE (final, never VERIFIED).
+APPRAISER_VERDICTS = ("VERIFIED", "REFUTED")
+APPRAISAL_ATTEMPTS = 3
+APPRAISAL_TIMEOUT_SECONDS = 120
+
 
 def unfinished_main_loop_boots(journal: Journal, now: datetime) -> list[str]:
     """Main-loop boots in a row that never recorded a clean stop, within the window.
@@ -727,14 +734,34 @@ class Body:
                     "hosted": getattr(self, "boot_id", None) is not None,
                     "at": iso(now)}, key=[mid, "context"])
             if mid not in appraised:
-                verdict = self.appraise(mid)
-                self.journal.record("mission.appraised", verdict, key=[mid, "appraised", verdict["head"]])
+                self._appraise_closure(mid, None, now)
         judged = {e.payload.get("closure_event") for e in self.journal.replay("mission.appraised")}
         for event in self.journal.replay("mission.held"):
             if event.event_id not in judged:
-                mid = event.payload["mission_id"]
-                verdict = self.appraise(mid, closure_event=event.event_id)
-                self.journal.record("mission.appraised", verdict, key=[mid, "appraised", event.event_id])
+                self._appraise_closure(event.payload["mission_id"], event.event_id, now)
+
+    def _appraise_closure(self, mid: str, closure_event: str | None, now):
+        """One appraiser run for one closure, recorded; a run that gave no verdict is retried on a later tick.
+
+        The appraiser is a separate process. When it is killed, times out or writes no readable verdict, it judged
+        nothing, so nothing is recorded as its verdict (acceptance H.G7): the run is one unavailable attempt and
+        the closure is appraised again on the next tick. After APPRAISAL_ATTEMPTS such runs the closure is recorded
+        appraised UNAVAILABLE, which is final: it is never VERIFIED and the closure is not appraised again."""
+        verdict = self.appraise(mid, closure_event=closure_event)
+        key = [mid, "appraised", closure_event or verdict["head"]]
+        if verdict["verdict"] in APPRAISER_VERDICTS:
+            self.journal.record("mission.appraised", verdict, key=key)
+            return
+        prior = [e.payload["why"] for e in self.journal.replay("mission.appraisal_unavailable")
+                 if e.payload["mission_id"] == mid and e.payload.get("closure_event") == closure_event]
+        attempt, why = len(prior) + 1, verdict["findings"][0]
+        self.journal.record("mission.appraisal_unavailable", {
+            "mission_id": mid, **({"closure_event": closure_event} if closure_event else {}), "attempt": attempt,
+            "of": APPRAISAL_ATTEMPTS, "head": verdict["head"], "why": why, "boot_id": getattr(self, "boot_id", None),
+            "at": iso(now)}, key=[mid, closure_event, "appraisal_unavailable", attempt])
+        if attempt >= APPRAISAL_ATTEMPTS:
+            self.journal.record("mission.appraised", {**verdict, "attempts": attempt, "findings": prior + [why]},
+                                key=key)
 
     def appraise(self, mission_id: str, *, closure_event: str | None = None) -> dict:
         import subprocess
@@ -748,13 +775,25 @@ class Body:
             request["closure_event"] = closure_event
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
                "PYTHONPATH": os.pathsep.join([str(KERNEL_ROOT)] + [p for p in sys.path if "-packages" in p])}
-        child = subprocess.run([sys.executable, "-m", "greg.appraisal"], input=json.dumps(request),
-                               capture_output=True, text=True, timeout=120, env=env, cwd=KERNEL_ROOT)
-        if child.returncode:
-            return {"mission_id": mission_id, "head": request["head"], "verdict": "APPRAISAL_FAILED",
-                    "checks": {}, "findings": [child.stderr[-500:]], "appraiser": "separate process",
+        def unavailable(why: str) -> dict:   # the appraiser judged nothing: not a verdict (see _appraise_closure)
+            return {"mission_id": mission_id, "head": request["head"], "verdict": "UNAVAILABLE",
+                    "checks": {}, "findings": [why[:600]], "appraiser": "separate process",
                     **({"closure_event": closure_event} if closure_event else {})}
-        return json.loads(child.stdout)
+        try:
+            child = subprocess.run([sys.executable, "-m", "greg.appraisal"], input=json.dumps(request),
+                                   capture_output=True, text=True, timeout=APPRAISAL_TIMEOUT_SECONDS, env=env,
+                                   cwd=KERNEL_ROOT)
+        except subprocess.TimeoutExpired as exc:   # subprocess.run killed it; a hung appraiser never crashes the body
+            return unavailable(f"the appraiser gave no verdict within {exc.timeout:g} s and was killed")
+        if child.returncode:
+            return unavailable(f"the appraiser exited {child.returncode} without a verdict: {child.stderr[-500:]}")
+        try:
+            verdict = json.loads(child.stdout)
+        except ValueError:
+            return unavailable("the appraiser exited 0 without a readable verdict")
+        if not isinstance(verdict, dict) or verdict.get("verdict") not in APPRAISER_VERDICTS:
+            return unavailable("the appraiser exited 0 without a readable verdict")
+        return verdict
 
     def next_wake(self, tick_seconds: float) -> float:
         """Seconds until the next turn: a full tick, or sooner when a mission the next tick steps is due.

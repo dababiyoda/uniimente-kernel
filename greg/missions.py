@@ -989,7 +989,9 @@ class MissionEngine:
                      "layer": library[cid].layer if cid in library else None,
                      "detail": library[cid].detail[:200] if cid in library else "",
                      "evidence_refs": list(library[cid].evidence_refs) if cid in library else []} for cid in waiting]
-        order = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "NOT_INVENTORIED")
+        # never recommend a composition stage on its own: the compiler rejects it as a standalone decision, so
+        # the hook's admissible set follows the compiler's rule (review of #179, M2)
+        order = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "EXPERIMENTAL", "NOT_INVENTORIED")
         admissible = sorted((f for f in families if f["admission"] in order), key=lambda f: order.index(f["admission"]))
         best = admissible[0] if admissible else None
         return self._request(

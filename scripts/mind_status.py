@@ -261,13 +261,20 @@ def _catalog_families() -> list[dict]:
         executor = ("greg.cognition.solvers:SOLVERS" if family in SOLVERS else
                     "greg.cognition.cortex:_semantic" if family == "semantic" and hasattr(greg_cortex, "_semantic")
                     else None)
-        label, basis = (("BUILT", "executable on the cognition path; no family-level frozen held-out verdict in "
-                                  "the evidence index") if executor else
-                        ("UNRESOLVED", "registered in the catalog without an executor"))
+        from greg.cognition.compiler import evidence_index, family_status
+        admission = family_status(family, evidence_index())   # the compiler's one status function (review M16)
+        if not executor:
+            label, basis = "UNRESOLVED", "registered in the catalog without an executor"
+        elif admission["raw"] is None:
+            label, basis = "BUILT", "executable on the cognition path; no frozen held-out verdict in the evidence index"
+        else:
+            label = "BUILT"
+            basis = (f"frozen held-out verdict {admission['raw']} ({admission['evidence']}); routes as "
+                     f"{admission['status']}" + (f"; stale: {admission['stale']}" if admission["stale"] else ""))
         rows.append({"id": f"cognition.{family}", "kind": "catalog_family", "label": label, "basis": basis,
                      "layer": layer, "operations": list(operations), "epistemic_classes": list(classes),
                      "proof_class": proof, "dependency": dependency, "seed_family": family in SEED_FAMILIES,
-                     "executor": executor})
+                     "executor": executor, "admission": admission})
     return rows
 
 

@@ -1119,6 +1119,7 @@
  "missing_sources": [],
  "operations": {
   "blackbox": {
+   "baseline": "random search",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1140,6 +1141,7 @@
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:bc8515869200bac9590da13451cd7c1a63e89a32844bf41306d2ad24ad05010d"
    },
+   "competitor": "multistart L-BFGS-B",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.blackbox",
    "history": [
     {
@@ -1152,6 +1154,7 @@
    "status": "SUPERSEDED"
   },
   "causal": {
+   "baseline": null,
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1164,6 +1167,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:18bb4ca2af55d10020cfdc7f8a880ce72ac99e93bdc7691c55f40eb83d36addb"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.causal",
    "history": [
     {
@@ -1176,6 +1180,7 @@
    "status": "UNEVALUATED"
   },
   "collective": {
+   "baseline": "most accurate single observer",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1189,6 +1194,8 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:4b7b82abe750b4403d8c285588d9166a831cad0aae6bc1954ad3c66f3ed3aa47"
    },
+   "competitor": "simple majority",
+   "erratum": "review of #179 (M3): REJECTED came from 5-16 (p = 0.013) against the most-accurate-observer baseline, which uses the generator's hidden true accuracies and is not deployable; against the deployable competitor, simple majority, it tied 7-11 (p = 0.24). Not evidence of rejection; EXPERIMENTAL until a pre-registered comparison against deployable baselines",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.collective",
    "history": [
     {
@@ -1198,9 +1205,10 @@
    ],
    "measured": true,
    "raw_status": "REJECTED",
-   "status": "REJECTED"
+   "status": "EXPERIMENTAL"
   },
   "control": {
+   "baseline": "bang-bang",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1213,6 +1221,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:2ae8bdc6ee56349a7649b602b10678d21c4af7f7772aab93fd338e921a6401b2"
    },
+   "competitor": "P-only kp=2",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.control",
    "history": [
     {
@@ -1225,6 +1234,7 @@
    "status": "DEFAULT_FOR_GEOMETRY"
   },
   "crowd": {
+   "baseline": null,
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1239,6 +1249,7 @@
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:89ae5e1ce5b2838c67747623e8cf587f77ee07db5414d03717e602a296cb8d37"
    },
+   "competitor": null,
    "evidence": "docs/evidence/pr155-crowd-sparse/2026-10-14/results.json#status",
    "history": [
     {
@@ -1255,6 +1266,7 @@
    "status": "EXPERIMENTAL"
   },
   "estimation": {
+   "baseline": null,
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1268,6 +1280,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:e6be6f9cefdaff4b6d0ae0dbad075cb29eca40bc438c4badca56d7a74eec5b9d"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.estimation",
    "history": [
     {
@@ -1280,6 +1293,7 @@
    "status": "UNEVALUATED"
   },
   "evidence": {
+   "baseline": null,
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1292,6 +1306,7 @@
     "path": "greg/cognition/evidence.py",
     "sha256": "sha256:283071c0344f52a5fe722fe4b3476f83793889fff9acc024fac873a0d8a61519"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.evidence",
    "history": [
     {
@@ -1304,6 +1319,7 @@
    "status": "UNEVALUATED"
   },
   "evolutionary": {
+   "baseline": "analytic minimum (the declared centre)",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1317,6 +1333,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:2eeab102c0127f3b5a61c06f367a01b2e9e005f2d09cf46878870731f82dbce2"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.evolutionary",
    "history": [
     {
@@ -1329,6 +1346,7 @@
    "status": "REJECTED"
   },
   "exact": {
+   "baseline": "binary floating point",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1342,6 +1360,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:23af2684d00fad3753dba1f048a760eeac6dea669481e0c8a868533173b31f51"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.exact",
    "history": [
     {
@@ -1354,6 +1373,7 @@
    "status": "DEFAULT_FOR_GEOMETRY"
   },
   "formal": {
+   "baseline": null,
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1368,6 +1388,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:017511faa362f9a46b8cad850cdc4221080b10c742548fef806dbc3cd066dd31"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.formal",
    "history": [
     {
@@ -1380,6 +1401,7 @@
    "status": "UNEVALUATED"
   },
   "game": {
+   "baseline": "uniform mix",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1392,6 +1414,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:9f02c16c3922903db88a1ffd3f3ef1eaa397227985af3b0a33e6fe62be004fb3"
    },
+   "competitor": "pure maximin",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.game",
    "history": [
     {
@@ -1404,6 +1427,7 @@
    "status": "DEFAULT_FOR_GEOMETRY"
   },
   "graph": {
+   "baseline": "fewest-hops BFS path",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1416,6 +1440,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:7c1c2dedb42b3ea9bf4125b11e01e3bf2dbe94c26f54ec288f8b4774df5ffda9"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.graph",
    "history": [
     {
@@ -1428,6 +1453,7 @@
    "status": "DEFAULT_FOR_GEOMETRY"
   },
   "human": {
+   "baseline": null,
    "code": {
     "closure_members": {
      "greg/cognition/solvers.py::human": "sha256:c17e4aed136bd7636b866b4f4f1f9d913f11ce8d727526c45a9b64481e281e26",
@@ -1438,6 +1464,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:c17e4aed136bd7636b866b4f4f1f9d913f11ce8d727526c45a9b64481e281e26"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.human",
    "history": [
     {
@@ -1450,6 +1477,7 @@
    "status": "UNEVALUATED"
   },
   "information": {
+   "baseline": "never acquire",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1462,6 +1490,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:849921f0695fcf0bfd39bfd506a140356ae4e5f1b2ffc37575bbf5dbf60311b2"
    },
+   "competitor": "always acquire",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.information",
    "history": [
     {
@@ -1474,6 +1503,7 @@
    "status": "DEFAULT_FOR_GEOMETRY"
   },
   "micro": {
+   "baseline": "single-threshold reflex",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1486,6 +1516,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:7bef72bf1972b80fd0d8e9f261dd54ce18fce935aabd92ebb2823e53076900da"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.micro",
    "history": [
     {
@@ -1498,6 +1529,7 @@
    "status": "DEFAULT_FOR_GEOMETRY"
   },
   "optimization": {
+   "baseline": null,
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1512,6 +1544,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:027a78219baf23432a9508950cabe4b160f208e1b2ef56e9c3501f0e934c5f5c"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.optimization",
    "history": [
     {
@@ -1524,6 +1557,7 @@
    "status": "UNEVALUATED"
   },
   "pattern": {
+   "baseline": "Tukey IQR fences",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1536,6 +1570,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:a3805d563c316dc33666186d6642901c7f2e2365d7e00f7b0185f2b61b11de29"
    },
+   "competitor": "median/MAD robust z 3.5",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.pattern",
    "history": [
     {
@@ -1548,6 +1583,7 @@
    "status": "REJECTED"
   },
   "probabilistic": {
+   "baseline": "clipped MLE",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1561,6 +1597,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:5f0ba505ab97fa60404fd466994e565a55aae58114b8b67ecd413ee341fa9ea5"
    },
+   "competitor": "Jeffreys posterior mean",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.probabilistic",
    "history": [
     {
@@ -1573,6 +1610,7 @@
    "status": "DEFAULT_FOR_GEOMETRY"
   },
   "protection": {
+   "baseline": null,
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1587,6 +1625,7 @@
     "path": "greg/cognition/protection.py",
     "sha256": "sha256:e6c5fe474641a259f9431da2be0d73895aafc652d26d87973e13e000366dfcc0"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.protection",
    "history": [
     {
@@ -1599,6 +1638,7 @@
    "status": "UNEVALUATED"
   },
   "robust_pattern": {
+   "baseline": "Tukey IQR fences",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1612,6 +1652,7 @@
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:d7fbc08ac18dc7125f0c972d5a23b37a4574babb8665eb7da758c0e68eae91bf"
    },
+   "competitor": "generalized ESD (Rosner)",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.robust_pattern",
    "history": [
     {
@@ -1624,6 +1665,7 @@
    "status": "EXPERIMENTAL"
   },
   "search": {
+   "baseline": null,
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1636,6 +1678,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:7c1c2dedb42b3ea9bf4125b11e01e3bf2dbe94c26f54ec288f8b4774df5ffda9"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.search",
    "history": [
     {
@@ -1648,7 +1691,9 @@
    "status": "UNEVALUATED"
   },
   "semantic": {
+   "baseline": null,
    "code": null,
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.semantic",
    "history": [
     {
@@ -1661,6 +1706,7 @@
    "status": "UNEVALUATED"
   },
   "sequential": {
+   "baseline": "greedy one-step policy",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1674,6 +1720,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:459e7655f9f6783fd6a30b44b05c1adea5ca35071f7eac3de540ddf60b24b53e"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.sequential",
    "history": [
     {
@@ -1686,6 +1733,7 @@
    "status": "DEFAULT_FOR_GEOMETRY"
   },
   "simulation": {
+   "baseline": "analytic steps x p",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1699,6 +1747,7 @@
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:fa21b3abf12aaa4c9f21bd12ed4d4abd60e5dfa21aaf2b5e43e666791997bd20"
    },
+   "competitor": null,
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.simulation",
    "history": [
     {
@@ -1711,6 +1760,7 @@
    "status": "REJECTED"
   },
   "swarm": {
+   "baseline": "random search",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -1732,6 +1782,7 @@
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:b80e76d4640cdafeb05d6d9b6b7c0cce5b6d02be369d7bfdc4ab732452314f4a"
    },
+   "competitor": "differential evolution (GREG blackbox)",
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.swarm",
    "history": [
     {

@@ -402,6 +402,11 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
     status = record.get("status", "UNEVALUATED")
     if status in NOT_POSITIVE or status == "UNEVALUATED":
         return status, None
+    if "competitor" in record and not record.get("competitor"):
+        # a DEFAULT measured only against a baseline, with no competitor, is not an admission under the rule the
+        # genomes follow (review of #179, H4): it routes as UNEVALUATED until a re-admission names a competitor
+        return "UNEVALUATED", (f"{status} was measured against a baseline only (no competitor in its frozen run); "
+                               "needs re-admission against a competitor")
     code, now = record.get("code") or {}, solver_code(family) or {}
     measured = code.get("closure_sha256")
     if measured is None:
@@ -414,6 +419,34 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
         return "UNEVALUATED", (f"{status} was measured on solver closure {measured}; changed since: "
                                f"{', '.join(changed) or 'unknown'}; needs re-admission")
     return status, None
+
+
+def family_status(family: str, evidence: dict) -> dict:
+    """The one admission status of a catalog family, read from the one evidence index. The compiler, Capability
+    Genesis, the genome inventory and ``mind_status`` all call this (review of #179, H2/M16).
+
+    Returns ``status`` (what routing uses: a stale or structural label routes as UNEVALUATED; negative evidence
+    persists), ``raw`` (the label the frozen run recorded, or None), ``stale`` (why a positive verdict no longer
+    binds, or None), ``evidence`` (the frozen file) and ``kind`` (genome, operation or none)."""
+    from .genomes import library
+    genomes = library.executables()
+    if family in genomes:
+        record = (evidence.get("genomes") or {}).get(family) or {}
+        raw = record.get("status")
+        status, stale = raw or "UNEVALUATED", None
+        measured, current = record.get("version"), genomes[family].genome.version
+        if measured and measured != current and status not in NOT_POSITIVE:
+            # positive evidence binds the version measured; negative evidence persists until a re-admission
+            stale = f"{status} was measured at version {measured}; version {current} needs re-admission"
+            status = "UNEVALUATED"
+        return {"status": status, "raw": raw, "stale": stale, "evidence": record.get("evidence"),
+                "kind": "genome"}
+    record = (evidence.get("operations") or {}).get(family) or {}
+    # PR #155 lineage: a frozen held-out verdict for an operation family routes like a genome's, bound to the
+    # solver code closure it measured; a structural label (alias, not run) is indexed as UNEVALUATED
+    status, stale = operation_status(family, record)
+    return {"status": status, "raw": record.get("raw_status"), "stale": stale, "evidence": record.get("evidence"),
+            "kind": "operation" if record else "none"}
 
 
 def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
@@ -429,24 +462,14 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
         for op in ops:
             stale = None
             outputs = None
+            admission = family_status(family, evidence)
+            status, stale = admission["status"], admission["stale"]
             if family in genomes:
                 need = genomes[family].genome.required_inputs
                 outputs = sorted(genomes[family].genome.output_contract)
-                record = evidence["genomes"].get(family, {})
-                status = record.get("status", "UNEVALUATED")
                 standalone = genomes[family].genome.standalone_decision
-                measured, current = record.get("version"), genomes[family].genome.version
-                if measured and measured != current and status not in NOT_POSITIVE:
-                    # positive evidence binds the version measured; negative evidence persists until a
-                    # re-admission replaces it
-                    stale = f"{status} was measured at version {measured}; version {current} needs re-admission"
-                    status = "UNEVALUATED"
             else:
                 need = NATIVE_INPUTS.get(op)
-                # PR #155 lineage: a frozen held-out verdict for an operation family routes like a genome's,
-                # bound to the solver code it measured; a structural label (alias, not run) is indexed as
-                # UNEVALUATED and changes nothing
-                status, stale = operation_status(family, (evidence.get("operations") or {}).get(family, {}))
                 standalone = True
             if need is None or not set(need) <= keys:
                 continue
@@ -474,6 +497,13 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                                         "evidence": evidence["genomes"].get(family, {}).get("evidence")}
                 if family in promoted:
                     pending.append((row, f"cognition.{promoted[family]}"))
+            if family not in genomes and status == "SUPERSEDED":
+                # an operation family superseded by its frozen run's competitor: name it as the acquisition
+                # candidate (review of #179, M1)
+                operation = (evidence.get("operations") or {}).get(family) or {}
+                if operation.get("competitor"):
+                    row["superseded_by"] = {"mechanism": operation["competitor"], "deployable": True,
+                                            "evidence": operation.get("evidence")}
             if family in genomes and genomes[family].promotes in FAMILIES:
                 row["promotes"] = f"cognition.{genomes[family].promotes}"
             rows.append(row)
@@ -734,8 +764,17 @@ def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> d
     from greg import asks
     family = best["method"].removeprefix("cognition.")
     record = evidence.get("genomes", {}).get(family, {})
-    measured = {k: v for k, v in {"admission_status": best["status"], "admission_evidence": record.get("evidence"),
+    operation = (evidence.get("operations") or {}).get(family) or {}
+    from .genome_library import NOTES
+    # an operation family's ask cites its own frozen evidence, raw label, history, code binding and recorded
+    # caveats, like a genome's (review of #179, M1)
+    measured = {k: v for k, v in {"admission_status": best["status"],
+                                  "admission_evidence": record.get("evidence") or operation.get("evidence"),
                                   "measured_version": record.get("version"),
+                                  "raw_status": operation.get("raw_status"),
+                                  "admission_history": operation.get("history"),
+                                  "measured_code_closure": (operation.get("code") or {}).get("closure_sha256"),
+                                  "caveat": NOTES.get(family),
                                   "subregion": best.get("subregion"), "current_state": best["usable_why"]}.items()
                 if v is not None}
     if best.get("promotes"):

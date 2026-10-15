@@ -142,7 +142,11 @@ def test_every_cited_verdict_matches_the_source_it_cites():
         cited = _cite(row["evidence"], listed, problems)
         if cited is not None and cited.get("status") != row["raw_status"]:
             problems.append(f"operation {family}: index {row['raw_status']} but source {cited.get('status')}")
-        routed = row["raw_status"] if row["raw_status"] in MEASURED else "UNEVALUATED"
+        from scripts.build_mind_evidence_index import ERRATA
+        routed = ERRATA.get((family, row["raw_status"]), (row["raw_status"] if row["raw_status"] in MEASURED
+                                                          else "UNEVALUATED",))[0]
+        if (family, row["raw_status"]) in ERRATA and row.get("erratum") != ERRATA[(family, row["raw_status"])][1]:
+            problems.append(f"operation {family}: the erratum on its verdict is missing or altered")
         if (row["status"], row["measured"]) != (routed, row["raw_status"] in MEASURED):
             problems.append(f"operation {family}: routes as {row['status']} but source label {row['raw_status']}")
         history = row.get("history") or []

@@ -55,6 +55,16 @@ OPERATION_RUNS = (
 )
 # Verdicts measured against a competitor on held-out data; any other label is structural and changes no route.
 MEASURED = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "SUPERSEDED", "REJECTED")
+# Errata on a frozen verdict: the frozen file is unchanged; the index routes on the corrected reading and keeps the
+# raw label beside it. (family, raw label) -> (routing status, erratum).
+ERRATA = {
+    ("collective", "REJECTED"): (
+        "EXPERIMENTAL",
+        "review of #179 (M3): REJECTED came from 5-16 (p = 0.013) against the most-accurate-observer baseline, "
+        "which uses the generator's hidden true accuracies and is not deployable; against the deployable competitor, "
+        "simple majority, it tied 7-11 (p = 0.24). Not evidence of rejection; EXPERIMENTAL until a pre-registered "
+        "comparison against deployable baselines"),
+}
 
 
 def _measured_code(family: str, commit: str | None) -> dict | None:
@@ -171,8 +181,13 @@ def build() -> dict:
             pointer = f"{rel}#{key}" if single else f"{rel}#{key}.{family}"
             history = (index["operations"].get(family) or {}).get("history", []) + [{"evidence": pointer,
                                                                                         "status": raw}]
-            index["operations"][family] = {"status": raw if raw in MEASURED else "UNEVALUATED", "raw_status": raw,
+            routed, erratum = ERRATA.get((family, raw), (raw if raw in MEASURED else "UNEVALUATED", None))
+            index["operations"][family] = {"status": routed, "raw_status": raw,
+                                           **({"erratum": erratum} if erratum else {}),
                                            "measured": raw in MEASURED, "evidence": pointer, "history": history,
+                                           # the frozen run's named competitor and baseline (None when it had
+                                           # none): an acquisition candidate for a SUPERSEDED verdict
+                                           "competitor": row.get("competitor"), "baseline": row.get("baseline"),
                                            # the solver code this verdict measured (greg.cognition.compiler
                                            # .operation_status routes a positive verdict only on that code)
                                            "code": _measured_code(family, data.get("source_commit"))}

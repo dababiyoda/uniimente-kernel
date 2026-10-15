@@ -48,7 +48,9 @@ P8_ROUTING = "docs/evidence/greg-protected-evolution/2026-10-14/results.json"
 FAMILY_LAYER = {"micro": 1, "control": 1, "pattern": 1, "robust_pattern": 1, "collective": 2, "human": 2, "crowd": 2,
                 "swarm": 2, "evolutionary": 4, "blackbox": 4}
 # Admission-run structural statuses mapped into the directive's vocabulary.
-STRUCTURAL = {"ALIAS": "SUPERSEDED", "SUPERSEDED_BY_CANONICAL_ORGAN": "SUPERSEDED",
+# Structural labels are not held-out verdicts: they are reported as EXPERIMENTAL (UNEVALUATED for routing) with
+# the raw label kept beside them, never as SUPERSEDED (review of #179, M16).
+STRUCTURAL = {"ALIAS": "EXPERIMENTAL", "SUPERSEDED_BY_CANONICAL_ORGAN": "EXPERIMENTAL",
               "NOT_BENCHMARKED": "EXPERIMENTAL", "NOT_RUN": "EXPERIMENTAL", "ROUTE_ONLY": "EXPERIMENTAL"}
 # Findings recorded next to a frozen verdict without changing it (see the cited README).
 NOTES = {
@@ -151,25 +153,13 @@ def admission_of(family: str, index: dict) -> tuple[str, str, str | None]:
     version measured, so a bumped version is EXPERIMENTAL until re-admitted; negative evidence persists. Any
     other family reads ``operations`` with the same rule applied to its solver code digest. No index row means
     no frozen run: EXPERIMENTAL, labelled UNEVALUATED."""
-    from .compiler import NOT_POSITIVE
-    from .genomes import library
-    genomes = library.executables()
-    if family in genomes:
-        record = (index.get("genomes") or {}).get(family)
-        if not record:
-            return "EXPERIMENTAL", "UNEVALUATED", None
-        raw, ref = record["status"], record["evidence"].partition("#")[0]
-        current = genomes[family].genome.version
-        if record.get("version") and record["version"] != current and raw not in NOT_POSITIVE:
-            return "EXPERIMENTAL", f"{raw}@{record['version']} (stale at {current})", ref
-        return raw, raw, ref
-    record = (index.get("operations") or {}).get(family)
-    if not record:
+    from .compiler import family_status
+    admission = family_status(family, index)            # the compiler's one status function (review H2/M16)
+    raw, ref = admission["raw"], (admission["evidence"] or "").partition("#")[0] or None
+    if raw is None:
         return "EXPERIMENTAL", "UNEVALUATED", None
-    from .compiler import operation_status
-    raw, ref = record["raw_status"], record["evidence"].partition("#")[0]
-    if operation_status(family, record)[1]:            # positive evidence measured on other solver code
-        return "EXPERIMENTAL", f"{raw} (stale: the solver changed since it was measured)", ref
+    if admission["stale"]:
+        return "EXPERIMENTAL", f"{raw} (stale: {admission['stale']})", ref
     return STRUCTURAL.get(raw, raw), raw, ref
 
 

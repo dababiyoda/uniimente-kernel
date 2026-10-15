@@ -741,17 +741,15 @@ class Genesis:
             if declared and declared not in classes:
                 continue
             cid = "cognition." + family
+            # the compiler's one status function (review of #179, H2): operation families read their frozen
+            # verdicts too, so a REJECTED or SUPERSEDED family is never offered as an UNEVALUATED candidate
+            status = compiler.family_status(family, evidence)["status"]
             if family in genomes:
                 genome = genomes[family].genome
                 needs, standalone = [tuple(genome.required_inputs)], genome.standalone_decision
-                measured = evidence.get("genomes", {}).get(family, {})
-                status = measured.get("status", "UNEVALUATED")
-                if measured.get("version") and measured["version"] != genome.version \
-                        and status not in compiler.NOT_POSITIVE:
-                    status = "UNEVALUATED"         # positive evidence binds the version measured
             else:
                 needs = [compiler.NATIVE_INPUTS[op] for op in operations if op in compiler.NATIVE_INPUTS]
-                standalone, status = True, "UNEVALUATED"
+                standalone = True
             fit = next((need for need in needs if set(need) <= provided), None)
             if fit is None:
                 close = next((need for need in needs if set(need) & provided), None)

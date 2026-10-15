@@ -90,9 +90,12 @@ def _rows(data: dict) -> dict:
 
 def test_frozen_negative_verdicts_from_pr155_change_the_compilers_routing():
     observations = _rows({"observations": [1, 2, 3, 40]})
-    for method in ("cognition.pattern", "cognition.collective"):       # REJECTED on held-out seeds
-        assert observations[method]["status"] == "REJECTED"
-        assert "frozen admission status REJECTED" in observations[method]["rejected"]
+    assert observations["cognition.pattern"]["status"] == "REJECTED"           # REJECTED on held-out seeds
+    assert "frozen admission status REJECTED" in observations["cognition.pattern"]["rejected"]
+    # review of #179 (M3): collective's REJECTED rested on an oracle baseline; against the deployable competitor it
+    # tied, so the index's erratum routes it as EXPERIMENTAL (routable, never a DEFAULT)
+    assert (observations["cognition.collective"]["status"], observations["cognition.collective"]["rejected"]) == \
+        ("EXPERIMENTAL", None)
     assert "cognition.robust_pattern" not in observations                # ambiguous signature: never inferred
     simulate = _rows({"seed": 1, "samples": 10, "steps": 3, "step_probability": 0.5})
     assert simulate["cognition.simulation"]["rejected"]
@@ -124,8 +127,7 @@ def test_the_genome_inventory_reads_the_index_the_compiler_routes_on():
             checked += 1
     for family, row in index["operations"].items():
         if f"cognition.{family}" in entries:
-            assert entries[f"cognition.{family}"].admission == lib.STRUCTURAL.get(row["raw_status"],
-                                                                                  row["raw_status"])
+            assert entries[f"cognition.{family}"].admission == lib.admission_of(family, index)[0]
             checked += 1
     assert checked >= 40
     assert lib.check() == []
@@ -205,12 +207,11 @@ def test_operation_verdicts_are_bound_to_the_solver_code_they_measured():
     from greg.cognition import compiler as C
     from greg.cognition import genome_library as lib
     evidence = copy.deepcopy(C.evidence_index())
-    data = {"edges": [["s", "t", 1.0]], "start": "s", "goal": "t"}
-    assert _rows(data)["cognition.graph"]["status"] == "DEFAULT_FOR_GEOMETRY"     # bound and unchanged today
-    evidence["operations"]["graph"]["code"]["closure_sha256"] = "sha256:" + "1" * 64  # as if the solver changed
-    row = {r["method"]: r for r in C.candidates(data, C.CompetencyGeometry(), evidence)}["cognition.graph"]
-    assert row["status"] == "UNEVALUATED" and "needs re-admission" in row["stale_evidence"]
-    assert lib.admission_of("graph", evidence)[0] == "EXPERIMENTAL"
+    assert C.operation_status("control", evidence["operations"]["control"]) == ("DEFAULT_FOR_GEOMETRY", None)
+    evidence["operations"]["control"]["code"]["closure_sha256"] = "sha256:" + "1" * 64  # as if the solver changed
+    status, why = C.operation_status("control", evidence["operations"]["control"])
+    assert status == "UNEVALUATED" and "needs re-admission" in why
+    assert lib.admission_of("control", evidence)[0] == "EXPERIMENTAL"
     evidence["operations"]["pattern"]["code"]["closure_sha256"] = "sha256:" + "2" * 64  # a REJECTED verdict persists
     assert C.operation_status("pattern", evidence["operations"]["pattern"]) == ("REJECTED", None)
     del evidence["operations"]["control"]["code"]                                     # unbound positive: not trusted
@@ -444,7 +445,9 @@ def test_a_helper_or_configuration_change_invalidates_positive_admission():
         finally:
             mp.undo()
 
-    assert C.operation_status("graph", evidence["operations"]["graph"]) == ("DEFAULT_FOR_GEOMETRY", None)
+    graph = {**evidence["operations"]["graph"], "competitor": "local Dijkstra (test fixture)"}
+    evidence["operations"]["graph"] = graph          # the closure rule alone, apart from the competitor rule
+    assert C.operation_status("graph", graph) == ("DEFAULT_FOR_GEOMETRY", None)
     helper = CB.working_tree("greg/cognition/contracts.py")
     start = helper.index("def number(")
     line = helper[start:].splitlines()[1]
@@ -552,3 +555,96 @@ def test_one_governed_path_from_problem_to_gate_proposal_and_receipt_keeps_conse
     if report["selected"] in legal_rows:
         assert result["disposition"] == "LEGAL_REVIEW"
     assert result["authority_created"] is False and result["ledger_writes"] == 0 and result["executes"] is False
+
+
+# ---------------------------------------------------------------- review of PR #179, 2026-10-15 (H2, M16, M1, M2, H4)
+class _Journal:
+    def __init__(self):
+        self.events = []
+
+    def record(self, kind, payload, key=None):
+        self.events.append((kind, payload))
+
+
+def _genesis_offers(required_inputs, geometry):
+    from greg import genesis as G
+    from greg.cognition.cortex import registry_view
+    journal = _Journal()
+    found = G.Genesis(journal=journal, registry=registry_view(), workspace_root=ROOT / ".no-workspace")._genome_library(
+        "deficit-review", {"required_inputs": required_inputs, "geometry": geometry})
+    return found, journal.events
+
+
+def test_genesis_never_offers_a_rejected_or_superseded_operation_family():
+    """H2: Genesis hard-coded UNEVALUATED for operation families, so it offered families the index marks REJECTED
+    or SUPERSEDED as attach candidates. It now reads the compiler's one status function."""
+    found, events = _genesis_offers(["observations"], None)
+    assert "cognition.pattern" not in found                                     # REJECTED
+    assert any(k == "genesis.route" and "cognition.pattern" in p["result"] and "REJECTED" in p["result"]
+               for k, p in events)
+    found, events = _genesis_offers(["function", "shift", "bounds", "budget", "seed"], None)
+    assert "cognition.blackbox" not in found and "cognition.swarm" in found      # SUPERSEDED vs DEFAULT
+    offered = {p["capability_id"]: p["admission_status"] for k, p in events if k == "deficit.awaiting_attach"}
+    assert offered.get("cognition.swarm") == "DEFAULT_FOR_GEOMETRY"
+
+
+def test_every_admission_surface_agrees_for_every_catalog_family():
+    """M16: the compiler, Genesis, the inventory and mind_status read one status function over one index."""
+    from greg.cognition import catalog, compiler as C
+    from greg.cognition import genome_library as lib
+    from scripts import mind_status
+    index = C.evidence_index()
+    entries = {e.genome_id: e for e in lib.inventory()}
+    catalog_rows = {r["id"]: r for r in mind_status._catalog_families()}
+    for family in catalog.FAMILIES:
+        status = C.family_status(family, index)
+        directive = lib.admission_of(family, index)[0]
+        if status["stale"] or status["raw"] is None:
+            assert directive == "EXPERIMENTAL", family
+        elif status["kind"] == "operation":
+            assert directive == lib.STRUCTURAL.get(status["raw"], status["raw"]), family
+        if f"cognition.{family}" in entries:
+            assert entries[f"cognition.{family}"].admission == directive, family
+        row = catalog_rows.get(f"cognition.{family}")
+        if row is not None and row["executor"]:
+            assert row["admission"] == status, family
+            assert (status["raw"] is None) == ("no frozen held-out verdict" in row["basis"]), family
+    assert not any(v == "SUPERSEDED" for v in lib.STRUCTURAL.values())         # structural labels never supersede
+
+
+def test_operation_attach_asks_cite_their_frozen_evidence_and_superseded_rows_name_the_competitor():
+    """M1: an operation family's attach ask carried only its status; a SUPERSEDED operation named no acquisition
+    candidate."""
+    from greg.cognition import compiler as C
+    index = C.evidence_index()
+    rows = {r["method"]: r for r in C.candidates({"function": "sphere", "shift": [0.0], "bounds": [[-1, 1]],
+                                                   "budget": 100, "seed": 1}, C.CompetencyGeometry(), index)}
+    assert rows["cognition.blackbox"]["superseded_by"]["mechanism"] == "multistart L-BFGS-B"
+    best = {**rows["cognition.swarm"], "usable_why": "VERIFIED (registered, withheld)"}
+    ask = C.attach_ask("review-ask", best, None, index)
+    evidence = ask["evidence"]
+    assert evidence["admission_evidence"].startswith("docs/evidence/greg-genome-admission/")
+    assert evidence["raw_status"] == "DEFAULT_FOR_GEOMETRY" and evidence["admission_history"]
+    assert evidence["measured_code_closure"].startswith("sha256:") and "L-BFGS-B" in evidence["caveat"]
+
+
+def test_the_mission_hook_never_recommends_a_composition_only_genome():
+    """M2: the #155 mission hook ranked COMPOSITION_ONLY genomes as attach recommendations; the compiler rejects
+    them as standalone decisions."""
+    import inspect
+    from greg import missions
+    source = inspect.getsource(missions.MissionEngine._cognition_ask)
+    order = source[source.index("order = ("):source.index(")", source.index("order = ("))]
+    assert "COMPOSITION_ONLY" not in order and "DEFAULT_FOR_GEOMETRY" in order
+
+
+def test_a_positive_operation_verdict_without_a_competitor_is_not_an_admission():
+    """H4: micro, exact, graph and sequential were DEFAULT against a baseline only. They route as UNEVALUATED until
+    a re-admission names a competitor; verdicts with a competitor keep their status."""
+    from greg.cognition import compiler as C
+    index = C.evidence_index()
+    for family in ("micro", "exact", "graph", "sequential"):
+        status, why = C.operation_status(family, index["operations"][family])
+        assert status == "UNEVALUATED" and "no competitor" in why, family
+    for family in ("control", "game", "information", "probabilistic", "swarm"):
+        assert C.operation_status(family, index["operations"][family]) == ("DEFAULT_FOR_GEOMETRY", None), family

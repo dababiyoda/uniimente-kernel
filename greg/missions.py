@@ -473,7 +473,9 @@ class MissionEngine:
                                  else self.journal if manifest.capability_id == "memory.precedents"
                                  or manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
-                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
+                                 # eligibility view for the Mind, and for the evaluator that asks it
+                                 capability_registry=self.registry if manifest.capability_id.startswith("cognition.")
+                                 or manifest.capability_id == "worker.appraise" else None,
                                  cognition_model=getattr(self, "cognition_model", None))
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,

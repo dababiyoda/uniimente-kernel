@@ -30,8 +30,9 @@ Track B execution, 2026-10-14 (draft PR from `claude/greg-mind-lineage-convergen
 - **Admission binding (2026-10-15):** positive operation verdicts are bound to the solver's dependency closure,
   not only its entry function.
 - **Negative evidence now routes:** #155's held-out REJECTED and SUPERSEDED verdicts change compiler routing.
-- **Replications across lineages:** P4 no gain twice; F2 lift twice; four P8 REJECTs; no replicated Layer 4
-  advantage.
+- **Replications across lineages** (corrected after the review of #179, H1): #155's P4 and F2b runs re-measured
+  subsets of #158's instances, so they show reproducibility, not replication. F2 to F2R is the one replicated
+  lift. Four P8 REJECTs; no replicated Layer 4 advantage.
 - **F7 independently audited:** CONFIRMED (200 of 200), and parametric min-cost flow ties F7. Recommended:
   `flow_expansion_mcf` becomes canonical for capacity expansion once admitted at its exact version.
 - **Horizon added:** `immune_function`.

@@ -124,9 +124,9 @@ Single-lineage duplicates and overlaps:
 | frozen cognition benchmark | #158 `frozen-suite-v2.json` | version-pinned suite with v1 kept; #155's fix reconciled a drifting view of the same suite | git history at `ef5f078` |
 | Landlock grants | one path: #155's superset | superset of both lineages' libraries, never user-site or an ancestor of repository or store; probe and confined-worker tests pass | none (exact duplicate fixed twice) |
 | admission source of truth | the Mind evidence index | #158's index is digest-checked and re-derived by test; #155's inventory had misreported #158's 47 genome families as unbenchmarked | none: `genome_library` now reads the index |
-| operation-family verdicts | #155's frozen admission runs, through the index | held-out runs against stated competitors; structural labels kept but non-routing | n/a |
-| P4 deciding row | #155's NO_GAIN (later run) | #158's own rule: the latest frozen run decides. Both runs are negative, so the default stays shadow | #158's REGRESSION in the row's `history` |
-| identify_then_optimize deciding family | #155's F2b (later run) | #158's own rule; F2, F2R and F2b form an independent replication of the lift | F2 and F2R in `history` |
+| operation-family verdicts | #155's frozen admission runs, through the index | held-out runs; four DEFAULTs had no competitor and route as UNEVALUATED (review H4); collective's REJECTED is corrected by an erratum to EXPERIMENTAL (review M3); structural labels kept but non-routing | n/a |
+| P4 deciding row | #158's REGRESSION (191 items) | review of #179 (H1): #155's NO_GAIN re-measured 130 of the same payloads, so it is a same-instance re-run and cannot decide. Both are negative; the default stays shadow | #155's NO_GAIN in `history`, labelled same-instance re-run |
+| identify_then_optimize deciding family | #158's F2R (64 items) | review of #179 (H1): F2b used the same generator on seeds 25-72, a subset of F2R's 25-88, so it is a same-instance re-run. F2 to F2R shares no instance and is the one genuine replication | F2 and F2b in `history` |
 | lawful intervention generation | #158 `foundry/lawful_leverage.py`, extended with #155's seven uncovered operator classes | See the note below the table. | #155's `compile_map`: superseded as a generator; read-only structural view (CLI), `authority_created` false |
 | founder-effect backcasts | `greg/path.json` horizons | the developmental-inheritance rule: one Backcast GPS | `advantage.DESTINATIONS` becomes a live buildability view naming its horizon (tested) |
 | composition | both | #158's operation recipes and #155's dataflow derivation answer different request shapes; derived chains are NICHE (they lift over singles, not over the fixed recipe) | n/a |
@@ -226,11 +226,14 @@ How the two generators were reconciled (2026-10-15, revised after the founder's 
 
 ## 6. Cognitive reconciliation: findings that replicate across lineages
 
-- **P4.** Two independently pre-registered decisive retests on different suites both found no gain: #158
-  REGRESSION 160 vs 162, and #155 NO_GAIN 111 = 111. Conditional solver learning is not currently worth its
-  complexity. Shadow observation stays. `scripts/mind_status.py` labelled NO_GAIN "UNRESOLVED"; it now labels
-  it as the demotion it is.
-- **P6.** The identify -> optimise lift replicated on fresh seeds in both lineages (F2R; F2b at 11-3).
+- **P4.** #158's decisive retest found REGRESSION (160 vs 162). #155's NO_GAIN (111 = 111) re-measured 130 of
+  the same 191 payloads after training on the same development partition. It is a same-instance re-run:
+  evidence that the result reproduces, not an independent replication (corrected after the review of #179,
+  H1). Conditional solver learning is not currently worth its complexity. Shadow observation stays.
+  `scripts/mind_status.py` labelled NO_GAIN "UNRESOLVED"; it now labels it as the demotion it is.
+- **P6.** The identify -> optimise lift replicated once: F2 (#158 v1) to F2R (#158 v2), with no shared
+  instance. #155's F2b re-measured 48 of F2R's 64 instances and matched them item for item (43 correct, 3
+  wrong, 2 no decision, the same failing seeds). That shows reproducibility, not replication.
 - **P8.** Four protected-evolution runs (three #158 cycles and #155's routing search) were REJECTED. No
   rejected configuration is promoted. Protected evolution has never kept an improvement.
 - **Layer 4.** #155's MICA/CDPE unseen-damage sweep found PARITY with adaptive central replanning. #158's
@@ -368,13 +371,13 @@ The three options compared:
 
 - **Strongest combination:** #158's canonical stack (compiler, genome library, evidence index, sealed
   evolution, Lawful Leverage Foundry, worlds and status ledger), plus #155's measured operation-family
-  verdicts, repertoire, dataflow derivation, Goal Gravity attach ask, P4/P8/P6 replications and destination
+  verdicts, repertoire, dataflow derivation, Goal Gravity attach ask, the P8 rejections and destination
   backcasts.
 - **Simpler alternative:** #158 alone, with #155 archived. That loses:
   - four measured REJECTED verdicts that change routing;
   - one SUPERSEDED verdict;
   - two admitted repertoire families;
-  - the cross-lineage replication of P4 and F2;
+  - the same-instance re-runs of P4 and F2 (reproducibility, not replication);
   - the derived-chain mechanism;
   - a stronger Landlock grant set.
 - **Do nothing (two Minds):** two admission truths, two evolution controllers, and a compiler that ignores

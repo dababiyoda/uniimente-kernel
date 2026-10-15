@@ -47,6 +47,68 @@ P4_RUNS = ("docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
            "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json",
            "docs/evidence/greg-learned-routing/2026-10-07/results-v3.json")
 ADMISSION = "docs/evidence/greg-genome-admission"
+# Instance identity (review of #179, H1). A later run decides a row only if it measured instances the deciding run
+# did not; a run whose instances are a subset of the deciding run's is a same-instance re-run (evidence of
+# reproducibility or timing noise), recorded in history, never a replication and never the deciding row.
+# P6: (code closure of the generator at the run's source commit, seed). P4: the held-out payload digests in the
+# run's suite at its source commit.
+GENERATORS = {family: ("cortex/evaluation/composition_lift/run.py", "f2") for family in ("F2", "F2R", "F2b")}
+P4_SUITES = {"docs/evidence/greg-learned-routing/2026-10-07/results-v2.json": "cortex/evaluation/learned_routing/suite-v2.json",
+             "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json": "cortex/evaluation/learned_routing/suite-v3.json",
+             "docs/evidence/greg-learned-routing/2026-10-07/results-v3.json": "cortex/evaluation/learned_routing/suite-v3.json"}
+
+
+def _git(commit: str | None, path: str) -> str | None:
+    import subprocess
+    if not commit:
+        return None
+    out = subprocess.run(["git", "show", f"{commit}:{path}"], cwd=ROOT, capture_output=True, text=True)
+    return out.stdout if out.returncode == 0 else None
+
+
+def p6_instances(data: dict, family: str) -> set:
+    ids = [r["item_id"] for r in data.get("heldout", []) if r.get("family") == family]
+    if family in GENERATORS:
+        from greg.cognition.code_binding import at_commit, closure
+        path, name = GENERATORS[family]
+        bound = closure(path, name, at_commit(data["source_commit"])) if data.get("source_commit") else None
+        if bound is not None:
+            return {(bound["sha256"], int(i.rsplit("-", 1)[1])) for i in ids}
+    return {(family, i) for i in ids}
+
+
+def p4_instances(rel: str, data: dict) -> set:
+    ids = {r["item_id"] for r in data.get("heldout", [])}
+    text = _git(data.get("source_commit"), P4_SUITES.get(rel, ""))
+    if text is None:
+        return {("item", i) for i in ids}
+    return {hashlib.sha256(json.dumps(item["problem"], sort_keys=True).encode()).hexdigest()
+            for item in json.loads(text)["items"] if item["item_id"] in ids}
+
+
+def _identity(keys: set) -> dict:
+    return {"count": len(keys), "sha256": "sha256:" + hashlib.sha256(
+        json.dumps(sorted(map(list, keys) if keys and isinstance(next(iter(keys)), tuple) else sorted(keys)),
+                   sort_keys=True).encode()).hexdigest()}
+
+
+def _decide(rows: dict, key: str, new: dict, keys: set, seen: dict) -> None:
+    """Install ``new`` as the deciding row for ``key`` unless its instances are a subset of the current deciding
+    row's; either way every run stays in ``history``."""
+    prior = rows.get(key)
+    new["instances"] = _identity(keys)
+    if prior is None:
+        rows[key], seen[key] = new, keys
+        return
+    overlap = len(keys & seen[key])
+    if keys and keys <= seen[key]:              # unknown instances (no held-out rows) never count as a subset
+        rerun = {**new, "kind": "same-instance re-run", "overlap_with": prior["evidence"], "overlap": overlap}
+        prior["history"] = [*prior.get("history", []), rerun]
+        return
+    history = [*prior.pop("history", []), prior]
+    new["history"] = history
+    new["overlap_with_previous"] = overlap
+    rows[key], seen[key] = new, keys
 # PR #155 lineage, in run order: (file, key holding the rows, family when the file measures one family).
 OPERATION_RUNS = (
     ("docs/evidence/greg-genome-admission/2026-10-14/results.json", "families", None),
@@ -98,6 +160,7 @@ def build() -> dict:
              "recipes": {}, "routing": {}, "genomes": {}, "operations": {},
              "rule": "frozen held-out verdicts only; a later frozen run for the same recipe or family replaces "
                      "an earlier one, and both stay in git"}
+    seen_recipes, seen_routing = {}, {}
     for rel, families in P6_RUNS:
         path = ROOT / rel
         if not path.exists():
@@ -110,15 +173,14 @@ def build() -> dict:
             if row is None:
                 continue
             lift = bool(row["lift"])
-            prior = index["recipes"].get(recipe)
-            index["recipes"][recipe] = {
+            # the latest family measured for a recipe decides its routing unless it re-measured the deciding
+            # run's instances; earlier verdicts stay visible
+            _decide(index["recipes"], recipe, {
                 "lift": lift, "status": "VPL_LIFT" if lift else "NO_LIFT", "family": family,
                 "prefer": None if lift else row["best_constituent"],
                 "wins": row["routed_wins"], "losses": row["routed_losses"],
-                "p_one_sided": row["sign_test_p_one_sided"], "evidence": f"{rel}#summary.{family}"}
-            if prior:
-                # the latest family measured for a recipe decides its routing; earlier verdicts stay visible
-                index["recipes"][recipe]["history"] = [*prior.pop("history", []), prior]
+                "p_one_sided": row["sign_test_p_one_sided"], "evidence": f"{rel}#summary.{family}"},
+                p6_instances(data, family), seen_recipes)
     for rel in P4_RUNS:
         path = ROOT / rel
         if not path.exists():
@@ -129,14 +191,11 @@ def build() -> dict:
         summary = data.get("summary", {})
         key = "primary_conditional_vs_static" if "primary_conditional_vs_static" in summary else "conditional_vs_static"
         verdict = (summary.get(key) or {}).get("verdict")
-        prior = index["routing"].get("conditional_competence")
-        index["routing"]["conditional_competence"] = {
+        # every frozen retest stays visible beside the deciding one; a retest of the same instances never decides
+        _decide(index["routing"], "conditional_competence", {
             "verdict": verdict, "consequence": data.get("consequence") or summary.get("consequence"),
             "default": "shadow (observed, never applied)" if verdict != "GAIN" else "conditional",
-            "evidence": f"{rel}#summary.{key}"}
-        if prior:
-            # every earlier frozen retest stays visible beside the deciding one
-            index["routing"]["conditional_competence"]["history"] = [*prior.pop("history", []), prior]
+            "evidence": f"{rel}#summary.{key}"}, p4_instances(rel, data), seen_routing)
     base = ROOT / ADMISSION
     for path in sorted(base.glob("*/results.json")) if base.exists() else []:
         data = json.loads(path.read_text())

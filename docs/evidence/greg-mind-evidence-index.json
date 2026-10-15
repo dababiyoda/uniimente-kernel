@@ -1799,6 +1799,10 @@
   "bayes_then_voi": {
    "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F4",
    "family": "F4",
+   "instances": {
+    "count": 30,
+    "sha256": "sha256:e277d19650a19db00b746ac846c146ebedee7e4a0d79deb471f6df6d83922d7b"
+   },
    "lift": true,
    "losses": 0,
    "p_one_sided": 0.000244,
@@ -1809,6 +1813,10 @@
   "estimate_then_optimize": {
    "evidence": "docs/evidence/greg-composition-lift/2026-10-07/results.json#summary.F1",
    "family": "F1",
+   "instances": {
+    "count": 16,
+    "sha256": "sha256:f0fbc93423a71617f0af9aa7b74978730b63aae87e7be5b724422cdccc68348e"
+   },
    "lift": true,
    "losses": 0,
    "p_one_sided": 0.000122,
@@ -1819,6 +1827,10 @@
   "forecast_then_allocate": {
    "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F5",
    "family": "F5",
+   "instances": {
+    "count": 30,
+    "sha256": "sha256:3720361cf7148ca78cbc5784d20829fb0b6c2424abbf45b71586a10537f738af"
+   },
    "lift": false,
    "losses": 13,
    "p_one_sided": 0.292332,
@@ -1829,6 +1841,10 @@
   "forecast_then_staff": {
    "evidence": "docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json#summary.F6",
    "family": "F6",
+   "instances": {
+    "count": 90,
+    "sha256": "sha256:249274bdb4c7f160002b30384fca15d9b94bc5f6cd37c140ba6a3325e896b3b5"
+   },
    "lift": true,
    "losses": 16,
    "p_one_sided": 0.0,
@@ -1843,6 +1859,10 @@
     {
      "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F3",
      "family": "F3",
+     "instances": {
+      "count": 30,
+      "sha256": "sha256:9bac14564c6ce3ebb3f10aad09c4e3824b687dafbc1d9ad0dc1fc65faa7888e7"
+     },
      "lift": true,
      "losses": 0,
      "p_one_sided": 0.000488,
@@ -1851,20 +1871,29 @@
      "wins": 11
     }
    ],
+   "instances": {
+    "count": 200,
+    "sha256": "sha256:a71877ed55ab1617c6a0b8b6b2525bec379fc4bda3d3560e1ae28f44659b99f1"
+   },
    "lift": true,
    "losses": 0,
+   "overlap_with_previous": 0,
    "p_one_sided": 0.0,
    "prefer": null,
    "status": "VPL_LIFT",
    "wins": 92
   },
   "identify_then_optimize": {
-   "evidence": "docs/evidence/greg-composition-lift/2026-10-14/results-v2.json#summary.F2b",
-   "family": "F2b",
+   "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F2R",
+   "family": "F2R",
    "history": [
     {
      "evidence": "docs/evidence/greg-composition-lift/2026-10-07/results.json#summary.F2",
      "family": "F2",
+     "instances": {
+      "count": 16,
+      "sha256": "sha256:8c0c3a6565a7627d67dcc51b0040b258cce5f5f5bf39a36a760b485e8a9f03eb"
+     },
      "lift": false,
      "losses": 0,
      "p_one_sided": 0.0625,
@@ -1873,26 +1902,42 @@
      "wins": 4
     },
     {
-     "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F2R",
-     "family": "F2R",
+     "evidence": "docs/evidence/greg-composition-lift/2026-10-14/results-v2.json#summary.F2b",
+     "family": "F2b",
+     "instances": {
+      "count": 48,
+      "sha256": "sha256:1df34313bcaf93e3c0bfa8749c1ddc7f44f6015af4989c55e45b4bf7e9d64c0a"
+     },
+     "kind": "same-instance re-run",
      "lift": true,
-     "losses": 4,
-     "p_one_sided": 0.024521,
+     "losses": 3,
+     "overlap": 48,
+     "overlap_with": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F2R",
+     "p_one_sided": 0.028687,
      "prefer": null,
      "status": "VPL_LIFT",
-     "wins": 13
+     "wins": 11
     }
    ],
+   "instances": {
+    "count": 64,
+    "sha256": "sha256:eddc98318a4b74691cf1788923fd372636c45f26903a81bfe4679b05babbf456"
+   },
    "lift": true,
-   "losses": 3,
-   "p_one_sided": 0.028687,
+   "losses": 4,
+   "overlap_with_previous": 0,
+   "p_one_sided": 0.024521,
    "prefer": null,
    "status": "VPL_LIFT",
-   "wins": 11
+   "wins": 13
   },
   "track_then_staff": {
    "evidence": "docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json#summary.F8",
    "family": "F8",
+   "instances": {
+    "count": 2196,
+    "sha256": "sha256:99ca26e4444be55c8ebf64d9ca30afd3bd54cb94361a701a4695950641b6d3a8"
+   },
    "lift": true,
    "losses": 204,
    "p_one_sided": 0.0,
@@ -1903,24 +1948,40 @@
  },
  "routing": {
   "conditional_competence": {
-   "consequence": null,
+   "consequence": "REGRESSION: conditional formal-engine routing is demoted. The `shadow` default stays; conditional solver learning is not currently worth its complexity for this two-engine repertoire. The memory is retained (observed in shadow, never applied by default) as evidence and as a substrate for wider repertoires.",
    "default": "shadow (observed, never applied)",
-   "evidence": "docs/evidence/greg-learned-routing/2026-10-07/results-v3.json#summary.conditional_vs_static",
+   "evidence": "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json#summary.primary_conditional_vs_static",
    "history": [
     {
      "consequence": null,
      "default": "shadow (observed, never applied)",
      "evidence": "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json#summary.conditional_vs_static",
+     "instances": {
+      "count": 66,
+      "sha256": "sha256:4e1f2ec061974c9e5bfc74364454f99c48a8605cdec33500270302b9bdc975df"
+     },
      "verdict": "INCONCLUSIVE"
     },
     {
-     "consequence": "REGRESSION: conditional formal-engine routing is demoted. The `shadow` default stays; conditional solver learning is not currently worth its complexity for this two-engine repertoire. The memory is retained (observed in shadow, never applied by default) as evidence and as a substrate for wider repertoires.",
+     "consequence": null,
      "default": "shadow (observed, never applied)",
-     "evidence": "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json#summary.primary_conditional_vs_static",
-     "verdict": "REGRESSION"
+     "evidence": "docs/evidence/greg-learned-routing/2026-10-07/results-v3.json#summary.conditional_vs_static",
+     "instances": {
+      "count": 130,
+      "sha256": "sha256:92b199a19a9669ea949cad4078f13b2bd6b7608b31369c3843dc5001c284099a"
+     },
+     "kind": "same-instance re-run",
+     "overlap": 130,
+     "overlap_with": "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json#summary.primary_conditional_vs_static",
+     "verdict": "NO_GAIN"
     }
    ],
-   "verdict": "NO_GAIN"
+   "instances": {
+    "count": 191,
+    "sha256": "sha256:6eab3ab8015a204cdc494242252684a32648f4490a45f89cc28139b8f59c77a8"
+   },
+   "overlap_with_previous": 0,
+   "verdict": "REGRESSION"
   }
  },
  "rule": "frozen held-out verdicts only; a later frozen run for the same recipe or family replaces an earlier one, and both stay in git",

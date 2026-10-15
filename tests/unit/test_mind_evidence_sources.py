@@ -214,19 +214,34 @@ def test_every_frozen_run_is_indexed_and_the_latest_run_decides():
             if family not in P6_RECIPE:
                 problems.append(f"{rel}: family {family} measures no recipe named in this test")
                 continue
-            families.setdefault(P6_RECIPE[family], []).append(f"{rel}#summary.{family}")
+            families.setdefault(P6_RECIPE[family], []).append((f"{rel}#summary.{family}", data, family))
+    from scripts.build_mind_evidence_index import p4_instances, p6_instances
+
+    def deciding(runs):
+        """The latest run that measured instances the deciding run had not (a same-instance re-run never decides;
+        review of #179, H1); every run is cited once, in history or as the deciding row."""
+        best, keys = None, set()
+        for evidence, new in runs:
+            if best is None or not new or not new <= keys:
+                best, keys = evidence, new
+        return best
+
     for recipe in sorted(set(families) | set(index["recipes"])):
         row = index["recipes"].get(recipe)
         if recipe not in families or row is None:
             problems.append(f"recipe {recipe}: index row {row is not None}, frozen families {families.get(recipe)}")
             continue
-        cited = [h.get("evidence") for h in row.get("history", [])] + [row.get("evidence")]
-        if cited != families[recipe]:
-            problems.append(f"recipe {recipe}: not the frozen runs in order: cites {cited}, runs {families[recipe]}")
-    # routing: the conditional-competence verdict comes from the latest frozen P4 run
+        cited = sorted([h.get("evidence") for h in row.get("history", [])] + [row.get("evidence")])
+        runs = [(e, p6_instances(d, f)) for e, d, f in families[recipe]]
+        if cited != sorted(e for e, _ in runs):
+            problems.append(f"recipe {recipe}: not every frozen run once: cites {cited}, runs {[e for e, _ in runs]}")
+        if row.get("evidence") != deciding(runs):
+            problems.append(f"recipe {recipe}: not the latest run with new instances: cites {row.get('evidence')}, "
+                            f"expected {deciding(runs)}")
+    # routing: the conditional-competence verdict comes from the latest frozen P4 run with new instances
     if routing:
-        rel, data = routing[-1]
-        expected = f"{rel}#summary.{_conditional_key(data['summary'])}"
+        expected = deciding([(f"{rel}#summary.{_conditional_key(data['summary'])}", p4_instances(rel, data))
+                             for rel, data in routing])
         if (index["routing"].get("conditional_competence") or {}).get("evidence") != expected:
             cited = (index["routing"].get("conditional_competence") or {}).get("evidence")
             problems.append(f"routing: not the latest frozen P4 run: cites {cited}, latest {expected}")
@@ -427,7 +442,7 @@ BOUND = test_every_operation_verdict_is_bound_to_the_solver_code_its_run_measure
     (lambda i: i["genomes"]["collective_market"].update(history=i["genomes"]["collective_market"]["history"][-1:]),
      COMPLETE, "history is not every run in order"),
     (lambda i: i["genomes"].update(never_measured={"status": "DEFAULT_FOR_GEOMETRY"}), COMPLETE, "no status in any"),
-    (_older_family_decides, COMPLETE, "not the frozen runs in order"),
+    (_older_family_decides, COMPLETE, "not every frozen run once"),
     (lambda i: i["recipes"].pop("bayes_then_voi"), COMPLETE, "recipe bayes_then_voi"),
     (lambda i: i["routing"]["conditional_competence"].update(
         evidence=f"{P4}/2026-10-07/results-v2.json#summary.conditional_vs_static"), COMPLETE,
@@ -458,3 +473,20 @@ def test_the_checks_fail_on_a_corrupted_index(tmp_path, monkeypatch, corrupt, ch
     monkeypatch.setitem(globals(), "INDEX", fake)
     with pytest.raises(AssertionError, match=needle):
         check()
+
+
+def test_a_same_instance_rerun_never_decides_and_is_labelled():
+    """Review of #179 (H1): #155's F2b re-measured a subset of #158's F2R instances (same generator, seeds 25-72 of
+    25-88), and #155's P4 v3 re-measured 130 of #158's 191 payloads. Neither is a replication; the superset run
+    decides and the re-run is recorded as such. F2 to F2R is a genuine replication (no shared instance)."""
+    index = _index()
+    recipe = index["recipes"]["identify_then_optimize"]
+    assert recipe["family"] == "F2R" and recipe["instances"]["count"] == 64
+    history = {h["family"]: h for h in recipe["history"]}
+    assert history["F2b"]["kind"] == "same-instance re-run" and history["F2b"]["overlap"] == 48
+    assert "kind" not in history["F2"] and recipe["overlap_with_previous"] == 0
+    routing = index["routing"]["conditional_competence"]
+    assert routing["evidence"].startswith("docs/evidence/greg-learned-routing/2026-10-08/")
+    assert routing["verdict"] == "REGRESSION" and routing["consequence"]
+    rerun = [h for h in routing["history"] if h.get("kind") == "same-instance re-run"]
+    assert [(h["verdict"], h["overlap"]) for h in rerun] == [("NO_GAIN", 130)]

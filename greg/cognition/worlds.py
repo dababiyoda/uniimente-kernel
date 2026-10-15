@@ -85,8 +85,8 @@ P6_FAMILIES = {
     "F1": (SIMULATED, "constructed to need composition; truth assumes calibrated lognormal intervals"),
     "F2": (SIMULATED, "constructed to need composition; truth is the generator's hidden effects"),
     "F2R": (SIMULATED, "constructed to need two intelligences; truth is the generator's hidden effects"),
-    "F2b": (SIMULATED, "PR #155 lineage: F2's generator on fresh seeds 25-72; truth is the generator's hidden "
-                       "effects"),
+    "F2b": (SIMULATED, "PR #155 lineage: F2's generator on seeds 25-72, a subset of F2R's 25-88 (a same-instance "
+                       "re-run, not fresh seeds); truth is the generator's hidden effects"),
     "F3": (MATHEMATICAL, "constructed to need two intelligences; truth is the exact optimum"),
     "F4": (SIMULATED, "constructed to need two intelligences; truth is the generator's hidden parameter"),
     "F5": (NATURAL, "real M4 data and real outcomes; the newsvendor decision layer is declared"),

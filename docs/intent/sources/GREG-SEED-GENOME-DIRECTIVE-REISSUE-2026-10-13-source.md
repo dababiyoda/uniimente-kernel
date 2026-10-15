@@ -41,3 +41,16 @@ counted.
 Repetition creates no additional authority and changes no requirement. It is applied the same way: by closing the
 next residual the requirement map records. This time that is §12, the decision-aware thinking budget on the
 compile path (`greg/cognition/budget.py`), recorded in `tests/evidence/seed-genome-residuals-2026-10-13/`.
+
+## Repeated 2026-10-15
+
+Alfonso sent the same message a third time in the same session, at transcript timestamp 2026-10-15T12:21:07Z. It
+was extracted from the transcript the same way: the user entries whose text opens with "Build this prompt" and
+contains the directive. There are exactly three, at 2026-10-13T18:51:08Z, 2026-10-14T04:59:45Z and
+2026-10-15T12:21:07Z, and all three have the whole-message SHA-256
+`ee71d7de66adad8ce5ace61ee05c0b9329b01e09f2e757e047d4eadf2effc6e1` (87,149 characters). Compaction summaries that
+quote the directive are not founder messages and are not counted.
+
+Repetition creates no additional authority and changes no requirement. It is applied by closing the next residual
+the requirement map records: §16's media case, truth-preserving paraphrase against source evidence, recorded in
+`tests/evidence/media-case-convergence-2026-10-15/`.

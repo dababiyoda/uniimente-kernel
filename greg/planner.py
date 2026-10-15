@@ -197,6 +197,9 @@ def _first_mission_route(text: str, ctx: PlannerContext) -> dict:
 MCP_WORDS = re.compile(r"\b(?:mcp|(?:tool\s+)?servers?)\b", re.I)
 GENERIC_VERBS = {"get", "show", "list", "find", "read", "fetch", "give", "tell", "use", "run", "make", "do", "ask"}
 TIMEZONE = re.compile(r"\b(?:UTC|[A-Z][A-Za-z_]+/[A-Za-z_]+(?:/[A-Za-z_]+)?)\b")
+CHANGE_WORDS = re.compile(r"\b(?:write|append|add|create|save|store|edit|update|replace|insert|put|delete|remove|"
+                          r"rename|move|commit|post|send|record)\b", re.I)
+ACT_QUOTE = re.compile(r"\"([^\"]{1,400})\"|\u201c([^\u201d]{1,400})\u201d|(?<!\w)'([^']{1,400})'(?!\w)")
 
 
 def _words(text: str) -> set:
@@ -249,15 +252,20 @@ def _mcp_route(text: str, ctx: PlannerContext) -> dict | None:
     tool = matching[0]
     schema = tool.get("input_schema") or {}
     properties = schema.get("properties", {})
-    arguments, readable, missing = {}, [], []
+    # A change: the words ask for one and the server does not claim the tool only reads. Text in quotes may fill one
+    # string argument, and a file that does not exist yet may be named (its folder must exist).
+    act = not tool.get("claims_read_only") and bool(CHANGE_WORDS.search(text))
+    quotes = [next(g for g in m.groups() if g is not None) for m in ACT_QUOTE.finditer(text)] if act else []
+    plain = ACT_QUOTE.sub(" ", text) if act else text
+    arguments, readable, missing, target, quoted = {}, [], [], None, None
     roots = [Path(r).expanduser().resolve() for r in ctx.read_roots]
     for prop in schema.get("required", []):
         spec = properties.get(prop, {})
         key = prop.lower()
         if any(k in key for k in ("path", "repo", "file", "dir", "folder")):
-            found = FILE_PATH.search(text)
+            found = FILE_PATH.search(plain)
             target = Path(found.group(1).rstrip(".,;")).expanduser().resolve() if found else None
-            if target is None or not target.exists():
+            if target is None or not (target.exists() or (act and target.parent.is_dir())):
                 missing.append(f"{prop} (a path under {', '.join(map(str, roots))})")
             elif not any(target == r or r in target.parents for r in roots):
                 return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
@@ -270,11 +278,16 @@ def _mcp_route(text: str, ctx: PlannerContext) -> dict | None:
                 arguments[prop] = zone.group(0)
             else:
                 missing.append(f"{prop} (an IANA zone such as Asia/Tokyo)")
+        elif act and quoted is None and len(quotes) == 1 and spec.get("type", "string") == "string":
+            arguments[prop], quoted = quotes[0], quotes[0]
         else:
-            missing.append(f"{prop}: {spec.get('description') or spec.get('type') or 'a value'}")
+            missing.append(f"{prop}: {spec.get('description') or spec.get('type') or 'a value'}"
+                           + (" (put it in quotes)" if act else ""))
     if missing:
         return {"status": "NEEDS_INPUT", "origin": origin,
                 "questions": [f"The {name} server's {tool['name']} needs " + "; ".join(missing) + "."]}
+    if act:
+        return _mcp_act_route(text, name, server, tool, arguments, target, quoted)
     readable = list(dict.fromkeys([*server.get("readable", []), *readable]))
     spec = templates.mcp_tool(server=name, root=server["root"], command=[*server["command"], *server.get("args", [])],
                               tool=tool["name"], arguments=arguments, readable=readable, founder_expression=text)
@@ -285,8 +298,38 @@ def _mcp_route(text: str, ctx: PlannerContext) -> dict | None:
         "the server's own claims about its tools are not trusted; its answer is shown as untrusted data"]
         + ([] if tool.get("claims_read_only") else [
             f"the server does not claim {tool['name']} is read-only: if it tries to change something, it fails inside "
-            "GREG's namespace and nothing changes (a change needs an mcp.act mission naming what it may write, "
-            "approved by you)"]))
+            "GREG's namespace and nothing changes (to change something, ask for the change with the text in quotes: "
+            "GREG proposes an mcp.act mission you approve)"]))
+
+
+def _mcp_act_route(text: str, name: str, server: dict, tool: dict, arguments: dict, target: Path | None,
+                   quoted: str | None) -> dict:
+    """One ``mcp.act`` mission from the founder's words. GREG checks the change itself by reading the file the words
+    name, so a change it cannot read back becomes a question. The server may write the file's folder (servers often
+    replace a file by writing a new one and renaming it) and nothing else; no network, no credentials."""
+    origin = "template:mcp-act"
+    if target is None or target.is_dir():
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"GREG checks a change by reading the file it changes. The {name} server's {tool['name']} names "
+            + (f"the folder {target}" if target else "no file") + ", so GREG could not tell whether it worked. "
+            "Name the file and, in quotes, the text it should contain afterwards."]}
+    if quoted is not None:
+        expect, closes = {"op": "contains", "field": "text", "value": quoted}, f"finds {quoted!r} in it"
+    elif not target.exists():
+        expect, closes = {"op": "equals", "field": "exists", "value": True}, "finds that it exists"
+    else:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"What should {target} contain after the change? Put that text in quotes so GREG can check it."]}
+    writable = target.parent
+    spec = templates.mcp_act(server=name, root=server["root"], command=[*server["command"], *server.get("args", [])],
+                             tool=tool["name"], arguments=arguments, writable=[str(writable)], check_path=str(target),
+                             expect=expect, readable=server.get("readable", []), founder_expression=text)
+    return _proposal(spec, origin, notes=[
+        f"the {name} server's {tool['name']} tool, with {json.dumps(arguments)}",
+        f"GREG asks you before it runs and shows this exact scope: the server may write {writable} and nothing "
+        "else; no network; no credentials",
+        f"closes only when GREG itself reads {target} and {closes}; if that is already true, nothing runs",
+        "the server's own answer is untrusted data"])
 
 
 def template_route(text: str, ctx: PlannerContext) -> dict | None:
@@ -637,6 +680,12 @@ CONSEQUENCE_WORDS = {"read_only": "read", "internal_write": "write a file on thi
                      "irreversible": "do something irreversible"}
 
 
+def _builtin_consequence(capability_id) -> str | None:
+    """A built-in capability's class when the caller's list does not carry it; unknown stays unknown (and asks)."""
+    from greg.capabilities import BUILTINS
+    return BUILTINS[capability_id][0].consequence_class if capability_id in BUILTINS else None
+
+
 def authority_summary(spec: dict, capabilities: list[dict]) -> dict:
     """Plain-language statement of what signing this mission lets GREG do."""
     known = {c["capability_id"]: c for c in capabilities}
@@ -645,12 +694,12 @@ def authority_summary(spec: dict, capabilities: list[dict]) -> dict:
     from fnmatch import fnmatchcase
     for strategy in spec.get("strategies", []):
         cid = strategy.get("capability")
-        cap = known.get(cid, {})
+        consequence = known.get(cid, {}).get("consequence_class") or _builtin_consequence(cid)
         words = f"{strategy['action_id']}: {cid or 'function ' + str(strategy.get('function'))} " \
-                f"({CONSEQUENCE_WORDS.get(cap.get('consequence_class'), 'unknown consequence')}) on {strategy['target']}"
-        within = (cid and any(fnmatchcase(cid, p) for p in cone["capabilities"])
-                  and ["read_only", "internal_write", "external_contact"].index(cap.get("consequence_class", "read_only"))
-                  <= ["read_only", "internal_write", "external_contact"].index(cone["max_consequence_class"]))
+                f"({CONSEQUENCE_WORDS.get(consequence, 'unknown consequence')}) on {strategy['target']}"
+        order = ["read_only", "internal_write", "external_contact"]
+        within = bool(cid and consequence in order and any(fnmatchcase(cid, p) for p in cone["capabilities"])
+                      and order.index(consequence) <= order.index(cone["max_consequence_class"]))
         (inside if within else ask).append(words)
     return {"may_do_without_asking": ["observe: " + ", ".join(sorted({c["sensor"].get("capability") or
                                                                       c["sensor"].get("function") for c in

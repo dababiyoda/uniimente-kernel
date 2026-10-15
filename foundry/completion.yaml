@@ -567,8 +567,10 @@
     network are refused), and credential handles in the mcp namespace whose values reach only the server's
     environment (tests/unit/test_greg_mcp_act.py, tests/integration/test_greg_mcp_act_mission.py; the official
     filesystem server wrote the approved folder locally and its write elsewhere failed read-only). Still missing -
-    remote (HTTP) transport, credentials other than environment variables (OAuth flows, files), words-to-mcp.act
-    proposals in the planner, and observation on the founder's device. Original failover and authority component
+    remote (HTTP) transport, credentials other than environment variables (OAuth flows, files), proposals from
+    words for changes GREG cannot read back as a file (a commit, a post; file changes are proposed since increment
+    21, tests/unit/test_greg_mcp_act_words.py, tests/integration/test_greg_mcp_act_founder_path.py), and
+    observation on the founder's device. Original failover and authority component
     evidence is retained.
   implementation: *id001
   interface: foundry.query foundry_tool|list_foundry_tools (system 28); Gateway.call for governed third-party tools
@@ -590,6 +592,8 @@
   - tests/unit/test_greg_mcp_npm.py
   - tests/unit/test_greg_mcp_act.py
   - tests/integration/test_greg_mcp_act_mission.py
+  - tests/unit/test_greg_mcp_act_words.py
+  - tests/integration/test_greg_mcp_act_founder_path.py
 29:
   acceptance:
   - External agents discover, negotiate and perform bounded work through an embassy

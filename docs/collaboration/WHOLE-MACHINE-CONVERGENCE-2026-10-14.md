@@ -1281,8 +1281,7 @@ its exact reach before it runs.
 
 - **Credentials are environment variables only.** Servers that need an OAuth flow or a credential file have no path.
 - **Remote (HTTP) MCP transport** is not built.
-- **The founder's words do not yet produce an `mcp.act` mission.** The planner proposes read-only calls; a writing
-  mission is signed from a template or the model route.
+- **The founder's words did not yet produce an `mcp.act` mission** (closed for file changes in increment 21).
 - **Inside the approved scope the server is trusted.** It may write anything in the named folders and send anything
   to the named hosts, including data it read from the shown paths. The approval is the control; the mission's
   check, not the server's answer, decides whether the effect happened.
@@ -1346,6 +1345,81 @@ Foundry #28 stays PARTIAL: remote transport, other credential forms, words-to-ac
   writes reviewable before they happen. Not built: servers that reach hosts cannot be dry-run without sending, and a
   copy of a large folder is costly. Revisit for write-only scopes once the planner proposes acts from words.
 
+## Increment 21 (2026-10-15): the founder asks for a change in words, approves its exact scope, and GREG checks it
+
+Increment 20 gave writing tools a path, but only through a hand-signed mission. Now the founder says it.
+
+- **Words become one `mcp.act` proposal** (`template:mcp-act`) when they ask for a change ("write", "append",
+  "create", "commit" and similar) of a tool its server does not claim only reads. Example: *Use the notes server to
+  append "ship the wedge" to ~/src/notes/plan.md*.
+  - Text in quotes fills the one string argument the tool needs. Two string arguments and one quote become a
+    question. A slash inside the quotes is not taken for the file.
+  - A file that does not exist yet may be named when its folder exists.
+- **The server may write the file's folder and nothing else.** A folder, not the file alone, because servers such
+  as the filesystem server replace a file by writing a new one and renaming it. No network, no credentials: words
+  never grant hosts or credential handles.
+- **GREG checks the change itself.** The mission's check is GREG's own `fs.read` of the named file: it must
+  contain the quoted text, or, for a new file with no text named, exist. If that is already true, nothing runs.
+  A change GREG cannot read back (a tool acting on a folder, an existing file with no text named) becomes a
+  question.
+- **The light cone stops at read-only,** so the act always waits for the founder's decision.
+- **Mission Control shows what approving allows** on the decision itself: "Approving lets it: run
+  `notes.append_line`; write: `<folder>` (nothing else); reach: no network; credentials: none". Before, the
+  console showed the requested authority only on resource asks.
+- **Fixed on the way: the signing summary.** It read an unknown capability as read-only. A proposal checked against
+  an empty capability list could say a consequential act happens "without asking", and an `irreversible`
+  capability crashed the summary. Built-in classes are now looked up, and an unknown class always asks.
+
+### Evidence
+
+- **`tests/unit/test_greg_mcp_act_words.py` (8 tests):**
+  - the words become one valid mission (tool, arguments, writable folder, contains-check, read-only cone), and the
+    summary says it must ask first with only `fs.read` observed freely;
+  - a new file in an existing folder;
+  - three unsettled cases (no quoted text, a missing folder, a file outside the read roots) become questions;
+  - a tool that claims to only read stays a read-only call;
+  - a slash inside the quotes is not taken for the file;
+  - an unknown capability is never summarized as allowed.
+- **`tests/integration/test_greg_mcp_act_founder_path.py` (2 tests in CI, 1 local),** over real HTTP with the
+  owner's session:
+  - the words become a proposal that says, before signing, that GREG asks first; after signing the body waits;
+    the decision shows the tool, the folder and "no network"; approving writes the line, and GREG reads the file
+    and closes the mission with the chain verified;
+  - a rejected change never writes;
+  - locally, the official filesystem server, discovered with its launch configuration and asked in words, wrote
+    the file after approval, and the mission closed on GREG's own read.
+- **Mutants: 8 of 8 non-equivalent ones fail the tests:** no act route; the whole read root writable; a check
+  that accepts any file; the act runs without asking; an unknown class read as read-only; the approval hiding the
+  scope; paths searched inside quotes; a missing folder accepted. A ninth (keeping the target in the readable list)
+  was equivalent: the act route never used it, and the dead branch was removed.
+
+### What this does not cover
+
+- Words fill paths, IANA zones and one quoted string. Anything else becomes a question; a model route can fill
+  more from the schemas.
+- A change GREG cannot read back as a file (a commit, a post) is not proposed from words. Hosts and credentials
+  are never granted from words.
+
+### Five roles and two passes (what signing allows changed)
+
+- **Builder:** one route, one template, no new authority path; the check reuses `fs.read`.
+- **Adversary:** a hostile server can write anything in the approved folder, including other files there; the
+  approval names the folder. A founder who approves without reading is the weakest link; the scope sits next to
+  the button.
+- **Operator:** questions name what is missing and how to say it ("put it in quotes").
+- **Beneficiary representative:** the founder no longer needs a template to change a file through a tool they
+  installed, and sees the exact reach before answering.
+- **Constitutional reviewer:** the summary fix removes a path where a proposal could under-state its authority.
+  Nothing is granted by words that a decision does not separately approve.
+- **Pass 1.** Advantage: GREG's own read closes the mission, so the server's claim never counts. It reverses only if
+  the quoted text was already in the file, in which case nothing runs, which is correct. Disadvantage, folder
+  granularity: kept visible on the decision, owner the founder.
+- **Pass 2.** A request whose quoted text also appears elsewhere in the file closes early. Accepted: the check is
+  "the file contains this text", which the founder can read on the proposal. A tool that ignores its arguments and
+  writes elsewhere in the folder is caught only if the named file lacks the text. **Dissent kept:** check that
+  nothing else in the folder changed (a before/after digest of the folder). Not built; it is the next strengthening
+  if a server is ever seen writing outside its named file.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local
@@ -1379,7 +1453,7 @@ Gate) instead of adding a parallel one.
 
 **Pass 1 (structural inversion).**
 - Owner authentication turns the console from "reachable means trusted" into "possessing the founder's private
-  link means trusted". That is the property the founder intends when he signs from his own browser.
+  link means trusted". That is the property the founder intends when they sign from their own browser.
 - Fail-closed worker dispatch turns a missing sandbox from a silent risk into a visible ask (the doctor fix), and a
   refusal before any spend.
 - The disadvantage is friction. It is bounded to a single link per console start, with no passwords.

@@ -332,7 +332,7 @@ def _overview(console, p, form) -> str:
     if p["dossiers"]:
         out.append("<section><h2>Founder's First Mission dossiers</h2><ul>" + "".join(
             f"<li><a href='/first-mission/{_e(n)}'>{_e(n)}</a></li>" for n in p["dossiers"]) + "</ul></section>")
-    out += [parts.get(k, "") for k in ("closures", "deliveries")]
+    out += [parts.get(k, "") for k in ("gravity", "closures", "deliveries")]
     body_paused = p["identity"]["pause"] or p["identity"]["background"] == "PAUSED" or p["identity"].get("paused")
     out.append("<section><h2>Pause or resume the whole body</h2><p class=muted>A signed pause holds every mission at its "
                "next step; nothing is lost and resume continues from the ledger.</p>"

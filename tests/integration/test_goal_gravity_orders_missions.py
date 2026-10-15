@@ -48,7 +48,7 @@ def test_goal_gravity_orders_the_signed_missions_and_records_each_change(tmp_pat
         body.boot()
         before = len(body.journal.replay("gravity.ranked"))
         body.engine.book.rebuild()
-        body._goal_gravity(sorted(body.engine.book.missions.values(), key=lambda m: m.mission_id))
+        body._order_missions(sorted(body.engine.book.missions.values(), key=lambda m: m.mission_id))
         assert len(body.journal.replay("gravity.ranked")) == before
 
 

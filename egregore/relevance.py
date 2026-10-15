@@ -3,7 +3,8 @@
 Deterministic matching of a signal's observations, tags and domain against
 each goal's declared wake conditions. The score is the sum of matched
 condition weights; a goal wakes when the score reaches its wake threshold.
-Founder mutes (``do_not_monitor``) and ``stop_pushing`` are respected.
+Founder mutes (``do_not_monitor``) and ``stop_pushing`` are respected; completed, revoked,
+paused and superseded goals never wake.
 """
 from __future__ import annotations
 
@@ -76,6 +77,12 @@ class GoalRelevanceRouter:
     def execution_authority(self) -> str:
         return "none"
 
+    def score(self, spec: GoalSpec, signal: SignalEnvelope, observations: Sequence[Observation]) -> tuple[float, tuple[str, ...]]:
+        """Score one signal for one goal. A host may refine how a signal counts for a goal (the GREG body
+        judges untrusted intake by what its content is about, greg/goal_gravity.py); muting, stops and
+        closed goals are still decided here, after scoring."""
+        return score_signal(spec, signal, observations)
+
     def route(self, signal: SignalEnvelope, *, observations: Sequence[Observation] | None = None) -> dict[str, RelevanceVerdict]:
         if observations is None:
             observations = WorldModel.observations_from_signal(signal)
@@ -84,13 +91,15 @@ class GoalRelevanceRouter:
         for goal_id in self.registry.goals():
             spec = self.registry.get(goal_id)
             state = self.registry.state(goal_id)
-            score, matched = score_signal(spec, signal, observations)
+            score, matched = self.score(spec, signal, observations)
             if score <= 0:
                 continue
             if self.registry.domain_muted(goal_id, domain):
                 verdicts[goal_id] = RelevanceVerdict(goal_id, signal.signal_id, score, matched, False, "domain muted by founder")
                 continue
-            if state.status in ("completed", "revoked", "paused") or state.preferences.get("stop_pushing"):
+            # A superseded goal is closed like a revoked one: its replacement carries the founder's intent,
+            # and GoalRegistry.wake refuses it (waking it would fault the turn for every other goal).
+            if state.status in ("completed", "revoked", "paused", "superseded") or state.preferences.get("stop_pushing"):
                 verdicts[goal_id] = RelevanceVerdict(goal_id, signal.signal_id, score, matched, False, f"goal is {state.status}")
                 continue
             wake = score >= spec.wake_threshold

@@ -16,6 +16,10 @@
     greg anchor configure --tsa-url URL --roots ROOTS.pem --key K   timestamp the ledger head externally
     greg anchor export --roots R.pem --out W.json   witness bundle kept OUTSIDE GREG
     greg anchor verify --witness W.json --roots R.pem   rewrite/rollback of witnessed history exits 3
+    greg gravity authorize --from-mission M --key K   a persistent goal derived from a signed mission
+    greg gravity authorize --from-mission M --print-only > g.json; greg gravity authorize g.json --key K
+    greg gravity authorize g.json --supersedes GOAL --key K   replace an admitted goal (the old one is kept)
+    greg gravity goals | greg gravity evidence GOAL   read-only; greg gravity control GOAL --kind stop_pushing --value true --key K
 
 The CLI never opens the ledger as a writer while the body runs: commands are
 signed files dropped into the body inbox, so any interface can close at any time.
@@ -68,6 +72,88 @@ def _secret_value(name: str) -> str:
 def _drop(home: str, kind: str, body: dict, args) -> Path:
     key = load_founder_key(args.key, _passphrase(args))
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
+
+
+def _json_or_text(value):
+    if value is None:
+        return None
+    try:
+        return json.loads(value)
+    except ValueError:
+        return value
+
+
+def _goal_id(home: str, prefix: str) -> str:
+    from egregore.goals import GoalRegistry
+    if not Layout(home).ledger.exists():
+        raise BodyError("this body has no ledger yet")
+    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+        matches = [g for g in GoalRegistry(ledger=journal.ledger, quarantine_unhydratable=True).goals()
+                   if g == prefix or g.startswith(prefix)]
+    if len(matches) != 1:
+        raise BodyError(f"no single goal matches {prefix!r} ({len(matches)} match)")
+    return matches[0]
+
+
+def _gravity_action(home: str, args) -> None:
+    """``greg gravity goals | authorize | control | evidence``: read-only views, or signed founder commands
+    dropped into the inbox. Nothing here opens the ledger as a writer."""
+    from greg import goal_gravity
+    from greg.missions import MissionError
+    if args.action in ("goals", "evidence"):
+        if not Layout(home).ledger.exists():
+            raise BodyError("this body has no ledger yet")
+        with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+            try:
+                data = (goal_gravity.projection(journal) if args.action == "goals"
+                        else goal_gravity.evidence(journal, args.target or ""))
+            except MissionError as exc:
+                raise BodyError(str(exc)) from exc
+        print(json.dumps(data, indent=1, default=str))
+        return
+    if args.action == "authorize":
+        notes = {}
+        if args.from_mission:
+            from greg.capabilities import BUILTINS
+            if not Layout(home).ledger.exists():
+                raise BodyError("this body has no ledger yet")
+            with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                try:   # only a registration a verified founder MISSION signs, for exactly that spec
+                    spec = goal_gravity.signed_mission_spec(journal, args.from_mission)
+                except MissionError as exc:
+                    raise BodyError(f"no signed mission {args.from_mission} on this body: {exc}") from exc
+            derived = goal_gravity.goal_from_mission(spec, {mf.capability_id: mf for mf, _ in BUILTINS.values()})
+            body = derived.pop("goal_command")
+            notes = derived
+        elif args.target:
+            body = json.loads(Path(args.target).read_text())
+            if isinstance(body, dict) and body.get("kind") == "GOAL" and isinstance(body.get("body"), dict):
+                body = body["body"]                     # the reviewed output of --print-only, as printed
+            elif isinstance(body, dict):
+                body = body.get("goal_command", body)
+        else:
+            raise BodyError("authorize needs a GOAL JSON file or --from-mission MISSION_ID")
+        if args.supersedes:
+            if not isinstance(body, dict) or not isinstance(body.get("goal"), dict):
+                raise BodyError("--supersedes needs a GOAL body with a 'goal' object")
+            body = {**body, "goal": {**body["goal"], "supersedes": _goal_id(home, args.supersedes)}}
+        if args.print_only:
+            print(json.dumps({"kind": "GOAL", "body": body, **notes}, indent=1))
+            return
+        if not args.key:
+            raise BodyError("authorize needs --key to sign, or --print-only to review first")
+        print(json.dumps({"dropped": str(_drop(home, "GOAL", body, args)), **notes}, indent=1))
+        return
+    if not args.target or not args.kind:
+        raise BodyError("control needs a goal id and --kind")
+    if args.kind not in goal_gravity.CONTROL_KINDS:
+        raise BodyError(f"--kind must be one of {', '.join(goal_gravity.CONTROL_KINDS)}")
+    if not args.key:
+        raise BodyError("control needs --key (a delegated phone key may only narrow a goal)")
+    body = {"goal_id": _goal_id(home, args.target), "kind": args.kind, "reason": args.reason or args.kind}
+    if args.value is not None:
+        body["value"] = _json_or_text(args.value)
+    print(_drop(home, "GOAL_CONTROL", body, args))
 
 
 def _model_builder(secrets, config):
@@ -223,9 +309,25 @@ def main(argv=None) -> int:
     sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
     sub.add_parser("resilience", help="read-only: failure/recovery episodes, antifragility evidence, common causes, "
                                        "dependency concentration and organ-vs-system decoupling warnings")
-    gv = sub.add_parser("gravity", help="one read-only Goal Gravity turn: Backcast GPS, Lawful Leverage Foundry, "
-                                         "Gate proposals and at most one prepared founder ask")
-    gv.add_argument("--situation", required=True, help="typed situation JSON (sensing evidence, never authority)")
+    gv = sub.add_parser("gravity", help="Goal Gravity: one read-only analysis turn (--situation), or the body's "
+                                         "persistent goals: goals | authorize | control | evidence")
+    gv.add_argument("action", nargs="?", choices=["goals", "authorize", "control", "evidence"],
+                    help="goals: read-only list; authorize: sign a GOAL; control: sign a GOAL_CONTROL; "
+                         "evidence: ledger hashes behind one goal")
+    gv.add_argument("target", nargs="?", help="authorize: GOAL JSON file; control/evidence: goal id (or prefix)")
+    gv.add_argument("--situation", help="typed situation JSON (sensing evidence, never authority); the one-turn "
+                                        "analysis, required when no action is given")
+    gv.add_argument("--from-mission", help="authorize: derive the GOAL deterministically from this signed mission")
+    gv.add_argument("--kind", help="control: stop_pushing | lower_priority | never_use_tactic | do_not_monitor | "
+                                   "ask_before | forget_route | revoke_capability | change_goal | revoke")
+    gv.add_argument("--value", help="control: the value (JSON, e.g. true or 4, or plain text)")
+    gv.add_argument("--reason", default="")
+    gv.add_argument("--key", help="founder key (a delegated phone key may only narrow a goal)")
+    gv.add_argument("--no-passphrase", action="store_true")
+    gv.add_argument("--ttl-hours", type=int, default=24)
+    gv.add_argument("--print-only", action="store_true", help="authorize: print the GOAL body without signing")
+    gv.add_argument("--supersedes", help="authorize: replace this admitted goal (id or prefix); it stays on the "
+                                         "ledger as superseded")
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
@@ -451,9 +553,13 @@ def main(argv=None) -> int:
             else:
                 data = {"reality_status": "NO_BODY_LEDGER", "note": "measure on the body"}
             print(json.dumps(data, indent=1, default=str))
+        elif args.cmd == "gravity" and args.action is not None:
+            _gravity_action(home, args)
         elif args.cmd == "gravity":
             from foundry.lawful_leverage import LeverageRefused
             from greg import gravity
+            if not args.situation:
+                raise BodyError("gravity needs --situation, or an action: goals | authorize | control | evidence")
             situation = json.loads(Path(args.situation).read_text())
             try:
                 if Layout(home).ledger.exists():

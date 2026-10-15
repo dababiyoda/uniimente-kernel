@@ -319,6 +319,9 @@ class MissionState:
     setpoints_reached: int = 0
     pending_effect: dict = field(default_factory=dict)  # action_id -> checks it should change
     collateral: dict = field(default_factory=dict)      # action_id -> passing checks it does not advance
+    # A persistent goal's pull (greg/goal_gravity.py) not yet served while the mission waits on an APPROVAL:
+    # only ``observe_now`` sets it, so a mission no goal is bound to never has one.
+    pull: str | None = None
 
     @property
     def mission_id(self):
@@ -331,6 +334,68 @@ class MissionState:
         else:
             wanted = {c["check_id"] for c in self.spec["success_checks"]}
         return [c for c in self.spec["success_checks"] if c["check_id"] in wanted]
+
+
+def pursued_checks(spec: dict) -> set:
+    """The check ids the mission's own loop ever observes and pursues: every rung of an infinite mission's ladder,
+    otherwise every success check. A strategy that advances none of them is never selected, so never run."""
+    ladder = spec["closure"].get("ladder") or []
+    if spec["closure"]["kind"] == "infinite" and ladder:
+        return set().union(*ladder)
+    return {c["check_id"] for c in spec["success_checks"]}
+
+
+def rank_key(s: dict, index: int, failing: set, manifest, record: dict | None, value_per_check_usd: float) -> tuple:
+    """(-expected value, route rank, signed order, reliability): the order ``MissionEngine._pursue`` selects
+    candidates in (most expected discrepancy closed per cost, structured routes before visual ones, then the
+    order Alfonso signed). One rule for the mission's own selection and for what a goal may ask about ahead."""
+    gain = len(set(s["advances"]) & failing)
+    route = ROUTES.index(manifest.route) if manifest else len(ROUTES)
+    estimate = routing.reliability(record)
+    expected = routing.score(gain=gain, reliability_estimate=estimate, cost_usd=float(s.get("cost_usd", 0.0)),
+                             value_per_check_usd=value_per_check_usd)
+    return -expected, route, index, estimate
+
+
+def first_choice(spec: dict, failing: set, *, manifest_for, records: dict, failed=(), excluded=()) -> str | None:
+    """The strategy the mission's own selection ranks first for these failing checks, or None.
+
+    The candidates are ``_pursue``'s: strategies advancing a failing check, not failed, not excluded, whose
+    signed preconditions (``requires``) are not among the failing checks. Bound inputs are not resolved here:
+    a bound strategy ranked first that cannot bind yet is held back at run time, never promoted past."""
+    value = float(spec.get("value_per_check_usd", 1.0))
+    ranked = []
+    for index, s in enumerate(spec["strategies"]):
+        if not set(s["advances"]) & failing or s["action_id"] in failed or s["action_id"] in excluded \
+                or set(s.get("requires", [])) & failing:
+            continue
+        manifest = manifest_for(s)
+        key = rank_key(s, index, failing, manifest, records.get(manifest.capability_id) if manifest else None, value)
+        ranked.append((*key[:3], s["action_id"]))
+    return min(ranked)[3] if ranked else None
+
+
+def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *, now: datetime) -> dict:
+    """The exact Gate scope of one static strategy of mission ``m`` and the reasons it lies outside its cone.
+
+    Pure: the mission state and the capability manifests are given, so the same answer is derived by the
+    engine (live) and by greg/goal_gravity.py (the mission state at a founder command's ledger position)."""
+    s = next((x for x in (m.spec["strategies"] if m else []) if x["action_id"] == action_id), None)
+    if s is None or "capability" not in s or s.get("bind") or "$from_action" in json.dumps(s.get("params", {})):
+        raise MissionError("only a static, capability-bound strategy of a registered mission has an exact scope")
+    manifest = manifests.get(s["capability"])
+    if manifest is None:
+        raise MissionError(f"capability {s['capability']} is not registered on this body")
+    cost = float(s.get("cost_usd", 0.0))
+    scope = AuthorityOffice.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
+                                         params=s.get("params", {}), target=s["target"],
+                                         consequence_class=manifest.consequence_class, cost_usd=cost)
+    outside = m.cone.admits(capability=manifest.capability_id, target=s["target"],
+                            consequence_class=manifest.consequence_class, cost_usd=cost,
+                            spent_usd=m.spent_usd, at=now)
+    return {"mission_id": m.mission_id, "action_id": action_id, "capability": manifest.capability_id,
+            "target": s["target"], "consequence_class": manifest.consequence_class, "cost_usd": cost,
+            "scope_digest": scope, "outside_cone": outside, "strategy": s}
 
 
 class MissionBook:
@@ -346,102 +411,119 @@ class MissionBook:
     def rebuild(self):
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
         for event in self.journal.replay():
-            kind, data = event.type[len("greg."):], event.payload
-            mid = data.get("mission_id")
-            m = self.missions.get(mid)
-            if kind == "mission.registered":
-                self.missions[mid] = MissionState(spec=data["spec"], command_digest=data["command_digest"],
-                                                  cone=LightCone.from_dict(data["spec"]["light_cone"]))
-            elif m is None:
-                if kind == "decision.requested":
-                    self.requests[data["request_id"]] = data
-                elif kind == "decision.answered":
-                    self.answers[data["request_id"]] = data
-                elif kind == "decision.withdrawn":
-                    self.withdrawn[data["request_id"]] = data
-                continue
-            elif kind == "mission.lifecycle":
-                m.paused = data["state"] == "PAUSED"
-                if data["state"] in ("ABANDONED", "SUPERSEDED"):
-                    m.status = data["state"]
-            elif kind == "mission.observed":
-                m.observations[data["check_id"]] = data
-                if data["passed"]:  # drift later -> previously ineffective strategies may be tried again
-                    for aid in [a for a, r in m.failed.items() if r.startswith(f"executed but {data['check_id']} ")]:
-                        m.failed.pop(aid)
-                for aid, checks in list(m.pending_effect.items()):
-                    if data["check_id"] not in checks:
-                        continue
-                    if data["passed"]:
-                        checks.discard(data["check_id"])
-                    else:
-                        # Surprise: executed, yet the world did not change. Replan
-                        # instead of repeating; eligible again after a later pass.
-                        # A producer whose output another strategy binds changed its consumers' input,
-                        # not the world: it is done, not ineffective, and is not re-run either.
-                        if m.failed.get(aid, "").startswith("regressed "):
-                            pass                     # blame for damaging the whole is never washed out by drift
-                        elif any(e["from"].get("action_id") == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
-                            m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
-                        else:
-                            m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
-                    if not checks:
-                        m.pending_effect.pop(aid, None)
-                # Section 13, a local gain that damages the whole: a check that passed just before an action ran,
-                # which that action does not advance, is re-observed failing. The action is blamed and not re-run
-                # automatically; if only such trade-offs remain, the founder decides. Unmeasured is not a regression.
-                for aid, watched in list(m.collateral.items()):
-                    if data["check_id"] not in watched or data["detail"].startswith("sensor "):
-                        continue
-                    watched.discard(data["check_id"])
-                    if not data["passed"]:
-                        m.failed[aid] = f"regressed {data['check_id']}, which passed before it ran: {data['detail']}"[:300]
-                        watched.clear()
-                    if not watched:
-                        m.collateral.pop(aid, None)
-            elif kind == "mission.action":
-                aid = data["action_id"]
-                m.attempts[aid] = data["attempt"] + 1
-                if data.get("cost_reserved") and data["status"] == "UNCERTAIN":
-                    m.spent_usd += data.get("cost_usd", 0.0)      # unknown spend holds the signed cap
-                if data["status"] == "DONE":
-                    m.actions_done += 1
-                    m.spent_usd += data.get("cost_usd", 0.0)
-                    m.failed.pop(aid, None)
-                    strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
-                    if strategy:
-                        m.pending_effect[aid] = set(strategy["advances"])
-                        current = {c["check_id"] for c in m.current_checks()}
-                        m.collateral[aid] = {c for c, o in m.observations.items()
-                                             if o["passed"] and c in current and c not in strategy["advances"]}
-                elif data["status"] in ("REFUSED", "UNAVAILABLE"):
-                    m.failed[aid] = "; ".join(data["reasons"])[:300]
-            elif kind == "mission.blocked":
-                m.blocker = data["blocker"]
-            elif kind == "mission.unblocked":
-                m.blocker = None
-            elif kind == "mission.setpoint":
-                m.setpoints_reached += 1
-                m.rung = data["next_rung"]
-            elif kind == "mission.achieved":
-                m.status = "ACHIEVED"
-            elif kind == "mission.schedule":
-                m.next_observe_at = data["next_observe_at"]
-            elif kind == "mission.strategy_excluded":
-                m.excluded[data["action_id"]] = data["reason"]
-            elif kind == "decision.requested":
+            self.fold(event.type[len("greg."):], event.payload)
+
+    def fold(self, kind: str, data: dict) -> None:
+        """Fold one retained greg.* fact (``kind`` without the ``greg.`` prefix), in ledger order.
+
+        ``rebuild`` is this fold over the whole journal; greg/goal_gravity.py folds the same facts one at a
+        time to judge a founder command against the mission state at its own ledger position."""
+        mid = data.get("mission_id")
+        m = self.missions.get(mid)
+        if kind == "mission.registered":
+            self.missions[mid] = MissionState(spec=data["spec"], command_digest=data["command_digest"],
+                                              cone=LightCone.from_dict(data["spec"]["light_cone"]))
+        elif m is None:
+            if kind == "decision.requested":
                 self.requests[data["request_id"]] = data
-            elif kind == "decision.withdrawn":
-                self.withdrawn[data["request_id"]] = data
             elif kind == "decision.answered":
                 self.answers[data["request_id"]] = data
-                request = self.requests.get(data["request_id"])
-                if request and data["answer"] == "approve":
-                    m.approved_scopes.add(request["scope_digest"])
-                elif request and data["answer"] == "reject":
-                    m.rejected_scopes.add(request["scope_digest"])
-                    if request.get("action_id"):
-                        m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
+            elif kind == "decision.withdrawn":
+                self.withdrawn[data["request_id"]] = data
+            return
+        elif kind == "mission.lifecycle":
+            m.paused = data["state"] == "PAUSED"
+            if m.paused:              # a founder pause ends any goal pull; a later wake pulls afresh
+                m.pull = None
+            if data["state"] in ("ABANDONED", "SUPERSEDED"):
+                m.status = data["state"]
+        elif kind == "mission.observed":
+            m.observations[data["check_id"]] = data
+            if m.blocker is None:     # an observation of the unblocked loop serves any pending goal pull
+                m.pull = None
+            if data["passed"]:  # drift later -> previously ineffective strategies may be tried again
+                for aid in [a for a, r in m.failed.items() if r.startswith(f"executed but {data['check_id']} ")]:
+                    m.failed.pop(aid)
+            for aid, checks in list(m.pending_effect.items()):
+                if data["check_id"] not in checks:
+                    continue
+                if data["passed"]:
+                    checks.discard(data["check_id"])
+                else:
+                    # Surprise: executed, yet the world did not change. Replan
+                    # instead of repeating; eligible again after a later pass.
+                    # A producer whose output another strategy binds changed its consumers' input,
+                    # not the world: it is done, not ineffective, and is not re-run either.
+                    if m.failed.get(aid, "").startswith("regressed "):
+                        pass                     # blame for damaging the whole is never washed out by drift
+                    elif any(e["from"].get("action_id") == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
+                        m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
+                    else:
+                        m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
+                if not checks:
+                    m.pending_effect.pop(aid, None)
+            # Section 13, a local gain that damages the whole: a check that passed just before an action ran,
+            # which that action does not advance, is re-observed failing. The action is blamed and not re-run
+            # automatically; if only such trade-offs remain, the founder decides. Unmeasured is not a regression.
+            for aid, watched in list(m.collateral.items()):
+                if data["check_id"] not in watched or data["detail"].startswith("sensor "):
+                    continue
+                watched.discard(data["check_id"])
+                if not data["passed"]:
+                    m.failed[aid] = f"regressed {data['check_id']}, which passed before it ran: {data['detail']}"[:300]
+                    watched.clear()
+                if not watched:
+                    m.collateral.pop(aid, None)
+        elif kind == "mission.action":
+            aid = data["action_id"]
+            m.attempts[aid] = data["attempt"] + 1
+            if data.get("cost_reserved") and data["status"] == "UNCERTAIN":
+                m.spent_usd += data.get("cost_usd", 0.0)      # unknown spend holds the signed cap
+            if data["status"] == "DONE":
+                m.actions_done += 1
+                m.spent_usd += data.get("cost_usd", 0.0)
+                m.failed.pop(aid, None)
+                strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
+                if strategy:
+                    m.pending_effect[aid] = set(strategy["advances"])
+                    current = {c["check_id"] for c in m.current_checks()}
+                    m.collateral[aid] = {c for c, o in m.observations.items()
+                                         if o["passed"] and c in current and c not in strategy["advances"]}
+            elif data["status"] in ("REFUSED", "UNAVAILABLE"):
+                m.failed[aid] = "; ".join(data["reasons"])[:300]
+        elif kind == "mission.blocked":
+            m.blocker = data["blocker"]
+        elif kind == "mission.unblocked":
+            m.blocker = None
+            m.pull = None
+        elif kind == "mission.setpoint":
+            m.setpoints_reached += 1
+            m.rung = data["next_rung"]
+        elif kind == "mission.achieved":
+            m.status = "ACHIEVED"
+        elif kind == "mission.schedule":
+            m.next_observe_at = data["next_observe_at"]
+            if "cause" in data:       # a persistent goal pulled this observation forward (observe_now)
+                m.pull = data["next_observe_at"]
+        elif kind == "mission.prepared":
+            m.pull = None             # the pull was served while the mission waited on the founder
+        elif kind == "mission.pull_released":
+            m.pull = None             # released unserved: no open, unstopped goal binds the mission any more
+        elif kind == "mission.strategy_excluded":
+            m.excluded[data["action_id"]] = data["reason"]
+        elif kind == "decision.requested":
+            self.requests[data["request_id"]] = data
+        elif kind == "decision.withdrawn":
+            self.withdrawn[data["request_id"]] = data
+        elif kind == "decision.answered":
+            self.answers[data["request_id"]] = data
+            request = self.requests.get(data["request_id"])
+            if request and data["answer"] == "approve":
+                m.approved_scopes.add(request["scope_digest"])
+            elif request and data["answer"] == "reject":
+                m.rejected_scopes.add(request["scope_digest"])
+                if request.get("action_id"):
+                    m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
 
     def open_requests(self) -> list[dict]:
         return [r for rid, r in self.requests.items() if rid not in self.answers and rid not in self.withdrawn]
@@ -522,6 +604,141 @@ class MissionEngine:
                             key=[mission_id, action_id, critique_ref])
         self.book.rebuild()
 
+    # -- timing and asks for a persistent goal bound to signed missions (greg/goal_gravity.py) ---
+    def observe_now(self, mission_id: str, now: datetime, *, cause: str) -> bool:
+        """Pull a mission's next read-only observation forward (a goal bound to it woke).
+
+        Timing only: scope, light cone, budget and strategies are unchanged, and the observation
+        still goes through the Gate. A paused or terminal mission is the founder's and is never
+        touched; a mission already due needs no pull. A mission waiting on the founder's answer to
+        an APPROVAL may be pulled, one pull pending at a time: it then re-observes and repairs its
+        other checks inside its cone while the decision stays open (``_prepare``); the asked scope
+        itself still runs only after a signed approve."""
+        self.book.rebuild()
+        m = self.book.missions.get(mission_id)
+        if m is None or m.status in TERMINAL or m.paused:
+            return False
+        if self._awaiting_approval(m):
+            if m.pull is not None:
+                return False
+        elif not m.next_observe_at or datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")) <= now:
+            return False
+        self.journal.record("mission.schedule", {"mission_id": mission_id, "next_observe_at": iso(now),
+                                                 "cause": str(cause)[:300]},
+                            key=[mission_id, "observe-now", str(cause)[:300]])
+        self.book.rebuild()
+        return True
+
+    def release_pull(self, mission_id: str, now: datetime, *, why: str) -> bool:
+        """Release a goal's pending pull unserved (greg/goal_gravity.py: no open, admitted, unstopped goal binds
+        the mission any more, e.g. the founder revoked or stopped it). The mission returns to its own loop:
+        while it waits on an APPROVAL it only waits, as a mission no goal is bound to does."""
+        self.book.rebuild()
+        m = self.book.missions.get(mission_id)
+        if m is None or m.pull is None:
+            return False
+        self.journal.record("mission.pull_released", {"mission_id": mission_id, "pull": m.pull,
+                                                      "why": str(why)[:300], "at": iso(now)},
+                            key=[mission_id, "pull-released", m.pull])
+        self.book.rebuild()
+        return True
+
+    def strategy_scope(self, mission_id: str, action_id: str, *, now: datetime) -> dict:
+        """The exact Gate scope of one founder-signed static strategy, and why it lies outside the cone.
+
+        The digest is the one ``AuthorityOffice.act`` derives for the same strategy (consequence class
+        from the capability manifest, never from the caller), so an approve of it is the approval the
+        mission itself would ask for. Strategies bound to another action's output have no exact scope
+        before they run and are refused here."""
+        return strategy_scope(self.book.missions.get(mission_id), self.registry.manifests, action_id, now=now)
+
+    def _manifest_for(self, s: dict):
+        """A strategy's capability manifest: the signed capability, else one Genesis attached for its function."""
+        manifest = self.registry.manifests.get(s.get("capability"))
+        if manifest is None and s.get("function") and self.genesis is not None:
+            manifest = self.genesis.find_attached(s["function"])
+        return manifest
+
+    def _askable(self, m: "MissionState | None", mission_id: str, action_id: str, *, now: datetime) -> dict:
+        """The exact scope of a strategy the founder may be asked about ahead of the mission's loop, or
+        MissionError saying why not. One predicate for ``request_decision`` and ``ask_refusal``."""
+        if m is None or m.status in TERMINAL or m.paused:
+            raise MissionError(f"mission {mission_id} is unknown, closed or paused: nothing to ask for it")
+        scope = self.strategy_scope(mission_id, action_id, now=now)
+        if not scope["outside_cone"]:
+            raise MissionError(f"{action_id} is inside the mission's light cone: it needs no founder decision")
+        if scope["scope_digest"] in m.rejected_scopes:
+            raise MissionError("the founder already rejected this exact scope")
+        # The mission's own selection never picks an excluded or failed strategy (tick: "in m.failed or in
+        # m.excluded"), nor one that advances no check its loop pursues, so it would never ask for (or run)
+        # one; asking ahead of it must not either: an approve could change nothing.
+        if action_id in m.excluded:
+            raise MissionError(f"the founder excluded {action_id} by a signed critique: {m.excluded[action_id]}"[:400])
+        if action_id in m.failed:
+            raise MissionError(f"{action_id} is not selectable now: {m.failed[action_id]}"[:400])
+        pursued = pursued_checks(m.spec)
+        checks = set(scope["strategy"].get("advances", [])) & pursued
+        if not checks:
+            raise MissionError(f"{action_id} advances {sorted(scope['strategy'].get('advances', []))}, none of which "
+                               f"the mission's loop pursues ({sorted(pursued)}): it would never run it")
+        # Only the move the mission's own selection would run next for these checks may be asked about ahead:
+        # one consequential decision is one ask, and its approve is what the mission then runs.
+        first = first_choice(m.spec, checks, manifest_for=self._manifest_for,
+                             records=routing.track_record(self.journal), failed=m.failed, excluded=m.excluded)
+        if first != action_id:
+            raise MissionError(f"for {', '.join(sorted(checks))} the mission's own selection runs {first} first, not "
+                               f"{action_id}: it would ask for (or run) {first}, so an approve of {action_id} could "
+                               "change nothing")
+        for rid, r in self.book.requests.items():
+            other = next((x for x in m.spec["strategies"] if x["action_id"] == r.get("action_id")), None)
+            if r.get("kind") == "APPROVAL" and r.get("mission_id") == mission_id and other is not None \
+                    and r.get("scope_digest") != scope["scope_digest"] and rid not in self.book.answers \
+                    and rid not in self.book.withdrawn and set(other["advances"]) & checks:
+                raise MissionError(f"an open APPROVAL ({rid}, {other['action_id']}) already asks about "
+                                   f"{', '.join(sorted(set(other['advances']) & checks))}: one decision, one ask")
+        return scope
+
+    def ask_refusal(self, mission_id: str, action_id: str, *, now: datetime) -> str | None:
+        """Why ``request_decision`` would refuse to ask about this strategy now, or None. Records nothing."""
+        self.book.rebuild()
+        try:
+            self._askable(self.book.missions.get(mission_id), mission_id, action_id, now=now)
+        except MissionError as exc:
+            return f"MissionError: {exc}"
+        return None
+
+    def request_decision(self, mission_id: str, action_id: str, *, why: str, recommendation: str, now: datetime,
+                         evidence: dict | None = None, quoted: tuple = ()) -> str:
+        """Ask the founder ahead of time about one signed strategy whose exact scope is outside the cone.
+
+        This is the engine's own APPROVAL ask: the same deterministic request id (mission, APPROVAL,
+        exact scope), the same contract and the same one-ask-per-scope rule, so when the mission's
+        loop later reaches the strategy it finds this request instead of asking again. Asking grants
+        nothing and executes nothing; an approve adds exactly this scope to the mission's approved
+        scopes, used only when the mission's own feedback loop selects the strategy."""
+        self.book.rebuild()
+        m = self.book.missions.get(mission_id)
+        scope = self._askable(m, mission_id, action_id, now=now)
+        s, cost = scope["strategy"], scope["cost_usd"]
+        resource = None
+        if cost > 0:
+            from types import SimpleNamespace
+            records = routing.track_record(self.journal)
+            routing_decision = {"chosen": action_id, "reliability": routing.reliability(records.get(scope["capability"])),
+                                "asked_ahead_of_the_mission_loop": True}
+            resource = self._spend_ask(m, s, SimpleNamespace(reasons=scope["outside_cone"]), routing_decision)
+            if evidence:
+                resource = {**resource, "evidence": {**resource["evidence"], **evidence}}
+        return self._request(
+            m, kind="APPROVAL", scope_digest=scope["scope_digest"], action_id=action_id,
+            why=(why or "; ".join(scope["outside_cone"]))[:400], recommendation=recommendation[:400],
+            alternatives=[x["action_id"] for x in m.spec["strategies"] if x["action_id"] != action_id][:5]
+            + ["reject: the mission will try alternatives or ask again"],
+            requested={"capability": scope["capability"], "target": scope["target"],
+                       "consequence_class": scope["consequence_class"], "cost_usd": s.get("cost_usd", 0.0),
+                       **({"spend": f"${cost:.2f} for this one action"} if cost > 0 else {})},
+            now=now, resource=resource, evidence=evidence, quoted=quoted)
+
     # -- the loop ---------------------------------------------------------------
     def tick(self, now: datetime, *, should_stop=None) -> list[dict]:
         """One turn per mission. ``should_stop`` is consulted before every mission step:
@@ -554,7 +771,7 @@ class MissionEngine:
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
-                 resource: dict | None = None, evidence: dict | None = None) -> str:
+                 resource: dict | None = None, evidence: dict | None = None, quoted: tuple = ()) -> str:
         """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
 
         ``resource`` makes it a section-60 resource ask: evidence, costed options with their
@@ -582,7 +799,7 @@ class MissionEngine:
             message["alternatives"] = [o["option"] for o in resource["options"]]
         founder_words = [a.get("reason", "") for a in self.book.answers.values() if a.get("mission_id") == m.mission_id]
         asks.record(self.journal, message, quoted=asks.founder_text([m.spec, m.mission_id, founder_words,
-                                                                     list(m.excluded.values())]))
+                                                                     list(m.excluded.values()), list(quoted)]))
         return rid
 
     def _generation(self, m: MissionState, kind: str) -> int:
@@ -633,6 +850,62 @@ class MissionEngine:
                             key=[m.mission_id, "schedule", at])
         m.next_observe_at = at
 
+    def _awaiting_approval(self, m: MissionState) -> bool:
+        """Blocked on the founder's still-open answer to an APPROVAL for one exact strategy scope."""
+        b = m.blocker or {}
+        rid = b.get("request_id")
+        return (b.get("type") == "decision" and bool(b.get("action_id")) and rid not in self.book.answers
+                and rid not in self.book.withdrawn and (self.book.requests.get(rid) or {}).get("kind") == "APPROVAL")
+
+    def _inside_cone(self, m: MissionState, s: dict, now: datetime) -> bool:
+        """A static strategy whose exact scope the mission's signed light cone admits now (no decision needed)."""
+        try:
+            return not strategy_scope(m, self.registry.manifests, s["action_id"], now=now)["outside_cone"]
+        except MissionError:
+            return False
+
+    def _prepare(self, m: MissionState, now: datetime) -> dict:
+        """Permitted preparation while the founder decides (a goal pulled this mission; Mission F).
+
+        The mission re-observes its current checks through the Gate and pursues the failing checks the
+        awaited strategy does not advance, with in-cone static strategies only. The decision stays open
+        and its blocker stays in place; nothing new is asked. The pull stays pending while a repair
+        awaits its re-observation and is served (``mission.prepared``) once nothing more can be done."""
+        pending = m.blocker["action_id"]
+        rid = m.blocker["request_id"]
+        failing, evidence = self._observe(m, now)
+        if failing is None:                  # the sensor itself needs a capability or a decision
+            return {"state": "BLOCKED", "blocker": m.blocker}
+        self.book.rebuild()
+        m = self.book.missions[m.mission_id]
+        self._record_routing_outcomes(m)
+        awaited = next((set(s["advances"]) for s in m.spec["strategies"] if s["action_id"] == pending), set())
+        observed = {c["check_id"] for c in m.current_checks()}
+        if awaited and awaited <= observed and not awaited & failing:
+            # The world already satisfies what the awaited move would do (no GREG action): the ask is moot.
+            # Withdrawn as _watch_while_blocked withdraws one (a body event, never a founder answer); the
+            # awaited move never runs on it, and the same scope returning later is a new escalation.
+            why = ("world re-observed while preparing: every check the awaited move advances now passes without "
+                   "any GREG action")
+            self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                       "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
+            self._unblock(m, why)
+            self.book.rebuild()
+            if failing:
+                return {"state": "RESUMED", "withdrawn": rid, "still_failing": sorted(failing)}
+            return self._setpoint_reached(self.book.missions[m.mission_id], now, evidence)
+        other = failing - awaited - set(self.sensor_errors)
+        if other:
+            done = self._pursue(m, now, other, evidence, prepare_for=pending)
+            if done.get("state") == "ACTED":
+                return {"state": "PREPARING", "awaiting": rid, "action": done["action"], "repairing": sorted(other)}
+            if done.get("state") not in ("NOTHING_TO_PREPARE", "REPLANNING"):
+                return done                  # e.g. an uncertain outcome now needs reconciliation
+        self.journal.record("mission.prepared", {"mission_id": m.mission_id, "awaiting": rid, "pull": m.pull,
+                                                 "still_failing": sorted(failing), "at": iso(now)},
+                            key=[m.mission_id, "prepared", m.pull])
+        return {"state": "WAITING", "blocker": m.blocker, "prepared": True, "still_failing": sorted(failing)}
+
     def _step(self, m: MissionState, now: datetime) -> dict:
         if m.status in TERMINAL:
             return {"state": m.status}
@@ -663,6 +936,8 @@ class MissionEngine:
         if m.blocker:
             resolved, why = self._blocker_resolved(m)
             if not resolved:
+                if m.pull is not None and self._awaiting_approval(m):
+                    return self._prepare(m, now)
                 return {"state": "WAITING", "blocker": m.blocker, "why": why}
             if m.blocker["type"] == "reconciliation":
                 answer = self.book.answers[m.blocker["request_id"]]["answer"]
@@ -879,9 +1154,6 @@ class MissionEngine:
                     # retry cadence (learned routing settles the lead engine's resource failure
                     # from these retries); _record_routing_outcomes never blames the strategy.
                     detail = f"sensor inconclusive ({why}): {detail}"
-                views = disagreement(outcome.output)
-                if views and not passed:
-                    self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
             if failure_class is not None:
@@ -1148,7 +1420,13 @@ class MissionEngine:
                      "expected_effect": "no money is spent; the mission tries " + (", ".join(others) or
                                                                                  "no other strategy") + " or asks again"}]}
 
-    def _pursue(self, m: MissionState, now: datetime, failing: set, evidence: list) -> dict:
+    def _pursue(self, m: MissionState, now: datetime, failing: set, evidence: list, *,
+                prepare_for: str | None = None) -> dict:
+        """Choose and run the highest-leverage strategy for the failing checks.
+
+        ``prepare_for`` (the strategy whose APPROVAL the founder has not answered yet) restricts the turn
+        to static strategies whose exact scope lies inside the cone: nothing is asked, nothing blocks,
+        and the awaited strategy itself never runs here."""
         candidates = []
         records = routing.track_record(self.journal)
         value = float(m.spec.get("value_per_check_usd", 1.0))
@@ -1157,6 +1435,8 @@ class MissionEngine:
         for index, s in enumerate(m.spec["strategies"]):
             gain = len(set(s["advances"]) & failing)
             if not gain or s["action_id"] in m.failed or s["action_id"] in m.excluded:
+                continue
+            if prepare_for is not None and (s["action_id"] == prepare_for or not self._inside_cone(m, s, now)):
                 continue
             if set(s.get("requires", [])) & failing:
                 held[s["action_id"]] = sorted(set(s["requires"]) & failing)
@@ -1167,14 +1447,12 @@ class MissionEngine:
                 except Unbound as why:
                     held[s["action_id"]] = [f"input: {why}"]
                     continue
-            manifest = self.registry.manifests.get(s.get("capability"))
-            if manifest is None and s.get("function") and self.genesis is not None:
-                manifest = self.genesis.find_attached(s["function"])
-            route = ROUTES.index(manifest.route) if manifest else len(ROUTES)
-            estimate = routing.reliability(records.get(manifest.capability_id) if manifest else None)
-            expected = routing.score(gain=gain, reliability_estimate=estimate,
-                                     cost_usd=float(s.get("cost_usd", 0.0)), value_per_check_usd=value)
-            candidates.append((-expected, route, index, s, estimate))
+            manifest = self._manifest_for(s)
+            neg_expected, route, _, estimate = rank_key(
+                s, index, failing, manifest, records.get(manifest.capability_id) if manifest else None, value)
+            candidates.append((neg_expected, route, index, s, estimate))
+        if not candidates and prepare_for is not None:
+            return {"state": "NOTHING_TO_PREPARE"}
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
             split = {c: v for c, v in sorted(getattr(self, "disagreements", {}).items()) if c in failing}
@@ -1216,6 +1494,8 @@ class MissionEngine:
                             "alternatives": [{"action_id": c[3]["action_id"], "expected_value": round(-c[0], 4),
                                               "reliability": round(c[4], 4)} for c in candidates[1:6]]}
         manifest, adapter, _ = self._resolve(s)
+        if manifest is None and prepare_for is not None:
+            return {"state": "NOTHING_TO_PREPARE"}
         if manifest is None:
             if self._deficit(m, s, now, purpose=f"strategy {s['action_id']}") is None:
                 return {"state": "BLOCKED", "blocker": m.blocker}
@@ -1262,6 +1542,8 @@ class MissionEngine:
                           spend_basis="signed_cap: worker outcome or spend unknown; reserved")
         if bindings:
             record["bindings"] = bindings
+        if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION") and prepare_for is not None:
+            return {"state": "NOTHING_TO_PREPARE"}    # preparation never asks; nothing was dispatched
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             if outcome.scope_digest in m.rejected_scopes:
                 record["status"] = "REFUSED"

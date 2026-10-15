@@ -407,7 +407,8 @@ class MissionState:
     pull: str | None = None
     # (action_id, attempt) -> worst-case USD of a dispatch whose completion is unknown (UNCERTAIN). It counts
     # against the signed budget until a founder reconciliation settles that one dispatch: executed books it as
-    # spent, not executed releases it. A retry-safe dispatch is never reconciled, so its reservation stands.
+    # spent, not executed releases it (except a metered run's, which is booked: its provider may have spent while it
+    # ran). A retry-safe dispatch is never reconciled, so its reservation stands.
     reserved: dict = field(default_factory=dict)
     uncertain_streak: dict = field(default_factory=dict)  # action_id -> consecutive dispatches of unknown outcome
 
@@ -633,6 +634,8 @@ class MissionBook:
                     m.pending_effect[aid] = set(strategy["advances"])
             elif data["status"] in ("REFUSED", "UNAVAILABLE"):
                 m.failed[aid] = "; ".join(data["reasons"])[:300]
+            elif data["status"] == "RECONCILED_NOT_EXECUTED":
+                m.spent_usd += data.get("cost_usd", 0.0)   # a metered run's unmeasured spend; 0.0 otherwise
         elif kind == "mission.blocked":
             m.blocker = data["blocker"]
         elif kind == "mission.unblocked":
@@ -1113,20 +1116,28 @@ class MissionEngine:
                 attempt = m.blocker.get("attempt", m.attempts.get(aid, 1) - 1)
                 executed = answer == "reconcile_executed"
                 worst = m.reserved.get((aid, attempt), signed_cost(m.spec, aid))
+                capability = m.blocker.get("capability") or next(
+                    (e.payload.get("capability") for e in reversed(self.journal.replay("mission.action"))
+                     if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid
+                     and e.payload.get("capability")), None)
+                # A metered capability (a paid worker) spends while its provider runs, whether or not its result was
+                # collected: "not executed" settles the effect, not the money, so its unmeasured spend is booked at
+                # the signed cap instead of being released as zero (acceptance H.G4).
+                booked = executed or capability in METERED_SPEND
                 settled = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
                            "status": "DONE" if executed else "RECONCILED_NOT_EXECUTED",
-                           "reasons": ["founder reconciliation: " + answer], "cost_usd": worst if executed else 0.0}
+                           "reasons": ["founder reconciliation: " + answer], "cost_usd": worst if booked else 0.0}
                 if "proposal_id" in m.blocker:
                     settled.update(reconciles={k: m.blocker.get(k) for k in ("request_id", "proposal_id", "grant_id")},
                                    scope_digest=m.blocker.get("scope_digest"))
                 if executed:       # it executed, but its spend was never measured: book the signed cap
-                    capability = m.blocker.get("capability") or next(
-                        (e.payload.get("capability") for e in reversed(self.journal.replay("mission.action"))
-                         if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid
-                         and e.payload.get("capability")), None)
                     settled.update(capability=capability, receipt=None, cost_cap_usd=worst, provider_reported_usd=None,
                                    spend_basis="signed_cap: founder reconciled the dispatch as executed; "
                                                "its spend was never measured")
+                elif booked:
+                    settled.update(capability=capability, cost_cap_usd=worst, provider_reported_usd=None,
+                                   spend_basis="signed_cap: a metered run stopped before its spend was reported; "
+                                               "not executed settles its effect, not its provider's spend")
                 self.journal.record("mission.action", settled,
                                     key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
             lifted = m.blocker

@@ -146,3 +146,84 @@ def test_unknown_spend_is_reserved_at_its_worst_case_and_bounds_dispatch(tmp_pat
         assert len(effects) == 2 and body.engine.book.missions["m:unknown"].committed_usd == 0.8
     finally:
         body.close()
+
+
+class _InterruptedOnceWorker:
+    """A worker provider double (not a frontier worker): its first run loses its process mid-work, after a partial
+    edit and with its spend unreported; a later run finishes the edit."""
+    name = "interrupted-once-test-double"
+
+    def __init__(self):
+        self.runs = []
+
+    def available(self):
+        return True, ""
+
+    def run(self, order, cwd):
+        from greg import workers
+        self.runs.append(order.grant_id)
+        (cwd / "pkg" / "calc.py").write_text("def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n")
+        if len(self.runs) == 1:
+            raise RuntimeError("worker process lost mid-run")
+        return workers.WorkerReport(self.name, self.name, 0, 0.1, None)
+
+
+def test_an_interrupted_paid_worker_reconciled_not_executed_books_its_cap_and_the_budget_bounds_a_rerun(
+        tmp_path, monkeypatch):
+    """A metered worker spends while its provider runs, whether or not GREG collected its result: "not executed"
+    settles the effect, not the money. Before H.G4 the settlement booked $0.00 and released the reservation, so a
+    signed $0.50 budget re-commissioned a second $0.50 run after an interrupted one that may have spent $0.50."""
+    import subprocess
+    from greg import workers
+    data = tmp_path / "data"
+    data.mkdir()
+    repo = data / "proj"
+    (repo / "pkg").mkdir(parents=True)
+    (repo / "tests").mkdir()
+    (repo / "pkg" / "__init__.py").write_text("")
+    (repo / "pkg" / "calc.py").write_text("def add(a, b):\n    return a + b\n")
+    (repo / "tests" / "test_calc.py").write_text("from pkg.calc import sub\n\n\ndef test_sub():\n    assert sub(3, 1) == 2\n")
+    for argv in (["init", "-q"], ["add", "-A"], ["commit", "-qm", "base"]):
+        subprocess.run(["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t", *argv], check=True,
+                       capture_output=True)
+    worker = _InterruptedOnceWorker()
+    monkeypatch.setitem(workers.PROVIDERS, "interrupted-once", worker)
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    drop(home, signed(key, body_id, "MISSION", mission("m:paid", checks=[{
+        "check_id": "accepted", "description": "independently accepted",
+        "sensor": {"capability": "worker.appraise", "params": {"order": "add-sub"}, "target": "work:add-sub"},
+        "predicate": {"op": "equals", "field": "verdict", "value": "ACCEPTED"}}],
+        strategies=[{"action_id": "commission", "capability": "worker.commission", "target": "work:add-sub",
+                     "params": {"order": "add-sub", "mode": "repository", "repo": str(repo), "objective": "add sub()",
+                                "acceptance": {"tests": [["python", "-m", "pytest", "-q", "-p", "no:cacheprovider",
+                                                          "tests/test_calc.py"]]},
+                                "allowed_paths": ["pkg/*"], "provider": "interrupted-once", "max_budget_usd": 0.5,
+                                "timeout_seconds": 60},
+                     "cost_usd": 0.5, "advances": ["accepted"], "rationale": "one paid worker"}],
+        capabilities=["worker.commission", "worker.appraise"], targets=("work:*",), budget=0.5)))
+    clock = Clock()
+    body = Body(home, clock=clock).open()
+    body.boot()
+    try:
+        assert _ticks(body, clock, 3) == ["BLOCKED", "WAITING", "WAITING"]
+        assert _actions(body) == [("UNCERTAIN", 0)] and len(worker.runs) == 1
+        [request] = _requests(body)
+        drop(home, signed(key, body_id, "DECISION", {"request_id": request["request_id"],
+                                                     "answer": "reconcile_not_executed", "reason": "test"}))
+        _ticks(body, clock, 4)
+        settled = [e.payload for e in body.journal.replay("mission.action")][1]
+        assert settled["status"] == "RECONCILED_NOT_EXECUTED"
+        assert settled["cost_usd"] == 0.5 and settled["spend_basis"].startswith("signed_cap")
+        m = body.engine.book.missions["m:paid"]
+        assert (m.spent_usd, m.reserved_usd) == (0.5, 0.0)
+        # The signed budget is spent at its worst case: a second run needs the founder, it is not re-commissioned.
+        assert len(worker.runs) == 1, _actions(body)
+        [ask] = _requests(body, "APPROVAL")
+        assert any("exceeds budget" in r for r in ask["evidence"]["policy"])
+    finally:
+        body.close()
+    body = Body(home, clock=clock).open()               # the booking is retained truth, rebuilt from the ledger
+    try:
+        assert body.engine.book.missions["m:paid"].spent_usd == 0.5
+    finally:
+        body.close()

@@ -608,7 +608,7 @@ def _genesis_offers(required_inputs, geometry):
     from greg.cognition.cortex import registry_view
     journal = _Journal()
     found = G.Genesis(journal=journal, registry=registry_view(), workspace_root=ROOT / ".no-workspace")._genome_library(
-        "deficit-review", {"required_inputs": required_inputs, "geometry": geometry})
+        "deficit-review", {"required_inputs": required_inputs, "geometry": geometry, "inputs_known": True})
     return found, journal.events
 
 
@@ -699,7 +699,7 @@ def test_no_rejected_p8_configuration_is_shipped_and_every_incumbent_is_unchange
     import importlib
     import json
     records = sorted((ROOT / "docs/evidence/greg-protected-evolution").glob("*/cycle-*.json"))
-    assert len(records) == 3
+    assert len(records) >= 4                       # cycles 1-3 and #158's cr-4 (under a committed freeze)
     for path in records:
         cycle = json.loads(path.read_text())
         if cycle["decision"] != "REJECT":

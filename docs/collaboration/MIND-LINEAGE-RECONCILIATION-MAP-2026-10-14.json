@@ -1137,7 +1137,7 @@
    "lineage": "both",
    "classification": "duplicate",
    "disposition": "unified",
-   "note": "two fixes of the same CI defect (#158 1ea2209, #155 bfb9c04); one grant path: #155's superset with the ancestor guard covers #158's glibc list (tested); #158's f8e8fd2 version selected, which adds Landlock ABI >= 6 signal and abstract-socket scoping (review L5); this branch's parallel version (1da022a) is history only"
+   "note": "two fixes of the same CI defect (#158 1ea2209, #155 bfb9c04); one grant path: #155's superset with the ancestor guard covers #158's glibc list (tested). #158's f8e8fd2 adds Landlock ABI >= 6 signal and abstract-socket scoping and list_code (af258bf, review of #179 L5): ported onto the unified grant path; #158's separate glibc list is not re-introduced"
   },
   {
    "path": "greg/missions.py",

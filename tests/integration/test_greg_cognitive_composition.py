@@ -154,24 +154,17 @@ def test_the_competency_compiler_reaches_a_derived_chain_and_never_answers_part_
 
 def test_an_exact_single_genome_competes_on_a_recipe_shaped_capacity_request():
     """M10: genome rows matched top-level keys only, so a capacity_network request could only ever run the
-    three-stage composition, whatever flow_expansion_mcf's admission. The genome now matches the inner network and,
-    when attached, answers it on the one path."""
+    three-stage composition, whatever flow_expansion_mcf's admission. #158's part rows ask the one-part request of
+    the methods its part fits; the genome, admitted DEFAULT at admission v3, answers it on the one path once attached."""
     from cortex.evaluation.composition_lift.run_v2 import f3
     from greg.cognition import compiler as C
     payload = f3(3)["payload"]
     rows = {r["method"]: r for r in C.candidates(payload, C.CompetencyGeometry(), C.evidence_index())}
     row = rows["cognition.flow_expansion_mcf"]
-    assert row["input_path"] == "capacity_network" and not row["rejected"]
+    assert row["part"] == "capacity_network" and not row["rejected"]
+    assert row["status"] == "DEFAULT_FOR_GEOMETRY"                    # admission v3, pre-registered at 878f76c
     assert "composition:graph_then_allocate" in rows
     registry = registry_view()
     registry.set_state("cognition.flow_expansion_mcf", "ATTACHED")     # what a founder attach would record
-    index = C.evidence_index()
-    index["genomes"]["flow_expansion_mcf"] = {"status": "DEFAULT_FOR_GEOMETRY", "evidence": "test", "version": None}
-    import pytest
-    mp = pytest.MonkeyPatch()
-    mp.setattr(C, "evidence_index", lambda: index)
-    try:
-        r = reason({"problem_id": "trackb:m10", "compile": {"geometry": {}, "data": payload}}, registry=registry)
-    finally:
-        mp.undo()
+    r = reason({"problem_id": "trackb:m10", "compile": {"geometry": {}, "data": payload}}, registry=registry)
     assert r["method_or_composition_selected"] == "cognition.flow_expansion_mcf" and r["state"] == "ANSWERED"

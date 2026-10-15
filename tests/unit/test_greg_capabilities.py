@@ -34,11 +34,14 @@ def test_filesystem_reads_stay_inside_permitted_roots(tmp_path):
 
 
 def test_writes_land_only_in_the_mission_workspace(tmp_path):
-    ctx = _ctx(tmp_path, "fs.write")
+    ctx = replace(_ctx(tmp_path, "fs.write"), target="workspace:notes/a.txt")   # the Gate sets the signed target
     out = fs_write({"relative_path": "notes/a.txt", "content": "x"}, ctx)
     assert Path(out["path"]).read_text() == "x"
     with pytest.raises(CapabilityError, match="outside permitted roots"):
         fs_write({"relative_path": "../../escape.txt", "content": "x"}, ctx)
+    with pytest.raises(CapabilityError, match="does not match the signed target"):
+        fs_write({"relative_path": "notes/b.txt", "content": "x"}, ctx)          # data never picks the file
+    assert not (tmp_path / "ws" / "notes" / "b.txt").exists()
 
 
 def test_cli_runs_only_declared_binaries_without_network(tmp_path):

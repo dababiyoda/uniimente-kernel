@@ -288,8 +288,18 @@ def fs_list(params, ctx: InvocationContext) -> dict:
 
 
 def fs_write(params, ctx: InvocationContext) -> dict:
+    """Write one text file in the mission workspace, and only the file the signed target names.
+
+    The founder-signed target (``workspace:<relative path>``) binds the file: a parameter value that
+    a typed handoff supplied (greg/pipeline.py, a strategy's ``bind``) can change what is written,
+    never where. Without this, a document's text could pick which workspace file is overwritten,
+    including the evidence a person's work is measured by (review of 2026-10-14; artifact.materialize
+    already binds its path the same way)."""
     ctx.workspace.mkdir(parents=True, exist_ok=True)
     path = _inside(ctx.workspace / params["relative_path"], (ctx.workspace,))
+    named = "workspace:" + path.relative_to(Path(ctx.workspace).resolve()).as_posix()
+    if ctx.target != named:
+        raise CapabilityError(f"write path {named!r} does not match the signed target {ctx.target!r}")
     content = params["content"]
     if not isinstance(content, str) or len(content.encode()) > MAX_READ_BYTES:
         raise CapabilityError("content must be text under the write ceiling")

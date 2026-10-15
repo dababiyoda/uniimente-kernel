@@ -178,3 +178,40 @@ def test_a_signed_pre_approval_must_name_its_exact_strategy(tmp_path):
     spec["pre_approved_steps"][0]["consequence_class"] = "external_contact"
     with pytest.raises(MissionError, match="mission contract"):
         validate_mission(spec)
+
+
+# -- finding 5: a typed handoff changes what is written, never where ------------------------------
+
+def test_a_handoff_cannot_choose_which_file_a_write_lands_in(tmp_path):
+    home, key, bid, data = make_body(tmp_path)
+    source = data / "source.txt"
+    source.write_text("statement.csv")                         # data, not authority: a name inside a document
+    folder = workspace(home, "m:pipeline")
+    binding = {"$from_action": {"action_id": "read", "field": "text", "type": "string"}}
+    spec = {"mission_id": "m:pipeline", "founder_expression": "Copy the note.", "intended_effect": "note copied",
+            "priority": 50, "closure": {"kind": "bounded"},
+            "success_checks": [
+                {"check_id": "read", "description": "source read",
+                 "sensor": {"capability": "pipeline.inspect", "target": "pipeline:read",
+                            "params": binding["$from_action"]},
+                 "predicate": {"op": "equals", "field": "available", "value": True}},
+                {"check_id": "copied", "description": "copied.txt exists",
+                 "sensor": {"capability": "fs.read", "target": "fs:copy", "params": {"path": str(folder / "copied.txt")}},
+                 "predicate": {"op": "equals", "field": "exists", "value": True}}],
+            "strategies": [
+                {"action_id": "read", "capability": "fs.read", "target": "fs:source", "params": {"path": str(source)},
+                 "advances": ["read"], "rationale": "read the note"},
+                {"action_id": "copy", "capability": "fs.write", "target": "workspace:copied.txt",
+                 "params": {"relative_path": binding, "content": "2026-10-02,Payment CASE-X-0001,250.00,USD\n"},
+                 "requires": ["read"], "advances": ["copied"], "rationale": "write copied.txt"}],
+            "light_cone": {"capabilities": ["pipeline.inspect", "fs.read", "fs.write"],
+                           "targets": ["pipeline:read", "fs:*", "workspace:copied.txt"],
+                           "max_consequence_class": "internal_write", "budget_usd": 0, "horizon": horizon()}}
+    drop(home, signed(key, bid, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 4)
+        copies = [e.payload for e in body.journal.replay("mission.action") if e.payload["action_id"] == "copy"]
+    assert not (folder / "statement.csv").exists() and not (folder / "copied.txt").exists()
+    assert copies and all(c["status"] == "REFUSED" for c in copies)
+    assert "does not match the signed target" in " ".join(copies[0]["reasons"])

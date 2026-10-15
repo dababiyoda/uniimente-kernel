@@ -353,15 +353,33 @@ def select(missions, journal) -> dict:
             "authority_created": False}
 
 
-def consistent(selection: dict, signed_priority: dict) -> list[str]:
-    """Why a recorded selection does not follow its own rule from the signed specs (empty: it does)."""
-    findings = []
-    ranking = selection.get("ranking") or []
-    for row in ranking:
-        if signed_priority.get(row["mission_id"]) != row["priority"]:
-            findings.append(f"{row['mission_id']}: recorded priority {row['priority']} is not the signed one")
-    if ranking != sorted(ranking, key=lambda r: (-r["priority"], -r["reliability"], r["mission_id"])):
-        findings.append("the ranking does not follow the declared rule")
-    if selection.get("selected") != (ranking[0]["mission_id"] if ranking else None):
-        findings.append("the selected mission is not the top of the ranking")
-    return findings
+class _Prefix:
+    """The journal as it stood just before one ledger position: what Goal Gravity saw when it ranked."""
+
+    def __init__(self, journal, before_seq: int):
+        self._journal = journal
+        self._seq = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
+        self._before = before_seq
+        self.ledger = journal.ledger
+
+    def replay(self, kind_prefix: str = ""):
+        return [e for e in self._journal.replay(kind_prefix) if self._seq.get(e.event_id, 1 << 60) < self._before]
+
+
+def rederive(journal, ranked_event) -> dict:
+    """Re-run the selection over the journal prefix the recorded ranking was computed from."""
+    from greg.missions import MissionBook
+    seq = next(r.seq for r in journal.ledger.by_type("event") if r.payload.get("event_id") == ranked_event.event_id)
+    prefix = _Prefix(journal, seq)
+    book = MissionBook(prefix)
+    return select(sorted(book.missions.values(), key=lambda m: m.mission_id), prefix)
+
+
+def consistent(journal, ranked_event) -> list[str]:
+    """Why a recorded selection is not what the rule produces from the ledger it was computed over (empty: it
+    is). Membership, signed priorities, paused exclusions and learned reliability are all re-derived; the
+    recorded fact must equal the re-derivation exactly."""
+    recorded = ranked_event.payload
+    again = rederive(journal, ranked_event)
+    return [f"recorded {field} differs from the re-derived one" for field in ("ranking", "excluded", "selected")
+            if recorded.get(field) != again[field]]

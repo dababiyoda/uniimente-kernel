@@ -315,3 +315,101 @@ def test_readers_tolerate_legacy_and_unnamed_reconciliation_records():
     assert [c["capability"] for c in summary["common_cause_candidates"]] == ["fs.write"]
     events = [{"type": e.type, "event_id": e.event_id, "payload": e.payload, "at": e.occurred_at} for e in j.events]
     assert [r["subject"] for r in reputation.from_greg(events)] == ["?"]
+
+
+def test_a_second_uncertain_dispatch_of_one_action_gets_its_own_founder_question(tmp_path):
+    """Second review (measurement 4, pre-existing): the RECONCILIATION request was keyed on the action's
+    scope alone, so a re-run that went UNCERTAIN again reused the answered request; the old answer was
+    applied to the new attempt and every later tick raised EventError (same fact key, other content)."""
+    home, key, body_id, _ = make_body(tmp_path)
+    note = workspace(home, "m:twice") / "c.txt"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:twice", checks=[note_check("c", note, "ok")],
+        strategies=[{"action_id": "w", "capability": "fs.write", "target": "workspace:c.txt",
+                     "params": {"relative_path": "c.txt", "content": "ok"}, "advances": ["c"], "rationale": "w"}],
+        capabilities=["fs.read", "fs.write"])))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        real, calls = body.registry.adapters["fs.write"], []
+
+        def adapter(params, ctx):
+            calls.append(1)
+            if len(calls) <= 2:
+                raise RuntimeError("power lost mid-effect")
+            return real(params, ctx)
+        body.registry.adapters["fs.write"] = adapter
+        tick(body, clock, 3)
+        first = reconcile(body, key, body_id, clock, "reconcile_not_executed")      # raised EventError before
+        [second] = [r for r in body.engine.book.open_requests() if r["kind"] == "RECONCILIATION"]
+        assert second["request_id"] != first["request_id"]
+        reconcile(body, key, body_id, clock, "reconcile_not_executed")
+        assert [(a["attempt"], a["status"]) for a in actions(body)][:4] == [
+            (0, "UNCERTAIN"), (0, "RECONCILED_NOT_EXECUTED"), (1, "UNCERTAIN"), (1, "RECONCILED_NOT_EXECUTED")]
+        assert body.engine.book.missions["m:twice"].status == "ACHIEVED"
+
+
+def test_a_pipeline_consumer_of_a_reconciled_producer_is_held_and_the_alternative_runs(tmp_path):
+    """Second review (spend 2): a ``$from_action`` consumer whose producer was reconciled without a
+    receipt blocked the mission with a self-clearing no_strategy every tick: the alternative never ran
+    and the founder was never asked. The consumer is now held at selection, like a signed bind edge."""
+    home, key, body_id, _ = make_body(tmp_path)
+    out = workspace(home, "m:pipe") / "b.txt"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:pipe", checks=[note_check("copied", out, "ok")],
+        strategies=[write_strategy("produce", "a.txt", "ok", ["copied"]),
+                    {"action_id": "copy", "capability": "fs.write", "target": "workspace:b.txt",
+                     "params": {"relative_path": "b.txt",
+                                "content": {"$from_action": {"action_id": "produce", "field": "path",
+                                                             "type": "string"}}},
+                     "advances": ["copied"], "rationale": "consume the producer's output"},
+                    write_strategy("alt", "b.txt", "ok", ["copied"])],
+        capabilities=["fs.read", "fs.write"])))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        explode_once(body)
+        tick(body, clock, 3)
+        reconcile(body, key, body_id, clock, "reconcile_executed", after=0)
+        for _ in range(12):
+            body.tick()
+            clock.advance(60)
+        ran = [a["action_id"] for a in actions(body, "m:pipe")]
+        assert "alt" in ran and "copy" not in ran
+        assert body.engine.book.missions["m:pipe"].status == "ACHIEVED"
+        assert not [e for e in body.journal.replay("mission.blocked") if e.payload["blocker"]["type"] == "no_strategy"]
+
+
+def test_a_ledger_wedged_by_the_old_shared_reconciliation_question_is_asked_again(tmp_path):
+    """Third review (measurement): a body that ran the old code holds a blocker naming attempt 0's answered
+    request for attempt 1's uncertain dispatch; every tick raised EventError after the upgrade. The stale
+    answer is now recognised and the founder is asked about attempt 1."""
+    home, key, body_id, _ = make_body(tmp_path)
+    note = workspace(home, "m:wedged") / "c.txt"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:wedged", checks=[note_check("c", note, "ok")],
+        strategies=[{"action_id": "w", "capability": "fs.write", "target": "workspace:c.txt",
+                     "params": {"relative_path": "c.txt", "content": "ok"}, "advances": ["c"], "rationale": "w"}],
+        capabilities=["fs.read", "fs.write"])))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        real, calls = body.registry.adapters["fs.write"], []
+
+        def adapter(params, ctx):
+            calls.append(1)
+            if len(calls) <= 2:
+                raise RuntimeError("power lost mid-effect")
+            return real(params, ctx)
+        body.registry.adapters["fs.write"] = adapter
+        tick(body, clock, 3)
+        first = reconcile(body, key, body_id, clock, "reconcile_not_executed")
+        # What the old code left: attempt 1's blocker naming attempt 0's (answered) request.
+        m = body.engine.book.missions["m:wedged"]
+        body.journal.record("mission.blocked", {"mission_id": "m:wedged", "blocker": {
+            "type": "reconciliation", "request_id": first["request_id"], "action_id": "w",
+            "why": "uncertain completion; no blind retry", "reconsider": "founder reconciliation decision"}},
+            key=["m:wedged", "retained-old-blocker", m.blocker])
+        body.engine.book.rebuild()
+        tick(body, clock, 2)                                              # raised EventError before
+        [again] = [r for r in body.engine.book.open_requests() if r["kind"] == "RECONCILIATION"]
+        assert again["request_id"] != first["request_id"]
+        reconcile(body, key, body_id, clock, "reconcile_not_executed")
+        assert body.engine.book.missions["m:wedged"].status == "ACHIEVED"

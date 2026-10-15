@@ -38,8 +38,17 @@ def test_verified_draft_and_publish_request_is_truthfully_blocked_by_daleobanks(
     assert out["status"] == "BLOCKED_BY_DALEOBANKS" and out["published"] == {}
     assert out["kill_switch_armed"] is False and all(r["dry_run"] for r in out["dry_run"].values())
     assert out["daleobanks_ledger"]["chain_ok"] is True
-    outcome = bridge.publish_status({}, ctx(tmp_path, "daleobanks.outcome"))
-    assert outcome["requested"] and outcome["outcome"] == "BLOCKED_DRY_RUN"
+    # The outcome sensor projects this mission's canonical publish receipt; the organ file only confirms it.
+    from dataclasses import replace
+    from events.spine import EventSpine
+    from greg.journal import Journal
+    from provenance.ledger import EvidenceLedger
+    journal = Journal(EventSpine(EvidenceLedger("sha256:" + "6" * 64)), actor="spiffe://uniimente.internal/greg/test")
+    receipt = journal.ledger.append("receipt", {"result": {"result_class": "positive", "output": out}}).hash
+    journal.record("mission.action", {"mission_id": "m:test", "action_id": "publish", "status": "DONE",
+                                      "capability": "daleobanks.publish", "receipt": receipt}, key=["publish"])
+    outcome = bridge.publish_status({}, replace(ctx(tmp_path, "daleobanks.outcome"), journal=journal))
+    assert outcome["requested"] and outcome["outcome"] == "BLOCKED_DRY_RUN" and outcome["organ_consistent"]
 
 
 def test_figures_absent_from_the_source_are_rejected(tmp_path):

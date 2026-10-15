@@ -26,6 +26,7 @@ import hashlib
 import importlib.metadata
 import json
 from pathlib import Path
+import signal
 import sys
 import tempfile
 
@@ -167,11 +168,14 @@ def run(candidate: PackageCandidate, source: str, requests: list, *, location: s
         except Exception as exc:          # a timeout or refused isolation: the host failed, not this route
             raise CapabilityError(f"capability refused: package runner for {candidate.distribution} "
                                   f"did not complete ({type(exc).__name__})",
-                                  failure_class=getattr(exc, "failure_class", "transient")) from exc
+                                  failure_class=getattr(exc, "failure_class", None) or "transient") from exc
     if proc.returncode:
+        # Only the runner's CPU ceiling kills by signal on its own (RLIMIT_CPU: SIGXCPU, then SIGKILL at
+        # the hard limit). A native crash (SIGSEGV, SIGABRT, SIGBUS ...) is the package's own fault.
+        budget = proc.returncode in (-signal.SIGXCPU, -signal.SIGKILL)
         raise CapabilityError(f"capability refused: package runner for {candidate.distribution} exited "
                               f"{proc.returncode}: {proc.stderr.decode('utf-8', 'replace')[-240:]}",
-                              failure_class="budget_exceeded" if proc.returncode < 0 else "executor_error")
+                              failure_class="budget_exceeded" if budget else "executor_error")
     if len(proc.stdout) > MAX_OUTPUT:
         raise CapabilityError(f"capability refused: package runner for {candidate.distribution} output too large")
     try:

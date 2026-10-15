@@ -64,7 +64,19 @@
   "scripts/verify_one_machine.py",
   "tests/integration/test_one_machine.py",
   "tests/integration/test_one_machine_attacks.py",
-  "docs/collaboration/ONE-MACHINE-TRUNK-2026-10-14.md"
+  "docs/collaboration/ONE-MACHINE-TRUNK-2026-10-14.md",
+  "greg/gravity.py (Goal Gravity ordering on the Body path; re-derivation)",
+  "greg/organ_bridge.py bound_facts (receipt- and dispatch-window binding)",
+  "greg/capabilities.py (typed failure classes; isolation refusals out of band)",
+  "greg/genesis.py (outages defer qualification and recovery probes)",
+  "greg/isolation.py confine_paths (Landlock path confinement)",
+  "greg/daleobanks_bridge.py daleobanks.outcome (projection of canonical publish receipts)",
+  "greg/doctor.py device_class (information beside platform; never a VEPMC condition)",
+  "greg/missions.py compensation (Defect 7)",
+  "foundry/systems/segmentation.py (in-memory seccomp filter)",
+  "cortex/evaluation/seed_genome/freeze-v8.json",
+  "scripts/observe_adversarial_matrix.py",
+  "tests/evidence/one-machine-20261014/"
  ],
  "reality_status": "SANDBOX: synthetic founder authority (per-test keys), real organ code, real processes, no external effect, no spend"
 }

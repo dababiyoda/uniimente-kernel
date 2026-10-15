@@ -113,12 +113,18 @@ def register(journal, mission_id):
         {"action_id": "organs", "capability": "organ.exchange"}]}}, key=[mission_id, "registered"])
 
 
-def finish(journal, mission_id, output=None, *, status="DONE", reconciled=False):
-    """What the engine records after the Gate: a DONE action and its receipt (or a founder reconciliation)."""
+def finish(journal, mission_id, output=None, *, status="DONE", reconciled=False, action_id="organs", attempt=0,
+           capability="organ.exchange"):
+    """What the engine records after the Gate: a DONE action and its receipt, or (``reconciled``) the
+    UNCERTAIN dispatch and the founder's reconciliation of that same attempt."""
+    base = {"mission_id": mission_id, "action_id": action_id, "attempt": attempt, "capability": capability}
+    if reconciled:
+        journal.record("mission.action", {**base, "status": "UNCERTAIN", "receipt": None},
+                       key=[mission_id, action_id, attempt])
     receipt = None if reconciled else journal.ledger.append("receipt", {"result": {"output": output}}).hash
-    journal.record("mission.action", {"mission_id": mission_id, "action_id": "organs", "status": status,
-                                      "receipt": receipt, "route": "founder_reconciliation" if reconciled else None},
-                   key=[mission_id, "organs", status, receipt or "reconciled"])
+    journal.record("mission.action", {**base, "status": status, "receipt": receipt,
+                                      "route": "founder_reconciliation" if reconciled else None},
+                   key=[mission_id, action_id, attempt, status, receipt or "reconciled"])
 
 
 def bridge_message(journal, mission_id, body=b'{"id": "p1"}'):
@@ -238,6 +244,17 @@ def test_the_snapshot_runs_head_and_reports_uncommitted_edits(tmp_path):
     assert snap["head"] == organs._head(wmi)
 
 
+
+def require_landlock():
+    """Landlock is what makes an organ stage's confinement true. Where it is required (CI's Landlock and
+    one-machine jobs) its absence fails the test: a skip there would be a silent pass."""
+    from greg import isolation
+    support = isolation.available()
+    if not support.get("available"):
+        if "1" in (os.environ.get("GREG_REQUIRE_LANDLOCK"), os.environ.get("UNIIMENTE_REQUIRE_ORGANS")):
+            pytest.fail(f"Landlock is required here and unavailable: {support}")
+        pytest.skip("Landlock unavailable on this host")
+
 NETWORK_PROBE = "import socket\ntry:\n    socket.socket()\n    print('NETWORK OPEN')\nexcept OSError:\n    print('denied')\n"
 
 
@@ -261,9 +278,8 @@ def test_a_child_that_rewrites_the_network_filter_cannot_disable_isolation_for_l
 
 
 def confined_probe(tmp_path, code):
-    from greg import capabilities, isolation
-    if not isolation.available().get("available"):
-        pytest.skip("Landlock unavailable on this host")
+    from greg import capabilities
+    require_landlock()
     python = Path(sys.executable)
     own, other, kernel, store = (tmp_path / n for n in ("own", "other", "kernel", "store"))
     for d in (own, other, kernel, store):
@@ -387,3 +403,174 @@ def test_a_seed_with_no_opportunity_is_a_truthful_answer_not_a_fault(tmp_path, j
                           ctx(tmp_path, journal, roots=organ_roots(params)))
     assert out["state"] == "NO_OPPORTUNITY" and out["appraisal_verdict"] is None
     assert journal.replay("organ.observed") == []
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="seccomp network filter and Landlock are Linux")
+@pytest.mark.parametrize("status, confined", [(97, False), (98, True)])
+def test_a_command_that_exits_97_or_98_ran_and_is_not_reported_as_refused(tmp_path, status, confined):
+    """Second review (containment 0): the preexec signalled its own failure with exit 97 (network) or 98
+    (confinement), so a command that ran, wrote and then exited 97/98 itself was reported as 'command
+    refused' and typed transient (never a capability fault). A refusal is now signalled out of band."""
+    from greg import capabilities, isolation
+    if confined:
+        require_landlock()
+    marker = tmp_path / "store" / "marker"
+    marker.parent.mkdir()
+    confine = organs._confinement(Path(sys.executable), tmp_path, marker.parent) if confined else None
+    proc = capabilities.run_isolated(
+        [sys.executable, "-s", "-c", f"open({str(marker)!r}, 'a').write('ran'); raise SystemExit({status})"],
+        cwd=tmp_path, confine=confine)
+    assert proc.returncode == status and marker.read_text() == "ran"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="seccomp network filter and Landlock are Linux")
+@pytest.mark.parametrize("failing", ["network", "confinement"])
+@pytest.mark.parametrize("supervised", [False, True])
+def test_isolation_that_cannot_be_installed_refuses_the_command_before_it_runs(tmp_path, monkeypatch, failing,
+                                                                              supervised):
+    from greg import capabilities, isolation
+
+    def broken(*a, **k):
+        raise OSError("unavailable")
+
+    if failing == "network":
+        monkeypatch.setattr(capabilities, "_network_filter", lambda: broken)
+    else:
+        monkeypatch.setattr(isolation, "confine_paths", broken)
+    marker = tmp_path / "marker"
+    with pytest.raises(CapabilityError, match=f"{'network isolation' if failing == 'network' else 'filesystem'}"
+                                              ".* unavailable; command refused") as raised:
+        capabilities.run_isolated([sys.executable, "-c", f"open({str(marker)!r}, 'w').write('ran')"], cwd=tmp_path,
+                                  confine={"read": [], "read_exec": [], "write": []} if failing == "confinement"
+                                  else None, stop_check=(lambda: False) if supervised else None)
+    assert raised.value.failure_class == "transient" and not marker.exists()
+
+
+def test_an_interpreter_outside_a_venv_is_granted_alone_never_its_parent_tree(tmp_path):
+    """Second review (containment 1): the grant was python.parent.parent, so an interpreter declared at
+    ~/bin/python3 gave the stage read+exec on the whole home (the other organ, the Kernel's sources, the
+    body's home) while the receipt said filesystem_confined. The grant now comes from the interpreter."""
+    require_landlock()
+    home = tmp_path / "home"
+    (home / "bin").mkdir(parents=True)
+    python = home / "bin" / "python3"
+    python.symlink_to(os.path.realpath(sys.executable))
+    for name in ("own", "other", "kernel", "store"):
+        (home / name).mkdir()
+        (home / name / "f.txt").write_text(name)
+    confine = organs._confinement(python, home / "own", home / "store", exclude=(home / "other", home / "kernel"))
+    assert str(home) not in {str(p) for p in confine["read_exec"]}
+    from greg import capabilities
+    code = ("import json, pathlib\nr = {}\n"
+            f"for n in ('own', 'other', 'kernel'):\n    try:\n        pathlib.Path({str(home)!r}, n, 'f.txt').read_text()"
+            "; r[n] = True\n    except OSError:\n        r[n] = False\nprint(json.dumps(r))\n")
+    proc = capabilities.run_isolated([str(python), "-s", "-I", "-c", code], cwd=home / "own", confine=confine)
+    assert proc.returncode == 0, proc.stderr.decode()
+    assert json.loads(proc.stdout.decode().splitlines()[-1]) == {"own": True, "other": False, "kernel": False}
+
+
+def test_an_interpreter_grant_that_reaches_another_organ_refuses_the_stage(tmp_path):
+    require_landlock()
+    home = tmp_path / "home"
+    (home / "venv" / "bin").mkdir(parents=True)
+    (home / "venv" / "pyvenv.cfg").write_text("home = /usr/bin\n")
+    python = home / "venv" / "bin" / "python3"
+    python.symlink_to(os.path.realpath(sys.executable))
+    (home / "venv" / "other-organ").mkdir()                    # the other organ's checkout sits inside the venv
+    with pytest.raises(CapabilityError, match="reaches"):
+        organs._confinement(python, home / "own", home / "store", exclude=(home / "venv" / "other-organ",))
+    assert organs._confinement(python, home / "own", home / "store", exclude=(tmp_path / "elsewhere",))[
+        "read_exec"][0] == home / "venv"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="process groups and /proc")
+def test_a_supervised_stage_leaves_no_process_behind(tmp_path):
+    """Second review (containment 2): the process group was killed only while the leader still ran, so a
+    stage that started a background process and exited 0 left it running (writing to the store) through
+    the rest of the exchange. Everything left in the stage's process group is now killed when it ends."""
+    import time as _time
+    from greg import capabilities
+    proc = capabilities.run_isolated(
+        [sys.executable, "-c", "import subprocess; p = subprocess.Popen(['/bin/sleep', '30']); print(p.pid)"],
+        cwd=tmp_path, stop_check=lambda: False)
+    left = int(proc.stdout.decode().strip())
+
+    def alive(pid):
+        try:
+            return Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[0] != "Z"
+        except FileNotFoundError:
+            return False
+
+    deadline = _time.monotonic() + 2
+    while alive(left) and _time.monotonic() < deadline:
+        _time.sleep(0.05)
+    assert not alive(left)
+
+
+def test_a_later_executed_reconciliation_never_vouches_for_facts_the_founder_declared_not_executed(
+        tmp_path, journal, monkeypatch):
+    """Second review (measurement 0): one mission-wide founder cut admitted every organ fact recorded before
+    the latest executed reconciliation, including an earlier dispatch the founder declared NOT executed.
+    A founder reconciliation now vouches only for the facts of the dispatch it reconciles."""
+    monkeypatch.setenv(bt.SIGNING_KEY_ENV, "k" * 64)
+    mid = "m:organ-test"
+    journal.record("mission.registered", {"mission_id": mid, "spec": {"strategies": [
+        {"action_id": "organs-a", "capability": "organ.exchange"},
+        {"action_id": "organs-b", "capability": "organ.exchange"}]}}, key=[mid, "registered"])
+    seen = bridge_message(journal, mid)
+    organ_bridge.record_appraisal(journal, mission_id=mid, appraiser="k", reproduced={"go_no_go": True},
+                                  invariants={}, exchange={"trace_id": "t", "packet_sha256": seen["content_sha256"],
+                                                           "assessment_sha256": "a" * 64, "redo_sha256": "r" * 64})
+    finish(journal, mid, status="RECONCILED_NOT_EXECUTED", reconciled=True, action_id="organs-a")
+    finish(journal, mid, status="REFUSED", action_id="organs-a", attempt=1)
+    finish(journal, mid, reconciled=True, action_id="organs-b")        # executed, but it recorded nothing
+    out = organs.status({}, ctx(tmp_path, journal, capability="organ.status"))
+    assert out["verdict"] is None and out["messages"] == 0 and out["unbound_facts_ignored"] == 2
+
+
+def test_a_function_named_organ_strategy_binds_its_receipted_facts(tmp_path, journal, monkeypatch):
+    """Second review (measurement 1): only strategies naming the capability in the spec were read, so a
+    strategy naming a function (resolved to organ.exchange by the engine) bound nothing and its mission
+    could never close. The dispatched capability on the action record decides."""
+    monkeypatch.setenv(bt.SIGNING_KEY_ENV, "k" * 64)
+    mid = "m:organ-test"
+    journal.record("mission.registered", {"mission_id": mid, "spec": {"strategies": [
+        {"action_id": "organs", "function": "organ.signed_exchange"}]}}, key=[mid, "registered"])
+    seen = bridge_message(journal, mid)
+    organ_bridge.record_appraisal(journal, mission_id=mid, appraiser="k", reproduced={"go_no_go": True},
+                                  invariants={}, exchange={"trace_id": "t", "packet_sha256": seen["content_sha256"],
+                                                           "assessment_sha256": "a" * 64, "redo_sha256": "r" * 64})
+    finish(journal, mid, {"packet_sha256": seen["content_sha256"], "assessment_sha256": "a" * 64})
+    out = organs.status({}, ctx(tmp_path, journal, capability="organ.status"))
+    assert out["verdict"] == "REPRODUCED" and out["messages"] == 1
+
+
+def test_an_appraisal_retained_before_it_named_its_exchange_binds_to_its_own_receipt(tmp_path, journal,
+                                                                                     monkeypatch):
+    """Second review (measurement 3): appraisals recorded before they named their exchange were dropped
+    although the DONE receipt that immediately follows them carries the digests. Such an appraisal binds
+    to the receipted dispatch it was recorded in, and is reported as a legacy binding."""
+    monkeypatch.setenv(bt.SIGNING_KEY_ENV, "k" * 64)
+    mid = "m:organ-test"
+    register(journal, mid)
+    seen = bridge_message(journal, mid)
+    organ_bridge.record_appraisal(journal, mission_id=mid, appraiser="k", reproduced={"go_no_go": True},
+                                  invariants={})
+    finish(journal, mid, {"packet_sha256": seen["content_sha256"], "assessment_sha256": "a" * 64})
+    out = organs.status({}, ctx(tmp_path, journal, capability="organ.status"))
+    assert out["verdict"] == "REPRODUCED" and out["unbound_facts_ignored"] == 0
+
+
+
+def test_an_excluded_tree_under_a_fixed_system_grant_refuses_the_stage(tmp_path):
+    """Third review (containment): only the interpreter grants were checked against the excluded trees, so an
+    organ checked out under /usr stayed readable through the fixed /usr grant while the receipt said
+    confined. Every grant is checked now."""
+    require_landlock()
+    venv = tmp_path / "venv"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "pyvenv.cfg").write_text("home = /opt/python/bin\n")
+    (venv / "bin" / "python3").write_text("")                       # never run: only its grants are computed
+    with pytest.raises(CapabilityError, match="reaches /usr/share"):
+        organs._confinement(venv / "bin" / "python3", tmp_path / "own", tmp_path / "store",
+                            exclude=(Path("/usr/share"),))

@@ -1,156 +1,156 @@
 [
  {
   "event_id": "0162fb1c-6287-5511-ae67-4de277774671",
-  "at": "2026-10-14T13:12:51.658433Z",
+  "at": "2026-10-15T13:43:17.151708Z",
   "kind": "mission.registered"
  },
  {
-  "event_id": "5358a0ab-0e5d-5f1a-8537-c6b8ae793fb8",
-  "at": "2026-10-14T13:12:52.873624Z",
+  "event_id": "8b81ed01-288d-56e0-85c1-2db4030340b6",
+  "at": "2026-10-15T13:43:18.681686Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "60bcce07-f5b1-5121-9162-c9071c6b1370",
-  "at": "2026-10-14T13:12:52.873624Z",
+  "event_id": "4276a435-b646-5f37-9339-5109fc33ab87",
+  "at": "2026-10-15T13:43:18.681686Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "dcfa7d5e-fe9e-5589-b9f8-7f4f283e8024",
-  "at": "2026-10-14T13:12:52.873624Z",
+  "event_id": "248cd9df-bafb-5f45-975c-d30db8a8a6e7",
+  "at": "2026-10-15T13:43:18.681686Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "c506a97b-0b26-53cc-a833-2bd0acf3b0c5",
-  "at": "2026-10-14T13:12:52.873624Z",
+  "event_id": "44b73a51-72ee-5bfe-834a-637896a3dacd",
+  "at": "2026-10-15T13:43:18.681686Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "5fb0905e-721c-5880-ac63-8451395b9482",
-  "at": "2026-10-14T13:12:52.933338Z",
+  "event_id": "04330a8d-a03c-5243-a634-6a99902bd2b7",
+  "at": "2026-10-15T13:43:18.664810Z",
   "kind": "organ.observed"
  },
  {
-  "event_id": "109afefb-4b90-5e44-80e1-7c87b581ca4b",
-  "at": "2026-10-14T13:12:52.951874Z",
+  "event_id": "6c7c398b-63d9-5741-a36a-a61edb29b03a",
+  "at": "2026-10-15T13:43:18.680706Z",
   "kind": "organ.observed"
  },
  {
-  "event_id": "3da45043-bbf5-5102-87c3-01d3dacb19a4",
-  "at": "2026-10-14T13:12:53.618164Z",
+  "event_id": "6dd6b9aa-01e9-5ff0-ac1e-ceacf5954c6c",
+  "at": "2026-10-15T13:43:19.209501Z",
   "kind": "organ.appraised",
   "verdict": "REPRODUCED"
  },
  {
   "event_id": "d85fd6fb-893b-53f6-9378-70118b3e70a0",
-  "at": "2026-10-14T13:12:52.873624Z",
+  "at": "2026-10-15T13:43:18.681686Z",
   "kind": "mission.action",
   "capability": "organ.exchange",
   "status": "DONE",
-  "receipt": "sha256:5cc88c63b9e7964d66f4177aaac736791003c16a494215bcbbcd3ef9d0bbb927",
+  "receipt": "sha256:63c629c169f54b8c3ef0734b5539c54a575fd4328eb0537b1464b0e4d682308b",
   "cost_usd": 0.0
  },
  {
-  "event_id": "3aed99f0-0342-542b-bc86-9f7604c9d055",
-  "at": "2026-10-14T13:15:30.298812Z",
+  "event_id": "1c24de9b-4e82-5e0c-8b85-31b01b026a2c",
+  "at": "2026-10-15T13:46:19.494600Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "9a368cf1-1206-5ee6-8655-6e5b53aae581",
-  "at": "2026-10-14T13:15:30.298812Z",
+  "event_id": "6989cf99-9f80-5b69-a216-57d42dda38c6",
+  "at": "2026-10-15T13:46:19.494600Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "a59e9712-5b90-5f3b-addb-0c50986faeb6",
-  "at": "2026-10-14T13:15:30.298812Z",
+  "event_id": "a3b53189-6fd4-5987-9440-0755212d0152",
+  "at": "2026-10-15T13:46:19.494600Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "52b79f25-a7fb-5563-95f7-b1397b72df1a",
-  "at": "2026-10-14T13:15:30.298812Z",
+  "event_id": "a8824ab6-270c-5ac1-8ef3-312323d5704b",
+  "at": "2026-10-15T13:46:19.494600Z",
   "kind": "mission.observed"
  },
  {
   "event_id": "f6a0591b-c7f7-50a3-a584-d64a2b550439",
-  "at": "2026-10-14T13:15:30.298812Z",
+  "at": "2026-10-15T13:46:19.494600Z",
   "kind": "mission.action",
   "capability": "cognition.solve",
   "status": "DONE",
-  "receipt": "sha256:97c0f69543eca5a81ed3c78d3d28bc09a844aa4753bc77df940b6c025365cc76",
+  "receipt": "sha256:0da950fc236c677add1381374d2f1a89f056508db9b0fb5f9232783d1c7986c5",
   "cost_usd": 0.0
  },
  {
   "event_id": "1c2f503d-535d-553d-aa71-3c2522a6b085",
-  "at": "2026-10-14T13:15:30.298812Z",
+  "at": "2026-10-15T13:46:19.494600Z",
   "kind": "deficit.opened"
  },
  {
   "event_id": "4a74d341-f833-5057-b44a-dccee2b3f025",
-  "at": "2026-10-14T13:15:30.298812Z",
+  "at": "2026-10-15T13:46:19.494600Z",
   "kind": "deficit.opened"
  },
  {
   "event_id": "3e557a88-4859-5246-b75f-388a50c21b82",
-  "at": "2026-10-14T13:12:55.378944Z",
+  "at": "2026-10-15T13:43:21.110395Z",
   "kind": "capability.state"
  },
  {
   "event_id": "cb8a65ce-24df-5075-9c8b-022582822bec",
-  "at": "2026-10-14T13:15:30.298812Z",
+  "at": "2026-10-15T13:46:19.494600Z",
   "kind": "deficit.resolved"
  },
  {
   "event_id": "5e346a6c-1184-5c12-a54c-cc86985712f1",
-  "at": "2026-10-14T13:12:55.818388Z",
+  "at": "2026-10-15T13:43:21.441533Z",
   "kind": "capability.state"
  },
  {
   "event_id": "cc258e45-1e4e-5914-bcb8-3d881ce10d9f",
-  "at": "2026-10-14T13:15:30.298812Z",
+  "at": "2026-10-15T13:46:19.494600Z",
   "kind": "deficit.resolved"
  },
  {
-  "event_id": "040f9750-68e5-5c7a-b3c4-4e5a451b079b",
-  "at": "2026-10-14T13:17:46.565538Z",
+  "event_id": "f6b42377-2270-5dfd-bc44-99bf40da794b",
+  "at": "2026-10-15T13:48:16.422097Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "4e3ed636-7a83-5135-a351-9a4f40d03953",
-  "at": "2026-10-14T13:17:46.565538Z",
+  "event_id": "61f50927-acac-5e34-b205-124bbaee9821",
+  "at": "2026-10-15T13:48:16.422097Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "54776c54-907c-5fda-b614-15612d46d28b",
-  "at": "2026-10-14T13:17:46.565538Z",
+  "event_id": "2aab7896-e568-5ee0-980c-a4366ee0ad7f",
+  "at": "2026-10-15T13:48:16.422097Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "4d0442d6-6c05-51b7-a029-4fc03be6c194",
-  "at": "2026-10-14T13:17:46.565538Z",
+  "event_id": "76af7a52-495b-55a9-8898-4d6d037ee6ce",
+  "at": "2026-10-15T13:48:16.422097Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "d470f858-b11e-503b-b2c3-3cc85e8e7c28",
-  "at": "2026-10-14T13:17:28.143480Z",
+  "event_id": "3b72943d-5da3-5941-80f1-641e25a59434",
+  "at": "2026-10-15T13:47:54.177188Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "50554f2f-0e20-5506-ad35-d11678444fc8",
-  "at": "2026-10-14T13:17:28.143480Z",
+  "event_id": "8e5bd6a7-0b44-548a-8cc2-016b27f471fd",
+  "at": "2026-10-15T13:47:54.177188Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "5285eb66-6e21-5d17-93dc-8c5d7631bbe3",
-  "at": "2026-10-14T13:17:28.143480Z",
+  "event_id": "9c0ac60d-d6a0-5ff8-91cf-8d25188a14a3",
+  "at": "2026-10-15T13:47:54.177188Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "8c51f94c-614c-5079-a7ba-de684cf224ec",
-  "at": "2026-10-14T13:17:28.143480Z",
+  "event_id": "7501e075-aa9e-55f3-b23b-e8b6e47e87ae",
+  "at": "2026-10-15T13:47:54.177188Z",
   "kind": "mission.observed"
  },
  {
   "event_id": "6c982ddb-c710-52d0-8de1-99627687dee4",
-  "at": "2026-10-14T13:17:28.143480Z",
+  "at": "2026-10-15T13:47:54.177188Z",
   "kind": "mission.action",
   "capability": "worker.commission",
   "status": "UNCERTAIN",
@@ -158,30 +158,30 @@
   "cost_usd": 0.0
  },
  {
-  "event_id": "1225204e-9487-563c-b833-a2a0a6b0eb00",
-  "at": "2026-10-14T13:13:00.393869Z",
+  "event_id": "86b58761-4269-579e-acc7-22e4584b4054",
+  "at": "2026-10-15T13:43:25.563210Z",
   "kind": "decision.requested",
-  "request_id": "req-904dedc26b6197abfed1aa16",
+  "request_id": "req-dac2312c6eb21f3148edfed3",
   "capability": null
  },
  {
-  "event_id": "475e1419-8256-528d-81b0-5f58be593831",
-  "at": "2026-10-14T13:13:00.430792Z",
+  "event_id": "d29d8974-9860-5e08-ba63-691f5631d666",
+  "at": "2026-10-15T13:43:25.583262Z",
   "kind": "mission.blocked",
   "reason": null,
   "capability": "worker.commission"
  },
  {
-  "event_id": "152ea6d5-a5ef-58cb-b37e-3bf8f50aece1",
-  "at": "2026-10-14T13:13:03.240235Z",
+  "event_id": "5ec3b09a-18f3-562e-9c41-990888e819db",
+  "at": "2026-10-15T13:43:28.199166Z",
   "kind": "decision.answered",
-  "request_id": "req-904dedc26b6197abfed1aa16",
+  "request_id": "req-dac2312c6eb21f3148edfed3",
   "answer": "reconcile_not_executed",
-  "latency_s": 2.846366
+  "latency_s": 2.635956
  },
  {
-  "event_id": "c1f8cc9c-fa56-5fef-8308-6340da481c5f",
-  "at": "2026-10-14T13:21:59.789347Z",
+  "event_id": "420031cc-136c-5d2f-9db0-f077f9c4f577",
+  "at": "2026-10-15T13:51:54.015807Z",
   "kind": "mission.action",
   "capability": "worker.commission",
   "status": "RECONCILED_NOT_EXECUTED",
@@ -189,102 +189,102 @@
   "cost_usd": 0.0
  },
  {
-  "event_id": "b56e4479-97a1-5b3b-99fb-069b7ef3d907",
-  "at": "2026-10-14T13:13:03.318983Z",
+  "event_id": "970f1440-0b1f-566a-9d6b-aad2c5e214a2",
+  "at": "2026-10-15T13:43:28.330742Z",
   "kind": "mission.unblocked"
  },
  {
-  "event_id": "65d96744-c32d-5a65-b3a5-9e42076d6c04",
-  "at": "2026-10-14T13:21:59.789347Z",
+  "event_id": "f48bca82-ea0f-539d-b4f7-79da8e2f93e7",
+  "at": "2026-10-15T13:51:54.015807Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "41950d7e-b380-54fa-b9f4-6e4e36969617",
-  "at": "2026-10-14T13:21:59.789347Z",
+  "event_id": "ffee9d93-943e-5b96-a0ca-1faa66e8f9d7",
+  "at": "2026-10-15T13:51:54.015807Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "abf29e60-5915-5e10-a7e9-287ed5f4df05",
-  "at": "2026-10-14T13:21:59.789347Z",
+  "event_id": "760c57b9-619a-5196-bb94-6e9b2aa48cd2",
+  "at": "2026-10-15T13:51:54.015807Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "e99d9d5b-0207-5104-9e1a-8b6de067d335",
-  "at": "2026-10-14T13:21:59.789347Z",
+  "event_id": "5a1574ea-a95b-5331-ba45-ca9eebd6545f",
+  "at": "2026-10-15T13:51:54.015807Z",
   "kind": "mission.observed"
  },
  {
   "event_id": "02350c20-8371-5f5f-99a0-cacb336304ef",
-  "at": "2026-10-14T13:21:59.789347Z",
+  "at": "2026-10-15T13:51:54.015807Z",
   "kind": "mission.action",
   "capability": "worker.commission",
   "status": "DONE",
-  "receipt": "sha256:eebb1023da57c42fb091bb0266c0630a6c04bdbff468bc0a2ef7254d830f9b4d",
+  "receipt": "sha256:622a5d1039193f0e0c81c471b422635fdf704d8439356771dfd6de3855889030",
   "cost_usd": 0.05
  },
  {
-  "event_id": "099eaa0f-3154-51d0-9600-f58951d7c133",
-  "at": "2026-10-14T13:25:15.886928Z",
+  "event_id": "75937f5b-49dc-548d-811f-5f766756a743",
+  "at": "2026-10-15T13:54:57.915935Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "e7813ae7-6b24-5c3c-84e8-aaa002342f43",
-  "at": "2026-10-14T13:25:15.886928Z",
+  "event_id": "bfe7cbef-6a11-5e9e-978d-4bba3c5b0ebc",
+  "at": "2026-10-15T13:54:57.915935Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "6dde181c-db5e-5d7e-95dc-813ab8243f85",
-  "at": "2026-10-14T13:25:15.886928Z",
+  "event_id": "3ca605e2-ad9c-5e08-aa61-54c50ee06cc0",
+  "at": "2026-10-15T13:54:57.915935Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "099dc1f1-dfb4-5500-91b9-41c8c67798bf",
-  "at": "2026-10-14T13:25:15.886928Z",
+  "event_id": "0e3a6450-2698-5620-a29a-9996a1ca264d",
+  "at": "2026-10-15T13:54:57.915935Z",
   "kind": "mission.observed"
  },
  {
   "event_id": "4ee065d8-4707-5e5c-a203-603771ffb788",
-  "at": "2026-10-14T13:25:15.886928Z",
+  "at": "2026-10-15T13:54:57.915935Z",
   "kind": "mission.action",
   "capability": "fs.write",
   "status": "DONE",
-  "receipt": "sha256:2dd32d0bfae72f033906f94d900fcbc7cbe4b7613a678ae6b4c5b9765d4fbb28",
+  "receipt": "sha256:0108a088405ab4091f28e90b57623dd049a8a44d0bf2d72dc855c2673302eea6",
   "cost_usd": 0.0
  },
  {
-  "event_id": "d6119b7f-05a8-5fa9-a910-7d95c9f5c303",
-  "at": "2026-10-14T13:28:46.187534Z",
+  "event_id": "50c5e447-c4a3-548e-a9a7-1a170f12b3ef",
+  "at": "2026-10-15T13:57:57.735403Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "2f486414-8903-5838-9dde-da9e3e5c88f8",
-  "at": "2026-10-14T13:28:46.187534Z",
+  "event_id": "9bb98f36-e63d-57a1-a77c-50e4c0ac3344",
+  "at": "2026-10-15T13:57:57.735403Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "4d22f9a1-a42e-5777-b510-4aab022d2c82",
-  "at": "2026-10-14T13:28:46.187534Z",
+  "event_id": "06befa24-53f2-512a-9f18-61a5d933d8ba",
+  "at": "2026-10-15T13:57:57.735403Z",
   "kind": "mission.observed"
  },
  {
-  "event_id": "c2b81397-35c7-51ca-b330-958c7fe4f913",
-  "at": "2026-10-14T13:28:46.187534Z",
+  "event_id": "6025390d-a1dc-5ccb-9c94-8dd984f5d338",
+  "at": "2026-10-15T13:57:57.735403Z",
   "kind": "mission.observed"
  },
  {
   "event_id": "075ebf13-7248-566b-95b1-a5e65f8b68b0",
-  "at": "2026-10-14T13:28:46.187534Z",
+  "at": "2026-10-15T13:57:57.735403Z",
   "kind": "mission.achieved",
   "capability": "fs.write"
  },
  {
   "event_id": "15312679-6134-5065-a8f1-bb4171a8e405",
-  "at": "2026-10-14T13:28:46.187534Z",
+  "at": "2026-10-15T13:57:57.735403Z",
   "kind": "mission.closure_context"
  },
  {
-  "event_id": "387c6b21-342c-5f94-9490-eb43f33af689",
-  "at": "2026-10-14T13:13:13.867798Z",
+  "event_id": "c24e207c-25d2-54b6-ab5b-8d514c648971",
+  "at": "2026-10-15T13:43:37.523651Z",
   "kind": "mission.appraised",
   "verdict": "VERIFIED",
   "capability": "fs.write"

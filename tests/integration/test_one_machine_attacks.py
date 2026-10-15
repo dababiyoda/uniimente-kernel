@@ -348,3 +348,17 @@ def test_every_attack_in_the_matrix_names_a_test_that_exists():
             path, _, name = node.partition("::")
             source = (KERNEL / path).read_text()
             assert f"def {name.split('::')[-1]}(" in source, node
+
+
+def test_every_test_in_the_matrix_has_an_observed_outcome():
+    """Second review (seals and CI 3): the matrix points at observed-run.json for the outcome of every listed
+    test, but rows were added without one. scripts/observe_adversarial_matrix.py regenerates it."""
+    matrix = json.loads(MATRIX.read_text())
+    observed = json.loads((MATRIX.parent / "observed-run.json").read_text())["results"]
+    for row in matrix["attacks"] + matrix["additional_attacks"]:
+        for node in row["tests"]:
+            path, _, name = node.partition("::")
+            *owners, function = name.split("::")             # JUnit: module[.Class]::function
+            case = ".".join([path.removesuffix(".py").replace("/", "."), *owners]) + "::" + function
+            outcomes = [r["outcome"] for key, r in observed.items() if key == case or key.startswith(case + "[")]
+            assert outcomes and set(outcomes) == {"passed"}, (node, outcomes)

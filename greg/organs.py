@@ -52,7 +52,7 @@ import time
 from adapters import bridge_transport as bt
 from greg import isolation, organ_bridge
 from adapters.contract_validation import validate_contract
-from greg.capabilities import CapabilityError, InvocationContext, _inside, run_isolated
+from greg.capabilities import KERNEL_ROOT, CapabilityError, InvocationContext, _inside, run_isolated
 from events.spine import EventError
 from greg.workers import WorkerInterrupted, _tree_digest
 
@@ -174,16 +174,39 @@ def _unchanged(snapshot: dict, why: str) -> None:
         raise CapabilityError(f"the {snapshot['path'].name} snapshot changed {why}; the exchange was refused")
 
 
-def _confinement(python: Path, code_dir: Path, store: Path) -> dict | None:
+def _confinement(python: Path, code_dir: Path, store: Path, *, exclude=()) -> dict | None:
     """Landlock grants for one organ stage: its own code snapshot and interpreter read-only, the
     system runtime read-only, writes only to the mission's organ store. Another organ's code, the
-    Kernel's sources and the body's home are unreachable. None where Landlock is unavailable."""
+    Kernel's sources and the body's home are unreachable. None where Landlock is unavailable.
+
+    The interpreter grant comes from the interpreter itself: its venv root only when ``pyvenv.cfg``
+    marks one (the venv holds its own packages), else the interpreter file alone; plus the installed
+    runtime it resolves to. A grant that would reach any ``exclude`` path (the other organ, the
+    Kernel's sources, the body's home) refuses the stage rather than run it under a false claim."""
     if not isolation.available().get("available"):
         return None
+    root = python.parent.parent
+    interpreter = root if (root / "pyvenv.cfg").is_file() else python
     runtime = Path(os.path.realpath(python)).parents[1]          # e.g. /usr for /usr/bin/python3.13
-    return {"read": [code_dir, "/etc", "/dev/urandom"],
-            "read_exec": [python.parent.parent, runtime, "/usr", "/lib", "/lib64", "/bin"],
+    system_read, system_exec = ["/etc", "/dev/urandom"], ["/usr", "/lib", "/lib64", "/bin"]
+    # Every grant but the stage's own snapshot and store (which live in the body's workspace by design)
+    # must stay clear of the excluded trees, the fixed system grants included.
+    for granted in (interpreter, runtime, *system_read, *system_exec):
+        g = Path(os.path.realpath(granted))
+        for x in exclude:
+            x = Path(os.path.realpath(x))
+            if g == x or g in x.parents or x in g.parents:
+                raise CapabilityError(f"the stage would be granted {g}, which reaches {x}; declare an "
+                                      "interpreter in its own venv or a system location, and keep the organs, "
+                                      "the Kernel and the body's home outside the system directories")
+    return {"read": [code_dir, *system_read],
+            "read_exec": [interpreter, runtime, *system_exec],
             "write": [store, "/dev/null"]}
+
+
+def _body_home(workspace: Path) -> Path:
+    """The body's home (it holds body.json, secrets and the witness key) above a mission workspace."""
+    return next((p for p in workspace.parents if (p / "body.json").is_file()), workspace)
 
 
 def _stage(python: Path, cwd: Path, code: str, *args, stdin=None, env: dict, timeout: float,
@@ -197,7 +220,8 @@ def _stage(python: Path, cwd: Path, code: str, *args, stdin=None, env: dict, tim
                             input_bytes=json.dumps(stdin).encode() if stdin is not None else None)
     except WorkerInterrupted:
         # Nothing an interrupted exchange recorded counts without a receipt (organ_bridge.bound_facts).
-        raise CapabilityError("founder STOP ended the organ exchange; its organ processes were killed") from None
+        raise CapabilityError("founder STOP ended the organ exchange; the stage's process group was killed") \
+            from None
     except subprocess.TimeoutExpired:
         raise CapabilityError(f"organ stage in {cwd.name} exceeded the exchange's time bound") from None
     if proc.returncode:
@@ -235,7 +259,9 @@ def exchange(params: dict, ctx: InvocationContext) -> dict:
     with tempfile.TemporaryDirectory(prefix=PAIR + "-", dir=ctx.workspace / "organs" / "code") as tmp:
         code = {organ: _snapshot(roots[organ], Path(tmp) / organ) for organ in ("daleobanks", "wealthmachine")}
         for organ, snap in code.items():
-            snap["confine"] = _confinement(roots[organ + "_python"], snap["path"], store)
+            other = roots["wealthmachine" if organ == "daleobanks" else "daleobanks"]
+            snap["confine"] = _confinement(roots[organ + "_python"], snap["path"], store,
+                                           exclude=(other, KERNEL_ROOT, _body_home(ctx.workspace)))
             snap["interpreter"] = _interpreter_record(roots[organ + "_python"])
         deadline = time.monotonic() + timeout
         try:

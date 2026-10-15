@@ -78,18 +78,22 @@ POLICY_PHRASES = ("usage policy", "usage policies", "content policy", "content m
 
 
 class RouteError(Exception):
-    """A route could not produce an answer (outage, bad credential, bad output). Try the next."""
+    """A route could not produce an answer (outage, bad credential, bad output). Try the next.
 
-    def __init__(self, message: str = "", *, kind: str = UNKNOWN):
+    ``cost_usd`` is what the failed attempt was still billed (a refusal after billed attempts, an
+    empty answer whose reasoning used every output token, a reported CLI error), so the router books
+    it and bounds the next route by what truly remains."""
+
+    def __init__(self, message: str = "", *, kind: str = UNKNOWN, cost_usd=None):
         super().__init__(message)
-        self.kind = kind
+        self.kind, self.cost_usd = kind, cost_usd
 
 
 class Refusal(RouteError):
     """The model or its provider declined. Terminal: never retried on another provider."""
 
-    def __init__(self, message: str = "", *, kind: str = SAFETY_REFUSAL):
-        super().__init__(message, kind=kind)
+    def __init__(self, message: str = "", *, kind: str = SAFETY_REFUSAL, cost_usd=None):
+        super().__init__(message, kind=kind, cost_usd=cost_usd)
 
 
 def _error_code(exc) -> str | None:
@@ -306,13 +310,16 @@ class AnthropicRoute(_APIRoute):
                                    None if budget_usd is None else budget_usd / attempts)
         answer = self._answer(system, user, max_tokens, fallbacks=self.fallback_models,
                               fallback_beta=self.FALLBACK_BETA)
-        if answer["refusal"]:
-            raise Refusal(f"model declined (refusal: {answer['refusal_detail']})", kind=SAFETY_REFUSAL)
         served = answer.get("served_model") or None          # the provider's report; never filled in by us
         iterations = list(answer.get("iterations") or [])
         fell_back = any(i.get("type") == "fallback_message" for i in iterations)
         usage = {"input_tokens": answer.get("input_tokens"), "output_tokens": answer.get("output_tokens")}
         billed_prompt = max([a.get("input_tokens") or 0 for a in (iterations or [usage])], default=0)
+        if answer["refusal"]:
+            # Declined, but every attempt was billed (#178); which permitted model declined is not reliably
+            # reported, so each attempt is booked at the dearest permitted price (never under-booked).
+            raise Refusal(f"model declined (refusal: {answer['refusal_detail']})", kind=SAFETY_REFUSAL,
+                          cost_usd=self._attempts_cost(iterations or [usage], self._bound_price(billed_prompt)))
         withheld = False
         if served is None and (self.fallback_models or not fell_back):
             # No served model reported: unknown, not proof that the requested model answered. The request
@@ -358,12 +365,15 @@ class OpenAIRoute(_APIRoute):
     def complete(self, system: str, user: str, *, budget_usd=None) -> dict:
         # classified on failure: HTTP 400 invalid_prompt is a policy verdict, not an outage
         answer = self._answer(system, user, _output_bound(self.price, system, user, budget_usd))
+        cost = self._cost(answer)   # a refusal or an empty answer was still billed (#178)
         if answer["refusal"]:
-            raise Refusal(f"model declined: {answer['refusal_detail'] or ''}"[:300], kind=SAFETY_REFUSAL)
-        if not answer["text"]:
-            raise RouteError(f"empty response (status {answer.get('status', 'unknown')})", kind=BAD_OUTPUT)
+            raise Refusal(f"model declined: {answer['refusal_detail'] or ''}"[:300], kind=SAFETY_REFUSAL,
+                          cost_usd=cost)
+        if not answer["text"]:     # e.g. status incomplete: reasoning used every output token, and it was billed
+            raise RouteError(f"empty response (status {answer.get('status', 'unknown')})", kind=BAD_OUTPUT,
+                             cost_usd=cost)
         # the provider's report or None: a missing report is not filled in with the model we asked for
-        return {"text": answer["text"], "cost_usd": self._cost(answer), "served_model": answer.get("served_model") or None}
+        return {"text": answer["text"], "cost_usd": cost, "served_model": answer.get("served_model") or None}
 
 
 CONFINED_CALL_SECONDS = 660   # the SDK's own 600 s timeout, plus its retries' backoff
@@ -589,10 +599,11 @@ class ClaudeCodeRoute:
             raise RouteError("Claude Code produced unreadable output", kind=BAD_OUTPUT) from exc
         if result.get("is_error"):
             detail = str(result.get("result"))[:300]
+            billed = result.get("total_cost_usd")      # the CLI's own report of what the failed run cost
             if is_policy_text(detail):
                 raise Refusal(f"Claude Code: provider policy rejected the request: {detail}"[:300],
-                              kind=PROVIDER_POLICY_REFUSAL)
-            raise RouteError(f"Claude Code reported an error: {detail}", kind=UNKNOWN)
+                              kind=PROVIDER_POLICY_REFUSAL, cost_usd=billed)
+            raise RouteError(f"Claude Code reported an error: {detail}", kind=UNKNOWN, cost_usd=billed)
         return {"text": str(result.get("result", "")), "cost_usd": result.get("total_cost_usd"),
                 "served_model": self.model or "claude-code default"}
 
@@ -654,7 +665,9 @@ class ModelRouter:
             try:
                 result = route.complete(system, user, budget_usd=remaining)
             except Refusal as exc:   # terminal: the next vendor is never asked the same thing
-                tried.append({"route": route.name, "outcome": "refused", "class": exc.kind, "why": str(exc)[:200]})
+                spent += float(exc.cost_usd or 0.0)    # declined, but billed
+                tried.append({"route": route.name, "outcome": "refused", "class": exc.kind, "why": str(exc)[:200],
+                              **({"cost_usd": exc.cost_usd} if exc.cost_usd is not None else {})})
                 self._note(route, "refused", at, str(exc), exc.kind)
                 self.last = {"route": route.name, "tried": tried, "cost_usd": spent, "refusal_class": exc.kind}
                 raise
@@ -669,8 +682,10 @@ class ModelRouter:
             except Unbounded as exc:
                 tried.append({"route": route.name, "outcome": "skipped", "why": str(exc)[:200]})
                 continue
-            except RouteError as exc:   # availability failure: fall back
-                tried.append({"route": route.name, "outcome": "failed", "class": exc.kind, "why": str(exc)[:200]})
+            except RouteError as exc:   # availability failure: fall back (a billed failure is still booked)
+                spent += float(exc.cost_usd or 0.0)
+                tried.append({"route": route.name, "outcome": "failed", "class": exc.kind, "why": str(exc)[:200],
+                              **({"cost_usd": exc.cost_usd} if exc.cost_usd is not None else {})})
                 self._note(route, "failed", at, str(exc), exc.kind)
                 continue
             spent += float(result.get("cost_usd") or 0.0)

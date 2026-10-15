@@ -114,13 +114,19 @@ def _tool_servers(home) -> dict:
         return {}
 
 
-def cost_rows(actions: list[dict], missions: list[dict], fixtures: list[dict]) -> list[dict]:
+def cost_rows(actions: list[dict], missions: list[dict], fixtures: list[dict], builds: list[dict] = ()) -> list[dict]:
     """Per mission, money kept in distinct columns, never netted: the signed budget; what was booked; how much of
     that a provider measured; how much was booked at the signed cap because the true spend was unknown or not
-    reported; and fixture amounts that moved no money. Read from the recorded actions, never estimated."""
+    reported; what Capability Genesis builds were billed (part of the booked total: the build budget is carved
+    from the same cone); and fixture amounts that moved no money. Read from recorded facts, never estimated."""
     rows = {m["mission_id"]: {"mission_id": m["mission_id"], "budget_usd": float(m["cone"].get("budget_usd") or 0),
-                              "booked_usd": 0.0, "measured_usd": 0.0, "unknown_at_cap_usd": 0.0,
+                              "booked_usd": 0.0, "measured_usd": 0.0, "unknown_at_cap_usd": 0.0, "build_usd": 0.0,
                               "fixture_cents": 0, "money_moved": False} for m in missions}
+    for b in builds:
+        row = rows.get(b.get("mission_id"))
+        if row is not None:
+            row["build_usd"] += float(b.get("cost_usd") or 0.0)
+            row["booked_usd"] += float(b.get("cost_usd") or 0.0)
     for a in actions:
         row = rows.get(a.get("mission_id"))
         if row is None or a.get("status") != "DONE":
@@ -203,6 +209,9 @@ def projection(console) -> dict:
                                      "receipt": r.hash, "at": r.ts_utc})
             if len(tool_answers) >= 5:
                 break
+        payer = {e.payload["deficit_id"]: e.payload.get("mission_id") for e in journal.replay("deficit.opened")}
+        build_rows = [{"mission_id": payer.get(e.payload.get("deficit_id")), "cost_usd": e.payload.get("cost_usd")}
+                      for kind in ("genesis.built", "genesis.unbuilt") for e in journal.replay(kind)]
         toggles = [e.type for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
         signed_pause = bool(toggles) and toggles[-1] == "greg.body.paused"
     morning = morning_projection(console.home)
@@ -244,7 +253,7 @@ def projection(console) -> dict:
         "resilience": _resilience(console),
         "traces": traces, "sandbox_integration": sandbox,
     }
-    out["costs"] = cost_rows(action_rows, out["missions"], out["rehearsals"])
+    out["costs"] = cost_rows(action_rows, out["missions"], out["rehearsals"], build_rows)
     return out
 
 

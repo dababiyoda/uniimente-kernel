@@ -21,7 +21,8 @@ Nothing in the chain is a function emitting a success message; every stage is th
    re-derives the answer by exhaustive search, re-applies the retained patch in a fresh clone and
    re-runs its test, and has WealthMachine re-evaluate the retained packet.
 8. Mission Control shows this mission's trace from retained events only.
-9. Learning: a later mission in a new process reuses the formed capability; nothing is re-formed.
+9. Learning: a later mission in a new process reuses the formed capability (nothing is re-formed),
+   and Goal Gravity ranks it with reliability learned from the episode's receipted outcomes.
 10. Proof classification: VEPMC stays 0; the sandbox whole-machine diagnostic counts 1.
 
 The worker is a deterministic local CLI test double (``tests/one_machine_worker.py``), declared as
@@ -253,6 +254,14 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
                     and r.payload["result"]["output"].get("problem_id") == "staff-later"]
         assert receipts and receipts[-1]["state"] == "ANSWERED"
         assert receipts[-1]["method_or_composition_selected"] in formed
+        # ...and the episode's recorded outcomes changed a later decision through a governed pathway: the
+        # first Goal Gravity ranking naming the later mission (written before it acted, by a new process)
+        # used learned reliability, not the 0.5 prior a capability with no record gets. Ordering only:
+        # no authority came with it.
+        first = next(e.payload for e in journal.replay("gravity.ranked")
+                     if second["mission_id"] in [r["mission_id"] for r in e.payload["ranking"]])
+        learned = next(r for r in first["ranking"] if r["mission_id"] == second["mission_id"])
+        assert learned["reliability"] > 0.5 and first["authority_created"] is False
 
         # 10. Proof classification: sandbox integration, never VEPMC.
         assert metrics.vepmc(journal)["VEPMC"] == 0

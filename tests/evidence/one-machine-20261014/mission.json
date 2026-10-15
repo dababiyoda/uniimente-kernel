@@ -14,7 +14,7 @@
  "success_checks": [
   {
    "check_id": "answered",
-   "description": "a competent method answered with its certificate",
+   "description": "a constructed method answered with a problem-level certificate",
    "sensor": {
     "capability": "cognition.solve",
     "target": "cognition:staff-om",
@@ -72,8 +72,8 @@
    },
    "predicate": {
     "op": "equals",
-    "field": "state",
-    "value": "ANSWERED"
+    "field": "confidence_type",
+    "value": "certified: exact problem-level certificate"
    }
   },
   {
@@ -112,7 +112,7 @@
    "sensor": {
     "capability": "fs.read",
     "params": {
-     "path": "/tmp/pytest-of-root/pytest-49/test_one_signed_mission_runs_t0/body/workspace/m_one-machine-staff-om/handoff-record-staff-om.md"
+     "path": "/tmp/pytest-of-root/pytest-824/test_one_signed_mission_runs_t0/body/workspace/m_one-machine-staff-om/handoff-record-staff-om.md"
     },
     "target": "fs:handoff-record-staff-om.md"
    },
@@ -207,7 +207,7 @@
    "params": {
     "order": "record-staff-om",
     "mode": "repository",
-    "repo": "/tmp/pytest-of-root/pytest-49/test_one_signed_mission_runs_t0/data/sandbox",
+    "repo": "/tmp/pytest-of-root/pytest-824/test_one_signed_mission_runs_t0/data/sandbox",
     "objective": "Record GREG's certified plan for problem.json in plan/plan.json (the assignment exactly as certified) and add tests/test_plan.py that checks it against problem.json from first principles: every assignment uses an eligible skill, no worker exceeds capacity, no order receives more than its demand, the staffed total equals the plan's claim, and no feasible assignment staffs more (exhaustive search; do not import GREG).",
     "acceptance": {
      "run_changed_tests": true,
@@ -282,7 +282,7 @@
   ],
   "max_consequence_class": "internal_write",
   "budget_usd": 0.05,
-  "horizon": "2026-10-15T13:12:50.822348Z"
+  "horizon": "2026-10-16T13:43:16.412021Z"
  },
  "auto_attach": {
   "max_consequence_class": "read_only"

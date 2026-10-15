@@ -161,6 +161,14 @@ def supervised_run(argv, *, input=None, capture_output=True, text=False, timeout
         finally:
             if proc.poll() is None:
                 _kill_process_group(proc)
+            else:
+                # The leader exited, but anything it started is still in its session's process group
+                # (start_new_session: pgid == pid). Kill it too (as foundry_bridge does). A descendant
+                # that called setsid itself has left the group and needs a cgroup to be reached.
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except (ProcessLookupError, PermissionError):
+                    pass
 
 
 def _sha(data: bytes) -> str:

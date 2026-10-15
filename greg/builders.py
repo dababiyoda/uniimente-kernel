@@ -48,7 +48,10 @@ MAX_INPUT = 256 * 1024
 RUN_TIMEOUT = 10
 
 HARNESS = r'''
-import builtins, json, sys
+import builtins, json, resource, sys
+# The candidate's own CPU is bounded here: a loop dies by SIGXCPU and is judged as the candidate's failure.
+# A wall-clock timeout is the host's only when the host cannot run an isolated no-op either (verify).
+resource.setrlimit(resource.RLIMIT_CPU, (8, 9))
 sys.setrecursionlimit(2000)
 ALLOWED = set(json.loads(sys.argv[2]))
 real_import = builtins.__import__
@@ -146,14 +149,40 @@ def _run_with_stdin(argv, *, cwd: Path, data: bytes, timeout: int) -> subprocess
                "r=subprocess.run(sys.argv[2:],stdin=f,capture_output=True);"
                "sys.stdout.buffer.write(r.stdout);sys.stderr.buffer.write(r.stderr);sys.exit(r.returncode)",
                str(stdin_file), *argv]
-    return run_isolated(wrapped, cwd=cwd, isolate_network=True, timeout=timeout)
+    # Supervised: the wrapper and the harness it starts share one process group, killed when the run ends or
+    # times out, so a candidate that hangs leaves nothing running behind it.
+    return run_isolated(wrapped, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=lambda: False)
+
+
+def isolation_ready(timeout: int = RUN_TIMEOUT) -> None:
+    """Raise a transient CapabilityError when the isolated runtime that judges built code cannot run now,
+    so a host outage defers formation before any paid build attempt instead of failing the candidate."""
+    with tempfile.TemporaryDirectory(prefix="greg-built-probe-") as tmp:
+        try:
+            proc = run_isolated([sys.executable, "-I", "-S", "-c", "pass"], cwd=Path(tmp), timeout=timeout)
+        except subprocess.TimeoutExpired:
+            raise CapabilityError("the isolated build verifier did not start in time",
+                                  failure_class="transient") from None
+    if proc.returncode:
+        raise CapabilityError(f"the isolated build verifier exited {proc.returncode}", failure_class="transient")
 
 
 def verify(source_path: Path, vectors: list[dict]) -> tuple[bool, dict]:
-    """Judge a candidate against frozen vectors it never saw. Returns (passed, report)."""
+    """Judge a candidate against frozen vectors it never saw. Returns (passed, report).
+
+    A host outage (isolation unavailable, the whole run timing out) is no verdict on the candidate: it is
+    raised as a transient CapabilityError. The candidate's own CPU is bounded by the harness."""
     try:
         results = execute(source_path, [v["input_text"] for v in vectors])
-    except (CapabilityError, subprocess.TimeoutExpired) as exc:
+    except subprocess.TimeoutExpired as exc:
+        # The candidate's CPU is bounded by the harness, but it can block without using any (a lock taken
+        # twice). If the host still runs an isolated no-op, the hang is the candidate's; else the host's.
+        isolation_ready()
+        return False, {"cases": len(vectors), "isolation": "separate no-network interpreter",
+                       "failures": [{"error": f"did not finish within {exc.timeout}s while the host was healthy"}]}
+    except CapabilityError as exc:
+        if exc.failure_class == "transient":
+            raise
         return False, {"cases": len(vectors), "failures": [{"error": f"{type(exc).__name__}: {exc}"[:300]}],
                        "isolation": "separate no-network interpreter"}
     failures = []

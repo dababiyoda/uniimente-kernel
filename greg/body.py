@@ -222,23 +222,25 @@ class Body:
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         self.engine.egress = self.egress
         self.engine.worker_confinement = confinement_mode(self.config.get("worker_confinement"))
-        self.engine.selector = self._order_missions
+        self.engine.selector = self._gravity_order
         return self
 
-    def _order_missions(self, missions) -> list[str]:
-        """Goal Gravity orders this tick's signed missions; each change of order is a ledger fact.
+    def _gravity_order(self, missions) -> list[str]:
+        """Goal Gravity orders this tick's signed missions; each change of the ranking (order, learned
+        reliability or exclusions) is a ledger fact a verifier can re-derive from the ledger before it.
 
         This is #178's ordering (``greg.gravity.select``). #175's persistent-goal binding
         (``greg/goal_gravity.py``) is a separate mechanism that caches itself on ``body._goal_gravity``;
         both run, and neither adds, drops or widens a mission.
 
-        A failure here never stops the missions: the engine keeps its static order and the
-        failure is recorded, so an unselected tick is visible rather than silent."""
+        A failure here never stops the missions: the engine keeps its static order and every
+        unselected tick is recorded, so it is visible rather than silent."""
         try:
             selection = gravity.select(missions, self.journal)
         except Exception as exc:
             why = f"{type(exc).__name__}: {exc}"[:300]
-            self.journal.record("gravity.unavailable", {"why": why}, key=["unavailable", why])
+            prior = len(self.journal.replay("gravity.unavailable"))
+            self.journal.record("gravity.unavailable", {"why": why}, key=["unavailable", prior, why])
             return []
         recorded = self.journal.replay("gravity.ranked")
         last = recorded[-1].payload if recorded else None
@@ -392,6 +394,7 @@ class Body:
                     return prior[0].payload
                 raise MissionError("the first body is already designated; do not silently replace it")
             record = {"body_id": self.config["body_id"], "platform": os.uname().sysname,
+                      "device_class": doctor.device_class(),   # informational; never part of founder_body
                       "purpose": body["purpose"], "command_digest": digest, "at": iso(self.clock())}
             self.journal.record("body.designated", record, key=[self.config["body_id"], "first"])
             return record
@@ -554,6 +557,7 @@ class Body:
                     "mission_id": mid, "boot_id": getattr(self, "boot_id", None), "pid": os.getpid(),
                     "platform": os.uname().sysname, "body_id": self.config["body_id"],
                     "hosted": getattr(self, "boot_id", None) is not None,
+                    "device_class": doctor.device_class(),   # informational; never part of founder_body
                     "at": iso(now)}, key=[mid, "context"])
             if mid not in appraised:
                 verdict = self.appraise(mid)

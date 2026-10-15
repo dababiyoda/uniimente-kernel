@@ -1,11 +1,11 @@
 {
  "mission_id": "m:one-machine-staff-om",
- "ledger_head": "sha256:58b510acd5eb4c5032bdf3bd2170d84f56329e8e87741d55f038f213d8ef5bd4",
+ "ledger_head": "sha256:93ff69f1ac5ca4f18182e3076edfc8d038439b4fb86dc6ae4a028c47a20ef4da",
  "worker_runs": [
-  "19695 1791983577.9866576",
-  "20229 1791983584.978305"
+  "2931 1792071803.2070708",
+  "2949 1792071810.0173585"
  ],
- "reconciliation_request": "req-904dedc26b6197abfed1aa16",
+ "reconciliation_request": "req-dac2312c6eb21f3148edfed3",
  "boots": 3,
  "recoveries": 2,
  "later_mission": "m:compiled-staff-later",

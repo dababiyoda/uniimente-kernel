@@ -174,6 +174,8 @@ def main(argv=None) -> int:
     s = sub.add_parser("init"); s.add_argument("--read-root", action="append", default=[])
     s.add_argument("--deliver-root", help="founder-visible folder for deliverables (default: <home>/deliveries)")
     s.add_argument("--local-model", help="opt in to an already installed Ollama model for the one GREG router")
+    s.add_argument("--confined-egress", action="store_true",
+                   help="run network capabilities as confined components behind the #26 egress relay (Linux)")
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
@@ -342,6 +344,7 @@ def main(argv=None) -> int:
     fdb = fds.add_parser("seed", help="Institutional Seed: content-addressed backup of this body (private keys excluded)")
     fdb.add_argument("--out", required=True, help="seed store directory, outside the body home")
     sub.add_parser("learning", help="brief corrections per labelled brief, and every learned change kept, rejected or reverted")
+    sub.add_parser("acceptance", help="read-only founder-device acceptance report from this body's own ledger")
     rh = sub.add_parser("rehearse", help="credential-free rehearsal: a throwaway body and REHEARSAL key run the "
                                           "Founder's First Mission end to end")
     rh.add_argument("--dir"); rh.add_argument("--kernel-root"); rh.add_argument("--effort", type=int, default=8)
@@ -371,7 +374,8 @@ def main(argv=None) -> int:
     try:
         if args.cmd == "init":
             print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())],
-                                       deliver_root=args.deliver_root, local_model=args.local_model), indent=1))
+                                       deliver_root=args.deliver_root, local_model=args.local_model,
+                                       confined_egress=args.confined_egress), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
             print(generate_founder_key(args.key, _passphrase(args)))
         elif args.cmd == "founder" and args.founder_cmd == "enroll":
@@ -631,6 +635,9 @@ def main(argv=None) -> int:
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))
+        elif args.cmd == "acceptance":
+            from greg import acceptance
+            return acceptance.main(home)
         elif args.cmd == "rehearse":
             from greg import rehearsal
             return rehearsal.main(args)

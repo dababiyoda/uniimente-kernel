@@ -23,14 +23,14 @@ state. Process completion never closes a mission: only re-observed evidence does
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
 from greg.authority import AuthorityOffice
-from greg.capabilities import InvocationContext, ROUTES
+from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
 from greg.journal import Journal, iso
@@ -42,6 +42,7 @@ MISSION_SCHEMA = json.loads((ROOT / "contracts/greg-mission.schema.json").read_t
 TERMINAL = {"ACHIEVED", "ABANDONED", "SUPERSEDED"}
 LIFECYCLE_STATES = {"ACTIVE", "PAUSED", "ABANDONED", "SUPERSEDED"}
 DECISION_ANSWERS = {"approve", "reject", "reconcile_executed", "reconcile_not_executed"}
+EPOCH = datetime.min.replace(tzinfo=timezone.utc)
 
 
 class MissionError(ValueError):
@@ -72,6 +73,13 @@ def validate_mission(spec: dict) -> dict:
         if requires & set(strategy["advances"]):
             raise MissionError(f"strategy {strategy['action_id']} cannot require a check it advances")
         _validate_bindings(strategy, set(actions))
+        outside = compensation_outside(cone, strategy["compensate"]) if "compensate" in strategy else []
+        if "compensate" in strategy and strategy["compensate"]["capability"] in METERED_SPEND:
+            outside.append(f"{strategy['compensate']['capability']} spends money by itself, and a compensation "
+                           "runs unpaid (cost 0): put that effect to the founder instead")
+        if outside:
+            raise MissionError(f"strategy {strategy['action_id']} compensation outside the light cone: "
+                               + "; ".join(outside))
     _acyclic_bindings(spec["strategies"])
     ladder = spec["closure"].get("ladder", [])
     for rung in ladder:
@@ -88,9 +96,22 @@ def validate_mission(spec: dict) -> dict:
     return spec
 
 
+def compensation_outside(cone: LightCone, compensate: dict, consequence_class: str = "read_only") -> list[str]:
+    """Why a signed compensating action falls outside its mission's light cone (empty = inside).
+
+    Judged at signing, so not against the horizon: compensation runs after the mission ends, and the
+    Gate re-checks the whole cone when it runs (outside it, the founder decides an exact-scope APPROVAL)."""
+    return cone.admits(capability=compensate["capability"], target=compensate["target"],
+                       consequence_class=consequence_class, cost_usd=0.0, at=EPOCH)
+
+
 BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "boolean": (bool,),
               "object": (dict,), "array": (list,)}
 DEFAULT_BIND_BYTES = 16 * 1024
+
+
+# Capabilities whose network access runs behind the body's #26 relay when the body confines egress.
+CONFINED_EGRESS = frozenset({"http.get"})
 
 
 class Unbound(Exception):
@@ -100,9 +121,16 @@ class Unbound(Exception):
 def _validate_bindings(strategy: dict, actions: set):
     seen = set()
     for edge in strategy.get("bind", []):
-        source = edge["from"]["action_id"]
-        if source not in actions or source == strategy["action_id"]:
-            raise MissionError(f"strategy {strategy['action_id']} binds from unknown or own action {source!r}")
+        if "check_id" in edge["from"]:
+            # Only a check this strategy requires: the gate guarantees it was observed passing,
+            # so the bound value is exactly the evidence that satisfied the precondition.
+            if edge["from"]["check_id"] not in strategy.get("requires", []):
+                raise MissionError(f"strategy {strategy['action_id']} binds from check "
+                                   f"{edge['from']['check_id']!r}, which it does not require")
+        else:
+            source = edge["from"]["action_id"]
+            if source not in actions or source == strategy["action_id"]:
+                raise MissionError(f"strategy {strategy['action_id']} binds from unknown or own action {source!r}")
         if edge["param"] in seen:
             raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']} twice")
         seen.add(edge["param"])
@@ -121,7 +149,8 @@ def _validate_bindings(strategy: dict, actions: set):
 
 
 def _acyclic_bindings(strategies: list):
-    edges = {s["action_id"]: {e["from"]["action_id"] for e in s.get("bind", [])} for s in strategies}
+    edges = {s["action_id"]: {e["from"]["action_id"] for e in s.get("bind", []) if "action_id" in e["from"]}
+             for s in strategies}
     state = {}
 
     def visit(node):
@@ -159,13 +188,14 @@ def _set_path(params: dict, path: str, value):
 
 def bound_value(edge: dict, output):
     """The typed, size-bounded value one edge carries from a receipt's output."""
+    source = edge["from"].get("action_id") or "check " + str(edge["from"].get("check_id"))
     try:
         value = _field(output, edge["from"]["field"])
     except KeyError:
-        raise Unbound(f"{edge['from']['action_id']} output has no {edge['from']['field']}") from None
+        raise Unbound(f"{source} output has no {edge['from']['field']}") from None
     kinds = BIND_TYPES[edge["type"]]
     if not isinstance(value, kinds) or (edge["type"] in ("number", "integer") and isinstance(value, bool)):
-        raise Unbound(f"{edge['from']['action_id']}.{edge['from']['field']} is not {edge['type']}")
+        raise Unbound(f"{source}.{edge['from']['field']} is not {edge['type']}")
     if edge.get("render") == "json":
         value = json.dumps(value, sort_keys=True, indent=1, ensure_ascii=False)
     if edge.get("template") is not None:
@@ -203,6 +233,22 @@ def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
                 "spend_basis": "signed_cap: provider report outside [0, cap]"}
     return {"cost_usd": round(float(reported), 6), "cost_cap_usd": cap, "provider_reported_usd": float(reported),
             "spend_basis": "provider_reported"}
+
+
+def disagreement(output) -> dict | None:
+    """The views behind a composition that reported CONFLICT, kept side by side for the founder: which question,
+    which method said what (a digest and a short preview of each output), and the dissent. Nothing is ranked."""
+    meta = output.get("metaconsensus") if isinstance(output, dict) else None
+    if not isinstance(meta, dict) or meta.get("state") != "CONFLICT":
+        return None
+    questions = {(q.get("problem_id"), q.get("epistemic_class")) for q in meta.get("conflicting_questions") or []}
+    views = [{"problem_id": r.get("problem_id"), "method": r.get("method"), "receipt_id": r.get("receipt_id"),
+              "output_digest": sha256_json(r.get("output")), "output_preview": json.dumps(r.get("output"),
+                                                                                         default=str)[:160]}
+             for r in output.get("receipts") or [] if isinstance(r, dict)
+             and (r.get("problem_id"), r.get("epistemic_class")) in questions]
+    return {"questions": sorted(f"{p}" for p, _ in questions), "views": views,
+            "dissent": [str(d)[:200] for d in meta.get("dissent") or []][:4], "vote_taken": False}
 
 
 def _field(output, path: str):
@@ -379,6 +425,7 @@ class MissionBook:
 
     def rebuild(self):
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
+        self._deficit_of = {}              # deficit_id -> the mission whose light cone pays for its builds
         for event in self.journal.replay():
             self.fold(event.type[len("greg."):], event.payload)
 
@@ -389,6 +436,15 @@ class MissionBook:
         time to judge a founder command against the mission state at its own ledger position."""
         mid = data.get("mission_id")
         m = self.missions.get(mid)
+        if kind in ("genesis.built", "genesis.unbuilt"):
+            # The build budget is carved from the light-cone budget (validate_mission), so what a
+            # build was billed is spent from the cone that every later paid action is admitted against.
+            payer = self.missions.get(self._deficit_of.get(data.get("deficit_id")))
+            if payer is not None:
+                payer.spent_usd += float(data.get("cost_usd") or 0.0)
+            return
+        if kind == "deficit.opened" and mid is not None:
+            self._deficit_of[data["deficit_id"]] = mid
         if kind == "mission.registered":
             self.missions[mid] = MissionState(spec=data["spec"], command_digest=data["command_digest"],
                                               cone=LightCone.from_dict(data["spec"]["light_cone"]))
@@ -423,7 +479,7 @@ class MissionBook:
                     # instead of repeating; eligible again after a later pass.
                     # A producer whose output another strategy binds changed its consumers' input,
                     # not the world: it is done, not ineffective, and is not re-run either.
-                    if any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
+                    if any(e["from"].get("action_id") == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
                         m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
                     else:
                         m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
@@ -501,6 +557,7 @@ class MissionEngine:
         self.genesis, self.max_actions_per_tick = genesis, max_actions_per_tick
         self.book = MissionBook(journal)
         self._stop_check = None
+        self.selector = None          # the Body installs Goal Gravity here; None keeps the static order
 
     # -- founder inputs (already signature-verified by the body) ---------------
     def register(self, spec: dict, command_digest: str) -> str:
@@ -511,6 +568,13 @@ class MissionEngine:
             if existing.command_digest == command_digest or existing.spec == spec:
                 return mid
             raise MissionError("mission id already bound to different founder intent; supersede explicitly")
+        cone = LightCone.from_dict(spec["light_cone"])
+        for s in (s for s in spec["strategies"] if "compensate" in s):   # its class is the manifest's, never claimed
+            manifest = self.registry.manifests.get(s["compensate"]["capability"])
+            outside = compensation_outside(cone, s["compensate"], manifest.consequence_class) if manifest \
+                else ["its capability is not registered, so its consequence class is unknown"]
+            if outside:
+                raise MissionError(f"strategy {s['action_id']} compensation: " + "; ".join(outside))
         self.journal.record("mission.registered", {"mission_id": mid, "spec": spec,
                                                    "command_digest": command_digest}, key=mid)
         self.book.rebuild()
@@ -696,6 +760,10 @@ class MissionEngine:
         self.book.rebuild()
         summary = []
         order = sorted(self.book.missions.values(), key=lambda m: (-m.spec.get("priority", 0), m.mission_id))
+        if self.selector is not None:
+            # Goal Gravity orders the signed missions (greg.gravity.select); it never adds or drops one.
+            ranked = list(dict.fromkeys(mid for mid in self.selector(order) if mid in self.book.missions))
+            order = [self.book.missions[mid] for mid in ranked] + [m for m in order if m.mission_id not in ranked]
         for m in order:
             if should_stop is not None and should_stop():
                 summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})
@@ -707,15 +775,18 @@ class MissionEngine:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.")) else None,
+                                 journal=self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome") or
+                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.", "organ.",
+                                                                    "foundry.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
-                                 cognition_model=getattr(self, "cognition_model", None))
+                                 cognition_model=getattr(self, "cognition_model", None),
+                                 egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
-                 resource: dict | None = None, evidence: dict | None = None, quoted: tuple = ()) -> str:
+                 resource: dict | None = None, evidence: dict | None = None, quoted: tuple = (),
+                 consequence: str = "the mission waits; no action is taken") -> str:
         """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
 
         ``resource`` makes it a section-60 resource ask: evidence, costed options with their
@@ -734,7 +805,7 @@ class MissionEngine:
         message = {"request_id": rid, "mission_id": m.mission_id, "kind": kind, "action_id": action_id,
                    "scope_digest": scope_digest, "why_now": why, "recommendation": recommendation,
                    "alternatives": alternatives, "authority_requested": requested,
-                   "consequence_of_no_response": "the mission waits; no action is taken",
+                   "consequence_of_no_response": consequence,
                    "created_at": iso(now), "reality_status": "RECORDED_LOCAL_MESSAGE"}
         if evidence is not None:
             message["evidence"] = evidence
@@ -784,6 +855,8 @@ class MissionEngine:
             return ok, why
         if b["type"] == "no_strategy":
             return True, "re-evaluate strategies at cadence"
+        if b["type"] == "outage":                # _after_outage re-runs the search when its back-off elapses
+            return False, "host outage: the search re-runs after the back-off"
         if b["type"] == "human_work":            # an answer is not the work; only observing the deliverable is
             return False, f"awaiting the deliverable for {b['function']}; GREG does not perform or fake it"
         return False, "unknown blocker"
@@ -852,7 +925,21 @@ class MissionEngine:
 
     def _step(self, m: MissionState, now: datetime) -> dict:
         if m.status in TERMINAL:
-            return {"state": m.status}
+            if m.status == "ACHIEVED":
+                return {"state": m.status}
+            if m.blocker and m.blocker.get("type") == "reconciliation":
+                # Nothing is undone before the founder says what an interrupted dispatch did: compensation
+                # waits for the answer, and an answer that arrives with or after the end is still recorded.
+                if m.blocker["request_id"] not in self.book.answers:
+                    return {"state": m.status, "compensation": [{"state": "AWAITING_RECONCILIATION",
+                                                                 "request_id": m.blocker["request_id"]}]}
+                asked_again = self._record_reconciliation(m, now)
+                if asked_again is not None:
+                    return {**asked_again, "state": m.status}
+                self._unblock(m, "founder reconciliation recorded after the mission ended")
+                self.book.rebuild()
+                m = self.book.missions[m.mission_id]
+            return {"state": m.status, **self._compensate(m, now)}
         if m.paused:
             return {"state": "PAUSED"}
         if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now:
@@ -871,10 +958,11 @@ class MissionEngine:
                                "expected_effect": "the mission resumes with the scope and budget you sign"},
                               {"option": "renew with narrower scope", "cost": "none in money; your signature",
                                "expected_effect": "the mission resumes with less authority"},
-                              {"option": "abandon", "cost": "none",
-                               "expected_effect": "the mission ends; nothing further runs for it"}]}),
+                              self._abandon_option(m)]}),
                 "why": "mandate expired", "reconsider": "founder renews or abandons"})
             return {"state": "BLOCKED", "blocker": m.blocker}
+        if m.blocker and m.blocker.get("type") == "outage":
+            return self._after_outage(m, now)
         if m.blocker and m.blocker.get("failing_checks") and not self._blocker_resolved(m)[0]:
             return self._watch_while_blocked(m, now)
         if m.blocker:
@@ -884,13 +972,9 @@ class MissionEngine:
                     return self._prepare(m, now)
                 return {"state": "WAITING", "blocker": m.blocker, "why": why}
             if m.blocker["type"] == "reconciliation":
-                answer = self.book.answers[m.blocker["request_id"]]["answer"]
-                aid = m.blocker["action_id"]
-                self.journal.record("mission.action", {
-                    "mission_id": m.mission_id, "action_id": aid, "attempt": m.attempts.get(aid, 1) - 1,
-                    "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
-                    "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0},
-                    key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
+                asked_again = self._record_reconciliation(m, now)
+                if asked_again is not None:
+                    return asked_again
             lifted = m.blocker
             self._unblock(m, why)
             self.book.rebuild()
@@ -901,7 +985,11 @@ class MissionEngine:
                 # the step that reported the deficit does not repeat. It still waits for its own attach.
                 function = lifted["function"]
                 purpose = f"construction of {function} over its attached engine"
-                if self.genesis.resolve(mission=m, function=function, purpose=purpose, now=now) is None:
+                formed, deferred = self._form(m, function, now, lambda: self.genesis.resolve(
+                    mission=m, function=function, purpose=purpose, now=now), purpose=purpose)
+                if deferred:
+                    return {"state": "BLOCKED", "blocker": m.blocker}
+                if formed is None:
                     waiting = [c.capability_id for c in self.registry.by_function(function)
                                if self.registry.state[c.capability_id] == "VERIFIED"]
                     self._escalate_capability(m, function, waiting[-1] if waiting else None, purpose, now,
@@ -952,24 +1040,37 @@ class MissionEngine:
         The source is the latest DONE action of the named strategy; its output is read from
         the canonical ledger, never from a cache or the adapter's memory. Only param values
         change: capability, target, cost and consequence class stay exactly as signed."""
-        latest = {}
+        latest = {}   # action_id -> receipt of its latest DONE; None when the founder reconciled it unreceipted
         for event in self.journal.replay("mission.action"):
             data = event.payload
-            if data.get("mission_id") == m.mission_id and data.get("status") == "DONE" and data.get("receipt"):
-                latest[data["action_id"]] = data["receipt"]
+            if data.get("mission_id") == m.mission_id and data.get("status") == "DONE":
+                latest[data["action_id"]] = data.get("receipt")
         params = json.loads(json.dumps(s.get("params", {})))
         bindings, sources = [], []
         for edge in s["bind"]:
-            source = edge["from"]["action_id"]
-            receipt = latest.get(source)
-            if receipt is None:
-                raise Unbound(f"{source} has no completed action yet")
+            if "check_id" in edge["from"]:
+                source = edge["from"]["check_id"]
+                passing = [e.payload["receipt"] for e in self.journal.replay("mission.observed")
+                           if e.payload.get("mission_id") == m.mission_id and e.payload.get("check_id") == source
+                           and e.payload.get("passed") and e.payload.get("receipt")]
+                receipt = passing[-1] if passing else None
+                if receipt is None:
+                    raise Unbound(f"check {source} has no passing observation yet")
+            else:
+                source = edge["from"]["action_id"]
+                if source not in latest:
+                    raise Unbound(f"{source} has no completed action yet")
+                receipt = latest[source]
+                if receipt is None:     # never an older receipt: that output is not the latest execution's
+                    raise Unbound(f"{source}'s latest execution was reconciled without a retained receipt; "
+                                  "its output is unknown")
             record = self.office.ledger.find(receipt)
             if record is None or record.record_type != "receipt":
                 raise Unbound(f"{source} receipt {receipt[:19]} is not on the ledger")
             value = bound_value(edge, record.payload.get("result", {}).get("output"))
             _set_path(params, edge["param"], value)
-            bindings.append({"param": edge["param"], "from_action": source, "from_receipt": receipt,
+            bindings.append({"param": edge["param"], ("from_check" if "check_id" in edge["from"] else "from_action"): source,
+                             "from_receipt": receipt,
                              "field": edge["from"]["field"], "value_sha256": sha256_json({"v": value})})
             sources.append(receipt)
         return params, bindings, sources
@@ -983,13 +1084,16 @@ class MissionEngine:
             streak = 0
             for obs in reversed([e.payload for e in self.journal.replay("mission.observed")
                                  if e.payload["mission_id"] == m.mission_id and e.payload["check_id"] == check_id]):
-                if obs["at"] < since or not is_capability_fault(manifest, obs["detail"]):
+                if obs["at"] < since or not is_capability_fault(manifest, obs["detail"], obs.get("failure_class")):
                     break
                 streak += 1
             if streak < 2:
                 continue
-            repaired = self.genesis.repair(mission=m, capability_id=manifest.capability_id, failure=detail,
-                                           params=params, now=now)
+            repaired, deferred = self._form(m, manifest.function, now, lambda: self.genesis.repair(
+                mission=m, capability_id=manifest.capability_id, failure=detail, params=params, now=now),
+                purpose=f"self-repair of {manifest.capability_id}")
+            if deferred:
+                return {"state": "BLOCKED", "blocker": m.blocker}
             if repaired is not None:   # the next tick re-measures with the re-formed capability
                 return {"state": "REPAIRED", "replaced": manifest.capability_id, "by": repaired.capability_id}
             self._escalate_capability(m, manifest.function, None, f"self-repair of {manifest.capability_id}", now)
@@ -1000,8 +1104,10 @@ class MissionEngine:
         failing, evidence = set(), []
         sensor_errors = self.sensor_errors = set()
         self.capability_faults = {}
+        self.disagreements = {}
         for check in m.current_checks():
             sensor = check["sensor"]
+            failure_class = None          # typed where a capability failure was raised, when one was
             manifest, adapter, missing = self._resolve(sensor)
             if manifest is None:
                 self._deficit(m, sensor, now, purpose=f"sensor for {check['check_id']}")
@@ -1042,7 +1148,8 @@ class MissionEngine:
                     return None, None
                 passed, detail = False, "sensor " + outcome.status + ": " + "; ".join(outcome.reasons)[:200]
                 sensor_errors.add(check["check_id"])
-                if self.genesis is not None and is_capability_fault(manifest, detail):
+                failure_class = outcome.failure_class
+                if self.genesis is not None and is_capability_fault(manifest, detail, failure_class):
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
@@ -1053,8 +1160,17 @@ class MissionEngine:
                     # same two-strike self-repair re-forms it (cognition itself did not fail).
                     formed = self.registry.manifests[fault["capability_id"]]
                     detail = f"{detail}; {str(fault.get('detail'))[:300]}"
-                    if is_capability_fault(formed, detail):
+                    failure_class = fault.get("failure_class")
+                    if is_capability_fault(formed, detail, failure_class):
                         self.capability_faults[check["check_id"]] = (formed, detail, sensor.get("params", {}))
+                    elif failure_class in ("transient", "budget_exceeded"):
+                        # The host (or a resource ceiling) stopped the construction: the world was not
+                        # measured. The SENSOR_RETRY path applies; no strategy is blamed for it.
+                        detail = f"sensor inconclusive ({failure_class}): {detail}"
+                        sensor_errors.add(check["check_id"])
+                views = disagreement(outcome.output)
+                if views and not passed:
+                    self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
                 why = None if passed else unanswered(outcome.output)
                 if why:
                     # The receipt abstained: the world was not measured. The mission keeps its
@@ -1062,7 +1178,10 @@ class MissionEngine:
                     # from these retries); _record_routing_outcomes never blames the strategy.
                     detail = f"sensor inconclusive ({why}): {detail}"
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
-                    "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
+                    "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now),
+                    "capability": manifest.capability_id}     # the sensor as resolved (a spec may name a function)
+            if failure_class is not None:
+                data["failure_class"] = failure_class
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
             if outcome.receipt_hash:
                 evidence.append(outcome.receipt_hash)
@@ -1079,7 +1198,8 @@ class MissionEngine:
             done = [e.payload for e in self.journal.replay("mission.action")
                     if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid
                     and e.payload["status"] == "DONE"]
-            if done:
+            # A founder reconciliation has no receipt: it is not a receipted execution to blame.
+            if done and done[-1].get("receipt"):
                 last = done[-1]
                 self.journal.record("routing.outcome", {"mission_id": m.mission_id, "action_id": aid,
                                                         "capability": last["capability"], "verdict": "ineffective",
@@ -1166,21 +1286,139 @@ class MissionEngine:
         if resource is not None:                  # never searched, built or attached: a person does this work
             return self._escalate_human(m, spec, function, resource, purpose, now)
         if self.genesis is not None:
-            capability = self.genesis.resolve(mission=m, function=function, purpose=purpose, now=now)
+            capability, deferred = self._form(m, function, now, lambda: self.genesis.resolve(
+                mission=m, function=function, purpose=purpose, now=now), purpose=purpose)
+            if deferred:
+                return None
             if capability is not None:
                 return capability
         return self._escalate_capability(m, function, spec.get("capability"), purpose, now)
+
+    OUTAGE_DEFERRALS = 5          # consecutive host outages forming one function before the founder is also told
+    OUTAGE_RETRY_CAP = 3600       # seconds: the longest back-off between searches during an outage
+
+    def _form(self, m: MissionState, function: str, now: datetime, formation, *, purpose: str, attempt: int = 0):
+        """Run a Genesis formation. A host outage while qualifying (a runner timeout, isolation unavailable)
+        is no evidence about any candidate: nothing was qualified, failed or built. The mission waits on an
+        outage blocker that re-runs this formation after a growing back-off (``_after_outage``); it does not
+        re-observe meanwhile, so no strategy is judged on a capability that could not be formed. From the
+        fifth consecutive outage the founder is also asked, and the search keeps re-running.
+        Returns (result, deferred)."""
+        try:
+            return formation(), False
+        except CapabilityError as exc:
+            if exc.failure_class != "transient":
+                raise
+            attempt += 1
+            blocker = {"type": "outage", "function": function, "purpose": purpose[:200], "attempt": attempt,
+                       "why": str(exc)[:200],
+                       "retry_at": iso(now + timedelta(seconds=min(60 * 2 ** (attempt - 1), self.OUTAGE_RETRY_CAP))),
+                       "reconsider": "the search re-runs after the back-off; nothing was qualified, failed or built"}
+            if attempt >= self.OUTAGE_DEFERRALS:
+                blocker["request_id"] = self._capability_request(
+                    m, function, f"{purpose}: the host failed {attempt} times in a row while forming {function} "
+                                 f"({str(exc)[:120]}); GREG keeps re-searching", now,
+                    scope={"function": function, "outage": True})
+            self._block(m, blocker)
+            return None, True
+
+    def _record_reconciliation(self, m: MissionState, now: datetime) -> dict | None:
+        """Record the founder's answer about an UNCERTAIN dispatch (the blocker's request), for a live mission
+        or one that ended while the question was open. Returns a state when the founder must be asked again."""
+        answer = self.book.answers[m.blocker["request_id"]]["answer"]
+        aid = m.blocker["action_id"]
+        attempt = m.attempts.get(aid, 1) - 1
+        # The record reconciles the UNCERTAIN dispatch of this attempt: it names the capability that
+        # dispatch actually used (a strategy may name only a function), never the strategy's spec.
+        dispatch = next((e.payload for e in reversed(self.journal.replay("mission.action"))
+                         if e.payload.get("mission_id") == m.mission_id and e.payload.get("action_id") == aid
+                         and e.payload.get("attempt") == attempt
+                         and e.payload.get("status") == "UNCERTAIN"), {})
+        asked = (self.book.requests.get(m.blocker["request_id"]) or {}).get("scope_digest")
+        expected = dispatch.get("scope_digest") if not attempt or not dispatch.get("scope_digest") else \
+            sha256_json({"scope": dispatch["scope_digest"], "attempt": attempt})
+        if dispatch and asked and expected and asked != expected:
+            # A blocker retained from before each dispatch had its own question names an earlier
+            # attempt's answered request: that answer is not about this attempt. Ask again.
+            self._unblock(m, "the retained reconciliation answered an earlier attempt; asking for this one")
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
+            rid = self._request(m, kind="RECONCILIATION", scope_digest=expected, action_id=aid,
+                                why="an action may or may not have executed before an interruption",
+                                recommendation="inspect the retained evidence, then state whether it executed",
+                                alternatives=["reconcile_executed", "reconcile_not_executed"],
+                                requested={"action_id": aid}, now=now)
+            self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid,
+                            "why": "uncertain completion; no blind retry",
+                            "reconsider": "founder reconciliation decision"})
+            return {"state": "BLOCKED", "blocker": m.blocker}
+        strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), {})
+        cap = float(strategy.get("cost_usd", 0.0))
+        # Executed, but no adapter measured the provider's spend: book the signed cap (metered_spend's
+        # conservative rule), so the budget the founder signed still bounds every later action.
+        spend = {"cost_usd": cap, "cost_cap_usd": cap, "provider_reported_usd": None,
+                 "spend_basis": "signed_cap: founder reconciled executed; provider spend unknown"} \
+            if answer == "reconcile_executed" and cap > 0 else {}
+        self.journal.record("mission.action", {
+            "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
+            "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
+            "capability": dispatch.get("capability") or strategy.get("capability"),
+            "route": "founder_reconciliation", "dispatch_route": dispatch.get("route"),
+            "receipt": None, "at": iso(now),
+            "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0, **spend},
+            key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
+        return None
+
+    def _after_outage(self, m: MissionState, now: datetime) -> dict:
+        """The back-off after a host outage elapsed: re-run the formation the outage interrupted."""
+        b = m.blocker
+        if b.get("retry_at") and now < datetime.fromisoformat(b["retry_at"].replace("Z", "+00:00")):
+            return {"state": "WAITING", "blocker": b, "why": "host outage: the search re-runs after the back-off"}
+        function = b["function"]
+        purpose = b.get("purpose") or f"re-search of {function} after a host outage"
+        self._unblock(m, "the back-off after a host outage elapsed; the search re-runs")
+        self.book.rebuild()
+        m = self.book.missions[m.mission_id]
+        if self.genesis is None:
+            self._escalate_capability(m, function, None, purpose, now)
+            return {"state": "BLOCKED", "blocker": m.blocker}
+        formed, deferred = self._form(m, function, now, lambda: self.genesis.resolve(
+            mission=m, function=function, purpose=purpose, now=now), purpose=purpose, attempt=b.get("attempt", 0))
+        if deferred:
+            return {"state": "BLOCKED", "blocker": m.blocker}
+        rid = b.get("request_id")
+        if rid and rid not in self.book.answers and rid not in self.book.withdrawn:
+            # The founder was told the host kept failing; the search ran on a working host now, so that ask
+            # is moot: the capability is formed, or a real escalation with current evidence replaces it.
+            self.journal.record("decision.withdrawn", {
+                "request_id": rid, "mission_id": m.mission_id, "at": iso(now),
+                "why": f"the host recovered and the search for {function} ran: " + (
+                    f"formed {formed.capability_id}" if formed is not None else "nothing qualified; asked anew"),
+                "evidence": {"capability_id": getattr(formed, "capability_id", None)}}, key=[rid, "withdrawn"])
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
+        if formed is None:
+            waiting = [c.capability_id for c in self.registry.by_function(function)
+                       if self.registry.state[c.capability_id] == "VERIFIED"]
+            self._escalate_capability(m, function, waiting[-1] if waiting else None, purpose, now,
+                                      awaiting=bool(waiting))
+            return {"state": "BLOCKED", "blocker": m.blocker}
+        return {"state": "FORMED", "function": function, "capability": formed.capability_id}
+
+    def _capability_request(self, m: MissionState, function: str, purpose: str, now: datetime,
+                            *, scope: dict | None = None) -> str:
+        return self._request(m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json(scope or {"function": function}),
+                             action_id=None, why=f"missing capability for {purpose}",
+                             recommendation="attach a verified capability for this function, or revise the mission",
+                             requested={"function": function,
+                                        "spend": "none requested; any account, license or purchase is yours to make"},
+                             now=now, resource=self._capability_ask(m, function, purpose))
 
     def _escalate_capability(self, m: MissionState, function: str, capability_id, purpose: str, now: datetime,
                              *, awaiting: bool = False):
         # ``awaiting``: a named, newly formed capability waits for its attach; that is a new ask, not the old one
         scope = {"function": function, **({"awaiting": capability_id} if awaiting else {})}
-        rid = self._request(m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json(scope),
-                            action_id=None, why=f"missing capability for {purpose}",
-                            recommendation="attach a verified capability for this function, or revise the mission",
-                            requested={"function": function,
-                                       "spend": "none requested; any account, license or purchase is yours to make"},
-                            now=now, resource=self._capability_ask(m, function, purpose))
+        rid = self._capability_request(m, function, purpose, now, scope=scope)
         self._block(m, {"type": "capability", "function": function, "capability_id": capability_id,
                         "request_id": rid, "why": f"no attached capability for {function}",
                         "reconsider": "a verified capability for this function is attached"})
@@ -1224,14 +1462,185 @@ class MissionEngine:
                      "expected_effect": "observed at the next check; the ask is withdrawn and the mission continues"},
                     {"option": "revise the mission so this step is not needed", "cost": "none",
                      "expected_effect": "a new signed MISSION replaces this one; nothing runs for this step"},
-                    {"option": "abandon", "cost": "none",
-                     "expected_effect": "the mission ends; nothing further runs for it"}]})
+                    self._abandon_option(m)]})
         self._block(m, {"type": "human_work", "request_id": rid, "function": function, "resource": resource,
                         "why": f"{function} is work only {who} may do",
                         **({"failing_checks": watched} if watched else {}),
                         "reconsider": "the deliverable is observed by the mission's own checks, or you revise or "
                                       "abandon the mission"})
         return None
+
+    def _executed(self, m: MissionState) -> list[tuple[dict, str]]:
+        """(latest DONE record, consequence class) of each executed strategy that is not read-only, in execution
+        order. A capability this body no longer knows has an unknown class, never a presumed harmless one."""
+        latest = {}
+        for e in self.journal.replay("mission.action"):
+            if e.payload.get("mission_id") == m.mission_id and e.payload.get("status") == "DONE":
+                latest.pop(e.payload["action_id"], None)
+                latest[e.payload["action_id"]] = e.payload
+        classes = {a: getattr(self.registry.manifests.get(d.get("capability")), "consequence_class", "unknown")
+                   for a, d in latest.items()}
+        return [(d, classes[a]) for a, d in latest.items() if classes[a] != "read_only"]
+
+    def _abandon_option(self, m: MissionState) -> dict:
+        """Abandoning costs no money, but an executed effect does not end with the mission (Defect 7)."""
+        executed = len(self._executed(m))
+        if not executed:
+            return {"option": "abandon", "cost": "none",
+                    "expected_effect": "the mission ends; nothing further runs for it"}
+        return {"option": "abandon",
+                "cost": f"none in money; {executed} executed effect(s) do not end with the mission",
+                "expected_effect": "the mission ends; each executed effect is compensated through the Gate where a "
+                                   "compensating action was signed, otherwise put to you as a COMPENSATION decision "
+                                   "(external effects) or recorded as an open compensation obligation (workspace "
+                                   "writes)"}
+
+    def _compensate(self, m: MissionState, now: datetime) -> dict:
+        """An abandoned or superseded mission leaves no executed effect unaccounted for (Defect 7).
+
+        Each executed, non-read-only strategy gets one compensation_required fact. A compensation signed with the
+        strategy runs once, through this office and the Gate like any action, bound to the original receipt.
+        With none signed, an external, financial, irreversible or unknown effect becomes one COMPENSATION
+        decision and nothing runs; a workspace write stays recorded as an open obligation. Never blind-retried,
+        never repeated after a restart (the fact keys and the Gate's retained receipt make it idempotent)."""
+        mid = m.mission_id
+        required = {e.payload["action_id"] for e in self.journal.replay("mission.compensation_required")
+                    if e.payload["mission_id"] == mid}
+        closed = {e.payload["action_id"] for e in self.journal.replay("mission.compensated")
+                  if e.payload["mission_id"] == mid}
+        strategies = {s["action_id"]: s for s in m.spec["strategies"]}
+        rows, dispatched = [], False
+        for action, klass in reversed(self._executed(m)):           # undo in reverse order of execution
+            aid = action["action_id"]
+            if aid in closed:
+                continue
+            decided = self._compensation_answer(m, action)
+            if decided is not None and not decided.get("answer"):
+                # The founder was asked about this effect and promised that nothing runs for it until the
+                # answer: a capability re-attached meanwhile does not license the compensation.
+                rows.append({"action_id": aid, "state": "AWAITING_FOUNDER", "request_id": decided["request_id"]})
+                continue
+            if decided is not None:            # the founder answered for this effect: that answer stands
+                self.journal.record("mission.compensated", {
+                    "mission_id": mid, "action_id": aid, "status": "FOUNDER_DECIDED", "receipt": None,
+                    "answer": decided["answer"], "request_id": decided["request_id"],
+                    "original_receipt": action.get("receipt"), "at": iso(now),
+                    "reasons": [("founder: " + str(decided.get("reason") or ""))[:300]]}, key=[mid, aid, "compensated"])
+                rows.append({"action_id": aid, "state": "FOUNDER_DECIDED"})
+                continue
+            declared = strategies.get(aid, {}).get("compensate")
+            if aid not in required:
+                reason = "compensation declared" if declared else "no compensation declared" + (
+                    "" if klass == "internal_write" else "; founder decision required")
+                self.journal.record("mission.compensation_required", {
+                    "mission_id": mid, "action_id": aid, "capability": action.get("capability"),
+                    "consequence_class": klass, "original_receipt": action.get("receipt"), "compensate": declared,
+                    "lifecycle": m.status, "reason": reason, "at": iso(now)}, key=[mid, aid, "compensate"])
+            if declared is None:
+                if klass != "internal_write":
+                    self._compensation_ask(m, action, klass, now)
+                rows.append({"action_id": aid, "state": "COMPENSATION_REQUIRED"})
+            elif dispatched or (self._stop_check is not None and self._stop_check()):
+                # One dispatch per mission step, like any action, so a STOP that arrives during one
+                # admits no further compensation in this tick; the rest run on later ticks.
+                rows.append({"action_id": aid, "state": "NEXT_TICK"})
+            else:
+                state = self._run_compensation(m, action, klass, declared, now)
+                dispatched = state not in ("WAITING", "DECLINED", "ESCALATED")
+                rows.append({"action_id": aid, "state": state})
+        return {"compensation": rows} if rows else {}
+
+    def _compensation_answer(self, m: MissionState, action: dict) -> dict | None:
+        """The COMPENSATION ask raised for this executed effect: with the founder's answer when there is one,
+        else ``{"request_id": rid}`` (asked, not yet answered). None when the founder was never asked."""
+        scope = sha256_json({"compensate": action["action_id"], "receipt": action.get("receipt")})
+        for rid, request in self.book.requests.items():
+            if request.get("mission_id") == m.mission_id and request.get("kind") == "COMPENSATION" \
+                    and request.get("scope_digest") == scope and rid not in self.book.withdrawn:
+                return {"request_id": rid, **self.book.answers.get(rid, {})}
+        return None
+
+    def _run_compensation(self, m: MissionState, action: dict, klass: str, declared: dict, now: datetime) -> str:
+        mid, aid, original = m.mission_id, action["action_id"], action.get("receipt")
+        manifest, adapter, missing = self._resolve(declared)
+        if manifest is None:
+            self._compensation_ask(m, action, klass, now, failure=[f"compensating capability {missing} is not usable"])
+            return "ESCALATED"
+        if manifest.capability_id in METERED_SPEND:      # signed before validate_mission refused it
+            self._compensation_ask(m, action, klass, now, failure=[
+                f"{manifest.capability_id} spends money by itself; GREG runs no unpaid compensation through it"])
+            return "ESCALATED"
+        params, target = declared.get("params", {}), declared["target"]
+        scope = self.office.scope_digest(mission_id=mid, capability_id=manifest.capability_id, params=params,
+                                         target=target, consequence_class=manifest.consequence_class, cost_usd=0.0)
+        if any(r["kind"] == "APPROVAL" and r["scope_digest"] == scope for r in self.book.open_requests()):
+            return "WAITING"                    # the founder decides this exact scope; no re-evaluation meanwhile
+        record = {"mission_id": mid, "action_id": aid, "capability": manifest.capability_id, "target": target,
+                  "original_receipt": original, "scope_digest": scope}
+        if scope in m.rejected_scopes:
+            self.journal.record("mission.compensated", {**record, "status": "DECLINED", "receipt": None, "at": iso(now),
+                                                        "reasons": ["founder rejected this compensating action"]},
+                                key=[mid, aid, "compensated"])
+            return "DECLINED"
+        if m.status == "SUPERSEDED" and scope not in m.approved_scopes:
+            # A successor mission may rely on this effect: undoing it is the founder's call, for this exact scope.
+            self._request(m, kind="APPROVAL", scope_digest=scope, action_id=aid,
+                          why=f"compensation of {aid}: the mission was superseded, and its successor may rely on "
+                              f"the effect this compensation would undo",
+                          recommendation=f"approve the compensating action signed with {aid} "
+                                         f"({manifest.capability_id} on {target}) only if the successor does not "
+                                         "need the effect",
+                          alternatives=["reject: the executed effect stands; nothing is run for it"],
+                          requested={"capability": manifest.capability_id, "target": target,
+                                     "consequence_class": manifest.consequence_class, "cost_usd": 0.0}, now=now,
+                          evidence={"original_receipt": original, "lifecycle": m.status},
+                          consequence="the executed effect stands; nothing is run for it")
+            return "WAITING"
+        outcome = self.office.act(
+            mission_id=mid, cone=m.cone, command_digest=m.command_digest, manifest=manifest, adapter=adapter,
+            ctx=self._context(m, manifest), params=params, target=target, cost_usd=0.0,
+            expected_outcome=f"compensation of {aid}", evidence_refs=[original] if original else [],
+            # Unpaid by construction (cost 0; self-spending capabilities refused), so an overrun of the cone
+            # by earlier spend is no reason to refuse undoing an effect: the budget clause sees what it adds.
+            attempt=f"compensate:{aid}:{original}", spent_usd=min(m.spent_usd, m.cone.budget_usd),
+            approved_scopes=m.approved_scopes)
+        if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
+            self._request(m, kind="APPROVAL", scope_digest=outcome.scope_digest, action_id=aid,
+                          why=f"compensation of {aid}: " + "; ".join(outcome.reasons)[:400],
+                          recommendation=f"approve the compensating action signed with {aid} "
+                                         f"({manifest.capability_id} on {target})",
+                          alternatives=["reject: the executed effect stands; nothing is run for it"],
+                          requested={"capability": manifest.capability_id, "target": target,
+                                     "consequence_class": manifest.consequence_class, "cost_usd": 0.0}, now=now,
+                          evidence={"original_receipt": original, "lifecycle": m.status},
+                          consequence="the executed effect stands; nothing is run for it")
+            return "WAITING"
+        self.journal.record("mission.compensated", {**record, "status": outcome.status, "receipt": outcome.receipt_hash,
+                                                    "reasons": [str(r)[:300] for r in outcome.reasons], "at": iso(now)},
+                            key=[mid, aid, "compensated"])
+        if outcome.status != "DONE":            # refused, unavailable or uncertain: never blind-retried
+            self._compensation_ask(m, action, klass, now, failure=outcome.reasons)
+        return outcome.status
+
+    def _compensation_ask(self, m: MissionState, action: dict, klass: str, now: datetime, *, failure=None) -> str:
+        """One founder decision for an executed effect GREG does not undo: none was signed, or the signed
+        compensation did not complete. The answer is only recorded; nothing is executed for it."""
+        aid, original = action["action_id"], action.get("receipt")
+        strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), {})
+        evidence = {"original_receipt": original, "capability": action.get("capability"),
+                    "target": strategy.get("target"), "consequence_class": klass, "lifecycle": m.status,
+                    "executed_at": action.get("at"),
+                    **({"compensation_failed": [str(r)[:300] for r in failure]} if failure else {})}
+        return self._request(
+            m, kind="COMPENSATION", scope_digest=sha256_json({"compensate": aid, "receipt": original}), action_id=aid,
+            why=f"{aid} executed a {klass} effect through {action.get('capability')} before the mission ended "
+                f"({m.status}); " + ("its signed compensation did not complete" if failure
+                                     else "the mission signed no compensating action for it"),
+            recommendation="inspect the retained receipt, then undo or accept the effect yourself",
+            alternatives=["approve: record that you have handled this effect", "reject: record that the effect stands"],
+            requested={"action_id": aid, "consequence_class": klass, "spend": "none",
+                       "execution": "none: GREG runs no compensation that was not signed with the strategy"},
+            now=now, evidence=evidence, consequence="the effect stays recorded as compensation required; nothing runs")
 
     def _capability_ask(self, m: MissionState, function: str, purpose: str) -> dict:
         """Section 60 for a missing capability: what was searched, what each route costs."""
@@ -1271,8 +1680,7 @@ class MissionEngine:
                      "expected_effect": "a built capability attaches only after it passes the held-out cases"},
                     {"option": "revise the strategy", "cost": "none",
                      "expected_effect": "the mission continues on strategies that do not need this function"},
-                    {"option": "abandon", "cost": "none",
-                     "expected_effect": "the mission ends; nothing further runs for it"}]}
+                    self._abandon_option(m)]}
 
     def _access_ask(self, m: MissionState, aid: str, manifest, gap: dict, now: datetime) -> str | None:
         """Section 60, "I need access to this account to answer reliably": the action worked,
@@ -1331,6 +1739,7 @@ class MissionEngine:
         ``prepare_for`` (the strategy whose APPROVAL the founder has not answered yet) restricts the turn
         to static strategies whose exact scope lies inside the cone: nothing is asked, nothing blocks,
         and the awaited strategy itself never runs here."""
+        from greg.pipeline import resolve, BindingError
         candidates = []
         records = routing.track_record(self.journal)
         value = float(m.spec.get("value_per_check_usd", 1.0))
@@ -1351,6 +1760,11 @@ class MissionEngine:
                 except Unbound as why:
                     held[s["action_id"]] = [f"input: {why}"]
                     continue
+            try:      # inline $from_action inputs are held the same way: an alternative runs, or the founder is asked
+                resolve(bound.get(s["action_id"], (s.get("params", {}),))[0], self.journal, m.mission_id)
+            except BindingError as why:
+                held[s["action_id"]] = [f"input: {why}"]
+                continue
             manifest = self._manifest_for(s)
             neg_expected, route, _, estimate = rank_key(
                 s, index, failing, manifest, records.get(manifest.capability_id) if manifest else None, value)
@@ -1359,17 +1773,24 @@ class MissionEngine:
             return {"state": "NOTHING_TO_PREPARE"}
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
-            rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None,
-                                why=("the remaining strategies wait on checks that observation says fail: "
-                                     + ", ".join(sorted({c for cs in held.values() for c in cs})))
-                                if held else "every strategy for the failing checks is exhausted, refused or excluded",
-                                recommendation="add or revise strategies, widen scope, or abandon the mission",
+            split = {c: v for c, v in sorted(getattr(self, "disagreements", {}).items()) if c in failing}
+            why = (("the remaining strategies wait on checks that observation says fail: "
+                    + ", ".join(sorted({c for cs in held.values() for c in cs})))
+                   if held else "every strategy for the failing checks is exhausted, refused or excluded")
+            if split:
+                why = (f"qualified intelligences disagree on {', '.join(split)}; GREG keeps every view and does not "
+                       f"vote, so it cannot close on either; " + why)
+            rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None, why=why,
+                                recommendation=("review both views and decide, or add an independent verifier that "
+                                                "can settle the question" if split else
+                                                "add or revise strategies, widen scope, or abandon the mission"),
                                 alternatives=["add or revise strategies for the failing checks", "widen the scope",
                                               "abandon the mission"],
                                 requested={"failing_checks": sorted(failing)}, now=now,
                                 evidence={"failing_checks": sorted(failing), "failed": dict(sorted(m.failed.items())),
                                           "excluded": dict(sorted(m.excluded.items())),
-                                          **({"held_by_precondition": held} if held else {})})
+                                          **({"held_by_precondition": held} if held else {}),
+                                          **({"disagreement": split} if split else {})})
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}
@@ -1385,6 +1806,9 @@ class MissionEngine:
         if manifest is None:
             if self._deficit(m, s, now, purpose=f"strategy {s['action_id']}") is None:
                 return {"state": "BLOCKED", "blocker": m.blocker}
+            # Forming it may have spent (a build is booked on this cone): the act is admitted on what is left.
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
             manifest, adapter, _ = self._resolve(s)
             if manifest is None:
                 return {"state": "BLOCKED", "blocker": m.blocker}
@@ -1394,7 +1818,6 @@ class MissionEngine:
         # Two typed-handoff syntaxes, one resolver order: signed ``bind`` edges (above) first, then
         # inline ``$from_action`` references (#156/#159 pipeline). Both read only retained Gate
         # receipts of this mission; neither can touch capability, target, cost or scope.
-        from greg.pipeline import resolve, BindingError
         try:
             bound_params, input_bindings = resolve(params, self.journal, m.mission_id)
         except BindingError as exc:
@@ -1445,7 +1868,11 @@ class MissionEngine:
         if outcome.status == "UNCERTAIN":
             if manifest.retry_safe:
                 return {"state": "RETRYING", "action": aid, "why": "read-only idempotent capability"}
-            rid = self._request(m, kind="RECONCILIATION", scope_digest=outcome.scope_digest, action_id=aid,
+            # Each uncertain dispatch is its own question: an answer about attempt 0 is never applied to a
+            # later attempt (attempt 0 keeps its retained request identity).
+            scope = outcome.scope_digest if not attempt else sha256_json({"scope": outcome.scope_digest,
+                                                                         "attempt": attempt})
+            rid = self._request(m, kind="RECONCILIATION", scope_digest=scope, action_id=aid,
                                 why="an action may or may not have executed before an interruption",
                                 recommendation="inspect the retained evidence, then state whether it executed",
                                 alternatives=["reconcile_executed", "reconcile_not_executed"],

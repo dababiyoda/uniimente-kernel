@@ -34,7 +34,7 @@ from provenance.ledger import EvidenceLedger, sha256_json
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
                 "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query", "pipeline.inspect",
                 "worker.appraise", "browser.trace", "daleobanks.outcome",
-                "institution.appraise"}
+                "institution.appraise", "organ.status"}
 REOBSERVABLE.update(cid for cid in BUILTINS if cid.startswith("cognition.") and
                     cid not in ("cognition.semantic", "cognition.compose", "cognition.knowledge"))
 DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
@@ -133,7 +133,8 @@ def appraise(request: dict) -> dict:
                                         secrets=None, manifest=manifest,
                                         deliver_root=Path(request["deliver_root"])
                                         if request.get("deliver_root") else None,
-                                        journal=journal if cap in ("memory.precedents", "artifact.inspect", "worker.appraise") or cap.startswith(("cognition.", "pipeline.", "institution.")) else None,
+                                        journal=journal if cap in ("memory.precedents", "artifact.inspect", "worker.appraise", "daleobanks.outcome")
+                                        or cap.startswith(("cognition.", "pipeline.", "institution.", "organ.", "foundry.")) else None,
                                         mission_id=mid,
                                         artifact_root=Path(request["artifact_root"])
                                         if request.get("artifact_root") else None,
@@ -155,13 +156,19 @@ def appraise(request: dict) -> dict:
         # 4. exactly-once consequences
         actions = [e.payload for e in journal.replay("mission.action")
                    if e.payload["mission_id"] == mid and e.payload["status"] == "DONE"]
-        receipts = [a["receipt"] for a in actions if a.get("receipt")]
+        # A compensating receipt (mission abandoned or superseded after executing) is its own effect: it may
+        # repeat no other receipt, and each executed action is compensated at most once.
+        compensations = [e.payload for e in journal.replay("mission.compensated")
+                         if e.payload["mission_id"] == mid and e.payload.get("receipt")]
+        receipts = [a["receipt"] for a in actions if a.get("receipt")] + [c["receipt"] for c in compensations]
         dispatch = {}
         for r in ledger.by_type("grant_dispatch"):
             dispatch[r.payload["proposal_id"]] = dispatch.get(r.payload["proposal_id"], 0) + 1
-        checks["exactly_once"] = len(receipts) == len(set(receipts)) and all(n == 1 for n in dispatch.values())
+        compensated = [c["action_id"] for c in compensations]
+        checks["exactly_once"] = len(receipts) == len(set(receipts)) and all(n == 1 for n in dispatch.values()) \
+            and len(compensated) == len(set(compensated))
         if not checks["exactly_once"]:
-            findings.append("duplicate receipt or dispatch claim")
+            findings.append("duplicate receipt, dispatch claim or compensation")
 
         # 4b. deliverables: the delivered file must be exactly the render of the receipted inputs
         # A standing mission's closure covers only the actions since its previous closure:

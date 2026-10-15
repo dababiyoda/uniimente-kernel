@@ -37,13 +37,17 @@ def verified_appraisals(journal: Journal) -> dict[str, str]:
 
 
 def closed_procedures(journal: Journal) -> dict[str, list]:
-    """mission_id -> ordered capabilities of DONE actions for locally verified closures."""
+    """mission_id -> ordered capabilities of receipted DONE actions for locally verified closures.
+
+    A founder-reconciled step (DONE without a receipt) is excluded whatever its record shape: the
+    appraiser never re-derived it, so it is not part of a procedure the evidence supports."""
     achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
     achieved.intersection_update(verified_appraisals(journal))
     steps = defaultdict(list)
     for event in journal.replay("mission.action"):
         data = event.payload
-        if data["mission_id"] in achieved and data["status"] == "DONE":
+        if data["mission_id"] in achieved and data["status"] == "DONE" and data.get("receipt") \
+                and data.get("capability"):
             steps[data["mission_id"]].append(data["capability"])
     return dict(steps)
 
@@ -64,7 +68,9 @@ def propose(journal: Journal) -> list[dict]:
         record = {"procedure_id": procedure_id, "steps": list(sequence), "occurrences": len(missions),
                   "missions": sorted(missions), "actions_per_outcome": len(sequence),
                   "appraisal_events": {mid: appraisals[mid] for mid in sorted(missions)},
-                  "evidence_level": "local separate-process appraisal; external outcome unproven",
+                  "evidence_level": "local separate-process appraisal of receipted steps; founder-reconciled "
+                                    "steps (no receipt) were never appraised and are excluded; external outcome "
+                                    "unproven",
                   "state": "PROPOSED", "promotion": "requires founder SOP_RATIFY"}
         journal.record("sop.proposed", record, key=procedure_id)
         proposals.append(record)

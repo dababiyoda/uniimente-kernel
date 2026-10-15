@@ -211,6 +211,17 @@
             },
             "description": "check_ids that must be observed passing before this strategy may act (e.g. file a verification record only after the digest matched)"
           },
+          "compensate": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["capability", "target"],
+            "description": "the compensating action signed with this strategy. If the mission is abandoned after this strategy executed, it runs once through the Gate, bound to the original receipt; if it is superseded, it runs only after the founder approves that exact scope (a successor may rely on the effect). Its result is the Gate's receipt; the undone state is not independently re-observed. It runs unpaid (cost 0), so a capability that spends money by itself (worker.commission) is refused here; one compensation is dispatched per mission step, and a founder answer to the effect's COMPENSATION ask closes it. It must sit inside the mission's light cone: capability and target admitted, and the capability's consequence class within the ceiling (checked at registration).",
+            "properties": {
+              "capability": {"type": "string", "maxLength": 120},
+              "params": {"type": "object"},
+              "target": {"type": "string", "minLength": 1, "maxLength": 500}
+            }
+          },
           "bind": {
             "type": "array",
             "maxItems": 8,
@@ -231,12 +242,20 @@
                 "from": {
                   "type": "object",
                   "additionalProperties": false,
+                  "description": "action_id: the latest DONE receipt of that strategy. check_id: the receipt of the latest passing observation of a check this strategy requires (the exact evidence that satisfied its precondition).",
                   "required": [
-                    "action_id",
                     "field"
+                  ],
+                  "oneOf": [
+                    {"required": ["action_id"]},
+                    {"required": ["check_id"]}
                   ],
                   "properties": {
                     "action_id": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9_.-]{1,80}$"
+                    },
+                    "check_id": {
                       "type": "string",
                       "pattern": "^[a-z0-9_.-]{1,80}$"
                     },
@@ -392,6 +411,15 @@
           "maxLength": 200,
           "description": "Model the provider reported actually serving the answer; may differ from the route's requested model."
         },
+        "requested_model": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Model the route asked for (the founder's selection); recorded next to served_model."
+        },
+        "substituted": {
+          "type": "boolean",
+          "description": "Whether a model other than requested_model answered; absent when the route did not or could not check."
+        },
         "model_digest": {
           "type": "string",
           "pattern": "^[a-fA-F0-9]{64}$",
@@ -429,6 +457,14 @@
               "why": {
                 "type": "string",
                 "maxLength": 300
+              },
+              "cost_usd": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "description": "What a failed or refused attempt was still billed, booked against the budget; null when the provider reported none."
               }
             }
           }

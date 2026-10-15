@@ -61,6 +61,8 @@ python -m cortex.evaluation.seed_genome.run --freeze                            
 | `f6d146e` | `tests/integration/test_one_machine_attacks.py`; worker suites | 11 passed; 127 passed |
 | `9a7776c` | MCP, planner, Mission Control, capability, packaging, standing-reconciliation suites | 76 passed, 2 skipped |
 | `d965bb7` | Organ exchange and venture suites | 27 passed, 3 skipped (3 skips need other real organ variables) |
+| `c2a50ba` (#169 `5244cb9` merged) | Full suite; both proofs with the real organs | 3,670 passed, 26 skipped, 1 failed (negative result 4); both passed, step 7c again 0 founder questions against 1 |
+| `67cae30` | #178's one-mission proof with bubblewrap hidden; appraisal-touching suites; both proofs | Passed (fails on `c2a50ba`, negative result 6); 574 passed, 7 skipped; both passed |
 
 ## Negative results
 
@@ -69,6 +71,7 @@ python -m cortex.evaluation.seed_genome.run --freeze                            
 3. **Three earlier ten-step runs used stand-in organs for step 6** (`b4289ca` working tree, `0bc57f4` working tree, `9def804`). The scripted runner set the `UNIIMENTE_*` organ variables but not `GREG_TEST_DALEOBANKS` and `GREG_TEST_WMI`, which step 6 reads. #178's one-mission proof used the real organs in those runs. The runner now sets both, and every run on the final commit used the real checkouts.
 4. **One #169 test fails under a system interpreter:** `tests/unit/test_foundry_namespace_privacy.py::test_greg_python_still_runs_inside_when_its_runtime_lives_under_the_hidden_home[virtualenv]`. It derives the founder's home from `sys.prefix`, which is `/usr` here, so the home it hides is `/`. It fails identically on #169's own head `dcb9cd7` and passes under a virtualenv (10 of 10). It is recorded, not edited.
 5. **Step 7c measures the invention against step 7b on the same body.** The same in-flight SIGKILL cost the founder one reconciliation question without a standing mandate and none with one. Each produced one completed run and zero duplicate consequences.
+6. **CI found what this host could not.** On the GitHub runner (no bubblewrap, Python 3.11) #178's one-mission proof failed at its independent verifier: NOT_REDERIVED with `greg_appraisal_verified` false, for a mission the body had VERIFIED. The verifier built its own appraisal request without the body's worker posture, so the appraiser re-ran a supervised body's acceptance under the fail-closed default and was refused. Every run here had bubblewrap, so the envelope succeeded and hid it. Reproduced by hiding bubblewrap: `c2a50ba` fails exactly as CI did and `67cae30` passes. The verifier and the body now build the same request, held equal by `tests/unit/test_verify_one_machine_request.py`.
 
 ## Digests
 

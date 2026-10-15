@@ -14,7 +14,8 @@
    "2026-10-15: H gap G5 closed by the crash-loop breaker (unit and real-process tests)",
    "2026-10-15: Mission L requirements L1 and L3 proven at BODY tier by a real-process nine-link run; L gap G3 closed",
    "2026-10-15: C gap G6 closed by a genuine-deficit negative control",
-   "2026-10-15: G gap G4 closed by the QC rejection-path test"
+   "2026-10-15: G gap G4 closed by the QC rejection-path test",
+   "2026-10-15: H gap G6 closed by driving the proof-host attempt bound to exhaustion"
   ]
  },
  "tier_reading": {
@@ -1574,7 +1575,7 @@
      "id": "H.3",
      "obligation": "H.3 No unbounded retry loop",
      "coverage": "partial",
-     "notes": "REQUIREMENT NOT MET (counterexamples below).\n\nWhat the tests show:\n- SANDBOX_VERIFIED (in-process Body): two failing strategies settle into ACTED, ACTED, BLOCKED, WAITING, WAITING and stay that way across a restart; a tampered capability is re-formed rather than crash-looping; repairs share one signed build budget.\n- BODY_VERIFIED for a narrower property only: the approval request is not re-escalated across SIGKILL and restart.\n- UNIT_VERIFIED bounds: DurableWorkflow max_retries leading to compensation, foundry with_retries (5 attempts, exponential backoff that honours retry-after), and the cognition model-call governor.\n\nCounterexample 1 (probe.py): a retry_safe read_only capability that raises every time returns RETRYING on 12 of 12 ticks. Each tick makes a new dispatch; there is no cap, no backoff and no founder ask. UNCERTAIN never enters m.failed.\n\nCounterexample 2 (probe.py and probe_budget.py): after one signed reconcile_not_executed answer, a non-retry_safe internal_write action is redispatched on every tick with no new founder ask (9 dispatches in 11 ticks).\n\nProcess level: the restart policy is unbounded by design. supervisord uses autorestart=unexpected, and startretries=100 counts only start failures; systemd uses Restart=on-failure with RestartSec=5 and no StartLimitBurst; launchd uses KeepAlive with ThrottleInterval=10. Body.boot counts unfinished boots but never holds. local_mission's max_attempts<=3 bound is not exercised by any test.\n\nProbe paths: /tmp/claude 2026-10-15: H2 regression added; the bound is SANDBOX tier (in-process Body). 2026-10-15: a process-level crash loop is bounded too: a real Body process that dies in every tick holds after 5 such boots within 10 minutes (heartbeat HELD, no mission tick) until a signed BODY_RESUME.",
+     "notes": "REQUIREMENT NOT MET (counterexamples below).\n\nWhat the tests show:\n- SANDBOX_VERIFIED (in-process Body): two failing strategies settle into ACTED, ACTED, BLOCKED, WAITING, WAITING and stay that way across a restart; a tampered capability is re-formed rather than crash-looping; repairs share one signed build budget.\n- BODY_VERIFIED for a narrower property only: the approval request is not re-escalated across SIGKILL and restart.\n- UNIT_VERIFIED bounds: DurableWorkflow max_retries leading to compensation, foundry with_retries (5 attempts, exponential backoff that honours retry-after), and the cognition model-call governor.\n\nCounterexample 1 (probe.py): a retry_safe read_only capability that raises every time returns RETRYING on 12 of 12 ticks. Each tick makes a new dispatch; there is no cap, no backoff and no founder ask. UNCERTAIN never enters m.failed.\n\nCounterexample 2 (probe.py and probe_budget.py): after one signed reconcile_not_executed answer, a non-retry_safe internal_write action is redispatched on every tick with no new founder ask (9 dispatches in 11 ticks).\n\nProcess level: the restart policy is unbounded by design. supervisord uses autorestart=unexpected, and startretries=100 counts only start failures; systemd uses Restart=on-failure with RestartSec=5 and no StartLimitBurst; launchd uses KeepAlive with ThrottleInterval=10. Body.boot counts unfinished boots but never holds. local_mission's max_attempts<=3 bound is not exercised by any test.\n\nProbe paths: /tmp/claude 2026-10-15: H2 regression added; the bound is SANDBOX tier (in-process Body). 2026-10-15: a process-level crash loop is bounded too: a real Body process that dies in every tick holds after 5 such boots within 10 minutes (heartbeat HELD, no mission tick) until a signed BODY_RESUME. 2026-10-15: the proof host's attempt bound driven to exhaustion: three replacement workers die, the host blocks for operator reconciliation, and asking again forks nothing.",
      "tests": [
       "tests/integration/test_goal_chase.py::test_duplicate_observation_trigger_and_escalation_spam_suppressed",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
@@ -1585,6 +1586,7 @@
       "tests/unit/test_foundry_systems.py::test_distributed_controls_charge_exactly_once_resume_and_compensate",
       "tests/unit/test_greg_continuity.py::test_two_ineffective_strategies_wait_for_the_founder_instead_of_crash_looping",
       "tests/unit/test_greg_crash_loop_breaker.py",
+      "tests/unit/test_greg_local_mission.py::test_a_worker_that_always_dies_exhausts_the_bound_and_blocks_without_redispatch",
       "tests/unit/test_greg_mission_retry_bound.py",
       "tests/unit/test_greg_models.py::test_installed_body_can_build_and_a_missing_route_degrades_instead_of_crash_looping",
       "tests/unit/test_greg_platform.py::test_supervisor_configs_restart_crashes_but_respect_stop",
@@ -1700,10 +1702,11 @@
     {
      "id": "G6",
      "gap": "G6 The egregore proof-host attempt bound (supervise max_attempts<=3) is implemented but never driven to exhaustion.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "In tests/unit/test_greg_local_mission.py, monkeypatch egregore.local_mission._worker before fork so the worker always calls os._exit(75). Assert:\n- worker_exits == [75, 75, 75];\n- status BLOCKED, with next_reconsideration naming explicit operator reconciliation;\n- grant_dispatch count is at most 1 and receipt count is 0 or 1, with no new grants minted;\n- a second supervise() call returns the same blocker without a further fork."
+     "next": "In tests/unit/test_greg_local_mission.py, monkeypatch egregore.local_mission._worker before fork so the worker always calls os._exit(75). Assert:\n- worker_exits == [75, 75, 75];\n- status BLOCKED, with next_reconsideration naming explicit operator reconciliation;\n- grant_dispatch count is at most 1 and receipt count is 0 or 1, with no new grants minted;\n- a second supervise() call returns the same blocker without a further fork.",
+     "closed_by": "tests/unit/test_greg_local_mission.py::test_a_worker_that_always_dies_exhausts_the_bound_and_blocks_without_redispatch"
     },
     {
      "id": "G7",

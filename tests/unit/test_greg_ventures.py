@@ -16,6 +16,8 @@ import textwrap
 import pytest
 
 from greg import ventures
+from types import SimpleNamespace
+
 from greg.body import Body, Layout
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, SecretBroker
 from greg.templates import venture_assessment
@@ -409,7 +411,8 @@ def test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forg
         _tick_until(body, clock, "ACHIEVED")
         memo = next((Layout(home).home / "deliveries" / "ventures").glob("venture-*.md"))
         text = memo.read_text()
-        assert "**stated**" in text and "randomized difference in means 5" in text and "randomization" in text
+        # the converged causal family names this identification assumption "random assignment"
+        assert "**stated**" in text and "randomized difference in means 5" in text and "random assignment" in text
         receipt = [r for r in body.ledger.by_type("receipt")
                    if "inputs" in ((r.payload["result"].get("output") or {}) if isinstance(r.payload["result"].get("output"), dict) else {})][-1]
         output = json.loads(json.dumps(receipt.payload["result"]["output"]))
@@ -424,7 +427,14 @@ def test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forg
         causal = offledger["inputs"]["cognition"]["causal"]
         causal["output"]["effect"] = 50
         causal.pop("receipt_id")
+        causal["receipt_id"] = receipt_digest(causal)
+        # the converged receipt contract also binds the proof artifact to the output: this forgery is not even valid
+        from greg.cognition.settlement import _valid_receipt
+        assert not _valid_receipt(causal)
+        causal.pop("receipt_id")
+        causal["proof_artifact"]["estimate"] = 50
         causal["receipt_id"] = receipt_digest(causal)                           # self-consistent, never on the ledger
+        assert _valid_receipt(causal)
         offledger["inputs"]["revenue"] = ventures.revenue_conclusion(offledger["inputs"]["cognition"]["revenue"], causal)
         offledger["inputs_digest"] = ventures.inputs_digest(offledger["inputs"])
         rendered = ventures.render(offledger["inputs"]).encode()
@@ -432,3 +442,44 @@ def test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forg
         offledger["sha256"] = hashlib.sha256(rendered).hexdigest()
         ok, why = ventures.verify_delivery(offledger, Layout(home).home / "deliveries", ledger=body.ledger)
         assert not ok and "not on the canonical ledger" in why
+
+
+def test_the_organ_bridge_reads_receipts_through_a_handle_with_no_write_method(tmp_path):
+    # The bridge only reads the Mind's receipts. It is handed the ledger's by_type and nothing else: no journal
+    # record, no replay, no append. In-process Python cannot be sandboxed, so this removes every write path from
+    # the handle; it is not a security boundary against code that deliberately introspects.
+    home, _, _, _ = make_body(tmp_path)
+    with Body(home, clock=Clock()) as body:
+        body.boot()
+        ctx = body.engine._context(SimpleNamespace(mission_id="m:reader"), BUILTINS["venture.assess"][0])
+        assert isinstance(ctx.journal, ventures.LedgerReader)
+        assert [a for a in dir(ctx.journal) if not a.startswith("_")] == ["ledger"]
+        assert [a for a in dir(ctx.journal.ledger) if not a.startswith("_")] == ["by_type"]
+        assert list(ctx.journal.ledger.by_type("receipt")) == list(body.ledger.by_type("receipt"))
+        with pytest.raises(AttributeError):
+            ctx.journal.ledger.append = body.ledger.append
+        cognition = body.engine._context(SimpleNamespace(mission_id="m:c"), BUILTINS["cognition.solve"][0])
+        assert cognition.journal is body.journal            # other grants are unchanged
+
+
+@pytest.mark.skipif(not (os.environ.get("GREG_TEST_RAILSCOUT") and os.environ.get("GREG_TEST_WMI")),
+                    reason="set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts")
+def test_real_organs_consume_the_minds_receipts_on_a_signed_mission(tmp_path):
+    # Directive section 16 on the real organs: the RailScout and WealthMachine checkouts, one signed body mission,
+    # and GREG's own revenue and causal receipts. Observational support yields an estimate and no revenue conclusion.
+    rs, wmi = Path(os.environ["GREG_TEST_RAILSCOUT"]), Path(os.environ["GREG_TEST_WMI"])
+    signal = rs / "examples" / "project-source-packet"
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[rs, wmi])
+    spec = venture_assessment(railscout_root=str(rs), wmi_root=str(wmi), manifest=str(signal / "manifest.json"),
+                              source_root=str(signal), economics=ECONOMICS, preauthorize_delivery=True)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        _tick_until(body, clock, "ACHIEVED")
+        appraisal = body.journal.replay("mission.appraised")[-1].payload
+        assert appraisal["verdict"] == "VERIFIED", appraisal["findings"]
+        memo = next((Layout(home).home / "deliveries" / "ventures").glob("venture-*.md")).read_text()
+    assert "**Binding verdict: needs_more_evidence**" in memo
+    assert "**conditional**" in memo and "no revenue conclusion is drawn" in memo
+    assert "Causal support: not identified (UNIDENTIFIED)" in memo

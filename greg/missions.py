@@ -458,13 +458,18 @@ class MissionEngine:
             summary.append({"mission_id": m.mission_id, **self._step(m, now)})
         return summary
 
+    def _ledger_reader(self):
+        from greg.ventures import LedgerReader
+        return LedgerReader(self.journal) if self.journal is not None else None
+
     def _context(self, m: MissionState, manifest) -> InvocationContext:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 # read-only ledger access: memory, artifacts, cognition, and the organ bridge
-                                 # that renders the Mind's receipts into a memo (it never writes the ledger)
-                                 journal=self.journal if manifest.capability_id in ("memory.precedents", "venture.assess")
+                                 # ledger access: memory, artifacts and cognition; the organ bridge that renders
+                                 # the Mind's receipts into a memo gets a reader that cannot write
+                                 journal=self._ledger_reader() if manifest.capability_id == "venture.assess"
+                                 else self.journal if manifest.capability_id == "memory.precedents"
                                  or manifest.capability_id.startswith(("artifact.", "cognition.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,

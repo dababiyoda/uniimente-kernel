@@ -130,6 +130,24 @@ def binding_verdict(railscout_status: str, wmi_verdict: str) -> tuple[str, str]:
     return capped, f"RailScout status {railscout_status}; engine verdict already no higher"
 
 
+class LedgerReader:
+    """The canonical ledger, readable by record type and nothing else. The organ bridge reads the Mind's receipts;
+    it is handed no ``record``, no ``append`` and no ledger object it could write through."""
+
+    def __init__(self, journal):
+        self.ledger = _Records(journal.ledger)
+
+
+class _Records:
+    __slots__ = ("_by_type",)
+
+    def __init__(self, ledger):
+        self._by_type = ledger.by_type
+
+    def by_type(self, record_type: str):
+        return self._by_type(record_type)
+
+
 def cognition_receipts(ctx: InvocationContext, ids: dict) -> dict:
     """The latest valid CognitiveReceipt on the canonical ledger for each named problem; never fabricated."""
     from greg.cognition.settlement import _valid_receipt

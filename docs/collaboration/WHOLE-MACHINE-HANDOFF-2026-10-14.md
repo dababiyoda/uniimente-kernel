@@ -139,6 +139,7 @@ The 13 holes were:
     installs, read-only by construction. Still missing: servers that need the network, consequential MCP tools
     through the Consequence Gate, and remote transport. Since increment 18 the founder reaches those tools by
     saying what they want, and Mission Control lists the installed servers, their tools and the latest answers.
+    Since increment 19, npm-installed servers are found too, with optional launch arguments in `greg-mcp.json`.
 - **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
   `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
   measured from this tree. Porting them is its own increment. #168's three runbook defects (a stranded attach;

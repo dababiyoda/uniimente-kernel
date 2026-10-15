@@ -569,6 +569,8 @@
   limitations: Stdio providers only (no remote HTTP providers configured); the third-party provider in CI is a local
     hostile stand-in, and the official reference servers run only where GREG_TEST_MCP_SERVERS points at them. Uses the
     official MCP Python SDK 2.x; a 1.x server answers after rejecting the 2.x discovery request (logged, not fatal).
+    Servers installed as a Python virtualenv or an npm prefix are found; a server needing launch arguments reads
+    them from greg-mcp.json beside it.
   recovery: Provider failure fails over to the next listed provider; disagreement under cross-check is refused; ungranted
     consequential calls never reach a provider (gate refuses first).
   state: PARTIAL
@@ -579,6 +581,7 @@
   - tests/integration/test_greg_mcp_mission.py
   - tests/unit/test_greg_mcp_planner.py
   - tests/integration/test_greg_mcp_founder_path.py
+  - tests/unit/test_greg_mcp_npm.py
 29:
   acceptance:
   - External agents discover, negotiate and perform bounded work through an embassy

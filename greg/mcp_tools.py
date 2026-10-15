@@ -40,12 +40,30 @@ MAX_RESULT_BYTES = 256 * 1024
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".cache", "lib", "lib64", "include", "share", "site-packages"}
 
 
+def _launch(directory: Path) -> dict:
+    """What the founder wrote in ``greg-mcp.json`` beside a server: arguments its command needs (the filesystem server
+    takes the directories it may serve) and the paths it may read. Optional; every path is still checked against the
+    read roots when a mission runs, and the founder signs the mission that carries them."""
+    config = directory / "greg-mcp.json"
+    if not config.is_file():
+        return {}
+    try:
+        value = json.loads(config.read_text())
+    except (OSError, ValueError):
+        return {"config_error": f"{config.name} is not valid JSON"}
+    args, readable = value.get("args", []), value.get("readable", [])
+    if not (isinstance(args, list) and isinstance(readable, list) and all(isinstance(a, str) for a in args + readable)):
+        return {"config_error": f"{config.name}: args and readable must be lists of strings"}
+    return {"args": args, "readable": readable}
+
+
 def installed_servers(read_roots, *, max_depth: int = 4) -> dict:
     """The MCP servers the founder installed under the body's read roots: ``name -> {"root", "command"}``.
 
     A server is an installation directory whose ``bin`` holds an executable named ``mcp-server-<name>`` (what
-    ``python -m venv <dir> && <dir>/bin/pip install mcp-server-<name>`` produces). Nothing is started: this only reads
-    the directory tree, a few levels deep, skipping library and cache trees."""
+    ``python -m venv <dir> && <dir>/bin/pip install mcp-server-<name>`` produces), or whose ``node_modules/.bin`` does
+    (what ``npm install --prefix <dir> @modelcontextprotocol/server-<name>`` produces). Nothing is started: this only
+    reads the directory tree, a few levels deep, skipping library and cache trees."""
     found: dict = {}
     for read_root in read_roots:
         base = Path(read_root).expanduser()
@@ -59,12 +77,15 @@ def installed_servers(read_roots, *, max_depth: int = 4) -> dict:
             except OSError:
                 continue
             for entry in entries:
-                if entry.name == "bin" and entry.is_dir():
-                    for executable in sorted(entry.glob("mcp-server-*")):
+                bins = (entry if entry.name == "bin" and entry.is_dir() else
+                        entry / ".bin" if entry.name == "node_modules" and (entry / ".bin").is_dir() else None)
+                if bins is not None:
+                    for executable in sorted(bins.glob("mcp-server-*")):
                         name = executable.name[len("mcp-server-"):].lower()
                         if (NAME.fullmatch(name) and executable.is_file() and name not in found
                                 and executable.stat().st_mode & 0o111):
-                            found[name] = {"root": str(directory.resolve()), "command": [str(executable)]}
+                            found[name] = {"root": str(directory.resolve()), "command": [str(executable)],
+                                           **_launch(directory)}
                 elif (entry.is_dir() and not entry.is_symlink() and depth < max_depth
                       and entry.name not in SKIP_DIRS and not entry.name.startswith(".")):
                     stack.append((entry, depth + 1))
@@ -83,8 +104,9 @@ def server_tools(server: dict, *, scratch_parent: Path) -> list[dict]:
     Path(scratch_parent).mkdir(parents=True, exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix="mcp-list-", dir=scratch_parent))
     try:
-        return list_tools({"name": Path(server["command"][0]).name, "command": server["command"],
-                           "root": server["root"], "scratch": str(scratch)})
+        return list_tools({"name": Path(server["command"][0]).name,
+                           "command": [*server["command"], *server.get("args", [])], "root": server["root"],
+                           "readable": server.get("readable", []), "scratch": str(scratch)})
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
 

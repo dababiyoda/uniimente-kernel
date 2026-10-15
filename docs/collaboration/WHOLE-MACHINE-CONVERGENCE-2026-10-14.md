@@ -1182,6 +1182,37 @@ path, its command, the tool's name and its argument schema. Now the founder only
   (`greg model set`) can fill them from the schemas.
 - Discovery covers Python virtualenv installs. npm-installed servers are not found yet.
 
+## Increment 19 (2026-10-15): npm-installed MCP servers, launch configuration, structured answers
+
+- **npm servers are found.** `npm install --prefix <folder> @modelcontextprotocol/server-<name>` puts the entry point at
+  `<folder>/node_modules/.bin/mcp-server-<name>`, and discovery now finds it there too. The entry point is a symlink
+  into the package; it resolves inside the installation, so it passes the same check. The Node runtime (nvm keeps it
+  under the hidden home) is shown read-only inside the namespace, and its `bin` is on the server's `PATH`.
+- **Launch configuration.** Some servers need launch arguments; the filesystem server takes the directories it may
+  serve. The founder writes them in an optional `greg-mcp.json` beside the server (`args`, `readable`). Discovery,
+  tool listing and the planner use it, and a broken file is reported, not guessed. Every path in it is still checked
+  against the read roots when a mission runs, so the file cannot widen what a mission may read.
+- **Fixed: a server's own structured answer was dropped.** The gateway took `structured_content["result"]`, which is
+  how GREG's SDK wraps a plain return value. A server with its own output schema (the official filesystem server)
+  returned `{"content": ...}`, and GREG recorded `None`. A lone `result` key is now unwrapped, any other structure is
+  kept whole, and plain text is the fallback.
+
+### Evidence
+
+- **`tests/unit/test_greg_mcp_npm.py` (6 tests),** with a Python stand-in laid out exactly as npm lays out a
+  package:
+  - the npm layout and its launch configuration are found;
+  - a broken configuration is reported;
+  - the launch arguments reach the server;
+  - a structured answer (declared output schema) is kept;
+  - words reach the npm server with its configuration;
+  - a configuration naming a path outside the read roots is refused when the mission runs.
+- **Mutant.** With the old `result`-only extraction, the structured answer is `None` and the test fails.
+- **The official `@modelcontextprotocol/server-filesystem`** (Node 22, MIT per its README), run locally. A signed
+  mission reads the founder's note through `read_text_file` and closes. Its `write_file` and `edit_file` fail with
+  Node's `EROFS: read-only file system`, and the folder and the note are unchanged.
+- **Planner.** "Use the filesystem server to read the text file …" proposes `read_text_file`.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

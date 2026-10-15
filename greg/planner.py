@@ -275,8 +275,9 @@ def _mcp_route(text: str, ctx: PlannerContext) -> dict | None:
     if missing:
         return {"status": "NEEDS_INPUT", "origin": origin,
                 "questions": [f"The {name} server's {tool['name']} needs " + "; ".join(missing) + "."]}
-    spec = templates.mcp_tool(server=name, root=server["root"], command=server["command"], tool=tool["name"],
-                              arguments=arguments, readable=readable, founder_expression=text)
+    readable = list(dict.fromkeys([*server.get("readable", []), *readable]))
+    spec = templates.mcp_tool(server=name, root=server["root"], command=[*server["command"], *server.get("args", [])],
+                              tool=tool["name"], arguments=arguments, readable=readable, founder_expression=text)
     return _proposal(spec, origin, notes=[
         f"the {name} server's {tool['name']} tool, with {json.dumps(arguments)}",
         "read-only by construction: the server runs with no network and a read-only view of what this mission "

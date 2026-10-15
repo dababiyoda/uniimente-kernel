@@ -382,8 +382,10 @@ def _tool_servers_section(console, p, form) -> str:
             [f"<code>{_e(a['server'])}</code> · <code>{_e(a['tool'])}</code>", f"<pre>{_e(a['text'][:600])}</pre>",
              f"<code>{_e(str(a['receipt'])[:23])}</code><br><span class=muted>{_e(a['at'])}</span>"] for a in answers]))
     if not servers:
-        return out + ("<p class=empty>None installed. Example: <code>python3 -m venv &lt;read root&gt;/tools/git &amp;&amp; "
-                      "&lt;read root&gt;/tools/git/bin/pip install mcp-server-git</code></p></section>")
+        return out + ("<p class=empty>None installed. Examples: <code>python3 -m venv &lt;read root&gt;/tools/git &amp;&amp; "
+                      "&lt;read root&gt;/tools/git/bin/pip install mcp-server-git</code>, or <code>npm install --prefix "
+                      "&lt;read root&gt;/tools/filesystem @modelcontextprotocol/server-filesystem</code> (a server that needs "
+                      "launch arguments reads them from <code>greg-mcp.json</code> beside it).</p></section>")
     out += _table(["Server", "Installation", ""], [[f"<code>{_e(n)}</code>", f"<code>{_e(s['root'])}</code>",
                                                    f"<a href='/mc/command?q=tools:{_e(n)}'>List its tools</a>"]
                                                   for n, s in servers.items()])

@@ -4,10 +4,10 @@ The stand-in server is the hostile one from ``tests/unit/test_greg_mcp_tools.py`
 its ``lookup`` tool; the observation crosses the authority office like any other sensor, is journaled with its
 receipt, and closes the mission. A mission whose light cone does not name ``mcp.call`` never starts a server.
 
-With ``GREG_TEST_MCP_SERVERS`` pointing at a directory holding the official reference servers, each installed in its
-own virtualenv (``time/`` with ``mcp-server-time``, ``git/`` with ``mcp-server-git``, both MIT, both built on the
-older ``mcp<2`` SDK), the same path runs real third-party servers: the time server answers, and the git server's
-write tools change nothing in the founder's repository.
+With ``GREG_TEST_MCP_SERVERS`` pointing at a directory holding the official reference servers (``time/`` and ``git/``,
+each a virtualenv with ``mcp-server-time`` / ``mcp-server-git`` on the older ``mcp<2`` SDK; ``filesystem/``, an npm
+prefix with ``@modelcontextprotocol/server-filesystem``; all MIT), the same path runs real third-party servers: the
+time server answers, and the git and filesystem servers' write tools change nothing the founder owns.
 """
 from __future__ import annotations
 
@@ -139,3 +139,35 @@ def test_the_official_git_server_reads_the_founder_repository_and_cannot_change_
     staged = subprocess.run(["git", "-C", str(repo), "diff", "--cached", "--name-only"], capture_output=True,
                             text=True).stdout
     assert after == head and staged.split() == ["plan.md"]              # nothing committed, nothing new staged
+
+
+@needs_namespaces
+@real
+def test_the_official_filesystem_server_reads_through_a_mission_and_cannot_write(tmp_path):
+    """``filesystem/`` is ``npm install --prefix filesystem @modelcontextprotocol/server-filesystem`` (MIT): a Node
+    server found through ``node_modules/.bin``, started with the directory it may serve."""
+    from greg import mcp_tools
+    from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, SecretBroker
+    root = Path(SERVERS) / "filesystem"
+    notes = tmp_path / "data" / "notes"
+    notes.mkdir(parents=True)
+    (notes / "plan.md").write_text("ship the wedge\n")
+    entry = root / "node_modules" / ".bin" / "mcp-server-filesystem"
+    params = {"server": "filesystem", "root": str(root), "command": [str(entry), str(notes)], "readable": [str(notes)],
+              "tool": "read_text_file", "arguments": {"path": str(notes / "plan.md")}}
+    home, key, body_id, data = make_body(tmp_path, read_roots=[tmp_path / "data", root])
+    spec = mission("m:files", checks=[_check(params, "filesystem", "ship the wedge")], strategies=[],
+                   capabilities=["mcp.call"], targets=("mcp:filesystem",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    states, observed, chain_ok = _run(home)
+    assert "ACHIEVED" in states and chain_ok, (states, observed)
+    ctx = InvocationContext(workspace=tmp_path / "ws", read_roots=(tmp_path / "data", root),
+                            secrets=SecretBroker(tmp_path / "s.json"), manifest=BUILTINS["mcp.call"][0],
+                            target="mcp:filesystem", mission_id="m:files")
+    for tool, arguments in (("write_file", {"path": str(notes / "planted.md"), "content": "x"}),
+                            ("edit_file", {"path": str(notes / "plan.md"),
+                                           "edits": [{"oldText": "wedge", "newText": "HACKED"}]})):
+        with pytest.raises(CapabilityError, match="(?i)read-only file system"):
+            mcp_tools.call({**params, "tool": tool, "arguments": arguments}, ctx)
+    assert sorted(p.name for p in notes.iterdir()) == ["plan.md"]
+    assert (notes / "plan.md").read_text() == "ship the wedge\n"

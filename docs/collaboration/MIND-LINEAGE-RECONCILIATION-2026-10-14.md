@@ -341,7 +341,7 @@ Remaining falsification tests:
 1. Pre-registered admission of `flow_expansion_mcf` 1.0.0 against the composition on items F7 never used.
 2. F7 VPL re-measured with that genome as a constituent.
 3. A frozen comparison of #155's operator library against the Foundry library on the same problems.
-4. Version-bound re-admission of the operation families (they carry no version).
+4. Re-admission of any operation family whose solver code changes. Each verdict is now bound to its entry function's source digest; helper functions are not covered.
 5. A natural family that uses an admitted Layer 1 or Layer 2 genome.
 6. F8 re-measured on the converged Mind under a fresh pre-registered freeze (its #158 freeze refuses here).
 
@@ -379,7 +379,7 @@ Removal from a branch does not remove the files from public history; this PR doe
 | no rejected P8 configuration promoted | met | nothing attached; P8 `exit_met` false (`test_frontier_backcasts.py`) |
 | no NO_GAIN presented as positive lift | met | P4 row and status label; `forecast_then_allocate` NO_LIFT demoted |
 | strong standalone and practitioner baselines included | met where measured | F7 PMCF and SP-upgrade; F6 weekly mean; crowd-sparse one-step vote; F7 audit |
-| genome admission bound to the exact tested version | met | compiler stale guard; inventory applies the same rule (`test_greg_mind_convergence.py`) |
+| genome admission bound to the exact tested version | met | genomes: compiler stale guard on the genome version; #155's operation families: each verdict is bound to its solver function's source digest at the run's source commit (`compiler.operation_status`), so changed code routes as UNEVALUATED. The compiler and the inventory share the rule (`test_greg_mind_convergence.py`), and the bindings are re-derived from git (`test_mind_evidence_sources.py`). The binding covers the solver's entry function, not the helpers it calls. |
 | interruption and restart do not duplicate consequential actions | met in tests | `test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation`, `test_greg_cognition_mission.py::test_detachment_survives_restart...` |
 | Kernel, event spine, authority, shutdown and founder boundaries preserved | met | no change to `policy/`, `provenance/`, `authority/`, `greg/founder.py` or the Gate |
 | no live deployment or external consequence | met | draft PR only |
@@ -406,7 +406,7 @@ Removal from a branch does not remove the files from public history; this PR doe
 
 **Not done here:**
 - `flow_expansion_mcf` admission and F7 re-measurement (left to #158's scheduled admission v3; see section 8);
-- version binding for operation families;
+- version binding for operation families beyond the solver entry function (its helpers are not covered);
 - an evaluation of #155's operator library against the Foundry.
 
 **Escalations (founder-only):**

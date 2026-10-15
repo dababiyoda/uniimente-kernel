@@ -26,6 +26,7 @@ that produced the file (the harness records that inside the file).
 """
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 from pathlib import Path
@@ -305,6 +306,48 @@ def test_every_source_names_a_commit_present_in_this_repository():
     assert not absent, f"source commits absent from a full clone: {absent}"
 
 
+def _function_source_digest(text: str, name: str):
+    """This test's own digest of a module-level function: its source lines (decorators included), trailing
+    whitespace stripped, sha256. Written independently of greg.cognition.compiler.function_digest."""
+    tree = ast.parse(text)
+    node = next((n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == name),
+                None)
+    if node is None:
+        return None
+    first = min([node.lineno, *(d.lineno for d in node.decorator_list)])
+    body = "\n".join(line.rstrip() for line in text.splitlines()[first - 1:node.end_lineno])
+    return "sha256:" + hashlib.sha256(body.encode()).hexdigest()
+
+
+def test_every_operation_verdict_is_bound_to_the_solver_code_its_run_measured():
+    """PR #155's operation-family verdicts route like genome verdicts, so each is bound to the code it measured:
+    the solver function's source digest at the run's own source commit, recomputed here from git."""
+    index = _index()
+    commit_of = {s["path"]: s.get("source_commit") for s in index["sources"]}
+    unbound = [f for f, row in index["operations"].items()
+               if row["status"] in POSITIVE and not (row.get("code") or {}).get("sha256")]
+    assert not unbound, f"positive operation verdicts without a solver-code binding: {unbound}"
+    if _shallow() is None:
+        pytest.skip("git history unavailable: solver-code bindings not re-derived")
+    problems, unreachable = [], []
+    for family, row in index["operations"].items():
+        code = row.get("code")
+        if not code:
+            continue
+        commit = commit_of[row["evidence"].partition("#")[0]]
+        out = subprocess.run(["git", "show", f"{commit}:{code['path']}"], cwd=ROOT, capture_output=True, text=True,
+                             timeout=60)
+        if out.returncode:
+            unreachable.append(commit)
+            continue
+        if _function_source_digest(out.stdout, code["function"]) != code["sha256"]:
+            problems.append(f"operation {family}: code {code['sha256']} is not {code['function']} at {commit[:12]}")
+    if unreachable and _shallow():
+        pytest.skip(f"shallow clone: solver code at {sorted(set(unreachable))} not verified")
+    assert not unreachable, f"source commits absent from a full clone: {sorted(set(unreachable))}"
+    assert not problems, problems
+
+
 def _flip_genome_status(index):
     row = index["genomes"][sorted(index["genomes"])[0]]
     row["status"] = "NICHE_CAPABILITY" if row["status"] == "DEFAULT_FOR_GEOMETRY" else "DEFAULT_FOR_GEOMETRY"
@@ -354,6 +397,7 @@ COMPLETE = test_every_frozen_run_is_indexed_and_the_latest_run_decides
 DERIVED = test_the_derived_fields_the_compiler_routes_on_match_their_source
 EXTERNAL = test_every_external_verification_entry_resolves_to_a_positive_record
 COMMITS = test_every_source_names_a_commit_present_in_this_repository
+BOUND = test_every_operation_verdict_is_bound_to_the_solver_code_its_run_measured
 
 
 @pytest.mark.parametrize("corrupt, check, needle", [
@@ -387,6 +431,8 @@ COMMITS = test_every_source_names_a_commit_present_in_this_repository
      "does not record a verified external outcome"),
     (_external_cites_a_listed_readme, EXTERNAL, "not a readable JSON source"),
     (lambda i: i["sources"][0].pop("source_commit"), COMMITS, "without a source commit"),
+    (lambda i: i["operations"]["graph"]["code"].update(sha256="sha256:" + "0" * 64), BOUND, "is not graph at"),
+    (lambda i: i["operations"]["control"].update(code=None), BOUND, "without a solver-code binding"),
 ])
 def test_the_checks_fail_on_a_corrupted_index(tmp_path, monkeypatch, corrupt, check, needle):
     """Each check is falsifiable: a corrupted copy of the real index must fail it."""

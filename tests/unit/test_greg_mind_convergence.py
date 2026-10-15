@@ -196,3 +196,22 @@ def test_the_reconciliation_map_covers_every_file_either_lineage_changed():
         changed |= set(subprocess.run(["git", "diff", "--name-only", record["base"], head], cwd=ROOT,
                                       capture_output=True, text=True, timeout=60).stdout.split())
     assert set(paths) == changed
+
+
+def test_operation_verdicts_are_bound_to_the_solver_code_they_measured():
+    """A positive #155 operation verdict routes only on the solver code it measured; once the code differs it
+    routes as UNEVALUATED with the reason recorded, while negative evidence persists. Compiler and inventory agree."""
+    import copy
+    from greg.cognition import compiler as C
+    from greg.cognition import genome_library as lib
+    evidence = copy.deepcopy(C.evidence_index())
+    data = {"edges": [["s", "t", 1.0]], "start": "s", "goal": "t"}
+    assert _rows(data)["cognition.graph"]["status"] == "DEFAULT_FOR_GEOMETRY"     # bound and unchanged today
+    evidence["operations"]["graph"]["code"]["sha256"] = "sha256:" + "1" * 64          # as if the solver changed
+    row = {r["method"]: r for r in C.candidates(data, C.CompetencyGeometry(), evidence)}["cognition.graph"]
+    assert row["status"] == "UNEVALUATED" and "needs re-admission" in row["stale_evidence"]
+    assert lib.admission_of("graph", evidence)[0] == "EXPERIMENTAL"
+    evidence["operations"]["pattern"]["code"]["sha256"] = "sha256:" + "2" * 64        # a REJECTED verdict persists
+    assert C.operation_status("pattern", evidence["operations"]["pattern"]) == ("REJECTED", None)
+    del evidence["operations"]["control"]["code"]                                     # unbound positive: not trusted
+    assert C.operation_status("control", evidence["operations"]["control"])[0] == "UNEVALUATED"

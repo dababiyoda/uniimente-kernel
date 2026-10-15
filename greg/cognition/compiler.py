@@ -378,6 +378,16 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
             row["status"] = "NO_LIFT"
             row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
                               f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
+        matched = _matched_by_single_genome(recipe, evidence)
+        if matched and not row["rejected"]:
+            # a single genome admitted DEFAULT against this recipe's twin, at its current version: equal quality at
+            # no more than 1.25x the recipe's latency on this geometry. The recipe's lift was measured over a
+            # repertoire without it; demoted, not deleted, it still serves when the genome cannot run
+            row["matched_by"] = matched
+            row["demoted"] = "; ".join(filter(None, [row.get("demoted"), (
+                f"admitted single genome {', '.join(m['method'] for m in matched)} matched this recipe's twin "
+                f"({', '.join(m['evidence'] for m in matched)}); the single method is canonical for this geometry "
+                f"and the recipe ranks after it")]))
         lacking = None if row["rejected"] else _stage_lacks(data, recipe, g, evidence)
         if lacking:
             # the stage that reads the part would abstain on it: the recipe is not a fit. When the part carries
@@ -491,6 +501,20 @@ def _settle_promotions(pending: list, rows: list[dict]) -> None:
             # its promoted genome cannot answer this request (its own frozen status, the declared geometry, a
             # relaxation): the superseding mechanism stays an acquisition candidate, and the reason is kept
             row["superseded_by"]["promoted_rejected"] = {"method": method, "why": why[method]}
+
+
+def _matched_by_single_genome(recipe: str, evidence: dict) -> list[dict]:
+    """Genomes whose admission competitor is ``recipe``'s twin and whose frozen status at their current version is
+    DEFAULT_FOR_GEOMETRY (a stale or any other status matches nothing)."""
+    from .genomes import library
+    out = []
+    for family, item in sorted(library.executables().items()):
+        record = evidence["genomes"].get(family, {})
+        if (getattr(item, "competitor_recipe", None) == recipe and record.get("status") == "DEFAULT_FOR_GEOMETRY"
+                and record.get("version") == item.genome.version):
+            out.append({"method": f"cognition.{family}", "version": item.genome.version,
+                        "evidence": record.get("evidence") or "evidence index"})
+    return out
 
 
 def _part_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:

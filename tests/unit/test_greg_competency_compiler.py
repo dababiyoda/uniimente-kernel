@@ -904,3 +904,50 @@ def test_a_cortex_organ_reading_one_part_of_a_genome_request_does_not_answer_it(
     # a declaration that excludes the fuller method leaves the organ its question; an organ alone is untouched
     assert compile_on(data, {"geometry": "semantic"})["method_or_composition_selected"] == "cognition.cortex.semantic"
     assert compile_on({"sources": data["sources"]})["method_or_composition_selected"] == "cognition.cortex.semantic"
+
+
+def test_an_admitted_single_genome_that_matched_a_recipes_twin_outranks_the_recipe(no_index):
+    """Review of #179 (M10, L11) and admission v3: flow_expansion_mcf was admitted DEFAULT against the
+    graph_then_allocate twin (equal quality on 30 of 30 at about a seventh of the latency). The recipe's VPL_LIFT
+    was measured over a repertoire without it, yet a request in the recipe's own shape still ranked the recipe
+    first. The matched recipe is demoted, not deleted: it serves while the genome is withheld (with one prepared
+    attach ask), and a stale or lower verdict matches nothing."""
+    from greg.cognition.genomes import library
+    item = library.executables()["flow_expansion_mcf"]
+    data, truth = item.instance(3)                                                   # development seed
+    shaped = {"capacity_network": data}
+
+    def index(status="DEFAULT_FOR_GEOMETRY", version=item.genome.version):
+        no_index.write_text(json.dumps({
+            "routing": {}, "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}},
+            "genomes": {"flow_expansion_mcf": {"status": status, "version": version,
+                                               "evidence": "docs/evidence/greg-genome-admission/x/results.json"}}}))
+
+    stages = registry_view()
+    for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow"):
+        stages.set_state(cid, "ATTACHED")
+    both = registry_view()
+    for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow",
+                "cognition.flow_expansion_mcf"):
+        both.set_state(cid, "ATTACHED")
+
+    def run(registry, **extra):
+        return reason({"problem_id": "f7-shape", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                             "data": shaped, **extra}}, registry=registry)
+    index()
+    r = run(both)
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+    assert r["result"]["flow_value"] == truth["optimum"]
+    demoted = {d["method"]: d["why"] for d in r["methods_demoted"]}
+    assert "matched this recipe's twin" in demoted["composition:graph_then_allocate"]
+    # an operator preference for the recipe never outranks the genome that matched it (it did before the demotion)
+    rows = [row for row in compiler.candidates(shaped, compiler.CompetencyGeometry.parse({}), compiler.evidence_index())
+            if not row["rejected"]]
+    ranked = sorted(rows, key=lambda row: compiler._rank(row, ["graph_then_allocate"], {}))
+    assert ranked[0]["method"] == "cognition.flow_expansion_mcf"
+    served = run(stages, execute=False)                       # the genome withheld: the recipe still serves
+    assert served["method_or_composition_selected"] == "composition:graph_then_allocate"
+    assert served["withheld_best_fit"]["method"] == "cognition.flow_expansion_mcf"
+    for status, version in (("NICHE_CAPABILITY", item.genome.version), ("DEFAULT_FOR_GEOMETRY", "0.0.0-old")):
+        index(status, version)                                # a lower or stale verdict matches nothing
+        assert run(both, execute=False)["method_or_composition_selected"] == "composition:graph_then_allocate"

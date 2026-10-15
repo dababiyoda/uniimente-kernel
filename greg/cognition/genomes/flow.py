@@ -670,7 +670,8 @@ INTELLIGENCES = [
             baseline="round-robin spread over source and sink edges",
             competitor="exact optimum via graph_then_allocate composition (compile + CP-SAT)", **_common()),
         solve=greedy_solve, verify=greedy_verify, instance=expansion_instance, score=expansion_score,
-        baseline=uniform_spread, competitor=lambda data: _composed_expansion(data)),
+        baseline=uniform_spread, competitor=lambda data: _composed_expansion(data),
+        competitor_recipe="graph_then_allocate"),
     Executable(
         genome=IntelligenceGenome(
             intelligence_id="solver.graph.capacity_expansion_mcf", version="1.0.0", family="flow_expansion_mcf",
@@ -699,7 +700,8 @@ INTELLIGENCES = [
             baseline="greedy min-cut reinforcement (flow_reinforce_greedy's solve)",
             competitor="graph_then_allocate composition twin (compile + CP-SAT), deployable", **_common()),
         solve=mcf_expansion_solve, verify=mcf_expansion_verify, instance=expansion_instance, score=expansion_score,
-        baseline=lambda data: greedy_solve(data, None)["output"], competitor=lambda data: _composed_expansion(data)),
+        baseline=lambda data: greedy_solve(data, None)["output"], competitor=lambda data: _composed_expansion(data),
+        competitor_recipe="graph_then_allocate"),
     Executable(
         genome=IntelligenceGenome(
             intelligence_id="solver.graph.capacity_expansion_compiler", version="1.0.2", family="flow_capacity_plan",

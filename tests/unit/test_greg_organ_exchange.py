@@ -225,6 +225,56 @@ def test_exchange_verifies_both_legs_caps_the_engine_and_the_appraiser_reproduce
     assert memo.read_bytes() == ox.render(out["inputs"]).encode() and ox.verify_delivery(again, ctx.deliver_root)[0]
 
 
+def test_a_confined_exchange_organ_has_no_network_at_all(tmp_path):
+    """#26 on the alternate exchange, as #169 did for the venture organs: on a confined body an organ runs in a
+    namespace with no door. The probe that reaches a listener on the body's loopback unconfined reaches nothing
+    confined and sees only lo, while its working directory (its own ledger and bridge state) stays writable."""
+    import socket
+    from tests.unit.test_greg_ventures import PROBE, _namespaces_or_skip
+    _namespaces_or_skip()
+    probe = PROBE.replace("print(json.dumps(", "open('wrote.txt', 'w').write('ok')\nprint(json.dumps(")
+    listener = socket.create_server(("127.0.0.1", 0))
+    port = str(listener.getsockname()[1])
+    try:
+        free = ox._organ(probe, {}, port, cwd=tmp_path / "free", env={})
+        confined = ox._organ(probe, {}, port, cwd=tmp_path / "confined", env={}, confined=True)
+    finally:
+        listener.close()
+    assert free["result"] == "REACHED"
+    assert confined["result"] in ("ConnectionRefusedError", "OSError") and confined["interfaces"] == ["lo"]
+    assert (tmp_path / "confined" / "wrote.txt").read_text() == "ok"
+
+
+def test_a_confined_body_exchanges_and_its_appraiser_re_derives_inside_the_same_confinement(tmp_path, organs):
+    """The whole exchange runs with no network on a confined body, the organs still keep their own state in the
+    mission workspace, and the appraiser's re-run, confined as the exchange was, reproduces it."""
+    from tests.unit.test_greg_ventures import _namespaces_or_skip
+    _namespaces_or_skip()
+    ctx = _ctx(tmp_path, [tmp_path / "data"])
+    ctx.egress = object()                                    # a confined body: organs get no network at all
+    out = ox.exchange(organs, ctx)
+    assert out["engine_verdict"] == "go" and out["verdict"] == "needs_more_evidence"
+    assert out["inputs"]["acceptance"]["ledger_chain_ok"]
+    assert (tmp_path / "ws" / "organs" / "daleobanks" / "decision_ledger.jsonl").is_file()
+    assert (tmp_path / "ws" / "organs" / "wealthmachine" / "bridge-state.jsonl").is_file()
+    ok, why = ox.verify_delivery(out, ctx.deliver_root, confined=True)
+    assert ok, why
+
+
+def test_every_delivery_the_appraiser_re_derives_accepts_the_confinement_it_passes():
+    """The appraiser passes ``confined`` to every verifier in DELIVERING (#26). A verifier that does not take it
+    fails every appraisal of that capability: the merge of #169 left this module's verifier without it, and only
+    the ten-step proof's organ step found it."""
+    import importlib
+    import inspect
+    from greg.appraisal import DELIVERING
+    for capability, module in DELIVERING.items():
+        parameters = inspect.signature(importlib.import_module(module).verify_delivery).parameters
+        assert "confined" in parameters, capability
+        assert parameters["confined"].kind is inspect.Parameter.KEYWORD_ONLY, capability
+        assert parameters["confined"].default is False, capability
+
+
 def test_a_tampered_memo_or_receipt_is_refuted(tmp_path, organs):
     ctx = _ctx(tmp_path, [tmp_path / "data"])
     out = ox.exchange(organs, ctx)

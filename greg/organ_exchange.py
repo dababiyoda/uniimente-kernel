@@ -192,14 +192,28 @@ print(json.dumps(OpportunityIntakeService().evaluate_packet(json.load(sys.stdin)
 '''
 
 
-def _organ(script: str, stdin: dict, *args: str, cwd: Path, env: dict) -> dict:
-    """Run one organ in its own process; stderr's last line is the organ's own reason for refusing."""
+def _organ(script: str, stdin: dict, *args: str, cwd: Path, env: dict, confined: bool = False) -> dict:
+    """Run one organ in its own process; stderr's last line is the organ's own reason for refusing.
+
+    ``confined`` (a body with confined egress, #26, as ``greg.ventures`` does): the exchange needs no network, so
+    the organ runs in a bubblewrap network namespace with no door at all. Its checkouts are read-only; its working
+    directory, where it keeps its own ledger and bridge state, stays writable. Without namespaces nothing runs."""
     cwd.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="greg-organ-pyc-") as pycache:
         full = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "PYTHONHASHSEED": "0", "LANG": "C.UTF-8",
                 "HOME": str(cwd), "PYTHONPYCACHEPREFIX": pycache, **env}
+        argv = [sys.executable, "-s", "-c", script, *args]
+        if confined:
+            from foundry.systems.relay_door import namespace_argv
+            from greg.worker_isolation import WorkerIsolationError, _backend
+            try:
+                _backend(require_bubblewrap=True)
+            except WorkerIsolationError as exc:
+                raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+            argv = namespace_argv(writable=[pycache, cwd], readonly=[a for a in args if Path(a).is_absolute()],
+                                  chdir=cwd) + argv
         try:
-            done = subprocess.run([sys.executable, "-s", "-c", script, *args], input=json.dumps(stdin),
+            done = subprocess.run(argv, input=json.dumps(stdin),
                                   capture_output=True, text=True, timeout=ORGAN_TIMEOUT_SECONDS, cwd=cwd, env=full)
         except subprocess.TimeoutExpired:
             raise CapabilityError(f"organ timed out after {ORGAN_TIMEOUT_SECONDS}s") from None
@@ -376,10 +390,11 @@ def exchange(params: dict, ctx: InvocationContext) -> dict:
     fingerprint = hashlib.sha256(key.encode()).hexdigest()
     base = ctx.workspace / "organs"
     d_home, w_home = base / "daleobanks", base / "wealthmachine"
+    confined = ctx.egress is not None                 # #26: on a confined body the organs get no network at all
     d_env = _organ_env(key, extra={"LEDGER_PATH": str(d_home / "decision_ledger.jsonl"),
                                    "RAW_VAULT_PATH": str(d_home / "raw_vault.jsonl")})
     produced = _organ(_PRODUCER, {"signal": signal, "mission_id": mission_id}, str(p["daleobanks_root"]),
-                      str(KERNEL_ROOT), cwd=d_home, env=d_env)
+                      str(KERNEL_ROOT), cwd=d_home, env=d_env, confined=confined)
     request_body = produced["body"].encode("ascii")
     request_check = _relay_check(key, produced["headers"], request_body, direction="request", status="",
                                  request_digest="", sender="daleobanks", recipient="wealthmachine")
@@ -388,7 +403,7 @@ def exchange(params: dict, ctx: InvocationContext) -> dict:
     received = _organ(_RECEIVER, {"body": produced["body"], "headers": produced["headers"],
                                   "bridge_state": str(w_home / "bridge-state.jsonl"), "anchor": anchor,
                                   "legal_principal": principal},
-                      str(p["wmi_root"]), str(KERNEL_ROOT), cwd=w_home, env=_organ_env(key))
+                      str(p["wmi_root"]), str(KERNEL_ROOT), cwd=w_home, env=_organ_env(key), confined=confined)
     response_body = received["body"].encode("ascii")
     response_check = _relay_check(key, received["headers"], response_body, direction="response", status="200",
                                   request_digest=hashlib.sha256(request_body).hexdigest(),
@@ -399,7 +414,7 @@ def exchange(params: dict, ctx: InvocationContext) -> dict:
                                   "response_headers": received["headers"], "packet_id": produced["packet_id"],
                                   "bridge_state": str(d_home / "bridge-state.jsonl"), "anchor": anchor,
                                   "legal_principal": principal},
-                      str(p["daleobanks_root"]), str(KERNEL_ROOT), cwd=d_home, env=d_env)
+                      str(p["daleobanks_root"]), str(KERNEL_ROOT), cwd=d_home, env=d_env, confined=confined)
     packet, assessment = json.loads(produced["body"]), json.loads(received["body"])
     canonical = _canonical(packet, assessment)
     verdict, why = binding_verdict(assessment["go_no_go"], canonical["packet_unresolved"], packet.get("evidence", []))
@@ -442,10 +457,11 @@ def status(params: dict, ctx: InvocationContext) -> dict:
     return {"exchanged": False, "verdict": None, "path": None, "signal_sha256": digest}
 
 
-def verify_delivery(output: dict, deliver_root: Path | None) -> tuple[bool, str]:
+def verify_delivery(output: dict, deliver_root: Path | None, *, confined: bool = False) -> tuple[bool, str]:
     """Appraiser (separate process, no key): the memo is the render of its receipt; both bodies satisfy the
     Kernel contracts; the envelopes name the parties and digests they claim; the venture engine reproduces the
-    assessment; DALEOBANKS reproduces the packet's content from the same signal."""
+    assessment; DALEOBANKS reproduces the packet's content from the same signal. On a confined body (#26) the
+    organ re-runs are as confined as the exchange was."""
     if not isinstance(output, dict) or "inputs" not in output:
         return False, "receipt does not retain the exchange inputs"
     inputs = output["inputs"]
@@ -505,11 +521,12 @@ def verify_delivery(output: dict, deliver_root: Path | None) -> tuple[bool, str]
             again = _organ(_PRODUCER, {"signal": json.loads(signal_raw.decode("utf-8")), "mission_id": inputs["mission_id"]},
                            str(paths["daleobanks_root"]), str(KERNEL_ROOT), cwd=scratch / "daleobanks",
                            env=_organ_env(secrets.token_hex(32), extra={"LEDGER_PATH": str(scratch / "d.jsonl"),
-                                                                        "RAW_VAULT_PATH": str(scratch / "v.jsonl")}))
+                                                                        "RAW_VAULT_PATH": str(scratch / "v.jsonl")}),
+                           confined=confined)
             if normalized_packet(json.loads(again["body"])) != normalized_packet(packet):
                 return False, "DALEOBANKS does not reproduce the receipted packet from the same signal"
             engine = _organ(_ENGINE_ONLY, packet, str(paths["wmi_root"]), str(KERNEL_ROOT), cwd=scratch / "wealthmachine",
-                            env={})
+                            env={}, confined=confined)
     except (CapabilityError, OSError, ValueError, KeyError) as exc:
         return False, f"organ re-run failed: {type(exc).__name__}: {exc}"
     if any(engine.get(k) != assessment.get(k) for k in STABLE_ASSESSMENT):

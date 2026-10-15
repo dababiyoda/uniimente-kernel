@@ -1120,6 +1120,22 @@
  "operations": {
   "blackbox": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/repertoire.py::OBJECTIVES": "sha256:eba2ffddad4319095a2105e9f36a6c8d71549d824b87d3bf0f05613d005e7716",
+     "greg/cognition/repertoire.py::_ackley": "sha256:6836767e4df9afe102e04a7a4ef053e4c565bc811eab034a792fa4e1243a4fef",
+     "greg/cognition/repertoire.py::_griewank": "sha256:481348c7d93611724bd4f2416e3da026d5c522d9bbbdf929f4ee1c0972e1a8d6",
+     "greg/cognition/repertoire.py::_rastrigin": "sha256:d206e30eccb5283438c5c71246b84554cd439ab5cd96aa44e269b87475eadb31",
+     "greg/cognition/repertoire.py::_result": "sha256:fbc4a38127b4d75c5f42aaadd951f64bf225b649ab8c7e12447a97c44604e887",
+     "greg/cognition/repertoire.py::_rosenbrock": "sha256:62cf75702211014d419eeee6b19060dad5251da1c0b65e6f707a7788cc1acd4d",
+     "greg/cognition/repertoire.py::_search_result": "sha256:a245383ca2fa9d7fba90f8aaef450e8810c181f3b31a9b7370e44768052aad59",
+     "greg/cognition/repertoire.py::_sphere": "sha256:b710899ff4107a4abb92db2288c280b7762b9de7a536419f6609b9847a35125b",
+     "greg/cognition/repertoire.py::evolve_blackbox": "sha256:bc8515869200bac9590da13451cd7c1a63e89a32844bf41306d2ad24ad05010d",
+     "greg/cognition/repertoire.py::objective": "sha256:3826b183fe0ef17b3d48fddf67d7963549b04753af4f7fc51563f9b07815510f"
+    },
+    "closure_sha256": "sha256:ff8651f01a35eecfe49fb51791451f0f7ffdaf9a2e7390efcadf0fb013b38d30",
     "function": "evolve_blackbox",
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:bc8515869200bac9590da13451cd7c1a63e89a32844bf41306d2ad24ad05010d"
@@ -1137,6 +1153,13 @@
   },
   "causal": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::causal": "sha256:18bb4ca2af55d10020cfdc7f8a880ce72ac99e93bdc7691c55f40eb83d36addb",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:69ce197f22dcaf38f1d6a24d91a9b07e85b3545420c528d5aee7d8fb94f51f37",
     "function": "causal",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:18bb4ca2af55d10020cfdc7f8a880ce72ac99e93bdc7691c55f40eb83d36addb"
@@ -1154,6 +1177,14 @@
   },
   "collective": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::quorum": "sha256:4b7b82abe750b4403d8c285588d9166a831cad0aae6bc1954ad3c66f3ed3aa47",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:3d3171e8a365607261c8630637b33e1ea3be093070b0247738d208739bba7a62",
     "function": "quorum",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:4b7b82abe750b4403d8c285588d9166a831cad0aae6bc1954ad3c66f3ed3aa47"
@@ -1171,6 +1202,13 @@
   },
   "control": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::control": "sha256:2ae8bdc6ee56349a7649b602b10678d21c4af7f7772aab93fd338e921a6401b2",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:ecca2966b6b872b7882f09ee28435e00cc4f2dafcbfd0aef4bf742a1dd694721",
     "function": "control",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:2ae8bdc6ee56349a7649b602b10678d21c4af7f7772aab93fd338e921a6401b2"
@@ -1188,6 +1226,15 @@
   },
   "crowd": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/repertoire.py::_result": "sha256:fbc4a38127b4d75c5f42aaadd951f64bf225b649ab8c7e12447a97c44604e887",
+     "greg/cognition/repertoire.py::_voters": "sha256:ffbfc698ce51b6d3922b740818c130bf8716914c90d721ed160f4379fe914d72",
+     "greg/cognition/repertoire.py::crowd_label": "sha256:89ae5e1ce5b2838c67747623e8cf587f77ee07db5414d03717e602a296cb8d37"
+    },
+    "closure_sha256": "sha256:946eeb38740186bd80ae1d4d4b1a36597a7cf2171148df19d610933daf0aefcd",
     "function": "crowd_label",
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:89ae5e1ce5b2838c67747623e8cf587f77ee07db5414d03717e602a296cb8d37"
@@ -1209,6 +1256,14 @@
   },
   "estimation": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::fermi": "sha256:e6be6f9cefdaff4b6d0ae0dbad075cb29eca40bc438c4badca56d7a74eec5b9d",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:72b41f5094cd12a3724363982033b2418952e2e6dbc013919729814ae3552c66",
     "function": "fermi",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:e6be6f9cefdaff4b6d0ae0dbad075cb29eca40bc438c4badca56d7a74eec5b9d"
@@ -1226,6 +1281,13 @@
   },
   "evidence": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::canonical": "sha256:0e9d18746651bec77bcac0f5122daf7eb0b5a5bc8ebeea69629123f085e2dda6",
+     "greg/cognition/contracts.py::digest": "sha256:764c30e3f94e9b5aef02d037d9565af736c2c39d5109c18b39df6ffe0eac4fb4",
+     "greg/cognition/evidence.py::assess": "sha256:283071c0344f52a5fe722fe4b3476f83793889fff9acc024fac873a0d8a61519"
+    },
+    "closure_sha256": "sha256:b3c9963022c479ecbaa8227a72ade59f9b41b218f285d0fb73ab7fe58e5d969f",
     "function": "assess",
     "path": "greg/cognition/evidence.py",
     "sha256": "sha256:283071c0344f52a5fe722fe4b3476f83793889fff9acc024fac873a0d8a61519"
@@ -1243,6 +1305,14 @@
   },
   "evolutionary": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::evolutionary": "sha256:2eeab102c0127f3b5a61c06f367a01b2e9e005f2d09cf46878870731f82dbce2",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:6802f67e85fe94459bfda565b8c1e3c628ecf6a31c97b605aec7345d24b5b38e",
     "function": "evolutionary",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:2eeab102c0127f3b5a61c06f367a01b2e9e005f2d09cf46878870731f82dbce2"
@@ -1260,6 +1330,14 @@
   },
   "exact": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::exact": "sha256:23af2684d00fad3753dba1f048a760eeac6dea669481e0c8a868533173b31f51",
+     "greg/cognition/solvers.py::exact_value": "sha256:562ee6306ea6c5947b51bd919e1d6aad557ac7ab86c77c565458725beb4cc765",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:e6fc72c9a50760826bbe51225748e0ac39fdb0a6535ee94488e17f198ef1b47d",
     "function": "exact",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:23af2684d00fad3753dba1f048a760eeac6dea669481e0c8a868533173b31f51"
@@ -1277,6 +1355,15 @@
   },
   "formal": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::_model": "sha256:903e2f75f75e6180dd17bebd936d4be56e7e79fd0fae38b7f2e8b4687ec0d9c9",
+     "greg/cognition/solvers.py::formal": "sha256:017511faa362f9a46b8cad850cdc4221080b10c742548fef806dbc3cd066dd31",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:930ca3b99eebeff065a586f04e16256bd7ac52086d8b008d465528dd10d2ccd1",
     "function": "formal",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:017511faa362f9a46b8cad850cdc4221080b10c742548fef806dbc3cd066dd31"
@@ -1294,6 +1381,13 @@
   },
   "game": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::game": "sha256:9f02c16c3922903db88a1ffd3f3ef1eaa397227985af3b0a33e6fe62be004fb3",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:2428ae2e27e4cc2ac56945dcc1bfd6f24ab1aade60070b23e01b4b9029b1242c",
     "function": "game",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:9f02c16c3922903db88a1ffd3f3ef1eaa397227985af3b0a33e6fe62be004fb3"
@@ -1311,6 +1405,13 @@
   },
   "graph": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::graph": "sha256:7c1c2dedb42b3ea9bf4125b11e01e3bf2dbe94c26f54ec288f8b4774df5ffda9",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:a53bde90a60a988093e405db668e24db234631a8dce84d6cf938a3208b276d14",
     "function": "graph",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:7c1c2dedb42b3ea9bf4125b11e01e3bf2dbe94c26f54ec288f8b4774df5ffda9"
@@ -1328,6 +1429,11 @@
   },
   "human": {
    "code": {
+    "closure_members": {
+     "greg/cognition/solvers.py::human": "sha256:c17e4aed136bd7636b866b4f4f1f9d913f11ce8d727526c45a9b64481e281e26",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:81ba8d7f0cbe5e0d73140090757f65fbb5d6ed3062340aa80f8eb7b2db64b004",
     "function": "human",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:c17e4aed136bd7636b866b4f4f1f9d913f11ce8d727526c45a9b64481e281e26"
@@ -1345,6 +1451,13 @@
   },
   "information": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::information": "sha256:849921f0695fcf0bfd39bfd506a140356ae4e5f1b2ffc37575bbf5dbf60311b2",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:2ddbb1d9f941abbbbd626e003ceb053d2660c44bb894d25b86c92c0dbe1a66b3",
     "function": "information",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:849921f0695fcf0bfd39bfd506a140356ae4e5f1b2ffc37575bbf5dbf60311b2"
@@ -1362,6 +1475,13 @@
   },
   "micro": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::micro": "sha256:7bef72bf1972b80fd0d8e9f261dd54ce18fce935aabd92ebb2823e53076900da",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:fb9265e4703ce6d719cbb0d9479748a5de180cea9131234bb43060f0252c685f",
     "function": "micro",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:7bef72bf1972b80fd0d8e9f261dd54ce18fce935aabd92ebb2823e53076900da"
@@ -1379,6 +1499,15 @@
   },
   "optimization": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::_model": "sha256:903e2f75f75e6180dd17bebd936d4be56e7e79fd0fae38b7f2e8b4687ec0d9c9",
+     "greg/cognition/solvers.py::optimization": "sha256:027a78219baf23432a9508950cabe4b160f208e1b2ef56e9c3501f0e934c5f5c",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:a7251ba2863978b0043298e0384385d0fa4eaa49281d708819bac117f1d3a47e",
     "function": "optimization",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:027a78219baf23432a9508950cabe4b160f208e1b2ef56e9c3501f0e934c5f5c"
@@ -1396,6 +1525,13 @@
   },
   "pattern": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::pattern": "sha256:a3805d563c316dc33666186d6642901c7f2e2365d7e00f7b0185f2b61b11de29",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:4f2a7ed3d50063540ebf10530eaf487582fb96fa0fc2ab7e2707f6dc66880a07",
     "function": "pattern",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:a3805d563c316dc33666186d6642901c7f2e2365d7e00f7b0185f2b61b11de29"
@@ -1413,6 +1549,14 @@
   },
   "probabilistic": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::bayesian": "sha256:5f0ba505ab97fa60404fd466994e565a55aae58114b8b67ecd413ee341fa9ea5",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:1a1662833a2302616498d68bd844a4070f99256b8af59c6c88a78010e8430818",
     "function": "bayesian",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:5f0ba505ab97fa60404fd466994e565a55aae58114b8b67ecd413ee341fa9ea5"
@@ -1430,6 +1574,15 @@
   },
   "protection": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::ConsequenceVector": "sha256:be6425432b238f33cc695ce4c1877b832ea2ea50aad39e55cd4f45eec6f9a696",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/contracts.py::strict_data": "sha256:47432930fb6eb71cbb0158c26c453f1dd3f94f8e23923d77e977972bd45b32bf",
+     "greg/cognition/protection.py::AffectedParty": "sha256:9165926ddf0453ff2a1b9f6271091d0b528050c1857bbfc1b911e45e0401c230",
+     "greg/cognition/protection.py::assess": "sha256:e6c5fe474641a259f9431da2be0d73895aafc652d26d87973e13e000366dfcc0"
+    },
+    "closure_sha256": "sha256:2299b3bbb48988adcdb29c6d666ebd720f92e21e2de51dee093ada13e7238ad7",
     "function": "assess",
     "path": "greg/cognition/protection.py",
     "sha256": "sha256:e6c5fe474641a259f9431da2be0d73895aafc652d26d87973e13e000366dfcc0"
@@ -1447,6 +1600,14 @@
   },
   "robust_pattern": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/repertoire.py::_result": "sha256:fbc4a38127b4d75c5f42aaadd951f64bf225b649ab8c7e12447a97c44604e887",
+     "greg/cognition/repertoire.py::modified_z": "sha256:0a098cb77b64b14a69f93dc2f9b6faacb20cb762bd342a9095a2014edb60b08b",
+     "greg/cognition/repertoire.py::robust_anomalies": "sha256:d7fbc08ac18dc7125f0c972d5a23b37a4574babb8665eb7da758c0e68eae91bf"
+    },
+    "closure_sha256": "sha256:1e72fad51bc9809eacb88100eeaa9ba7f56b08808ed2e535b9e2443caf69d008",
     "function": "robust_anomalies",
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:d7fbc08ac18dc7125f0c972d5a23b37a4574babb8665eb7da758c0e68eae91bf"
@@ -1464,6 +1625,13 @@
   },
   "search": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::graph": "sha256:7c1c2dedb42b3ea9bf4125b11e01e3bf2dbe94c26f54ec288f8b4774df5ffda9",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
+    },
+    "closure_sha256": "sha256:a53bde90a60a988093e405db668e24db234631a8dce84d6cf938a3208b276d14",
     "function": "graph",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:7c1c2dedb42b3ea9bf4125b11e01e3bf2dbe94c26f54ec288f8b4774df5ffda9"
@@ -1494,6 +1662,14 @@
   },
   "sequential": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c",
+     "greg/cognition/solvers.py::sequential": "sha256:459e7655f9f6783fd6a30b44b05c1adea5ca35071f7eac3de540ddf60b24b53e"
+    },
+    "closure_sha256": "sha256:79cbcb72d956a27c47a4d294452112ca78e6a96a6d03e0e977499ca7866514ca",
     "function": "sequential",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:459e7655f9f6783fd6a30b44b05c1adea5ca35071f7eac3de540ddf60b24b53e"
@@ -1511,6 +1687,14 @@
   },
   "simulation": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c",
+     "greg/cognition/solvers.py::simulation": "sha256:fa21b3abf12aaa4c9f21bd12ed4d4abd60e5dfa21aaf2b5e43e666791997bd20"
+    },
+    "closure_sha256": "sha256:d8475c501336ffec3d8d6a5deb8429c3919ed26bbd9b6bf995bb670e08d2602b",
     "function": "simulation",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:fa21b3abf12aaa4c9f21bd12ed4d4abd60e5dfa21aaf2b5e43e666791997bd20"
@@ -1528,6 +1712,22 @@
   },
   "swarm": {
    "code": {
+    "closure_members": {
+     "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
+     "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
+     "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
+     "greg/cognition/repertoire.py::OBJECTIVES": "sha256:eba2ffddad4319095a2105e9f36a6c8d71549d824b87d3bf0f05613d005e7716",
+     "greg/cognition/repertoire.py::_ackley": "sha256:6836767e4df9afe102e04a7a4ef053e4c565bc811eab034a792fa4e1243a4fef",
+     "greg/cognition/repertoire.py::_griewank": "sha256:481348c7d93611724bd4f2416e3da026d5c522d9bbbdf929f4ee1c0972e1a8d6",
+     "greg/cognition/repertoire.py::_rastrigin": "sha256:d206e30eccb5283438c5c71246b84554cd439ab5cd96aa44e269b87475eadb31",
+     "greg/cognition/repertoire.py::_result": "sha256:fbc4a38127b4d75c5f42aaadd951f64bf225b649ab8c7e12447a97c44604e887",
+     "greg/cognition/repertoire.py::_rosenbrock": "sha256:62cf75702211014d419eeee6b19060dad5251da1c0b65e6f707a7788cc1acd4d",
+     "greg/cognition/repertoire.py::_search_result": "sha256:a245383ca2fa9d7fba90f8aaef450e8810c181f3b31a9b7370e44768052aad59",
+     "greg/cognition/repertoire.py::_sphere": "sha256:b710899ff4107a4abb92db2288c280b7762b9de7a536419f6609b9847a35125b",
+     "greg/cognition/repertoire.py::objective": "sha256:3826b183fe0ef17b3d48fddf67d7963549b04753af4f7fc51563f9b07815510f",
+     "greg/cognition/repertoire.py::swarm_minimize": "sha256:b80e76d4640cdafeb05d6d9b6b7c0cce5b6d02be369d7bfdc4ab732452314f4a"
+    },
+    "closure_sha256": "sha256:ae534e5c9f7f8645b27e251d40ef7d914f0db6c16edb63ac33e57401f9002189",
     "function": "swarm_minimize",
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:b80e76d4640cdafeb05d6d9b6b7c0cce5b6d02be369d7bfdc4ab732452314f4a"

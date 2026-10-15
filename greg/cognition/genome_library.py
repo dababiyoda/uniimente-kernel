@@ -206,15 +206,21 @@ def _acquired() -> list[GenomeEntry]:
             detail = (f"index {verdict['status']} on {verdict['family']} ({verdict['wins']}/{verdict['losses']}, "
                       f"p={verdict['p_one_sided']})" + ("" if verdict["lift"] else
                                                         f"; prefer {verdict['prefer']}")
-                      + (f"; stale: {stale}" if stale else ""))
+                      + (f"; stale: {stale}" if stale else "")
+                      # the frozen run's practitioner arms (review of #179, H4 and L11): the lift is over GREG's
+                      # best constituent, not over these
+                      + (f"; tied on every item by {', '.join(verdict['tied_by'])}" if verdict.get("tied_by") else "")
+                      + (f"; loses on item count to {', '.join(verdict['loses_to'])}"
+                         if verdict.get("loses_to") else ""))
             refs = (verdict["evidence"].partition("#")[0],)
         out.append(GenomeEntry(f"composition.{recipe}", "composition_recipe", 5, True, True, "BUILDABLE_NOW",
                                status, detail + (f"; {extra}" if extra else ""), refs + extra_refs))
     out += [
         GenomeEntry("mechanism.conditional_competence", "mechanism", 5, True, True, "BUILDABLE_NOW", "EXPERIMENTAL",
-                    "P4 conditional memory, observed in shadow and never applied by default. Two pre-registered "
-                    "decisive retests found no gain: #158 v3 REGRESSION 160 vs 162; #155 v3 NO_GAIN 111 = 111 of "
-                    "130. Conditional solver learning is not currently worth its complexity",
+                    "P4 conditional memory, observed in shadow and never applied by default. #158's pre-registered "
+                    "decisive retest found REGRESSION 160 vs 162 of 191; #155's NO_GAIN 111 = 111 re-measured 130 "
+                    "of the same payloads (a same-instance re-run: reproducibility, not replication). Conditional "
+                    "solver learning is not currently worth its complexity",
                     (P4_V2, P4_V3_PR158, P4_V3_PR155)),
         GenomeEntry("mechanism.protected_evolution", "mechanism", 5, True, False, "BUILDABLE_NOW", "EXPERIMENTAL",
                     "P8 canonical controller (greg.cognition.evolution): Landlock-confined candidates, sealed "
@@ -297,10 +303,45 @@ def matrix(entries: list[GenomeEntry] | None = None) -> dict:
     return dict(sorted(rows.items()))
 
 
+# where an admitted label comes from (review of #179, H4): only the first is an admission under #158's
+# pre-registered rule at the current version; the others are reported, never summed into one "admitted" number
+PROVENANCE = {
+    "rule_admitted": "#158 genome admission under the pre-registered rule (git freeze before the run), held-out "
+                     "seeds, against a named competitor, bound to the measured version",
+    "lineage_operation_verdict": "#155 operation-family admission runs: held-out, but not pre-registered in git "
+                                 "(freeze, runner and results land in one commit); a DEFAULT with no competitor "
+                                 "routes as UNEVALUATED",
+    "recipe_lift": "a composition's lift over its own constituents on one frozen family: not an admission",
+    "organ_label": "a hand-coded cortex-organ label from router evidence: not an admission",
+}
+LINEAGE_ADMISSION_DIR = "docs/evidence/greg-genome-admission/2026-10-14/"
+
+
+def provenance(e: GenomeEntry) -> str | None:
+    if e.admission not in ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY"):
+        return None
+    if e.source == "composition_recipe":
+        return "recipe_lift"
+    if e.source == "cortex_organ":
+        return "organ_label"
+    if any(r.startswith(LINEAGE_ADMISSION_DIR) for r in e.evidence_refs):
+        return "lineage_operation_verdict"
+    return "rule_admitted"
+
+
+def admitted_by_provenance(entries: list[GenomeEntry] | None = None) -> dict:
+    counts = {k: 0 for k in PROVENANCE}
+    for e in entries if entries is not None else inventory():
+        if (kind := provenance(e)) is not None:
+            counts[kind] += 1
+    return {"counts": counts, "meaning": PROVENANCE}
+
+
 def export() -> dict:
     entries = inventory()
     return {"schema": "greg-genome-library/0.1", "entries": [asdict(e) for e in entries],
-            "matrix": matrix(entries), "problems": check(entries)}
+            "matrix": matrix(entries), "admitted_by_provenance": admitted_by_provenance(entries),
+            "problems": check(entries)}
 
 
 if __name__ == "__main__":

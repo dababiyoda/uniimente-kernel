@@ -21,9 +21,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:                 # runnable as a plain script from any directory
+    sys.path.insert(0, str(ROOT))
 OUT = ROOT / "docs/evidence/greg-mind-evidence-index.json"
 # Family -> recipe, in run order: later files replace earlier verdicts for the same recipe.
 P6_RUNS = (
@@ -188,6 +191,16 @@ def _sha(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _practitioners(row: dict) -> dict:
+    """Arms beside the best constituent: ``tied_by`` names arms with no discordant item (the same outcome on
+    every item); ``loses_to`` names arms the composition lost more items to than it won."""
+    others = {k: v for k, v in (row.get("versus") or {}).items()
+              if k not in ("static_composition", "compiled", row.get("best_constituent"))}
+    out = {"tied_by": sorted(k for k, v in others.items() if v["wins"] == v["losses"] == 0),
+           "loses_to": sorted(k for k, v in others.items() if v["losses"] > v["wins"])}
+    return {k: v for k, v in out.items() if v}
+
+
 def build() -> dict:
     index = {"schema": "greg-mind-evidence-index/0.1", "sources": [], "missing_sources": [],
              "recipes": {}, "routing": {}, "genomes": {}, "operations": {},
@@ -213,6 +226,9 @@ def build() -> dict:
                 "prefer": None if lift else row["best_constituent"],
                 "wins": row["routed_wins"], "losses": row["routed_losses"],
                 "p_one_sided": row["sign_test_p_one_sided"], "evidence": f"{rel}#summary.{family}",
+                # practitioner and exact-single arms the same frozen run measured (review of #179, L11): a lift
+                # over GREG's best constituent is not a lift over these
+                **_practitioners(row),
                 # the recipe code this verdict measured (greg.cognition.compiler.recipe_stale)
                 "code": _recipe_code(recipe, data.get("source_commit"))},
                 p6_instances(data, family), seen_recipes)

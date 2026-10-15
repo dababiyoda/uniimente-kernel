@@ -682,8 +682,8 @@ INTELLIGENCES = [
                                 "potentials whose min-cost-flow dual bound for one more unit exceeds the budget",
             latency_profile="one Bellman-Ford per augmenting path", known_strengths=(
                 "exact with its own certificate", "no 64-variable ceiling (the graph_then_allocate composition "
-                "abstains above 32 edges)", "P6 v4 (F7): the same algorithm as its truth tied the composition on "
-                "200 of 200 real-backbone items"),
+                "abstains above 32 edges)", "not yet measured on F7: P6 v4's tie on 200 of 200 items was parametric "
+                "min-cost flow (the same split-arc formulation, a different and uncertified algorithm)"),
             known_failure_modes=("supplied capacities and prices may be wrong", "single commodity only",
                                  "parallel edges between one ordered pair are refused"),
             counterindications=("multi-commodity or modular (lumpy) capacity",),

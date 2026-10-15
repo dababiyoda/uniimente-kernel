@@ -2552,6 +2552,9 @@
     "sha256": "sha256:249274bdb4c7f160002b30384fca15d9b94bc5f6cd37c140ba6a3325e896b3b5"
    },
    "lift": true,
+   "loses_to": [
+    "weekly_mean_then_staff"
+   ],
    "losses": 16,
    "p_one_sided": 0.0,
    "prefer": null,
@@ -2611,6 +2614,9 @@
    "p_one_sided": 0.0,
    "prefer": null,
    "status": "VPL_LIFT",
+   "tied_by": [
+    "parametric_min_cost_flow"
+   ],
    "wins": 92
   },
   "identify_then_optimize": {
@@ -2752,6 +2758,11 @@
     "sha256": "sha256:99ca26e4444be55c8ebf64d9ca30afd3bd54cb94361a701a4695950641b6d3a8"
    },
    "lift": true,
+   "loses_to": [
+    "cumulative_ratio_then_staff",
+    "ewma_ratio_then_staff",
+    "kalman_median_then_staff"
+   ],
    "losses": 204,
    "p_one_sided": 0.0,
    "prefer": null,

@@ -718,3 +718,25 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
                                                   C.CompetencyGeometry(), index)}
     row = rows["composition:graph_then_allocate"]
     assert row["status"] == "UNEVALUATED" and "re-measurement" in row["stale_evidence"]
+
+
+def test_admitted_labels_are_reported_by_provenance_and_practitioner_ties_are_visible():
+    """Review of #179 (H4, L11): rule admissions, lineage verdicts, recipe lifts and organ labels are not one
+    admitted repertoire; and a recipe's practitioner tie reaches the compiler row and the inventory."""
+    from greg.cognition import genome_library
+    from greg.cognition.compiler import evidence_index
+    entries = genome_library.inventory()
+    split = genome_library.admitted_by_provenance(entries)["counts"]
+    labelled = [e for e in entries if e.admission in ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY")]
+    assert sum(split.values()) == len(labelled)
+    for e in labelled:
+        kind = genome_library.provenance(e)
+        if kind == "rule_admitted":           # only #158's pre-registered genome admissions count as admissions
+            assert all("greg-genome-admission/2026-10-1" in r and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR)
+                       for r in e.evidence_refs), e
+        if e.source in ("composition_recipe", "cortex_organ"):
+            assert kind in ("recipe_lift", "organ_label")
+    f7 = evidence_index()["recipes"]["graph_then_allocate"]
+    assert f7["tied_by"] == ["parametric_min_cost_flow"]
+    entry = next(e for e in entries if e.genome_id == "composition.graph_then_allocate")
+    assert "tied on every item by parametric_min_cost_flow" in entry.detail

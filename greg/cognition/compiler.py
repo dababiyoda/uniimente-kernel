@@ -522,6 +522,10 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     from .genomes import library
     rows, keys = [], set(data)
     genomes = library.executables()
+    # a recipe-shaped payload wraps one problem under its single required key: genomes also match the inner
+    # mapping, so an exact single method can compete with the recipe on the same request (review of #179, M10)
+    wrapped = {k: set(data[k]) for k in {r["requires"][0] for r in RECIPES.values() if len(r["requires"]) == 1}
+               if isinstance(data.get(k), dict)}
     # a superseded genome's competitor promoted into a registered genome of its own (same geometry and inputs)
     promoted = {old: new for old, new in library.promotions().items() if new in FAMILIES}
     pending = []                          # (superseded row, its promoted genome's method), settled after rejection
@@ -538,7 +542,10 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             else:
                 need = NATIVE_INPUTS.get(op)
                 standalone = True
-            if need is None or not set(need) <= keys:
+            input_path = None
+            if need is not None and not set(need) <= keys and family in genomes:
+                input_path = next((k for k, inner in wrapped.items() if set(need) <= inner), None)
+            if need is None or (not set(need) <= keys and input_path is None):
                 continue
             reason = None
             if g.geometry and g.geometry not in classes:
@@ -550,6 +557,7 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             row = {"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
                    "epistemic_classes": list(classes), "rejected": reason, "inputs": sorted(need), "outputs": outputs,
                    **({"stale_evidence": stale} if stale else {}),
+                   **({"input_path": input_path} if input_path else {}),
                    # solver code that changed since the admission run measured it (reported, not gating)
                    **({"code_drift": admission["code_drift"]} if admission.get("code_drift") else {})}
             if family in genomes and not stale and evidence["genomes"].get(family, {}).get("median_seconds") is not None:
@@ -588,12 +596,29 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             # relaxation): the superseding mechanism stays an acquisition candidate, and the reason is kept
             row["superseded_by"]["promoted_rejected"] = {"method": method, "why": why[method]}
     rows += _organ_rows(data, g, evidence)
+    _reject_relaxations(rows)          # organ rows too (review of #179, M7): Fermi alone answers part of a chain
     recipe = route(data)
+    if recipe is None:
+        # PR #155's dataflow derivation, reachable from the one Layer-5 entry (review of #179, M7): only when the
+        # derived chain consumes every input of every recipe that matched (M8)
+        from .composition import derive, derived_inputs, matching
+        derived = derive(data)
+        if derived and all(set(RECIPES[m]["requires"]) <= derived_inputs(data) for m in matching(data)):
+            rows.append({"method": "composition:derived:" + "+".join(derived), "operation": "derived",
+                         "kind": "composition", "status": "UNEVALUATED", "stages": list(derived), "rejected": None,
+                         "inputs": sorted(derived_inputs(data)), "outputs": None,
+                         "evidence_note": "NICHE_CAPABILITY in PR #155's P6 v3 (lift over the best single "
+                                          "intelligence, not over the best fixed recipe), measured before run() and "
+                                          "derive() changed (review M8): needs re-measurement"})
     if recipe:
         verdict = evidence["recipes"].get(recipe, {})
         row = {"method": f"composition:{recipe}", "operation": recipe, "kind": "composition",
                "status": "VPL_LIFT" if verdict.get("lift") else verdict.get("status", "UNEVALUATED"),
-               "stages": list(RECIPES[recipe]["stages"]), "rejected": None}
+               "stages": list(RECIPES[recipe]["stages"]), "rejected": None,
+               "inputs": sorted(RECIPES[recipe]["requires"]), "outputs": None,
+               # practitioner arms the same frozen run tied or lost to (review of #179, L11): reported, since the
+               # lift is over GREG's best constituent, not over these
+               **{k: verdict[k] for k in ("tied_by", "loses_to") if verdict.get(k)}}
         stale = recipe_stale(recipe, verdict)
         if stale and verdict.get("lift"):
             # a lift binds the recipe code it measured (review of #179, H5); no lift persists like any negative
@@ -606,6 +631,14 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
             row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
                               f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
         rows.append(row)
+    for comp in [r for r in rows if r["kind"] == "composition" and not r["rejected"] and r["status"] != "NO_LIFT"]:
+        # a single method reading only part of a composition's inputs answers a relaxed question; a NO_LIFT
+        # recipe never displaces its constituents (they win ties by the frozen verdict)
+        for row in rows:
+            if row is not comp and row["kind"] != "composition" and not row["rejected"] \
+                    and _read(row) < _read(comp):
+                ignored = sorted(_read(comp) - _read(row))
+                row["rejected"] = f"answers a relaxation: ignores declared inputs {ignored} that {comp['method']} consumes"
     return rows
 
 
@@ -613,6 +646,13 @@ def _same_decision(row: dict, fuller: dict) -> bool:
     """True when ``row`` produces every output the fuller method does: it decides the same question with less
     side information (hysteresis vs the Bayesian regime filter, which also reads a dwell prior) and competes."""
     return row["outputs"] is not None and fuller["outputs"] is not None and set(fuller["outputs"]) <= set(row["outputs"])
+
+
+def _read(row: dict) -> set:
+    """The payload fields a row reads, qualified by the wrapped key it reads them under: a method answering the
+    problem nested under ``capacity_network`` and one answering the top-level graph read different fields."""
+    path = row.get("input_path")
+    return {f"{path}.{k}" if path else k for k in row.get("inputs") or ()}
 
 
 def _reject_relaxations(rows: list[dict]) -> None:
@@ -627,10 +667,10 @@ def _reject_relaxations(rows: list[dict]) -> None:
     for row in rows:
         if row["rejected"]:
             continue
-        mine = set(row["inputs"])
-        fuller = [r for r in rows if r is not row and mine < set(r["inputs"]) and not _same_decision(row, r)]
+        mine = _read(row)
+        fuller = [r for r in rows if r is not row and mine < _read(r) and not _same_decision(row, r)]
         if fuller:
-            ignored = sorted(set().union(*(set(r["inputs"]) for r in fuller)) - mine)
+            ignored = sorted(set().union(*(_read(r) for r in fuller)) - mine)
             row["rejected"] = (f"answers a relaxation: ignores declared inputs {ignored} that "
                                f"{sorted(r['method'] for r in fuller)} consume")
 
@@ -641,7 +681,11 @@ def _organ_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]
     path. Their status comes from the evidence index's ``organs`` section when it has one, else UNEVALUATED; like a
     genome's, positive organ evidence binds the version it was measured at (CORTEX_ENTRIES) and negative evidence
     persists until a re-admission replaces it."""
-    from cortex.routing import _route_parts      # the cortex's route policy, reused rather than re-implemented
+    from cortex.routing import (DETERRENCE, EVIDENCE, EXTRACT, FERMI, FORMAL, SEMANTIC,  # the cortex's route
+                                _route_parts)                                       # policy, reused
+    # the payload part each organ reads under that policy (cortex.routing._route_parts)
+    part = {FORMAL: "formal_model", EXTRACT: "schedule_request", FERMI: "estimation_model",
+            DETERRENCE: "deterrence_model", EVIDENCE: "claim", SEMANTIC: "sources"}
     from .bridge import _CLASS, ORGANS
     from .catalog import CORTEX_ENTRIES
     rows = []
@@ -660,7 +704,8 @@ def _organ_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]
         reason = (f"native geometry {klass} does not include {g.geometry}" if g.geometry and g.geometry != klass
                   else f"frozen status {status}" if status in EXCLUDED else None)
         rows.append({"method": cid, "operation": "problem", "kind": "problem", "status": status, "organ": key,
-                     "epistemic_classes": [klass], "rejected": reason, **({"stale_evidence": stale} if stale else {})})
+                     "epistemic_classes": [klass], "rejected": reason, "inputs": [part.get(key, key)], "outputs": None,
+                     **({"stale_evidence": stale} if stale else {})})
     return rows
 
 
@@ -769,6 +814,11 @@ def _usable(registry, row: dict) -> tuple[bool, str]:
         return True, "organ attached behind the attached cortex router"
     if row["kind"] != "operation":
         from .composition import RECIPES
+        if row["operation"] == "derived":
+            # derived stages run on the canonical problem path behind the cortex router, checked there
+            from .bridge import ROUTER
+            ok, why = registry.usable(ROUTER) if ROUTER in registry.manifests else (False, "not registered")
+            return (True, "derived composition: stages run on the canonical path") if ok else (False, f"{ROUTER}: {why}")
         missing = [op for op in RECIPES[row["operation"]].get("operations", ()) if not _operation_usable(registry, op)]
         if missing:
             return False, f"composition stages without an attached capability: {missing}"
@@ -1210,7 +1260,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                       inner["output"])
     if chosen["kind"] == "composition":
         from .composition import RECIPES
-        if high and "optimize" in RECIPES[chosen["operation"]]["stages"] and data.get("formalization_complete") is not True:
+        if high and "optimize" in chosen["stages"] and data.get("formalization_complete") is not True:
             receipt["abstentions"].append("FORMALIZATION_INCOMPLETE: complete formal model plus independently "
                                           "verified world assumptions")
             return finish("FORMALIZATION_INCOMPLETE")
@@ -1229,7 +1279,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         return finish("ANSWERED", inner["answer"])
     geometry_hint = {"latency_limit": min(30.0, float(g.latency_budget or 20.0)),
                      **({"consequence_class": g.consequence_class} if g.consequence_class else {})}
-    inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint,
+    inner = reason({"problem_id": pid, "operation": chosen["operation"],
+                    "data": data[chosen["input_path"]] if chosen.get("input_path") else data, "geometry": geometry_hint,
                     **extra}, registry=registry, journal=journal, model_config=model_config)
     receipt["intermediate_receipts"] = [inner["receipt_id"]]
     # the executed method's own receipt, whole: settlement credits that method through this compilation

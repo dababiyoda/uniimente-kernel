@@ -75,7 +75,7 @@ system and one evolution controller, with every useful capability retained and e
 | file | 185 files changed by either lineage. Classified: 97 complementary, 73 historical evidence, 8 semantic incompatibility (the frozen-path collisions), 5 interchangeable, 2 duplicate, 0 unresolved. |
 | interface | One cognition entry: `greg.cognition.cortex.reason` / `solve` -> catalog -> `SOLVERS` -> isolated worker -> independent verifier -> receipt. One Layer 5 entry above it: the Competency Compiler (`greg/cognition/compiler.py`). Both lineages' families run through it. |
 | contract | One catalog projection (`catalog.FAMILIES`, 72 families). The genome contract is `greg/cognition/genomes/contract.py`. Proof classes: #155's family checks plus #158's `genome_certificate`, on one verifier. |
-| genome | 126 inventoried; 97 implemented; 93 integrated; 36 admitted (27 DEFAULT_FOR_GEOMETRY, 9 NICHE_CAPABILITY); 7 COMPOSITION_ONLY; 12 SUPERSEDED; 4 REJECTED; 40 EXPERIMENTAL or unevaluated; 27 FRONTIER_HORIZON. 8 are attached by default and 0 are attached by any evaluation. On a body, actually exercised is 0 (VEPMC 0); exercised in tests and frozen evaluations only. |
+| genome | 127 inventoried; 98 implemented; 94 integrated; 28 labelled DEFAULT_FOR_GEOMETRY (19) or NICHE_CAPABILITY (9); 7 COMPOSITION_ONLY; 8 SUPERSEDED; 4 REJECTED; 53 EXPERIMENTAL or unevaluated; 27 FRONTIER_HORIZON. The 28 labels are not one admitted repertoire (review of #179, H4); by provenance: **19 rule-admitted** under #158's pre-registered rule at the current version, 5 #155 operation-family verdicts (held-out, not pre-registered in git), 2 recipe lifts (not admissions), 2 hand-coded organ labels (not admissions). `genome_library.admitted_by_provenance()` reports this split. 8 are attached by default and 0 are attached by any evaluation. On a body, actually exercised is 0 (VEPMC 0); exercised in tests and frozen evaluations only. |
 | evaluation | One evidence index (`docs/evidence/greg-mind-evidence-index.json`) carries every frozen admission, P6 and P4 run of both lineages. `tests/unit/test_mind_evidence_sources.py` re-derives every row from the file it cites. |
 | behaviour | Measured on one request per input signature. The compiler now refuses methods that lost on held-out data in either lineage (section 5); every other top choice is unchanged. |
 
@@ -124,7 +124,7 @@ Single-lineage duplicates and overlaps:
 | frozen cognition benchmark | #158 `frozen-suite-v2.json` | version-pinned suite with v1 kept; #155's fix reconciled a drifting view of the same suite | git history at `ef5f078` |
 | Landlock grants | one path: #155's superset | superset of both lineages' libraries, never user-site or an ancestor of repository or store; probe and confined-worker tests pass | none (exact duplicate fixed twice) |
 | admission source of truth | the Mind evidence index | #158's index is digest-checked and re-derived by test; #155's inventory had misreported #158's 47 genome families as unbenchmarked | none: `genome_library` now reads the index |
-| operation-family verdicts | #155's frozen admission runs, through the index | held-out runs; four DEFAULTs had no competitor and route as UNEVALUATED (review H4); collective's REJECTED is corrected by an erratum to EXPERIMENTAL (review M3); structural labels kept but non-routing | n/a |
+| operation-family verdicts | #155's frozen admission runs, through the index | held-out runs, not pre-registered in git (freeze, runner and results land in one commit, review H4); four DEFAULTs had no competitor and route as UNEVALUATED (review H4); collective's REJECTED is corrected by an erratum to EXPERIMENTAL (review M3); structural labels kept but non-routing | n/a |
 | P4 deciding row | #158's REGRESSION (191 items) | review of #179 (H1): #155's NO_GAIN re-measured 130 of the same payloads, so it is a same-instance re-run and cannot decide. Both are negative; the default stays shadow | #155's NO_GAIN in `history`, labelled same-instance re-run |
 | identify_then_optimize deciding family | #158's F2R (64 items) | review of #179 (H1): F2b used the same generator on seeds 25-72, a subset of F2R's 25-88, so it is a same-instance re-run. F2 to F2R shares no instance and is the one genuine replication | F2 and F2b in `history` |
 | lawful intervention generation | #158 `foundry/lawful_leverage.py`, extended with #155's seven uncovered operator classes | See the note below the table. | #155's `compile_map`: superseded as a generator; read-only structural view (CLI), `authority_created` false |
@@ -249,22 +249,35 @@ How the two generators were reconciled (2026-10-15, revised after the founder's 
 |---|---|---|---|---|
 | F1 estimate -> optimise | shared base | constructed | yes (p = 0.00012) | |
 | F2 identify -> optimise | both | constructed | yes (F2R; F2b 11-3) | v1 underpowered |
-| F3 graph -> allocate | #158 | constructed (generated networks) | yes | |
-| F4 bayes -> voi | #158 | constructed | yes | |
+| F3 graph -> allocate | #158 | constructed (generated networks) | yes (11-0, over greedy) | the exact single genome `flow_expansion_mcf` ties it on development items F3-1..8 (8/8 each, review L15); measured before that genome existed |
+| F4 bayes -> voi | #158 | constructed | yes | truth is the declared-model Bayes action, not the hidden parameter; the best constituent was denied the observed evidence; on realised value the composition is worse (-55.4 against -20.3, review M13) |
 | F5 forecast -> allocate | #158 | natural (M4) | **no** (8.5% cheaper, not significant) | |
 | F6 forecast -> staff | #158 | natural (bank arrivals) | yes (74-16) | loses to the weekly-mean practitioner on day count (40-50) |
-| F7 graph -> allocate | #158 | natural topology; computed truth | yes (92-0) | tied on every item by parametric min-cost flow, about 300x faster |
+| F7 graph -> allocate | #158 | natural topology; computed truth | yes (92-0, over greedy) | tied on throughput on every item by parametric min-cost flow (PMCF); at equal throughput the composition spends more than PMCF on 46 of 100 development items (mean excess 7.6% of budget, max 55.8%) and never less (spend diagnostic, review M11), so the exact method weakly dominates it; the frozen latencies of the two are not comparable (review M12) |
 | X1 | #155 | constructed | yes (48-0) | cortex multi-organ route, not a recipe |
 | X2 | #155 | constructed | yes (57-0) | its strongest single (a local model) NOT_RUN |
 | derived chains ("#155 F3") | #155 | constructed | yes (41-0) | **no** lift over the best fixed recipe (4-2) |
 | F8 track -> staff | #158 | natural (NYC 2015 pickups; Layer 1 Kalman tracker as a stage) | yes, over the best single intelligence | 4.7% dearer in total than the simpler EWMA ratio + quantile ablation (the tracker's abstentions fall back to the standing plan); measured on #158's lineage at its freeze commit, not on the converged Mind |
 
-Ten distinct families lift over the best single constituent they were measured against. Nine remain if X2
-is set aside because its strongest single was not run. Three of four natural families lift (F6, F7, F8); in
-each, a simpler practitioner or ablation pipeline ties or beats the composition (F6 weekly mean, F7 parametric
-min-cost flow, F8 EWMA ratio + quantile).
+**Count under the founder's definition** (review of #179, L2). The VPL metric counts held-out families where
+composition beats the strongest single available intelligence, net of cost and latency, with no added false
+answers. Under that definition no family is settled:
+- **pending, a stronger single exists or was not run:** F7 (PMCF ties it and spends less), F3 (the exact genome
+  ties it on development data), X2 (strongest single NOT_RUN);
+- **lift over a constituent denied information or incomplete by design:** F4 (uninformed prior), X1 (structural,
+  cortex multi-organ route);
+- **added wrong answers or abstentions where a single was right:** F2R-27, -37, -41, -87 (two wrong, two no
+  decision) and F2b-27, -37, -41 (one wrong, two no decision), recomputed here from the frozen rows;
+- **beaten or tied by a practitioner on a natural family:** F6 (weekly mean wins day count 50-40), F8 (dearer in
+  total than the EWMA-quantile ablation; loses on item count to the cumulative-ratio, EWMA-ratio and
+  Kalman-median arms).
 
-Every lift costs latency (#158 accounting: 1.5-5.2x). Apart from F7's shortest-path-upgrade arm, no
+The weaker count, over the best constituent each family was measured against, is ten families (nine without
+X2). The evidence index now carries each frozen run's practitioner arms as `tied_by` and `loses_to`, and the
+compiler and `greg genomes` report them. #155's ledger line "VPL = 4 distinct families with F1" carries an
+erratum.
+
+Every lift costs latency (#158 accounting: 1.5-5.3x; F7 5.31x, review L13). Apart from F7's shortest-path-upgrade arm, no
 practitioner pipeline was beaten where one was measured. This does not show composition has superior general
 intelligence: several constituents are deliberately incomplete, as the founder warned.
 
@@ -276,14 +289,26 @@ intelligence: several constituents are deliberately incomplete, as the founder w
 - The HiGHS optimum equals #158's recorded truth on 200 of 200.
 - Every arm's recorded outcome and throughput reproduce under an independent max-flow.
 
-**Should parametric min-cost flow be the canonical genome for this geometry?** Engineering answer: yes,
-conditionally. It is exact on every audited item, a single certified intelligence, and about 300 times faster
-than the three-stage composition. That intelligence is #158's `flow_expansion_mcf`, version 1.0.0.
+**Should parametric min-cost flow be the canonical genome for this geometry?** Engineering answer: an exact
+single method should be, conditionally. PMCF (the same split-arc formulation, a different algorithm, uncertified)
+tied the composition on all 200 audited items and never spends more at equal throughput. #158's
+`flow_expansion_mcf` 1.0.0 shares the formulation, not the algorithm (successive shortest paths with its own
+dual or cut certificate), and has development evidence only (review L10).
+
+Latency (review M12, corrected): the earlier "about 300 times faster" divided PMCF run in process by the
+composition through three isolated workers; the frozen v4 README says those figures are not comparable. Like for
+like, the review measured the composition and PMCF equally fast in process (per-item median ratio 0.96x), and a
+one-stage exact genome on GREG's path about 4-5x faster than the three-stage chain. An erratum sits beside the
+frozen audit (`docs/evidence/pr155-f7-audit/2026-10-14/ERRATUM-2026-10-15.md`); its README is unchanged.
 
 - It is UNEVALUATED in the index: no frozen admission at its exact version.
-- The compiler already routes a flat capacity-expansion request to it as the only fit; it is withheld, so the
-  route ends in an attach ask.
-- A recipe-shaped payload still reaches `graph_then_allocate`.
+- The compiler routes a flat capacity-expansion request to it as the only fit; it is withheld, so the route ends
+  in an attach ask.
+- A recipe-shaped payload (`capacity_network`) now also reaches it: exact single methods match the problem nested
+  under a recipe's key and compete with the recipe on evidence (review M10). Today the recipe's VPL_LIFT still
+  ranks first, with `tied_by: parametric_min_cost_flow` reported on its row; admission v3 re-derives the order.
+- Admission v3 and the F7 re-measurement should pre-register spend at equal throughput as a declared secondary
+  measure (review M11).
 
 The condition is a pre-registered admission of `flow_expansion_mcf` 1.0.0 with the composition as competitor
 on items F7 never used. This PR does not run that admission:

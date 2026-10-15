@@ -106,7 +106,14 @@ def _recipe_verdict(cited: dict) -> dict:
     lift = bool(cited["lift"])
     return {"lift": lift, "status": "VPL_LIFT" if lift else "NO_LIFT", "wins": cited["routed_wins"],
             "losses": cited["routed_losses"], "p_one_sided": cited["sign_test_p_one_sided"],
-            "prefer": None if lift else cited["best_constituent"]}
+            "prefer": None if lift else cited["best_constituent"],
+            # practitioner and exact-single arms of the same run (review of #179, L11): no discordant item is a tie
+            "tied_by": sorted(k for k, v in (cited.get("versus") or {}).items()
+                              if k not in ("static_composition", "compiled", cited["best_constituent"])
+                              and v["wins"] == 0 and v["losses"] == 0) or None,
+            "loses_to": sorted(k for k, v in (cited.get("versus") or {}).items()
+                               if k not in ("static_composition", "compiled", cited["best_constituent"])
+                               and v["losses"] > v["wins"]) or None}
 
 
 def test_every_cited_verdict_matches_the_source_it_cites():
@@ -133,7 +140,9 @@ def test_every_cited_verdict_matches_the_source_it_cites():
             expected = _recipe_verdict(cited)
             observed = {k: verdict.get(k) for k in expected}
             if observed != expected:
-                problems.append(f"recipe {recipe} ({verdict.get('family')}): index {observed} but source {expected}")
+                diff = {k: (observed[k], expected[k]) for k in expected if observed[k] != expected[k]}
+                problems.append(f"recipe {recipe} ({verdict.get('family')}): index but source differ (index, "
+                                f"source): {diff}")
     for name, row in index["routing"].items():
         cited = _cite(row["evidence"], listed, problems)
         if cited is not None and cited.get("verdict") != row["verdict"]:

@@ -106,11 +106,35 @@ PRODUCERS = {"estimate": ("estimate", "estimation_model"), "effect": ("identify"
 STAGE_ORDER = ("estimate", "identify")
 
 
+def matching(payload: dict) -> list[str]:
+    """Every recipe whose required inputs the payload carries."""
+    keys = set(payload)
+    return [name for name, r in RECIPES.items() if set(r["requires"]) <= keys]
+
+
 def route(payload: dict) -> str | None:
     """The recipe whose geometry the payload has, or None when no single recipe fits."""
-    keys = set(payload)
-    matches = [name for name, r in RECIPES.items() if set(r["requires"]) <= keys]
+    matches = matching(payload)
     return matches[0] if len(matches) == 1 else None
+
+
+def _reads(recipe: str) -> set:
+    """Payload keys a recipe reads (its required inputs plus every ``payload[...]``/``payload.get(...)`` key in its
+    operation function), so a receipt can name what the chain never consumed."""
+    import ast
+    import inspect
+    keys = set(RECIPES.get(recipe, {}).get("requires", ()))
+    fn = OPERATION_RECIPES.get(recipe)
+    if fn is not None:
+        for node in ast.walk(ast.parse(inspect.getsource(fn))):
+            if isinstance(node, ast.Subscript) and getattr(node.value, "id", None) == "payload" \
+                    and isinstance(node.slice, ast.Constant):
+                keys.add(node.slice.value)
+            elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "get" \
+                    and getattr(node.func.value, "id", None) == "payload" and node.args \
+                    and isinstance(node.args[0], ast.Constant):
+                keys.add(node.args[0].value)
+    return keys
 
 
 def _roots(template, out: set) -> set:
@@ -136,6 +160,14 @@ def derive(payload: dict) -> tuple[str, ...] | None:
         return None
     needed = {PRODUCERS[r][0] for r in roots}
     return tuple(stage for stage in STAGE_ORDER if stage in needed) + ("optimize",)
+
+
+def derived_inputs(payload: dict) -> set:
+    """The payload keys a derived chain consumes: each producer stage's input and the formal template."""
+    if not isinstance(payload.get("formal_template"), dict):
+        return set()
+    roots = _roots(payload["formal_template"], set())
+    return {PRODUCERS[r][1] for r in roots if r in PRODUCERS} | {"formal_template"}
 
 
 class TranslationError(CognitionError):
@@ -520,7 +552,12 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     recipe = chain.get("recipe") or route(payload)
     routed_by = "fixed" if chain.get("recipe") else "geometry"
     stages = RECIPES[recipe]["stages"] if recipe else None
-    if recipe is None and not chain.get("recipe") and (derived := derive(payload)) is not None:
+    ambiguous = [] if chain.get("recipe") else matching(payload)
+    # derive only when the derived chain consumes every input of every recipe that matched: otherwise the
+    # geometry is ambiguous and the composition refuses rather than silently dropping a recipe's inputs
+    # (review of #179, M8). A three-stage estimate+identify chain matches both template recipes and consumes both.
+    if recipe is None and not chain.get("recipe") and (derived := derive(payload)) is not None \
+            and all(set(RECIPES[m]["requires"]) <= derived_inputs(payload) for m in ambiguous):
         stages, recipe, routed_by = derived, "derived:" + "+".join(derived), "dataflow"
     receipt = {"schema": SCHEMA, "problem_id": pid, "input_digest": digest(params), "recipe": recipe,
                "routed_by": routed_by, "stages": [], "bindings": [], "translation_failures": [],
@@ -536,6 +573,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         return receipt
 
     if recipe is None:
+        if len(ambiguous) > 1:
+            return finish("NO_RECIPE", f"ambiguous geometry: recipes {ambiguous} all match; supply one recipe")
         return finish("NO_RECIPE", "no single composition recipe matches this geometry")
     requires = RECIPES[recipe]["requires"] if recipe in RECIPES else \
         tuple(PRODUCERS[r][1] for r in PRODUCERS if PRODUCERS[r][0] in stages) + ("formal_template",)
@@ -543,6 +582,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     if missing:
         return finish("NO_RECIPE", f"recipe {recipe} needs {missing}")
     receipt["chain"] = list(stages)
+    consumed = _reads(recipe) if recipe in RECIPES else set(requires) | {"declared"}
+    receipt["unconsumed_inputs"] = sorted(k for k in payload if k not in consumed | {"declared"})
     declared = payload.get("declared", DECL)
     values = {}
     kw = dict(registry=registry, journal=journal, model_config=model_config)

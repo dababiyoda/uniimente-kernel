@@ -95,6 +95,13 @@ def test_a_composition_without_verified_lift_yields_to_any_other_fit(registry, n
     assert any(x["method"] == "composition:graph_then_allocate" and "no lift" in x["why"]
                for x in r["methods_demoted"])
     assert r["method_or_composition_selected"] == "cognition.flow_maxflow"
+    # review of #179 (M10): exact single methods also read the problem nested under the recipe's key, so the
+    # verdict's own preferred constituent answers it once the recipe has no lift
+    alone = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"], execute=False)
+    assert alone["method_or_composition_selected"] == "cognition.flow_reinforce_greedy"
+    no_index.write_text(json.dumps({"genomes": {"flow_reinforce_greedy": {"status": "SUPERSEDED"}}, "routing": {},
+                                    "recipes": {"graph_then_allocate": {"lift": False,
+                                                                        "prefer": "flow_reinforce_greedy"}}}))
     alone = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"], execute=False)
     assert alone["method_or_composition_selected"] == "composition:graph_then_allocate"   # the only fit stays
 
@@ -327,7 +334,8 @@ def test_a_withheld_best_fit_is_asked_for_on_the_attach_contract(registry, no_in
     from greg import asks
     from greg.console import _attachable
     both = {**R.f3(3)["payload"], **maxflow_instance(3)[0]}
-    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"}},
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"},
+                                                "flow_reinforce_greedy": {"status": "SUPERSEDED"}},
                                     "recipes": {}, "routing": {}}))
     geometry = {"geometry": "optimization", "graph_structure": True}
     attached = compile_(registry, geometry, both, execute=False)
@@ -432,7 +440,8 @@ def test_settled_failures_on_the_body_demote_a_method_and_a_few_do_not(registry,
     """Section 31 item 13: live negative evidence changes routing. Ten or more settled outcomes whose 95% upper
     bound on correctness is below one half demote the method (ranked after every other fit, never deleted)."""
     both = {**R.f3(3)["payload"], **maxflow_instance(3)[0]}
-    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"}},
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"},
+                                                "flow_reinforce_greedy": {"status": "SUPERSEDED"}},
                                     "recipes": {}, "routing": {}}))
     geometry = {"geometry": "optimization"}
     monkeypatch.setattr(compiler, "_settled_counts", lambda journal: {"cognition.flow_maxflow": (12, 2)})
@@ -445,8 +454,10 @@ def test_settled_failures_on_the_body_demote_a_method_and_a_few_do_not(registry,
     assert compiler._settled_inhibition(12, 8) is None
 
 
-def test_an_executed_composition_keeps_each_stages_counterargument_as_dissent(registry):
+def test_an_executed_composition_keeps_each_stages_counterargument_as_dissent(registry, no_index):
     """Audit 2026-10-14 (section 12): the composition branch dropped every stage's strongest counterargument."""
+    no_index.write_text(json.dumps({"genomes": {"flow_reinforce_greedy": {"status": "SUPERSEDED"}},
+                                    "recipes": {}, "routing": {}}))      # the frozen admission v1 verdict
     r = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"])
     assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
     stages = [d for d in r["dissent"] if d.startswith("stage ")]

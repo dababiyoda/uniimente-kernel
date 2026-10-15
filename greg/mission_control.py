@@ -114,8 +114,7 @@ def _credentials(home, handles) -> list[dict]:
     rows = []
     for handle in handles:
         login = mcp_login.record(broker, handle) if handle.startswith("mcp:") else None
-        rows.append({"handle": handle, "kind": "OAuth login" if login else "token or key",
-                     **(mcp_login.public(login) if login else {})})
+        rows.append({"handle": handle, "kind": "token or key", **(mcp_login.public(login) if login else {})})
     return rows
 
 
@@ -394,12 +393,14 @@ def _tool_servers_section(console, p, form) -> str:
            "change anything; its own claims are not trusted. A tool that writes or reaches the network runs as "
            "<code>mcp.act</code>, and only after you approve its exact scope: the folders it may write, the hosts it "
            "may reach through the relay, and the credential handles it receives.</p>")
-    hosted = [c for c in p.get("credentials") or [] if c.get("kind") == "OAuth login"]
+    hosted = [c for c in p.get("credentials") or [] if c.get("kind") in ("OAuth login", "registered token")]
     if hosted:
-        out += ("<h3>Hosted servers GREG is logged in to</h3><p class=reality>Their tools as each server listed them "
-                "when you logged in (its claim, not trusted). Every call to one waits for your approval.</p>"
-                + _table(["Server", "Handle", "Tools (listed at login)"], [
-                    [f"<code>{_e(c['server'])}</code>", f"<code>{_e(c['handle'])}</code>",
+        out += ("<h3>Hosted servers GREG holds a login or token for</h3><p class=reality>Their tools as each server "
+                "listed them when you logged in or registered the token (its claim, not trusted). Every call to one "
+                "waits for your approval.</p>"
+                + _table(["Server", "Handle", "Tools (as the server listed them)"], [
+                    [f"<code>{_e(c['server'])}</code>", f"<code>{_e(c['handle'])}</code> "
+                     f"<span class=muted>{_e(c['kind'])}</span>",
                      "; ".join(f"<code>{_e(t['name'])}</code>" + (f": {_e(t['description'][:80])}" if t.get("description")
                                                                   else "") for t in c.get("tools") or []) or "none listed"]
                     for c in hosted]))
@@ -575,7 +576,8 @@ def _authority(console, p, form) -> str:
             + (_table(["Handle", "Kind", "Server", "Renews at", "Expires", "To revoke"], [
                 [f"<code>{_e(c['handle'])}</code>", _e(c["kind"]), _e(c.get("server") or "—"), _e(c.get("renews_at") or "—"),
                  _e(_when(c.get("expires_at"))), f"<code>greg secret remove {_e(c['handle'])}</code>"
-                 + (" and remove GREG's access at the service" if c["kind"] == "OAuth login" else "")]
+                 + (" and remove GREG's access at the service" if c["kind"] == "OAuth login" else
+                    " and revoke the token at the service" if c["kind"] == "registered token" else "")]
                 for c in p.get("credentials", [])]) if p.get("credentials") else "<p class=empty>None.</p>")
             + ("<h2>Model keys a vendor refused</h2><p class=warn>GREG stopped using each of these routes when the vendor "
                "refused its key, and will not try it again until a new key is stored.</p>"

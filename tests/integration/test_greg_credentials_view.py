@@ -40,6 +40,22 @@ def test_the_founder_sees_the_hosted_servers_greg_is_logged_in_to_without_contac
         "tools": [{"name": "add_note", "description": "Add a note to the shared notes.", "needs": ["text"],
                    "claims_read_only": None}]}))
     _, command = http(port, "/mc/command")
-    hosted = command.split("Hosted servers GREG is logged in to", 1)[1].split("</table>", 1)[0]
+    hosted = command.split("Hosted servers GREG holds a login or token for", 1)[1].split("</table>", 1)[0]
     assert "https://service.test/mcp" in hosted and "<code>add_note</code>" in hosted and "<code>mcp:notes</code>" in hosted
     assert "ACCESS-VALUE-8c9d" not in command
+
+
+def test_a_registered_token_shows_as_a_hosted_server_with_its_tools(running):
+    home, data, console, port = running
+    SecretBroker(home / "secrets.json").put("mcp:issues", json.dumps({
+        "kind": mcp_login.TOKEN_KIND, "server": "https://issues.test/mcp", "tokens": {"access_token": "PASTED-VALUE-1f2e"},
+        "listed_at": time.time(), "tools": [{"name": "open_issue", "description": "Open an issue.", "needs": ["title"],
+                                             "claims_read_only": False}]}))
+    _, authority = http(port, "/mc/authority")
+    table = authority.split("Credentials GREG holds", 1)[1].split("</table>", 1)[0]
+    assert "registered token" in table and "https://issues.test/mcp" in table
+    assert "greg secret remove mcp:issues</code> and revoke the token at the service" in table
+    _, command = http(port, "/mc/command")
+    hosted = command.split("Hosted servers GREG holds a login or token for", 1)[1].split("</table>", 1)[0]
+    assert "https://issues.test/mcp" in hosted and "<code>open_issue</code>" in hosted and "registered token" in hosted
+    assert "PASTED-VALUE-1f2e" not in authority + command

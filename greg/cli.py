@@ -242,6 +242,10 @@ def main(argv=None) -> int:
                                         "the tokens stay in this body's secret broker under mcp:<name>")
     mlo.add_argument("name")
     mlo.add_argument("url")
+    mto = mcps.add_parser("token", help="keep a bearer token a hosted MCP server gave you, with its address and the "
+                                        "tools it lists (read from a hidden prompt or stdin, never the command line)")
+    mto.add_argument("name")
+    mto.add_argument("url")
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
     doc.add_argument("--chromebook", action="store_true", required=True)
     fd = sub.add_parser("foundry", help="the Foundry arsenal: completion status, systems, GREG's own graph and reputation")
@@ -677,6 +681,19 @@ def main(argv=None) -> int:
                                              "your approval" + (f", and names {out['renews_at']} in hosts so an "
                                              "expired login can renew" if out["renews_at"] != urlsplit(args.url).hostname
                                              else "")}, indent=1))
+        elif args.cmd == "mcp" and args.mcp_cmd == "token":
+            import asyncio
+            import os
+            from greg import mcp_login
+            from greg.capabilities import CapabilityError, SecretBroker
+            try:
+                out = asyncio.run(mcp_login.register_token(args.name, args.url, _secret_value(f"mcp:{args.name}"),
+                                                           SecretBroker(Layout(home).secrets),
+                                                           cafile=os.environ.get("GREG_EGRESS_CAFILE")))
+            except CapabilityError as exc:
+                raise BodyError(f"not registered: {exc}") from None
+            print(json.dumps({**out, "next": f"a mission names bearer {out['handle']}; every call still waits for "
+                                             "your approval"}, indent=1))
         elif args.cmd == "mcp":
             from greg import mcp_tools
             servers = mcp_tools.installed_servers(json.loads(Layout(home).config.read_text())["read_roots"])

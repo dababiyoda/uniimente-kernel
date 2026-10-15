@@ -42,6 +42,7 @@ The founder's OPUS MAXIMUS continuation directive is implemented on draft branch
 - Increment 25 tests a model vendor that is slow, cuts its answer off or refuses the key, over real HTTP through the real SDKs: the mission closes through the vendor that answers each time. It found that a refused key was retried like an outage forever; a refused key is now benched until the founder stores a new one, and Mission Control says which key and what to run.
 - Increment 26 shows, in Mission Control, the hosted servers GREG is logged in to and the tools each listed at login, as the server's claim, without contacting it again.
 - Increment 27 extends the refused-key bench to the console: drafting a mission no longer sends a refused key to its vendor, and when no other model is available the console says which key to replace.
+- Increment 28 lets the founder register a hosted MCP server that uses a plain token (`greg mcp token`): GREG keeps the token only if the server accepts it, records the server and the tools it listed, shows them in Mission Control, and sends the token only inside an approved call to that server.
 - State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
 
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13

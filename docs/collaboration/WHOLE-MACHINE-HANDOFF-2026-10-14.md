@@ -135,6 +135,10 @@ The 13 holes were:
   - Since increment 16, no door program can read the founder's signing key or the body's home. Before it, every
     door program could read both, and the Claude Code route and builder had the founder's home writable.
 - **#9, #10, #28 and #52 PARTIAL** (Foundry 50/55).
+  - #28 narrowed in increment 17: a signed mission can now use a tool from any stdio MCP server the founder
+    installs, read-only by construction. Still missing: servers that need the network, consequential MCP tools
+    through the Consequence Gate, and remote transport. Since increment 18 the founder reaches those tools by
+    saying what they want, and Mission Control lists the installed servers, their tools and the latest answers.
 - **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
   `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
   measured from this tree. Porting them is its own increment. #168's three runbook defects (a stranded attach;

@@ -104,6 +104,16 @@ def _mind() -> dict:
     return {"genomes": out, "counts": counts, "frozen": data.get("freeze_sha256", "")[:16], "source_commit": data.get("source_commit")}
 
 
+def _tool_servers(home) -> dict:
+    """MCP servers the founder installed under the body's read roots (a directory scan; nothing is started)."""
+    from greg.body import Layout
+    from greg.mcp_tools import installed_servers
+    try:
+        return installed_servers(json.loads(Layout(home).config.read_text())["read_roots"])
+    except (OSError, ValueError, KeyError):
+        return {}
+
+
 def cost_rows(actions: list[dict], missions: list[dict], fixtures: list[dict]) -> list[dict]:
     """Per mission, money kept in distinct columns, never netted: the signed budget; what was booked; how much of
     that a provider measured; how much was booked at the signed cap because the true spend was unknown or not
@@ -183,6 +193,16 @@ def projection(console) -> dict:
         sandbox = _metrics.sandbox_whole_machine(journal)
         quarantined = [e.payload for e in journal.replay("capability.quarantined")][-10:]
         action_rows = [e.payload for e in journal.replay("mission.action")]
+        tool_answers = []                       # the latest answers from installed MCP servers, from their receipts
+        for r in reversed(journal.ledger.by_type("receipt") if hasattr(journal, "ledger") else []):
+            out = (r.payload.get("result") or {}).get("output")
+            if isinstance(out, dict) and {"server", "tool", "trust"} <= set(out):
+                text = out.get("text")
+                tool_answers.append({"server": out["server"], "tool": out["tool"], "trust": out["trust"],
+                                     "text": text if isinstance(text, str) else json.dumps(text, default=str),
+                                     "receipt": r.hash, "at": r.ts_utc})
+            if len(tool_answers) >= 5:
+                break
         toggles = [e.type for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
         signed_pause = bool(toggles) and toggles[-1] == "greg.body.paused"
     morning = morning_projection(console.home)
@@ -220,6 +240,7 @@ def projection(console) -> dict:
         "rehearsals": [b for b in (_books(console.home, m["mission_id"]) for m in missions
                                    if m["mission_id"].startswith("m:venture-rehearsal-")) if b],
         "foundry": _foundry(), "mind": _mind(), "read_roots": st.get("permissions", {}).get("read_roots", []),
+        "tool_servers": _tool_servers(console.home), "tool_answers": tool_answers,
         "resilience": _resilience(console),
         "traces": traces, "sandbox_integration": sandbox,
     }
@@ -351,8 +372,46 @@ def _command(console, p, form) -> str:
             "<p><button>Propose a mission</button> <span class=muted>Plain words become a contract you review; nothing runs before you sign.</span></p></form></section>"
             "<section><h2>Founder's First Mission</h2>" + _first_mission_form(console, form) + "</section>"
             f"<section><h2>Mission templates GREG can draft without a model</h2><p>{', '.join(f'<code>{_e(t)}</code>' for t in p['templates'])}</p></section>"
+            + _tool_servers_section(console, p, form) +
             "<section><h2>Capability map</h2><p class=reality>Derived from each installed capability's attachment state and health on this body; "
             "worker providers checked live.</p>" + _table(["Capability", "Class", "Consequence", "Why"], rows) + "</section>")
+
+
+def _tool_servers_section(console, p, form) -> str:
+    """The MCP servers the founder installed, and on request one server's tools: listing them runs that server
+    exactly as a mission would, confined, with no network and nothing writable."""
+    servers = p.get("tool_servers") or {}
+    q = (form.get("_query") if isinstance(form, dict) else "") or ""
+    out = ("<section><h2>Tool servers you installed (MCP)</h2><p class=reality>Found under GREG's read roots: a folder "
+           "whose <code>bin</code> holds <code>mcp-server-&lt;name&gt;</code>. A mission may call one of their tools "
+           "(<code>mcp.call</code>): the server runs with no network and a read-only view, so nothing it does can "
+           "change anything; its own claims are not trusted.</p>")
+    answers = p.get("tool_answers") or []
+    if answers:
+        out += ("<h3>Latest answers</h3>" + _table(["Server · tool", "Answer (untrusted data)", "Receipt"], [
+            [f"<code>{_e(a['server'])}</code> · <code>{_e(a['tool'])}</code>", f"<pre>{_e(a['text'][:600])}</pre>",
+             f"<code>{_e(str(a['receipt'])[:23])}</code><br><span class=muted>{_e(a['at'])}</span>"] for a in answers]))
+    if not servers:
+        return out + ("<p class=empty>None installed. Example: <code>python3 -m venv &lt;read root&gt;/tools/git &amp;&amp; "
+                      "&lt;read root&gt;/tools/git/bin/pip install mcp-server-git</code></p></section>")
+    out += _table(["Server", "Installation", ""], [[f"<code>{_e(n)}</code>", f"<code>{_e(s['root'])}</code>",
+                                                   f"<a href='/mc/command?q=tools:{_e(n)}'>List its tools</a>"]
+                                                  for n, s in servers.items()])
+    name = q[len("tools:"):] if q.startswith("tools:") else ""
+    if name in servers:
+        from greg.mcp_tools import server_tools
+        try:
+            tools = server_tools(servers[name], scratch_parent=console.home / "workspace" / "mcp-listing")
+        except Exception as exc:
+            return out + f"<p class=warn>The {_e(name)} server did not list its tools: {_e(str(exc)[:200])}</p></section>"
+        rows = [[f"<code>{_e(t['name'])}</code>", _e((t["description"] or "").strip().splitlines()[0][:140]
+                                                     if t["description"] else ""),
+                 _e(", ".join((t.get("input_schema") or {}).get("required", [])) or "—"),
+                 "claims read-only (not trusted)" if t.get("claims_read_only") else "no read-only claim"]
+                for t in tools]
+        out += (f"<h3>{_e(name)}: {len(tools)} tools</h3>" + _table(["Tool", "What it says it does", "Needs", "Its claim"], rows)
+                + f"<p class=muted>Ask in words, e.g. <i>Use the {_e(name)} server to …</i>, naming what the tool needs.</p>")
+    return out + "</section>"
 
 
 def _mind_view(console, p, form) -> str:

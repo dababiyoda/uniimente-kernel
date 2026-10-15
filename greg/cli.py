@@ -334,6 +334,10 @@ def main(argv=None) -> int:
                                          "ledger as superseded")
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
+    mcp = sub.add_parser("mcp", help="MCP tool servers you installed under GREG's read roots (read-only)")
+    mcps = mcp.add_subparsers(dest="mcp_cmd", required=True)
+    mcl = mcps.add_parser("list", help="the servers found; with --tools, each one's tools (run confined, no network)")
+    mcl.add_argument("--tools", action="store_true")
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
     doc.add_argument("--chromebook", action="store_true", required=True)
     fd = sub.add_parser("foundry", help="the Foundry arsenal: completion status, systems, GREG's own graph and reputation")
@@ -760,6 +764,18 @@ def main(argv=None) -> int:
                 print(json.dumps(improvement.report(journal, journal.ledger), indent=1, default=str))
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
+        elif args.cmd == "mcp":
+            from greg import mcp_tools
+            servers = mcp_tools.installed_servers(json.loads(Layout(home).config.read_text())["read_roots"])
+            if args.tools:
+                for server in servers.values():
+                    try:
+                        server["tools"] = [{k: t[k] for k in ("name", "description", "claims_read_only")} | {
+                            "needs": (t.get("input_schema") or {}).get("required", [])}
+                            for t in mcp_tools.server_tools(server, scratch_parent=Layout(home).workspace / "mcp-listing")]
+                    except Exception as exc:
+                        server["tools"] = f"not listed: {str(exc)[:200]}"
+            print(json.dumps(servers, indent=1))
         elif args.cmd == "doctor":
             from greg.doctor import chromebook
             report = chromebook()

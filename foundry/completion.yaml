@@ -586,19 +586,31 @@
   - policy/consequence_gate.py
   - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  gap: The exact reviewed first-party MCP now runs through official SDK/stdio against canonical staged Foundry stores. General
-    external providers and remote transport still require stronger OS filesystem confinement; original failover and authority
-    component evidence is retained.
+  - greg/mcp_tools.py
+  gap: The exact reviewed first-party MCP now runs through official SDK/stdio against canonical staged Foundry stores.
+    Since 2026-10-15 any third-party stdio provider given as a command (any language, its own installation) runs
+    confined in the door namespace with no network, a read-only filesystem and the founder's and body homes hidden,
+    in every context; GREG's mcp.call capability puts such a tool on the mission path through the authority office
+    (tests/unit/test_greg_mcp_tools.py, tests/integration/test_greg_mcp_mission.py; the official mcp-server-time and
+    mcp-server-git ran locally, and the git server's add and commit were refused by the read-only filesystem). Still
+    missing - servers that need the network (signed hosts behind the relay), consequential MCP tools through the
+    Consequence Gate on the mission path, and remote (HTTP) transport. Original failover and authority component
+    evidence is retained.
   implementation: *id001
   interface: foundry.query foundry_tool|list_foundry_tools (system 28); Gateway.call for governed third-party tools
-  limitations: Stdio providers only (no remote HTTP providers configured); the third-party provider in tests is a local
-    stand-in. Uses the official MCP Python SDK 2.x.
+  limitations: Stdio providers only (no remote HTTP providers configured); the third-party provider in CI is a local
+    hostile stand-in, and the official reference servers run only where GREG_TEST_MCP_SERVERS points at them. Uses the
+    official MCP Python SDK 2.x; a 1.x server answers after rejecting the 2.x discovery request (logged, not fatal).
   recovery: Provider failure fails over to the next listed provider; disagreement under cross-check is refused; ungranted
     consequential calls never reach a provider (gate refuses first).
   state: PARTIAL
   tests:
   - tests/unit/test_foundry_systems.py
   - tests/unit/test_greg_mcp_worker.py
+  - tests/unit/test_greg_mcp_tools.py
+  - tests/integration/test_greg_mcp_mission.py
+  - tests/unit/test_greg_mcp_planner.py
+  - tests/integration/test_greg_mcp_founder_path.py
 29:
   acceptance:
   - External agents discover, negotiate and perform bounded work through an embassy

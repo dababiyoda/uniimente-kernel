@@ -1055,6 +1055,133 @@ could read all of it. The Claude Code route and builder went further: they mount
   first run on unenumerated paths. Revisit when the founder's device run shows which paths those callers actually
   touch.
 
+## Increment 17 (2026-10-15): GREG uses tools from MCP servers the founder installs, read-only by construction
+
+### What GREG can do now
+
+A founder-signed mission can call one tool on any stdio MCP server the founder has installed: a git server, a time
+server, a database or calendar server, a domain calculator. The Model Context Protocol is the common way such tools are
+now offered, so GREG uses the server the founder chooses instead of rebuilding each tool.
+
+- **The capability** is `mcp.call` (`greg/mcp_tools.py`), class `read_only`, target `mcp:<server>`.
+- **The signed mission names everything:** the server's installation directory (inside the body's read roots), the
+  command that starts it, the tool, its arguments, and any further paths the server may read.
+- **The server runs in the door namespace with no network at all.** It sees no founder home, no body home and no
+  `.git` (increment 16). The filesystem is read-only except a private scratch directory, discarded after the call.
+  Only its own installation and the named paths are shown.
+- **So the call is read-only by construction.** A tool that writes, deletes or sends finds nothing writable and no
+  network. The server's own claim about its tools (`readOnlyHint`) is recorded as a claim and never used.
+- **The answer is untrusted external data.** The mission's predicate decides what it means.
+- **Discovery.** Founder words such as "use a tool from the MCP server I installed" rank `mcp.call` first.
+- **The Foundry's #28 gateway** now runs any provider given as a command the same way, in every context.
+- **Diagnostics.** A confined server's stderr goes to a log in its scratch directory, not the body's stderr. A failure
+  is reported with its root cause (the SDK wraps it in an exception group).
+
+### Evidence
+
+- **`tests/unit/test_greg_mcp_tools.py` (10 tests).** The stand-in server is hostile: every tool claims to be
+  read-only.
+  - Its lookup answers from the founder's glossary, which the mission named.
+  - Its snoop tool reads neither the founder's key nor the body's secrets.
+  - It cannot plant a file in its own installation, the founder's data or the body.
+  - It reaches no network, and its home is the empty scratch home.
+  - A target that does not name the server is refused, as is an executable outside the server's installation and an
+    installation outside the read roots.
+  - Without namespaces, no server is started.
+  - The Foundry gateway confines a command provider the same way.
+  - Discovery finds `mcp.call` from the founder's words.
+- **`tests/integration/test_greg_mcp_mission.py`.**
+  - A signed mission closes on the server's answer through the authority office, and the chain verifies.
+  - A mission whose light cone does not name `mcp.call` never starts a server.
+- **The official reference servers,** run locally (`GREG_TEST_MCP_SERVERS`; not in CI): `mcp-server-time` and
+  `mcp-server-git` 2026.10.10, MIT, each in its own virtualenv on the older `mcp` 1.30 SDK.
+  - The time server answers a signed mission (`Asia/Tokyo`).
+  - The git server reads the founder's repository: `git_status` shows the staged and the unstaged change.
+  - Its `git_add` and `git_commit` both fail with git's own "Unable to create '.../.git/index.lock': Read-only file
+    system". The commit was refused by the operating system, not by the server.
+  - HEAD and the index are unchanged.
+
+### What this does not cover
+
+- **Servers that need the network** (search, calendars, hosted APIs) are refused. They need signed hosts behind the
+  relay, which is not built.
+- **Tools with consequences** (send, write, pay) have no GREG path yet. They would need their own consequence class
+  through the Consequence Gate. Today such a tool simply fails inside the namespace.
+- **Remote (HTTP) MCP transport** is not built.
+- **Same-kernel isolation.** Namespaces are not gVisor-class isolation of arbitrary code (#10).
+- **Protocol noise.** GREG's 2.x client first sends `server/discover`. A 1.x server rejects it with a long validation
+  warning, then completes the older handshake. The warning now goes to the call's own log.
+
+**Mutant.** With command providers started unconfined, the hostile server reads the founder's key and the gateway test sees no `bwrap`: both tests fail.
+
+Foundry #28 stays PARTIAL. Its gap narrows to network-reaching servers, consequential tools and remote transport.
+
+## Increment 18 (2026-10-15): installed MCP tools in Mission Control and in the founder's words
+
+Increment 17 let a signed mission call an installed MCP tool. Writing that mission by hand meant knowing the server's
+path, its command, the tool's name and its argument schema. Now the founder only says what they want.
+
+- **GREG finds the servers.** A server is a folder under the read roots whose `bin` holds `mcp-server-<name>`, which is
+  what `python3 -m venv <folder> && <folder>/bin/pip install mcp-server-<name>` produces. The scan reads directories
+  only; nothing is started.
+- **It lists their tools on request,** with each tool's input schema and its own read-only claim. Listing runs the
+  server exactly as a mission does: confined, no network, read-only, scratch discarded.
+- **Words become one mission.** "Use the git server to show the status of ~/src/kernel" becomes one read-only
+  `mcp.call` mission (`template:mcp-tool`):
+  - the tool comes from its own name: the distinctive words of the name must be present, generic verbs are ignored,
+    and naming the tool exactly wins;
+  - required arguments come from the words (a path under the read roots, an IANA zone).
+- **Whatever the words do not settle becomes a question, never a guess:**
+  - which server;
+  - which tool;
+  - a missing argument, named with the schema's own description;
+  - a path outside the read roots.
+
+  A tool the server does not claim is read-only gets a note that, inside GREG's namespace, its writes fail and
+  nothing changes.
+- **The model route** sees the installed servers and their tools whenever the words mention a server or MCP.
+- **Mission Control** (Command view) shows:
+  - the installed servers;
+  - on request, one server's tools, with what each says it does, what it needs and its claim, marked not trusted;
+  - the latest answers, labelled untrusted data and linked to their receipts.
+
+  With nothing installed, it says how to install one.
+- **`greg mcp list [--tools]`** shows the same from a terminal.
+
+### Evidence
+
+- **`tests/unit/test_greg_mcp_planner.py` (11 tests):**
+  - discovery skips non-executable and too-deep entries and starts nothing;
+  - tools are listed with their schemas and claims;
+  - words become one valid read-only mission, whose authority summary says it may observe through `mcp.call` and
+    nothing else;
+  - the four unsettled cases become questions, and with nothing installed the founder is told how to install a
+    server;
+  - "restart the web server" is not taken for a tool;
+  - the model route sees the tools;
+  - the CLI lists the server.
+- **`tests/integration/test_greg_mcp_founder_path.py`,** over real HTTP with the owner's session:
+  - Mission Control lists the server and, on request, its two tools and their claims;
+  - the words become a proposal that states, before signing, that it is read-only by construction;
+  - signing runs the mission to ACHIEVED with the chain verified;
+  - the Command view then shows the tool's answer ("3 lines") as untrusted data with its receipt.
+- **Mutants.**
+  - Dropping a missing argument instead of asking fails two of the question cases.
+  - Accepting a path outside the read roots fails the third.
+- **The real servers, locally.** Against the official `mcp-server-git` and `mcp-server-time`, the same route turned
+  these requests into proposals:
+  - "show the status of", "show me the log of" and "show the unstaged diff in" a repository;
+  - "the current time in Asia/Tokyo".
+
+  It asked for a target, a revision, a commit message or a zone where those were missing. `greg mcp list --tools`
+  listed their 12 and 2 tools.
+
+### What this does not cover
+
+- Argument filling is lexical and covers paths and time zones. Other arguments become questions. A model route
+  (`greg model set`) can fill them from the schemas.
+- Discovery covers Python virtualenv installs. npm-installed servers are not found yet.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

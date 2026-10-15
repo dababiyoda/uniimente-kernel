@@ -11,7 +11,7 @@ Deliverable J. Each claim below is a command that was run, on the commit named, 
 | Isolation | bubblewrap 0.9.0 with unprivileged namespaces available |
 | Organs | DALEOBANKS `667439f`, WealthMachineIntelligence `ec82b80` (local checkouts; organ venv on Python 3.13.16) |
 | Base | #178 `claude/greg-one-machine` at `baf630d` (merged here in `8cb4043` for `44f7c35` and `cd8046a` for `baf630d`; it was `4ed91f7` until about 16:40 UTC) |
-| Final code commit | `cd8046a` (earlier final: `d965bb7`, results kept below) |
+| Final code commit | `16900ca`: `fd45060` (#169 `854a021` joined with the second review's fixes) plus the verifier's failure names (earlier finals: `cd8046a` and `d965bb7`, results kept below) |
 
 The organ variables used by every proof run:
 
@@ -31,24 +31,23 @@ python -m pytest -q -p no:cacheprovider tests/integration/test_one_machine_ten_s
 python -m pytest -q -p no:cacheprovider -rfEs --ignore=tests/integration/test_one_machine.py \
     --ignore=tests/integration/test_one_machine_ten_steps.py                            # full suite (the two proofs run separately)
 python -m greg rehearse --dir <scratch> --kernel-root <tree>                             # credential-free rehearsal
-python -m cortex.evaluation.seed_genome.run --freeze                                     # wrote freeze-v8.json, later freeze-v9.json, once each
+python -m cortex.evaluation.seed_genome.run --freeze                                     # wrote freeze-v8.json, then v9 and v10, once each
 python scripts/ci/replay_seed_compatibility.py --out <file>                              # the runner freeze CI pins
 python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pipeline_mutants.py
 ```
 
-## Results on the final code commit `cd8046a`
+## Results on the final code commit `16900ca`
 
-`cd8046a` joins #178 `baf630d` (its second review, the institutional verifier as its own CI job, and the Goal Gravity merge fixes) with this branch and closes an adversarial review of this branch (`3ded0a7`, negative result 7).
+`fd45060` joins #169 `854a021` (increments 21-29: MCP tools from the founder's words, hosted servers by URL, login or plain token, the credentials view, a benched refused key) with the second adversarial review's fixes (`2cf4bdc`, `6352c68`, negative result 10). `16900ca` changes only `verifier/v2/verify.py`, which neither proof imports; the proofs ran on `fd45060`, the full suite on `48e5116` (`16900ca` plus the ledger).
 
 | Run | Result |
 |---|---|
-| Full suite (`python -m pytest -q -p no:cacheprovider -rfs`, the two proofs included without organ variables) | **3,779 passed, 27 skipped, 1 failed** in 2,388 s. The failure is negative result 4 (environment only) |
+| Full suite (`python -m pytest -q -p no:cacheprovider -rfs`, the two proofs included without organ variables) | **3,851 passed, 29 skipped, 1 failed** in 2,206 s. The failure is negative result 4 (environment only) |
 | `tests/unit/test_greg_organs.py` with the real organs | 39 passed |
-| #178's one-mission proof with the real organs | **Passed** (32.2 s). Independent verifier REDERIVED: 16 of 16 checks, no findings |
-| Ten-step proof with the real organ checkouts | **Passed** (263.7 s); its assertions include every appraisal VERIFIED and step 7c's 0 founder questions against step 7b's 1 |
-| Seed replay (`scripts/ci/replay_seed_compatibility.py`) and the frozen seed evaluation | Valid, 120 of 120; the evaluation accepts `freeze-v9.json` |
-| CI checks run outside pytest | Worker-appraisal and pipeline mutants all caught; authority singleton and schema references pass |
-| The review's regression tests on `8cb4043` (before the fixes) | All 11 fail; all pass on `3ded0a7` and `cd8046a` |
+| #178's one-mission proof with the real organs | **Passed** (32.8 s). Independent verifier REDERIVED; three boots, two recoveries |
+| Ten-step proof with the real organ checkouts | **Passed** (252.1 s): 11 missions closed, one decision request after the SIGKILL restart, the independent appraiser VERIFIED |
+| Seed replay and the frozen seed evaluation | Valid, 120 of 120; the evaluation accepts `freeze-v10.json` (each arm 100 of 100 matched, 0 hard failures) |
+| The second review's regression tests | `2cf4bdc`'s 10 fail on `bc6c4b3`; of `6352c68`'s 12, 11 fail on `2cf4bdc` (the twelfth guards a plain CLI exit and passes on both); the suites they touch, 227 passed |
 | VEPMC | 0. Local bodies only (`ten-step/vepmc.json`, `acceptance.json`: `first_body_designated` and `founder_accepted` NOT_YET) |
 
 ## Results on the earlier final code commit `d965bb7`
@@ -82,6 +81,8 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 | `67cae30` | #178's one-mission proof with bubblewrap hidden; appraisal-touching suites; both proofs | Passed (fails on `c2a50ba`, negative result 6); 574 passed, 7 skipped; both passed |
 | `8cb4043` (#178 `44f7c35` merged) | Affected suites (missions, models, reconciliation, gravity, adversarial machine, one-machine attacks, compensation, projection, Chromebook rehearsal); seal, segmentation and organ exchange | 225 passed; 54 passed, 1 skipped. A full-suite run was stopped at 74% when #178 moved again (negative result 8) |
 | `3ded0a7` | Suites the fixes touch | 292 passed, 3 skipped; Goal Gravity and mission suites 193 passed, 1 skipped; worker suites 116 passed |
+| `cd8046a` (#178 `baf630d` merged; the then final code commit) | Full suite; organ suite; both proofs with the real organs; seed replay | 3,779 passed, 27 skipped, 1 failed (negative result 4) in 2,388 s; 39 passed; one-mission passed (32.2 s, REDERIVED, 16 of 16 checks), ten-step passed (263.7 s, step 7c 0 founder questions against 1); valid, 120 of 120 on `freeze-v9.json`. The first review's 11 regression tests fail on `8cb4043` |
+| `bc6c4b3` (#169 `19e8fd0` merged) | CI; the unit suite here without bubblewrap | Jobs 1-8 green; job 9 failed (negative result 9); 3,456 passed, 80 skipped |
 
 ## Negative results
 
@@ -94,6 +95,10 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 7. **An adversarial review of this branch confirmed 12 defects** (separate finders per area; each finding kept only after a skeptic reproduced it at `67cae30`). Two were fixed by #178's second review (an answered reconciliation reused for a later interruption, then a crash loop), two by #178's billing of refused and empty model answers, which `8cb4043` carried onto #169's confined model path. The rest are fixed in `3ded0a7`: a body killed between an uncertain run's record and its question retried a non-retry-safe, possibly paid act blind on restart and held a cap it could never release; supervision covered any envelope refusal, so a reviewed provider ran with the body's reach over a CA path; acceptance looked `./check.sh` up in GREG's own directory and then ran the worker-modifiable script outside the envelope; the confined organ exchange still ran on the body's network on the mission path (the `d965bb7` test set `ctx.egress` by hand); a failed launch inside the envelope was reported as supervised; a goal's ask for a paid move named a scope the mission's dispatch never derives; and a goal's ask for `mcp.act` hid its reach. Each fix has a test that fails on `8cb4043`.
 8. **The base moved twice during validation.** #178 went from `4ed91f7` to `44f7c35` (merged in `8cb4043`) and then to `baf630d` (merged in `cd8046a`). The full-suite run on `8cb4043` was stopped at 74% to validate the newer head instead; it had shown one failure whose name was not captured. The run on `cd8046a` shows only negative result 4, which falls at that point in the run order, but whether it was the same failure is not confirmed.
 
+9. **CI's institutional verifier reported a unit failure it did not name.** On `bc6c4b3`, job 9's V2 (`pytest tests/unit`, no bubblewrap on the runner) printed only "1 failed, 3446 passed, 82 skipped". Job 1's full suite passed on the same commit, and the unit suite passed here with bubblewrap hidden (3,456 passed, 80 skipped), so the failure could not be named or reproduced. `16900ca` makes V2 print the FAILED and ERROR lines; the next CI run names it if it recurs.
+10. **A second adversarial review, of `3ded0a7`, `8cb4043` and `cd8046a`, confirmed 13 of 14 findings** (a separate skeptic reproduced each at `3cf5dab`; one, about in-process providers, was rejected). Fixed in `2cf4bdc`: a kill in the uncertain window during Goal Gravity preparation or behind another blocker still retried blind; a crash between a reconciliation's record and its unblock crash-looped; #178's "asked again" check dropped the answer to a legacy unsalted question; provider binaries on a relative PATH resolved inside the worker's clone; a supervised Mac body's appraisal refused acceptance. Fixed in `6352c68`: a goal lost its ask, its signed reject and its evidence when the mission spent, and told the founder a paid approve was standing (it funds one run, #157); a goal asked about moves its body cannot run; the Claude Code CLI exits 1 on every error and refusal, so a billed CLI failure was booked at $0 and a refusal was shopped to the next vendor (Seed Genome re-sealed as `freeze-v10.json`); this README's digest table named the wrong seal.
+11. **Two runs were stopped by limits, not by results.** The first full-suite run on `fd45060` was stopped at 63% by the tool's 30-minute background limit, with one failure shown at collection position 1,242, which is negative result 4's test; the complete re-run is the row above. The third review's finders hit a session limit before reporting and were re-run.
+
 ## Digests
 
 | Artifact | sha256 |
@@ -103,6 +108,8 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 | `cortex/evaluation/seed_genome/freeze-v8-pr184.json` (this branch's v8, the seal at `d965bb7`) | `c253504c11eb1f128d0687f6c5fbce2e5479b70b9b8bd183c5d5b22ec3d96039` |
 | `cortex/evaluation/seed_genome/freeze-v8.json` (#178's v8) | `236da72cac0cf883688cb4e30aeabf7523caec8cb643aaa89ed62a99a0bf5b86` |
 | Ten-step body ledger file, 848 records (not committed; the per-mission ledger heads are in `ten-step/mission-traces.json`) | `e38f1b79fb9d4a4c400cab5524604622187a161a9d89e36b20a5ac508fb250d7` |
+| Ten-step body ledger file on `fd45060`, 849 records (not committed) | `03576a7ddf84eb133e26c4316d64c38d7bfdd53219411639c3a23a238cfef5a1` |
+| One-mission ledger head on `fd45060` (`run.json` of that run, not committed) | `bea7e74f637e1dc425661d18d32102d04615da4a26eba37c97548eb233534cca` |
 | One-mission ledger head (`one-mission/run.json`) | `0e1cb9cf01996baaecd969a4b64d96ee16a84e21435cab1eca6a63276f5a373c` |
 | `ten-step/one-machine-trace.json` | `dd29bdbb89484f4c2d9b59d4ba70e3fc8a7ffcd013ce2183c544168a5baf9514` |
 | `one-mission/verify.json` | `b3437146e3d4f8cfc0588699977012e3d41d308cdd055105adffeb440081451d` |

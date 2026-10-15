@@ -35,7 +35,9 @@
     "CI on PR #184 failed #178's one-mission proof on a host without bubblewrap: its verifier's appraisal request lacked the body's worker posture (67cae30; reproduced locally by hiding bubblewrap)",
     "Three earlier ten-step runs used stand-in organs for step 6 because the runner did not set GREG_TEST_DALEOBANKS and GREG_TEST_WMI; the final runs used the real checkouts (evidence README, negative result 3)",
     "The freight proof-of-delivery Venture Cell has no demand evidence; the organ said 'demand asserted, not shown'",
-    "An adversarial review of this branch (12 findings confirmed by separate skeptics who reproduced each) found a kill window that retried a non-retry-safe act blind after restart, supervision applied to workers the envelope could confine, a worker-modifiable acceptance script run outside the envelope, the confined organ exchange still on the body's network on the mission path, receipts stating supervision that did not happen, and two goal-ask mismatches (paid scope digest, mcp.act reach). Findings 1 and 5 were fixed by #178's per-attempt question (44f7c35), 6 and 7 by #178's billing carried onto the confined child (8cb4043), the rest in 3ded0a7"
+    "An adversarial review of this branch (12 findings confirmed by separate skeptics who reproduced each) found a kill window that retried a non-retry-safe act blind after restart, supervision applied to workers the envelope could confine, a worker-modifiable acceptance script run outside the envelope, the confined organ exchange still on the body's network on the mission path, receipts stating supervision that did not happen, and two goal-ask mismatches (paid scope digest, mcp.act reach). Findings 1 and 5 were fixed by #178's per-attempt question (44f7c35), 6 and 7 by #178's billing carried onto the confined child (8cb4043), the rest in 3ded0a7",
+    "A second adversarial review (13 of 14 findings confirmed by separate skeptics) found the first review's kill-window fix incomplete in Goal Gravity preparation, a reconciliation crash loop, goal-side links broken by paid spend, a standing-approval claim false for paid moves, asks about unrunnable moves, and Claude Code CLI failures booked at $0 with refusals shopped to another vendor; fixed in 2cf4bdc and 6352c68",
+    "CI job 9 on bc6c4b3 reported one unit failure without its name; job 1's full suite passed on the same commit and the unit suite passed locally without bubblewrap; the verifier now names failures (16900ca)"
   ],
   "dependencies": [
     "INTENT-20261014-ONE-MACHINE (#178)",
@@ -63,6 +65,10 @@
     "8cb4043 merge #178 44f7c35 (refusal and empty-answer billing on both model paths; per-attempt reconciliation; freeze-v9.json)",
     "3ded0a7 greg/missions.py unsettled UNCERTAIN resumed after restart, organs.exchange in CONFINED_EGRESS, paid goal-ask digest, mcp.act reach on goal asks; greg/worker_isolation.py envelope_cannot_confine and workspace executables; greg/workers.py positive supervision statement",
     "cd8046a merge #178 baf630d (Goal Gravity joined with the trunk)",
+    "17df4d5, 09c5061 merge #169 3944a50 and 19e8fd0 (increments 21-28); bc6c4b3 records and #169's 8b01d58",
+    "2cf4bdc second review findings 1-6: greg/missions.py _resume_unsettled/_unsettled, re-entrant reconciliation (Journal.retained), owned-earlier re-ask; greg/workers.py absolute provider binaries; greg/worker_isolation.py host_has_envelope",
+    "6352c68 second review findings 7-13: greg/missions.py move_digest; greg/goal_gravity.py asks_for_move and approve_means; greg/authority.py AuthorityOffice.precheck; greg/models.py cli_report; greg/builders.py; freeze-v10.json; tests/unit/test_evidence_bundle_digests.py",
+    "fd45060 merge #169 854a021 (increment 29); 16900ca verifier/v2/verify.py names failing unit tests",
     "greg/improvement.py",
     "greg/organ_exchange.py",
     "tests/integration/test_one_machine_ten_steps.py",

@@ -565,9 +565,9 @@ class Body:
                 verdict = self.appraise(mid, closure_event=event.event_id)
                 self.journal.record("mission.appraised", verdict, key=[mid, "appraised", event.event_id])
 
-    def appraise(self, mission_id: str, *, closure_event: str | None = None) -> dict:
-        import subprocess
-        import sys
+    def appraisal_request(self, mission_id: str, *, closure_event: str | None = None) -> dict:
+        """What the separate appraiser re-derives from: the head, the scope, and the postures the original ran in
+        (worker confinement, confined egress), so a re-run is exactly as confined as the original."""
         request = {"ledger": str(self.layout.ledger), "constitution": self.compiled.constitution_hash,
                    "head": self.ledger.head, "mission_id": mission_id, "read_roots": self.config["read_roots"],
                    "deliver_root": str(self.deliver_root),
@@ -577,6 +577,12 @@ class Body:
                    "confined_egress": bool(self.config.get("confined_egress"))}
         if closure_event:
             request["closure_event"] = closure_event
+        return request
+
+    def appraise(self, mission_id: str, *, closure_event: str | None = None) -> dict:
+        import subprocess
+        import sys
+        request = self.appraisal_request(mission_id, closure_event=closure_event)
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
                "PYTHONPATH": os.pathsep.join([str(KERNEL_ROOT)] + [p for p in sys.path if "-packages" in p])}
         child = subprocess.run([sys.executable, "-m", "greg.appraisal"], input=json.dumps(request),

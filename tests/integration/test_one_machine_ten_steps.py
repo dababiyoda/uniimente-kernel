@@ -51,7 +51,7 @@ pytest.importorskip("ortools")
 pytest.importorskip("networkx")
 pytest.importorskip("scipy")
 
-from greg import service, templates                                                       # noqa: E402
+from greg import service, templates, workers                                              # noqa: E402
 from greg import worker_isolation as isolation                                           # noqa: E402
 from greg.templates import compiled_question, engineering_brief, organ_exchange          # noqa: E402
 from tests.greg_fixtures import signed as sign_envelope                                  # noqa: E402
@@ -205,7 +205,10 @@ def _appraise(ep: Episode, mission_id: str) -> dict:
     request = {"ledger": str(ep.home / "ledger.jsonl"), "constitution": config["constitution_hash"], "head": head,
                "mission_id": mission_id, "read_roots": config["read_roots"], "deliver_root": config["deliver_root"],
                "artifact_root": str(ep.home / "artifacts"),
-               "workspace": str(ep.home / "workspace" / mission_id.replace(":", "_"))}
+               "workspace": str(ep.home / "workspace" / mission_id.replace(":", "_")),
+               # the postures the original ran in, as Body.appraisal_request passes them
+               "worker_confinement": workers.confinement_mode(config.get("worker_confinement")),
+               "confined_egress": bool(config.get("confined_egress"))}
     out = subprocess.run([sys.executable, "-m", "greg.appraisal"], input=json.dumps(request), capture_output=True,
                          text=True, timeout=120, cwd=ROOT, env={**os.environ, "PYTHONPATH": str(ROOT)})
     assert out.returncode == 0, out.stderr[-800:]

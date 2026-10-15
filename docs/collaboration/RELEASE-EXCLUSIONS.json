@@ -1,0 +1,144 @@
+{
+ "schema": "greg-release-exclusions/1",
+ "rule": "Every tracked file that carries third-party-derived values whose redistribution terms are not cleared. These files stay in git as frozen evidence, identified by (commit, path, sha256). No release, tag artifact or Python package may contain them until the founder or counsel clears the source. Founder approval does not substitute for a third party's rights. Enforced by scripts/check_release_exclusions.py (Canonical CI) and tests/unit/test_release_exclusions.py.",
+ "markers": {
+  "m4": [
+   "\"F5-"
+  ],
+  "bank": [
+   "\"F6-"
+  ],
+  "sndlib": [
+   "\"F7-",
+   "\"abilene"
+  ],
+  "uber": [
+   "\"F8-"
+  ]
+ },
+ "sources": {
+  "m4": {
+   "description": "M4 weekly series (Mcompetitions/M4-methods; no licence found)",
+   "status": "uncleared: founder or counsel decision (reconciliation record section 12)"
+  },
+  "bank": {
+   "description": "fpp3 bank_calls (GPL-3 package; data credited to Weinberg, Brown and Stroud 2007)",
+   "status": "uncleared: founder or counsel decision (reconciliation record section 12)"
+  },
+  "sndlib": {
+   "description": "SNDlib 1.0 networks via TopoHub (SNDlib licence text unverified)",
+   "status": "uncleared: founder or counsel decision (reconciliation record section 12)"
+  },
+  "uber": {
+   "description": "NYC TLC Uber pickups 2015 (FOIL release via fivethirtyeight/uber-tlc-foil-response; no licence statement)",
+   "status": "uncleared: founder or counsel decision (reconciliation record section 12)"
+  }
+ },
+ "paths": [
+  {
+   "path": "cortex/evaluation/data/m4_weekly.json.gz",
+   "source": "m4",
+   "carries": "the extract"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v2.json",
+   "source": "m4",
+   "carries": "F5 series histories"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json",
+   "source": "m4",
+   "carries": "F5 actual arrays"
+  },
+  {
+   "path": "cortex/evaluation/data/bank_calls_halfhour.json.gz",
+   "source": "bank",
+   "carries": "the extract"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v3.json",
+   "source": "bank",
+   "carries": "raw half-hourly counts"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json",
+   "source": "bank",
+   "carries": "raw half-hourly counts"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v3/run.log",
+   "source": "bank",
+   "carries": "per-item values"
+  },
+  {
+   "path": "cortex/evaluation/data/sndlib_networks.json.gz",
+   "source": "sndlib",
+   "carries": "the extract"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v4.json",
+   "source": "sndlib",
+   "carries": "networks, arcs and demands"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/freeze-v4.json",
+   "source": "sndlib",
+   "carries": "network identifiers and derived inputs"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/prereg-v4.json",
+   "source": "sndlib",
+   "carries": "network-derived inputs"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json",
+   "source": "sndlib",
+   "carries": "per-item network data"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/development-v4.json",
+   "source": "sndlib",
+   "carries": "per-item network data"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v4/run.log",
+   "source": "sndlib",
+   "carries": "per-item values"
+  },
+  {
+   "path": "docs/evidence/pr155-f7-audit/2026-10-14/results.json",
+   "source": "sndlib",
+   "carries": "per-item values"
+  },
+  {
+   "path": "docs/evidence/pr155-f7-spend-diagnostic/2026-10-15/results.json",
+   "source": "sndlib",
+   "carries": "derived budgets and spend"
+  },
+  {
+   "path": "cortex/evaluation/data/uber_nyc_2015_halfhour.json.gz",
+   "source": "uber",
+   "carries": "the extract"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/suite-v5.json",
+   "source": "uber",
+   "carries": "half-hourly counts"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json",
+   "source": "uber",
+   "carries": "per-item values"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/development-v5.json",
+   "source": "uber",
+   "carries": "per-item values"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/run.log",
+   "source": "uber",
+   "carries": "per-item values"
+  }
+ ]
+}

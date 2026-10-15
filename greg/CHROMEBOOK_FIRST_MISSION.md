@@ -200,7 +200,7 @@ runs, the signed mission fixes the buyer, the price and the acceptance terms:
 ```bash
 greg mission new business-case --case "lease review 01" --buyer "Acme Property LLC" \
   --offer "a reviewed lease summary" --price 250 --currency USD \
-  --acceptance "summary delivered within 5 business days"
+  --acceptance "summary delivered within 5 business days" --key ~/.greg-founder.pem
 ```
 
 - GREG drafts `offer.md` in the case folder (`greg status` shows the path). It carries a case
@@ -239,8 +239,8 @@ it proposes a standard procedure. Nothing changes until you ratify it.
 ```bash
 greg sop list                                   # proposals waiting for you, and their inputs
 greg sop show <procedure-id>                    # the evidence, the workflow, what may be pre-approved
-greg sop ratify <procedure-id> --pre-approve file-record --key ~/greg-founder.pem
-greg sop run <procedure-id> --set path="$HOME/drafts/essay.md" --set words=500 --key ~/greg-founder.pem
+greg sop ratify <procedure-id> --pre-approve file-record --key ~/.greg-founder.pem
+greg sop run <procedure-id> --set path="$HOME/src/drafts/essay.md" --set words=500 --key ~/.greg-founder.pem
 greg sop trend                                  # before and after, per verified outcome
 ```
 
@@ -262,22 +262,35 @@ greg sop trend                                  # before and after, per verified
   - and every closure it rests on (the three that taught it and the three runs) was signed at the
     founder tier; otherwise it is a structural candidate only.
 
+## The fifth node (N5): where `greg path` stops for now
+
+N5 (a broader worker ecology and temporary organizations) has no ledger predicate yet, so
+`greg path` stops at N5 whatever you do next: a node without a measurement is never counted as
+passed. N6 and N7 below are still measured, one node at a time:
+
+```bash
+greg path --node N6        # its own measurement; it says the path stops at N5
+greg path --node N7
+```
+
+That reading is reported, not counted: it moves `greg path` only once N5 can be measured.
+
 ## The seventh node (N7): a second venture, and books that pay obligations first
 
 Name the venture on each case. If you want to approve GREG's own writes in a new business, add
 `--approve-writes`:
 
 ```bash
-greg mission new business-case --venture leases --approve-writes --case "lease review 01" ...
+greg mission new business-case --venture leases --approve-writes --case "lease review 01" ... --key ~/.greg-founder.pem
 ```
 
 After three verified cases, ratify the procedure GREG proposes, pre-approving its two writes. Then
 run it for a second venture:
 
 ```bash
-greg sop ratify <procedure-id> --pre-approve draft-offer --pre-approve record-settlement --key ~/greg-founder.pem
+greg sop ratify <procedure-id> --pre-approve draft-offer --pre-approve record-settlement --key ~/.greg-founder.pem
 greg sop run <procedure-id> --venture audits --set reference=CASE-AUDIT-01 --set buyer="..." \
-  --set offer="..." --set price=300.00 --set acceptance="..." --key ~/greg-founder.pem
+  --set offer="..." --set price=300.00 --set acceptance="..." --key ~/.greg-founder.pem
 ```
 
 Sign what each venture owes before any surplus counts. Tier names come from
@@ -286,7 +299,7 @@ Sign what each venture owes before any surplus counts. Tier names come from
 ```bash
 greg treasury set --venture audits --currency USD \
   --tier taxes_and_binding_legal_obligations=120 \
-  --tier emergency_liquidity_and_operating_reserves=80 --key ~/greg-founder.pem
+  --tier emergency_liquidity_and_operating_reserves=80 --key ~/.greg-founder.pem
 greg treasury books
 ```
 
@@ -294,9 +307,10 @@ greg treasury books
   act, appraised VERIFIED and accepted by you.
 - **Surplus is what remains** after every tier above reinvestment is fully funded.
 - **GREG moves and allocates no money;** these are books.
-- **`greg path` measures N7.** It is met when a procedure taught by one venture made at least two
-  closed cases in another cheaper or faster per outcome, and that venture's books show surplus,
-  with every closure that rests on signed at the founder tier.
+- **`greg path --node N7` measures N7** (the path itself stops at N5 for now). It is met when a
+  procedure taught by one venture made at least two closed cases in another cheaper or faster per
+  outcome, and that venture's books show surplus, with every closure that rests on signed at the
+  founder tier.
 - **Your judgment remains:** whether the second venture could stand alone.
 
 ## The sixth node (N6): one piece of work with a named person
@@ -308,7 +322,7 @@ acceptance terms:
 ```bash
 greg mission new shared-work --task "Design the GREG logo" --person "Dana Reyes" \
   --relationship contract --function human.design_logo --deliverable logo.png \
-  --acceptance "a square PNG, 1024 px, two colors"
+  --acceptance "a square PNG, 1024 px, two colors" --key ~/.greg-founder.pem
 ```
 
 - GREG writes `handoff.md` first, with the task, the terms, a reference such as
@@ -324,11 +338,12 @@ greg mission new shared-work --task "Design the GREG logo" --person "Dana Reyes"
   - GREG withdraws its ask and never asks that step again;
   - it asks you to choose: name someone else in a new mission, do it yourself, or abandon.
 
-`greg path` measures N6 from the ledger. It needs:
+`greg path --node N6` measures N6 from the ledger (the path itself stops at N5 for now). It needs:
 
 - the handoff written before anything was asked;
 - every step of the person's, and your review, observed;
-- GREG's own actions internal only;
+- GREG's own actions internal only, and none of them a write to a file the person's steps are
+  measured by;
 - the closure appraised VERIFIED and accepted by you;
 - the mission signed with your key at the founder tier.
 

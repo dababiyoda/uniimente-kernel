@@ -455,6 +455,64 @@ def test_an_external_node_never_passes_on_its_ledger_predicate_alone(monkeypatch
     assert {"N6", "N7"} <= set(devpath.position(journal, data)["achieved"])
 
 
+# -- findings 11 and 12: the runbook's commands run as written, and later nodes can be read --------
+
+def test_signing_commands_without_a_usable_key_refuse_plainly(tmp_path, capsys):
+    from greg import cli
+    home, *_ = make_body(tmp_path)
+    case = ["--home", str(home), "mission", "new", "business-case", "--case", "lease review 01", "--buyer", "Acme",
+            "--offer", "a reviewed lease summary", "--price", "250", "--currency", "USD", "--acceptance", "in 5 days"]
+    assert cli.main(case) == 2
+    assert "needs your founder key: add --key ~/.greg-founder.pem" in capsys.readouterr().err
+    assert cli.main(case + ["--key", str(tmp_path / "greg-founder.pem")]) == 2
+    assert "no founder key file at" in capsys.readouterr().err
+    assert not list((Path(home) / "inbox").glob("*.json"))
+
+
+def test_greg_path_reads_a_later_node_and_says_where_the_path_stops(tmp_path, capsys):
+    import json as _json
+    from greg import cli, path as devpath
+    home, *_ = make_body(tmp_path)
+    assert cli.main(["--home", str(home), "path", "--node", "N6"]) == 0
+    shown = _json.loads(capsys.readouterr().out)
+    assert shown["id"] == "N6" and shown["measurement"]["source"] == "ledger"
+    assert shown["measurement"]["met"] is False and shown["path_stops_at"] == "N1"
+    assert "reported, not counted" in shown["on_the_path"]
+    assert cli.main(["--home", str(home), "path", "--node", "N99"]) == 2
+    assert next(n for n in devpath.load()["nodes"] if n["id"] == "N5").get("predicate") is None
+
+
+def test_the_runbook_signs_with_the_installed_key_and_says_the_path_stops_at_n5():
+    import re
+    runbook = (Path(__file__).resolve().parents[2] / "greg/CHROMEBOOK_FIRST_MISSION.md").read_text()
+    assert "~/greg-founder.pem" not in runbook and '$HOME/drafts/' not in runbook
+    blocks = re.findall(r"```bash\n(.*?)```", runbook, re.S)
+    commands = [c for b in blocks for c in re.sub(r"\\\n\s*", " ", b).splitlines()]
+    signing = [c for c in commands if re.match(r"\s*greg (mission new|sop ratify|sop run|treasury set)", c)]
+    assert len(signing) >= 6 and all("--key ~/.greg-founder.pem" in c or "--print-only" in c for c in signing), signing
+    assert "`greg path` stops at N5" in runbook and "greg path --node N6" in runbook
+
+
+# -- finding 13: an SOP run's signed text names the file the mission checks -------------------------
+
+def test_an_sop_run_names_the_file_it_checks_not_the_taught_directory(tmp_path):
+    from greg import templates
+    specs = []
+    for n in (1, 2, 3):
+        spec = templates.word_limit(file=Path(f"/home/u/src/drafts/essay-{n}.md"), max_words=1500,
+                                    workspace_root=tmp_path)
+        spec["founder_expression"] = f"Confirm ~/src/drafts/essay-{n}.md is at most 1500 words"   # console text
+        specs.append(spec)
+    record = {"procedure_id": "sop-0123456789abcdef", "command_digest": "sha256:ratify", "steps": ["fs.write"],
+              "workflow": {**sop.generalize(specs), "horizon_days": 2.0}, "pre_approved_steps": []}
+    same = sop.instantiate(record, {"path": "/home/u/src/drafts/essay.md"})
+    assert same["founder_expression"] == "Confirm ~/src/drafts/essay.md is at most 1500 words"   # his words kept
+    moved = sop.instantiate(record, {"path": "/home/u/drafts/essay.md"})
+    assert moved["success_checks"][0]["sensor"]["params"]["path"] == "/home/u/drafts/essay.md"
+    assert moved["founder_expression"] == "Confirm /home/u/drafts/essay.md is at most 1500 words"
+    assert sop.instantiates(record, moved) == {"path": "/home/u/drafts/essay.md"}
+
+
 def test_mission_control_and_the_classic_page_show_whether_the_key_is_attested(tmp_path):
     from greg.console import Console, render_mission_control
     home, *_ = make_body(tmp_path)

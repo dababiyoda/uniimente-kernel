@@ -68,8 +68,19 @@ def _secret_value(name: str) -> str:
     return value
 
 
+def _key_file(args, kind: str | None) -> str:
+    """The founder key file a signing command names, or a plain refusal (never a traceback)."""
+    what = f"signing {kind}" if kind else "this command"
+    if not getattr(args, "key", None):
+        raise BodyError(f"{what} needs your founder key: add --key ~/.greg-founder.pem"
+                        + (" (or --print-only to review it unsigned)" if hasattr(args, "print_only") else ""))
+    if not Path(args.key).expanduser().is_file():
+        raise BodyError(f"no founder key file at {args.key}; the installer creates ~/.greg-founder.pem")
+    return str(Path(args.key).expanduser())
+
+
 def _drop(home: str, kind: str, body: dict, args) -> Path:
-    key = load_founder_key(args.key, _passphrase(args))
+    key = load_founder_key(_key_file(args, kind), _passphrase(args))
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 
@@ -85,10 +96,11 @@ def _drop_attested(home: str, kind: str, body: dict, args, *, require: bool = Fa
     key signs ``kind`` alone, or is refused when ``require`` (``greg founder attest``).
     """
     from greg.founder import FOUNDER_TIER_BODY
+    keyfile = _key_file(args, kind or "FOUNDER_TIER")
     passphrase = _passphrase(args)
     if passphrase is None and require:
         raise BodyError(NO_FOUNDER_TIER)
-    key = load_founder_key(args.key, passphrase)
+    key = load_founder_key(keyfile, passphrase)
     ttl = timedelta(hours=getattr(args, "ttl_hours", 24))
     dropped = [send_signed(home, key, kind, body, ttl=ttl)] if kind else []
     if passphrase is not None:
@@ -324,7 +336,8 @@ def main(argv=None) -> int:
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
-    sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
+    pp = sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
+    pp.add_argument("--node", help="read one node's own measurement (e.g. N6), even past where the path stops")
     tr = sub.add_parser("treasury", help="venture books: verified revenue through your waterfall (node N7); moves no money")
     trs = tr.add_subparsers(dest="treasury_cmd", required=True)
     trs.add_parser("books", help="per venture: verified revenue, obligations and reserves, reinvestable surplus, transfers")
@@ -585,11 +598,19 @@ def main(argv=None) -> int:
             print(json.dumps(data, indent=1))
         elif args.cmd == "path":
             from greg import path as devpath
+
+            def where(journal):
+                if not getattr(args, "node", None):
+                    return devpath.position(journal)
+                try:
+                    return devpath.measure(journal, args.node)
+                except devpath.PathError as exc:
+                    raise BodyError(str(exc)) from None
             if Layout(home).ledger.exists():
                 with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
-                    data = devpath.position(journal)
+                    data = where(journal)
             else:
-                data = devpath.position(None)
+                data = where(None)
             print(json.dumps(data, indent=1))
         elif args.cmd == "treasury":
             from greg import venture_books

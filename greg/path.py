@@ -490,6 +490,36 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
     }
 
 
+def measure(journal: Journal | None, node_id: str, data: dict | None = None) -> dict:
+    """One node's own exit measurement, read directly even when an earlier node blocks the path.
+
+    ``position`` stops at the first node whose exit evidence does not hold; N5 has no ledger predicate
+    yet, so it can never pass and N6/N7 never show there (review of 2026-10-14). Reading a later node
+    here moves nothing: the path still stops where ``position`` says, and this says so."""
+    data = data or load()
+    nodes = {n["id"]: n for n in data["nodes"]}
+    if node_id not in nodes:
+        raise PathError(f"unknown node {node_id}; known: {sorted(nodes)}")
+    node = nodes[node_id]
+    out = {"id": node_id, "title": node["title"], "gate": node["gate"], "evidence_source": node["evidence_source"],
+           "exit_evidence": node["exit_evidence"]}
+    if node["evidence_source"] == "repository":
+        out["measurement"] = {"source": "repository", "attested": node["attested"]}
+    elif node.get("predicate") and journal is not None:
+        out["measurement"] = {"source": "ledger", **PREDICATES[node["predicate"]](journal)}
+    else:
+        out["measurement"] = {"source": node["evidence_source"],
+                              "not_yet_measurable": "no body ledger here: measure on the body" if node.get("predicate")
+                              else "no ledger predicate yet; never counted as passed"}
+    where = position(journal, data)
+    active = (where["active"] or {}).get("id")
+    out["path_stops_at"] = active
+    if active and [n["id"] for n in data["nodes"]].index(node_id) > [n["id"] for n in data["nodes"]].index(active):
+        out["on_the_path"] = (f"not yet: the path stops at {active} until its exit evidence holds; this measurement "
+                              "is reported, not counted")
+    return out
+
+
 # -- developmental inheritance: rules for placing lineages on the path ---------------------
 
 CLASSES = ("ALREADY_ACHIEVED_NODE", "CURRENT_NODE_IMPLEMENTATION", "NEXT_NODE_INPUT", "FUTURE_NODE_CAPABILITY",

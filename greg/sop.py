@@ -212,18 +212,40 @@ def _derive(values: list, env: list) -> str | None:
     return template if any(m.group(1) for m in TOKEN.finditer(template)) else None
 
 
+PATH_PREFIX = re.compile(r"(\S*/)$")
+
+
+def _names_directory(prefix: str, value: str) -> bool:
+    """Whether a literal directory written before a ``{slot|basename}`` still names the value's directory.
+
+    Judged without the body's HOME: ``~/src/drafts/`` names ``/home/u/src/drafts`` because that directory
+    ends with ``/src/drafts``. A run of the procedure on a file elsewhere must not keep the taught one."""
+    directory = value.rstrip("/").rsplit("/", 1)[0] + "/" if "/" in value.rstrip("/") else ""
+    tail = prefix[1:] if prefix.startswith("~") else prefix
+    return (directory == prefix) or (bool(tail) and ("/" + directory.lstrip("/")).endswith(
+        tail if tail.startswith("/") else "/" + tail))
+
+
 def render(template: str, env: dict) -> str:
     out, last = [], 0
     for match in TOKEN.finditer(template):
-        out.append(template[last:match.start()])
+        literal = template[last:match.start()]
         token = match.group(0)
         if token in ("{{", "}}"):
-            out.append(token[0])
+            out.append(literal + token[0])
         elif match.group(1) is None or match.group(1) not in env:
             raise SopError(f"workflow text names an unknown slot: {token}")
+        elif match.group(2):
+            value = str(env[match.group(1)])
+            prefix = PATH_PREFIX.search(literal)
+            if prefix and "/" in value and not _names_directory(prefix.group(1), value):
+                # The taught text wrote a directory this run's file is not in: name the actual file instead
+                # (review of 2026-10-14), never a path the mission does not check.
+                out.append(literal[:prefix.start()] + value)
+            else:
+                out.append(literal + _basename(value))
         else:
-            value = env[match.group(1)]
-            out.append(_basename(value) if match.group(2) else str(value))
+            out.append(literal + str(env[match.group(1)]))
         last = match.end()
     return "".join(out) + template[last:]
 

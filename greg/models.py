@@ -17,6 +17,11 @@ What routing never does:
   records an outage seen as elevated ``invalid_prompt`` errors): it is recorded as
   ``unconfirmed_rejection`` and another route may legitimately try.
   Fallback may improve availability; it is never a way around a policy decision.
+* **Substitute a model silently.** Anthropic's server-side fallback may answer with a different model than the one
+  requested. It is off unless the founder's own configuration sets ``anthropic_server_fallback``, and even then it
+  is never requested where a founder budget must be bounded, because the substitute's price is unknown in advance.
+  When the served model differs from the requested one the answer says so (``substituted``), is priced at the
+  served model's known price, and otherwise reports its cost as unknown rather than as the requested model's.
 * **Spend without a bound.** For spending contexts (Capability Genesis builds) each
   API route computes the largest output it may generate so that its worst-case cost
   fits the remaining founder-signed budget; a route whose price is unknown cannot be
@@ -133,6 +138,18 @@ ANTHROPIC_PRICES = {"claude-opus-5": (5.0, 25.0), "claude-opus-5-5": (4.0, 20.0)
 MAX_OUTPUT_TOKENS = 16000
 
 
+_SNAPSHOT = re.compile(r"-(?:\d{8}|latest)$")
+
+
+def model_family(model: str) -> str:
+    """``claude-opus-5-20260901`` -> ``claude-opus-5``: a dated snapshot is the same model as its alias."""
+    return _SNAPSHOT.sub("", str(model or ""))
+
+
+def same_model(requested: str, served: str) -> bool:
+    return model_family(requested) == model_family(served)
+
+
 def _price(value):
     """(input, output) USD per million tokens, both finite and positive; anything else is 'no price'."""
     try:
@@ -166,8 +183,10 @@ class AnthropicRoute:
     """Claude via the official Anthropic SDK (optional dependency ``anthropic``)."""
     provider = "anthropic"
 
-    def __init__(self, api_key: str, *, model: str = "claude-opus-5", price=None, client=None):
+    def __init__(self, api_key: str, *, model: str = "claude-opus-5", price=None, client=None,
+                 server_fallback: bool = False):
         self.model, self.name = model, f"anthropic:{model}"
+        self.server_fallback = server_fallback is True
         # Prices are operational evidence, not constants: a configured price supersedes the built-in
         # snapshot without a code change. A malformed configured price is not silently replaced by the
         # (possibly stale) snapshot: the route has no price, so a spending context skips it (Unbounded).
@@ -179,12 +198,14 @@ class AnthropicRoute:
 
     def complete(self, system: str, user: str, *, budget_usd=None) -> dict:
         max_tokens = _output_bound(self.price, system, user, budget_usd)
+        # a substitute model's price is unknown in advance, so a bounded spend never asks for one
+        substitution = ({"betas": ["server-side-fallback-2026-07-01"], "fallbacks": "default"}
+                        if self.server_fallback and budget_usd is None else {})
         try:
             response = self.client.beta.messages.create(
                 model=self.model, max_tokens=max_tokens, system=system,
                 messages=[{"role": "user", "content": user}],
-                thinking={"type": "adaptive"}, output_config={"effort": "high"},
-                betas=["server-side-fallback-2026-07-01"], fallbacks="default")
+                thinking={"type": "adaptive"}, output_config={"effort": "high"}, **substitution)
         except Exception as exc:   # SDK/network errors, classified: a policy verdict is not an outage
             raise _route_failure(exc) from exc
         if response.stop_reason == "refusal":
@@ -192,11 +213,17 @@ class AnthropicRoute:
             raise Refusal(f"model declined (refusal: {category})", kind=SAFETY_REFUSAL)
         text = "".join(block.text for block in response.content if block.type == "text")
         usage = getattr(response, "usage", None)
-        cost = None
-        if usage is not None and self.price:
-            cost = (usage.input_tokens * self.price[0] + usage.output_tokens * self.price[1]) / 1e6
         # the provider's own report of the model that answered (server-side fallback may substitute one)
-        return {"text": text, "cost_usd": cost, "served_model": getattr(response, "model", None) or self.model}
+        served = getattr(response, "model", None) or self.model
+        substituted = not same_model(self.model, served)
+        price = (ANTHROPIC_PRICES.get(model_family(served)) if substituted else self.price)
+        cost = None
+        if usage is not None and price:
+            cost = (usage.input_tokens * price[0] + usage.output_tokens * price[1]) / 1e6
+        out = {"text": text, "cost_usd": cost, "served_model": served}
+        if substituted:
+            out.update(substituted=True, requested_model=self.model)
+        return out
 
 
 class OpenAIRoute:
@@ -424,10 +451,14 @@ class ModelRouter:
             tried.append({"route": route.name, "outcome": "ok"})
             self._note(route, "ok", at, None)
             served = result.get("served_model")
+            # truthful reporting: an unknown price is unknown, never zero; a substitute is named as one
+            honesty = {**({"cost_unknown": True} if result.get("cost_usd") is None else {}),
+                       **({"substituted": True, "requested_model": result.get("requested_model")}
+                          if result.get("substituted") else {})}
             self.last = {"route": route.name, "tried": tried, "cost_usd": spent, "served_model": served,
-                         "model_digest": result.get("model_digest")}
+                         "model_digest": result.get("model_digest"), **honesty}
             return {"text": result["text"], "route": route.name, "served_model": served, "cost_usd": spent,
-                    "tried": tried, "model_digest": result.get("model_digest")}
+                    "tried": tried, "model_digest": result.get("model_digest"), **honesty}
         self.last = {"route": None, "tried": tried, "cost_usd": spent}
         raise RouteError("every model route failed: " + "; ".join(f"{t['route']}: {t.get('why', '')}"
                                                                   for t in tried)[:600])
@@ -455,7 +486,8 @@ def available_routes(secrets=None, *, config: dict | None = None, claude_budget_
     builders = {
         "anthropic": lambda: AnthropicRoute(secrets.resolve("anthropic_api_key", declared=("anthropic_api_key",)),
                                             model=config.get("anthropic_model", "claude-opus-5"),
-                                            price=config.get("anthropic_price_per_mtok")),
+                                            price=config.get("anthropic_price_per_mtok"),
+                                            server_fallback=config.get("anthropic_server_fallback") is True),
         "openai": lambda: OpenAIRoute(secrets.resolve("openai_api_key", declared=("openai_api_key",)),
                                       model=config.get("openai_model", "gpt-5.5"),
                                       price=config.get("openai_price_per_mtok")),

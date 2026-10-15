@@ -179,3 +179,54 @@ def test_installed_body_can_build_and_a_missing_route_degrades_instead_of_crash_
     why = body.journal.replay("genesis.builder")[0].payload
     assert why["available"] is False and "credential unavailable" in why["why"]
     body.close()
+
+
+class ServedAs(FakeAnthropic):
+    """Answers as a named model, the way server-side fallback reports a substitute."""
+
+    def __init__(self, served, *replies):
+        super().__init__(*replies)
+        self.served = served
+
+    def _create(self, **kw):
+        reply = super()._create(**kw)
+        reply.model = self.served
+        return reply
+
+
+def test_server_side_fallback_is_off_unless_the_founder_configures_it_and_never_used_under_a_budget(monkeypatch):
+    """Master build prompt section 4: govern silent substitution. Off by default; when the founder's own config
+    turns it on, a spending context still never asks for it, because the substitute's price is unknown."""
+    plain = FakeAnthropic("a", "b")
+    models.AnthropicRoute("k", model="claude-opus-5", client=plain).complete("s", "u")
+    assert "betas" not in plain.calls[0] and "fallbacks" not in plain.calls[0]
+    opted = FakeAnthropic("a", "b")
+    route = models.AnthropicRoute("k", model="claude-opus-5", client=opted, server_fallback=True)
+    route.complete("s", "u")
+    route.complete("s", "u", budget_usd=0.5)
+    assert opted.calls[0]["betas"] == ["server-side-fallback-2026-07-01"] and opted.calls[0]["fallbacks"] == "default"
+    assert "betas" not in opted.calls[1] and "fallbacks" not in opted.calls[1]
+    real = models.AnthropicRoute
+    monkeypatch.setattr(models, "AnthropicRoute", lambda key, **kw: real(key, client=FakeAnthropic(), **kw))
+    for value, expected in (("yes", False), (1, False), (True, True), (None, False)):
+        routes, _ = models.available_routes(NS(resolve=lambda name, declared: "k"),
+                                            config={"order": ["anthropic"], "anthropic_server_fallback": value})
+        assert routes[0].server_fallback is expected, value   # only the founder's literal true opts in
+
+
+def test_a_substituted_model_is_named_and_priced_as_itself_and_an_unknown_price_is_not_zero():
+    opus = models.ANTHROPIC_PRICES["claude-opus-5"]
+    sonnet = models.ANTHROPIC_PRICES["claude-sonnet-5"]
+    same = models.AnthropicRoute("k", model="claude-opus-5", client=ServedAs("claude-opus-5-20260901", "ok"))
+    out = same.complete("s", "u")
+    assert "substituted" not in out and out["cost_usd"] == pytest.approx((1000 * opus[0] + 2000 * opus[1]) / 1e6)
+    swapped = models.AnthropicRoute("k", model="claude-opus-5", client=ServedAs("claude-sonnet-5-20260801", "ok"),
+                                    server_fallback=True).complete("s", "u")
+    assert swapped["substituted"] is True and swapped["requested_model"] == "claude-opus-5"
+    assert swapped["served_model"] == "claude-sonnet-5-20260801"
+    assert swapped["cost_usd"] == pytest.approx((1000 * sonnet[0] + 2000 * sonnet[1]) / 1e6)   # not the Opus price
+    router = models.ModelRouter([models.AnthropicRoute("k", model="claude-opus-5", server_fallback=True,
+                                                       client=ServedAs("claude-unlisted-9", "ok"))])
+    result = router.complete("s", "u")
+    assert result["substituted"] is True and result["cost_unknown"] is True and result["cost_usd"] == 0.0
+    assert router.last["cost_unknown"] is True and router.last["requested_model"] == "claude-opus-5"

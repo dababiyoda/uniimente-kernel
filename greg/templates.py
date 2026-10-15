@@ -147,9 +147,31 @@ def engineering_brief(*, local: dict[str, str], github: list[str], daily: bool =
     }
 
 
+def read_economics(manifest: str, economics=None) -> dict | None:
+    """The signal's stated economics: an explicit dict or file, else ``economics.json`` beside the manifest.
+
+    ``revenue`` is a bounded estimate request (named factors with low/central/high and units, optional
+    expected_units, assumptions, next_measurement); ``causal_support`` is a causal request (design,
+    treated, control, dag). Absent economics means the memo states no revenue figure."""
+    if economics is None:
+        sibling = Path(manifest).expanduser().resolve().with_name("economics.json")
+        if not sibling.is_file():
+            return None
+        economics = str(sibling)
+    if isinstance(economics, (str, Path)):
+        economics = json.loads(Path(economics).expanduser().read_text(encoding="utf-8"))
+    if not isinstance(economics, dict) or not isinstance(economics.get("revenue"), dict) \
+            or not isinstance(economics["revenue"].get("factors"), list):
+        raise ValueError("economics needs a revenue block with named factors (low, central, high, units)")
+    causal = economics.get("causal_support") or {"design": "unstated"}
+    if not isinstance(causal, dict):
+        raise ValueError("causal_support must be an object (design, treated, control, dag)")
+    return {"revenue": economics["revenue"], "causal_support": causal}
+
+
 def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, source_root: str,
                        preauthorize_delivery: bool = False, standing: bool = False, cadence_seconds: int = 3600,
-                       horizon_days: float = 2) -> dict:
+                       horizon_days: float = 2, economics=None) -> dict:
     """Signal -> venture decision memo through the real organs (Bridge A).
 
     RailScout appraises the signal's real source bytes; WealthMachine's venture engine
@@ -157,6 +179,11 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
     engine's verdict capped by the evidence status. Delivery is one founder-visible
     file and, like every internal_write, stops at a founder approval unless signed
     into the cone. Nothing is sent, published, bought or contacted.
+
+    When the signal carries economics (``economics.json`` beside the manifest, or passed here),
+    the mission first asks GREG's own cognition, read-only, for a certified revenue range and for
+    causal support. The memo's revenue section is rendered from those receipts only: a revenue
+    figure may not outrun its causal support (directive section 16, the venture case).
 
     ``standing``: an infinite mission on this signal. Whenever the evidence file changes
     (Alfonso adds a buyer interview, a quote, a counterexample), the check fails, both
@@ -169,11 +196,31 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
                  "source_root": source_root}.items()}
     digest = hashlib.sha256(Path(resolved["manifest"]).read_bytes()).hexdigest()
     thread = hashlib.sha256(resolved["manifest"].encode()).hexdigest()[:12]
+    stated = read_economics(resolved["manifest"], economics)
+    cognition, checks = [], []
+    if stated:
+        ids = {"revenue": f"venture-revenue-{thread}", "causal": f"venture-causal-{thread}"}
+        asks = {"revenue": ("estimate", stated["revenue"], "revenue_estimated",
+                            {"op": "equals", "field": "abstention_state", "value": "NONE"},
+                            "GREG's own revenue range from the stated factors, with units and the dominant uncertainty"),
+                "causal": ("treatment_effect", stated["causal_support"], "causal_checked",
+                           {"op": "equals", "field": "authority_created", "value": False},
+                           "whether any identified causal support exists for the offer producing that revenue; "
+                           "an unidentified design is a truthful abstention, not a failure")}
+        for role, (operation, data, check_id, predicate, rationale) in asks.items():
+            step = {"capability": "cognition.solve", "target": f"cognition:{ids[role]}",
+                    "params": {"problem_id": ids[role], "operation": operation, "data": data}}
+            checks.append({"check_id": check_id, "description": f"a cognition receipt for the {role} question",
+                           "sensor": step, "predicate": predicate})
+            cognition.append({"action_id": f"{role}-receipt", **step, "advances": [check_id], "rationale": rationale})
+        resolved = {**resolved, "cognition": ids}
     delivery = {"action_id": "assess-venture", "capability": "venture.assess", "params": resolved,
                 "target": "deliver:ventures", "advances": ["assessed"],
+                **({"requires": [c["check_id"] for c in checks]} if checks else {}),
                 "expected_outcome": "one decision memo in the delivery root; no external act",
                 "rationale": "run both organs read-only on source bytes; deliver one memo for Alfonso"}
-    capabilities = ["venture.status", "fs.read"] + (["venture.assess"] if preauthorize_delivery else [])
+    capabilities = ["venture.status", "fs.read"] + (["venture.assess"] if preauthorize_delivery else []) \
+        + (["cognition.solve"] if cognition else [])
     return {
         "mission_id": f"m:venture-watch-{thread}" if standing else f"m:venture-{digest[:12]}",
         "founder_expression": "Take this signal, find out whether it is a real business, and tell me what to do "
@@ -185,12 +232,13 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
                                   "a go verdict on NEEDS_EVIDENCE"],
         "priority": 65,
         "closure": {"kind": "infinite", "cadence_seconds": cadence_seconds} if standing else {"kind": "bounded"},
-        "success_checks": [{"check_id": "assessed", "description": "a memo exists for the current evidence",
-                            "sensor": {"capability": "venture.status", "params": {"manifest": resolved["manifest"]},
-                                       "target": "deliver:ventures"},
-                            "predicate": {"op": "equals", "field": "assessed", "value": True}}],
-        "strategies": [delivery],
-        "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"],
+        "success_checks": checks + [{"check_id": "assessed", "description": "a memo exists for the current evidence",
+                                     "sensor": {"capability": "venture.status",
+                                                "params": {"manifest": resolved["manifest"]},
+                                                "target": "deliver:ventures"},
+                                     "predicate": {"op": "equals", "field": "assessed", "value": True}}],
+        "strategies": cognition + [delivery],
+        "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"] + (["cognition:*"] if cognition else []),
                        "max_consequence_class": "internal_write" if preauthorize_delivery else "read_only",
                        "budget_usd": 0, "horizon": _horizon(30 if standing else horizon_days)},
     }

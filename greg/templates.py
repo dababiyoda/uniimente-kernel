@@ -982,3 +982,122 @@ def compiled_question(*, problem_id: str, data: dict, geometry: dict | None = No
 
 TEMPLATES["compiled-question"] = compiled_question
 TEMPLATES["organ-exchange"] = organ_exchange
+
+
+def one_machine(*, problem_id: str, data: dict, sandbox_repo: str, organs: dict, seed: str,
+                provider: str = "claude-code", worker_budget_usd: float = 0.05, horizon_days: float = 1,
+                workspace_root: Path | None = None, founder_expression: str | None = None) -> dict:
+    """One signed mission through Mind, Genesis, Organs and Hands, closed by independent appraisal.
+
+    Composes existing capabilities only; each step hands typed outputs to the next through ``bind``:
+
+    1. ``cognition.solve``: the Competency Compiler recognizes the problem. When no admitted method
+       fits but a certified reduction does, its CapabilityDeficit names the function; Capability
+       Genesis constructs it and attaches it read-only inside this cone (``auto_attach``). The answer
+       carries a problem-level certificate GREG checks from the original problem.
+    2. ``organ.exchange``: DALEOBANKS and WealthMachine run their own code, sign their messages and
+       are verified at the kernel; a second WealthMachine process re-derives the assessment.
+    3. ``worker.commission``: only after (1) and (2) are observed passing, a worker receives the
+       certified answer (bound from the receipt, never relayed by hand) and records it with a test in
+       a private clone of ``sandbox_repo``; GREG runs the acceptance itself with no network.
+    4. ``worker.appraise`` (sensor): fresh clone, patch re-applied, scope checks, acceptance re-run.
+    5. A handoff note is written only after the work is ACCEPTED.
+
+    ``organs`` names ``daleobanks_root``, ``daleobanks_python``, ``wealthmachine_root`` and
+    ``wealthmachine_python``, all inside the body's read roots. Nothing is sent, published, merged
+    or paid; the worker's signed cap is the only spend bound and a local worker spends nothing.
+    """
+    from greg.cognition.compiler import CERTIFIED
+    from greg.genesis import CATALOG
+    from greg.organs import TARGET
+    from greg.recombine import chain, fits
+
+    if not isinstance(problem_id, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,47}", problem_id):
+        raise ValueError("problem_id must be 1-48 letters, digits or _.:-")
+    organ_keys = ("daleobanks_root", "daleobanks_python", "wealthmachine_root", "wealthmachine_python")
+    missing = set(organ_keys) - set(organs)
+    if missing:
+        raise ValueError(f"organs is missing {sorted(missing)}")
+    repo = str(Path(sandbox_repo).expanduser().resolve())
+    order = _slug(f"record-{problem_id}", 30)
+    mission_id = f"m:one-machine-{problem_id}"[:96]
+    handoff = f"handoff-{order}.md"
+    handoff_path = str(Path(workspace_root or ".").resolve() / mission_id.replace(":", "_") / handoff)
+    compile_params = {"problem_id": problem_id, "compile": {"geometry": {"geometry": "optimization"}, "data": data}}
+    capabilities = ["cognition.solve"]
+    for reduction in fits(data):
+        found = chain(reduction.function, CATALOG)
+        if found:
+            capabilities += [f"composed.{reduction.function}.*", f"acquired.{found[1]}.*"]
+    objective = ("Record GREG's certified plan for problem.json in plan/plan.json (the assignment exactly as "
+                 "certified) and add tests/test_plan.py that checks it against problem.json from first principles: "
+                 "every assignment uses an eligible skill, no worker exceeds capacity, no order receives more than "
+                 "its demand, the staffed total equals the plan's claim, and no feasible assignment staffs more "
+                 "(exhaustive search; do not import GREG).")
+    return {
+        "mission_id": mission_id,
+        "founder_expression": founder_expression or (
+            "Solve this with the smallest competent method, form what is missing, consult the organs, have a "
+            "worker do the real work, survive interruption, and prove it to someone who did not do it."),
+        "intended_effect": "a certified answer, an organ assessment reproduced by a second process, and an "
+                           "independently accepted change that records and re-checks the answer, on one trace",
+        "priority": 75, "closure": {"kind": "bounded"},
+        "constraints": ["nothing is sent, published, merged or paid",
+                        "the worker never pushes, merges or commits; GREG commits on a greg/ branch in a private clone",
+                        "organ messages are evidence about organ computation, not Kernel consequences"],
+        "success_checks": [
+            # The label the worker is handed ("CERTIFIED_PLAN_JSON") must be what this gate guarantees:
+            # the compiler sets this confidence type only for an ANSWER that carries a problem-level
+            # certificate GREG checked, never for a composition, an estimate or a model-backed trace.
+            {"check_id": "answered", "description": "a constructed method answered with a problem-level certificate",
+             "sensor": {"capability": "cognition.solve", "target": f"cognition:{problem_id}", "params": compile_params},
+             "predicate": {"op": "equals", "field": "confidence_type", "value": CERTIFIED}},
+            {"check_id": "organs-reproduced",
+             "description": "both organ messages verified at the kernel and a second process reproduced the answer",
+             "sensor": {"capability": "organ.status", "target": TARGET, "params": {}},
+             "predicate": {"op": "equals", "field": "verdict", "value": "REPRODUCED"}},
+            {"check_id": "work_accepted", "description": "independent appraisal ACCEPTED the work order",
+             "sensor": {"capability": "worker.appraise", "params": {"order": order}, "target": f"work:{order}"},
+             "predicate": {"op": "equals", "field": "verdict", "value": "ACCEPTED"}},
+            {"check_id": "handoff_written", "description": "the review handoff exists for the founder",
+             "sensor": {"capability": "fs.read", "params": {"path": handoff_path}, "target": f"fs:{handoff}"},
+             "predicate": {"op": "contains", "field": "text", "value": f"greg/{order}"}}],
+        "strategies": [
+            {"action_id": "compile", "capability": "cognition.solve", "target": f"cognition:{problem_id}",
+             "params": compile_params, "advances": ["answered"],
+             "rationale": "compile the problem's geometry to a competent method; construct one if missing"},
+            {"action_id": "organs", "capability": "organ.exchange", "target": TARGET,
+             "params": {**{k: str(organs[k]) for k in organ_keys}, "seed": seed},
+             "advances": ["organs-reproduced"],
+             "rationale": "ask the organs through their own code over the signed bridge; re-derive in a second process"},
+            {"action_id": "commission", "capability": "worker.commission", "target": f"work:{order}",
+             "params": {"order": order, "mode": "repository", "repo": repo, "objective": objective,
+                        "acceptance": {"run_changed_tests": True, "max_changed_files": 4},
+                        "allowed_paths": ["plan/*", "tests/*"], "provider": provider,
+                        "max_budget_usd": worker_budget_usd, "timeout_seconds": 300},
+             # the exact certified answer that satisfied "answered", which may come from the re-observation
+             # after Genesis attached the construction rather than from the compile action's first receipt
+             "bind": [{"param": "context", "from": {"check_id": "answered", "field": "result"}, "type": "object",
+                       "render": "json", "template": "CERTIFIED_PLAN_JSON:\n{value}", "max_bytes": 16384}],
+             "requires": ["answered", "organs-reproduced"], "cost_usd": worker_budget_usd,
+             "advances": ["work_accepted"],
+             "rationale": "Hands act only on a certified answer and a reproduced organ assessment"},
+            {"action_id": "handoff", "capability": "fs.write", "target": f"workspace:{handoff}",
+             "params": {"relative_path": handoff,
+                        "content": f"# One-machine mission ready for review: greg/{order}\n\nThe certified answer "
+                                   "was recorded and re-checked by an independently ACCEPTED change; the organ "
+                                   "assessment was reproduced by a second process. Promotion requires the existing "
+                                   "authorized path; GREG holds no push or merge authority.\n"},
+             "advances": ["handoff_written"], "requires": ["work_accepted"],
+             "rationale": "continue the parent mission only on an independently accepted result"}],
+        "light_cone": {"capabilities": list(dict.fromkeys(capabilities + [
+                           "organ.exchange", "organ.status", "worker.commission", "worker.appraise",
+                           "fs.read", "fs.write"])),
+                       "targets": ["cognition:*", TARGET, f"work:{order}", f"fs:{handoff}", f"workspace:{handoff}"],
+                       "max_consequence_class": "internal_write", "budget_usd": worker_budget_usd,
+                       "horizon": _horizon(horizon_days)},
+        "auto_attach": {"max_consequence_class": "read_only"},
+    }
+
+
+TEMPLATES["one-machine"] = one_machine

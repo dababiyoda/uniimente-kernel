@@ -806,7 +806,8 @@ def library(query: str = "", reductions: dict | None = None) -> list[dict]:
 
 def _engine_fault(engine_id: str, exc: CapabilityError) -> CapabilityError:
     if str(exc).startswith("capability refused:"):
-        return CapabilityError(f"capability refused: composed engine {engine_id} faulted: {str(exc)[20:220]}")
+        return CapabilityError(f"capability refused: composed engine {engine_id} faulted: {str(exc)[20:220]}",
+                               failure_class=getattr(exc, "failure_class", "executor_error"))
     return exc
 
 

@@ -1,0 +1,60 @@
+{
+  "checks": {
+    "greg_appraisal_verified": true,
+    "interruption_reconciled_not_retried_blind": true,
+    "ledger_chain_intact": true,
+    "mind_answer_is_optimal": true,
+    "mind_assignment_feasible": true,
+    "mind_used_no_model": true,
+    "no_duplicate_worker_branch_in_source": true,
+    "one_commission_done": true,
+    "organ_answer_rederived": true,
+    "organ_messages_one_trace": true,
+    "organ_messages_transport_verified": true,
+    "patch_matches_receipt": true,
+    "patch_reapplies_and_its_test_passes": true,
+    "vepmc_not_inflated": true
+  },
+  "findings": [],
+  "greg_appraisal": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+      "achieved_claimed": true,
+      "approval_boundaries_honored": true,
+      "approval_boundary_encountered": false,
+      "arrived_via_inbox": true,
+      "chain_intact": true,
+      "checks_rederived_from_receipts": true,
+      "deliveries_bound_to_evidence": true,
+      "exactly_once": true,
+      "founder_signature_verified": true,
+      "preconditions_honored": true,
+      "registered_once": true,
+      "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:a640c10fe02a337c3023245fed02367d8daeb846e9b466ecb028a5285fa9b404",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:one-machine-staff-om",
+    "verdict": "VERIFIED"
+  },
+  "ledger_head": "sha256:a640c10fe02a337c3023245fed02367d8daeb846e9b466ecb028a5285fa9b404",
+  "mission_id": "m:one-machine-staff-om",
+  "sandbox_whole_machine": [
+    {
+      "appraised_verified": true,
+      "capability_formed": true,
+      "founder_signed_via_inbox": true,
+      "interruption_reconciled": true,
+      "mind_certified_without_model": true,
+      "missing": [],
+      "mission_id": "m:one-machine-staff-om",
+      "organs_reproduced": true,
+      "whole_machine": true,
+      "worker_accepted": true
+    }
+  ],
+  "tier": "sandbox integration proof on a synthetic-authority test body; not VEPMC, not founder acceptance",
+  "vepmc": 0,
+  "verdict": "REDERIVED"
+}

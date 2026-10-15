@@ -332,7 +332,10 @@ def _die_with_body():
     macOS has no parent-death signal; there the stale lease plus reconciliation still prevent reuse of an
     unfinished run, but an orphan can continue until its own budget or timeout ends (stated limit).
     """
-    os.setsid()
+    try:
+        os.setsid()
+    except PermissionError:   # already a session leader (supervised_run starts a new session)
+        pass
     if sys.platform.startswith("linux"):
         import ctypes
         ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, 9)   # PR_SET_PDEATHSIG = 1, SIGKILL = 9
@@ -565,11 +568,32 @@ PROVIDERS: dict[str, object] = {
 
 # -- git helpers (scrubbed environment, never the founder's config) ------------------------
 
+# Defense in depth for every git command GREG runs in a worker's clone: no hooks, no fsmonitor,
+# no attributes file outside the tree (repository config is also restored before collection).
+_GIT_HARDENING = ("-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "core.attributesFile=/dev/null",
+                  "-c", "commit.gpgSign=false", "-c", "tag.gpgSign=false")
+
+
+def _tree_digest(root: Path) -> str:
+    """Digest of a directory's names, modes, file bytes and symlink targets (never followed)."""
+    h = hashlib.sha256()
+    for path in sorted(root.rglob("*")):
+        rel = path.relative_to(root).as_posix()
+        if path.is_symlink():
+            h.update(b"L" + rel.encode() + b"\0" + os.readlink(path).encode() + b"\0")
+        elif path.is_file():
+            h.update(b"F" + rel.encode() + b"\0" + oct(path.stat().st_mode & 0o777).encode() + b"\0")
+            h.update(path.read_bytes())
+        else:
+            h.update(b"D" + rel.encode() + b"\0")
+    return h.hexdigest()
+
+
 def _git(repo: Path, *args, check: bool = True, home: Path | None = None) -> subprocess.CompletedProcess:
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "GIT_CONFIG_NOSYSTEM": "1",
            "GIT_CONFIG_GLOBAL": "/dev/null", "HOME": str(home or repo), "GIT_TERMINAL_PROMPT": "0"}
-    proc = subprocess.run(["git", "-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false",
-                           "-C", str(repo), *args], capture_output=True, text=True, timeout=120, env=env)
+    proc = subprocess.run(["git", *_GIT_HARDENING, "-C", str(repo), *args], capture_output=True, text=True,
+                          timeout=120, env=env)
     if check and proc.returncode:
         raise WorkerError(f"git {' '.join(args[:3])} failed: {proc.stderr[-300:]}")
     return proc
@@ -687,9 +711,12 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
 
     # Workers may alter .git/config, hooks, objects, attributes and refs. Keep trusted metadata outside
     # their envelope and restore it before GREG's own git can run a clean filter, fsmonitor or hook that
-    # the worker planted (extracted from #157).
+    # the worker planted (extracted from #157). The copy's digest is held in memory only (from #178): a
+    # copy that changed while the worker ran, a restore that raced, or an acceptance run that rewrote .git
+    # refuses the change, defense in depth behind the envelope.
     trusted_metadata = root / "base.git"
-    shutil.copytree(work / ".git", trusted_metadata)
+    shutil.copytree(work / ".git", trusted_metadata, symlinks=True)
+    trusted_digest = _tree_digest(trusted_metadata)
     try:
         report = provider.run(order, work, stop_check=ctx.stop_check,
                               **({"egress": ctx.egress} if ctx.egress is not None else {})) if isinstance(
@@ -705,13 +732,18 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     (root / "worker-report.json").write_text(json.dumps({**asdict(report), "cost_usd": spend["reported_usd"],
                                                          "spend": spend}, indent=2, sort_keys=True, default=str))
     collection_error = None
+    metadata = work / ".git"
     try:
-        metadata = work / ".git"
+        if _tree_digest(trusted_metadata) != trusted_digest:
+            raise WorkerError("GREG's trusted copy of the clone's git metadata changed while the worker ran; "
+                              "nothing was collected or committed")
         if metadata.is_symlink() or metadata.is_file():
             metadata.unlink()
         elif metadata.exists():
             shutil.rmtree(metadata)
-        shutil.copytree(trusted_metadata, metadata)
+        shutil.copytree(trusted_metadata, metadata, symlinks=True)
+        if _tree_digest(metadata) != trusted_digest:      # a process that outlived the worker raced the restore
+            raise WorkerError("the clone's git metadata changed during GREG's restore; nothing was collected")
         names, patch = collect_changes(work, base_commit)
     except (WorkerError, OSError, subprocess.TimeoutExpired) as exc:
         names, patch = [], ""
@@ -723,8 +755,14 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     commands = acceptance_commands(order.acceptance, names) if order.mode == "repository" else []
     stopped_for_spend = spend["status"] in ("invalid", "over_cap")
     stopped = stopped_for_spend or collection_error is not None or report.interrupted or report.error is not None
+    collected = _tree_digest(metadata) if names and commands and not stopped else None
     tests = run_tests(commands, work, timeout=min(order.timeout_seconds, 1200), stop_check=ctx.stop_check) if (
         names and commands and not stopped) else []
+    # GREG's acceptance run executes the worker's test code. If that code rewrote the clone's .git
+    # (config, hooks, gpg program), GREG's next git commands would run it, so the commit is refused.
+    if collected is not None and _tree_digest(metadata) != collected:
+        collection_error = "the acceptance run changed the clone's git metadata; GREG did not commit"
+        stopped = True
     if ctx.stop_check is not None and ctx.stop_check():
         report.interrupted = True
         stopped = True

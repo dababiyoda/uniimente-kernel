@@ -132,6 +132,12 @@ def confine(root, public_files):
         directory = Path(directory)
         if directory.is_dir():
             grants[directory.resolve()] = grants.get(directory.resolve(), 0) | READ_FILE | READ_DIR
+    _restrict(libc, grants)
+    return {"filesystem": "landlock", "abi": abi, "arbitrary_source": "refused",
+            "scope": "published source/runtime read-only; staged store read/write"}
+
+
+def _restrict(libc, grants: dict) -> None:
     attr = _Rules(ALL_FS)
     fd = libc.syscall(444, ctypes.byref(attr), ctypes.sizeof(attr), 0)
     if fd < 0:
@@ -151,5 +157,31 @@ def confine(root, public_files):
             raise IsolationError(f"Landlock restriction failed errno={ctypes.get_errno()}")
     finally:
         os.close(fd)
-    return {"filesystem": "landlock", "abi": abi, "arbitrary_source": "refused",
-            "scope": "published source/runtime read-only; staged store read/write"}
+
+
+FILE_RIGHTS = EXECUTE | WRITE_FILE | READ_FILE | TRUNCATE
+
+
+def confine_paths(*, read=(), read_exec=(), write=()) -> int:
+    """Irreversibly confine this process (a forked child about to exec) to explicit paths.
+
+    ``read`` trees are read-only, ``read_exec`` trees read-only and executable, ``write`` trees
+    read/write. Every other path is neither readable nor writable, which is what keeps one
+    organ's process away from another organ's code, the Kernel's sources and the body's home.
+    Missing paths are skipped; installation failure raises."""
+    libc = _libc()
+    abi = libc.syscall(444, None, 0, 1)
+    if abi < 3:
+        raise IsolationError("Landlock ABI >=3 required")
+    grants = {}
+    for paths, access in ((read, READ_FILE | READ_DIR), (read_exec, READ_FILE | READ_DIR | EXECUTE),
+                          (write, ALL_FS)):
+        for path in paths:
+            path = Path(path)
+            if not path.exists():
+                continue
+            path = path.resolve()
+            access_now = grants.get(path, 0) | access
+            grants[path] = access_now if path.is_dir() else access_now & FILE_RIGHTS
+    _restrict(libc, grants)
+    return abi

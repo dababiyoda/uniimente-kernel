@@ -12,6 +12,9 @@ independent appraiser REFUTES a closure because its receipts or the re-observed
 world do not hold, every capability that acted for that mission loses reliability.
 A refutation for reasons that are not the capability's (signature, inbox, replay
 boundary) does not move routing. Appraiser-VERIFIED actions are counted apart.
+Each dispatched attempt is one outcome: a founder reconciliation of an UNCERTAIN
+dispatch replaces that attempt's outcome and, having no receipt, is counted apart
+(founder_reconciled) and never moves reliability.
 Knowledge is institutional and cross-mission: one mission's failure changes the
 next mission's routing. Nothing here grants authority; it only ranks options
 that are already inside the founder-signed light cone.
@@ -27,8 +30,17 @@ FAILURE = {"REFUSED", "UNAVAILABLE", "UNCERTAIN", "RECONCILED_NOT_EXECUTED"}
 EFFECT_CHECKS = ("checks_rederived_from_receipts", "world_reobserved")  # appraiser checks a capability owns
 
 
+def founder_reconciled(action: dict) -> bool:
+    """A founder's statement about an UNCERTAIN dispatch, not a receipted execution.
+
+    Records written before 2026-10-14 name no route; their reasons still say so."""
+    return not action.get("receipt") and (action.get("route") == "founder_reconciliation" or any(
+        str(r).startswith("founder reconciliation: ") for r in action.get("reasons") or ()))
+
+
 def track_record(journal: Journal) -> dict[str, dict]:
-    record = defaultdict(lambda: {"done": 0, "failed": 0, "ineffective": 0, "refuted": 0, "verified": 0})
+    record = defaultdict(lambda: {"done": 0, "failed": 0, "ineffective": 0, "refuted": 0, "verified": 0,
+                                  "founder_reconciled": 0})
     appraisals = {}
     for event in journal.replay("mission.appraised"):
         data = event.payload
@@ -39,12 +51,23 @@ def track_record(journal: Journal) -> dict[str, dict]:
             appraisals[data["mission_id"]] = "refuted"
         else:
             appraisals.pop(data["mission_id"], None)
-    for event in journal.replay("mission.action"):
+    # One outcome per dispatched attempt: a founder reconciliation of an UNCERTAIN dispatch is a later fact
+    # about the same (mission, action, attempt) and replaces it; it never adds a second outcome.
+    attempts = {}
+    for index, event in enumerate(journal.replay("mission.action")):
         data = event.payload
+        key = (data.get("mission_id"), data.get("action_id"), data["attempt"]) if "attempt" in data else index
+        prior = attempts.get(key)
+        if prior is not None and not data.get("capability"):     # legacy reconciliations name no capability
+            data = {**data, "capability": prior.get("capability")}
+        attempts[key] = data
+    for data in attempts.values():
         capability = data.get("capability")
-        if not capability or data.get("reconciles"):   # a settlement resolves an earlier act; it is not a new one
+        if not capability:
             continue
-        if data["status"] in SUCCESS:
+        if data["status"] in SUCCESS and founder_reconciled(data):
+            record[capability]["founder_reconciled"] += 1     # no receipt: neither a success nor a failure
+        elif data["status"] in SUCCESS:
             record[capability]["done"] += 1
             if data.get("mission_id") in appraisals:
                 record[capability][appraisals[data["mission_id"]]] += 1
@@ -52,7 +75,7 @@ def track_record(journal: Journal) -> dict[str, dict]:
             record[capability]["failed"] += 1
     for event in journal.replay("routing.outcome"):
         if event.payload["verdict"] == "ineffective":
-            record[event.payload["capability"]]["ineffective"] += 1
+            record[event.payload.get("capability") or "?"]["ineffective"] += 1
     return dict(record)
 
 

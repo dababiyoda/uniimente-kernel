@@ -171,7 +171,16 @@ def projection(console) -> dict:
         appraisals = [{"mission_id": e.payload.get("mission_id"), "verdict": e.payload.get("verdict"), "at": e.occurred_at}
                       for e in journal.replay("mission.appraised")][-20:]
         receipts = len(journal.ledger.by_type("receipt")) if hasattr(journal, "ledger") else None
-        events = len(journal.replay())
+        retained = journal.replay()
+        events = len(retained)
+        # Per-mission traces are #44's correlation over retained events: every row is a ledger fact.
+        from foundry.systems import observability
+        from greg import metrics as _metrics
+        order = {r.payload.get("event_id"): r.seq for r in journal.ledger.by_type("event")}
+        traces = {mid: t["spans"][-200:] for mid, t in observability.correlate(
+            [{"type": e.type, "event_id": e.event_id, "payload": e.payload, "seq": order.get(e.event_id, -1),
+              "at": e.payload.get("at") or e.occurred_at} for e in retained])["missions"].items()}
+        sandbox = _metrics.sandbox_whole_machine(journal)
         quarantined = [e.payload for e in journal.replay("capability.quarantined")][-10:]
         action_rows = [e.payload for e in journal.replay("mission.action")]
         toggles = [e.type for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
@@ -212,6 +221,7 @@ def projection(console) -> dict:
                                    if m["mission_id"].startswith("m:venture-rehearsal-")) if b],
         "foundry": _foundry(), "mind": _mind(), "read_roots": st.get("permissions", {}).get("read_roots", []),
         "resilience": _resilience(console),
+        "traces": traces, "sandbox_integration": sandbox,
     }
     out["costs"] = cost_rows(action_rows, out["missions"], out["rehearsals"])
     return out
@@ -446,12 +456,31 @@ def _proof(console, p, form) -> str:
     return ("<section><h2>Proof</h2>" + _table(["", ""], [
         ["Ledger chain", "verified" if p["identity"]["chain_verified"] else "<b class=warn>FAILED</b>"],
         ["External anchors (RFC 3161)", _e(f"{a.get('verified', 0)} verified of {a.get('anchors', 0)}; configured: {a.get('configured')}")],
-        ["VEPMC", f"<b>{_e(v.get('VEPMC', 0))}</b> — {_e(v.get('external_confirmation_required', ''))}"]])
+        ["VEPMC", f"<b>{_e(v.get('VEPMC', 0))}</b> — {_e(v.get('external_confirmation_required', ''))}"],
+        ["Sandbox whole-machine closures (engineering diagnostic; never VEPMC)",
+         _e(f"{(p.get('sandbox_integration') or {}).get('SANDBOX_WHOLE_MACHINE_CLOSURES', 0)} — "
+            f"{(p.get('sandbox_integration') or {}).get('tier', '')}")]])
             + "</section><section><h2>Independent appraisals</h2>"
             + _table(["Mission", "Verdict", "At"], [[_e(x["mission_id"]), _cls(x["verdict"]), _e(x["at"])] for x in p["appraisals"][::-1]])
-            + "</section>" + _resilience_section(p["resilience"]) + "<section><h2>Quarantine</h2>"
+            + "</section>" + _traces_section(p.get("traces") or {}) + _resilience_section(p["resilience"])
+            + "<section><h2>Quarantine</h2>"
             + _table(["Capability", "Why"], [[_e(q.get("capability_id")), _e(q.get("reason") or q.get("why") or "")] for q in p["quarantined"]])
             + "</section>")
+
+
+def _traces_section(traces: dict) -> str:
+    """Each mission's trace, drawn from retained events only (Foundry #44 correlation)."""
+    if not traces:
+        return "<section><h2>Mission traces</h2><p class=empty>No mission events retained yet.</p></section>"
+    parts = ["<section><h2>Mission traces</h2><p class=reality>Every row is a retained ledger event: actions, "
+             "observations, organ exchanges, capability formation, decisions and appraisals, in time order.</p>"]
+    for mid, spans in sorted(traces.items()):
+        rows = [[_e(s.get("at", "")[:19]), _e(s["kind"]), _e(s.get("capability") or s.get("request_id") or ""),
+                 _cls(s["verdict"]) if s.get("verdict") else _e(s.get("status") or s.get("answer") or s.get("reason") or ""),
+                 _e(s["event_id"][:16])] for s in spans]
+        parts.append(f"<h3 id='trace-{_e(mid)}'>{_e(mid)}</h3>" + _table(["At", "Kind", "Capability / request",
+                                                                           "Status / verdict", "Event"], rows))
+    return "".join(parts) + "</section>"
 
 
 def _resilience_section(r: dict) -> str:

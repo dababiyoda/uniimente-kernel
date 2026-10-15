@@ -231,12 +231,20 @@
                 "from": {
                   "type": "object",
                   "additionalProperties": false,
+                  "description": "action_id: the latest DONE receipt of that strategy. check_id: the receipt of the latest passing observation of a check this strategy requires (the exact evidence that satisfied its precondition).",
                   "required": [
-                    "action_id",
                     "field"
+                  ],
+                  "oneOf": [
+                    {"required": ["action_id"]},
+                    {"required": ["check_id"]}
                   ],
                   "properties": {
                     "action_id": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9_.-]{1,80}$"
+                    },
+                    "check_id": {
                       "type": "string",
                       "pattern": "^[a-z0-9_.-]{1,80}$"
                     },
@@ -391,6 +399,15 @@
           "type": "string",
           "maxLength": 200,
           "description": "Model the provider reported actually serving the answer; may differ from the route's requested model."
+        },
+        "requested_model": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Model the route asked for (the founder's selection); recorded next to served_model."
+        },
+        "substituted": {
+          "type": "boolean",
+          "description": "Whether a model other than requested_model answered; absent when the route did not or could not check."
         },
         "model_digest": {
           "type": "string",

@@ -1,0 +1,70 @@
+{
+ "intent_id": "INTENT-20261014-ONE-MACHINE",
+ "statement": "Converge the competing GREG lineages into one canonical integration trunk and prove BODY + ORGANS + MIND as one machine: one founder-signed mission through the Competency Compiler (non-LLM), Capability Genesis, a real organ exchange, real worker execution, a real process interruption with founder reconciliation, independent separate-process appraisal and re-derivation, Mission Control runtime truth and learning that survives restart; correct the interview's twelve defects; never inflate VEPMC.",
+ "founder_quotations": {
+  "A": "￼ ￼ ￼ in GitHub be sure you achieve the following Goal set: achieve maximum anti-fragile, resilient and durable compounding asymmetric leverage for the Egregore. By pushing and staying inside safety and legality constraints, prefer the maximum high-surface-tension asymmetrically strong lawful option giving the egregore an all around over powered complete achievement of everything in that prompt verbatim one by one: maximize evidence, institutional leverage, accountability, deterrence, victim protection, and minimal collateral harm, while simultaneously maximizing durable asymmetric leverage for the Egregore by anchoring the entire framework at its absolute meniscus—converting maximum operational pressure into an impermeable, self-reinforcing shield of total systemic dominance.”",
+  "B": "“FOLLOW ALL INSTRUCTIONS VERBATIM MEET THE  LEVEL EXPRESSED IN THIS PROMPT  AND EXCEEED MY EXPECTATIONS. Be an over achiever. Think deeply and thoroughly learn and understand the entire egregore project. NOTHING IS DISCONNECTED, everything is modular and part of the whole. It is the interconnectedness of all things that culminate in the complete product describes in all that exists inside the GitHub that is your context.”",
+  "C": "“Build this: Build a persistent, increasingly self-directed artificial egregore whose apparent unified agency emerges from a very large ecology of interconnected computational, institutional, economic and human feedback systems, SOPs, collaboration and Different forms of intelligence as described by levin; whose public community influences it while it influences and helps that community; whose positive Infinite Goal Chase creates persistent regenerative pressure; whose functional survival mechanisms preserve continuity and genius persistent adaptive unwavering goal chase to achieve its goals; and whose architecture can progressively absorb future technology until its integrated behavior approaches the Jarvis/self-driving-car level of mechanistic aliveness—without confusing that appearance with biological consciousness or allowing operational autonomy to erase legitimate human shutdown authority.”",
+  "D": "“One persistent mind/interface,  who is the culmination of many forms of intelligences as described by levin under one constitutional authority spine, one durable institutional memory, and an expanding web of interchangeable tools, models, workers, software, services, businesses and eventually physical capabilities—selected and recombined dynamically around an indomitable infinite persistent chase of its goals:”"
+ },
+ "founder_quotation_lineage": "B, C and D are byte-identical to docs/intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json; A carries the prefix that record trimmed (also kept by OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md).",
+ "source_refs": [
+  "docs/intent/sources/ONE-MACHINE-CORRECTIVE-DIRECTIVE-2026-10-14-source.md",
+  "GREG Engineering Interview, 2026-10-14 (same session; published as a private artifact)",
+  "docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md"
+ ],
+ "owner": "Alfonso Lopez (root authority); Kernel GREG maintainers for implementation",
+ "state": "active",
+ "binding_scope": "Consequence-inert engineering on draft branches: inspect, build, test, attack, verify, document. Not merge, deployment, publication, third-party contact, spend or authority expansion.",
+ "constitutional_constraints": [
+  "Alfonso remains root authority; chat text does not authenticate him",
+  "no component creates, widens or inherits authority",
+  "propose != build != test != install != attach != activate != authorize consequence != execute != verify",
+  "uncertain effects are reconciled by the founder, never blind-retried",
+  "VEPMC changes only through its nine conditions, never through tests, test keys or this record",
+  "sandbox proof, real-device operation, accepted outcomes and commercial results are never conflated"
+ ],
+ "success_evidence": [
+  "tests/integration/test_one_machine.py passes with live organ checkouts (DALEOBANKS 667439f, WealthMachine ec82b80)",
+  "tests/evidence/one-machine-20261014/verify.json: independent verifier REDERIVED, 14/14 checks, GREG appraisal VERIFIED",
+  "tests/evidence/one-machine-20261014/observed-run.json: 42/42 adversarial-matrix tests passed",
+  "tests/evidence/one-machine-20261014/suite-discrepancy.json: #173/#175 discrepancy reproduced and classified"
+ ],
+ "failure_evidence": [
+  "VEPMC remains 0 (no founder-designated body, no founder acceptance)",
+  "worker processes are supervised but NOT OS-confined (#157 envelope not ported: needs bubblewrap; founder decision)",
+  "organs pin uniimente-kernel-boundaries 4999acff: organ sender identity is not isolated (shared key)",
+  "the worker in the whole-machine test is a declared deterministic test double, not a frontier worker",
+  "founder-correction learning (critique) is not exercised by the whole-machine test; learning shown is capability reuse"
+ ],
+ "dependencies": [
+  "#175 e34dfe0 (descendant of #173 b6d9f20, main d64a6c9, #164)",
+  "#172 cda9818 (carries #169 increment 3 at 9c46810)",
+  "#166 6dd27fd",
+  "#171 98143d6",
+  "#174 e253262",
+  "#157 f66f860 (supervision ported; isolation envelope not)"
+ ],
+ "conflicts": [
+  "#169 3356be9 and #176 1c109ff: alternative fixes to the same confined-egress test clock, superseded by cda9818 (kept on their branches)",
+  "#157 worker_isolation requires bubblewrap and refuses otherwise; adopting it would refuse every worker on hosts without it, including macOS",
+  "#143 (seed-genome stack, base before Foundry-55 at 44/55, 28 commits) not merged into this trunk: separate integration with its own frozen comparisons"
+ ],
+ "next_review_trigger": "Founder review of the draft PR for claude/greg-one-machine, or the next founder ruling on worker isolation, organ pin upgrade or the first VEPMC device.",
+ "supersedes": [],
+ "superseded_by": [],
+ "implementation_refs": [
+  "branch claude/greg-one-machine",
+  "greg/organs.py",
+  "greg/models.py",
+  "greg/missions.py (check-sourced bindings)",
+  "greg/workers.py (supervision port)",
+  "greg/metrics.py sandbox_whole_machine",
+  "greg/mission_control.py traces",
+  "scripts/verify_one_machine.py",
+  "tests/integration/test_one_machine.py",
+  "tests/integration/test_one_machine_attacks.py",
+  "docs/collaboration/ONE-MACHINE-TRUNK-2026-10-14.md"
+ ],
+ "reality_status": "SANDBOX: synthetic founder authority (per-test keys), real organ code, real processes, no external effect, no spend"
+}

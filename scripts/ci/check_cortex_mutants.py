@@ -207,7 +207,7 @@ MIND_CONSTRUCTION_MUTANTS = [
     ("the deficit names an unbuildable geometry label", "greg/cognition/compiler.py",
      "        if buildable:\n", "        if False:\n"),
     ("a construction's fault is charged to cognition, not repaired", "greg/missions.py",
-     'if is_capability_fault(formed, detail):\n                        self.capability_faults',
+     'if is_capability_fault(formed, detail, failure_class):\n                        self.capability_faults',
      'if False:\n                        self.capability_faults'),
     ("attaching the engine never forms the construction", "greg/missions.py",
      'if cap is None and self.genesis.construction_ready(b["function"]):', "if False:"),

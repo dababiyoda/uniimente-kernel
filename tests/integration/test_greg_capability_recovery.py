@@ -249,3 +249,37 @@ def test_the_recovery_mechanism_card_is_complete():
                       .read_text())
     assert all(card.get(field) for field in CARD_FIELDS)
     assert "ev_bda547f2" in card["evidence_and_uncertainties"]
+
+
+@pytest.mark.parametrize("outage", ["timeout", "isolation_unavailable"])
+def test_an_outage_is_not_a_capability_fault_and_opens_no_deficit(tmp_path, monkeypatch, outage):
+    """Gap map (Defect 2, rank 1): the host, not the capability, failed. A package-runner timeout or the
+    host's network isolation being unavailable used to read as a capability fault (by message), so a
+    working capability was quarantined, a new deficit generation opened, the flapping count grew and
+    build budget could be spent. The failure is now typed where it is raised; an outage never
+    quarantines or re-forms anything."""
+    import subprocess
+    from greg.capabilities import CapabilityError
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", network_in_words(text=FLOW, auto_attach=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 1)
+        assert body.registry.state[NX] == "ATTACHED"
+        deficits = len(body.journal.replay("deficit.opened"))
+
+        def down(argv, **kw):
+            if outage == "timeout":
+                raise subprocess.TimeoutExpired(argv, kw.get("timeout", 1))
+            raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
+
+        monkeypatch.setattr(mechanisms, "run_isolated", down)
+        ticks(body, clock, 8)
+        assert body.registry.state[NX] == "ATTACHED"
+        assert not [e for e in body.journal.replay("capability.state")
+                    if e.payload.get("capability_id") == NX and e.payload.get("state") == "QUARANTINED"]
+        assert len(body.journal.replay("deficit.opened")) == deficits
+        classes = {e.payload.get("failure_class") for e in body.journal.replay("mission.observed")
+                   if not e.payload.get("passed") and e.payload.get("failure_class")}
+        assert classes == {"transient"}

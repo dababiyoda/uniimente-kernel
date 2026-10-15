@@ -37,14 +37,23 @@ def resolve(params, journal, mission_id, *, before_seq=None):
             rows = []
             for event in journal.replay("mission.action"):
                 data = event.payload
-                record = journal.ledger.find(data.get("receipt", ""))
-                if (data.get("mission_id") == mission_id and data.get("action_id") == ref["action_id"]
-                    and data.get("status") == "DONE" and record is not None
-                    and record.record_type == "receipt" and (before_seq is None or record.seq < before_seq)):
+                if (data.get("mission_id") != mission_id or data.get("action_id") != ref["action_id"]
+                        or data.get("status") != "DONE"):
+                    continue
+                if not data.get("receipt"):     # a founder-reconciled execution: its output was never retained
+                    if before_seq is None or _event_seq(journal, event) < before_seq:
+                        rows.append((event, None))
+                    continue
+                record = journal.ledger.find(data["receipt"])
+                if (record is not None and record.record_type == "receipt"
+                        and (before_seq is None or record.seq < before_seq)):
                     rows.append((event, record))
             if not rows:
                 raise PendingInput("producer action has no successful retained receipt: " + ref["action_id"])
             event, record = rows[-1]
+            if record is None:              # never an older receipt: that output is not the latest execution's
+                raise BindingError(ref["action_id"] + "'s latest execution was reconciled without a retained "
+                                   "receipt; its output is unknown")
             result = record.payload.get("result", {})
             if result.get("result_class") != "positive":
                 raise BindingError("producer receipt is not a positive result")
@@ -71,6 +80,12 @@ def resolve(params, journal, mission_id, *, before_seq=None):
             return [visit(v, depth+1, protected) for v in value]
         return value
     return visit(params), provenance
+
+
+def _event_seq(journal, event) -> int:
+    """Ledger position of a journal event (its own record, since it carries no receipt)."""
+    return next((r.seq for r in journal.ledger.by_type("event") if r.payload.get("event_id") == event.event_id),
+                1 << 60)
 
 
 def inspect(params, ctx):

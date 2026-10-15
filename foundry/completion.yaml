@@ -193,10 +193,10 @@
     kill, hash-chained journal, SIEM-shaped denials). In-session run on 2026-09-30 before the pause: 7 of 7 escape probes
     denied inside gVisor. Negative evidence: that run''s host control attempted a direct connection to 1.1.1.1:443 and privileged
     setuid/mount as root in the development container; the external connection succeeded, bypassing the configured egress
-    proxy. The probe set was then redesigned (host control limited to self-created resources; network probe targets RFC
-    5737 TEST-NET) and has not been re-run. Execution paused 2026-09-30: running privileged OCI runtimes (runc/runsc as
-    root) and sandbox escape probes in the development container was denied by the session''s safety classifier (containment
-    escape). Resuming needs Alfonso''s explicit authorization for where these may run (e.g. CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md.'
+    proxy. The probe set was then redesigned (host control limited to self-created resources; network probe targets RFC 5737
+    TEST-NET) and has not been re-run. Execution paused 2026-09-30: running privileged OCI runtimes (runc/runsc as root) and
+    sandbox escape probes in the development container was denied by the session''s safety classifier (containment escape).
+    Resuming needs Alfonso''s explicit authorization for where these may run (e.g. CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md.'
   state: PARTIAL
   state_lineage: '#158 line recorded OUTSTANDING (Landlock worker confinement only); #132 recorded PARTIAL (unexercised gVisor
     runner). Reconciled to PARTIAL because both partial mechanisms now exist in one tree; neither meets the acceptance criteria

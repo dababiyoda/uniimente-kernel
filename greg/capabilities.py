@@ -47,7 +47,20 @@ KERNEL_ROOT = Path(__file__).resolve().parents[1]
 
 
 class CapabilityError(RuntimeError):
-    """Capability unavailable, malformed, outside its manifest or failed."""
+    """Capability unavailable, malformed, outside its manifest or failed.
+
+    ``failure_class`` says what failed, typed where the failure is raised and never read back from
+    the message (evolution.failure_analysis.FAILURE_CLASSES): ``executor_error`` (the capability
+    itself, the default), ``transient`` (the host or infrastructure: a timeout, unavailable
+    isolation), ``budget_exceeded`` (a resource ceiling). Only ``executor_error`` is evidence
+    against the capability; Genesis never quarantines or re-forms one for an outage."""
+
+    def __init__(self, *args, failure_class: str = "executor_error"):
+        from evolution.failure_analysis import FAILURE_CLASSES
+        if failure_class not in FAILURE_CLASSES:
+            raise ValueError(f"unknown failure class {failure_class!r}")
+        super().__init__(*args)
+        self.failure_class = failure_class
 
 
 @dataclass
@@ -301,40 +314,102 @@ def fs_write(params, ctx: InvocationContext) -> dict:
     return {"path": str(path), "sha256": hashlib.sha256(content.encode()).hexdigest()}
 
 
-def _no_network_preexec():
-    # Reuse the Kernel's reviewed seccomp filter where libseccomp exists.
+def _network_filter():
+    """The Kernel's reviewed seccomp filter, loaded into THIS process before any child runs.
+
+    The forked child calls the in-memory function and never imports from disk: an isolated child
+    can write files (no filesystem confinement by default), so a filter read from
+    tools/offline_test.py at fork time could be replaced by one stage to switch isolation off for
+    every later child. None when it cannot be loaded (the child then fails closed)."""
     try:
-        sys.path.insert(0, str(KERNEL_ROOT / "tools"))
-        from offline_test import install_filter  # type: ignore
-        install_filter()
+        module = sys.modules.get("offline_test")
+        if module is None:
+            sys.path.insert(0, str(KERNEL_ROOT / "tools"))
+            import offline_test as module  # type: ignore
+        return module.install_filter
     except Exception:
-        os._exit(97)  # fail closed: never run an isolated command without isolation
+        return None
+
+
+if sys.platform != "darwin":
+    _network_filter()          # load at import, before any isolated child can touch the file
+
+
+def _no_network_preexec():
+    """preexec_fn for callers that need only the network filter: the module already in memory, or
+    fail closed. Never an import from disk in the child."""
+    try:
+        sys.modules["offline_test"].install_filter()
+    except Exception:
+        os._exit(97)
+
+
+def _isolating_preexec(install_filter, confine: dict | None):
+    from greg.isolation import confine_paths      # resolved here, in the parent: the child imports nothing
+
+    def preexec():
+        if confine is not None:
+            try:
+                confine_paths(**confine)
+            except Exception:
+                os._exit(98)   # fail closed: never run a confined command unconfined
+        try:
+            install_filter()
+        except Exception:
+            os._exit(97)       # fail closed: never run an isolated command without isolation
+    return preexec
 
 
 MACOS_NO_NETWORK = "(version 1)(allow default)(deny network*)"
 
 
 def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout: int = 30,
-                 extra_env: dict | None = None, input_bytes: bytes | None = None) -> subprocess.CompletedProcess:
+                 extra_env: dict | None = None, input_bytes: bytes | None = None,
+                 confine: dict | None = None, stop_check=None) -> subprocess.CompletedProcess:
     """Run one command with a scrubbed environment and, by default, no network.
 
-    Linux: the Kernel's seccomp filter (tools/offline_test.py). macOS: the system
-    sandbox-exec profile denying network. No isolation available -> refusal.
+    Linux: the Kernel's seccomp filter (tools/offline_test.py, held in memory). macOS: the system
+    sandbox-exec profile denying network. No isolation available -> refusal. ``confine``
+    (``read``/``read_exec``/``write`` path lists, Linux Landlock) additionally limits the files the
+    command can reach; when it cannot be installed the command is refused, never run unconfined.
+    ``stop_check`` runs the command supervised (``workers.supervised_run``): founder STOP is polled,
+    the process group is killed, and on Linux the child dies with the body; a stop raises
+    ``workers.WorkerInterrupted``.
     """
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": str(cwd), **(extra_env or {})}
     preexec = None
+    if confine is not None and sys.platform == "darwin":
+        raise CapabilityError("filesystem confinement unavailable on this host; command refused")
     if isolate_network:
         if sys.platform == "darwin":
             if not Path("/usr/bin/sandbox-exec").exists():
-                raise CapabilityError("network isolation unavailable; command refused")
+                raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
             argv = ["/usr/bin/sandbox-exec", "-p", MACOS_NO_NETWORK, *argv]
         else:
-            preexec = _no_network_preexec
-    stdin = {"stdin": subprocess.DEVNULL} if input_bytes is None else {"input": input_bytes}
-    proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, timeout=timeout,
-                          preexec_fn=preexec, **stdin)
+            install_filter = _network_filter()
+            if install_filter is None:
+                raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
+            preexec = _isolating_preexec(install_filter, confine)
+    elif confine is not None:
+        preexec = _isolating_preexec(lambda: None, confine)
+    if stop_check is not None:
+        from greg.workers import _die_with_body, supervised_run
+        isolate = preexec
+
+        def supervised_preexec():
+            _die_with_body()
+            if isolate is not None:
+                isolate()
+        proc = supervised_run(argv, input=input_bytes, timeout=timeout, cwd=cwd, env=env,
+                              preexec_fn=supervised_preexec, stop_check=stop_check)
+    else:
+        stdin = {"stdin": subprocess.DEVNULL} if input_bytes is None else {"input": input_bytes}
+        proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, timeout=timeout,
+                              preexec_fn=preexec, **stdin)
     if isolate_network and preexec is not None and proc.returncode == 97:
-        raise CapabilityError("network isolation unavailable; command refused")
+        raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
+    if confine is not None and proc.returncode == 98:
+        raise CapabilityError("filesystem confinement unavailable; command refused")
     return proc
 
 
@@ -345,7 +420,10 @@ def run_cli(params, ctx: InvocationContext, *, isolate_network: bool = True, tim
     if argv[0] not in ctx.manifest.binaries:
         raise CapabilityError(f"executable {argv[0]} not in this capability's manifest")
     ctx.workspace.mkdir(parents=True, exist_ok=True)
-    proc = run_isolated(argv, cwd=ctx.workspace, isolate_network=isolate_network, timeout=timeout)
+    try:
+        proc = run_isolated(argv, cwd=ctx.workspace, isolate_network=isolate_network, timeout=timeout)
+    except subprocess.TimeoutExpired:      # a refusal with a cause, never an "uncertain external effect"
+        raise CapabilityError(f"{argv[0]} did not finish within {timeout}s", failure_class="transient") from None
     return {"argv": argv, "returncode": proc.returncode,
             "stdout": proc.stdout[:MAX_READ_BYTES].decode("utf-8", errors="replace"),
             "stderr": proc.stderr[-4000:].decode("utf-8", errors="replace")}
@@ -609,6 +687,8 @@ STRENGTHENS = {
     "institution.compose": ("capability_formation", "routing", "compounding"),
     "institution.dossier": ("settlement", "routing", "compounding"),
     "institution.appraise": ("proof", "reliability"),
+    "organ.exchange": ("proof", "routing", "eligibility"),
+    "organ.status": ("proof", "reliability"),
 }
 
 
@@ -950,6 +1030,36 @@ BUILTINS.update({
                                       filesystem="read-scoped", retry_safe=True, data_classes=("project_sources",),
                                       tests=_INSTITUTION_TESTS, provenance=_INSTITUTION_SOURCE),
                              _lazy("greg.institution", "appraise")),
+})
+
+_ORGAN_SOURCE = {"source": "uniimente-kernel/greg/organs.py",
+                 "mechanism_from": "scripts/organ_bridge_live.py (#171); adapters/bridge_transport.py; "
+                                   "greg/organ_bridge.py; DALEOBANKS services/idea_refinery.py; WMI "
+                                   "src/services/opportunity_intake.py"}
+_GIT = tuple(b for b in ("/usr/bin/git",) if Path(b).exists()) or ("/usr/bin/git",)
+BUILTINS.update({
+    "organ.exchange": (_builtin("organ.exchange", "organ.signed_exchange",
+                                "DALEOBANKS refines a seed into a signed OpportunityPacket and WealthMachine answers "
+                                "with a signed VentureAssessment, each in its own checkout and founder-declared "
+                                "interpreter (inside read roots), with no network; GREG verifies both, binds them to "
+                                "this mission's one trace and has a second WealthMachine process re-derive the answer",
+                                "cli", "internal_write", "organ:",
+                                {"daleobanks_root": "path", "daleobanks_python": "path", "wealthmachine_root": "path",
+                                 "wealthmachine_python": "path", "seed": "str", "timeout_seconds": "int?"},
+                                {"trace_id": "str", "packet_id": "str", "assessment": "dict",
+                                 "appraisal_verdict": "REPRODUCED|REFUTED", "transport_verified": "bool",
+                                 "sender_identity_isolated": "bool", "organ_heads": "dict"},
+                                filesystem="workspace-write", binaries=_GIT, data_classes=("project_sources",),
+                                tests=("tests/unit/test_greg_organs.py", "tests/integration/test_one_machine.py"),
+                                provenance=_ORGAN_SOURCE),
+                       _lazy("greg.organs", "exchange")),
+    "organ.status": (_builtin("organ.status", "organ.exchange_status",
+                              "This mission's organ facts as retained: organs observed, transport verification, "
+                              "trace binding and the latest organ appraisal verdict", "api", "read_only", "organ:",
+                              {"(none)": "reads this mission's journal"}, {"verdict": "str|null", "organs_observed": "list", "transport_verified": "bool",
+                                   "trace_ids": "list"},
+                              retry_safe=True, tests=("tests/unit/test_greg_organs.py",), provenance=_ORGAN_SOURCE),
+                     _lazy("greg.organs", "status")),
 })
 
 # Cognitive families are the SAME capability manifests/genomes, lazily executed.

@@ -1,10 +1,10 @@
 """A founder reconciliation settles an uncertain act without breaking anything that reads the action history.
 
-Found by the one-machine proof (2026-10-15): after a SIGKILL mid-worker and a founder "not executed"
-reconciliation, Mission Control and the morning report crashed with ``KeyError: 'capability'``. The
-settlement record was the only action record without the common shape. Fixed at the writer (the record carries
-the uncertain act's identity and time) and at the readers (older short records still on disk do not crash
-them, and a settlement is not counted as a second act).
+Found independently by the ten-step proof (2026-10-15) and by PR #178: after a SIGKILL mid-worker and a
+founder "not executed" reconciliation, Mission Control and the morning report crashed with
+``KeyError: 'capability'``. #178's canonical fix makes the settlement record name the dispatched capability
+(route ``founder_reconciliation``) and makes routing count one outcome per attempt. These tests hold that fix,
+and the resilience readers to the same one-outcome rule (they still counted the interruption twice).
 """
 from greg import capabilities, resilience, routing
 from greg.body import Body, morning_projection
@@ -49,7 +49,7 @@ def test_a_settlement_carries_the_uncertain_acts_identity_and_the_morning_report
         assert [a["status"] for a in acts] == ["UNCERTAIN", "RECONCILED_NOT_EXECUTED", "DONE"] and len(calls) == 2
         settlement = acts[1]
         assert settlement["capability"] == "fs.write" and settlement["receipt"] is None and settlement["at"]
-        assert settlement["reconciles"] and settlement["scope_digest"] == acts[0]["scope_digest"]
+        assert settlement["route"] == "founder_reconciliation" and settlement["dispatch_route"] == acts[0]["route"]
         # one interruption is one failed act for the capability, not two
         assert routing.track_record(body.journal)["fs.write"]["failed"] == 1
         assert sum(resilience.failed(e.payload) for e in resilience._acts(body.journal)) == 1

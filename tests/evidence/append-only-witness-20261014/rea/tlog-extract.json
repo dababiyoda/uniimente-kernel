@@ -1,0 +1,2850 @@
+{
+ "evidence_id": "ev_8c44d0826b64a4af3441a42d898ad0be5b97a244b3d42d1e5010b3d34d0834af",
+ "subject": {
+  "name": "package",
+  "digest": {
+   "sha256": "e86c2d5e162a92f86548276717cf5fc7bff72bc00a1caa48cd62d6f8e4c81c62"
+  },
+  "format": "directory",
+  "architecture": null,
+  "local_path": "/tmp/claude-0/rea-target/package"
+ },
+ "provider": {
+  "id": "rea-javascript-application",
+  "name": "REA JavaScript application analyzer",
+  "version": "1"
+ },
+ "confidence": "derived",
+ "authority": "shipped-artifact",
+ "limitations": [
+  "CommonJS and ESM binding relationships were recovered from inert syntax and resolved only within the inventoried artifact container.",
+  "JavaScript and HTML were parsed as inert text; bundle bootstrap code was never executed.",
+  "Static imports, entrypoints, workers, endpoints, and storage relationships do not prove runtime execution.",
+  "Static paths and relationships may remain unresolved when expressions are dynamic or obfuscated.",
+  "Webpack/Rspack factories were recovered from AST literals; REA did not invoke push handlers or bundle bootstrap code."
+ ],
+ "nodes": [
+  {
+   "node_id": "jag_node_0ccb8983ec2796102c8b06a8f3de341788d3a1b4d13cce12caa452c9cf736672",
+   "kind": "javascript-module",
+   "key": "dist/tlog/checkpoint.js:LogCheckpoint",
+   "observations": [
+    {
+     "label": "dist/tlog/checkpoint.js:LogCheckpoint",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/checkpoint.js",
+      "start": {
+       "line": 168,
+       "column": 0
+      },
+      "end": {
+       "line": 168,
+       "column": 37
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/checkpoint.js:LogCheckpoint",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/checkpoint.js",
+      "start": {
+       "line": 3,
+       "column": 0
+      },
+      "end": {
+       "line": 3,
+       "column": 30
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/checkpoint.js:LogCheckpoint:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/checkpoint.js",
+      "start": {
+       "line": 130,
+       "column": 0
+      },
+      "end": {
+       "line": 167,
+       "column": 1
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_0fe3d6dec8f2e5c2c3a2b0bca8de8652c47106d076abe62bc18211fa726e6745",
+   "kind": "javascript-module",
+   "key": "dist/tlog/intoto.js",
+   "observations": [
+    {
+     "label": "dist/tlog/intoto.js",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/intoto.js",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 63,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_189fbc2edb26e7ac09413466d17210120d319c6c949d22fe6b532f7c2cc74cec",
+   "kind": "javascript-module",
+   "key": "dist/tlog/checkpoint.js",
+   "observations": [
+    {
+     "label": "dist/tlog/checkpoint.js",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/checkpoint.js",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 169,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_1f2b3a47d325ec777ede267429b883877ede3c36b943430672b7ed59b733aeaf",
+   "kind": "javascript-module",
+   "key": "dist/tlog/merkle.js:verifyMerkleInclusion",
+   "observations": [
+    {
+     "label": "dist/tlog/merkle.js:verifyMerkleInclusion:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/merkle.js",
+      "start": {
+       "line": 23,
+       "column": 0
+      },
+      "end": {
+       "line": 66,
+       "column": 1
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/merkle.js:verifyMerkleInclusion",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/merkle.js",
+      "start": {
+       "line": 3,
+       "column": 0
+      },
+      "end": {
+       "line": 3,
+       "column": 53
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_27daf37e49e09cfaa2827f7d4e307088873abb5ee9b7cd2d8c27a598961ae5b5",
+   "kind": "javascript-module",
+   "key": "dist/tlog/intoto.js:verifyIntotoTLogBody",
+   "observations": [
+    {
+     "label": "dist/tlog/intoto.js:verifyIntotoTLogBody:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/intoto.js",
+      "start": {
+       "line": 21,
+       "column": 0
+      },
+      "end": {
+       "line": 31,
+       "column": 1
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/intoto.js:verifyIntotoTLogBody",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/intoto.js",
+      "start": {
+       "line": 3,
+       "column": 0
+      },
+      "end": {
+       "line": 3,
+       "column": 51
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_3a5822d0b6788448c2108a64150e1a8d0f31793b88745c789cd8210daf0fe213",
+   "kind": "javascript-module",
+   "key": "dist/tlog/dsse.js:verifyDSSETLogBody",
+   "observations": [
+    {
+     "label": "dist/tlog/dsse.js:verifyDSSETLogBody",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/dsse.js",
+      "start": {
+       "line": 4,
+       "column": 0
+      },
+      "end": {
+       "line": 4,
+       "column": 47
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/dsse.js:verifyDSSETLogBody:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/dsse.js",
+      "start": {
+       "line": 24,
+       "column": 0
+      },
+      "end": {
+       "line": 34,
+       "column": 1
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_3f89d1624618bbf0573ba879a702b3aa29eb7eca7d6f8f86c2c39d4b220b078f",
+   "kind": "javascript-module",
+   "key": "dist/tlog/index.js:verifyTLogBody",
+   "observations": [
+    {
+     "label": "dist/tlog/index.js:verifyTLogBody",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/index.js",
+      "start": {
+       "line": 3,
+       "column": 0
+      },
+      "end": {
+       "line": 3,
+       "column": 39
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/index.js:verifyTLogBody:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/index.js",
+      "start": {
+       "line": 29,
+       "column": 0
+      },
+      "end": {
+       "line": 79,
+       "column": 1
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_4d11a74b95d6c7fcd321be260b918b72a34f426411096f15e10cec2f285f2636",
+   "kind": "javascript-module",
+   "key": "dist/tlog/checkpoint.d.ts:LogCheckpoint",
+   "observations": [
+    {
+     "label": "dist/tlog/checkpoint.d.ts:LogCheckpoint:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/checkpoint.d.ts",
+      "start": {
+       "line": 4,
+       "column": 7
+      },
+      "end": {
+       "line": 11,
+       "column": 1
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/checkpoint.d.ts:LogCheckpoint",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/checkpoint.d.ts",
+      "start": {
+       "line": 4,
+       "column": 7
+      },
+      "end": {
+       "line": 11,
+       "column": 1
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_54e2532bc8b2435e54e99b88e56663311e776a165c9718b752b7c29e7a4e20a0",
+   "kind": "javascript-module",
+   "key": "dist/tlog/set.js:verifyTLogSET",
+   "observations": [
+    {
+     "label": "dist/tlog/set.js:verifyTLogSET",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/set.js",
+      "start": {
+       "line": 3,
+       "column": 0
+      },
+      "end": {
+       "line": 3,
+       "column": 37
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/set.js:verifyTLogSET:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/set.js",
+      "start": {
+       "line": 25,
+       "column": 0
+      },
+      "end": {
+       "line": 48,
+       "column": 1
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_5aec43879bd1ec539cc92818736fe0460fc0cdf1f7c8589a76dde7233ffa1460",
+   "kind": "javascript-module",
+   "key": "dist/tlog/hashedrekord.js:HASHEDREKORD_API_VERSION_V1",
+   "observations": [
+    {
+     "label": "dist/tlog/hashedrekord.js:HASHEDREKORD_API_VERSION_V1",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/hashedrekord.js",
+      "start": {
+       "line": 3,
+       "column": 0
+      },
+      "end": {
+       "line": 3,
+       "column": 44
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/hashedrekord.js:HASHEDREKORD_API_VERSION_V1",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/hashedrekord.js",
+      "start": {
+       "line": 22,
+       "column": 0
+      },
+      "end": {
+       "line": 22,
+       "column": 45
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_5bb288d0976e65459852802ff158a4593ac95be74d5caa823c08211a37ceed22",
+   "kind": "javascript-module",
+   "key": "dist/tlog/dsse.js:verifyDSSETLogBodyV2",
+   "observations": [
+    {
+     "label": "dist/tlog/dsse.js:verifyDSSETLogBodyV2",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/dsse.js",
+      "start": {
+       "line": 5,
+       "column": 0
+      },
+      "end": {
+       "line": 5,
+       "column": 51
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/dsse.js:verifyDSSETLogBodyV2:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/dsse.js",
+      "start": {
+       "line": 37,
+       "column": 0
+      },
+      "end": {
+       "line": 54,
+       "column": 1
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_5bb37cdd6d4d50969ad4cffa3e86a7d74e909daa1e60cbdc3728a0e3023b75e2",
+   "kind": "javascript-module",
+   "key": "dist/tlog/hashedrekord.js",
+   "observations": [
+    {
+     "label": "dist/tlog/hashedrekord.js",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/hashedrekord.js",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 95,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_5e337ea656c3e4a6c75b8fceb77e095f01fe5e40566dfa7ecfa780e96aef7818",
+   "kind": "javascript-module",
+   "key": "dist/tlog/hashedrekord.js:verifyHashedRekordTLogBodyV2",
+   "observations": [
+    {
+     "label": "dist/tlog/hashedrekord.js:verifyHashedRekordTLogBodyV2:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/hashedrekord.js",
+      "start": {
+       "line": 37,
+       "column": 0
+      },
+      "end": {
+       "line": 54,
+       "column": 1
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/hashedrekord.js:verifyHashedRekordTLogBodyV2",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/hashedrekord.js",
+      "start": {
+       "line": 5,
+       "column": 0
+      },
+      "end": {
+       "line": 5,
+       "column": 67
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_666c880c583f3466ed2f4d3ae69c8173f8ad9da29872b8320a249a507ed81043",
+   "kind": "javascript-module",
+   "key": "dist/tlog/hashedrekord.js:verifyHashedRekordTLogBody",
+   "observations": [
+    {
+     "label": "dist/tlog/hashedrekord.js:verifyHashedRekordTLogBody",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/hashedrekord.js",
+      "start": {
+       "line": 4,
+       "column": 0
+      },
+      "end": {
+       "line": 4,
+       "column": 63
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/hashedrekord.js:verifyHashedRekordTLogBody:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/hashedrekord.js",
+      "start": {
+       "line": 24,
+       "column": 0
+      },
+      "end": {
+       "line": 34,
+       "column": 1
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_675814df74ee596fb94c2c7403ee3e3b761ff01ac50590d926fac27d4ef468b7",
+   "kind": "javascript-module",
+   "key": "dist/tlog/checkpoint.d.ts",
+   "observations": [
+    {
+     "label": "dist/tlog/checkpoint.d.ts",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/checkpoint.d.ts",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 12,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_7bd0e3e4dbcd03a3a57c0ae23bfc6b0984ec0dafed50eab66dd41888d2f45ffe",
+   "kind": "javascript-module",
+   "key": "dist/tlog/dsse.d.ts",
+   "observations": [
+    {
+     "label": "dist/tlog/dsse.d.ts",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/dsse.d.ts",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 7,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_7c86eed5b83458d77d7272e25139414cf9a485a72a0012a692e485f482f13ed5",
+   "kind": "javascript-module",
+   "key": "dist/tlog/set.js",
+   "observations": [
+    {
+     "label": "dist/tlog/set.js",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/set.js",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 61,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_832480dbf7affa3ffec1c90c6e1d3a9c90f449e7dce87bd978ac0d10a2734522",
+   "kind": "javascript-module",
+   "key": "dist/tlog/dsse.js:DSSE_API_VERSION_V1",
+   "observations": [
+    {
+     "label": "dist/tlog/dsse.js:DSSE_API_VERSION_V1",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/dsse.js",
+      "start": {
+       "line": 22,
+       "column": 0
+      },
+      "end": {
+       "line": 22,
+       "column": 37
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/dsse.js:DSSE_API_VERSION_V1",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/dsse.js",
+      "start": {
+       "line": 3,
+       "column": 0
+      },
+      "end": {
+       "line": 3,
+       "column": 36
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_88c9621b09986c106c70392a028ca4165872fedabc2a668804666a8f17954aad",
+   "kind": "javascript-module",
+   "key": "dist/tlog/set.d.ts",
+   "observations": [
+    {
+     "label": "dist/tlog/set.d.ts",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/set.d.ts",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 4,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_907deacc41f031b445eb6338a2a00c288b77245d9f40c35c7ed8c2785a1d720b",
+   "kind": "javascript-module",
+   "key": "dist/tlog/hashedrekord.d.ts",
+   "observations": [
+    {
+     "label": "dist/tlog/hashedrekord.d.ts",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/hashedrekord.d.ts",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 7,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_925d27ae68a5b9dd0d22bf053444e9682ab622a1686156086d454563ea42d6f2",
+   "kind": "javascript-module",
+   "key": "dist/tlog/checkpoint.js:verifyCheckpoint",
+   "observations": [
+    {
+     "label": "dist/tlog/checkpoint.js:verifyCheckpoint",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/checkpoint.js",
+      "start": {
+       "line": 4,
+       "column": 0
+      },
+      "end": {
+       "line": 4,
+       "column": 43
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/checkpoint.js:verifyCheckpoint:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/checkpoint.js",
+      "start": {
+       "line": 39,
+       "column": 0
+      },
+      "end": {
+       "line": 51,
+       "column": 1
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_95d76b325632fd1ef1622b7e0b4c370be7bc36bebf19290804845fcc965fd5df",
+   "kind": "javascript-module",
+   "key": "dist/tlog/dsse.d.ts:DSSE_API_VERSION_V1",
+   "observations": [
+    {
+     "label": "dist/tlog/dsse.d.ts:DSSE_API_VERSION_V1",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/dsse.d.ts",
+      "start": {
+       "line": 4,
+       "column": 7
+      },
+      "end": {
+       "line": 4,
+       "column": 51
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_967d74f480ed0c2abbf94941689c06243cd5b7dd99b8d99122d73322f487b78f",
+   "kind": "javascript-module",
+   "key": "dist/tlog/index.js",
+   "observations": [
+    {
+     "label": "dist/tlog/index.js",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/index.js",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 105,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_972c120e4e5649e0068b9a9b136568a203d70bf6723e8acf86d765ff64c697e0",
+   "kind": "javascript-module",
+   "key": "dist/tlog/intoto.d.ts",
+   "observations": [
+    {
+     "label": "dist/tlog/intoto.d.ts",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/intoto.d.ts",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 4,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_a8e98c25075dda6048a77370866034f196a5d7a4719c40b4a0ca88fb4cc6697a",
+   "kind": "javascript-module",
+   "key": "dist/tlog/dsse.js",
+   "observations": [
+    {
+     "label": "dist/tlog/dsse.js",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/dsse.js",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 107,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_bf863a701b2e3f017c7e1e858a75490b589ee0c056a92e3414023731973ec7ff",
+   "kind": "javascript-module",
+   "key": "dist/tlog/index.js:verifyTLogInclusion",
+   "observations": [
+    {
+     "label": "dist/tlog/index.js:verifyTLogInclusion:return-shapes",
+     "semantic_role": "export-return-shapes",
+     "evidence_state": "inferred",
+     "authority": "static-relationship-inference",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/index.js",
+      "start": {
+       "line": 80,
+       "column": 0
+      },
+      "end": {
+       "line": 98,
+       "column": 1
+      }
+     }
+    },
+    {
+     "label": "dist/tlog/index.js:verifyTLogInclusion",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/index.js",
+      "start": {
+       "line": 4,
+       "column": 0
+      },
+      "end": {
+       "line": 4,
+       "column": 49
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_c103d957aa280df237f9f8221c487e9b92f8f9eea4d5498eb6453af46386efd3",
+   "kind": "javascript-module",
+   "key": "dist/tlog/merkle.d.ts",
+   "observations": [
+    {
+     "label": "dist/tlog/merkle.d.ts",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/merkle.d.ts",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 4,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_c909f00ac7baa72f8d91d1b484e3a04675fa76b46aba19ca75d16f3fce0576e4",
+   "kind": "javascript-module",
+   "key": "dist/tlog/index.d.ts",
+   "observations": [
+    {
+     "label": "dist/tlog/index.d.ts",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/index.d.ts",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 6,
+       "column": 0
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_cc92b366bf0fef6c25950b3e08402c1ce593fd5dfb16aff62c3ca5fc7024be0c",
+   "kind": "javascript-module",
+   "key": "dist/tlog/hashedrekord.d.ts:HASHEDREKORD_API_VERSION_V1",
+   "observations": [
+    {
+     "label": "dist/tlog/hashedrekord.d.ts:HASHEDREKORD_API_VERSION_V1",
+     "semantic_role": "export-binding",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/hashedrekord.d.ts",
+      "start": {
+       "line": 4,
+       "column": 7
+      },
+      "end": {
+       "line": 4,
+       "column": 59
+      }
+     }
+    }
+   ]
+  },
+  {
+   "node_id": "jag_node_d86735c2dfec18f1711246338b203d724dfb395563d4b06563088ef39ca8237a",
+   "kind": "javascript-module",
+   "key": "dist/tlog/merkle.js",
+   "observations": [
+    {
+     "label": "dist/tlog/merkle.js",
+     "semantic_role": "source-module",
+     "evidence_state": "observed",
+     "authority": "ast-static-analysis",
+     "location": {
+      "kind": "source-range",
+      "source": "dist/tlog/merkle.js",
+      "start": {
+       "line": 1,
+       "column": 0
+      },
+      "end": {
+       "line": 116,
+       "column": 0
+      }
+     }
+    }
+   ]
+  }
+ ],
+ "edges": [
+  {
+   "relation": "imports",
+   "from": "dist/tlog/dsse.d.ts",
+   "to": "@sigstore/rekor-types",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_0224db33f13598372d285b984689c104e51b2dde72f91c53c07ca02f3c1d38c7",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.d.ts",
+    "start": {
+     "line": 2,
+     "column": 14
+    },
+    "end": {
+     "line": 2,
+     "column": 31
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/set.d.ts",
+   "to": "@sigstore/bundle",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_028fc93bbda2f6e868618fc3f9dc8958ce48103647fb753e0fa6dfd69411f697",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.d.ts",
+    "start": {
+     "line": 2,
+     "column": 14
+    },
+    "end": {
+     "line": 2,
+     "column": 43
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/set.js",
+   "to": "@sigstore/core",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_054c08a40f3b903fe647fbb9af2e8d14e0d5cda4939eb36bd44b89f472df05e5",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.js",
+    "start": {
+     "line": 19,
+     "column": 6
+    },
+    "end": {
+     "line": 19,
+     "column": 40
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/hashedrekord.js",
+   "to": "dist/tlog/hashedrekord.js:HASHEDREKORD_API_VERSION_V1",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_06958f09a58a917d9cdc3b63e26f394380864313939f38b08bf32315e227e407",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.js",
+    "start": {
+     "line": 22,
+     "column": 0
+    },
+    "end": {
+     "line": 22,
+     "column": 45
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/merkle.js",
+   "to": "dist/error.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_06dd2f6d9613b4d4cb309d08dfc88cda8ffbbe86f7b038e2ea3ea88583928dda",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/merkle.js",
+    "start": {
+     "line": 20,
+     "column": 6
+    },
+    "end": {
+     "line": 20,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_089539a9000ad1c94ea75cea44d47ed92c499fe50fa12bb88077b1a27604a3e3",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 22,
+     "column": 15
+    },
+    "end": {
+     "line": 22,
+     "column": 32
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/dsse.js",
+   "to": "dist/tlog/dsse.js:DSSE_API_VERSION_V1",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_09562bbc3efe3e782cb02802e8dd2366a954bd000e88bb0c0bc7ed251c09cee9",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.js",
+    "start": {
+     "line": 3,
+     "column": 0
+    },
+    "end": {
+     "line": 3,
+     "column": 36
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.d.ts",
+   "to": "dist/trust/index.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_0d000a247463ab63bca7195c9fdbd5cea5d6b097dc61252dfff0ce63ff459120",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.d.ts",
+    "start": {
+     "line": 3,
+     "column": 9
+    },
+    "end": {
+     "line": 3,
+     "column": 22
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/checkpoint.d.ts",
+   "to": "dist/tlog/checkpoint.d.ts:LogCheckpoint",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_0d5e1aef71e294ed82f7a475addb41810b62fdf924bcd4fa0e4dd97624f0bfb2",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.d.ts",
+    "start": {
+     "line": 4,
+     "column": 7
+    },
+    "end": {
+     "line": 11,
+     "column": 1
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.d.ts",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_0e14bc136f42310a5e97f666589533c547fa5ebe8dbfb069a72521305f13cbb4",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.d.ts",
+    "start": {
+     "line": 3,
+     "column": 0
+    },
+    "end": {
+     "line": 3,
+     "column": 41
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "dist/tlog/checkpoint.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_10df4815662264dcae6faefe3aa62f43767e87311055740ecf4ebcb90d744054",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 25,
+     "column": 6
+    },
+    "end": {
+     "line": 25,
+     "column": 44
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/set.js",
+   "to": "@sigstore/core",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_129f3e0ed2fa3a992eb18687541d75f0972ceb253489f8ab18899084f371264a",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.js",
+    "start": {
+     "line": 19,
+     "column": 15
+    },
+    "end": {
+     "line": 19,
+     "column": 40
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/merkle.d.ts",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_1b14c9f66f6e265b54a1b1e9d66c1a76c138f449caa1ea06b03a996d2e435d22",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/merkle.d.ts",
+    "start": {
+     "line": 1,
+     "column": 0
+    },
+    "end": {
+     "line": 1,
+     "column": 45
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/set.js",
+   "to": "dist/tlog/set.js:verifyTLogSET",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_1baef32ec2aed5e0f199cdecedb7180ffa92106f3625fe72f15c97c309fe54d6",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.js",
+    "start": {
+     "line": 3,
+     "column": 0
+    },
+    "end": {
+     "line": 3,
+     "column": 37
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/set.js",
+   "to": "dist/error.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_1bf82a8680691a6c447efbc0eb67cea77133270f1e2ae4c45184b37c7015c1b0",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.js",
+    "start": {
+     "line": 20,
+     "column": 6
+    },
+    "end": {
+     "line": 20,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/checkpoint.js",
+   "to": "dist/error.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_21fe4216c1f9b01d6f29dfc660cb8b67f9c46c9daade5ee2860613bf31358a59",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.js",
+    "start": {
+     "line": 21,
+     "column": 6
+    },
+    "end": {
+     "line": 21,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "dist/tlog/intoto.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_23cdfb36c14970274a407da77554d29ddaa012a6d2aed44c3a2fcb63b5da6895",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 24,
+     "column": 6
+    },
+    "end": {
+     "line": 24,
+     "column": 36
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/hashedrekord.d.ts",
+   "to": "dist/tlog/hashedrekord.d.ts:HASHEDREKORD_API_VERSION_V1",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_23dd35a242066ab77c1147f0d99ef89f6280531c7b8974c35908fa4096ccff1f",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.d.ts",
+    "start": {
+     "line": 4,
+     "column": 7
+    },
+    "end": {
+     "line": 4,
+     "column": 59
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/set.d.ts",
+   "to": "@sigstore/bundle",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_2c48efa4432197c93b9ec3b88b93f6427979347dd1ccd5156810fa502d32e895",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.d.ts",
+    "start": {
+     "line": 2,
+     "column": 0
+    },
+    "end": {
+     "line": 2,
+     "column": 70
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/merkle.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_2e20244f5a1694fafd5ba05d8b3c8bb29f00562682e2c069dfc13ce55024ab1f",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/merkle.js",
+    "start": {
+     "line": 20,
+     "column": 16
+    },
+    "end": {
+     "line": 20,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/merkle.js",
+   "to": "@sigstore/core",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_2f2c773114bab2b7b02cdb313b85f4d39bf35898c5ff11d00285fcedfdf7f112",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/merkle.js",
+    "start": {
+     "line": 19,
+     "column": 6
+    },
+    "end": {
+     "line": 19,
+     "column": 40
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_31d4bc210ea95e743d39f4de4cc80aa67d253a1ddad0956f2cac3b9dce359323",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 23,
+     "column": 23
+    },
+    "end": {
+     "line": 23,
+     "column": 48
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/intoto.d.ts",
+   "to": "dist/shared.types.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_31e59fe30b188eaea8b7c763da99f8520b11167309090e73391762390d395992",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/intoto.d.ts",
+    "start": {
+     "line": 2,
+     "column": 14
+    },
+    "end": {
+     "line": 2,
+     "column": 30
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/intoto.d.ts",
+   "to": "@sigstore/rekor-types",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_41e7cf3b06bbe2986d3e90d1528507abb3f1dbe3ad4938ac42be79632f6b9637",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/intoto.d.ts",
+    "start": {
+     "line": 1,
+     "column": 14
+    },
+    "end": {
+     "line": 1,
+     "column": 33
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "dist/tlog/hashedrekord.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_4204be46187e4f33420a1bfdbf014cb9c8492b25ca7513eb675e95c4cdec8937",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 23,
+     "column": 6
+    },
+    "end": {
+     "line": 23,
+     "column": 48
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/intoto.js",
+   "to": "dist/error.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_478edf84e2f73afcc0f27fd4a3b918d37ebf62188310e7797f9afff40ebd55a9",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/intoto.js",
+    "start": {
+     "line": 19,
+     "column": 6
+    },
+    "end": {
+     "line": 19,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/hashedrekord.d.ts",
+   "to": "@sigstore/protobuf-specs/rekor/v2",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_479092567a209c113978ed8f9521869975116e960fb72b17df56978a019dd847",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.d.ts",
+    "start": {
+     "line": 1,
+     "column": 0
+    },
+    "end": {
+     "line": 1,
+     "column": 58
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/dsse.js",
+   "to": "dist/tlog/dsse.js:verifyDSSETLogBodyV2",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_47c61f7f52d47e84e81cf2f9313512009b3038c20b8102c0bb13af216a23a843",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.js",
+    "start": {
+     "line": 5,
+     "column": 0
+    },
+    "end": {
+     "line": 5,
+     "column": 51
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.d.ts",
+   "to": "@sigstore/bundle",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_491a9a5fd38a2281accdd40c68409c8687b09c23f2f474dc25a806a7403f724a",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.d.ts",
+    "start": {
+     "line": 1,
+     "column": 0
+    },
+    "end": {
+     "line": 1,
+     "column": 61
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.d.ts",
+   "to": "dist/shared.types.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_49be93466197ea7cf8586b4fdf2cd83457136c7c880d16d886de30012a4f1b8d",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.d.ts",
+    "start": {
+     "line": 2,
+     "column": 14
+    },
+    "end": {
+     "line": 2,
+     "column": 30
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/checkpoint.js",
+   "to": "@sigstore/core",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_51f00863f245dadd1f814b6b6ca6fc27c9196d89214d337aec3ebfd8f070a46d",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.js",
+    "start": {
+     "line": 20,
+     "column": 15
+    },
+    "end": {
+     "line": 20,
+     "column": 40
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/hashedrekord.js",
+   "to": "dist/tlog/hashedrekord.js:verifyHashedRekordTLogBodyV2",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_5732f08d0b9b9dbdd5c2e9d519fd14ee9c80024657f9ba4ab398ef3047f46904",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.js",
+    "start": {
+     "line": 5,
+     "column": 0
+    },
+    "end": {
+     "line": 5,
+     "column": 67
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/checkpoint.d.ts",
+   "to": "@sigstore/bundle",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_60122d63c016da89142290ac43e8ab65e5cee85750fe5cd0375e4da960044a2f",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.d.ts",
+    "start": {
+     "line": 2,
+     "column": 14
+    },
+    "end": {
+     "line": 2,
+     "column": 41
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/intoto.d.ts",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_61f646c40385c97cf3bcbb55fc517bd73d3f12bf2efea0aa9086ab1c7f0fb2ac",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/intoto.d.ts",
+    "start": {
+     "line": 2,
+     "column": 0
+    },
+    "end": {
+     "line": 2,
+     "column": 56
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/set.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_6423ed506d18627181de49a8f46455b9e04b943eb4d40aef63c5be587b3d38f6",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.js",
+    "start": {
+     "line": 20,
+     "column": 16
+    },
+    "end": {
+     "line": 20,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/checkpoint.js",
+   "to": "@sigstore/core",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_66c596f8a2300888b585deec163f0424f89971627755f6f9acf5ecb091cd9db8",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.js",
+    "start": {
+     "line": 20,
+     "column": 6
+    },
+    "end": {
+     "line": 20,
+     "column": 40
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/merkle.d.ts",
+   "to": "@sigstore/bundle",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_67dd569817c9f8d5c661335eab0f14b43863d003be6e599a913441992216920e",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/merkle.d.ts",
+    "start": {
+     "line": 2,
+     "column": 0
+    },
+    "end": {
+     "line": 2,
+     "column": 68
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/dsse.d.ts",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_6b71ad6ca207d9929b8f7ac5527263626d63f6fcc6549ccead0df6076edc02ec",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.d.ts",
+    "start": {
+     "line": 3,
+     "column": 0
+    },
+    "end": {
+     "line": 3,
+     "column": 56
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_6dc02fb196adbbe8d6f4ef242ca6ddc686f2eb76751bac72a36f920089c73b17",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 27,
+     "column": 14
+    },
+    "end": {
+     "line": 27,
+     "column": 30
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/set.js",
+   "to": "dist/trust/index.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_6f410f2f3aa32db1acbf6812bf0b1642f989a53da9f1767cc335e60835f18770",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.js",
+    "start": {
+     "line": 21,
+     "column": 6
+    },
+    "end": {
+     "line": 21,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/checkpoint.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_7dd2da7831decaace0186dc6e116a36c218c5902da6ec9373377b6f65600cede",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.js",
+    "start": {
+     "line": 21,
+     "column": 16
+    },
+    "end": {
+     "line": 21,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/dsse.d.ts",
+   "to": "@sigstore/rekor-types",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_854c0e65a41fb5a715a8e1e6fcaf84c675b11b62fb9a54c2c0dfd5839d05d8d3",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.d.ts",
+    "start": {
+     "line": 2,
+     "column": 0
+    },
+    "end": {
+     "line": 2,
+     "column": 63
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.d.ts",
+   "to": "@sigstore/bundle",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_85e6b4eef7dc98d5351f7902550f99caffaa9d4b49b2a2f88e663a4edf21b81b",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.d.ts",
+    "start": {
+     "line": 1,
+     "column": 14
+    },
+    "end": {
+     "line": 1,
+     "column": 34
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/checkpoint.js",
+   "to": "dist/tlog/checkpoint.js:verifyCheckpoint",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_863270819935047b143e9f4db47aaf398a248783b8c5a981ec8aa5306a27202f",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.js",
+    "start": {
+     "line": 4,
+     "column": 0
+    },
+    "end": {
+     "line": 4,
+     "column": 43
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/checkpoint.js",
+   "to": "dist/tlog/checkpoint.js:LogCheckpoint",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_870ef63cd9321165575ac5cea4fff8014d6d1a5c081bfe312fd99e6ef5d1af9d",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.js",
+    "start": {
+     "line": 168,
+     "column": 0
+    },
+    "end": {
+     "line": 168,
+     "column": 37
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/set.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_8bb7a95bd6f2aa47fb8c4cdc392ace75329293c66511f8923ae58b405e445ddf",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.js",
+    "start": {
+     "line": 21,
+     "column": 16
+    },
+    "end": {
+     "line": 21,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.d.ts",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_8e75f8bf36d3fedb0cc78aa43eb3b82ebf62aeb7b2ebbd247774447dc7d1a82a",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.d.ts",
+    "start": {
+     "line": 2,
+     "column": 0
+    },
+    "end": {
+     "line": 2,
+     "column": 56
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/dsse.d.ts",
+   "to": "@sigstore/protobuf-specs/rekor/v2",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_90aa011539aadc17d7cbf500e2099c97a86b501e4f05f834ca4699cbdf2ba011",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.d.ts",
+    "start": {
+     "line": 1,
+     "column": 0
+    },
+    "end": {
+     "line": 1,
+     "column": 63
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/hashedrekord.d.ts",
+   "to": "@sigstore/rekor-types",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_91674eb9b29df81142d0608447d5f0d4982cdb9bb328476219374234a935635e",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.d.ts",
+    "start": {
+     "line": 2,
+     "column": 0
+    },
+    "end": {
+     "line": 2,
+     "column": 71
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/merkle.js",
+   "to": "dist/tlog/merkle.js:verifyMerkleInclusion",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_92be2fe03c4bb063c4f4109f88cac9bf41d52ed8396ac0510a69437200380829",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/merkle.js",
+    "start": {
+     "line": 3,
+     "column": 0
+    },
+    "end": {
+     "line": 3,
+     "column": 53
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "dist/tlog/dsse.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_9411d6d914c83f0ba2534701be98bb27bb9b2bab809eff0a4223d085ecd0dc22",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 22,
+     "column": 6
+    },
+    "end": {
+     "line": 22,
+     "column": 32
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/set.d.ts",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_943e10308c3f0d6be7d2ba69004bab53009cd57cba2f463ddec21b0a000f4aba",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.d.ts",
+    "start": {
+     "line": 1,
+     "column": 0
+    },
+    "end": {
+     "line": 1,
+     "column": 41
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/hashedrekord.js",
+   "to": "dist/tlog/hashedrekord.js:HASHEDREKORD_API_VERSION_V1",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_99c208663b093b1d01da964649cc6ca59925c80b61533204a32134f2f123e6ec",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.js",
+    "start": {
+     "line": 3,
+     "column": 0
+    },
+    "end": {
+     "line": 3,
+     "column": 44
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_99d89a4c1907fd35db6378409328e5f8f99015031fdb9b7a3da78f35026e7690",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 25,
+     "column": 21
+    },
+    "end": {
+     "line": 25,
+     "column": 44
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/dsse.js",
+   "to": "dist/tlog/dsse.js:verifyDSSETLogBody",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_a3410808e256ab1fbb3856b49b7d3ee31324264010b78e5e9dd2ee7d66769fd8",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.js",
+    "start": {
+     "line": 4,
+     "column": 0
+    },
+    "end": {
+     "line": 4,
+     "column": 47
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/hashedrekord.js",
+   "to": "dist/error.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_a590430b19dc198fddfe2e7aebcc48eab93f66d8c030e6c9dfd66964a843c420",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.js",
+    "start": {
+     "line": 21,
+     "column": 6
+    },
+    "end": {
+     "line": 21,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/dsse.d.ts",
+   "to": "@sigstore/protobuf-specs/rekor/v2",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_a636c691f488101f4998c1d39b21d0543b4c7e7946917d504fc74e4d1fadd0fd",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.d.ts",
+    "start": {
+     "line": 1,
+     "column": 14
+    },
+    "end": {
+     "line": 1,
+     "column": 19
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/index.js",
+   "to": "dist/tlog/index.js:verifyTLogBody",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_b007f4cd0cb12d8da416d4f09305fca186b38445384ac3998cf3e309a8c1b667",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 3,
+     "column": 0
+    },
+    "end": {
+     "line": 3,
+     "column": 39
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "@sigstore/protobuf-specs/rekor/v2",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_b1165383f5f4632e57c6991a34e088dd72c898ed067bd7ab3faf7e53f0b45b1f",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 20,
+     "column": 13
+    },
+    "end": {
+     "line": 20,
+     "column": 57
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/hashedrekord.d.ts",
+   "to": "@sigstore/protobuf-specs/rekor/v2",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_b314b9ea23a5a0fc03309fd260cf9289f76d5a2789bc322a8c852a9119c5b520",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.d.ts",
+    "start": {
+     "line": 1,
+     "column": 9
+    },
+    "end": {
+     "line": 1,
+     "column": 14
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/hashedrekord.d.ts",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_b82a3deecda3ad9343f997cfa4fe272733b867831327f7cf55386911f38ce155",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.d.ts",
+    "start": {
+     "line": 3,
+     "column": 0
+    },
+    "end": {
+     "line": 3,
+     "column": 56
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/intoto.d.ts",
+   "to": "@sigstore/rekor-types",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_bd480f12bacdddaca72e54b199ab1817d6f4cb4cc7bae3d82382659238b5453d",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/intoto.d.ts",
+    "start": {
+     "line": 1,
+     "column": 0
+    },
+    "end": {
+     "line": 1,
+     "column": 65
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_be5ab7e98db162ec6db7e7660bf3f49ea48581d4a6314ade2cd655982550fe7c",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 26,
+     "column": 17
+    },
+    "end": {
+     "line": 26,
+     "column": 36
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/hashedrekord.d.ts",
+   "to": "dist/shared.types.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_c4144c85b25418331726fd3c01776f21403adda522ccf1de66bc1cfab75bce71",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.d.ts",
+    "start": {
+     "line": 3,
+     "column": 14
+    },
+    "end": {
+     "line": 3,
+     "column": 30
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/checkpoint.d.ts",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_c430bf3b06bb3c4c0952017f2a06006df6cfa7e07f8bbd7273080e44ab6bae4a",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.d.ts",
+    "start": {
+     "line": 1,
+     "column": 0
+    },
+    "end": {
+     "line": 1,
+     "column": 41
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_c48d8b40cfd8b73aafc7c4d9a148c6627b52183434d53b49b1017b8920005970",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 24,
+     "column": 17
+    },
+    "end": {
+     "line": 24,
+     "column": 36
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/set.d.ts",
+   "to": "dist/trust/index.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_c6666e9862d30844b4bcdbc52bdc1d9d457fbca033ac5d1955690ba04fb3d3af",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/set.d.ts",
+    "start": {
+     "line": 1,
+     "column": 9
+    },
+    "end": {
+     "line": 1,
+     "column": 22
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/checkpoint.d.ts",
+   "to": "dist/trust/index.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_c94b899c45230c140ad86e75ca7f51cd66f02d216ae312eb25de9654cd0dba65",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.d.ts",
+    "start": {
+     "line": 1,
+     "column": 9
+    },
+    "end": {
+     "line": 1,
+     "column": 22
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "dist/tlog/set.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_cabe652bfce66f7e6a0e75d72c5bdbe91aad1e9b6fe4e2d4336760de5d41cad4",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 27,
+     "column": 6
+    },
+    "end": {
+     "line": 27,
+     "column": 30
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/index.js",
+   "to": "dist/tlog/index.js:verifyTLogInclusion",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_ccef0b83abf911062ff5ffd1d9829c0493e21cb9394d105ca139d4c5149ae863",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 4,
+     "column": 0
+    },
+    "end": {
+     "line": 4,
+     "column": 49
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "dist/tlog/merkle.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_cf8d84159674d9eaebae3d40f01a8b07949167b713ae70a71e6465ebd3449cda",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 26,
+     "column": 6
+    },
+    "end": {
+     "line": 26,
+     "column": 36
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/dsse.js",
+   "to": "dist/error.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_d047bbaa27eac50734fce6b869391eaa1e485c418cdfb354073baabd405914c4",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.js",
+    "start": {
+     "line": 21,
+     "column": 6
+    },
+    "end": {
+     "line": 21,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/hashedrekord.d.ts",
+   "to": "@sigstore/rekor-types",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_d21837892b788bc5991a6cc4e3e2d85157692fba35e5072150b1eb6718fa555a",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.d.ts",
+    "start": {
+     "line": 2,
+     "column": 14
+    },
+    "end": {
+     "line": 2,
+     "column": 39
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_d3cf0d3735075d0dfbcdfe19a0932e84372aa49ece5e16ce736f6d8440579d98",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 21,
+     "column": 16
+    },
+    "end": {
+     "line": 21,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/merkle.js",
+   "to": "@sigstore/core",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_d43ba25e34d95e3a8bd24d2e0929673505b7f1ed65860e8b5fc7e33a72c43fb9",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/merkle.js",
+    "start": {
+     "line": 19,
+     "column": 15
+    },
+    "end": {
+     "line": 19,
+     "column": 40
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/hashedrekord.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_d77a79ec98cde07cc95fc7bc6cfb73939f7afb28cf6eec5396fb36b8314ddb29",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.js",
+    "start": {
+     "line": 21,
+     "column": 16
+    },
+    "end": {
+     "line": 21,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/intoto.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_dc06b6138d7bcea1136542ab68bb797eb9371fcfc05c73d044dd5001ea9b322c",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/intoto.js",
+    "start": {
+     "line": 19,
+     "column": 16
+    },
+    "end": {
+     "line": 19,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/dsse.js",
+   "to": "dist/tlog/dsse.js:DSSE_API_VERSION_V1",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_dcf060f5e711e8c5c036053b45254ed4e6e7b1cbb37b29add50973af5b797280",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.js",
+    "start": {
+     "line": 22,
+     "column": 0
+    },
+    "end": {
+     "line": 22,
+     "column": 37
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/merkle.d.ts",
+   "to": "dist/tlog/checkpoint.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_de11a245c2ac41ff1085f1294953f92e9c8c83c04429ecff151fff42f76d7997",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/merkle.d.ts",
+    "start": {
+     "line": 1,
+     "column": 9
+    },
+    "end": {
+     "line": 1,
+     "column": 22
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/dsse.d.ts",
+   "to": "dist/shared.types.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_de38b67c79042d64e2a5aa63dc874067b7df827252721cbe11f7816acf74b87a",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.d.ts",
+    "start": {
+     "line": 3,
+     "column": 14
+    },
+    "end": {
+     "line": 3,
+     "column": 30
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/verifier.js",
+   "to": "dist/tlog/index.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_e0e73dd9d62cc6db659827542d023eaed9b33aa6a68f770caac27e54104e7df9",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/verifier.js",
+    "start": {
+     "line": 24,
+     "column": 6
+    },
+    "end": {
+     "line": 24,
+     "column": 32
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "dist/error.js",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_e6ce26b0830c8f1932029c2b31a1cae281dd62e830aa6434efdc49d440ef383e",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 21,
+     "column": 6
+    },
+    "end": {
+     "line": 21,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/hashedrekord.js",
+   "to": "dist/tlog/hashedrekord.js:verifyHashedRekordTLogBody",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_e717930cc70f03140a9aec835495d9e454edd49b6d5bcc97382e3ee1ad2a789d",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/hashedrekord.js",
+    "start": {
+     "line": 4,
+     "column": 0
+    },
+    "end": {
+     "line": 4,
+     "column": 63
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/checkpoint.js",
+   "to": "dist/tlog/checkpoint.js:LogCheckpoint",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_e83738a45ca1f2f890588221fef3ddbca23c34648fd8bb5b183bd1387cdc2435",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.js",
+    "start": {
+     "line": 3,
+     "column": 0
+    },
+    "end": {
+     "line": 3,
+     "column": 30
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/dsse.js",
+   "to": "?",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_ee737f2522b9b0e9af2bb54cb3b3dd153593d8659f90bb3fb9540e7b6a8199d5",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.js",
+    "start": {
+     "line": 21,
+     "column": 16
+    },
+    "end": {
+     "line": 21,
+     "column": 35
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/dsse.d.ts",
+   "to": "dist/tlog/dsse.d.ts:DSSE_API_VERSION_V1",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_f6440e2c674329343e3640f30a00e8215c791e0f6f864598855ea5934ffec005",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/dsse.d.ts",
+    "start": {
+     "line": 4,
+     "column": 7
+    },
+    "end": {
+     "line": 4,
+     "column": 51
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/index.js",
+   "to": "@sigstore/protobuf-specs/rekor/v2",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_f85e38b1c3bb4dc9f151c455b0f91777369cddb4585367edd0261d1d081613cc",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/index.js",
+    "start": {
+     "line": 20,
+     "column": 6
+    },
+    "end": {
+     "line": 20,
+     "column": 57
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/checkpoint.d.ts",
+   "to": "@sigstore/bundle",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_f9084639d1ae688eb9dfed3714fbe9bc759e02d1123c1d1b3a22a7770db7b93f",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/checkpoint.d.ts",
+    "start": {
+     "line": 2,
+     "column": 0
+    },
+    "end": {
+     "line": 2,
+     "column": 68
+    }
+   }
+  },
+  {
+   "relation": "imports",
+   "from": "dist/tlog/merkle.d.ts",
+   "to": "@sigstore/bundle",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_fde0430730e1f8f4e2679997ef919f5751c4b1c01b170d77ce2a1e75fde7f05c",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/merkle.d.ts",
+    "start": {
+     "line": 2,
+     "column": 14
+    },
+    "end": {
+     "line": 2,
+     "column": 41
+    }
+   }
+  },
+  {
+   "relation": "exposes",
+   "from": "dist/tlog/intoto.js",
+   "to": "dist/tlog/intoto.js:verifyIntotoTLogBody",
+   "state": "inferred",
+   "authority": "static-relationship-inference",
+   "edge_id": "jag_edge_ffd84e6179a75df9567ecc7a9b21afeb84e50b3f66cb257d71fc24a4bdd26bce",
+   "location": {
+    "kind": "source-range",
+    "source": "dist/tlog/intoto.js",
+    "start": {
+     "line": 3,
+     "column": 0
+    },
+    "end": {
+     "line": 3,
+     "column": 51
+    }
+   }
+  }
+ ]
+}

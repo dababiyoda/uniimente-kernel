@@ -13,6 +13,7 @@ import pytest
 
 from evolution.repair import spec
 from evolution.repair.subjects import SR001
+from tests.history import require_commits
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -109,6 +110,7 @@ def test_continuity_hashes_describe_the_real_artifacts_now():
     before/after comparison proves nothing."""
     # The sealed experiment keeps its original source binding. SR-001's later
     # authorized gate repair is a distinct subject, never a retroactive pass.
+    require_commits(ROOT, spec.BASELINE_COMMIT, SR001.source_commit)
     combined = hashlib.sha256()
     for rel, expected in spec.CONTINUITY_ARTIFACT_SHA256.items():
         raw = subprocess.check_output(["git", "show", f"{spec.BASELINE_COMMIT}:{rel}"], cwd=ROOT)

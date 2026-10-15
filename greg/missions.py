@@ -105,9 +105,16 @@ class Unbound(Exception):
 def _validate_bindings(strategy: dict, actions: set):
     seen = set()
     for edge in strategy.get("bind", []):
-        source = edge["from"]["action_id"]
-        if source not in actions or source == strategy["action_id"]:
-            raise MissionError(f"strategy {strategy['action_id']} binds from unknown or own action {source!r}")
+        if "check_id" in edge["from"]:
+            # Only a check this strategy requires: the gate guarantees it was observed passing,
+            # so the bound value is exactly the evidence that satisfied the precondition.
+            if edge["from"]["check_id"] not in strategy.get("requires", []):
+                raise MissionError(f"strategy {strategy['action_id']} binds from check "
+                                   f"{edge['from']['check_id']!r}, which it does not require")
+        else:
+            source = edge["from"]["action_id"]
+            if source not in actions or source == strategy["action_id"]:
+                raise MissionError(f"strategy {strategy['action_id']} binds from unknown or own action {source!r}")
         if edge["param"] in seen:
             raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']} twice")
         seen.add(edge["param"])
@@ -126,7 +133,8 @@ def _validate_bindings(strategy: dict, actions: set):
 
 
 def _acyclic_bindings(strategies: list):
-    edges = {s["action_id"]: {e["from"]["action_id"] for e in s.get("bind", [])} for s in strategies}
+    edges = {s["action_id"]: {e["from"]["action_id"] for e in s.get("bind", []) if "action_id" in e["from"]}
+             for s in strategies}
     state = {}
 
     def visit(node):
@@ -164,13 +172,14 @@ def _set_path(params: dict, path: str, value):
 
 def bound_value(edge: dict, output):
     """The typed, size-bounded value one edge carries from a receipt's output."""
+    source = edge["from"].get("action_id") or "check " + str(edge["from"].get("check_id"))
     try:
         value = _field(output, edge["from"]["field"])
     except KeyError:
-        raise Unbound(f"{edge['from']['action_id']} output has no {edge['from']['field']}") from None
+        raise Unbound(f"{source} output has no {edge['from']['field']}") from None
     kinds = BIND_TYPES[edge["type"]]
     if not isinstance(value, kinds) or (edge["type"] in ("number", "integer") and isinstance(value, bool)):
-        raise Unbound(f"{edge['from']['action_id']}.{edge['from']['field']} is not {edge['type']}")
+        raise Unbound(f"{source}.{edge['from']['field']} is not {edge['type']}")
     if edge.get("render") == "json":
         value = json.dumps(value, sort_keys=True, indent=1, ensure_ascii=False)
     if edge.get("template") is not None:
@@ -372,7 +381,7 @@ class MissionBook:
                         # not the world: it is done, not ineffective, and is not re-run either.
                         if m.failed.get(aid, "").startswith("regressed "):
                             pass                     # blame for damaging the whole is never washed out by drift
-                        elif any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
+                        elif any(e["from"].get("action_id") == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
                             m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
                         else:
                             m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
@@ -460,6 +469,7 @@ class MissionEngine:
         self.genesis, self.max_actions_per_tick = genesis, max_actions_per_tick
         self.book = MissionBook(journal)
         self._stop_check = None
+        self.selector = None          # the Body installs Goal Gravity here; None keeps the static order
 
     # -- founder inputs (already signature-verified by the body) ---------------
     def register(self, spec: dict, command_digest: str) -> str:
@@ -520,6 +530,10 @@ class MissionEngine:
         self.book.rebuild()
         summary = []
         order = sorted(self.book.missions.values(), key=lambda m: (-m.spec.get("priority", 0), m.mission_id))
+        if self.selector is not None:
+            # Goal Gravity orders the signed missions (greg.gravity.select); it never adds or drops one.
+            ranked = list(dict.fromkeys(mid for mid in self.selector(order) if mid in self.book.missions))
+            order = [self.book.missions[mid] for mid in ranked] + [m for m in order if m.mission_id not in ranked]
         for m in order:
             if should_stop is not None and should_stop():
                 summary.append({"mission_id": m.mission_id, "state": "NOT_STEPPED", "why": "stop requested"})
@@ -532,7 +546,7 @@ class MissionEngine:
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
                                  journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.")) else None,
+                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.", "organ.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
                                  cognition_model=getattr(self, "cognition_model", None),
@@ -653,20 +667,27 @@ class MissionEngine:
             if m.blocker["type"] == "reconciliation":
                 answer = self.book.answers[m.blocker["request_id"]]["answer"]
                 aid = m.blocker["action_id"]
-                # The same record shape as every other action (found by the one-machine proof 2026-10-15: the
-                # morning report and Mission Control crashed on a reconciliation that named no capability).
-                # The identity comes from the uncertain record it settles; it carries no receipt, so a
-                # delivering capability reconciled as executed still cannot pass the appraiser's delivery check.
-                uncertain = next((e.payload for e in reversed(self.journal.replay("mission.action"))
-                                  if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid
-                                  and e.payload["status"] == "UNCERTAIN"), {})
+                attempt = m.attempts.get(aid, 1) - 1
+                # The record reconciles the UNCERTAIN dispatch of this attempt: it names the capability that
+                # dispatch actually used (a strategy may name only a function), never the strategy's spec.
+                dispatch = next((e.payload for e in reversed(self.journal.replay("mission.action"))
+                                 if e.payload.get("mission_id") == m.mission_id and e.payload.get("action_id") == aid
+                                 and e.payload.get("attempt") == attempt
+                                 and e.payload.get("status") == "UNCERTAIN"), {})
+                strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), {})
+                cap = float(strategy.get("cost_usd", 0.0))
+                # Executed, but no adapter measured the provider's spend: book the signed cap (metered_spend's
+                # conservative rule), so the budget the founder signed still bounds every later action.
+                spend = {"cost_usd": cap, "cost_cap_usd": cap, "provider_reported_usd": None,
+                         "spend_basis": "signed_cap: founder reconciled executed; provider spend unknown"} \
+                    if answer == "reconcile_executed" and cap > 0 else {}
                 self.journal.record("mission.action", {
-                    "mission_id": m.mission_id, "action_id": aid, "attempt": m.attempts.get(aid, 1) - 1,
+                    "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
                     "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
-                    "reasons": ["founder reconciliation: " + answer], "receipt": None,
-                    "capability": uncertain.get("capability"), "route": uncertain.get("route"),
-                    "scope_digest": uncertain.get("scope_digest"), "cost_usd": 0.0, "at": iso(now),
-                    "reconciles": m.blocker["request_id"]},
+                    "capability": dispatch.get("capability") or strategy.get("capability"),
+                    "route": "founder_reconciliation", "dispatch_route": dispatch.get("route"),
+                    "receipt": None, "at": iso(now),
+                    "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0, **spend},
                     key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
             lifted = m.blocker
             self._unblock(m, why)
@@ -729,24 +750,37 @@ class MissionEngine:
         The source is the latest DONE action of the named strategy; its output is read from
         the canonical ledger, never from a cache or the adapter's memory. Only param values
         change: capability, target, cost and consequence class stay exactly as signed."""
-        latest = {}
+        latest = {}   # action_id -> receipt of its latest DONE; None when the founder reconciled it unreceipted
         for event in self.journal.replay("mission.action"):
             data = event.payload
-            if data.get("mission_id") == m.mission_id and data.get("status") == "DONE" and data.get("receipt"):
-                latest[data["action_id"]] = data["receipt"]
+            if data.get("mission_id") == m.mission_id and data.get("status") == "DONE":
+                latest[data["action_id"]] = data.get("receipt")
         params = json.loads(json.dumps(s.get("params", {})))
         bindings, sources = [], []
         for edge in s["bind"]:
-            source = edge["from"]["action_id"]
-            receipt = latest.get(source)
-            if receipt is None:
-                raise Unbound(f"{source} has no completed action yet")
+            if "check_id" in edge["from"]:
+                source = edge["from"]["check_id"]
+                passing = [e.payload["receipt"] for e in self.journal.replay("mission.observed")
+                           if e.payload.get("mission_id") == m.mission_id and e.payload.get("check_id") == source
+                           and e.payload.get("passed") and e.payload.get("receipt")]
+                receipt = passing[-1] if passing else None
+                if receipt is None:
+                    raise Unbound(f"check {source} has no passing observation yet")
+            else:
+                source = edge["from"]["action_id"]
+                if source not in latest:
+                    raise Unbound(f"{source} has no completed action yet")
+                receipt = latest[source]
+                if receipt is None:     # never an older receipt: that output is not the latest execution's
+                    raise Unbound(f"{source}'s latest execution was reconciled without a retained receipt; "
+                                  "its output is unknown")
             record = self.office.ledger.find(receipt)
             if record is None or record.record_type != "receipt":
                 raise Unbound(f"{source} receipt {receipt[:19]} is not on the ledger")
             value = bound_value(edge, record.payload.get("result", {}).get("output"))
             _set_path(params, edge["param"], value)
-            bindings.append({"param": edge["param"], "from_action": source, "from_receipt": receipt,
+            bindings.append({"param": edge["param"], ("from_check" if "check_id" in edge["from"] else "from_action"): source,
+                             "from_receipt": receipt,
                              "field": edge["from"]["field"], "value_sha256": sha256_json({"v": value})})
             sources.append(receipt)
         return params, bindings, sources
@@ -760,7 +794,7 @@ class MissionEngine:
             streak = 0
             for obs in reversed([e.payload for e in self.journal.replay("mission.observed")
                                  if e.payload["mission_id"] == m.mission_id and e.payload["check_id"] == check_id]):
-                if obs["at"] < since or not is_capability_fault(manifest, obs["detail"]):
+                if obs["at"] < since or not is_capability_fault(manifest, obs["detail"], obs.get("failure_class")):
                     break
                 streak += 1
             if streak < 2:
@@ -780,6 +814,7 @@ class MissionEngine:
         self.disagreements = {}
         for check in m.current_checks():
             sensor = check["sensor"]
+            failure_class = None          # typed where a capability failure was raised, when one was
             manifest, adapter, missing = self._resolve(sensor)
             if manifest is None:
                 self._deficit(m, sensor, now, purpose=f"sensor for {check['check_id']}")
@@ -820,7 +855,8 @@ class MissionEngine:
                     return None, None
                 passed, detail = False, "sensor " + outcome.status + ": " + "; ".join(outcome.reasons)[:200]
                 sensor_errors.add(check["check_id"])
-                if self.genesis is not None and is_capability_fault(manifest, detail):
+                failure_class = outcome.failure_class
+                if self.genesis is not None and is_capability_fault(manifest, detail, failure_class):
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
@@ -831,8 +867,12 @@ class MissionEngine:
                     # same two-strike self-repair re-forms it (cognition itself did not fail).
                     formed = self.registry.manifests[fault["capability_id"]]
                     detail = f"{detail}; {str(fault.get('detail'))[:300]}"
-                    if is_capability_fault(formed, detail):
+                    failure_class = fault.get("failure_class")
+                    if is_capability_fault(formed, detail, failure_class):
                         self.capability_faults[check["check_id"]] = (formed, detail, sensor.get("params", {}))
+                views = disagreement(outcome.output)
+                if views and not passed:
+                    self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
                 why = None if passed else unanswered(outcome.output)
                 if why:
                     # The receipt abstained: the world was not measured. The mission keeps its
@@ -844,6 +884,8 @@ class MissionEngine:
                     self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
+            if failure_class is not None:
+                data["failure_class"] = failure_class
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
             if outcome.receipt_hash:
                 evidence.append(outcome.receipt_hash)
@@ -860,7 +902,8 @@ class MissionEngine:
             done = [e.payload for e in self.journal.replay("mission.action")
                     if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid
                     and e.payload["status"] == "DONE"]
-            if done:
+            # A founder reconciliation has no receipt: it is not a receipted execution to blame.
+            if done and done[-1].get("receipt"):
                 last = done[-1]
                 self.journal.record("routing.outcome", {"mission_id": m.mission_id, "action_id": aid,
                                                         "capability": last["capability"], "verdict": "ineffective",

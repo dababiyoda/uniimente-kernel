@@ -27,6 +27,8 @@ import time
 from .contracts import CognitionError, canonical, digest, strict_data
 
 SCHEMA = "greg-competency-compilation/0.1"
+# The confidence label of an answer from a construction whose problem-level certificate GREG checked.
+CERTIFIED = "certified: exact problem-level certificate"
 ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE_INDEX = ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json"
 HIGH_CONSEQUENCE = ("external_contact", "financial", "irreversible")
@@ -472,18 +474,21 @@ def _run_constructed(chosen: dict, data: dict, pid: str, registry, receipt: dict
         except CapabilityError as exc:
             if str(exc).startswith("capability refused:"):
                 # the mission's two-strike repair re-forms a construction that faults in service
-                receipt["capability_fault"] = {"capability_id": manifest.capability_id, "detail": str(exc)[:300]}
+                receipt["capability_fault"] = {"capability_id": manifest.capability_id, "detail": str(exc)[:300],
+                                               "failure_class": getattr(exc, "failure_class", "executor_error")}
             receipt["abstentions"].append(f"ABSTAIN: {str(exc)[:300]}")
             return finish("ABSTAIN")
     receipt["resource_use"]["stages"] = 1
     receipt["proof_artifacts"] = [{"type": "certificate", "evidence_type": (out.get("certificate") or {}).get("kind")}]
     receipt["verification_method"] = (out.get("certificate") or {}).get("checked_by") or \
         "GREG problem-level certificate, independent of the engine"
-    receipt["confidence_type"] = "certified: exact problem-level certificate"
     receipt["dissent"].append(f"trust per call: {manifest.provenance.get('baseline', 'see the construction card')}")
     if out.get("certified") is not True:
         receipt["abstentions"].append("ABSTAIN: the construction returned no certificate")
         return finish("ABSTAIN")
+    # Set only once the certificate is in hand: a predicate on this label then implies an answer
+    # that carries a problem-level certificate, never an abstention that merely tried.
+    receipt["confidence_type"] = CERTIFIED
     return finish("ANSWERED", out)
 
 

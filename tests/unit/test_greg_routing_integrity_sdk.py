@@ -72,7 +72,7 @@ def test_anthropic_errors_are_classified_through_the_real_sdk():
             "content": [{"type": "text", "text": "ok"}], "stop_reason": "end_turn", "stop_sequence": None,
             "usage": {"input_tokens": 10, "output_tokens": 5}})
 
-    route = models.AnthropicRoute("sk-ant-test", model="claude-opus-5", client=anthropic_client(handler))
+    route = models.AnthropicRoute("sk-ant-test", model="claude-sonnet-5", client=anthropic_client(handler))
     with pytest.raises(models.RouteError) as outage:
         route.complete("s", "overloaded")
     assert outage.value.kind == models.TRANSIENT and not isinstance(outage.value, models.Refusal)
@@ -81,3 +81,7 @@ def test_anthropic_errors_are_classified_through_the_real_sdk():
     assert verdict.value.kind == models.PROVIDER_POLICY_REFUSAL
     served = route.complete("s", "hello")
     assert served["served_model"] == "claude-sonnet-5-20260801"                 # the provider's report, not our request
+    assert served["requested_model"] == "claude-sonnet-5" and served["substituted"] is False
+    other = models.AnthropicRoute("sk-ant-test", model="claude-opus-5", client=anthropic_client(handler))
+    with pytest.raises(models.ModelSubstitution):                              # a different model's answer is withheld
+        other.complete("s", "hello")

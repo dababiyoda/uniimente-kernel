@@ -424,6 +424,7 @@ def vet(draft: dict, text: str, ctx: PlannerContext, *, origin: str, extra: dict
                            or ["fs:*"], "max_consequence_class": "read_only", "budget_usd": 0,
                            "horizon": horizon.isoformat().replace("+00:00", "Z")}
     draft.pop("auto_attach", None)
+    draft.pop("standing_reconciliation", None)     # the founder adds a standing mandate, never a model
     if clamped:
         extra = {**extra, "clamped": clamped}
     return _proposal(draft, origin, notes=["drafted by a model; review every check and strategy before signing"]

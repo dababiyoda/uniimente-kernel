@@ -30,11 +30,15 @@ FAILURE = {"REFUSED", "UNAVAILABLE", "UNCERTAIN", "RECONCILED_NOT_EXECUTED"}
 EFFECT_CHECKS = ("checks_rederived_from_receipts", "world_reobserved")  # appraiser checks a capability owns
 
 
+RECONCILIATION_ROUTES = ("founder_reconciliation", "standing_reconciliation")
+
+
 def founder_reconciled(action: dict) -> bool:
-    """A founder's statement about an UNCERTAIN dispatch, not a receipted execution.
+    """A statement about an UNCERTAIN dispatch, not a receipted execution: the founder's own, or one settled under
+    the founder's signed standing mandate with a recorded proof (greg.workers.inert_interruption_proof).
 
     Records written before 2026-10-14 name no route; their reasons still say so."""
-    return not action.get("receipt") and (action.get("route") == "founder_reconciliation" or any(
+    return not action.get("receipt") and (action.get("route") in RECONCILIATION_ROUTES or any(
         str(r).startswith("founder reconciliation: ") for r in action.get("reasons") or ()))
 
 

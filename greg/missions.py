@@ -776,6 +776,18 @@ class MissionEngine:
                                  egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None,
                                  worker_confinement=getattr(self, "worker_confinement", "required"))
 
+    def _inert_interruption(self, m: MissionState, strategy: dict, manifest) -> dict:
+        """The standing-reconciliation proof for an UNCERTAIN dispatch (greg.workers.inert_interruption_proof)."""
+        from greg.workers import inert_interruption_proof
+        prior = sum(1 for e in self.journal.replay("mission.action")
+                    if e.payload.get("mission_id") == m.mission_id
+                    and e.payload.get("action_id") == strategy["action_id"]
+                    and e.payload.get("route") == "standing_reconciliation")
+        return inert_interruption_proof(spec=m.spec, strategy=strategy, capability_id=manifest.capability_id,
+                                        consequence_class=manifest.consequence_class,
+                                        mission_workspace=self.workspace_root / m.mission_id.replace(":", "_"),
+                                        prior=prior)
+
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
                  resource: dict | None = None, evidence: dict | None = None, quoted: tuple = ()) -> str:
@@ -1577,8 +1589,24 @@ class MissionEngine:
         if outcome.status == "UNCERTAIN":
             if manifest.retry_safe:
                 return {"state": "RETRYING", "action": aid, "why": "read-only idempotent capability"}
+            proof = self._inert_interruption(m, s, manifest)
+            if proof["holds"]:
+                # The founder signed a standing mandate for exactly this class, and the retained facts prove the
+                # interrupted run could not have left a consequence: settle it with the proof, retry once.
+                self.journal.record("mission.action", {
+                    "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
+                    "status": "RECONCILED_NOT_EXECUTED", "capability": manifest.capability_id,
+                    "route": "standing_reconciliation", "dispatch_route": manifest.route, "receipt": None,
+                    "at": iso(now), "mandate": m.command_digest, "proof": proof, "cost_usd": 0.0,
+                    "reasons": ["standing reconciliation: a consequence-inert interruption, settled under the "
+                                "founder-signed mission mandate"]},
+                    key=[m.mission_id, aid, "standing", attempt])
+                return {"state": "RETRYING", "action": aid, "why": "standing reconciliation of an inert interruption"}
+            unmet = [k for k, ok in proof["predicates"].items() if not ok]
             rid = self._request(m, kind="RECONCILIATION", scope_digest=outcome.scope_digest, action_id=aid,
-                                why="an action may or may not have executed before an interruption",
+                                why="an action may or may not have executed before an interruption"
+                                + ("; GREG could not settle it under your standing mandate: " + ", ".join(unmet)
+                                   if proof["predicates"]["founder_mandate"] else ""),
                                 recommendation="inspect the retained evidence, then state whether it executed",
                                 alternatives=["reconcile_executed", "reconcile_not_executed"],
                                 requested={"action_id": aid}, now=now)

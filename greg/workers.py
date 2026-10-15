@@ -572,6 +572,14 @@ class ScriptWorker:
     """
 
     name = "script"
+    # Read by ``inert_interruption_proof``. True only while every guarantee below holds in ``run``: change one and
+    # this must become False, because a founder's standing reconciliation mandate relies on it.
+    CONSEQUENCE_INERT = True
+    GUARANTEES = {"network": "network namespace closed (prepare_worker network=False); no relay door",
+                  "credentials": "none: source_env={} and no config files",
+                  "spend": "none: no provider route exists to charge",
+                  "writes": "the private clone and its runtime only; the work order is discarded before any retry",
+                  "fallback": "never supervised: the bubblewrap envelope is required"}
 
     def __init__(self, runner=supervised_run):
         self.runner = runner
@@ -610,6 +618,48 @@ class ScriptWorker:
                             summary=text[-MAX_TAIL:],
                             error=(proc.stderr or text)[-300:] if proc.returncode else None,
                             isolation=envelope["evidence"])
+
+
+STANDING_RECONCILIATION_LIMIT = 2      # per (mission, action); after that the founder decides
+_RERUNNABLE_EVIDENCE = (None, "UNCERTAIN")
+
+
+def inert_interruption_proof(*, spec: dict, strategy: dict, capability_id: str, consequence_class: str,
+                             mission_workspace: Path, prior: int, providers: dict | None = None) -> dict:
+    """Whether an interrupted dispatch provably left no consequence a retry could duplicate.
+
+    A pure function of retained facts (the founder-signed mission, its strategy, the capability's manifest, the
+    work order's evidence and the count of earlier standing reconciliations), so any separate process re-derives
+    the same verdict. The engine settles the interruption itself only when every predicate holds; otherwise the
+    founder is asked, as before. It never settles an action that could have spent money, reached the network or
+    written outside a discarded private clone."""
+    providers = PROVIDERS if providers is None else providers
+    params = strategy.get("params") or {}
+    name, order = params.get("provider"), params.get("order")
+    provider = providers.get(name) if isinstance(name, str) else None
+    order_root = Path(mission_workspace) / "work-orders" / order if isinstance(order, str) and ORDER_NAME.match(order) \
+        else None
+    status = None
+    if order_root is not None and (order_root / "evidence.json").is_file():
+        try:
+            status = json.loads((order_root / "evidence.json").read_text()).get("status")
+        except (OSError, ValueError, AttributeError):
+            status = "unreadable"
+    predicates = {
+        "founder_mandate": (spec.get("standing_reconciliation") or {}).get("consequence_inert") is True,
+        "worker_commission": capability_id == "worker.commission",
+        "internal_consequence_only": consequence_class in ("read_only", "internal_write"),
+        "provider_consequence_inert": getattr(type(provider), "CONSEQUENCE_INERT", False) is True,
+        "no_completed_evidence": order_root is not None and status in _RERUNNABLE_EVIDENCE,
+        "within_limit": isinstance(prior, int) and prior < STANDING_RECONCILIATION_LIMIT,
+    }
+    return {"holds": all(predicates.values()), "predicates": predicates,
+            "evidence": {"provider": name, "provider_class": type(provider).__name__ if provider is not None else None,
+                         "provider_guarantees": dict(getattr(type(provider), "GUARANTEES", {}) or {}),
+                         "workers_code_sha256": _sha(Path(__file__).read_bytes()),
+                         "order_root": str(order_root) if order_root is not None else None,
+                         "evidence_status": status, "prior_standing_reconciliations": prior,
+                         "limit": STANDING_RECONCILIATION_LIMIT}}
 
 
 PROVIDERS: dict[str, object] = {

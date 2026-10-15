@@ -14,6 +14,9 @@ signals. The steps, in the order the episode runs them:
       inside the founder-signed scope
    4. the Hands commission a confined worker (a founder-signed script in a bubblewrap envelope with no
       network) that changes a private clone; GREG re-runs the tests in a fresh clone before accepting
+      (7b: a SIGKILL while that worker is in flight asks the founder once and the work runs exactly once
+      more; 7c: the same kill under a founder-signed standing mandate is settled with a recorded proof that
+      the run was consequence-inert, asks the founder nothing, and the work still runs exactly once more)
    6. DALEOBANKS and WealthMachine, as two organ processes, exchange authenticated messages through a
       Kernel-led mission trace
    9. Mission Control renders the body's own truth at desktop, Chromebook and phone widths
@@ -412,6 +415,39 @@ def test_one_machine_ten_steps_on_one_body_with_real_processes(tmp_path):
             "commission_statuses": statuses, "reconciliation_request": asked[0]["request_id"],
             "founder_answer": "reconcile_not_executed", "completed_runs": statuses.count("DONE"),
             "commit": slow_summary["commit"], "appraisal": appraisal["verdict"]}
+
+        # ---- 7c. The same interruption under the founder's standing mandate: settled with its proof, run once ----
+        standing = templates.code_change(repo=str(proj), objective="add sub() after a pause, standing mandate",
+                                         order="slow-standing", provider="script", allowed_paths=["pkg/*", "tests/*"],
+                                         budget_usd=0.01, script=SLOW_SCRIPT, workspace_root=ep.home / "workspace")
+        standing["standing_reconciliation"] = {"consequence_inert": True}      # signed by the founder with the mission
+        standing_id = ep.submit(standing, "slow-standing")
+        standing_root = ep.home / "workspace" / standing_id.replace(":", "_") / "work-orders" / "slow-standing"
+        wait_for(lambda: (standing_root / "repo" / "tests" / "started.txt").exists(), timeout=90,
+                 what="the standing-mandate worker in flight")
+        killed_again = heartbeat(ep.home)["pid"]
+        os.kill(killed_again, signal.SIGKILL)
+        wait_for(lambda: heartbeat(ep.home)["pid"] != killed_again and heartbeat(ep.home)["state"] == "RUNNING"
+                 and heartbeat(ep.home), what="restart after the second in-flight kill")
+        wait_for(lambda: ep.achieved(standing_id), timeout=240, what="closure under the standing mandate")
+        assert not ep.request_for(standing_id), "a provably inert interruption asks the founder nothing"
+        appraisal = ep.run_to_closure(standing_id, timeout=120)
+        assert appraisal["verdict"] == "VERIFIED", appraisal["findings"]
+        standing_acts = [a for a in events(ep.home, "mission.action")
+                         if a["mission_id"] == standing_id and a["action_id"] == "commission-worker"]
+        assert [a["status"] for a in standing_acts] == ["UNCERTAIN", "RECONCILED_NOT_EXECUTED", "DONE"], standing_acts
+        settled = standing_acts[1]
+        assert settled["route"] == "standing_reconciliation" and settled["proof"]["holds"], settled
+        assert json.loads((standing_root / "evidence.json").read_text())["summary"]["status"] == "COMPLETED"
+        ep.trace["steps"]["7c_sigkill_in_flight_worker_settled_under_standing_mandate"] = {
+            "mission_id": standing_id, "killed_pid": killed_again,
+            "commission_statuses": [a["status"] for a in standing_acts], "founder_questions": 0,
+            "completed_runs": [a["status"] for a in standing_acts].count("DONE"),
+            "proof_predicates": settled["proof"]["predicates"],
+            "comparison": {"7b_founder_questions": len(asked), "7c_founder_questions": len(ep.request_for(standing_id)),
+                           "duplicate_consequences": statuses.count("DONE") - 1
+                           + [a["status"] for a in standing_acts].count("DONE") - 1},
+            "appraisal": appraisal["verdict"]}
 
         # ---- 6. two organ processes exchange authenticated messages through a Kernel-led trace -----------------
         organs_id = ep.submit(organ_exchange(daleobanks_root=str(daleobanks_root), wmi_root=str(wmi_root),

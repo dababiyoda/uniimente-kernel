@@ -4,13 +4,16 @@ Mission A: "GREG backcasts, identifies the active constraint, performs permitted
 appropriate founder decision." `greg status` now carries, per mission, the first pursued check that has not
 passed, the strategies held because a check they require has not passed, and the blocker with what would lift it
 (authority, capability, a person's work, evidence or a strategy). It is derived only from retained facts, so a
-restart reads the same constraint, and it disappears when the mission closes.
+restart reads the same constraint, and it disappears when the mission closes. A request the founder already
+answered is shown as answered, lifted by the next tick, never as still waiting on the founder; and a pause in
+force (the body's, the crash-loop breaker's, the mission's own) is named first, with what lifts it.
 
 In-process Body with a test clock (SANDBOX); the founder key is a per-test key, not Alfonso's.
 """
 from __future__ import annotations
 
-from greg.body import Body, status
+from greg.body import BREAKER, CRASH_LOOP_BOOTS, RESUME_LIFTS, Body, status
+from greg.missions import MISSION_RESUME_LIFTS
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
 
 
@@ -46,9 +49,49 @@ def test_the_active_constraint_names_the_failing_check_the_held_work_and_what_li
     assert constraint(home) == now
 
     drop(home, signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "approve"}))
+    with Body(home, clock=clock) as b:                     # answered, not yet acted on: nothing waits on the founder
+        b.ingest_inbox()
+    answered = constraint(home)["blocker"]
+    assert answered["answered"] == "approve" and answered["lifted_by"] == "the next tick"
+    assert status(home)["decisions_required"] == []
     with Body(home, clock=clock) as b:
         for _ in range(4):
             b.tick()
             clock.advance(1)
     assert (ws / "d.txt").read_text() == "shipped"
     assert constraint(home) is None                        # closed: nothing left to wait on
+
+
+def test_a_pause_in_force_is_named_first_with_what_lifts_it(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    ws = workspace(home, "m:two")
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:two", checks=[note_check("c", ws / "c.txt", "ok")], strategies=[write_strategy("w", "c.txt", "ok", ["c"])],
+        capabilities=["fs.read", "fs.write"], targets=("fs:*", "workspace:c.txt"))))
+    clock = Clock()
+    with Body(home, clock=clock) as b:
+        b.ingest_inbox()
+
+    def apply(kind, body):
+        drop(home, signed(key, body_id, kind, body))
+        with Body(home, clock=clock) as b:
+            b.tick()
+        return constraint(home)
+
+    mission_pause = {"by": "mission paused (signed LIFECYCLE)", "lifted_by": MISSION_RESUME_LIFTS}
+    paused = apply("LIFECYCLE", {"mission_id": "m:two", "state": "PAUSED", "reason": "not now"})
+    assert paused == {"paused_by": [mission_pause], "check_id": "c", "observed": "never observed",
+                      "held_strategies": []} and not (ws / "c.txt").exists()
+    both = apply("BODY_PAUSE", {"reason": "not anything"})
+    assert both["paused_by"] == [{"by": "body paused (signed BODY_PAUSE)", "lifted_by": RESUME_LIFTS}, mission_pause]
+    apply("BODY_RESUME", {"reason": "carry on"})
+    for _ in range(CRASH_LOOP_BOOTS + 1):                  # then the body crash-loops and the breaker holds it
+        with Body(home, clock=clock) as b:
+            b.boot(main_loop=True)
+        clock.advance(60)
+    held = constraint(home)["paused_by"]
+    assert held == [{"by": BREAKER, "why": status(home)["security"]["crash_loop_hold"], "lifted_by": RESUME_LIFTS},
+                    mission_pause]
+    assert apply("BODY_RESUME", {"reason": "fixed"})["paused_by"] == [mission_pause]
+    assert "paused_by" not in (apply("LIFECYCLE", {"mission_id": "m:two", "state": "ACTIVE", "reason": "go"}) or {})
+    assert (ws / "c.txt").read_text() == "ok"

@@ -67,27 +67,34 @@ def founder_keys(journal: Journal) -> dict[str, str]:
 
 
 # Crash-loop breaker (acceptance H.G5). supervisord, systemd and launchd restart a crashing body forever. Once
-# CRASH_LOOP_BOOTS main-loop boots in a row ended without a clean stop within CRASH_LOOP_WINDOW_SECONDS, the next
-# boot holds the body: it keeps running, stays observable and reads its inbox, ticks no mission, and only the
-# founder's signed BODY_RESUME lifts the hold. The hold is the breaker's own record, never shown as the founder's.
+# CRASH_LOOP_BOOTS main-loop boots in a row (no clean stop between them) ended without a clean stop within
+# CRASH_LOOP_WINDOW_SECONDS, the next boot holds the body: it keeps running, stays observable and reads its inbox,
+# ticks no mission, and raises one founder ask. Only a signed BODY_RESUME lifts the hold (RESUME_LIFTS: the founder
+# key, or a device key delegated BODY_RESUME, greg/founder.py DEVICE_KINDS). The hold is the breaker's own record,
+# never shown as the founder's.
 CRASH_LOOP_BOOTS = 5          # above deliberate use: the founder runbook kill -9s a body three times in minutes
 CRASH_LOOP_WINDOW_SECONDS = 600
 BREAKER = "crash-loop breaker"
+RESUME_LIFTS = "a signed BODY_RESUME: the founder key, or a device key the founder delegated BODY_RESUME to"
+HOLD_ASK = "CRASH_LOOP_HOLD"  # no DECISION answers it (greg/missions.py NOT_ANSWERABLE); BODY_RESUME withdraws it
 
 
 def unfinished_main_loop_boots(journal: Journal, now: datetime) -> list[str]:
-    """Main-loop boots that never recorded a clean stop, since the last pause or resume, within the window.
+    """Main-loop boots in a row that never recorded a clean stop, within the window.
 
-    Only boots made by ``Body.run`` count: an embedded or test host that opens the body and boots it without the
-    main loop is not a process lifetime under a supervisor."""
+    The run restarts at a pause or resume, and at a main-loop boot that recorded a clean stop: "in a row" means
+    no clean stop between them. Only boots made by ``Body.run`` count: an embedded or test host that opens the body
+    and boots it without the main loop is not a process lifetime under a supervisor."""
     stopped = {e.payload["boot_id"] for e in journal.replay("body.stopped")}
     recent: list[dict] = []
     for event in journal.replay("body."):
         if event.type in ("greg.body.paused", "greg.body.resumed"):
             recent = []
-        elif event.type == "greg.body.booted" and event.payload.get("main_loop") \
-                and event.payload["boot_id"] not in stopped:
-            recent.append(event.payload)
+        elif event.type == "greg.body.booted" and event.payload.get("main_loop"):
+            if event.payload["boot_id"] in stopped:
+                recent = []           # a clean lifetime ends the run
+            else:
+                recent.append(event.payload)
     floor = now - timedelta(seconds=CRASH_LOOP_WINDOW_SECONDS)
     return [b["boot_id"] for b in recent if datetime.fromisoformat(b["at"].replace("Z", "+00:00")) >= floor]
 
@@ -99,6 +106,44 @@ def crash_loop_hold(journal: Journal) -> dict | None:
     if last is not None and last.type == "greg.body.paused" and last.payload.get("by") == BREAKER:
         return last.payload
     return None
+
+
+def body_pauses(journal: Journal, *, pause_file: bool) -> list[dict]:
+    """Every body-level pause in force, each with what lifts it: the active constraint of every active mission."""
+    toggles = [e for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
+    out = []
+    if toggles and toggles[-1].type == "greg.body.paused":
+        hold = toggles[-1].payload
+        out.append({"by": BREAKER, "why": hold.get("why"), "lifted_by": RESUME_LIFTS} if hold.get("by") == BREAKER
+                   else {"by": "body paused (signed BODY_PAUSE)", "lifted_by": RESUME_LIFTS})
+    if pause_file:
+        out.append({"by": "PAUSE file in the body home", "lifted_by": "removing that file on this machine"})
+    return out
+
+
+def hold_ask(hold: dict) -> dict:
+    """The one founder ask a crash-loop hold raises, derived only from the hold record (greg/asks.py contract).
+
+    Asking grants nothing: no DECISION answers it, and only a signed BODY_RESUME lifts the hold (which withdraws
+    this ask). Deterministic, so a boot after a crash between the hold and its ask records the same ask."""
+    boot_id = hold["boot_id"]
+    return {"request_id": "req-hold-" + sha256_json({"crash_loop_hold": boot_id})[7:23], "kind": HOLD_ASK,
+            "mission_id": None, "action_id": None, "scope_digest": sha256_json({"crash_loop_hold": boot_id}),
+            "why_now": hold["why"],
+            "recommendation": "read the repeated failure in the body's error log (logs/body.err.log in the body "
+                              "home under launchd or supervisord; journalctl --user under systemd), fix its "
+                              "cause, then sign BODY_RESUME",
+            "alternatives": ["fix the cause, then sign BODY_RESUME (greg resume, or Resume in Mission Control)",
+                             f"sign BODY_RESUME as is: if the cause remains, the breaker holds again after "
+                             f"{CRASH_LOOP_BOOTS} more unfinished boots",
+                             "sign BODY_STOP: the body exits and its supervisor does not restart it",
+                             "do nothing: the body stays held"],
+            "authority_requested": {"body": "resume (a signed BODY_RESUME)", "spend": "none"},
+            "consequence_of_no_response": "the body stays held: it reads its inbox and runs no mission step; "
+                                          "missions stay durable",
+            "evidence": {"hold_boot_id": boot_id, "unfinished_boots": hold.get("unfinished_boots", []),
+                         "window_seconds": hold.get("window_seconds")},
+            "created_at": hold["at"], "reality_status": "RECORDED_LOCAL_MESSAGE"}
 
 
 def device_delegations(journal: Journal) -> dict[str, dict]:
@@ -359,6 +404,14 @@ class Body:
             return {"paused": True}
         if kind == "BODY_RESUME":
             self.journal.record("body.resumed", {"command_digest": digest}, key=digest)
+            answered = {e.payload["request_id"] for e in self.journal.replay("decision.")
+                        if e.type in ("greg.decision.answered", "greg.decision.withdrawn")}
+            for ask in self.journal.replay("decision.requested"):   # the resume lifted the hold its ask was about
+                rid = ask.payload["request_id"]
+                if ask.payload.get("kind") == HOLD_ASK and rid not in answered:
+                    self.journal.record("decision.withdrawn", {
+                        "request_id": rid, "mission_id": None, "why": "a signed BODY_RESUME lifted the hold",
+                        "evidence": {"command_digest": digest}, "at": iso(self.clock())}, key=[rid, "withdrawn"])
             return {"paused": False}
         if kind == "BODY_DESIGNATE":
             if body != {"purpose": "first_founder_body"}:
@@ -496,14 +549,19 @@ class Body:
                                                    "action": "missions reconstructed from retained history; "
                                                              "uncertain dispatches reconcile, never blind-retry"},
                                 key=[boot_id, "recovered"])
-        if len(crashed) >= CRASH_LOOP_BOOTS and not self.paused():
+        if len(crashed) >= CRASH_LOOP_BOOTS and not self.paused():   # a pause in force (yours or a hold) stays
             hold = {"by": BREAKER, "boot_id": boot_id, "unfinished_boots": crashed,
                     "window_seconds": CRASH_LOOP_WINDOW_SECONDS, "at": iso(self.clock()),
-                    "why": f"{len(crashed)} main-loop boots ended without a clean stop within "
-                           f"{CRASH_LOOP_WINDOW_SECONDS} s; no mission runs until the founder resumes",
-                    "lifted_by": "a founder-signed BODY_RESUME"}
+                    "why": f"{len(crashed)} main-loop boots in a row ended without a clean stop within "
+                           f"{CRASH_LOOP_WINDOW_SECONDS} s; no mission runs until a signed BODY_RESUME",
+                    "lifted_by": RESUME_LIFTS}
             self.journal.record("body.paused", hold, key=[boot_id, "crash-loop"])
             record["held"] = hold["why"]
+        hold = crash_loop_hold(self.journal)
+        if hold is not None:   # one ask per hold; re-derived here, so a crash between the two records loses none
+            ask = hold_ask(hold)
+            if all(e.payload["request_id"] != ask["request_id"] for e in self.journal.replay("decision.requested")):
+                asks.record(self.journal, ask)
         self.boot_id = boot_id
         return record
 
@@ -584,6 +642,33 @@ class Body:
                 horizon = min(horizon, max(at, now))
         return max(0.05, (horizon - now).total_seconds())
 
+    def _contained(self, work, *args):
+        """One piece of the work a paused or held body still does each turn (read its inbox, note a gap).
+
+        A failure there would otherwise kill every restart with no further signal (a held body exists because
+        restarts did not help). While the body is paused or held it is recorded once per boot and failure site,
+        and the body stays up, observable and reading its inbox; None is returned. A body that is not paused
+        fails as before: the process dies, the supervisor restarts it and the breaker counts the boot."""
+        try:
+            return work(*args)
+        except Exception as exc:
+            if not self.paused():
+                raise
+            import traceback
+            frames = traceback.extract_tb(exc.__traceback__)
+            site = f"{Path(frames[-1].filename).name}:{frames[-1].lineno} {frames[-1].name}" if frames else "unknown"
+            digest = sha256_json({"error": type(exc).__name__, "site": site})
+            if all(e.payload["boot_id"] != self.boot_id or e.payload["fault_digest"] != digest
+                   for e in self.journal.replay("body.fault_contained")):
+                self.journal.record("body.fault_contained", {
+                    "boot_id": self.boot_id, "fault_digest": digest, "error": f"{type(exc).__name__}: {exc}"[:500],
+                    "site": site, "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED",
+                    "inbox_waiting": sorted(p.name for p in self.layout.inbox.glob("*.json")),
+                    "at": iso(self.clock()), "action": "contained: the paused body stays up, observable and "
+                                                       "reading its inbox; recorded once per boot and site"},
+                    key=[self.boot_id, digest])
+            return None
+
     def _heartbeat(self, state: str, summary: list):
         data = {"pid": os.getpid(), "boot_id": getattr(self, "boot_id", None), "at": iso(self.clock()),
                 "state": state, "ledger_head": self.ledger.head, "missions": summary}
@@ -604,34 +689,43 @@ class Body:
         self.open()
         try:
             self.boot(main_loop=True)
-            ticks = 0
+            ticks = active = 0
             last_seen = None
             while True:
                 if self.layout.stop_file.exists():
                     reason = "local STOP file"
                     break
+                waiting = set(self.layout.inbox.glob("*.json"))   # one still here after this turn wakes nothing
                 seen = (self.clock(), self.monotonic())
                 if last_seen is not None:
-                    presence.note_gap(self.journal, self.boot_id, last_seen, seen)
+                    self._contained(presence.note_gap, self.journal, self.boot_id, last_seen, seen)
                 last_seen = seen
-                result = self.tick()
+                result = self._contained(self.tick)
+                if result is None:                # a paused body's turn failed, contained: it is still paused
+                    hold = crash_loop_hold(self.journal)
+                    result = {"paused": True, **({"held": hold["why"]} if hold else {})}
                 if self.stop_requested:
                     reason = "founder BODY_STOP or signal"
                     break
                 ticks += 1
-                if ticks % telemetry_every == 1:
-                    compute.record_telemetry(self.journal, self.layout.home)
-                    compute.recommend(self.journal)
-                    presence.recommend(self.journal, now=self.clock(),
-                                       platform_hint="chromeos" if doctor.is_crostini() else None)
+                idle = bool(result.get("paused"))  # paused or held: no mission steps, so nothing is measured or due
+                if not idle:
+                    active += 1
+                    if active % telemetry_every == 1:
+                        compute.record_telemetry(self.journal, self.layout.home)
+                        compute.recommend(self.journal)
+                        presence.recommend(self.journal, now=self.clock(),
+                                           platform_hint="chromeos" if doctor.is_crostini() else None)
                 self._heartbeat("HELD" if result.get("held") else "PAUSED" if result.get("paused") else "RUNNING",
                                 result.get("missions", []))
                 if max_ticks is not None and ticks >= max_ticks:
                     reason = "max_ticks reached"
                     break
-                deadline = time.monotonic() + self.next_wake(tick_seconds)
+                # A paused or held body serves no due observation, so it waits a full tick instead of spinning on
+                # one; a new inbox file (a signed resume, say) or a stop wakes either body sooner.
+                deadline = time.monotonic() + (tick_seconds if idle else self.next_wake(tick_seconds))
                 while time.monotonic() < deadline and not self.stop_requested:
-                    if self.layout.stop_file.exists() or any(self.layout.inbox.glob("*.json")):
+                    if self.layout.stop_file.exists() or set(self.layout.inbox.glob("*.json")) - waiting:
                         break
                     time.sleep(min(0.2, max(0.0, deadline - time.monotonic())))
             self.journal.record("body.stopped", {"boot_id": self.boot_id, "reason": reason,
@@ -739,9 +833,10 @@ def status(home: str | Path) -> dict:
         ok, chain = ledger.verify_chain()
         from greg.missions import MissionBook, active_constraint
         book = MissionBook(journal)
+        paused = body_pauses(journal, pause_file=layout.pause_file.exists())
         missions = [{"mission_id": mid, "intended_effect": spec["intended_effect"],
                      "closure": spec["closure"]["kind"], "achieved": mid in achieved,
-                     "active_constraint": active_constraint(book.missions[mid], book.requests)
+                     "active_constraint": active_constraint(book.missions[mid], book, body_paused=paused)
                      if mid in book.missions else None}
                     for mid, spec in registered.items()]
         from greg import goal_gravity

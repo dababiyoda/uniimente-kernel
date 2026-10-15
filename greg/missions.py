@@ -60,7 +60,9 @@ def retry_delay(streak: int) -> int:
 # LIFECYCLE abandon/supersede; an "approve" here changed nothing and left the mission blocked with no
 # ask left to answer (review of 2026-10-14).
 NOT_ANSWERABLE = {"SCOPE_RENEWAL": "an expired mandate is not renewed by a decision: sign a new MISSION with a "
-                                   "new horizon (and supersede this one), or LIFECYCLE abandon it"}
+                                   "new horizon (and supersede this one), or LIFECYCLE abandon it",
+                  # greg/body.py hold_ask: an "approve" would lift nothing and close the ask on a still-held body
+                  "CRASH_LOOP_HOLD": "a crash-loop hold is not lifted by a decision: sign BODY_RESUME (or BODY_STOP)"}
 
 
 class MissionError(ValueError):
@@ -437,28 +439,47 @@ CONSTRAINT_LIFTED_BY = {"APPROVAL": "authority", "SCOPE_RENEWAL": "authority", "
                         "NO_STRATEGY": "a strategy"}
 
 
-def active_constraint(m: "MissionState", requests: dict) -> dict | None:
+MISSION_RESUME_LIFTS = ("a signed LIFECYCLE ACTIVE for this mission: the founder key, or a device key the founder "
+                        "delegated LIFECYCLE to")
+
+
+def active_constraint(m: "MissionState", book: "MissionBook", *, body_paused: list | None = None) -> dict | None:
     """The one thing this mission waits on now, named for the founder (acceptance A.G2).
 
     Derived only from retained facts, so a restart cannot change it: the first currently pursued check whose
     latest observation did not pass (or that was never observed), the strategies held because a check they
     require has not passed, and the blocker with the kind of thing that would lift it. None when the mission is
-    closed, or when every pursued check passes and nothing blocks it."""
+    closed, or when it is not paused, every pursued check passes and nothing blocks it.
+
+    A pause comes first, because nothing else moves while it holds: ``paused_by`` names each pause in force (the
+    body's, from greg.body ``body_pauses``, then the mission's own) and what lifts it. A blocker whose request
+    the founder already answered (a decision or reconciliation, which an answer resolves) or the body withdrew
+    waits on no one any more: it is shown with that answer, lifted by the next tick. An answer to a capability
+    or human-work ask is only a record, so those blockers still name what lifts them."""
     if m.status != "ACTIVE":
         return None
+    paused_by = list(body_paused or [])
+    if m.paused:
+        paused_by.append({"by": "mission paused (signed LIFECYCLE)", "lifted_by": MISSION_RESUME_LIFTS})
     failing = [c["check_id"] for c in m.current_checks() if not (m.observations.get(c["check_id"]) or {}).get("passed")]
-    if not failing and not m.blocker:
+    if not failing and not m.blocker and not paused_by:
         return None
     passed = {cid for cid, o in m.observations.items() if (o or {}).get("passed")}
     out = {"check_id": failing[0] if failing else None,
            "observed": (m.observations.get(failing[0]) or {}).get("detail", "never observed") if failing else None,
            "held_strategies": [s["action_id"] for s in m.spec["strategies"] if set(s.get("requires", [])) - passed]}
+    if paused_by:
+        out = {"paused_by": paused_by, **out}
     if m.blocker:
         rid = m.blocker.get("request_id")
-        kind = (requests.get(rid) or {}).get("kind")
+        kind = (book.requests.get(rid) or {}).get("kind")
         out["blocker"] = {"type": m.blocker.get("type"), "request_id": rid, "kind": kind,
                           "lifted_by": CONSTRAINT_LIFTED_BY.get(kind, m.blocker.get("type")),
                           "why": m.blocker.get("why")}
+        if rid in book.withdrawn:
+            out["blocker"].update(withdrawn=book.withdrawn[rid].get("why"), lifted_by="the next tick")
+        elif rid in book.answers and m.blocker.get("type") in ("decision", "reconciliation"):
+            out["blocker"].update(answered=book.answers[rid].get("answer"), lifted_by="the next tick")
     return out
 
 

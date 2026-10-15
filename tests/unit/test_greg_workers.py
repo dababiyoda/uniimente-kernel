@@ -47,7 +47,8 @@ def acceptance_envelope(monkeypatch, request):
     def scripted_envelope(argv, cwd, timeout_seconds, provider, reviewed=False, config_files=None, *,
                           source_env=None, network=True, file_bytes=0):
         if reviewed is not True:
-            raise isolation.WorkerIsolationError("unreviewed worker provider refused before dispatch")
+            raise isolation.WorkerIsolationError("unreviewed worker provider refused before dispatch",
+                                                 evidence={"status": "unreviewed", "reason": "unreviewed"})
         runtime = Path(cwd).parent / ".worker-runtime" / provider
         runtime.mkdir(parents=True, exist_ok=True)
         env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": str(runtime), "LANG": "C.UTF-8"}

@@ -36,6 +36,7 @@ conservative full-cap reservation when unknown.
 """
 from __future__ import annotations
 
+import contextlib
 from dataclasses import dataclass, field, asdict
 from fnmatch import fnmatchcase
 import hashlib
@@ -52,7 +53,7 @@ import tempfile
 import time
 
 from greg.capabilities import CapabilityError, InvocationContext, _inside
-from greg.worker_isolation import WorkerIsolationError, prepare_worker
+from greg.worker_isolation import WorkerIsolationError, envelope_cannot_confine, prepare_worker
 
 # Surfaces a worker may never change on its own: authority, permission semantics, approval
 # rules, shutdown, evidence retention, capability promotion, founder intent and this fabric.
@@ -101,6 +102,20 @@ SUPERVISION = {"mode": "supervised",
 def confinement_mode(value) -> str:
     """The body's worker confinement; anything but an exact ``supervised`` is the fail-closed default."""
     return value if value in WORKER_CONFINEMENT else "required"
+
+
+def _supervision(ctx, provider, report) -> dict | None:
+    """#178's statement of what supervision leaves unconfined, on a supervised body's receipt only when it is true:
+    the worker's own evidence says it ran supervised, or it is an in-process provider GREG never confined at all
+    (no envelope evidence). A governed worker set up inside the OS envelope never gets it, even when its launch
+    failed before its process ran; one that never reached an envelope ran nothing."""
+    if confinement_mode(ctx.worker_confinement) != "supervised":
+        return None
+    isolation = report.isolation or {}
+    if isolation.get("mode") == "supervised":
+        return SUPERVISION
+    governed = isinstance(provider, (ClaudeCodeWorker, CliAgentWorker, ScriptWorker))
+    return SUPERVISION if not isolation and not governed else None
 
 
 class WorkerError(CapabilityError):
@@ -397,6 +412,20 @@ def _door(egress):
     return Door(egress, "worker.commission")
 
 
+@contextlib.contextmanager
+def _evidence_of(envelope: dict):
+    """An unexpected failure carries the envelope the worker was set up in to its receipt (``commission``), so a
+    launch that failed inside the OS envelope is never reported as a supervised run."""
+    try:
+        yield
+    except Exception as exc:
+        try:
+            exc.isolation = envelope["evidence"]
+        except AttributeError:
+            pass
+        raise
+
+
 def _fds(envelope: dict) -> dict:
     """Only the door's descriptor crosses into the worker, and only when there is one."""
     return {"pass_fds": envelope["pass_fds"]} if envelope.get("pass_fds") else {}
@@ -410,7 +439,9 @@ def _confined_or_supervised(prepare, argv: list[str], cwd: Path, *, confinement:
     try:
         return prepare()
     except WorkerIsolationError as exc:
-        if confinement_mode(confinement) != "supervised":
+        # Only a worker the envelope cannot confine at all falls back: a reviewed provider refused over one input
+        # or host setting on a host that has the envelope is refused, never run with the body's reach.
+        if confinement_mode(confinement) != "supervised" or not envelope_cannot_confine(exc):
             raise
         if door is not None:
             raise WorkerIsolationError(f"{exc}; this body confines egress, which an unconfined worker cannot "
@@ -466,7 +497,8 @@ class ClaudeCodeWorker:
                                                      Path.home() / ".claude" / ".credentials.json"},
                                        **({"door": door} if door is not None else {})),
                 argv, cwd, confinement=confinement, door=door)
-            return self._run(order, cwd, envelope, stop_check)
+            with _evidence_of(envelope):
+                return self._run(order, cwd, envelope, stop_check)
 
     def _run(self, order: WorkOrder, cwd: Path, envelope: dict, stop_check) -> WorkerReport:
         started = time.monotonic()
@@ -538,7 +570,8 @@ class CliAgentWorker:
                                        file_bytes=8 * MAX_PROCESS_OUTPUT,
                                        **({"door": door} if door is not None else {})),
                 argv, cwd, confinement=confinement, door=door)
-            return self._run(order, cwd, envelope, stop_check)
+            with _evidence_of(envelope):
+                return self._run(order, cwd, envelope, stop_check)
 
     def _run(self, order: WorkOrder, cwd: Path, envelope: dict, stop_check) -> WorkerReport:
         prompt = worker_prompt(order)
@@ -606,9 +639,10 @@ class ScriptWorker:
         identity = "script:" + _sha(order.context.encode())[:16]
         started = time.monotonic()
         try:
-            proc = self.runner(envelope["argv"], input=order.context, capture_output=True, text=True,
-                               timeout=order.timeout_seconds, cwd=cwd, env=envelope["env"], close_fds=True,
-                               preexec_fn=envelope["preexec_fn"], stop_check=stop_check, **_fds(envelope))
+            with _evidence_of(envelope):
+                proc = self.runner(envelope["argv"], input=order.context, capture_output=True, text=True,
+                                   timeout=order.timeout_seconds, cwd=cwd, env=envelope["env"], close_fds=True,
+                                   preexec_fn=envelope["preexec_fn"], stop_check=stop_check, **_fds(envelope))
         except WorkerInterrupted as exc:
             return WorkerReport(self.name, identity, -1, time.monotonic() - started, 0.0, error=str(exc),
                                 isolation=envelope["evidence"], interrupted=True)
@@ -755,8 +789,9 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
                 envelope = prepare_worker(argv, cwd, timeout_seconds=timeout, provider="acceptance-tests",
                                           reviewed=True, source_env={}, network=False,
                                           file_bytes=8 * MAX_PROCESS_OUTPUT)
-            except WorkerIsolationError:
-                if confinement_mode(confinement) != "supervised":
+            except WorkerIsolationError as exc:
+                # Acceptance the envelope cannot host is only acceptance on a host without it.
+                if confinement_mode(confinement) != "supervised" or not envelope_cannot_confine(exc):
                     raise
                 mode = "supervised: network denied, environment scrubbed, filesystem NOT confined"
                 proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=stop_check,
@@ -857,7 +892,8 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     except Exception as exc:
         # Once dispatch began, an exception does not establish that no paid work happened.
         report = WorkerReport(order.provider, order.provider, -1, 0.0, None,
-                              error=f"worker failed with {type(exc).__name__}: {str(exc)[:300]}")
+                              error=f"worker failed with {type(exc).__name__}: {str(exc)[:300]}",
+                              isolation=getattr(exc, "isolation", None) or {})
     spend = worker_spend(report.cost_usd, order.max_budget_usd)
     (root / "worker-report.json").write_text(json.dumps({**asdict(report), "cost_usd": spend["reported_usd"],
                                                          "spend": spend}, indent=2, sort_keys=True, default=str))
@@ -942,11 +978,8 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
                    "duration_s": report.duration_s, "turns": report.turns,
                    "exit_code": report.exit_code, "error": report.error,
                    "permission_denials": report.permission_denials, "isolation": report.isolation,
-                   # #178's statement of what supervision leaves unconfined, on every receipt whose worker ran
-                   # outside the OS envelope on a supervised body; an envelope run's isolation says os-confined.
-                   "supervision": SUPERVISION if (confinement_mode(ctx.worker_confinement) == "supervised" and
-                                                  (report.isolation or {}).get("filesystem") != "os-confined")
-                   else None,
+                   # #178's statement of what supervision leaves unconfined, only where it is true (see below).
+                   "supervision": _supervision(ctx, provider, report),
                    "interrupted": report.interrupted},
         "cost_usd": spend["charge_usd"], "spend": spend, "collection_error": collection_error,
         "worker_claim": report.claim, "worker_summary_tail": report.summary[-1500:],

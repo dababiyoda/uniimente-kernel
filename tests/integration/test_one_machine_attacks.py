@@ -182,7 +182,9 @@ def test_attack_worker_test_code_rewrites_git_metadata_during_greg_acceptance(tm
     the payload never runs. This is #178's host: a supervised body where the OS envelope is refused, so
     the acceptance run falls back to supervision (on a host with the envelope it never reaches .git)."""
     def no_envelope(*args, **kwargs):
-        raise workers.WorkerIsolationError("no OS envelope on this host (test)")
+        # what worker_isolation._backend raises on a host without the envelope (status "unsupported")
+        raise workers.WorkerIsolationError("no OS envelope on this host (test)",
+                                           evidence={"status": "unsupported", "reason": "no envelope (test)"})
 
     monkeypatch.setattr(workers, "prepare_worker", no_envelope)
     marker, planted = _acceptance_rewrites_git(tmp_path)

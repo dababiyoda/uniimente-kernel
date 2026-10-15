@@ -386,3 +386,58 @@ def test_real_organs(tmp_path):
     assert out["inputs"]["organs"]["daleobanks_head"] and out["inputs"]["organs"]["wmi_head"]
     ok, detail = ox.verify_delivery(out, ctx.deliver_root)
     assert ok, detail
+
+
+def test_a_confined_body_runs_its_mission_exchange_organs_with_no_network(tmp_path, organs, monkeypatch):
+    """Review finding (d965bb7): the engine hands ctx.egress only to capabilities in CONFINED_EGRESS, and
+    organs.exchange was not listed, so a signed mission on a confined body launched both organs with the body's
+    network while the appraiser re-ran them confined. Driven through the real mission path, not a hand-set ctx."""
+    from tests.greg_fixtures import mission
+    from tests.integration.test_greg_confined_egress import body_with_confined_egress
+    home, key, body_id = body_with_confined_egress(tmp_path)
+    seen = []
+
+    def probe(script, stdin, *args, cwd, env, confined=False):
+        seen.append(confined)
+        raise CapabilityError("probe stops here")
+    monkeypatch.setattr(ox, "_organ", probe)
+    check = {"check_id": "exchanged", "description": "memo delivered",
+             "sensor": {"capability": "organs.exchange_status", "params": {"signal": organs["signal"]},
+                        "target": "deliver:organs"},
+             "predicate": {"op": "equals", "field": "exchanged", "value": True}}
+    spec = mission("m:organs", checks=[check],
+                   strategies=[{"action_id": "exchange", "capability": "organs.exchange", "params": organs,
+                                "target": "deliver:organs", "advances": ["exchanged"], "rationale": "exchange"}],
+                   capabilities=["organs.exchange", "organs.exchange_status"], targets=("deliver:*",))
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        assert body.egress is not None
+        for _ in range(3):
+            body.tick()
+            if seen:
+                break
+    assert seen == [True], "a confined body launched an organ with the body's network"
+
+
+def test_every_builtin_that_reads_ctx_egress_is_handed_the_relay_on_a_confined_body():
+    """The class of the finding above: a built-in adapter that decides confinement from ``ctx.egress`` but is
+    missing from CONFINED_EGRESS silently runs unconfined on a confined body."""
+    import importlib
+    import inspect
+    from greg.missions import CONFINED_EGRESS
+    readers = []
+    for capability, (_manifest, adapter) in BUILTINS.items():
+        target = inspect.getclosurevars(adapter).nonlocals
+        if {"module", "name"} <= set(target):
+            fn = getattr(importlib.import_module(target["module"]), target["name"])
+        else:
+            fn = adapter
+        try:
+            source = inspect.getsource(fn)
+        except (OSError, TypeError):
+            continue
+        if "ctx.egress" in source:
+            readers.append(capability)
+    assert "organs.exchange" in readers
+    assert [c for c in readers if c not in CONFINED_EGRESS] == []

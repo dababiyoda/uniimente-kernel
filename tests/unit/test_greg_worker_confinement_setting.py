@@ -142,8 +142,8 @@ def test_supervised_runs_the_worker_and_says_exactly_what_was_not_confined(tmp_p
 
 
 def test_confined_egress_is_never_traded_for_supervision():
-    def refused():
-        raise isolation.WorkerIsolationError("unreviewed worker provider refused before dispatch")
+    def refused():   # the real refusal of an unreviewed provider
+        return isolation.prepare_worker(["true"], Path("/tmp"), 10, "t", reviewed=False)
     with pytest.raises(isolation.WorkerIsolationError, match="confines egress"):
         workers._confined_or_supervised(refused, ["true"], Path("/tmp"), confinement="supervised", door=object())
 
@@ -164,7 +164,8 @@ def test_a_reviewed_provider_on_an_envelope_host_stays_confined_under_supervised
 def test_acceptance_without_an_envelope_follows_the_setting_and_never_opens_the_network(tmp_path, monkeypatch,
                                                                                        confinement):
     def no_envelope(*args, **kwargs):
-        raise isolation.WorkerIsolationError("bubblewrap unavailable on this host")
+        raise isolation.WorkerIsolationError("bubblewrap unavailable on this host",   # as _backend raises it
+                                             evidence={"status": "unsupported", "reason": "bubblewrap unavailable"})
     monkeypatch.setattr(workers, "prepare_worker", no_envelope)
     probe = ("import socket\n"
              "try:\n    socket.socket(socket.AF_INET, socket.SOCK_STREAM)\nexcept OSError:\n    raise SystemExit(0)\n"
@@ -191,3 +192,91 @@ def test_the_separate_appraiser_receives_the_founders_setting(tmp_path, monkeypa
     with Body(tmp_path / "body") as body:
         body.appraise("m:none")
     assert seen["worker_confinement"] == "supervised"
+
+
+# -- supervision covers only workers the envelope cannot confine (review findings on the merged trunk) -----
+
+def test_only_a_missing_envelope_or_an_unreviewed_provider_counts_as_unconfinable(monkeypatch):
+    """The contract the fallback reads: the host backend's own refusal and the unreviewed refusal are the two
+    cases ``supervised`` covers; a refusal of one input or host setting is not."""
+    monkeypatch.setattr(isolation, "_landlock_abi", lambda: (_ for _ in ()).throw(isolation.WorkerIsolationError("x")))
+    monkeypatch.setattr(isolation.shutil, "which", lambda name, *a, **k: None if name == "bwrap" else "/usr/bin/" + name)
+    with pytest.raises(isolation.WorkerIsolationError) as host:
+        isolation._backend(require_bubblewrap=True)
+    with pytest.raises(isolation.WorkerIsolationError) as unreviewed:
+        isolation.prepare_worker(["true"], Path("/tmp"), 10, "t", reviewed=False)
+    assert isolation.envelope_cannot_confine(host.value) and isolation.envelope_cannot_confine(unreviewed.value)
+    for refusal in ("transport certificate path outside supported certificate roots: SSL_CERT_FILE",
+                    "worker credential source must be a regular non-symlink file",
+                    "shared UID task count leaves no bounded worker process margin",
+                    "worker executable is unavailable"):
+        assert not isolation.envelope_cannot_confine(isolation.WorkerIsolationError(refusal))
+
+
+def test_a_reviewed_provider_refused_over_a_host_setting_is_not_run_unconfined_under_supervised(tmp_path, monkeypatch):
+    """Review finding (b4289ca): on a host with the envelope, any refusal fell back to supervision, so a reviewed
+    provider ran with the body's filesystem and network because of a CA path outside the supported roots."""
+    if not _envelope_available():
+        pytest.skip("no envelope on this host")
+    outside = tmp_path / "proxy-ca.pem"
+    outside.write_text("-----BEGIN CERTIFICATE-----\n")
+    monkeypatch.setenv("SSL_CERT_FILE", str(outside))
+    work = tmp_path / "order" / "repo"
+    work.mkdir(parents=True)
+    with pytest.raises(isolation.WorkerIsolationError, match="certificate"):
+        workers._confined_or_supervised(
+            lambda: isolation.prepare_worker([sys.executable, "-c", "pass"], work, timeout_seconds=10, provider="t",
+                                             reviewed=True, source_env={"SSL_CERT_FILE": str(outside)}),
+            [sys.executable, "-c", "pass"], work, confinement="supervised")
+
+
+def test_supervised_acceptance_of_a_workspace_script_runs_in_the_envelope_on_an_envelope_host(tmp_path):
+    """Review finding (b4289ca + 9eb226f): ./check.sh was looked up in GREG's own working directory, refused as
+    unavailable, and the supervised fallback then ran the worker-modifiable script with the body's filesystem."""
+    if not _envelope_available():
+        pytest.skip("no envelope on this host")
+    clone = tmp_path / "order" / "repo"
+    clone.mkdir(parents=True)
+    escaped = tmp_path / "escaped.marker"
+    script = clone / "check.sh"
+    script.write_text(f"#!/bin/sh\necho reached > {escaped} 2>/dev/null\nexit 0\n")
+    script.chmod(0o755)
+    [result] = workers.run_tests([["./check.sh"]], clone, timeout=30, confinement="supervised")
+    assert result["confinement"].startswith("envelope"), result
+    assert result["passed"], result["tail"]
+    assert not escaped.exists(), "worker-modifiable acceptance wrote outside its clone"
+
+
+def test_a_workspace_executable_may_not_point_outside_the_workspace(tmp_path):
+    clone = tmp_path / "repo"
+    clone.mkdir()
+    (clone / "check.sh").symlink_to("/bin/true")
+    with pytest.raises(isolation.WorkerIsolationError, match="leaves the workspace"):
+        isolation.prepare_worker(["./check.sh"], clone, 10, "acceptance-tests", reviewed=True, network=False,
+                                 source_env={})
+
+
+def test_a_launch_that_fails_inside_the_envelope_is_never_reported_as_supervised(tmp_path, monkeypatch):
+    """Review finding (f6d146e): a reviewed provider set up in the OS envelope whose launch failed with an
+    unexpected error got a receipt saying it ran supervised with its filesystem NOT confined."""
+    if not _envelope_available():
+        pytest.skip("no envelope on this host")
+    from greg.capabilities import InvocationContext
+
+    def fork_fails(argv, **kwargs):
+        raise BlockingIOError(11, "Resource temporarily unavailable")
+    fake = tmp_path / "codex"
+    fake.write_text("#!/bin/sh\necho hi > out.md\n")
+    fake.chmod(0o755)
+    monkeypatch.setitem(workers.PROVIDERS, "codex",
+                        workers.CliAgentWorker("codex", [str(fake), "exec", "-"], reviewed=True, runner=fork_fails))
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    ctx = InvocationContext(workspace=ws, read_roots=(tmp_path,), secrets=None, manifest=None, mission_id="m1",
+                            authority_ref="a", grant_id="g", worker_confinement="supervised")
+    summary = workers.commission({"order": "doc1", "mode": "document", "objective": "write", "max_budget_usd": 0.5,
+                                  "timeout_seconds": 60, "acceptance": {"output": "out.md"},
+                                  "allowed_paths": ["out.md"], "provider": "codex"}, ctx)
+    assert summary["status"] == "FAILED" and "BlockingIOError" in summary["worker"]["error"]
+    assert summary["worker"]["isolation"]["filesystem"] == "os-confined"
+    assert summary["worker"]["supervision"] is None

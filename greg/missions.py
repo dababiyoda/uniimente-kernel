@@ -123,10 +123,12 @@ def exact_reach(capability_id: str, params: dict) -> dict:
             "credentials": sorted(str(v) for v in (params.get("secrets") or {}).values()) or "none"}
 
 
-# Capabilities whose network access runs behind the body's #26 relay when the body confines egress.
+# Capabilities whose network access runs behind the body's #26 relay when the body confines egress. A capability
+# that decides its own confinement from ``ctx.egress`` (the organ exchange runs its organs with no network at all)
+# must be listed, or a confined body hands it None and it runs with the body's network.
 CONFINED_EGRESS = frozenset({"http.get", "github.pulls", "brief.engineering", "browser.render",
                              "browser.session", "worker.commission", "daleobanks.verify", "daleobanks.publish",
-                             "venture.assess", "mcp.act"})
+                             "venture.assess", "mcp.act", "organs.exchange"})
 
 
 class Unbound(Exception):
@@ -351,6 +353,7 @@ class MissionState:
     pending_effect: dict = field(default_factory=dict)  # action_id -> checks it should change
     collateral: dict = field(default_factory=dict)      # action_id -> passing checks it does not advance
     reserved: dict = field(default_factory=dict)        # (action_id, attempt) -> signed cap held for unknown spend
+    uncertain: dict = field(default_factory=dict)       # action_id -> its latest record, while that is UNCERTAIN
     # A persistent goal's pull (greg/goal_gravity.py) not yet served while the mission waits on an APPROVAL:
     # only ``observe_now`` sets it, so a mission no goal is bound to never has one.
     pull: str | None = None
@@ -419,9 +422,12 @@ def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *,
     if manifest is None:
         raise MissionError(f"capability {s['capability']} is not registered on this body")
     cost = float(s.get("cost_usd", 0.0))
+    # The paid budget state too, exactly as AuthorityOffice.act binds a paid scope (#157): without it a goal's
+    # ahead-of-time approval of a paid strategy names a digest the mission's own dispatch never derives.
     scope = AuthorityOffice.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
                                          params=s.get("params", {}), target=s["target"],
-                                         consequence_class=manifest.consequence_class, cost_usd=cost)
+                                         consequence_class=manifest.consequence_class, cost_usd=cost,
+                                         spent_usd=m.spent_usd, budget_usd=m.cone.budget_usd)
     outside = m.cone.admits(capability=manifest.capability_id, target=s["target"],
                             consequence_class=manifest.consequence_class, cost_usd=cost,
                             spent_usd=m.spent_usd, at=now)
@@ -526,6 +532,11 @@ class MissionBook:
             if data.get("cost_reserved") and data["status"] == "UNCERTAIN":
                 m.reserved[slot] = data.get("cost_usd", 0.0)  # unknown spend holds the signed cap
                 m.spent_usd += m.reserved[slot]
+            # Settled by any later record about the action: its reconciliation, a standing proof, a later attempt.
+            if data["status"] == "UNCERTAIN":
+                m.uncertain[aid] = data
+            else:
+                m.uncertain.pop(aid, None)
             if data["status"] == "DONE":
                 m.actions_done += 1
                 m.spent_usd += data.get("cost_usd", 0.0)
@@ -790,6 +801,8 @@ class MissionEngine:
             + ["reject: the mission will try alternatives or ask again"],
             requested={"capability": scope["capability"], "target": scope["target"],
                        "consequence_class": scope["consequence_class"], "cost_usd": s.get("cost_usd", 0.0),
+                       # the same reach the loop's ask shows: one scope has one request, whichever path asks first
+                       **exact_reach(scope["capability"], s.get("params", {})),
                        **({"spend": f"${cost:.2f} for this one action"} if cost > 0 else {})},
             now=now, resource=resource, evidence=evidence, quoted=quoted)
 
@@ -981,6 +994,10 @@ class MissionEngine:
         if m.status in TERMINAL:
             if m.status == "ACHIEVED":
                 return {"state": m.status}
+            if m.blocker is None and m.uncertain:
+                self._resume_unsettled(m, now)        # a question lost to a crash is asked before anything is undone
+                self.book.rebuild()
+                m = self.book.missions[m.mission_id]
             if m.blocker and m.blocker.get("type") == "reconciliation":
                 # Nothing is undone before the founder says what an interrupted dispatch did: compensation
                 # waits for the answer, and an answer that arrives with or after the end is still recorded.
@@ -1049,6 +1066,9 @@ class MissionEngine:
                     self._escalate_capability(m, function, waiting[-1] if waiting else None, purpose, now,
                                               awaiting=bool(waiting))
                     return {"state": "BLOCKED", "blocker": m.blocker}
+        resumed = self._resume_unsettled(m, now)
+        if resumed is not None:
+            return resumed
         if m.next_observe_at and now < datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")):
             return {"state": "WAITING", "until": m.next_observe_at}
 
@@ -1087,6 +1107,58 @@ class MissionEngine:
             self._schedule(m, now, 30 * streak or 30)
             return {"state": "SENSOR_RETRY", "checks": sorted(errors)}
         return self._pursue(m, now, failing, evidence)
+
+    def _settle_uncertain(self, m: MissionState, s: dict, manifest, aid: str, attempt: int, scope_digest: str,
+                          now: datetime) -> dict:
+        """An UNCERTAIN dispatch of a non-retry-safe action, never retried blind: settled by the founder's standing
+        mandate when the retained facts prove it inert, else one reconciliation question for exactly this attempt.
+        Called when the dispatch is recorded, and again after a restart that found the record unsettled."""
+        proof = self._inert_interruption(m, s, manifest) if manifest is not None else \
+            {"holds": False, "predicates": {"founder_mandate": False}}
+        if proof["holds"]:
+            # The founder signed a standing mandate for exactly this class, and the retained facts prove the
+            # interrupted run could not have left a consequence: settle it with the proof, retry once.
+            self.journal.record("mission.action", {
+                "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
+                "status": "RECONCILED_NOT_EXECUTED", "capability": manifest.capability_id,
+                "route": "standing_reconciliation", "dispatch_route": manifest.route, "receipt": None,
+                "at": iso(now), "mandate": m.command_digest, "proof": proof, "cost_usd": 0.0,
+                "reasons": ["standing reconciliation: a consequence-inert interruption, settled under the "
+                            "founder-signed mission mandate"]},
+                key=[m.mission_id, aid, "standing", attempt])
+            return {"state": "RETRYING", "action": aid, "why": "standing reconciliation of an inert interruption"}
+        unmet = [k for k, ok in proof["predicates"].items() if not ok]
+        # Each uncertain dispatch is its own question (#178): an answer about attempt 0 is never applied to a
+        # later attempt (attempt 0 keeps its retained request identity).
+        scope = scope_digest if not attempt else sha256_json({"scope": scope_digest, "attempt": attempt})
+        rid = self._request(m, kind="RECONCILIATION", scope_digest=scope, action_id=aid,
+                            why="an action may or may not have executed before an interruption"
+                            + ("; GREG could not settle it under your standing mandate: " + ", ".join(unmet)
+                               if proof["predicates"]["founder_mandate"] else ""),
+                            recommendation="inspect the retained evidence, then state whether it executed",
+                            alternatives=["reconcile_executed", "reconcile_not_executed"],
+                            requested={"action_id": aid}, now=now)
+        self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid,
+                        "why": "uncertain completion; no blind retry",
+                        "reconsider": "founder reconciliation decision"})
+        return {"state": "BLOCKED", "blocker": m.blocker}
+
+    def _resume_unsettled(self, m: MissionState, now: datetime) -> dict | None:
+        """A dispatch recorded UNCERTAIN whose settlement never became durable: the body died after that record
+        and before its reconciliation question (or the block on it) was retained. Settle it now, exactly as the
+        dispatch would have, instead of letting the next tick dispatch the next attempt with no answer."""
+        if m.blocker is not None:
+            return None
+        for aid, record in sorted(m.uncertain.items()):
+            strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), None)
+            manifest = self.registry.manifests.get(record.get("capability"))
+            if manifest is None and strategy is not None:
+                manifest = self._manifest_for(strategy)
+            if strategy is None or (manifest is not None and manifest.retry_safe):
+                continue
+            return self._settle_uncertain(m, strategy, manifest, aid, record["attempt"], record.get("scope_digest"),
+                                          now)
+        return None
 
     def _bind(self, m: MissionState, s: dict) -> tuple[dict, list, list]:
         """Resolve a strategy's typed input edges from retained Gate receipts of this mission.
@@ -1979,35 +2051,7 @@ class MissionEngine:
         if outcome.status == "UNCERTAIN":
             if manifest.retry_safe:
                 return {"state": "RETRYING", "action": aid, "why": "read-only idempotent capability"}
-            proof = self._inert_interruption(m, s, manifest)
-            if proof["holds"]:
-                # The founder signed a standing mandate for exactly this class, and the retained facts prove the
-                # interrupted run could not have left a consequence: settle it with the proof, retry once.
-                self.journal.record("mission.action", {
-                    "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
-                    "status": "RECONCILED_NOT_EXECUTED", "capability": manifest.capability_id,
-                    "route": "standing_reconciliation", "dispatch_route": manifest.route, "receipt": None,
-                    "at": iso(now), "mandate": m.command_digest, "proof": proof, "cost_usd": 0.0,
-                    "reasons": ["standing reconciliation: a consequence-inert interruption, settled under the "
-                                "founder-signed mission mandate"]},
-                    key=[m.mission_id, aid, "standing", attempt])
-                return {"state": "RETRYING", "action": aid, "why": "standing reconciliation of an inert interruption"}
-            unmet = [k for k, ok in proof["predicates"].items() if not ok]
-            # Each uncertain dispatch is its own question (#178): an answer about attempt 0 is never applied to a
-            # later attempt (attempt 0 keeps its retained request identity).
-            scope = outcome.scope_digest if not attempt else sha256_json({"scope": outcome.scope_digest,
-                                                                         "attempt": attempt})
-            rid = self._request(m, kind="RECONCILIATION", scope_digest=scope, action_id=aid,
-                                why="an action may or may not have executed before an interruption"
-                                + ("; GREG could not settle it under your standing mandate: " + ", ".join(unmet)
-                                   if proof["predicates"]["founder_mandate"] else ""),
-                                recommendation="inspect the retained evidence, then state whether it executed",
-                                alternatives=["reconcile_executed", "reconcile_not_executed"],
-                                requested={"action_id": aid}, now=now)
-            self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid,
-                            "why": "uncertain completion; no blind retry",
-                            "reconsider": "founder reconciliation decision"})
-            return {"state": "BLOCKED", "blocker": m.blocker}
+            return self._settle_uncertain(m, s, manifest, aid, attempt, outcome.scope_digest, now)
         if outcome.status == "DONE" and isinstance(outcome.output, dict) and outcome.output.get("access_gap"):
             self._access_ask(m, aid, manifest, outcome.output["access_gap"], now)
         deficit = outcome.output.get("capability_deficit") if outcome.status == "DONE" and \

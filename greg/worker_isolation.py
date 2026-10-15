@@ -30,6 +30,18 @@ class WorkerIsolationError(CapabilityError):
         self.evidence = evidence or {"status": "refused", "reason": message}
 
 
+# The two refusals that mean the envelope cannot confine a worker at all: this host has no backend
+# (``unsupported``) or the provider is not reviewed (``unreviewed``). Every other refusal is about one input or one
+# host setting (a certificate path, a credential file, a timeout, the task margin) and is never a reason to run
+# the worker with less confinement.
+CANNOT_CONFINE = ("unsupported", "unreviewed")
+
+
+def envelope_cannot_confine(exc: WorkerIsolationError) -> bool:
+    """Whether a refusal is one the founder's ``supervised`` setting covers (see ``CANNOT_CONFINE``)."""
+    return isinstance(exc, WorkerIsolationError) and (exc.evidence or {}).get("status") in CANNOT_CONFINE
+
+
 _READ = (1 << 0) | (1 << 2) | (1 << 3)  # execute, read file, read directory
 _HANDLED = (1 << 15) - 1               # ABI 3 includes REFER and TRUNCATE
 _WRITE = _HANDLED & ~((1 << 6) | (1 << 11))  # never create device nodes
@@ -223,7 +235,9 @@ def prepare_worker(argv, cwd, timeout_seconds, provider, reviewed=False, config_
     if door is not None and not network:
         raise WorkerIsolationError("a relay door is for provider networking; acceptance runs with no network at all")
     if reviewed is not True:
-        raise WorkerIsolationError("unreviewed worker provider refused before dispatch")
+        raise WorkerIsolationError("unreviewed worker provider refused before dispatch",
+                                   evidence={"status": "unreviewed",
+                                             "reason": "unreviewed worker provider refused before dispatch"})
     if not isinstance(argv, (list, tuple)) or not argv or not all(isinstance(a, str) for a in argv):
         raise WorkerIsolationError("worker argv must contain strings")
     if not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,60}", str(provider)):
@@ -242,7 +256,16 @@ def prepare_worker(argv, cwd, timeout_seconds, provider, reviewed=False, config_
         raise WorkerIsolationError("worker workspace must not use a symlink directory or parent")
     if not cwd.is_dir() or cwd == Path("/") or cwd == Path.home().resolve():
         raise WorkerIsolationError("worker cwd must be a private workspace directory")
-    binary = shutil.which(argv[0]) if not Path(argv[0]).is_absolute() else argv[0]
+    if Path(argv[0]).is_absolute():
+        binary = argv[0]
+    elif "/" in argv[0]:
+        # A path such as ./check.sh names a file in the workspace, not in GREG's own working directory; it must
+        # stay inside the workspace, which the envelope already binds.
+        binary = str(cwd / argv[0])
+        if not Path(binary).resolve().is_relative_to(cwd):
+            raise WorkerIsolationError("worker executable path leaves the workspace")
+    else:
+        binary = shutil.which(argv[0])
     if not binary or not Path(binary).is_file() or not os.access(binary, os.X_OK):
         raise WorkerIsolationError("worker executable is unavailable")
     executable = Path(binary).absolute()

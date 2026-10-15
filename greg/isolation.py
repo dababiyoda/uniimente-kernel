@@ -82,6 +82,10 @@ def confine(root, public_files, *, list_code: bool = True):
     for directory in (prefix / "lib", Path(sys.prefix).resolve() / "lib"):
         if directory.is_dir():
             grants[directory] = READ_FILE | READ_DIR
+    # A virtual environment's interpreter reads pyvenv.cfg at startup: a confined worker's child interpreter needs it.
+    venv_config = Path(sys.prefix).resolve() / "pyvenv.cfg"
+    if sys.prefix != sys.base_prefix and venv_config.is_file():
+        grants[venv_config] = READ_FILE
     # Already-loaded ELF dependencies are explicit public runtime files.
     # No /proc hierarchy is granted; this read happens before confinement.
     for line in Path("/proc/self/maps").read_text().splitlines():

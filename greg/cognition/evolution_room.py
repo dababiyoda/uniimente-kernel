@@ -39,6 +39,11 @@ get_data.executed = {Path(__file__).resolve().relative_to(ROOT).as_posix(): _sha
 if __name__ == "__main__":
     sys.dont_write_bytecode = True
     importlib.machinery.SourceFileLoader.get_data = get_data
-    sys.path[0] = str(ROOT)
+    # Started with -P (as the launcher does) the script's directory is not on the path, so nothing in greg/cognition
+    # can stand in for a standard module this file imports; otherwise that directory is sys.path[0]: replace it.
+    if sys.path and Path(sys.path[0] or ".").resolve() == Path(__file__).resolve().parent:
+        sys.path[0] = str(ROOT)
+    else:
+        sys.path.insert(0, str(ROOT))
     sys.argv = [str(ROOT / "greg" / "cognition" / "evolution.py"), *sys.argv[1:]]
     runpy.run_module("greg.cognition.evolution", run_name="__main__", alter_sys=True)

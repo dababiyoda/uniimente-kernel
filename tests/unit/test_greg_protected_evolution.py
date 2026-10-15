@@ -640,7 +640,7 @@ def test_the_clean_room_names_repository_bytecode_and_unfrozen_executed_code(mon
     monkeypatch.setattr(E.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0, stdout="",
                                                                                      stderr=""))  # a fresh checkout
     entry = lambda loader, path: b""                                            # the clean-room entry's loader
-    entry.executed = {}
+    entry.executed = {p: "x" for p in E._loaded_repository_files()}
     monkeypatch.setattr(importlib.machinery.SourceFileLoader, "get_data", entry)
     code = {p: "x" for p in E._loaded_repository_files()}
     monkeypatch.setattr(sys, "pycache_prefix", None)
@@ -651,8 +651,13 @@ def test_the_clean_room_names_repository_bytecode_and_unfrozen_executed_code(mon
     monkeypatch.setattr(sys, "pycache_prefix", str(prefix))
     assert E._clean_room_violations(code) == []
     (planted / "developmental.cpython-313.pyc").write_bytes(b"\0")
-    assert any("holds repository bytecode" in v for v in E._clean_room_violations(code))
+    assert any("prefix is not empty" in v for v in E._clean_room_violations(code))
     (planted / "developmental.cpython-313.pyc").unlink()
+    stdlib = prefix / "usr/lib/python3.13"            # bytecode of a standard module the entry imports first
+    stdlib.mkdir(parents=True)
+    (stdlib / "hashlib.cpython-313.pyc").write_bytes(b"\0")
+    assert any("prefix is not empty" in v for v in E._clean_room_violations(code))
+    (stdlib / "hashlib.cpython-313.pyc").unlink()
     stray = types.ModuleType("greg_review_stray")
     stray.__file__ = str(E.ROOT / "greg/cognition/genomes/strategic_patch.py")
     monkeypatch.setitem(sys.modules, "greg_review_stray", stray)
@@ -791,7 +796,7 @@ def test_the_clean_room_requires_a_fresh_checkout(monkeypatch, tmp_path):
     entry = importlib.machinery.SourceFileLoader.get_data
     monkeypatch.setattr(importlib.machinery.SourceFileLoader, "get_data", lambda loader, path: entry(loader, path))
     importlib.machinery.SourceFileLoader.get_data.executed = {}
-    monkeypatch.setattr(E, "ROOT", tmp_path)
+    monkeypatch.setattr(E, "ROOT", tmp_path)                       # no repository module of tmp_path is loaded
     monkeypatch.setattr(sys, "pycache_prefix", str(tmp_path.parent / "fresh-prefix"))
     assert E._clean_room_violations(None) == []
     (tmp_path / "__pycache__").mkdir()
@@ -843,8 +848,8 @@ def test_the_launcher_refuses_a_dirty_or_bytecode_bearing_tree_and_disables_hook
                         subprocess.CompletedProcess(argv, 0, b"", b""))
     assert E.run_recorded("constraint_release", committed, tmp_path / "c.json") == 0
     inner = next(argv for argv in calls if "--inside" in argv)
-    assert inner[1:5] == ["-E", "-s", "-B", "-X"] and inner[5].startswith("pycache_prefix=")
-    assert inner[6].endswith("greg/cognition/evolution_room.py")          # the source-only entry, not -m
+    assert inner[1:6] == ["-E", "-s", "-B", "-P", "-X"] and inner[6].startswith("pycache_prefix=")
+    assert inner[7].endswith("greg/cognition/evolution_room.py")          # the source-only entry, not -m
 
 
 def test_never_checked_bytecode_of_a_loaded_module_is_named(monkeypatch, tmp_path):
@@ -902,11 +907,35 @@ def test_a_recorded_cycle_needs_the_clean_room_entry_and_its_compiled_digests_to
     code = {p: "x" for p in E._loaded_repository_files()}
     assert any("clean-room entry" in v for v in E._clean_room_violations(code))     # started any other way
     entry = lambda loader, path: b""
-    entry.executed = {"greg/cognition/genomes/developmental.py": "sha256:" + "5" * 64}
+    entry.executed = {**code, "greg/cognition/genomes/developmental.py": "sha256:" + "5" * 64}
     monkeypatch.setattr(importlib.machinery.SourceFileLoader, "get_data", entry)
     assert any("unlike the freeze" in v for v in E._clean_room_violations(code))
-    entry.executed = {"greg/cognition/genomes/developmental.py": "x"}
+    entry.executed = dict(code)
     assert E._clean_room_violations(code) == []
+    del entry.executed["greg/cognition/genomes/developmental.py"]      # loaded before the loader (compatibility check)
+    assert any("without the entry's loader" in v for v in E._clean_room_violations(code))
+
+
+def test_the_freeze_commit_is_not_guessed_in_a_shallow_clone(monkeypatch, tmp_path):
+    """The compatibility check: a shallow clone named its boundary commit as the commit that added the freeze."""
+    import subprocess
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    git = lambda cwd, *a: subprocess.run(["git", "-c", "user.email=t@t", "-c", "user.name=t", *a], cwd=cwd,
+                                         check=True, capture_output=True, text=True).stdout.strip()
+    git(origin, "init", "-q")
+    (origin / "freeze.json").write_text("{}")
+    git(origin, "add", ".")
+    git(origin, "commit", "-qm", "freeze")
+    added = git(origin, "rev-parse", "HEAD")
+    (origin / "later.txt").write_text("x")
+    git(origin, "add", ".")
+    git(origin, "commit", "-qm", "later")
+    monkeypatch.setattr(E, "ROOT", origin)
+    assert E._freeze_commit("freeze.json") == added
+    git(tmp_path, "clone", "-q", "--depth", "1", f"file://{origin}", "shallow")
+    monkeypatch.setattr(E, "ROOT", tmp_path / "shallow")
+    assert E._freeze_commit("freeze.json").startswith("unknown: a shallow clone")
 
 
 def test_a_virtualenv_inside_the_repository_is_not_repository_code(monkeypatch):
@@ -916,3 +945,22 @@ def test_a_virtualenv_inside_the_repository_is_not_repository_code(monkeypatch):
     stray.__file__ = str(E.ROOT / ".venv/lib/python3.11/site-packages/_distutils_hack/__init__.py")
     monkeypatch.setitem(E.sys.modules, "greg_review_venv", stray)
     assert not any(p.startswith(".venv/") for p in E._loaded_repository_files())
+
+
+
+@pytest.mark.skipif(not isolation.available()["available"], reason="Landlock unavailable on this host")
+def test_a_confined_process_in_a_virtualenv_can_start_its_interpreter(tmp_path):
+    """The compatibility check: confinement denied <venv>/pyvenv.cfg, so a confined worker's child interpreter
+    failed whenever GREG ran from a virtualenv (pre-existing; CI runs without one)."""
+    import subprocess
+    import sys
+    subprocess.run([sys.executable, "-m", "venv", "--without-pip", "--system-site-packages", str(tmp_path / "v")],
+                   check=True, capture_output=True, timeout=120)
+    code = ("import subprocess, sys, tempfile; sys.path.insert(0, %r)\n"
+            "from greg import isolation\n"
+            "isolation.confine(tempfile.mkdtemp(), [], list_code=False)\n"
+            "print(subprocess.run([sys.executable, '-c', 'print(1)'], capture_output=True, text=True).returncode)\n"
+            ) % str(E.ROOT)
+    proc = subprocess.run([str(tmp_path / "v" / "bin" / "python"), "-I", "-c", code], capture_output=True, text=True,
+                          timeout=120)
+    assert proc.stdout.strip() == "0", proc.stdout + proc.stderr

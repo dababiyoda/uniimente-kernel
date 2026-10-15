@@ -526,10 +526,14 @@ def _clean_room_violations(code: dict | None) -> list[str]:
     if entry is None:
         found.append("not started through the clean-room entry (greg/cognition/evolution_room.py), so bytecode may "
                      "have run instead of the hashed source")
-    elif code is not None:
-        unlike = sorted(p for p, sha in entry.items() if code.get(p) != sha)
-        if unlike:
-            found.append(f"compiled repository source outside or unlike the freeze: {unlike[:10]}")
+    else:
+        unhashed = sorted(_loaded_repository_files() - set(entry))
+        if unhashed:
+            found.append(f"repository modules loaded without the entry's loader: {unhashed[:10]}")
+        if code is not None:
+            unlike = sorted(p for p, sha in entry.items() if code.get(p) != sha)
+            if unlike:
+                found.append(f"compiled repository source outside or unlike the freeze: {unlike[:10]}")
     status = subprocess.run(["git", "status", "--porcelain", "--ignored", "--untracked-files=all"], cwd=ROOT,
                             capture_output=True, text=True)
     if status.returncode or status.stdout.strip():
@@ -537,11 +541,10 @@ def _clean_room_violations(code: dict | None) -> list[str]:
     prefix = getattr(sys, "pycache_prefix", None)
     if not prefix:
         found.append("no fresh bytecode prefix: repository bytecode in __pycache__ may have run instead of source")
-    else:
-        mirror = Path(prefix) / ROOT.relative_to(ROOT.anchor)
-        planted = sorted(str(p.relative_to(mirror)) for p in mirror.rglob("*.pyc")) if mirror.is_dir() else []
-        if planted:
-            found.append(f"the bytecode prefix holds repository bytecode: {planted[:5]}")
+    else:                              # nothing writes there (-B), so any file in it was there before the run
+        held = sorted(str(p) for p in Path(prefix).rglob("*") if p.is_file()) if Path(prefix).is_dir() else []
+        if held:
+            found.append(f"the bytecode prefix is not empty: {held[:5]}")
     if code is not None:
         outside = sorted(_loaded_repository_files() - set(code))
         if outside:
@@ -596,6 +599,17 @@ def _registered_heldout(target_name: str) -> set:
     if target_name == "immune_detect":
         return {f"s{s}" for s in IMMUNE_HELDOUT_SEEDS}
     return set(_FORECASTING_SPLIT()[1]) | PRE_FREEZE_HELDOUT["2026-10-08/cycle-forecast-1"][1]()
+
+
+def _freeze_commit(relative: str) -> str:
+    """The commit that last changed the freeze, or why it cannot be named: in a shallow clone the history may stop
+    before it, and ``git log`` would name the shallow boundary instead."""
+    shallow = subprocess.run(["git", "rev-parse", "--is-shallow-repository"], cwd=ROOT, capture_output=True,
+                             text=True).stdout.strip()
+    if shallow != "false":
+        return "unknown: a shallow clone's history may not reach the commit that added it"
+    return subprocess.check_output(["git", "log", "-1", "--format=%H", "HEAD", "--", relative], cwd=ROOT,
+                                   text=True).strip()
 
 
 def _in_evidence(path: Path) -> bool:
@@ -747,8 +761,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
                                  f"blob at HEAD: {freeze}")
         freeze_record = {"path": relative or str(freeze), "sha256": _sha(resolved), "committed": committed}
         if committed:
-            freeze_record["commit"] = subprocess.check_output(
-                ["git", "log", "-1", "--format=%H", "HEAD", "--", relative], cwd=ROOT, text=True).strip()
+            freeze_record["commit"] = _freeze_commit(relative)
 
     def check_frozen():
         if manifest is None:
@@ -957,7 +970,7 @@ def run_recorded(target_name: str, freeze: Path, out: Path, *, timeout: int = 6 
             if any(prefix.iterdir()):
                 raise EvolutionError("CLEAN_ROOM_REQUIRED: the room's bytecode prefix was written before the run")
             env = {k: v for k, v in os.environ.items() if not k.startswith("PYTHON")}
-            proc = subprocess.run([sys.executable, "-E", "-s", "-B", "-X", f"pycache_prefix={prefix}",
+            proc = subprocess.run([sys.executable, "-E", "-s", "-B", "-P", "-X", f"pycache_prefix={prefix}",
                                    str(tree / "greg" / "cognition" / "evolution_room.py"),
                                    "--inside", "--target", target_name, "--freeze",
                                    relative, "--out", str(Path(out).resolve()), "--launcher",

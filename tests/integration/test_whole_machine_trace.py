@@ -12,15 +12,19 @@ code paths and proofs are in acceptance/missions.json (Mission L trace). This te
   the out-of-cone ship waits for the founder's signed approve;
 - Evidence: every action is receipted on the hash-chained ledger;
 - Outcome: the separate-process appraiser verifies the mission's closure;
-- Learning: the mission's own outcomes become routing knowledge for each capability it used;
+- Learning: the appraiser's VERIFIED verdict, not the act alone, credits each capability the mission used in
+  routing knowledge (greg/routing.py, which ranks the next mission's strategies); the same acts appraised
+  REFUTED credit nothing;
 - Updated Goal: after the outcome, the goal's active node is recalculated;
-- and `greg foundry trace --mission` (the founder interface) shows the chain.
+- and `greg foundry trace --mission` (the founder interface) shows the chain: the founder's approve answers
+  the ask before the approved write, and the block is attributed to the capability it waited on.
 
 In-process Body with a deterministic clock (SANDBOX tier); the founder key is a per-test key, not Alfonso's.
 """
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 
 from greg import cli, goal_gravity as gg, routing
 from greg.body import Layout
@@ -66,6 +70,32 @@ class WholeWorld(World):
                                 "cadence_seconds": 86400}, **kw)
 
 
+class Reappraised:
+    """The retained journal with every appraisal turned REFUTED on the re-observed world: a contrast only."""
+
+    def __init__(self, journal):
+        self.journal = journal
+
+    def replay(self, prefix):
+        events = self.journal.replay(prefix)
+        if prefix != "mission.appraised":
+            return events
+        return [SimpleNamespace(payload={**e.payload, "verdict": "REFUTED",
+                                         "checks": {**e.payload["checks"], "world_reobserved": False}}) for e in events]
+
+
+def founder_trace(spans: list[dict], rid: str, shipped_receipt: str) -> None:
+    """The founder's decision in the trace: asked, answered approve with a latency, then the approved write."""
+    [asked] = [i for i, s in enumerate(spans) if s["kind"] == "decision.requested" and s["request_id"] == rid]
+    [answered] = [i for i, s in enumerate(spans) if s["kind"] == "decision.answered" and s["request_id"] == rid]
+    [shipped] = [i for i, s in enumerate(spans) if s["kind"] == "mission.action" and s["receipt"] == shipped_receipt]
+    assert spans[answered]["answer"] == "approve", spans[answered]
+    assert spans[answered]["latency_s"] is not None and spans[answered]["latency_s"] >= 0, spans[answered]
+    assert asked < answered < shipped, [s["kind"] for s in spans]
+    [blocked] = [s for s in spans if s["kind"] == "mission.blocked"]
+    assert (blocked["capability"], blocked["reason"]) == ("fs.write", "decision"), blocked   # what the block awaited
+
+
 def test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_it(tmp_path, organs, capsys):
     world = WholeWorld(tmp_path, organs)
     gid, _ = world.start()                                              # Goal: signed GOAL + MISSION admitted
@@ -89,9 +119,13 @@ def test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_
         verdicts = [e.payload["verdict"] for e in b.journal.replay("mission.appraised")
                     if e.payload["mission_id"] == MID]
         knowledge = {r["capability"]: r for r in routing.routing_knowledge(b.journal)}
+        refuted = {r["capability"]: r for r in routing.routing_knowledge(Reappraised(b.journal))}
+        shipped = next(a["receipt"] for a in done if a["action_id"] == "w2")
     assert verdicts and verdicts[-1] == "VERIFIED", verdicts                  # Outcome: separate appraiser
     for capability in ("cognition.seed.solve", "venture.assess", "fs.write"):  # Learning: routing knowledge
-        assert knowledge[capability]["done"] >= 1, knowledge.get(capability)
+        assert knowledge[capability]["verified"] >= 1, knowledge.get(capability)   # credited by the VERIFIED verdict
+        assert refuted[capability]["done"] == knowledge[capability]["done"]       # the same acts, appraised REFUTED,
+        assert (refuted[capability]["verified"], refuted[capability]["refuted"]) == (0, knowledge[capability]["done"])
 
     world.ingest("ops", "check the watch after shipping")
     world.tick(2)
@@ -99,7 +133,7 @@ def test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_
 
     capsys.readouterr()
     assert cli.main(["--home", str(world.home), "foundry", "trace", "--mission", MID]) == 0
-    trace = json.dumps(json.loads(capsys.readouterr().out))                  # the founder interface's trace
-    for capability in ("cognition.seed.solve", "venture.assess", "fs.write"):
-        assert capability in trace
-    assert rid in trace
+    spans = json.loads(capsys.readouterr().out)["missions"][MID]["spans"]    # the founder interface's trace
+    acted = {s["capability"] for s in spans if s["kind"] == "mission.action" and s["status"] == "DONE"}
+    assert {"cognition.seed.solve", "venture.assess", "fs.write"} <= acted, acted
+    founder_trace(spans, rid, shipped)

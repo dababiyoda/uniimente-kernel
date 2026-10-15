@@ -151,9 +151,11 @@ def hold_ask(hold: dict) -> dict:
 FAULT_CLEARS = ("fix the cause named by error and site; while it lasts it is recorded again at each boot, and a "
                 "body that is not paused exits on it (the breaker counts that boot)")
 FAULTED_CLEARS = ("not accepted as a command: read the file, sign the command again if you meant one, then remove "
-                  "the file from inbox/faulted on this machine")
+                  "the file this entry names, on this machine")
 FAULTED_APPLIED_CLEARS = ("accepted and applied (the ledger has it); only moving the file to inbox/processed failed: "
-                          "do not sign it again, remove the file from inbox/faulted on this machine")
+                          "do not sign it again; remove the file this entry names, on this machine")
+FAULTED_UNREADABLE_CLEARS = ("inbox/faulted cannot be listed: restore its permissions on this machine; until then "
+                             "files set aside there are not shown")
 
 
 FAULTED_SUFFIX = ".faulted"   # a file set aside in place when inbox/faulted cannot take it: outside the *.json read
@@ -174,9 +176,14 @@ def contained_faults(journal: Journal, layout: "Layout") -> list[dict]:
                                                                                "at")},
                          "clear_with": FAULT_CLEARS})
     recorded = {e.payload["kept_as"]: e.payload for e in journal.replay("command.faulted")}
-    files = [f"inbox/faulted/{p.name}" for p in sorted(layout.faulted.iterdir())] if layout.faulted.is_dir() else []
+    files, unreadable = [], []
+    try:
+        files = [f"inbox/faulted/{p.name}" for p in sorted(layout.faulted.iterdir())] if layout.faulted.is_dir() else []
+    except OSError as exc:   # the case a set-aside falls back from; status must still answer
+        unreadable = [{"fault": "inbox/faulted unreadable", "error": f"{type(exc).__name__}: {exc}"[:300],
+                       "clear_with": FAULTED_UNREADABLE_CLEARS}]
     files += [f"inbox/{p.name}" for p in sorted(layout.inbox.glob("*" + FAULTED_SUFFIX))]   # set aside in place
-    return turn + [{"fault": "inbox file set aside", "file": name,
+    return turn + unreadable + [{"fault": "inbox file set aside", "file": name,
                     **{k: (recorded.get(name) or {}).get(k) for k in ("sha256", "error", "state", "at")},
                     **({"applied": True} if (recorded.get(name) or {}).get("applied") else {}),
                     "clear_with": FAULTED_APPLIED_CLEARS if (recorded.get(name) or {}).get("applied")
@@ -542,15 +549,40 @@ class Body:
 
     def ingest_inbox(self) -> list[dict]:
         results = []
+        stuck = self.__dict__.setdefault("_stuck", set())   # files this process could neither ingest nor set aside
         for path in sorted(self.layout.inbox.glob("*.json")):
+            if path.name in stuck:
+                continue
             try:
                 outcome = self._ingest_one(path)
             except Exception as exc:   # anywhere in the file's handling, its rejection path included
                 if not self.paused():
                     raise     # a running body exits on it: its supervisor restarts it and the breaker counts the boot
-                outcome = self._set_aside(path, exc)
+                try:
+                    outcome = self._set_aside(path, exc)
+                except Exception as failed:
+                    # it can be neither read nor moved (a name too long to extend, no permission): skip it for the
+                    # life of this process, so the files behind it, a signed resume among them, are still read
+                    stuck.add(path.name)
+                    outcome = self._stuck_file(path, exc, failed)
             results.append(outcome)
         return results
+
+    def _stuck_file(self, path: Path, exc: Exception, failed: Exception) -> dict:
+        error = f"{type(exc).__name__}: {exc}"[:300] + f"; set-aside failed: {type(failed).__name__}: {failed}"[:200]
+        site = f"inbox file {path.name[:120]} (skipped by this process)"
+        digest = sha256_json({"error": type(failed).__name__, "site": site})
+        try:
+            self.journal.record("body.fault_contained", {
+                "boot_id": getattr(self, "boot_id", None), "fault_digest": digest, "error": error, "site": site,
+                "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED",
+                "inbox_waiting": sorted(p.name for p in self.layout.inbox.glob("*.json")), "at": iso(self.clock()),
+                "action": "contained: the file stays in the inbox, unread, and this process reads the files behind "
+                          "it; it is tried again after a restart"},
+                key=[getattr(self, "boot_id", None), digest])
+        except Exception:
+            pass   # the skip stands even when the ledger cannot take the record; the heartbeat still shows HELD
+        return {"status": "SKIPPED", "file": path.name, "reason": error}
 
     def _ingest_one(self, path: Path) -> dict:
         try:
@@ -564,7 +596,10 @@ class Body:
                                                       "reason": f"{type(exc).__name__}: {exc}"[:500],
                                                       "instruction_status": "data_only",
                                                       **({"consumed": consumed} if consumed else {})},
-                                key=[path.name, sha256_json(raw.hex())])
+                                # the reason is part of the fact: the same file rejected again for another reason
+                                # (re-dropped after the state that refused it changed) is a second rejection, not a
+                                # reused fact identity the ledger refuses (which crashed the body)
+                                key=[path.name, sha256_json(raw.hex()), sha256_json(f"{type(exc).__name__}: {exc}")])
             shutil.move(str(path), self.layout.rejected / path.name)
             return {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}
         try:

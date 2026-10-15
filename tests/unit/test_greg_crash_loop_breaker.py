@@ -14,6 +14,7 @@ The founder key is a per-test key, not Alfonso's.
 from __future__ import annotations
 
 from datetime import timedelta
+from pathlib import Path
 import json
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -22,7 +23,8 @@ import pytest
 from greg import body as body_module
 from greg import presence
 from greg.body import (BREAKER, CRASH_LOOP_BOOTS, CRASH_LOOP_WINDOW_SECONDS, FAULT_CLEARS, FAULTED_APPLIED_CLEARS,
-                       FAULTED_CLEARS, HOLD_ASK, Body, Layout, crash_loop_hold, status, unfinished_main_loop_boots)
+                       FAULTED_CLEARS, FAULTED_UNREADABLE_CLEARS, HOLD_ASK, Body, Layout, crash_loop_hold, status,
+                       unfinished_main_loop_boots)
 from greg.founder import public_bytes, stamp
 from provenance.ledger import sha256_json
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
@@ -547,3 +549,89 @@ def test_a_set_aside_never_overwrites_and_works_when_inbox_faulted_cannot_take_t
     [kept_in_place] = list(inbox.glob("0-poison.json.*.faulted"))
     assert kept_in_place.read_bytes() == poison and record["kept_as"] == f"inbox/{kept_in_place.name}"
     assert [f["file"] for f in status(home)["security"]["contained_faults"]] == [f"inbox/{kept_in_place.name}"]
+
+
+def test_a_file_that_can_be_neither_read_nor_set_aside_is_skipped_and_never_blocks_the_resume(tmp_path, monkeypatch):
+    """When setting a file aside fails too (a name too long to extend, no permission to move or rename it), the
+    exception left ingest_inbox and the file blocked every turn: the signed resume behind it was never read. It is
+    now skipped for the life of the process and recorded; it is tried again after a restart."""
+    home, key, body_id, clock = held(tmp_path)
+    inbox = Layout(home).inbox
+    (inbox / "0-poison.json").write_bytes(("[" * 100_000 + "]" * 100_000).encode())
+    drop(home, signed(key, body_id, "BODY_RESUME", {"reason": "fixed the cause"}), "1-resume.json")
+    real_move, real_rename = body_module.shutil.move, Path.rename
+
+    def no_move(src, dst):
+        if str(src).endswith("0-poison.json"):
+            raise OSError(36, "File name too long")
+        return real_move(src, dst)
+
+    def no_rename(self, target):
+        if self.name == "0-poison.json":
+            raise OSError(36, "File name too long")
+        return real_rename(self, target)
+    monkeypatch.setattr(body_module.shutil, "move", no_move)
+    monkeypatch.setattr(Path, "rename", no_rename)
+    with Body(home, clock=clock) as b:
+        b.boot()
+        first = b.ingest_inbox()
+        assert [o["status"] for o in first][0] == "SKIPPED"
+        assert crash_loop_hold(b.journal) is None, "the signed resume behind the stuck file was read"
+        assert [o["file"] for o in b.ingest_inbox()] == [], "the stuck file is skipped, not retried, by this process"
+        [fault] = [e.payload for e in b.journal.replay("body.fault_contained")]
+    assert "0-poison.json" in fault["site"] and "set-aside failed" in fault["error"]
+    assert (inbox / "0-poison.json").exists(), "the file is left where it was, unread"
+
+
+def test_status_still_answers_when_inbox_faulted_cannot_be_listed(tmp_path, monkeypatch):
+    home, key, body_id, clock = held(tmp_path)
+    faulted = Layout(home).faulted
+    faulted.mkdir()
+    real = Path.iterdir
+
+    def unreadable(self):
+        if self == faulted:
+            raise PermissionError(13, "Permission denied")
+        return real(self)
+    monkeypatch.setattr(Path, "iterdir", unreadable)
+    [shown] = status(home)["security"]["contained_faults"]
+    assert shown["fault"] == "inbox/faulted unreadable" and shown["clear_with"] == FAULTED_UNREADABLE_CLEARS
+
+
+def test_a_set_aside_never_reuses_the_name_of_one_recorded_and_since_removed(tmp_path):
+    home, key, body_id, clock = held(tmp_path)
+    inbox = Layout(home).inbox
+    poison = ("[" * 100_000 + "]" * 100_000).encode()
+    (inbox / "0-poison.json").write_bytes(poison)
+    with Body(home, clock=clock) as b:
+        b.boot()
+        b.ingest_inbox()
+    (inbox / "faulted" / "0-poison.json").unlink()            # cleared by hand, as status says
+    (inbox / "0-poison.json").write_bytes(poison + b" ")      # another file under the same name
+    with Body(home, clock=clock) as b:
+        b.boot()
+        [outcome] = b.ingest_inbox()
+        kept = [e.payload["kept_as"] for e in b.journal.replay("command.faulted")]
+    assert outcome["status"] == "SET_ASIDE" and len(kept) == 2 and len(set(kept)) == 2
+    assert kept[1] != "inbox/faulted/0-poison.json" and (home / kept[1]).read_bytes() == poison + b" "
+
+
+def test_the_same_file_rejected_again_for_another_reason_is_a_second_rejection_not_a_crash(tmp_path):
+    """The rejection fact was keyed by file name and bytes only. A founder who re-dropped a rejected file after the
+    state that refused it changed got the same file rejected for another reason, the ledger refused the reused fact
+    identity, and a running body crashed on it (crash-looping into a hold). The reason is now part of the fact."""
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    envelope = signed(key, body_id, "MISSION", {"mission_id": "m:incomplete"}, now=clock(), ttl=timedelta(hours=1))
+    drop(home, envelope, "0-mission.json")
+    inbox = Layout(home).inbox
+    with Body(home, clock=clock) as b:
+        [first] = b.ingest_inbox()
+        assert first["status"] == "REJECTED"
+    (inbox / "rejected" / "0-mission.json").rename(inbox / "0-mission.json")   # re-dropped later
+    clock.advance(2 * 3600)
+    with Body(home, clock=clock) as b:
+        [second] = b.ingest_inbox()
+        reasons = [e.payload["reason"] for e in b.journal.replay("command.rejected")]
+    assert second["status"] == "REJECTED" and len(reasons) == 2 and reasons[0] != reasons[1]
+    assert "expired" in reasons[1]

@@ -417,6 +417,40 @@ def test_a_verdict_for_a_genome_no_longer_in_the_library_is_unresolved_not_dropp
     assert row["label"] == "UNRESOLVED" and row["heldout"]["status"] == "DEFAULT_FOR_GEOMETRY"
 
 
+def test_a_declared_regime_change_is_not_reported_as_a_rule_boundary_sample(monkeypatch):
+    """Found by the 2026-10-15 independent review: collective_quorum and collective_immune changed status between
+    v1 and v3 at the same version because v3's pre-registration declared new evaluation regimes for the four Layer 2
+    genomes (new instance generators; for immune also a new competitor), not because they sit near a rule boundary.
+    A flip within one regime stays flagged, and a declaration whose pre-registration changed declares nothing."""
+    run = "2026-10-15-v3"
+    rows = _rows(M.status())
+    for family in ("collective_quorum", "collective_immune"):
+        held = rows[f"cognition.{family}"]["heldout"]
+        assert [(h["run"], h["version"]) for h in held["history"]] == [
+            ("2026-10-13-v1", held["version_measured"]), (run, held["version_measured"])], family
+        assert held["history"][0]["status"] != held["status"], family
+        assert held["status_changed_at_same_version"] is False, family
+        assert held["status_changed_with_declared_regime_change"] is True, family
+        assert [h["regime"] for h in held["history"]] == ["2026-10-13-v1", run], family
+        assert [c["declared_in"] for c in held["regime_changes"]] == [M.DECLARED_REGIMES[run]["declared_in"]]
+    # the declaration is the pre-registration's own: it names every declared genome, and the run measured each
+    declared = M.DECLARED_REGIMES[run]
+    text = (ROOT / declared["declared_in"]).read_text()
+    frozen = json.loads((ROOT / declared["declared_in"]).with_name("freeze.json").read_text())["inputs"]["families"]
+    for family in declared["families"]:
+        assert f"`{family}`" in text and family in frozen, family
+    # collective_market's v1 -> v2 flip at 1.1.0 crossed no declared regime change (the rule was amended): flagged
+    market = rows["cognition.collective_market"]["heldout"]
+    assert market["status_changed_at_same_version"] is True
+    assert market["status_changed_with_declared_regime_change"] is False
+    # a declaration whose pre-registration no longer matches its bound digest declares nothing
+    monkeypatch.setitem(M.DECLARED_REGIMES, run, {**declared, "sha256": "sha256:" + "0" * 64})
+    held = _rows(M.status())["cognition.collective_quorum"]["heldout"]
+    assert held["status_changed_at_same_version"] is True
+    assert held["status_changed_with_declared_regime_change"] is False
+    assert "regime_changes" not in held and held["regime_declarations_unresolved"]
+
+
 def test_a_catalog_family_without_an_executor_is_unresolved(monkeypatch):
     monkeypatch.setitem(FAMILIES, "unbuilt_probe", (3, ("unbuilt_op",), ("estimate",), "bounded_estimate", None))
     row = _rows(M.status())["cognition.unbuilt_probe"]

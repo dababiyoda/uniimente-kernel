@@ -136,6 +136,8 @@ def projection(console) -> dict:
         quarantined = [e.payload for e in journal.replay("capability.quarantined")][-10:]
         toggles = [e.type for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
         signed_pause = bool(toggles) and toggles[-1] == "greg.body.paused"
+        from greg.body import crash_loop_hold
+        hold = crash_loop_hold(journal)
     morning = morning_projection(console.home)
     dossiers = []
     folder = console.deliver_root() / "first-mission"
@@ -157,11 +159,12 @@ def projection(console) -> dict:
                      "founder_keys": len(st["security"]["founder_keys_enrolled"]), "chain_verified": st["security"]["chain_verified"],
                      "background": heartbeat.get("state", "NOT RUNNING"), "signer": console.key is not None,
                      "stop": st["security"]["stop_file_present"], "pause": st["security"]["pause_file_present"],
-                     "paused": signed_pause},
+                     "paused": signed_pause and hold is None, "held": (hold or {}).get("why")},
         "capabilities": caps, "capability_classes": by_class, "providers": providers,
         "missions": missions, "active_missions": len(active),
         "decisions": st["decisions_required"], "goals": st.get("goals", []),
         "position": st.get("developmental_position", {}), "vepmc": st.get("single_bottleneck_metric", {}),
+        "founder_tier": st.get("founder_tier", {}),
         "presence": st.get("presence", {}), "compute": st.get("compute", {}), "devices": st["security"].get("devices", []),
         "anchor": st.get("external_anchor", {}), "cognition": st.get("cognition", {}),
         "appraisals": appraisals, "receipts": receipts, "events": events, "quarantined": quarantined,
@@ -239,7 +242,7 @@ def render_view(console, view: str, form) -> str:
             f"{'<span class=ok>' + _e(ident['background']) + '</span>' if ident['background'] in ('RUNNING', 'PAUSED') else '<span class=warn>' + _e(ident['background']) + '</span>'}"
             f" · ledger chain {'<span class=ok>verified</span>' if ident['chain_verified'] else '<b class=warn>FAILED</b>'}"
             f" · {'founder key unlocked' if ident['signer'] else '<span class=warn>read-only (start with --key to sign)</span>'}"
-            f"{' · <b class=warn>STOP file present</b>' if ident['stop'] else ''}{' · <b class=warn>paused</b>' if ident['pause'] or ident['paused'] else ''}</p>")
+            f"{' · <b class=warn>STOP file present</b>' if ident['stop'] else ''}{' · <b class=warn>paused</b>' if ident['pause'] or ident['paused'] else ''}{' · <b class=warn>held by the crash-loop breaker: ' + _e(ident['held']) + '</b>' if ident.get('held') else ''}</p>")
     body = {"overview": _overview, "command": _command, "mind": _mind_view, "body": _body_view, "organs": _organs,
             "goals": _goals, "ventures": _ventures, "proof": _proof, "authority": _authority, "night": _night}[view](console, p, form)
     return head + _nav(view) + body
@@ -278,7 +281,8 @@ def _overview(console, p, form) -> str:
         out.append("<section><h2>Founder's First Mission dossiers</h2><ul>" + "".join(
             f"<li><a href='/first-mission/{_e(n)}'>{_e(n)}</a></li>" for n in p["dossiers"]) + "</ul></section>")
     out += [parts.get(k, "") for k in ("gravity", "closures", "deliveries")]
-    body_paused = p["identity"]["pause"] or p["identity"]["background"] == "PAUSED" or p["identity"].get("paused")
+    body_paused = (p["identity"]["pause"] or p["identity"]["background"] in ("PAUSED", "HELD")
+                   or p["identity"].get("paused") or p["identity"].get("held"))
     out.append("<section><h2>Pause or resume the whole body</h2><p class=muted>A signed pause holds every mission at its "
                "next step; nothing is lost and resume continues from the ledger.</p>"
                + _button(console, "/body", {"mode": "resume" if body_paused else "pause"},
@@ -365,13 +369,25 @@ def _ventures(console, p, form) -> str:
             "The Foundry's company loop (#49) runs end to end only in the sandbox with fixtures.</p></section>")
 
 
+def _tier_line(tier: dict, v: dict) -> str:
+    if not tier:
+        return "unknown"
+    if tier.get("enrolled_key_attested"):
+        since = ", ".join(a.get("issued_at") or "?" for a in tier.get("attested", []))
+        return (f"attested since {_e(since)}; <b>{_e(v.get('founder_tier_count', 0))}</b> closure(s) at the founder tier"
+                f" — {_e(tier.get('basis', ''))}")
+    return (f"<b class=warn>not attested</b>: {_e(tier.get('consequence', ''))}. Run <code>{_e(tier.get('how', ''))}</code>"
+            f" — {_e(tier.get('basis', ''))}")
+
+
 def _proof(console, p, form) -> str:
     v = p["vepmc"] or {}
     a = p["anchor"] or {}
     return ("<section><h2>Proof</h2>" + _table(["", ""], [
         ["Ledger chain", "verified" if p["identity"]["chain_verified"] else "<b class=warn>FAILED</b>"],
         ["External anchors (RFC 3161)", _e(f"{a.get('verified', 0)} verified of {a.get('anchors', 0)}; configured: {a.get('configured')}")],
-        ["VEPMC", f"<b>{_e(v.get('VEPMC', 0))}</b> — {_e(v.get('external_confirmation_required', ''))}"]])
+        ["VEPMC (structural candidates)", f"<b>{_e(v.get('VEPMC', 0))}</b> — {_e(v.get('external_confirmation_required', ''))}"],
+        ["Founder tier", _tier_line(p.get("founder_tier") or {}, v)]])
             + "</section><section><h2>Independent appraisals</h2>"
             + _table(["Mission", "Verdict", "At"], [[_e(x["mission_id"]), _cls(x["verdict"]), _e(x["at"])] for x in p["appraisals"][::-1]])
             + "</section><section><h2>Quarantine</h2>"

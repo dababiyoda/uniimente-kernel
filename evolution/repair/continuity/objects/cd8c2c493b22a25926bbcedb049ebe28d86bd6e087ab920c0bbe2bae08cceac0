@@ -1,0 +1,43 @@
+# Service identities. SPIFFE-style portable workload identities.
+# Identity proves who sent something. It never grants local authority.
+version: "1.0.0"
+
+namespace: spiffe://uniimente.internal
+
+services:
+  kernel_gateway:
+    id: spiffe://uniimente.internal/kernel/action-gateway
+    role: sole path to external effects
+  plan_executor:
+    id: spiffe://uniimente.internal/kernel/plan-executor
+    role: durable workflow state machine
+  evidence_ledger:
+    id: spiffe://uniimente.internal/kernel/evidence-ledger
+    role: append-only consequence record
+  policy_engine:
+    id: spiffe://uniimente.internal/kernel/policy-engine
+    role: compiled UCL decisions
+  evidence_browser:
+    id: spiffe://uniimente.internal/organ/railscout/evidence-browser
+    role: quarantined intake; raw vault; signed EvidencePackets
+  bridge_daleobanks:
+    id: spiffe://uniimente.internal/organ/daleobanks/bridge
+    role: HMAC-SHA256 signed transport client (WEALTHMACHINE_SIGNING_KEY family)
+  bridge_wealthmachine:
+    id: spiffe://uniimente.internal/organ/wealthmachine/bridge
+    role: signed transport intake; verifies transport before parsing
+
+identity_resolution_questions:
+  - Who is this?
+  - Who created it?
+  - Which legal actor does it represent?
+  - What capability was delegated, by whom, for what purpose?
+  - Against which objects, until when, under which budget?
+  - Can that authority still be used now?
+
+rules:
+  unsigned_local_mode: development_only
+  production_transport: signed_requests_and_responses
+  replay: nonce_cache_and_timestamp_skew_window_required
+  schema_downgrade: rejected
+  rotation: short_lived_documents; no long_term_shared_bearer_tokens   # retire the current fallback

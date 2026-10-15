@@ -258,3 +258,41 @@ def test_a_plan_without_limit_closes_on_its_proof(tmp_path):
                   if isinstance(r.payload["result"].get("output"), dict)
                   and r.payload["result"]["output"].get("certified")][-1]
         assert answer["status"] == "unbounded" and answer["improving_direction"] and "follow_up" not in answer
+
+
+def test_an_answered_capability_ask_still_leaves_the_founder_an_attach_in_the_console(tmp_path):
+    """Found on a rehearsal of the installed body (CHROMEBOOK_FIRST_MISSION.md, the LP request).
+
+    Approve on a capability ask only records an answer (greg/asks.py) and removed the ask with its
+    Attach button, while the mission stayed blocked on the unattached capability: the console then
+    offered no way forward. The phone can approve but can never attach, so it stranded missions too.
+    """
+    from greg.body import status
+    from greg.console import Console, render_home, render_mission_control
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", plan_in_words(text=PLAN)))      # no auto_attach: the founder decides
+    clock = Clock()
+    console = Console(home, key=key)
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 2)
+        [ask] = [r for r in status(home)["decisions_required"] if r["kind"] == "CAPABILITY_ATTACH"]
+        page = render_home(console).decode()
+        assert "Attach acquired.lp.optimize" in page
+        assert "name='answer' value='approve'" not in page, "Approve would answer the ask without attaching"
+        drop(home, signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "approve"},
+                          now=clock.now))                                   # e.g. answered from the phone
+        ticks(body, clock, 1)
+        st = status(home)
+        assert not st["decisions_required"]
+        [waiting] = st["attach_waiting"]
+        assert waiting["mission_id"] == plan_in_words(text=PLAN)["mission_id"]
+        page = render_home(console).decode()
+        assert "Waiting for an attach" in page and f"Attach {waiting['capability_id']}" in page
+        mc = render_mission_control(console).decode()                     # the founder's first page shows it too
+        assert "Waiting for an attach" in mc and f"Attach {waiting['capability_id']}" in mc
+        with pytest.raises(ValueError):
+            console.attach("", "acquired.not.waiting.anywhere")              # still only verified candidates
+        console.attach("", waiting["capability_id"])                        # the signed CAPABILITY_ATTACH
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]     # the ORIGINAL mission resumes
+        assert status(home)["attach_waiting"] == []

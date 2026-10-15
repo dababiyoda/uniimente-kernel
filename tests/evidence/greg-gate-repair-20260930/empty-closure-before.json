@@ -1,0 +1,31 @@
+{
+  "test_key": "per-run Ed25519 fixture key, not Alfonso",
+  "machine": "Linux development container, not founder body",
+  "source_commit": "f617db9",
+  "scope": "canonical signed mission + real separate-process appraiser",
+  "file_exists": false,
+  "observations": 0,
+  "closure_event_id": "f48b0aec-96b6-560e-871f-4c171921984d",
+  "spec_sha256": "sha256:b53dba9ccdb1e3613f4ea75d736b2f88d955894a40ade0cd2614f9193dcb232d",
+  "verdict": {
+    "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
+    "checks": {
+      "achieved_claimed": true,
+      "approval_boundaries_honored": true,
+      "approval_boundary_encountered": false,
+      "arrived_via_inbox": true,
+      "chain_intact": true,
+      "checks_rederived_from_receipts": true,
+      "deliveries_bound_to_evidence": true,
+      "exactly_once": true,
+      "founder_signature_verified": true,
+      "registered_once": true,
+      "world_reobserved": true
+    },
+    "findings": [],
+    "head": "sha256:918bd51af9f63f31fbb17c3bf4547851c106b9e5f96395476be21a1f6880c214",
+    "limits": "shares reviewed Kernel code; not an independent implementation",
+    "mission_id": "m:unobserved",
+    "verdict": "VERIFIED"
+  }
+}

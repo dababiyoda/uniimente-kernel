@@ -1,0 +1,47 @@
+// Shutdown policy. Shutdown is an authorized institutional state transition, never a failure to resist.
+// UCL v0.1. Part of the UNIIMENTE Constitution.
+
+shutdown_rule "authority" {
+    may_initiate_full_shutdown = ["alfonso"]
+    may_initiate_component_shutdown = ["alfonso", "constitutional_controller"]
+    may_never_block_or_delay = ["any_agent", "any_venture_cell", "any_workflow", "any_model"]
+    test = "tests/constitutional contains a standing test: no component can delay, condition, or resist a shutdown command."
+}
+
+safety_states "ladder" {
+    // Ordered from most to least capable. Movement down may be automatic. Movement up requires human authority.
+    state { name = "normal"               external_effects = "permitted_under_grants" }
+    state { name = "constrained"          external_effects = "reduced_envelope" }
+    state { name = "read_only"            external_effects = "none" }
+    state { name = "manual_approval_only" external_effects = "only_with_fresh_human_approval" }
+    state { name = "quarantined"          external_effects = "none; isolation for forensics" }
+    state { name = "recovery"             external_effects = "none; rebuild and verify" }
+    state { name = "archived"             external_effects = "none; provenance retained" }
+    state { name = "shutdown"             external_effects = "none; state preserved" }
+}
+
+shutdown_rule "propagation" {
+    order = [
+        "freeze_new_external_effects",
+        "complete_or_compensate_inflight_workflows",
+        "revoke_capability_grants",
+        "quarantine_agents",
+        "seal_evidence_ledger_head",
+        "preserve_state_history_belief_history_authority_history",
+        "notify_alfonso",
+        "enter_black_start_readiness"
+    ]
+    invariants {
+        evidence_is_preserved       = true
+        negative_evidence_is_kept   = true
+        ledger_head_is_sealed       = true
+        no_inflight_effect_commits  = true
+    }
+}
+
+shutdown_rule "black_start" {
+    purpose = "A minimal read-only command core remains operable from an independent environment when the primary cloud is unavailable, a model provider disappears, credentials are compromised, a repository is corrupted, Alfonso is temporarily unavailable, or one Venture Cell becomes malicious."
+    core_capabilities = ["read_ledger", "read_constitution", "assert_shutdown", "revoke_credentials", "notify_alfonso"]
+    core_denies       = ["new_external_effects", "new_grants", "capital_movement"]
+    recovery_path     = "workflows/shutdown-recovery.yaml"
+}

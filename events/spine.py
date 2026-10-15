@@ -16,9 +16,11 @@ Doctrine (EVENTS):
 """
 from __future__ import annotations
 
+import heapq
 import re
 import uuid
 from dataclasses import dataclass, field, asdict
+from types import MappingProxyType
 from datetime import datetime, timezone
 
 EVENT_TYPE_RE = re.compile(r"^[a-z]+(\.[a-z_]+)+$")
@@ -71,41 +73,78 @@ class EventSpine:
     def __init__(self, ledger):
         self.ledger = ledger
         self._subscribers = {}
+        self._reset_views()
+        self._refresh()
+
+    def _reset_views(self):
+        self._bindings, self._pending, self._uncertain_deliveries = {}, {}, set()
         self._seen_ids = set()
         self._outbox = []
-        self._refresh()
+        self._payloads = []      # every spine event payload, in ledger order (the ledger's own; never handed out)
+        self._by_type = {}       # exact event type -> positions in _payloads
+        self._latest = {}        # event_id -> (payload, record hash) of its last record
+        self._positions = {}     # type prefix -> (payloads seen, matches counted, event_id -> position)
+        self._folded, self._folded_tail = 0, None
 
     @staticmethod
     def _event_from_payload(p):
         return Event(**{k: p[k] for k in Event.__dataclass_fields__})
 
+    @staticmethod
+    def _event_copy(p):
+        """An Event the caller owns: its payload is a copy, so changing it changes no retained fact."""
+        from provenance.ledger import copy_json
+        return Event(**{k: copy_json(p[k]) if k == "payload" else p[k] for k in Event.__dataclass_fields__})
+
     def _spine_payloads(self):
-        ok, reason = self.ledger.verify_chain()
-        if not ok:
-            raise EventError(reason)
-        return [r.payload for r in self.ledger.by_type("event")
-                if "event_id" in r.payload]
+        from provenance.ledger import copy_json
+        self._refresh()
+        return [copy_json(p) for p in self._payloads]
 
     def _refresh(self):
+        """Verify new history, then fold only the records not folded yet into the views.
+
+        The views are a left fold over the ledger, so folding the new records gives what a
+        rebuild from the beginning gives. Each record is checked before any view changes, so a
+        refused record is refused again on every later call (fail closed). Replaced history
+        (a different record where the last folded one was) is rebuilt from the beginning.
+        """
         from provenance.ledger import sha256_json
-        self._bindings, pending, self._uncertain_deliveries = {}, {}, set()
-        for p in self._spine_payloads():
-            ev = self._event_from_payload(p).validate()
-            digest = sha256_json(asdict(ev))
-            if ev.event_id in self._bindings and self._bindings[ev.event_id] != digest:
-                raise EventError("conflicting durable event identity")
-            self._bindings[ev.event_id] = digest
-            direction = p.get("direction")
-            if direction == "outbox_staged":
-                pending[ev.event_id] = ev
-            elif direction == "outbox_dispatch_started":
-                self._uncertain_deliveries.add(ev.event_id)
-            elif direction in ("outbox_flushed", "outbox_refused"):
-                self._uncertain_deliveries.discard(ev.event_id)
-                if direction == "outbox_flushed":
-                    pending.pop(ev.event_id, None)
-        self._seen_ids = set(self._bindings)
-        self._outbox = list(pending.values())
+        with self.ledger._lock:  # one fold at a time, even if a spine is shared across threads
+            self._fold(sha256_json)
+
+    def _fold(self, sha256_json):
+        ok, reason = self.ledger.verify_incremental()
+        if not ok:
+            raise EventError(reason)
+        records = self.ledger._records  # the retained records themselves; only read here
+        if self._folded and (self._folded > len(records)
+                             or records[self._folded - 1] is not self._folded_tail):
+            self._reset_views()
+        for i in range(self._folded, len(records)):
+            rec = records[i]
+            p = rec.payload
+            if rec.record_type == "event" and "event_id" in p:
+                ev = self._event_from_payload(p).validate()
+                digest = sha256_json(asdict(ev))
+                if ev.event_id in self._bindings and self._bindings[ev.event_id] != digest:
+                    raise EventError("conflicting durable event identity")
+                self._bindings[ev.event_id] = digest
+                self._seen_ids.add(ev.event_id)
+                direction = p.get("direction")
+                if direction == "outbox_staged":
+                    self._pending[ev.event_id] = self._event_copy(p)  # a mediator may touch it
+                elif direction == "outbox_dispatch_started":
+                    self._uncertain_deliveries.add(ev.event_id)
+                elif direction in ("outbox_flushed", "outbox_refused"):
+                    self._uncertain_deliveries.discard(ev.event_id)
+                    if direction == "outbox_flushed":
+                        self._pending.pop(ev.event_id, None)
+                self._by_type.setdefault(p["type"], []).append(len(self._payloads))
+                self._payloads.append(p)
+                self._latest[ev.event_id] = (p, rec.hash)
+            self._folded, self._folded_tail = i + 1, rec
+        self._outbox = list(self._pending.values())
 
     def _accept(self, event, direction):
         from provenance.ledger import sha256_json
@@ -141,14 +180,49 @@ class EventSpine:
                     handler(event)
 
     def replay(self, type_prefix=None):
-        return [self._event_from_payload(p) for p in self._spine_payloads()
-                if type_prefix is None or p["type"].startswith(type_prefix)]
+        """Events in ledger order; each is the caller's own copy."""
+        self._refresh()
+        if not type_prefix:
+            chosen = self._payloads
+        else:
+            lists = [positions for kind, positions in self._by_type.items() if kind.startswith(type_prefix)]
+            order = lists[0] if len(lists) == 1 else heapq.merge(*lists)  # positions ascend: ledger order
+            chosen = [self._payloads[i] for i in order]
+        return [self._event_copy(p) for p in chosen]
+
+    def positions(self, type_prefix=""):
+        """event_id -> position of its last record among the events replay(type_prefix) returns.
+
+        Exactly {e.event_id: i for i, e in enumerate(self.replay(type_prefix))}, kept up to date by
+        counting only events added since the last call. Read-only.
+        """
+        self._refresh()
+        seen, count, index = self._positions.get(type_prefix, (0, 0, {}))
+        for i in range(seen, len(self._payloads)):
+            p = self._payloads[i]
+            if p["type"].startswith(type_prefix):
+                index[p["event_id"]] = count
+                count += 1
+        self._positions[type_prefix] = (len(self._payloads), count, index)
+        return MappingProxyType(index)
+
+    def latest(self, event_id):
+        """The last retained record of this event identity as an Event, or None."""
+        self._refresh()
+        found = self._latest.get(event_id)
+        return None if found is None else self._event_copy(found[0])
+
+    def record_hash(self, event_id):
+        """Ledger hash of the last retained record of this event identity, or None."""
+        self._refresh()
+        found = self._latest.get(event_id)
+        return None if found is None else found[1]
 
     def outbox_stage(self, event):
         return self._accept(event, "outbox_staged")
 
     def outbox_flush(self, mediator=None):
-        from provenance.ledger import ReconciliationRequired
+        from provenance.ledger import ReconciliationRequired, copy_json
         if mediator is None:
             raise EventError("explicit consequence mediator required")
         flushed = []
@@ -160,7 +234,10 @@ class EventSpine:
                 self.ledger.append("event", {**asdict(ev), "direction": "outbox_dispatch_started"})
                 # Any exception leaves the durable pending claim intact.
                 try:
-                    allowed = bool(mediator(ev))
+                    # The mediator gets its own copy: what is written next is the staged fact, not
+                    # whatever the mediator did to the object it was shown.
+                    allowed = bool(mediator(Event(**{**{k: getattr(ev, k) for k in Event.__dataclass_fields__},
+                                                     "payload": copy_json(ev.payload)})))
                 except Exception as exc:
                     raise ReconciliationRequired("dispatch outcome unknown") from exc
                 self.ledger.append("event", {**asdict(ev), "direction":

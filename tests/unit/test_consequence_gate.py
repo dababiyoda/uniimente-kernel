@@ -264,3 +264,23 @@ def test_no_approver_pending_human_expires(stack):
     p = make_proposal(actor.passport_id, action_class="material_debt")
     rec = gate.run(p, executor=GOOD, approver=None)
     assert rec.state == "expired"
+
+
+# ---------- the commit path verifies the WHOLE chain (e2440a6 merge) ----------
+
+def test_tampering_an_old_retained_record_refuses_the_next_commit(stack):
+    """Hot paths verify only new history (provenance/ledger.py verify_incremental, e2440a6), so an
+    old record altered in memory is invisible to append() for up to FULL_VERIFY_SECONDS. The Gate's
+    commit path must still reconstruct the whole chain: nothing is witnessed, dispatched or executed
+    on top of altered history."""
+    gate, passports, ledger, actor, _ = stack
+    assert authorized_run(gate, make_proposal(actor.passport_id), executor=GOOD).state == "recorded"
+    assert ledger.verify_incremental()[0]                 # the incremental view is warm and trusts its prefix
+    ledger._records[1].payload["tampered"] = True          # an old retained record, altered in this process
+    assert ledger.verify_incremental()[0]                 # ...which the hot path alone does not see
+    calls, dispatched = [], len(ledger.by_type("grant_dispatch"))
+    with pytest.raises(ValueError, match="payload hash mismatch at seq 1"):
+        authorized_run(gate, make_proposal(actor.passport_id, payload={"text": "second"}),
+                       executor=lambda p: calls.append(p) or GOOD(p))
+    assert calls == []                                      # the executor never ran
+    assert len(ledger.by_type("grant_dispatch")) == dispatched and not ledger.verify_chain()[0]

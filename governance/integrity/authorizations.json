@@ -1,0 +1,5 @@
+{
+ "version": 1,
+ "purpose": "Append-only INTEGRITY_AUTHORIZE records, each an Ed25519 envelope signed by a key in founder-keys.json naming one artifact, the digest it moves from and to, a reason, issued_at and a nonce (python -m governance.integrity authorize). Never edit a landed record; to correct one, append another that follows from it.",
+ "authorizations": []
+}

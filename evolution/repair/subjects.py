@@ -3,12 +3,20 @@
 SR-001 changes the gate under a later bounded founder direction. The old
 experiment remains bound to its original bytes. A new run names both that
 unchanged experiment and this separately reviewed subject, with no promotion.
+
+CONTRADICTION-0002 Option A (FOUNDER-RULING-2026-08-23): a binding is
+historical. ``matches()`` with no root reads the frozen, content-addressed
+copies in ``evolution/repair/continuity`` that the binding's own digests name,
+so it answers "does this subject reproduce?" and keeps answering it while the
+live files evolve. ``matches(root)`` still reads a tree; for the live tree that
+is a recorded observation, never the institution's tripwire on unauthorised
+change, which is ``governance.integrity``. No digest below was changed.
 """
 from dataclasses import dataclass
 import hashlib
 from pathlib import Path
 
-from evolution.repair import spec
+from evolution.repair import continuity, spec
 
 
 @dataclass(frozen=True)
@@ -18,14 +26,39 @@ class SubjectBinding:
     artifacts: tuple[tuple[str, str], ...]
     continuity_sha256: str
 
-    def matches(self, root):
+    def _bytes(self, relative, expected, root):
+        if root is None:
+            return continuity.read_raw(expected)
+        return (Path(root) / relative).read_bytes()
+
+    def matches(self, root=None):
+        """Whether the artifacts equal this binding, byte for byte.
+
+        ``root=None`` reads the frozen historical copies (reproducibility); a
+        root reads that tree. Missing frozen history does not match.
+        """
         combined = hashlib.sha256()
         for relative, expected in self.artifacts:
-            raw = (Path(root) / relative).read_bytes()
+            try:
+                raw = self._bytes(relative, expected, root)
+            except continuity.FrozenHistoryError:
+                return False
             if hashlib.sha256(raw).hexdigest() != expected:
                 return False
             combined.update(raw)
         return combined.hexdigest() == self.continuity_sha256
+
+    def fingerprint(self, root=None):
+        """sha256 over the artifacts' bytes in binding order, compared with
+        nothing: frozen copies when ``root`` is None, else that tree."""
+        combined = hashlib.sha256()
+        for relative, expected in self.artifacts:
+            combined.update(self._bytes(relative, expected, root))
+        return combined.hexdigest()
+
+    def frozen_bytes(self, relative):
+        """The verified frozen copy of one artifact of this binding."""
+        return continuity.read_frozen(dict(self.artifacts)[relative])
 
     def to_dict(self):
         return {"subject_id": self.subject_id, "source_commit": self.source_commit,

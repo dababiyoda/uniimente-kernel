@@ -118,7 +118,9 @@ def test_weak_evidence_payment_does_not_happen(stack):
     assert case.stage == "offer" and case.payment_receipt_hash is None
 
 
-def test_full_external_closure(stack):
+def test_stub_loop_runs_in_order_but_synthetic_money_never_closes_externally(stack):
+    # Before Mission G fix G2 this stub-executor loop evaluated CLOSED: synthetic activity counted as an
+    # external close. It runs in order, is labelled synthetic, and the controller names it false closure.
     loop, case, actor = open_to_offer(stack)
     loop.take_payment(case.case_id, actor=actor.passport_id, executor=PAY_OK,
                       evidence_confidence=0.9, evidence_refs=EV)
@@ -127,7 +129,25 @@ def test_full_external_closure(stack):
     loop.verify_outcome(case.case_id, verified_by="external_receipt",
                         detail="buyer accepted the report")
     loop.resolve(case.case_id, retained=True, reason="quarterly re-audit")
-    assert loop.evaluate().overall == "CLOSED"
+    assert case.stage == "retention_or_termination" and case.synthetic
+    assert loop.evaluate().overall == "FALSELY_CLOSED"
+
+
+def test_full_external_closure_needs_observed_customer_and_live_money(stack):
+    gate, ledger, actor, compiler = stack
+    loop = CommercialLoop(compiler.compile(make_genome()), gate=gate, ledger=ledger)
+    case = loop.open_case("acme", customer_observation={"source": "crm.example", "record_ref": EV[0]})
+    loop.present_offer(case.case_id)
+    live = {"source": "stripe", "record_ref": "sha256:" + "9" * 64, "livemode": True}
+    loop.take_payment(case.case_id, actor=actor.passport_id,
+                      executor=lambda p: {**PAY_OK(p), "processor_observation": live},
+                      evidence_confidence=0.9, evidence_refs=EV)
+    loop.deliver(case.case_id, actor=actor.passport_id, executor=SHIP_OK,
+                 evidence_confidence=0.9, evidence_refs=EV)
+    loop.verify_outcome(case.case_id, verified_by="external_receipt",
+                        detail="buyer accepted the report")
+    loop.resolve(case.case_id, retained=True, reason="quarterly re-audit")
+    assert not case.synthetic and loop.evaluate().overall == "CLOSED"
 
 
 def test_self_report_does_not_verify_customer_value(stack):

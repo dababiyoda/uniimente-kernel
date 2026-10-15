@@ -42,6 +42,7 @@
     "grants_access": false
    }
   ],
+  "every_delivery_receipted_by_the_gate": true,
   "forged_receipt_rejected": true,
   "payment_required": {
    "amount_cents": 39200,
@@ -66,7 +67,9 @@
    "confirm_before_delivery": "order-0003 has no delivery to confirm",
    "confirm_by_seller": "the seller does not grade its own delivery",
    "expired_challenge": "challenge for order-0004 expired at 2026-10-13T12:20:00Z; ask again for a fresh ",
+   "forged_grant": "grant not honoured: not a grant the governing Consequence Gate issued (unregiste",
    "grant_for_other_order": "delivery to another agent needs a Consequence Gate grant for this exact order",
+   "grant_from_another_gate": "grant not honoured: not a grant the governing Consequence Gate issued (unregiste",
    "no_grant": "delivery to another agent needs a Consequence Gate grant for this exact order",
    "payment_bound_to_other_order": "pi_000005 is bound to another order; refused and booked for refund",
    "replay_same_payment": "order-0001 is delivered; a payment is redeemed once",
@@ -98,6 +101,6 @@
    "status": 409
   }
  },
- "result_sha256": "sha256:18850000c5c53ea36664841076a585a5842f113dccaf436374628b03f2116cd5",
+ "result_sha256": "sha256:6dd9eb62d9fcba1204746d497e14a0a4821d265bb2782d7d03276d57db3430e0",
  "system": 54
 }

@@ -116,11 +116,20 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The integrity check reads every committed version of its record files:
+          # a genesis key never changes and no signed record is removed.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: No second Constitution, Gate, identity or authority registry
         run: python scripts/ci/check_authority_singleton.py
+      - run: pip install "cryptography>=41"
+      - name: Live constitutional integrity (CONTRADICTION-0002 Option A; only founder-signed authorizations count)
+        # Fails, naming each artifact and the founder's exact steps, when a protected
+        # artifact differs from what an enrolled founder key authorized.
+        run: python -m governance.integrity --check
 
   sealed:
     name: "4 · Developmental work stays sealed"

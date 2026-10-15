@@ -36,6 +36,7 @@ from __future__ import annotations
 import re
 import unicodedata
 
+from greg.dataplane import INVISIBLE
 from greg.journal import Journal
 from provenance.ledger import sha256_json
 
@@ -68,7 +69,8 @@ RESOURCE_FIELDS = ("resource", "evidence", "options", "expected_effect", "uncert
 PROSE_FIELDS = ("why_now", "recommendation", "consequence_of_no_response", "expected_effect", "uncertainty",
                 "argued_from")
 NO_COST = "none"      # an option whose cost starts with this needs no money, access, hardware or people
-_INVISIBLE = dict.fromkeys(map(ord, "\u00ad\u200b\u200c\u200d\u200e\u200f\u2060\u2061\u2062\u2063\ufeff"))
+# The data plane's character set: zero-width, bidi embeddings/overrides/isolates, joiners, BOM, C0 (#13).
+_INVISIBLE = dict.fromkeys(INVISIBLE)
 
 _SELF = r"(?:greg|i|me|myself|this body|the body|this machine|this institution|the institution|uniimente|the egregore)"
 _SELF_POSS = r"(?:my|greg'?s|its|the body'?s|this body'?s|the institution'?s|uniimente'?s)"
@@ -306,6 +308,13 @@ ANSWER_ONLY_RECORDS = {
 }
 
 
+# Asks that no DECISION closes (greg/missions.py refuses one); every surface says what does close them.
+NOT_ANSWERABLE = {
+    "SCOPE_RENEWAL": "Approve or Reject cannot renew a mandate. Sign a new MISSION with a new horizon and "
+                     "supersede this one (`greg mission ...`, then LIFECYCLE SUPERSEDED), or abandon it.",
+}
+
+
 def surface(request: dict) -> dict:
     """The fields every founder surface (console, phone, status, morning report) shows."""
     keys = ("request_id", "kind", "mission_id", "resource", "why_now", "recommendation", "expected_effect",
@@ -314,4 +323,7 @@ def surface(request: dict) -> dict:
     shown = {k: request[k] for k in keys if k in request}
     if request.get("kind") in ANSWER_ONLY_RECORDS:
         shown["answer_effect"] = ANSWER_ONLY_RECORDS[request["kind"]]
+    if request.get("kind") in NOT_ANSWERABLE:     # no Approve/Reject on any surface: the body refuses them
+        shown["answerable"] = False
+        shown["answer_effect"] = NOT_ANSWERABLE[request["kind"]]
     return shown

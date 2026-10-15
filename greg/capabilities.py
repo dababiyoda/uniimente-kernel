@@ -30,6 +30,7 @@ import urllib.parse
 import urllib.request
 
 from capabilities.genome import AuthorityEnvelope, CapabilityGenome, GenomeRegistry, CONSEQUENCE_CLASSES
+from greg import egress
 
 ROUTES = ("api", "app_integration", "cli", "browser", "os_automation", "visual", "internal")
 # Spider-Web Compounding Rule (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING): every
@@ -288,8 +289,18 @@ def fs_list(params, ctx: InvocationContext) -> dict:
 
 
 def fs_write(params, ctx: InvocationContext) -> dict:
+    """Write one text file in the mission workspace, and only the file the signed target names.
+
+    The founder-signed target (``workspace:<relative path>``) binds the file: a parameter value that
+    a typed handoff supplied (greg/pipeline.py, a strategy's ``bind``) can change what is written,
+    never where. Without this, a document's text could pick which workspace file is overwritten,
+    including the evidence a person's work is measured by (review of 2026-10-14; artifact.materialize
+    already binds its path the same way)."""
     ctx.workspace.mkdir(parents=True, exist_ok=True)
     path = _inside(ctx.workspace / params["relative_path"], (ctx.workspace,))
+    named = "workspace:" + path.relative_to(Path(ctx.workspace).resolve()).as_posix()
+    if ctx.target != named:
+        raise CapabilityError(f"write path {named!r} does not match the signed target {ctx.target!r}")
     content = params["content"]
     if not isinstance(content, str) or len(content.encode()) > MAX_READ_BYTES:
         raise CapabilityError("content must be text under the write ceiling")
@@ -369,11 +380,17 @@ def http_get(params, ctx: InvocationContext) -> dict:
     if parts.scheme != "https" or parts.hostname not in ctx.manifest.egress_allowlist:
         raise CapabilityError(f"egress to {parts.hostname!r} not in allowlist")
     request = urllib.request.Request(url, headers={"User-Agent": "uniimente-greg/0.1"})
-    with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - allowlisted https only
-        body = response.read(MAX_READ_BYTES + 1)
+    try:
+        # Every redirect hop is re-checked against this capability's allowlist.
+        with egress.open_checked(request, allowlist=ctx.manifest.egress_allowlist, timeout=20) as response:
+            body = response.read(MAX_READ_BYTES + 1)
+            final_url = response.geturl()
+    except egress.EgressRefused as exc:
+        raise CapabilityError(str(exc)) from None
     if len(body) > MAX_READ_BYTES:
         raise CapabilityError("response exceeds read ceiling")
-    return {"url": url, "status": response.status, "sha256": hashlib.sha256(body).hexdigest(),
+    return {"url": url, "final_url": final_url, "status": response.status,
+            "sha256": hashlib.sha256(body).hexdigest(),
             "text": body.decode("utf-8", errors="replace"), "trust": "untrusted-external-data"}
 
 
@@ -544,6 +561,7 @@ STRENGTHENS = {
     "artifact.materialize": ("proof", "reliability", "compounding"),
     "venture.assess": ("proof", "routing", "settlement", "compounding"),
     "venture.status": ("proof",),
+    "business.reconcile": ("proof", "settlement"),
     "worker.commission": ("capability_formation", "routing", "settlement", "compounding"),
     "worker.appraise": ("proof", "eligibility", "reliability"),
     "browser.session": ("proof", "capability_formation", "settlement"),
@@ -628,7 +646,8 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                              retry_safe=True), git_inspect),
     "http.get": (_builtin("http.get", "web.fetch", "HTTPS GET from an explicit egress allowlist", "api",
                           "read_only", "https:", {"url": "str"},
-                          {"url": "str", "status": "int", "sha256": "str", "text": "str", "trust": "str"},
+                          {"url": "str", "final_url": "str", "status": "int", "sha256": "str", "text": "str",
+                           "trust": "str"},
                           network="egress-allowlist", egress_allowlist=("example.com",),
                           data_classes=("public_web",), retry_safe=True), http_get),
     "browser.render": (_builtin("browser.render", "web.render",
@@ -718,6 +737,21 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                                               "adapters/daleobanks_opportunity + "
                                                               "wealthmachine_assessment (Bridge A)"}),
                        _lazy("greg.ventures", "assess")),
+    "business.reconcile": (_builtin("business.reconcile", "business.reconcile",
+                                    "Match exactly one exported statement row to a signed price, currency and "
+                                    "case reference (to the cent; ambiguous or near matches never count)", "api",
+                                    "read_only", "fs:", {"path": "str", "amount": "number", "currency": "str",
+                                                         "reference": "str", "columns": "dict?",
+                                                         "minor_units": "bool?"},
+                                    {"matched": "bool", "matches": "int", "rows_read": "int", "row": "int?",
+                                     "sha256": "str?", "detail": "str"},
+                                    filesystem="read-scoped", retry_safe=True,
+                                    tests=("tests/unit/test_greg_business_case.py",),
+                                    provenance={"source": "uniimente-kernel/greg/business_loop.py",
+                                                "mechanism_from": "business/commercial_loop.py stage order; "
+                                                                  "beancount/hledger exact single-posting "
+                                                                  "matching (DISCOVER, no code copied)"}),
+                           _lazy("greg.business_loop", "reconcile")),
     "venture.status": (_builtin("venture.status", "venture.assessment_status",
                                 "Has a decision memo been delivered for this signal manifest, and with what "
                                 "binding verdict", "api", "read_only", "deliver:", {"manifest": "path"},

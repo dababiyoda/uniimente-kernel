@@ -934,6 +934,11 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
                    "duration_s": report.duration_s, "turns": report.turns,
                    "exit_code": report.exit_code, "error": report.error,
                    "permission_denials": report.permission_denials, "isolation": report.isolation,
+                   # #178's statement of what supervision leaves unconfined, on every receipt whose worker ran
+                   # outside the OS envelope on a supervised body; an envelope run's isolation says os-confined.
+                   "supervision": SUPERVISION if (confinement_mode(ctx.worker_confinement) == "supervised" and
+                                                  (report.isolation or {}).get("filesystem") != "os-confined")
+                   else None,
                    "interrupted": report.interrupted},
         "cost_usd": spend["charge_usd"], "spend": spend, "collection_error": collection_error,
         "worker_claim": report.claim, "worker_summary_tail": report.summary[-1500:],

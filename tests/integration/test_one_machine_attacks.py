@@ -55,11 +55,13 @@ class Scripted:
                                     summary="WORK_REPORT: {}")
 
 
-def run_in_process(tmp_path, monkeypatch, provider, *, ticks=6):
+def run_in_process(tmp_path, monkeypatch, provider, *, ticks=6, confinement="supervised"):
+    # #178 wrote these attacks for its supervised workers; the founder's body setting keeps that posture
+    # available, and the envelope (the default, ``required``) gets its own cases below.
     data = tmp_path / "data"
     data.mkdir()
     repo = sandbox_repo(data)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=confinement)
     monkeypatch.setitem(workers.PROVIDERS, "attacker", provider)
     spec = code_mission(home, repo, provider="attacker")
     drop(home, signed(key, body_id, "MISSION", spec))
@@ -93,10 +95,13 @@ def test_attack_worker_lies_about_the_minds_certified_answer(tmp_path, monkeypat
     assert not (Layout(home).workspace / spec["mission_id"].replace(":", "_") / "handoff-attack.md").exists()
 
 
-def test_attack_worker_plants_git_hooks_and_filters_that_never_run(tmp_path, monkeypatch):
+@pytest.mark.parametrize("confinement", ["supervised", "required"])
+def test_attack_worker_plants_git_hooks_and_filters_that_never_run(tmp_path, monkeypatch, confinement):
     """Attack: the worker writes .git/config (fsmonitor, a clean filter) and a pre-commit hook so that
     GREG's own git commands in the clone execute worker code. Expected: GREG restores the metadata it
-    created before any worker code ran; the payload never executes; the honest change is collected."""
+    created before any worker code ran; the payload never executes; the honest change is collected.
+    The restore is GREG's, so it holds in both postures; only a supervised receipt carries #178's
+    statement of what supervision leaves unconfined."""
     marker = tmp_path / "pwned"
     payload = f"#!/bin/sh\ntouch {marker}\n"
     planted = {"plan/plan.json": json.dumps({"assignment": [["Ana", "Dock2", 2], ["Ben", "Dock1", 4],
@@ -114,11 +119,14 @@ def test_attack_worker_plants_git_hooks_and_filters_that_never_run(tmp_path, mon
         return report
 
     monkeypatch.setattr(Scripted, "run", run)
-    home, spec, states, outputs = run_in_process(tmp_path, monkeypatch, Scripted(planted))
+    home, spec, states, outputs = run_in_process(tmp_path, monkeypatch, Scripted(planted), confinement=confinement)
     assert not marker.exists(), "worker-planted git metadata executed inside GREG's collection"
     receipt = [o for o in outputs if o.get("work_order") == "attack"][0]
     assert "plan/plan.json" in receipt["changed_files"]
-    assert receipt["worker"]["supervision"]["git_metadata"].startswith("restored")
+    if confinement == "supervised":
+        assert receipt["worker"]["supervision"]["git_metadata"].startswith("restored")
+    else:
+        assert receipt["worker"]["supervision"] is None
 
 
 def test_attack_worker_tampers_with_greg_trusted_git_copy(tmp_path, monkeypatch):
@@ -146,12 +154,8 @@ def test_attack_worker_tampers_with_greg_trusted_git_copy(tmp_path, monkeypatch)
     assert "ACHIEVED" not in states
 
 
-def test_attack_worker_test_code_rewrites_git_metadata_during_greg_acceptance(tmp_path, monkeypatch):
-    """Attack: the worker adds tests/conftest.py. GREG's own acceptance run executes it (network denied,
-    filesystem not confined), and it rewrites the clone's .git after GREG restored it: a gpg program
-    for commit signing plus a post-checkout hook, so GREG's own ``checkout -b``/``commit`` run worker
-    code. Expected: GREG notices the metadata changed after its acceptance run and refuses to commit;
-    the payload never runs."""
+def _acceptance_rewrites_git(tmp_path):
+    """The worker's tests/conftest.py rewrites the clone's .git while GREG's acceptance run imports it."""
     marker = tmp_path / "pwned-acceptance"
     payload = tmp_path / "payload.sh"
     payload.write_text(f"#!/bin/sh\ntouch {marker}\nexit 1\n")
@@ -167,9 +171,46 @@ def test_attack_worker_test_code_rewrites_git_metadata_during_greg_acceptance(tm
     planted = {"plan/plan.json": json.dumps({"assignment": [["Ana", "Dock2", 2], ["Ben", "Dock1", 4],
                                                             ["Cy", "Line", 2]], "staffed": 8}),
                "tests/test_plan.py": TEST_FROM_DOUBLE, "tests/conftest.py": conftest}
+    return marker, planted
+
+
+def test_attack_worker_test_code_rewrites_git_metadata_during_greg_acceptance(tmp_path, monkeypatch):
+    """Attack: the worker adds tests/conftest.py. GREG's own acceptance run executes it (network denied,
+    filesystem not confined), and it rewrites the clone's .git after GREG restored it: a gpg program
+    for commit signing plus a post-checkout hook, so GREG's own ``checkout -b``/``commit`` run worker
+    code. Expected: GREG notices the metadata changed after its acceptance run and refuses to commit;
+    the payload never runs. This is #178's host: a supervised body where the OS envelope is refused, so
+    the acceptance run falls back to supervision (on a host with the envelope it never reaches .git)."""
+    def no_envelope(*args, **kwargs):
+        raise workers.WorkerIsolationError("no OS envelope on this host (test)")
+
+    monkeypatch.setattr(workers, "prepare_worker", no_envelope)
+    marker, planted = _acceptance_rewrites_git(tmp_path)
     home, spec, states, outputs = run_in_process(tmp_path, monkeypatch, Scripted(planted))
+    receipt = [o for o in outputs if o.get("work_order") == "attack"][0]
+    assert all(t["confinement"].startswith("supervised") for t in receipt["greg_tests"]), receipt["greg_tests"]
     assert not marker.exists(), "worker test code planted git metadata that GREG's git then executed"
     assert not [o for o in outputs if o.get("work_order") == "attack" and o.get("commit")]
+    assert "the acceptance run changed the clone's git metadata" in (receipt["collection_error"] or "")
+    assert "ACHIEVED" not in states
+
+
+def test_attack_worker_test_code_cannot_reach_git_metadata_inside_the_envelope(tmp_path, monkeypatch):
+    """Attack: the same conftest on the default body (``required``). Expected: GREG's acceptance run is in
+    the OS envelope, where the clone's .git is not writable, so the rewrite fails inside the run: the
+    payload never runs, the acceptance fails, GREG's restored metadata is what its own git uses, and the
+    mission is not ACHIEVED (the independent appraisal re-runs acceptance from the retained patch)."""
+    marker, planted = _acceptance_rewrites_git(tmp_path)
+    home, spec, states, outputs = run_in_process(tmp_path, monkeypatch, Scripted(planted), confinement="required")
+    receipt = [o for o in outputs if o.get("work_order") == "attack"][0]
+    if any(t["confinement"] == "refused" for t in receipt["greg_tests"]):
+        pytest.skip("this host cannot provide the OS envelope: " + receipt["greg_tests"][0]["tail"][:200])
+    assert all(t["confinement"].startswith("envelope") for t in receipt["greg_tests"]), receipt["greg_tests"]
+    assert not marker.exists(), "worker test code planted git metadata that GREG's git then executed"
+    assert receipt["greg_tests_passed"] is False
+    config = (Layout(home).workspace / spec["mission_id"].replace(":", "_") / "work-orders" / "attack" / "repo"
+              / ".git" / "config").read_text()
+    assert "gpg" not in config and not receipt["collection_error"]
     assert "ACHIEVED" not in states
 
 
@@ -263,7 +304,9 @@ def test_attack_founder_stop_during_ongoing_work_ends_the_worker_now(tmp_path):
     worker = tools / "worker.py"
     shutil.copy(KERNEL / "tests" / "one_machine_worker.py", worker)
     (tools / "HOLD").touch()
-    home, _, _, _ = make_body(tmp_path, read_roots=[data])
+    # The local CLI double is unreviewed: a default body refuses it before dispatch, so this attack runs on
+    # #178's posture, the founder's ``supervised`` setting (as the one-mission test does).
+    home, _, _, _ = make_body(tmp_path, read_roots=[data], worker_confinement="supervised")
     key, log = tmp_path / "founder.pem", tmp_path / "body.log"
     spec = code_mission(home, repo, provider="local-cli", order="stop-me")
     (tmp_path / "m.json").write_text(json.dumps(spec))
@@ -278,7 +321,11 @@ def test_attack_founder_stop_during_ongoing_work_ends_the_worker_now(tmp_path):
     assert time.monotonic() - stopped_at < 30, "STOP waited for the worker instead of ending it"
     wait_for(lambda: not alive(pid), timeout=10, what="the worker to be killed")
     order_dir = Layout(home).workspace / spec["mission_id"].replace(":", "_") / "work-orders" / "stop-me"
-    assert (order_dir / "interrupted.json").exists() and not (order_dir / "evidence.json").exists()
+    # The joined trunk keeps one record per order: an interrupted run's evidence says UNCERTAIN, never
+    # COMPLETED, nothing is committed, and worker.appraise refuses any collection that did not complete.
+    # (#178 wrote interrupted.json instead; the standing-reconciliation proof reads this status.)
+    stopped = json.loads((order_dir / "evidence.json").read_text())["summary"]
+    assert stopped["status"] == "UNCERTAIN" and stopped["commit"] is None and stopped["branch"] is None
     rows = facts(home, spec["mission_id"])["actions"]
     assert [a["status"] for a in rows if a["action_id"] == "commission-worker"] == ["UNCERTAIN"]
     Layout(home).stop_file.unlink()

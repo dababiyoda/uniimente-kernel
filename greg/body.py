@@ -199,12 +199,18 @@ def contained_faults(journal: Journal, layout: "Layout") -> list[dict]:
 
 def device_delegations(journal: Journal) -> dict[str, dict]:
     """Currently delegated device keys (enrolled by the founder key, not revoked).
-    Expiry is enforced at verification time, so an expired delegation is listed but unusable."""
-    devices = {}
+    Expiry is enforced at verification time, so an expired delegation is listed but unusable.
+
+    A key delegated again after a revocation carries ``signed_not_before`` (that delegation's enrollment time):
+    a command it signed before then, under the revoked delegation, never verifies again (FounderVerifier)."""
+    devices, revoked = {}, set()
     for event in journal.replay("device."):
         if event.type == "greg.device.enrolled":
-            devices[event.payload["device_key_id"]] = event.payload
+            kid = event.payload["device_key_id"]
+            devices[kid] = ({**event.payload, "signed_not_before": event.payload["at"]} if kid in revoked
+                            else event.payload)
         elif event.type == "greg.device.revoked":
+            revoked.add(event.payload["device_key_id"])
             devices.pop(event.payload["device_key_id"], None)
     return devices
 
@@ -309,6 +315,7 @@ class Body:
         if self.compiled.constitution_hash != self.config["constitution_hash"]:
             raise BodyError("Constitution changed since this body was created; an explicit founder-approved "
                             "migration is required (history is bound to the old constitution)")
+        self._require_published_head()
         # One writer. A final line torn by power loss or SIGKILL was never acknowledged:
         # quarantine its bytes and continue instead of crash-looping under the supervisor.
         self.ledger = EvidenceLedger(self.compiled.constitution_hash, str(self.layout.ledger), tail="quarantine")
@@ -337,6 +344,36 @@ class Body:
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         return self
+
+    def _require_published_head(self):
+        """Refuse history rolled back behind the ledger head this body last published (heartbeat.json).
+
+        Recovery stage 2 (workflows/shutdown-recovery.yaml) needs the chain valid up to the sealed head, and on
+        failure no normal-state restoration. The heartbeat names the head of the last turn, or the clean stop, of
+        the previous process. That record was fsynced into the ledger before the heartbeat was written, and a
+        torn-tail quarantine only removes bytes no append acknowledged, so it is in every honest history of this
+        body. A ledger without it was truncated, restored from an older copy or forked; it is refused before
+        anything is written to it, on every start, until a person on this machine restores the history or removes
+        the heartbeat. A guard against rollback by accident or a stale copy, not against someone who can rewrite
+        both files (greg/anchor.py witnesses cover that). An unreadable heartbeat is not evidence (presence)."""
+        try:
+            published = json.loads(self.layout.heartbeat.read_text()).get("ledger_head")
+        except (OSError, ValueError, AttributeError):
+            return
+        if not isinstance(published, str):
+            return
+        if self.layout.ledger.exists():
+            reader = EvidenceLedger(self.compiled.constitution_hash, str(self.layout.ledger), read_only=True,
+                                    tail="ignore")
+            try:
+                if reader.find(published) is not None:
+                    return
+            finally:
+                reader.close()
+        raise BodyError(f"the ledger head {published} this body last published (heartbeat.json) is not in this "
+                        "ledger: its history was rolled back, truncated or replaced. The body stays down and "
+                        "writes nothing; restore the ledger that contains that head, or, if this history is the "
+                        "one to keep, remove heartbeat.json on this machine")
 
     def _refresh_builder(self):
         """Replace the model adapter, never the mission engine, ledger or authority office."""

@@ -480,3 +480,41 @@ def test_a_handoff_sensor_receipt_must_carry_the_params_this_mission_resolved(tm
     assert verdict["verdict"] == "REFUTED", verdict
     assert not verdict["checks"]["closure_evidence_bound"] and verdict["checks"]["exactly_once"]
     assert any("a: receipt not bound" in f for f in verdict["findings"])
+
+
+# -- a dispatch the founder reconciled as executed (acceptance gap H.G10) -----------------------------------------
+# The recovery harness (tests/integration/test_greg_recovery_scenarios_process.py) SIGKILLs a body after fs.write
+# wrote its file and before the Gate's receipt; the founder answers reconcile_executed. The appraiser re-derives
+# closures from receipts only, so it withholds VERIFIED. Before the fix it also reported a "duplicate receipt or
+# dispatch claim" that does not exist: one claim, no receipt, no second dispatch.
+
+def test_a_founder_reconciled_dispatch_is_named_as_such_not_reported_as_a_duplicate(tmp_path):
+    from greg.capabilities import BUILTINS
+    from tests.greg_fixtures import Clock, drop
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:reconciled"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "settled")],
+        strategies=[write_strategy("w", "n.txt", "settled", ["n"])], capabilities=["fs.read", "fs.write"])))
+    manifest, write = BUILTINS["fs.write"]
+
+    def receipt_lost(params, ctx):            # the real write happens; the body loses power before its receipt
+        write(params, ctx)
+        raise RuntimeError("power lost after the write, before the Gate's receipt")
+
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.registry.register(manifest, receipt_lost, state="ATTACHED")
+        body.boot()
+        _run(body, clock, ticks=2)
+        [ask] = [e.payload for e in body.journal.replay("decision.requested") if e.payload["kind"] == "RECONCILIATION"]
+        drop(home, signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "reconcile_executed"}))
+        assert _run(body, clock)[-1] == "ACHIEVED"
+        claims = {r.payload["grant_id"] for r in body.ledger.by_type("grant_dispatch")}
+        receipts = [r.payload["grant_id"] for r in body.ledger.by_type("receipt")]
+        verdict = body.journal.replay("mission.appraised")[-1].payload
+    assert ask["authority_requested"]["grant_id"] in claims and ask["authority_requested"]["grant_id"] not in receipts
+    assert len(receipts) == len(set(receipts))                       # there is no duplicate to report
+    assert verdict["verdict"] == "REFUTED" and verdict["checks"]["exactly_once"] is False
+    assert not [f for f in verdict["findings"] if "duplicate" in f], verdict["findings"]
+    assert [f for f in verdict["findings"] if f.startswith("w: ") and "founder reconciliation" in f], verdict["findings"]

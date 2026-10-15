@@ -401,9 +401,13 @@ def appraise(request: dict) -> dict:
                                                     observation=False, claimed_scope=action["scope_digest"],
                                                     claimed_capability=action["capability"])):
                 once = False
-                findings.append(f"{action['action_id']}: completed action lacks its signed strategy's Gate receipt")
+                findings.append(
+                    f"{action['action_id']}: recorded as settled by a founder reconciliation answer, with no Gate "
+                    "receipt; exactly-once cannot be re-derived from receipts"
+                    if receipt is None and action.get("reconciles") else
+                    f"{action['action_id']}: completed action lacks its signed strategy's Gate receipt")
         checks["exactly_once"] = once
-        if not checks["exactly_once"]:
+        if len(receipts) != len(set(receipts)):   # only a real duplicate is reported as one
             findings.append("duplicate receipt or dispatch claim")
 
         # 4b. deliverables: the delivered file must be exactly the render of the receipted inputs

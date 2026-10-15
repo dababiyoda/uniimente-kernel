@@ -67,6 +67,33 @@ def iso(value: datetime) -> str:
     return parse_time(value).isoformat().replace("+00:00", "Z")
 
 
+BODY_LEDGER_MARKER = "greg.founder.enrolled"
+
+
+def body_ledger_scan(ledger: Any, *, start: int = 0) -> tuple[bool, int]:
+    """(found, scanned): whether records from ``start`` on carry the GREG body marker, and how far the
+    scan reached, so a caller can resume an unsuccessful scan instead of re-reading the ledger."""
+    records = getattr(ledger, "records", ())
+    for index in range(start, len(records)):
+        record = records[index]
+        if getattr(record, "record_type", None) == "event":
+            payload = getattr(record, "payload", None) or {}
+            if payload.get("type") == BODY_LEDGER_MARKER:
+                return True, index + 1
+    return False, len(records)
+
+
+def hosted_on_body(ledger: Any) -> bool:
+    """Whether ``ledger`` is a GREG body ledger: one carrying a founder enrollment event.
+
+    On a body ledger the body owns authority (Ed25519 founder commands, the mission engine, the
+    AuthorityOffice and its Consequence Gate). Egregore components hosted there run in body mode:
+    they may wake, backcast, classify, prepare and narrow, never execute or answer for the founder.
+    The enrollment is the body's first founder fact, so the scan usually stops early.
+    """
+    return body_ledger_scan(ledger)[0]
+
+
 def _tuple_of_text(name: str, values: Sequence[str]) -> tuple[str, ...]:
     if isinstance(values, (str, bytes)):
         raise GoalError(f"{name} must be a sequence of strings")
@@ -481,7 +508,8 @@ class GoalRegistry:
     PREFERENCE_RECORD = "egregore.goal_preference"
     CONFLICT_RECORD = "egregore.goal_conflict"
 
-    def __init__(self, *, ledger: Any, source: str = "spiffe://uniimente.internal/egregore/goal-gravity"):
+    def __init__(self, *, ledger: Any, source: str = "spiffe://uniimente.internal/egregore/goal-gravity",
+                 quarantine_unhydratable: bool | None = None):
         if not all(hasattr(ledger, name) for name in ("append", "by_type", "records")):
             raise GoalError("ledger must provide append(), by_type() and records (hydration source)")
         self.ledger = ledger
@@ -489,6 +517,13 @@ class GoalRegistry:
         self._specs: dict[str, GoalSpec] = {}
         self._states: dict[str, GoalState] = {}
         self._record_hashes: dict[str, str] = {}
+        # On a GREG body ledger a stray goal record (a transition or preference for a goal that was
+        # never authorized, or a malformed record) is quarantined, not fatal: raising here would fault
+        # every later turn forever. Elsewhere the historical fail-closed behaviour is unchanged.
+        self.quarantine_unhydratable = (hosted_on_body(ledger) if quarantine_unhydratable is None
+                                        else bool(quarantine_unhydratable))
+        self.quarantined: list[dict[str, Any]] = []
+        self._folded = 0
         self._hydrate()
 
     @property
@@ -497,24 +532,42 @@ class GoalRegistry:
 
     # ------------------------------------------------------------ hydration
     def _hydrate(self) -> None:
-        for record in getattr(self.ledger, "records", ()):
+        records = getattr(self.ledger, "records", ())
+        for record in records[self._folded:]:
             rtype = getattr(record, "record_type", None)
-            payload = getattr(record, "payload", {})
-            if rtype == self.AUTHORIZED_RECORD:
-                spec = GoalSpec.from_dict(payload["goal"])
-                existing = self._specs.get(spec.goal_id)
-                if existing is not None and existing.to_dict() != spec.to_dict():
-                    raise IntegrityConflict("ledger contains conflicting goal content")
-                self._specs[spec.goal_id] = spec
-                self._record_hashes[spec.goal_id] = getattr(record, "hash", None)
-                self._states.setdefault(spec.goal_id, GoalState(goal_id=spec.goal_id,
-                                                                last_reviewed_at=payload.get("authorized_at"),
-                                                                missing_capabilities=list(spec.missing_capabilities)))
-            elif rtype in (self.TRANSITION_RECORD, self.PREFERENCE_RECORD):
-                state = GoalState.from_dict(payload["state"])
-                if state.goal_id not in self._specs:
-                    raise IntegrityConflict("ledger transition references an unknown goal")
-                self._states[state.goal_id] = state
+            if rtype not in (self.AUTHORIZED_RECORD, self.TRANSITION_RECORD, self.PREFERENCE_RECORD):
+                continue
+            try:
+                self._fold(record, rtype, getattr(record, "payload", {}))
+            except (KeyError, TypeError, ValueError) as exc:   # ContractError is a ValueError
+                if not self.quarantine_unhydratable:
+                    raise
+                self.quarantined.append({"record_hash": getattr(record, "hash", None), "record_type": rtype,
+                                         "goal_id": (getattr(record, "payload", None) or {}).get("goal_id"),
+                                         "reason": f"{type(exc).__name__}: {exc}"[:300],
+                                         "disposition": "quarantined_retained_not_folded"})
+        self._folded = len(records)
+
+    def _fold(self, record: Any, rtype: str, payload: Mapping[str, Any]) -> None:
+        if rtype == self.AUTHORIZED_RECORD:
+            spec = GoalSpec.from_dict(payload["goal"])
+            existing = self._specs.get(spec.goal_id)
+            if existing is not None and existing.to_dict() != spec.to_dict():
+                raise IntegrityConflict("ledger contains conflicting goal content")
+            self._specs[spec.goal_id] = spec
+            self._record_hashes[spec.goal_id] = getattr(record, "hash", None)
+            self._states.setdefault(spec.goal_id, GoalState(goal_id=spec.goal_id,
+                                                            last_reviewed_at=payload.get("authorized_at"),
+                                                            missing_capabilities=list(spec.missing_capabilities)))
+        else:
+            state = GoalState.from_dict(payload["state"])
+            if state.goal_id not in self._specs:
+                raise IntegrityConflict("ledger transition references an unknown goal")
+            self._states[state.goal_id] = state
+
+    def refresh(self) -> None:
+        """Fold goal records appended by any other writer since the last fold (records are the truth)."""
+        self._hydrate()
 
     # ------------------------------------------------------------ queries
     def goals(self) -> list[str]:

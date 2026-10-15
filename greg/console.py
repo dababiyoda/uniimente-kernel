@@ -464,6 +464,18 @@ def home_parts(console: Console) -> dict:
             f"<td>{m['actions_done']}</td></tr>" for m in snap["missions"])
         add("missions", "<section><h2>Missions</h2><table><tr><th>Mission</th><th>State</th><th>Blocker / next look"
                    "</th><th>Actions</th></tr>" + rows + "</table></section>")
+    gravity = (st.get("gravity") or {}).get("goals") or []
+    if gravity:
+        rows = "".join(
+            f"<tr><td>{_e(g['desired_state'])}<br><span class=muted>{_e(g['goal_id'][:23])}</span></td>"
+            f"<td>{_e(g.get('stop_label') or g['status'])}</td>"
+            f"<td>{_e(g['active_gate'] or '')}</td><td>{_e(', '.join(g['missions']))}</td>"
+            f"<td>{len(g['open_requests'])}</td></tr>" for g in gravity)
+        add("gravity", "<section><h2>Persistent goals</h2><table><tr><th>Goal</th><th>State</th><th>Active gate</th>"
+                   "<th>Missions</th><th>Decisions</th></tr>" + rows + "</table><p class=muted>A goal wakes on "
+                   "relevant evidence and pulls its missions' next look forward; the missions act, through the "
+                   "Gate. Decisions about a goal's moves appear above as the missions' own approvals. Goal "
+                   "completion is observation-tier, not external verification.</p></section>")
     cognitive = snap['status'].get('cognition', {}).get('receipts', [])
     if cognitive:
         rows = []
@@ -586,7 +598,8 @@ def render_delivery(console: Console, name: str) -> bytes:
 def render_morning(console: Console) -> bytes:
     report = morning_projection(console.home)
     keep = {k: report[k] for k in ("q1_goals_worked_on", "q3_what_i_did", "q6_what_failed", "q7_surprises",
-                                   "q12_decisions_required", "q13_tonight", "metrics", "claims_not_made")}
+                                   "q12_decisions_required", "q13_tonight", "goal_gravity", "metrics",
+                                   "claims_not_made")}
     return _page("GREG morning", "<p><a href=/>Back</a></p><section><h2>Morning report</h2><pre>"
                  + _e(json.dumps(keep, indent=1, default=str)) + "</pre></section>")
 

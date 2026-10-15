@@ -4,6 +4,7 @@ Section 31 item 16: "All speculative descendants remain preserved in the Backcas
 the developmental horizon in the founder's own words; every descendant it names keeps a backcast with that class,
 quoted verbatim, and a BUILDABLE_NOW label must say why it describes the destination rather than the precursor.
 """
+import collections
 import json
 from pathlib import Path
 import re
@@ -122,6 +123,30 @@ def test_the_p8_node_records_every_frozen_cycle():
         assert f"a {ordinal} cycle" not in p8["smallest_next_experiment"], "the next experiment is already done"
     if all(d == "REJECT" for d in decisions):
         assert p8["exit_met"] is False and "never kept an improvement" in p8["reality"]
+
+
+def test_the_cortex_summary_and_the_older_p5_node_state_the_latest_frozen_totals():
+    """Found by the 2026-10-15 independent review: the polyintelligence workstream's ``current`` summary still
+    counted three P8 cycles after cycle 4 was frozen, and the older P5 node still gave admission v1's 20 admitted of
+    31 after v3. Both state the latest frozen totals, read here from the cycle records and the evidence index."""
+    data = path.load()
+    current = data["subordinate_workstreams"]["polyintelligence_cortex"]["current"]
+    cycles = sorted(ROOT.glob("docs/evidence/greg-protected-evolution/*/cycle-*.json"))
+    decisions = {json.loads(c.read_text())["decision"] for c in cycles}
+    assert cycles and f"P8 cycles 1-{len(cycles)}" in current, current
+    if len(decisions) == 1:
+        assert f"P8 cycles 1-{len(cycles)}: {next(iter(decisions))}" in current, current
+    genomes = json.loads((ROOT / "docs/evidence/greg-mind-evidence-index.json").read_text())["genomes"]
+    counts = collections.Counter(g["status"] for g in genomes.values())
+    admitted = counts["DEFAULT_FOR_GEOMETRY"] + counts["NICHE_CAPABILITY"]
+    assert f"{admitted} admitted of {len(genomes)}" in current, current
+    [ws] = [w for w in data["workstreams"] if w["id"] == "cognition_cortex"]
+    p5 = {n["id"]: n for n in ws["nodes"]}["P5"]
+    assert f"all {len(genomes)} executable genomes" in p5["status"] and f"({admitted} admitted)" in p5["status"]
+    for status, n in counts.items():
+        assert re.search(rf"\b{n} {status}\b", p5["status"]), (status, n)
+    latest = sorted(ROOT.glob("docs/evidence/greg-genome-admission/*/results.json"))[-1]
+    assert str(latest.relative_to(ROOT)) in p5["evidence_refs"], p5["evidence_refs"]
 
 
 # The frozen runs each Mind node is measured by (a P8 cycle record is not an index source).

@@ -840,6 +840,76 @@ rehearsing the runbook on #168's installed body. I reproduced it here first.
   - before the fix, both failed here: neither page named the file, and after an answer the ask left `status()`;
   - with only `tribunal.py` reverted, the morning-report assertion fails.
 
+## Increment 15 (2026-10-15): two "untested here" items now tested end to end
+
+The handoff listed two recovery paths that had been tested only in parts. Both now have end-to-end tests. Neither
+test needed a code change: the existing recovery logic held.
+
+### A hard kill in the middle of a self-repair
+
+`tests/integration/test_greg_self_repair_kill.py` runs the body in its own process. A journal hook sends the
+process SIGKILL immediately after one chosen repair fact is written. Nothing flushes, closes or cleans up, as with a
+power loss or the out-of-memory killer. The three kill points are:
+
+- the repair deficit has opened (`deficit.opened`, carrying `repair`);
+- the replacement has been verified (`genesis.verified`);
+- the replacement has been registered but not yet attached (`capability.registered`);
+- the same point, with the kill landing in the middle of the next ledger append, so half a line is on disk.
+
+The test then reopens the same home with a working builder and ticks. For each kill point:
+
+- exactly one repair deficit exists, and it is resolved once, by the replacement;
+- nothing is registered twice;
+- the broken capability stays QUARANTINED and the replacement is ATTACHED;
+- the original mission returns to HOLDING with its check passing;
+- the ledger chain verifies;
+- in the torn case, the half line is moved to a sidecar file (kept as evidence) and the ledger records one
+  `unacknowledged_tail_quarantined` recovery. Without a tear, neither appears.
+
+**Mutants** (applied, then reverted):
+
+- `greg/genesis.py`, a restart that ignores the open deficit (`_deficit_for` always opens a new generation): every
+  kill point fails, with two repair deficits instead of one.
+- `greg/genesis.py`, a restart that skips a verified but unattached replacement: the `capability.registered` kill
+  point fails, because the replacement is built and registered a second time.
+- `greg/body.py`, the ledger opened with `tail="refuse"`: the torn case fails, because the body cannot open
+  ("partial or blank history record") and would crash-loop under its supervisor.
+
+### Losing a model vendor
+
+`tests/integration/test_greg_vendor_loss.py` uses the real `anthropic` and `openai` SDK clients over real HTTP,
+through the body's single Genesis path. Each client points at a local endpoint:
+
+- Nothing listens on Anthropic's port. The SDK retries and fails, as it would against an outage.
+- OpenAI's endpoint answers through the Responses API.
+
+The test checks:
+
+- The founder's signed mission needs a function GREG lacks. Genesis builds it through OpenAI, and the **original**
+  mission reaches ACHIEVED.
+- The routing evidence records Anthropic as `failed`, class `transient` (an outage, never a refusal), and OpenAI as
+  `ok`.
+- A restarted body replays that evidence into route health: Anthropic has one consecutive failure, OpenAI none.
+- With both vendors down, nothing is built and the mission is not closed. Both outages are recorded as transient.
+
+**Mutants** (applied to `greg/models.py`, then reverted; `greg/models.py` is unchanged, so the Seed Genome freeze
+`freeze-v6` still holds):
+
+- With no fallback to the next vendor, both tests fail.
+- With routing evidence never replayed into health, the restart assertion fails.
+- With `APIConnectionError` dropped from the transient classes, the outage is recorded as `unknown` and both tests
+  fail.
+
+### What this does not show
+
+- The outage is a closed local port. A real vendor can also fail slowly, return partial streams, or fail on
+  authentication. The component tests in `test_greg_models.py` cover classification of status codes and timeouts,
+  but not over a real provider.
+- The kill is SIGKILL of one process on one filesystem, and the torn line is written by the test, not produced by
+  a real power cut. A device that loses whole lines already acknowledged is not covered. The hash chain alone
+  cannot detect that loss at the end of the file, because a shorter chain still verifies; only a head recorded
+  somewhere else would reveal it.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

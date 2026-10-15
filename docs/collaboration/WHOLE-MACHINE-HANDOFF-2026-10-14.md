@@ -145,8 +145,12 @@ The 13 holes were:
   - regression blame is by sequence, not proven causation.
 - **Untested here.**
   - DALEOBANKS real-organ runs (run locally since increment 12, against `e2f1ebe`; not in CI).
-  - A process kill in the middle of a self-repair.
-  - Loss of a model vendor end to end; it is tested at component level only.
+  - A storage device that loses whole lines it already acknowledged. The hash chain cannot detect a lost suffix of
+    the ledger.
+  - A vendor that fails slowly, streams partially or rejects the key, over real HTTP. Classification of those
+    failures is tested at component level only.
+  - Tested since increment 15: a process kill in the middle of a self-repair, including a torn ledger append, and the
+    loss of a model vendor end to end through the real SDKs.
 - **Future technology.** Chromium cannot run its own sandbox inside GREG's namespace (`os_sandboxed: false`). A
   privileged or rootless-sandbox route depends on the #9/#10 host decision.
 
@@ -163,8 +167,8 @@ The 13 holes were:
 Reproduce:
 
 ```
-python -m pytest -q tests/unit                     # 2840 passed, 12 skipped
-python -m pytest -q tests/integration              # 201 passed
+python -m pytest -q tests/unit                     # 2866 passed, 9 skipped (increment 15)
+python -m pytest -q tests/integration              # 216 passed (increment 15)
 python scripts/ci/check_worker_appraisal_mutants.py
 python -m greg rehearse --dir /tmp/greg-rehearsal
 python scripts/mission_trace.py /tmp/greg-rehearsal/body <mission id from the rehearsal output>

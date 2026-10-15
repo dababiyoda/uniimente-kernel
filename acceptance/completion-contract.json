@@ -690,7 +690,7 @@
    "n": 8,
    "condition": "Authority, evidence, resource, and consequence controls are enforced.",
    "met": "partly",
-   "evidence": "Enforced through the ratified gate, which still admits the CASE 27 commit-window escalation until the hardening is authorized; the evidence register is unarmed."
+   "evidence": "Enforced through the ratified gate and proven in a live-process attack campaign (forged, replayed and garbage commands, unauthorized spending, injection, tampered evidence); the ratified gate still admits the CASE 27 commit-window escalation until the hardening is authorized, and the evidence register is unarmed."
   },
   {
    "n": 9,
@@ -720,7 +720,7 @@
    "n": 13,
    "condition": "No readily buildable required subsystem has been replaced by a stub, placeholder, or future-work paragraph.",
    "met": "no",
-   "evidence": "Buildable gaps remain open (e.g. D G1, H G5, I G2, L G1)."
+   "evidence": "Buildable gaps remain open (e.g. D G1, H G5, I G6, L G1)."
   },
   {
    "n": 14,

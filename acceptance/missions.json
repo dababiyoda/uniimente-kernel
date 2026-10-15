@@ -8,7 +8,8 @@
    "2026-10-15: A (R2, R3) and F re-mapped onto Goal Gravity on the Body (76832db); D, G and H updated with the Mission D/G/H defect fixes and their regressions (docs/collaboration/MISSION-DEFECTS-2026-10-15.md); I, K and L mapped",
    "2026-10-15: Mission F requirements R1 and R3-R7 proven at BODY tier by a real-process Goal Gravity test; F gap G1 closed",
    "2026-10-15: Mission K requirement K1 proven at BODY tier by a real-process pause/resume test; K gap G1 closed",
-   "2026-10-15: Mission K requirements K2, K5 and K6 proven at BODY tier by a real-process device-revocation test; K gap G2 closed"
+   "2026-10-15: Mission K requirements K2, K5 and K6 proven at BODY tier by a real-process device-revocation test; K gap G2 closed",
+   "2026-10-15: Mission I requirements I1, I2, I4 and I7 proven at BODY tier by a live-process attack campaign; I gap G2 closed, the uncovered attack classes opened as G6"
   ]
  },
  "tier_reading": {
@@ -1733,39 +1734,41 @@
      "id": "I1",
      "obligation": "Forged authority is refused: a command, goal, approval, grant or device key not signed by the enrolled founder key acts on nothing.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
+      "tests/integration/test_greg_attack_campaign_process.py::test_one_live_body_refuses_and_contains_a_campaign_while_its_legitimate_work_closes",
+      "tests/unit/test_greg_closure_integrity.py::test_appraiser_refutes_an_approval_no_founder_command_carries",
       "tests/unit/test_greg_founder_and_scope.py::test_other_key_cannot_impersonate_founder",
       "tests/unit/test_greg_founder_and_scope.py::test_tampered_or_misaddressed_commands_refuse",
-      "tests/unit/test_greg_missions.py::test_unsigned_or_injected_commands_are_retained_as_data_only",
       "tests/unit/test_greg_goal_gravity.py::test_a_forged_goal_is_preserved_but_never_woken",
       "tests/unit/test_greg_goal_gravity_authority.py::test_a_forged_approve_is_never_reported_signature_verified",
-      "tests/unit/test_greg_closure_integrity.py::test_appraiser_refutes_an_approval_no_founder_command_carries",
-      "tests/unit/test_mission_g_grants.py::test_a_forged_grant_moves_no_money",
-      "tests/unit/test_greg_remote.py::test_a_phone_key_can_never_do_what_only_the_founder_key_may"
+      "tests/unit/test_greg_missions.py::test_unsigned_or_injected_commands_are_retained_as_data_only",
+      "tests/unit/test_greg_remote.py::test_a_phone_key_can_never_do_what_only_the_founder_key_may",
+      "tests/unit/test_mission_g_grants.py::test_a_forged_grant_moves_no_money"
      ],
-     "notes": ""
+     "notes": "2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
     },
     {
      "id": "I2",
      "obligation": "Tampered evidence is detected: retained ledger history, witnesses, delivered artifacts and frozen continuity copies refuse once altered.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
-      "tests/unit/test_provenance.py::test_tamper_detection",
-      "tests/unit/test_provenance.py::test_chain_break_detection",
-      "tests/unit/test_provenance.py::test_corrupted_persistence_refuses_to_load",
-      "tests/unit/test_consequence_gate.py::test_witness_tamper_detected",
+      "tests/integration/test_greg_attack_campaign_process.py::test_one_live_body_refuses_and_contains_a_campaign_while_its_legitimate_work_closes",
       "tests/unit/test_consequence_gate.py::test_tampering_an_old_retained_record_refuses_the_next_commit",
+      "tests/unit/test_consequence_gate.py::test_witness_tamper_detected",
+      "tests/unit/test_governance_integrity.py::test_a_committed_genesis_never_changes",
+      "tests/unit/test_greg_briefs.py::test_appraiser_refutes_a_brief_edited_after_delivery",
       "tests/unit/test_ledger_incremental_verification.py::test_a_commit_witness_is_appended_only_onto_a_wholly_verified_chain",
       "tests/unit/test_ledger_incremental_verification.py::test_the_hot_path_detects_tampering_at_its_next_full_reconstruction",
-      "tests/unit/test_greg_briefs.py::test_appraiser_refutes_a_brief_edited_after_delivery",
-      "tests/unit/test_repair_continuity_history.py",
-      "tests/unit/test_governance_integrity.py::test_a_committed_genesis_never_changes"
+      "tests/unit/test_provenance.py::test_chain_break_detection",
+      "tests/unit/test_provenance.py::test_corrupted_persistence_refuses_to_load",
+      "tests/unit/test_provenance.py::test_tamper_detection",
+      "tests/unit/test_repair_continuity_history.py"
      ],
-     "notes": ""
+     "notes": "2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
     },
     {
      "id": "I3",
@@ -1789,16 +1792,17 @@
      "id": "I4",
      "obligation": "Prompt injection is data, never authority: injected, invisible or role-marked instructions are flagged, quarantined when they instruct, kept verbatim, and change nothing.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
-      "tests/unit/test_greg_dataplane_invisible.py",
-      "tests/unit/test_greg_platform.py::test_external_injection_is_flagged_retained_and_powerless",
-      "tests/unit/test_greg_cognition_seed_path.py::test_prompt_injection_is_data_not_authority",
+      "tests/integration/test_greg_attack_campaign_process.py::test_one_live_body_refuses_and_contains_a_campaign_while_its_legitimate_work_closes",
       "tests/unit/test_cortex_schedule_composition.py::test_injected_instruction_is_text_not_a_command",
-      "tests/unit/test_greg_goal_gravity.py::test_untrusted_intake_can_wake_a_goal_but_never_clear_its_gate"
+      "tests/unit/test_greg_cognition_seed_path.py::test_prompt_injection_is_data_not_authority",
+      "tests/unit/test_greg_dataplane_invisible.py",
+      "tests/unit/test_greg_goal_gravity.py::test_untrusted_intake_can_wake_a_goal_but_never_clear_its_gate",
+      "tests/unit/test_greg_platform.py::test_external_injection_is_flagged_retained_and_powerless"
      ],
-     "notes": ""
+     "notes": "2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
     },
     {
      "id": "I5",
@@ -1838,17 +1842,18 @@
      "id": "I7",
      "obligation": "Unauthorized spending is refused: no dispatch beyond the signed budget, including reserved unknown spend and over-cap worker budgets.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
+      "tests/integration/test_greg_attack_campaign_process.py::test_one_live_body_refuses_and_contains_a_campaign_while_its_legitimate_work_closes",
+      "tests/integration/test_greg_mission_d_handoffs.py::test_a_worker_budget_is_capped_at_the_signed_cost_and_actual_spend_is_booked",
       "tests/unit/test_consequence_gate.py::test_budget_overflow_refused",
       "tests/unit/test_greg_founder_and_scope.py::test_light_cone_admits_only_inside_actions",
       "tests/unit/test_greg_mission_reconciliation.py::test_unknown_spend_is_reserved_at_its_worst_case_and_bounds_dispatch",
-      "tests/integration/test_greg_mission_d_handoffs.py::test_a_worker_budget_is_capped_at_the_signed_cost_and_actual_spend_is_booked",
-      "tests/unit/test_greg_workers.py::test_unknown_reported_zero_and_overcap_spend_remain_distinct",
-      "tests/unit/test_greg_models.py::test_spend_is_bounded_per_route_and_unpriced_routes_are_skipped_when_money_is_at_stake"
+      "tests/unit/test_greg_models.py::test_spend_is_bounded_per_route_and_unpriced_routes_are_skipped_when_money_is_at_stake",
+      "tests/unit/test_greg_workers.py::test_unknown_reported_zero_and_overcap_spend_remain_distinct"
      ],
-     "notes": ""
+     "notes": "2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
     },
     {
      "id": "I8",
@@ -1857,13 +1862,14 @@
      "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
-      "tests/unit/test_consequence_gate.py::test_executor_explosion_fails_closed_and_preserves_evidence",
+      "tests/integration/test_greg_attack_campaign_process.py::test_one_live_body_refuses_and_contains_a_campaign_while_its_legitimate_work_closes",
+      "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
       "tests/unit/test_consequence_gate.py::test_effect_mismatch_is_hard_refusal_and_incident",
+      "tests/unit/test_consequence_gate.py::test_executor_explosion_fails_closed_and_preserves_evidence",
       "tests/unit/test_greg_goal_gravity.py::test_a_gravity_fault_is_contained_and_recorded_once",
-      "tests/unit/test_greg_improvement_attacks.py::test_a_forged_ledger_record_with_protected_state_is_never_executed",
-      "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command"
+      "tests/unit/test_greg_improvement_attacks.py::test_a_forged_ledger_record_with_protected_state_is_never_executed"
      ],
-     "notes": "BODY tier only for recoverability (a supervised Body process survives a hard kill)."
+     "notes": "BODY tier only for recoverability (a supervised Body process survives a hard kill). 2026-10-15: in one campaign against one live `greg run` process doing legitimate work, a forged and a garbage command are refused as data, a replayed envelope applies nothing, an over-budget write is never dispatched (one founder ask), an injected item is quarantined and answers nothing, the legitimate mission closes, and a tampered copy of the home refuses to boot with its bytes retained while the original verifies."
     }
    ],
    "gaps": [
@@ -1878,10 +1884,11 @@
     {
      "id": "G2",
      "gap": "No integrated attack campaign runs against one live Body process (BODY tier): each attack class is proven separately, mostly in-process.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "A supervised-Body test that, in one run, drops forged commands, tampers a retained record, injects instructions into intake, presents a revoked device key and an over-budget strategy, then asserts every refusal on the ledger and that the Body still closes a legitimate mission."
+     "next": "A supervised-Body test that, in one run, drops forged commands, tampers a retained record, injects instructions into intake, presents a revoked device key and an over-budget strategy, then asserts every refusal on the ledger and that the Body still closes a legitimate mission.",
+     "closed_by": "tests/integration/test_greg_attack_campaign_process.py (forged, garbage and replayed commands, unauthorized spending, prompt injection and tampered evidence in one live-process run)"
     },
     {
      "id": "G3",
@@ -1906,6 +1913,14 @@
      "buildable_now": true,
      "dependency": "none",
      "next": "Bind A1+ issuance to a founder-signed decision envelope (greg/founder.py)."
+    },
+    {
+     "id": "G6",
+     "gap": "Evaluator substitution, worker escape and revoked grants are proven only by their own tests, not inside a live-process campaign (they need a worker or a second evaluator in the loop).",
+     "state": "OPEN",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "Extend the campaign with a scripted worker double that tries to read outside its grant and a substituted appraiser, on the same live Body."
     }
    ]
   },

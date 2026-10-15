@@ -134,7 +134,7 @@ def test_a_goal_on_a_real_body_process_wakes_on_meaning_not_noise_and_asks_once_
     ingest_external(home, source="feed://weather", content="sunny tomorrow", channel="weather")
     body = start(home, log)
     try:
-        wait_for(lambda: len(events(home, "body.recovered")) >= 2, what="the second restart")
+        wait_for(lambda: len(events(home, "body.booted")) >= 3, what="the second restart")
         time.sleep(2.0)
         assert pulls(home) == before and (ws / "c.txt").read_text() == "damaged", "noise wakes nothing"
     finally:

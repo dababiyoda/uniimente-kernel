@@ -977,7 +977,9 @@ def test_an_optimal_claim_must_meet_its_own_proven_bound_and_a_composition_carri
     assert checks["optimal_objective_meets_its_bound"] is False
     mismatched = copy.deepcopy(honest)
     mismatched["output"].update(solution={"x": 1, "y": 2}, objective_value=3.0)   # the proof is another solution's
-    assert verify("optimization", data, mismatched, proof_class)["checks"]["proof_matches_output"] is False
+    checks = verify("optimization", data, mismatched, proof_class)["checks"]
+    # one canonical check (review V4): proof_matches_output duplicated the artifact status and solution checks
+    assert checks["artifact_solution_matches_output"] is False and "proof_matches_output" not in checks
     no_index.write_text(json.dumps({"genomes": {"flow_reinforce_greedy": {"status": "SUPERSEDED"}}, "routing": {},
                                     "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}}))
     r = compile_(registry, {"geometry": "optimization"}, R.f3(3)["payload"])

@@ -179,6 +179,18 @@ def _answered(receipt: dict) -> bool:
     return receipt["abstention_state"] == "NONE" and isinstance(receipt.get("output"), dict)
 
 
+# What an optimize stage's answer proves, weakest first, in the words of what was checked (review V2): "proven" only
+# when the independent verifier's certificate held (Z3, a different engine, finds no strictly better assignment).
+OPTIMALITY = ("unproven (feasible plan; the optimiser stopped before proving it optimal)",
+              "solver-reported (CP-SAT OPTIMAL; bound equals objective); not independently certified", "proven")
+
+
+def _optimality(solved: dict) -> str:
+    status = (solved.get("output") or {}).get("solver_status")
+    certified = ((solved.get("evaluator_result") or {}).get("certificate") or {}).get("status") == "CERTIFIED"
+    return OPTIMALITY[0] if status != "OPTIMAL" else OPTIMALITY[2] if certified else OPTIMALITY[1]
+
+
 def _graph_then_allocate(payload, pid, kw, receipt, finish):
     from .cortex import reason
     network = payload["capacity_network"]
@@ -205,14 +217,14 @@ def _graph_then_allocate(payload, pid, kw, receipt, finish):
         receipt["translation_failures"].append(f"optimiser claimed flow {claimed}; max-flow organ found "
                                                f"{check['output']['value']}")
         return finish("TRANSLATION_FAILED", "cross-intelligence flow check disagreed")
-    # the composition's certificate is the optimiser's: OPTIMAL with a zero gap is proven (the verifier requires
-    # it), FEASIBLE is a feasible plan whose flow the cross-check confirms but whose optimality is unproven
+    # the composition's certificate is the optimiser's, as strong as its verifier made it: OPTIMAL is proven only
+    # when the independent certificate held; FEASIBLE is a feasible plan whose flow the cross-check confirms. The
+    # gap is the verifier's: it recomputes |objective - bound| exactly.
     gap = (solved.get("proof_artifact") or {}).get("optimality_gap")
     return finish("ANSWERED", None, {"increments": increments, "flow_value": claimed,
                                      "control_points": check["output"]["cut_edges"],
                                      "solver_status": out["solver_status"], "optimality_gap": gap,
-                                     "optimality": "proven" if out["solver_status"] == "OPTIMAL"
-                                     else "unproven (feasible plan; the optimiser stopped before proving it optimal)"})
+                                     "optimality": _optimality(solved)})
 
 
 def _bayes_then_voi(payload, pid, kw, receipt, finish):
@@ -260,7 +272,7 @@ def _forecast_then_allocate(payload, pid, kw, receipt, finish):
         if not _answered(f):
             return finish("STAGE_ABSTAINED", f"forecast {p['name']}: {f['abstention_state']}")
         paths.append(f["output"]["quantiles"])
-    allocation = []
+    allocation, weekly = [], []
     for t in range(weeks):
         data = {"capacity": plan["capacity"],
                 "products": [{"name": p["name"], "over_cost": p["over_cost"], "under_cost": p["under_cost"],
@@ -277,7 +289,13 @@ def _forecast_then_allocate(payload, pid, kw, receipt, finish):
         if not _answered(solved) or out.get("solver_status") not in ("OPTIMAL", "FEASIBLE"):
             return finish("STAGE_ABSTAINED", f"optimize week {t + 1}: {out.get('solver_status')}")
         allocation.append([out["solution"][f"q{i}"] for i in range(len(products))])
-    return finish("ANSWERED", None, {"plan": allocation, "products": [p["name"] for p in products]})
+        weekly.append(solved)
+    # each week's solver status and the weakest week's certificate strength, as graph_then_allocate reports its one
+    # (review V3): the plan is proven only when every week's is
+    return finish("ANSWERED", None, {"plan": allocation, "products": [p["name"] for p in products],
+                                     "solver_status": [solved["output"]["solver_status"] for solved in weekly],
+                                     "optimality": min((_optimality(solved) for solved in weekly),
+                                                       key=OPTIMALITY.index)})
 
 
 def _real(x, name) -> float:

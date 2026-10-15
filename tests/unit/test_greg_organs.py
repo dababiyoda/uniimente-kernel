@@ -501,10 +501,19 @@ def test_a_supervised_stage_leaves_no_process_behind(tmp_path):
         except FileNotFoundError:
             return False
 
-    deadline = _time.monotonic() + 2
+    # The group is SIGKILLed when the stage ends; a loaded runner may take a moment to finish the kill. A leftover
+    # `sleep 30` outlives any wait here, so the wait bounds only scheduling, never the property.
+    deadline = _time.monotonic() + 10
     while alive(left) and _time.monotonic() < deadline:
         _time.sleep(0.05)
-    assert not alive(left)
+    if alive(left):
+        try:
+            stat = Path(f"/proc/{left}/stat").read_text().rsplit(")", 1)[1].split()
+            why = {"state": stat[0], "ppid": stat[1], "pgid": stat[2], "sid": stat[3],
+                   "cmdline": Path(f"/proc/{left}/cmdline").read_bytes().replace(b"\0", b" ").decode()[:120]}
+        except (FileNotFoundError, IndexError) as exc:
+            why = {"gone_while_reading": repr(exc)}
+        assert not alive(left), f"a process the stage started is still running: {why}"
 
 
 def test_a_later_executed_reconciliation_never_vouches_for_facts_the_founder_declared_not_executed(

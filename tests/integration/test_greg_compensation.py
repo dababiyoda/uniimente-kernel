@@ -66,6 +66,14 @@ def test_an_abandoned_write_is_compensated_once_through_the_gate_and_never_repea
         assert note.read_text() == "draft" and not facts(body, "mission.compensated", mid)
         abandon(home, key, body_id, mid, state)
         tick(body, clock, 3)
+        if state == "SUPERSEDED":
+            # A successor may rely on the effect: the signed compensation runs only on an exact-scope approval.
+            [request] = [r for r in body.engine.book.open_requests() if r["kind"] == "APPROVAL"]
+            assert request["action_id"] == "w" and "superseded" in request["why_now"]
+            assert note.read_text() == "draft" and not facts(body, "mission.compensated", mid)
+            drop(home, signed(key, body_id, "DECISION", {"request_id": request["request_id"], "answer": "approve",
+                                                         "reason": "the successor does not need it"}))
+            tick(body, clock, 2)
         [required] = facts(body, "mission.compensation_required", mid)
         [compensated] = facts(body, "mission.compensated", mid)
         assert required["action_id"] == "w" and required["consequence_class"] == "internal_write"

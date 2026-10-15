@@ -153,8 +153,10 @@ def publish_status(params: dict, ctx: InvocationContext) -> dict:
     The outcome comes only from Gate receipts of ``daleobanks.publish`` actions of this mission. The
     workspace organ ledger is writable by any signed workspace write, so it can only lower
     ``organ_consistent`` (a witnessed entry missing or rewritten); it never adds a fact. No receipted
-    publish -> no outcome. Limit: a bound receipt proves the Gate ran DALEOBANKS's publish gate and
-    retained what DALEOBANKS printed; it does not prove a post exists (no platform read-back exists).
+    publish -> no outcome. Limit: a bound receipt proves the Gate ran the publish step at the
+    founder-signed checkout and interpreter and retained what that code printed. It does not prove the
+    code there is DALEOBANKS's reviewed gate (the root and interpreter are signed parameters, not pinned
+    code), nor that a post exists (no platform read-back exists).
     """
     if ctx.journal is None or not ctx.mission_id:
         raise CapabilityError("daleobanks.outcome projects one mission's canonical publish receipts; journal required")
@@ -183,4 +185,5 @@ def publish_status(params: dict, ctx: InvocationContext) -> dict:
             "statuses": [o.get("status") for _, o in bound], "bound_receipts": [h for h, _ in bound],
             "unwitnessed_actions": unwitnessed,
             "organ_consistent": chains_ok and present is not None and witnessed <= present,
-            "basis": "canonical daleobanks.publish receipts; DALEOBANKS self-report, no platform read-back"}
+            "basis": "canonical daleobanks.publish receipts of the code at the signed root and interpreter; "
+                     "its self-report, no platform read-back"}

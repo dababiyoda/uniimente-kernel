@@ -1182,6 +1182,20 @@ class MissionEngine:
                                                         "reasons": ["founder rejected this compensating action"]},
                                 key=[mid, aid, "compensated"])
             return "DECLINED"
+        if m.status == "SUPERSEDED" and scope not in m.approved_scopes:
+            # A successor mission may rely on this effect: undoing it is the founder's call, for this exact scope.
+            self._request(m, kind="APPROVAL", scope_digest=scope, action_id=aid,
+                          why=f"compensation of {aid}: the mission was superseded, and its successor may rely on "
+                              f"the effect this compensation would undo",
+                          recommendation=f"approve the compensating action signed with {aid} "
+                                         f"({manifest.capability_id} on {target}) only if the successor does not "
+                                         "need the effect",
+                          alternatives=["reject: the executed effect stands; nothing is run for it"],
+                          requested={"capability": manifest.capability_id, "target": target,
+                                     "consequence_class": manifest.consequence_class, "cost_usd": 0.0}, now=now,
+                          evidence={"original_receipt": original, "lifecycle": m.status},
+                          consequence="the executed effect stands; nothing is run for it")
+            return "WAITING"
         outcome = self.office.act(
             mission_id=mid, cone=m.cone, command_digest=m.command_digest, manifest=manifest, adapter=adapter,
             ctx=self._context(m, manifest), params=params, target=target, cost_usd=0.0,

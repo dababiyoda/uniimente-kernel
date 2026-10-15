@@ -215,7 +215,7 @@
             "type": "object",
             "additionalProperties": false,
             "required": ["capability", "target"],
-            "description": "the compensating action signed with this strategy. If the mission is abandoned or superseded after this strategy executed, it runs once through the Gate, bound to the original receipt. It must sit inside the mission's light cone: capability and target admitted, and the capability's consequence class within the ceiling (checked at registration).",
+            "description": "the compensating action signed with this strategy. If the mission is abandoned after this strategy executed, it runs once through the Gate, bound to the original receipt; if it is superseded, it runs only after the founder approves that exact scope (a successor may rely on the effect). Its result is the Gate's receipt; the undone state is not independently re-observed. It must sit inside the mission's light cone: capability and target admitted, and the capability's consequence class within the ceiling (checked at registration).",
             "properties": {
               "capability": {"type": "string", "maxLength": 120},
               "params": {"type": "object"},

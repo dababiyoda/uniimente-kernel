@@ -415,6 +415,7 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     genomes = library.executables()
     # a superseded genome's competitor promoted into a registered genome of its own (same geometry and inputs)
     promoted = {old: new for old, new in library.promotions().items() if new in FAMILIES}
+    pending = []                          # (superseded row, its promoted genome's method), settled after rejection
     for family, (_, ops, classes, _, _) in FAMILIES.items():
         for op in ops:
             stale = None
@@ -463,13 +464,21 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                                         "deployable": bool(getattr(item, "competitor_deployable", True)),
                                         "evidence": evidence["genomes"].get(family, {}).get("evidence")}
                 if family in promoted:
-                    # the mechanism is already a registered genome: its own row and record govern it, and
-                    # attaching it is the founder's decision (never a Genesis acquisition)
-                    row["superseded_by"]["promoted_as"] = f"cognition.{promoted[family]}"
+                    pending.append((row, f"cognition.{promoted[family]}"))
             if family in genomes and genomes[family].promotes in FAMILIES:
                 row["promotes"] = f"cognition.{genomes[family].promotes}"
             rows.append(row)
     _reject_relaxations(rows)
+    why = {r["method"]: r["rejected"] for r in rows}
+    for row, method in pending:
+        if method in why and not why[method]:
+            # the mechanism is already a registered genome that can answer this request: its own row and record
+            # govern it, and attaching it is the founder's decision (never a Genesis acquisition)
+            row["superseded_by"]["promoted_as"] = method
+        elif method in why:
+            # its promoted genome cannot answer this request (its own frozen status, the declared geometry, a
+            # relaxation): the superseding mechanism stays an acquisition candidate, and the reason is kept
+            row["superseded_by"]["promoted_rejected"] = {"method": method, "why": why[method]}
     rows += _organ_rows(data, g, evidence)
     recipe = route(data)
     if recipe:
@@ -974,7 +983,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     superseding = [{"mechanism": r["superseded_by"]["mechanism"], "supersedes": r["method"],
                     "evidence": r["superseded_by"]["evidence"],
                     "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority",
-                    "authority": "none: a candidate to acquire, never an attached method"}
+                    "authority": "none: a candidate to acquire, never an attached method",
+                    **({"promoted_genome_rejected": r["superseded_by"]["promoted_rejected"]}
+                       if r["superseded_by"].get("promoted_rejected") else {})}
                    for r in rows if r.get("superseded_by", {}).get("deployable")
                    and not r["superseded_by"].get("promoted_as")]
     high = g.consequence_class in HIGH_CONSEQUENCE or vector.high

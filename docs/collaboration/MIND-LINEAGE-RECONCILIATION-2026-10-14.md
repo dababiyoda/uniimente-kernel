@@ -28,7 +28,9 @@ Convergence commits:
 - `e21bb5b` merges #158 `047549f`.
 - `8a43e70` records the institutional verifier run (PASS, bound to `ccd38a2`).
 - A later merge brings #158 to `202b932`: the F8 (P6 v5) pre-registration, freeze, suite and data. F8's held-out
-  arms had not run at merge time.
+  arms had not run at that merge.
+- A further merge brings #158 to `41a8538`: F8's frozen result, verified fixes to the promoted competitor genomes,
+  and the Backcast GPS record of F8.
 
 The eight collided frozen files are byte-identical at `a832c73`, `77b61a1` and `047549f`.
 
@@ -178,9 +180,12 @@ emits only UNESTIMATED candidates. Neither has outcome evidence.
 | X1 | #155 | constructed | yes (48-0) | cortex multi-organ route, not a recipe |
 | X2 | #155 | constructed | yes (57-0) | its strongest single (a local model) NOT_RUN |
 | derived chains ("#155 F3") | #155 | constructed | yes (41-0) | **no** lift over the best fixed recipe (4-2) |
+| F8 track -> staff | #158 | natural (NYC 2015 pickups; Layer 1 Kalman tracker as a stage) | yes, over the best single intelligence | 4.7% dearer in total than the simpler EWMA ratio + quantile ablation (the tracker's abstentions fall back to the standing plan); measured on #158's lineage at its freeze commit, not on the converged Mind |
 
-Nine distinct families lift over the best single constituent they were measured against. Eight remain if X2
-is set aside because its strongest single was not run. Two of three natural families lift.
+Ten distinct families lift over the best single constituent they were measured against. Nine remain if X2
+is set aside because its strongest single was not run. Three of four natural families lift (F6, F7, F8); in
+each, a simpler practitioner or ablation pipeline ties or beats the composition (F6 weekly mean, F7 parametric
+min-cost flow, F8 EWMA ratio + quantile).
 
 Every lift costs latency (#158 accounting: 1.5-5.2x). Apart from F7's shortest-path-upgrade arm, no
 practitioner pipeline was beaten where one was measured. This does not show composition has superior general

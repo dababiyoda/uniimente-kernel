@@ -1489,6 +1489,24 @@ the same approval as any other act.
   certificate against a pinned key, so a host that changes hands is refused. Not built: hosted services rotate
   certificates; revisit with the first real hosted server.
 
+### CI correction (increment 20's refusal order)
+
+CI failed on `5244cb9`: seven `mcp.act` refusal tests received "an MCP server runs only in a bubblewrap namespace"
+instead of the refusal they test. The CI runner's bubblewrap cannot create a network namespace (`bwrap: loopback:
+Failed RTM_NEWADDR: Operation not permitted`), and `mcp.act` asked the host for namespaces before it checked what
+the mission signed. On a host without namespaces the founder would have been told "no namespaces" about a mission
+that was also wrongly signed.
+
+- **Fix:** every check of what was signed (target, paths, hosts, credential handles, arguments) now runs before the
+  host is asked; the namespace probe moved into the invocation itself. The remote path in increment 22 already had
+  that order.
+- **Test:** the refusal tests now simulate a host without namespaces, so they prove the order everywhere; with the
+  old order they fail here exactly as in CI (7 of 7).
+- **Reproduction harness:** a stand-in `bwrap` that fails like the runner's (`ci-bin/bwrap` in the session
+  scratchpad, first on `PATH`) runs the whole suite as CI sees it. Namespace tests skip, as they do there.
+- **Negative evidence kept:** none of the namespace-dependent `mcp.act`, `mcp.call` or remote tests run in CI; their
+  evidence is local only. CI checks the refusals, the planner, discovery and the CLI.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

@@ -77,6 +77,15 @@ def install_scribe(root: Path) -> dict:
     return {"server": "scribe", "root": str(folder), "command": [str(entry)]}
 
 
+def no_namespaces(monkeypatch):
+    """This host as a CI runner sees it: bubblewrap cannot create namespaces, so nothing could start."""
+    from greg import worker_isolation
+
+    def refuse(*a, **k):
+        raise worker_isolation.WorkerIsolationError("bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted")
+    monkeypatch.setattr(worker_isolation, "_backend", refuse)
+
+
 @pytest.fixture
 def world(tmp_path, monkeypatch):
     data = tmp_path / "data"
@@ -131,13 +140,15 @@ def test_a_credential_reaches_the_server_by_handle_and_never_the_record(world):
 def test_what_the_mission_did_not_sign_exactly_is_refused_before_anything_starts(world, monkeypatch, change, why):
     from foundry.systems import mcp_gateway
     monkeypatch.setattr(mcp_gateway, "_call", lambda *a, **k: pytest.fail("a server was started"))
+    no_namespaces(monkeypatch)            # what was signed is checked before the host is asked (CI has no netns)
     params = {**world["base"], "tool": "write_note", "writable": [str(world["data"] / "notes")],
               "arguments": {"path": "x", "text": "y"}, **change}
     with pytest.raises(CapabilityError, match=why):
         mcp_tools.act(params, world["ctx"])
 
 
-def test_a_writable_path_outside_the_read_roots_or_missing_is_refused(world, tmp_path):
+def test_a_writable_path_outside_the_read_roots_or_missing_is_refused(world, tmp_path, monkeypatch):
+    no_namespaces(monkeypatch)
     for path, why in ((tmp_path / "elsewhere", "outside permitted roots"),
                       (world["data"] / "does-not-exist", "does not exist")):
         if why == "outside permitted roots":

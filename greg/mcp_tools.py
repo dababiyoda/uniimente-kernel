@@ -135,9 +135,9 @@ HANDLE = re.compile(r"mcp:[a-z0-9][a-z0-9._-]{0,60}")     # the founder's own cr
 
 
 def _common(params: dict, ctx: InvocationContext) -> dict:
-    """What every MCP invocation checks: the signed target names the server; the installation, its command and every
-    named path are inside the read roots; the arguments are an object; namespaces exist (else nothing starts)."""
-    from greg.worker_isolation import WorkerIsolationError, _backend
+    """What every MCP invocation checks first: the signed target names the server; the installation, its command and
+    every named path are inside the read roots; the arguments are an object. Whether this host has namespaces is
+    asked only after everything signed has been checked (``_invoke``)."""
     server, tool = params.get("server", ""), params.get("tool", "")
     if not NAME.fullmatch(str(server)) or not TOOL.fullmatch(str(tool)):
         raise CapabilityError("server must be a lowercase name and tool a plain identifier")
@@ -149,10 +149,6 @@ def _common(params: dict, ctx: InvocationContext) -> dict:
     arguments = params.get("arguments") or {}
     if not isinstance(arguments, dict):
         raise CapabilityError("arguments must be an object")
-    try:
-        _backend(require_bubblewrap=True)
-    except WorkerIsolationError as exc:
-        raise CapabilityError(f"an MCP server runs only in a bubblewrap namespace, unavailable here: {exc}") from None
     return {"server": server, "tool": tool, "root": root, "command": command, "readable": readable,
             "arguments": arguments}
 
@@ -161,6 +157,11 @@ def _invoke(c: dict, ctx: InvocationContext, *, writable=(), hosts=(), env=None)
     """Start the server confined (behind a door to a relay allowing exactly ``hosts`` when there are any), call the
     tool once, discard the scratch directory, and report the answer as untrusted data."""
     from foundry.systems.mcp_gateway import GatewayError, _call, root_cause
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        raise CapabilityError(f"an MCP server runs only in a bubblewrap namespace, unavailable here: {exc}") from None
     ctx.workspace.mkdir(parents=True, exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix=f"mcp-{c['server']}-", dir=ctx.workspace))
     provider = {"name": c["server"], "command": c["command"], "root": str(c["root"]), "readable": c["readable"],

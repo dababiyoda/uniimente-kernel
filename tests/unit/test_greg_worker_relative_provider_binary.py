@@ -12,7 +12,7 @@ import pytest
 
 from greg import workers
 from greg.capabilities import InvocationContext
-from greg.worker_isolation import WorkerIsolationError, prepare_worker
+from greg.worker_isolation import WorkerIsolationError, host_has_envelope, prepare_worker
 
 
 def _exe(path: Path, text: str) -> None:
@@ -51,7 +51,6 @@ def test_relative_provider_binary_without_a_copy_in_the_clone_is_not_unavailable
     assert str(greg_cwd / "node_modules" / ".bin" / "codex") in envelope["argv"]
 
 
-@pytest.mark.skipif(not shutil.which("bwrap"), reason="needs bubblewrap for the required envelope")
 def test_repository_file_never_runs_as_the_provider_through_commission(base, monkeypatch):
     greg_cwd = base / "greg-cwd"
     _exe(greg_cwd / "node_modules" / ".bin" / "codex",
@@ -73,8 +72,15 @@ def test_repository_file_never_runs_as_the_provider_through_commission(base, mon
     workspace.mkdir()
     ctx = InvocationContext(workspace=workspace, read_roots=(base,), secrets=None, manifest=None, mission_id="m1",
                             authority_ref="a", grant_id="g", worker_confinement="required")
-    status = workers.commission({"order": "o1", "mode": "repository", "repo": str(source), "base": "HEAD",
-                                 "objective": "do", "max_budget_usd": 0.5, "timeout_seconds": 60,
-                                 "acceptance": {"tests": [["true"]]}, "allowed_paths": ["done.txt"],
-                                 "provider": "codex"}, ctx)
+    try:
+        status = workers.commission({"order": "o1", "mode": "repository", "repo": str(source), "base": "HEAD",
+                                     "objective": "do", "max_budget_usd": 0.5, "timeout_seconds": 60,
+                                     "acceptance": {"tests": [["true"]]}, "allowed_paths": ["done.txt"],
+                                     "provider": "codex"}, ctx)
+    except workers.WorkerError as exc:
+        # A host whose bubblewrap is missing or unusable (CI's runners) refuses a required-posture order before any
+        # provider process starts: neither file ran, so the repository's never saw the founder's key either.
+        assert not host_has_envelope() and "isolation unavailable" in str(exc), str(exc)
+        assert not list(workspace.rglob("done.txt"))
+        return
     assert status["worker_claim"] == {"who": "greg codex"}, status["worker_claim"]

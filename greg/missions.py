@@ -108,12 +108,22 @@ class Unbound(Exception):
     """A bound input is not available yet (or no longer matches its declared type)."""
 
 
+def protected_param(path: str) -> str | None:
+    """The protected key on ``path`` (greg/pipeline.py PROTECTED: budget, provider, scope, credentials, ...),
+    if any. A typed handoff substitutes data only; it never sets authority, budget or execution scope."""
+    from greg.pipeline import PROTECTED
+    return next((part for part in str(path).split(".") if part in PROTECTED), None)
+
+
 def _validate_bindings(strategy: dict, actions: set):
     seen = set()
     for edge in strategy.get("bind", []):
         source = edge["from"]["action_id"]
         if source not in actions or source == strategy["action_id"]:
             raise MissionError(f"strategy {strategy['action_id']} binds from unknown or own action {source!r}")
+        if protected_param(edge["param"]):
+            raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']}: {protected_param(edge['param'])!r} "
+                               "is protected (budget, provider, scope or credentials stay founder-signed literals)")
         if edge["param"] in seen:
             raise MissionError(f"strategy {strategy['action_id']} binds {edge['param']} twice")
         seen.add(edge["param"])
@@ -209,9 +219,13 @@ def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
     if isinstance(reported, bool) or not isinstance(reported, (int, float)) or reported != reported:
         return {"cost_usd": cap, "cost_cap_usd": cap, "spend_basis": "signed_cap" if field_path is None
                 else "signed_cap: provider spend not reported", "provider_reported_usd": None}
-    if reported < 0 or reported > cap + 1e-9:
+    if reported < 0:
         return {"cost_usd": cap, "cost_cap_usd": cap, "provider_reported_usd": float(reported),
                 "spend_basis": "signed_cap: provider report outside [0, cap]"}
+    if reported > cap + 1e-9:     # spent more than signed: the actual spend is booked, never the cap in its place
+        return {"cost_usd": round(float(reported), 6), "cost_cap_usd": cap, "provider_reported_usd": float(reported),
+                "overspend_usd": round(float(reported) - cap, 6),
+                "spend_basis": "provider_reported: over the signed cap"}
     return {"cost_usd": round(float(reported), 6), "cost_cap_usd": cap, "provider_reported_usd": float(reported),
             "spend_basis": "provider_reported"}
 
@@ -1015,6 +1029,9 @@ class MissionEngine:
         bindings, sources = [], []
         for edge in s["bind"]:
             source = edge["from"]["action_id"]
+            if protected_param(edge["param"]):   # a mission retained from before registration refused this
+                raise Unbound(f"bind onto {edge['param']} is refused: {protected_param(edge['param'])!r} is protected "
+                              "and stays a founder-signed literal")
             receipt = latest.get(source)
             if receipt is None:
                 raise Unbound(f"{source} has no completed action yet")
@@ -1457,6 +1474,14 @@ class MissionEngine:
         except BindingError as exc:
             self._block(m, {"type": "no_strategy", "why": "pipeline input unavailable: " + str(exc)})
             return {"state": "BLOCKED", "blocker": m.blocker}
+        # A worker's own provider budget never exceeds the cost Alfonso signed for the strategy: whatever the
+        # params say, the dispatch carries at most the signed ceiling, so no spend can escape the budget.
+        budget_capped = None
+        requested = bound_params.get("max_budget_usd") if isinstance(bound_params, dict) else None
+        if isinstance(requested, (int, float)) and not isinstance(requested, bool) \
+                and requested > float(s.get("cost_usd", 0.0)) + 1e-9:
+            budget_capped = {"signed_cost_usd": float(s.get("cost_usd", 0.0)), "requested_usd": float(requested)}
+            bound_params = {**bound_params, "max_budget_usd": float(s.get("cost_usd", 0.0))}
         outcome = self.office.act(
             mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
             adapter=adapter, ctx=self._context(m, manifest), params=bound_params, target=s["target"],
@@ -1485,6 +1510,8 @@ class MissionEngine:
                                    "retry_in_seconds": retry_delay(streak) if streak < RETRY_LIMIT else None}
         if bindings:
             record["bindings"] = bindings
+        if budget_capped:
+            record["budget_capped"] = budget_capped
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION") and prepare_for is not None:
             return {"state": "NOTHING_TO_PREPARE"}    # preparation never asks; nothing was dispatched
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):

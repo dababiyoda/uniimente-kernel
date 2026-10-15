@@ -39,6 +39,7 @@ import json
 import math
 from pathlib import Path
 import random
+import secrets
 import statistics
 import subprocess
 import sys
@@ -85,7 +86,8 @@ class Target:
             raise EvolutionError(f"a candidate must set exactly the {self.name} space: {sorted(self.space)}")
         for key, (kind, values) in self.space.items():
             value = config[key]
-            if kind == "choice" and value not in values:
+            # type-strict (review of #179, L6): True is not 1 and 2.0 is not 2, so neither enters an int space
+            if kind == "choice" and not any(value == v and type(value) is type(v) for v in values):
                 raise EvolutionError(f"{key}={value!r} is outside the declared space")
             if kind == "float" and (type(value) not in (int, float) or not values[0] <= value <= values[1]):
                 raise EvolutionError(f"{key}={value!r} is outside [{values[0]}, {values[1]}]")
@@ -259,12 +261,31 @@ def crossover(target: Target, a: dict, b: dict, rng: random.Random) -> tuple[dic
 
 
 # ------------------------------------------------------------------ isolation
+def blind(data, salt: str | None):
+    """A problem's generator seed would let a candidate regenerate its labels (review of #179, L5). With a
+    cycle salt the sandbox receives a keyed digest of the seed instead: deterministic within the cycle, so the
+    incumbent and every candidate see the same input, and not invertible without the salt the parent keeps."""
+    if salt is None or not isinstance(data, dict) or "seed" not in data:
+        return data
+    keyed = hashlib.sha256(f"{salt}:{data['seed']}".encode()).digest()
+    return {**data, "seed": int.from_bytes(keyed[:4], "big") % (2 ** 31 - 1)}
+
+
+def method_module_sha256(target_name: str) -> str:
+    """The bytes of the reviewed module a target's sandbox imports (evolution_sandbox.TARGETS)."""
+    import importlib.util
+    from . import evolution_sandbox
+    spec = importlib.util.find_spec(evolution_sandbox.TARGETS[target_name][0])
+    return "sha256:" + hashlib.sha256(Path(spec.origin).read_bytes()).hexdigest()
+
+
 def run_candidate(target: Target, config: dict, problems: list[dict], *, require_confinement: bool = True,
-                  probe_read: str | None = None, timeout: int = 600) -> dict:
+                  probe_read: str | None = None, timeout: int = 600, salt: str | None = None,
+                  expected_module: str | None = None) -> dict:
     """Execute one validated configuration on problem inputs in the confined sandbox."""
     from greg.capabilities import run_isolated
     request = {"target": target.name, "config": target.validate(config),
-               "problems": [{"id": p["id"], "data": p["data"]} for p in problems], "confine": True}
+               "problems": [{"id": p["id"], "data": blind(p["data"], salt)} for p in problems], "confine": True}
     if probe_read is not None:
         request["probe_read"] = probe_read
     proc = run_isolated([sys.executable, "-I", str(SANDBOX)], cwd=ROOT, timeout=timeout,
@@ -274,6 +295,10 @@ def run_candidate(target: Target, config: dict, problems: list[dict], *, require
     result = json.loads(proc.stdout)
     if require_confinement and not result.get("confined"):
         raise EvolutionError(result.get("error") or "candidate ran without filesystem confinement")
+    imported = (result.get("method_module") or {}).get("sha256")
+    if expected_module is not None and imported != expected_module:
+        # the sandbox ran a method module other than the one the parent froze (review of #179, M14, probe 2c)
+        raise EvolutionError(f"FROZEN_INPUT_CHANGED: the sandbox imported {imported}, frozen {expected_module}")
     return result
 
 
@@ -385,18 +410,98 @@ def _stress(items: dict) -> dict:
     return out
 
 
-def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, out: Path | None = None,
-          require_confinement: bool = True, target_name: str = "forecast_quantile") -> dict:
+# The trusted closure a recorded cycle pre-registers (review of #179, M14; #155's freeze manifest, ported): the
+# controller, sandbox, confinement and runner, the genome contract, the receipt contract, and the constitutional
+# vocabulary PROTECTED is built from. The target's method module is added per target.
+TRUSTED_CLOSURE = ("greg/cognition/evolution.py", "greg/cognition/evolution_sandbox.py", "greg/isolation.py",
+                   "greg/capabilities.py", "tools/offline_test.py", "greg/cognition/genomes/contract.py",
+                   "greg/cognition/contracts.py", "greg/improvement.py")
+
+
+def closure_files(target_name: str) -> list[str]:
+    import importlib.util
+    from . import evolution_sandbox
+    origin = Path(importlib.util.find_spec(evolution_sandbox.TARGETS[target_name][0]).origin).resolve()
+    return sorted({*TRUSTED_CLOSURE, str(origin.relative_to(ROOT))})
+
+
+def closure_digests(target_name: str, root: Path | None = None) -> dict:
+    base = root or ROOT
+    return {rel: "sha256:" + hashlib.sha256((base / rel).read_bytes()).hexdigest()
+            for rel in closure_files(target_name)}
+
+
+def freeze_manifest(*, target_name: str, generations: int, population: int, seed: int) -> dict:
+    """What a recorded cycle must match before it runs, before every evaluation and before it reports: the
+    trusted closure's bytes, the rule, the settings, and the sealed evaluators (code, inputs and outcomes) of
+    its train and held-out splits."""
     if target_name not in TARGET_SPECS:
         raise EvolutionError(f"unknown evolution target {target_name!r}")
+    spec = TARGET_SPECS[target_name]()
+    train_items, heldout_items, _ = spec.split()
+    return {"schema": "greg-protected-evolution-freeze/1", "target": target_name, "rule": RULE,
+            "settings": {"generations": generations, "population": population, "seed": seed},
+            "closure": closure_digests(target_name),
+            "evaluator_seals": {"train": SealedEvaluator(train_items, spec.score).seal,
+                                "heldout": SealedEvaluator(heldout_items, spec.score).seal}}
+
+
+def write_freeze(path: Path, **settings) -> dict:
+    """Pre-register a cycle; commit the file before running the cycle that cites it."""
+    if path.exists():
+        raise EvolutionError("refusing to overwrite a freeze; create a new version")
+    manifest = freeze_manifest(**settings)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n")
+    return manifest
+
+
+def _closure_dirty(target_name: str) -> list[str]:
+    out = subprocess.run(["git", "status", "--porcelain", "--", *closure_files(target_name)], cwd=ROOT,
+                         capture_output=True, text=True)
+    return [line[3:] for line in out.stdout.splitlines() if line.strip()]
+
+
+def _check_freeze(frozen: dict, target_name: str) -> None:
+    changed = sorted(k for k, v in closure_digests(target_name).items() if frozen["closure"].get(k) != v)
+    if changed or set(frozen["closure"]) != set(closure_files(target_name)):
+        raise EvolutionError(f"FROZEN_INPUT_CHANGED: {changed or 'closure membership'}")
+
+
+def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, out: Path | None = None,
+          require_confinement: bool = True, target_name: str = "forecast_quantile",
+          freeze: dict | Path | None = None, allow_dirty: bool = False) -> dict:
+    if target_name not in TARGET_SPECS:
+        raise EvolutionError(f"unknown evolution target {target_name!r}")
+    if out is not None and freeze is None:
+        raise EvolutionError("a recorded cycle needs a pre-registered freeze (write_freeze), committed before it runs")
+    frozen = json.loads(Path(freeze).read_text()) if isinstance(freeze, (str, Path)) else freeze
+    if frozen is not None:
+        expected = {"target": target_name, "rule": RULE,
+                    "settings": {"generations": generations, "population": population, "seed": seed}}
+        differs = sorted(k for k, v in expected.items() if frozen.get(k) != v)
+        if differs:
+            raise EvolutionError(f"FROZEN_INPUT_CHANGED: {differs}")
+        _check_freeze(frozen, target_name)
+        if (dirty := _closure_dirty(target_name)) and not allow_dirty:   # tests only; the record lists them
+            raise EvolutionError(f"FROZEN_INPUT_CHANGED: uncommitted changes in the trusted closure {dirty}")
     spec = TARGET_SPECS[target_name]()
     target = spec.target()
     train_items, heldout_items, excluded = spec.split()
     train = SealedEvaluator(train_items, spec.score)
     heldout = SealedEvaluator(heldout_items, spec.score)
+    if frozen is not None and frozen["evaluator_seals"] != {"train": train.seal, "heldout": heldout.seal}:
+        # the evaluator, its inputs or its outcomes differ from the pre-registration (review M14, probe 2d)
+        raise EvolutionError("FROZEN_INPUT_CHANGED: evaluator seals differ from the freeze")
+    module = method_module_sha256(target_name)
+    salt = secrets.token_hex(16)        # seed blinding for this cycle (review L5); recorded when the cycle ends
     record = {"schema": "greg-protected-evolution/1", "target": target.name, "rule": RULE,
               "started_at": datetime.now(timezone.utc).isoformat(),
               "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+              "closure_dirty": _closure_dirty(target_name),
+              "freeze": ({"closure": frozen["closure"], "verified": "before the run, before every evaluation "
+                          "and before reporting"} if frozen is not None else None),
+              "method_module": module, "blinding": {"seed": "keyed digest", "salt": salt},
               "evaluator_seals": {"train": train.seal, "heldout": heldout.seal},
               "split": {"train": len(train_items), "heldout": len(heldout_items),
                         "excluded_admission_items": len(excluded)},
@@ -404,7 +509,10 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     rng = random.Random(seed)
 
     def evaluate(config, evaluator):
-        run = run_candidate(target, config, evaluator.problems(), require_confinement=require_confinement)
+        if frozen is not None:
+            _check_freeze(frozen, target_name)
+        run = run_candidate(target, config, evaluator.problems(), require_confinement=require_confinement,
+                            salt=salt, expected_module=module)
         return evaluator.losses(run["outputs"]), run
 
     # 1. detect a recurring failure (incumbent vs the simple baseline on the train split)
@@ -418,7 +526,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
                          round(statistics.fmean(incumbent_train.values()), 6)}
     if rate < FAILURE_RATE_TRIGGER:
         record["decision"] = "NO_RECURRING_FAILURE"
-        return _finish(record, out)
+        return _finish(record, out, frozen)
     # 2. residual geometry
     geometry = {}
     for key, item in train_items.items():
@@ -458,7 +566,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     if best_id == record["incumbent"]["id"] or gain <= TRAIN_GAIN_MIN:
         record["decision"] = "REJECT"
         record["reason"] = f"no candidate beat the incumbent's train loss by more than {TRAIN_GAIN_MIN:.0%}"
-        return _finish(record, out)
+        return _finish(record, out, frozen)
     # 5. adversarial evaluation (derived stress sets + independent verification of every output)
     stress = SealedEvaluator(spec.stress(train_items), spec.score)
     inc_s, _ = evaluate(target.incumbent, stress)
@@ -475,7 +583,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
                            for k, v in adversarial.items() if isinstance(v, dict)):
         record["decision"] = "REJECT"
         record["reason"] = "adversarial evaluation failed"
-        return _finish(record, out)
+        return _finish(record, out, frozen)
     # 6. one held-out look against the incumbent
     train.check()
     inc_h, _ = evaluate(target.incumbent, heldout)
@@ -503,10 +611,12 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
                           "activation": "a reviewed change adopting the configuration; founder decision",
                           "rollback": {"to": record["incumbent"]["id"], "config": target.incumbent},
                           "canary": spec.proposal["canary"]} if retain else None
-    return _finish(record, out)
+    return _finish(record, out, frozen)
 
 
-def _finish(record: dict, out: Path | None) -> dict:
+def _finish(record: dict, out: Path | None, frozen: dict | None = None) -> dict:
+    if frozen is not None:
+        _check_freeze(frozen, record["target"])          # before reporting (review M14)
     record["finished_at"] = datetime.now(timezone.utc).isoformat()
     record["authority_created"] = False
     if out is not None:
@@ -520,9 +630,18 @@ def _finish(record: dict, out: Path | None) -> dict:
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--out", type=Path)
     ap.add_argument("--target", default="forecast_quantile", choices=sorted(TARGET_SPECS))
+    ap.add_argument("--freeze", type=Path, required=True,
+                    help="pre-registered manifest (write it with --write-freeze and commit it first)")
+    ap.add_argument("--write-freeze", action="store_true", help="write the freeze and exit; never runs the cycle")
     args = ap.parse_args()
-    result = cycle(out=args.out, target_name=args.target)
+    if args.write_freeze:
+        print(json.dumps(write_freeze(args.freeze, target_name=args.target, generations=5, population=8,
+                                      seed=20261008)["closure"], indent=1))
+        raise SystemExit(0)
+    if args.out is None:
+        ap.error("--out is required to run a cycle")
+    result = cycle(out=args.out, target_name=args.target, freeze=args.freeze)
     print(json.dumps({k: result.get(k) for k in ("failure", "candidate", "adversarial", "heldout", "decision",
                                                  "reason")}, indent=1))

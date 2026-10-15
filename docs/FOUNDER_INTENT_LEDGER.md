@@ -118,6 +118,7 @@ Erratum, 2026-10-15 (review of #179, L2; the line above is kept as written). It 
 - F2b is a same-instance re-run of F2R, not a fresh family.
 - "Dawid-Skene and PSO admitted": #155 later found the crowd verifier EXPERIMENTAL, and L-BFGS-B beats PSO 32/7 post hoc.
 - "NO_GAIN" re-measured 130 of the same payloads as #158's REGRESSION; that retest decides.
+- "every protection held" (P8): the review found three adversarial probes accepted on #155's routing-genome evaluator (a module edit, a mid-run data edit, a hash/exec swap). The REJECT verdict stands; the protection claim does not.
 
 ## Seed genome: the Competency Compiler on GREG's path — 2026-10-01
 

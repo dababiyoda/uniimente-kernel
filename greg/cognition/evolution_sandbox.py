@@ -18,6 +18,7 @@ import tempfile
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+import hashlib  # noqa: E402
 import importlib  # noqa: E402
 from greg.cognition.genomes.contract import GenomeError  # noqa: E402
 from greg import isolation  # noqa: E402
@@ -37,7 +38,11 @@ def main():
         print(json.dumps({"confined": None, "error": "UNKNOWN_TARGET"}))
         return
     module, function, runtime = TARGETS[request["target"]]
-    method = getattr(importlib.import_module(module), function)      # imported BEFORE confinement
+    imported = importlib.import_module(module)                        # imported BEFORE confinement
+    method = getattr(imported, function)
+    # the bytes of the module actually imported, read before confinement: the parent compares them with its
+    # pre-registered freeze, so an edit between the parent's check and this import is refused (review M14)
+    module_sha256 = "sha256:" + hashlib.sha256(Path(imported.__file__).read_bytes()).hexdigest()
     for name in runtime:
         importlib.import_module(name)                                 # lazily used, so preloaded here too
     resource.setrlimit(resource.RLIMIT_CPU, (120, 121))
@@ -45,7 +50,7 @@ def main():
     confined = None
     if request.get("confine", True):
         try:
-            confined = isolation.confine(scratch, [])
+            confined = isolation.confine(scratch, [], read_code=False)     # no repository listing (review L5)
         except isolation.IsolationError as exc:
             print(json.dumps({"confined": None, "error": f"CONFINEMENT_UNAVAILABLE: {exc}"}))
             return
@@ -65,7 +70,10 @@ def main():
             outputs[problem["id"]] = {"output": out["output"], "certificate": out["certificate"]}
         except (GenomeError, ValueError, ZeroDivisionError, OverflowError) as exc:
             outputs[problem["id"]] = {"error": f"{type(exc).__name__}: {str(exc)[:160]}"}
-    print(json.dumps({"confined": confined, "probe": probe_result, "outputs": outputs}))
+        except Exception as exc:      # one item's error is that item's, never the whole cycle's (review L6)
+            outputs[problem["id"]] = {"error": f"UNEXPECTED {type(exc).__name__}: {str(exc)[:160]}"}
+    print(json.dumps({"confined": confined, "probe": probe_result, "outputs": outputs,
+                      "method_module": {"module": module, "sha256": module_sha256}}))
 
 
 if __name__ == "__main__":

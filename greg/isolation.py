@@ -28,6 +28,14 @@ class _Rules(ctypes.Structure):
     _fields_ = [("handled_access_fs", ctypes.c_uint64)]
 
 
+class _ScopedRules(ctypes.Structure):          # struct landlock_ruleset_attr, ABI >= 6
+    _fields_ = [("handled_access_fs", ctypes.c_uint64), ("handled_access_net", ctypes.c_uint64),
+                ("scoped", ctypes.c_uint64)]
+
+
+SCOPE_ABSTRACT_UNIX_SOCKET, SCOPE_SIGNAL = 1, 1 << 1
+
+
 class _Path(ctypes.Structure):
     _pack_ = 1
     _fields_ = [("allowed_access", ctypes.c_uint64), ("parent_fd", ctypes.c_int32)]
@@ -51,15 +59,19 @@ def available():
         return {"available": False, "abi": None, "reason": str(exc)}
 
 
-def confine(root, public_files):
-    """Irreversibly confine this disposable process. Installation failure raises."""
+def confine(root, public_files, *, read_code: bool = True):
+    """Irreversibly confine this disposable process. Installation failure raises.
+
+    ``read_code=False`` withholds the repository read grant (a P8 candidate sandbox imports its method before
+    confinement and needs no repository listing afterwards). On Landlock ABI >= 6 the domain is also scoped:
+    no signals to, and no abstract-unix-socket connections with, processes outside it."""
     libc = _libc()
     abi = libc.syscall(444, None, 0, 1)
     if abi < 3:
         raise IsolationError("Landlock ABI >=3 required; caller/provider execution remains refused")
     root = Path(root).resolve(strict=True)
     code = Path(__file__).resolve().parents[1]
-    grants = {root: ALL_FS, code: READ_DIR}
+    grants = {root: ALL_FS, **({code: READ_DIR} if read_code else {})}
     for file in public_files:
         file = Path(file)
         if file.resolve(strict=True) != file or file.stat().st_nlink != 1 or not file.is_file():
@@ -117,7 +129,8 @@ def confine(root, public_files):
                             "aarch64-linux-gnu/ld-linux*.so*"):
                 for path in base.glob(pattern):
                     grants[path.resolve()] = READ_FILE | EXECUTE
-    attr = _Rules(ALL_FS)
+    scoped = abi >= 6
+    attr = _ScopedRules(ALL_FS, 0, SCOPE_ABSTRACT_UNIX_SOCKET | SCOPE_SIGNAL) if scoped else _Rules(ALL_FS)
     fd = libc.syscall(444, ctypes.byref(attr), ctypes.sizeof(attr), 0)
     if fd < 0:
         raise IsolationError(f"Landlock ruleset creation failed errno={ctypes.get_errno()}")
@@ -137,4 +150,6 @@ def confine(root, public_files):
     finally:
         os.close(fd)
     return {"filesystem": "landlock", "abi": abi, "arbitrary_source": "refused",
-            "scope": "published source/runtime read-only; staged store read/write"}
+            "scope": "published source/runtime read-only; staged store read/write",
+            "repository_listing": "granted" if read_code else "withheld",
+            "signals_and_abstract_sockets": "scoped to the domain" if scoped else "unscoped (Landlock ABI < 6)"}

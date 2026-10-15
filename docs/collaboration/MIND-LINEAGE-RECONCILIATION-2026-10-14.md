@@ -331,10 +331,33 @@ branch, under a lineage-unique path. It is listed with the remaining falsificati
 
 | alternative | where | state | what would decide it |
 |---|---|---|---|
-| routing-genome protected evolution (#155) | `greg/cognition/evolution_routing.py`, `tests/unit/test_greg_evolution_routing.py` | not imported by any runtime module (AST test); its frozen runner refuses changed inputs | a target where routing configurations, not method configurations, carry headroom |
+| routing-genome protected evolution (#155) | `greg/cognition/evolution_routing.py`, `tests/unit/test_greg_evolution_routing.py` | not imported or named by any non-test source outside its runner (AST and string test over every top-level tree); its frozen runner refuses changed inputs. Review L8 found three adversarial probes accepted on its evaluator (a module edit, a mid-run data edit, a hash/exec swap), an unconfined evaluator context, a crash on a non-string key, `{}` filled from BASELINE, and every non-dev partition running the held-out branch | a target where routing configurations, not method configurations, carry headroom; **and** those defects fixed first |
 | typed mental-model operator library (#155) | `greg/cognition/advantage.py` | superseded as a generator: every operator maps to a Foundry mechanism, seven of them ported (section 5); `compile_map` stays a read-only CLI view (`greg cognition advantage`) | decided by the crosswalk (coverage). Merit needs real maps with outcomes |
 | both lineages' colliding frozen files | `docs/collaboration/lineage-archive/` | byte-identical archival copies (tested against git and the manifest's digests) | n/a: evidence |
 | #155's benchmark reconciliation table | git history at `ef5f078` | superseded | n/a |
+
+**P8 controller integrity (review of #179, M14 and L5).** #155's freeze mechanism is now combined into the
+canonical controller. A recorded cycle needs a pre-registered manifest (`evolution.write_freeze`), which covers:
+- the trusted closure's bytes, including the target's method module;
+- the rule and the settings;
+- both evaluator seals.
+
+`cycle()` checks the manifest before the run, before every evaluation and before it reports, and it refuses a
+dirty closure. The sandbox reports the bytes of the module it imported, and the parent refuses a mismatch.
+Confinement no longer grants the repository listing. On Landlock ABI 6 or later it scopes signals and abstract
+sockets. Generator seeds reach the sandbox only as a keyed digest. Two limits remain:
+- the parent still relies on the child's own report of its confinement, because Landlock exposes no
+  parent-side query;
+- constraint-release truth can still be regenerated from public generator code and the inputs.
+
+Both stay preconditions before any code-level candidate space is allowed. No cycle has yet run under the freeze.
+
+**Who adopts a P8 RETAIN (review L9, escalated).** Three mechanisms in the tree can decide improvements: the
+Kernel's `evolution/loop.py` ClosureLoop, `greg/improvement.py` (which auto-retains the `brief.attention`
+lever), and P8. P8 only proposes (`PROPOSED_NOT_APPLIED`), and it has no apply function; a test checks that a
+synthetic RETAIN record changes no shipped configuration. The proposed rule is that adoption is a reviewed code
+change, recorded as an EvolutionCapsule with a founder decision. **Founder decision needed:** confirm that rule,
+or name a different adopting decider.
 
 ## 10. Five review responsibilities
 

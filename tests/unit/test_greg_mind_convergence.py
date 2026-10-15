@@ -54,9 +54,23 @@ def _imports_module(path: Path, module: str) -> bool:
 def test_one_evolution_controller_is_reachable_from_runtime():
     """greg.cognition.evolution is the controller; the #155 routing-genome mechanism is an isolated alternative
     imported only by its historical runner (and its own tests)."""
-    importers = sorted(str(p.relative_to(ROOT)) for base in ("greg", "cortex", "scripts", "foundry")
-                       for p in (ROOT / base).rglob("*.py") if _imports_module(p, "evolution_routing"))
+    # every source tree but tests, docs and the lineage archive (review of #179, L7: a top-level package and a
+    # dynamic import by string both escaped the narrower scan)
+    skip = {"tests", "docs", "lineage-archive", "node_modules", ".git"}
+    sources = [p for p in ROOT.rglob("*.py") if not skip & set(p.relative_to(ROOT).parts[:1])
+               and "__pycache__" not in p.parts]
+    importers = sorted(str(p.relative_to(ROOT)) for p in sources if _imports_module(p, "evolution_routing"))
     assert importers == ["cortex/evaluation/evolution/run.py"], importers
+    allowed = {"cortex/evaluation/evolution/run.py",          # its historical runner
+               "greg/cognition/evolution_routing.py",         # itself
+               "greg/cognition/genome_library.py"}            # names it in the inventory's description text
+    named = sorted(str(p.relative_to(ROOT)) for p in sources
+                   if "evolution_routing" in p.read_text(errors="replace") and str(p.relative_to(ROOT)) not in allowed)
+    assert named == [], named
+    if "evolution_routing" in (ROOT / "greg/cognition/genome_library.py").read_text():
+        tree = ast.parse((ROOT / "greg/cognition/genome_library.py").read_text())
+        calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and "import" in ast.unparse(n.func)]
+        assert not any("evolution_routing" in ast.unparse(c) for c in calls)
     from greg.cognition import evolution
     assert hasattr(evolution, "cycle") and hasattr(evolution, "SealedEvaluator")
 

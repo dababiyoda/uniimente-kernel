@@ -74,8 +74,11 @@ def test_a_cycle_without_a_recurring_failure_changes_nothing(monkeypatch, tmp_pa
     train, held, excluded = E.forecasting_split()
     monkeypatch.setattr(E, "forecasting_split", lambda seed=808: (dict(list(train.items())[:4]),
                                                                   dict(list(held.items())[:4]), excluded))
-    record = E.cycle(generations=2, population=2, out=tmp_path / "c.json",
-                     require_confinement=isolation.available()["available"])
+    freeze = E.write_freeze(tmp_path / "freeze.json", target_name="forecast_quantile", generations=2,
+                            population=2, seed=20261008)
+    record = E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=tmp_path / "freeze.json",
+                     allow_dirty=True, require_confinement=isolation.available()["available"])
+    assert record["freeze"]["closure"] == freeze["closure"] and record["method_module"].startswith("sha256:")
     assert record["decision"] == "NO_RECURRING_FAILURE" and record["authority_created"] is False
     assert "proposal" not in record
     with pytest.raises(E.EvolutionError, match="overwrite"):
@@ -204,3 +207,93 @@ def test_a_constraint_release_candidate_runs_confined_and_verifies(tmp_path):
     produced = run["outputs"]["a"]
     assert "error" not in produced
     assert all(D.constraint_release_verify(data, produced["output"], produced["certificate"]).values())
+
+
+# ------------------------------------------------------------------ review of #179 (M14, L5, L6, L9)
+def test_a_recorded_cycle_refuses_to_run_without_a_freeze(tmp_path):
+    with pytest.raises(E.EvolutionError, match="pre-registered freeze"):
+        E.cycle(generations=2, population=2, out=tmp_path / "c.json")
+
+
+def test_an_edited_evaluator_refuses_before_any_candidate_runs(tmp_path, monkeypatch):
+    """Probe 2d: an edit of SealedEvaluator.losses on disk changed the seal, and nothing compared it."""
+    import shutil
+    manifest = E.freeze_manifest(target_name="immune_detect", generations=2, population=2, seed=1)
+    copy = tmp_path / "root"
+    for rel in manifest["closure"]:
+        (copy / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(E.ROOT / rel, copy / rel)
+    edited = copy / "greg/cognition/evolution.py"
+    edited.write_text(edited.read_text().replace("out[key] = -s[\"quality\"]", "out[key] = 0.0 * -s[\"quality\"]"))
+    monkeypatch.setattr(E, "closure_digests", lambda name, root=None, _real=E.closure_digests: _real(name, copy))
+    monkeypatch.setattr(E, "run_candidate", lambda *a, **k: pytest.fail("a candidate ran"))
+    with pytest.raises(E.EvolutionError, match="FROZEN_INPUT_CHANGED: .*evolution.py"):
+        E.cycle(generations=2, population=2, seed=1, target_name="immune_detect", freeze=manifest,
+                allow_dirty=True)
+
+
+def test_changed_evaluator_seals_refuse(monkeypatch):
+    manifest = E.freeze_manifest(target_name="immune_detect", generations=2, population=2, seed=1)
+    manifest["evaluator_seals"]["heldout"] = "sha256:" + "0" * 64
+    monkeypatch.setattr(E, "run_candidate", lambda *a, **k: pytest.fail("a candidate ran"))
+    with pytest.raises(E.EvolutionError, match="evaluator seals"):
+        E.cycle(generations=2, population=2, seed=1, target_name="immune_detect", freeze=manifest,
+                allow_dirty=True)
+
+
+@pytest.mark.skipif(not isolation.available()["available"], reason="Landlock unavailable")
+def test_a_method_module_other_than_the_frozen_one_is_refused():
+    """Probe 2c: an on-disk edit of the candidate's method module ran with seal.check() passing. The sandbox
+    now reports the bytes it imported and the parent compares them."""
+    target = E.immune_target()
+    from greg.cognition.genomes import collective
+    data, _ = collective.immune_gaussian_instance(3)
+    ok = E.run_candidate(target, target.incumbent, [{"id": "a", "data": data}],
+                         expected_module=E.method_module_sha256("immune_detect"))
+    assert ok["method_module"]["sha256"] == E.method_module_sha256("immune_detect")
+    with pytest.raises(E.EvolutionError, match="FROZEN_INPUT_CHANGED: the sandbox imported"):
+        E.run_candidate(target, target.incumbent, [{"id": "a", "data": data}], expected_module="sha256:" + "1" * 64)
+
+
+@pytest.mark.skipif(not isolation.available()["available"], reason="Landlock unavailable")
+def test_the_p8_sandbox_cannot_list_the_repository_or_signal_its_parent():
+    import os
+    target = E.forecasting_target()
+    listed = E.run_candidate(target, target.incumbent, [], probe_read=str(E.ROOT / "greg"))
+    assert listed["probe"].startswith("DENIED"), listed["probe"]
+    assert listed["confined"]["repository_listing"] == "withheld"
+    if listed["confined"]["abi"] >= 6:
+        assert listed["confined"]["signals_and_abstract_sockets"] == "scoped to the domain"
+    assert os.getpid()                       # the parent survived the run
+
+
+def test_seed_blinding_is_keyed_deterministic_and_leaves_seedless_data_alone():
+    data = {"seed": 7000, "x": 1}
+    a, b = E.blind(data, "salt-1"), E.blind(data, "salt-1")
+    assert a == b and a["seed"] != 7000 and E.blind(data, "salt-2")["seed"] != a["seed"]
+    assert E.blind({"x": 1}, "salt-1") == {"x": 1} and E.blind(data, None) == data
+
+
+@pytest.mark.parametrize("bad", [True, 2.0])
+def test_int_choices_refuse_bool_and_float(bad):
+    target = E.immune_target()
+    key = next(k for k, (kind, values) in target.space.items()
+               if kind == "choice" and all(type(v) is int for v in values))
+    with pytest.raises(E.EvolutionError, match="outside the declared space"):
+        target.validate({**target.incumbent, key: bad if bad is True else float(target.incumbent[key])})
+
+
+def test_a_synthetic_retain_record_changes_no_shipped_configuration(tmp_path):
+    """Review L9: P8 only proposes. Recording a RETAIN applies nothing; adoption is a reviewed change with a
+    founder decision."""
+    from greg.cognition.genomes import collective, developmental, forecasting
+    before = [dict(forecasting.DEFAULT_CONFIG), dict(collective.IMMUNE_DEFAULT_CONFIG),
+              dict(getattr(developmental, "CR_DEFAULT_CONFIG", {}))]
+    target = E.immune_target()
+    record = {"target": target.name, "decision": "RETAIN",
+              "proposal": {"state": "PROPOSED_NOT_APPLIED", "change": {"from": target.incumbent,
+                                                                       "to": {**target.incumbent}}}}
+    E._finish(record, tmp_path / "retain.json")
+    assert [dict(forecasting.DEFAULT_CONFIG), dict(collective.IMMUNE_DEFAULT_CONFIG),
+            dict(getattr(developmental, "CR_DEFAULT_CONFIG", {}))] == before
+    assert not any(hasattr(E, name) for name in ("apply", "adopt", "promote"))

@@ -69,9 +69,11 @@ def executables() -> dict[str, Executable]:
 
 
 def check_promotions(items: dict[str, Executable]) -> None:
-    """A promotion must answer the promoted family's requests: same native geometry, no input that family did not
-    need, and a deployable competitor to promote (an oracle reference is not a mechanism); one promotion per family
-    and no chains. Raises GenomeError otherwise."""
+    """A promotion must answer the promoted family's requests: same native geometry, a standalone decision (a
+    composition stage is never routed alone), no input that family did not need, every output that family
+    declares (so the Competency Compiler never rejects it as answering a relaxation of that family's question),
+    and a deployable competitor to promote (an oracle reference is not a mechanism); one promotion per family and
+    no chains. Raises GenomeError otherwise."""
     promoted = [x.promotes for x in items.values() if x.promotes is not None]
     for family, item in items.items():
         if item.promotes is None:
@@ -80,7 +82,9 @@ def check_promotions(items: dict[str, Executable]) -> None:
         if (former is None or item.promotes == family or former.promotes is not None
                 or promoted.count(item.promotes) > 1
                 or former.genome.epistemic_class != item.genome.epistemic_class
+                or not item.genome.standalone_decision
                 or not set(item.genome.required_inputs) <= set(former.genome.required_inputs)
+                or not set(former.genome.output_contract) <= set(item.genome.output_contract)
                 or not former.competitor_deployable):
             raise GenomeError(f"{item.genome.intelligence_id}: invalid promotion of {item.promotes!r}")
 

@@ -26,8 +26,8 @@ LOSS_V3_SHA256 = '80299c49024e58afa9d449763646c75be4d8e7bfc2b62e6a6eb966c1b41297
 
 # The runner freeze run.py currently points at, pinned by manifest digest. Re-freezing the runner
 # (a new freeze-vN) is a deliberate re-seal: update this pair in the same change.
-RUNNER_FREEZE = ('cortex/evaluation/seed_genome/freeze-v7.json',
-                 '3aa4e044c778e74a74ebc26be26b40a8ce64a5cdad483b99759d5babc14468f7')
+RUNNER_FREEZE = ('cortex/evaluation/seed_genome/freeze-v8.json',
+                 '236da72cac0cf883688cb4e30aeabf7523caec8cb643aaa89ed62a99a0bf5b86')
 RUNNER = 'cortex/evaluation/seed_genome/run.py'
 
 
@@ -55,7 +55,7 @@ def replay(root=ROOT):
     # The labels, scoring implementation and case generator remain sealed. The labels and the
     # generator are sealed by their v3 file digests. run.py's import path, file list and freeze
     # pointer changed when the seed module was renamed (greg/cognition.py ->
-    # greg/cognition/seed_path.py) and the runner was re-frozen (v4-v7), so it carries two seals:
+    # greg/cognition/seed_path.py) and the runner was re-frozen (v4-v8), so it carries two seals:
     # its scoring equals v3 (loss() byte for byte, SPEC equal to the sealed spec), and its whole
     # file equals the digest the pinned current runner freeze records. Any other edit is refused.
     for name in ('cortex/evaluation/seed_genome/suite.json',

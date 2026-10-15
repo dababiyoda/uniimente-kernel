@@ -7,7 +7,8 @@
    "Missions A-E, G, H, J first mapped against 5c4f4aa (2026-10-14) by an independent mapping run; every cited node re-resolved against this tree",
    "2026-10-15: A (R2, R3) and F re-mapped onto Goal Gravity on the Body (76832db); D, G and H updated with the Mission D/G/H defect fixes and their regressions (docs/collaboration/MISSION-DEFECTS-2026-10-15.md); I, K and L mapped",
    "2026-10-15: Mission F requirements R1 and R3-R7 proven at BODY tier by a real-process Goal Gravity test; F gap G1 closed",
-   "2026-10-15: Mission K requirement K1 proven at BODY tier by a real-process pause/resume test; K gap G1 closed"
+   "2026-10-15: Mission K requirement K1 proven at BODY tier by a real-process pause/resume test; K gap G1 closed",
+   "2026-10-15: Mission K requirements K2, K5 and K6 proven at BODY tier by a real-process device-revocation test; K gap G2 closed"
   ]
  },
  "tier_reading": {
@@ -2109,16 +2110,17 @@
      "id": "K2",
      "obligation": "Revoke: a revoked grant, delegation, goal or capability acts on nothing.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
+      "tests/integration/test_greg_device_revocation_process.py::test_a_revoked_device_stays_revoked_across_a_kill_and_no_other_device_can_restore_it",
       "tests/unit/test_consequence_gate.py::test_revoked_grant_fails_at_commit",
-      "tests/unit/test_greg_remote.py::test_expired_and_revoked_delegations_stop_working",
-      "tests/unit/test_greg_goal_gravity_authority.py::test_an_unsigned_record_cannot_undo_a_founder_revoke",
       "tests/unit/test_greg_goal_gravity.py::test_signed_commands_honour_device_revocation_and_founder_rotation",
-      "tests/unit/test_greg_recombine.py::test_detaching_the_engine_stops_every_construction_built_on_it"
+      "tests/unit/test_greg_goal_gravity_authority.py::test_an_unsigned_record_cannot_undo_a_founder_revoke",
+      "tests/unit/test_greg_recombine.py::test_detaching_the_engine_stops_every_construction_built_on_it",
+      "tests/unit/test_greg_remote.py::test_expired_and_revoked_delegations_stop_working"
      ],
-     "notes": ""
+     "notes": "2026-10-15: on a real `greg run` process the founder revokes one of two delegated device keys; that device's answer, signed by its own `greg decide` process, is refused as data before and after a SIGKILL restart; the other device cannot re-enroll it; the other device's valid answer is honoured."
     },
     {
      "id": "K3",
@@ -2159,22 +2161,24 @@
      "implementation": "INTEGRATED",
      "tests": [
       "tests/integration/test_greg_cortex_rehearsal.py::test_kill_restart_approve_settle_once_then_revocation_survives_restart",
+      "tests/integration/test_greg_device_revocation_process.py::test_a_revoked_device_stays_revoked_across_a_kill_and_no_other_device_can_restore_it",
       "tests/unit/test_greg_remote.py::test_a_founder_stop_survives_restart_until_a_human_clears_it"
      ],
-     "notes": ""
+     "notes": "2026-10-15: on a real `greg run` process the founder revokes one of two delegated device keys; that device's answer, signed by its own `greg decide` process, is refused as data before and after a SIGKILL restart; the other device cannot re-enroll it; the other device's valid answer is honoured."
     },
     {
      "id": "K6",
      "obligation": "Revoked authority is not restored by another worker or device.",
-     "coverage": "partial",
-     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
+      "tests/integration/test_greg_device_revocation_process.py::test_a_revoked_device_stays_revoked_across_a_kill_and_no_other_device_can_restore_it",
+      "tests/unit/test_greg_goal_gravity.py::test_signed_commands_honour_device_revocation_and_founder_rotation",
       "tests/unit/test_greg_goal_gravity_reattack.py::test_an_unverified_record_cannot_hide_a_key_rotation_so_the_retired_key_admits_nothing",
-      "tests/unit/test_greg_remote.py::test_a_phone_key_can_never_do_what_only_the_founder_key_may",
-      "tests/unit/test_greg_goal_gravity.py::test_signed_commands_honour_device_revocation_and_founder_rotation"
+      "tests/unit/test_greg_remote.py::test_a_phone_key_can_never_do_what_only_the_founder_key_may"
      ],
-     "notes": "Another device key is refused; a second concurrent worker process presenting revoked authority is not exercised (gap G2)."
+     "notes": "2026-10-15: on a real `greg run` process the founder revokes one of two delegated device keys; that device's answer, signed by its own `greg decide` process, is refused as data before and after a SIGKILL restart; the other device cannot re-enroll it; the other device's valid answer is honoured."
     }
    ],
    "gaps": [
@@ -2190,10 +2194,11 @@
     {
      "id": "G2",
      "gap": "No test has a second concurrent worker or Body process present a grant or key revoked by the first.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Two processes on one ledger: revoke in one, present the revoked grant from the other, assert the Gate refuses at admission and at commit."
+     "next": "Two processes on one ledger: revoke in one, present the revoked grant from the other, assert the Gate refuses at admission and at commit.",
+     "closed_by": "tests/integration/test_greg_device_revocation_process.py (revoked device key presented by its own process across a SIGKILL; re-enrollment by another device refused). GREG grants are single-action and never held by a worker across dispatches; revoked or consumed grants at the Gate are I6."
     },
     {
      "id": "G3",

@@ -207,13 +207,11 @@
    ],
    "authority": "Only founder-signed (or founder-delegated device) commands; an OS signal is never a founder stop.",
    "missing_dependencies": [],
-   "observed_failures": [
-    "A second concurrent process presenting revoked authority is not exercised (K gap G2)"
-   ],
+   "observed_failures": [],
    "recovery": "A founder stop persists across restart until a human clears it.",
    "resources": "None beyond the Body.",
    "next_work": [
-    "K gap G2"
+    "Founder shutdown from Alfonso's own enrolled device (K gap G3, founder)"
    ],
    "blocking": []
   },
@@ -650,7 +648,7 @@
    "n": 1,
    "condition": "All presently implementable required Body mechanisms are connected.",
    "met": "partly",
-   "evidence": "Connected on one Body; the gate hardening waits on a founder signature; a second concurrent process presenting revoked authority is not exercised (K gap G2)."
+   "evidence": "Connected on one Body; the gate hardening waits on a founder signature; DALEOBANKS and the real organ checkouts are absent here (E gaps)."
   },
   {
    "n": 2,
@@ -698,7 +696,7 @@
    "n": 9,
    "condition": "Recovery and shutdown behave correctly in the exercised environments.",
    "met": "partly",
-   "evidence": "Mid-dispatch SIGKILL (H) and founder pause/resume across a SIGKILL (K1) at BODY tier; concurrent revocation (K gap G2) open."
+   "evidence": "Mid-dispatch SIGKILL (H), founder pause/resume and device revocation across a SIGKILL (K) at BODY tier; a crash-loop breaker and interruption of services other than the Body host are open (H gaps G5, G7)."
   },
   {
    "n": 10,
@@ -722,7 +720,7 @@
    "n": 13,
    "condition": "No readily buildable required subsystem has been replaced by a stub, placeholder, or future-work paragraph.",
    "met": "no",
-   "evidence": "Buildable gaps remain open (e.g. D G1, I G2, K G2, L G1)."
+   "evidence": "Buildable gaps remain open (e.g. D G1, H G5, I G2, L G1)."
   },
   {
    "n": 14,

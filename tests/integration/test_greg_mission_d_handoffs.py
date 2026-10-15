@@ -163,3 +163,33 @@ def test_a_legacy_protected_bind_is_never_honoured_at_dispatch(tmp_path, monkeyp
     assert [c["order"] for c in run["double"].calls] == ["a"], "the consumer with a protected bind never runs"
     asks = [a for a in run["asks"] if a["kind"] == "NO_STRATEGY"]
     assert len(asks) == 1 and "protected" in str(asks[0]["evidence"]["held_by_precondition"]["worker-b"])
+
+
+# -- D2 -------------------------------------------------------------------------------------------------
+@pytest.mark.parametrize("handoff", ["bind", "inline"])
+def test_a_rejected_producer_output_never_feeds_a_consumer(tmp_path, monkeypatch, handoff):
+    # worker-a's own acceptance test fails, so independent appraisal REJECTS its output; worker-b binds
+    # worker-a's commit with no `requires` precondition.
+    run = _run(tmp_path, monkeypatch, {"handoff": handoff}, double=Double(a_test="assert sub(3, 1) == 99"), ticks=8)
+    assert [c["order"] for c in run["double"].calls] == ["a"], "a rejected output is never consumed"
+    assert [a["action_id"] for a in run["actions"]] == ["worker-a"]
+    rejected = [o for o in run["observed"] if o["check_id"] == "a_accepted"]
+    assert rejected and not rejected[-1]["passed"] and "REJECTED" in rejected[-1]["detail"]
+    asks = [a for a in run["asks"] if a["kind"] == "NO_STRATEGY"]
+    assert len(asks) == 1 and "REJECTED" in str(asks[0]["evidence"]["held_by_precondition"]["worker-b"])
+    assert run["m"].blocker["request_id"] == asks[0]["request_id"] and run["m"].status == "ACTIVE"
+
+
+def test_an_accepted_producer_output_feeds_its_consumer(tmp_path, monkeypatch):
+    run = _run(tmp_path, monkeypatch, {"handoff": "bind"}, ticks=8)
+    assert [c["order"] for c in run["double"].calls] == ["a", "b"]
+    assert run["double"].calls[1]["context"].startswith("commit ")
+    assert run["m"].status == "ACHIEVED"
+
+
+def test_a_worker_handoff_without_an_independent_appraisal_is_refused_at_registration(tmp_path):
+    spec = _spec(_repo(tmp_path))
+    spec["success_checks"] = [c for c in spec["success_checks"] if c["check_id"] != "a_accepted"]
+    spec["strategies"][0]["advances"] = ["b_accepted"]
+    with pytest.raises(MissionError, match="appraisal"):
+        validate_mission(spec)

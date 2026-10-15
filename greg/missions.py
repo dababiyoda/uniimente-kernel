@@ -84,6 +84,7 @@ def validate_mission(spec: dict) -> dict:
             raise MissionError(f"strategy {strategy['action_id']} cannot require a check it advances")
         _validate_bindings(strategy, set(actions))
     _acyclic_bindings(spec["strategies"])
+    _validate_appraised_handoffs(spec)
     ladder = spec["closure"].get("ladder", [])
     for rung in ladder:
         if set(rung) - checks:
@@ -106,6 +107,51 @@ DEFAULT_BIND_BYTES = 16 * 1024
 
 class Unbound(Exception):
     """A bound input is not available yet (or no longer matches its declared type)."""
+
+
+# Producers whose output has an independent appraiser: producer capability -> (appraiser capability, the
+# appraiser's sensor param naming the instance, the producer output field naming it, the accepting verdict).
+# A typed handoff consumes such an output only after the mission observed that appraisal accept it.
+APPRAISED_PRODUCERS = {"worker.commission": ("worker.appraise", "order", "work_order", "ACCEPTED")}
+
+
+def inline_refs(params) -> list[dict]:
+    """Every inline ``$from_action`` reference in a strategy's params (greg/pipeline.py syntax)."""
+    found = []
+    if isinstance(params, dict):
+        ref = params.get("$from_action")
+        if isinstance(ref, dict):
+            found.append(ref)
+        for key, value in params.items():
+            if key != "$from_action":
+                found += inline_refs(value)
+    elif isinstance(params, list):
+        for value in params:
+            found += inline_refs(value)
+    return found
+
+
+def handoff_producers(strategy: dict) -> set:
+    """The strategies whose output this strategy consumes through a typed handoff (bind or inline)."""
+    return ({e["from"]["action_id"] for e in strategy.get("bind", [])}
+            | {r.get("action_id") for r in inline_refs(strategy.get("params", {}))})
+
+
+def _validate_appraised_handoffs(spec: dict):
+    """A handoff from a producer that has an independent appraiser needs that appraisal in the mission:
+    otherwise nothing could ever accept the output, and the consumer would only ever wait."""
+    strategies = {s["action_id"]: s for s in spec["strategies"]}
+    for consumer in spec["strategies"]:
+        for producer in sorted(handoff_producers(consumer) & set(strategies)):
+            rule = APPRAISED_PRODUCERS.get(strategies[producer].get("capability"))
+            if rule is None:
+                continue
+            appraiser, key, _, _ = rule
+            instance = strategies[producer].get("params", {}).get(key)
+            if not any(c["sensor"].get("capability") == appraiser
+                       and (c["sensor"].get("params") or {}).get(key) == instance for c in spec["success_checks"]):
+                raise MissionError(f"strategy {consumer['action_id']} consumes {producer}'s output, which has no "
+                                   f"independent appraisal ({appraiser} of {key} {instance!r}) in this mission")
 
 
 def protected_param(path: str) -> str | None:
@@ -1045,6 +1091,41 @@ class MissionEngine:
             sources.append(receipt)
         return params, bindings, sources
 
+    def _handoff_hold(self, m: MissionState, producer: str, receipt: str) -> str | None:
+        """Why a typed handoff may not consume ``producer``'s output (its retained ``receipt``) yet, or None.
+
+        An output whose producer has an independent appraiser (APPRAISED_PRODUCERS) is consumed only after this
+        mission observed that appraisal, later than the receipt, accept it: never before, never if it rejected.
+        A producer without an appraiser hands over its receipted output (integrity evidence) as before."""
+        strategy = next((x for x in m.spec["strategies"] if x["action_id"] == producer), None)
+        rule = APPRAISED_PRODUCERS.get(strategy.get("capability")) if strategy else None
+        if rule is None:
+            return None
+        appraiser, key, field, accepted = rule
+        ledger = self.journal.ledger
+        record = ledger.find(receipt)
+        output = (record.payload.get("result") or {}).get("output") if record is not None else None
+        instance = output.get(field) if isinstance(output, dict) else None
+        checks = {c["check_id"] for c in m.spec["success_checks"] if c["sensor"].get("capability") == appraiser
+                  and (c["sensor"].get("params") or {}).get(key) == instance}
+        if record is None or not checks:
+            return f"{producer}'s output has no independent appraisal ({appraiser}) in this mission"
+        latest = None
+        for event in self.journal.replay("mission.observed"):
+            data = event.payload
+            if data.get("mission_id") != m.mission_id or data.get("check_id") not in checks or not data.get("receipt"):
+                continue
+            seen = ledger.find(data["receipt"])
+            if seen is not None and seen.seq > record.seq:
+                latest = seen
+        if latest is None:
+            return f"awaiting the independent appraisal ({appraiser}) of {producer}'s output"
+        verdict = ((latest.payload.get("result") or {}).get("output") or {}).get("verdict")
+        if verdict != accepted:
+            return (f"the independent appraisal of {producer}'s output is {verdict}, not {accepted}; "
+                    "a rejected output is never consumed")
+        return None
+
     def _self_repair(self, m: MissionState, now: datetime):
         """A formed capability that faults twice in a row on the same check is re-formed, not escalated."""
         for check_id, (manifest, detail, params) in sorted(self.capability_faults.items()):
@@ -1425,6 +1506,18 @@ class MissionEngine:
                 except Unbound as why:
                     held[s["action_id"]] = [f"input: {why}"]
                     continue
+            links = [(b["from_action"], b["from_receipt"]) for b in bound.get(s["action_id"], (None, [], []))[1]]
+            if inline_refs(s.get("params", {})):
+                from greg.pipeline import resolve, BindingError
+                try:
+                    links += [(p["action_id"], p["receipt"])
+                              for p in resolve(s.get("params", {}), self.journal, m.mission_id)[1]]
+                except BindingError:
+                    pass                     # not available yet: resolved again after selection
+            holds = [h for h in (self._handoff_hold(m, producer, receipt) for producer, receipt in links) if h]
+            if holds:
+                held[s["action_id"]] = [f"input: {h}" for h in holds]
+                continue
             manifest = self._manifest_for(s)
             neg_expected, route, _, estimate = rank_key(
                 s, index, failing, manifest, records.get(manifest.capability_id) if manifest else None, value)

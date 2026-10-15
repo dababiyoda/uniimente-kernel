@@ -12,6 +12,7 @@ future routing (directive 2026-10-07, section 31 item 13):
             solvers and the #155 repertoire), keyed by family. A measured verdict routes; a structural label
             (alias, superseded by a canonical organ, not run, not benchmarked, route only) is kept as
             ``raw_status`` and routes as UNEVALUATED. The latest run decides; ``history`` keeps every run.
+            ``code`` binds the verdict to the solver function's source digest at the run's source commit.
 
 Only frozen, committed result files are read; a missing source is listed, never invented. Run:
     PYTHONPATH=. python scripts/build_mind_evidence_index.py
@@ -53,6 +54,22 @@ OPERATION_RUNS = (
 )
 # Verdicts measured against a competitor on held-out data; any other label is structural and changes no route.
 MEASURED = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "SUPERSEDED", "REJECTED")
+
+
+def _measured_code(family: str, commit: str | None) -> dict | None:
+    """The family's solver at the run's source commit: its current path and function name, and the digest of that
+    function's source as committed then (git show). A verdict is bound to this; None when there is no solver."""
+    import subprocess
+    from greg.cognition.compiler import function_digest, solver_code
+    now = solver_code(family)
+    if now is None:
+        return None
+    code = {"path": now["path"], "function": now["function"], "sha256": None}
+    if commit:
+        out = subprocess.run(["git", "show", f"{commit}:{now['path']}"], cwd=ROOT, capture_output=True, text=True)
+        if out.returncode == 0:
+            code["sha256"] = function_digest(out.stdout, now["function"])
+    return code
 
 
 def _sha(path: Path) -> str:
@@ -148,7 +165,10 @@ def build() -> dict:
             history = (index["operations"].get(family) or {}).get("history", []) + [{"evidence": pointer,
                                                                                         "status": raw}]
             index["operations"][family] = {"status": raw if raw in MEASURED else "UNEVALUATED", "raw_status": raw,
-                                           "measured": raw in MEASURED, "evidence": pointer, "history": history}
+                                           "measured": raw in MEASURED, "evidence": pointer, "history": history,
+                                           # the solver code this verdict measured (greg.cognition.compiler
+                                           # .operation_status routes a positive verdict only on that code)
+                                           "code": _measured_code(family, data.get("source_commit"))}
     return index
 
 

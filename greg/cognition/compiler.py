@@ -20,6 +20,7 @@ become real): every receipt carries ``authority_state: EXISTING_KERNEL_GATE_REQU
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, fields
+from functools import lru_cache
 import json
 from pathlib import Path
 import time
@@ -360,6 +361,49 @@ def evidence_index(path: Path | None = None) -> dict:
     return json.loads(path.read_text())
 
 
+def function_digest(text: str, name: str) -> str | None:
+    """sha256 of a module-level function's source lines, decorators included, with trailing whitespace
+    stripped; None when the module defines no such function. Source text, not an AST dump, so the digest does
+    not change with the Python version."""
+    import ast
+    import hashlib
+    for node in ast.parse(text).body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == name:
+            start = min([node.lineno] + [d.lineno for d in node.decorator_list])
+            lines = text.splitlines()[start - 1:node.end_lineno]
+            return "sha256:" + hashlib.sha256("\n".join(line.rstrip() for line in lines).encode()).hexdigest()
+    return None
+
+
+@lru_cache(maxsize=None)
+def solver_code(family: str) -> dict | None:
+    """The operation family's solver as it is now: repository path, function name and source digest."""
+    import inspect
+    from .solvers import SOLVERS
+    fn = SOLVERS.get(family)
+    if fn is None:
+        return None
+    path = Path(inspect.getsourcefile(fn)).resolve()
+    return {"path": path.relative_to(ROOT).as_posix(), "function": fn.__name__,
+            "sha256": function_digest(path.read_text(), fn.__name__)}
+
+
+def operation_status(family: str, record: dict) -> tuple[str, str | None]:
+    """(routing status, stale reason) for an operation family's frozen verdict (PR #155 lineage).
+
+    Like a genome's version rule: positive evidence binds the solver code measured (its source digest at the
+    run's source commit), so a changed solver routes as UNEVALUATED until re-admitted; negative and
+    inconclusive evidence persists. A positive verdict without a recorded binding is treated as stale."""
+    status = record.get("status", "UNEVALUATED")
+    if status in NOT_POSITIVE or status == "UNEVALUATED":
+        return status, None
+    measured, now = (record.get("code") or {}).get("sha256"), (solver_code(family) or {}).get("sha256")
+    if measured is None or measured != now:
+        return "UNEVALUATED", (f"{status} was measured on solver code {measured or 'not recorded'}; the code "
+                               f"is now {now}; needs re-admission")
+    return status, None
+
+
 def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     from .catalog import FAMILIES
     from .composition import RECIPES, route
@@ -386,9 +430,10 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                     status = "UNEVALUATED"
             else:
                 need = NATIVE_INPUTS.get(op)
-                # PR #155 lineage: a frozen held-out verdict for an operation family routes like a genome's;
-                # a structural label (alias, not run) is indexed as UNEVALUATED and changes nothing
-                status = (evidence.get("operations") or {}).get(family, {}).get("status", "UNEVALUATED")
+                # PR #155 lineage: a frozen held-out verdict for an operation family routes like a genome's,
+                # bound to the solver code it measured; a structural label (alias, not run) is indexed as
+                # UNEVALUATED and changes nothing
+                status, stale = operation_status(family, (evidence.get("operations") or {}).get(family, {}))
                 standalone = True
             if need is None or not set(need) <= keys:
                 continue

@@ -100,6 +100,11 @@ Progress 2026-10-15 (measured, frozen, negative results kept):
 - **Fix rounds merged after independent verification:** packs B and C, Capability Genesis (five rounds) and the solo compiler work (three rounds).
 - **Independent review of PR #179** posted, plus a review of its closure binding. A family re-pointed to another solver keeps a positive verdict after an index rebuild (confirmed).
 - **Records corrected after the independent evidence review:** the F8 percentage base, the scope of the `flow_expansion_mcf` result, the explanation of the eight DEFAULT verdicts and the random-restart comparison above. The v3 admission, P8 cycle-4 and P6 v5 READMEs carry errata that quote the original wording. `scripts/mind_status.py` now reports a status change across a declared regime change (`collective_quorum`, `collective_immune`) apart from a rule-boundary flip, and the admission harness records `source_dirty` for future runs.
+- **Independent review of this day's work** (five lenses, each finding re-run by a second agent): 33 findings plus 9 the verifiers added, all confirmed or partly confirmed. Each was fixed with a regression test that fails on the old code and independently re-checked:
+  - **P8 integrity v2.** The freeze now covers the full import closure, and executed code is checked in both processes. A recorded cycle runs only through a clean room (a fresh checkout, a source-only entry, no bytecode, git hooks off). Held-out data is looked at once, and only by a recorded run. This took four rounds of independent checking. It defends a record against a dirty or stale tree, not against whoever controls the machine.
+  - **Competency Compiler and Genesis:** a wrapped request now gets one ask, recipe demotion is scoped to the request, and demotion labels are truthful.
+  - **Optimisation verifier:** OPTIMAL, INFEASIBLE and UNSAT claims are now certified independently by Z3 ("proven" only when certified). Objectives are compared exactly at large magnitudes, and parallel edges are refused in capacity expansion.
+  - **Records:** errata quote the original wording.
 - **Blocked by the environment:** fresh NYC TLC data for F8's next evaluation. The network policy refuses `data.cityofnewyork.us` and the TLC CDN.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07

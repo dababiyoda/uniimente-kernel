@@ -23,12 +23,14 @@
     "tests/integration/test_one_machine_ten_steps.py (ten steps plus 7b and 7c) and its evidence bundle under docs/evidence/one-machine-ten-steps/2026-10-15/",
     "tests/integration/test_one_machine.py (#178) on the same tree with real DALEOBANKS 667439f and WealthMachine ec82b80: independent verifier REDERIVED, appraisal VERIFIED",
     "tests/unit/test_greg_worker_confinement_setting.py, tests/unit/test_greg_reservation_release.py, tests/unit/test_greg_standing_reconciliation.py",
+    "tests/unit/test_greg_model_child_policy.py (#169's confined child keeps #178's model policy) and tests/integration/test_one_machine_attacks.py in both worker postures",
     "docs/opus-maximus/ deliverables A-L"
   ],
   "failure_evidence": [
     "Defects the proofs found and fixed with regression tests: learned-policy tie-break; reconciliation record crash; resilience double count, then resilience dropping reconciled interruptions; a Goal Gravity name collision (86 failing tests on the #175 merge); an interrupted attempt's signed cap never released on reconciliation (stalled #178's whole-machine test) and booked twice on 'executed'",
     "Goal Gravity (#178's ordering) ranked the ten-step body's signed missions (26 ranking facts in one run); the ten-step test does not assert it; #178's verifier asserts it for its mission",
-    "#169 dcb9cd7 not merged: a trial merge found a design conflict in greg/models.py and a seed-freeze re-seal requirement (REPOSITORY_CONVERGENCE_MAP.md)",
+    "#169 dcb9cd7 merged only after its confined model child was extended: it sent the provider-chosen fallbacks=\"default\" form that #178 had removed after an audit found substitutes billed at the requested model's price; the seed freeze was re-sealed as v8 (REPOSITORY_CONVERGENCE_MAP.md)",
+    "Three of #178's one-machine attacks had failed on this branch since the #178 merge (5d23901) and were found by the full suite: a receipt field the merge dropped, a refusal the envelope makes unnecessary, and an unreviewed test double the default body refuses (f6d146e)",
     "The freight proof-of-delivery Venture Cell has no demand evidence; the organ said 'demand asserted, not shown'"
   ],
   "dependencies": [
@@ -48,6 +50,8 @@
     "a02a258 greg/missions.py reservation release, greg/resilience.py",
     "b4289ca worker confinement setting (greg/workers.py, greg/body.py, greg/cli.py, greg/capabilities.py, greg/appraisal.py)",
     "0bc57f4 standing reconciliation (greg/workers.py inert_interruption_proof, greg/missions.py, greg/routing.py, greg/planner.py, contracts/greg-mission.schema.json)",
+    "ba371d8 merge #169 dcb9cd7 (greg/model_child.py allowlist and per-attempt evidence, greg/models.py, cortex/evaluation/seed_genome/freeze-v8.json)",
+    "f6d146e greg/workers.py supervision statement on supervised receipts; #178 attack suite in both postures",
     "greg/improvement.py",
     "greg/organ_exchange.py",
     "tests/integration/test_one_machine_ten_steps.py",

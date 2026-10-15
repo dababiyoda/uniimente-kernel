@@ -2051,7 +2051,15 @@
      "state": "OPEN",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Hold the expectations outside the code under test: run the frozen tests' assertions in a parent that the worker's code cannot read or write (a Landlock-confined child executes the code and returns values; the parent compares them), and require a positive per-test result, not an exit code."
+     "next": "Build the chosen design in docs/collaboration/IG7-ORACLE-DESIGN-2026-10-15.md (Angle B with four grafts): the frozen tests run in a confined parent that never executes the worker's bytes, the patched code only in a confined child reached through a data-only boundary, and ACCEPTED needs a positive per-test record from the parent. Its acceptance tests are patches written to defeat an evaluator; they need an environment where that corpus can be written and reviewed (the model provider's safeguards stopped it here). Already landed: GREG's own acceptance runs of a patch are confined like the worker (fbb1a01)."
+    },
+    {
+     "id": "G8",
+     "gap": "Authoring-time special-casing of visible frozen tests is not excluded: the worker sees the frozen acceptance tests in its clone and can satisfy exactly their cases.",
+     "state": "OPEN",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "Held-out acceptance cases the worker never sees, fixed in the founder-signed order by digest and revealed only to the appraisal (Angle C's ledger-digest mechanism in docs/collaboration/IG7-ORACLE-DESIGN-2026-10-15.md), checked through the I.G7 oracle."
     }
    ]
   },

@@ -26,12 +26,13 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
 
 ## Open gaps (from `acceptance/missions.json`)
 
-**Buildable now (45).** Highest leverage first:
+**Buildable now (46).** Highest leverage first:
 
 1. **I.G7:** the appraisal executes the worker's code inside the acceptance process and reads its exit code, so a
-   change built to subvert the test process itself can still pass. Hold the expectations in a parent the code under
-   test cannot reach. (I.G6 closed on 2026-10-15: commissioned workers are now Landlock-confined and a substituted
-   evaluator is refused; see `tests/unit/test_greg_worker_containment.py`.)
+   change built to subvert the test process itself can still pass. The design is chosen and recorded in
+   `docs/collaboration/IG7-ORACLE-DESIGN-2026-10-15.md`; building it needs an environment where its hostile-patch
+   test corpus can be written and reviewed. GREG's own acceptance runs of a patch are already confined (fbb1a01).
+   **I.G8:** held-out acceptance cases the worker never sees.
 2. **H.G7:** interrupt the separate appraiser, the console or remote service, and the Genesis builder mid-operation.
    **H.G4:** interrupt a paid `worker.commission` inside a Body process.
 3. **D.G8:** run a multi-worker mission in a real Body process. **D.G4, D.G6, D.G7:** cumulative budget,

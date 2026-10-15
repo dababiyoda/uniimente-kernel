@@ -206,7 +206,7 @@ def test_composition_families_are_declared_as_the_frozen_runs_describe_them_and_
 
 def test_a_version_bump_makes_positive_evidence_stale_while_negative_evidence_persists(tmp_path):
     def bump(index):
-        for family in ("basal_kalman", "flow_maxflow", "collective_quorum", "flow_reinforce_greedy"):
+        for family in ("basal_kalman", "flow_maxflow", "grid_dijkstra", "flow_reinforce_greedy"):
             index["genomes"][family]["version"] = "0.0.0-old"
     fixture = _fixture(tmp_path, bump)
     rows = _rows(M.status(index_path=fixture))
@@ -214,8 +214,8 @@ def test_a_version_bump_makes_positive_evidence_stale_while_negative_evidence_pe
         row = rows[f"cognition.{family}"]
         assert row["label"] == "BUILT" and row["heldout"]["current"] is False
         assert row["heldout"]["version_measured"] == "0.0.0-old" and "needs re-admission" in row["basis"]
-    assert rows["cognition.collective_quorum"]["label"] == "UNRESOLVED"       # EXPERIMENTAL persists
-    assert "persists until a re-admission" in rows["cognition.collective_quorum"]["basis"]
+    assert rows["cognition.grid_dijkstra"]["label"] == "UNRESOLVED"       # EXPERIMENTAL persists
+    assert "persists until a re-admission" in rows["cognition.grid_dijkstra"]["basis"]
     assert rows["cognition.flow_reinforce_greedy"]["label"] == "BUILT"        # SUPERSEDED persists
     assert "refuted" in rows["cognition.flow_reinforce_greedy"]["basis"]
     # the compiler reads the same fixture the same way

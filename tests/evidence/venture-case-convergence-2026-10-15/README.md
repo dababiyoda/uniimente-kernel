@@ -75,6 +75,8 @@ So the organ that would conclude "go" did not determine what the memo concludes 
   - an abstained estimate still shown;
   - an off-ledger receipt accepted;
   - the writable journal handed to the bridge.
+- `full-suite.log`: the whole suite at `852e5cd` gave 3750 passed, 5 failed, 23 skipped. The five are the environmental
+  Landlock tests, which fail identically at the pristine base; two of the 23 skips are the real-organ tests.
 - `venture_evidence.py` reproduces the two missions. Run it from the repository root as
   `python venture_evidence.py <out> <railscout> <wealthmachine>`.
 

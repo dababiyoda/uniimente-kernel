@@ -103,6 +103,7 @@ def exact_reach(capability_id: str, params: dict) -> dict:
     from urllib.parse import urlsplit
     hosts = params.get("hosts") or ([urlsplit(str(params["url"])).hostname] if params.get("url") else [])
     credentials = [str(v) for v in (params.get("secrets") or {}).values()] + \
+                  [f"{v} (as a file)" for v in (params.get("secret_files") or {}).values()] + \
                   ([str(params["bearer"])] if params.get("bearer") else [])
     return {"tool": f"{params.get('server')}.{params.get('tool')}",
             **({"remote_server": str(params["url"])} if params.get("url") else {}),

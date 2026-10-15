@@ -580,7 +580,9 @@
     tests/integration/test_greg_mcp_token.py), kept only when the server accepts it, and listed the same way.
     Since increment 29 the founder's words propose a call to such a server, closed only when GREG renders a page
     the words name and finds the text (tests/unit/test_greg_mcp_remote_words.py, test_greg_mcp_token.py).
-    Still missing - credential files, a remote change no page shows, a real hosted server observed, and
+    Since increment 30 a server that reads its credential from a file gets a private read-only file, removed after
+    the call (secret_files; greg secret set --from-file; tests/unit/test_greg_mcp_act.py).
+    Still missing - a remote change no page shows, a real hosted server observed, and
     observation on the founder's device. Original failover and authority component evidence is retained.
   implementation: *id001
   interface: foundry.query foundry_tool|list_foundry_tools (system 28); Gateway.call for governed third-party tools

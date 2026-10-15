@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import hashlib
+import json
 from pathlib import Path
 import sys
 
@@ -40,6 +41,22 @@ def write_note(path: str, text: str) -> str:
 def env_digest(name: str) -> str:
     """The SHA-256 of an environment variable's value (never the value)."""
     return hashlib.sha256(os.environ.get(name, "").encode()).hexdigest()
+
+
+@server.tool()
+def key_file(name: str) -> str:
+    """What a credential file named by an environment variable looks like from inside (a digest, never the value)."""
+    path = os.environ.get(name, "")
+    out = {"is_a_path": os.path.isabs(path), "exists": os.path.isfile(path)}
+    if out["exists"]:
+        out["mode"] = oct(os.stat(path).st_mode & 0o777)
+        out["sha256"] = hashlib.sha256(open(path, "rb").read()).hexdigest()
+        try:
+            open(path, "a").close()
+            out["writable"] = True
+        except OSError as exc:
+            out["writable"] = exc.strerror
+    return json.dumps(out)
 
 
 @server.tool()
@@ -128,7 +145,33 @@ def test_a_credential_reaches_the_server_by_handle_and_never_the_record(world):
     assert "TOKEN-VALUE-FIXTURE" not in repr(out)
 
 
+@needs_namespaces
+def test_a_credential_file_is_private_read_only_and_gone_after_the_call(world):
+    base, ctx = world["base"], world["ctx"]
+    params = {**base, "tool": "key_file", "writable": [str(world["data"] / "notes")],
+              "secret_files": {"SCRIBE_KEY_FILE": "mcp:scribe-token"}, "arguments": {"name": "SCRIBE_KEY_FILE"}}
+    out = mcp_tools.act(params, ctx)
+    seen = json.loads(out["result"])
+    assert seen["is_a_path"] and seen["exists"] and seen["mode"] == "0o600"
+    assert seen["sha256"] == hashlib.sha256(b"TOKEN-VALUE-FIXTURE").hexdigest()
+    assert seen["writable"] == "Read-only file system"                 # shown read-only to the server
+    assert out["confinement"]["secret_files"] == ["SCRIBE_KEY_FILE"] and "TOKEN-VALUE-FIXTURE" not in repr(out)
+    leftovers = [p for p in ctx.workspace.rglob("*") if p.is_file() and b"TOKEN-VALUE-FIXTURE" in p.read_bytes()]
+    assert not leftovers and not list(ctx.workspace.glob("cred-*"))     # removed when the call ended
+
+
+def test_the_approval_names_a_credential_file_by_handle():
+    from greg.missions import exact_reach
+    shown = exact_reach("mcp.act", {"server": "scribe", "tool": "key_file", "writable": ["/data/notes"],
+                                    "secret_files": {"SCRIBE_KEY_FILE": "mcp:scribe-token"}})
+    assert shown["credentials"] == ["mcp:scribe-token (as a file)"]
+
+
 @pytest.mark.parametrize("change, why", [
+    ({"secret_files": {"SCRIBE_KEY": "github_token"}}, "mcp:<name> credential handle"),
+    ({"secret_files": ["mcp:scribe-token"]}, "secret_files must map"),
+    ({"secrets": {"K": "mcp:scribe-token"}, "secret_files": {"K": "mcp:scribe-token"}}, "not both"),
+    ({"secret_files": {"SCRIBE_KEY": "mcp:missing"}}, "unavailable"),
     ({"secrets": {"SCRIBE_TOKEN": "github_token"}}, "mcp:<name> credential handle"),
     ({"secrets": {"scribe token": "mcp:scribe-token"}}, "UPPER_CASE environment name"),
     ({"secrets": {"SCRIBE_TOKEN": "mcp:missing"}}, "unavailable"),
@@ -219,6 +262,18 @@ def test_the_founder_stores_a_server_credential_by_its_mcp_handle(tmp_path):
         assert refused.returncode != 0 and "unknown credential handle" in refused.stdout + refused.stderr, bad
     assert SecretBroker(home / "secrets.json").names() == ["mcp:courier-token"]
 
+    key = tmp_path / "service-account.json"
+    key.write_text('{\n  "type": "service_account",\n  "private_key": "KEY-VALUE-FIXTURE"\n}\n')
+    kept = greg("set", "mcp:gcp-key", "--from-file", str(key))
+    assert kept.returncode == 0 and "KEY-VALUE-FIXTURE" not in kept.stdout + kept.stderr, kept.stderr[-300:]
+    assert SecretBroker(home / "secrets.json").resolve("mcp:gcp-key", declared=("mcp:gcp-key",)) == key.read_text()
+    (tmp_path / "empty").write_text("")
+    for args, why in ((("mcp:gcp-key", "--from-file", str(tmp_path / "empty")), "non-empty"),
+                      (("mcp:gcp-key", "--from-file", str(tmp_path / "missing")), "cannot read"),
+                      (("github_token", "--from-file", str(key)), "for mcp:<name> credentials")):
+        refused = greg("set", *args)
+        assert refused.returncode != 0 and why in refused.stdout + refused.stderr, (args, refused.stderr[-200:])
+
 
 REMOTE = {"server": "scribe", "url": "https://service.test/mcp", "tool": "add_note", "arguments": {"text": "x"}}
 
@@ -231,6 +286,7 @@ REMOTE = {"server": "scribe", "url": "https://service.test/mcp", "tool": "add_no
     ({"hosts": ["other.test"]}, "exactly its own host"),
     ({"writable": ["/tmp"]}, "no local paths"),
     ({"secrets": {"TOKEN": "mcp:scribe-token"}}, "no local paths and no environment"),
+    ({"secret_files": {"KEY": "mcp:scribe-token"}}, "no local paths and no environment"),
     ({"bearer": "github_token"}, "mcp:<name> credential handle"),
     ({}, "confined egress"),
     ({"bearer": "mcp:missing", "_egress": True}, "unavailable"),

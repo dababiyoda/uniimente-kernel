@@ -146,7 +146,8 @@ The 13 holes were:
     call approved, through the relay, with a bearer token by handle; since increment 23 the founder can log GREG
     in with OAuth (`greg mcp login`), and approved calls renew an expired login; since increment 28 a plain token
     is registered with its server and tools (`greg mcp token`); since increment 29 the founder's words propose a
-    call to such a server, checked on a page they name. Still missing: credential files, discovery of remote
+    call to such a server, checked on a page they name; since increment 30 a server can receive its credential as
+    a private read-only file. Still missing: discovery of remote
     servers, a remote change no page shows, and a real hosted service observed.
 - **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
   `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be

@@ -242,7 +242,8 @@ from a `greg-mcp.json` beside it: `{"args": ["/home/<you>/src/notes"], "readable
 
 A tool that changes something (writes a file, posts to a service) runs only as an `mcp.act` mission, and GREG
 stops and asks you first. The request shows the folders it may write, the hosts it may reach through the relay
-and the credential handles it receives (`greg secret set mcp:<name>`); approve exactly that, or reject. Everything
+and the credential handles it receives (`greg secret set mcp:<name>`, or `--from-file <path>` for a server that
+reads a key file, such as a service-account JSON); approve exactly that, or reject. Everything
 else stays read-only. For a change to a file, say it with the text in quotes, for example *Use the notes server to
 append "call the broker" to ~/src/notes/plan.md*: GREG proposes the mission, asks before it runs, and closes it
 only when it reads the file itself and finds the text. Words do not grant hosts or credentials; those missions are

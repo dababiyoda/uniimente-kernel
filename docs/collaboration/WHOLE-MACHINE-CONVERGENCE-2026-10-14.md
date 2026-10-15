@@ -1751,6 +1751,42 @@ over `add_note`).
 Not covered: a change that no page shows (GREG then asks); hosted services with the same name as an installed
 server are routed to the hosted one.
 
+## Increment 30 (2026-10-15): a credential a server reads from a file
+
+Many MCP servers take their credential as a file path rather than a value: a Google service-account key in
+`GOOGLE_APPLICATION_CREDENTIALS`, a kubeconfig, a client certificate. Until now `mcp.act` could pass credentials
+only as environment values, and `greg secret set` kept only one line, so a multi-line key could not be stored at
+all.
+
+- `greg secret set mcp:<name> --from-file <path>` keeps the whole file (text, 64 KiB at most) in the secret broker.
+  Nothing of it is printed, and the original stays where it was, which the output says.
+- A mission names it in `mcp.act`'s `secret_files` (`{"GOOGLE_APPLICATION_CREDENTIALS": "mcp:gcp-key"}`). For the
+  call, GREG writes the value to a 0600 file in a private 0700 directory of the call's workspace. The namespace
+  shows that directory read-only, the variable holds the path, and the directory is removed when the call ends,
+  whatever the outcome.
+- The approval names it as "mcp:gcp-key (as a file)". The receipt lists the variable names only.
+- An environment name may be a value or a file, not both. A remote call takes neither, since its credential is the
+  bearer.
+
+Evidence (`tests/unit/test_greg_mcp_act.py`, through the real namespace): from inside, the server sees an absolute
+path to a 0600 file with the stored value's digest, and writing it fails with "Read-only file system". No file in
+the workspace holds the value after the call, and no `cred-*` directory remains. The approval shows the handle as a
+file. The CLI stores a multi-line key without printing it, and refuses an empty file, a missing file and a non-mcp
+handle.
+
+Mutants: 7 of 7 fail the tests:
+- the directory shown writable;
+- not removed;
+- mode 0644;
+- the value placed in the variable instead of the path;
+- a remote call allowed files;
+- the approval omits the file;
+- a name used both ways.
+
+Not covered: binary credential files (refused), and a server that copies the file elsewhere inside its own
+writable folders. That copy is the server's act within its approved scope; the founder sees the writable folders
+before approving.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

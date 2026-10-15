@@ -29,6 +29,7 @@ import asyncio
 import contextlib
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -153,9 +154,11 @@ def _common(params: dict, ctx: InvocationContext) -> dict:
             "arguments": arguments}
 
 
-def _invoke(c: dict, ctx: InvocationContext, *, writable=(), hosts=(), env=None) -> dict:
+def _invoke(c: dict, ctx: InvocationContext, *, writable=(), hosts=(), env=None, files=None) -> dict:
     """Start the server confined (behind a door to a relay allowing exactly ``hosts`` when there are any), call the
-    tool once, discard the scratch directory, and report the answer as untrusted data."""
+    tool once, discard the scratch directory, and report the answer as untrusted data. ``files`` maps an environment
+    name to a credential value the server reads from a file: each is written to a private directory shown to the
+    server read-only, the variable holds its path, and the directory is removed when the call ends."""
     from foundry.systems.mcp_gateway import GatewayError, _call, root_cause
     from greg.worker_isolation import WorkerIsolationError, _backend
     try:
@@ -168,6 +171,16 @@ def _invoke(c: dict, ctx: InvocationContext, *, writable=(), hosts=(), env=None)
                 "writable": list(writable), "env": dict(env or {}), "scratch": str(scratch)}
     try:
         with contextlib.ExitStack() as stack:
+            if files:
+                held = Path(tempfile.mkdtemp(prefix=f"cred-{c['server']}-", dir=ctx.workspace))   # mode 0700
+                stack.callback(shutil.rmtree, held, True)
+                for name, value in files.items():
+                    path = held / name.lower()
+                    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                    with os.fdopen(fd, "w") as fh:
+                        fh.write(value)
+                    provider["env"][name] = str(path)
+                provider["readable"] = [*provider["readable"], str(held)]
             if hosts:
                 from foundry.systems.relay_door import Door
                 from foundry.systems.segmentation import Relay
@@ -216,7 +229,9 @@ def act(params: dict, ctx: InvocationContext) -> dict:
     - ``writable``: paths under the read roots the server may write (nothing else is writable);
     - ``hosts``: exact host names it may reach on port 443, through the body's relay (confined bodies only);
     - ``secrets``: environment variables for the server, each naming a credential handle in the ``mcp:`` namespace
-      (``greg secret set mcp:<name>``); values reach the server's environment only, never the ledger.
+      (``greg secret set mcp:<name>``); values reach the server's environment only, never the ledger;
+    - ``secret_files``: the same, for a server that reads its credential from a file (a service-account key, a
+      kubeconfig): the variable holds the path of a private file shown read-only and removed after the call.
 
     With ``url`` instead of an installation, the server is remote (Streamable HTTP): GREG's own client runs confined,
     reaching only that URL's host through the relay, with the token from ``bearer`` (an ``mcp:`` handle).
@@ -243,17 +258,24 @@ def act(params: dict, ctx: InvocationContext) -> dict:
     secrets = params.get("secrets") or {}
     if not isinstance(secrets, dict):
         raise CapabilityError("secrets must map environment names to credential handles")
-    env = {}
-    for name, handle in secrets.items():
-        if not ENV_NAME.fullmatch(str(name)) or not HANDLE.fullmatch(str(handle)):
-            raise CapabilityError("each secret maps an UPPER_CASE environment name to an mcp:<name> credential handle")
-        env[name] = ctx.secrets.resolve(str(handle), declared=(str(handle),))
+    secret_files = params.get("secret_files") or {}
+    if not isinstance(secret_files, dict):
+        raise CapabilityError("secret_files must map environment names to credential handles")
+    if set(secrets) & set(secret_files):
+        raise CapabilityError("an environment name is either a secret value or a secret file, not both")
+    env, files = {}, {}
+    for into, mapping in ((env, secrets), (files, secret_files)):
+        for name, handle in mapping.items():
+            if not ENV_NAME.fullmatch(str(name)) or not HANDLE.fullmatch(str(handle)):
+                raise CapabilityError("each secret maps an UPPER_CASE environment name to an mcp:<name> credential "
+                                      "handle")
+            into[name] = ctx.secrets.resolve(str(handle), declared=(str(handle),))
     if not writable and not hosts:
         raise CapabilityError("nothing to act on: name writable paths or hosts, or use mcp.call for a read-only call")
-    out = _invoke(c, ctx, writable=writable, hosts=hosts, env=env)
+    out = _invoke(c, ctx, writable=writable, hosts=hosts, env=env, files=files)
     out["confinement"] = {"network": f"only {', '.join(hosts)} through the relay" if hosts else "none",
                           "writable": writable, "shown": [str(c["root"]), *c["readable"]],
-                          "secrets": sorted(secrets)}
+                          "secrets": sorted(secrets), "secret_files": sorted(secret_files)}
     return out
 
 
@@ -283,7 +305,7 @@ def _remote_act(params: dict, ctx: InvocationContext) -> dict:
         raise CapabilityError(f"the signed target {ctx.target!r} does not name server {server!r}")
     host = remote_url(params["url"])
     named = [str(h).lower() for h in params.get("hosts") or [host]]
-    if params.get("writable") or params.get("readable") or params.get("secrets"):
+    if params.get("writable") or params.get("readable") or params.get("secrets") or params.get("secret_files"):
         raise CapabilityError("a remote server is given no local paths and no environment; its credential is bearer")
     arguments = params.get("arguments") or {}
     if not isinstance(arguments, dict):

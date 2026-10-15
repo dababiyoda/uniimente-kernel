@@ -3,6 +3,8 @@
 The builder here is deterministic (StaticBuilder); a live Claude Code build is retained
 in tests/evidence/greg-product/. Built code always runs in a separate no-network interpreter.
 """
+import sys
+from pathlib import Path
 import json
 import subprocess
 
@@ -479,3 +481,31 @@ def test_a_paid_candidate_that_used_the_whole_budget_is_still_judged_after_an_ou
         assert [e.payload["passed"] for e in body.journal.replay("genesis.verified")] == [True]
     finally:
         body.close()
+
+
+def test_a_timed_out_built_run_leaves_no_process_behind(tmp_path):
+    """Fix verification (closure 1): the timeout killed only the stdin wrapper, so a candidate's harness that
+    hung kept running (one orphan per retry). The whole process group now ends with the run."""
+    import subprocess
+    import time as _time
+    import uuid
+    marker = f"greg-orphan-probe-{uuid.uuid4().hex}"
+    with pytest.raises(subprocess.TimeoutExpired):
+        builders._run_with_stdin([sys.executable, "-c", f"import time  # {marker}\ntime.sleep(60)"],
+                                 cwd=tmp_path, data=b"{}", timeout=1)
+
+    def alive():
+        found = []
+        for proc in Path("/proc").iterdir():
+            try:
+                if proc.name.isdigit() and marker in (proc / "cmdline").read_bytes().decode(errors="replace") \
+                        and (proc / "stat").read_text().rsplit(")", 1)[1].split()[0] != "Z":
+                    found.append(proc.name)
+            except OSError:
+                continue
+        return found
+
+    deadline = _time.monotonic() + 3
+    while alive() and _time.monotonic() < deadline:
+        _time.sleep(0.05)
+    assert not alive()

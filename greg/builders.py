@@ -149,7 +149,9 @@ def _run_with_stdin(argv, *, cwd: Path, data: bytes, timeout: int) -> subprocess
                "r=subprocess.run(sys.argv[2:],stdin=f,capture_output=True);"
                "sys.stdout.buffer.write(r.stdout);sys.stderr.buffer.write(r.stderr);sys.exit(r.returncode)",
                str(stdin_file), *argv]
-    return run_isolated(wrapped, cwd=cwd, isolate_network=True, timeout=timeout)
+    # Supervised: the wrapper and the harness it starts share one process group, killed when the run ends or
+    # times out, so a candidate that hangs leaves nothing running behind it.
+    return run_isolated(wrapped, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=lambda: False)
 
 
 def isolation_ready(timeout: int = RUN_TIMEOUT) -> None:

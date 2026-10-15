@@ -61,6 +61,8 @@ Ancestry, refreshed on 2026-10-14 at 12:38 UTC, counting commits not contained i
 - Merging DALEOBANKS #89 (measurement truth; merges cleanly, 416 pass) and its public-persona clause.
 - Binding the Kernel grant into DALEOBANKS's publish seam, and any LIVE arming.
 - VEPMC fixture exclusion: implemented as enforcement of the metric's own definition ("fixture results are never external VEPMC evidence"); the founder may confirm or regress it.
+- Compensation (Defect 7): an ABANDONED mission's signed compensating action runs once through the Gate; a SUPERSEDED mission's runs only on an exact-scope approval (a successor may rely on the effect). Whether ABANDONED should also ask first, and whether missions abandoned before this code should raise COMPENSATION asks retroactively (they do today: one ask per executed external effect), are the founder's calls. Compensation is booked at $0 and checked by its Gate receipt, not by re-observing the undone state.
+- Outage deferral: a host outage while forming a capability defers the formation with a back-off; after five deferrals for one function the founder is asked. The threshold is a default, not a ruling.
 
 ## 5. Completion map: BODY + ORGANS + MIND (executable evidence only)
 
@@ -72,14 +74,14 @@ Tier legend: **proven-sandbox** = exercised end to end by `test_one_machine.py` 
 | Goal Gravity selecting work | proven-sandbox (ordering) | `gravity.ranked` before the first action; verifier `selected_by_goal_gravity` | engagement (founder ruling); sensing feed |
 | Mind (Competency Compiler, non-LLM, certified) | proven-sandbox | verifier re-derives the optimum by exhaustive search, no GREG import | founder-correction learning (Stage 9 shows capability reuse only) |
 | Capability Genesis (deficit → construct → resume) | proven-sandbox | `deficit.opened` → `capability.state` → `deficit.resolved`; reuse after restart | #129 shadow trial, dossier/ratify, failure-pattern detector |
-| Cause classification before repair | tested | `test_an_outage_is_not_a_capability_fault_and_opens_no_deficit` | persistent-outage policy (founder) |
+| Cause classification before repair | tested | `test_an_outage_is_not_a_capability_fault_and_opens_no_deficit`; second review: request/world refusals, native crashes, outages during probes, acquisition and constructions | persistent-outage policy (founder) |
 | Organs (DALEOBANKS ↔ WealthMachine, separate processes) | proven-sandbox | live exchange; second-process reproduction; bound to a receipt; Landlock-confined | per-organ identity (pin upgrade); a non-same-code verifier |
 | Hands (real worker, isolated clone, GREG-run acceptance) | proven-sandbox | patch digest, fresh-clone re-apply, its test re-run | OS confinement (#157, founder) |
 | Interruption (real SIGKILL, reconciliation, no duplicate) | proven-sandbox | one receipted DONE commission; founder reconciliation recorded | — |
 | Independent appraisal | proven-sandbox | separate-process `greg.appraisal` VERIFIED; verifier REDERIVED | a different machine or organization |
 | Mission Control from runtime evidence | proven-sandbox | traces from ledger sequence; sandbox row distinct from VEPMC | founder-device rendering |
 | Measurement truth (VEPMC) | tested | fixture exclusion; nine conditions unchanged | the first real closure (founder device, founder acceptance) |
-| Compensation of executed effects | in progress | — | founder decision on uncompensable classes |
+| Compensation of executed effects | tested | `tests/integration/test_greg_compensation.py` (9 tests): once through the Gate, bound to the original receipt, never repeated across restarts; uncompensable effects put to the founder | founder decisions in section 4; re-observation of the undone state |
 | Venture Cell lifecycle (dispute, refund, obligation) | absent on the mission path | rehearsal is fixture-only and now never counts | founder approval gate before sale; dispute/refund route |
 | External consequence (Bridge C/D) | absent by authority | template constraint "nothing is sent, published, merged or paid" | founder-authorized bounded experiment |
 
@@ -104,7 +106,32 @@ Seven review dimensions ran as separate agents over `b0b8907..d0355a4`: authorit
 | medium | A withheld substituted answer's billed cost was never booked; billed build attempts without a candidate escaped the build budget | Booked on `ModelSubstitution` and `genesis.unbuilt` (`f58ed46`, `f3b4fab`) | `test_a_withheld_substitution_is_still_booked_against_the_budget`, `test_a_withheld_build_attempt_is_booked_against_the_signed_build_budget` |
 | low (×12) | Appraisal identity collapse, trace not checked, missing-field "reproduced", contract validation absent, interpreter provenance, "no opportunity" booked as a fault, metric stages unbound, verifier passing on a skipped re-derivation, unknown served model reported as requested, config plumbing, Haiku long-prompt price, tribunal/SOP/critique handling of receipt-less reconciliations | `e24efa2`, `8f772ad`, `a073dea`, `19a28d4`, `aa5a7a5`, `ba0c0f5`, `02884c3` | listed in `tests/evidence/one-machine-20261014/adversarial-matrix.json` |
 
-Not fixed, stated: a fallback attempt fed a declined attempt's partial text can exceed the per-attempt bound (the booked cost stays correct); refusals carry no cost; resilience still counts UNCERTAIN plus RECONCILED_NOT_EXECUTED as two failures; two strategies with identical params, target and cost share a proposal id (pre-existing); a worker daemon that outlives the worker can still race a check (no PID namespace until #157 confinement).
+Not fixed, stated: a fallback attempt fed a declined attempt's partial text can exceed the per-attempt bound (the booked cost stays correct); resilience still counts UNCERTAIN plus RECONCILED_NOT_EXECUTED as two failures; two strategies with identical params, target and cost share a proposal id (pre-existing); a worker daemon that outlives the worker can still race a check (no PID namespace until #157 confinement).
+
+### 6b. Second adversarial review (2026-10-15, over `d0355a4..4ed91f7` and the fix branches)
+
+Seven dimensions again (containment, typed failures, measurement, reconciliation and spend, goal gravity, seals and CI, observability), 21 findings. A skeptic pair upheld 8; 13 had no skeptic before the session limit. I reproduced every one I fixed with a test that fails on the code before the fix. All 21 are fixed, except where stated.
+
+| Severity | Finding | Fix (commit) | Proving test |
+|---|---|---|---|
+| high | Every untyped `CapabilityError` defaulted to `executor_error`: a malformed request or a file over the input ceiling quarantined working engines, and the next tick raised `EventError` | Untyped by default; only a capability's own failure is evidence against it (`b4bd9c2`) | `test_a_malformed_request_to_a_working_engine_is_not_a_capability_fault`, `test_a_file_over_the_input_ceiling_is_not_a_fault_of_the_built_capability` |
+| high | `bound_facts` used one mission-wide founder cut: a later executed reconciliation admitted facts the founder declared not executed | Each reconciliation vouches only for its own dispatch window (`8539146`) | `test_a_later_executed_reconciliation_never_vouches_for_facts_the_founder_declared_not_executed` |
+| high | Billed failed attempts (a refusal, an empty answer, a reported CLI error) were not booked; the next route got the whole budget again | Booked on the route error and the router; schema field `cost_usd` (`8539146`, re-seal v8 `ffe7f4f`) | `test_a_billed_empty_openai_answer_is_booked_and_bounds_the_next_route` and two more |
+| high | Build spend never counted against the light-cone budget it is carved from | Booked on the paying mission's cone; Mission Control `build_usd` (`8539146`) | `test_build_spend_counts_against_the_signed_light_cone_budget` |
+| medium | A command's own exit 97/98 read as "isolation unavailable; command refused" | Refusal signalled through a close-on-exec pipe and a raise (`484622e`) | `test_a_command_that_exits_97_or_98_ran_and_is_not_reported_as_refused` |
+| medium | Organ interpreter grant `python.parent.parent` covered the whole home for `~/bin/python3` | Venv root only with `pyvenv.cfg`, else the file; overlap with the other organ, Kernel or body home refuses (`484622e`) | `test_an_interpreter_outside_a_venv_is_granted_alone_never_its_parent_tree` |
+| medium | A supervised stage's background process outlived it | The process group is killed when the stage ends (`484622e`); `setsid` escapes need a cgroup (stated) | `test_a_supervised_stage_leaves_no_process_behind` |
+| medium | Every negative return code typed as a budget; a segfaulting engine was never repaired | Only SIGXCPU/SIGKILL are a budget (`b4bd9c2`) | `test_an_engine_that_crashes_natively_is_a_capability_fault_and_is_re_formed` |
+| medium | An outage during qualification or a recovery probe recorded a failure; five stopped recovery; acquisition moved to the builder | Deferred, never failed; the mission waits on a self-clearing outage blocker (`b4bd9c2`) | `test_an_outage_during_recovery_probes_is_not_a_failed_probe`, `test_an_outage_during_acquisition_records_no_failed_qualification_and_builds_nothing` |
+| medium | Function-named organ strategies bound nothing | Dispatches read by the capability their record names (`8539146`) | `test_a_function_named_organ_strategy_binds_its_receipted_facts` |
+| medium (pre-existing) | A second UNCERTAIN of one action reused the answered reconciliation; every tick crashed | One question per uncertain dispatch (`8539146`) | `test_a_second_uncertain_dispatch_of_one_action_gets_its_own_founder_question` |
+| medium | A `$from_action` consumer of a reconciled producer livelocked the mission | Held at selection like a bind edge (`8539146`) | `test_a_pipeline_consumer_of_a_reconciled_producer_is_held_and_the_alternative_runs` |
+| medium | The Landlock row's test skipped instead of failing in CI job 8 | Fails where Landlock is required; job 8 requires it (`8539146`) | simulated no-Landlock host: 2 failed, not skipped |
+| medium | Goal Gravity consistency did not re-derive the ranking | Re-derived exactly over the ledger prefix (`d8df52d`) | `test_a_forged_ranking_is_detected_by_rederivation` |
+| low (×5) | Function-named sensors in the sandbox diagnostic; legacy appraisals dropped; matrix rows naming tests that do not assert them; stale observed-run record; an outage inside a construction blamed on the strategy | `8539146`; observed-run regenerated by `scripts/observe_adversarial_matrix.py` and required by the matrix test | listed in the matrix |
+| same class | `foundry/systems/segmentation.py` imported the seccomp filter from disk in each child (old code: `NETWORK OPEN`) | Loaded at import (`484622e`) | `test_a_replaced_filter_file_cannot_open_sockets_for_a_later_component` |
+
+The three fix branches (`fix/outcome`, `fix/device`, `fix/compensation`) were merged after my own review (`d87636e`, `e89091e`, `f147fc2`) with two corrections (`9a24e4d`): the outcome projection no longer claims the receipt proves DALEOBANKS's reviewed gate ran, and a superseded mission's compensation waits for an exact-scope approval.
 
 ## 7. Gap map (seven investigators and a critic) and what was closed
 
@@ -113,13 +140,13 @@ Not fixed, stated: a fallback attempt fed a declined attempt's partial text can 
 | — | VEPMC counted a fixture rehearsal (critical, measurement truth) | **Closed** `8fb5ee7`: closures with fixture evidence never count; the nine conditions are unchanged |
 | 1 | Genesis treated host outages as capability faults (quarantine, re-formation, budget) | **Closed** `4baff73`: failures typed where raised; only `executor_error` is evidence against a capability |
 | 5 / Stage 2 | Nothing selected work on the mission path | **Closed (ordering)** `3e1043d`: Goal Gravity ranks the signed missions each tick, records each change, verifier re-derives it. Engagement of only the top candidate is founder-reserved |
-| 3 | `daleobanks.outcome` reads an unverified organ file as institutional truth | In progress (separate branch, verified before merge) |
-| Defect 12 | Ledger cannot tell which device class ran a closure | In progress (informational only; VEPMC unchanged) |
-| 4 / Defect 7 | No compensation for executed effects of abandoned missions | In progress |
+| 3 | `daleobanks.outcome` reads an unverified organ file as institutional truth | **Closed** `d87636e`, `9a24e4d`: a projection of this mission's canonical publish receipts; the organ file can only lower `organ_consistent` |
+| Defect 12 | Ledger cannot tell which device class ran a closure | **Closed (information only)** `e89091e`: `device_class` on designations and closures; forgeable, never a VEPMC condition |
+| 4 / Defect 7 | No compensation for executed effects of abandoned missions | **Closed (tested)** `f147fc2`, `9a24e4d`: signed compensation through the Gate, exactly once; otherwise a founder COMPENSATION decision |
 | 2 | Kernel grant never reaches DALEOBANKS's publish seam (metadata key mismatch; organ-local grant authority) | Open: cross-repository, and LIVE arming is founder-reserved |
 | Defect 9 | DALEOBANKS rewards its own generated text (PR #89 fixes it, merges cleanly, 416 pass) | Founder-reserved: merging #89 |
 | Defect 2 rest | #129 shadow trial, dossier/ratify, failure-pattern detector | Open: port only typed classes was the recommended slice (done) |
 
 ## 8. Rollback
 
-Every change is a separate commit on `claude/greg-one-machine`. Reverting any one leaves the others intact; reverting the whole branch is deleting the branch. No data migration was introduced. The new event types `organ.observed` and `organ.appraised` are additive, and readers tolerate their absence.
+Every change is a separate commit on `claude/greg-one-machine`. Reverting any one leaves the others intact; reverting the whole branch is deleting the branch. No data migration was introduced. The new event types (`organ.observed`, `organ.appraised`, `gravity.ranked`, `gravity.unavailable`, `capability.deferred_probe`, `mission.compensation_required`, `mission.compensated`), the new fields (`failure_class` and `capability` on observations, `device_class`, `cost_usd` on route attempts) and the `outage` blocker are additive, and readers tolerate their absence. The seed genome evaluation is re-sealed at v8; v1-v7 are kept.

@@ -14,6 +14,9 @@
     "appraised_verified": true,
     "founder_accepted": false,
     "founder_body": false,
+    "device_class": "linux_other",
+    "designated_device_class": null,
+    "fixture_evidence": false,
     "counts": false,
     "missing": [
      "approval_boundary",
@@ -33,6 +36,9 @@
     "appraised_verified": true,
     "founder_accepted": false,
     "founder_body": false,
+    "device_class": "linux_other",
+    "designated_device_class": null,
+    "fixture_evidence": false,
     "counts": false,
     "missing": [
      "approval_boundary",

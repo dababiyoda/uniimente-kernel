@@ -383,5 +383,5 @@
       ]
     }
   ],
-  "observed": "see observed-run.json (pytest outcome of every listed test on the trunk head)"
+  "observed": "see observed-run.json: the pytest outcome of every listed test on the recorded code head, with live organs and Landlock required (regenerate: python scripts/observe_adversarial_matrix.py)"
 }

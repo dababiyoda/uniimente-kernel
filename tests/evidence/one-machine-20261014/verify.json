@@ -9,10 +9,12 @@
     "no_duplicate_worker_branch_in_source": true,
     "one_commission_done": true,
     "organ_answer_rederived": true,
+    "organ_appraisal_reproduced": true,
     "organ_messages_one_trace": true,
     "organ_messages_transport_verified": true,
     "patch_matches_receipt": true,
     "patch_reapplies_and_its_test_passes": true,
+    "selected_by_goal_gravity": true,
     "vepmc_not_inflated": true
   },
   "findings": [],
@@ -33,12 +35,12 @@
       "world_reobserved": true
     },
     "findings": [],
-    "head": "sha256:a640c10fe02a337c3023245fed02367d8daeb846e9b466ecb028a5285fa9b404",
+    "head": "sha256:bb93bac0a8187b72384827ac1b39bbc63727e7679c87177e0c1a8bb3226815e6",
     "limits": "shares reviewed Kernel code; not an independent implementation",
     "mission_id": "m:one-machine-staff-om",
     "verdict": "VERIFIED"
   },
-  "ledger_head": "sha256:a640c10fe02a337c3023245fed02367d8daeb846e9b466ecb028a5285fa9b404",
+  "ledger_head": "sha256:bb93bac0a8187b72384827ac1b39bbc63727e7679c87177e0c1a8bb3226815e6",
   "mission_id": "m:one-machine-staff-om",
   "sandbox_whole_machine": [
     {

@@ -126,3 +126,64 @@ def test_an_approved_call_sends_the_registered_token_to_its_server(tmp_path, gua
     assert carried() > at_registration                                  # the approved call sent the registered token
     leaked = [p for p in home.rglob("*") if p.is_file() and p.name != "secrets.json" and TOKEN.encode() in p.read_bytes()]
     assert not leaked, leaked
+
+
+@needs_namespaces
+def test_the_founder_asks_a_registered_service_in_words_and_greg_sees_the_change_on_their_page(tmp_path, guarded):
+    """Words to a signed proposal, the founder's approval, the call through the relay, and closure only when GREG
+    renders the board page the words named and finds the text: the whole path, against a service that checks the
+    token. The board is a plain local page showing the service's notes."""
+    import html
+    import http.server
+    import threading
+    from greg.capabilities import BUILTINS
+    from greg.console import Console
+    manifest, _ = BUILTINS["browser.render"]
+    if not manifest.available()[0]:
+        pytest.skip("no runnable browser here")
+
+    class Board(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            body = ("<html><body><ul>" + "".join(f"<li>{html.escape(n)}</li>" for n in guarded["notes"])
+                    + "</ul></body></html>").encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *a):
+            pass
+    board = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Board)
+    threading.Thread(target=board.serve_forever, daemon=True).start()
+    page = f"http://127.0.0.1:{board.server_address[1]}/board"
+    home, key, body_id = body_with_confined_egress(tmp_path)
+    register(SecretBroker(home / "secrets.json"), TOKEN, guarded["cert"], name="notes")
+    carried = lambda: guarded["seen"].count(f"Bearer {TOKEN}")             # noqa: E731
+    at_registration = carried()
+    try:
+        console = Console(home, key=key)
+        pid = console.ask(f"Use the notes service to add 'ship the wedge', then check {page}")
+        proposal = console.proposals[pid]["proposal"]
+        assert proposal["status"] == "PROPOSED" and proposal["origin"] == "template:mcp-remote-act", proposal
+        assert carried() == at_registration                                  # drafting contacted nobody
+        console.sign_proposal(pid)
+        with Body(home) as body:
+            body.boot()
+            assert tick_until(body, "WAITING")["state"] == "WAITING"
+            [ask] = [e.payload for e in body.journal.replay("decision.requested")]
+        shown = ask["authority_requested"]
+        assert shown["remote_server"] == "https://service.test/mcp" and shown["credentials"] == ["mcp:notes"]
+        assert guarded["notes"] == [] and carried() == at_registration       # nothing before approval
+        drop(home, signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "approve"}))
+        with Body(home) as body:
+            body.boot()
+            out = tick_until(body, "ACHIEVED")
+            receipts = [r.payload["result"].get("output") for r in body.ledger.by_type("receipt")]
+    finally:
+        board.shutdown()
+    assert out["state"] == "ACHIEVED" and guarded["notes"] == ["ship the wedge"], out
+    rendered = [r for r in receipts if isinstance(r, dict) and r.get("url") == page]
+    assert rendered and "ship the wedge" in rendered[-1]["text"]              # closed on GREG's own render
+    leaked = [p for p in home.rglob("*") if p.is_file() and p.name != "secrets.json" and TOKEN.encode() in p.read_bytes()]
+    assert not leaked, leaked

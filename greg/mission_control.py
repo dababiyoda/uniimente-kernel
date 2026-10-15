@@ -397,7 +397,8 @@ def _tool_servers_section(console, p, form) -> str:
     if hosted:
         out += ("<h3>Hosted servers GREG holds a login or token for</h3><p class=reality>Their tools as each server "
                 "listed them when you logged in or registered the token (its claim, not trusted). Every call to one "
-                "waits for your approval.</p>"
+                "waits for your approval. Ask in words, naming a page that will show the change: <i>Use the notes "
+                "service to add \"ship the wedge\", then check https://…</i></p>"
                 + _table(["Server", "Handle", "Tools (as the server listed them)"], [
                     [f"<code>{_e(c['server'])}</code>", f"<code>{_e(c['handle'])}</code> "
                      f"<span class=muted>{_e(c['kind'])}</span>",

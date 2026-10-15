@@ -131,7 +131,20 @@ class Console:
         config = json.loads(self.layout.config.read_text())
         return planner.PlannerContext(read_roots=tuple(Path(r) for r in config["read_roots"]),
                                       capabilities=status(self.home)["capabilities"],
-                                      workspace=self.layout.workspace)
+                                      workspace=self.layout.workspace, hosted=self._hosted())
+
+    def _hosted(self) -> dict:
+        """The hosted MCP servers GREG holds a login or token for, as the founder's words may name them: public
+        fields only (server, tools as listed, renewal host); no value leaves the secret broker."""
+        from greg import mcp_login
+        from greg.capabilities import SecretBroker
+        broker = SecretBroker(self.layout.secrets)
+        out = {}
+        for handle in broker.names():
+            login = mcp_login.record(broker, handle) if handle.startswith("mcp:") else None
+            if login:
+                out[handle[len("mcp:"):]] = {**mcp_login.public(login), "handle": handle}
+        return out
 
     # -- acting (signed files only) -----------------------------------------------------
     def sign(self, kind: str, body: dict) -> Path:

@@ -253,7 +253,10 @@ you: the decision names the server, its one host and the credential handle. If t
 run `greg mcp login <name> <url>` and approve GREG in your browser; if it gave you a token instead, run
 `greg mcp token <name> <url>` and paste it at the hidden prompt. GREG keeps it only if the server accepts it, and
 Mission Control then lists the server and the tools it offered. Either way, grant only what the service lets you narrow, because an approved call can
-do whatever the login permits. GREG's words do not propose remote calls yet; such a mission is signed by hand.
+do whatever the login permits. Then ask in words, naming a page that will show the change:
+*Use the notes service to add "ship the wedge", then check https://notes.example.com/board*. GREG picks the tool
+from the list the service gave at login, asks for your approval, and closes the mission only when it renders that
+page and finds the text.
 
 ## 7. Founder control
 

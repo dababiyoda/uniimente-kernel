@@ -1,9 +1,9 @@
 {
- "trunk_head": "9a24e4d667d14ee34dc48f1561fae2b9e4bf92db",
- "command": "python scripts/observe_adversarial_matrix.py (pytest on the 93 test ids in adversarial-matrix.json, live organ checkouts, Landlock required)",
+ "trunk_head": "019fb0beb7149e012b79c45d98057af3f6184eff",
+ "command": "python scripts/observe_adversarial_matrix.py (pytest on the 120 test ids in adversarial-matrix.json, live organ checkouts, Landlock required)",
  "organs": 2,
  "totals": {
-  "passed": 104,
+  "passed": 133,
   "failure": 0,
   "error": 0,
   "skipped": 0
@@ -11,199 +11,307 @@
  "results": {
   "tests.integration.test_goal_chase::test_duplicate_observation_trigger_and_escalation_spam_suppressed": {
    "outcome": "passed",
-   "seconds": 0.273
+   "seconds": 0.453
   },
   "tests.integration.test_goal_gravity_orders_missions::test_a_forged_ranking_is_detected_by_rederivation": {
    "outcome": "passed",
-   "seconds": 0.302
+   "seconds": 0.43
   },
   "tests.integration.test_goal_gravity_orders_missions::test_every_unselected_tick_is_recorded": {
    "outcome": "passed",
-   "seconds": 0.281
+   "seconds": 0.486
   },
   "tests.integration.test_greg_adversarial_machine::test_a_paid_worker_outside_the_signed_envelope_never_runs": {
    "outcome": "passed",
-   "seconds": 0.184
+   "seconds": 0.249
   },
   "tests.integration.test_greg_adversarial_machine::test_duplicate_fixture_order_does_not_double_book": {
    "outcome": "passed",
-   "seconds": 30.944
+   "seconds": 42.052
   },
   "tests.integration.test_greg_adversarial_machine::test_lying_solver_is_caught_by_the_independent_profit_dp": {
    "outcome": "passed",
-   "seconds": 0.002
+   "seconds": 0.001
   },
   "tests.integration.test_greg_adversarial_machine::test_prompt_injection_in_sources_stays_data": {
    "outcome": "passed",
-   "seconds": 9.879
+   "seconds": 10.521
   },
   "tests.integration.test_greg_adversarial_machine::test_revoked_engine_is_not_reused_after_restart": {
    "outcome": "passed",
-   "seconds": 16.231
+   "seconds": 18.058
   },
   "tests.integration.test_greg_adversarial_machine::test_sources_changed_mid_mission_cannot_close_as_achieved": {
    "outcome": "passed",
-   "seconds": 8.361
+   "seconds": 9.951
   },
   "tests.integration.test_greg_body_supervised::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command": {
    "outcome": "passed",
-   "seconds": 11.297
+   "seconds": 11.8
   },
   "tests.integration.test_greg_capability_recovery::test_a_changed_identity_is_never_probed_back": {
    "outcome": "passed",
-   "seconds": 1.198
+   "seconds": 1.274
   },
   "tests.integration.test_greg_capability_recovery::test_a_failed_probe_doubles_the_wait_and_never_restores_eligibility": {
    "outcome": "passed",
-   "seconds": 3.038
+   "seconds": 3.064
   },
   "tests.integration.test_greg_capability_recovery::test_a_malformed_request_to_a_working_engine_is_not_a_capability_fault": {
    "outcome": "passed",
-   "seconds": 1.72
+   "seconds": 2.308
+  },
+  "tests.integration.test_greg_capability_recovery::test_a_persistent_outage_backs_off_to_a_day_and_recovery_resumes_when_the_host_returns": {
+   "outcome": "passed",
+   "seconds": 40.126
   },
   "tests.integration.test_greg_capability_recovery::test_a_reescalation_after_a_founder_attach_is_recorded_and_the_body_keeps_running": {
    "outcome": "passed",
-   "seconds": 2.014
+   "seconds": 1.997
   },
   "tests.integration.test_greg_capability_recovery::test_an_engine_that_crashes_natively_is_a_capability_fault_and_is_re_formed": {
    "outcome": "passed",
-   "seconds": 2.826
+   "seconds": 2.761
   },
   "tests.integration.test_greg_capability_recovery::test_an_outage_during_acquisition_records_no_failed_qualification_and_builds_nothing": {
    "outcome": "passed",
-   "seconds": 1.81
+   "seconds": 1.359
   },
   "tests.integration.test_greg_capability_recovery::test_an_outage_during_recovery_probes_is_not_a_failed_probe": {
    "outcome": "passed",
-   "seconds": 4.16
+   "seconds": 3.076
+  },
+  "tests.integration.test_greg_capability_recovery::test_an_outage_forming_a_cognition_deficit_is_re_searched_and_never_blamed_on_the_strategy": {
+   "outcome": "passed",
+   "seconds": 4.34
   },
   "tests.integration.test_greg_capability_recovery::test_an_outage_inside_a_construction_never_blames_the_strategy": {
    "outcome": "passed",
-   "seconds": 2.419
+   "seconds": 2.445
   },
   "tests.integration.test_greg_capability_recovery::test_an_outage_is_not_a_capability_fault_and_opens_no_deficit[timeout]": {
    "outcome": "passed",
-   "seconds": 0.662
+   "seconds": 0.914
   },
   "tests.integration.test_greg_capability_recovery::test_an_outage_is_not_a_capability_fault_and_opens_no_deficit[isolation_unavailable]": {
    "outcome": "passed",
-   "seconds": 0.811
+   "seconds": 0.921
   },
   "tests.integration.test_greg_capability_recovery::test_flapping_stops_recovery_and_leaves_the_decision_to_the_founder": {
    "outcome": "passed",
-   "seconds": 1.815
+   "seconds": 2.165
   },
   "tests.integration.test_greg_capability_recovery::test_only_the_cpu_ceilings_signals_are_typed_as_a_budget[24-budget_exceeded]": {
    "outcome": "passed",
-   "seconds": 0.002
+   "seconds": 0.003
   },
   "tests.integration.test_greg_capability_recovery::test_only_the_cpu_ceilings_signals_are_typed_as_a_budget[9-budget_exceeded]": {
    "outcome": "passed",
-   "seconds": 0.001
+   "seconds": 0.002
   },
   "tests.integration.test_greg_capability_recovery::test_only_the_cpu_ceilings_signals_are_typed_as_a_budget[11-executor_error]": {
    "outcome": "passed",
-   "seconds": 0.001
+   "seconds": 0.002
   },
   "tests.integration.test_greg_capability_recovery::test_only_the_cpu_ceilings_signals_are_typed_as_a_budget[6-executor_error]": {
    "outcome": "passed",
-   "seconds": 0.001
+   "seconds": 0.002
+  },
+  "tests.integration.test_greg_capability_recovery::test_outage_deferrals_reset_after_a_formation_and_the_capped_ask_keeps_searching": {
+   "outcome": "passed",
+   "seconds": 2.815
+  },
+  "tests.integration.test_greg_capability_recovery::test_when_the_host_recovers_but_nothing_qualifies_the_outage_ask_gives_way_to_a_real_one": {
+   "outcome": "passed",
+   "seconds": 2.888
+  },
+  "tests.integration.test_greg_compensation::test_a_compensation_through_a_capability_that_spends_money_is_refused_at_signing": {
+   "outcome": "passed",
+   "seconds": 0.002
+  },
+  "tests.integration.test_greg_compensation::test_a_compensation_waits_for_the_founder_once_asked_even_if_its_capability_returns": {
+   "outcome": "passed",
+   "seconds": 0.559
+  },
+  "tests.integration.test_greg_compensation::test_a_self_spending_compensation_signed_before_the_check_is_refused_when_it_would_run": {
+   "outcome": "passed",
+   "seconds": 0.362
+  },
+  "tests.integration.test_greg_compensation::test_a_signed_compensation_never_runs_after_the_founder_answered_its_compensation_ask": {
+   "outcome": "passed",
+   "seconds": 0.535
+  },
+  "tests.integration.test_greg_compensation::test_an_interrupted_dispatch_is_reconciled_before_anything_is_compensated[True]": {
+   "outcome": "passed",
+   "seconds": 0.34
+  },
+  "tests.integration.test_greg_compensation::test_an_interrupted_dispatch_is_reconciled_before_anything_is_compensated[False]": {
+   "outcome": "passed",
+   "seconds": 0.397
+  },
+  "tests.integration.test_greg_compensation::test_an_overrun_cone_does_not_stop_a_free_compensation": {
+   "outcome": "passed",
+   "seconds": 0.741
+  },
+  "tests.integration.test_greg_compensation::test_compensations_dispatch_one_per_step_and_a_stop_mid_tick_admits_no_more": {
+   "outcome": "passed",
+   "seconds": 1.084
   },
   "tests.integration.test_greg_first_mission::test_tampered_dossier_is_refuted_by_the_independent_sensor": {
    "outcome": "passed",
-   "seconds": 9.906
+   "seconds": 9.418
+  },
+  "tests.integration.test_greg_foundry_projection::test_an_edit_made_while_the_founder_deliberates_is_never_admitted": {
+   "outcome": "passed",
+   "seconds": 1.124
+  },
+  "tests.integration.test_greg_foundry_projection::test_an_interrupted_apply_reconciled_as_executed_admits_its_write_ahead_state_and_the_mission_closes": {
+   "outcome": "passed",
+   "seconds": 1.897
+  },
+  "tests.integration.test_greg_foundry_projection::test_every_signed_foundry_compensation_runs_on_the_state_the_previous_one_left": {
+   "outcome": "passed",
+   "seconds": 3.843
   },
   "tests.integration.test_greg_mind_constructs_capability::test_a_construction_that_lies_through_the_mind_is_repaired_by_the_same_mechanism": {
    "outcome": "passed",
-   "seconds": 4.809
+   "seconds": 4.479
   },
   "tests.integration.test_greg_mind_constructs_capability::test_a_detached_construction_is_never_used_by_the_mind": {
    "outcome": "passed",
-   "seconds": 2.471
+   "seconds": 2.534
   },
   "tests.integration.test_greg_mind_constructs_capability::test_the_appraiser_restores_constructions_without_writing_even_when_one_must_be_quarantined": {
    "outcome": "passed",
-   "seconds": 2.208
+   "seconds": 1.902
   },
   "tests.integration.test_greg_pipeline::test_binding_is_data_and_cannot_recurse_as_instructions": {
    "outcome": "passed",
-   "seconds": 0.046
+   "seconds": 0.054
   },
   "tests.integration.test_greg_venture_rehearsal::test_dossier_to_fixture_sale_delivery_acceptance_and_books": {
    "outcome": "passed",
-   "seconds": 29.785
+   "seconds": 33.428
   },
   "tests.integration.test_one_machine::test_one_signed_mission_runs_the_whole_machine_across_processes": {
    "outcome": "passed",
-   "seconds": 27.422
+   "seconds": 31.966
   },
   "tests.integration.test_one_machine_attacks::test_attack_absent_isolation_refuses_the_organ_exchange": {
    "outcome": "passed",
-   "seconds": 0.09
+   "seconds": 0.136
   },
   "tests.integration.test_one_machine_attacks::test_attack_founder_stop_during_ongoing_work_ends_the_worker_now": {
    "outcome": "passed",
-   "seconds": 3.27
+   "seconds": 3.601
   },
   "tests.integration.test_one_machine_attacks::test_attack_hands_cannot_bind_an_answer_that_never_passed": {
    "outcome": "passed",
-   "seconds": 0.055
+   "seconds": 0.086
   },
   "tests.integration.test_one_machine_attacks::test_attack_stale_heartbeat_is_never_shown_as_running": {
    "outcome": "passed",
-   "seconds": 0.11
+   "seconds": 0.12
   },
   "tests.integration.test_one_machine_attacks::test_attack_worker_lies_about_the_minds_certified_answer": {
    "outcome": "passed",
-   "seconds": 1.884
+   "seconds": 2.803
   },
   "tests.integration.test_one_machine_attacks::test_attack_worker_plants_git_hooks_and_filters_that_never_run": {
    "outcome": "passed",
-   "seconds": 1.845
+   "seconds": 2.499
   },
   "tests.integration.test_one_machine_attacks::test_attack_worker_tampers_with_greg_trusted_git_copy": {
    "outcome": "passed",
-   "seconds": 0.681
+   "seconds": 0.723
   },
   "tests.integration.test_one_machine_attacks::test_attack_worker_test_code_rewrites_git_metadata_during_greg_acceptance": {
    "outcome": "passed",
-   "seconds": 1.14
+   "seconds": 1.174
   },
   "tests.unit.test_cortex_routes.TestFormalOptimization::test_a_lying_optimizer_is_caught_by_the_certificate": {
    "outcome": "passed",
-   "seconds": 0.026
+   "seconds": 0.03
+  },
+  "tests.unit.test_foundry_segmentation::test_a_component_that_exits_97_ran_and_is_not_reported_as_refused": {
+   "outcome": "passed",
+   "seconds": 0.032
   },
   "tests.unit.test_foundry_segmentation::test_a_replaced_filter_file_cannot_open_sockets_for_a_later_component": {
    "outcome": "passed",
-   "seconds": 0.058
+   "seconds": 0.031
+  },
+  "tests.unit.test_foundry_segmentation::test_code_planted_in_the_mission_workspace_is_never_imported_by_the_fetch_component[import os\\nos._exit(97)\\n]": {
+   "outcome": "passed",
+   "seconds": 0.243
+  },
+  "tests.unit.test_foundry_segmentation::test_code_planted_in_the_mission_workspace_is_never_imported_by_the_fetch_component[import sys\\nprint('{\"status\": 200, \"body\": \"Rk9SR0VE\"}')\\nsys.exit(0)\\n]": {
+   "outcome": "passed",
+   "seconds": 0.266
   },
   "tests.unit.test_greg_capabilities::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused": {
    "outcome": "passed",
-   "seconds": 0.069
+   "seconds": 0.07
   },
   "tests.unit.test_greg_community_evidence::test_quarantined_instructions_never_become_evidence": {
    "outcome": "passed",
    "seconds": 0.001
   },
+  "tests.unit.test_greg_genesis_builder::test_a_build_after_a_paid_action_is_bounded_by_what_the_cone_has_left": {
+   "outcome": "passed",
+   "seconds": 1.596
+  },
+  "tests.unit.test_greg_genesis_builder::test_a_build_and_the_paid_act_it_enables_are_admitted_against_one_cone": {
+   "outcome": "passed",
+   "seconds": 0.421
+  },
+  "tests.unit.test_greg_genesis_builder::test_a_candidate_that_hangs_while_the_host_is_healthy_is_judged_failed": {
+   "outcome": "passed",
+   "seconds": 0.027
+  },
+  "tests.unit.test_greg_genesis_builder::test_a_candidate_that_loops_is_judged_failed_by_its_cpu_limit_not_deferred_as_an_outage": {
+   "outcome": "passed",
+   "seconds": 8.179
+  },
   "tests.unit.test_greg_genesis_builder::test_a_file_over_the_input_ceiling_is_not_a_fault_of_the_built_capability": {
    "outcome": "passed",
-   "seconds": 1.436
+   "seconds": 1.4
   },
-  "tests.unit.test_greg_genesis_builder::test_build_spend_counts_against_the_signed_light_cone_budget": {
+  "tests.unit.test_greg_genesis_builder::test_a_paid_candidate_an_outage_left_unjudged_is_judged_later_and_never_paid_for_again": {
    "outcome": "passed",
-   "seconds": 0.738
+   "seconds": 0.846
   },
-  "tests.unit.test_greg_linear_genesis::test_a_worse_plan_an_infeasible_plan_and_forged_prices_are_refuted": {
+  "tests.unit.test_greg_genesis_builder::test_a_paid_candidate_that_used_the_whole_budget_is_still_judged_after_an_outage": {
    "outcome": "passed",
-   "seconds": 0.611
+   "seconds": 0.899
   },
-  "tests.unit.test_greg_mission_control_costs::test_build_spend_is_its_own_column_and_part_of_the_booked_total": {
+  "tests.unit.test_greg_genesis_builder::test_a_re_judged_candidate_keeps_its_attempt_so_an_outage_never_buys_a_third_build": {
+   "outcome": "passed",
+   "seconds": 0.528
+  },
+  "tests.unit.test_greg_genesis_builder::test_an_outage_before_a_build_pays_for_nothing_and_the_build_runs_once_the_host_is_back": {
+   "outcome": "passed",
+   "seconds": 0.853
+  },
+  "tests.unit.test_greg_genesis_builder::test_an_overspent_cone_still_observes_its_checks_for_free": {
    "outcome": "passed",
    "seconds": 0.0
   },
+  "tests.unit.test_greg_genesis_builder::test_build_spend_counts_against_the_signed_light_cone_budget": {
+   "outcome": "passed",
+   "seconds": 0.617
+  },
+  "tests.unit.test_greg_linear_genesis::test_a_worse_plan_an_infeasible_plan_and_forged_prices_are_refuted": {
+   "outcome": "passed",
+   "seconds": 0.574
+  },
+  "tests.unit.test_greg_mission_control_costs::test_build_spend_is_its_own_column_and_part_of_the_booked_total": {
+   "outcome": "passed",
+   "seconds": 0.001
+  },
   "tests.unit.test_greg_missions::test_tampered_acquired_binary_is_quarantined_on_restart": {
    "outcome": "passed",
-   "seconds": 0.65
+   "seconds": 0.712
   },
   "tests.unit.test_greg_model_identity_policy::test_a_billed_empty_openai_answer_is_booked_and_bounds_the_next_route": {
    "outcome": "passed",
@@ -211,11 +319,11 @@
   },
   "tests.unit.test_greg_model_identity_policy::test_a_billed_refusal_is_booked_on_the_router_record": {
    "outcome": "passed",
-   "seconds": 0.0
+   "seconds": 0.001
   },
   "tests.unit.test_greg_model_identity_policy::test_a_claude_code_error_with_a_reported_cost_is_booked": {
    "outcome": "passed",
-   "seconds": 0.002
+   "seconds": 0.001
   },
   "tests.unit.test_greg_model_identity_policy::test_a_response_naming_no_model_is_unknown_not_the_requested_model": {
    "outcome": "passed",
@@ -223,7 +331,7 @@
   },
   "tests.unit.test_greg_model_identity_policy::test_a_withheld_build_attempt_is_booked_against_the_signed_build_budget": {
    "outcome": "passed",
-   "seconds": 0.116
+   "seconds": 0.21
   },
   "tests.unit.test_greg_model_identity_policy::test_a_withheld_substitution_is_still_booked_against_the_budget": {
    "outcome": "passed",
@@ -231,7 +339,7 @@
   },
   "tests.unit.test_greg_model_identity_policy::test_an_unknown_substitute_is_booked_at_the_dearest_known_price": {
    "outcome": "passed",
-   "seconds": 0.001
+   "seconds": 0.002
   },
   "tests.unit.test_greg_model_identity_policy::test_default_request_sends_no_server_side_fallback": {
    "outcome": "passed",
@@ -263,19 +371,19 @@
   },
   "tests.unit.test_greg_one_machine_gates::test_a_function_named_sensor_counts_through_the_capability_the_engine_resolved": {
    "outcome": "passed",
-   "seconds": 0.007
+   "seconds": 0.008
   },
   "tests.unit.test_greg_one_machine_gates::test_fixture_evidence_never_moves_vepmc_even_when_every_condition_holds": {
    "outcome": "passed",
-   "seconds": 0.024
+   "seconds": 0.021
   },
   "tests.unit.test_greg_one_machine_gates::test_the_answered_gate_admits_only_a_certified_answer": {
    "outcome": "passed",
-   "seconds": 0.001
+   "seconds": 0.0
   },
   "tests.unit.test_greg_organ_bridge::test_an_organ_appraisal_never_stands_in_for_the_bodys_closure_appraisal": {
    "outcome": "passed",
-   "seconds": 0.518
+   "seconds": 0.546
   },
   "tests.unit.test_greg_organ_bridge::test_failed_appraisal_is_refuted": {
    "outcome": "passed",
@@ -303,67 +411,71 @@
   },
   "tests.unit.test_greg_organs::test_a_child_that_rewrites_the_network_filter_cannot_disable_isolation_for_later_children": {
    "outcome": "passed",
-   "seconds": 0.073
+   "seconds": 0.072
   },
   "tests.unit.test_greg_organs::test_a_command_that_exits_97_or_98_ran_and_is_not_reported_as_refused[97-False]": {
    "outcome": "passed",
-   "seconds": 0.027
+   "seconds": 0.031
   },
   "tests.unit.test_greg_organs::test_a_command_that_exits_97_or_98_ran_and_is_not_reported_as_refused[98-True]": {
    "outcome": "passed",
-   "seconds": 0.03
+   "seconds": 0.031
   },
   "tests.unit.test_greg_organs::test_a_confined_organ_stage_reaches_only_its_code_and_the_store": {
    "outcome": "passed",
-   "seconds": 0.062
+   "seconds": 0.044
   },
   "tests.unit.test_greg_organs::test_a_function_named_organ_strategy_binds_its_receipted_facts": {
    "outcome": "passed",
-   "seconds": 0.013
+   "seconds": 0.01
   },
   "tests.unit.test_greg_organs::test_a_later_executed_reconciliation_never_vouches_for_facts_the_founder_declared_not_executed": {
    "outcome": "passed",
-   "seconds": 0.018
+   "seconds": 0.016
   },
   "tests.unit.test_greg_organs::test_a_supervised_stage_leaves_no_process_behind": {
    "outcome": "passed",
-   "seconds": 0.069
+   "seconds": 0.07
   },
   "tests.unit.test_greg_organs::test_an_appraisal_retained_before_it_named_its_exchange_binds_to_its_own_receipt": {
    "outcome": "passed",
-   "seconds": 0.014
+   "seconds": 0.015
+  },
+  "tests.unit.test_greg_organs::test_an_excluded_tree_under_a_fixed_system_grant_refuses_the_stage": {
+   "outcome": "passed",
+   "seconds": 0.002
   },
   "tests.unit.test_greg_organs::test_an_interpreter_grant_that_reaches_another_organ_refuses_the_stage": {
    "outcome": "passed",
-   "seconds": 0.005
+   "seconds": 0.003
   },
   "tests.unit.test_greg_organs::test_an_interpreter_outside_a_venv_is_granted_alone_never_its_parent_tree": {
    "outcome": "passed",
-   "seconds": 0.048
+   "seconds": 0.053
   },
   "tests.unit.test_greg_organs::test_an_organ_that_rewrites_the_other_organs_code_is_refused": {
    "outcome": "passed",
-   "seconds": 0.069
+   "seconds": 0.083
   },
   "tests.unit.test_greg_organs::test_an_organ_that_signs_another_trace_is_refused_before_recording": {
    "outcome": "passed",
-   "seconds": 0.055
+   "seconds": 0.066
   },
   "tests.unit.test_greg_organs::test_facts_from_an_exchange_that_never_completed_do_not_count": {
    "outcome": "passed",
-   "seconds": 0.011
+   "seconds": 0.013
   },
   "tests.unit.test_greg_organs::test_founder_stop_ends_an_in_flight_organ_exchange": {
    "outcome": "passed",
-   "seconds": 0.538
+   "seconds": 0.539
   },
   "tests.unit.test_greg_organs::test_isolation_that_cannot_be_installed_refuses_the_command_before_it_runs[False-network]": {
    "outcome": "passed",
-   "seconds": 0.012
+   "seconds": 0.017
   },
   "tests.unit.test_greg_organs::test_isolation_that_cannot_be_installed_refuses_the_command_before_it_runs[False-confinement]": {
    "outcome": "passed",
-   "seconds": 0.01
+   "seconds": 0.011
   },
   "tests.unit.test_greg_organs::test_isolation_that_cannot_be_installed_refuses_the_command_before_it_runs[True-network]": {
    "outcome": "passed",
@@ -375,55 +487,59 @@
   },
   "tests.unit.test_greg_organs::test_live_exchange_never_signs_as_an_organ_when_per_organ_keys_are_configured": {
    "outcome": "passed",
-   "seconds": 1.591
+   "seconds": 1.587
   },
   "tests.unit.test_greg_organs::test_malformed_or_off_contract_organ_output_is_a_clean_refusal[reply0-signed trace None]": {
    "outcome": "passed",
-   "seconds": 0.069
+   "seconds": 0.061
   },
   "tests.unit.test_greg_organs::test_malformed_or_off_contract_organ_output_is_a_clean_refusal[no-body-KeyError]": {
    "outcome": "passed",
-   "seconds": 0.057
+   "seconds": 0.056
   },
   "tests.unit.test_greg_organs::test_malformed_or_off_contract_organ_output_is_a_clean_refusal[bad-packet-broke its wire contract]": {
    "outcome": "passed",
-   "seconds": 0.064
+   "seconds": 0.054
+  },
+  "tests.unit.test_greg_reconciliation::test_a_ledger_wedged_by_the_old_shared_reconciliation_question_is_asked_again": {
+   "outcome": "passed",
+   "seconds": 1.547
   },
   "tests.unit.test_greg_reconciliation::test_a_paid_action_reconciled_as_executed_books_its_signed_cap_against_the_budget": {
    "outcome": "passed",
-   "seconds": 0.431
+   "seconds": 0.481
   },
   "tests.unit.test_greg_reconciliation::test_a_pipeline_consumer_of_a_reconciled_producer_is_held_and_the_alternative_runs": {
    "outcome": "passed",
-   "seconds": 1.117
+   "seconds": 1.157
   },
   "tests.unit.test_greg_reconciliation::test_a_pipeline_input_never_falls_back_past_a_reconciled_execution": {
    "outcome": "passed",
-   "seconds": 0.148
+   "seconds": 0.146
   },
   "tests.unit.test_greg_reconciliation::test_a_second_uncertain_dispatch_of_one_action_gets_its_own_founder_question": {
    "outcome": "passed",
-   "seconds": 1.271
+   "seconds": 1.243
   },
   "tests.unit.test_greg_reconciliation::test_a_signed_binding_never_falls_back_past_a_reconciled_execution": {
    "outcome": "passed",
-   "seconds": 0.893
+   "seconds": 0.944
   },
   "tests.unit.test_greg_reconciliation::test_reconciling_a_function_named_strategy_names_the_dispatched_capability[reconcile_executed]": {
    "outcome": "passed",
-   "seconds": 0.417
+   "seconds": 0.457
   },
   "tests.unit.test_greg_reconciliation::test_reconciling_a_function_named_strategy_names_the_dispatched_capability[reconcile_not_executed]": {
    "outcome": "passed",
-   "seconds": 0.834
+   "seconds": 0.936
   },
   "tests.unit.test_greg_remote::test_expired_and_revoked_delegations_stop_working": {
    "outcome": "passed",
-   "seconds": 0.164
+   "seconds": 0.223
   },
   "tests.unit.test_per_organ_bridge_keys::test_organ_cannot_sign_as_another_organ": {
    "outcome": "passed",
-   "seconds": 0.001
+   "seconds": 0.002
   }
  }
 }

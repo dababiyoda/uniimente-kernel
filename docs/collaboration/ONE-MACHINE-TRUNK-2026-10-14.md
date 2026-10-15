@@ -61,8 +61,8 @@ Ancestry, refreshed on 2026-10-14 at 12:38 UTC, counting commits not contained i
 - Merging DALEOBANKS #89 (measurement truth; merges cleanly, 416 pass) and its public-persona clause.
 - Binding the Kernel grant into DALEOBANKS's publish seam, and any LIVE arming.
 - VEPMC fixture exclusion: implemented as enforcement of the metric's own definition ("fixture results are never external VEPMC evidence"); the founder may confirm or regress it.
-- Compensation (Defect 7): an ABANDONED mission's signed compensating action runs once through the Gate; a SUPERSEDED mission's runs only on an exact-scope approval (a successor may rely on the effect). Whether ABANDONED should also ask first, and whether missions abandoned before this code should raise COMPENSATION asks retroactively (they do today: one ask per executed external effect), are the founder's calls. Compensation is booked at $0 and checked by its Gate receipt, not by re-observing the undone state.
-- Outage deferral: a host outage while forming a capability defers the formation with a back-off; after five deferrals for one function the founder is asked. The threshold is a default, not a ruling.
+- Compensation (Defect 7): an ABANDONED mission's signed compensating action runs once through the Gate; a SUPERSEDED mission's runs only on an exact-scope approval (a successor may rely on the effect). Whether ABANDONED should also ask first, and whether missions abandoned before this code should raise COMPENSATION asks retroactively (they do today: one ask per executed external effect), are the founder's calls. Compensation runs unpaid (a self-spending capability is refused at signing), one per mission step, and is checked by its Gate receipt, not by re-observing the undone state; a founder answer to a COMPENSATION ask closes the obligation.
+- Outage deferral: a host outage while forming a capability holds the mission and re-runs the search after a growing back-off (capped at an hour); from the fifth consecutive outage the founder is also asked while the search keeps running. Recovery probes stop for the founder after eight outages in a row. Both thresholds are defaults, not rulings.
 
 ## 5. Completion map: BODY + ORGANS + MIND (executable evidence only)
 
@@ -133,6 +133,40 @@ Seven dimensions again (containment, typed failures, measurement, reconciliation
 
 The three fix branches (`fix/outcome`, `fix/device`, `fix/compensation`) were merged after my own review (`d87636e`, `e89091e`, `f147fc2`) with two corrections (`9a24e4d`): the outcome projection no longer claims the receipt proves DALEOBANKS's reviewed gate ran, and a superseded mission's compensation waits for an exact-scope approval.
 
+### 6c. Third adversarial review (2026-10-15, over `4ed91f7..9a24e4d`)
+
+A workflow of four reviewers (containment, typed failures, measurement, spend and authority), each finding put to a skeptic: 13 findings, 12 upheld. Two were regressions of this round's own fixes (an outage while forming a capability blamed the reporting strategy; booking build spend on the cone let an overspent cone refuse every free sensor). All 13 are fixed in `1a92b99`, each with a test that fails before it; the rows are in the adversarial matrix.
+
+| Severity | Finding | Fix |
+|---|---|---|
+| high | Outage while forming a cognition-reported capability: blocker cleared next tick, strategy blamed, NO_STRATEGY asked, no re-search | Outage blocker holds the mission and re-runs the formation after a growing back-off; from the fifth outage the founder is also asked |
+| high | Build spend not bounded by the cone; an overspent cone refused every free sensor | Builds bounded by the cone's remainder; free read-only observations never refused on budget |
+| medium | Outage during installed-binary or builder verification failed candidates and paid for more builds | No verdict during an outage; isolation checked before paying; unjudged paid candidates judged later; harness CPU limit separates a looping candidate from a slow host |
+| medium | A signed compensation ran after the founder answered its COMPENSATION ask | The answer closes the obligation (`FOUNDER_DECIDED`) |
+| medium | Compensations dispatched in one step past a founder STOP | One per step, under the tick's STOP check |
+| medium | A paid (metered) compensating capability spent unbooked money | Refused at signing |
+| medium | Foundry projection wedged after a founder-reconciled apply; ignored compensation receipts | Founder reconciliation anchors the store once (`foundry.anchored`); compensation receipts read in ledger order |
+| low | Outage deferrals never reset; capped ask could never clear | Per-episode count; the search keeps running after the ask |
+| low | Recovery-probe outages retried forever | Doubling wait; eight in a row stop recovery for the founder |
+| low | Organ exclusion skipped the fixed system grants | Every grant checked |
+| low | Ledgers wedged by the old shared reconciliation question crashed every tick | Stale answer recognised; the founder is asked for the later attempt |
+| low (refuted) | Fetch component imported planted workspace code; exit 97 read in band | Skeptic: pre-existing and not exploitable through shipped writers. Hardened anyway: `-P`, empty working directory, out-of-band refusal |
+
+### 6d. Fix verification (2026-10-15, over `132b600..1a92b99`)
+
+A second workflow re-ran each third-review probe against the fixed tree (eleven closure checks) and hunted defects the fixes introduced (three reviewers, each finding put to a skeptic). Seven fixes had a residual variant and the hunt found nine defects, five of them the same as residuals. All are closed in `c5e4b40` and `019fb0b`, each with a test that fails before it.
+
+| Residual or regression | Fix |
+|---|---|
+| A re-judged candidate took a fresh attempt slot: a third paid build, or an `EventError` crash when the builder returned the same source | Re-judged candidates keep their attempt; new builds fill only unused attempts |
+| A candidate hanging without CPU, or looping on a contended host, was read as an outage forever | A whole-run timeout is the host's only when the host cannot run an isolated no-op; else the candidate failed (also on the service replay) |
+| A paid candidate whose bill used the budget was never judged | Judging costs nothing: pending candidates are judged before any budget gate |
+| The eight-outage recovery stop stranded the capability (QUARANTINED cannot be re-attached by hand) | No stop on outages; the wait doubles up to a day |
+| The outage ask shared its identity with the real escalation and was never withdrawn | Own identity; withdrawn when the search next runs on a working host |
+| A build and the paid act it enables were admitted on the spend read before the build | The book is re-read after a formation |
+| Compensation: ran when the capability returned before the founder answered; refused on an overrun cone; a pre-check signed self-spending compensation ran; an answer arriving with the abandon was never recorded | Waits for the founder once asked; unpaid by construction so admitted; refused at run time; nothing compensated while a reconciliation is open, and the answer is recorded for an ended mission |
+| Foundry: anchoring at the first later call accepted edits made while the founder deliberated | Write-ahead `foundry.committing` digest; a reconciliation admits exactly it or the unchanged prior state |
+
 ## 7. Gap map (seven investigators and a critic) and what was closed
 
 | Rank | Gap | Status on this trunk |
@@ -149,4 +183,4 @@ The three fix branches (`fix/outcome`, `fix/device`, `fix/compensation`) were me
 
 ## 8. Rollback
 
-Every change is a separate commit on `claude/greg-one-machine`. Reverting any one leaves the others intact; reverting the whole branch is deleting the branch. No data migration was introduced. The new event types (`organ.observed`, `organ.appraised`, `gravity.ranked`, `gravity.unavailable`, `capability.deferred_probe`, `mission.compensation_required`, `mission.compensated`), the new fields (`failure_class` and `capability` on observations, `device_class`, `cost_usd` on route attempts) and the `outage` blocker are additive, and readers tolerate their absence. The seed genome evaluation is re-sealed at v8; v1-v7 are kept.
+Every change is a separate commit on `claude/greg-one-machine`. Reverting any one leaves the others intact; reverting the whole branch is deleting the branch. No data migration was introduced. The new event types (`organ.observed`, `organ.appraised`, `gravity.ranked`, `gravity.unavailable`, `capability.deferred_probe`, `mission.compensation_required`, `mission.compensated`, `foundry.committing`), the new fields (`failure_class` and `capability` on observations, `device_class`, `cost_usd` on route attempts) and the `outage` blocker are additive (the built-code harness also gained a CPU limit), and readers tolerate their absence. The seed genome evaluation is re-sealed at v8; v1-v7 are kept.

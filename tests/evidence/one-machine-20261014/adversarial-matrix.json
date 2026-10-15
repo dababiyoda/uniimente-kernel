@@ -381,6 +381,87 @@
       "tests": [
         "tests/unit/test_greg_one_machine_gates.py::test_a_function_named_sensor_counts_through_the_capability_the_engine_resolved"
       ]
+    },
+    {
+      "attack": "a host outage while forming a capability a strategy reported missing is blamed on that strategy, and the search never re-runs",
+      "expected": "the mission waits on an outage blocker that re-runs the formation after a growing back-off; no strategy is judged meanwhile; after five outages the founder is also asked and the search keeps running",
+      "tests": [
+        "tests/integration/test_greg_capability_recovery.py::test_an_outage_forming_a_cognition_deficit_is_re_searched_and_never_blamed_on_the_strategy",
+        "tests/integration/test_greg_capability_recovery.py::test_outage_deferrals_reset_after_a_formation_and_the_capped_ask_keeps_searching",
+        "tests/integration/test_greg_capability_recovery.py::test_when_the_host_recovers_but_nothing_qualifies_the_outage_ask_gives_way_to_a_real_one"
+      ]
+    },
+    {
+      "attack": "a host outage during installed-binary or builder verification fails working candidates and pays for more builds",
+      "expected": "no verdict and no paid attempt during the outage; a paid candidate left unjudged is judged later and never paid for again; a looping candidate is judged failed by its CPU limit",
+      "tests": [
+        "tests/unit/test_greg_genesis_builder.py::test_an_outage_before_a_build_pays_for_nothing_and_the_build_runs_once_the_host_is_back",
+        "tests/unit/test_greg_genesis_builder.py::test_a_paid_candidate_an_outage_left_unjudged_is_judged_later_and_never_paid_for_again",
+        "tests/unit/test_greg_genesis_builder.py::test_a_candidate_that_loops_is_judged_failed_by_its_cpu_limit_not_deferred_as_an_outage",
+        "tests/unit/test_greg_genesis_builder.py::test_a_re_judged_candidate_keeps_its_attempt_so_an_outage_never_buys_a_third_build",
+        "tests/unit/test_greg_genesis_builder.py::test_a_candidate_that_hangs_while_the_host_is_healthy_is_judged_failed",
+        "tests/unit/test_greg_genesis_builder.py::test_a_paid_candidate_that_used_the_whole_budget_is_still_judged_after_an_outage"
+      ]
+    },
+    {
+      "attack": "a persistent outage keeps recovery probing forever, stalling ticks",
+      "expected": "each outage doubles the wait up to a day; an outage never stops recovery, and the probe passes once the host is back",
+      "tests": [
+        "tests/integration/test_greg_capability_recovery.py::test_a_persistent_outage_backs_off_to_a_day_and_recovery_resumes_when_the_host_returns"
+      ]
+    },
+    {
+      "attack": "a confined component fakes a refusal with its own exit 97, or imports code planted in the mission workspace",
+      "expected": "refusal signalled out of band; the fetch component runs with -P from an empty directory",
+      "tests": [
+        "tests/unit/test_foundry_segmentation.py::test_a_component_that_exits_97_ran_and_is_not_reported_as_refused",
+        "tests/unit/test_foundry_segmentation.py::test_code_planted_in_the_mission_workspace_is_never_imported_by_the_fetch_component"
+      ]
+    },
+    {
+      "attack": "an excluded tree under a fixed system grant (/usr) stays readable while the stage is reported confined",
+      "expected": "every grant is checked against the excluded trees; an overlap refuses the stage",
+      "tests": [
+        "tests/unit/test_greg_organs.py::test_an_excluded_tree_under_a_fixed_system_grant_refuses_the_stage"
+      ]
+    },
+    {
+      "attack": "a build after a paid action overspends the cone, and every free sensor is then refused",
+      "expected": "a build is bounded by what the cone has left; a free read-only observation is never refused on budget",
+      "tests": [
+        "tests/unit/test_greg_genesis_builder.py::test_a_build_after_a_paid_action_is_bounded_by_what_the_cone_has_left",
+        "tests/unit/test_greg_genesis_builder.py::test_an_overspent_cone_still_observes_its_checks_for_free",
+        "tests/unit/test_greg_genesis_builder.py::test_a_build_and_the_paid_act_it_enables_are_admitted_against_one_cone"
+      ]
+    },
+    {
+      "attack": "a signed compensation runs after the founder answered its COMPENSATION ask, runs past a STOP, or spends unbooked money",
+      "expected": "the founder's answer closes the obligation; one compensation per step under the tick's STOP check; a compensation through a self-spending capability is refused at signing",
+      "tests": [
+        "tests/integration/test_greg_compensation.py::test_a_signed_compensation_never_runs_after_the_founder_answered_its_compensation_ask",
+        "tests/integration/test_greg_compensation.py::test_compensations_dispatch_one_per_step_and_a_stop_mid_tick_admits_no_more",
+        "tests/integration/test_greg_compensation.py::test_a_compensation_through_a_capability_that_spends_money_is_refused_at_signing",
+        "tests/integration/test_greg_compensation.py::test_a_compensation_waits_for_the_founder_once_asked_even_if_its_capability_returns",
+        "tests/integration/test_greg_compensation.py::test_an_overrun_cone_does_not_stop_a_free_compensation",
+        "tests/integration/test_greg_compensation.py::test_an_interrupted_dispatch_is_reconciled_before_anything_is_compensated",
+        "tests/integration/test_greg_compensation.py::test_a_self_spending_compensation_signed_before_the_check_is_refused_when_it_would_run"
+      ]
+    },
+    {
+      "attack": "an interrupted foundry.apply reconciled by the founder, or a chain of foundry compensations, wedges the store projection",
+      "expected": "each apply records the digest it is about to publish; a founder reconciliation admits exactly that digest or the unchanged prior state, never an edit; compensation receipts are canonical facts of the projection",
+      "tests": [
+        "tests/integration/test_greg_foundry_projection.py::test_an_interrupted_apply_reconciled_as_executed_admits_its_write_ahead_state_and_the_mission_closes",
+        "tests/integration/test_greg_foundry_projection.py::test_an_edit_made_while_the_founder_deliberates_is_never_admitted",
+        "tests/integration/test_greg_foundry_projection.py::test_every_signed_foundry_compensation_runs_on_the_state_the_previous_one_left"
+      ]
+    },
+    {
+      "attack": "a ledger wedged by the old shared reconciliation question crashes every tick after the upgrade",
+      "expected": "the stale answer is recognised and the founder is asked about the later attempt",
+      "tests": [
+        "tests/unit/test_greg_reconciliation.py::test_a_ledger_wedged_by_the_old_shared_reconciliation_question_is_asked_again"
+      ]
     }
   ],
   "observed": "see observed-run.json: the pytest outcome of every listed test on the recorded code head, with live organs and Landlock required (regenerate: python scripts/observe_adversarial_matrix.py)"

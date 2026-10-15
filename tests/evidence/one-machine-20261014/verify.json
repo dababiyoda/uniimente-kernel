@@ -35,12 +35,12 @@
       "world_reobserved": true
     },
     "findings": [],
-    "head": "sha256:bb93bac0a8187b72384827ac1b39bbc63727e7679c87177e0c1a8bb3226815e6",
+    "head": "sha256:7d3209b31bbdff0675347b08d690c64cf699ac2ef4df0017e7b07fc7dac5aeb7",
     "limits": "shares reviewed Kernel code; not an independent implementation",
     "mission_id": "m:one-machine-staff-om",
     "verdict": "VERIFIED"
   },
-  "ledger_head": "sha256:bb93bac0a8187b72384827ac1b39bbc63727e7679c87177e0c1a8bb3226815e6",
+  "ledger_head": "sha256:7d3209b31bbdff0675347b08d690c64cf699ac2ef4df0017e7b07fc7dac5aeb7",
   "mission_id": "m:one-machine-staff-om",
   "sandbox_whole_machine": [
     {

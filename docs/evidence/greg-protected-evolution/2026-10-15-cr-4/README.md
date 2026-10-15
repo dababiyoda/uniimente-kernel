@@ -2,6 +2,8 @@
 
 **What this is:** the fourth protected-evolution cycle, and the first run under the committed-freeze rule. Every number below is copied from `cycle-cr-4.json` by script. Nothing was re-run.
 
+> **Errata:** an independent review on 2026-10-15 corrected two statements in this README. The original wording is kept below, and each correction is listed under *Errata (2026-10-15 independent review)* at the end. The frozen files are unchanged.
+
 ## Protocol
 
 | Item | Value |
@@ -51,3 +53,26 @@ PYTHONPATH=. taskset -c 1 python -m greg.cognition.evolution --target constraint
 ```
 
 The cycle refuses to run unless every frozen input matches, and it refuses a dirty tree.
+
+## Errata (2026-10-15 independent review)
+
+Each item quotes the original wording, which stays in place above, and states the correction. Every number here was recomputed from `cycle-cr-4.json`. No frozen file was changed, and nothing was re-run.
+
+1. **"By script".** Original: "Every number below is copied from `cycle-cr-4.json` by script."
+   - No script is committed for this README. The directory holds only `PREREGISTRATION.md`, `README.md`, `cycle-cr-4.json`, `cycle-cr-4.log` and `freeze.json`.
+   - The review recomputed every number in the *Protocol* and *Result* tables from the record, and they match.
+   - The *Reading* section is hand-written. Item 2 corrects one of its claims.
+2. **The search did move `p_restart`.** Original: "**The headroom is real, but this closed space does not reach it.**" and "(`p_restart` is in the space, but the search did not move it)".
+   - Three of the 39 evaluated configurations set `p_restart` above 0:
+     - `cfg-c0b27b4df69e` at 0.064 (generation 1);
+     - `cfg-2272322885e9` at 0.156 (generation 1);
+     - `cfg-0e070b72573f` at 0.339 (generation 5).
+   - All three had a worse train mean loss than the incumbent's 0.007975: 0.011097, 0.008155 and 0.007983. The last was worse only marginally.
+   - The space allows `p_restart` up to 1.0 (`CR_CONFIG_SPACE` at `2cbb43d`). Nothing above 0.339 was tried.
+   - The record therefore shows that this search did not reach the headroom, not that the closed space cannot. The restart settings it tried lost on train, and a restart-heavy configuration remains untested. Any hypothesis for the next cycle has to start from that.
+3. **Note on the random-restart comparison.** The sentence "Random restart beat the incumbent on 53% of train items and has a lower held-out mean loss than either configuration (0.0045 against 0.0062 and 0.0091)" is accurate as written.
+   - The record compares random restart with two configurations only:
+     - the incumbent, on the train failure rate (32 of 60 items, 53.3%) and on held-out mean loss;
+     - the candidate, on held-out mean loss and the paired held-out count (46-22 in random restart's favour).
+   - The other 37 lineage entries record only `train_mean_loss`.
+   - `greg/path.json` stretched the sentence to "every configuration it searched". The Founder Intent Ledger's "beat both configurations on held-out" rests, for the incumbent, on mean loss alone, with no paired test. Both records are corrected.

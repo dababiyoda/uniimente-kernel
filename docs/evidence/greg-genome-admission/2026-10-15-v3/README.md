@@ -2,6 +2,8 @@
 
 **What this is:** the third frozen admission run. It covers 24 families on fresh held-out seeds. Every number in the tables below was copied from `results.json` by script (`make_readme_tables.py`, listed under *Reproduce*). Nothing was re-run, re-scored or re-labelled.
 
+> **Errata:** an independent review on 2026-10-15 corrected several statements in this README. The original wording is kept below, and each correction is listed under *Errata (2026-10-15 independent review)* at the end. The frozen files are unchanged.
+
 **Why it ran:** `PREREGISTRATION.md` in this directory, committed with `freeze.json` in `878f76c` before any held-out instance was generated. The 24 families are:
 - 15 genomes with no verdict;
 - 5 genomes whose version changed after their last verdict;
@@ -225,3 +227,48 @@ python docs/evidence/greg-genome-admission/2026-10-15-v3/make_readme_tables.py d
 ```
 
 The harness refuses with `FROZEN_INPUT_CHANGED` if any frozen input differs, and refuses to overwrite `results.json`.
+
+## Errata (2026-10-15 independent review)
+
+Each item quotes the original wording, which stays in place above, and states the correction. Every number here was recomputed from `results.json`, `freeze.json` and the evidence index at `878f76c`. No frozen file was changed, and nothing was re-run.
+
+1. **Scope of "by script".** Original: "Every number in the tables below was copied from `results.json` by script (`make_readme_tables.py`, listed under *Reproduce*)."
+   - The script generates only the section *Results (scripted from `results.json`)*: the source-commit line, the three tables with their captions and the two summary lines. Those 142 lines regenerate byte for byte from `results.json` and the index at `878f76c`.
+   - The Layer 2 table under *What the results mean*, and every count in that section's prose, were written by hand. Items 2 to 4 below are errors in those hand-written parts.
+2. **Layer 2 movements.** Original: "Three moved up. All four were measured on the generators, competitors and scorers declared after v1."
+   - Two moved up: `collective_quorum` and `collective_immune`, each from EXPERIMENTAL to NICHE_CAPABILITY.
+   - `collective_physarum` stayed NICHE_CAPABILITY and `collective_flock` stayed SUPERSEDED, as the table under that sentence shows.
+   - All four were measured on instance generators changed after v1. Only some of the other components changed, as `PREREGISTRATION.md` declares:
+     - the declared competitor changed for physarum, immune and flock;
+     - the scorer changed for physarum and flock;
+     - `collective_quorum`'s competitor and scorer are unchanged since v1.
+3. **`collective_quorum`'s edge over its competitor.** Original table row: "| `collective_quorum` | EXPERIMENTAL → NICHE | 17-1 over simple majority | 4-2 over the group-majority competitor | 4 wrong answers against the competitor's 8 |".
+   - All four wins are abstentions on instances where the competitor answered wrongly (seeds 1201, 1210, 1211 and 1222).
+   - Both losses are abstentions where the competitor answered correctly (seeds 1200 and 1219).
+   - On the competitor's other four wrong answers (seeds 1207, 1213, 1220 and 1225), the candidate was wrong too. It never answered correctly where the competitor erred.
+   - It abstained on 6 of 30 instances, so "4 wrong answers against the competitor's 8" is those same four abstentions.
+   - The NICHE_CAPABILITY verdict is the frozen rule's and stands. The edge it records is abstention, not a correct answer.
+4. **Wrong answers and abstentions.** Original: "Three candidates still gave wrong answers: `bootstrap_ci` 4, `collective_quorum` 4 and `mc_expectation` 1." and "`collective_flock` abstained on 5 instances and gave no wrong answer."
+   - Four candidates gave wrong answers, 20 in all: `flow_reinforce_greedy` 11, `bootstrap_ci` 4, `collective_quorum` 4 and `mc_expectation` 1.
+   - Two abstained, 11 times in all: `collective_quorum` on 6 instances and `collective_flock` on 5.
+   - This was an inconsistency in the prose, not an omission from the record. The scripted table shows `flow_reinforce_greedy` at 19/11/0 and `collective_quorum` at 20/4/6, and the bullet above the sentence says "`flow_reinforce_greedy` stays SUPERSEDED: 11 wrong".
+5. **The canonical-path smoke for `collective_quorum`.** Original: "All 24 were STRUCTURALLY_VERIFIED, and none created authority." The Smoke column also reads STRUCTURALLY_VERIFIED for every genome.
+   - Both match the record: the verifier field of every canonical-path record is STRUCTURALLY_VERIFIED, and none created authority.
+   - They do not show that `collective_quorum`'s smoke instance abstained. Its record has `abstention_state` ABSTAIN and `proof_type` null.
+   - Read it as: 23 smoke runs answered and were STRUCTURALLY_VERIFIED; `collective_quorum`'s abstained. The canonical path reproduced the genome's own abstention on seed 1200, where its held-out row also abstains.
+   - `make_readme_tables.py` prints only the verifier field. It is left unchanged so that the committed tables still regenerate byte for byte.
+6. **What the eight latency-based DEFAULT verdicts rest on.** Original: "**Eight DEFAULT verdicts rest on latency, not quality.** The frozen rule lets an equal-quality answer that is at least 1.25x cheaper than its baseline, and no more than 1.25x its competitor's median latency, count as an edge:" and "Several medians are below 2 ms, where the differences are fractions of a millisecond in one container."
+   - All eight tie their competitor on all 30 instances. DEFAULT rather than NICHE or SUPERSEDED rests on the candidate's median latency being no more than 1.25x the competitor's. The measured ratios run from 0.02 to 0.54.
+   - The condition "at least 1.25x cheaper than its baseline" applies to two of the eight. `game_lp_dual` and `knapsack_bnb` also tie their baseline on all 30 instances, and they clear the baseline only by being 6.08x and 3.02x cheaper than it.
+   - The other six beat their baseline on quality: `critical_path` 30-0, `min_cost_flow` 30-0, `graph_matching` 28-0, `mechanism_check` 13-0, `flow_expansion_mcf` 11-0 and `verify_liveness` 9-0.
+     - Four of these six have a slower median than their baseline: `critical_path`, `min_cost_flow`, `graph_matching` and `mechanism_check`.
+   - The candidate-to-competitor latency gap is under 1 ms only for `critical_path` (0.54 ms). It is 1.04-4.58 ms for six genomes and 75.44 ms for `mechanism_check`.
+7. **Where `flow_expansion_mcf` was measured.** Original: "On this geometry the simpler exact method is the canonical genome."
+   - The 30 held-out instances (seeds 1200-1229) come from the synthetic capacity-expansion generator in `greg/cognition/genomes/flow.py`. It builds layered networks: s, 3-4 relays, 3-4 relays, t, with random capacities, unit costs from 1 to 5 and a budget from 8 to 28.
+   - The genome was not run on F7's SNDlib items. The one-seventh latency (0.66 ms against 4.57 ms) and the tie on all 30 instances were measured on the synthetic instances.
+   - "This geometry" therefore means the capacity-expansion geometry as that generator samples it.
+8. **The freeze and the run.** Original: "It hashes 117 code files: the import closure of the harness and the isolated worker, and all of `greg/cognition`. It also records the M4 extract, the requirement files, ..." and "once, in a clean worktree at `878f76c`".
+   - `freeze.json` hashes 117 files. 114 are Python: the import closure plus all of `greg/cognition`, including `tools/offline_test.py`. The other three are the M4 extract and the two requirement files. They are part of the 117, not in addition to it.
+   - `results.json` records `source_commit` 878f76c but no dirty-tree state, and the harness had no dirty check. So "clean" and "once" are the operator's statements, not recorded facts.
+   - What is enforced: `--run` rehashes every frozen input and would have refused with `FROZEN_INPUT_CHANGED` had any hashed file differed from the freeze.
+   - Future runs record `source_dirty` in `results.json`. It lists the frozen files whose bytes differ from their blob at HEAD; see `greg/cognition/genomes/admission.py`.

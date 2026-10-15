@@ -42,6 +42,17 @@ MISSION_SCHEMA = json.loads((ROOT / "contracts/greg-mission.schema.json").read_t
 TERMINAL = {"ACHIEVED", "ABANDONED", "SUPERSEDED"}
 LIFECYCLE_STATES = {"ACTIVE", "PAUSED", "ABANDONED", "SUPERSEDED"}
 DECISION_ANSWERS = {"approve", "reject", "reconcile_executed", "reconcile_not_executed"}
+# A retry-safe (read-only, idempotent) dispatch whose completion is unknown is re-attempted, but boundedly:
+# at most RETRY_LIMIT consecutive unknown outcomes per strategy, the first retry at once (an interrupted read),
+# later ones after an exponential backoff. Then the strategy counts as failed and the mission replans: another
+# strategy, or one NO_STRATEGY ask on the founder-ask path. A non-retry-safe dispatch is never retried blindly.
+RETRY_LIMIT = 3
+RETRY_BACKOFF_SECONDS = 60
+
+
+def retry_delay(streak: int) -> int:
+    """Seconds to wait before re-attempting after ``streak`` consecutive unknown outcomes (1-based)."""
+    return 0 if streak <= 1 else RETRY_BACKOFF_SECONDS * 2 ** (streak - 2)
 
 
 class MissionError(ValueError):
@@ -301,6 +312,7 @@ class MissionState:
     # against the signed budget until a founder reconciliation settles that one dispatch: executed books it as
     # spent, not executed releases it. A retry-safe dispatch is never reconciled, so its reservation stands.
     reserved: dict = field(default_factory=dict)
+    uncertain_streak: dict = field(default_factory=dict)  # action_id -> consecutive dispatches of unknown outcome
 
     @property
     def mission_id(self):
@@ -456,8 +468,13 @@ class MissionBook:
                 # The dispatch may have taken effect: its signed cap is reserved until reconciled. Records written
                 # before the reservation existed carry no ``reserved_usd``; their worst case is the signed cost.
                 m.reserved[slot] = float(data.get("reserved_usd", signed_cost(m.spec, aid)))
+                streak = m.uncertain_streak[aid] = m.uncertain_streak.get(aid, 0) + 1
+                if streak >= RETRY_LIMIT:   # bounded: no further blind re-attempt; the mission replans or asks
+                    m.failed[aid] = (f"completion unknown on {streak} consecutive dispatches (retry limit "
+                                     f"{RETRY_LIMIT}): " + "; ".join(data["reasons"]))[:300]
             else:                     # a later record for the same dispatch settles it (reconciled or receipted)
                 m.reserved.pop(slot, None)
+                m.uncertain_streak.pop(aid, None)
             if data["status"] == "DONE":
                 m.actions_done += 1
                 m.spent_usd += data.get("cost_usd", 0.0)
@@ -1462,6 +1479,10 @@ class MissionEngine:
                           grant_id=outcome.grant_id,
                           spend_basis="reserved: completion unknown; the signed cap counts against the budget "
                                       "until this dispatch is reconciled")
+            if manifest.retry_safe:
+                streak = m.uncertain_streak.get(aid, 0) + 1
+                record["retry"] = {"consecutive_unknown": streak, "limit": RETRY_LIMIT,
+                                   "retry_in_seconds": retry_delay(streak) if streak < RETRY_LIMIT else None}
         if bindings:
             record["bindings"] = bindings
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION") and prepare_for is not None:
@@ -1491,7 +1512,15 @@ class MissionEngine:
         self.journal.record("mission.action", record, key=[m.mission_id, aid, attempt])
         if outcome.status == "UNCERTAIN":
             if manifest.retry_safe:
-                return {"state": "RETRYING", "action": aid, "why": "read-only idempotent capability"}
+                streak = m.uncertain_streak.get(aid, 0) + 1          # this record is the latest of the streak
+                if streak >= RETRY_LIMIT:
+                    return {"state": "REPLANNING", "action": aid, "status": outcome.status,
+                            "why": f"completion unknown on {streak} consecutive dispatches; retry limit reached"}
+                delay = retry_delay(streak)
+                if delay:
+                    self._schedule(m, now, delay)
+                return {"state": "RETRYING", "action": aid, "why": "read-only idempotent capability",
+                        "attempt": attempt, "retry_in_seconds": delay}
             # One reconciliation per dispatch: the request names this attempt's proposal and grant, so the answer
             # settles exactly this dispatch and a later uncertain dispatch opens its own request.
             dispatch = {"attempt": attempt, "proposal_id": outcome.proposal_id, "grant_id": outcome.grant_id}

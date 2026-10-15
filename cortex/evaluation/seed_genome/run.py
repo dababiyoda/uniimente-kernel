@@ -112,6 +112,9 @@ def main():
     ap.add_argument('--freeze', action='store_true')
     ap.add_argument('--out', type=Path)
     args = ap.parse_args()
+    # v10 = PR #184's second review: greg/models.py reads the Claude Code CLI's JSON report before its exit status (the
+    # CLI exits 1 on every is_error result), so a billed CLI failure is booked and a CLI refusal is final; the seed
+    # path, its static rules and scoring are untouched and its model baselines stay NOT_RUN.
     # v9 = the tree that joined #178's 2026-10-15 second review (44f7c35) into PR #184: greg/models.py books what billed
     # failed attempts cost (a refusal, an empty answer, a reported CLI error) on both the in-process and the confined
     # child path; the seed path, its static rules and scoring are untouched and its model baselines stay NOT_RUN.
@@ -123,7 +126,7 @@ def main():
     # and freeze-v7-pr169.json: v7 = the door namespace stopped showing the founder's home to the Claude Code CLI;
     # v6 = #26 confined the paid model routes. v5 = the committed converged tree (v4 was written before the final
     # greg/models.py merge and the protobuf pin); v1-v8 kept.
-    manifest = HERE / 'freeze-v9.json'
+    manifest = HERE / 'freeze-v10.json'
     frozen = inputs()
     if args.freeze:
         if manifest.exists():

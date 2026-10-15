@@ -98,7 +98,10 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 
 | Artifact | sha256 |
 |---|---|
-| `cortex/evaluation/seed_genome/freeze-v8.json` (seal of the joined tree) | `c253504c11eb1f128d0687f6c5fbce2e5479b70b9b8bd183c5d5b22ec3d96039` |
+| `cortex/evaluation/seed_genome/freeze-v10.json` (seal of the joined tree; `RUNNER_FREEZE`) | `be5beafb740b494568b15f76c4bec6cdf242ead931c9cffc5352d0914f563a73` |
+| `cortex/evaluation/seed_genome/freeze-v9.json` (the seal at `cd8046a`) | `761b35411ad15f303f92ed6248eefe521c04d3167c02845511af176a401994a9` |
+| `cortex/evaluation/seed_genome/freeze-v8-pr184.json` (this branch's v8, the seal at `d965bb7`) | `c253504c11eb1f128d0687f6c5fbce2e5479b70b9b8bd183c5d5b22ec3d96039` |
+| `cortex/evaluation/seed_genome/freeze-v8.json` (#178's v8) | `236da72cac0cf883688cb4e30aeabf7523caec8cb643aaa89ed62a99a0bf5b86` |
 | Ten-step body ledger file, 848 records (not committed; the per-mission ledger heads are in `ten-step/mission-traces.json`) | `e38f1b79fb9d4a4c400cab5524604622187a161a9d89e36b20a5ac508fb250d7` |
 | One-mission ledger head (`one-mission/run.json`) | `0e1cb9cf01996baaecd969a4b64d96ee16a84e21435cab1eca6a63276f5a373c` |
 | `ten-step/one-machine-trace.json` | `dd29bdbb89484f4c2d9b59d4ba70e3fc8a7ffcd013ce2183c544168a5baf9514` |

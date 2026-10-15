@@ -64,6 +64,25 @@ class AuthorityOffice:
             material["paid_budget_state"] = {"spent_usd": spent_usd, "budget_usd": budget_usd}
         return sha256_json(material)
 
+    @staticmethod
+    def precheck(manifest: CapabilityManifest, *, target: str, params: dict) -> tuple[str, str] | None:
+        """(status, reason) when this capability cannot act on this target here, before any cone or approval
+        question: unavailable on this body, or a target its manifest does not admit. None when it can.
+
+        ``act`` returns these before it reaches the cone, so a mission never asks about such an act; asking the
+        founder about it ahead of the mission's loop (``MissionEngine._askable``) applies the same test."""
+        ok, why = manifest.available()
+        if not ok:
+            return "UNAVAILABLE", why
+        if not target.startswith(manifest.target_prefix):
+            return "REFUSED", f"target {target!r} outside capability prefix {manifest.target_prefix!r}"
+        if manifest.target_from:  # the founder-signed target must name the host actually contacted
+            host = urllib.parse.urlsplit(str(params.get(manifest.target_from, ""))).hostname or ""
+            if target != manifest.target_prefix + host:
+                return "REFUSED", (f"target {target!r} does not name the host {host!r} "
+                                   f"that {manifest.target_from} would contact")
+        return None
+
     def _prior(self, proposal_id: str):
         """Retained dispatch/receipt for this exact proposal, if any (crash recovery)."""
         claims = [r for r in self.ledger.by_type("grant_dispatch") if r.payload.get("proposal_id") == proposal_id]
@@ -84,17 +103,9 @@ class AuthorityOffice:
         proposal_id = "greg-" + sha256_json({"scope": scope, "attempt": attempt})[7:39]
         base = dict(proposal_id=proposal_id, scope_digest=scope)
 
-        ok, why = manifest.available()
-        if not ok:
-            return ActionOutcome("UNAVAILABLE", [why], **base)
-        if not target.startswith(manifest.target_prefix):
-            return ActionOutcome("REFUSED", [f"target {target!r} outside capability prefix "
-                                             f"{manifest.target_prefix!r}"], **base)
-        if manifest.target_from:  # the founder-signed target must name the host actually contacted
-            host = urllib.parse.urlsplit(str(params.get(manifest.target_from, ""))).hostname or ""
-            if target != manifest.target_prefix + host:
-                return ActionOutcome("REFUSED", [f"target {target!r} does not name the host {host!r} "
-                                                 f"that {manifest.target_from} would contact"], **base)
+        refused = self.precheck(manifest, target=target, params=params)
+        if refused is not None:
+            return ActionOutcome(refused[0], [refused[1]], **base)
         # Exactly-once recovery for a body stopped between a paid dispatch or receipt and the mission projection
         # under the earlier scope form: only a retained exact legacy dispatch is used; legacy approvals grant
         # no new action.

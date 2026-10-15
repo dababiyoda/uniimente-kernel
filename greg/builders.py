@@ -269,12 +269,16 @@ class ClaudeCodeBuilder:
         with tempfile.TemporaryDirectory(prefix="greg-builder-") as empty:  # nothing to read, nothing to write
             proc = (self.runner(argv, input=prompt, capture_output=True, text=True, timeout=self.timeout, cwd=empty)
                     if self.egress is None else self._behind_door(argv, prompt, empty))
-        if proc.returncode:
-            raise BuildError(f"Claude Code exited {proc.returncode}: {(proc.stderr or proc.stdout)[-300:]}")
-        result = json.loads(proc.stdout)
+        from greg.models import cli_report
+        result = cli_report(proc)        # printed with what the run cost even when the CLI exits 1 (every is_error)
+        if result is None:
+            if proc.returncode:
+                raise BuildError(f"Claude Code exited {proc.returncode}: {(proc.stderr or proc.stdout)[-300:]}")
+            raise BuildError("Claude Code produced unreadable output")
         cost = result.get("total_cost_usd")
-        if result.get("is_error"):
-            raise BuildError(f"Claude Code reported an error: {str(result.get('result'))[:300]}", cost_usd=cost)
+        if result.get("is_error") or proc.returncode or result.get("stop_reason") == "refusal":
+            exited = f" (exit {proc.returncode})" if proc.returncode else ""
+            raise BuildError(f"Claude Code reported an error{exited}: {str(result.get('result'))[:300]}", cost_usd=cost)
         return {"source": _billed_source(str(result.get("result", "")), cost), "builder": self.identity,
                 "prompt_sha256": "sha256:" + hashlib.sha256(prompt.encode()).hexdigest(),
                 "cost_usd": cost}

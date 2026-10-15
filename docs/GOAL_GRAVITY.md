@@ -273,11 +273,16 @@ another wake; it is released unserved (`greg.mission.pull_released`) as soon as 
 binds the mission (you revoked, superseded or stopped it) or a goal turn faults, and your signed pause of the mission
 (LIFECYCLE PAUSED) ends it too. A mission no goal is bound to waits exactly as before.
 
-**An approve is standing.** Approving an ask approves that exact scope for the mission's lifetime (the mission
-engine's semantics, unchanged by goals): the mission runs it whenever its own loop selects it again, for example
-after the check regresses, with no new ask, until the mission closes or its signed horizon passes. To end it sooner,
-exclude the strategy with a signed critique, or pause or abandon the mission. The goal's ask, `greg gravity goals`
-and `greg gravity evidence` say so (`approve_means`).
+**An approve of an unpaid move is standing; an approve of a paid move funds one run.** Approving an ask approves
+that exact scope (the mission engine's semantics, unchanged by goals). For an unpaid move the scope is the same for
+the mission's lifetime: the mission runs it whenever its own loop selects it again, for example after the check
+regresses, with no new ask, until the mission closes or its signed horizon passes. A paid move's scope also names the
+mission's spend at the time of the ask (#157: one paid approval cannot fund a second attempt), so the approve funds
+one run: once that run's cost, or any other spend, is booked, the mission asks again before spending again. To end
+either sooner, reject it, exclude the strategy with a signed critique, or pause or abandon the mission. The goal's ask
+and each ask in `greg gravity evidence` state which applies (`approve_means`); `greg gravity goals` shows both texts.
+A goal links its move to the engine's asks by the move itself (`move_digest`, without the spend), so its open ask, a
+signed reject of it and its evidence stay attached when the mission spends in between.
 
 **Completion.** Completion is observation-tier and never terminal: a completed goal is reopened when an attributed
 observation shows one of its plan nodes regressed (for a goal of an infinite mission the surfaces say "holding").

@@ -442,12 +442,17 @@ def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *,
                                          params=s.get("params", {}), target=s["target"],
                                          consequence_class=manifest.consequence_class, cost_usd=cost,
                                          spent_usd=m.spent_usd, budget_usd=m.cone.budget_usd)
+    # The move itself, whatever the mission has spent: the identity a goal links its move and its asks by. The
+    # scope digest above changes whenever a paid mission spends; it stays the one an approval is checked against.
+    move = AuthorityOffice.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
+                                        params=s.get("params", {}), target=s["target"],
+                                        consequence_class=manifest.consequence_class, cost_usd=cost)
     outside = m.cone.admits(capability=manifest.capability_id, target=s["target"],
                             consequence_class=manifest.consequence_class, cost_usd=cost,
                             spent_usd=m.spent_usd, at=now)
     return {"mission_id": m.mission_id, "action_id": action_id, "capability": manifest.capability_id,
             "target": s["target"], "consequence_class": manifest.consequence_class, "cost_usd": cost,
-            "scope_digest": scope, "outside_cone": outside, "strategy": s}
+            "scope_digest": scope, "move_digest": move, "outside_cone": outside, "strategy": s}
 
 
 class MissionBook:
@@ -748,6 +753,12 @@ class MissionEngine:
             raise MissionError(f"{action_id} is inside the mission's light cone: it needs no founder decision")
         if scope["scope_digest"] in m.rejected_scopes:
             raise MissionError("the founder already rejected this exact scope")
+        # AuthorityOffice.act refuses such an act before the cone, so the mission never asks about it: an approve
+        # asked for ahead of its loop could change nothing on this body.
+        refused = AuthorityOffice.precheck(self.registry.manifests[scope["capability"]], target=scope["target"],
+                                           params=scope["strategy"].get("params", {}))
+        if refused is not None:
+            raise MissionError(f"{action_id} cannot act here ({refused[0]}): {refused[1]}"[:400])
         # The mission's own selection never picks an excluded or failed strategy (tick: "in m.failed or in
         # m.excluded"), nor one that advances no check its loop pursues, so it would never ask for (or run)
         # one; asking ahead of it must not either: an approve could change nothing.
@@ -796,7 +807,9 @@ class MissionEngine:
         exact scope), the same contract and the same one-ask-per-scope rule, so when the mission's
         loop later reaches the strategy it finds this request instead of asking again. Asking grants
         nothing and executes nothing; an approve adds exactly this scope to the mission's approved
-        scopes, used only when the mission's own feedback loop selects the strategy."""
+        scopes, used only when the mission's own feedback loop selects the strategy. A paid scope
+        includes the mission's spend state (#157), so its approve funds one run: once that run, or
+        any other spend, changes the state, the mission asks again before spending again."""
         self.book.rebuild()
         m = self.book.missions.get(mission_id)
         scope = self._askable(m, mission_id, action_id, now=now)
@@ -811,8 +824,9 @@ class MissionEngine:
             if evidence:
                 resource = {**resource, "evidence": {**resource["evidence"], **evidence}}
         return self._request(
-            m, kind="APPROVAL", scope_digest=scope["scope_digest"], action_id=action_id,
-            why=(why or "; ".join(scope["outside_cone"]))[:400], recommendation=recommendation[:400],
+            m, kind="APPROVAL", scope_digest=scope["scope_digest"], move_digest=scope["move_digest"],
+            action_id=action_id, why=(why or "; ".join(scope["outside_cone"]))[:400],
+            recommendation=recommendation[:400],
             alternatives=[x["action_id"] for x in m.spec["strategies"] if x["action_id"] != action_id][:5]
             + ["reject: the mission will try alternatives or ask again"],
             requested={"capability": scope["capability"], "target": scope["target"],
@@ -869,12 +883,15 @@ class MissionEngine:
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
                  resource: dict | None = None, evidence: dict | None = None, quoted: tuple = (),
-                 consequence: str = "the mission waits; no action is taken") -> str:
+                 consequence: str = "the mission waits; no action is taken", move_digest: str | None = None) -> str:
         """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
 
         ``resource`` makes it a section-60 resource ask: evidence, costed options with their
         expected effects, the recommendation's expected effect and uncertainty. Everything
-        Alfonso signed in the mission is exempt from the wording screen."""
+        Alfonso signed in the mission is exempt from the wording screen. An APPROVAL also records
+        the move it asks about without the spend state (``move_digest``; the scope digest when
+        none is given, which is the same for an unpaid scope), so a goal still finds its ask, and
+        the answer to it, after the mission spends."""
         epoch = 0
         while True:
             rid = "req-" + sha256_json({"mission": m.mission_id, "kind": kind, "scope": scope_digest,
@@ -890,6 +907,8 @@ class MissionEngine:
                    "alternatives": alternatives, "authority_requested": requested,
                    "consequence_of_no_response": consequence,
                    "created_at": iso(now), "reality_status": "RECORDED_LOCAL_MESSAGE"}
+        if kind == "APPROVAL":
+            message["move_digest"] = move_digest or scope_digest
         if evidence is not None:
             message["evidence"] = evidence
         if resource is not None:
@@ -2093,8 +2112,12 @@ class MissionEngine:
                 record["reasons"].append("founder already rejected this exact scope")
                 self.journal.record("mission.action", record, key=[m.mission_id, aid, attempt, "rejected"])
                 return {"state": "REPLANNING", "action": aid}
-            rid = self._request(m, kind="APPROVAL", scope_digest=outcome.scope_digest, action_id=aid,
-                                why="; ".join(outcome.reasons)[:400],
+            move = self.office.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
+                                            params=bound_params, target=s["target"],
+                                            consequence_class=manifest.consequence_class,
+                                            cost_usd=float(s.get("cost_usd", 0.0)))
+            rid = self._request(m, kind="APPROVAL", scope_digest=outcome.scope_digest, move_digest=move,
+                                action_id=aid, why="; ".join(outcome.reasons)[:400],
                                 recommendation=f"approve {aid} ({manifest.capability_id} on {s['target']}) "
                                                f"at ${s.get('cost_usd', 0.0)}: {s.get('rationale', '')}"[:400],
                                 alternatives=[x["action_id"] for x in m.spec["strategies"] if x["action_id"] != aid][:5]

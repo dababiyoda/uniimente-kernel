@@ -559,6 +559,19 @@ class OllamaRoute:
         return {"text": content, "cost_usd": 0.0, "served_model": served, "model_digest": digest}
 
 
+def cli_report(proc) -> dict | None:
+    """The Claude Code CLI's JSON result on stdout, or None when there is none.
+
+    The CLI prints it, with what the run cost and why it stopped, whether or not it succeeded: it exits 1 on every
+    ``is_error`` result (a refusal, an API error, an exhausted ``--max-budget-usd``), so the exit status alone says
+    neither what was billed nor whether the model declined."""
+    try:
+        result = json.loads(proc.stdout)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    return result if isinstance(result, dict) else None
+
+
 class ClaudeCodeRoute:
     """The founder's installed Claude Code CLI, headless: no tools, no MCP, no disk, a spend cap."""
     provider = "claude-code"
@@ -587,23 +600,26 @@ class ClaudeCodeRoute:
                         if self.egress is None else self._behind_door(argv, user, empty))
             except (subprocess.TimeoutExpired, OSError) as exc:
                 raise RouteError(f"{type(exc).__name__}: {exc}"[:300], kind=TRANSIENT) from exc
-        if proc.returncode:
-            detail = (proc.stderr or proc.stdout)[-300:]
-            if is_policy_text(detail):
-                raise Refusal(f"Claude Code: provider policy rejected the request: {detail}"[:300],
-                              kind=PROVIDER_POLICY_REFUSAL)
-            raise RouteError(f"Claude Code exited {proc.returncode}: {detail}", kind=UNKNOWN)
-        try:
-            result = json.loads(proc.stdout)
-        except json.JSONDecodeError as exc:
-            raise RouteError("Claude Code produced unreadable output", kind=BAD_OUTPUT) from exc
-        if result.get("is_error"):
-            detail = str(result.get("result"))[:300]
-            billed = result.get("total_cost_usd")      # the CLI's own report of what the failed run cost
+        result = cli_report(proc)
+        if result is None:
+            if proc.returncode:
+                detail = (proc.stderr or proc.stdout)[-300:]
+                if is_policy_text(detail):
+                    raise Refusal(f"Claude Code: provider policy rejected the request: {detail}"[:300],
+                                  kind=PROVIDER_POLICY_REFUSAL)
+                raise RouteError(f"Claude Code exited {proc.returncode}: {detail}", kind=UNKNOWN)
+            raise RouteError("Claude Code produced unreadable output", kind=BAD_OUTPUT)
+        billed = result.get("total_cost_usd")          # the CLI's own report of what the run cost, failed or not
+        detail = str(result.get("result"))[:300]
+        if result.get("stop_reason") == "refusal":
+            # The model declined, as AnthropicRoute reads the same stop reason: an answer, never shopped elsewhere.
+            raise Refusal(f"Claude Code: the model declined: {detail}"[:300], kind=SAFETY_REFUSAL, cost_usd=billed)
+        if result.get("is_error") or proc.returncode:
             if is_policy_text(detail):
                 raise Refusal(f"Claude Code: provider policy rejected the request: {detail}"[:300],
                               kind=PROVIDER_POLICY_REFUSAL, cost_usd=billed)
-            raise RouteError(f"Claude Code reported an error: {detail}", kind=UNKNOWN, cost_usd=billed)
+            exited = f" (exit {proc.returncode})" if proc.returncode else ""
+            raise RouteError(f"Claude Code reported an error{exited}: {detail}", kind=UNKNOWN, cost_usd=billed)
         return {"text": str(result.get("result", "")), "cost_usd": result.get("total_cost_usd"),
                 "served_model": self.model or "claude-code default"}
 

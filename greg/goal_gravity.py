@@ -80,6 +80,37 @@ APPROVE_MEANS = ("standing approval of this exact scope for the mission's lifeti
                  "its own loop selects it again (for example after the check regresses), with no new ask, until the "
                  "mission closes or its signed horizon passes; to end it sooner, exclude the strategy with a signed "
                  "critique or pause or abandon the mission. It is not a one-time execution")
+# A paid scope includes the mission's spend state (AuthorityOffice.scope_digest, #157): one paid approval funds one run.
+APPROVE_MEANS_PAID = ("approval of this one paid run at the mission's current spend: the mission runs it once, when its "
+                      "own loop selects it; once that run's cost (or any other spend) is booked the approved scope no "
+                      "longer matches, and the mission asks you again before spending again (for example after the "
+                      "check regresses). Until it runs you may end it by rejecting it, excluding the strategy with a "
+                      "signed critique, or pausing or abandoning the mission")
+
+
+def approve_means(cost_usd, budget_usd) -> str:
+    """What an approve of a move costing ``cost_usd`` in a mission with budget ``budget_usd`` means: standing for an
+    unpaid scope, one run for a paid one (the engine binds a paid scope to the spend state whenever there is a budget)."""
+    return APPROVE_MEANS_PAID if float(cost_usd or 0.0) > 0 and budget_usd is not None else APPROVE_MEANS
+
+
+def _approve_means_of(r: dict) -> str:
+    """``approve_means`` for one recorded APPROVAL, from the cost and budget the ask itself shows."""
+    evidence = r.get("evidence") if isinstance(r.get("evidence"), dict) else {}
+    budget = evidence.get("budget") if isinstance(evidence.get("budget"), dict) else {}
+    return approve_means((r.get("authority_requested") or {}).get("cost_usd", 0.0), budget.get("budget_usd"))
+
+
+def asks_for_move(r: dict, scope: dict) -> bool:
+    """Whether a recorded request is the engine's APPROVAL ask for this exact goal move (``scope`` from
+    ``strategy_scope``). It compares the spend-free move digest, so the link survives the mission's spending; a request
+    recorded before the move digest existed compares the scope digest, as it always did. A compensation APPROVAL
+    naming the same strategy is a different move (other capability, params or target)."""
+    if r.get("kind") != "APPROVAL" or r.get("mission_id") != scope["mission_id"]:
+        return False
+    if "move_digest" in r:
+        return r["move_digest"] == scope["move_digest"]
+    return r.get("scope_digest") == scope["scope_digest"]
 
 
 class _Genomes:
@@ -593,9 +624,7 @@ class BodyAttentionStore:
 
     def _requests(self, scope: dict) -> list[str]:
         book = self.body.engine.book
-        return [rid for rid, r in book.requests.items()
-                if r.get("kind") == "APPROVAL" and r.get("mission_id") == scope["mission_id"]
-                and r.get("scope_digest") == scope["scope_digest"]]
+        return [rid for rid, r in book.requests.items() if asks_for_move(r, scope)]
 
     def _refusal(self, item: dict) -> str | None:
         """Why the decision's move cannot be asked for now (the engine's own ``ask_refusal``), or None."""
@@ -672,11 +701,13 @@ class BodyAttentionStore:
                 spec = self.registry.get(item.goal_id)
                 move = next(m for m in _moves(spec) if m.route_hash == item.route_hash)
                 ref = move.payload
+                budget = self.body.engine.book.missions[ref["mission_id"]].cone.budget_usd
                 rid = self.body.engine.request_decision(
                     ref["mission_id"], ref["action_id"], why=item.question, recommendation=item.recommendation,
                     now=datetime.fromisoformat(str(payload.get("routed_at", iso(self.body.clock()))).replace("Z", "+00:00")),
                     evidence={"goal_id": item.goal_id, "goal_item_id": item.item_id, "lane": lane,
-                              "evidence_refs": list(item.evidence_refs), "approve_means": APPROVE_MEANS},
+                              "evidence_refs": list(item.evidence_refs),
+                              "approve_means": approve_means(move.estimated_cost_usd, budget)},
                     quoted=tuple(asks.founder_text([spec.founder_intent, spec.desired_state, move.description,
                                                     move.intervention_id, move.expected_outcome,
                                                     [n.gate for n in spec.plan], [n.outcome for n in spec.plan]])))
@@ -940,8 +971,7 @@ def _settle(body, reg: GoalRegistry, facts: FounderFacts, at: datetime) -> list[
                 continue
             for rid, r in book.requests.items():
                 answer = book.answers.get(rid)
-                if r.get("kind") == "APPROVAL" and r.get("mission_id") == scope["mission_id"] \
-                        and r.get("scope_digest") == scope["scope_digest"] and answer \
+                if asks_for_move(r, scope) and answer \
                         and answer.get("answer") == "reject" and signed_answer(signed, rid, answer):
                     who = signed[answer["command_digest"]]["principal"]
                     reg.record_refusal(gid, route_hash=move.route_hash, now=at,
@@ -1160,11 +1190,11 @@ def _mission_rows(book: MissionBook, mids) -> list[dict]:
     return rows
 
 
-def _move_scopes(book: MissionBook, manifests: dict, spec: GoalSpec) -> set[tuple[str, str]]:
-    """(mission_id, scope digest) of each declared move's exact strategy scope: the one link from a goal to the
-    engine's APPROVAL asks, as the attention store and ``_settle`` match. An APPROVAL of another scope that names
-    the same strategy (the compensation of its executed effect) is the mission's decision, not the goal's move."""
-    scopes = set()
+def _move_scopes(book: MissionBook, manifests: dict, spec: GoalSpec) -> list[dict]:
+    """Each declared move's exact strategy scope: the one link from a goal to the engine's APPROVAL asks
+    (``asks_for_move``), as the attention store and ``_settle`` match. An APPROVAL of another scope that names the
+    same strategy (the compensation of its executed effect) is the mission's decision, not the goal's move."""
+    scopes = []
     for move in _moves(spec):
         ref = move.payload if isinstance(move.payload, dict) else {}
         try:
@@ -1172,13 +1202,13 @@ def _move_scopes(book: MissionBook, manifests: dict, spec: GoalSpec) -> set[tupl
                                    now=datetime.now(timezone.utc))      # the time reads only the cone, not the scope
         except MissionError:
             continue
-        scopes.add((scope["mission_id"], scope["scope_digest"]))
+        scopes.append(scope)
     return scopes
 
 
-def _goal_request(r: dict, gid: str, scopes: set) -> bool:
-    return (r.get("evidence") or {}).get("goal_id") == gid or \
-        (r.get("kind") == "APPROVAL" and (r.get("mission_id"), r.get("scope_digest")) in scopes)
+def _goal_request(r: dict, gid: str, scopes: list) -> bool:
+    evidence = r.get("evidence") if isinstance(r.get("evidence"), dict) else {}
+    return evidence.get("goal_id") == gid or any(asks_for_move(r, scope) for scope in scopes)
 
 
 def _goal_requests(book: MissionBook, manifests: dict, gid: str, spec: GoalSpec) -> list[str]:
@@ -1276,7 +1306,7 @@ def projection(journal, *, closure: bool = True) -> dict:
         "how_it_acts": "an awake goal pulls its signed missions' next observation forward (a mission waiting on "
                        "your decision then re-observes and repairs its other checks inside its cone); the missions "
                        "do all execution through the AuthorityOffice and the Consequence Gate",
-        "approve_means": APPROVE_MEANS,
+        "approve_means": {"free": APPROVE_MEANS, "paid": APPROVE_MEANS_PAID},
         "completion_tier": "observation: attributed ledger observations recomputed from Gate receipts and "
                            "separate-process appraisals; not external verification",
     }
@@ -1343,7 +1373,7 @@ def evidence(journal, goal_id: str) -> dict:
         "asks": [{"request_id": rid, "answer": (book.answers.get(rid) or {}).get("answer"),
                   "answer_command": (book.answers.get(rid) or {}).get("command_digest"),
                   "answer_signature_verified": signed_answer(signed, rid, book.answers.get(rid)) is not None,
-                  "approve_means": APPROVE_MEANS}
+                  "approve_means": _approve_means_of(book.requests[rid])}
                  for rid in requests],
         "mission_receipts": sorted({e.payload["receipt"] for e in journal.replay("mission.")
                                     if e.type in ("greg.mission.action", "greg.mission.observed")

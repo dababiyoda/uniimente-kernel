@@ -19,6 +19,7 @@ VENTURES = 'tests/unit/test_greg_ventures.py'
 MEDIA = 'tests/unit/test_greg_media_case.py'
 FABRIC = 'tests/unit/test_greg_task_fabric.py'
 RESTORE = 'tests/unit/test_greg_restore.py'
+FAILURES = 'tests/unit/test_greg_failure_closure.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -202,6 +203,27 @@ MUTANTS = [
  ('a crafted seed writes outside its target', 'foundry/systems/seed.py',
   'if Path(rel).is_absolute() or root not in (root / rel).resolve().parents:', 'if False:',
   'test_a_seed_someone_else_built_cannot_write_outside_or_plant_keys', RESTORE),
+ # Sections 11 and 14: the outcome plane hears failures, each independently appraised, each once.
+ ('a failed mission never closes', 'greg/missions.py',
+  '            if m.actions_done and not held:', '            if False:',
+  'test_a_failed_mission_closes_unmet_and_is_appraised_as_a_verified_failure', FAILURES),
+ ('settlement hears successes only', 'greg/cognition/settlement.py',
+  'if (data.get("verdict") in ("VERIFIED", "VERIFIED_UNMET")', 'if (data.get("verdict") == "VERIFIED"',
+  'test_settlement_hears_each_failure_once_and_reconciles_idempotently', FAILURES),
+ ('a re-observed failure settles again', 'greg/cognition/settlement.py',
+  '"input_digest": digest(check["sensor"].get("params", {})), "problem_id": receipt["problem_id"]}',
+  '"input_digest": receipt["input_digest"], "problem_id": receipt["problem_id"]}',
+  'test_settlement_hears_each_failure_once_and_reconciles_idempotently', FAILURES),
+ ('a forged failure is taken on its word', 'greg/appraisal.py',
+  '            if passed == unmet:', '            if not passed and not unmet:',
+  'test_a_forged_failure_closure_on_a_passing_mission_is_refuted', FAILURES),
+ ('a failure the world no longer shows is accepted', 'greg/appraisal.py',
+  '                if now_ok is None or now_ok == unmet:', '                if now_ok is None or (now_ok is False and not unmet):',
+  'test_a_failure_the_world_no_longer_shows_is_refuted', FAILURES),
+ ('a verified failure reads as a success', 'greg/appraisal.py',
+  '"verdict": ("VERIFIED_UNMET" if unmet else "VERIFIED") if verified else "REFUTED",',
+  '"verdict": "VERIFIED" if verified else "REFUTED",',
+  'test_a_verified_failure_is_never_read_as_a_success', FAILURES),
 ]
 
 

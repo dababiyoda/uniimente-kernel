@@ -1169,6 +1169,13 @@ class MissionEngine:
                                 evidence={"failing_checks": sorted(failing), "failed": dict(sorted(m.failed.items())),
                                           "excluded": dict(sorted(m.excluded.items())),
                                           **({"held_by_precondition": held} if held else {})})
+            if m.actions_done and not held:
+                # Every admissible strategy ran and these signed checks still fail: a failure closure. The
+                # separate process appraises it as it does an achievement, so settlement hears failures too.
+                self.journal.record("mission.unmet", {
+                    "mission_id": m.mission_id, "failing_checks": sorted(failing), "actions_done": m.actions_done,
+                    "closure_rule": "every admissible strategy ran; these signed checks re-observed failing",
+                    "at": iso(now)}, key=[m.mission_id, "unmet", m.actions_done])
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}

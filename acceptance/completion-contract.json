@@ -248,7 +248,8 @@
    "recovery": "A killed worker leaves a claimed dispatch that is reconciled.",
    "resources": "Provider spend reported and booked; over-cap reports booked as reported.",
    "next_work": [
-    "Two receipted workers in one signed mission (D gap G1)"
+    "A real-process multi-worker mission (D gap G8)",
+    "Lease coherence over long worker runs (D gap G7)"
    ],
    "blocking": [
     "Credentials for real frontier workers"
@@ -678,7 +679,7 @@
    "n": 6,
    "condition": "Relevant tool and worker actions actually execute within sandbox or authenticated scope.",
    "met": "partly",
-   "evidence": "Sandbox workers and capabilities execute through the Gate; no multi-worker run with a real frontier worker."
+   "evidence": "Workers and capabilities execute through the Gate in sandbox scope, including two receipted WorkOrders chained by a typed edge (scripted worker double); no multi-worker run with a real frontier worker or in a real Body process (D gaps G8, G9)."
   },
   {
    "n": 7,
@@ -720,7 +721,7 @@
    "n": 13,
    "condition": "No readily buildable required subsystem has been replaced by a stub, placeholder, or future-work paragraph.",
    "met": "no",
-   "evidence": "Buildable gaps remain open (e.g. D G1, H G5, I G6, L G3)."
+   "evidence": "Buildable gaps remain open (e.g. D G8, H G5, I G6, L G3)."
   },
   {
    "n": 14,

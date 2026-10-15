@@ -521,6 +521,7 @@ class Body:
         from greg import goal_gravity
         gravity = goal_gravity.tick(self, now)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
+        recovered = self.genesis.recover(now)     # quarantined capabilities may earn back eligibility (sandbox)
         summary = self.engine.tick(now, should_stop=self._stop_now)
         self._close_out(now)
         from greg.cognition.settlement import reconcile as settle_cognition
@@ -528,7 +529,7 @@ class Body:
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)
         anchored = anchor.anchor_once(self.journal, now) if anchor.due(self.journal, now) else None
-        result = {"commands": commands, "missions": summary, "anchor": anchored}
+        result = {"commands": commands, "missions": summary, "anchor": anchored, "recovery": recovered}
         if gravity is not None:
             result["gravity"] = gravity
         return result

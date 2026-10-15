@@ -192,8 +192,8 @@ def test_the_trend_counts_only_exact_runs_that_held_quality_and_cut_intervention
         for n in range(3):
             spec = sop.instantiate(record, {"text": f"sop run {n}"},
                                    now=datetime.now(timezone.utc) + timedelta(seconds=n))
-            assert "fs.write" in spec["light_cone"]["capabilities"]
-            assert spec["light_cone"]["max_consequence_class"] == "internal_write"
+            assert spec["light_cone"]["capabilities"] == ["fs.read"]          # the cone is never widened
+            assert [p["action_id"] for p in spec["pre_approved_steps"]] == ["w"]   # the one step, carried itself
             if n == 2 and case == "doctored":
                 spec["light_cone"]["budget_usd"] = 5                     # signed, but not this procedure
             if n == 2 and case == "long_mandate":

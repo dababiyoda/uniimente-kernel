@@ -78,6 +78,16 @@ def validate_mission(spec: dict) -> dict:
                                "(human.* or professional.*)")
         _validate_bindings(strategy, set(actions))
     _acyclic_bindings(spec["strategies"])
+    by_id = {s["action_id"]: s for s in spec["strategies"]}
+    pre = [p["action_id"] for p in spec.get("pre_approved_steps", [])]
+    if len(pre) != len(set(pre)):
+        raise MissionError("a step is pre-approved at most once")
+    for step in spec.get("pre_approved_steps", []):
+        strategy = by_id.get(step["action_id"])
+        if (strategy is None or strategy.get("capability") != step["capability"]
+                or strategy["target"] != step["target"] or float(strategy.get("cost_usd", 0) or 0) != 0):
+            raise MissionError(f"pre-approved step {step['action_id']} must name one free strategy by its exact "
+                               "capability and target")
     ladder = spec["closure"].get("ladder", [])
     for rung in ladder:
         if set(rung) - checks:
@@ -91,6 +101,15 @@ def validate_mission(spec: dict) -> dict:
         raise MissionError("capability build budgets exceed the mission budget")
     del cone
     return spec
+
+
+def pre_approved(spec: dict, strategy: dict, manifest) -> bool:
+    """Whether the founder-signed mission pre-approves exactly this strategy as resolved to ``manifest``:
+    its own action id, capability, target and consequence class, at no cost (greg/sop.py runs)."""
+    return float(strategy.get("cost_usd", 0) or 0) == 0 and any(
+        p["action_id"] == strategy["action_id"] and p["capability"] == manifest.capability_id
+        and p["target"] == strategy["target"] and p["consequence_class"] == manifest.consequence_class
+        for p in spec.get("pre_approved_steps", []))
 
 
 BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "boolean": (bool,),
@@ -1206,13 +1225,17 @@ class MissionEngine:
         except BindingError as exc:
             self._block(m, {"type": "no_strategy", "why": "pipeline input unavailable: " + str(exc)})
             return {"state": "BLOCKED", "blocker": m.blocker}
+        signed = frozenset({AuthorityOffice.scope_digest(
+            mission_id=m.mission_id, capability_id=manifest.capability_id, params=bound_params, target=s["target"],
+            consequence_class=manifest.consequence_class, cost_usd=float(s.get("cost_usd", 0.0)))}) \
+            if pre_approved(m.spec, s, manifest) else frozenset()
         outcome = self.office.act(
             mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
             adapter=adapter, ctx=self._context(m, manifest), params=bound_params, target=s["target"],
             cost_usd=float(s.get("cost_usd", 0.0)), expected_outcome=s.get("expected_outcome", "strategy executed"),
             evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
             spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
-            evidence_confidence=float(s.get("evidence_confidence", 1.0)))
+            evidence_confidence=float(s.get("evidence_confidence", 1.0)), signed_scopes=signed)
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,

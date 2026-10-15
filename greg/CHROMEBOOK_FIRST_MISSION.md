@@ -244,7 +244,8 @@ greg sop trend                                  # before and after, per verified
 - **A run uses no model, and you still sign every run.**
 - **`--pre-approve` is limited.** It applies only to steps you approved in every one of those
   runs, internal at most and free:
-  - the step then sits inside the cone you sign for each run, so it does not stop to ask you;
+  - each run you sign names that one step as pre-approved, so it does not stop to ask you;
+  - the cone itself is not widened, so every step you did not pre-approve still asks;
   - contact with the outside world and any spend always ask.
 - **`greg path` measures N4 from the ledger.** It is met when three runs of the ratified
   procedure:

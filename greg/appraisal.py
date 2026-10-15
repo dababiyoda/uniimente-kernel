@@ -11,7 +11,9 @@ appraiser re-derives the result from retained bytes and from the world:
 3. read-only built-in sensors are re-run now, so the world must still match;
 4. every action completed inside the closure window has exactly one dispatch claim and one receipt,
    bound to its signed strategy through the same Gate chain;
-5. any action that needed founder approval happened only after an approving decision.
+5. every completed action the founder-signed cone does not admit (re-derived here, not taken from the
+   engine's asks) ran only after an exact-scope approval carried by a re-verified founder DECISION, or
+   was pre-approved by the signed mission itself.
 
 The closure window runs from the mission's one registration (or, for a standing mission, its previous
 hold) to the selected closure; history outside it neither proves nor refutes this closure.
@@ -37,7 +39,8 @@ from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityManifest, InvocationContext
 from greg.founder import _signing_bytes
 from greg.journal import Journal
-from greg.missions import evaluate_predicate
+from greg.lightcone import LightCone
+from greg.missions import evaluate_predicate, pre_approved
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
@@ -167,6 +170,80 @@ def _invocation_receipt_bound(ledger, journal, seq, receipt, invocation, *, miss
             and wd.get("expected_outcome") == ("observation captured" if observation else
                                                invocation.get("expected_outcome", "strategy executed"))
             and command_digest in wd.get("evidence_refs", []))
+
+
+def _instant_or_none(value):
+    from datetime import datetime
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")) if value else None
+    except ValueError:
+        return None
+
+
+def _manifest_before(journal: Journal, seq: dict, cid, before: int):
+    """The manifest a capability had when it ran: a built-in, or the one Genesis registered before it."""
+    if cid in BUILTINS:
+        return BUILTINS[cid][0]
+    registrations = [e for e in journal.replay("capability.registered")
+                     if e.payload.get("manifest", {}).get("capability_id") == cid
+                     and seq.get(e.event_id, 1 << 60) < before]
+    return CapabilityManifest.from_dict(registrations[-1].payload["manifest"]) if registrations else None
+
+
+def _devices_before(journal: Journal, seq: dict, before: int) -> dict:
+    devices = {}
+    for event in journal.replay("device."):
+        if seq.get(event.event_id, 1 << 60) > before:
+            continue
+        if event.type == "greg.device.enrolled":
+            devices[event.payload["device_key_id"]] = event.payload
+        elif event.type == "greg.device.revoked":
+            devices.pop(event.payload["device_key_id"], None)
+    return devices
+
+
+def _decision_signed(journal: Journal, ledger, seq: dict, answer: dict, answer_seq: int, request_id: str,
+                     before: int) -> bool:
+    """The answer is carried by exactly one accepted DECISION approving this request, whose retained
+    envelope re-verifies against a founder key, or a delegated device key allowed to sign DECISION,
+    as the ledger stood when the answer was recorded."""
+    commands = [e.payload for e in journal.replay("command.accepted")
+                if e.payload.get("digest") == answer.get("command_digest") and seq.get(e.event_id, 1 << 60) < before]
+    if len(commands) != 1 or not isinstance(commands[0].get("envelope"), dict):
+        return False
+    env = commands[0]["envelope"]
+    body = env.get("body") or {}
+    if (sha256_json(env) != answer.get("command_digest") or env.get("kind") != "DECISION"
+            or body.get("request_id") != request_id or body.get("answer") != "approve"):
+        return False
+    kid = env.get("founder_key_id")
+    public = _founder_keys(journal, answer_seq, ledger).get(kid)
+    if public is None:
+        device = _devices_before(journal, seq, answer_seq).get(kid)
+        issued, expires = _instant_or_none(env.get("issued_at")), _instant_or_none((device or {}).get("expires_at"))
+        if (device is None or "DECISION" not in device.get("kinds", []) or issued is None or expires is None
+                or not issued < expires):
+            return False
+        public = device["public_key"]
+    try:
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(public)).verify(bytes.fromhex(env["signature"]),
+                                                                          _signing_bytes(env))
+    except (InvalidSignature, ValueError, KeyError, TypeError):
+        return False
+    return True
+
+
+def _approved_before(journal, ledger, seq, requests, answers, scope_digest, at_seq) -> bool:
+    """An exact-scope request of this mission, answered "approve" by a verified founder DECISION before
+    the action ran."""
+    for request in requests:
+        data = request.payload
+        answer = answers.get(data["request_id"])
+        if (scope_digest and data.get("scope_digest") == scope_digest and seq[request.event_id] < at_seq
+                and answer is not None and answer[0].get("answer") == "approve" and answer[1] < at_seq
+                and _decision_signed(journal, ledger, seq, answer[0], answer[1], data["request_id"], at_seq)):
+            return True
+    return False
 
 
 def _formed_registry(journal: Journal, workspace) -> object:
@@ -348,24 +425,56 @@ def appraise(request: dict) -> dict:
                 findings.append(f"{action['action_id']}: {detail}")
         checks["deliveries_bound_to_evidence"] = delivered_ok
 
-        # 5. approval boundaries honored, inside the closure window
-        answered = {e.payload["request_id"]: (e.payload, seq[e.event_id]) for e in journal.replay("decision.answered")
-                    if registered_seq < seq[e.event_id] < achieved_seq}
-        approvals_ok, approvals_seen = True, 0
-        for req in journal.replay("decision.requested"):
-            data = req.payload
-            if (data.get("mission_id") != mid or data["kind"] != "APPROVAL"
-                    or not registered_seq < seq[req.event_id] < achieved_seq):
+        # 5. approval boundaries honored, inside the closure window. The founder-signed cone decides which
+        # completed actions needed approval, not the engine's own asks: every DONE action is re-admitted
+        # against LightCone.admits (capability, signed target, manifest class, cost, spend so far, its time).
+        # One outside the cone, or one whose grant the engine marked founder-approved, ran honestly only
+        # after an exact-scope approval answered "approve" by a DECISION whose accepted envelope re-verifies
+        # against a key allowed to sign DECISION at that ledger position; or, past the cone only, when the
+        # signed mission itself pre-approves that exact step (greg/sop.py runs). An engine that forgot to
+        # ask, or an answer no founder command carries, refutes the closure (review of 2026-10-14).
+        cone = LightCone.from_dict(spec["light_cone"])
+        requests = [e for e in journal.replay("decision.requested") if e.payload.get("mission_id") == mid]
+        answers = {}
+        for e in journal.replay("decision.answered"):
+            if registered_seq < seq[e.event_id] < achieved_seq:
+                answers.setdefault(e.payload["request_id"], (e.payload, seq[e.event_id]))
+        approvals_ok = True
+        approvals_seen = sum(1 for r in requests if r.payload["kind"] == "APPROVAL"
+                             and registered_seq < seq[r.event_id] < achieved_seq)
+        grants = {r.payload.get("grant_id"): r.payload for r in ledger.by_type("event")
+                  if r.payload.get("type") == "greg.authority.grant_issued" and r.seq < achieved_seq}
+        by_id = {s["action_id"]: s for s in spec["strategies"]}
+        spent = 0.0
+        for event in journal.replay("mission.action"):
+            action = event.payload
+            if action["mission_id"] != mid or action["status"] != "DONE" or seq[event.event_id] >= achieved_seq:
                 continue
-            approvals_seen += 1
-            executed = [e for e in journal.replay("mission.action") if e.payload["mission_id"] == mid
-                        and e.payload.get("scope_digest") == data["scope_digest"] and e.payload["status"] == "DONE"
-                        and registered_seq < seq[e.event_id] < achieved_seq]
-            for e in executed:
-                ans = answered.get(data["request_id"])
-                if ans is None or ans[0]["answer"] != "approve" or ans[1] > seq[e.event_id]:
+            at_seq = seq[event.event_id]
+            in_window = registered_seq < at_seq
+            strategy = by_id.get(action["action_id"])
+            manifest = _manifest_before(journal, seq, action.get("capability"), at_seq)
+            receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
+            grant = grants.get(receipt.payload.get("grant_id")) if receipt is not None else None
+            if in_window and (strategy is None or manifest is None):
+                approvals_ok = False
+                findings.append(f"{action['action_id']}: its admission to the signed cone cannot be re-derived")
+            elif in_window:
+                outside = cone.admits(capability=manifest.capability_id, target=strategy["target"],
+                                      consequence_class=manifest.consequence_class,
+                                      cost_usd=float(strategy.get("cost_usd", 0.0)), spent_usd=spent,
+                                      at=_instant_or_none(action.get("at")) or _instant_or_none(cone.horizon))
+                if not action.get("at"):          # no recorded time: the horizon cannot be judged here
+                    outside = [r for r in outside if r != "scope horizon has expired"]
+                if outside and pre_approved(spec, strategy, manifest):
+                    outside = []                  # the signed mission approves this exact step itself
+                human = bool(grant and grant.get("founder_approved_scope"))
+                if (outside or human) and not _approved_before(journal, ledger, seq, requests, answers,
+                                                               action.get("scope_digest"), at_seq):
                     approvals_ok = False
-                    findings.append(f"{e.payload['action_id']}: executed without a prior founder approval")
+                    why = "; ".join(outside) if outside else "its grant claims a founder approval"
+                    findings.append(f"{action['action_id']}: executed without a prior founder approval ({why})")
+            spent += float(action.get("cost_usd", 0.0) or 0.0)
         checks["approval_boundaries_honored"] = approvals_ok
         checks["approval_boundary_encountered"] = approvals_seen > 0
 

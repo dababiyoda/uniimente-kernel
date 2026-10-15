@@ -548,7 +548,12 @@ def authority_summary(spec: dict, capabilities: list[dict]) -> dict:
         within = (cid and any(fnmatchcase(cid, p) for p in cone["capabilities"])
                   and ["read_only", "internal_write", "external_contact"].index(cap.get("consequence_class", "read_only"))
                   <= ["read_only", "internal_write", "external_contact"].index(cone["max_consequence_class"]))
-        (inside if within else ask).append(words)
+        signed = any(p["action_id"] == strategy["action_id"] and p["capability"] == cid
+                     and p["target"] == strategy["target"] and p["consequence_class"] == cap.get("consequence_class")
+                     for p in spec.get("pre_approved_steps", []))
+        if signed and not within:            # this one step only (greg/sop.py); the cone itself is unchanged
+            words += " (pre-approved by this signature)"
+        (inside if within or signed else ask).append(words)
     return {"may_do_without_asking": ["observe: " + ", ".join(sorted({c["sensor"].get("capability") or
                                                                       c["sensor"].get("function") for c in
                                                                       spec["success_checks"]}))] + inside,

@@ -394,6 +394,23 @@
       "pattern": "^[a-z0-9][a-z0-9-]{1,40}$",
       "description": "The venture this mission serves (a short name). Books and capability transfer are measured per venture (greg/venture_books.py); it grants nothing."
     },
+    "pre_approved_steps": {
+      "type": "array",
+      "maxItems": 200,
+      "description": "Steps this founder signature approves in advance, one exact strategy each (a run of a ratified SOP, greg/sop.py). Each admits only its own strategy, with this capability, target and consequence class at no cost, past the light cone; it never widens the cone for any other strategy and never answers a constitutional requirement for a human.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action_id", "capability", "target", "consequence_class", "cost_usd"],
+        "properties": {
+          "action_id": {"type": "string", "pattern": "^[a-z0-9_.-]{1,80}$"},
+          "capability": {"type": "string", "maxLength": 120},
+          "target": {"type": "string", "minLength": 1, "maxLength": 500},
+          "consequence_class": {"enum": ["read_only", "internal_write"]},
+          "cost_usd": {"const": 0}
+        }
+      }
+    },
     "provenance": {
       "type": "object",
       "additionalProperties": false,

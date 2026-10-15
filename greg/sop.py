@@ -15,8 +15,10 @@
 3. **Ratify.** A founder-signed SOP_RATIFY registers the procedure. It may name ``pre_approve``:
    steps Alfonso approved in every one of those runs, internal at most and free. Nothing else.
 4. **Run.** ``instantiate`` fills the slots and returns a complete mission with zero model calls.
-   Alfonso still signs every run. A pre-approved step is inside that signed cone, so it no longer
-   stops for approval: the approval moves to the signature he gives this run; it is not inherited.
+   Alfonso still signs every run. Each pre-approved step is named in that signed run
+   (``pre_approved_steps``: its own capability, target and class, free), so it no longer stops for
+   approval: the approval moves to the signature he gives this run; it is not inherited. The cone is
+   not widened, so every other step still asks exactly as it did in the verified runs.
 5. **Measure.** ``trend`` reports, per procedure, founder interventions, GREG's own model calls and
    model cost per verified outcome for the runs before ratification and the runs from the SOP.
    Quality held means every finished SOP run was appraised VERIFIED and none was rejected.
@@ -28,7 +30,6 @@ from __future__ import annotations
 from collections import defaultdict
 import copy
 from datetime import datetime, timedelta, timezone
-from fnmatch import fnmatchcase
 import json
 import math
 import re
@@ -470,11 +471,6 @@ def _check_slots(declared: dict, slots: dict):
             raise SopError(f"slot {name} must be a {want}" + (" of 1-2000 characters" if want == "string" else ""))
 
 
-def _within(cone: dict, capability: str, target: str) -> tuple[bool, bool]:
-    return (any(fnmatchcase(capability, p) for p in cone["capabilities"]),
-            any(fnmatchcase(target, p) for p in cone["targets"]))
-
-
 def instantiate(record: dict, slots: dict, *, now: datetime | None = None, horizon_days: float | None = None,
                 mission_id: str | None = None, venture: str | None = None) -> dict:
     """A complete mission for one run of a ratified procedure: zero model calls; Alfonso signs it."""
@@ -494,14 +490,20 @@ def instantiate(record: dict, slots: dict, *, now: datetime | None = None, horiz
     cone = spec["light_cone"]
     cone["horizon"] = iso(now + timedelta(days=days))
     strategies = {s["action_id"]: s for s in spec["strategies"]}
+    # Each pre-approved step is carried as itself, never by widening the cone. Widening the cone's
+    # capabilities and its one ceiling admitted every sibling strategy with the same capability and
+    # class, so a step Alfonso did not pre-approve ran without the approval it asked for in every
+    # verified run (review of 2026-10-14). The engine admits exactly these strategies past the cone.
+    pre = []
     for step in record.get("pre_approved_steps", []):
-        has_capability, has_target = _within(cone, step["capability"], strategies[step["action_id"]]["target"])
-        if not has_capability:
-            cone["capabilities"] = [*cone["capabilities"], step["capability"]]
-        if not has_target:
-            cone["targets"] = [*cone["targets"], strategies[step["action_id"]]["target"]]
-        if CLASS_ORDER.index(step["consequence_class"]) > CLASS_ORDER.index(cone["max_consequence_class"]):
-            cone["max_consequence_class"] = step["consequence_class"]
+        strategy = strategies[step["action_id"]]
+        if strategy.get("capability") != step["capability"] or float(strategy.get("cost_usd", 0) or 0) != 0:
+            raise SopError(f"pre-approved step {step['action_id']} no longer matches its ratified capability")
+        pre.append({"action_id": step["action_id"], "capability": step["capability"], "target": strategy["target"],
+                    "consequence_class": step["consequence_class"], "cost_usd": 0})
+    spec.pop("pre_approved_steps", None)            # only this ratification's steps, never a taught run's
+    if pre:
+        spec["pre_approved_steps"] = pre
     if venture or workflow.get("venture"):          # a procedure taught in one venture may run in another
         spec["venture"] = venture or workflow["venture"]
     spec["provenance"] = {"origin": ORIGIN + record["procedure_id"], "planner": "greg.sop/1",

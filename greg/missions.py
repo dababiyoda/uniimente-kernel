@@ -319,6 +319,7 @@ class MissionState:
     setpoints_reached: int = 0
     pending_effect: dict = field(default_factory=dict)  # action_id -> checks it should change
     collateral: dict = field(default_factory=dict)      # action_id -> passing checks it does not advance
+    reserved: dict = field(default_factory=dict)        # (action_id, attempt) -> signed cap held for unknown spend
     # A persistent goal's pull (greg/goal_gravity.py) not yet served while the mission waits on an APPROVAL:
     # only ``observe_now`` sets it, so a mission no goal is bound to never has one.
     pull: str | None = None
@@ -477,8 +478,13 @@ class MissionBook:
         elif kind == "mission.action":
             aid = data["action_id"]
             m.attempts[aid] = data["attempt"] + 1
+            # A later record about the same attempt (its reconciliation) replaces that attempt's reservation:
+            # "not executed" releases the held cap; "executed" books the cap once, as its own spend below.
+            slot = (aid, data["attempt"])
+            m.spent_usd -= m.reserved.pop(slot, 0.0)
             if data.get("cost_reserved") and data["status"] == "UNCERTAIN":
-                m.spent_usd += data.get("cost_usd", 0.0)      # unknown spend holds the signed cap
+                m.reserved[slot] = data.get("cost_usd", 0.0)  # unknown spend holds the signed cap
+                m.spent_usd += m.reserved[slot]
             if data["status"] == "DONE":
                 m.actions_done += 1
                 m.spent_usd += data.get("cost_usd", 0.0)

@@ -38,18 +38,18 @@ def failed(payload: dict) -> bool:
 
 
 def _acts(journal) -> list:
-    """Capability acts in time order, one outcome per dispatched attempt (the rule routing.track_record uses).
+    """Capability acts in time order, one record per dispatched attempt.
 
-    A founder reconciliation is a later statement about the same (mission, action, attempt): it replaces the
-    UNCERTAIN dispatch instead of counting as a second failure, and a reconciled-as-executed DONE carries no
-    receipt, so it is not counted as a completion either."""
+    Resilience measures execution: an interrupted dispatch (UNCERTAIN) is a failure episode whatever the founder
+    later states about it. A reconciliation is a later statement about the same (mission, action, attempt), so
+    where that attempt's UNCERTAIN record is retained the statement is not counted again: "not executed" is not a
+    second failure and a receiptless "executed" is not a completion. A reconciliation whose UNCERTAIN record is
+    absent (older ledgers) is the only record of its attempt and is kept."""
     from greg.routing import founder_reconciled
     events = _events(journal, "mission.action")
     key = lambda p: (p.get("mission_id"), p.get("action_id"), p.get("attempt"))
-    settled = {key(e.payload or {}) for e in events if founder_reconciled(e.payload or {})}
-    return [e for e in events
-            if not ((e.payload or {}).get("status") == "UNCERTAIN" and key(e.payload) in settled)
-            and not (founder_reconciled(e.payload or {}) and (e.payload or {}).get("status") == "DONE")]
+    interrupted = {key(e.payload or {}) for e in events if (e.payload or {}).get("status") == "UNCERTAIN"}
+    return [e for e in events if not (founder_reconciled(e.payload or {}) and key(e.payload or {}) in interrupted)]
 
 
 def _lever_capability(lever) -> str | None:

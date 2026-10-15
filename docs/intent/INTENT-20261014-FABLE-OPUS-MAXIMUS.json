@@ -31,6 +31,8 @@
     "Goal Gravity (#178's ordering) ranked the ten-step body's signed missions (26 ranking facts in one run); the ten-step test does not assert it; #178's verifier asserts it for its mission",
     "#169 dcb9cd7 merged only after its confined model child was extended: it sent the provider-chosen fallbacks=\"default\" form that #178 had removed after an audit found substitutes billed at the requested model's price; the seed freeze was re-sealed as v8 (REPOSITORY_CONVERGENCE_MAP.md)",
     "Three of #178's one-machine attacks had failed on this branch since the #178 merge (5d23901) and were found by the full suite: a receipt field the merge dropped, a refusal the envelope makes unnecessary, and an unreviewed test double the default body refuses (f6d146e)",
+    "The ten-step proof on 9a7776c failed at its organ step: #169's appraiser passes confined= and this branch's alternate organ exchange did not accept it; that exchange also kept the body's network on a confined body (d965bb7)",
+    "Three earlier ten-step runs used stand-in organs for step 6 because the runner did not set GREG_TEST_DALEOBANKS and GREG_TEST_WMI; the final runs used the real checkouts (evidence README, negative result 3)",
     "The freight proof-of-delivery Venture Cell has no demand evidence; the organ said 'demand asserted, not shown'"
   ],
   "dependencies": [
@@ -52,6 +54,8 @@
     "0bc57f4 standing reconciliation (greg/workers.py inert_interruption_proof, greg/missions.py, greg/routing.py, greg/planner.py, contracts/greg-mission.schema.json)",
     "ba371d8 merge #169 dcb9cd7 (greg/model_child.py allowlist and per-attempt evidence, greg/models.py, cortex/evaluation/seed_genome/freeze-v8.json)",
     "f6d146e greg/workers.py supervision statement on supervised receipts; #178 attack suite in both postures",
+    "9a7776c merge #169 b14e4f5 (greg/mcp_tools.py, mcp.call)",
+    "d965bb7 greg/organ_exchange.py organs run with no network on a confined body; verify_delivery(confined=)",
     "greg/improvement.py",
     "greg/organ_exchange.py",
     "tests/integration/test_one_machine_ten_steps.py",

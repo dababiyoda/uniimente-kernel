@@ -261,13 +261,20 @@ def _catalog_families() -> list[dict]:
         executor = ("greg.cognition.solvers:SOLVERS" if family in SOLVERS else
                     "greg.cognition.cortex:_semantic" if family == "semantic" and hasattr(greg_cortex, "_semantic")
                     else None)
-        label, basis = (("BUILT", "executable on the cognition path; no family-level frozen held-out verdict in "
-                                  "the evidence index") if executor else
-                        ("UNRESOLVED", "registered in the catalog without an executor"))
+        from greg.cognition.compiler import evidence_index, family_status
+        admission = family_status(family, evidence_index())   # the compiler's one status function (review M16)
+        if not executor:
+            label, basis = "UNRESOLVED", "registered in the catalog without an executor"
+        elif admission["raw"] is None:
+            label, basis = "BUILT", "executable on the cognition path; no frozen held-out verdict in the evidence index"
+        else:
+            label = "BUILT"
+            basis = (f"frozen held-out verdict {admission['raw']} ({admission['evidence']}); routes as "
+                     f"{admission['status']}" + (f"; stale: {admission['stale']}" if admission["stale"] else ""))
         rows.append({"id": f"cognition.{family}", "kind": "catalog_family", "label": label, "basis": basis,
                      "layer": layer, "operations": list(operations), "epistemic_classes": list(classes),
                      "proof_class": proof, "dependency": dependency, "seed_family": family in SEED_FAMILIES,
-                     "executor": executor})
+                     "executor": executor, "admission": admission})
     return rows
 
 
@@ -328,9 +335,14 @@ def _recipes(index: dict, ctx: dict) -> list[dict]:
         elif record is None:
             label, basis = "BUILT", "no frozen P6 verdict"
         elif lift:
+            from greg.cognition.compiler import recipe_stale
             label, where = _positive_label(world, why)
+            stale = recipe_stale(name, record)
+            if stale:
+                label = "BUILT"
             basis = (f"VPL lift on held-out family {family}: {record.get('wins')} wins, {record.get('losses')} "
-                     f"losses against the best constituent, measured {where}")
+                     f"losses against the best constituent, measured {where}"
+                     + (f"; stale: {stale}" if stale else ""))
         else:
             wins, losses = int(record.get("wins") or 0), int(record.get("losses") or 0)
             worse, better = _p_at_least(losses, wins + losses), _p_at_least(wins, wins + losses)

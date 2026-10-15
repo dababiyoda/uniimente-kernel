@@ -30,13 +30,26 @@ Track B execution, 2026-10-14 (draft PR from `claude/greg-mind-lineage-convergen
 - **Admission binding (2026-10-15):** positive operation verdicts are bound to the solver's dependency closure,
   not only its entry function.
 - **Negative evidence now routes:** #155's held-out REJECTED and SUPERSEDED verdicts change compiler routing.
-- **Replications across lineages:** P4 no gain twice; F2 lift twice; four P8 REJECTs; no replicated Layer 4
-  advantage.
+- **Replications across lineages** (corrected after the review of #179, H1): #155's P4 and F2b runs re-measured
+  subsets of #158's instances, so they show reproducibility, not replication. F2 to F2R is the one replicated
+  lift. Four P8 REJECTs; no replicated Layer 4 advantage.
 - **F7 independently audited:** CONFIRMED (200 of 200), and parametric min-cost flow ties F7. Recommended:
   `flow_expansion_mcf` becomes canonical for capacity expansion once admitted at its exact version.
 - **Horizon added:** `immune_function`.
 - **Release blocker:** third-party data rights (SNDlib, M4, fpp3, and the F8 NYC TLC/FiveThirtyEight Uber
   extract) are uncleared in a public repository.
+
+Authority delta: none.
+
+Track B update, 2026-10-15 (founder review of #179 and the independent review; record sections 5, 8, 9, 12 and 17):
+- **Foundry:** #155's seven operator classes run through the canonical Foundry. They carry surface-instance
+  identity and purpose-bound, revocable consent. Accountability is split into four legal channels that end in a
+  legal-review request and never unlock execution.
+- **Code binding:** positive operation admission binds the code closure it measured.
+- **Re-merge:** #158 is merged at `f8e8fd2`. Its pre-registered admission v3 makes `flow_expansion_mcf` the routed
+  default for budgeted capacity expansion; attaching it is the founder's.
+- **Release guard:** uncleared third-party data cannot ship in a release (CI check). The distribution question
+  stays with the founder and counsel.
 
 Authority delta: none.
 
@@ -106,11 +119,40 @@ Progress 2026-10-14 (measured, frozen, negative results kept):
   - a composition family that uses an admitted Layer 1 or Layer 2 genome;
   - new data before any further forecast admission.
 
+Progress 2026-10-15 (measured, frozen, negative results kept):
+
+- **P6 v5** ([evidence](evidence/greg-composition-lift/2026-10-14-v5/README.md)): the natural family F8 (real NYC 2015 pickups; basal Kalman tracker -> Erlang C staffing) **lifts** over the best single intelligence, 8.6% cheaper (1589-204 items, 120-2 days). The EWMA-ratio-plus-quantile ablation is 4.7% cheaper still, and all of that comes from the tracker's fallbacks. Natural families are now 3 of 4. The data's redistribution terms are unverified (release blocker).
+- **Genome admission v3** ([evidence](evidence/greg-genome-admission/2026-10-15-v3/README.md)), pre-registered at `878f76c` on fresh seeds 1200-1229, measured 24 families: 15 new, 5 version-bumped and the 4 Layer 2 genomes on their native regimes.
+  - `flow_expansion_mcf` is DEFAULT against the F7 composition twin, with equal quality on all 30 instances at about one seventh of the latency. On F7's geometry the single exact method is canonical, which answers the founder's audit question at an exact version.
+  - Eight DEFAULT verdicts rest on latency at equal quality.
+  - `bootstrap_ci` is REJECTED.
+  - Grid shortest paths have no admitted genome: `grid_dijkstra` is EXPERIMENTAL at 1.22x its baseline's speed, short of 1.25x.
+  - `basal_bayes_filter` fell to NICHE and `develop_constraint_release` rose to DEFAULT. Both crossed a rule boundary, recorded as a replication finding.
+  - All 47 genomes carry current-version evidence: 34 admitted, none attached.
+- **P8 integrity and cycle 4** ([evidence](evidence/greg-protected-evolution/2026-10-15-cr-4/README.md)):
+  - A cycle that writes a record now has to match a committed freeze. The freeze holds the trusted-code digests, the rule, the settings, the split and both seals.
+  - The parent checks the method each sandbox imported, and confinement is scoped.
+  - Cycle 4 is the first cycle run under the freeze. It targeted the constraint-release search policy on a fresh split and was REJECTED at the held-out gate.
+    - On train the candidate was 23.7% better and improved on both stress sets.
+    - On held-out it lost 26-37 (p = 0.94) and its mean loss was 46% worse.
+    - Random restart beat both configurations on held-out.
+  - Protected evolution has still never kept an improvement: 4 cycles, 4 REJECTs.
+- **Fix rounds merged after independent verification:** packs B and C, Capability Genesis (five rounds) and the solo compiler work (three rounds).
+- **Independent review of PR #179** posted, plus a review of its closure binding. A family re-pointed to another solver keeps a positive verdict after an index rebuild (confirmed).
+- **Blocked by the environment:** fresh NYC TLC data for F8's next evaluation. The network policy refuses `data.cityofnewyork.us` and the TLC CDN.
+
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 
 `INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT` ([record](intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json), [verbatim source](intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md)): founder review of PR #155. P4 learned routing and P6 typed composition are Layer 5 substrate, not the Polyintelligence Mind; all five layers (basal, collective, solver, developmental, meta) remain obligations. Metric: held-out problem families where geometry routing or composition beats the strongest single available intelligence, net of cost/latency, with no added false answers or unauthorized effects; 0 means "a sophisticated router". Sequence: P6 cognitive composition lift → P4 conditional competence memory (hierarchical fallback) → P8 protected evolutionary cognition → IntelligenceGenome library expansion, each family admitted only when it beats simpler baselines on its native geometry. State: active. VPL: 0. Authority delta: none.
 
 Execution record, 2026-10-14 (directive of 2026-10-07, steps 2-13): P6 v2 lift on F2b, X1, X2 (VPL = 4 distinct families with F1); P4 v3, the one pre-registered decisive retest, NO_GAIN (111 = 111 of 130), so per the founder's rule conditional solver learning is not currently worth its complexity (learned mode not recommended; shadow kept for real-mission evidence); P8 protected evolution REJECT (no headroom; every protection held); admission v1/v2: Dawid-Skene and PSO admitted, four families rejected, DE superseded by multistart L-BFGS-B; Layer 4 unseen-damage sweep PARITY. Evidence under `docs/evidence/` (greg-learned-routing, greg-protected-evolution, greg-genome-admission, greg-composition-lift, greg-developmental-sweep). Authority delta: none.
+
+Erratum, 2026-10-15 (review of #179, L2; the line above is kept as written). It is superseded by the convergence accounting in `collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md` section 7:
+- "VPL = 4 distinct families" counts X2, whose strongest single was NOT_RUN, and X1, a structural lift over constituents that are incomplete by design.
+- F2b is a same-instance re-run of F2R, not a fresh family.
+- "Dawid-Skene and PSO admitted": #155 later found the crowd verifier EXPERIMENTAL, and L-BFGS-B beats PSO 32/7 post hoc.
+- "NO_GAIN" re-measured 130 of the same payloads as #158's REGRESSION; that retest decides.
+- "every protection held" (P8): the review found three adversarial probes accepted on #155's routing-genome evaluator (a module edit, a mid-run data edit, a hash/exec swap). The REJECT verdict stands; the protection claim does not.
 
 ## Seed genome: the Competency Compiler on GREG's path — 2026-10-01
 

@@ -85,10 +85,13 @@ P6_FAMILIES = {
     "F1": (SIMULATED, "constructed to need composition; truth assumes calibrated lognormal intervals"),
     "F2": (SIMULATED, "constructed to need composition; truth is the generator's hidden effects"),
     "F2R": (SIMULATED, "constructed to need two intelligences; truth is the generator's hidden effects"),
-    "F2b": (SIMULATED, "PR #155 lineage: F2's generator on fresh seeds 25-72; truth is the generator's hidden "
-                       "effects"),
+    "F2b": (SIMULATED, "PR #155 lineage: F2's generator on seeds 25-72, a subset of F2R's 25-88 (a same-instance "
+                       "re-run, not fresh seeds); truth is the generator's hidden effects"),
     "F3": (MATHEMATICAL, "constructed to need two intelligences; truth is the exact optimum"),
-    "F4": (SIMULATED, "constructed to need two intelligences; truth is the generator's hidden parameter"),
+    "F4": (SIMULATED, "constructed to need two intelligences; truth is the Bayes-optimal action under the declared "
+                      "Beta(1,1) posterior, not the hidden parameter (review of #179, M13). The best constituent "
+                      "was denied the observed evidence (an uninformed prior), and under the hidden parameter the "
+                      "composition realises less value (mean -55.4 against -20.3)"),
     "F5": (NATURAL, "real M4 data and real outcomes; the newsvendor decision layer is declared"),
     "F6": (NATURAL, "real bank call arrivals and real outcomes; the staffing decision layer is declared"),
     "F7": (NATURAL, "real SNDlib topologies, lengths, demands and loads; truth is the exact optimum of the declared "

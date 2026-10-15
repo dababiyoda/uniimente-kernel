@@ -151,6 +151,39 @@ def _measured_code(family: str, commit: str | None) -> dict | None:
     return code
 
 
+def _recipe_code(recipe: str, commit: str | None) -> dict | None:
+    from greg.cognition.code_binding import at_commit
+    from greg.cognition.compiler import recipe_code
+    if not commit:
+        return None
+    measured = recipe_code(recipe, at_commit(commit))
+    if measured is None:
+        return None
+    # the RECIPES entry as it stood at that commit
+    text = _git(commit, "greg/cognition/composition.py")
+    import ast
+    entry = None
+    for node in ast.parse(text).body:
+        if isinstance(node, ast.Assign) and any(getattr(t, "id", None) == "RECIPES" for t in node.targets):
+            value = ast.literal_eval(node.value)
+            entry = "sha256:" + hashlib.sha256(json.dumps(value.get(recipe), sort_keys=True).encode()).hexdigest()
+    return {**measured, "recipe_entry_sha256": entry}
+
+
+def _genome_code(family: str, commit: str | None) -> dict | None:
+    """The genome solver's dependency closure at the admission run's source commit, when it is in git."""
+    import inspect
+    from greg.cognition.code_binding import ROOT as REPO, at_commit, closure
+    from greg.cognition.genomes import library
+    item = library.executables().get(family)
+    if item is None or not commit:
+        return None
+    path = Path(inspect.getsourcefile(item.solve)).resolve().relative_to(REPO).as_posix()
+    bound = closure(path, item.solve.__name__, at_commit(commit))
+    return None if bound is None else {"function": bound["entry"], "closure_sha256": bound["sha256"],
+                                       "closure_members": bound["members"]}
+
+
 def _sha(path: Path) -> str:
     return "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -179,7 +212,9 @@ def build() -> dict:
                 "lift": lift, "status": "VPL_LIFT" if lift else "NO_LIFT", "family": family,
                 "prefer": None if lift else row["best_constituent"],
                 "wins": row["routed_wins"], "losses": row["routed_losses"],
-                "p_one_sided": row["sign_test_p_one_sided"], "evidence": f"{rel}#summary.{family}"},
+                "p_one_sided": row["sign_test_p_one_sided"], "evidence": f"{rel}#summary.{family}",
+                # the recipe code this verdict measured (greg.cognition.compiler.recipe_stale)
+                "code": _recipe_code(recipe, data.get("source_commit"))},
                 p6_instances(data, family), seen_recipes)
     for rel in P4_RUNS:
         path = ROOT / rel
@@ -212,7 +247,10 @@ def build() -> dict:
                     {"run": path.parent.name, "status": row["status"], "version": row.get("version")}]
                 # the version the status was measured at: a later code change needs re-admission
                 index["genomes"][family] = {"status": row["status"], "evidence": f"{rel}#genomes.{family}",
-                                            "version": row.get("version"), "history": history}
+                                            "version": row.get("version"), "history": history,
+                                            # the solver closure measured (drift is reported; a changed default
+                                            # configuration gates: compiler.family_status)
+                                            "code": _genome_code(family, data.get("source_commit"))}
                 seconds = ((row.get("arms") or {}).get("candidate") or {}).get("median_seconds")
                 if seconds is not None:
                     # held-out median latency at this version: a tie-break within one status, never a status

@@ -335,9 +335,14 @@ def _recipes(index: dict, ctx: dict) -> list[dict]:
         elif record is None:
             label, basis = "BUILT", "no frozen P6 verdict"
         elif lift:
+            from greg.cognition.compiler import recipe_stale
             label, where = _positive_label(world, why)
+            stale = recipe_stale(name, record)
+            if stale:
+                label = "BUILT"
             basis = (f"VPL lift on held-out family {family}: {record.get('wins')} wins, {record.get('losses')} "
-                     f"losses against the best constituent, measured {where}")
+                     f"losses against the best constituent, measured {where}"
+                     + (f"; stale: {stale}" if stale else ""))
         else:
             wins, losses = int(record.get("wins") or 0), int(record.get("losses") or 0)
             worse, better = _p_at_least(losses, wins + losses), _p_at_least(wins, wins + losses)

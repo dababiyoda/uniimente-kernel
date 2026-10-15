@@ -20,10 +20,12 @@ def test_admission_statuses_reach_the_index_in_the_harness_shape(tmp_path, monke
     assert index["genomes"] == {
         "basal_kalman": {"status": "DEFAULT_FOR_GEOMETRY", "version": None,
                          "evidence": f"{B.ADMISSION}/run-x/results.json#genomes.basal_kalman",
-                         "history": [{"run": "run-x", "status": "DEFAULT_FOR_GEOMETRY", "version": None}]},
+                         "history": [{"run": "run-x", "status": "DEFAULT_FOR_GEOMETRY", "version": None}],
+                         "code": None},      # no source commit recorded: no solver closure to bind
         "collective_market": {"status": "SUPERSEDED", "version": None,
                               "evidence": f"{B.ADMISSION}/run-x/results.json#genomes.collective_market",
-                              "history": [{"run": "run-x", "status": "SUPERSEDED", "version": None}]}}
+                              "history": [{"run": "run-x", "status": "SUPERSEDED", "version": None}],
+                              "code": None}}
     # the genome harness's run is present; PR #155's operation runs are absent from this tmp root and listed
     assert not any("no frozen held-out admission run" in m for m in index["missing_sources"])
     assert {rel for rel, _, _ in B.OPERATION_RUNS} <= set(index["missing_sources"])

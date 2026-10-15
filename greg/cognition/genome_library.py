@@ -189,21 +189,24 @@ def _acquired() -> list[GenomeEntry]:
                        "open-source mechanism formed by Capability Genesis; GREG certificate check; attach is "
                        "the founder's", ("tests/evidence/greg-open-source-genesis-2026-10-01",))
            for engine in genesis.CATALOG]
-    from .compiler import evidence_index
+    from .compiler import evidence_index, recipe_stale
     recipes = evidence_index().get("recipes") or {}
     # PR #155 lineage lift on further families for the same recipe: corroboration, not the routing verdict
     corroboration = {"estimate_then_optimize": ("PR #155: X1 48/48", (P6_V1, P6_V2)),
-                     "identify_then_optimize": ("PR #155: F2b lift 11/3, p=0.029", (P6_V2,))}
+                     "identify_then_optimize": ("PR #155: F2b 11/3, p=0.029, a same-instance re-run of F2R "
+                                                "(reproducibility, not replication)", (P6_V2,))}
     for recipe in composition.RECIPES:
         verdict = recipes.get(recipe)
         extra, extra_refs = corroboration.get(recipe, ("", ()))
         if verdict is None:
             status, detail, refs = "EXPERIMENTAL", "no held-out lift measured", ()
         else:
-            status = "DEFAULT_FOR_GEOMETRY" if verdict["lift"] else "EXPERIMENTAL"
+            stale = recipe_stale(recipe, verdict) if verdict["lift"] else None
+            status = "DEFAULT_FOR_GEOMETRY" if verdict["lift"] and not stale else "EXPERIMENTAL"
             detail = (f"index {verdict['status']} on {verdict['family']} ({verdict['wins']}/{verdict['losses']}, "
                       f"p={verdict['p_one_sided']})" + ("" if verdict["lift"] else
-                                                        f"; prefer {verdict['prefer']}"))
+                                                        f"; prefer {verdict['prefer']}")
+                      + (f"; stale: {stale}" if stale else ""))
             refs = (verdict["evidence"].partition("#")[0],)
         out.append(GenomeEntry(f"composition.{recipe}", "composition_recipe", 5, True, True, "BUILDABLE_NOW",
                                status, detail + (f"; {extra}" if extra else ""), refs + extra_refs))

@@ -421,6 +421,66 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
     return status, None
 
 
+def recipe_code(recipe: str, read=None) -> dict | None:
+    """The executable a recipe verdict measured: the dependency closure of the function that runs the recipe
+    (its operation-recipe function, or ``run`` for a template recipe) plus the digest of its RECIPES entry."""
+    import hashlib
+    import json as _json
+    from . import code_binding
+    from .composition import OPERATION_RECIPES, RECIPES
+    read = read or code_binding.working_tree
+    fn = OPERATION_RECIPES.get(recipe)
+    bound = code_binding.closure("greg/cognition/composition.py", fn.__name__ if fn else "run", read)
+    if bound is None:
+        return None
+    entry = "sha256:" + hashlib.sha256(_json.dumps(RECIPES.get(recipe), sort_keys=True).encode()).hexdigest()
+    return {"function": bound["entry"], "closure_sha256": bound["sha256"], "closure_members": bound["members"],
+            "recipe_entry_sha256": entry}
+
+
+@lru_cache(maxsize=None)
+def _recipe_code_now(recipe: str) -> str | None:
+    now = recipe_code(recipe)
+    return None if now is None else now["closure_sha256"] + "|" + now["recipe_entry_sha256"]
+
+
+def recipe_stale(recipe: str, verdict: dict) -> str | None:
+    """Why a recipe's positive verdict no longer binds its code, or None (review of #179, H5)."""
+    if "code" not in verdict:
+        return None            # a hand-built index without bindings (unit-test fixtures); the builder always writes it
+    code = verdict.get("code") or {}
+    if not code.get("closure_sha256"):
+        return "the recipe code it measured is not recorded (absent from git at the run's source commit); " \
+               "needs re-measurement"
+    if code["closure_sha256"] + "|" + code.get("recipe_entry_sha256", "") != _recipe_code_now(recipe):
+        return f"measured on recipe code {code['closure_sha256']}; the recipe code has changed; needs re-measurement"
+    return None
+
+
+@lru_cache(maxsize=None)
+def genome_code(family: str) -> dict | None:
+    """The genome's solve function as it is now: its static dependency closure (greg.cognition.code_binding)."""
+    import inspect
+    from . import code_binding
+    from .genomes import library
+    item = library.executables().get(family)
+    if item is None:
+        return None
+    path = Path(inspect.getsourcefile(item.solve)).resolve().relative_to(ROOT).as_posix()
+    return code_binding.closure(path, item.solve.__name__)
+
+
+def genome_code_drift(family: str, record: dict) -> list[str]:
+    """Closure members of the genome's solver that changed since its admission run measured them. Reported on
+    every surface; only a changed default configuration (or version) gates routing, because a re-admission at the
+    current code is the owner's scheduled admission v3."""
+    then = (record.get("code") or {}).get("closure_members")
+    now = (genome_code(family) or {}).get("members")
+    if not then or not now:
+        return []
+    return sorted(k for k in set(then) | set(now) if then.get(k) != now.get(k))
+
+
 def family_status(family: str, evidence: dict) -> dict:
     """The one admission status of a catalog family, read from the one evidence index. The compiler, Capability
     Genesis, the genome inventory and ``mind_status`` all call this (review of #179, H2/M16).
@@ -435,12 +495,19 @@ def family_status(family: str, evidence: dict) -> dict:
         raw = record.get("status")
         status, stale = raw or "UNEVALUATED", None
         measured, current = record.get("version"), genomes[family].genome.version
+        drift = genome_code_drift(family, record)
         if measured and measured != current and status not in NOT_POSITIVE:
             # positive evidence binds the version measured; negative evidence persists until a re-admission
             stale = f"{status} was measured at version {measured}; version {current} needs re-admission"
             status = "UNEVALUATED"
+        elif status not in NOT_POSITIVE and status != "UNEVALUATED" and \
+                any(member.rsplit("::", 1)[1].endswith("DEFAULT_CONFIG") for member in drift):
+            # a changed default configuration is a different method at the same version (review of #179, M15)
+            stale = (f"{status} was measured with a different default configuration "
+                     f"({', '.join(m for m in drift if m.endswith('DEFAULT_CONFIG'))}); needs re-admission")
+            status = "UNEVALUATED"
         return {"status": status, "raw": raw, "stale": stale, "evidence": record.get("evidence"),
-                "kind": "genome"}
+                "kind": "genome", "code_drift": drift}
     record = (evidence.get("operations") or {}).get(family) or {}
     # PR #155 lineage: a frozen held-out verdict for an operation family routes like a genome's, bound to the
     # solver code closure it measured; a structural label (alias, not run) is indexed as UNEVALUATED
@@ -482,7 +549,9 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
                 reason = f"frozen admission status {status}"
             row = {"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
                    "epistemic_classes": list(classes), "rejected": reason, "inputs": sorted(need), "outputs": outputs,
-                   **({"stale_evidence": stale} if stale else {})}
+                   **({"stale_evidence": stale} if stale else {}),
+                   # solver code that changed since the admission run measured it (reported, not gating)
+                   **({"code_drift": admission["code_drift"]} if admission.get("code_drift") else {})}
             if family in genomes and not stale and evidence["genomes"].get(family, {}).get("median_seconds") is not None:
                 row["median_seconds"] = evidence["genomes"][family]["median_seconds"]   # held-out, this version
             if family in genomes and not stale:
@@ -525,6 +594,10 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
         row = {"method": f"composition:{recipe}", "operation": recipe, "kind": "composition",
                "status": "VPL_LIFT" if verdict.get("lift") else verdict.get("status", "UNEVALUATED"),
                "stages": list(RECIPES[recipe]["stages"]), "rejected": None}
+        stale = recipe_stale(recipe, verdict)
+        if stale and verdict.get("lift"):
+            # a lift binds the recipe code it measured (review of #179, H5); no lift persists like any negative
+            row["status"], row["stale_evidence"] = "UNEVALUATED", stale
         if verdict.get("lift") is False:
             # Demoted, not deleted: a recipe without verified lift ranks after every other method that fits,
             # because the simpler constituent wins ties; it stays the route when nothing else fits (P6 F5:
@@ -775,6 +848,7 @@ def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> d
                                   "admission_history": operation.get("history"),
                                   "measured_code_closure": (operation.get("code") or {}).get("closure_sha256"),
                                   "caveat": NOTES.get(family),
+                                  "code_changed_since_admission": best.get("code_drift"),
                                   "subregion": best.get("subregion"), "current_state": best["usable_why"]}.items()
                 if v is not None}
     if best.get("promotes"):

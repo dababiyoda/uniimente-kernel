@@ -648,3 +648,73 @@ def test_a_positive_operation_verdict_without_a_competitor_is_not_an_admission()
         assert status == "UNEVALUATED" and "no competitor" in why, family
     for family in ("control", "game", "information", "probabilistic", "swarm"):
         assert C.operation_status(family, index["operations"][family]) == ("DEFAULT_FOR_GEOMETRY", None), family
+
+
+# ---------------------------------------------------------------- review of PR #179, 2026-10-15 (H5 recipes, M15)
+P8_SHIPPED = {"forecast_quantile": ("greg.cognition.genomes.forecasting", "DEFAULT_CONFIG"),
+              "immune_detect": ("greg.cognition.genomes.collective", "IMMUNE_DEFAULT_CONFIG"),
+              "constraint_release": ("greg.cognition.genomes.developmental", "CR_DEFAULT_CONFIG")}
+
+
+def test_no_rejected_p8_configuration_is_shipped_and_every_incumbent_is_unchanged():
+    """M15 / G8: for every frozen P8 cycle with decision REJECT, the shipped constant equals the cycle's incumbent and
+    differs from its rejected candidate and every configuration its search evaluated."""
+    import importlib
+    import json
+    records = sorted((ROOT / "docs/evidence/greg-protected-evolution").glob("*/cycle-*.json"))
+    assert len(records) == 3
+    for path in records:
+        cycle = json.loads(path.read_text())
+        if cycle["decision"] != "REJECT":
+            continue
+        module, name = P8_SHIPPED[cycle["target"]]
+        shipped = getattr(importlib.import_module(module), name)
+        incumbent = cycle["incumbent"]["config"]
+        assert {k: shipped[k] for k in incumbent} == incumbent, path.name
+        candidate = (cycle.get("candidate") or {}).get("config")
+        assert candidate is None or {k: shipped.get(k) for k in candidate} != candidate, path.name
+        for entry in cycle["search"].get("lineage") or []:
+            config = entry.get("config") if isinstance(entry, dict) else None
+            if config and config != incumbent:
+                assert {k: shipped.get(k) for k in config} != config, path.name
+
+
+def test_a_changed_default_configuration_makes_a_positive_genome_verdict_stale(monkeypatch):
+    """M15: admission bound to a version string only; a shipped DEFAULT_CONFIG change at the same version kept the
+    verdict. It now routes as UNEVALUATED, naming the changed configuration."""
+    import copy
+    from greg.cognition import code_binding as CB
+    from greg.cognition import compiler as C
+    index = copy.deepcopy(C.evidence_index())
+    family = "forecast_quantile"
+    assert C.family_status(family, index)["status"] in ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY")
+    now = C.genome_code(family)
+    source = CB.working_tree("greg/cognition/genomes/forecasting.py")
+    edited = source.replace('"fit_window": 260', '"fit_window": 156', 1)
+    assert edited != source
+    mutated = CB.closure(now["entry"].split("::")[0], now["entry"].split("::")[1],
+                         lambda p: edited if p == "greg/cognition/genomes/forecasting.py" else CB.working_tree(p))
+    monkeypatch.setattr(C, "genome_code", lambda f: mutated if f == family else None)
+    index["genomes"][family]["code"] = {"closure_members": now["members"]}
+    status = C.family_status(family, index)
+    assert status["status"] == "UNEVALUATED" and "DEFAULT_CONFIG" in status["stale"]
+
+
+def test_recipe_lifts_bind_the_recipe_code_they_measured():
+    """H5 (recipes): a recipe's lift binds the closure of the function that runs it and its RECIPES entry; a changed
+    recipe routes as UNEVALUATED until re-measured; no lift persists; every indexed row records its binding."""
+    import copy
+    from greg.cognition import compiler as C
+    index = C.evidence_index()
+    assert all("code" in row for row in index["recipes"].values())
+    assert C.recipe_stale("track_then_staff", index["recipes"]["track_then_staff"]) is None
+    changed = copy.deepcopy(index["recipes"]["track_then_staff"])
+    changed["code"]["closure_sha256"] = "sha256:" + "3" * 64
+    assert "needs re-measurement" in C.recipe_stale("track_then_staff", changed)
+    unrecorded = {**index["recipes"]["track_then_staff"], "code": None}
+    assert "not recorded" in C.recipe_stale("track_then_staff", unrecorded)
+    rows = {r["method"]: r for r in C.candidates({"capacity_network": {"edges": [], "source": "s", "sink": "t",
+                                                                        "budget": 1, "costs": {}}},
+                                                  C.CompetencyGeometry(), index)}
+    row = rows["composition:graph_then_allocate"]
+    assert row["status"] == "UNEVALUATED" and "re-measurement" in row["stale_evidence"]

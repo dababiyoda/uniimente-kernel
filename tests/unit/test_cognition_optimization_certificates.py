@@ -16,6 +16,8 @@ from greg.cognition import cortex, verification  # noqa: E402
 from greg.cognition.catalog import FAMILIES  # noqa: E402
 from greg.cognition.contracts import CognitionError  # noqa: E402
 from greg.cognition.cortex import reason, registry_view  # noqa: E402
+from greg.cognition.genomes import flow, library  # noqa: E402
+from greg.cognition.genomes.contract import GenomeError  # noqa: E402
 from greg.cognition.solvers import SOLVERS  # noqa: E402
 from greg.cognition.verification import verify  # noqa: E402
 
@@ -300,3 +302,31 @@ def test_forecast_then_allocate_reports_each_weeks_status_and_the_weakest_certif
     assert r["answer"]["solver_status"] == ["OPTIMAL", "FEASIBLE"] + ["OPTIMAL"] * (weeks - 2)
     assert r["answer"]["optimality"].startswith("unproven")
 
+
+# A network with two parallel s->a edges (review 2026-10-15): the compiled model bought each its own increment, the
+# decoded plan kept one and the reinforced cross-check doubled it, so the recipe answered an over-budget plan as proven.
+PARALLEL = {"edges": [["s", "a", 1], ["s", "a", 1], ["a", "t", 3]], "source": "s", "sink": "t",
+            "unit_cost": {"s->a": 1, "a->t": 1}, "max_increment": 5, "budget": 1}
+
+
+@pytest.mark.parametrize("family", ["flow_reinforce_greedy", "flow_capacity_plan", "flow_expansion_mcf"])
+def test_parallel_edges_are_refused_by_every_capacity_expansion_genome(family):
+    genome = library.executables()[family]
+    with pytest.raises(GenomeError, match="parallel edges"):
+        genome.solve(PARALLEL, None)
+    with pytest.raises(GenomeError, match="parallel edges"):
+        genome.verify(PARALLEL, {"increments": {}, "flow_value": 0, "spent": 0, "model": {}, "decode": {}}, {})
+    with pytest.raises(GenomeError, match="parallel edges"):
+        flow.expansion_value(PARALLEL, {"s->a": 1})
+    merged = {**PARALLEL, "edges": [["s", "a", 2], ["a", "t", 3]]}           # the same capacity, merged: answered
+    assert genome.solve(merged, None)["status"] == "ANSWER"
+
+
+@pytest.mark.parametrize("network", [
+    PARALLEL,
+    {**PARALLEL, "edges": [["s", "a", 1], ["s", "a", 1], ["a", "t", 10]]},
+    {**PARALLEL, "edges": [["s", "a", 1], ["s", "a", 1], ["a", "t", 4]], "budget": 2}])
+def test_graph_then_allocate_never_answers_a_network_with_parallel_edges(registry, network):
+    r = reason({"problem_id": "parallel", "chain": {"payload": {"capacity_network": network},
+                                                    "recipe": "graph_then_allocate"}}, registry=registry)
+    assert r["state"] == "STAGE_ABSTAINED" and r["answer"] is None and r["reason"].startswith("compile")

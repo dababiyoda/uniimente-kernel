@@ -151,6 +151,8 @@ def main(argv=None) -> int:
             q.add_argument("--wmi", help="venture-assessment: WealthMachineIntelligence checkout")
             q.add_argument("--manifest", help="venture-assessment: RailScout signal manifest (JSON)")
             q.add_argument("--source-root", help="venture-assessment: directory holding the manifest's sources")
+            q.add_argument("--daleobanks", help="organ-exchange: DALEOBANKS checkout")
+            q.add_argument("--signal", help="organ-exchange: signal JSON file ({text, topic, ...}) inside a read root")
             q.add_argument("--standing", action="store_true",
                            help="venture-assessment: keep watching; re-assess whenever the evidence changes")
             q.add_argument("--file", help="verify-download: the file to verify (inside a read root)")
@@ -325,6 +327,12 @@ def main(argv=None) -> int:
                                                         preauthorize_delivery=args.preauthorize_delivery,
                                                         standing=args.standing,
                                                         cadence_seconds=args.cadence_seconds or 3600)
+                elif args.target == "organ-exchange":
+                    missing = [f for f in ("daleobanks", "wmi", "signal") if not getattr(args, f)]
+                    if missing:
+                        raise BodyError(f"organ-exchange needs --{', --'.join(missing)}")
+                    spec = templates.organ_exchange(daleobanks_root=args.daleobanks, wmi_root=args.wmi,
+                                                    signal=args.signal, preauthorize_delivery=args.preauthorize_delivery)
                 else:
                     raise BodyError(f"unknown template {args.target}; known: {sorted(templates.TEMPLATES)}")
             from greg.missions import validate_mission

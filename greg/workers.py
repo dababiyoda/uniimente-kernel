@@ -501,8 +501,62 @@ class CliAgentWorker:
                             isolation=envelope["evidence"])
 
 
+
+class ScriptWorker:
+    """A founder-signed script is the worker: no model, no provider network, no credentials.
+
+    The signed work order's ``context`` is the script's source (at most 8000 characters, signed by the founder
+    inside the mission). It runs in the same bubblewrap envelope as any provider, on the private clone, with the
+    network namespace closed and nothing inherited from GREG's environment. Everything it produces is a claim:
+    GREG collects the diff, checks scope and protected surfaces, re-runs acceptance in a fresh clone and
+    appraises it exactly as for a model-backed worker. This is the Hands path for a body without a paid agent
+    CLI (the Chromebook) and for deterministic, reviewable automation the founder wrote.
+    """
+
+    name = "script"
+
+    def __init__(self, runner=supervised_run):
+        self.runner = runner
+
+    def available(self) -> tuple[bool, str]:
+        return True, ""
+
+    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None, egress=None) -> WorkerReport:
+        if not order.context.strip():
+            raise WorkerError("a script worker needs the script source in the work order's context")
+        # ``-I``: isolated interpreter (no site, no user path, no environment-driven imports); the program is
+        # read from stdin so no script file has to exist on any mounted path. No relay door: no network at all.
+        envelope = prepare_worker([sys.executable, "-I", "-"], cwd, timeout_seconds=order.timeout_seconds,
+                                  provider=self.name, reviewed=True, source_env={}, network=False,
+                                  file_bytes=8 * MAX_PROCESS_OUTPUT)
+        identity = "script:" + _sha(order.context.encode())[:16]
+        started = time.monotonic()
+        try:
+            proc = self.runner(envelope["argv"], input=order.context, capture_output=True, text=True,
+                               timeout=order.timeout_seconds, cwd=cwd, env=envelope["env"], close_fds=True,
+                               preexec_fn=envelope["preexec_fn"], stop_check=stop_check, **_fds(envelope))
+        except WorkerInterrupted as exc:
+            return WorkerReport(self.name, identity, -1, time.monotonic() - started, 0.0, error=str(exc),
+                                isolation=envelope["evidence"], interrupted=True)
+        except WorkerError as exc:
+            return WorkerReport(self.name, identity, -1, time.monotonic() - started, 0.0, error=str(exc),
+                                isolation=envelope["evidence"])
+        except subprocess.TimeoutExpired:
+            return WorkerReport(self.name, identity, -1, time.monotonic() - started, 0.0,
+                                error=f"script exceeded {order.timeout_seconds}s and was stopped",
+                                isolation=envelope["evidence"])
+        duration = time.monotonic() - started
+        text = proc.stdout or ""
+        return WorkerReport(provider=self.name, identity=identity, exit_code=proc.returncode,
+                            duration_s=round(duration, 2), cost_usd=0.0, claim=_parse_claim(text),
+                            summary=text[-MAX_TAIL:],
+                            error=(proc.stderr or text)[-300:] if proc.returncode else None,
+                            isolation=envelope["evidence"])
+
+
 PROVIDERS: dict[str, object] = {
     "claude-code": ClaudeCodeWorker(),
+    "script": ScriptWorker(),
     "codex": CliAgentWorker("codex", ["codex", "exec", "--full-auto", "-"], reviewed=True),
     "aider": CliAgentWorker("aider", ["aider", "--yes-always", "--no-auto-commits", "--message-file",
                                       "{prompt_file}"], stdin=False, reviewed=True),
@@ -639,7 +693,7 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     try:
         report = provider.run(order, work, stop_check=ctx.stop_check,
                               **({"egress": ctx.egress} if ctx.egress is not None else {})) if isinstance(
-            provider, (ClaudeCodeWorker, CliAgentWorker)) else provider.run(order, work)
+            provider, (ClaudeCodeWorker, CliAgentWorker, ScriptWorker)) else provider.run(order, work)
     except WorkerIsolationError as exc:
         # Confinement was refused before a provider process was launched; no spend occurred.
         raise WorkerError(str(exc)) from exc

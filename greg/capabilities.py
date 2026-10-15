@@ -596,6 +596,8 @@ STRENGTHENS = {
     "artifact.materialize": ("proof", "reliability", "compounding"),
     "venture.assess": ("proof", "routing", "settlement", "compounding"),
     "venture.status": ("proof",),
+    "organs.exchange": ("routing", "proof", "eligibility", "settlement"),
+    "organs.exchange_status": ("proof",),
     "worker.commission": ("capability_formation", "routing", "settlement", "compounding"),
     "worker.appraise": ("proof", "eligibility", "reliability"),
     "browser.session": ("proof", "capability_formation", "settlement"),
@@ -776,6 +778,29 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                 {"assessed": "bool", "verdict": "str|null", "path": "str|null",
                                  "manifest_sha256": "str"}, filesystem="read-scoped", retry_safe=True),
                        _lazy("greg.ventures", "status")),
+    "organs.exchange": (_builtin("organs.exchange", "organs.authenticated_exchange",
+                                 "DALEOBANKS turns one signal into a signed wire OpportunityPacket; GREG carries it to "
+                                 "WealthMachine, which verifies, assesses and signs back; DALEOBANKS verifies and "
+                                 "records; one memo whose verdict may not outrun the evidence", "cli",
+                                 "internal_write", "deliver:",
+                                 {"daleobanks_root": "path", "wmi_root": "path", "signal": "path",
+                                  "legal_principal": "str?"},
+                                 {"path": "str", "sha256": "str", "verdict": "str", "engine_verdict": "str",
+                                  "packet_id": "str", "inputs": "dict", "inputs_digest": "str", "legs_verified": "dict"},
+                                 filesystem="deliver-write", binaries=(sys.executable,),
+                                 data_classes=("project_sources",),
+                                 provenance={"source": "uniimente-kernel/greg/organ_exchange.py",
+                                             "mechanism_from": "DALEOBANKS services/context_packet + venture_protocol + "
+                                                               "bridge_security; WMI src/services/opportunity_intake; "
+                                                               "kernel adapters/bridge_transport (HMAC v2) and "
+                                                               "events/bridge_state (Bridge A, two organ processes)"}),
+                        _lazy("greg.organ_exchange", "exchange")),
+    "organs.exchange_status": (_builtin("organs.exchange_status", "organs.exchange_status",
+                                        "Has a memo been delivered for this signal, and with what binding verdict",
+                                        "api", "read_only", "deliver:", {"signal": "path"},
+                                        {"exchanged": "bool", "verdict": "str|null", "path": "str|null",
+                                         "signal_sha256": "str"}, filesystem="read-scoped", retry_safe=True),
+                               _lazy("greg.organ_exchange", "status")),
     "foundry.query": (_builtin("foundry.query", "foundry.system_query",
                                "Read-only operation of an implemented Foundry system (search, graph, reputation, "
                                "model check, verify, history, trial balance)", "internal", "read_only", "foundry:",

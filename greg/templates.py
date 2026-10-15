@@ -196,6 +196,46 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
     }
 
 
+def organ_exchange(*, daleobanks_root: str, wmi_root: str, signal: str, preauthorize_delivery: bool = False,
+                   legal_principal: str = "alfonso_lopez", horizon_days: float = 2) -> dict:
+    """One signal through two organs with authenticated messages, led by GREG (Bridge A, both organs real).
+
+    DALEOBANKS senses and signs; WealthMachine verifies, assesses and signs back; DALEOBANKS verifies and
+    records. GREG carries each leg, checks each signature, adapts both messages to the canonical contracts
+    and delivers one memo whose verdict may not outrun the evidence. Nothing is sent, published, bought or
+    contacted; the memo stops at your approval unless delivery is signed into the cone.
+    """
+    import hashlib
+    resolved = {k: str(Path(v).expanduser().resolve()) for k, v in
+                {"daleobanks_root": daleobanks_root, "wmi_root": wmi_root, "signal": signal}.items()}
+    digest = hashlib.sha256(Path(resolved["signal"]).read_bytes()).hexdigest()
+    params = {**resolved, "legal_principal": legal_principal}
+    delivery = {"action_id": "exchange", "capability": "organs.exchange", "params": params,
+                "target": "deliver:organs", "advances": ["exchanged"],
+                "expected_outcome": "one memo in the delivery root; no external act",
+                "rationale": "run both organs on the signal with signed messages; deliver one memo for Alfonso"}
+    capabilities = ["organs.exchange_status", "fs.read"] + (["organs.exchange"] if preauthorize_delivery else [])
+    return {
+        "mission_id": f"m:organs-{digest[:12]}",
+        "founder_expression": "Run this signal through DALEOBANKS and WealthMachine as two organs that must "
+                              "authenticate to each other, and tell me what they conclude. Do not act on it.",
+        "intended_effect": "a memo for Alfonso carrying both organs' verified messages, the canonical "
+                           "fields they could not evidence, and a verdict capped by that evidence",
+        "beneficiaries": ["Alfonso"],
+        "unacceptable_outcomes": ["contacting anyone", "spending", "publishing", "an unverified organ message",
+                                  "a go verdict on unevidenced fields"],
+        "priority": 65, "closure": {"kind": "bounded"},
+        "success_checks": [{"check_id": "exchanged", "description": "a memo exists for this signal",
+                            "sensor": {"capability": "organs.exchange_status", "params": {"signal": resolved["signal"]},
+                                       "target": "deliver:organs"},
+                            "predicate": {"op": "equals", "field": "exchanged", "value": True}}],
+        "strategies": [delivery],
+        "light_cone": {"capabilities": capabilities, "targets": ["deliver:*", "fs:*"],
+                       "max_consequence_class": "internal_write" if preauthorize_delivery else "read_only",
+                       "budget_usd": 0, "horizon": _horizon(horizon_days)},
+    }
+
+
 def verify_download(*, file: Path, sha256: str, workspace_root: Path, horizon_days: float = 2) -> dict:
     """Verify a file against its published SHA-256, then file a record: the first no-model genesis mission.
 
@@ -344,7 +384,7 @@ def _slug(text: str, limit: int = 40) -> str:
 def code_change(*, repo: str, objective: str, order: str | None = None, allowed_paths: list[str] | None = None,
                 tests: list[list[str]] | None = None, budget_usd: float = 3.0, provider: str = "claude-code",
                 timeout_seconds: int = 1200, horizon_days: float = 2, founder_expression: str | None = None,
-                workspace_root: Path | None = None) -> dict:
+                workspace_root: Path | None = None, script: str | None = None) -> dict:
     """Software work through a temporary coding worker; GREG appraises it independently, then hands off.
 
     1. ``worker.commission`` (internal_write, spends at most ``budget_usd``): a real worker edits a private
@@ -352,6 +392,8 @@ def code_change(*, repo: str, objective: str, order: str | None = None, allowed_
     2. ``worker.appraise`` (read-only sensor): fresh clone, patch re-applied, scope and protected-surface
        checks, acceptance re-run. Only ``ACCEPTED`` closes the check; a protected surface yields a
        founder decision, never acceptance.
+    ``script`` (with ``provider="script"``): the founder-signed program that does the work instead of a
+    model-backed worker; it runs in the same confined envelope with no network (``greg.workers.ScriptWorker``).
     3. The handoff note is written only after acceptance (``requires``): the parent mission continues on
        the appraised result. Push, PR and merge stay with the existing authorized path.
     """
@@ -383,7 +425,8 @@ def code_change(*, repo: str, objective: str, order: str | None = None, allowed_
             {"action_id": "commission-worker", "capability": "worker.commission", "target": f"work:{order}",
              "params": {"order": order, "mode": "repository", "repo": repo_path, "objective": objective,
                         "acceptance": acceptance, "allowed_paths": allowed_paths, "provider": provider,
-                        "max_budget_usd": budget_usd, "timeout_seconds": timeout_seconds},
+                        "max_budget_usd": budget_usd, "timeout_seconds": timeout_seconds,
+                        **({"context": script} if script else {})},
              "cost_usd": budget_usd, "advances": ["work_accepted"],
              "rationale": "software-development work: commission a temporary coding worker under a bounded lease",
              "expected_outcome": "a committed change on a greg/ branch in a private clone, with evidence"},
@@ -938,3 +981,4 @@ def compiled_question(*, problem_id: str, data: dict, geometry: dict | None = No
 
 
 TEMPLATES["compiled-question"] = compiled_question
+TEMPLATES["organ-exchange"] = organ_exchange

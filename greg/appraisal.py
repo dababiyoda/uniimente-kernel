@@ -33,11 +33,12 @@ from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
                 "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query", "pipeline.inspect",
-                "worker.appraise", "browser.trace", "daleobanks.outcome",
+                "worker.appraise", "browser.trace", "daleobanks.outcome", "organs.exchange_status",
                 "institution.appraise"}
 REOBSERVABLE.update(cid for cid in BUILTINS if cid.startswith("cognition.") and
                     cid not in ("cognition.semantic", "cognition.compose", "cognition.knowledge"))
-DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
+DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures",
+              "organs.exchange": "greg.organ_exchange"}  # re-rendered from receipts
 
 
 def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:

@@ -515,7 +515,7 @@ def brief_freshness(params, ctx: InvocationContext) -> dict:
             "sha256": hashlib.sha256(latest.read_bytes()).hexdigest()}
 
 
-def verify_delivery(output: dict, deliver_root: Path | None) -> tuple[bool, str]:
+def verify_delivery(output: dict, deliver_root: Path | None, ledger=None) -> tuple[bool, str]:
     """Appraiser check: the delivered file is exactly the render of the receipted inputs."""
     if not isinstance(output, dict) or "inputs" not in output:
         return False, "receipt does not retain the brief inputs"

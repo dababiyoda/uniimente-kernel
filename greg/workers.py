@@ -26,7 +26,10 @@ own report is retained as ``worker_claim`` and is never used as acceptance.
 
 Limits (stated, not hidden): reviewed worker processes require OS filesystem confinement,
 a private HOME and a scrubbed environment (``greg/worker_isolation.py``, extracted from #157);
-unsupported hosts refuse dispatch. Provider network access remains available and is
+unsupported hosts refuse dispatch, unless the founder initialized the body with
+``worker_confinement: supervised``, in which case a worker the envelope cannot confine runs under
+#178's process supervision and its report says the filesystem and network were not confined
+(``SUPERVISION``). Provider network access remains available and is
 explicitly reported, so this is not a network isolation claim. GREG's acceptance tests run in
 private filesystem, PID and network namespaces. Spend uses finite provider reports or a
 conservative full-cap reservation when unknown.
@@ -74,6 +77,30 @@ MAX_TAIL = 4000
 MAX_PROCESS_OUTPUT = 1024 * 1024
 ORDER_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]{0,60}$")
 REPORT_MARK = "WORK_REPORT:"
+
+# The founder's body setting for workers the #157 envelope cannot confine (``init_body(worker_confinement=...)``):
+# ``required`` (default): such a worker is refused before dispatch, and so are its acceptance tests.
+# ``supervised``: such a worker runs under #178's process supervision (``SUPERVISION``), and acceptance the
+#   envelope cannot host runs with the network denied but the filesystem not confined. A reviewed provider on a
+#   host with the envelope is still confined; the script worker and confined egress never fall back.
+WORKER_CONFINEMENT = ("required", "supervised")
+
+# What supervision does and does not do, recorded on every worker report that ran under it (from #178).
+SUPERVISION = {"mode": "supervised",
+               "process": "own session; parent-death SIGKILL (Linux); process group killed on stop/timeout",
+               "cancellation": "founder STOP / SIGTERM stops the worker mid-run",
+               "output": f"stdout/stderr file-backed and capped at {MAX_PROCESS_OUTPUT} bytes",
+               "environment": "scrubbed: no ambient keys, home, proxies or SDK configuration",
+               "filesystem": "NOT OS-confined: same UID as the body",
+               "network": "NOT isolated for the worker process",
+               "git_metadata": "restored from a trusted copy whose digest is re-checked after the restore and after "
+                               "GREG's acceptance run; a daemon that outlives the worker is NOT prevented "
+                               "(no PID namespace)"}
+
+
+def confinement_mode(value) -> str:
+    """The body's worker confinement; anything but an exact ``supervised`` is the fail-closed default."""
+    return value if value in WORKER_CONFINEMENT else "required"
 
 
 class WorkerError(CapabilityError):
@@ -367,6 +394,25 @@ def _fds(envelope: dict) -> dict:
     return {"pass_fds": envelope["pass_fds"]} if envelope.get("pass_fds") else {}
 
 
+def _confined_or_supervised(prepare, argv: list[str], cwd: Path, *, confinement: str, door=None) -> dict:
+    """The #157 envelope; where it is refused and the founder set ``supervised``, #178's process supervision.
+
+    The supervised envelope says what it does not confine. Confined egress is never traded away: a worker
+    whose traffic must leave through the relay door is refused rather than run with direct network."""
+    try:
+        return prepare()
+    except WorkerIsolationError as exc:
+        if confinement_mode(confinement) != "supervised":
+            raise
+        if door is not None:
+            raise WorkerIsolationError(f"{exc}; this body confines egress, which an unconfined worker cannot "
+                                       "honour, so supervision is refused as well") from exc
+        runtime = cwd.parent / "supervised-runtime"
+        runtime.mkdir(mode=0o700, exist_ok=True)
+        return {"argv": list(argv), "env": _worker_env(cwd), "preexec_fn": _die_with_body, "pass_fds": [],
+                "runtime_root": runtime, "evidence": {**SUPERVISION, "envelope_refused": str(exc)[:300]}}
+
+
 class ClaudeCodeWorker:
     """The Claude Code CLI as a headless, tool-using coding/research worker.
 
@@ -399,15 +445,19 @@ class ClaudeCodeWorker:
             argv += ["--model", self.model]
         return argv
 
-    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None, egress=None) -> WorkerReport:
+    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None, egress=None,
+            confinement: str = "required") -> WorkerReport:
         if not self.binary:
             raise WorkerError("Claude Code CLI is not installed on this body")
+        argv = self.argv(order)
         with _door(egress) as door:
-            envelope = prepare_worker(self.argv(order), cwd, timeout_seconds=order.timeout_seconds,
-                                      provider=self.name, reviewed=True, file_bytes=8 * MAX_PROCESS_OUTPUT,
-                                      config_files={".claude/.credentials.json":
-                                                    Path.home() / ".claude" / ".credentials.json"},
-                                      **({"door": door} if door is not None else {}))
+            envelope = _confined_or_supervised(
+                lambda: prepare_worker(argv, cwd, timeout_seconds=order.timeout_seconds,
+                                       provider=self.name, reviewed=True, file_bytes=8 * MAX_PROCESS_OUTPUT,
+                                       config_files={".claude/.credentials.json":
+                                                     Path.home() / ".claude" / ".credentials.json"},
+                                       **({"door": door} if door is not None else {})),
+                argv, cwd, confinement=confinement, door=door)
             return self._run(order, cwd, envelope, stop_check)
 
     def _run(self, order: WorkOrder, cwd: Path, envelope: dict, stop_check) -> WorkerReport:
@@ -467,14 +517,19 @@ class CliAgentWorker:
     def available(self) -> tuple[bool, str]:
         return (True, "") if self.binary else (False, f"{self.template[0]} is not installed on this body")
 
-    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None, egress=None) -> WorkerReport:
+    def run(self, order: WorkOrder, cwd: Path, *, stop_check=None, egress=None,
+            confinement: str = "required") -> WorkerReport:
         if not self.binary:
             raise WorkerError(f"{self.template[0]} is not installed on this body")
         config_files = {".codex/auth.json": Path.home() / ".codex" / "auth.json"} if self.name == "codex" else {}
+        argv = [self.binary, *self.template[1:]]
         with _door(egress) as door:
-            envelope = prepare_worker([self.binary, *self.template[1:]], cwd, timeout_seconds=order.timeout_seconds,
-                                      provider=self.name, reviewed=self.reviewed, config_files=config_files,
-                                      file_bytes=8 * MAX_PROCESS_OUTPUT, **({"door": door} if door is not None else {}))
+            envelope = _confined_or_supervised(
+                lambda: prepare_worker(argv, cwd, timeout_seconds=order.timeout_seconds,
+                                       provider=self.name, reviewed=self.reviewed, config_files=config_files,
+                                       file_bytes=8 * MAX_PROCESS_OUTPUT,
+                                       **({"door": door} if door is not None else {})),
+                argv, cwd, confinement=confinement, door=door)
             return self._run(order, cwd, envelope, stop_check)
 
     def _run(self, order: WorkOrder, cwd: Path, envelope: dict, stop_check) -> WorkerReport:
@@ -623,30 +678,45 @@ def collect_changes(clone: Path, base_commit: str) -> tuple[list[str], str]:
     return sorted(names), patch
 
 
-def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None) -> list[dict]:
+def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinement: str = "required") -> list[dict]:
     """Execute generated acceptance in a private filesystem/PID/network envelope, never as unconfined GREG.
 
     Worker-written tests are untrusted code. On a host that cannot provide the envelope (no usable
-    bubblewrap), the command is refused and recorded as failed; it never runs with GREG's own reach."""
+    bubblewrap), the command is refused and recorded as failed; it never runs with GREG's own reach.
+    The one exception is the founder's ``supervised`` body setting: there the command runs as #178 ran
+    it, scrubbed and with the network denied (seccomp / sandbox-exec), and its result says the filesystem
+    was not confined. Without network denial it is refused in every mode."""
+    from greg.capabilities import run_isolated
     results = []
     for argv in tests:
         argv = [sys.executable if a in ("python", "python3") else a for a in argv]
         started = time.monotonic()
+        mode = "envelope: private filesystem, PID and network namespaces"
         try:
-            envelope = prepare_worker(argv, cwd, timeout_seconds=timeout, provider="acceptance-tests",
-                                      reviewed=True, source_env={}, network=False, file_bytes=8 * MAX_PROCESS_OUTPUT)
-            envelope["env"]["PYTHONDONTWRITEBYTECODE"] = "1"
-            proc = supervised_run(envelope["argv"], cwd=cwd, timeout=timeout, capture_output=True,
-                                  env=envelope["env"], preexec_fn=envelope["preexec_fn"], close_fds=True,
-                                  stop_check=stop_check)
+            try:
+                envelope = prepare_worker(argv, cwd, timeout_seconds=timeout, provider="acceptance-tests",
+                                          reviewed=True, source_env={}, network=False,
+                                          file_bytes=8 * MAX_PROCESS_OUTPUT)
+            except WorkerIsolationError:
+                if confinement_mode(confinement) != "supervised":
+                    raise
+                mode = "supervised: network denied, environment scrubbed, filesystem NOT confined"
+                proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=stop_check,
+                                    extra_env={"PATH": f"{Path(sys.executable).parent}:/usr/bin:/bin",
+                                               "PYTHONDONTWRITEBYTECODE": "1"})
+            else:
+                envelope["env"]["PYTHONDONTWRITEBYTECODE"] = "1"
+                proc = supervised_run(envelope["argv"], cwd=cwd, timeout=timeout, capture_output=True,
+                                      env=envelope["env"], preexec_fn=envelope["preexec_fn"], close_fds=True,
+                                      stop_check=stop_check)
             code, out = proc.returncode, (proc.stdout + proc.stderr).decode("utf-8", "replace")
         except subprocess.TimeoutExpired:
             code, out = -1, f"timed out after {timeout}s"
-        except (WorkerError, WorkerIsolationError, OSError, subprocess.SubprocessError) as exc:
-            code, out = -1, "acceptance confinement refused: " + str(exc)[:300]
+        except (CapabilityError, WorkerIsolationError, OSError, subprocess.SubprocessError) as exc:
+            code, out, mode = -1, "acceptance confinement refused: " + str(exc)[:300], "refused"
         results.append({"argv": argv, "returncode": code, "passed": code == 0,
                         "seconds": round(time.monotonic() - started, 2), "tail": out[-MAX_TAIL:],
-                        "network": "denied"})
+                        "network": "denied", "confinement": mode})
     return results
 
 
@@ -719,7 +789,9 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     trusted_digest = _tree_digest(trusted_metadata)
     try:
         report = provider.run(order, work, stop_check=ctx.stop_check,
-                              **({"egress": ctx.egress} if ctx.egress is not None else {})) if isinstance(
+                              **({"egress": ctx.egress} if ctx.egress is not None else {}),
+                              **({"confinement": ctx.worker_confinement} if isinstance(
+                                  provider, (ClaudeCodeWorker, CliAgentWorker)) else {})) if isinstance(
             provider, (ClaudeCodeWorker, CliAgentWorker, ScriptWorker)) else provider.run(order, work)
     except WorkerIsolationError as exc:
         # Confinement was refused before a provider process was launched; no spend occurred.
@@ -756,7 +828,8 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
     stopped_for_spend = spend["status"] in ("invalid", "over_cap")
     stopped = stopped_for_spend or collection_error is not None or report.interrupted or report.error is not None
     collected = _tree_digest(metadata) if names and commands and not stopped else None
-    tests = run_tests(commands, work, timeout=min(order.timeout_seconds, 1200), stop_check=ctx.stop_check) if (
+    tests = run_tests(commands, work, timeout=min(order.timeout_seconds, 1200), stop_check=ctx.stop_check,
+                      confinement=ctx.worker_confinement) if (
         names and commands and not stopped) else []
     # GREG's acceptance run executes the worker's test code. If that code rewrote the clone's .git
     # (config, hooks, gpg program), GREG's next git commands would run it, so the commit is refused.
@@ -924,7 +997,8 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
             verdict = "REJECTED"
         if order["mode"] == "repository":
             with_tests = run_tests(acceptance_commands(order["acceptance"], names), fresh,
-                                   timeout=min(int(order["timeout_seconds"]), 1200), stop_check=ctx.stop_check)
+                                   timeout=min(int(order["timeout_seconds"]), 1200), stop_check=ctx.stop_check,
+                                   confinement=ctx.worker_confinement)
             failed = [t for t in with_tests if not t["passed"]]
             if failed:
                 findings.append(f"{len(failed)} acceptance command(s) failed in the independent clone")

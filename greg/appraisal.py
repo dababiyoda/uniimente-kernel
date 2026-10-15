@@ -140,7 +140,8 @@ def appraise(request: dict) -> dict:
                                         if request.get("artifact_root") else None,
                                         target=check["sensor"].get("target", ""),
                                         capability_registry=_formed_registry(journal, request["workspace"])
-                                        if cap.startswith("cognition.") else None)
+                                        if cap.startswith("cognition.") else None,
+                                        worker_confinement=request.get("worker_confinement", "required"))
                 try:
                     from greg.pipeline import resolve
                     bound_params, _ = resolve(check["sensor"].get("params", {}), journal, mid)

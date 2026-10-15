@@ -24,12 +24,13 @@ class Clock:
         self.now += timedelta(seconds=seconds)
 
 
-def make_body(tmp: Path, *, read_roots=None):
+def make_body(tmp: Path, *, read_roots=None, worker_confinement: str = "required"):
     tmp = Path(tmp)
     data = tmp / "data"
     data.mkdir(exist_ok=True)
     home = tmp / "body"
-    config = init_body(home, read_roots=[str(p) for p in (read_roots or [data])])
+    config = init_body(home, read_roots=[str(p) for p in (read_roots or [data])],
+                       worker_confinement=worker_confinement)
     public = generate_founder_key(tmp / "founder.pem", None)
     key = load_founder_key(tmp / "founder.pem", None)
     with Body(home) as body:

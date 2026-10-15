@@ -268,6 +268,7 @@ class InvocationContext:
     cognition_model: dict | None = None       # effective founder-selected local model; never a paid fallback
     cognition_budget: InvocationBudgetWindow | None = None
     egress: object | None = None              # #26 relay when the body confines egress; never a grant of hosts
+    worker_confinement: str = "required"      # founder's body setting for unconfinable workers; never widened here
 
     def secret(self, name: str) -> str:
         return self.secrets.resolve(name, declared=self.manifest.credentials)

@@ -773,7 +773,8 @@ class MissionEngine:
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
                                  cognition_model=getattr(self, "cognition_model", None),
-                                 egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None)
+                                 egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None,
+                                 worker_confinement=getattr(self, "worker_confinement", "required"))
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,

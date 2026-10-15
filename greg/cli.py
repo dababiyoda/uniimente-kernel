@@ -176,6 +176,9 @@ def main(argv=None) -> int:
     s.add_argument("--local-model", help="opt in to an already installed Ollama model for the one GREG router")
     s.add_argument("--confined-egress", action="store_true",
                    help="run network capabilities as confined components behind the #26 egress relay (Linux)")
+    s.add_argument("--worker-confinement", choices=("required", "supervised"), default="required",
+                   help="required (default): refuse a worker the bubblewrap envelope cannot confine. supervised: run "
+                        "it under process supervision instead; its filesystem and network are NOT confined")
     f = sub.add_parser("founder"); fs = f.add_subparsers(dest="founder_cmd", required=True)
     k = fs.add_parser("keygen"); k.add_argument("--key", required=True); k.add_argument("--no-passphrase", action="store_true")
     e = fs.add_parser("enroll"); e.add_argument("--pubkey", required=True)
@@ -377,7 +380,8 @@ def main(argv=None) -> int:
         if args.cmd == "init":
             print(json.dumps(init_body(home, read_roots=args.read_root or [str(Path.home())],
                                        deliver_root=args.deliver_root, local_model=args.local_model,
-                                       confined_egress=args.confined_egress), indent=1))
+                                       confined_egress=args.confined_egress,
+                                       worker_confinement=args.worker_confinement), indent=1))
         elif args.cmd == "founder" and args.founder_cmd == "keygen":
             print(generate_founder_key(args.key, _passphrase(args)))
         elif args.cmd == "founder" and args.founder_cmd == "enroll":

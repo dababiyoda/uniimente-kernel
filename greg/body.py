@@ -41,6 +41,7 @@ from greg.founder import FounderAuthError, FounderVerifier, key_id, spent_nonce,
 from greg.genesis import Genesis
 from greg.journal import Journal, iso, utcnow
 from greg.missions import MissionEngine, MissionError
+from greg.workers import WORKER_CONFINEMENT, confinement_mode
 from identity.machine_passport import PassportRegistry
 from provenance.commit_witness import WitnessSigner
 from provenance.ledger import EvidenceLedger, sha256_json
@@ -109,7 +110,8 @@ def _private_write(path: Path, data: bytes):
 
 
 def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None,
-              local_model: str | None = None, confined_egress: bool = False) -> dict:
+              local_model: str | None = None, confined_egress: bool = False,
+              worker_confinement: str = "required") -> dict:
     """Create a new body directory. Refuses to overwrite an existing body.
 
     ``deliver_root`` is the founder-visible folder where deliverables (briefs,
@@ -141,6 +143,12 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
         config["models"] = {"order": ["ollama"], "ollama_model": local_model}
     if confined_egress:
         config["confined_egress"] = True
+    if worker_confinement not in WORKER_CONFINEMENT:
+        raise ValueError(f"worker_confinement must be one of {', '.join(WORKER_CONFINEMENT)}")
+    if worker_confinement == "supervised":
+        # The founder's choice, made once at init: a worker the #157 envelope cannot confine runs under process
+        # supervision instead of being refused. Every such run's report says what was not confined.
+        config["worker_confinement"] = "supervised"
     _private_write(layout.config, json.dumps(config, indent=2).encode())
     return config
 
@@ -194,6 +202,7 @@ class Body:
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         self.engine.egress = self._egress_relay()
+        self.engine.worker_confinement = confinement_mode(self.config.get("worker_confinement"))
         self.engine.selector = self._order_missions
         return self
 
@@ -547,7 +556,8 @@ class Body:
                    "head": self.ledger.head, "mission_id": mission_id, "read_roots": self.config["read_roots"],
                    "deliver_root": str(self.deliver_root),
                    "artifact_root": str(self.layout.artifacts),
-                   "workspace": str(self.layout.workspace / mission_id.replace(":", "_"))}
+                   "workspace": str(self.layout.workspace / mission_id.replace(":", "_")),
+                   "worker_confinement": confinement_mode(self.config.get("worker_confinement"))}
         if closure_event:
             request["closure_event"] = closure_event
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",

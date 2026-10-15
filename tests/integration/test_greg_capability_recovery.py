@@ -370,12 +370,12 @@ def test_an_outage_during_recovery_probes_is_not_a_failed_probe(tmp_path, monkey
             raise subprocess.TimeoutExpired(argv, kw.get("timeout", 1))
 
         monkeypatch.setattr(mechanisms, "run_isolated", down)               # ...but the host is down
-        for _ in range(12):
+        for _ in range(5):
             clock.advance(24 * 3600)
             ticks(body, clock, 1)
         assert not [p for p in probes(body) if p["passed"] is False]
         assert not body.journal.replay("capability.recovery_stopped")
-        assert body.journal.replay("capability.deferred_probe")
+        assert len(body.journal.replay("capability.deferred_probe")) == 5
         monkeypatch.setattr(mechanisms, "run_isolated", real)               # the outage ends
         for _ in range(2):
             clock.advance(24 * 3600)
@@ -434,3 +434,83 @@ def test_an_outage_inside_a_construction_never_blames_the_strategy(tmp_path, mon
         assert not [e for e in body.journal.replay("routing.outcome") if e.payload.get("verdict") == "ineffective"]
         assert "NO_STRATEGY" not in [e.payload.get("kind") for e in body.journal.replay("decision.requested")]
         assert "SENSOR_RETRY" in states(out)
+
+
+def test_an_outage_forming_a_cognition_deficit_is_re_searched_and_never_blamed_on_the_strategy(tmp_path,
+                                                                                              monkeypatch):
+    """Third review (typed failures): the outage blocker cleared on the next tick, the mission re-observed,
+    the compile strategy that reported the deficit was booked 'ineffective' and the founder asked
+    NO_STRATEGY; nothing re-ran the search once the host was back. The outage blocker now holds the
+    mission and re-runs the formation after its back-off."""
+    import subprocess
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compiled_question(problem_id="staff-3", data=STAFFING,
+                                                                   allow_construction=True)))
+    clock = Clock()
+    real = mechanisms.run_isolated
+
+    def down(argv, **kw):
+        raise subprocess.TimeoutExpired(argv, kw.get("timeout", 1))
+
+    monkeypatch.setattr(mechanisms, "run_isolated", down)
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 6)
+        monkeypatch.setattr(mechanisms, "run_isolated", real)            # the host is back
+        out = ticks(body, clock, 30, step=600)
+        assert "ACHIEVED" in states(out)
+        assert not [e for e in body.journal.replay("routing.outcome") if e.payload.get("verdict") == "ineffective"]
+        assert not [e for e in body.journal.replay("decision.requested") if e.payload.get("kind") == "NO_STRATEGY"]
+
+
+def test_outage_deferrals_reset_after_a_formation_and_the_capped_ask_keeps_searching(tmp_path, monkeypatch):
+    """Third review (typed failures): the deferral count never reset, and after the cap the mission waited
+    on an attach that could not exist once nothing had qualified. After the cap the founder is asked and
+    the search still re-runs (hourly), so the mission closes when the host is back."""
+    import subprocess
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", network_in_words(text=FLOW, auto_attach=True)))
+    clock = Clock()
+    real = mechanisms.run_isolated
+
+    def down(argv, **kw):
+        raise subprocess.TimeoutExpired(argv, kw.get("timeout", 1))
+
+    monkeypatch.setattr(mechanisms, "run_isolated", down)
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 70)                                          # past five deferrals
+        assert "CAPABILITY_ATTACH" in [e.payload.get("kind") for e in body.journal.replay("decision.requested")]
+        monkeypatch.setattr(mechanisms, "run_isolated", real)
+        out = ticks(body, clock, 6, step=1800)
+        assert body.registry.state.get(NX) == "ATTACHED" and "ACHIEVED" in states(out)
+
+
+def test_a_persistent_outage_backs_off_and_then_leaves_recovery_to_the_founder(tmp_path, monkeypatch):
+    """Third review (typed failures): a deferred probe was retried every base period forever, and each try
+    could stall a tick for 80 s. Outages now double the wait; after eight in a row the founder decides."""
+    import subprocess
+    from datetime import datetime
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", network_in_words(text=FLOW, auto_attach=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 1)
+        honest, _ = lose_every_engine(body, clock, monkeypatch)
+        monkeypatch.setitem(network.RUNNERS, "networkx.max_flow", honest["networkx.max_flow"])
+
+        def down(argv, **kw):
+            raise subprocess.TimeoutExpired(argv, kw.get("timeout", 1))
+
+        monkeypatch.setattr(mechanisms, "run_isolated", down)
+        for _ in range(4 * 24 * 7):                                      # a week, ticking every 15 minutes
+            clock.advance(15 * 60)
+            ticks(body, clock, 1)
+        at = [datetime.fromisoformat(e.payload["at"].replace("Z", "+00:00"))
+              for e in body.journal.replay("capability.deferred_probe")]
+        assert len(at) == genesis_mod.RECOVERY_MAX_DEFERRED_PROBES
+        gaps = [(b - a).total_seconds() for a, b in zip(at, at[1:])]
+        assert gaps == sorted(gaps) and gaps[-1] > gaps[0]               # the wait grows
+        [stopped] = [e.payload for e in body.journal.replay("capability.recovery_stopped")]
+        assert "host outage persisted" in stopped["why"] and not probes(body)

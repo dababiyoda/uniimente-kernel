@@ -559,3 +559,18 @@ def test_an_appraisal_retained_before_it_named_its_exchange_binds_to_its_own_rec
     finish(journal, mid, {"packet_sha256": seen["content_sha256"], "assessment_sha256": "a" * 64})
     out = organs.status({}, ctx(tmp_path, journal, capability="organ.status"))
     assert out["verdict"] == "REPRODUCED" and out["unbound_facts_ignored"] == 0
+
+
+
+def test_an_excluded_tree_under_a_fixed_system_grant_refuses_the_stage(tmp_path):
+    """Third review (containment): only the interpreter grants were checked against the excluded trees, so an
+    organ checked out under /usr stayed readable through the fixed /usr grant while the receipt said
+    confined. Every grant is checked now."""
+    require_landlock()
+    venv = tmp_path / "venv"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "pyvenv.cfg").write_text("home = /opt/python/bin\n")
+    (venv / "bin" / "python3").write_text("")                       # never run: only its grants are computed
+    with pytest.raises(CapabilityError, match="reaches /usr/share"):
+        organs._confinement(venv / "bin" / "python3", tmp_path / "own", tmp_path / "store",
+                            exclude=(Path("/usr/share"),))

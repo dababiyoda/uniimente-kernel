@@ -295,11 +295,17 @@ def _load_filter():
 _INSTALL_FILTER = _load_filter() if sys.platform == "linux" else None
 
 
-def _confine():
-    try:
-        _INSTALL_FILTER()      # in memory since import; the child imports nothing
-    except Exception:
-        os._exit(97)           # fail closed: a component never runs unconfined
+def _confiner(refused_fd: int):
+    """preexec: install the in-memory filter or fail closed. A failure is written to a close-on-exec pipe only
+    the parent holds, then raised, so the component never runs and its own exit status never reads as a
+    refusal (nor a refusal as a component that ran)."""
+    def confine():
+        try:
+            _INSTALL_FILTER()      # in memory since import; the child imports nothing
+        except Exception:
+            os.write(refused_fd, b"N")
+            raise
+    return confine
 
 
 def run_confined(argv: list, *, identity: str, relay: Relay, cwd: Path, timeout: int = 30,
@@ -310,17 +316,29 @@ def run_confined(argv: list, *, identity: str, relay: Relay, cwd: Path, timeout:
     control, child = socket.socketpair()
     worker = threading.Thread(target=relay.serve, args=(identity, control), daemon=True)
     worker.start()
+    refused_r, refused_w = os.pipe()
     try:
-        proc = subprocess.run(argv, cwd=cwd, capture_output=True, timeout=timeout, preexec_fn=_confine,
+        proc = subprocess.run(argv, cwd=cwd, capture_output=True, timeout=timeout, preexec_fn=_confiner(refused_w),
                               pass_fds=(child.fileno(),), close_fds=True,
                               env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONPATH": str(ROOT),
                                    "PYTHONDONTWRITEBYTECODE": "1", "GREG_EGRESS_FD": str(child.fileno()),
                                    **(env or {})})
+    except subprocess.SubprocessError as exc:
+        if isinstance(exc, subprocess.TimeoutExpired):
+            raise
+        os.set_blocking(refused_r, False)
+        try:
+            refused = os.read(refused_r, 1) == b"N"
+        except BlockingIOError:
+            refused = False
+        if not refused:
+            raise
+        raise SegmentationError("seccomp confinement unavailable; launch refused") from None
     finally:
         child.close()
+        os.close(refused_r)
+        os.close(refused_w)
     worker.join(timeout=5)
-    if proc.returncode == 97:
-        raise SegmentationError("seccomp confinement unavailable; launch refused")
     return proc
 
 
@@ -374,8 +392,13 @@ def confined_fetch(url: str, *, identity: str, relay: Relay, cwd: Path, max_byte
     env = {}
     if os.environ.get("GREG_EGRESS_CAFILE"):
         env["GREG_EGRESS_CAFILE"] = os.environ["GREG_EGRESS_CAFILE"]
-    proc = run_confined([sys.executable, "-s", "-c", FETCH, parts.hostname, str(parts.port or 443), path,
-                         str(max_bytes)], identity=identity, relay=relay, cwd=cwd, timeout=timeout, env=env)
+    # -P: neither the working directory nor the script's is put on sys.path, so nothing written into a mission
+    # workspace can be imported ahead of the standard library; the component also runs from an empty
+    # directory of its own. Only PYTHONPATH (the Kernel) and the interpreter's own paths are searched.
+    with tempfile.TemporaryDirectory(prefix="greg-fetch-") as empty:
+        proc = run_confined([sys.executable, "-P", "-s", "-c", FETCH, parts.hostname, str(parts.port or 443), path,
+                             str(max_bytes)], identity=identity, relay=relay, cwd=Path(empty), timeout=timeout,
+                            env=env)
     relay.drain()
     if proc.returncode != 0:
         raise SegmentationError("confined fetch failed: " + proc.stderr.decode("utf-8", "replace")[-300:])

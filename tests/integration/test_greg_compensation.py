@@ -244,3 +244,79 @@ def test_the_appraisal_counts_compensating_receipts_in_its_exactly_once_check(tm
         verdict = body.appraise(mid, closure_event=held.event_id)
     assert verdict["checks"]["exactly_once"] is False
     assert any("compensat" in f for f in verdict["findings"])
+
+
+def test_a_signed_compensation_never_runs_after_the_founder_answered_its_compensation_ask(tmp_path):
+    """Third review (spend): the compensating capability was detached, so the founder was asked; the founder
+    answered 'the effect stands'; once the capability was re-attached for other work the compensation ran
+    anyway. The founder's answer now closes the obligation."""
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:compensate-answered"
+    note, spec = write_mission(home, mid, check_text="final")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 3)
+        drop(home, signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": "fs.write"}))
+        tick(body, clock, 1)
+        abandon(home, key, body_id, mid)
+        tick(body, clock, 2)
+        [ask] = [r for r in body.engine.book.open_requests() if r["kind"] == "COMPENSATION"]
+        drop(home, signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "reject",
+                                                     "reason": "the effect stands"}))
+        tick(body, clock, 1)
+        drop(home, signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "fs.write"}))
+        tick(body, clock, 2)
+        [closed] = facts(body, "mission.compensated", mid)
+        assert closed["status"] == "FOUNDER_DECIDED" and closed["answer"] == "reject" and closed["receipt"] is None
+    assert note.read_text() == "draft"
+
+
+def test_compensations_dispatch_one_per_step_and_a_stop_mid_tick_admits_no_more(tmp_path):
+    """Third review (spend): every signed compensation of a mission dispatched in one step, past a founder STOP
+    that arrived while the first ran. One compensation is dispatched per step, under the tick's STOP check."""
+    stopper = CapabilityManifest(
+        capability_id="test.undo", version="1.0.0", provider="test-double", function="test.undo",
+        description="test double of a slow undo during which the founder presses STOP", route="api",
+        consequence_class="internal_write", inputs={"x": "str"}, outputs={"ok": "bool"},
+        target_prefix="workspace:", strengthens=("settlement",))
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:compensate-stop"
+    ws = workspace(home, mid)
+    ws.mkdir(parents=True, exist_ok=True)
+    (ws / "a.txt").write_text("original")
+    restore_a = {"capability": "fs.write", "params": {"relative_path": "a.txt", "content": "original"},
+                 "target": "workspace:a.txt"}
+    undo_b = {"capability": "test.undo", "params": {"x": "b"}, "target": "workspace:b.txt"}
+    spec = mission(mid, checks=[note_check("c", ws / "a.txt", "final"), note_check("d", ws / "b.txt", "final")],
+                   strategies=[write_strategy("a", "a.txt", "draft", ["c"], compensate=restore_a),
+                               write_strategy("b", "b.txt", "draft", ["d"], compensate=undo_b)],
+                   capabilities=["fs.read", "fs.write", "test.undo"])
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        stop_file = body.layout.stop_file
+
+        def undo(params, ctx):
+            stop_file.write_text("founder STOP")                   # pressed while this undo runs
+            return {"ok": True}
+        body.registry.register(stopper, undo, state="ATTACHED")
+        drop(home, signed(key, body_id, "MISSION", spec))
+        tick(body, clock, 6)
+        abandon(home, key, body_id, mid)
+        body.tick()
+        assert [(c["action_id"], c["status"]) for c in facts(body, "mission.compensated", mid)] == [("b", "DONE")]
+    assert (ws / "a.txt").read_text() == "draft"                  # nothing ran after the STOP
+
+
+def test_a_compensation_through_a_capability_that_spends_money_is_refused_at_signing():
+    """Third review (spend): compensation runs at cost 0, so a metered capability (worker.commission) could
+    spend unbooked money after the cone was exhausted. Such a compensation is refused when the mission is
+    validated; the founder handles that effect through a COMPENSATION decision instead."""
+    from pathlib import Path
+    spec = mission("m:paid-undo", checks=[note_check("c", Path("/nonexistent/note.txt"), "final")],
+                   strategies=[write_strategy(
+        "w", "note.txt", "draft", ["c"], compensate={"capability": "worker.commission", "params": {},
+                                                     "target": "workspace:undo"})],
+        capabilities=["fs.read", "fs.write", "worker.commission"], ceiling="internal_write")
+    with pytest.raises(MissionError, match="spends money"):
+        validate_mission(spec)

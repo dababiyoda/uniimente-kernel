@@ -188,15 +188,19 @@ def _confinement(python: Path, code_dir: Path, store: Path, *, exclude=()) -> di
     root = python.parent.parent
     interpreter = root if (root / "pyvenv.cfg").is_file() else python
     runtime = Path(os.path.realpath(python)).parents[1]          # e.g. /usr for /usr/bin/python3.13
-    for granted in (interpreter, runtime):
+    system_read, system_exec = ["/etc", "/dev/urandom"], ["/usr", "/lib", "/lib64", "/bin"]
+    # Every grant but the stage's own snapshot and store (which live in the body's workspace by design)
+    # must stay clear of the excluded trees, the fixed system grants included.
+    for granted in (interpreter, runtime, *system_read, *system_exec):
         g = Path(os.path.realpath(granted))
         for x in exclude:
             x = Path(os.path.realpath(x))
             if g == x or g in x.parents or x in g.parents:
-                raise CapabilityError(f"the interpreter {python} would give the stage {g}, which reaches {x}; "
-                                      "declare an interpreter in its own venv or a system location")
-    return {"read": [code_dir, "/etc", "/dev/urandom"],
-            "read_exec": [interpreter, runtime, "/usr", "/lib", "/lib64", "/bin"],
+                raise CapabilityError(f"the stage would be granted {g}, which reaches {x}; declare an "
+                                      "interpreter in its own venv or a system location, and keep the organs, "
+                                      "the Kernel and the body's home outside the system directories")
+    return {"read": [code_dir, *system_read],
+            "read_exec": [interpreter, runtime, *system_exec],
             "write": [store, "/dev/null"]}
 
 

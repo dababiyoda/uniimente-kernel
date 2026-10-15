@@ -42,6 +42,7 @@ import os
 from pathlib import Path
 import random
 import stat
+import subprocess
 import sys
 import tempfile
 import time
@@ -354,6 +355,7 @@ RECOVERABLE = ("failed in service",)      # quarantine reasons that leave the ca
 RECOVERY_BASE = timedelta(minutes=15)    # first probe after a quarantine; doubles per failed probe and per fault
 RECOVERY_CAP = timedelta(hours=24)
 RECOVERY_MAX_FAILED_PROBES = 5
+RECOVERY_MAX_DEFERRED_PROBES = 8       # host outages in a row on one probe attempt before the founder decides
 RECOVERY_MAX_QUARANTINES = 3            # more in-service quarantines than this is flapping: the founder decides
 RECOVERED_BY = "recovery probe (sandbox, fresh frozen-oracle seed)"
 
@@ -597,10 +599,15 @@ class Genesis:
                 continue
             failed = [p for p in probes if p["capability_id"] == cid and p["incident"] == incident and not p["passed"]]
             faults = [q for q in history if str(q.get("why", "")).startswith(RECOVERABLE)]
+            # Outages deferring the current attempt: each doubles the wait, and a persistent one goes to the founder.
+            deferred = [d for d in self.journal.replay("capability.deferred_probe")
+                        if d.payload["capability_id"] == cid and d.payload["incident"] == incident]
+            outages = [d for d in deferred if d.payload["attempt"] == len(failed) + 1]
             why_stop = ("flapping: quarantined in service %d times" % len(faults)
                         if len(faults) > RECOVERY_MAX_QUARANTINES
                         else "%d recovery probes failed" % len(failed) if len(failed) >= RECOVERY_MAX_FAILED_PROBES
-                        else None)
+                        else "a host outage persisted through %d recovery probes" % len(outages)
+                        if len(outages) >= RECOVERY_MAX_DEFERRED_PROBES else None)
             if why_stop:
                 self.journal.record("capability.recovery_stopped", {
                     "capability_id": cid, "incident": incident, "why": why_stop,
@@ -608,10 +615,8 @@ class Genesis:
                     key=[cid, incident, "recovery-stopped"])
                 results.append({"capability_id": cid, "result": "stopped", "why": why_stop})
                 continue
-            wait = min(RECOVERY_BASE * 2 ** (len(failed) + len(faults) - 1), RECOVERY_CAP)
+            wait = min(RECOVERY_BASE * 2 ** (len(failed) + len(faults) + len(outages) - 1), RECOVERY_CAP)
             since = datetime.fromisoformat(last["at"].replace("Z", "+00:00"))
-            deferred = [d for d in self.journal.replay("capability.deferred_probe")
-                        if d.payload["capability_id"] == cid and d.payload["incident"] == incident]
             for latest in ([failed[-1]] if failed else []) + ([deferred[-1].payload] if deferred else []):
                 since = max(since, datetime.fromisoformat(latest["at"].replace("Z", "+00:00")))
             if now < since + wait:
@@ -624,7 +629,8 @@ class Genesis:
                 if exc.failure_class != "transient":
                     raise
                 # The host could not run the probe (a runner timeout, isolation unavailable): no evidence
-                # either way. Not a failed probe, no backoff growth; the same attempt runs after the wait.
+                # either way. Not a failed probe; the same attempt runs after a doubled wait, and after
+                # RECOVERY_MAX_DEFERRED_PROBES outages in a row recovery stops for the founder.
                 self.journal.record("capability.deferred_probe", {
                     "capability_id": cid, "incident": incident, "attempt": attempt, "why": str(exc)[:300],
                     "failure_class": exc.failure_class, "at": iso(now)},
@@ -799,7 +805,13 @@ class Genesis:
                 self._route(deficit_id, "installed_software", f"{candidate.binary_name} was verified earlier on this "
                             "deficit (recorded; not re-run)", manifest.capability_id)
                 continue
-            passed, report = self._verify(function, candidate, binary, seed, manifest)
+            try:
+                passed, report = self._verify(function, candidate, binary, seed, manifest)
+            except CapabilityError as exc:
+                if exc.failure_class == "transient":
+                    self._route(deficit_id, "installed_software", f"{candidate.binary_name} not evaluated: host "
+                                f"outage ({str(exc)[:200]})", None)
+                raise
             self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
                                                      "passed": passed, "report": report,
                                                      "verifier": "frozen oracle, independent of candidate"},
@@ -1023,6 +1035,14 @@ class Genesis:
             self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
             self._route(deficit_id, "founder", "escalated", None)
             return None
+        # The build budget is carved from the light cone, which actions spend too: a build never takes more
+        # than the cone has left (MissionBook books every build on it).
+        cone_left = mission.cone.budget_usd - getattr(mission, "spent_usd", 0.0)
+        spent_at_entry = spent
+        if cone_left <= 0:
+            self._route(deficit_id, "builder", "the mission's light cone has no budget left for a build", None)
+            self._route(deficit_id, "founder", "escalated", None)
+            return None
         request = {"function": function, "description": contract["description"],
                    "returns": contract.get("returns", "a JSON value"), "examples": contract["examples"]}
         # Repair: the builder learns that and how the predecessor failed, never the live input itself.
@@ -1030,35 +1050,48 @@ class Genesis:
                      "it must handle arbitrary real input without raising"] if repair else None)
         replay = self._replay_text(repair)
         self.store.mkdir(parents=True, exist_ok=True)
+        # A paid candidate an outage left unjudged is judged first, never paid for again.
+        pending = self._unjudged_builds(deficit_id)
+        try:
+            builders.isolation_ready()          # an outage defers here, before any paid attempt
+        except CapabilityError as exc:
+            self._route(deficit_id, "builder", f"not attempted: host outage ({str(exc)[:200]})", None)
+            raise
         for attempt in (1, 2):
-            remaining = contract["build_budget_usd"] - spent
-            if remaining <= 0:   # re-checked per attempt: every attempt is spend
-                self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
-                break
-            if self.builder_cap is not None:   # per attempt: this function's remaining signed budget
-                self.builder.max_budget_usd = min(self.builder_cap, remaining)
-            try:
-                built = self.builder.build(request, feedback)
-            except Exception as exc:  # the builder is untrusted; its failure is evidence
-                why = f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300]
-                cost = getattr(exc, "cost_usd", None)
-                if cost:   # billed although no candidate came back (e.g. a withheld substituted answer)
-                    self.journal.record("genesis.unbuilt", {"deficit_id": deficit_id, "attempt": attempt,
-                                                            "cost_usd": cost, "why": why, "at": iso(now)})
-                self._route(deficit_id, "builder", why, None)
-                break
-            spent += float(built.get("cost_usd") or 0.0)
-            source = built["source"]
-            digest = hashlib.sha256(source.encode()).hexdigest()
-            self.journal.record("genesis.built", {
-                "deficit_id": deficit_id, "attempt": attempt, "builder": built["builder"],
-                "prompt_sha256": built.get("prompt_sha256"), "source_sha256": digest,
-                "cost_usd": built.get("cost_usd"), "sees": "description, signature, public examples only",
-                "served_model": built.get("served_model"), "routes_tried": built.get("routes_tried"),
-                **({"model_digest": built["model_digest"]} if built.get("model_digest") else {}),
-                # the model identity evidence: what was asked for and whether another model answered
-                **{k: built[k] for k in ("requested_model", "substituted") if built.get(k) is not None}},
-                key=[deficit_id, attempt, digest])
+            again = bool(pending)
+            if again:
+                built, attempt = pending.pop(0)
+                source = built["source"]
+                digest = hashlib.sha256(source.encode()).hexdigest()
+            else:
+                remaining = min(contract["build_budget_usd"] - spent, cone_left - (spent - spent_at_entry))
+                if remaining <= 0:   # re-checked per attempt: every attempt is spend
+                    self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
+                    break
+                if self.builder_cap is not None:   # per attempt: this function's remaining signed budget
+                    self.builder.max_budget_usd = min(self.builder_cap, remaining)
+                try:
+                    built = self.builder.build(request, feedback)
+                except Exception as exc:  # the builder is untrusted; its failure is evidence
+                    why = f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300]
+                    cost = getattr(exc, "cost_usd", None)
+                    if cost:   # billed although no candidate came back (e.g. a withheld substituted answer)
+                        self.journal.record("genesis.unbuilt", {"deficit_id": deficit_id, "attempt": attempt,
+                                                                "cost_usd": cost, "why": why, "at": iso(now)})
+                    self._route(deficit_id, "builder", why, None)
+                    break
+                spent += float(built.get("cost_usd") or 0.0)
+                source = built["source"]
+                digest = hashlib.sha256(source.encode()).hexdigest()
+                self.journal.record("genesis.built", {
+                    "deficit_id": deficit_id, "attempt": attempt, "builder": built["builder"],
+                    "prompt_sha256": built.get("prompt_sha256"), "source_sha256": digest,
+                    "cost_usd": built.get("cost_usd"), "sees": "description, signature, public examples only",
+                    "served_model": built.get("served_model"), "routes_tried": built.get("routes_tried"),
+                    **({"model_digest": built["model_digest"]} if built.get("model_digest") else {}),
+                    # the model identity evidence: what was asked for and whether another model answered
+                    **{k: built[k] for k in ("requested_model", "substituted") if built.get(k) is not None}},
+                    key=[deficit_id, attempt, digest])
             problems = builders.screen(source)
             path = self.objects.path("sha256:" + digest)
             if not problems:
@@ -1076,15 +1109,25 @@ class Genesis:
                         raise CapabilityError("built-source path is not a regular file or symlink")
                     path.rename(path.with_name(f"{path.name}.unverified-{actual[:16]}"))
                     self.objects.put(source.encode())
-            public_ok, public = (False, {}) if problems else builders.verify(path, contract["examples"])
-            passed, report = (False, {"screen": problems}) if problems else builders.verify(
-                path, contract["examples"] + contract["held_out"])
+            try:
+                public_ok, public = (False, {}) if problems else builders.verify(path, contract["examples"])
+                passed, report = (False, {"screen": problems}) if problems else builders.verify(
+                    path, contract["examples"] + contract["held_out"])
+            except CapabilityError as exc:      # a host outage: no verdict; the paid candidate is judged later
+                self._route(deficit_id, "builder", f"attempt {attempt} not judged: host outage ({str(exc)[:160]})",
+                            None)
+                raise
             report = {"screen": problems, "public": public, "cases": report.get("cases"),
                       "failed_cases": len(report.get("failures", [])), "isolation": report.get("isolation")}
             if passed and replay is not None:  # must not repeat the predecessor's failure on the live input
                 try:
                     replayed = builders.execute(path, [replay])[0]
+                except subprocess.TimeoutExpired as exc:
+                    raise CapabilityError(f"the service replay did not finish within {exc.timeout}s",
+                                          failure_class="transient") from None
                 except CapabilityError as exc:
+                    if exc.failure_class == "transient":
+                        raise
                     replayed = {"ok": False, "error": str(exc)[:200]}
                 report["service_replay"] = {"passed": bool(replayed.get("ok")),
                                             "error": None if replayed.get("ok") else str(replayed.get("error"))[:200]}
@@ -1126,6 +1169,22 @@ class Genesis:
             self._route(deficit_id, "builder", f"attempt {attempt} failed verification", None)
         self._route(deficit_id, "founder", "escalated", None)
         return None
+
+    def _unjudged_builds(self, deficit_id: str) -> list[tuple[dict, int]]:
+        """Paid candidates of this deficit that an outage left without a verdict, with their retained source."""
+        judged = {e.payload["capability_id"] for e in self.journal.replay("genesis.verified")
+                  if e.payload["deficit_id"] == deficit_id}
+        out = []
+        for event in self.journal.replay("genesis.built"):
+            p = event.payload
+            if p["deficit_id"] != deficit_id or f"built:{p['source_sha256']}" in judged:
+                continue
+            try:
+                data = self.objects.read("sha256:" + p["source_sha256"])     # digest-checked, no symlinks
+            except CapabilityError:
+                continue                       # unretained or changed: never judged from other bytes
+            out.append(({**p, "source": data.decode("utf-8", errors="replace")}, p["attempt"]))
+        return out
 
     def _built_manifest(self, function, contract, built, digest, deficit_id, report) -> CapabilityManifest:
         return CapabilityManifest(
@@ -1170,7 +1229,12 @@ class Genesis:
                 path.write_bytes(case["data"])
                 try:
                     got = adapter({"path": str(path)}, ctx)[spec["output_field"]]
+                except subprocess.TimeoutExpired:   # the host, not the binary: no verdict either way
+                    raise CapabilityError(f"verifying {candidate.binary_name} timed out",
+                                          failure_class="transient") from None
                 except Exception as exc:  # candidate failure is evidence, not a crash
+                    if isinstance(exc, CapabilityError) and exc.failure_class == "transient":
+                        raise
                     failures.append({"case": case["name"], "error": type(exc).__name__})
                     continue
                 if got != case["expected"]:

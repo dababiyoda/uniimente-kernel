@@ -376,3 +376,40 @@ def test_a_pipeline_consumer_of_a_reconciled_producer_is_held_and_the_alternativ
         assert "alt" in ran and "copy" not in ran
         assert body.engine.book.missions["m:pipe"].status == "ACHIEVED"
         assert not [e for e in body.journal.replay("mission.blocked") if e.payload["blocker"]["type"] == "no_strategy"]
+
+
+def test_a_ledger_wedged_by_the_old_shared_reconciliation_question_is_asked_again(tmp_path):
+    """Third review (measurement): a body that ran the old code holds a blocker naming attempt 0's answered
+    request for attempt 1's uncertain dispatch; every tick raised EventError after the upgrade. The stale
+    answer is now recognised and the founder is asked about attempt 1."""
+    home, key, body_id, _ = make_body(tmp_path)
+    note = workspace(home, "m:wedged") / "c.txt"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:wedged", checks=[note_check("c", note, "ok")],
+        strategies=[{"action_id": "w", "capability": "fs.write", "target": "workspace:c.txt",
+                     "params": {"relative_path": "c.txt", "content": "ok"}, "advances": ["c"], "rationale": "w"}],
+        capabilities=["fs.read", "fs.write"])))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        real, calls = body.registry.adapters["fs.write"], []
+
+        def adapter(params, ctx):
+            calls.append(1)
+            if len(calls) <= 2:
+                raise RuntimeError("power lost mid-effect")
+            return real(params, ctx)
+        body.registry.adapters["fs.write"] = adapter
+        tick(body, clock, 3)
+        first = reconcile(body, key, body_id, clock, "reconcile_not_executed")
+        # What the old code left: attempt 1's blocker naming attempt 0's (answered) request.
+        m = body.engine.book.missions["m:wedged"]
+        body.journal.record("mission.blocked", {"mission_id": "m:wedged", "blocker": {
+            "type": "reconciliation", "request_id": first["request_id"], "action_id": "w",
+            "why": "uncertain completion; no blind retry", "reconsider": "founder reconciliation decision"}},
+            key=["m:wedged", "retained-old-blocker", m.blocker])
+        body.engine.book.rebuild()
+        tick(body, clock, 2)                                              # raised EventError before
+        [again] = [r for r in body.engine.book.open_requests() if r["kind"] == "RECONCILIATION"]
+        assert again["request_id"] != first["request_id"]
+        reconcile(body, key, body_id, clock, "reconcile_not_executed")
+        assert body.engine.book.missions["m:wedged"].status == "ACHIEVED"

@@ -90,17 +90,33 @@ def _call(params, ctx: InvocationContext, table: str) -> dict:
         os.close(lock)
 
 
-def _canonical_state(ctx) -> str | None:
-    """state_after of this mission's last canonical foundry.apply receipt ("absent" before any; None if unknown)."""
-    state = "absent"
-    for event in ctx.journal.replay("mission.action"):
+def _canonical_state(ctx) -> tuple[str | None, str | None]:
+    """(state, vouching) of this mission's store as its canonical facts leave it ("absent" before any apply).
+
+    Read in ledger order over this mission's foundry.apply actions and compensations: a receipted DONE sets
+    its state_after. A founder reconciliation of an interrupted apply as executed vouches that the store
+    holds that apply's result, whose digest no receipt retained: the first later call anchors the store as
+    it then finds it (a foundry.anchored fact), and ``vouching`` names that reconciliation until it is
+    anchored. Limit: a same-UID edit between the reconciliation and that first call is anchored with it."""
+    anchors = {e.payload["reconciliation"]: e.payload["state"] for e in ctx.journal.replay("foundry.anchored")
+               if e.payload.get("mission_id") == ctx.mission_id}
+    state, vouching = "absent", None
+    for event in ctx.journal.replay("mission."):
+        if event.type not in ("greg.mission.action", "greg.mission.compensated"):
+            continue
         p = event.payload
         if p.get("mission_id") != ctx.mission_id or p.get("capability") != "foundry.apply" or p.get("status") != "DONE":
             continue
-        record = ctx.journal.ledger.find(p["receipt"]) if p.get("receipt") else None
-        output = record.payload.get("result", {}).get("output") if record and record.record_type == "receipt" else None
-        state = (output.get("execution") or {}).get("state_after") if isinstance(output, dict) else None
-    return state
+        if p.get("receipt"):
+            record = ctx.journal.ledger.find(p["receipt"])
+            output = record.payload.get("result", {}).get("output") if record and record.record_type == "receipt" \
+                else None
+            state = (output.get("execution") or {}).get("state_after") if isinstance(output, dict) else None
+            vouching = None
+        elif p.get("route") == "founder_reconciliation":
+            state = anchors.get(event.event_id)
+            vouching = None if event.event_id in anchors else event.event_id
+    return state, vouching
 
 
 def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
@@ -112,9 +128,22 @@ def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
         before = stage(root.parent, staged)
         # The store is a projection of this mission's Gate receipts: an edit outside foundry.apply is never
         # served (query) nor laundered into a new receipted state (apply). Standalone callers pass no journal.
-        if ctx.journal is not None and ctx.mission_id and before != (expected := _canonical_state(ctx)):
-            raise CapabilityError(f"Foundry store {before} differs from this mission's last canonical foundry.apply "
-                                  f"state_after {expected}; refused", failure_class="verifier_insufficient")
+        if ctx.journal is not None and ctx.mission_id:
+            expected, vouching = _canonical_state(ctx)
+            if vouching is not None:
+                try:
+                    ctx.journal.record("foundry.anchored", {
+                        "mission_id": ctx.mission_id, "reconciliation": vouching, "state": before,
+                        "basis": "founder reconciled the interrupted foundry.apply as executed; anchored at the "
+                                 "first later call"}, key=[ctx.mission_id, "foundry-anchor", vouching])
+                except Exception:          # e.g. the appraiser's read-only view: nothing may be anchored there
+                    raise CapabilityError("Foundry store awaits its anchor after a founder reconciliation; refused",
+                                          failure_class="verifier_insufficient") from None
+                expected = before
+            if before != expected:
+                raise CapabilityError(f"Foundry store {before} differs from this mission's last canonical "
+                                      f"foundry.apply state_after {expected}; refused",
+                                      failure_class="verifier_insufficient")
         with open(Path(temporary) / "request.json", "w+b") as inp, \
                 open(Path(temporary) / "result.json", "w+b") as out, \
                 open(Path(temporary) / "error.txt", "w+b") as err:

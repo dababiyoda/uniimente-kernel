@@ -65,9 +65,14 @@ def test_denied_request_never_connects_and_malformed_requests_are_journaled(tmp_
 def test_fail_closed_without_confinement(tmp_path, monkeypatch):
     from foundry.systems import segmentation
     relay = Relay({}, Journal(tmp_path / "j"))
-    monkeypatch.setattr(segmentation, "_confine", lambda: segmentation.os._exit(97))
+    def broken():
+        raise OSError("seccomp unavailable")
+
+    monkeypatch.setattr(segmentation, "_INSTALL_FILTER", broken)
     with pytest.raises(SegmentationError, match="refused"):
-        run_confined([sys.executable, "-c", "print(1)"], identity="x", relay=relay, cwd=tmp_path)
+        run_confined([sys.executable, "-c", f"open({str(tmp_path / 'ran')!r}, 'w')"], identity="x", relay=relay,
+                      cwd=tmp_path)
+    assert not (tmp_path / "ran").exists()
     monkeypatch.setattr(segmentation.sys, "platform", "darwin")
     with pytest.raises(SegmentationError, match="Linux"):
         run_confined([sys.executable, "-c", "print(1)"], identity="x", relay=relay, cwd=tmp_path)
@@ -93,3 +98,31 @@ def test_a_replaced_filter_file_cannot_open_sockets_for_a_later_component(tmp_pa
     relay = Relay(policy={}, journal=Journal(tmp_path / "journal.jsonl"))
     proc = run_confined([sys.executable, "-c", probe], identity="probe", relay=relay, cwd=tmp_path)
     assert proc.stdout.decode().strip() == "denied"
+
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="seccomp is Linux")
+def test_a_component_that_exits_97_ran_and_is_not_reported_as_refused(tmp_path):
+    """Third review (containment): run_confined read exit 97 as 'confinement unavailable', so a component (or
+    code planted for it) could fake a refusal. The refusal is now signalled out of band."""
+    relay = Relay({}, Journal(tmp_path / "j"))
+    marker = tmp_path / "ran"
+    proc = run_confined([sys.executable, "-c", f"open({str(marker)!r}, 'w').write('x'); raise SystemExit(97)"],
+                        identity="x", relay=relay, cwd=tmp_path)
+    assert proc.returncode == 97 and marker.read_text() == "x"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="seccomp is Linux")
+@pytest.mark.parametrize("planted", ["import os\nos._exit(97)\n",
+                                     "import sys\nprint('{\"status\": 200, \"body\": \"Rk9SR0VE\"}')\nsys.exit(0)\n"])
+def test_code_planted_in_the_mission_workspace_is_never_imported_by_the_fetch_component(tmp_path, planted):
+    """Third review (containment): the fetch component ran with the mission workspace as its working directory
+    and on sys.path, so a planted base64.py could fake a refusal or forge a response the relay never saw."""
+    from foundry.systems.segmentation import confined_fetch
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "base64.py").write_text(planted)
+    (workspace / "json.py").write_text(planted)
+    relay = Relay({}, Journal(tmp_path / "j"))                   # nothing is allowed: the honest outcome is a denial
+    with pytest.raises(PermissionError):
+        confined_fetch("https://example.invalid/x", identity="x", relay=relay, cwd=workspace, max_bytes=1000)

@@ -248,3 +248,125 @@ def test_build_spend_counts_against_the_signed_light_cone_budget(tmp_path):
         assert "APPROVAL" in [e.payload["kind"] for e in body.journal.replay("decision.requested")]
     finally:
         body.close()
+
+
+class _PaidBuilder(builders.StaticBuilder):
+    def build(self, request, feedback=None):
+        return {**super().build(request, feedback), "cost_usd": 0.30}
+
+
+def test_an_outage_before_a_build_pays_for_nothing_and_the_build_runs_once_the_host_is_back(tmp_path, monkeypatch):
+    """Third review (typed failures): an outage during builder verification failed each paid candidate,
+    paid for a second, then asked the founder; the mission stayed blocked after the host returned."""
+    from greg.capabilities import CapabilityError
+    home, key, body_id, data = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", _mission(data)))
+    builder = _PaidBuilder(GOOD, GOOD, GOOD, GOOD, identity="paid")
+    real = builders.run_isolated
+
+    def down(argv, **kw):
+        raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
+
+    monkeypatch.setattr(builders, "run_isolated", down)
+    body, states = _run(home, builder, ticks=3)
+    try:
+        assert not body.journal.replay("genesis.built") and not body.journal.replay("genesis.verified")
+        monkeypatch.setattr(builders, "run_isolated", real)
+        clock = body.clock
+        for _ in range(6):
+            clock.advance(600)
+            states.append(body.tick()["missions"][0]["state"])
+        assert "ACHIEVED" in states
+        assert [e.payload["cost_usd"] for e in body.journal.replay("genesis.built")] == [0.30]
+        assert "CAPABILITY_ATTACH" not in [e.payload["kind"] for e in body.journal.replay("decision.requested")]
+    finally:
+        body.close()
+
+
+def test_a_paid_candidate_an_outage_left_unjudged_is_judged_later_and_never_paid_for_again(tmp_path, monkeypatch):
+    from greg.capabilities import CapabilityError
+    home, key, body_id, data = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", _mission(data)))
+    builder = _PaidBuilder(GOOD, GOOD, GOOD, GOOD, identity="paid")
+    real, calls = builders.verify, []
+
+    def outage_once(path, vectors):
+        calls.append(path)
+        if len(calls) == 1:
+            raise CapabilityError("the isolated verifier did not finish within 10s", failure_class="transient")
+        return real(path, vectors)
+
+    monkeypatch.setattr(builders, "verify", outage_once)
+    body, states = _run(home, builder, ticks=1)
+    try:
+        assert len(body.journal.replay("genesis.built")) == 1 and not body.journal.replay("genesis.verified")
+        clock = body.clock
+        for _ in range(6):
+            clock.advance(600)
+            states.append(body.tick()["missions"][0]["state"])
+        assert "ACHIEVED" in states
+        assert len(builder.calls) == 1 and len(body.journal.replay("genesis.built")) == 1    # paid once
+        assert [e.payload["passed"] for e in body.journal.replay("genesis.verified")] == [True]
+    finally:
+        body.close()
+
+
+def test_a_candidate_that_loops_is_judged_failed_by_its_cpu_limit_not_deferred_as_an_outage(tmp_path):
+    loop = "def run(text):\n    while True:\n        pass\n"
+    path = tmp_path / "candidate.py"
+    path.write_text(loop)
+    passed, report = builders.verify(path, CONTRACT["examples"])
+    assert passed is False and "exited" in report["failures"][0]["error"]
+
+
+class _CapBillingBuilder(builders.StaticBuilder):
+    """Bills exactly the bound it is given (worst case)."""
+    max_budget_usd = 0.5
+
+    def build(self, request, feedback=None):
+        return {**super().build(request, feedback), "cost_usd": self.max_budget_usd}
+
+
+def test_a_build_after_a_paid_action_is_bounded_by_what_the_cone_has_left(tmp_path):
+    """Third review (spend): build spend was booked on the cone but never bounded by it, so a build after a
+    paid action overspent the cone and every free sensor was then refused (a SENSOR_SCOPE stall)."""
+    from tests.greg_fixtures import note_check, workspace, write_strategy
+    home, key, body_id, data = make_body(tmp_path)
+    doc = data / "FIRST_MISSION.md"
+    doc.write_text("# Runbook\n- [x] install\n- [ ] enroll key\n  - [ ] load launchd\n* [ ] accept closure\n")
+    note = workspace(home, "m:order") / "c.txt"
+    counted = {"check_id": "counted", "description": "open steps known",
+               "sensor": {"function": FUNCTION, "params": {"path": str(doc)}, "target": "fs:FIRST_MISSION.md"},
+               "predicate": {"op": "equals", "field": "unchecked", "value": 3}}
+    spec = mission("m:order", checks=[note_check("note", note, "ok"), counted],
+                   strategies=[write_strategy("w", "c.txt", "ok", ["note"], cost_usd=0.8)],
+                   capabilities=["fs.read", "fs.write", f"built.{FUNCTION}.*"], budget=1.0, auto_attach=True,
+                   closure={"kind": "infinite", "ladder": [["note"], ["note", "counted"]]})
+    spec["capability_specs"] = [dict(CONTRACT, build_budget_usd=0.5)]
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    body = Body(home, clock=clock, builder=_CapBillingBuilder(GOOD, identity="paid")).open()
+    try:
+        body.boot()
+        for _ in range(12):
+            clock.advance(60)
+            body.tick()
+        m = body.engine.book.missions["m:order"]
+        assert [e.payload["cost_usd"] for e in body.journal.replay("genesis.built")] == [pytest.approx(0.2)]
+        assert m.spent_usd == pytest.approx(1.0)
+        assert "SENSOR_SCOPE" not in [e.payload["kind"] for e in body.journal.replay("decision.requested")]
+    finally:
+        body.close()
+
+
+def test_an_overspent_cone_still_observes_its_checks_for_free():
+    from greg.lightcone import LightCone
+    cone = LightCone.from_dict({"capabilities": ["fs.read", "fs.write"], "targets": ["workspace:*"],
+                                "max_consequence_class": "internal_write", "budget_usd": 1.0,
+                                "horizon": "2099-01-01T00:00:00Z"})
+    assert cone.admits(capability="fs.read", target="workspace:x", consequence_class="read_only", cost_usd=0.0,
+                       spent_usd=1.9) == []
+    assert cone.admits(capability="fs.write", target="workspace:x", consequence_class="internal_write", cost_usd=0.0,
+                       spent_usd=1.9)                                  # a write is still refused
+    assert cone.admits(capability="fs.read", target="workspace:x", consequence_class="read_only", cost_usd=0.1,
+                       spent_usd=1.9)                                  # so is a paid read

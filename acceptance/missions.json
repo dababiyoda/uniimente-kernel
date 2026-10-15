@@ -143,6 +143,7 @@
       "tests/integration/test_goal_gravity_acceptance.py::test_section_33_acceptance_chain",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
       "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
+      "tests/unit/test_greg_active_constraint.py::test_a_pause_in_force_is_named_first_with_what_lifts_it",
       "tests/unit/test_greg_active_constraint.py::test_the_active_constraint_names_the_failing_check_the_held_work_and_what_lifts_the_block",
       "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
       "tests/unit/test_greg_gravity.py::test_one_turn_reaches_a_founder_decision_with_a_screened_ask_and_gate_proposals"
@@ -262,7 +263,7 @@
      "buildable_now": true,
      "dependency": "none",
      "next": "Add a per-mission active_constraint to the Body projection: the first failing check on the backcast path, the strategies held by precondition, and the current blocker kind (authority, capability, resource or evidence). Expose it in status()['goals'] and the console. In the G1 harness, assert that the first mission.action.routing.chosen advances the active-constraint check, and that strategies requiring it are listed as held. When the chosen strategy is out of cone, decision.requested must cite that same constraint and the exact capability. After the founder approves and the check passes, the constraint moves to the next node. A SIGKILL between those two steps must not change the computed constraint or create a second request.",
-     "closed_by": "greg.missions.active_constraint in status() with tests/unit/test_greg_active_constraint.py (SANDBOX)"
+     "closed_by": "greg.missions.active_constraint in status() with tests/unit/test_greg_active_constraint.py (SANDBOX): an answered or withdrawn request is reported as such, pending the next tick; a pause in force (the breaker's hold, a signed body pause, the PAUSE file, the mission's own pause) is named first under paused_by with what lifts it."
     },
     {
      "id": "G3",
@@ -1660,7 +1661,7 @@
      "id": "H.3",
      "obligation": "H.3 No unbounded retry loop",
      "coverage": "partial",
-     "notes": "Partial. Both counterexamples recorded on 2026-10-15 are fixed and pinned by regressions, and the process restart loop is bounded; the retry bounds of runtime services other than the Body host are not shown (gap G7), and the mission-level bound is shown only in-process.\n\nWhat the tests show:\n- SANDBOX_VERIFIED (in-process Body): two failing strategies settle into ACTED, ACTED, BLOCKED, WAITING, WAITING and stay that way across a restart; a tampered capability is re-formed rather than crash-looping; repairs share one signed build budget.\n- Counterexample 1 (fixed by f3dd17f, gap G2): a retry_safe read_only capability that raised every time returned RETRYING on 12 of 12 ticks with no cap, backoff or founder ask. tests/unit/test_greg_mission_retry_bound.py now pins at most 3 backed-off retries, then one NO_STRATEGY ask (SANDBOX).\n- Counterexample 2 (fixed by 8598452, gap G1): after one signed reconcile_not_executed answer, a non-retry_safe internal_write action was redispatched on every tick with no new ask (9 dispatches in 11 ticks). tests/unit/test_greg_mission_reconciliation.py now pins one reconciliation per dispatch and unknown spend reserved at its cap (SANDBOX).\n- Process level: supervisord (autorestart=unexpected, startretries=100), systemd and launchd restart a crashing Body without limit; the crash-loop breaker holds a real Body process that dies in every tick after 5 such boots within 10 minutes (heartbeat HELD, no mission tick) until a signed BODY_RESUME (gap G5, test_greg_crash_loop_process).\n- The proof host's max_attempts<=3 bound is driven to exhaustion: three replacement workers die, the host blocks for operator reconciliation, and asking again forks nothing (gap G6).\n- BODY_VERIFIED for a narrower property: the approval request is not re-escalated across SIGKILL and restart.\n- UNIT_VERIFIED bounds: DurableWorkflow max_retries leading to compensation, foundry with_retries (5 attempts, exponential backoff that honours retry-after), and the cognition model-call governor.",
+     "notes": "Partial. Both counterexamples recorded on 2026-10-15 are fixed and pinned by regressions, and the process restart loop is bounded; the retry bounds of runtime services other than the Body host are not shown (gap G7), and the mission-level bound is shown only in-process.\n\nWhat the tests show:\n- SANDBOX_VERIFIED (in-process Body): two failing strategies settle into ACTED, ACTED, BLOCKED, WAITING, WAITING and stay that way across a restart; a tampered capability is re-formed rather than crash-looping; repairs share one signed build budget.\n- Counterexample 1 (fixed by f3dd17f, gap G2): a retry_safe read_only capability that raised every time returned RETRYING on 12 of 12 ticks with no cap, backoff or founder ask. tests/unit/test_greg_mission_retry_bound.py now pins at most 3 backed-off retries, then one NO_STRATEGY ask (SANDBOX).\n- Counterexample 2 (fixed by 8598452, gap G1): after one signed reconcile_not_executed answer, a non-retry_safe internal_write action was redispatched on every tick with no new ask (9 dispatches in 11 ticks). tests/unit/test_greg_mission_reconciliation.py now pins one reconciliation per dispatch and unknown spend reserved at its cap (SANDBOX).\n- Process level: supervisord (autorestart=unexpected, startretries=100), systemd and launchd restart a crashing Body without limit; the crash-loop breaker holds a real Body process that dies in every tick after 5 such boots within 10 minutes (heartbeat HELD, no mission tick) until a signed BODY_RESUME (gap G5, test_greg_crash_loop_process).\n- The proof host's max_attempts<=3 bound is driven to exhaustion: three replacement workers die, the host blocks for operator reconciliation, and asking again forks nothing (gap G6).\n- BODY_VERIFIED for a narrower property: the approval request is not re-escalated across SIGKILL and restart.\n- UNIT_VERIFIED bounds: DurableWorkflow max_retries leading to compensation, foundry with_retries (5 attempts, exponential backoff that honours retry-after), and the cognition model-call governor.\n- The process-level crash-loop hold (H.G5) raises one founder ask, waits a full tick and measures nothing while held, and contains held-path faults (tests/unit/test_greg_crash_loop_breaker.py).",
      "tests": [
       "tests/integration/test_goal_chase.py::test_duplicate_observation_trigger_and_escalation_spam_suppressed",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
@@ -1671,6 +1672,10 @@
       "tests/unit/test_foundry_systems.py::test_distributed_controls_charge_exactly_once_resume_and_compensate",
       "tests/unit/test_greg_continuity.py::test_two_ineffective_strategies_wait_for_the_founder_instead_of_crash_looping",
       "tests/unit/test_greg_crash_loop_breaker.py",
+      "tests/unit/test_greg_crash_loop_breaker.py::test_a_clean_stop_ends_the_run_of_unfinished_boots",
+      "tests/unit/test_greg_crash_loop_breaker.py::test_a_held_body_with_a_due_mission_waits_a_full_tick_and_measures_nothing",
+      "tests/unit/test_greg_crash_loop_breaker.py::test_a_running_body_whose_work_fails_still_crashes_for_the_breaker_to_count",
+      "tests/unit/test_greg_crash_loop_breaker.py::test_each_hold_raises_exactly_one_ask_and_only_a_signed_resume_closes_it",
       "tests/unit/test_greg_local_mission.py::test_a_worker_that_always_dies_exhausts_the_bound_and_blocks_without_redispatch",
       "tests/unit/test_greg_mission_reconciliation.py::test_one_reconciliation_answer_settles_exactly_one_dispatch",
       "tests/unit/test_greg_mission_retry_bound.py",
@@ -1783,7 +1788,7 @@
      "buildable_now": true,
      "dependency": "none",
      "next": "Design and test a breaker: K unfinished boots inside a window W put the Body in a recorded HOLD state, raise one founder ask ('crash loop'), and stop executing mission ticks while staying observable.\n\nTest: run under supervisord with a driver that raises on tick 1 after startsecs (for example a capability state file that makes Body.open succeed and tick fail). Assert that after K restarts there is 1 hold event, 1 decision.requested, no new mission.action, and the heartbeat state is HELD. Also tighten service.systemd_unit with StartLimitBurst/StartLimitIntervalSec, plus a unit assertion.",
-     "closed_by": "greg/body.py crash-loop breaker with tests/unit/test_greg_crash_loop_breaker.py and tests/integration/test_greg_crash_loop_process.py (real process; the hold is lifted only by a signed BODY_RESUME)"
+     "closed_by": "greg/body.py crash-loop breaker with tests/unit/test_greg_crash_loop_breaker.py and tests/integration/test_greg_crash_loop_process.py (real process). The hold raises one CRASH_LOOP_HOLD founder ask that no DECISION answers and the resume withdraws; it is lifted only by a signed BODY_RESUME (the founder key, or a device key the founder delegated BODY_RESUME); a paused or held body waits a full tick, records no telemetry and contains a failure in the work it still does (recorded once as body.fault_contained); the count resets on a clean stop. Not done: the supervisor-level start limit the plan also named (it would put a held body into a failed unit instead of keeping it observable)."
     },
     {
      "id": "G6",
@@ -2362,14 +2367,14 @@
      "id": "L1",
      "obligation": "From the founder interface, a single mission can be traced: its decisions, actions, costs and outcomes, and why a metric moved.",
      "coverage": "partial",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
       "tests/integration/test_whole_machine_trace.py::test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_it",
       "tests/integration/test_whole_machine_trace_process.py::test_one_mission_runs_all_nine_links_on_a_real_body_process",
       "tests/unit/test_foundry_systems.py::test_observability_explains_a_real_greg_mission_and_why_a_metric_moved"
      ],
-     "notes": "SANDBOX_VERIFIED and partial (lowered from BODY_VERIFIED/covered on 2026-10-15). By clause:\n- decisions and actions: on a real `greg run` process the `greg foundry trace` CLI output names every capability the mission used and the founder decision's request id (BODY evidence, process test); the in-process trace and the observability test show the same, plus the decision.requested -> decision.answered -> mission.action order (SANDBOX);\n- outcomes: the appraisal verdict is asserted from the ledger (VERIFIED on the real process, VERIFIED in-process), but no test asserts that the founder interface's trace shows it;\n- costs: no test asserts any cost in the trace, at any tier;\n- why a metric moved: shown only by observability.exercise over sample events (UNIT); for the real Body mission the test asserts only that metrics() counts its closure (SANDBOX), not why it moved.\n`greg foundry trace --mission` and `greg foundry why` read the Body ledger."
+     "notes": "BODY_VERIFIED, partial. By clause, on a real `greg run` process (tests/integration/test_whole_machine_trace_process.py), read through the founder's own CLI:\n- decisions: the trace shows the ask, then exactly one decision.answered approve with its latency, before the approved write (ordered by ledger record time; before 2026-10-15 the CLI mixed tick time and record time and showed the write before the approve);\n- actions: every booked action appears in the trace with its receipt;\n- outcomes: the appraisal spans equal the retained appraisals, the last VERIFIED, verified_rate 1.0;\n- why a metric moved: `greg foundry why` on the verified appraisal names the founder's approve as Authority and the receipts of the actions before it; `greg foundry changed blocks` attributes the drop in blocks to the fs.write the founder approved (before 2026-10-15 it blamed whichever capability acted last).\nPartial: every cost in this mission is $0 and the span cost is the same ledger field it is compared with, so cost tracing is not independently shown at BODY tier; a nonzero cost through the trace is proven only at unit tier (tests/unit/test_foundry_systems.py audit)."
     },
     {
      "id": "L2",
@@ -2386,8 +2391,8 @@
     {
      "id": "L3",
      "obligation": "One mission is traced through all nine links in a single run: Goal -> Mind -> Organs -> Body -> Action -> Evidence -> Outcome -> Learning -> Updated Goal.",
-     "coverage": "partial",
-     "notes": "Partial: the Learning link of the run is vacuous. The run asserts routing_knowledge()['done'] >= 1 for each capability it used, which follows from the Action assertions alone (a DONE action is counted); no test asserts the appraisal-to-learning edge (that the separate appraisal's verdict changes what is learned). This requirement says one run passes through all nine links; it does not lift any link's own evidence tier, which the trace computes from that link's proofs (Organs and Evidence are UNIT_VERIFIED there). 2026-10-15: one founder-signed mission bound to a signed GOAL thinks (cognition.seed.solve), assesses a venture through both organs (stand-in organs with the real entry points), writes through the Gate, waits for and executes the signed approve, is receipted on the verified chain, verified by the separate appraiser, becomes routing knowledge for every capability it used, moves the goal's active node, and appears in `greg foundry trace`. In-process Body (SANDBOX). 2026-10-15: also on a real `greg run` process: the founder approves through `greg decide`, post-outcome evidence enters while the Body is stopped, and the `greg foundry trace` CLI shows every capability and the decision.",
+     "coverage": "covered",
+     "notes": "Covered at BODY_VERIFIED: one run passes through all nine links on a real Body process. The Learning link is the appraiser's verdict reaching routing knowledge: both runs assert routing_knowledge()['verified'] >= 1 for every capability used, a counter only a VERIFIED mission.appraised credits (until 2026-10-15 the runs asserted 'done', which follows from the Action link alone). The in-process run adds the contrast: the same retained acts appraised REFUTED credit nothing verified, count as refuted and give every capability a lower routing reliability, so they rank lower. This requirement does not lift any link's own tier, which the trace computes from that link's proofs.",
      "tests": [
       "tests/integration/test_whole_machine_trace.py::test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_it",
       "tests/integration/test_whole_machine_trace_process.py::test_one_mission_runs_all_nine_links_on_a_real_body_process"
@@ -2404,7 +2409,7 @@
      "buildable_now": true,
      "dependency": "none",
      "next": "One Body test: a signed GOAL bound to a mission whose strategy calls cognition (Mind) and venture.assess (Organs), closes through the Gate with appraisal, feeds a brief or routing outcome into improvement.learn, and asserts the goal's active node moves; then `greg foundry trace` shows it.",
-     "closed_by": "tests/integration/test_whole_machine_trace.py (one mission through all nine links in one run, traced by `greg foundry trace`; SANDBOX tier)"
+     "closed_by": "tests/integration/test_whole_machine_trace.py and tests/integration/test_whole_machine_trace_process.py: one mission through all nine links in one run, traced by `greg foundry trace`; the Learning link is the appraiser's verdict reaching routing knowledge (routing.track_record, ranked by routing.reliability), not improvement.learn, which the gap's plan named."
     },
     {
      "id": "G2",
@@ -2518,15 +2523,19 @@
     },
     {
      "link": "Learning",
-     "owner": "GREG improvement engine (the one learning engine)",
+     "owner": "GREG Default Routing: track record weighted by the appraiser's verdict",
      "code": [
-      "greg/improvement.py::learn"
+      "greg/routing.py::track_record",
+      "greg/routing.py::reliability",
+      "greg/missions.py::rank_key"
      ],
      "proof": [
-      "tests/unit/test_greg_improvement_attacks.py::test_a_verified_failure_claim_teaches_ready_first_checks_and_it_survives_process_death"
+      "tests/integration/test_whole_machine_trace.py::test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_it",
+      "tests/unit/test_greg_improvement_attacks.py::test_a_verified_failure_claim_teaches_ready_first_checks_and_it_survives_process_death",
+      "tests/unit/test_greg_spiderweb.py::test_appraiser_refutation_of_the_effect_lowers_routing_but_foreign_faults_do_not"
      ],
      "tier": "SANDBOX_VERIFIED",
-     "note": "Retained only on held-out evidence; survives process death."
+     "note": "The separate appraiser's verdict credits verified or refuted acts in routing knowledge, and reliability ranks the next mission's strategies by it. A second learning path, greg/improvement.py::learn, moves the brief levers from CRITIQUE labels and writes nothing for a mission like this one (its proof stays cited). SANDBOX: the ranking effect is shown in-process; the real-process run shows the verified credit only."
     },
     {
      "link": "Updated Goal",

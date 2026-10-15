@@ -126,6 +126,7 @@ def test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_
         assert knowledge[capability]["verified"] >= 1, knowledge.get(capability)   # credited by the VERIFIED verdict
         assert refuted[capability]["done"] == knowledge[capability]["done"]       # the same acts, appraised REFUTED,
         assert (refuted[capability]["verified"], refuted[capability]["refuted"]) == (0, knowledge[capability]["done"])
+        assert routing.reliability(refuted[capability]) < routing.reliability(knowledge[capability])  # and rank lower
 
     world.ingest("ops", "check the watch after shipping")
     world.tick(2)

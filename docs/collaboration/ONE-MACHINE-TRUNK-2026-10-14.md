@@ -167,6 +167,26 @@ A second workflow re-ran each third-review probe against the fixed tree (eleven 
 | Compensation: ran when the capability returned before the founder answered; refused on an overrun cone; a pre-check signed self-spending compensation ran; an answer arriving with the abandon was never recorded | Waits for the founder once asked; unpaid by construction so admitted; refused at run time; nothing compensated while a reconciliation is open, and the answer is recorded for an ended mission |
 | Foundry: anchoring at the first later call accepted edits made while the founder deliberated | Write-ahead `foundry.committing` digest; a reconciliation admits exactly it or the unchanged prior state |
 
+### 6e. The moved base, and a review of how it joins this trunk (2026-10-15)
+
+The base branch moved to `0ae4c94` (#173 head `19bbdcb`: Goal Gravity on the GREG body). `6ad8944` merges it and keeps both sides:
+- `MissionBook.fold` is the base's; build-spend booking moves into it.
+- `_pursue` takes the base's preparation mode and keeps this trunk's input holds.
+- Body's per-tick ordering method is renamed `_gravity_order`: the base caches its binding on `body._goal_gravity`, and the clash failed its tests until the rename.
+
+`44f7c35` runs the institutional verifier as CI job 9. Its V2 re-runs `tests/unit`, which pushed job 1 past its 30 minutes. The base `0ae4c94` times out at the same step.
+
+A workflow then reviewed the joined system. Five lenses (projection, asks, sensing, ordering, surfaces) each put every finding to a skeptic who had to reproduce it. It upheld 10 of 13 findings, which collapse to four defects. All four are fixed in the commit that adds this section, each by a test in `tests/unit/test_greg_goal_gravity_merge.py` that fails before the fix.
+
+| Defect | Origin | Fix |
+|---|---|---|
+| A compensation APPROVAL (undo of an executed goal move) appeared among the goal's own decisions, labelled "standing approval" | Merge: goal views linked asks by (mission, action) | Goal views link asks by the move's exact scope digest, as the attention store and `_settle` do |
+| The goal's ask-ahead named a strategy as "run first" that `_pursue` holds for an unresolvable input, so the goal's ask was refused as "could change nothing" | Base gap for `bind`; this trunk's `$from_action` hold widened it | `MissionEngine._inputs` is the one hold rule; `first_choice(held=...)` applies it when asking ahead |
+| A read that did not measure the world was goal evidence. A refused or host-stopped read became an attributed `False`: it reopened completed goals and minted asks that stayed open after recovery | Base, for refused sensors; this trunk's typed outages added a path | `missions.measured()`, the engine's "sensor ..." rule, now also gates Goal Gravity's `_sense` and the SENSOR_RETRY path |
+| After GREG's own compensation undid the effect a completed goal observed, the goal still said "holding ... a regressed check reopens this goal", although an ended mission never observes again | Merge | The completion label says it no longer holds and names the compensation and its receipt |
+
+The three rejected findings were real behaviour but not defects of the join (two are the `bind` gap above, now closed with it).
+
 ## 7. Gap map (seven investigators and a critic) and what was closed
 
 | Rank | Gap | Status on this trunk |

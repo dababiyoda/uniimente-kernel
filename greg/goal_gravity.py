@@ -27,7 +27,7 @@ recomputed from Gate receipts), never a claim of external verification.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import re
 from types import SimpleNamespace
@@ -50,8 +50,8 @@ from greg.authority import PRINCIPAL, AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityManifest
 from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes, spent_nonce
 from greg.journal import SOURCE, iso
-from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, pursued_checks, \
-    strategy_scope
+from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, measured, \
+    pursued_checks, strategy_scope
 from provenance.ledger import sha256_json
 
 SCHEMA = "greg-goal-gravity-binding/1"
@@ -1006,7 +1006,9 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
         t, p = rec.payload.get("type"), rec.payload.get("payload", {})
         if t in PATH_EVENTS:
             path_changed = True
-        if t == "greg.mission.observed" and p.get("receipt"):
+        if t == "greg.mission.observed" and p.get("receipt") and measured(p):
+            # A read that did not measure the world (refused, stopped by the host, abstained) says nothing about
+            # the check: recomputing the predicate over its output would read the fault as the world.
             m = book.missions.get(p["mission_id"])
             check = next((c for c in (m.spec["success_checks"] if m else []) if c["check_id"] == p["check_id"]), None)
             receipt = None if check is None else _sensor_receipt(body.ledger, gate, m, check, p["receipt"])
@@ -1158,11 +1160,30 @@ def _mission_rows(book: MissionBook, mids) -> list[dict]:
     return rows
 
 
-def _goal_requests(book: MissionBook, gid: str, spec: GoalSpec) -> list[str]:
-    links = {(m.payload.get("mission_id"), m.payload.get("action_id")) for m in _moves(spec)}
-    return [r["request_id"] for r in book.open_requests()
-            if (r.get("evidence") or {}).get("goal_id") == gid
-            or (r.get("kind") == "APPROVAL" and (r.get("mission_id"), r.get("action_id")) in links)]
+def _move_scopes(book: MissionBook, manifests: dict, spec: GoalSpec) -> set[tuple[str, str]]:
+    """(mission_id, scope digest) of each declared move's exact strategy scope: the one link from a goal to the
+    engine's APPROVAL asks, as the attention store and ``_settle`` match. An APPROVAL of another scope that names
+    the same strategy (the compensation of its executed effect) is the mission's decision, not the goal's move."""
+    scopes = set()
+    for move in _moves(spec):
+        ref = move.payload if isinstance(move.payload, dict) else {}
+        try:
+            scope = strategy_scope(book.missions.get(ref.get("mission_id")), manifests, ref.get("action_id"),
+                                   now=datetime.now(timezone.utc))      # the time reads only the cone, not the scope
+        except MissionError:
+            continue
+        scopes.add((scope["mission_id"], scope["scope_digest"]))
+    return scopes
+
+
+def _goal_request(r: dict, gid: str, scopes: set) -> bool:
+    return (r.get("evidence") or {}).get("goal_id") == gid or \
+        (r.get("kind") == "APPROVAL" and (r.get("mission_id"), r.get("scope_digest")) in scopes)
+
+
+def _goal_requests(book: MissionBook, manifests: dict, gid: str, spec: GoalSpec) -> list[str]:
+    scopes = _move_scopes(book, manifests, spec)
+    return [r["request_id"] for r in book.open_requests() if _goal_request(r, gid, scopes)]
 
 
 def _stop_label(facts: FounderFacts, gid: str, status: str) -> str | None:
@@ -1180,10 +1201,34 @@ def _stop_label(facts: FounderFacts, gid: str, status: str) -> str | None:
         f"stopped by your device ({stop['principal'].split(':', 1)[-1]})"
 
 
+def _undone(book: MissionBook, spec: GoalSpec) -> list[str]:
+    """Plan nodes whose observed effect GREG's own compensation undid after the bound mission ended. An ended
+    mission never observes again, so no regression observation can reopen the goal for them."""
+    nodes = {node.sbm: node.node_id for node in spec.plan}
+    out = []
+    for mid in spec.authority.get("missions", []):
+        m = book.missions.get(mid)
+        if m is None or m.status not in TERMINAL:
+            continue
+        advances = {s["action_id"]: s.get("advances", []) for s in m.spec["strategies"]}
+        for c in book.journal.replay("mission.compensated"):
+            p = c.payload
+            hit = [nodes[f"{mid}.{check}"] for check in advances.get(p.get("action_id"), [])
+                   if f"{mid}.{check}" in nodes]
+            if p.get("mission_id") == mid and p.get("status") == "DONE" and hit:
+                out.append(f"GREG compensated {p['action_id']} of {mid} after it ended {m.status} (receipt "
+                           f"{str(p.get('receipt'))[:19]}), undoing the effect behind {', '.join(hit)}")
+    return out
+
+
 def _completion_label(book: MissionBook, spec: GoalSpec, status: str) -> str | None:
     """What "completed" means on the founder surfaces: observation-tier, and never the end of a maintenance goal."""
     if status != "completed":
         return None
+    undone = _undone(book, spec)
+    if undone:
+        return ("no longer holds: " + "; ".join(undone) + ". The mission has ended, so nothing re-verifies it and "
+                "no observation can reopen this goal")
     standing = [mid for mid in spec.authority.get("missions", []) if (m := book.missions.get(mid)) is not None
                 and m.status not in TERMINAL and m.spec["closure"]["kind"] == "infinite"]
     if standing:
@@ -1212,7 +1257,7 @@ def projection(journal, *, closure: bool = True) -> dict:
                "missions": _mission_rows(book, spec.authority.get("missions", [])),
                "moves": [m.intervention_id for m in _moves(spec)],
                "refused_routes": len(state.preferences.get("refused_routes", [])),
-               "open_requests": _goal_requests(book, gid, spec), "supersedes": spec.supersedes}
+               "open_requests": _goal_requests(book, facts.manifests, gid, spec), "supersedes": spec.supersedes}
         if gid in ok:
             goals.append({**row, "admitted": True, "authorization_command": ok[gid]})
         else:
@@ -1282,10 +1327,8 @@ def evidence(journal, goal_id: str) -> dict:
     command_events = [e for e in journal.replay("command.accepted") if e.payload.get("digest") == ok.get(gid)]
     mids = set(spec.authority.get("missions", []))
     book = MissionBook(journal)
-    links = {(m.payload.get("mission_id"), m.payload.get("action_id")) for m in _moves(spec)}
-    requests = [rid for rid, r in book.requests.items()
-                if (r.get("evidence") or {}).get("goal_id") == gid
-                or (r.get("kind") == "APPROVAL" and (r.get("mission_id"), r.get("action_id")) in links)]
+    scopes = _move_scopes(book, facts.manifests, spec)
+    requests = [rid for rid, r in book.requests.items() if _goal_request(r, gid, scopes)]
     return {
         "goal_id": gid, "admitted": gid in ok,
         "authorization_record": reg.authorization_hash(gid),

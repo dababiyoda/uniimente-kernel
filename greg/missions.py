@@ -305,6 +305,13 @@ def blames_strategy(reason: str) -> bool:
     return reason.startswith("executed but ") and ": sensor " not in reason
 
 
+def measured(observation: dict) -> bool:
+    """Whether a recorded observation measured the world. The engine records a read that did not (the sensor
+    call refused or failed, the host stopped it, or the receipt abstained) with a "sensor ..." detail, the
+    marker its SENSOR_RETRY path and ``blames_strategy`` read; a predicate's own detail never starts so."""
+    return not str(observation.get("detail", "")).startswith("sensor ")
+
+
 def evaluate_predicate(predicate: dict, output) -> tuple[bool, str]:
     op = predicate["op"]
     try:
@@ -392,17 +399,19 @@ def rank_key(s: dict, index: int, failing: set, manifest, record: dict | None, v
     return -expected, route, index, estimate
 
 
-def first_choice(spec: dict, failing: set, *, manifest_for, records: dict, failed=(), excluded=()) -> str | None:
+def first_choice(spec: dict, failing: set, *, manifest_for, records: dict, failed=(), excluded=(),
+                 held=()) -> str | None:
     """The strategy the mission's own selection ranks first for these failing checks, or None.
 
     The candidates are ``_pursue``'s: strategies advancing a failing check, not failed, not excluded, whose
-    signed preconditions (``requires``) are not among the failing checks. Bound inputs are not resolved here:
-    a bound strategy ranked first that cannot bind yet is held back at run time, never promoted past."""
+    signed preconditions (``requires``) are not among the failing checks, and not ``held``: strategies whose
+    typed inputs cannot resolve now, which ``_pursue`` holds the same way (``MissionEngine._inputs``). A caller
+    without the ledger (``goal_from_mission``) passes none and keeps the signed order."""
     value = float(spec.get("value_per_check_usd", 1.0))
     ranked = []
     for index, s in enumerate(spec["strategies"]):
         if not set(s["advances"]) & failing or s["action_id"] in failed or s["action_id"] in excluded \
-                or set(s.get("requires", [])) & failing:
+                or set(s.get("requires", [])) & failing or s["action_id"] in held:
             continue
         manifest = manifest_for(s)
         key = rank_key(s, index, failing, manifest, records.get(manifest.capability_id) if manifest else None, value)
@@ -748,8 +757,10 @@ class MissionEngine:
                                f"the mission's loop pursues ({sorted(pursued)}): it would never run it")
         # Only the move the mission's own selection would run next for these checks may be asked about ahead:
         # one consequential decision is one ask, and its approve is what the mission then runs.
+        held = {s["action_id"] for s in m.spec["strategies"] if set(s["advances"]) & checks and self._held(m, s)}
         first = first_choice(m.spec, checks, manifest_for=self._manifest_for,
-                             records=routing.track_record(self.journal), failed=m.failed, excluded=m.excluded)
+                             records=routing.track_record(self.journal), failed=m.failed, excluded=m.excluded,
+                             held=held)
         if first != action_id:
             raise MissionError(f"for {', '.join(sorted(checks))} the mission's own selection runs {first} first, not "
                                f"{action_id}: it would ask for (or run) {first}, so an approve of {action_id} could "
@@ -1091,7 +1102,7 @@ class MissionEngine:
             streak = 0
             for obs in reversed([e.payload for e in self.journal.replay("mission.observed")
                                  if e.payload["mission_id"] == m.mission_id]):
-                if obs["check_id"] in errors and obs["detail"].startswith("sensor "):
+                if obs["check_id"] in errors and not measured(obs):
                     streak += 1
                 else:
                     break
@@ -1159,6 +1170,24 @@ class MissionEngine:
             return self._settle_uncertain(m, strategy, manifest, aid, record["attempt"], record.get("scope_digest"),
                                           now)
         return None
+
+    def _inputs(self, m: MissionState, s: dict) -> tuple[dict, list, list]:
+        """A strategy's params with its typed inputs resolvable now: signed ``bind`` edges, then inline
+        ``$from_action`` references, both read from this mission's retained Gate receipts. Raises Unbound or
+        BindingError while one cannot resolve: the one hold rule ``_pursue`` selects under and ``_askable``
+        asks ahead under."""
+        from greg.pipeline import resolve
+        bound = self._bind(m, s) if s.get("bind") else (s.get("params", {}), [], [])
+        resolve(bound[0], self.journal, m.mission_id)
+        return bound
+
+    def _held(self, m: MissionState, s: dict) -> bool:
+        from greg.pipeline import BindingError
+        try:
+            self._inputs(m, s)
+        except (Unbound, BindingError):
+            return True
+        return False
 
     def _bind(self, m: MissionState, s: dict) -> tuple[dict, list, list]:
         """Resolve a strategy's typed input edges from retained Gate receipts of this mission.
@@ -1914,15 +1943,9 @@ class MissionEngine:
             if set(s.get("requires", [])) & failing:
                 held[s["action_id"]] = sorted(set(s["requires"]) & failing)
                 continue
-            if s.get("bind"):
-                try:
-                    bound[s["action_id"]] = self._bind(m, s)
-                except Unbound as why:
-                    held[s["action_id"]] = [f"input: {why}"]
-                    continue
-            try:      # inline $from_action inputs are held the same way: an alternative runs, or the founder is asked
-                resolve(bound.get(s["action_id"], (s.get("params", {}),))[0], self.journal, m.mission_id)
-            except BindingError as why:
+            try:      # inputs that cannot resolve yet hold the strategy: an alternative runs, or the founder is asked
+                bound[s["action_id"]] = self._inputs(m, s)
+            except (Unbound, BindingError) as why:
                 held[s["action_id"]] = [f"input: {why}"]
                 continue
             manifest = self._manifest_for(s)

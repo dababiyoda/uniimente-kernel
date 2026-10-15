@@ -431,6 +431,37 @@ class MissionState:
         return [c for c in self.spec["success_checks"] if c["check_id"] in wanted]
 
 
+# What lifts each kind of founder ask, for the active constraint (acceptance A.G2).
+CONSTRAINT_LIFTED_BY = {"APPROVAL": "authority", "SCOPE_RENEWAL": "authority", "CAPABILITY_ATTACH": "capability",
+                        "HUMAN_WORK": "a person's work", "RECONCILIATION": "evidence of what happened",
+                        "NO_STRATEGY": "a strategy"}
+
+
+def active_constraint(m: "MissionState", requests: dict) -> dict | None:
+    """The one thing this mission waits on now, named for the founder (acceptance A.G2).
+
+    Derived only from retained facts, so a restart cannot change it: the first currently pursued check whose
+    latest observation did not pass (or that was never observed), the strategies held because a check they
+    require has not passed, and the blocker with the kind of thing that would lift it. None when the mission is
+    closed, or when every pursued check passes and nothing blocks it."""
+    if m.status != "ACTIVE":
+        return None
+    failing = [c["check_id"] for c in m.current_checks() if not (m.observations.get(c["check_id"]) or {}).get("passed")]
+    if not failing and not m.blocker:
+        return None
+    passed = {cid for cid, o in m.observations.items() if (o or {}).get("passed")}
+    out = {"check_id": failing[0] if failing else None,
+           "observed": (m.observations.get(failing[0]) or {}).get("detail", "never observed") if failing else None,
+           "held_strategies": [s["action_id"] for s in m.spec["strategies"] if set(s.get("requires", [])) - passed]}
+    if m.blocker:
+        rid = m.blocker.get("request_id")
+        kind = (requests.get(rid) or {}).get("kind")
+        out["blocker"] = {"type": m.blocker.get("type"), "request_id": rid, "kind": kind,
+                          "lifted_by": CONSTRAINT_LIFTED_BY.get(kind, m.blocker.get("type")),
+                          "why": m.blocker.get("why")}
+    return out
+
+
 def pursued_checks(spec: dict) -> set:
     """The check ids the mission's own loop ever observes and pursues: every rung of an infinite mission's ladder,
     otherwise every success check. A strategy that advances none of them is never selected, so never run."""

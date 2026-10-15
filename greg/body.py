@@ -737,8 +737,12 @@ def status(home: str | Path) -> dict:
             if event.payload["capability_id"] in registry.manifests:
                 registry.set_state(event.payload["capability_id"], event.payload["state"])
         ok, chain = ledger.verify_chain()
+        from greg.missions import MissionBook, active_constraint
+        book = MissionBook(journal)
         missions = [{"mission_id": mid, "intended_effect": spec["intended_effect"],
-                     "closure": spec["closure"]["kind"], "achieved": mid in achieved}
+                     "closure": spec["closure"]["kind"], "achieved": mid in achieved,
+                     "active_constraint": active_constraint(book.missions[mid], book.requests)
+                     if mid in book.missions else None}
                     for mid, spec in registered.items()]
         from greg import goal_gravity
         return {

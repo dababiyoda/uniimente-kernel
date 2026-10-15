@@ -16,7 +16,8 @@
    "2026-10-15: C gap G6 closed by a genuine-deficit negative control",
    "2026-10-15: G gap G4 closed by the QC rejection-path test",
    "2026-10-15: H gap G6 closed by driving the proof-host attempt bound to exhaustion",
-   "2026-10-15: B gap G2 closed by recomputing recorded comparisons; B.G9 opened for genome admission rows"
+   "2026-10-15: B gap G2 closed by recomputing recorded comparisons; B.G9 opened for genome admission rows",
+   "2026-10-15: A gap G2 closed: per-mission active constraint in status()"
   ]
  },
  "tier_reading": {
@@ -66,11 +67,12 @@
      "id": "R3",
      "obligation": "R3. GREG identifies the active constraint: one named current bottleneck or gate for the goal, recomputed as evidence changes.",
      "coverage": "partial",
-     "notes": "On the egregore engine, test_goal_gravity_acceptance asserts the active gate, the Single Bottleneck Metric (satisfied=False) and the gate's movement after exit evidence (SANDBOX_VERIFIED). greg gravity's Lawful Leverage bottleneck and disposition are UNIT_VERIFIED only. On the Body, the engine records failing checks (mission.observed), a routing decision (mission.action.routing: chosen, expected_value, alternatives) and a blocker. The body-process tests assert only that the mission stops at the authority boundary: one decision.requested APPROVAL naming the capability it needs. That is a constraint the engine hits, not a named active constraint for the goal. No body-process test asserts the routing, failing-check or held-by-precondition records, and status() exposes no per-goal constraint. Its single_bottleneck_metric is the institution-wide VEPMC. 2026-10-15: the goal's active node (its bottleneck) is asserted before and after the decision.",
+     "notes": "On the egregore engine, test_goal_gravity_acceptance asserts the active gate, the Single Bottleneck Metric (satisfied=False) and the gate's movement after exit evidence (SANDBOX_VERIFIED). greg gravity's Lawful Leverage bottleneck and disposition are UNIT_VERIFIED only. On the Body, the engine records failing checks (mission.observed), a routing decision (mission.action.routing: chosen, expected_value, alternatives) and a blocker. The body-process tests assert only that the mission stops at the authority boundary: one decision.requested APPROVAL naming the capability it needs. That is a constraint the engine hits, not a named active constraint for the goal. No body-process test asserts the routing, failing-check or held-by-precondition records, and status() exposes no per-goal constraint. Its single_bottleneck_metric is the institution-wide VEPMC. 2026-10-15: the goal's active node (its bottleneck) is asserted before and after the decision. 2026-10-15: every active mission now names its active constraint in `greg status` (first pursued failing check, held strategies, blocker and what lifts it), derived from retained facts so a restart reads the same; goal-less missions included.",
      "tests": [
       "tests/integration/test_goal_gravity_acceptance.py::test_section_33_acceptance_chain",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
       "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
+      "tests/unit/test_greg_active_constraint.py::test_the_active_constraint_names_the_failing_check_the_held_work_and_what_lifts_the_block",
       "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
       "tests/unit/test_greg_gravity.py::test_one_turn_reaches_a_founder_decision_with_a_screened_ask_and_gate_proposals"
      ],
@@ -185,10 +187,11 @@
     {
      "id": "G2",
      "gap": "G2. No named active constraint for a mission on the Body, and none asserted. The engine records failing checks (mission.observed), routing (chosen, expected_value, alternatives) and a blocker, but no body-process test asserts them. status() exposes only the institution-wide VEPMC as single_bottleneck_metric. Update 2026-10-15: a goal-bound mission now has a named active node (Goal Gravity); a mission with no GOAL still has none.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Add a per-mission active_constraint to the Body projection: the first failing check on the backcast path, the strategies held by precondition, and the current blocker kind (authority, capability, resource or evidence). Expose it in status()['goals'] and the console. In the G1 harness, assert that the first mission.action.routing.chosen advances the active-constraint check, and that strategies requiring it are listed as held. When the chosen strategy is out of cone, decision.requested must cite that same constraint and the exact capability. After the founder approves and the check passes, the constraint moves to the next node. A SIGKILL between those two steps must not change the computed constraint or create a second request."
+     "next": "Add a per-mission active_constraint to the Body projection: the first failing check on the backcast path, the strategies held by precondition, and the current blocker kind (authority, capability, resource or evidence). Expose it in status()['goals'] and the console. In the G1 harness, assert that the first mission.action.routing.chosen advances the active-constraint check, and that strategies requiring it are listed as held. When the chosen strategy is out of cone, decision.requested must cite that same constraint and the exact capability. After the founder approves and the check passes, the constraint moves to the next node. A SIGKILL between those two steps must not change the computed constraint or create a second request.",
+     "closed_by": "greg.missions.active_constraint in status() with tests/unit/test_greg_active_constraint.py (SANDBOX)"
     },
     {
      "id": "G3",

@@ -652,7 +652,21 @@ class MissionEngine:
 
     def _step(self, m: MissionState, now: datetime) -> dict:
         if m.status in TERMINAL:
-            return {"state": m.status, **(self._compensate(m, now) if m.status != "ACHIEVED" else {})}
+            if m.status == "ACHIEVED":
+                return {"state": m.status}
+            if m.blocker and m.blocker.get("type") == "reconciliation":
+                # Nothing is undone before the founder says what an interrupted dispatch did: compensation
+                # waits for the answer, and an answer that arrives with or after the end is still recorded.
+                if m.blocker["request_id"] not in self.book.answers:
+                    return {"state": m.status, "compensation": [{"state": "AWAITING_RECONCILIATION",
+                                                                 "request_id": m.blocker["request_id"]}]}
+                asked_again = self._record_reconciliation(m, now)
+                if asked_again is not None:
+                    return {**asked_again, "state": m.status}
+                self._unblock(m, "founder reconciliation recorded after the mission ended")
+                self.book.rebuild()
+                m = self.book.missions[m.mission_id]
+            return {"state": m.status, **self._compensate(m, now)}
         if m.paused:
             return {"state": "PAUSED"}
         if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now:
@@ -683,48 +697,9 @@ class MissionEngine:
             if not resolved:
                 return {"state": "WAITING", "blocker": m.blocker, "why": why}
             if m.blocker["type"] == "reconciliation":
-                answer = self.book.answers[m.blocker["request_id"]]["answer"]
-                aid = m.blocker["action_id"]
-                attempt = m.attempts.get(aid, 1) - 1
-                # The record reconciles the UNCERTAIN dispatch of this attempt: it names the capability that
-                # dispatch actually used (a strategy may name only a function), never the strategy's spec.
-                dispatch = next((e.payload for e in reversed(self.journal.replay("mission.action"))
-                                 if e.payload.get("mission_id") == m.mission_id and e.payload.get("action_id") == aid
-                                 and e.payload.get("attempt") == attempt
-                                 and e.payload.get("status") == "UNCERTAIN"), {})
-                asked = (self.book.requests.get(m.blocker["request_id"]) or {}).get("scope_digest")
-                expected = dispatch.get("scope_digest") if not attempt or not dispatch.get("scope_digest") else \
-                    sha256_json({"scope": dispatch["scope_digest"], "attempt": attempt})
-                if dispatch and asked and expected and asked != expected:
-                    # A blocker retained from before each dispatch had its own question names an earlier
-                    # attempt's answered request: that answer is not about this attempt. Ask again.
-                    self._unblock(m, "the retained reconciliation answered an earlier attempt; asking for this one")
-                    self.book.rebuild()
-                    m = self.book.missions[m.mission_id]
-                    rid = self._request(m, kind="RECONCILIATION", scope_digest=expected, action_id=aid,
-                                        why="an action may or may not have executed before an interruption",
-                                        recommendation="inspect the retained evidence, then state whether it executed",
-                                        alternatives=["reconcile_executed", "reconcile_not_executed"],
-                                        requested={"action_id": aid}, now=now)
-                    self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid,
-                                    "why": "uncertain completion; no blind retry",
-                                    "reconsider": "founder reconciliation decision"})
-                    return {"state": "BLOCKED", "blocker": m.blocker}
-                strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), {})
-                cap = float(strategy.get("cost_usd", 0.0))
-                # Executed, but no adapter measured the provider's spend: book the signed cap (metered_spend's
-                # conservative rule), so the budget the founder signed still bounds every later action.
-                spend = {"cost_usd": cap, "cost_cap_usd": cap, "provider_reported_usd": None,
-                         "spend_basis": "signed_cap: founder reconciled executed; provider spend unknown"} \
-                    if answer == "reconcile_executed" and cap > 0 else {}
-                self.journal.record("mission.action", {
-                    "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
-                    "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
-                    "capability": dispatch.get("capability") or strategy.get("capability"),
-                    "route": "founder_reconciliation", "dispatch_route": dispatch.get("route"),
-                    "receipt": None, "at": iso(now),
-                    "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0, **spend},
-                    key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
+                asked_again = self._record_reconciliation(m, now)
+                if asked_again is not None:
+                    return asked_again
             lifted = m.blocker
             self._unblock(m, why)
             self.book.rebuild()
@@ -1067,9 +1042,57 @@ class MissionEngine:
             if attempt >= self.OUTAGE_DEFERRALS:
                 blocker["request_id"] = self._capability_request(
                     m, function, f"{purpose}: the host failed {attempt} times in a row while forming {function} "
-                                 f"({str(exc)[:120]}); GREG keeps re-searching", now)
+                                 f"({str(exc)[:120]}); GREG keeps re-searching", now,
+                    scope={"function": function, "outage": True})
             self._block(m, blocker)
             return None, True
+
+    def _record_reconciliation(self, m: MissionState, now: datetime) -> dict | None:
+        """Record the founder's answer about an UNCERTAIN dispatch (the blocker's request), for a live mission
+        or one that ended while the question was open. Returns a state when the founder must be asked again."""
+        answer = self.book.answers[m.blocker["request_id"]]["answer"]
+        aid = m.blocker["action_id"]
+        attempt = m.attempts.get(aid, 1) - 1
+        # The record reconciles the UNCERTAIN dispatch of this attempt: it names the capability that
+        # dispatch actually used (a strategy may name only a function), never the strategy's spec.
+        dispatch = next((e.payload for e in reversed(self.journal.replay("mission.action"))
+                         if e.payload.get("mission_id") == m.mission_id and e.payload.get("action_id") == aid
+                         and e.payload.get("attempt") == attempt
+                         and e.payload.get("status") == "UNCERTAIN"), {})
+        asked = (self.book.requests.get(m.blocker["request_id"]) or {}).get("scope_digest")
+        expected = dispatch.get("scope_digest") if not attempt or not dispatch.get("scope_digest") else \
+            sha256_json({"scope": dispatch["scope_digest"], "attempt": attempt})
+        if dispatch and asked and expected and asked != expected:
+            # A blocker retained from before each dispatch had its own question names an earlier
+            # attempt's answered request: that answer is not about this attempt. Ask again.
+            self._unblock(m, "the retained reconciliation answered an earlier attempt; asking for this one")
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
+            rid = self._request(m, kind="RECONCILIATION", scope_digest=expected, action_id=aid,
+                                why="an action may or may not have executed before an interruption",
+                                recommendation="inspect the retained evidence, then state whether it executed",
+                                alternatives=["reconcile_executed", "reconcile_not_executed"],
+                                requested={"action_id": aid}, now=now)
+            self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid,
+                            "why": "uncertain completion; no blind retry",
+                            "reconsider": "founder reconciliation decision"})
+            return {"state": "BLOCKED", "blocker": m.blocker}
+        strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), {})
+        cap = float(strategy.get("cost_usd", 0.0))
+        # Executed, but no adapter measured the provider's spend: book the signed cap (metered_spend's
+        # conservative rule), so the budget the founder signed still bounds every later action.
+        spend = {"cost_usd": cap, "cost_cap_usd": cap, "provider_reported_usd": None,
+                 "spend_basis": "signed_cap: founder reconciled executed; provider spend unknown"} \
+            if answer == "reconcile_executed" and cap > 0 else {}
+        self.journal.record("mission.action", {
+            "mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
+            "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
+            "capability": dispatch.get("capability") or strategy.get("capability"),
+            "route": "founder_reconciliation", "dispatch_route": dispatch.get("route"),
+            "receipt": None, "at": iso(now),
+            "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0, **spend},
+            key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
+        return None
 
     def _after_outage(self, m: MissionState, now: datetime) -> dict:
         """The back-off after a host outage elapsed: re-run the formation the outage interrupted."""
@@ -1094,6 +1117,13 @@ class MissionEngine:
             self._escalate_capability(m, function, waiting[-1] if waiting else None, purpose, now,
                                       awaiting=bool(waiting))
             return {"state": "BLOCKED", "blocker": m.blocker}
+        rid = b.get("request_id")
+        if rid and rid not in self.book.answers and rid not in self.book.withdrawn:
+            # The founder was told the host kept failing; the capability is formed now, so that ask is moot.
+            self.journal.record("decision.withdrawn", {
+                "request_id": rid, "mission_id": m.mission_id, "at": iso(now),
+                "why": f"{function} was formed once the host recovered: {formed.capability_id}",
+                "evidence": {"capability_id": formed.capability_id}}, key=[rid, "withdrawn"])
         return {"state": "FORMED", "function": function, "capability": formed.capability_id}
 
     def _capability_request(self, m: MissionState, function: str, purpose: str, now: datetime,
@@ -1206,6 +1236,11 @@ class MissionEngine:
             if aid in closed:
                 continue
             decided = self._compensation_answer(m, action)
+            if decided is not None and not decided.get("answer"):
+                # The founder was asked about this effect and promised that nothing runs for it until the
+                # answer: a capability re-attached meanwhile does not license the compensation.
+                rows.append({"action_id": aid, "state": "AWAITING_FOUNDER", "request_id": decided["request_id"]})
+                continue
             if decided is not None:            # the founder answered for this effect: that answer stands
                 self.journal.record("mission.compensated", {
                     "mission_id": mid, "action_id": aid, "status": "FOUNDER_DECIDED", "receipt": None,
@@ -1237,12 +1272,13 @@ class MissionEngine:
         return {"compensation": rows} if rows else {}
 
     def _compensation_answer(self, m: MissionState, action: dict) -> dict | None:
-        """The founder's answer to the COMPENSATION ask for this executed effect, when there is one."""
+        """The COMPENSATION ask raised for this executed effect: with the founder's answer when there is one,
+        else ``{"request_id": rid}`` (asked, not yet answered). None when the founder was never asked."""
         scope = sha256_json({"compensate": action["action_id"], "receipt": action.get("receipt")})
         for rid, request in self.book.requests.items():
             if request.get("mission_id") == m.mission_id and request.get("kind") == "COMPENSATION" \
-                    and request.get("scope_digest") == scope and rid in self.book.answers:
-                return {"request_id": rid, **self.book.answers[rid]}
+                    and request.get("scope_digest") == scope and rid not in self.book.withdrawn:
+                return {"request_id": rid, **self.book.answers.get(rid, {})}
         return None
 
     def _run_compensation(self, m: MissionState, action: dict, klass: str, declared: dict, now: datetime) -> str:
@@ -1250,6 +1286,10 @@ class MissionEngine:
         manifest, adapter, missing = self._resolve(declared)
         if manifest is None:
             self._compensation_ask(m, action, klass, now, failure=[f"compensating capability {missing} is not usable"])
+            return "ESCALATED"
+        if manifest.capability_id in METERED_SPEND:      # signed before validate_mission refused it
+            self._compensation_ask(m, action, klass, now, failure=[
+                f"{manifest.capability_id} spends money by itself; GREG runs no unpaid compensation through it"])
             return "ESCALATED"
         params, target = declared.get("params", {}), declared["target"]
         scope = self.office.scope_digest(mission_id=mid, capability_id=manifest.capability_id, params=params,
@@ -1281,7 +1321,10 @@ class MissionEngine:
             mission_id=mid, cone=m.cone, command_digest=m.command_digest, manifest=manifest, adapter=adapter,
             ctx=self._context(m, manifest), params=params, target=target, cost_usd=0.0,
             expected_outcome=f"compensation of {aid}", evidence_refs=[original] if original else [],
-            attempt=f"compensate:{aid}:{original}", spent_usd=m.spent_usd, approved_scopes=m.approved_scopes)
+            # Unpaid by construction (cost 0; self-spending capabilities refused), so an overrun of the cone
+            # by earlier spend is no reason to refuse undoing an effect: the budget clause sees what it adds.
+            attempt=f"compensate:{aid}:{original}", spent_usd=min(m.spent_usd, m.cone.budget_usd),
+            approved_scopes=m.approved_scopes)
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             self._request(m, kind="APPROVAL", scope_digest=outcome.scope_digest, action_id=aid,
                           why=f"compensation of {aid}: " + "; ".join(outcome.reasons)[:400],
@@ -1476,6 +1519,9 @@ class MissionEngine:
         if manifest is None:
             if self._deficit(m, s, now, purpose=f"strategy {s['action_id']}") is None:
                 return {"state": "BLOCKED", "blocker": m.blocker}
+            # Forming it may have spent (a build is booked on this cone): the act is admitted on what is left.
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
             manifest, adapter, _ = self._resolve(s)
             if manifest is None:
                 return {"state": "BLOCKED", "blocker": m.blocker}

@@ -370,3 +370,77 @@ def test_an_overspent_cone_still_observes_its_checks_for_free():
                        spent_usd=1.9)                                  # a write is still refused
     assert cone.admits(capability="fs.read", target="workspace:x", consequence_class="read_only", cost_usd=0.1,
                        spent_usd=1.9)                                  # so is a paid read
+
+
+def test_a_re_judged_candidate_keeps_its_attempt_so_an_outage_never_buys_a_third_build(tmp_path, monkeypatch):
+    """Fix verification (closure 1): the re-judged candidate took a fresh slot of the two-attempt loop, so an
+    outage while judging attempt 2 bought a third paid build without asking the founder."""
+    from greg.capabilities import CapabilityError
+    wrong2 = "def run(text):\n    return text.count('[ ]') + 2\n"
+    home, key, body_id, data = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", _mission(data)))
+    builder = _PaidBuilder(WRONG, wrong2, GOOD, identity="paid")
+    real, judged = builders.verify, []
+
+    def outage_on_wrong2(path, vectors):
+        judged.append(path.read_text())
+        if path.read_text() == wrong2 and judged.count(wrong2) == 1:
+            raise CapabilityError("the isolated verifier did not finish within 10s", failure_class="transient")
+        return real(path, vectors)
+
+    monkeypatch.setattr(builders, "verify", outage_on_wrong2)
+    body, states = _run(home, builder, ticks=1)
+    try:
+        clock = body.clock
+        for _ in range(6):
+            clock.advance(600)
+            states.append(body.tick()["missions"][0]["state"])
+        built = [(e.payload["attempt"], e.payload["cost_usd"]) for e in body.journal.replay("genesis.built")]
+        assert built == [(1, 0.30), (2, 0.30)] and len(builder.calls) == 2
+        assert "CAPABILITY_ATTACH" in [e.payload["kind"] for e in body.journal.replay("decision.requested")]
+    finally:
+        body.close()
+
+
+def test_a_candidate_that_hangs_while_the_host_is_healthy_is_judged_failed(tmp_path, monkeypatch):
+    """Fix verification (closure 1): a candidate that blocks without using CPU never meets its CPU limit; the
+    whole-run timeout was read as a host outage, so it was never judged. A healthy host makes it the candidate's."""
+    import subprocess
+    path = tmp_path / "candidate.py"
+    path.write_text(GOOD)
+
+    def hangs(source_path, inputs, **kw):
+        raise subprocess.TimeoutExpired(["harness"], builders.RUN_TIMEOUT)
+
+    monkeypatch.setattr(builders, "execute", hangs)
+    passed, report = builders.verify(path, CONTRACT["examples"])
+    assert passed is False and "while the host was healthy" in report["failures"][0]["error"]
+
+
+def test_a_build_and_the_paid_act_it_enables_are_admitted_against_one_cone(tmp_path):
+    """Fix verification (closure 6): the act after a same-step build was admitted on the spend read before
+    the build, so build plus act overspent the cone with no approval."""
+    home, key, body_id, data = make_body(tmp_path)
+    doc = data / "FIRST_MISSION.md"
+    doc.write_text("# Runbook\n- [ ] one\n")
+    check = {"check_id": "counted", "description": "count", "sensor": {"capability": "fs.read",
+             "params": {"path": str(doc)}, "target": "fs:FIRST_MISSION.md"},
+             "predicate": {"op": "equals", "field": "never", "value": 1}}
+    strategy = {"action_id": "compute", "function": FUNCTION, "target": "fs:FIRST_MISSION.md",
+                "params": {"path": str(doc)}, "advances": ["counted"], "rationale": "count", "cost_usd": 0.8}
+    spec = mission("m:same-step", checks=[check], strategies=[strategy], ceiling="read_only", budget=1.0,
+                   capabilities=["fs.read", f"built.{FUNCTION}.*"], auto_attach=True)
+    spec["capability_specs"] = [dict(CONTRACT, build_budget_usd=0.5)]
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    body = Body(home, clock=clock, builder=_CapBillingBuilder(GOOD, identity="paid")).open()
+    try:
+        body.boot()
+        for _ in range(4):
+            clock.advance(60)
+            body.tick()
+        m = body.engine.book.missions["m:same-step"]
+        assert m.spent_usd <= m.cone.budget_usd + 1e-9
+        assert "APPROVAL" in [e.payload["kind"] for e in body.journal.replay("decision.requested")]
+    finally:
+        body.close()

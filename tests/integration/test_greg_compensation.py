@@ -320,3 +320,118 @@ def test_a_compensation_through_a_capability_that_spends_money_is_refused_at_sig
         capabilities=["fs.read", "fs.write", "worker.commission"], ceiling="internal_write")
     with pytest.raises(MissionError, match="spends money"):
         validate_mission(spec)
+
+
+def test_a_compensation_waits_for_the_founder_once_asked_even_if_its_capability_returns(tmp_path):
+    """Fix verification (closure 7): once a COMPENSATION ask promised that nothing runs, re-attaching the
+    compensating capability before the founder answered still ran the compensation."""
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:compensate-reattached"
+    note, spec = write_mission(home, mid, check_text="final")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 3)
+        drop(home, signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": "fs.write"}))
+        tick(body, clock, 1)
+        abandon(home, key, body_id, mid)
+        tick(body, clock, 2)
+        [ask] = [r for r in body.engine.book.open_requests() if r["kind"] == "COMPENSATION"]
+        drop(home, signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "fs.write"}))
+        tick(body, clock, 2)
+        assert note.read_text() == "draft" and not facts(body, "mission.compensated", mid)
+        drop(home, signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "approve",
+                                                     "reason": "I undid it myself"}))
+        tick(body, clock, 2)
+        [closed] = facts(body, "mission.compensated", mid)
+        assert closed["status"] == "FOUNDER_DECIDED"
+    assert note.read_text() == "draft"
+
+
+def test_an_overrun_cone_does_not_stop_a_free_compensation(tmp_path):
+    """Fix verification (closure 6): a founder-approved overrun left the cone spent, and every compensation
+    was then refused on budget with a false reason. Compensation is unpaid by construction."""
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:compensate-overrun"
+    note = workspace(home, mid) / "note.txt"
+    note.parent.mkdir(parents=True, exist_ok=True)
+    note.write_text("original")
+    spec = mission(mid, checks=[note_check("c", note, "final")], budget=0.5,
+                   strategies=[write_strategy("w", "note.txt", "draft", ["c"], cost_usd=1.0, compensate=RESTORE)],
+                   capabilities=["fs.read", "fs.write"])
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 2)
+        [approval] = [r for r in body.engine.book.open_requests() if r["kind"] == "APPROVAL"]
+        drop(home, signed(key, body_id, "DECISION", {"request_id": approval["request_id"], "answer": "approve",
+                                                     "reason": "worth the overrun"}))
+        tick(body, clock, 3)
+        assert note.read_text() == "draft" and body.engine.book.missions[mid].spent_usd == 1.0
+        abandon(home, key, body_id, mid)
+        tick(body, clock, 3)
+        [compensated] = facts(body, "mission.compensated", mid)
+        assert compensated["status"] == "DONE"
+        assert not [r for r in body.engine.book.open_requests() if r["kind"] == "APPROVAL"]
+    assert note.read_text() == "original"
+
+
+@pytest.mark.parametrize("same_tick", [True, False])
+def test_an_interrupted_dispatch_is_reconciled_before_anything_is_compensated(tmp_path, same_tick):
+    """Fix verification (closure 10): an answer arriving with or after the abandon was never recorded, so the
+    executed effect was neither compensated nor put to the founder. Compensation now waits for the answer,
+    which is recorded even for an ended mission."""
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:compensate-uncertain"
+    note, spec = write_mission(home, mid, check_text="final")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        real, calls = body.registry.adapters["fs.write"], []
+
+        def adapter(params, ctx):        # the write lands, then power is lost before the receipt
+            calls.append(1)
+            out = real(params, ctx)
+            if len(calls) == 1:
+                raise RuntimeError("power lost after the write")
+            return out
+        body.registry.adapters["fs.write"] = adapter
+        tick(body, clock, 3)
+        [request] = [r for r in body.engine.book.open_requests() if r["kind"] == "RECONCILIATION"]
+        answer = signed(key, body_id, "DECISION", {"request_id": request["request_id"],
+                                                   "answer": "reconcile_executed", "reason": "it landed"})
+        if same_tick:
+            drop(home, answer)
+            abandon(home, key, body_id, mid)
+        else:
+            abandon(home, key, body_id, mid)
+            tick(body, clock, 2)
+            assert not facts(body, "mission.compensated", mid) and note.read_text() == "draft"
+            drop(home, answer)
+        tick(body, clock, 3)
+        [compensated] = facts(body, "mission.compensated", mid)
+        assert compensated["status"] == "DONE"
+    assert note.read_text() == "original"
+
+
+def test_a_self_spending_compensation_signed_before_the_check_is_refused_when_it_would_run(tmp_path, monkeypatch):
+    """Fix verification (closure 9): the signing check does not reach missions signed before it existed; the
+    run-time path refuses a self-spending compensating capability too, and puts the effect to the founder."""
+    from greg import missions as missions_mod
+    home, key, body_id, _ = make_body(tmp_path)
+    mid = "m:compensate-metered"
+    note, spec = write_mission(home, mid, check_text="final", strategies=[write_strategy(
+        "w", "note.txt", "draft", ["c"], compensate={"capability": "fs.write",
+                                                     "params": {"relative_path": "note.txt", "content": "original"},
+                                                     "target": "workspace:note.txt"})])
+    monkeypatch.setattr(missions_mod, "METERED_SPEND", {})            # as signed before the signing check
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        tick(body, clock, 3)
+        monkeypatch.setattr(missions_mod, "METERED_SPEND", {"fs.write": "written"})   # fs.write stands in as metered
+        abandon(home, key, body_id, mid)
+        tick(body, clock, 2)
+        [ask] = [r for r in body.engine.book.open_requests() if r["kind"] == "COMPENSATION"]
+        assert "spends money by itself" in str(ask.get("evidence"))
+    assert note.read_text() == "draft"

@@ -484,11 +484,15 @@ def test_outage_deferrals_reset_after_a_formation_and_the_capped_ask_keeps_searc
         monkeypatch.setattr(mechanisms, "run_isolated", real)
         out = ticks(body, clock, 6, step=1800)
         assert body.registry.state.get(NX) == "ATTACHED" and "ACHIEVED" in states(out)
+        # the ask that told the founder the host kept failing is withdrawn once the capability is formed
+        assert not [r for r in body.engine.book.open_requests() if r["kind"] == "CAPABILITY_ATTACH"]
 
 
-def test_a_persistent_outage_backs_off_and_then_leaves_recovery_to_the_founder(tmp_path, monkeypatch):
-    """Third review (typed failures): a deferred probe was retried every base period forever, and each try
-    could stall a tick for 80 s. Outages now double the wait; after eight in a row the founder decides."""
+def test_a_persistent_outage_backs_off_to_a_day_and_recovery_resumes_when_the_host_returns(tmp_path, monkeypatch):
+    """Third review (typed failures): a deferred probe was retried every base period forever; its first fix
+    stopped recovery after eight outages, which stranded the capability (a QUARANTINED capability cannot be
+    re-attached by hand). Outages now double the wait up to a day, never stop recovery, and the probe passes
+    once the host is back."""
     import subprocess
     from datetime import datetime
     home, key, body_id, _ = make_body(tmp_path)
@@ -499,6 +503,7 @@ def test_a_persistent_outage_backs_off_and_then_leaves_recovery_to_the_founder(t
         ticks(body, clock, 1)
         honest, _ = lose_every_engine(body, clock, monkeypatch)
         monkeypatch.setitem(network.RUNNERS, "networkx.max_flow", honest["networkx.max_flow"])
+        real = mechanisms.run_isolated
 
         def down(argv, **kw):
             raise subprocess.TimeoutExpired(argv, kw.get("timeout", 1))
@@ -509,8 +514,11 @@ def test_a_persistent_outage_backs_off_and_then_leaves_recovery_to_the_founder(t
             ticks(body, clock, 1)
         at = [datetime.fromisoformat(e.payload["at"].replace("Z", "+00:00"))
               for e in body.journal.replay("capability.deferred_probe")]
-        assert len(at) == genesis_mod.RECOVERY_MAX_DEFERRED_PROBES
         gaps = [(b - a).total_seconds() for a, b in zip(at, at[1:])]
-        assert gaps == sorted(gaps) and gaps[-1] > gaps[0]               # the wait grows
-        [stopped] = [e.payload for e in body.journal.replay("capability.recovery_stopped")]
-        assert "host outage persisted" in stopped["why"] and not probes(body)
+        assert gaps == sorted(gaps) and gaps[0] < 3600 and max(gaps) <= genesis_mod.RECOVERY_CAP.total_seconds() + 900
+        assert 8 <= len(at) <= 14 and not body.journal.replay("capability.recovery_stopped")
+        monkeypatch.setattr(mechanisms, "run_isolated", real)             # the host is back
+        for _ in range(3):
+            clock.advance(24 * 3600)
+            ticks(body, clock, 1)
+        assert [p["passed"] for p in probes(body)] == [True]

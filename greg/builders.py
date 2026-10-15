@@ -49,8 +49,8 @@ RUN_TIMEOUT = 10
 
 HARNESS = r'''
 import builtins, json, resource, sys
-# The candidate's own CPU is bounded here: a loop dies by SIGXCPU and is judged as the candidate's failure,
-# so a wall-clock timeout of the whole run is the host's (load, a stalled runtime), never the candidate's.
+# The candidate's own CPU is bounded here: a loop dies by SIGXCPU and is judged as the candidate's failure.
+# A wall-clock timeout is the host's only when the host cannot run an isolated no-op either (verify).
 resource.setrlimit(resource.RLIMIT_CPU, (8, 9))
 sys.setrecursionlimit(2000)
 ALLOWED = set(json.loads(sys.argv[2]))
@@ -173,8 +173,11 @@ def verify(source_path: Path, vectors: list[dict]) -> tuple[bool, dict]:
     try:
         results = execute(source_path, [v["input_text"] for v in vectors])
     except subprocess.TimeoutExpired as exc:
-        raise CapabilityError(f"the isolated verifier did not finish within {exc.timeout}s",
-                              failure_class="transient") from None
+        # The candidate's CPU is bounded by the harness, but it can block without using any (a lock taken
+        # twice). If the host still runs an isolated no-op, the hang is the candidate's; else the host's.
+        isolation_ready()
+        return False, {"cases": len(vectors), "isolation": "separate no-network interpreter",
+                       "failures": [{"error": f"did not finish within {exc.timeout}s while the host was healthy"}]}
     except CapabilityError as exc:
         if exc.failure_class == "transient":
             raise

@@ -355,7 +355,6 @@ RECOVERABLE = ("failed in service",)      # quarantine reasons that leave the ca
 RECOVERY_BASE = timedelta(minutes=15)    # first probe after a quarantine; doubles per failed probe and per fault
 RECOVERY_CAP = timedelta(hours=24)
 RECOVERY_MAX_FAILED_PROBES = 5
-RECOVERY_MAX_DEFERRED_PROBES = 8       # host outages in a row on one probe attempt before the founder decides
 RECOVERY_MAX_QUARANTINES = 3            # more in-service quarantines than this is flapping: the founder decides
 RECOVERED_BY = "recovery probe (sandbox, fresh frozen-oracle seed)"
 
@@ -606,8 +605,7 @@ class Genesis:
             why_stop = ("flapping: quarantined in service %d times" % len(faults)
                         if len(faults) > RECOVERY_MAX_QUARANTINES
                         else "%d recovery probes failed" % len(failed) if len(failed) >= RECOVERY_MAX_FAILED_PROBES
-                        else "a host outage persisted through %d recovery probes" % len(outages)
-                        if len(outages) >= RECOVERY_MAX_DEFERRED_PROBES else None)
+                        else None)
             if why_stop:
                 self.journal.record("capability.recovery_stopped", {
                     "capability_id": cid, "incident": incident, "why": why_stop,
@@ -629,8 +627,8 @@ class Genesis:
                 if exc.failure_class != "transient":
                     raise
                 # The host could not run the probe (a runner timeout, isolation unavailable): no evidence
-                # either way. Not a failed probe; the same attempt runs after a doubled wait, and after
-                # RECOVERY_MAX_DEFERRED_PROBES outages in a row recovery stops for the founder.
+                # either way. Not a failed probe; the same attempt runs after a doubled wait (at most a day).
+                # An outage never stops recovery: a QUARANTINED capability cannot be re-attached by hand.
                 self.journal.record("capability.deferred_probe", {
                     "capability_id": cid, "incident": incident, "attempt": attempt, "why": str(exc)[:300],
                     "failure_class": exc.failure_class, "at": iso(now)},
@@ -1057,7 +1055,10 @@ class Genesis:
         except CapabilityError as exc:
             self._route(deficit_id, "builder", f"not attempted: host outage ({str(exc)[:200]})", None)
             raise
-        for attempt in (1, 2):
+        used = max([e.payload.get("attempt") or 0 for kind in ("genesis.built", "genesis.unbuilt")
+                    for e in self.journal.replay(kind) if e.payload["deficit_id"] == deficit_id], default=0)
+        slots = [a for _, a in pending] + list(range(used + 1, 3))   # never more than two attempts per deficit
+        for attempt in slots:
             again = bool(pending)
             if again:
                 built, attempt = pending.pop(0)

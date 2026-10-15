@@ -398,3 +398,87 @@ def test_a_construction_that_fails_its_oracle_is_never_registered(tmp_path, monk
         assert ("constructed", "failed qualification") in [(r, res) for r, res in routes(body)]
         assert not [c for c in body.registry.manifests if c.startswith("composed.")]
         assert not answers(body)
+
+
+# -- selection.closure: which projects to take when some require others ------------------------
+
+PORTFOLIO = {"items": [{"id": "Offer1", "value": 5}, {"id": "Offer2", "value": 6}, {"id": "Platform", "value": -6},
+                       {"id": "Audit", "value": -3}, {"id": "Pilot", "value": 3}, {"id": "Lab", "value": -5}],
+             "requires": [["Offer1", "Platform"], ["Offer2", "Platform"], ["Offer2", "Audit"], ["Pilot", "Lab"]]}
+
+
+def selection_answer(params):
+    p = recombine.normalize_selection(params)
+    flow = network.certify_max_flow(network.normalize_max_flow(recombine.encode_selection(p)),
+                                    _local_flow(recombine.encode_selection(p)))
+    return p, recombine.decode_selection(p, flow)
+
+
+def test_the_selection_certificate_proves_a_shared_prerequisite_and_refutes_wrong_portfolios():
+    p, raw = selection_answer(PORTFOLIO)
+    answer = recombine.certify_selection(p, raw)
+    # Neither offer pays for the Platform alone (5-6, 6-6-3); together they do (11-9 = 2). Pilot never pays for Lab.
+    assert answer["chosen"] == ["Audit", "Offer1", "Offer2", "Platform"] and answer["profit"] == 2
+    assert answer["left_out_profitable"] == ["Pilot"] and answer["why_left_out"] == {"Pilot": [["Lab", 3]]}
+    assert answer["profit"] == recombine.selection_brute_force(p)
+    with pytest.raises(recombine.ReductionError, match="not closed"):           # takes an offer without its platform
+        recombine.certify_selection(p, {**raw, "chosen": ["Offer1"]})
+    with pytest.raises(recombine.ReductionError, match="does not meet the bound"):  # closed but not the best
+        recombine.certify_selection(p, {**raw, "chosen": []})
+    with pytest.raises(recombine.ReductionError, match="not a requirement"):     # funding along a made-up edge
+        recombine.certify_selection(p, {**raw, "funding": raw["funding"] + [["Pilot", "Audit", 1]]})
+    with pytest.raises(recombine.ReductionError, match="above its value"):
+        recombine.certify_selection(p, {**raw, "funding": [["source", "Pilot", 9], ["Pilot", "Lab", 9],
+                                                           ["Lab", "sink", 9]]})
+
+
+def test_nothing_profitable_is_proved_without_any_engine():
+    p = recombine.normalize_selection({"items": [{"id": "A", "value": 0}, {"id": "B", "value": -4}],
+                                       "requires": [["A", "B"]]})
+    shortcut = recombine.direct_selection(p)
+    assert shortcut is not None and recombine.certify_selection(p, shortcut)["profit"] == 0
+
+
+def test_the_selection_oracle_agrees_with_the_certified_engine_path_on_seeded_cases():
+    for seed in range(15):
+        for case in recombine.oracle_selection(seed):
+            p = recombine.normalize_selection(case["input"])
+            raw = recombine.direct_selection(p)
+            if raw is None:
+                raw = selection_answer(case["input"])[1]
+            assert recombine.certify_selection(p, raw)["profit"] == case["expected"]["profit"], case["name"]
+
+
+def test_a_selection_mission_constructs_over_the_max_flow_engine(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", constructed_question(function="selection.closure",
+                                                                    params=PORTFOLIO, auto_attach=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+        answer = answers(body)[-1]
+        assert answer["certified"] and answer["profit"] == 2 and answer["left_out_profitable"] == ["Pilot"]
+        assert answer["composed_of"] == ["selection-via-maxflow"] and answer["authority_created"] is False
+        [composed] = [cid for cid, s in body.registry.state.items()
+                      if s == "ATTACHED" and cid.startswith("composed.selection.closure.")]
+        assert body.registry.manifests[composed].consequence_class == "read_only"
+        assert [e.payload["function"] for e in body.journal.replay("deficit.opened")] == ["selection.closure",
+                                                                                         "graph.max_flow"]
+
+
+def test_the_mind_recognizes_a_portfolio_question_and_answers_it_through_the_construction(tmp_path):
+    from greg.templates import compiled_question
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = compiled_question(problem_id="portfolio-1", data=PORTFOLIO, allow_construction=True,
+                             objective="which offers to take")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 4)]
+        compiled = [r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
+                    if isinstance(r.payload["result"].get("output"), dict)
+                    and r.payload["result"]["output"].get("schema") == "greg-competency-compilation/0.1"]
+        assert compiled[0]["capability_deficit"]["function"] == "selection.closure"
+        assert compiled[-1]["state"] == "ANSWERED" and compiled[-1]["result"]["profit"] == 2

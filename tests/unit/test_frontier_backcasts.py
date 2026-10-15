@@ -125,6 +125,23 @@ def test_the_p8_node_records_every_frozen_cycle():
         assert p8["exit_met"] is False and "never kept an improvement" in p8["reality"]
 
 
+def test_the_p8_next_experiment_states_how_far_the_latest_search_moved_p_restart():
+    """Found by the 2026-10-15 independent review and its fix verifier: greg/path.json first said cycle 4's search did
+    not move p_restart, then planned a cycle "whose closed space can reach the measured headroom", as if cycle 4's
+    space could not. The record holds three configurations with p_restart above 0, the largest 0.339 of the 1.0 the
+    space allows: the search did not reach the headroom, which says nothing about what the space can reach."""
+    from greg.cognition.genomes.developmental import CR_CONFIG_SPACE
+    record = json.loads(sorted(ROOT.glob("docs/evidence/greg-protected-evolution/*/cycle-cr-*.json"))[-1].read_text())
+    tried = sorted(e["config"]["p_restart"] for e in record["search"]["lineage"] if e["config"]["p_restart"] > 0)
+    upper = CR_CONFIG_SPACE["p_restart"][1][1]
+    p8 = {n["id"]: n for n in path.load()["subordinate_workstreams"]["polyintelligence_cortex"]["nodes"]}["P8"]
+    plan = p8["smallest_next_experiment"]
+    assert f"the {WORDS[len(tried)]} searched configurations with p_restart above 0" in plan, plan
+    assert f"at most {max(tried)} of the allowed {upper}" in plan, plan
+    if max(tried) < upper:
+        assert f"nothing above {max(tried)} was tried" in plan and "closed space can reach" not in plan, plan
+
+
 def test_the_cortex_summary_and_the_older_p5_node_state_the_latest_frozen_totals():
     """Found by the 2026-10-15 independent review: the polyintelligence workstream's ``current`` summary still
     counted three P8 cycles after cycle 4 was frozen, and the older P5 node still gave admission v1's 20 admitted of
@@ -142,9 +159,13 @@ def test_the_cortex_summary_and_the_older_p5_node_state_the_latest_frozen_totals
     assert f"{admitted} admitted of {len(genomes)}" in current, current
     [ws] = [w for w in data["workstreams"] if w["id"] == "cognition_cortex"]
     p5 = {n["id"]: n for n in ws["nodes"]}["P5"]
-    assert f"all {len(genomes)} executable genomes" in p5["status"] and f"({admitted} admitted)" in p5["status"]
-    for status, n in counts.items():
-        assert re.search(rf"\b{n} {status}\b", p5["status"]), (status, n)
+    assert f"all {len(genomes)} executable genomes" in p5["status"]
+    # the latest totals only: the node keeps admission v1's counts before them as lineage, so a count v1 shares
+    # (3 COMPOSITION_ONLY) would otherwise be found in v1's text however the latest clause states it
+    latest_clause = p5["status"].split(f"all {len(genomes)} executable genomes", 1)[1]
+    assert f"({admitted} admitted)" in latest_clause, latest_clause
+    stated = {status: int(n) for n, status in re.findall(r"\b(\d+) ([A-Z][A-Z_]+)\b", latest_clause)}
+    assert stated and all(stated.get(s, 0) == counts[s] for s in set(stated) | set(counts)), (stated, counts)
     latest = sorted(ROOT.glob("docs/evidence/greg-genome-admission/*/results.json"))[-1]
     assert str(latest.relative_to(ROOT)) in p5["evidence_refs"], p5["evidence_refs"]
 

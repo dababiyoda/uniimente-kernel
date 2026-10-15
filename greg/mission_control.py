@@ -162,6 +162,7 @@ def projection(console) -> dict:
         "missions": missions, "active_missions": len(active),
         "decisions": st["decisions_required"], "goals": st.get("goals", []),
         "position": st.get("developmental_position", {}), "vepmc": st.get("single_bottleneck_metric", {}),
+        "founder_tier": st.get("founder_tier", {}),
         "presence": st.get("presence", {}), "compute": st.get("compute", {}), "devices": st["security"].get("devices", []),
         "anchor": st.get("external_anchor", {}), "cognition": st.get("cognition", {}),
         "appraisals": appraisals, "receipts": receipts, "events": events, "quarantined": quarantined,
@@ -365,13 +366,25 @@ def _ventures(console, p, form) -> str:
             "The Foundry's company loop (#49) runs end to end only in the sandbox with fixtures.</p></section>")
 
 
+def _tier_line(tier: dict, v: dict) -> str:
+    if not tier:
+        return "unknown"
+    if tier.get("enrolled_key_attested"):
+        since = ", ".join(a.get("issued_at") or "?" for a in tier.get("attested", []))
+        return (f"attested since {_e(since)}; <b>{_e(v.get('founder_tier_count', 0))}</b> closure(s) at the founder tier"
+                f" — {_e(tier.get('basis', ''))}")
+    return (f"<b class=warn>not attested</b>: {_e(tier.get('consequence', ''))}. Run <code>{_e(tier.get('how', ''))}</code>"
+            f" — {_e(tier.get('basis', ''))}")
+
+
 def _proof(console, p, form) -> str:
     v = p["vepmc"] or {}
     a = p["anchor"] or {}
     return ("<section><h2>Proof</h2>" + _table(["", ""], [
         ["Ledger chain", "verified" if p["identity"]["chain_verified"] else "<b class=warn>FAILED</b>"],
         ["External anchors (RFC 3161)", _e(f"{a.get('verified', 0)} verified of {a.get('anchors', 0)}; configured: {a.get('configured')}")],
-        ["VEPMC", f"<b>{_e(v.get('VEPMC', 0))}</b> — {_e(v.get('external_confirmation_required', ''))}"]])
+        ["VEPMC (structural candidates)", f"<b>{_e(v.get('VEPMC', 0))}</b> — {_e(v.get('external_confirmation_required', ''))}"],
+        ["Founder tier", _tier_line(p.get("founder_tier") or {}, v)]])
             + "</section><section><h2>Independent appraisals</h2>"
             + _table(["Mission", "Verdict", "At"], [[_e(x["mission_id"]), _cls(x["verdict"]), _e(x["at"])] for x in p["appraisals"][::-1]])
             + "</section><section><h2>Quarantine</h2>"

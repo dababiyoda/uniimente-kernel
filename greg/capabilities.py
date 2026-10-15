@@ -288,8 +288,18 @@ def fs_list(params, ctx: InvocationContext) -> dict:
 
 
 def fs_write(params, ctx: InvocationContext) -> dict:
+    """Write one text file in the mission workspace, and only the file the signed target names.
+
+    The founder-signed target (``workspace:<relative path>``) binds the file: a parameter value that
+    a typed handoff supplied (greg/pipeline.py, a strategy's ``bind``) can change what is written,
+    never where. Without this, a document's text could pick which workspace file is overwritten,
+    including the evidence a person's work is measured by (review of 2026-10-14; artifact.materialize
+    already binds its path the same way)."""
     ctx.workspace.mkdir(parents=True, exist_ok=True)
     path = _inside(ctx.workspace / params["relative_path"], (ctx.workspace,))
+    named = "workspace:" + path.relative_to(Path(ctx.workspace).resolve()).as_posix()
+    if ctx.target != named:
+        raise CapabilityError(f"write path {named!r} does not match the signed target {ctx.target!r}")
     content = params["content"]
     if not isinstance(content, str) or len(content.encode()) > MAX_READ_BYTES:
         raise CapabilityError("content must be text under the write ceiling")
@@ -544,6 +554,7 @@ STRENGTHENS = {
     "artifact.materialize": ("proof", "reliability", "compounding"),
     "venture.assess": ("proof", "routing", "settlement", "compounding"),
     "venture.status": ("proof",),
+    "business.reconcile": ("proof", "settlement"),
     "worker.commission": ("capability_formation", "routing", "settlement", "compounding"),
     "worker.appraise": ("proof", "eligibility", "reliability"),
     "browser.session": ("proof", "capability_formation", "settlement"),
@@ -718,6 +729,21 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                                               "adapters/daleobanks_opportunity + "
                                                               "wealthmachine_assessment (Bridge A)"}),
                        _lazy("greg.ventures", "assess")),
+    "business.reconcile": (_builtin("business.reconcile", "business.reconcile",
+                                    "Match exactly one exported statement row to a signed price, currency and "
+                                    "case reference (to the cent; ambiguous or near matches never count)", "api",
+                                    "read_only", "fs:", {"path": "str", "amount": "number", "currency": "str",
+                                                         "reference": "str", "columns": "dict?",
+                                                         "minor_units": "bool?"},
+                                    {"matched": "bool", "matches": "int", "rows_read": "int", "row": "int?",
+                                     "sha256": "str?", "detail": "str"},
+                                    filesystem="read-scoped", retry_safe=True,
+                                    tests=("tests/unit/test_greg_business_case.py",),
+                                    provenance={"source": "uniimente-kernel/greg/business_loop.py",
+                                                "mechanism_from": "business/commercial_loop.py stage order; "
+                                                                  "beancount/hledger exact single-posting "
+                                                                  "matching (DISCOVER, no code copied)"}),
+                           _lazy("greg.business_loop", "reconcile")),
     "venture.status": (_builtin("venture.status", "venture.assessment_status",
                                 "Has a decision memo been delivered for this signal manifest, and with what "
                                 "binding verdict", "api", "read_only", "deliver:", {"manifest": "path"},

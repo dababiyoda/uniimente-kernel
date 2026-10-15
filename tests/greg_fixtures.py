@@ -24,17 +24,37 @@ class Clock:
         self.now += timedelta(seconds=seconds)
 
 
-def make_body(tmp: Path, *, read_roots=None):
+def make_body(tmp: Path, *, read_roots=None, passphrase: bytes | None = None):
     tmp = Path(tmp)
     data = tmp / "data"
     data.mkdir(exist_ok=True)
     home = tmp / "body"
     config = init_body(home, read_roots=[str(p) for p in (read_roots or [data])])
-    public = generate_founder_key(tmp / "founder.pem", None)
-    key = load_founder_key(tmp / "founder.pem", None)
+    public = generate_founder_key(tmp / "founder.pem", passphrase)
+    key = load_founder_key(tmp / "founder.pem", passphrase)
     with Body(home) as body:
         body.enroll_founder(public)
     return home, key, config["body_id"], data
+
+
+TEST_PASSPHRASE = b"test passphrase, not Alfonso's"
+
+
+def attest_founder_tier(home: Path, keyfile: Path, passphrase: bytes, monkeypatch) -> list:
+    """Run ``greg founder attest`` exactly as the founder would, against a passphrase-protected key.
+
+    It proves the custody check and the attestation path work. It does not make a test key
+    Alfonso's: the body cannot tell the two apart (greg/metrics.py founder_tier, residual).
+    """
+    import contextlib
+    import io
+    from greg import cli
+    monkeypatch.setenv("GREG_FOUNDER_PASSPHRASE", passphrase.decode())
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        assert cli.main(["--home", str(home), "founder", "attest", "--key", str(keyfile)]) == 0
+    monkeypatch.delenv("GREG_FOUNDER_PASSPHRASE")
+    return [Path(line) for line in out.getvalue().split()]
 
 
 def horizon(days: float = 2) -> str:

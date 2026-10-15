@@ -101,3 +101,42 @@ def test_landlock_inherits_into_exact_reviewed_dsl_and_packaging_children(tmp_pa
     assert out["result"]["blocked_at"] == "ratification"
     built = foundry_bridge.apply({"system": 53, "op": "build"}, context(tmp_path))
     assert built["execution"]["filesystem"] == "landlock"
+
+
+def test_a_confined_venv_interpreter_can_still_start_a_python_child(tmp_path):
+    """The installed body runs from a venv (greg/chromebook/install.sh); CI's toolcache Python does not.
+
+    A venv interpreter reads <venv>/pyvenv.cfg at startup, so a confined process that spawns
+    Python (the first-party MCP server, DSL verification, owned packaging) needs that one file.
+    Before the grant this child died with "Failed to import the site module".
+    """
+    require_support()
+    import venv
+    env_dir = tmp_path / "body-venv"
+    venv.EnvBuilder(with_pip=False, symlinks=True).create(env_dir)
+    python = env_dir / "bin" / "python"
+    scope = tmp_path / "stage"; scope.mkdir()
+    secret = tmp_path / "unrelated.fixture"; secret.write_text("not granted")
+    code = Path(__file__).resolve().parents[2]
+    script = """
+import json, subprocess, sys
+from pathlib import Path
+from greg.isolation import confine
+installed = confine(Path(sys.argv[1]), [])
+child = subprocess.run([sys.executable, "-s", "-c", "print('child-started')"], capture_output=True, text=True)
+try:
+    Path(sys.argv[2]).read_text(); denied = False
+except PermissionError:
+    denied = True
+print(json.dumps({"filesystem": installed["filesystem"], "child_rc": child.returncode,
+                  "child_out": child.stdout.strip(), "child_err": child.stderr[-300:], "unrelated_denied": denied}))
+"""
+    result = subprocess.run([str(python), "-s", "-c", script, str(scope), str(secret)], cwd=code,
+                            env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONPATH": str(code),
+                                 "PYTHONDONTWRITEBYTECODE": "1"},
+                            capture_output=True, text=True, timeout=30, close_fds=True)
+    assert result.returncode == 0, result.stderr
+    observed = json.loads(result.stdout)
+    assert observed["filesystem"] == "landlock"
+    assert observed["child_rc"] == 0 and observed["child_out"] == "child-started", observed["child_err"]
+    assert observed["unrelated_denied"], "the grant is the one config file, not the venv or its neighbours"

@@ -53,6 +53,19 @@ class BodyError(RuntimeError):
     pass
 
 
+def founder_keys(journal: Journal) -> dict[str, str]:
+    """Current founder keys from the one retained enrollment/rotation history (#138 b8a0ccd)."""
+    keys = {}
+    for event in journal.replay("founder."):
+        data = event.payload
+        if event.type == "greg.founder.enrolled":
+            keys[data["key_id"]] = data["public_key"]
+        elif event.type == "greg.founder.key_rotated":
+            keys.pop(data["old_key_id"], None)
+            keys[data["new_key_id"]] = data["new_public_key"]
+    return keys
+
+
 def device_delegations(journal: Journal) -> dict[str, dict]:
     """Currently delegated device keys (enrolled by the founder key, not revoked).
     Expiry is enforced at verification time, so an expired delegation is listed but unusable."""
@@ -230,15 +243,7 @@ class Body:
 
     # -- founder identity ----------------------------------------------------------
     def enrolled_keys(self) -> dict[str, str]:
-        keys = {}
-        for event in self.journal.replay("founder."):
-            data = event.payload
-            if event.type == "greg.founder.enrolled":
-                keys[data["key_id"]] = data["public_key"]
-            elif event.type == "greg.founder.key_rotated":
-                keys.pop(data["old_key_id"], None)
-                keys[data["new_key_id"]] = data["new_public_key"]
-        return keys
+        return founder_keys(self.journal)
 
     def enroll_founder(self, public_hex: str) -> dict:
         """Trust-on-first-use by whoever controls this body's filesystem."""
@@ -350,6 +355,17 @@ class Body:
             return compute.enroll_node(self.journal, body, digest)
         if kind == "SOP_RATIFY":
             return sop.ratify(self.journal, body, digest)
+        if kind == "FOUNDER_TIER":               # founder key only (DEVICE_KINDS excludes it)
+            from greg.founder import FOUNDER_TIER_BODY
+            if body != FOUNDER_TIER_BODY:
+                raise MissionError(f"a founder-tier attestation is exactly {FOUNDER_TIER_BODY}")
+            # The accepted command (its signer and key id) is the record greg.metrics.founder_tier reads.
+            return {**FOUNDER_TIER_BODY, "authority_changed": False}
+        if kind == "TREASURY_REQUIREMENTS":      # founder key only (DEVICE_KINDS excludes it)
+            from greg.venture_books import validate_requirements
+            declared = validate_requirements(body)
+            self.journal.record("treasury.requirements", {**declared, "command_digest": digest}, key=digest)
+            return {**declared, "money_moved": False, "authority_changed": False}
         if kind == "MODEL_ROUTE_SET":
             selection = models.validate_route_selection(body)
             self.journal.record("model.configured", {"selection": selection, "command_digest": digest}, key=digest)
@@ -621,6 +637,30 @@ def morning_projection(home: str | Path) -> dict:
         return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat)
 
 
+def _attach_waiting(journal, achieved: set) -> list[dict]:
+    """Verified capabilities Genesis is waiting for the founder to attach, whatever the ask's answer.
+
+    An Approve on a capability ask only records an answer (greg/asks.py); attaching is its own signed
+    command. Derived from the ledger, so a mission stays unblockable from the console after an answer
+    given here or on the phone (which can never attach)."""
+    mission_of = {e.payload["deficit_id"]: e.payload.get("mission_id") for e in journal.replay("deficit.opened")}
+    resolved = {e.payload["deficit_id"] for e in journal.replay("deficit.resolved")}
+    latest = {}
+    for e in journal.replay("capability.state"):
+        latest[e.payload["capability_id"]] = e.payload["state"]
+    waiting = {}
+    for e in journal.replay("deficit.awaiting_attach"):
+        p = e.payload
+        mission_id = mission_of.get(p["deficit_id"])
+        if p["deficit_id"] in resolved or mission_id in achieved or latest.get(p["capability_id"]) in (
+                "ATTACHED", "QUARANTINED", "DETACHED"):
+            continue
+        waiting[(p["deficit_id"], p["capability_id"])] = {"deficit_id": p["deficit_id"],
+                                                          "capability_id": p["capability_id"],
+                                                          "mission_id": mission_id, "why": p.get("why")}
+    return list(waiting.values())
+
+
 def status(home: str | Path) -> dict:
     """Read-only projection for the founder; safe while the body runs."""
     layout = Layout(home)
@@ -638,7 +678,7 @@ def status(home: str | Path) -> dict:
         answered = {e.payload["request_id"] for e in journal.replay("decision.answered")}
         answered |= {e.payload["request_id"] for e in journal.replay("decision.withdrawn")}
         requests = [e.payload for e in journal.replay("decision.requested") if e.payload["request_id"] not in answered]
-        founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
+        founder = list(founder_keys(journal))     # rotation honored: only the currently enrolled keys
         boots = journal.replay("body.booted")
         # The same states the body uses: catalog initial state, then every recorded transition.
         from greg.cognition.catalog import initial_state
@@ -672,12 +712,14 @@ def status(home: str | Path) -> dict:
                      "gravity": "persistent Goal Gravity goals (founder-signed GOAL commands bound to missions)"},
             "gravity": goal_gravity.status_summary(journal),
             "decisions_required": [asks.surface(r) for r in requests],
+            "attach_waiting": _attach_waiting(journal, achieved),
             "capabilities": registry.inventory(), "permissions": {"read_roots": config["read_roots"]},
             "compute": compute.sample(layout.home),
             "secret_handles": SecretBroker(layout.secrets).names(),
             "external_items_quarantined": sum(1 for e in journal.replay("external.ingested")
                                               if e.payload["quarantined"]),
             "single_bottleneck_metric": metrics.vepmc(journal),
+            "founder_tier": metrics.tier_status(journal, founder),
             "external_anchor": anchor.summary(journal),
             "presence": presence.summary(journal, now=utcnow(), since=utcnow() - presence.REVIEW_WINDOW,
                                          heartbeat=heartbeat),

@@ -232,9 +232,12 @@ def build_registry() -> ClosureRegistry:
         l = EvidenceLedger("sha256:" + "0" * 64)
         l.append("event", {"n": 1})
         rec = l.records[-1]
-        rec.payload["n"] = 999  # tamper
+        rec.payload["n"] = 999  # a reader's copy: retained evidence is unchanged
+        untouched = l.verify_chain()[0] and l.records[-1].payload["n"] == 1
+        l._records[-1].payload["n"] = 999  # tamper with what the ledger retains
         ok, _ = l.verify_chain()
-        return not ok, "tampering is detected by reconstruction; integrity without trusted hardware"
+        return untouched and not ok, ("a reader cannot change retained evidence and tampering is detected by "
+                                      "reconstruction; integrity without trusted hardware")
 
     def ledger_regenerative():
         from provenance.ledger import EvidenceLedger

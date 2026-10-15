@@ -77,7 +77,11 @@ class AuthorityOffice:
     def act(self, *, mission_id: str, cone: LightCone, command_digest: str, manifest: CapabilityManifest,
             adapter, ctx: InvocationContext, params: dict, target: str, cost_usd: float,
             expected_outcome: str, evidence_refs: list, attempt, spent_usd: float,
-            approved_scopes: set, evidence_confidence: float = 1.0) -> ActionOutcome:
+            approved_scopes: set, evidence_confidence: float = 1.0,
+            signed_scopes: frozenset = frozenset()) -> ActionOutcome:
+        """``signed_scopes``: exact scopes the founder-signed mission itself pre-approves (its
+        ``pre_approved_steps``). They admit that one action past the light cone only; a constitutional
+        requirement for a human is still answered by an exact-scope founder DECISION alone."""
         consequence = manifest.consequence_class
         scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
                                   target=target, consequence_class=consequence, cost_usd=cost_usd)
@@ -97,7 +101,7 @@ class AuthorityOffice:
                                                  f"that {manifest.target_from} would contact"], **base)
         outside = cone.admits(capability=manifest.capability_id, target=target, consequence_class=consequence,
                               cost_usd=cost_usd, spent_usd=spent_usd)
-        if outside and scope not in approved_scopes:
+        if outside and scope not in approved_scopes and scope not in signed_scopes:
             return ActionOutcome("OUTSIDE_SCOPE", outside, **base)
 
         claim, receipt = self._prior(proposal_id)
@@ -139,7 +143,9 @@ class AuthorityOffice:
         self.ledger.append("event", {"type": "greg.authority.grant_issued", "grant_id": grant["grant_id"],
                                      "proposal_id": proposal_id, "scope_digest": scope,
                                      "authority_ref": command_digest, "cone": cone.to_dict(),
-                                     "founder_approved_scope": scope in approved_scopes})
+                                     "founder_approved_scope": scope in approved_scopes,
+                                     **({"pre_approved_in_signed_mission": True}
+                                        if outside and scope in signed_scopes else {})})
 
         def execute(p):
             try:

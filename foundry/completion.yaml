@@ -608,8 +608,9 @@
     the founder logs GREG in with OAuth (greg mcp login, the SDK's own client flow) and approved calls renew an
     expired login at the recorded endpoint only (tests/integration/test_greg_mcp_oauth.py,
     tests/unit/test_greg_mcp_login.py); Mission Control lists each logged-in hosted server with the tools it listed
-    at login. Still missing - credential files, listing hosted servers used with a plain token, proposals from
-    words for remote calls or for changes GREG cannot read back as a file, a real hosted server observed, and
+    at login. Since increment 28 a plain bearer token is registered with its server and tools (greg mcp token;
+    tests/integration/test_greg_mcp_token.py), kept only when the server accepts it, and listed the same way.
+    Still missing - credential files, proposals from words for remote calls or for changes GREG cannot read back as a file, a real hosted server observed, and
     observation on the founder's device. Original failover and authority component evidence is retained.
   implementation: *id001
   interface: foundry.query foundry_tool|list_foundry_tools (system 28); Gateway.call for governed third-party tools

@@ -20,10 +20,11 @@ from urllib.parse import parse_qs, urlsplit
 from greg.capabilities import CapabilityError
 
 KIND = "oauth-login/1"
+TOKEN_KIND = "token/1"                 # a plain bearer token the founder pasted, with where it is used (greg mcp token)
 
 
 def record(broker, handle: str) -> dict | None:
-    """The stored login for ``handle``, or None when the handle holds a plain bearer token (or nothing)."""
+    """The stored login or registered token for ``handle``; None when the handle holds a bare value (or nothing)."""
     try:
         value = broker.resolve(handle, declared=(handle,))
     except CapabilityError:
@@ -32,12 +33,13 @@ def record(broker, handle: str) -> dict | None:
         parsed = json.loads(value)
     except ValueError:
         return None
-    return parsed if isinstance(parsed, dict) and parsed.get("kind") == KIND else None
+    return parsed if isinstance(parsed, dict) and parsed.get("kind") in (KIND, TOKEN_KIND) else None
 
 
 def public(login: dict) -> dict:
     """What may be shown: never a token or a client secret."""
-    return {"server": login["server"], "renews_at": urlsplit(login["token_endpoint"]).hostname,
+    return {"server": login["server"], "kind": "OAuth login" if login["kind"] == KIND else "registered token",
+            "renews_at": urlsplit(login["token_endpoint"]).hostname if login.get("token_endpoint") else None,
             "scope": login.get("scope"), "expires_at": login.get("expires_at"),
             "tools": login.get("tools", []), "listed_at": login.get("listed_at")}
 
@@ -151,11 +153,47 @@ async def login(name: str, url: str, broker, *, open_url, cafile: str | None = N
     storage.data["token_endpoint"] = endpoint
     # What the server said it offers when the founder logged in: shown as its claim, so nothing has to contact it
     # outside an approved call to list them again.
-    storage.data["tools"] = [{"name": t.name, "description": (t.description or "").strip().split("\n")[0][:200],
-                              "needs": list((getattr(t, "input_schema", None) or getattr(t, "inputSchema", None)
-                                             or {}).get("required", [])),
-                              "claims_read_only": getattr(t.annotations, "read_only_hint", None)
-                              if t.annotations is not None else None} for t in listed[:100]]
+    storage.data["tools"] = _tool_rows(listed)
     storage.data["listed_at"] = time.time()
     broker.put(handle, json.dumps(storage.data))
     return {**public(storage.data), "handle": handle, "tools_offered": len(listed)}
+
+
+def _tool_rows(listed) -> list[dict]:
+    return [{"name": t.name, "description": (t.description or "").strip().split("\n")[0][:200],
+             "needs": list((getattr(t, "input_schema", None) or getattr(t, "inputSchema", None) or {}).get("required", [])),
+             "claims_read_only": getattr(t.annotations, "read_only_hint", None) if t.annotations is not None else None}
+            for t in listed[:100]]
+
+
+async def register_token(name: str, url: str, token: str, broker, *, cafile: str | None = None) -> dict:
+    """``greg mcp token``: keep a bearer token the service gave the founder, with the server it is for and the tools
+    the server lists with it. The founder runs this; it is the one contact with the server outside an approved call,
+    and nothing is stored unless the server accepts the token. Returns the public record."""
+    import ssl
+    import httpx2
+    from mcp import Client
+    from mcp.client.streamable_http import streamable_http_client
+    from greg.mcp_tools import HANDLE, remote_url
+    handle = f"mcp:{name}"
+    if not HANDLE.fullmatch(handle):
+        raise CapabilityError("the name is a lowercase name (it becomes the handle mcp:<name>)")
+    remote_url(url)
+    token = (token or "").strip()
+    if not token or any(c.isspace() for c in token):
+        raise CapabilityError("a bearer token is one word with no spaces; nothing was stored")
+    verify = ssl.create_default_context(cafile=cafile) if cafile else True
+    try:
+        async with httpx2.AsyncClient(headers={"Authorization": f"Bearer {token}"}, verify=verify, trust_env=True,
+                                      timeout=httpx2.Timeout(30.0, read=60.0)) as http:
+            async with Client(streamable_http_client(url, http_client=http), read_timeout_seconds=60) as client:
+                listed = (await client.list_tools()).tools
+    except CapabilityError:
+        raise
+    except Exception as exc:              # the SDK raises exception groups; the token never appears in the message
+        raise CapabilityError(f"the server did not accept the token or could not be reached "
+                              f"({type(exc).__name__}); nothing was stored") from None
+    data = {"kind": TOKEN_KIND, "server": url, "tokens": {"access_token": token},
+            "tools": _tool_rows(listed), "listed_at": time.time()}
+    broker.put(handle, json.dumps(data))
+    return {**public(data), "handle": handle, "tools_offered": len(listed)}

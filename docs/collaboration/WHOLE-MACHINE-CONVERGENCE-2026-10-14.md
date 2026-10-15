@@ -1684,6 +1684,37 @@ the handed-in router left unheld).
 
 Not covered: a refusal seen only by the console is not in Mission Control's list until the body meets it.
 
+## Increment 28 (2026-10-15): a hosted server reached with a plain token, registered like a login
+
+Many hosted MCP services hand out a token, not an OAuth flow. Before this, the founder stored it with
+`greg secret set mcp:<name>`. GREG then knew neither which server the token was for nor what that server offered,
+and Mission Control could not show the server. A mistyped token was found out only when an approved call failed.
+
+`greg mcp token <name> <url>` reads the token from a hidden prompt (or stdin), never from the command line. It lists
+the server's tools once with the token, and only if the server accepts it keeps the token, the server's address and
+those tools under `mcp:<name>`. If the server refuses, nothing is stored, and the message carries the error type but
+never the token. From then on:
+- the Authority view shows the handle as a "registered token" for that server, with the instruction to remove it
+  and revoke it at the service;
+- the Command view lists the server and its tools beside the OAuth logins, as the server's claim;
+- an approved `mcp.act` naming the handle sends the token to that server and nothing else. A pasted token is never
+  renewed or aged out by GREG.
+
+This one founder-run listing is the only contact with the server outside an approved call, as with `greg mcp login`.
+
+Evidence (`tests/integration/test_greg_mcp_token.py`, the guarded notes service over TLS behind the fake proxy):
+- an accepted token is kept with its server and `add_note`;
+- a refused token, an empty or spaced token, and an http URL are refused, and nothing is kept;
+- the CLI reads the token from stdin, prints no token, and fails with one line (exit 2) on refusal;
+- an approved mission sends the registered token and closes on its own read of `/notes`; the token is not used
+  before approval and appears in no file outside the secret broker (namespace test: local only, skipped on CI);
+- `tests/integration/test_greg_credentials_view.py` shows a registered token on both views, with no value.
+
+Mutants: 6 of 6 fail the tests: records of the new kind ignored, the bare token stored, a refused token stored, no
+token shape check, registered servers left off the Command view, and the kind mislabeled.
+
+Not covered: a token's own scope at the service is not known to GREG; the founder narrows it there.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

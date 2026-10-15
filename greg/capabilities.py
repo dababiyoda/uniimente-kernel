@@ -602,6 +602,7 @@ STRENGTHENS = {
     "institution.compose": ("capability_formation", "routing", "compounding"),
     "institution.dossier": ("settlement", "routing", "compounding"),
     "institution.appraise": ("proof", "reliability"),
+    "mcp.call": ("capability_formation", "routing", "proof"),
 }
 
 
@@ -840,6 +841,20 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                tests=("tests/unit/test_greg_computer.py",),
                                provenance={"source": "uniimente-kernel/greg/computer.py"}),
                       _lazy("greg.computer", "session_status")),
+    "mcp.call": (_builtin("mcp.call", "tool.mcp_call",
+                          "Call one tool on a founder-installed MCP server, confined with no network and a read-only "
+                          "filesystem; the server's own read-only claim is recorded, never trusted",
+                          "app_integration", "read_only", "mcp:",
+                          {"server": "str", "root": "path", "command": "list", "tool": "str", "arguments": "dict?",
+                           "readable": "list[path]?"},
+                          {"server": "str", "tool": "str", "result": "str|dict", "text": "str",
+                           "result_sha256": "str", "trust": "str", "confinement": "dict"},
+                          filesystem="read-scoped", retry_safe=True, data_classes=("project_sources",),
+                          tests=("tests/unit/test_greg_mcp_tools.py", "tests/integration/test_greg_mcp_mission.py"),
+                          provenance={"source": "uniimente-kernel/greg/mcp_tools.py",
+                                      "mechanism_from": "Model Context Protocol (official Python SDK, MIT); "
+                                                        "foundry/systems/mcp_gateway.py; relay_door namespace"}),
+                 _lazy("greg.mcp_tools", "call")),
     "daleobanks.verify": (_builtin("daleobanks.verify", "media.verify_draft",
                                    "DALEOBANKS EthicsGuard/Critic/PromptFirewall on a draft plus figure-to-source "
                                    "binding (DALEOBANKS code, DALEOBANKS interpreter)", "cli", "read_only",

@@ -653,10 +653,20 @@ class MissionEngine:
             if m.blocker["type"] == "reconciliation":
                 answer = self.book.answers[m.blocker["request_id"]]["answer"]
                 aid = m.blocker["action_id"]
+                # The same record shape as every other action (found by the one-machine proof 2026-10-15: the
+                # morning report and Mission Control crashed on a reconciliation that named no capability).
+                # The identity comes from the uncertain record it settles; it carries no receipt, so a
+                # delivering capability reconciled as executed still cannot pass the appraiser's delivery check.
+                uncertain = next((e.payload for e in reversed(self.journal.replay("mission.action"))
+                                  if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid
+                                  and e.payload["status"] == "UNCERTAIN"), {})
                 self.journal.record("mission.action", {
                     "mission_id": m.mission_id, "action_id": aid, "attempt": m.attempts.get(aid, 1) - 1,
                     "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
-                    "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0},
+                    "reasons": ["founder reconciliation: " + answer], "receipt": None,
+                    "capability": uncertain.get("capability"), "route": uncertain.get("route"),
+                    "scope_digest": uncertain.get("scope_digest"), "cost_usd": 0.0, "at": iso(now),
+                    "reconciles": m.blocker["request_id"]},
                     key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
             lifted = m.blocker
             self._unblock(m, why)

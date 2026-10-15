@@ -43,7 +43,9 @@ def closed_procedures(journal: Journal) -> dict[str, list]:
     steps = defaultdict(list)
     for event in journal.replay("mission.action"):
         data = event.payload
-        if data["mission_id"] in achieved and data["status"] == "DONE":
+        # a founder-settled act carries no receipt, so it is not a verified step of a reusable procedure
+        if data["mission_id"] in achieved and data["status"] == "DONE" and data.get("capability") \
+                and not data.get("reconciles"):
             steps[data["mission_id"]].append(data["capability"])
     return dict(steps)
 

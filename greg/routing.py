@@ -42,7 +42,7 @@ def track_record(journal: Journal) -> dict[str, dict]:
     for event in journal.replay("mission.action"):
         data = event.payload
         capability = data.get("capability")
-        if not capability:
+        if not capability or data.get("reconciles"):   # a settlement resolves an earlier act; it is not a new one
             continue
         if data["status"] in SUCCESS:
             record[capability]["done"] += 1

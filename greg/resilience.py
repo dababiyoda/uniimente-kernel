@@ -37,6 +37,12 @@ def failed(payload: dict) -> bool:
     return status in FAILED_ACTIONS or (status == "REFUSED" and bool(payload.get("receipt")))
 
 
+def _acts(journal) -> list:
+    """Capability acts in time order. A founder reconciliation (``reconciles``) settles an earlier uncertain
+    act instead of being a second one, so one interruption is counted once."""
+    return [e for e in _events(journal, "mission.action") if not (e.payload or {}).get("reconciles")]
+
+
 def _lever_capability(lever) -> str | None:
     """Improvements and closed regressions name a lever, not a capability; every lever belongs to the
     improvement loop's one capability (greg.improvement.CAPABILITY)."""
@@ -62,7 +68,7 @@ def _events(journal, prefix):
 
 def episodes(journal) -> list[dict]:
     """Failure -> recovery episodes per (mission, check), in time order."""
-    actions = _events(journal, "mission.action")
+    actions = _acts(journal)
     answers = _events(journal, "decision.answered")
     state, open_, recovered_before, out = {}, {}, defaultdict(int), []
     for event in _events(journal, "mission.observed"):
@@ -91,7 +97,7 @@ def episodes(journal) -> list[dict]:
 
 
 def common_causes(journal, window: timedelta = timedelta(hours=1)) -> list[dict]:
-    failures = [e for e in _events(journal, "mission.action") if failed(e.payload)]
+    failures = [e for e in _acts(journal) if failed(e.payload)]
     by_cap = defaultdict(list)
     for e in failures:
         by_cap[e.payload.get("capability", "?")].append(e)
@@ -109,7 +115,7 @@ def common_causes(journal, window: timedelta = timedelta(hours=1)) -> list[dict]
 
 def concentration(journal) -> dict:
     done = defaultdict(int)
-    for e in journal.replay("mission.action"):
+    for e in _acts(journal):
         if e.payload.get("status") == "DONE":
             done[e.payload.get("capability", "?")] += 1
     total = sum(done.values())
@@ -124,7 +130,7 @@ def concentration(journal) -> dict:
 def after_failure(journal) -> dict:
     """Per capability: completion rate of the WINDOW actions after each failure vs the WINDOW before."""
     by_cap = defaultdict(list)
-    for e in _events(journal, "mission.action"):
+    for e in _acts(journal):
         status = e.payload.get("status")
         if status == "DONE" or failed(e.payload):
             by_cap[e.payload.get("capability", "?")].append(
@@ -193,7 +199,7 @@ def decoupling_from_journal(journal) -> list[dict]:
     origin = min(whole_days)
     whole = [((d - origin).days, statistics.fmean(v)) for d, v in sorted(whole_days.items())]
     per_cap = defaultdict(lambda: defaultdict(list))
-    for e in journal.replay("mission.action"):
+    for e in _acts(journal):
         status = e.payload.get("status")
         if status == "DONE" or failed(e.payload):
             per_cap[e.payload.get("capability", "?")][_at(e).date()].append(1.0 if status == "DONE" else 0.0)

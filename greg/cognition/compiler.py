@@ -418,14 +418,18 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
             if family in genomes and genomes[family].promotes in FAMILIES:
                 row["promotes"] = f"cognition.{genomes[family].promotes}"
             rows.append(row)
-    _reject_relaxations(rows, unfit, keys, g.geometry)
     rows += _organ_rows(data, g, evidence)
+    _reject_relaxations(rows, unfit, keys, g.geometry)
     recipe = route(data)
     if recipe:
         verdict = evidence["recipes"].get(recipe, {})
+        classes = recipe_classes(recipe)
         row = {"method": f"composition:{recipe}", "operation": recipe, "kind": "composition",
                "status": "VPL_LIFT" if verdict.get("lift") else verdict.get("status", "UNEVALUATED"),
-               "stages": list(RECIPES[recipe]["stages"]), "rejected": None}
+               "stages": list(RECIPES[recipe]["stages"]), "epistemic_classes": classes, "rejected": None}
+        if g.geometry and g.geometry not in classes:
+            # the declaration is honoured for a recipe exactly as for an operation or an organ
+            row["rejected"] = f"native geometry of its stages {tuple(classes)} does not include {g.geometry}"
         if verdict.get("lift") is False:
             # Demoted, not deleted: a recipe without verified lift ranks after every other method that fits,
             # because the simpler constituent wins ties; it stays the route when nothing else fits (P6 F5:
@@ -433,40 +437,156 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
             row["status"] = "NO_LIFT"
             row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
                               f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
-        lacking = _stage_lacks(data, recipe, g, evidence)
+        lacking = None if row["rejected"] else _stage_lacks(data, recipe, g, evidence)
         if lacking:
             # the stage that reads the part would abstain on it: the recipe is not a fit. When the part carries
-            # inputs only this recipe (or a fuller method) reads, it asks the recipe's question and the request
-            # ends asking for what it lacks, never in an attach ask, Genesis or a stage abstention; otherwise the
-            # part asks a simpler question that the methods it fully supplies answer
+            # inputs only this recipe (or a fuller method) reads, and no other method reads more of it, it asks the
+            # recipe's question and the request ends asking for what it lacks, never in an attach ask, Genesis or a
+            # stage abstention; otherwise the part asks another method's question
             row["rejected"] = (f"its {lacking['stage']} stage ({lacking['stage_method']}) reads part "
                                f"{lacking['part']!r}, which lacks {lacking['missing_inputs']}")
-            if lacking["carried"]:
+            if lacking["more"]:
+                row["rejected"] += f" ({lacking['more']} read more of the part)"
+            elif lacking["carried"]:
                 row["rejected"] += f" (the part carries {lacking['carried']}, which no method it fully supplies reads)"
                 row["missing_inputs"] = [{"method": row["method"], "part": lacking["part"],
                                           "missing_inputs": lacking["missing_inputs"]}]
         rows.append(row)
         if parts:
-            rows += _part_rows(data, recipe, g, evidence)
+            rows += _part_rows(data, g, evidence)
     return rows
 
 
-def _part_rows(data: dict, recipe: str, g: CompetencyGeometry, evidence: dict) -> list[dict]:
+def _part_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     """A composition request whose one typed part is the whole question (``{"capacity_network": {...}}``, the shape
     graph_then_allocate reads) asks that question of every method whose native inputs the part carries: the flat
     network is exactly what flow_expansion_mcf answers alone. Those operation rows are offered beside the recipe,
     each marked with the part it reads; ranking, the relaxation rule and attachment decide as for any row. A
     recipe of several parts is a joint question no single part answers, so it offers none."""
-    from .composition import RECIPES
-    required = RECIPES[recipe]["requires"]
-    if len(required) != 1 or set(data) - {required[0], *PART_FLAGS} or not isinstance(data[required[0]], dict):
+    part = _one_part(data)
+    if part is None:
         return []
-    part = required[0]
     return [{**row, "part": part} for row in candidates(_part_data(data, part), g, evidence, parts=False)
             if row["kind"] == "operation"]
 
 
 PART_FLAGS = ("formalization_complete",)        # request-level flags a part-addressed method reads with its part
+
+
+def _one_part(data: dict) -> str | None:
+    """The part, when the request is a recipe of one typed part and nothing else (``{"capacity_network": {...}}``,
+    plus request-level flags): that part is the whole question. Otherwise None."""
+    from .composition import RECIPES, route
+    recipe = route(data)
+    required = RECIPES[recipe]["requires"] if recipe else ()
+    if len(required) != 1 or set(data) - {required[0], *PART_FLAGS} or not isinstance(data[required[0]], dict):
+        return None
+    return required[0]
+
+
+def recipe_classes(recipe: str) -> list[str]:
+    """A recipe's native geometry: the epistemic classes of its stages. An operation stage has the classes of the
+    catalogued family that declares the operation; a problem-path stage (a cortex organ) has the class its recipe
+    declares in ``stage_classes``. As for a family of several classes, a declaration excludes the recipe only when
+    no stage is native to it; a recipe whose stages declare no class is excluded by every declaration."""
+    from .catalog import FAMILIES
+    from .composition import RECIPES
+    spec = RECIPES[recipe]
+    classes = set(spec.get("stage_classes", ()))
+    for operation in spec.get("operations", ()):
+        classes |= {c for _, ops, family_classes, _, _ in FAMILIES.values() if operation in ops
+                    for c in family_classes}
+    return sorted(classes)
+
+
+def _method_inputs() -> list[dict]:
+    """Every catalogued mechanism that declares the inputs it reads: method, operation, inputs, outputs and native
+    classes. An operation reads the native inputs candidates() fits on (a family without a declared output
+    contract has outputs None); a composition recipe reads its typed parts and has its stages' classes."""
+    from .catalog import FAMILIES
+    from .composition import RECIPES
+    from .genomes import library
+    genomes, out = library.executables(), []
+    for family, (_, ops, classes, _, _) in FAMILIES.items():
+        for op in ops:
+            if family in genomes:
+                need, outputs = genomes[family].genome.required_inputs, sorted(genomes[family].genome.output_contract)
+            else:
+                need, outputs = NATIVE_INPUTS.get(op), None
+            if need is not None:
+                out.append({"method": f"cognition.{family}", "operation": op, "inputs": sorted(need),
+                            "outputs": outputs, "epistemic_classes": list(classes)})
+    for recipe, spec in RECIPES.items():
+        out.append({"method": f"composition:{recipe}", "operation": recipe, "inputs": sorted(spec["requires"]),
+                    "outputs": None, "epistemic_classes": recipe_classes(recipe)})
+    return out
+
+
+def _served(rows: list[dict], g: CompetencyGeometry) -> set:
+    """The inputs read by the mechanisms the request fully supplies and whose native geometry the declaration
+    admits: operations and cortex organs, whatever else (frozen status, a relaxation) rejected them. Such a
+    mechanism poses the question those inputs ask. One the declaration excludes poses none: variables and
+    constraints declared optimization are the optimization question without its objective, not the feasibility
+    question. Part-addressed rows are another request's (the part's) and are not counted."""
+    return {i for r in rows if not r.get("part") and not (g.geometry and g.geometry not in r["epistemic_classes"])
+            for i in r.get("inputs", ())}
+
+
+def _readers(keys: set) -> list[dict]:
+    """Every catalogued method and recipe that reads some of ``keys``, with what it reads and what it lacks."""
+    return [{**m, "reads": sorted(set(m["inputs"]) & keys), "missing_inputs": sorted(set(m["inputs"]) - keys)}
+            for m in _method_inputs() if set(m["inputs"]) & keys]
+
+
+def _read_more(m: dict, readers: list[dict]) -> list[str]:
+    """The methods and recipes that read more of the request than ``m`` does without producing its decision, among
+    those whose question the request could be (it carries at least as many of their inputs as they lack). The
+    request is then their question, not ``m``'s, whatever their status or the declaration."""
+    return sorted({o["method"] for o in readers if len(o["reads"]) > len(m["reads"])
+                   and len(o["reads"]) >= len(o["missing_inputs"]) and not _same_decision(m, o)})
+
+
+def _partially_supplied(data: dict, rows: list[dict], g: CompetencyGeometry, part: str | None = None) -> list[dict]:
+    """Catalogued mechanisms (operations and recipes) that read some of what ``data`` carries and need inputs it
+    lacks; ``rows`` are the candidates for ``data``. ``why`` is None when the request asks that mechanism's
+    question, so that what it lacks is missing information rather than a capability deficit; otherwise it says
+    why the mechanism is not the question asked.
+
+    The analogue of a one-part recipe's 'carried' rule (_stage_lacks) for a request that no mechanism it fully
+    supplies can answer. A mechanism is the question asked when
+      - the declaration does not exclude its native geometry;
+      - the request carries an input it reads that no mechanism the request fully supplies reads (_served;
+        otherwise that mechanism poses the question, and the relaxation rule decides between the two);
+      - the request carries at least as many of its inputs as it lacks: one key shared with a larger method does
+        not make the request that method's question (a cost table with a budget is not a capacity expansion
+        missing five inputs). A part named for a recipe (``{"capacity_network": {...}}``) names it already, so the
+        recipe's own stage rule needs no such count; and
+      - no other catalogued method or recipe that the request supplies in full, or in part carrying at least as
+        many of its inputs as it lacks (whatever its status or the declaration), reads more of the request's
+        inputs without producing its decision (_read_more): the request is that mechanism's question (max_flow is
+        not asked for the sink beside the expansion methods when the request also carries a budget; a PID tracking
+        problem declared prediction is not a simulation missing its step probability). A mechanism producing the
+        same decision from less side information competes and is asked as well (hysteresis beside the Bayesian
+        regime filter, which also reads a dwell prior). Keys no mechanism requires (optional inputs) decide
+        nothing.
+    Request-level flags (``formalization_complete``) are not inputs."""
+    served = _served(rows, g)
+    readers = _readers(set(data) - set(PART_FLAGS))
+    out = []
+    for m in readers:
+        if not m["missing_inputs"]:
+            continue
+        more = _read_more(m, readers)
+        why = (f"native geometry {tuple(m['epistemic_classes'])} does not include {g.geometry}"
+               if g.geometry and g.geometry not in m["epistemic_classes"]
+               else "every input it reads here is read by a mechanism the request fully supplies"
+               if not set(m["reads"]) - served
+               else "the request carries fewer of its inputs than it lacks"
+               if len(m["reads"]) < len(m["missing_inputs"])
+               else f"{more} read more of the request" if more else None)
+        out.append({**m, "why": why, **({"part": part} if part else {})})
+    out.sort(key=lambda m: (m["method"], m["operation"]))
+    return out
 
 
 def _stage_lacks(data: dict, recipe: str, g: CompetencyGeometry, evidence: dict) -> dict | None:
@@ -475,10 +595,13 @@ def _stage_lacks(data: dict, recipe: str, g: CompetencyGeometry, evidence: dict)
     The first stage of a one-part recipe reads the part whole (graph_then_allocate compiles
     ``capacity_network`` with compile_capacity_expansion), so the part must carry that operation's native inputs;
     without them the stage abstains and the composition cannot answer. ``carried`` lists the stage inputs the part
-    does carry that no method whose native inputs the part fully supplies reads (budget and unit_cost beside a
-    max-flow network): then the part asks this recipe's question with information missing, as the relaxation
-    rule decides for a flat request. A part that carries none (a plain max-flow network) asks a simpler question.
-    A recipe of several parts feeds its stages from several places and is not judged here."""
+    does carry that no mechanism the part fully supplies (and the declaration admits) reads (budget and unit_cost
+    beside a max-flow network; _served): then the part asks this recipe's question with information missing, as
+    the relaxation rule decides for a flat request. A part that carries none (a plain max-flow network) asks a
+    simpler question, and so does a part another method reads more of (``more``, _read_more, as for a flat
+    request): a causal graph sent as a capacity network is the causal question, not a capacity expansion missing
+    five inputs, whatever the declaration. A recipe of several parts feeds its stages from several places and is
+    not judged here."""
     from .catalog import FAMILIES
     from .composition import RECIPES
     from .genomes import library
@@ -494,10 +617,12 @@ def _stage_lacks(data: dict, recipe: str, g: CompetencyGeometry, evidence: dict)
             missing = sorted(need - set(data[part]))
             if not missing:
                 return None
-            served = {i for r in candidates(_part_data(data, part), g, evidence, parts=False)
-                      if r["kind"] == "operation" for i in r["inputs"]}
+            served = _served(candidates(_part_data(data, part), g, evidence, parts=False), g)
+            stage = {"reads": sorted(need & set(data[part])),
+                     "outputs": sorted(genomes[family].genome.output_contract) if family in genomes else None}
             return {"part": part, "stage": spec["stages"][0], "stage_method": f"cognition.{family}",
-                    "missing_inputs": missing, "carried": sorted((need & set(data[part])) - served)}
+                    "missing_inputs": missing, "carried": sorted(set(stage["reads"]) - served),
+                    "more": _read_more(stage, _readers(set(data[part]) - set(PART_FLAGS)))}
     return None
 
 
@@ -512,16 +637,19 @@ def _same_decision(row: dict, fuller: dict) -> bool:
     return row["outputs"] is not None and fuller["outputs"] is not None and set(fuller["outputs"]) <= set(row["outputs"])
 
 
-def _missing_information(rows: list[dict]) -> list[dict]:
+def _missing_information(rows: list[dict], partial: list[dict] = ()) -> list[dict]:
     """What the request lacks, once per (method, part, inputs): the fuller methods a relaxation was rejected for
-    (``missing_for_fuller``) and the recipes whose reading stage the part cannot feed (``missing_inputs``). An
-    entry from a part-addressed row names that part."""
+    (``missing_for_fuller``), the recipes whose reading stage the part cannot feed (``missing_inputs``), and the
+    partially supplied methods and recipes whose question the request asks (``partial``, from
+    _partially_supplied). An entry from a part-addressed row names that part."""
+    entries = [{**m, **({"part": r["part"]} if r.get("part") else {})}
+               for r in rows for m in r.get("missing_for_fuller", []) + r.get("missing_inputs", [])]
+    entries += [{"method": p["method"], "missing_inputs": p["missing_inputs"],
+                 **({"part": p["part"]} if p.get("part") else {})} for p in partial if p["why"] is None]
     out = []
-    for r in rows:
-        for m in r.get("missing_for_fuller", []) + r.get("missing_inputs", []):
-            entry = {**m, **({"part": r["part"]} if r.get("part") else {})}
-            if entry not in out:
-                out.append(entry)
+    for entry in entries:
+        if entry not in out:
+            out.append(entry)
     return out
 
 
@@ -549,7 +677,9 @@ def _reject_relaxations(rows: list[dict], unfit: list[dict], keys: set, geometry
     constraint_feasibility asks the feasibility question even when its model also carries an objective. A
     method producing the same decision from less side information is not a relaxation; it competes on
     evidence. Families without a declared output contract (native cortex families) are compared on inputs
-    alone."""
+    alone, and so are cortex organs, which read the payload parts they are routed on: the semantic organ reads
+    ``sources`` and answers no grid repair, so it does not serve a develop_repair request (it served one whenever
+    develop_repair was withheld, and a request lacking one of its inputs was answered instead of asking)."""
     def fuller_than(row, other):
         return (other is not row and set(row["inputs"]) < set(other["inputs"]) and not _same_decision(row, other)
                 and not (geometry and geometry not in other["epistemic_classes"]))
@@ -573,11 +703,16 @@ def _reject_relaxations(rows: list[dict], unfit: list[dict], keys: set, geometry
 def _organ_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]:
     """Cortex organs (Z3, CP-SAT, Fermi, evidence/causal, semantic, deterrence, schedule extraction) for payload
     parts they serve, named by the cortex's own deterministic route policy and run through the canonical problem
-    path. Their status comes from the evidence index's ``organs`` section when it has one, else UNEVALUATED."""
+    path. Their status comes from the evidence index's ``organs`` section when it has one, else UNEVALUATED.
+    ``inputs`` are the payload parts an organ reads, by the same policy: those without which it is not routed."""
     from cortex.routing import _route_parts      # the cortex's route policy, reused rather than re-implemented
     from .bridge import _CLASS, ORGANS
+    routed = _route_parts(data)
+    if not routed:
+        return []
+    without = {k: {key for key, _ in _route_parts({x: v for x, v in data.items() if x != k})} for k in data}
     rows = []
-    for key, cls in _route_parts(data):
+    for key, cls in routed:
         cid = ORGANS.get(key)
         if cid is None:
             continue
@@ -586,7 +721,8 @@ def _organ_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]
         reason = (f"native geometry {klass} does not include {g.geometry}" if g.geometry and g.geometry != klass
                   else f"frozen status {status}" if status in EXCLUDED else None)
         rows.append({"method": cid, "operation": "problem", "kind": "problem", "status": status, "organ": key,
-                     "epistemic_classes": [klass], "rejected": reason})
+                     "epistemic_classes": [klass], "inputs": sorted(k for k in data if key not in without[k]),
+                     "outputs": None, "rejected": reason})
     return rows
 
 
@@ -991,7 +1127,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                    "agrees": not g.geometry or not implied or g.geometry in implied}
     if not receipt["derived_geometry"]["agrees"]:
         receipt["dissent"].append(f"declared geometry {g.geometry!r} but the inputs fit methods of {implied}: the "
-                                  f"declaration excludes them (check the declaration before trusting a deficit)")
+                                  f"declaration excludes them (check the declaration before trusting a deficit or a "
+                                  f"request for missing inputs)")
     receipt["methods_considered"] = [r["method"] for r in rows]
     receipt["methods_rejected"] = [{"method": r["method"], "why": r["rejected"]} for r in rows if r["rejected"]]
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
@@ -1007,7 +1144,13 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         formed = _formed(registry, data, g, body, high, receipt)
         if formed is not None:
             return finish(*formed)
-        missing = _missing_information(rows)
+        # catalogued methods and recipes the request supplies in part, flat and (in a one-part recipe's shape) in
+        # its part
+        part = _one_part(data)
+        partial = _partially_supplied(data, rows, g) + (
+            _partially_supplied(_part_data(data, part), candidates(_part_data(data, part), g, evidence, parts=False),
+                                g, part) if part else [])
+        missing = _missing_information(rows, partial)
         if missing:
             # the method that answers the question asked exists; the request lacks some of its inputs. That is
             # missing information, not a capability deficit: Capability Genesis is not asked to build it again
@@ -1017,6 +1160,10 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         if superseding:
             # the method that fits was superseded on frozen held-out evidence by a deployable mechanism: name it
             receipt["acquisition_candidates"] = superseding
+        # every catalogued method or recipe that reads any of the request's inputs is accounted for, with why it
+        # cannot serve
+        readers = [{"method": p["method"], **({"part": p["part"]} if p.get("part") else {}),
+                    "why": f"reads {p['reads']} and lacks {p['missing_inputs']}: {p['why']}"} for p in partial]
         receipt["capability_deficit"] = {
             "function": f"cognition.{g.geometry or 'unknown'}:{g.subgeometry or 'unspecified'}",
             "purpose": g.objective or g.epistemic_question or "cognitive request",
@@ -1024,8 +1171,12 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             "verification": {"failed": ("every catalogued method that reads these inputs is ineligible here "
                                         "(unserviceable lists why)" if rows else
                                         f"the request's shape (keys {sorted(data)}) matches no catalogued method's "
-                                        f"native inputs"),
-                             "unserviceable": receipt["methods_rejected"] or "no method declares these inputs",
+                                        f"native inputs" + ("; the methods that read some of them are not the "
+                                                            "question asked (unserviceable lists why)" if readers
+                                                            else ", and no catalogued method or recipe reads any of "
+                                                                 "them")),
+                             "unserviceable": (receipt["methods_rejected"] + readers
+                                               or "no catalogued method or recipe reads any of these inputs"),
                              "verified": True},
             "search_order": list(GENESIS_SEARCH),
             "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority"}

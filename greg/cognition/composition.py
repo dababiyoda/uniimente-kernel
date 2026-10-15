@@ -56,11 +56,13 @@ DECL = {"consequence_class": "read_only", "reversibility": "reversible"}
 
 RECIPES = {
     # Fermi estimate -> robust optimisation: the optimiser's demand slot takes an estimate quantile.
+    # ``stage_classes``: the epistemic class of each problem-path stage (a cortex organ, not a catalogued
+    # operation), so a declared geometry is checked against the recipe as against any operation.
     "estimate_then_optimize": {"requires": ("estimation_model", "formal_template"),
-                               "stages": ("estimate", "optimize")},
+                               "stages": ("estimate", "optimize"), "stage_classes": ("estimate", "optimization")},
     # Causal identification of each intervention -> allocation over the identified effects.
     "identify_then_optimize": {"requires": ("causal_studies", "formal_template"),
-                               "stages": ("identify", "optimize")},
+                               "stages": ("identify", "optimize"), "stage_classes": ("causal", "optimization")},
     # Graph bottleneck structure -> integer allocation; graph intelligence re-checks the answer.
     "graph_then_allocate": {"requires": ("capacity_network",),
                             "stages": ("compile", "optimize", "cross_check"),

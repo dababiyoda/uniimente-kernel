@@ -19,14 +19,14 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
 | Converged GREG lineage | PR #173, `claude/greg-full-machine-convergence-20261013` | Draft. Not merged to `main`; merging is Alfonso's decision |
 | Gate hardening (#55 CASE 27, #21, #12) | Draft PR #182, `claude/greg-gate-hardening-20261015` | Waits on Alfonso's key enrollment and INTEGRITY_AUTHORIZE; CI job 3 is red by design until then |
 | Merge records | `docs/collaboration/MISSION-DEFECTS-2026-10-15.md`, `INSTALLED-BODY-CONVERGENCE-2026-10-14.md`, `SECURITY-PORTS-2026-10-15.md` | Each names its residuals |
-| Acceptance missions A–L | `acceptance/missions.json` | 85 obligations, 358 test nodes, 24 gaps closed |
-| Completion contract | `acceptance/completion-contract.json` | 18 functions; tiers are computed from the acceptance run |
+| Acceptance missions A–L | `acceptance/missions.json` | 85 obligations, 359 test nodes, 24 gaps closed; 16 test files registered as real Body processes |
+| Completion contract | `acceptance/completion-contract.json` | 18 functions; tiers and coverage are computed from the acceptance run; 4 rest only on requirements that cover their whole obligation |
 | Verifier | `verifier/runs/` | PASS V1–V5 at 0655f13 |
-| Acceptance run | `docs/evidence/acceptance/2026-10-15-7cfa0bc.json` | 81/85 requirements at their declared tier; the 4 short need the real organ checkouts, which skip here |
+| Acceptance run | `docs/evidence/acceptance/2026-10-15-7cfa0bc.json` | 81/85 under the earlier rules, which ignored coverage and never checked BODY_VERIFIED against the cited tests. Under the current rules, the cited nodes at the commit that introduced them give 80/85 at their declared tier, of which 37 cover the whole obligation and 43 only part; J.J1b (coverage gap) no longer counts, and 9/9 trace links reach their tier. The 4 short (E.R2–R4, G.R2) need the real organ checkouts, which skip here |
 
 ## Open gaps (from `acceptance/missions.json`)
 
-**Buildable now (44).** Highest leverage first:
+**Buildable now (45).** Highest leverage first:
 
 1. **I.G7:** the appraisal executes the worker's code inside the acceptance process and reads its exit code, so a
    change built to subvert the test process itself can still pass. Hold the expectations in a parent the code under
@@ -42,7 +42,9 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
    BODY tier, routing gravity deficits into Genesis, license provenance).
 6. **E.G1–E.G7:** cross-organ work with real organs. This needs the organ checkouts in CI (E.G4), which is an
    environment step, not a founder act.
-7. **J.G1–J.G8:** compounding learning (counterfactuals, ablations, acquired capability and SOP compounding).
+7. **J.G1–J.G8, J.G10:** compounding learning (counterfactuals, ablations, acquired capability and SOP
+   compounding), and Mission J on a real Body process (J.G10 needs no founder act: BODY_VERIFIED uses a
+   per-test key).
 8. **B.G3–B.G6, B.G9, A.G3, A.G4, F.G3, H.G10, I.G5.**
 
 **Blocked (23).**
@@ -78,11 +80,14 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
 
 ```
 python -m acceptance check                      # static soundness of the manifest and contract
-python -m acceptance run --out report.json      # ~8 min; exits 1 while any tested requirement falls short
+python -m acceptance run --out report.json      # ~8 min; exits 1 while any tested requirement or trace link falls short
 python -m governance.integrity --check          # 0 on #173; 1 on #182 until Alfonso signs
 python verifier/v2/verify.py                    # needs a clean tracked tree
 ```
 
 When you close a gap, add its test to the requirement in `acceptance/missions.json` and mark the gap
 `CLOSED` with what closed it. Run a mutant that removes the mechanism, and confirm the test fails. Never
-raise a tier without a passing test, and never cite a test that skips here as attained.
+raise a tier without a passing test, and never cite a test that skips here as attained. A requirement is
+`BODY_VERIFIED` only with a cited test from a file in `body_process_tests` that starts a real Body process;
+an in-process Body is `SANDBOX_VERIFIED` at most. Raise `coverage` only when the cited tests show every
+clause of the obligation; a `gap` requirement declares no tier.

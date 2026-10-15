@@ -4,8 +4,10 @@
   run     run every cited test once, then report what each requirement, mission and function attained
   report  the same report from a recorded outcomes file, without running anything
 
-``run`` exits 0 only when every tested requirement attained its declared tier; any shortfall exits 1 and
-names it. Nothing here grants, attaches or activates anything.
+``run`` exits 0 only when every tested requirement and every Mission L trace link attained its declared
+tier; any shortfall exits 1 and names it. Reaching a tier is not covering an obligation: the report also says
+how many requirements, missions and contract functions cover their whole obligation and how many only part.
+Nothing here grants, attaches or activates anything.
 """
 from __future__ import annotations
 
@@ -18,7 +20,7 @@ import subprocess
 import sys
 import tempfile
 
-from acceptance import CONTRACT, MANIFEST, ROOT, load, minimal_nodes, problems, report
+from acceptance import CONTRACT, MANIFEST, ROOT, load, minimal_nodes, problems, report, shortfall_names
 
 
 def _head() -> str | None:
@@ -55,11 +57,22 @@ def _print(rep: dict) -> None:
           f"({'tests ran' if rep['ran'] else 'no tests ran: declarations only'})")
     for mid, m in rep["missions"].items():
         short = [rid for rid, r in m["requirements"].items() if r.get("declared_tier") and not r["attained"]]
-        print(f"  Mission {mid}: {m['status']:<20} {m['title']}"
+        part = "whole obligation" if m["coverage"] == "covered" else "part of obligation"
+        print(f"  Mission {mid}: {m['status']:<20} {part:<18} {m['title']}"
               + (f"  [short of declared tier: {', '.join(short)}]" if short and rep["ran"] else ""))
+        if m.get("trace"):
+            links = ", ".join(f"{x['link']} {x['status']}" for x in m["trace"])
+            short = [x["link"] for x in m["trace"] if not x["attained"]]
+            print(f"    trace: {links}"
+                  + (f"  [short of declared tier: {', '.join(short)}]" if short and rep["ran"] else ""))
     s = rep["summary"]
-    print(f"{s['attained_declared_tier']}/{s['requirements']} requirements attained their declared tier; "
-          f"no test can establish {', '.join(s['statuses_no_test_can_establish'])}.")
+    print(f"{s['attained_declared_tier']}/{s['requirements']} requirements reach their declared tier; "
+          f"{s['attained_whole_obligation']} of them cover the whole obligation, "
+          f"{s['attained_part_obligation']} only part.")
+    print(f"{s['trace_links_attained']}/{s['trace_links']} trace links reach their declared tier. "
+          f"{s['contract_functions_whole_obligation']}/{s['contract_functions']} contract functions rest only on "
+          f"requirements that cover their whole obligation.")
+    print(f"No test can establish {', '.join(s['statuses_no_test_can_establish'])}.")
 
 
 def main(argv=None) -> int:
@@ -101,9 +114,7 @@ def main(argv=None) -> int:
     if args.out:
         Path(args.out).write_text(json.dumps(rep, indent=1, sort_keys=True) + "\n")
     _print(rep)
-    short = [(mid, rid) for mid, m in rep["missions"].items() for rid, r in m["requirements"].items()
-             if r.get("declared_tier") and not r["attained"]]
-    return 1 if short else 0
+    return 1 if shortfall_names(rep) else 0
 
 
 if __name__ == "__main__":

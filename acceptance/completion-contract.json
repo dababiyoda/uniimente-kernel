@@ -404,12 +404,15 @@
    "authority": "Retains only on held-out evidence; protected fields can never become learned policy.",
    "missing_dependencies": [],
    "observed_failures": [
-    "No per-task winning-direction counterfactual after retention (J gap G1)"
+    "No per-task winning-direction counterfactual after retention (J gap G1)",
+    "A capability acquired earlier is never shown to improve a later related mission at any tier (J1b, coverage gap; J gaps G4, G5)",
+    "No learning evidence from a real Body process (J gap G10)"
    ],
    "recovery": "Retained and reverted learning survive process death.",
    "resources": "Ledger-derived; no model calls.",
    "next_work": [
-    "J gaps G1-G4"
+    "J gaps G1-G5",
+    "J gap G10: drive the J1 learning path on a real `greg run` process"
    ],
    "blocking": [
     "Real labels and days of briefs on a standing Body (founder)"
@@ -478,7 +481,8 @@
    "authority": "Rails and storefronts honour only grants their governing Gate issued (G1).",
    "missing_dependencies": [],
    "observed_failures": [
-    "Payments run against a loopback test-mode emulator only"
+    "Payments run against a loopback test-mode emulator only",
+    "Owned-company fulfillment and proof run only on an in-process Body (G.R5, G.R6: SANDBOX_VERIFIED); no real Body process runs them (G gap G1)"
    ],
    "recovery": "Distributed controls charge exactly once and compensate.",
    "resources": "Offline emulators.",
@@ -599,7 +603,7 @@
    "authority": "Synthetic by default; only observed customers and live money close externally (G2).",
    "missing_dependencies": [],
    "observed_failures": [
-    "No Body-driven loop end to end (G gap G1)"
+    "No real Body process runs any stage of the loop: every Body-level node is an in-process Body (G.R1, R2, R5, R6, R11 are SANDBOX_VERIFIED; G gap G1)"
    ],
    "recovery": "Settlement states reconcile; unknown outcomes need reconciliation.",
    "resources": "Test mode only.",
@@ -631,11 +635,16 @@
    ],
    "authority": "Reads only.",
    "missing_dependencies": [],
-   "observed_failures": [],
+   "observed_failures": [
+    "No test asserts costs, outcomes or why a metric moved through the founder trace for the traced mission (L1 is SANDBOX_VERIFIED and partial)",
+    "The nine-link run's Learning link is vacuous: no test asserts the appraisal-to-learning edge (L3 partial)"
+   ],
    "recovery": "Stateless.",
    "resources": "Offline.",
    "next_work": [
-    "Run the trace with the real organ checkouts (L gap G2)"
+    "Run the trace with the real organ checkouts (L gap G2)",
+    "Assert costs, the appraisal outcome and a metric movement with its cause in `greg foundry trace` / `greg foundry why` output on the real-process run (L1)",
+    "Assert that the separate appraisal's verdict changes what the run learns (L3)"
    ],
    "blocking": []
   }
@@ -699,7 +708,7 @@
    "n": 10,
    "condition": "The whole-machine acceptance suite passes at its declared evidence tier.",
    "met": "partly",
-   "evidence": "See the recorded acceptance report for this head; requirements without tests or with open gaps are not counted as passing."
+   "evidence": "See the recorded acceptance report for this head. A requirement without tests, or whose coverage is 'gap', is never counted as passing; one whose coverage is 'partial' is counted as reaching its tier but reported as covering only part of its obligation; BODY_VERIFIED counts only with a cited real Body process test; and each trace link's tier is computed from its proofs."
   },
   {
    "n": 11,

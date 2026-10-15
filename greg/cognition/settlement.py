@@ -62,12 +62,39 @@ def _compiled(value):
     return value
 
 
+FORMED_SELECTION = "formed_by_capability_genesis"
+
+
+def _formed_versions(journal) -> set:
+    """(capability id, pinned package version) of every installed open-source mechanism Capability Genesis
+    registered on this body (``greg.genesis``). A formed mechanism has no BUILTINS entry; it is credited only as
+    the identity its own registration pinned."""
+    out = set()
+    for event in journal.replay("capability.registered"):
+        manifest = event.payload.get("manifest") or {}
+        if str(manifest.get("provider", "")).startswith("installed:python:") \
+                and (event.payload.get("origin") or {}).get("kind") == "package":
+            out.add((manifest.get("capability_id"), str((manifest.get("provenance") or {}).get("version"))))
+    return out
+
+
+def _known_method(receipt, compiled, builtins, formed) -> bool:
+    """The receipt's method is one GREG can credit: a builtin cognitive capability at its manifest version, or,
+    for a compiled request the compiler served by a formed mechanism, that mechanism at its pinned version."""
+    if compiled is not None and compiled.get("selection_level") == FORMED_SELECTION:
+        return (receipt["method"] == compiled.get("method_or_composition_selected")
+                and (receipt["method"], receipt["method_version"]) in formed)
+    method = builtins.get(receipt["method"], (None,))[0]
+    return method is not None and bool(method.cognitive_profile) and method.version == receipt["method_version"]
+
+
 def measured_outcomes(journal):
     if journal is None:
         return []
     from greg.sop import REQUIRED_CHECKS
     from .cortex import geometry_key
     from greg.capabilities import BUILTINS
+    formed = _formed_versions(journal)
     registrations = {e.payload["mission_id"]: e.payload for e in journal.replay("mission.registered")}
     witnesses = {r.payload["witness_id"]: r.payload for r in journal.ledger.by_type("witness")}
     latest_appraisal, observations = {}, {}
@@ -93,11 +120,10 @@ def measured_outcomes(journal):
             continue
         witness = witnesses.get(record.payload.get("witness_id"), {})
         producer = witness.get("capability")
-        method = BUILTINS.get(receipt["method"], (None,))[0]
         registration = registrations.get(data["mission_id"], {})
         check = next((c for c in registration.get("spec", {}).get("success_checks", [])
                       if c["check_id"] == data["check_id"]), None)
-        if (method is None or not method.cognitive_profile or method.version != receipt["method_version"] or
+        if (not _known_method(receipt, compiled, BUILTINS, formed) or
                 producer not in ("cognition.solve", receipt["method"]) or not check or
                 check["sensor"].get("capability") != producer or
                 digest(check["sensor"].get("params", {})) != (compiled or receipt)[

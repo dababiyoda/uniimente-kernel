@@ -90,14 +90,36 @@ def _runtime_paths(executable: Path) -> list[Path]:
                                           for root in existing if root.is_dir())]
 
 
+def _executable_links(executable: Path, read_paths: list[Path]) -> list[tuple[str, str]]:
+    """Symlinks in the executable's chain that live outside every read root, recreated in the envelope.
+
+    Debian and Ubuntu install ``/usr/bin/python3 -> /etc/alternatives/python3 -> /usr/bin/python3.13``.
+    The binary is granted, but exec of the symlink fails with ENOENT inside an empty filesystem
+    unless the intermediate link exists there too. Recreating the link (never binding /etc) keeps
+    ``sys.executable`` and virtualenv discovery exactly as on the host.
+    """
+    links, path = [], executable
+    for _ in range(16):
+        if not path.is_symlink():
+            break
+        target = Path(os.readlink(path))
+        if not any(path == root or (root.is_dir() and path.is_relative_to(root)) for root in read_paths):
+            links.append((str(target), str(path)))
+        path = target if target.is_absolute() else (path.parent / target)
+    return links
+
+
 def _bubblewrap_argv(binary: str, read_paths: list[Path], cwd: Path | None = None,
-                    runtime: Path | None = None, *, network: bool = True) -> list[str]:
+                    runtime: Path | None = None, *, network: bool = True,
+                    symlinks: list[tuple[str, str]] = ()) -> list[str]:
     argv = [binary, "--unshare-user", "--unshare-pid", "--unshare-uts", "--unshare-ipc",
             "--disable-userns", "--die-with-parent", "--new-session", "--cap-drop", "ALL"]
     if not network:
         argv.append("--unshare-net")
     for path in read_paths:
         argv += ["--ro-bind", str(path), str(path)]
+    for target, link in symlinks:
+        argv += ["--symlink", target, link]
     argv += ["--proc", "/proc", "--dev", "/dev"]
     if cwd is not None and runtime is not None:
         argv += ["--bind", str(runtime / "tmp"), "/tmp", "--tmpfs", str(cwd.parent),
@@ -323,9 +345,10 @@ def prepare_worker(argv, cwd, timeout_seconds, provider, reviewed=False, config_
         from foundry.systems.relay_door import door_argv
         read_paths += _runtime_paths(Path(sys.executable).absolute())
         confined_argv = door_argv(sys.executable, door.fd, confined_argv)
+    links = _executable_links(executable, read_paths)
     if backend == "bubblewrap":
         confined_argv = _bubblewrap_argv(bwrap, list(dict.fromkeys(read_paths)), cwd, runtime,
-                                        network=network and door is None) + ["--", *confined_argv]
+                                        network=network and door is None, symlinks=links) + ["--", *confined_argv]
     evidence = {"status": "prepared", "filesystem": "os-confined", "mechanism": backend,
                 "landlock_abi": abi, "unavailable_mechanisms": unavailable,
                 "network": "provider-network-required" if network else "isolated-network-namespace",
@@ -333,6 +356,7 @@ def prepare_worker(argv, cwd, timeout_seconds, provider, reviewed=False, config_
                 "network_reason": ("provider thinking requires network; filesystem isolation does not authorize network actions"
                                    if network else "untrusted acceptance has no provider network or inherited authentication"),
                 "read_roots": [str(p) for p in dict.fromkeys(read_paths)],
+                "executable_links": [{"link": link, "target": target} for target, link in links],
                 "write_roots": [str(cwd), str(runtime)], "private_home": str(home),
                 "copied_config_files": copied, "environment_names": sorted(env),
                 "limits": {"cpu_seconds": cpu_limit, "address_space_bytes": _MEMORY_LIMIT,

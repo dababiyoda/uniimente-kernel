@@ -268,3 +268,32 @@ def test_a_certificate_outside_the_supported_roots_is_refused_before_dispatch(tm
     bundle.write_text("-----BEGIN CERTIFICATE-----\n")
     with pytest.raises(isolation.WorkerIsolationError, match="certificate roots: SSL_CERT_FILE"):
         prepare(tmp_path, monkeypatch, source_env={"SSL_CERT_FILE": str(bundle)}, config_files={})
+
+
+def test_executable_symlink_chain_outside_the_read_roots_is_recreated_in_the_envelope(tmp_path):
+    """Reproduced on this host (Ubuntu): /usr/bin/python3 -> /etc/alternatives/python3 -> /usr/bin/python3.13.
+    The binary was granted, yet bwrap failed with 'execvp /usr/bin/python3: No such file or directory' because the
+    intermediate link lived outside every mounted root. Links outside the read roots are recreated with --symlink;
+    links inside a granted directory are left to the bind."""
+    from greg.worker_isolation import _bubblewrap_argv, _executable_links
+    real = tmp_path / "opt" / "python3.13"
+    real.parent.mkdir()
+    real.write_text("#!/bin/sh\n")
+    alternatives = tmp_path / "etc" / "alternatives"
+    alternatives.mkdir(parents=True)
+    (alternatives / "python3").symlink_to(real)
+    granted = tmp_path / "usr" / "bin"
+    granted.mkdir(parents=True)
+    (granted / "python3").symlink_to(alternatives / "python3")
+    venv = tmp_path / "venv" / "bin"
+    venv.mkdir(parents=True)
+    (venv / "python").symlink_to(granted / "python3")
+    read_paths = [granted, venv, real]
+    links = _executable_links(venv / "python", read_paths)
+    assert links == [(str(real), str(alternatives / "python3"))], links
+    argv = _bubblewrap_argv("/usr/bin/bwrap", read_paths, network=False, symlinks=links)
+    i = argv.index("--symlink")
+    assert argv[i + 1:i + 3] == [str(real), str(alternatives / "python3")]
+    assert argv.index("--symlink") > argv.index("--ro-bind") and "--unshare-net" in argv
+    # A plain binary has no chain and the envelope gains no symlink.
+    assert _executable_links(real, read_paths) == [] and "--symlink" not in _bubblewrap_argv("/usr/bin/bwrap", read_paths)

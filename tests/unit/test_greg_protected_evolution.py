@@ -1,5 +1,6 @@
 """P8 protected evolutionary cognition: closed space, confined candidates, sealed evaluator, no activation."""
 import json
+import math
 import random
 
 import pytest
@@ -78,11 +79,12 @@ def _small_forecasting_split(monkeypatch):
 def test_a_cycle_without_a_recurring_failure_changes_nothing(monkeypatch, tmp_path):
     monkeypatch.setattr(E, "FAILURE_RATE_TRIGGER", 1.01)
     monkeypatch.setattr(E, "_dirty", lambda paths: [])         # the dirty-tree rule has its own test
+    monkeypatch.setattr(E, "_spent_heldout", lambda *a, **k: {})   # so has the spent-split rule
     _small_forecasting_split(monkeypatch)
     frozen = tmp_path / "freeze.json"
     E.freeze("forecast_quantile", frozen, generations=2, population=2)
     record = E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen,
-                     require_confinement=isolation.available()["available"])
+                     require_confinement=isolation.available()["available"], allow_dirty_for_test=True)
     assert record["decision"] == "NO_RECURRING_FAILURE" and record["authority_created"] is False
     assert record["freeze"]["sha256"].startswith("sha256:") and record["source_dirty"] == []
     assert "proposal" not in record
@@ -220,6 +222,7 @@ def test_a_constraint_release_candidate_runs_confined_and_verifies(tmp_path):
 def _frozen(monkeypatch, tmp_path, edit=None):
     """A pre-registered small forecasting cycle; ``edit`` changes the freeze as an on-disk edit after it would."""
     monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    monkeypatch.setattr(E, "_spent_heldout", lambda *a, **k: {})
     _small_forecasting_split(monkeypatch)
     path = tmp_path / "freeze.json"
     E.freeze("forecast_quantile", path, generations=2, population=2)
@@ -243,7 +246,8 @@ def test_a_trusted_file_that_differs_from_the_freeze_is_refused(monkeypatch, tmp
         inputs["code"][path] = "sha256:" + "0" * 64
     frozen = _frozen(monkeypatch, tmp_path, edit)
     with pytest.raises(E.EvolutionError, match="FROZEN_INPUT_CHANGED"):
-        E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen, require_confinement=False)
+        E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen, require_confinement=False,
+                allow_dirty_for_test=True)
     assert not (tmp_path / "c.json").exists()
 
 
@@ -256,7 +260,8 @@ def test_a_trusted_file_that_differs_from_the_freeze_is_refused(monkeypatch, tmp
 def test_seals_split_settings_and_rule_must_equal_the_freeze(monkeypatch, tmp_path, edit, why):
     frozen = _frozen(monkeypatch, tmp_path, edit)
     with pytest.raises(E.EvolutionError, match=why):
-        E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen, require_confinement=False)
+        E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen, require_confinement=False,
+                allow_dirty_for_test=True)
 
 
 def test_a_trusted_file_changed_mid_run_stops_the_cycle_before_the_next_evaluation(monkeypatch, tmp_path):
@@ -272,7 +277,7 @@ def test_a_trusted_file_changed_mid_run_stops_the_cycle_before_the_next_evaluati
     monkeypatch.setattr(E, "_code", drifting)
     with pytest.raises(E.EvolutionError, match="FROZEN_INPUT_CHANGED"):
         E.cycle(generations=2, population=2, out=tmp_path / "c.json", freeze=frozen,
-                require_confinement=isolation.available()["available"])
+                require_confinement=isolation.available()["available"], allow_dirty_for_test=True)
     assert not (tmp_path / "c.json").exists()
 
 
@@ -344,10 +349,32 @@ def test_a_method_error_is_recorded_per_problem_and_never_aborts_the_sandbox():
 
 
 def _shipped(target_name):
+    """The configuration the shipped executable actually runs, observed on a development instance (independent
+    review, P8-5: comparing the named constant alone let the executable run a rejected configuration), which must
+    also be the named constant."""
     import importlib
+    from greg.cognition import evolution_sandbox as S
+    from greg.cognition.genomes import library
     spec = E.TARGET_SPECS[target_name]()
-    module = importlib.import_module(spec.proposal["module"][:-3].replace("/", "."))
-    return getattr(module, spec.proposal["constant"])
+    constant = getattr(importlib.import_module(spec.proposal["module"][:-3].replace("/", ".")),
+                       spec.proposal["constant"])
+    executable = library.executables()[E.EVOLVABLE_CONFIG_PINS[target_name][0]]
+    module_name, function, _ = S.TARGETS[target_name]
+    module = importlib.import_module(module_name)
+    real, seen = getattr(module, function), []
+
+    def spy(config, data):
+        seen.append(json.loads(json.dumps(config)))
+        return real(config, data)
+    setattr(module, function, spy)
+    try:
+        data, _ = executable.instance(3)                                    # development seed
+        executable.solve(data, {"latency_s": 5.0, "compute": 100000})
+    finally:
+        setattr(module, function, real)
+    assert seen, (target_name, "the shipped executable never ran its evolvable method")
+    assert all(c == seen[0] for c in seen) and seen[0] == json.loads(json.dumps(constant)), target_name
+    return seen[0]
 
 
 def test_no_rejected_p8_configuration_is_shipped_and_every_incumbent_still_is():
@@ -403,3 +430,297 @@ def test_an_earlier_cycles_split_reproduces_its_frozen_evaluator_seals():
     assert E.SealedEvaluator(train, D.constraint_release_score).seal == record["evaluator_seals"]["train"]
     assert E.SealedEvaluator(held, D.constraint_release_score).seal == record["evaluator_seals"]["heldout"]
     assert E.CR_CURRENT_SPLIT != "cycle-3"
+
+
+# ------------------------------------------------------------------ independent review 2026-10-15: P8 integrity v2
+def test_the_frozen_closure_covers_every_repository_file_each_target_runs_in_both_processes():
+    """P8-1: the closure was ten named files; package __init__ files and ~25 parent-imported modules ran outside it.
+    A fresh interpreter runs a development cycle per target (dev-seed items) and reports what it executed."""
+    import subprocess
+    import sys
+    script = r'''
+import json, sys
+sys.path.insert(0, sys.argv[1])
+from greg import isolation
+from greg.cognition import evolution as E
+from greg.cognition.genomes import collective, developmental as D, forecasting
+train, held, _ = E.forecasting_split()
+f_items = lambda d, n: dict(list(d.items())[:n])
+def dev(make, seeds, category):
+    return {f"s{s}": {"data": make(s)[0], "truth": make(s)[1], "category": category(make(s)[0])} for s in seeds}
+E.forecasting_split = lambda seed=808, excluded_seeds=None: (f_items(train, 3), f_items(held, 2), [])
+E.immune_split = lambda: (dev(collective.immune_gaussian_instance, (1, 2, 3), collective.immune_dimension_band),
+                          dev(collective.immune_gaussian_instance, (4, 5), collective.immune_dimension_band), [])
+cr = lambda seeds: dev(D.constraint_release_instance, seeds, D.constraint_release_subregion)
+E.cr_split = lambda name=E.CR_CURRENT_SPLIT: (cr((1, 2, 3)), cr((4, 5)), [])
+E.FAILURE_RATE_TRIGGER = 0.0
+out = {}
+for name in sorted(E.TARGET_SPECS):
+    sandbox = []
+    real = E.run_candidate
+    def spy(*a, **k):
+        result = real(*a, **k)
+        sandbox.append(sorted(result["loaded"]))
+        return result
+    E.run_candidate = spy
+    record = E.cycle(generations=1, population=2, target_name=name,
+                     require_confinement=isolation.available()["available"])
+    E.run_candidate = real
+    closure = set(E.trusted_closure(name))
+    out[name] = {"decision": record["decision"],
+                 "parent_outside": sorted(E._loaded_repository_files() - closure),
+                 "sandbox_outside": sorted({p for run in sandbox for p in run} - closure),
+                 "sandbox_inits": sorted({p for run in sandbox for p in run if p.endswith("__init__.py")})}
+print(json.dumps(out))
+'''
+    proc = subprocess.run([sys.executable, "-I", "-c", script, str(E.ROOT)], capture_output=True, timeout=900)
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    out = json.loads(proc.stdout.splitlines()[-1])
+    assert set(out) == set(E.TARGET_SPECS)
+    for name, seen in out.items():
+        assert seen["parent_outside"] == [] and seen["sandbox_outside"] == [], (name, seen)
+        assert {"greg/__init__.py", "greg/cognition/__init__.py",
+                "greg/cognition/genomes/__init__.py"} <= set(seen["sandbox_inits"]), name
+
+
+def test_the_parent_refuses_a_sandbox_that_executed_code_outside_or_unlike_the_freeze(target):
+    """P8-1: only the method module was compared; an edited package __init__ or helper ran unnoticed."""
+    train, _, _ = E.forecasting_split()
+    problems = [{"id": k, "data": v["data"]} for k, v in list(train.items())[:1]]
+    code = E._code("forecast_quantile")
+    confine = isolation.available()["available"]
+    run = E.run_candidate(target, target.incumbent, problems, require_confinement=confine, expected_code=code)
+    assert set(run["loaded"]) <= set(code) and "greg/cognition/genomes/__init__.py" in run["loaded"]
+    assert all(run["loaded"][p] == code[p] for p in run["loaded"])
+    uncovered = {p: v for p, v in code.items() if p != "greg/cognition/genomes/__init__.py"}
+    with pytest.raises(E.EvolutionError, match="does not cover"):
+        E.run_candidate(target, target.incumbent, problems, require_confinement=confine, expected_code=uncovered)
+    edited = {**code, "greg/__init__.py": "sha256:" + "4" * 64}
+    with pytest.raises(E.EvolutionError, match="FROZEN_INPUT_CHANGED: the sandbox executed greg/__init__.py"):
+        E.run_candidate(target, target.incumbent, problems, require_confinement=confine, expected_code=edited)
+
+
+def test_the_sandbox_hashes_the_bytes_it_compiles_and_never_reads_repository_bytecode():
+    """P8-2: an UNCHECKED_HASH .pyc in the gitignored __pycache__ ran instead of the hashed source."""
+    import importlib.machinery
+    from greg.cognition import evolution_sandbox as S
+    source = E.ROOT / "greg/isolation.py"
+    loader = importlib.machinery.SourceFileLoader("greg.isolation", str(source))
+    with pytest.raises(OSError, match="never executed"):
+        S._get_data(loader, str(E.ROOT / "greg/__pycache__/isolation.cpython-313.pyc"))
+    assert S._get_data(loader, str(source)) == source.read_bytes()
+    assert S._EXECUTED["greg/isolation.py"] == E._sha(source)
+    # importing the module for TARGETS changes nothing in the importing process
+    assert importlib.machinery.SourceFileLoader.get_data is not S._get_data
+
+
+def test_a_development_run_never_looks_at_the_held_out_split(monkeypatch, tmp_path):
+    """P8-3: without a freeze the cycle evaluated the reserved held-out split, any number of times. The same
+    settings under a freeze reach the one look."""
+    monkeypatch.setattr(E, "FAILURE_RATE_TRIGGER", 0.0)
+    monkeypatch.setattr(E, "TRAIN_GAIN_MIN", -math.inf)
+    monkeypatch.setattr(E, "STRESS_TOLERANCE", math.inf)
+    monkeypatch.setattr(E, "outputs_verified", lambda *a: True)
+    monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    monkeypatch.setattr(E, "_spent_heldout", lambda *a, **k: {})
+    _small_forecasting_split(monkeypatch)
+    confine = isolation.available()["available"]
+    seen = []
+    real = E.SealedEvaluator.losses
+
+    def spy(self, outputs):                     # every later evaluation scores better, so a candidate advances
+        seen.append(set(self._items))
+        return {k: -float(len(seen)) for k in real(self, outputs)}
+    monkeypatch.setattr(E.SealedEvaluator, "losses", spy)
+    _, held, _ = E.forecasting_split()
+    record = E.cycle(generations=2, population=2, require_confinement=confine)
+    assert record["decision"] == "STOPPED_BEFORE_HELDOUT" and "heldout" not in record
+    frozen = tmp_path / "freeze.json"
+    E.freeze("forecast_quantile", frozen, generations=2, population=2)
+    record = E.cycle(generations=2, population=2, freeze=frozen, require_confinement=confine)   # no record written
+    assert record["decision"] == "STOPPED_BEFORE_HELDOUT" and "heldout" not in record
+    assert not any(items & set(held) for items in seen)
+    record = E.cycle(generations=2, population=2, freeze=frozen, require_confinement=confine,
+                     out=tmp_path / "c.json", allow_dirty_for_test=True)
+    assert record["decision"] in ("RETAIN", "REJECT") and record["heldout"]["n"] == len(held)
+    assert json.loads((tmp_path / "c.json").read_text())["heldout"] == record["heldout"]
+
+
+def test_the_sandbox_puts_the_repository_after_the_standard_library():
+    """A file at the repository root named like a standard module must not shadow it in the sandbox (the
+    verifier's addition to P8-1); the repository's packages still precede installed ones."""
+    from greg.cognition import evolution_sandbox as S
+    path = ["/usr/lib/python313.zip", "/usr/lib/python3.13", "/usr/lib/python3.13/lib-dynload",
+            "/usr/local/lib/python3.13/dist-packages", "/usr/lib/python3/dist-packages"]
+    assert S.search_path(path) == [*path[:3], str(S.ROOT), *path[3:]]
+    assert S.search_path(path[:3]) == [*path[:3], str(S.ROOT)]
+
+
+def test_a_freeze_refuses_a_held_out_split_an_earlier_cycle_or_freeze_looked_at(monkeypatch, tmp_path):
+    """One look per held-out item: cycle 4's frozen split (s7500-s7589) and cycles 1-3's splits are spent."""
+    from greg.cognition.genomes import developmental as D
+    monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    data, truth = D.constraint_release_instance(3)                            # development seed, relabelled
+    item = {"data": data, "truth": truth, "category": D.constraint_release_subregion(data)}
+    monkeypatch.setattr(E, "cr_split", lambda name=E.CR_CURRENT_SPLIT: ({"s3": item}, {"s7500": item}, []))
+    with pytest.raises(E.EvolutionError, match="SPLIT_SPENT.*2026-10-15-cr-4/freeze.json"):
+        E.freeze("constraint_release", tmp_path / "f.json")
+    assert not (tmp_path / "f.json").exists()
+    monkeypatch.setattr(E, "cr_split", lambda name=E.CR_CURRENT_SPLIT: ({"s3": item}, {"s7300": item}, []))
+    with pytest.raises(E.EvolutionError, match="SPLIT_SPENT.*cycle-cr-3"):
+        E.freeze("constraint_release", tmp_path / "f.json")
+    spent = E._spent_heldout("immune_detect")
+    assert {f"s{s}" for s in E.IMMUNE_HELDOUT_SEEDS} <= set().union(*spent.values())
+
+
+def test_a_recorded_cycle_needs_a_committed_freeze_confinement_and_the_clean_room(monkeypatch, tmp_path):
+    """P8-4: a freeze outside the repository (or edited after its commit) was accepted; P8-7: a recorded cycle
+    could run unconfined; P8-1/P8-2: nothing required the run to vouch for the code it executed."""
+    with pytest.raises(E.EvolutionError, match="CONFINEMENT_REQUIRED"):
+        E.cycle(out=tmp_path / "c.json", freeze=tmp_path / "f.json", require_confinement=False)
+    monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    (tmp_path / "f.json").write_text(json.dumps({"inputs": {}}))
+    with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):
+        E.cycle(out=tmp_path / "c.json", freeze=tmp_path / "f.json")
+    with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):
+        E.run_recorded("constraint_release", tmp_path / "f.json", tmp_path / "c.json")
+    committed = E.ROOT / "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/freeze.json"
+    monkeypatch.setattr(E, "_dirty", lambda paths: list(paths))          # an uncommitted edit of a committed freeze
+    with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):
+        E.run_recorded("constraint_release", committed, tmp_path / "c.json")
+
+
+def test_the_clean_room_names_repository_bytecode_and_unfrozen_executed_code(monkeypatch, tmp_path):
+    import sys
+    import types
+    code = {p: "x" for p in E._loaded_repository_files()}
+    monkeypatch.setattr(sys, "pycache_prefix", None)
+    assert any("bytecode" in v for v in E._clean_room_violations(code))
+    prefix = tmp_path / "prefix"
+    planted = prefix / E.ROOT.relative_to(E.ROOT.anchor) / "greg/cognition/genomes"
+    planted.mkdir(parents=True)
+    monkeypatch.setattr(sys, "pycache_prefix", str(prefix))
+    assert E._clean_room_violations(code) == []
+    (planted / "developmental.cpython-313.pyc").write_bytes(b"\0")
+    assert any("holds repository bytecode" in v for v in E._clean_room_violations(code))
+    (planted / "developmental.cpython-313.pyc").unlink()
+    stray = types.ModuleType("greg_review_stray")
+    stray.__file__ = str(E.ROOT / "greg/cognition/genomes/strategic_patch.py")
+    monkeypatch.setitem(sys.modules, "greg_review_stray", stray)
+    assert any("strategic_patch.py" in v for v in E._clean_room_violations(code))
+
+
+def test_the_dirty_check_compares_bytes_with_head_so_an_index_flag_cannot_hide_an_edit(monkeypatch, tmp_path):
+    """P8-6: ``git status`` trusted skip-worktree/assume-unchanged; the check now compares content with HEAD."""
+    import subprocess
+    git = lambda *a: subprocess.run(["git", *a], cwd=tmp_path, check=True, capture_output=True)
+    git("init", "-q")
+    (tmp_path / "a.py").write_text("x = 1\n")
+    (tmp_path / "b.py").write_text("y = 1\n")
+    git("add", ".")
+    git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "c")
+    monkeypatch.setattr(E, "ROOT", tmp_path)
+    assert E._dirty(["a.py", "b.py"]) == []
+    git("update-index", "--skip-worktree", "a.py")
+    (tmp_path / "a.py").write_text("x = 0\n")
+    git("update-index", "--assume-unchanged", "b.py")
+    (tmp_path / "b.py").write_text("y = 0\n")
+    assert subprocess.run(["git", "status", "--porcelain"], cwd=tmp_path, capture_output=True, text=True).stdout == ""
+    assert E._dirty(["a.py", "b.py", "untracked.py"]) == ["a.py", "b.py", "untracked.py"]
+
+
+def test_confinement_failure_is_reported_as_such_and_an_unconfined_run_asks_for_none(monkeypatch, target):
+    """P8-7: without Landlock the child omitted its digest and the parent blamed METHOD_CHANGED; the request
+    always asked for confinement."""
+    problems = [{"id": "a", "data": E.forecasting_split()[0][next(iter(E.forecasting_split()[0]))]["data"]}]
+    sent = []
+    real_run = __import__("greg.capabilities", fromlist=["run_isolated"]).run_isolated
+
+    def spy(argv, **kw):
+        sent.append(json.loads(kw["input_bytes"]))
+        return real_run(argv, **kw)
+    monkeypatch.setattr("greg.capabilities.run_isolated", spy)
+    E.run_candidate(target, target.incumbent, problems, require_confinement=False)
+    assert sent[-1]["confine"] is False
+    real = E.json.loads
+
+    def unavailable(text):
+        out = real(text)
+        if isinstance(out, dict) and "outputs" in out:
+            out = {"confined": None, "error": "CONFINEMENT_UNAVAILABLE: no Landlock", "imported": out["imported"],
+                   "loaded": out["loaded"]}
+        return out
+    monkeypatch.setattr(E.json, "loads", unavailable)
+    with pytest.raises(E.EvolutionError, match="CONFINEMENT_UNAVAILABLE"):
+        E.run_candidate(target, target.incumbent, problems, require_confinement=True)
+
+    def failed(text):                                   # an unconfined child's own error is reported as itself
+        out = real(text)
+        return {"confined": None, "error": "UNKNOWN_TARGET"} if isinstance(out, dict) and "outputs" in out else out
+    monkeypatch.setattr(E.json, "loads", failed)
+    with pytest.raises(E.EvolutionError, match="UNKNOWN_TARGET"):
+        E.run_candidate(target, target.incumbent, problems, require_confinement=False)
+
+
+@pytest.mark.parametrize("name,key,value,why", [
+    ("constraint_release", "p_restart", float("nan"), "outside"),
+    ("constraint_release", "p_restart", True, "outside"),
+    ("forecast_quantile", "beta_set", [0.0, 0.05, 0.1, float("nan")], "outside the declared space"),
+    ("immune_detect", "detectors", float("nan"), "outside the declared space")])
+def test_non_finite_and_mistyped_values_are_evolution_errors(name, key, value, why):
+    """P8-8: NaN inside a choice escaped as a bare ValueError."""
+    target = E.TARGET_SPECS[name]().target()
+    with pytest.raises(E.EvolutionError, match=why):
+        target.validate({**target.incumbent, key: value})
+
+
+def test_float_values_have_one_canonical_form_and_unknown_kinds_are_refused():
+    """P8-8: 0 and -0.0 passed unchanged and became configurations distinct from the incumbent's 0.0."""
+    target = E.cr_target()
+    incumbent = E.config_id(target.validate(target.incumbent))
+    assert incumbent == E.config_id(target.incumbent)
+    for same in (0, -0.0, 0.0):
+        assert E.config_id(target.validate({**target.incumbent, "p_restart": same})) == incumbent
+    with pytest.raises(E.EvolutionError, match="unknown kinds"):
+        E.Target("x", {"a": ("int", (0, 10))}, {"a": 1})
+
+
+@pytest.mark.skipif(not isolation.available()["available"] or isolation.available()["abi"] < 6,
+                    reason="Landlock scoping needs ABI 6")
+def test_a_confined_process_cannot_reach_an_abstract_socket_created_outside_its_domain():
+    """L1: only signal scoping had a test; dropping SCOPE_ABSTRACT_UNIX_SOCKET passed every suite."""
+    import os
+    import socket
+    import subprocess
+    import sys
+    name = f"\0greg-review-{os.getpid()}"
+    listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    listener.bind(name)
+    listener.listen(1)
+    try:
+        code = ("import json, socket, sys, tempfile; sys.path.insert(0, %r)\n"
+                "from greg import isolation\n"
+                "info = isolation.confine(tempfile.mkdtemp(), [], list_code=False)\n"
+                "s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\n"
+                "try:\n    s.connect(%r); out = 'ALLOWED'\n"
+                "except OSError as exc:\n    out = type(exc).__name__\n"
+                "print(json.dumps({'connect': out, 'scopes': info['ipc_scopes']}))\n") % (str(E.ROOT), name)
+        proc = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, timeout=60)
+        out = json.loads(proc.stdout)
+    finally:
+        listener.close()
+    assert out == {"connect": "PermissionError", "scopes": ["abstract_unix_socket", "signal"]}, out
+
+
+@pytest.mark.skipif(not isolation.available()["available"], reason="Landlock unavailable on this host")
+def test_confinement_refuses_a_process_whose_other_threads_would_stay_unconfined():
+    """L2: landlock_restrict_self confines the calling thread only; a pre-existing thread kept full access."""
+    import subprocess
+    import sys
+    code = ("import json, sys, tempfile, threading, time; sys.path.insert(0, %r)\n"
+            "from greg import isolation\n"
+            "threading.Thread(target=time.sleep, args=(5,), daemon=True).start()\n"
+            "try:\n    isolation.confine(tempfile.mkdtemp(), [], list_code=False); print('CONFINED')\n"
+            "except isolation.IsolationError as exc:\n    print('REFUSED', exc)\n") % str(E.ROOT)
+    proc = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True, timeout=60)
+    assert proc.stdout.startswith("REFUSED") and "2 threads" in proc.stdout, proc.stdout + proc.stderr

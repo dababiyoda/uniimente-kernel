@@ -378,16 +378,6 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
             row["status"] = "NO_LIFT"
             row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
                               f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
-        matched = _matched_by_single_genome(recipe, evidence)
-        if matched and not row["rejected"]:
-            # a single genome admitted DEFAULT against this recipe's twin, at its current version: equal quality at
-            # no more than 1.25x the recipe's latency on this geometry. The recipe's lift was measured over a
-            # repertoire without it; demoted, not deleted, it still serves when the genome cannot run
-            row["matched_by"] = matched
-            row["demoted"] = "; ".join(filter(None, [row.get("demoted"), (
-                f"admitted single genome {', '.join(m['method'] for m in matched)} matched this recipe's twin "
-                f"({', '.join(m['evidence'] for m in matched)}); the single method is canonical for this geometry "
-                f"and the recipe ranks after it")]))
         lacking = None if row["rejected"] else _stage_lacks(data, recipe, g, evidence)
         if lacking:
             # the stage that reads the part would abstain on it: the recipe is not a fit. When the part carries
@@ -405,6 +395,20 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
         rows.append(row)
         if parts:
             rows += _part_rows(data, g, evidence)
+        # a single genome admitted DEFAULT against this recipe's twin, at its current version, that fits this request
+        # (a row no rule rejected, flat or in the part): equal quality at no more than 1.25x the recipe's latency on
+        # this geometry. The recipe's lift was measured over a repertoire without it. Decided after the stage rule and
+        # the part rows: a genome with no row here answers another question, and a rejected recipe is not demoted.
+        # Demoted, not deleted, the recipe still serves while the genome is withheld. It is no fallback for an input
+        # the attached genome refuses: parallel edges end in the genome's abstention
+        fits = {r["method"] for r in rows if not r["rejected"]}
+        matched = [m for m in _matched_by_single_genome(recipe, evidence) if m["method"] in fits]
+        if matched and not row["rejected"]:
+            row["matched_by"] = matched
+            row["demoted"] = "; ".join(filter(None, [row.get("demoted"), (
+                f"admitted single genome {', '.join(m['method'] for m in matched)} matched this recipe's twin "
+                f"({', '.join(m['evidence'] for m in matched)}); the single method is canonical for this geometry "
+                f"and the recipe ranks after it")]))
     return rows
 
 
@@ -498,8 +502,9 @@ def _settle_promotions(pending: list, rows: list[dict]) -> None:
             # govern it, and attaching it is the founder's decision (never a Genesis acquisition)
             row["superseded_by"]["promoted_as"] = method
         elif method in why:
-            # its promoted genome cannot answer this request (its own frozen status, the declared geometry, a
-            # relaxation): the superseding mechanism stays an acquisition candidate, and the reason is kept
+            # its promoted genome cannot answer this request (its own frozen status, a relaxation): the superseding
+            # mechanism stays an acquisition candidate, and the reason is kept. A declared geometry that excludes the
+            # promoted genome excludes this row too (promotion keeps the class), and run names no candidate for it
             row["superseded_by"]["promoted_rejected"] = {"method": method, "why": why[method]}
 
 
@@ -1282,6 +1287,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     receipt["methods_rejected"] = [{"method": r["method"], "why": r["rejected"]} for r in rows if r["rejected"]]
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible = [r for r in rows if not r["rejected"]]
+    # a superseded row the declaration excludes names nothing: promotion keeps the epistemic class, so the
+    # superseding mechanism (promoted or not) has the geometry the declaration excludes
     superseding = [{"mechanism": r["superseded_by"]["mechanism"], "supersedes": r["method"],
                     "evidence": r["superseded_by"]["evidence"],
                     "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority",
@@ -1289,7 +1296,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                     **({"promoted_genome_rejected": r["superseded_by"]["promoted_rejected"]}
                        if r["superseded_by"].get("promoted_rejected") else {})}
                    for r in rows if r.get("superseded_by", {}).get("deployable")
-                   and not r["superseded_by"].get("promoted_as")]
+                   and not r["superseded_by"].get("promoted_as")
+                   and not (g.geometry and g.geometry not in r["epistemic_classes"])]
     high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
     if not eligible:
         formed = _formed(registry, data, g, body, high, receipt, pid=pid, vector=vector, journal=journal)
@@ -1339,6 +1347,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         inhibited = _settled_inhibition(*settled.get(r["method"], (0, 0)))
         if inhibited and not r.get("demoted"):
             r["demoted"] = inhibited                    # live negative evidence changes routing
+            r["settled_inhibition"] = True
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
     for r in eligible:
@@ -1383,7 +1392,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         return finish("CAPABILITY_DEFICIT")
     chosen = runnable[0]
     receipt["method_or_composition_selected"] = chosen["method"]
-    receipt["selection_level"] = ("only_fit_despite_no_lift" if chosen.get("demoted")
+    receipt["selection_level"] = (_demoted_level(chosen, best) if chosen.get("demoted")
                                   else "preferred_by_operator" if chosen["operation"] in plan["prefer"]
                                   or chosen["method"] in plan["prefer"] else "admission_status")
     if chosen.get("demoted"):
@@ -1491,6 +1500,19 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         receipt["sensitivity"] = _sensitivity_runs(pid, chosen["operation"], data, inner["output"], geometry_hint,
                                                    registry, journal, model_config, receipt, extra)
     return finish(done, inner["output"])
+
+
+def _demoted_level(chosen: dict, best: dict) -> str:
+    """Why a demoted fit serves. A demoted row ranks after every fit that is not, so either a better-ranked fit cannot
+    run (the receipt names it in ``withheld_best_fit``) or every fit is demoted and this one ranks first, labelled by
+    what demoted it: no verified lift, or settled outcomes on this body."""
+    if chosen is not best:
+        return "serves_while_best_fit_withheld"
+    if chosen["status"] == "NO_LIFT":
+        return "only_fit_despite_no_lift"
+    if chosen.get("settled_inhibition"):
+        return "demoted_by_settled_outcomes"
+    return "best_of_demoted_fits"
 
 
 def _has_answer(inner: dict) -> bool:

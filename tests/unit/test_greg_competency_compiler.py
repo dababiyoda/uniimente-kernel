@@ -906,6 +906,111 @@ def test_a_cortex_organ_reading_one_part_of_a_genome_request_does_not_answer_it(
     assert compile_on({"sources": data["sources"]})["method_or_composition_selected"] == "cognition.cortex.semantic"
 
 
+def _f7_index(no_index):
+    """Admission v3's verdicts for the F7 shape: the recipe's VPL lift, and flow_expansion_mcf DEFAULT against its
+    twin at the genome's current version."""
+    from greg.cognition.genomes import library
+    no_index.write_text(json.dumps({
+        "routing": {}, "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}},
+        "genomes": {"flow_expansion_mcf": {"status": "DEFAULT_FOR_GEOMETRY",
+                                           "version": library.executables()["flow_expansion_mcf"].genome.version,
+                                           "evidence": "docs/evidence/greg-genome-admission/x/results.json"}}}))
+
+
+def _everything_attached():
+    registry = registry_view()
+    for cid in list(registry.manifests):
+        registry.set_state(cid, "ATTACHED")
+    return registry
+
+
+def _f7_run(registry):
+    def run(request, **extra):
+        return reason({"problem_id": "f7-shape", "compile": {"geometry": {}, "data": request, **extra}},
+                      registry=registry)
+    return run
+
+
+def test_a_recipe_is_demoted_only_for_a_matched_genome_that_fits_this_request(no_index):
+    """Independent review 2026-10-15 (F2): the single-genome match was decided without asking whether the genome fits
+    this request. A capacity network sent beside any other key fits no single genome (it is not a one-part request),
+    yet the recipe was demoted after every other fit and another question was answered ("expression": "2 + 2" was
+    ANSWERED 4; "sources" went to the semantic organ, which abstained)."""
+    from greg.cognition.genomes import library
+    _f7_index(no_index)
+    data, truth = library.executables()["flow_expansion_mcf"].instance(3)            # development seed
+    run = _f7_run(_everything_attached())
+    for extra in ({"expression": "2 + 2"}, {"sources": [{"id": "s1", "text": "capacity report"}]}):
+        r = run({"capacity_network": data, **extra}, execute=False)
+        assert r["method_or_composition_selected"] == "composition:graph_then_allocate", extra
+        assert "composition:graph_then_allocate" not in {d["method"] for d in r["methods_demoted"]}
+    answered = run({"capacity_network": data, "expression": "2 + 2"})
+    assert answered["state"] == "ANSWERED" and answered["result"]["flow_value"] == truth["optimum"]
+    plain = run({"capacity_network": data}, execute=False)          # the one-part request: the genome answers its part
+    assert plain["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+    assert any(d["method"] == "composition:graph_then_allocate" and "matched this recipe's twin" in d["why"]
+               for d in plain["methods_demoted"])
+
+
+def test_a_recipe_the_stage_rule_rejects_is_not_listed_as_demoted(no_index):
+    """Independent review 2026-10-15 (F5): the match was decided before the stage rule, so a part that is no capacity
+    network listed the recipe both as rejected (its compile stage lacks the inputs) and as demoted by the match."""
+    from greg.cognition.genomes import library
+    _f7_index(no_index)
+    other, _ = library.executables()["assignment_lsa"].instance(2)                   # development seed; no network
+    r = _f7_run(_everything_attached())({"capacity_network": other}, execute=False)
+    assert "composition:graph_then_allocate" in {d["method"] for d in r["methods_rejected"]}
+    assert "composition:graph_then_allocate" not in {d["method"] for d in r["methods_demoted"]}
+
+
+def test_a_recipe_serving_while_its_matched_genome_is_withheld_says_so(no_index):
+    """Independent review 2026-10-15 (F4): every demoted fit that served was labelled only_fit_despite_no_lift. A
+    recipe with a verified lift serving while the genome that matched it is withheld is neither the only fit nor
+    without lift."""
+    from greg.cognition.genomes import library
+    _f7_index(no_index)
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)                # development seed
+    stages = registry_view()
+    for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow"):
+        stages.set_state(cid, "ATTACHED")
+    r = _f7_run(stages)({"capacity_network": data}, execute=False)
+    assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
+    assert r["withheld_best_fit"]["method"] == "cognition.flow_expansion_mcf"
+    assert r["selection_level"] == "serves_while_best_fit_withheld"
+
+
+def test_a_fit_demoted_by_its_settled_outcomes_is_labelled_so(registry, no_index, monkeypatch):
+    """Independent review 2026-10-15 (F4): a method demoted by its settled outcomes on this body, serving because
+    nothing else fits, was labelled only_fit_despite_no_lift although no lift verdict applies to it."""
+    monkeypatch.setattr(compiler, "_settled_counts", lambda journal: {"cognition.flow_maxflow": (12, 2)})
+    r = compile_(registry, {"geometry": "optimization"}, maxflow_instance(3)[0], execute=False)
+    assert r["method_or_composition_selected"] == "cognition.flow_maxflow"          # demoted, and the only fit
+    assert any("2 of 12 correct" in d["why"] for d in r["methods_demoted"])
+    assert r["selection_level"] == "demoted_by_settled_outcomes"
+
+
+@pytest.mark.parametrize("promotion", ["registered", "not registered"])
+def test_no_acquisition_candidate_is_named_for_a_geometry_the_declaration_excludes(registry, no_index, monkeypatch,
+                                                                                   promotion):
+    """Independent review 2026-10-15 (F6): a basal_pid request declared deductive named the simulation-optimised PI
+    tuner (physical) for Genesis to acquire, although the declaration excludes it: promotion keeps the epistemic
+    class. The same held where the superseding mechanism is not a registered genome."""
+    from greg.cognition import catalog
+    from greg.cognition.genomes import library
+    item = library.executables()["basal_pid"]
+    no_index.write_text(json.dumps({"genomes": {"basal_pid": {
+        "status": "SUPERSEDED", "version": item.genome.version, "evidence": "v2/results.json#genomes.basal_pid"}},
+        "recipes": {}, "routing": {}}))
+    if promotion == "not registered":
+        monkeypatch.delitem(catalog.FAMILIES, library.promotions()["basal_pid"])
+    data = item.instance(2)[0]                                                        # development seed
+    r = compile_(registry, {"geometry": "deductive"}, data, execute=False)
+    assert r["state"] == "CAPABILITY_DEFICIT" and "acquisition_candidates" not in r
+    if promotion == "not registered":                       # the native declaration still names the mechanism
+        native = compile_(registry, {"geometry": item.genome.epistemic_class}, data, execute=False)
+        assert "cognition.basal_pid" in [c["supersedes"] for c in native["acquisition_candidates"]]
+
+
 def test_an_admitted_single_genome_that_matched_a_recipes_twin_outranks_the_recipe(no_index):
     """Review of #179 (M10, L11) and admission v3: flow_expansion_mcf was admitted DEFAULT against the
     graph_then_allocate twin (equal quality on 30 of 30 at about a seventh of the latency). The recipe's VPL_LIFT

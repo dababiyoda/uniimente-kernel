@@ -279,11 +279,25 @@ class Relay:
         self.journal.append({**entry, "bytes_sent": counts["sent"], "bytes_received": counts["received"]})
 
 
-def _confine():
-    sys.path.insert(0, str(ROOT / "tools"))
+def _load_filter():
+    """The seccomp filter, loaded once into this (parent) process. A child that imported it from disk
+    at fork time could be handed a replaced tools/offline_test.py by any earlier writer."""
     try:
-        from offline_test import install_filter
-        install_filter()
+        module = sys.modules.get("offline_test")
+        if module is None:
+            sys.path.insert(0, str(ROOT / "tools"))
+            import offline_test as module  # type: ignore
+        return module.install_filter
+    except Exception:
+        return None
+
+
+_INSTALL_FILTER = _load_filter() if sys.platform == "linux" else None
+
+
+def _confine():
+    try:
+        _INSTALL_FILTER()      # in memory since import; the child imports nothing
     except Exception:
         os._exit(97)           # fail closed: a component never runs unconfined
 

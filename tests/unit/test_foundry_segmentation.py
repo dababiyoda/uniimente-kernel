@@ -76,3 +76,20 @@ def test_fail_closed_without_confinement(tmp_path, monkeypatch):
 def test_registered_on_the_foundry_with_read_only_ops():
     mod = module(26)
     assert set(mod.QUERY_OPS) == {"policy", "journal"} and mod.APPLY_OPS == {}
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="seccomp is Linux")
+def test_a_replaced_filter_file_cannot_open_sockets_for_a_later_component(tmp_path, monkeypatch):
+    """Same class as the run_isolated finding: the component's preexec imported tools/offline_test.py from
+    disk at fork time, so whoever could write that file decided whether the next component had sockets.
+    The filter is now the one loaded into the body's memory at import."""
+    from foundry.systems import segmentation
+    kernel = tmp_path / "kernel"
+    (kernel / "tools").mkdir(parents=True)
+    (kernel / "tools" / "offline_test.py").write_text("def install_filter():\n    pass\n")
+    monkeypatch.setattr(segmentation, "ROOT", kernel)
+    monkeypatch.delitem(sys.modules, "offline_test", raising=False)     # nothing cached for a child to reuse
+    probe = "import socket\ntry:\n    socket.socket()\n    print('NETWORK OPEN')\nexcept OSError:\n    print('denied')\n"
+    relay = Relay(policy={}, journal=Journal(tmp_path / "journal.jsonl"))
+    proc = run_confined([sys.executable, "-c", probe], identity="probe", relay=relay, cwd=tmp_path)
+    assert proc.stdout.decode().strip() == "denied"

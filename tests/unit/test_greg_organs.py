@@ -387,3 +387,109 @@ def test_a_seed_with_no_opportunity_is_a_truthful_answer_not_a_fault(tmp_path, j
                           ctx(tmp_path, journal, roots=organ_roots(params)))
     assert out["state"] == "NO_OPPORTUNITY" and out["appraisal_verdict"] is None
     assert journal.replay("organ.observed") == []
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="seccomp network filter and Landlock are Linux")
+@pytest.mark.parametrize("status, confined", [(97, False), (98, True)])
+def test_a_command_that_exits_97_or_98_ran_and_is_not_reported_as_refused(tmp_path, status, confined):
+    """Second review (containment 0): the preexec signalled its own failure with exit 97 (network) or 98
+    (confinement), so a command that ran, wrote and then exited 97/98 itself was reported as 'command
+    refused' and typed transient (never a capability fault). A refusal is now signalled out of band."""
+    from greg import capabilities, isolation
+    if confined and not isolation.available().get("available"):
+        pytest.skip("Landlock unavailable on this host")
+    marker = tmp_path / "store" / "marker"
+    marker.parent.mkdir()
+    confine = organs._confinement(Path(sys.executable), tmp_path, marker.parent) if confined else None
+    proc = capabilities.run_isolated(
+        [sys.executable, "-s", "-c", f"open({str(marker)!r}, 'a').write('ran'); raise SystemExit({status})"],
+        cwd=tmp_path, confine=confine)
+    assert proc.returncode == status and marker.read_text() == "ran"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="seccomp network filter and Landlock are Linux")
+@pytest.mark.parametrize("failing", ["network", "confinement"])
+@pytest.mark.parametrize("supervised", [False, True])
+def test_isolation_that_cannot_be_installed_refuses_the_command_before_it_runs(tmp_path, monkeypatch, failing,
+                                                                              supervised):
+    from greg import capabilities, isolation
+
+    def broken(*a, **k):
+        raise OSError("unavailable")
+
+    if failing == "network":
+        monkeypatch.setattr(capabilities, "_network_filter", lambda: broken)
+    else:
+        monkeypatch.setattr(isolation, "confine_paths", broken)
+    marker = tmp_path / "marker"
+    with pytest.raises(CapabilityError, match=f"{'network isolation' if failing == 'network' else 'filesystem'}"
+                                              ".* unavailable; command refused") as raised:
+        capabilities.run_isolated([sys.executable, "-c", f"open({str(marker)!r}, 'w').write('ran')"], cwd=tmp_path,
+                                  confine={"read": [], "read_exec": [], "write": []} if failing == "confinement"
+                                  else None, stop_check=(lambda: False) if supervised else None)
+    assert raised.value.failure_class == "transient" and not marker.exists()
+
+
+def test_an_interpreter_outside_a_venv_is_granted_alone_never_its_parent_tree(tmp_path):
+    """Second review (containment 1): the grant was python.parent.parent, so an interpreter declared at
+    ~/bin/python3 gave the stage read+exec on the whole home (the other organ, the Kernel's sources, the
+    body's home) while the receipt said filesystem_confined. The grant now comes from the interpreter."""
+    from greg import isolation
+    if not isolation.available().get("available"):
+        pytest.skip("Landlock unavailable on this host")
+    home = tmp_path / "home"
+    (home / "bin").mkdir(parents=True)
+    python = home / "bin" / "python3"
+    python.symlink_to(os.path.realpath(sys.executable))
+    for name in ("own", "other", "kernel", "store"):
+        (home / name).mkdir()
+        (home / name / "f.txt").write_text(name)
+    confine = organs._confinement(python, home / "own", home / "store", exclude=(home / "other", home / "kernel"))
+    assert str(home) not in {str(p) for p in confine["read_exec"]}
+    from greg import capabilities
+    code = ("import json, pathlib\nr = {}\n"
+            f"for n in ('own', 'other', 'kernel'):\n    try:\n        pathlib.Path({str(home)!r}, n, 'f.txt').read_text()"
+            "; r[n] = True\n    except OSError:\n        r[n] = False\nprint(json.dumps(r))\n")
+    proc = capabilities.run_isolated([str(python), "-s", "-I", "-c", code], cwd=home / "own", confine=confine)
+    assert proc.returncode == 0, proc.stderr.decode()
+    assert json.loads(proc.stdout.decode().splitlines()[-1]) == {"own": True, "other": False, "kernel": False}
+
+
+def test_an_interpreter_grant_that_reaches_another_organ_refuses_the_stage(tmp_path):
+    from greg import isolation
+    if not isolation.available().get("available"):
+        pytest.skip("Landlock unavailable on this host")
+    home = tmp_path / "home"
+    (home / "venv" / "bin").mkdir(parents=True)
+    (home / "venv" / "pyvenv.cfg").write_text("home = /usr/bin\n")
+    python = home / "venv" / "bin" / "python3"
+    python.symlink_to(os.path.realpath(sys.executable))
+    (home / "venv" / "other-organ").mkdir()                    # the other organ's checkout sits inside the venv
+    with pytest.raises(CapabilityError, match="reaches"):
+        organs._confinement(python, home / "own", home / "store", exclude=(home / "venv" / "other-organ",))
+    assert organs._confinement(python, home / "own", home / "store", exclude=(tmp_path / "elsewhere",))[
+        "read_exec"][0] == home / "venv"
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="process groups and /proc")
+def test_a_supervised_stage_leaves_no_process_behind(tmp_path):
+    """Second review (containment 2): the process group was killed only while the leader still ran, so a
+    stage that started a background process and exited 0 left it running (writing to the store) through
+    the rest of the exchange. Everything left in the stage's process group is now killed when it ends."""
+    import time as _time
+    from greg import capabilities
+    proc = capabilities.run_isolated(
+        [sys.executable, "-c", "import subprocess; p = subprocess.Popen(['/bin/sleep', '30']); print(p.pid)"],
+        cwd=tmp_path, stop_check=lambda: False)
+    left = int(proc.stdout.decode().strip())
+
+    def alive(pid):
+        try:
+            return Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[0] != "Z"
+        except FileNotFoundError:
+            return False
+
+    deadline = _time.monotonic() + 2
+    while alive(left) and _time.monotonic() < deadline:
+        _time.sleep(0.05)
+    assert not alive(left)

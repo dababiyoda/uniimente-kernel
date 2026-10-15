@@ -347,7 +347,14 @@ def _no_network_preexec():
         os._exit(97)
 
 
-def _isolating_preexec(install_filter, confine: dict | None):
+REFUSALS = {b"F": "filesystem confinement unavailable; command refused",
+            b"N": "network isolation unavailable; command refused"}
+
+
+def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int):
+    """Fail closed without an exit status: a command's own exit 97 or 98 must never read as a refusal
+    (nor a refusal as a command that ran). The child writes why to a close-on-exec pipe only the body
+    holds, then raises, so the command never executes and Popen reports the failure to the parent."""
     from greg.isolation import confine_paths      # resolved here, in the parent: the child imports nothing
 
     def preexec():
@@ -355,11 +362,13 @@ def _isolating_preexec(install_filter, confine: dict | None):
             try:
                 confine_paths(**confine)
             except Exception:
-                os._exit(98)   # fail closed: never run a confined command unconfined
+                os.write(refused_fd, b"F")         # never run a confined command unconfined
+                raise
         try:
             install_filter()
         except Exception:
-            os._exit(97)       # fail closed: never run an isolated command without isolation
+            os.write(refused_fd, b"N")             # never run an isolated command without isolation
+            raise
     return preexec
 
 
@@ -383,18 +392,45 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
     preexec = None
     if confine is not None and sys.platform == "darwin":
         raise CapabilityError("filesystem confinement unavailable on this host; command refused")
-    if isolate_network:
-        if sys.platform == "darwin":
-            if not Path("/usr/bin/sandbox-exec").exists():
-                raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
-            argv = ["/usr/bin/sandbox-exec", "-p", MACOS_NO_NETWORK, *argv]
-        else:
-            install_filter = _network_filter()
-            if install_filter is None:
-                raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
-            preexec = _isolating_preexec(install_filter, confine)
-    elif confine is not None:
-        preexec = _isolating_preexec(lambda: None, confine)
+    if isolate_network and sys.platform == "darwin":
+        if not Path("/usr/bin/sandbox-exec").exists():
+            raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
+        argv = ["/usr/bin/sandbox-exec", "-p", MACOS_NO_NETWORK, *argv]
+    elif isolate_network or confine is not None:
+        install_filter = _network_filter() if isolate_network else (lambda: None)
+        if install_filter is None:
+            raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
+        refused_r, refused_w = os.pipe()          # close-on-exec: the command itself never holds it
+        try:
+            return _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
+                          preexec=_isolating_preexec(install_filter, confine, refused_w), refused=refused_r)
+        finally:
+            os.close(refused_r)
+            os.close(refused_w)
+    return _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
+                  preexec=None, refused=None)
+
+
+def _spawn(argv, *, cwd, env, timeout, input_bytes, stop_check, preexec, refused):
+    try:
+        return _launch(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
+                       preexec=preexec)
+    except subprocess.SubprocessError as exc:
+        if refused is None or isinstance(exc, subprocess.TimeoutExpired):
+            raise
+        # The child wrote before raising, and Popen reports a preexec failure only after the child
+        # failed, so the byte is already there; the body still holds the write end, so never block.
+        os.set_blocking(refused, False)
+        try:
+            why = os.read(refused, 1)
+        except BlockingIOError:
+            why = b""
+        if why not in REFUSALS:
+            raise
+        raise CapabilityError(REFUSALS[why], failure_class="transient") from None
+
+
+def _launch(argv, *, cwd, env, timeout, input_bytes, stop_check, preexec):
     if stop_check is not None:
         from greg.workers import _die_with_body, supervised_run
         isolate = preexec
@@ -409,10 +445,6 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
         stdin = {"stdin": subprocess.DEVNULL} if input_bytes is None else {"input": input_bytes}
         proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, timeout=timeout,
                               preexec_fn=preexec, **stdin)
-    if isolate_network and preexec is not None and proc.returncode == 97:
-        raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
-    if confine is not None and proc.returncode == 98:
-        raise CapabilityError("filesystem confinement unavailable; command refused")
     return proc
 
 

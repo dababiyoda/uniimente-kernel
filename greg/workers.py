@@ -451,21 +451,27 @@ def collect_changes(clone: Path, base_commit: str) -> tuple[list[str], str]:
 
 
 def run_tests(tests: list, cwd: Path, *, timeout: int) -> list[dict]:
-    """GREG runs acceptance itself: scrubbed env, no network (seccomp / sandbox-exec), timeout."""
+    """GREG runs acceptance itself: scrubbed env, no network (seccomp / sandbox-exec), timeout.
+
+    The commands execute the worker's patch, so they are confined as the worker was (``confine_to``): the
+    patch's code reads only the host runtime and writes only its clone. Unconfined, a patch's test could
+    read the Body's witness key into the retained output tail, or write into the Body home."""
     results = []
     python_dir = str(Path(sys.executable).parent)
     for argv in tests:
         argv = [sys.executable if a in ("python", "python3") else a for a in argv]
         started = time.monotonic()
+        confinement = None
         try:
-            proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout,
+            proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, confine_to=cwd,
                                 extra_env={"PATH": f"{python_dir}:/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1"})
             code, out = proc.returncode, (proc.stdout + proc.stderr).decode("utf-8", "replace")
+            confinement = getattr(proc, "confinement", None)
         except subprocess.TimeoutExpired:
             code, out = -1, f"timed out after {timeout}s"
         results.append({"argv": argv, "returncode": code, "passed": code == 0,
                         "seconds": round(time.monotonic() - started, 2), "tail": out[-MAX_TAIL:],
-                        "network": "denied"})
+                        "network": "denied", "confinement": confinement})
     return results
 
 

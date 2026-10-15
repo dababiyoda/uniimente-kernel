@@ -1937,9 +1937,10 @@
       "tests/unit/test_greg_protected_evolution.py::test_an_immune_candidate_runs_confined_from_the_allow_list",
       "tests/unit/test_greg_worker_containment.py::test_a_cli_agent_runs_from_where_the_host_found_it_not_from_the_scrubbed_path",
       "tests/unit/test_greg_worker_containment.py::test_a_confined_worker_reads_nothing_of_the_body_and_writes_only_its_work_directory",
-      "tests/unit/test_greg_worker_containment.py::test_a_runtime_root_that_would_expose_the_body_home_refuses_the_worker"
+      "tests/unit/test_greg_worker_containment.py::test_a_runtime_root_that_would_expose_the_body_home_refuses_the_worker",
+      "tests/unit/test_greg_worker_containment.py::test_gregs_own_acceptance_run_is_confined_to_the_clone"
      ],
-     "notes": "Commissioned workers (worker.commission) are now Landlock-confined in a live Body: they read only the host runtime and write only their work directory. Partial: their network is not confined (the provider needs it), and OS confinement needs kernel support; where it is absent those tests skip, and a skip is not a pass."
+     "notes": "Commissioned workers (worker.commission) are now Landlock-confined in a live Body: they read only the host runtime and write only their work directory. Since 2026-10-15 GREG's own acceptance runs of a worker's patch (in commission and in the independent appraisal) are confined the same way; before, the patch's code ran there with only the network isolated. Partial: their network is not confined (the provider needs it), and OS confinement needs kernel support; where it is absent those tests skip, and a skip is not a pass."
     },
     {
      "id": "I6",
@@ -2042,7 +2043,7 @@
      "buildable_now": true,
      "dependency": "none",
      "next": "Extend the campaign with a scripted worker double that tries to read outside its grant and a substituted appraiser, on the same live Body.",
-     "closed_by": "tests/integration/test_greg_attack_campaign_process.py (second campaign: a hostile worker executable the live Body commissions is denied every read and write outside its work directory by Landlock, a worker that rewrites its frozen acceptance test is REJECTED and never closes its mission, and a revoked phone's approval is refused) and tests/unit/test_greg_worker_containment.py. Closing it found and fixed two defects: commissioned workers ran with no OS confinement (they could read the witness key, device key, ledger and the Body's environment), and the appraisal re-ran a substituted evaluator. Also fixed: CliAgentWorker could not start a provider installed outside the scrubbed PATH."
+     "closed_by": "tests/integration/test_greg_attack_campaign_process.py (second campaign: a hostile worker executable the live Body commissions is denied every read and write outside its work directory by Landlock, a worker that rewrites its frozen acceptance test is REJECTED and never closes its mission, and a revoked phone's approval is refused) and tests/unit/test_greg_worker_containment.py. Closing it found and fixed two defects: commissioned workers ran with no OS confinement (they could read the witness key, device key, ledger and the Body's environment), and the appraisal re-ran a substituted evaluator. Also fixed: CliAgentWorker could not start a provider installed outside the scrubbed PATH. Correction (2026-10-15): the closure first left GREG's own acceptance runs of the patch unconfined (network-isolated only), so the patch's code could still reach the Body home when GREG ran it; run_tests now confines those runs too (tests/unit/test_greg_worker_containment.py::test_gregs_own_acceptance_run_is_confined_to_the_clone)."
     },
     {
      "id": "G7",

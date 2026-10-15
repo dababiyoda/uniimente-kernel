@@ -1618,7 +1618,9 @@ class MissionEngine:
         Gate's dispatch claim, but no mission.action: the world may already show the effect, and observing first
         would close the mission over an unrecorded, unreconciled dispatch. The Gate's own record decides: a
         receipt is reused (DONE, its spend booked), a claim without a receipt is UNCERTAIN (its cap reserved,
-        one reconciliation of exactly that dispatch, never a blind retry), and no claim means nothing happened."""
+        one reconciliation of exactly that dispatch, never a blind retry), and no claim means nothing happened.
+        A free read_only claim without a receipt is left to observation: it cannot have changed the world or the
+        budget, so recovering it first would only turn an answerable mission into a needless reconciliation."""
         recorded = {(e.payload["action_id"], e.payload["attempt"]) for e in self.journal.replay("mission.action")
                     if e.payload.get("mission_id") == m.mission_id}
         for intent in [e.payload for e in self.journal.replay("mission.dispatching")
@@ -1630,6 +1632,10 @@ class MissionEngine:
             manifest = self.registry.manifests.get(intent["capability"])
             if claim is None and receipt is None or s is None or manifest is None:
                 continue                     # the Gate never dispatched it: nothing happened, nothing to settle
+            if receipt is None and manifest.consequence_class == "read_only" and float(s.get("cost_usd", 0.0)) <= 0:
+                # A free read-only dispatch cannot have changed the world or the budget: its unknown outcome gives
+                # observation nothing to close over, so observation decides first, as it did before this recovery.
+                continue
             base = dict(proposal_id=intent["proposal_id"], scope_digest=intent["scope_digest"])
             if receipt is not None:
                 result = receipt.payload.get("result") or {}

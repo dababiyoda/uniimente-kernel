@@ -631,13 +631,11 @@
    ],
    "authority": "Reads only.",
    "missing_dependencies": [],
-   "observed_failures": [
-    "The nine-link run is in-process (SANDBOX); no real-process run yet (L gap G3)"
-   ],
+   "observed_failures": [],
    "recovery": "Stateless.",
    "resources": "Offline.",
    "next_work": [
-    "L gap G3"
+    "Run the trace with the real organ checkouts (L gap G2)"
    ],
    "blocking": []
   }
@@ -719,7 +717,7 @@
    "n": 13,
    "condition": "No readily buildable required subsystem has been replaced by a stub, placeholder, or future-work paragraph.",
    "met": "no",
-   "evidence": "Buildable gaps remain open (e.g. D G8, H G7, I G6, L G3)."
+   "evidence": "Buildable gaps remain open (e.g. D G8, H G7, I G6, and Missions A-C, E, G, J gaps)."
   },
   {
    "n": 14,

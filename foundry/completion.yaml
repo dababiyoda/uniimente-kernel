@@ -610,7 +610,9 @@
     tests/unit/test_greg_mcp_login.py); Mission Control lists each logged-in hosted server with the tools it listed
     at login. Since increment 28 a plain bearer token is registered with its server and tools (greg mcp token;
     tests/integration/test_greg_mcp_token.py), kept only when the server accepts it, and listed the same way.
-    Still missing - credential files, proposals from words for remote calls or for changes GREG cannot read back as a file, a real hosted server observed, and
+    Since increment 29 the founder's words propose a call to such a server, closed only when GREG renders a page
+    the words name and finds the text (tests/unit/test_greg_mcp_remote_words.py, test_greg_mcp_token.py).
+    Still missing - credential files, a remote change no page shows, a real hosted server observed, and
     observation on the founder's device. Original failover and authority component evidence is retained.
   implementation: *id001
   interface: foundry.query foundry_tool|list_foundry_tools (system 28); Gateway.call for governed third-party tools

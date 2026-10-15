@@ -1715,6 +1715,42 @@ token shape check, registered servers left off the Command view, and the kind mi
 
 Not covered: a token's own scope at the service is not known to GREG; the founder narrows it there.
 
+## Increment 29 (2026-10-15): the founder's words to an approved call on a hosted server
+
+After increments 22 to 28, a call to a hosted MCP server still had to be signed by hand. The console now holds
+the public part of every login and registered token (server, tools as listed, renewal host; never a value). Words
+that name one of those services as "the <name> service" or "the <name> server" become one `mcp.act` proposal by
+URL:
+- the tool is chosen from the list the service gave at login or registration, so drafting contacts nobody;
+- the one text in quotes fills the tool's one required argument;
+- the approval names the service's host, plus the renewal host when a login renews elsewhere, and the handle.
+
+GREG cannot read a hosted service's disk. So the words must name a page that will show the change; the mission
+closes only when GREG renders that page (`browser.render`, read-only, reaching only that page's host) and finds the
+text. Everything the words do not settle becomes a question, never a guess:
+- no page, two pages, or the server's own address as the page;
+- no quoted text, or a tool needing more than one argument;
+- no tool that fits;
+- a tool that claims to only read.
+
+Evidence:
+- `tests/unit/test_greg_mcp_remote_words.py`: the proposal's exact parameters, check and light cone; the
+  renewal host; each question; and words naming no hosted service are left to other routes.
+- `tests/integration/test_greg_mcp_token.py`, end to end on a confined body against a service that checks the token:
+  the console drafts without contacting the service, the founder signs and approves, the call crosses the relay,
+  and the mission closes on GREG's own render of the board page. The token appears in no file outside the broker.
+  This test needs namespaces and a browser, so it runs locally only.
+
+Mutants: 7 of 7 fail the tests: the console gives the planner no hosted services, the first of several pages is
+used, a read-only claim is ignored, the renewal host is dropped, the server's address is accepted as the page, no
+quoted text is required, and the route is switched off.
+
+On the way, tool matching stopped counting the service's own name in plural form ("notes" matched `list_notes`
+over `add_note`).
+
+Not covered: a change that no page shows (GREG then asks); hosted services with the same name as an installed
+server are routed to the hosted one.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

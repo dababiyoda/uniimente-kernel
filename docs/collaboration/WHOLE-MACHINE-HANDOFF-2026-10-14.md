@@ -145,9 +145,9 @@ The 13 holes were:
     closes the mission on its own read of the file. Since increment 22 a remote server is reached by URL, each
     call approved, through the relay, with a bearer token by handle; since increment 23 the founder can log GREG
     in with OAuth (`greg mcp login`), and approved calls renew an expired login; since increment 28 a plain token
-    is registered with its server and tools (`greg mcp token`). Still missing: credential files,
-    discovery of remote servers, proposals from words for remote calls or changes GREG cannot read back, and a real
-    hosted service observed.
+    is registered with its server and tools (`greg mcp token`); since increment 29 the founder's words propose a
+    call to such a server, checked on a page they name. Still missing: credential files, discovery of remote
+    servers, a remote change no page shows, and a real hosted service observed.
 - **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
   `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
   measured from this tree. Porting them is its own increment. #168's three runbook defects (a stranded attach;

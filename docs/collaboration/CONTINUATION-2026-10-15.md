@@ -20,9 +20,9 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
 | Gate hardening (#55 CASE 27, #21, #12) | Draft PR #182, `claude/greg-gate-hardening-20261015` | Waits on Alfonso's key enrollment and INTEGRITY_AUTHORIZE; CI job 3 is red by design until then |
 | Merge records | `docs/collaboration/MISSION-DEFECTS-2026-10-15.md`, `INSTALLED-BODY-CONVERGENCE-2026-10-14.md`, `SECURITY-PORTS-2026-10-15.md` | Each names its residuals |
 | Acceptance missions A–L | `acceptance/missions.json` | 85 obligations, 359 test nodes, 24 gaps closed; 16 test files registered as real Body processes |
-| Completion contract | `acceptance/completion-contract.json` | 18 functions; tiers and coverage are computed from the acceptance run; 4 rest only on requirements that cover their whole obligation |
+| Completion contract | `acceptance/completion-contract.json` | 18 functions; tiers and coverage are computed from the acceptance run; 0 rest only on requirements that cover their whole obligation |
 | Verifier | `verifier/runs/` | PASS V1–V5 at 0655f13 |
-| Acceptance run | `docs/evidence/acceptance/2026-10-15-7cfa0bc.json` | 81/85 under the earlier rules, which ignored coverage and never checked BODY_VERIFIED against the cited tests. Under the current rules, the cited nodes at the commit that introduced them give 80/85 at their declared tier, of which 37 cover the whole obligation and 43 only part; J.J1b (coverage gap) no longer counts, and 9/9 trace links reach their tier. The 4 short (E.R2–R4, G.R2) need the real organ checkouts, which skip here |
+| Acceptance run | `docs/evidence/acceptance/2026-10-15-7cfa0bc.json` | 81/85 under the earlier rules, which ignored coverage and never checked BODY_VERIFIED against the cited tests. Under the current rules (`acceptance-report/3`), this tree's 359 cited nodes give 80/85 at their declared tier (800 passed, 4 skipped). Of those 80, 15 cover the whole obligation and 65 only part: a coverage audit lowered 22 requirements to partial, and a requirement covers its whole obligation only when it reaches its tier. J.J1b (coverage gap) does not count, though its failing tests would fail the run. 9/9 trace links reach their tier. The 4 short (E.R2–R4, G.R2) need the real organ checkouts, which skip here |
 
 ## Open gaps (from `acceptance/missions.json`)
 
@@ -80,7 +80,7 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
 
 ```
 python -m acceptance check                      # static soundness of the manifest and contract
-python -m acceptance run --out report.json      # ~8 min; exits 1 while any tested requirement or trace link falls short
+python -m acceptance run --out report.json      # ~8 min; exits 1 while any requirement or trace link falls short or any cited test fails
 python -m governance.integrity --check          # 0 on #173; 1 on #182 until Alfonso signs
 python verifier/v2/verify.py                    # needs a clean tracked tree
 ```
@@ -88,6 +88,8 @@ python verifier/v2/verify.py                    # needs a clean tracked tree
 When you close a gap, add its test to the requirement in `acceptance/missions.json` and mark the gap
 `CLOSED` with what closed it. Run a mutant that removes the mechanism, and confirm the test fails. Never
 raise a tier without a passing test, and never cite a test that skips here as attained. A requirement is
-`BODY_VERIFIED` only with a cited test from a file in `body_process_tests` that starts a real Body process;
-an in-process Body is `SANDBOX_VERIFIED` at most. Raise `coverage` only when the cited tests show every
-clause of the obligation; a `gap` requirement declares no tier.
+`BODY_VERIFIED` only with a cited test from a file in `body_process_tests` in which an argv that starts a real
+Body process statically reaches a process-spawning call; an in-process Body is `SANDBOX_VERIFIED` at most.
+Raise `coverage` only when the cited tests show every clause of the obligation at the declared tier, and a
+requirement counts as covering its whole obligation only when it also reaches that tier in the run; a `gap`
+requirement declares no tier, but its failing tests still fail the run.

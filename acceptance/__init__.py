@@ -12,11 +12,16 @@ The harness reports only what the tests establish. It never infers a higher stat
   failure, an error, a skip or a node that collects nothing leaves it unverified, with the observed reason;
 - a tier says how strongly the cited tests ran, coverage says how much of the obligation they show. A
   requirement whose coverage is 'gap' never attains anything and may not declare a tier; one whose coverage
-  is 'partial' can attain its tier, and the report says it covers only part of its obligation. A mission or
-  a contract function covers its whole obligation only when every requirement it rests on does;
+  is 'partial' can attain its tier, and the report says it covers only part of its obligation. A requirement
+  covers its whole obligation only when it attained its declared tier and is declared 'covered'; a mission or
+  a contract function covers its whole obligation only when every requirement (and trace link) it rests on
+  does;
+- every tested requirement records what its cited tests did, a 'gap' one included, and a cited test that
+  failed, errored or collected nothing fails the run whether or not its requirement declares a tier;
 - BODY_VERIFIED needs at least one cited node that drives a real Body process: a test in a file registered
-  under ``body_process_tests`` whose code statically starts ``greg run`` (directly or under supervisord) or a
-  driver subprocess running Body.run. An in-process Body is SANDBOX_VERIFIED at most;
+  under ``body_process_tests`` in which an argv starting ``greg run``, supervisord running
+  service.supervisord_program, or a driver script running Body.run statically reaches a process-spawning call.
+  An in-process Body is SANDBOX_VERIFIED at most;
 - a requirement without tests keeps its declared unverified status (INTENDED .. INTEGRATED) or is
   BLOCKED_WITH_REASON with its reason;
 - tests can establish at most BODY_VERIFIED. FOUNDER_ACCEPTED and every status above it need a record that
@@ -24,16 +29,19 @@ The harness reports only what the tests establish. It never infers a higher stat
   commercial outcome), so the manifest refuses to declare them and the harness never assigns them;
 - a mission or a contract function is only as verified as its least-verified requirement;
 - each Mission L trace link is computed from its own proof run by the same rule as a requirement; a link
-  whose proof falls short is reported short and fails the run like a requirement.
+  whose proof falls short is reported short and fails the run like a requirement, and Mission L, and every
+  contract function citing it, is only as verified as its least-verified requirement or trace link.
 
 The harness holds no authority: it reads code and runs tests. It grants, attaches and activates nothing.
 """
 from __future__ import annotations
 
 import ast
+from collections import ChainMap
 import json
 from pathlib import Path
 import re
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
@@ -127,30 +135,45 @@ def shortfalls(nodes, outcomes: dict) -> list[str]:
     return observed
 
 
+def failing(nodes, outcomes: dict) -> list[str]:
+    """The cited tests a run shows broken: an item that failed or errored, or a node that collected nothing.
+    A skip shows nothing, but it is not a failure."""
+    broken = []
+    for node in nodes:
+        items = {k: v for k, v in outcomes.items() if covers(node, k)}
+        if not items:
+            broken.append(node)
+        broken += sorted(k for k, v in items.items() if v["outcome"] in ("failed", "error"))
+    return broken
+
+
 def requirement_status(req: dict, outcomes: dict | None) -> dict:
     """What one requirement attained in a run. ``outcomes`` maps collected nodeid -> {outcome, reason}.
 
     With ``outcomes`` None (no run), a tested requirement is reported at its declared implementation
     status only: a declaration is never evidence. Coverage 'gap' (the cited tests do not show the obligation
-    at any tier) never attains, whatever the tests do; a missing coverage is read as 'gap'."""
+    at any tier) never attains, whatever the tests do; a missing coverage is read as 'gap'. Every tested
+    requirement, a 'gap' one included, records what its cited tests did, and ``failing`` names the cited tests
+    that failed, errored or collected nothing. A requirement covers its whole obligation only when it attained
+    its declared tier and its coverage is 'covered'."""
     tests = req.get("tests", [])
     coverage = req.get("coverage", "gap")
-    shape = {"coverage": coverage, "whole_obligation": coverage == "covered"}
     if not tests:
-        status = req.get("status", "INTENDED")
-        return {"status": status, "declared_tier": None, "attained": False, **shape,
+        return {"status": req.get("status", "INTENDED"), "declared_tier": None, "attained": False,
+                "coverage": coverage, "whole_obligation": False, "failing": [],
                 "observed": [req.get("blocked_reason", "no executable test cites this requirement")]}
     floor = req.get("implementation", "IMPLEMENTED")
+    observed = ["not run"] if outcomes is None else shortfalls(tests, outcomes)
+    broken = [] if outcomes is None else failing(tests, outcomes)
     if coverage not in ("covered", "partial"):
-        return {"status": floor, "declared_tier": None, "attained": False, **shape,
+        return {"status": floor, "declared_tier": None, "attained": False, "coverage": coverage,
+                "whole_obligation": False, "failing": broken,
                 "observed": [f"coverage is {coverage!r}: the cited tests do not establish this obligation "
-                             "at any tier"]}
-    if outcomes is None:
-        return {"status": floor, "declared_tier": req["tier"], "attained": False, **shape, "observed": ["not run"]}
-    observed = shortfalls(tests, outcomes)
-    if observed:
-        return {"status": floor, "declared_tier": req["tier"], "attained": False, **shape, "observed": observed}
-    return {"status": req["tier"], "declared_tier": req["tier"], "attained": True, **shape, "observed": []}
+                             "at any tier"] + observed}
+    attained = not observed
+    return {"status": req["tier"] if attained else floor, "declared_tier": req["tier"], "attained": attained,
+            "coverage": coverage, "whole_obligation": attained and coverage == "covered", "failing": broken,
+            "observed": observed}
 
 
 def link_status(link: dict, outcomes: dict | None) -> dict:
@@ -162,37 +185,47 @@ def link_status(link: dict, outcomes: dict | None) -> dict:
             "declared_tier": link["tier"], "attained": attained, "observed": observed}
 
 
-def _coverage(results) -> str:
-    """'covered' only when every contributing requirement covers its whole obligation."""
+def _coverage(results, links=()) -> str:
+    """'covered' only when every contributing requirement covers its whole obligation (it attained its declared
+    tier and is declared covered) and every contributing trace link attained its tier."""
     results = list(results)
-    return "covered" if results and all(r["whole_obligation"] for r in results) else "partial"
+    whole = results and all(r["whole_obligation"] for r in results) and all(x["attained"] for x in links)
+    return "covered" if whole else "partial"
 
 
 def mission_status(mission: dict, outcomes: dict | None) -> dict:
+    """A mission is only as verified as its least-verified requirement and, for Mission L, trace link."""
     reqs = {r["id"]: requirement_status(r, outcomes) for r in mission["requirements"]}
+    links = [link_status(link, outcomes) for link in mission.get("trace", [])]
     open_gaps = [g for g in mission.get("gaps", []) if g["state"] == "OPEN"]
-    out = {"id": mission["id"], "title": mission["title"], "status": lowest(r["status"] for r in reqs.values()),
-           "coverage": _coverage(reqs.values()), "requirements": reqs, "open_gaps": len(open_gaps),
+    out = {"id": mission["id"], "title": mission["title"],
+           "status": lowest([r["status"] for r in reqs.values()] + [x["status"] for x in links]),
+           "coverage": _coverage(reqs.values(), links), "requirements": reqs, "open_gaps": len(open_gaps),
            "blocked_beyond_tests": sorted({g["id"] for g in open_gaps if g["dependency"] != "none"
                                            and not g.get("buildable_now")})}
     if mission.get("trace"):
-        out["trace"] = [link_status(link, outcomes) for link in mission["trace"]]
+        out["trace"] = links
     return out
 
 
 def contract_status(function: dict, missions: dict) -> dict:
     """A contract function's evidence tier is computed from the mission requirements it cites, never
-    declared: the least-verified of them, and never above what its own implementation status allows. Its
-    coverage is 'partial' unless every cited requirement covers its whole obligation."""
-    reached = []
+    declared: the least-verified of them and of the trace links of any cited mission that carries a trace
+    (Mission L), and never above what its own implementation status allows. Its coverage is 'partial' unless
+    every cited requirement covers its whole obligation and every such link attained its tier."""
+    reached, cited = [], []
     for ref in function["evidence"]:
         mid, _, rid = ref.partition(".")
         reached.append(missions[mid]["requirements"][rid])
-    tier = lowest(r["status"] for r in reached) if reached else function["implementation"]
+        if mid not in cited:
+            cited.append(mid)
+    links = [x for mid in cited for x in missions[mid].get("trace", [])]
+    tier = (lowest([r["status"] for r in reached] + [x["status"] for x in links]) if reached
+            else function["implementation"])
     if tier != BLOCKED and function["implementation"] in UNVERIFIED and rank(function["implementation"]) < rank(
             "IMPLEMENTED"):
         tier = function["implementation"]           # designed-only functions cannot be verified by tests
-    return {"id": function["id"], "evidence_tier": tier, "coverage": _coverage(reached),
+    return {"id": function["id"], "evidence_tier": tier, "coverage": _coverage(reached, links),
             "evidence": function["evidence"]}
 
 
@@ -202,11 +235,12 @@ def report(manifest: dict, contract: dict, outcomes: dict | None, meta: dict) ->
     reqs = [r for m in missions.values() for r in m["requirements"].values()]
     links = [link for m in missions.values() for link in m.get("trace", [])]
     attained = [r for r in reqs if r["attained"]]
-    return {"version": "acceptance-report/2", **meta, "ran": outcomes is not None,
+    return {"version": "acceptance-report/3", **meta, "ran": outcomes is not None,
             "summary": {"requirements": len(reqs), "attained_declared_tier": len(attained),
                         "attained_whole_obligation": sum(r["whole_obligation"] for r in attained),
                         "attained_part_obligation": sum(not r["whole_obligation"] for r in attained),
-                        "coverage": {c: sum(r["coverage"] == c for r in reqs) for c in COVERAGE},
+                        "requirements_citing_failing_tests": sum(bool(r["failing"]) for r in reqs),
+                        "declared_coverage": {c: sum(r["coverage"] == c for r in reqs) for c in COVERAGE},
                         "missions": {k: {"status": v["status"], "coverage": v["coverage"]}
                                      for k, v in missions.items()},
                         "trace_links": len(links), "trace_links_attained": sum(x["attained"] for x in links),
@@ -218,94 +252,385 @@ def report(manifest: dict, contract: dict, outcomes: dict | None, meta: dict) ->
 
 
 def shortfall_names(rep: dict) -> list[str]:
-    """Every tested requirement and trace link that did not attain its declared tier in this report."""
+    """Everything that fails a run: every tested requirement and trace link that did not attain its declared
+    tier, and every requirement, whether or not it declares a tier, citing a test that failed, errored or
+    collected nothing."""
     short = [f"{mid}.{rid}" for mid, m in rep["missions"].items() for rid, r in m["requirements"].items()
-             if r.get("declared_tier") and not r["attained"]]
+             if (r.get("declared_tier") and not r["attained"]) or r.get("failing")]
     short += [f"{mid}.trace.{link['link']}" for mid, m in rep["missions"].items() for link in m.get("trace", [])
               if not link["attained"]]
     return short
 
 
 # -- real Body processes (static) ----------------------------------------------------------------------
+#
+# A test drives a real Body process only when an argv that starts one reaches a call that spawns a process.
+# The reader below follows values through the test function, the same-module functions it calls and the
+# same-module fixtures it requests (names, list and tuple displays and their concatenation, starred
+# arguments, ``+``, f-strings, ``str()``, a file written with ``write_text``), and it looks at an argv only
+# where a spawning call receives it. It never evaluates a condition other than a constant, never follows a
+# lambda, a method or a function from another module, and drops everything when the test patches the
+# spawning calls, so whatever it cannot see counts as in-process.
 
 _BODY_RUN = re.compile(r"\w*Body\([^()]*\)\.run\(")
-_SUBPROCESS = {"Popen", "run", "call", "check_call", "check_output"}
+SPAWNERS = frozenset({"subprocess.Popen", "subprocess.run", "subprocess.call", "subprocess.check_call",
+                      "subprocess.check_output", "asyncio.create_subprocess_exec"})
+_PROGRAM = "greg.service.supervisord_program"          # writes a supervisord program that runs `greg run`
+_PASS_THROUGH = frozenset({"str", "os.fspath", "pathlib.Path"})
+_PATCHERS = frozenset({"setattr", "patch", "object"})  # monkeypatch.setattr, setattr, mock.patch(.object)
+_FOLLOW_BUDGET = 5000                                  # calls followed per test; past it, nothing more is seen
 
 
-def _const(node):
-    return node.value if isinstance(node, ast.Constant) else None
+class _Value(NamedTuple):
+    """What the reader knows about one value. ``facts``: 'driver' (is, or names a file holding, a script that
+    calls ``Body(...).run(``) and 'program' (is, or names a file holding, service.supervisord_program output)."""
+    const: object = None                     # a constant; sys.executable reads as 'python'
+    items: tuple | None = None               # a list or tuple display: ((starred, _Value), ...)
+    facts: frozenset = frozenset()
+    qual: str | None = None                  # a module or module attribute, by dotted name
+    func: tuple | None = None                # (FunctionDef, the scope it closes over): a function of this module
 
 
-def _greg_subcommand(node) -> str | None:
-    """For a list/tuple display holding ``-m greg``: its subcommand, the first plain string after it (option
-    flags and computed values such as ``str(home)`` are skipped), or '*' when a starred argument comes first."""
-    if not isinstance(node, (ast.List, ast.Tuple)):
-        return None
-    elts = node.elts
-    for i in range(len(elts) - 1):
-        if _const(elts[i]) == "-m" and _const(elts[i + 1]) == "greg":
-            for item in elts[i + 2:]:
-                if isinstance(item, ast.Starred):
-                    return "*"
-                value = _const(item)
-                if isinstance(value, str) and not value.startswith("-"):
-                    return value
-            return None
-    return None
+_NOTHING = _Value()
 
 
-def _process_kinds(fn, tree) -> set[str]:
-    """How the test function ``fn`` starts a real Body process, following calls to and fixtures of functions
-    defined in the same module: ``greg run`` in an argv, supervisord launched with a ``greg run`` program
-    (service.supervisord_program), or a subprocess running a module-level driver script that calls
-    ``Body(...).run(``. Static and conservative: anything it cannot see counts as in-process."""
-    funcs = {n.name: n for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
-    drivers = {t.id for n in tree.body if isinstance(n, ast.Assign) and isinstance(_const(n.value), str)
-               and _BODY_RUN.search(n.value.value) for t in n.targets if isinstance(t, ast.Name)}
-    kinds, seen, todo = set(), set(), [fn]
-    program = launch = driver = spawn = False
-    while todo:
-        f = todo.pop()
-        if f.name in seen and funcs.get(f.name) is f:
+def _facts(values) -> frozenset:
+    return frozenset().union(*(v.facts for v in values))
+
+
+def _flatten(items) -> tuple[list, bool]:
+    """The elements of a display or an argument list with starred parts expanded, and whether that is all of
+    them (False once a starred part is unknown: nothing from there on is known)."""
+    out = []
+    for starred, value in items:
+        if not starred:
+            out.append(value)
             continue
-        seen.add(f.name)
-        args = f.args.posonlyargs + f.args.args + f.args.kwonlyargs
-        todo += [funcs[a.arg] for a in args if a.arg in funcs and a.arg not in seen]   # module fixtures
-        for n in ast.walk(f):
-            if _greg_subcommand(n) == "run":
-                kinds.add("greg run")
-            if isinstance(n, (ast.List, ast.Tuple)) and n.elts and (
-                    _const(n.elts[0]) == "supervisord" or getattr(n.elts[0], "id", None) == "SUPERVISORD"):
-                launch = True
-            if isinstance(n, ast.Name) and n.id in drivers:
-                driver = True
-            if not isinstance(n, ast.Call):
-                continue
-            name = n.func.id if isinstance(n.func, ast.Name) else getattr(n.func, "attr", None)
-            program |= name == "supervisord_program"
-            spawn |= name in _SUBPROCESS
-            if isinstance(n.func, ast.Name) and name in funcs:
-                callee = funcs[name]
-                if name not in seen:
-                    todo.append(callee)
-                first = next((a.value for a in n.args if isinstance(_const(a), str)), None)
-                if first == "run" and any(_greg_subcommand(x) == "*" for x in ast.walk(callee)):
-                    kinds.add("greg run")                # a helper like cli(home, *args) called with 'run'
-    if program and launch:
-        kinds.add("supervisord")
-    if driver and spawn:
-        kinds.add("Body.run driver")
-    return kinds
+        if value.items is None:
+            return out, False
+        inner, complete = _flatten(value.items)
+        out += inner
+        if not complete:
+            return out, False
+    return out, True
+
+
+def _argv_kind(argv: _Value) -> str | None:
+    """Which real Body process an argv starts: ``python -m greg [--home H] run``; supervisord whose -c
+    configuration file holds service.supervisord_program; or python running a driver script that calls
+    ``Body(...).run(`` (as a file, or with -c). Anything else, or anything not known, is None."""
+    if argv.items is None:
+        return None
+    args, _ = _flatten(argv.items)
+    const = [a.const if isinstance(a.const, str) else None for a in args]
+    program = Path(const[0]).name if const and const[0] else ""
+    if program == "supervisord":
+        configured = any(c in ("-c", "--configuration") and i + 1 < len(args) and "program" in args[i + 1].facts
+                         for i, c in enumerate(const))
+        return "supervisord" if configured else None
+    if not program.startswith("python"):
+        return None
+    if const[1:3] == ["-m", "greg"]:
+        i = 3
+        while i < len(const) and const[i] is not None and const[i].startswith("-"):
+            i += 1 if "=" in const[i] else 2           # greg's one global option, --home, takes a value
+        return "greg run" if i < len(const) and const[i] == "run" else None
+    script = 2 if const[1:2] == ["-c"] else 1
+    return "Body.run driver" if script < len(args) and "driver" in args[script].facts else None
+
+
+def _is_fixture(fn) -> bool:
+    for d in fn.decorator_list:
+        d = d.func if isinstance(d, ast.Call) else d
+        if (d.attr if isinstance(d, ast.Attribute) else getattr(d, "id", None)) == "fixture":
+            return True
+    return False
+
+
+def _tree(root: Path, path: str, cache: dict):
+    key = ("tree", path)
+    if key not in cache:
+        file = root / path
+        cache[key] = ast.parse(file.read_text()) if file.is_file() else None
+    return cache[key]
+
+
+class _Reader:
+    """Reads one test, and the code it reaches, for the real Body processes it spawns."""
+
+    def __init__(self, root: Path, cache: dict):
+        self.root, self.cache = root, cache
+        self.kinds: set[str] = set()
+        self.patched = False
+        self.live = True                        # False while reading a module's top level: nothing runs there
+        self.stack: list = []
+        self.returns: list[list] = []
+        self.followed = 0
+
+    def module(self, path: str) -> dict:
+        """What a module binds at top level: its imports, constants and functions."""
+        key = ("env", path)
+        if key not in self.cache:
+            env = self.cache[key] = {}
+            tree = _tree(self.root, path, self.cache)
+            live, self.live = self.live, False
+            try:
+                for s in tree.body if tree is not None else []:
+                    if isinstance(s, (ast.Import, ast.ImportFrom, ast.Assign, ast.AnnAssign, ast.FunctionDef,
+                                      ast.AsyncFunctionDef)):
+                        self.stmt(s, env)
+            finally:
+                self.live = live
+        return self.cache[key]
+
+    def imported(self, module: str | None, name: str) -> _Value:
+        if not module:
+            return _NOTHING
+        path = module.replace(".", "/") + ".py"
+        if module.startswith("tests.") and (self.root / path).is_file():
+            value = self.module(path).get(name, _NOTHING)
+            return _NOTHING if value.func else value          # another module's function is not followed
+        return _Value(qual=f"{module}.{name}")
+
+    # statements
+
+    def block(self, stmts, env) -> None:
+        for s in stmts:
+            self.stmt(s, env)
+
+    def stmt(self, s, env) -> None:
+        if isinstance(s, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            env[s.name] = _Value(func=(s, env))                # followed only when called
+        elif isinstance(s, ast.Import):
+            for a in s.names:
+                top = a.name.split(".")[0]
+                env[a.asname or top] = _Value(qual=a.name if a.asname else top)
+        elif isinstance(s, ast.ImportFrom):
+            for a in s.names:
+                env[a.asname or a.name] = self.imported(s.module if not s.level else None, a.name)
+        elif isinstance(s, ast.Assign):
+            value = self.expr(s.value, env)
+            for target in s.targets:
+                self.bind(target, value, env)
+        elif isinstance(s, ast.AnnAssign) and s.value is not None:
+            self.bind(s.target, self.expr(s.value, env), env)
+        elif isinstance(s, ast.AugAssign):
+            self.bind(s.target, self.binop(s.op, self.expr(s.target, env), self.expr(s.value, env)), env)
+        elif isinstance(s, ast.Expr):
+            self.expr(s.value, env)
+        elif isinstance(s, ast.Return):
+            value = self.expr(s.value, env) if s.value is not None else _NOTHING
+            if self.returns:
+                self.returns[-1].append(value)
+        elif isinstance(s, (ast.If, ast.While)):
+            self.expr(s.test, env)
+            constant = isinstance(s.test, ast.Constant)
+            if not (constant and not s.test.value):
+                self.block(s.body, env)
+            if not (constant and s.test.value and isinstance(s, ast.If)):
+                self.block(s.orelse, env)
+        elif isinstance(s, (ast.For, ast.AsyncFor)):
+            self.expr(s.iter, env)
+            self.bind(s.target, _NOTHING, env)
+            self.block(s.body, env)
+            self.block(s.orelse, env)
+        elif isinstance(s, (ast.With, ast.AsyncWith)):
+            for item in s.items:
+                self.expr(item.context_expr, env)
+                if item.optional_vars is not None:
+                    self.bind(item.optional_vars, _NOTHING, env)
+            self.block(s.body, env)
+        elif isinstance(s, (ast.Try, getattr(ast, "TryStar", ast.Try))):
+            self.block(s.body, env)
+            for handler in s.handlers:
+                if handler.name:
+                    env[handler.name] = _NOTHING
+                self.block(handler.body, env)
+            self.block(s.orelse, env)
+            self.block(s.finalbody, env)
+        elif isinstance(s, ast.Assert):
+            self.expr(s.test, env)                             # the message runs only on failure
+        elif isinstance(s, ast.Raise) and s.exc is not None:
+            self.expr(s.exc, env)
+        # a class body, del, pass, break, continue, global, nonlocal, match: nothing here is followed
+
+    def bind(self, target, value: _Value, env) -> None:
+        if isinstance(target, ast.Name):
+            env[target.id] = value
+        elif isinstance(target, (ast.Tuple, ast.List)):
+            items = value.items
+            pairwise = (items is not None and len(items) == len(target.elts) and not any(s for s, _ in items)
+                        and not any(isinstance(e, ast.Starred) for e in target.elts))
+            for i, elt in enumerate(target.elts):
+                self.bind(elt.value if isinstance(elt, ast.Starred) else elt, items[i][1] if pairwise else _NOTHING,
+                          env)
+        elif isinstance(target, (ast.Attribute, ast.Subscript)):
+            self.expr(target.value, env)
+
+    # expressions
+
+    def expr(self, node, env) -> _Value:
+        if node is None:
+            return _NOTHING
+        if isinstance(node, ast.Constant):
+            driver = isinstance(node.value, str) and _BODY_RUN.search(node.value)
+            return _Value(const=node.value, facts=frozenset({"driver"}) if driver else frozenset())
+        if isinstance(node, ast.Name):
+            return env[node.id] if node.id in env else _Value(qual=node.id)   # a builtin, or never bound
+        if isinstance(node, ast.Attribute):
+            base = self.expr(node.value, env)
+            if not base.qual:
+                return _NOTHING
+            qual = f"{base.qual}.{node.attr}"
+            return _Value(const="python") if qual == "sys.executable" else _Value(qual=qual)
+        if isinstance(node, ast.Call):
+            return self.call(node, env)
+        if isinstance(node, (ast.List, ast.Tuple)):
+            return _Value(items=tuple((isinstance(e, ast.Starred),
+                                       self.expr(e.value if isinstance(e, ast.Starred) else e, env))
+                                      for e in node.elts))
+        if isinstance(node, ast.BinOp):
+            return self.binop(node.op, self.expr(node.left, env), self.expr(node.right, env))
+        if isinstance(node, ast.JoinedStr):
+            return _Value(facts=_facts([self.expr(v, env) for v in node.values]))
+        if isinstance(node, ast.FormattedValue):
+            self.expr(node.format_spec, env)
+            return _Value(facts=self.expr(node.value, env).facts)
+        if isinstance(node, ast.IfExp):
+            self.expr(node.test, env)
+            return _Value(facts=_facts([self.expr(node.body, env), self.expr(node.orelse, env)]))
+        if isinstance(node, ast.NamedExpr):
+            value = self.expr(node.value, env)
+            self.bind(node.target, value, env)
+            return value
+        if isinstance(node, ast.Await):
+            return self.expr(node.value, env)
+        if isinstance(node, (ast.Yield, ast.YieldFrom)):
+            value = self.expr(node.value, env)
+            if self.returns:
+                self.returns[-1].append(value)
+            return _NOTHING
+        if isinstance(node, ast.Lambda):
+            return _NOTHING                                    # never followed
+        if isinstance(node, (ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp)):
+            inner = ChainMap({}, env)
+            for gen in node.generators:
+                self.expr(gen.iter, inner)
+                self.bind(gen.target, _NOTHING, inner)
+                for cond in gen.ifs:
+                    self.expr(cond, inner)
+            for part in (node.key, node.value) if isinstance(node, ast.DictComp) else (node.elt,):
+                self.expr(part, inner)
+            return _NOTHING
+        for child in ast.iter_child_nodes(node):               # anything else: read it for the calls it makes
+            if isinstance(child, ast.expr):
+                self.expr(child, env)
+        return _NOTHING
+
+    @staticmethod
+    def binop(op, left: _Value, right: _Value) -> _Value:
+        facts = left.facts | right.facts
+        if isinstance(op, ast.Add):
+            if left.items is not None and right.items is not None:
+                return _Value(items=left.items + right.items, facts=facts)
+            if isinstance(left.const, str) and isinstance(right.const, str):
+                return _Value(const=left.const + right.const, facts=facts)
+        return _Value(facts=facts)
+
+    def call(self, node, env) -> _Value:
+        callee = self.expr(node.func, env)
+        pos = tuple((isinstance(a, ast.Starred), self.expr(a.value if isinstance(a, ast.Starred) else a, env))
+                    for a in node.args)
+        kwargs = {k.arg: self.expr(k.value, env) for k in node.keywords if k.arg}
+        for k in node.keywords:
+            if not k.arg:
+                self.expr(k.value, env)
+        first = pos[0][1] if pos and not pos[0][0] else _NOTHING
+        if callee.func is not None:
+            return self.follow(callee.func, pos, kwargs)
+        if callee.qual in SPAWNERS:
+            if self.live:
+                argv = _Value(items=pos) if callee.qual == "asyncio.create_subprocess_exec" else (
+                    first if pos and not pos[0][0] else kwargs.get("args", _NOTHING))
+                kind = _argv_kind(argv)
+                if kind:
+                    self.kinds.add(kind)
+            return _NOTHING
+        if callee.qual == _PROGRAM:
+            return _Value(facts=frozenset({"program"}))
+        if callee.qual == "shutil.which":
+            return _Value(const=first.const if isinstance(first.const, str) else None)
+        if callee.qual in _PASS_THROUGH:
+            return _Value(const=first.const if isinstance(first.const, str) else None, facts=first.facts)
+        name = node.func.attr if isinstance(node.func, ast.Attribute) else getattr(node.func, "id", None)
+        if name in _PATCHERS and (first.qual in ("subprocess", "asyncio") or first.qual in SPAWNERS or (
+                isinstance(first.const, str) and first.const.split(".")[0] in ("subprocess", "asyncio"))):
+            self.patched = True
+        if name in ("write_text", "write_bytes") and isinstance(node.func, ast.Attribute) and isinstance(
+                node.func.value, ast.Name) and pos:
+            held = env[node.func.value.id] if node.func.value.id in env else _NOTHING
+            env[node.func.value.id] = held._replace(facts=first.facts)     # the file now holds what was written
+        return _NOTHING
+
+    def follow(self, func: tuple, pos: tuple = (), kwargs: dict | None = None, fixtures: bool = False) -> _Value:
+        """Read a call to a function of this module (or a fixture pytest calls) and return what it returns."""
+        fn, scope = func
+        if not self.live or fn in self.stack or self.followed >= _FOLLOW_BUDGET:
+            return _NOTHING
+        self.followed += 1
+        for decorator in fn.decorator_list:
+            self.expr(decorator, scope)
+        env = ChainMap({}, scope)
+        kwargs = dict(kwargs or {})
+        values, complete = _flatten(pos)
+        a = fn.args
+        positional = a.posonlyargs + a.args
+        defaults = dict(zip([p.arg for p in positional][len(positional) - len(a.defaults):], a.defaults))
+        defaults.update({p.arg: d for p, d in zip(a.kwonlyargs, a.kw_defaults) if d is not None})
+        for i, p in enumerate(positional + a.kwonlyargs):
+            if i < len(positional) and i < len(values):
+                env[p.arg] = values[i]
+            elif p.arg in kwargs:
+                env[p.arg] = kwargs.pop(p.arg)
+            elif not complete and i < len(positional):
+                env[p.arg] = _NOTHING                          # an unknown starred argument may fill it
+            elif p.arg in defaults:
+                env[p.arg] = self.expr(defaults[p.arg], scope)
+            elif fixtures and p.arg in scope and scope[p.arg].func and _is_fixture(scope[p.arg].func[0]):
+                env[p.arg] = self.follow(scope[p.arg].func, fixtures=True)
+            else:
+                env[p.arg] = _NOTHING
+        if a.vararg:
+            extra = values[len(positional):]
+            env[a.vararg.arg] = _Value(items=tuple((False, v) for v in extra)) if complete else _NOTHING
+        if a.kwarg:
+            env[a.kwarg.arg] = _NOTHING
+        self.stack.append(fn)
+        self.returns.append([])
+        try:
+            self.block(fn.body, env)
+        finally:
+            self.stack.pop()
+            returned = self.returns.pop()
+        return returned[0] if len(returned) == 1 else _Value(facts=_facts(returned))
+
+
+def _process_kinds(fn, path: str, root: Path, cache: dict) -> set[str]:
+    """How the test function ``fn`` (in ``path``) starts a real Body process: the kinds of argv that reach a
+    spawning call in it, its same-module helpers and its same-module fixtures. Empty when it patches them."""
+    key = ("kinds", path, fn.lineno, fn.name)
+    if key not in cache:
+        reader = _Reader(root, cache)
+        reader.follow((fn, reader.module(path)), fixtures=True)
+        cache[key] = set() if reader.patched else set(reader.kinds)
+    return cache[key]
 
 
 def node_process_kinds(node: str, root: Path = ROOT, _cache: dict | None = None) -> set[str]:
     """The ways the tests a cited node selects start a real Body process (empty: in-process only)."""
     path, _, rest = node.partition("::")
     cache = {} if _cache is None else _cache
-    if path not in cache:
-        file = root / path
-        cache[path] = ast.parse(file.read_text()) if file.is_file() else None
-    tree = cache[path]
+    tree = _tree(root, path, cache)
     if tree is None:
         return set()
     target = tree
@@ -314,11 +639,14 @@ def node_process_kinds(node: str, root: Path = ROOT, _cache: dict | None = None)
         if target is None:
             return set()
     if isinstance(target, (ast.FunctionDef, ast.AsyncFunctionDef)):
-        return _process_kinds(target, tree)
+        tests = [target]
+    else:                                   # a module or a class: the tests pytest collects from it
+        scopes = [target] + [n for n in target.body if isinstance(n, ast.ClassDef) and n.name.startswith("Test")]
+        tests = [n for s in scopes for n in s.body
+                 if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name.startswith("test")]
     kinds = set()
-    for n in ast.walk(target):
-        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name.startswith("test"):
-            kinds |= _process_kinds(n, tree)
+    for fn in tests:
+        kinds |= _process_kinds(fn, path, root, cache)
     return kinds
 
 

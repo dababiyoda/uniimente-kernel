@@ -708,7 +708,7 @@
    "n": 10,
    "condition": "The whole-machine acceptance suite passes at its declared evidence tier.",
    "met": "partly",
-   "evidence": "See the recorded acceptance report for this head. A requirement without tests, or whose coverage is 'gap', is never counted as passing; one whose coverage is 'partial' is counted as reaching its tier but reported as covering only part of its obligation; BODY_VERIFIED counts only with a cited real Body process test; and each trace link's tier is computed from its proofs."
+   "evidence": "See the recorded acceptance report for this head. A requirement without tests, or whose coverage is 'gap', is never counted as passing, and a cited test that fails, errors or collects nothing fails the run even where no tier is declared; one whose coverage is 'partial' is counted as reaching its tier but reported as covering only part of its obligation; a requirement covers its whole obligation only when it reaches its declared tier and is declared 'covered'; BODY_VERIFIED counts only with a cited test whose argv for a real Body process statically reaches a process-spawning call; and each trace link's tier is computed from its proofs, with Mission L and every function citing it no more verified than its least-verified link."
   },
   {
    "n": 11,
@@ -726,7 +726,7 @@
    "n": 13,
    "condition": "No readily buildable required subsystem has been replaced by a stub, placeholder, or future-work paragraph.",
    "met": "no",
-   "evidence": "Buildable gaps remain open (e.g. D G8, H G7, I G6, and Missions A-C, E, G, J gaps)."
+   "evidence": "Buildable gaps remain open (e.g. D G8, H G7, I G7, and Missions A-C, E, G, J gaps)."
   },
   {
    "n": 14,

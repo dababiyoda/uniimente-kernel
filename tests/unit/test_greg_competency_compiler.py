@@ -963,12 +963,17 @@ def test_a_recipe_the_stage_rule_rejects_is_not_listed_as_demoted(no_index):
     assert "composition:graph_then_allocate" not in {d["method"] for d in r["methods_demoted"]}
 
 
-def test_a_recipe_serving_while_its_matched_genome_is_withheld_says_so(no_index):
+@pytest.mark.parametrize("lift", [True, False])
+def test_a_recipe_serving_while_its_matched_genome_is_withheld_says_so(no_index, lift):
     """Independent review 2026-10-15 (F4): every demoted fit that served was labelled only_fit_despite_no_lift. A
-    recipe with a verified lift serving while the genome that matched it is withheld is neither the only fit nor
-    without lift."""
+    recipe serving while the genome that matched it is withheld is not the only fit, whether its own lift verdict is
+    verified or not (the fix verification's label-order mutation survived the lift case alone)."""
     from greg.cognition.genomes import library
     _f7_index(no_index)
+    if not lift:
+        index = json.loads(no_index.read_text())
+        index["recipes"]["graph_then_allocate"] = {"lift": False, "status": "NO_LIFT"}
+        no_index.write_text(json.dumps(index))
     data, _ = library.executables()["flow_expansion_mcf"].instance(3)                # development seed
     stages = registry_view()
     for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow"):

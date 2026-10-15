@@ -1,0 +1,57 @@
+{
+  "intent_id": "INTENT-20261014-FABLE-OPUS-MAXIMUS",
+  "statement": "Produce the greatest technically defensible realization of UNIIMENTE/GREG (BODY + ORGANS + MIND) on one canonical, reviewable development trunk: ingest every supplied source into a coverage ledger with exact quotes; converge the lineages without a parallel GREG; execute a ten-step whole-machine sandbox proof with real processes, SIGKILL, an independent appraiser, two organ processes, Genesis, Mission Control at three widths and a learning effect; attack it; record the invention and Spider-Web work; deliver deliverables A–L; keep VEPMC at 0 without founder-device proof; return founder-only items as NEEDS_FOUNDER_DECISION with a safe default.",
+  "founder_quotations": {
+    "note": "Quotations A–D are preserved verbatim in docs/intent/sources/OPUS-MAXIMUS-MASTER-EXECUTION-DIRECTIVE-2026-10-13-source.md and INTENT-20261014-ONE-MACHINE.json; byte-checked 2026-10-15."
+  },
+  "source_refs": [
+    "docs/intent/sources/FABLE-5-1-MASTER-BUILD-PROMPT-2026-10-14-source.md",
+    "docs/opus-maximus/SOURCE_COVERAGE_LEDGER.md",
+    "FABLE 5.1 OPUS MAXIMUS execution command in session_01TnTfFXr93jtNSzVD9SWeGx (chat text; not authentication)"
+  ],
+  "owner": "Alfonso Lopez (root authority); development branch claude/opus-maximus-one-greg-20261014",
+  "state": "active",
+  "binding_scope": "Development and draft review only. No merge into main, deployment, spending, publication, third-party contact, token or wallet action, or authority expansion.",
+  "constitutional_constraints": [
+    "Founder human authority and legitimate shutdown",
+    "Objective truth, provenance and negative evidence",
+    "One canonical institution without competing authority, mission or evidence roots",
+    "Reversible, authorized consequence boundaries",
+    "Whole-machine sandbox success is not VEPMC"
+  ],
+  "success_evidence": [
+    "tests/integration/test_one_machine_ten_steps.py (ten steps plus 7b and 7c) and its evidence bundle under docs/evidence/one-machine-ten-steps/2026-10-15/",
+    "tests/integration/test_one_machine.py (#178) on the same tree with real DALEOBANKS 667439f and WealthMachine ec82b80: independent verifier REDERIVED, appraisal VERIFIED",
+    "tests/unit/test_greg_worker_confinement_setting.py, tests/unit/test_greg_reservation_release.py, tests/unit/test_greg_standing_reconciliation.py",
+    "docs/opus-maximus/ deliverables A-L"
+  ],
+  "failure_evidence": [
+    "Defects the proofs found and fixed with regression tests: learned-policy tie-break; reconciliation record crash; resilience double count, then resilience dropping reconciled interruptions; a Goal Gravity name collision (86 failing tests on the #175 merge); an interrupted attempt's signed cap never released on reconciliation (stalled #178's whole-machine test) and booked twice on 'executed'",
+    "Goal Gravity (#178's ordering) ranked the ten-step body's signed missions (26 ranking facts in one run); the ten-step test does not assert it; #178's verifier asserts it for its mission",
+    "#169 dcb9cd7 not merged: a trial merge found a design conflict in greg/models.py and a seed-freeze re-seal requirement (REPOSITORY_CONVERGENCE_MAP.md)",
+    "The freight proof-of-delivery Venture Cell has no demand evidence; the organ said 'demand asserted, not shown'"
+  ],
+  "dependencies": [
+    "INTENT-20261014-ONE-MACHINE (#178)",
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE"
+  ],
+  "conflicts": [
+    "Worker OS confinement: #169's bubblewrap envelope (fail closed) versus #178's unconfined supervision; safe default fail closed, NEEDS_FOUNDER_DECISION",
+    "First VEPMC device wording (Mac versus Chromebook); NEEDS_FOUNDER_DECISION"
+  ],
+  "next_review_trigger": "Founder review of the draft PR stacked on #178",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": [
+    "7b54e76 merge #175",
+    "a02a258 greg/missions.py reservation release, greg/resilience.py",
+    "b4289ca worker confinement setting (greg/workers.py, greg/body.py, greg/cli.py, greg/capabilities.py, greg/appraisal.py)",
+    "0bc57f4 standing reconciliation (greg/workers.py inert_interruption_proof, greg/missions.py, greg/routing.py, greg/planner.py, contracts/greg-mission.schema.json)",
+    "greg/improvement.py",
+    "greg/organ_exchange.py",
+    "tests/integration/test_one_machine_ten_steps.py",
+    "docs/collaboration/deliberation-opus-maximus-converge-on-178-20261015.json"
+  ],
+  "reality_status": "LABORATORY-VERIFIED in one Linux container: INTEGRATION and SANDBOX-WHOLE-MACHINE. Not founder-device, not external, not commercial. VEPMC 0."
+}

@@ -2,6 +2,18 @@
 
 # Founder Intent Ledger
 
+## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
+
+`INTENT-20261014-FABLE-OPUS-MAXIMUS` ([record](intent/INTENT-20261014-FABLE-OPUS-MAXIMUS.json), [verbatim prompt](intent/sources/FABLE-5-1-MASTER-BUILD-PROMPT-2026-10-14-source.md)): the greatest technically defensible realization of BODY + ORGANS + MIND on one canonical reviewable trunk, with no parallel GREG. Deliverables A-L are in [`opus-maximus/`](opus-maximus/). Convergence decision: [stack on #178](collaboration/deliberation-opus-maximus-converge-on-178-20261015.json) instead of running a second trunk.
+
+- **Merged:** #178 (one-machine trunk) and #175 `0ae4c94` (Goal Gravity bound to the body). #178's mission ordering and #175's persistent goals both run.
+- **Defects found by the merged suites and fixed:** a Goal Gravity name collision (86 failing tests); a reconciliation that left an interrupted attempt's signed cap held, which stalled #178's whole-machine test, and booked it twice when "executed"; resilience dropping reconciled interruptions.
+- **Founder decision made executable with a safe default:** worker confinement is the founder's `greg init` choice, `required` by default, `supervised` by opt-in.
+- **Invention (field B):** proof-carrying standing reconciliation. A founder-signed mission may let GREG settle an interruption it can prove was consequence-inert (the script worker: no network, no credentials, no paid route, writes only inside a discarded clone), at most twice per action. Measured on a real in-flight SIGKILL: founder questions 1 to 0, duplicate consequences 0 (ten-step proof steps 7b and 7c).
+- **Proof:** the ten-step proof and #178's one-mission test both pass on one tree with real DALEOBANKS and WealthMachine code.
+- **Open founder decisions:** VEPMC device and acceptance; organ pin upgrade; the canonical Goal Gravity runtime; contacting brokers for the freight proof-of-delivery cell; merge of this branch.
+- State: active. Reality: INTEGRATION and SANDBOX-WHOLE-MACHINE. VEPMC 0. No authority, spending, publication, contact or merge.
+
 ## Whole-machine convergence and the Founder's First Mission — 2026-10-14
 
 The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`. The section 16 handoff (nine items, with a recorded mission trace) is `collaboration/WHOLE-MACHINE-HANDOFF-2026-10-14.md`.

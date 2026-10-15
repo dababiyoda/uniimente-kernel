@@ -205,6 +205,12 @@ def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
             "spend_basis": "provider_reported"}
 
 
+def signed_cost(spec: dict, action_id: str) -> float:
+    """The cost Alfonso signed for one strategy: its spend cap, hence the worst case of one dispatch of it."""
+    strategy = next((s for s in spec["strategies"] if s["action_id"] == action_id), None)
+    return float(strategy.get("cost_usd", 0.0)) if strategy else 0.0
+
+
 def _field(output, path: str):
     value = output
     for part in path.split(".") if path else []:
@@ -291,10 +297,23 @@ class MissionState:
     # A persistent goal's pull (greg/goal_gravity.py) not yet served while the mission waits on an APPROVAL:
     # only ``observe_now`` sets it, so a mission no goal is bound to never has one.
     pull: str | None = None
+    # (action_id, attempt) -> worst-case USD of a dispatch whose completion is unknown (UNCERTAIN). It counts
+    # against the signed budget until a founder reconciliation settles that one dispatch: executed books it as
+    # spent, not executed releases it. A retry-safe dispatch is never reconciled, so its reservation stands.
+    reserved: dict = field(default_factory=dict)
 
     @property
     def mission_id(self):
         return self.spec["mission_id"]
+
+    @property
+    def reserved_usd(self) -> float:
+        return round(sum(self.reserved.values()), 9)
+
+    @property
+    def committed_usd(self) -> float:
+        """What the signed budget must cover: booked spend plus every unreconciled dispatch at its worst case."""
+        return round(self.spent_usd + self.reserved_usd, 9)
 
     def current_checks(self) -> list[dict]:
         ladder = self.spec["closure"].get("ladder") or []
@@ -361,7 +380,7 @@ def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *,
                                          consequence_class=manifest.consequence_class, cost_usd=cost)
     outside = m.cone.admits(capability=manifest.capability_id, target=s["target"],
                             consequence_class=manifest.consequence_class, cost_usd=cost,
-                            spent_usd=m.spent_usd, at=now)
+                            spent_usd=m.committed_usd, at=now)
     return {"mission_id": m.mission_id, "action_id": action_id, "capability": manifest.capability_id,
             "target": s["target"], "consequence_class": manifest.consequence_class, "cost_usd": cost,
             "scope_digest": scope, "outside_cone": outside, "strategy": s}
@@ -432,6 +451,13 @@ class MissionBook:
         elif kind == "mission.action":
             aid = data["action_id"]
             m.attempts[aid] = data["attempt"] + 1
+            slot = (aid, data["attempt"])
+            if data["status"] == "UNCERTAIN":
+                # The dispatch may have taken effect: its signed cap is reserved until reconciled. Records written
+                # before the reservation existed carry no ``reserved_usd``; their worst case is the signed cost.
+                m.reserved[slot] = float(data.get("reserved_usd", signed_cost(m.spec, aid)))
+            else:                     # a later record for the same dispatch settles it (reconciled or receipted)
+                m.reserved.pop(slot, None)
             if data["status"] == "DONE":
                 m.actions_done += 1
                 m.spent_usd += data.get("cost_usd", 0.0)
@@ -715,16 +741,20 @@ class MissionEngine:
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
-                 resource: dict | None = None, evidence: dict | None = None, quoted: tuple = ()) -> str:
+                 resource: dict | None = None, evidence: dict | None = None, quoted: tuple = (),
+                 instance: dict | None = None) -> str:
         """One escalation per exact scope, recorded through the founder-ask contract (greg/asks.py).
 
         ``resource`` makes it a section-60 resource ask: evidence, costed options with their
         expected effects, the recommendation's expected effect and uncertainty. Everything
-        Alfonso signed in the mission is exempt from the wording screen."""
+        Alfonso signed in the mission is exempt from the wording screen. ``instance`` binds the
+        request to one occurrence inside its scope (a RECONCILIATION names the one dispatch it
+        settles), so an answer about one occurrence is never reused for another."""
         epoch = 0
         while True:
             rid = "req-" + sha256_json({"mission": m.mission_id, "kind": kind, "scope": scope_digest,
-                                        **({"epoch": epoch} if epoch else {})})[7:31]
+                                        **({"epoch": epoch} if epoch else {}),
+                                        **({"instance": instance} if instance is not None else {})})[7:31]
             if rid not in self.book.withdrawn:
                 break
             epoch += 1  # the same discrepancy returned after healing: a new escalation
@@ -851,6 +881,8 @@ class MissionEngine:
                 requested={"horizon": "extend", "spend": "none beyond the renewed mission's own budget"}, now=now,
                 resource={"resource": "mandate", "evidence": {"horizon": m.cone.horizon, "observed_at": iso(now),
                                                              "spent_usd": m.spent_usd,
+                                                             **({"reserved_usd": m.reserved_usd}
+                                                                if m.reserved else {}),
                                                              "budget_usd": m.cone.budget_usd},
                           "expected_effect": "the mission resumes inside a renewed, founder-signed mandate",
                           "uncertainty": "GREG cannot know whether this goal still matters to you; its value is "
@@ -875,11 +907,27 @@ class MissionEngine:
             if m.blocker["type"] == "reconciliation":
                 answer = self.book.answers[m.blocker["request_id"]]["answer"]
                 aid = m.blocker["action_id"]
-                self.journal.record("mission.action", {
-                    "mission_id": m.mission_id, "action_id": aid, "attempt": m.attempts.get(aid, 1) - 1,
-                    "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
-                    "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0},
-                    key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
+                # One answer settles exactly the one dispatch its request names (blockers recorded before
+                # requests named their dispatch settle the latest attempt, as they always did).
+                attempt = m.blocker.get("attempt", m.attempts.get(aid, 1) - 1)
+                executed = answer == "reconcile_executed"
+                worst = m.reserved.get((aid, attempt), signed_cost(m.spec, aid))
+                settled = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt,
+                           "status": "DONE" if executed else "RECONCILED_NOT_EXECUTED",
+                           "reasons": ["founder reconciliation: " + answer], "cost_usd": worst if executed else 0.0}
+                if "proposal_id" in m.blocker:
+                    settled.update(reconciles={k: m.blocker.get(k) for k in ("request_id", "proposal_id", "grant_id")},
+                                   scope_digest=m.blocker.get("scope_digest"))
+                if executed:       # it executed, but its spend was never measured: book the signed cap
+                    capability = m.blocker.get("capability") or next(
+                        (e.payload.get("capability") for e in reversed(self.journal.replay("mission.action"))
+                         if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid
+                         and e.payload.get("capability")), None)
+                    settled.update(capability=capability, receipt=None, cost_cap_usd=worst, provider_reported_usd=None,
+                                   spend_basis="signed_cap: founder reconciled the dispatch as executed; "
+                                               "its spend was never measured")
+                self.journal.record("mission.action", settled,
+                                    key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
             lifted = m.blocker
             self._unblock(m, why)
             self.book.rebuild()
@@ -1017,7 +1065,7 @@ class MissionEngine:
                 mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
                 adapter=adapter, ctx=self._context(m, manifest), params=bound_params,
                 target=sensor["target"], cost_usd=0.0, expected_outcome="observation captured",
-                evidence_refs=[], attempt=f"{attempt}@{iso(now)}", spent_usd=m.spent_usd,
+                evidence_refs=[], attempt=f"{attempt}@{iso(now)}", spent_usd=m.committed_usd,
                 approved_scopes=m.approved_scopes)
             if outcome.status != "DONE":
                 if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
@@ -1067,13 +1115,15 @@ class MissionEngine:
                 continue
             done = [e.payload for e in self.journal.replay("mission.action")
                     if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid
-                    and e.payload["status"] == "DONE"]
+                    and e.payload["status"] == "DONE" and e.payload.get("capability")]
             if done:
                 last = done[-1]
+                # A dispatch the founder reconciled as executed has no receipt: it is identified by its attempt.
+                which = last.get("receipt") or ["reconciled attempt", last["attempt"]]
                 self.journal.record("routing.outcome", {"mission_id": m.mission_id, "action_id": aid,
                                                         "capability": last["capability"], "verdict": "ineffective",
-                                                        "receipt": last["receipt"], "reason": reason[:300]},
-                                    key=[m.mission_id, aid, last["receipt"]])
+                                                        "receipt": last.get("receipt"), "reason": reason[:300]},
+                                    key=[m.mission_id, aid, which])
 
     def _watch_while_blocked(self, m: MissionState, now: datetime) -> dict:
         """No strategy is not blindness: keep re-observing at cadence. If the world heals
@@ -1302,7 +1352,8 @@ class MissionEngine:
         others = [x["action_id"] for x in m.spec["strategies"] if x["action_id"] != s["action_id"]][:5]
         return {"resource": "spend",
                 "evidence": {"policy": [str(r)[:300] for r in outcome.reasons], "routing": routing_decision,
-                             "budget": {"spent_usd": m.spent_usd, "budget_usd": m.cone.budget_usd}},
+                             "budget": {"spent_usd": m.spent_usd, "budget_usd": m.cone.budget_usd,
+                                        **({"reserved_usd": m.reserved_usd} if m.reserved else {})}},
                 "expected_effect": f"advances {sorted(s['advances'])} if the action succeeds",
                 "uncertainty": f"estimated reliability {routing_decision['reliability']:.2f} from this body's "
                                "record of the capability; the outcome is re-observed, never assumed",
@@ -1394,7 +1445,7 @@ class MissionEngine:
             adapter=adapter, ctx=self._context(m, manifest), params=bound_params, target=s["target"],
             cost_usd=float(s.get("cost_usd", 0.0)), expected_outcome=s.get("expected_outcome", "strategy executed"),
             evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
-            spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
+            spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)))
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
@@ -1404,6 +1455,13 @@ class MissionEngine:
                   "input_bindings": input_bindings}
         if outcome.status == "DONE" and float(s.get("cost_usd", 0.0)) > 0:
             record.update(metered_spend(manifest.capability_id, outcome.output, outcome.cost_usd))
+        if outcome.status == "UNCERTAIN":
+            # Completion unknown: nothing is booked as spent, and the dispatch's worst case (its signed cap) is
+            # reserved against the budget until a reconciliation settles this one dispatch.
+            record.update(reserved_usd=float(s.get("cost_usd", 0.0)), proposal_id=outcome.proposal_id,
+                          grant_id=outcome.grant_id,
+                          spend_basis="reserved: completion unknown; the signed cap counts against the budget "
+                                      "until this dispatch is reconciled")
         if bindings:
             record["bindings"] = bindings
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION") and prepare_for is not None:
@@ -1434,12 +1492,19 @@ class MissionEngine:
         if outcome.status == "UNCERTAIN":
             if manifest.retry_safe:
                 return {"state": "RETRYING", "action": aid, "why": "read-only idempotent capability"}
+            # One reconciliation per dispatch: the request names this attempt's proposal and grant, so the answer
+            # settles exactly this dispatch and a later uncertain dispatch opens its own request.
+            dispatch = {"attempt": attempt, "proposal_id": outcome.proposal_id, "grant_id": outcome.grant_id}
             rid = self._request(m, kind="RECONCILIATION", scope_digest=outcome.scope_digest, action_id=aid,
                                 why="an action may or may not have executed before an interruption",
                                 recommendation="inspect the retained evidence, then state whether it executed",
                                 alternatives=["reconcile_executed", "reconcile_not_executed"],
-                                requested={"action_id": aid}, now=now)
-            self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid,
+                                requested={"action_id": aid, **dispatch}, now=now, instance=dispatch,
+                                evidence={"dispatch": dispatch, "reasons": record["reasons"][:3],
+                                          "reserved_usd": record["reserved_usd"],
+                                          "budget": {"spent_usd": m.spent_usd, "budget_usd": m.cone.budget_usd}})
+            self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid, **dispatch,
+                            "scope_digest": outcome.scope_digest, "capability": manifest.capability_id,
                             "why": "uncertain completion; no blind retry",
                             "reconsider": "founder reconciliation decision"})
             return {"state": "BLOCKED", "blocker": m.blocker}

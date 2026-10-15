@@ -13,7 +13,8 @@
    "2026-10-15: Mission L requirement L3 proven at SANDBOX tier by one nine-link run; L gap G1 closed, the real-process run opened as L.G3",
    "2026-10-15: H gap G5 closed by the crash-loop breaker (unit and real-process tests)",
    "2026-10-15: Mission L requirements L1 and L3 proven at BODY tier by a real-process nine-link run; L gap G3 closed",
-   "2026-10-15: C gap G6 closed by a genuine-deficit negative control"
+   "2026-10-15: C gap G6 closed by a genuine-deficit negative control",
+   "2026-10-15: G gap G4 closed by the QC rejection-path test"
   ]
  },
  "tier_reading": {
@@ -1352,13 +1353,14 @@
      "id": "R7",
      "obligation": "R7 Quality control: an independent party (not the supplier) accepts or rejects the delivery; rejection blocks charging and is recorded",
      "coverage": "covered",
-     "notes": "#37 enforces four QC rules: the verifier must not be the supplier, the method must be one the buyer accepts, the verdict is VERIFIED or REFUTED, and a refuted match is never charged. In #54 the seller cannot confirm its own delivery, and an undeliverable order is refunded. The Body test exercises only the 'accept' path. offers.accept with verdict 'reject' is not exercised by any test.",
+     "notes": "#37 enforces four QC rules: the verifier must not be the supplier, the method must be one the buyer accepts, the verdict is VERIFIED or REFUTED, and a refuted match is never charged. In #54 the seller cannot confirm its own delivery, and an undeliverable order is refunded. The Body test exercises only the 'accept' path. offers.accept with verdict 'reject' is not exercised by any test. 2026-10-15: the rejection path: a signed buyer rejection is not accepted, books no revenue, records no purchase journey, lowers the offer's rating, and cannot be flipped by a later accept.",
      "tests": [
-      "tests/unit/test_foundry_systems.py::test_marketplace_matches_by_sealed_second_price_and_settles_only_through_verification",
+      "tests/unit/test_business.py::test_self_report_does_not_verify_customer_value",
       "tests/unit/test_foundry_systems.py::test_agent_commerce_sells_by_card_402_and_processor_verified_receipts",
-      "tests/unit/test_greg_owned_company.py::test_reputation_deduplicates_peer_offer_not_order_ids_and_delivery_corruption_refutes",
+      "tests/unit/test_foundry_systems.py::test_marketplace_matches_by_sealed_second_price_and_settles_only_through_verification",
       "tests/unit/test_greg_owned_company.py::test_hash_valid_but_noncanonical_media_manifest_cannot_close_production",
-      "tests/unit/test_business.py::test_self_report_does_not_verify_customer_value"
+      "tests/unit/test_greg_owned_company.py::test_reputation_deduplicates_peer_offer_not_order_ids_and_delivery_corruption_refutes",
+      "tests/unit/test_greg_owned_company_rejection.py::test_a_rejected_delivery_is_never_accepted_booked_journeyed_or_rated_up"
      ],
      "tier": "SANDBOX_VERIFIED",
      "implementation": "IMPLEMENTED"
@@ -1464,10 +1466,11 @@
     {
      "id": "G4",
      "gap": "The QC rejection path in the owned-company loop is untested (offers.accept with verdict 'reject')",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Unit test: fulfill, then accept with verdict 'reject', then assert (1) inspect shows accepted == 0, (2) reconcile posts no fixture-books entry, (3) rated() reports REFUTED for the offer, and (4) journeys records no purchase. Body variant: a mission whose acceptance message is 'reject' must leave its finance check open, i.e. not VERIFIED."
+     "next": "Unit test: fulfill, then accept with verdict 'reject', then assert (1) inspect shows accepted == 0, (2) reconcile posts no fixture-books entry, (3) rated() reports REFUTED for the offer, and (4) journeys records no purchase. Body variant: a mission whose acceptance message is 'reject' must leave its finance check open, i.e. not VERIFIED.",
+     "closed_by": "tests/unit/test_greg_owned_company_rejection.py (fixture mode)"
     },
     {
      "id": "G5",

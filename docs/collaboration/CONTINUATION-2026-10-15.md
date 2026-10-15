@@ -19,20 +19,20 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
 | Converged GREG lineage | PR #173, `claude/greg-full-machine-convergence-20261013` | Draft. Not merged to `main`; merging is Alfonso's decision |
 | Gate hardening (#55 CASE 27, #21, #12) | Draft PR #182, `claude/greg-gate-hardening-20261015` | Waits on Alfonso's key enrollment and INTEGRITY_AUTHORIZE; CI job 3 is red by design until then |
 | Merge records | `docs/collaboration/MISSION-DEFECTS-2026-10-15.md`, `INSTALLED-BODY-CONVERGENCE-2026-10-14.md`, `SECURITY-PORTS-2026-10-15.md` | Each names its residuals |
-| Acceptance missions A–L | `acceptance/missions.json` | 85 obligations, 347 test nodes, 19 gaps closed |
+| Acceptance missions A–L | `acceptance/missions.json` | 85 obligations, 348 test nodes, 20 gaps closed |
 | Completion contract | `acceptance/completion-contract.json` | 18 functions; tiers are computed from the acceptance run |
 | Verifier | `verifier/runs/` | PASS V1–V5 at 0655f13 |
 
 ## Open gaps (from `acceptance/missions.json`)
 
-**Buildable now (47).** Highest leverage first:
+**Buildable now (46).** Highest leverage first:
 
 1. **I.G6:** add evaluator substitution, worker escape and revoked grants to the live-process attack campaign.
 2. **H.G7:** interrupt the separate appraiser, the console or remote service, and the Genesis builder mid-operation.
    **H.G4:** interrupt a paid `worker.commission` inside a Body process.
 3. **D.G8:** run a multi-worker mission in a real Body process. **D.G4, D.G6, D.G7:** cumulative budget,
    cancellation, and lease coherence over time.
-4. **G.G1, G.G5:** drive the business loop through the Body end to end. **G.G4:** cover the QC rejection path.
+4. **G.G1, G.G5:** drive the business loop through the Body end to end.
 5. **C.G1, C.G3–C.G5, C.G7–C.G12:** Capability Genesis honesty and reach (no prewritten answer, real search, route
    order, oracle ordering, hostile attach, appraiser audit, the package route at
    BODY tier, routing gravity deficits into Genesis, license provenance).

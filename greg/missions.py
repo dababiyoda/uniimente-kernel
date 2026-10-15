@@ -455,7 +455,8 @@ def active_constraint(m: "MissionState", book: "MissionBook", *, body_paused: li
     body's, from greg.body ``body_pauses``, then the mission's own) and what lifts it. A blocker whose request
     the founder already answered (a decision or reconciliation, which an answer resolves) or the body withdrew
     waits on no one any more: it is shown with that answer, lifted by the next tick. An answer to a capability
-    or human-work ask is only a record, so those blockers still name what lifts them."""
+    or human-work ask is only a record, and an answer an older ledger holds to a NOT_ANSWERABLE kind (a mandate
+    renewal) lifts nothing, so those blockers still name what lifts them."""
     if m.status != "ACTIVE":
         return None
     paused_by = list(body_paused or [])
@@ -476,9 +477,10 @@ def active_constraint(m: "MissionState", book: "MissionBook", *, body_paused: li
         out["blocker"] = {"type": m.blocker.get("type"), "request_id": rid, "kind": kind,
                           "lifted_by": CONSTRAINT_LIFTED_BY.get(kind, m.blocker.get("type")),
                           "why": m.blocker.get("why")}
-        if rid in book.withdrawn:
+        if rid in book.withdrawn:           # MissionEngine._finish_withdrawal lifts it at the next step
             out["blocker"].update(withdrawn=book.withdrawn[rid].get("why"), lifted_by="the next tick")
-        elif rid in book.answers and m.blocker.get("type") in ("decision", "reconciliation"):
+        elif rid in book.answers and m.blocker.get("type") in ("decision", "reconciliation") \
+                and kind not in NOT_ANSWERABLE:    # a legacy answer to these lifts nothing: the mission asks again
             out["blocker"].update(answered=book.answers[rid].get("answer"), lifted_by="the next tick")
     return out
 
@@ -954,6 +956,33 @@ class MissionEngine:
                             key=[m.mission_id, "unblock", m.blocker])
         m.blocker = None
 
+    def _finish_withdrawal(self, m: MissionState) -> MissionState:
+        """Lift a blocker whose request was withdrawn but whose mission was never unblocked.
+
+        Each withdraw site (``_prepare``, ``_watch_while_blocked``, ``_honor_refusal``) records decision.withdrawn
+        and then mission.unblocked as separate appends. A body that died between them left a blocker nothing could
+        lift: ``answer`` refuses a withdrawn request, ``_blocker_resolved`` waits for an answer, and no ask is open,
+        so the founder was told nothing is needed. The rest of the withdrawal is finished from the retained facts,
+        recording exactly what the site would have (so it is idempotent): an honored refusal's exclusion, then the
+        unblock. Normal handling resumes, and may raise a new ask."""
+        rid = m.blocker["request_id"]
+        honored = next((e.payload for e in self.journal.replay("human.refusal_honored")
+                        if e.payload["mission_id"] == m.mission_id and e.payload["request_id"] == rid), None)
+        if honored is not None:              # _honor_refusal: the person's refusal stands, for good
+            self._exclude_refused(m, honored)
+        self._unblock(m, self.book.withdrawn[rid]["why"])
+        self.book.rebuild()
+        return self.book.missions[m.mission_id]
+
+    def _exclude_refused(self, m: MissionState, honored: dict):
+        """The exclusion an honored refusal records, derived only from that record (so re-recording is idempotent)."""
+        evidence = honored["evidence"]
+        self.journal.record("mission.strategy_excluded", {
+            "mission_id": m.mission_id, "action_id": honored["action_id"],
+            "reason": "declined by the person: " + honored["detail"][:200],
+            "critique_ref": "refusal:" + (evidence[0] if evidence else honored["request_id"])},
+            key=[m.mission_id, honored["action_id"], "refusal"])
+
     def _blocker_resolved(self, m: MissionState) -> tuple[bool, str]:
         b = m.blocker
         if b["type"] in ("decision", "reconciliation"):
@@ -1044,6 +1073,8 @@ class MissionEngine:
         recovered = self._recover_dispatch(m, now)
         if recovered is not None:
             return recovered
+        if m.blocker and m.blocker.get("request_id") in self.book.withdrawn:
+            m = self._finish_withdrawal(m)
         if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now:
             self._block(m, {"type": "decision", "request_id": self._request(
                 m, kind="SCOPE_RENEWAL", scope_digest=sha256_json({"horizon": m.cone.horizon}), action_id=None,
@@ -1437,17 +1468,17 @@ class MissionEngine:
         and leaves the next move to Alfonso; it never re-asks, argues or routes around the person."""
         aid, rid, function = m.blocker["action_id"], m.blocker["request_id"], m.blocker["function"]
         why = "the person declined; the refusal is legitimate, and GREG asks nothing more of them in this mission"
-        evidence = [receipt] if receipt else []
-        self.journal.record("human.refusal_honored", {"mission_id": m.mission_id, "action_id": aid,
-                                                      "function": function, "request_id": rid, "evidence": evidence,
-                                                      "detail": detail[:300], "at": iso(now)},
-                            key=[m.mission_id, aid, "refusal"])
+        honored = {"mission_id": m.mission_id, "action_id": aid, "function": function, "request_id": rid,
+                   "evidence": [receipt] if receipt else [], "detail": detail[:300], "at": iso(now)}
+        # A body that died after recording this refusal observes it again on restart: finish that one refusal
+        # (its facts are idempotent), never record a second, different one under the same identity.
+        honored = next((e.payload for e in self.journal.replay("human.refusal_honored")
+                        if e.payload["mission_id"] == m.mission_id and e.payload["action_id"] == aid), honored)
+        self.journal.record("human.refusal_honored", honored, key=[m.mission_id, aid, "refusal"])
         self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
-                                                   "evidence": evidence, "at": iso(now)}, key=[rid, "withdrawn"])
-        self.journal.record("mission.strategy_excluded", {"mission_id": m.mission_id, "action_id": aid,
-                                                          "reason": "declined by the person: " + detail[:200],
-                                                          "critique_ref": "refusal:" + (receipt or rid)},
-                            key=[m.mission_id, aid, "refusal"])
+                                                   "evidence": honored["evidence"], "at": iso(now)},
+                            key=[rid, "withdrawn"])
+        self._exclude_refused(m, honored)
         self._unblock(m, why)
         self.book.rebuild()
         return {"state": "REFUSAL_HONORED", "action": aid}

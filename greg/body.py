@@ -146,6 +146,35 @@ def hold_ask(hold: dict) -> dict:
             "created_at": hold["at"], "reality_status": "RECORDED_LOCAL_MESSAGE"}
 
 
+# What a paused or held body contains instead of exiting (Body._contained, Body._set_aside), and how each clears.
+# Neither clearing lifts anything: only a signed BODY_RESUME lifts a pause or a hold.
+FAULT_CLEARS = ("fix the cause named by error and site; while it lasts it is recorded again at each boot, and a "
+                "body that is not paused exits on it (the breaker counts that boot)")
+FAULTED_CLEARS = ("not accepted as a command: read the file, sign the command again if you meant one, then remove "
+                  "the file from inbox/faulted on this machine")
+
+
+def contained_faults(journal: Journal, layout: "Layout") -> list[dict]:
+    """The faults a paused or held body contained and that still stand, each with how to clear it (greg status).
+
+    A turn fault stands for the latest boot until a resume (each boot records it again while its cause lasts,
+    and a running body exits on it instead). A file set aside stands while it is in inbox/faulted, recorded or
+    not (the body moves it before it records it)."""
+    turn: list[dict] = []
+    for event in journal.replay("body."):
+        if event.type in ("greg.body.booted", "greg.body.resumed"):
+            turn = []
+        elif event.type == "greg.body.fault_contained":
+            turn.append({"fault": "turn", **{k: event.payload.get(k) for k in ("error", "site", "state", "boot_id",
+                                                                               "at")},
+                         "clear_with": FAULT_CLEARS})
+    recorded = {e.payload["kept_as"]: e.payload for e in journal.replay("command.faulted")}
+    files = sorted(p.name for p in layout.faulted.iterdir()) if layout.faulted.is_dir() else []
+    return turn + [{"fault": "inbox file set aside", "file": f"inbox/faulted/{name}",
+                    **{k: (recorded.get(name) or {}).get(k) for k in ("sha256", "error", "state", "at")},
+                    "clear_with": FAULTED_CLEARS} for name in files]
+
+
 def device_delegations(journal: Journal) -> dict[str, dict]:
     """Currently delegated device keys (enrolled by the founder key, not revoked).
     Expiry is enforced at verification time, so an expired delegation is listed but unusable."""
@@ -186,6 +215,7 @@ class Layout:
         self.inbox = self.home / "inbox"
         self.processed = self.inbox / "processed"
         self.rejected = self.inbox / "rejected"
+        self.faulted = self.inbox / "faulted"   # files a paused or held body could not ingest; made when needed
         self.outbox = self.home / "outbox"
         self.workspace = self.home / "workspace"
         self.artifacts = self.home / "artifacts"
@@ -520,8 +550,38 @@ class Body:
                                     key=[path.name, sha256_json(raw.hex())])
                 shutil.move(str(path), self.layout.rejected / path.name)
                 outcome = {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}
+            except Exception as exc:
+                if not self.paused():
+                    raise     # a running body exits on it: its supervisor restarts it and the breaker counts the boot
+                outcome = self._set_aside(path, exc)
             results.append(outcome)
         return results
+
+    def _set_aside(self, path: Path, exc: Exception) -> dict:
+        """An inbox file whose ingestion raised while the body is paused or held: kept under inbox/faulted, unread.
+
+        The inbox is read in name order, so one such file failed every turn and kept every later file, a signed
+        BODY_RESUME among them, from ever being read: the held body could not be resumed. It is moved aside byte
+        for byte (never deleted, never accepted as a command) and recorded once with its digest and error, and the
+        turn goes on to the next file. Setting a file aside lifts nothing; only a valid signed command does."""
+        try:
+            raw = path.read_bytes()
+        except OSError:
+            raw = None
+        self.layout.faulted.mkdir(exist_ok=True)
+        target = self.layout.faulted / path.name
+        if target.exists() or any(e.payload["kept_as"] == target.name for e in self.journal.replay("command.faulted")):
+            # never overwrite a file set aside earlier, nor reuse the name of one recorded (and since removed)
+            target = target.with_name(f"{path.stem}.{secrets.token_hex(4)}{path.suffix}")
+        shutil.move(str(path), target)           # first, so a crash before the record loses no bytes
+        record = {"file": path.name, "kept_as": target.name,
+                  "sha256": sha256_json(raw.hex()) if raw is not None else None,
+                  "error": f"{type(exc).__name__}: {exc}"[:500], "boot_id": getattr(self, "boot_id", None),
+                  "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED", "at": iso(self.clock()),
+                  "instruction_status": "data_only"}
+        self.journal.record("command.faulted", record, key=[target.name, "faulted"])
+        return {"status": "SET_ASIDE", "file": path.name, "kept_as": f"inbox/faulted/{target.name}",
+                "reason": record["error"][:300]}
 
     # -- lifecycle -----------------------------------------------------------------
     def boot(self, *, main_loop: bool = False) -> dict:
@@ -634,10 +694,19 @@ class Body:
         return json.loads(child.stdout)
 
     def next_wake(self, tick_seconds: float) -> float:
+        """Seconds until the next turn: a full tick, or sooner when a mission the next tick steps is due.
+
+        Only a mission the engine will step pulls the wake forward. A paused or held body steps none, and a
+        LIFECYCLE-paused or blocked mission is not stepped toward its observation (MissionEngine._step returns
+        before it schedules one), so its past next_observe_at stays past: counted as due, it turned the loop
+        every 0.05 s, running the whole tick and sampling telemetry about once a second."""
+        if self.paused():
+            return tick_seconds
         now = self.clock()
         horizon = now + timedelta(seconds=tick_seconds)
         for m in self.engine.book.missions.values():
-            if m.next_observe_at and m.status not in ("ACHIEVED", "ABANDONED", "SUPERSEDED") and not m.blocker:
+            if m.next_observe_at and m.status not in ("ACHIEVED", "ABANDONED", "SUPERSEDED") and not m.blocker \
+                    and not m.paused:
                 at = datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00"))
                 horizon = min(horizon, max(at, now))
         return max(0.05, (horizon - now).total_seconds())
@@ -721,9 +790,10 @@ class Body:
                 if max_ticks is not None and ticks >= max_ticks:
                     reason = "max_ticks reached"
                     break
-                # A paused or held body serves no due observation, so it waits a full tick instead of spinning on
-                # one; a new inbox file (a signed resume, say) or a stop wakes either body sooner.
-                deadline = time.monotonic() + (tick_seconds if idle else self.next_wake(tick_seconds))
+                # A paused or held body, or a paused mission, serves no due observation, so it waits a full tick
+                # instead of spinning on one (next_wake); a new inbox file (a signed resume, say) or a stop wakes
+                # the body sooner.
+                deadline = time.monotonic() + self.next_wake(tick_seconds)
                 while time.monotonic() < deadline and not self.stop_requested:
                     if self.layout.stop_file.exists() or set(self.layout.inbox.glob("*.json")) - waiting:
                         break
@@ -848,7 +918,8 @@ def status(home: str | Path) -> dict:
                                      for d in device_delegations(journal).values()],
                          "stop_file_present": layout.stop_file.exists(),
                          "pause_file_present": layout.pause_file.exists(),
-                         "crash_loop_hold": (crash_loop_hold(journal) or {}).get("why")},
+                         "crash_loop_hold": (crash_loop_hold(journal) or {}).get("why"),
+                         "contained_faults": contained_faults(journal, layout)},
             # Missions and persistent goals are different objects: missions under "missions" (and under
             # "goals", the legacy key older phone/Mac clients read), founder-signed Goal Gravity goals under
             # "gravity". Neither key is ambiguous once "keys" is read.

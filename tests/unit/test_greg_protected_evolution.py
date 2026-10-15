@@ -283,6 +283,7 @@ def test_a_trusted_file_changed_mid_run_stops_the_cycle_before_the_next_evaluati
 
 def test_a_dirty_trusted_file_is_refused_for_a_freeze_and_for_a_record(monkeypatch, tmp_path):
     monkeypatch.setattr(E, "_dirty", lambda paths: ["greg/cognition/evolution.py"])
+    monkeypatch.setattr(E, "_clean_room_violations", lambda code: [])      # the clean room has its own tests
     with pytest.raises(E.EvolutionError, match="DIRTY_TREE"):
         E.freeze("forecast_quantile", tmp_path / "f.json")
     (tmp_path / "f.json").write_text(json.dumps({"inputs": {}}))
@@ -369,12 +370,28 @@ def _shipped(target_name):
     setattr(module, function, spy)
     try:
         data, _ = executable.instance(3)                                    # development seed
-        executable.solve(data, {"latency_s": 5.0, "compute": 100000})
+        out = executable.solve(data, {"latency_s": 5.0, "compute": 100000})
     finally:
         setattr(module, function, real)
     assert seen, (target_name, "the shipped executable never ran its evolvable method")
     assert all(c == seen[0] for c in seen) and seen[0] == json.loads(json.dumps(constant)), target_name
+    # what the method reports it ran (the verifier's round 2: a substitution inside the method passed the spy)
+    ran = _effective(target_name, out["certificate"])
+    assert ran == {k: seen[0][k] for k in ran}, (target_name, ran)
     return seen[0]
+
+
+def _effective(target_name, certificate):
+    """The configuration fields each method's certificate records about the run itself. The constraint-release
+    certificate records the whole search configuration; the forecasting and immune certificates record the fields
+    below (their remaining keys - origins, error model, uniform share, scale set, alarm fraction, whitening - are
+    not observable from the certificate and rest on the argument check above and on review)."""
+    if target_name == "constraint_release":
+        return certificate["search_config"]
+    if target_name == "forecast_quantile":
+        return {k: certificate[k] for k in ("fit_window", "beta_set", "phi_set", "interval_scale")}
+    folds = int(certificate["calibration"]["method"].split("-fold")[0])
+    return {"detectors": certificate["detectors_generated"], "calibration_folds": folds}
 
 
 def test_no_rejected_p8_configuration_is_shipped_and_every_incumbent_still_is():
@@ -540,9 +557,24 @@ def test_a_development_run_never_looks_at_the_held_out_split(monkeypatch, tmp_pa
     record = E.cycle(generations=2, population=2, freeze=frozen, require_confinement=confine)   # no record written
     assert record["decision"] == "STOPPED_BEFORE_HELDOUT" and "heldout" not in record
     assert not any(items & set(held) for items in seen)
-    record = E.cycle(generations=2, population=2, freeze=frozen, require_confinement=confine,
-                     out=tmp_path / "c.json", allow_dirty_for_test=True)
-    assert record["decision"] in ("RETAIN", "REJECT") and record["heldout"]["n"] == len(held)
+    # a test run may not look at a registered held-out split either (verifier's round-2 finding) ...
+    with pytest.raises(E.EvolutionError, match="never evaluates a registered held-out split"):
+        E.cycle(generations=2, population=2, freeze=frozen, require_confinement=confine,
+                out=tmp_path / "c.json", allow_dirty_for_test=True)
+    assert not any(items & set(held) for items in seen) and not (tmp_path / "c.json").exists()
+    # ... and takes the one look only on development instances, writing its record
+    from greg.cognition.genomes import developmental as D
+
+    def dev(seeds):
+        return {f"s{s}": {"data": D.constraint_release_instance(s)[0], "truth": D.constraint_release_instance(s)[1],
+                          "category": D.constraint_release_subregion(D.constraint_release_instance(s)[0])}
+                for s in seeds}
+    monkeypatch.setattr(E, "cr_split", lambda name=E.CR_CURRENT_SPLIT: (dev((1, 2)), dev((4, 5)), []))
+    frozen = tmp_path / "cr-freeze.json"
+    E.freeze("constraint_release", frozen, generations=2, population=2)
+    record = E.cycle(generations=2, population=2, target_name="constraint_release", freeze=frozen,
+                     require_confinement=confine, out=tmp_path / "c.json", allow_dirty_for_test=True)
+    assert record["decision"] in ("RETAIN", "REJECT") and record["heldout"]["n"] == 2
     assert json.loads((tmp_path / "c.json").read_text())["heldout"] == record["heldout"]
 
 
@@ -578,10 +610,16 @@ def test_a_recorded_cycle_needs_a_committed_freeze_confinement_and_the_clean_roo
     could run unconfined; P8-1/P8-2: nothing required the run to vouch for the code it executed."""
     with pytest.raises(E.EvolutionError, match="CONFINEMENT_REQUIRED"):
         E.cycle(out=tmp_path / "c.json", freeze=tmp_path / "f.json", require_confinement=False)
+    with pytest.raises(E.EvolutionError, match="CLEAN_ROOM_REQUIRED"):     # a test process is no clean room
+        E.cycle(out=tmp_path / "c.json", freeze=tmp_path / "f.json")
+    monkeypatch.setattr(E, "_clean_room_violations", lambda code: [])
     monkeypatch.setattr(E, "_dirty", lambda paths: [])
     (tmp_path / "f.json").write_text(json.dumps({"inputs": {}}))
     with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):
         E.cycle(out=tmp_path / "c.json", freeze=tmp_path / "f.json")
+    elsewhere = E.ROOT / "docs/evidence/greg-genome-admission/2026-10-15-v3/freeze.json"  # committed, not a P8 run's
+    with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):
+        E.cycle(target_name="constraint_release", out=tmp_path / "c.json", freeze=elsewhere)
     with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):
         E.run_recorded("constraint_release", tmp_path / "f.json", tmp_path / "c.json")
     committed = E.ROOT / "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/freeze.json"
@@ -593,6 +631,8 @@ def test_a_recorded_cycle_needs_a_committed_freeze_confinement_and_the_clean_roo
 def test_the_clean_room_names_repository_bytecode_and_unfrozen_executed_code(monkeypatch, tmp_path):
     import sys
     import types
+    monkeypatch.setattr(E.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0, stdout="",
+                                                                                     stderr=""))  # a fresh checkout
     code = {p: "x" for p in E._loaded_repository_files()}
     monkeypatch.setattr(sys, "pycache_prefix", None)
     assert any("bytecode" in v for v in E._clean_room_violations(code))
@@ -724,3 +764,87 @@ def test_confinement_refuses_a_process_whose_other_threads_would_stay_unconfined
             "except isolation.IsolationError as exc:\n    print('REFUSED', exc)\n") % str(E.ROOT)
     proc = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True, timeout=60)
     assert proc.stdout.startswith("REFUSED") and "2 threads" in proc.stdout, proc.stdout + proc.stderr
+
+
+# ------------------------------------------------------------------ verifier's round 2 on the P8 fix (2026-10-15)
+def test_the_clean_room_requires_a_fresh_checkout(monkeypatch, tmp_path):
+    """A direct --inside run in a working tree (untracked or ignored files, __pycache__ included) is not a clean
+    room, whatever bytecode prefix the caller chose."""
+    import subprocess
+    import sys
+    git = lambda *a: subprocess.run(["git", *a], cwd=tmp_path, check=True, capture_output=True)
+    git("init", "-q")
+    (tmp_path / ".gitignore").write_text("__pycache__/\n")
+    (tmp_path / "a.py").write_text("x = 1\n")
+    git("add", ".")
+    git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "c")
+    monkeypatch.setattr(E, "ROOT", tmp_path)
+    monkeypatch.setattr(sys, "pycache_prefix", str(tmp_path.parent / "fresh-prefix"))
+    assert E._clean_room_violations(None) == []
+    (tmp_path / "__pycache__").mkdir()
+    (tmp_path / "__pycache__" / "a.cpython-313.pyc").write_bytes(b"\0")
+    assert any("not a fresh checkout" in v for v in E._clean_room_violations(None))
+
+
+def test_a_recorded_cycle_checks_the_clean_room_before_it_imports_the_target(monkeypatch, tmp_path):
+    called = []
+    monkeypatch.setattr(E, "_clean_room_violations", lambda code: ["planted"])
+    monkeypatch.setitem(E.TARGET_SPECS, "constraint_release", lambda: called.append(1))
+    with pytest.raises(E.EvolutionError, match="CLEAN_ROOM_REQUIRED: \\['planted'\\]"):
+        E.cycle(target_name="constraint_release", out=tmp_path / "c.json", freeze=tmp_path / "f.json")
+    assert called == []
+
+
+def test_the_launcher_refuses_a_dirty_or_bytecode_bearing_tree_and_disables_hooks(monkeypatch, tmp_path):
+    """The verifier tainted a 'clean_room' record through the launching process (an uncommitted edit it loaded,
+    never-checked bytecode) and through a post-checkout hook run by git worktree add."""
+    import subprocess
+    committed = E.ROOT / "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/freeze.json"
+    with pytest.raises(E.EvolutionError, match="FREEZE_NOT_COMMITTED"):          # committed, but not a freeze
+        E.run_recorded("constraint_release", E.ROOT / "greg/path.json", tmp_path / "c.json")
+    monkeypatch.setattr(E, "_dirty", lambda paths: [p for p in paths if p == "greg/cognition/genomes/__init__.py"])
+    with pytest.raises(E.EvolutionError, match="DIRTY_TREE: the launching tree"):
+        E.run_recorded("constraint_release", committed, tmp_path / "c.json")
+    monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    monkeypatch.setattr(E, "_unchecked_bytecode", lambda: ["greg/cognition/evolution.py"])
+    with pytest.raises(E.EvolutionError, match="never-checked repository bytecode"):
+        E.run_recorded("constraint_release", committed, tmp_path / "c.json")
+    monkeypatch.setattr(E, "_unchecked_bytecode", lambda: [])
+    calls = []
+
+    class Stop(Exception):
+        pass
+
+    def run(argv, **kw):
+        calls.append(argv)
+        if "add" in argv:
+            raise Stop
+        return subprocess.CompletedProcess(argv, 0, b"", b"")
+    monkeypatch.setattr(E.subprocess, "run", run)
+    with pytest.raises(Stop):
+        E.run_recorded("constraint_release", committed, tmp_path / "c.json")
+    add = next(argv for argv in calls if "worktree" in argv)
+    assert add[:3] == ["git", "-c", "core.hooksPath=/dev/null"] and "add" in add
+
+
+def test_never_checked_bytecode_of_a_loaded_module_is_named(monkeypatch, tmp_path):
+    import sys
+    import types
+    pyc = tmp_path / "x.cpython-313.pyc"
+    pyc.write_bytes(b"\0" * 4 + (0b01).to_bytes(4, "little") + b"\0" * 8)       # hash-based, source never checked
+    module = types.ModuleType("greg_review_unchecked")
+    module.__file__ = str(E.ROOT / "greg/cognition/x.py")
+    module.__cached__ = str(pyc)
+    monkeypatch.setitem(sys.modules, "greg_review_unchecked", module)
+    assert E._unchecked_bytecode() == ["greg/cognition/x.py"]
+    pyc.write_bytes(b"\0" * 4 + (0b11).to_bytes(4, "little") + b"\0" * 8)       # checked against the source
+    assert E._unchecked_bytecode() == []
+
+
+def test_the_spent_ledger_reads_every_freeze_under_the_evidence_tree(monkeypatch, tmp_path):
+    nested = tmp_path / "a" / "b"
+    nested.mkdir(parents=True)
+    (nested / "freeze.json").write_text(json.dumps({"inputs": {"target": "constraint_release",
+                                                               "split": {"heldout": ["s9"]}}}))
+    monkeypatch.setattr(E, "EVIDENCE", tmp_path)
+    assert E._spent_heldout("constraint_release")["a/b/freeze.json"] == {"s9"}

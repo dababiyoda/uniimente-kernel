@@ -502,12 +502,22 @@ def _loaded_repository_files() -> set[str]:
     return out
 
 
-def _clean_room_violations(code: dict) -> list[str]:
-    """Why this process cannot vouch that the frozen code is the code it ran (empty when it can): repository
-    bytecode it may have read instead of the hashed source, and repository files it executed outside the freeze.
-    ``python -m greg.cognition.evolution --freeze F --out O`` provides the clean room: a fresh detached checkout
-    of HEAD and an empty bytecode prefix, with nothing written."""
+def _clean_room_violations(code: dict | None) -> list[str]:
+    """Why this process cannot vouch that the frozen code is the code it ran (empty when it can): a working tree
+    that is not a fresh checkout (any untracked or ignored file, __pycache__ included), repository bytecode it may
+    have read instead of the hashed source, and (given the freeze's ``code``) repository files it executed outside
+    the freeze. ``python -m greg.cognition.evolution --freeze F --out O`` provides the clean room: a fresh
+    detached checkout of HEAD, checked out with git hooks disabled, and an empty bytecode prefix, with nothing
+    written.
+
+    Scope: this defends the record against a dirty or stale working tree and against the run's own code. It cannot
+    defend against whoever controls the machine, who can write any record; re-executing the frozen cycle at the
+    recorded commit is that check."""
     found = []
+    status = subprocess.run(["git", "status", "--porcelain", "--ignored", "--untracked-files=all"], cwd=ROOT,
+                            capture_output=True, text=True)
+    if status.returncode or status.stdout.strip():
+        found.append(f"not a fresh checkout: {status.stdout.split(chr(10))[:5] if status.stdout else status.stderr}")
     prefix = getattr(sys, "pycache_prefix", None)
     if not prefix:
         found.append("no fresh bytecode prefix: repository bytecode in __pycache__ may have run instead of source")
@@ -516,9 +526,10 @@ def _clean_room_violations(code: dict) -> list[str]:
         planted = sorted(str(p.relative_to(mirror)) for p in mirror.rglob("*.pyc")) if mirror.is_dir() else []
         if planted:
             found.append(f"the bytecode prefix holds repository bytecode: {planted[:5]}")
-    outside = sorted(_loaded_repository_files() - set(code))
-    if outside:
-        found.append(f"executed repository files the freeze does not cover: {outside[:10]}")
+    if code is not None:
+        outside = sorted(_loaded_repository_files() - set(code))
+        if outside:
+            found.append(f"executed repository files the freeze does not cover: {outside[:10]}")
     return found
 
 
@@ -535,13 +546,47 @@ PRE_FREEZE_HELDOUT = {
 def _spent_heldout(target_name: str, exclude: Path | None = None) -> dict:
     """Held-out item ids already looked at on this target, by the cycle or freeze that looked: one look per item."""
     spent = {name: ids() for name, (target, ids) in PRE_FREEZE_HELDOUT.items() if target == target_name}
-    for manifest in sorted(EVIDENCE.glob("*/freeze.json")) if EVIDENCE.is_dir() else []:
+    for manifest in sorted(EVIDENCE.rglob("freeze.json")) if EVIDENCE.is_dir() else []:
         if exclude is not None and manifest.resolve() == Path(exclude).resolve():
             continue
         inputs = json.loads(manifest.read_text()).get("inputs", {})
         if inputs.get("target") == target_name:
             spent[str(manifest.relative_to(EVIDENCE))] = set(inputs.get("split", {}).get("heldout", []))
     return spent
+
+
+def _unchecked_bytecode() -> list[str]:
+    """Repository modules this process loaded whose cached bytecode is hash-based with source checking off: Python
+    runs such a .pyc without reading the source (normal runs write timestamp bytecode, which Python validates
+    against the source), so its presence means the hashed source may not be what ran here."""
+    found = []
+    for module in list(sys.modules.values()):
+        cached = getattr(module, "__cached__", None)
+        path = getattr(module, "__file__", None)
+        if not cached or not path or ROOT not in Path(path).resolve().parents or not Path(cached).is_file():
+            continue
+        header = Path(cached).read_bytes()[:16]
+        flags = int.from_bytes(header[4:8], "little") if len(header) == 16 else 0
+        if flags & 0b1 and not flags & 0b10:
+            found.append(Path(path).resolve().relative_to(ROOT).as_posix())
+    return sorted(found)
+
+
+def _registered_heldout(target_name: str) -> set:
+    """Held-out item ids of every split registered for this target, spent or reserved for a later cycle. A test
+    run (``allow_dirty_for_test``) never evaluates them: it would be an unrecorded look before pre-registration."""
+    if target_name == "constraint_release":
+        return {f"s{s}" for _, held in CR_SPLITS.values() for s in held}
+    if target_name == "immune_detect":
+        return {f"s{s}" for s in IMMUNE_HELDOUT_SEEDS}
+    return set(_FORECASTING_SPLIT()[1]) | PRE_FREEZE_HELDOUT["2026-10-08/cycle-forecast-1"][1]()
+
+
+def _in_evidence(path: Path) -> bool:
+    """A recorded cycle's freeze lives at docs/evidence/greg-protected-evolution/<run>/freeze.json, where the
+    spent-split ledger reads every freeze."""
+    resolved = Path(path).resolve()
+    return resolved.name == "freeze.json" and EVIDENCE.resolve() in resolved.parents
 
 
 def _refuse_spent(target_name: str, heldout, exclude: Path | None = None):
@@ -663,6 +708,11 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     recorded = out is not None and not allow_dirty_for_test
     if recorded and not require_confinement:
         raise EvolutionError("CONFINEMENT_REQUIRED: a recorded cycle never runs candidates unconfined")
+    if recorded:                       # before the target's modules are imported, so planted bytecode is still there
+        violations = _clean_room_violations(None)
+        if violations:
+            raise EvolutionError(f"CLEAN_ROOM_REQUIRED: {violations}; run a recorded cycle with "
+                                 f"python -m greg.cognition.evolution --freeze F --out O")
     spec = TARGET_SPECS[target_name]()
     target = spec.target()
     manifest = json.loads(Path(freeze).read_text())["inputs"] if freeze is not None else None
@@ -675,9 +725,10 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
         resolved = Path(freeze).resolve()
         relative = resolved.relative_to(ROOT).as_posix() if ROOT in resolved.parents else None
         committed = relative is not None and not _dirty([relative])
-        if recorded and not committed:
-            raise EvolutionError(f"FREEZE_NOT_COMMITTED: a recorded cycle's freeze must be a file in this repository "
-                                 f"equal to its committed blob at HEAD: {freeze}")
+        if recorded and not (committed and _in_evidence(resolved)):
+            raise EvolutionError(f"FREEZE_NOT_COMMITTED: a recorded cycle's freeze must be "
+                                 f"docs/evidence/greg-protected-evolution/<run>/freeze.json, equal to its committed "
+                                 f"blob at HEAD: {freeze}")
         freeze_record = {"path": relative or str(freeze), "sha256": _sha(resolved), "committed": committed}
         if committed:
             freeze_record["commit"] = subprocess.check_output(
@@ -719,7 +770,9 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
               "source_dirty": dirty,
               "freeze": freeze_record,
               "execution": {"recorded": recorded, "require_confinement": require_confinement,
-                            "clean_room": recorded, "launcher": launcher,
+                            "clean_room": "checked: fresh checkout, empty bytecode prefix, executed code inside "
+                                          "the freeze" if recorded else "not checked",
+                            "launcher_stated": launcher,
                             "allow_dirty_for_test": allow_dirty_for_test},
               "evaluator_seals": {"train": train.seal, "heldout": heldout.seal},
               "split": {"train": len(train_items), "heldout": len(heldout_items),
@@ -815,6 +868,8 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
         record["reason"] = ("only a recorded run under a pre-registered freeze (with a fresh split) evaluates the "
                             "held-out split; a development or unrecorded run stops here")
         return finish()
+    if allow_dirty_for_test and set(heldout_items) & _registered_heldout(target_name):
+        raise EvolutionError("a test run never evaluates a registered held-out split; use development instances")
     train.check()
     inc_h, _ = evaluate(target.incumbent, heldout)
     cand_h, _ = evaluate(best, heldout)
@@ -862,16 +917,28 @@ def run_recorded(target_name: str, freeze: Path, out: Path, *, timeout: int = 6 
     import os
     import tempfile
     resolved = Path(freeze).resolve()
-    if ROOT not in resolved.parents or _dirty([resolved.relative_to(ROOT).as_posix()]):
-        raise EvolutionError(f"FREEZE_NOT_COMMITTED: commit the freeze before running its cycle: {freeze}")
+    if not _in_evidence(resolved) or _dirty([resolved.relative_to(ROOT).as_posix()]):
+        raise EvolutionError(f"FREEZE_NOT_COMMITTED: commit the freeze at "
+                             f"docs/evidence/greg-protected-evolution/<run>/freeze.json before running it: {freeze}")
+    # This launching process ran from the working tree: refuse it unless every file it executed, and every file the
+    # cycle trusts, equals HEAD (an uncommitted edit here could reach the room through the launcher itself).
+    dirty = _dirty(sorted(set(trusted_closure(target_name)) | _loaded_repository_files()))
+    if dirty:
+        raise EvolutionError(f"DIRTY_TREE: the launching tree differs from HEAD: {dirty}")
+    unchecked = _unchecked_bytecode()
+    if unchecked:
+        raise EvolutionError(f"CLEAN_ROOM_REQUIRED: this launcher loaded never-checked repository bytecode for "
+                             f"{unchecked}; delete the __pycache__ entries and launch again")
     relative = resolved.relative_to(ROOT).as_posix()
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     with tempfile.TemporaryDirectory(prefix="greg-p8-room-") as room:
         tree, prefix = Path(room) / "tree", Path(room) / "bytecode"
         prefix.mkdir()
-        subprocess.run(["git", "worktree", "add", "--detach", str(tree), commit], cwd=ROOT, check=True,
-                       capture_output=True)
+        subprocess.run(["git", "-c", "core.hooksPath=/dev/null", "worktree", "add", "--detach", str(tree), commit],
+                       cwd=ROOT, check=True, capture_output=True)       # no repository hook runs in the room
         try:
+            if any(prefix.iterdir()):
+                raise EvolutionError("CLEAN_ROOM_REQUIRED: the room's bytecode prefix was written before the run")
             env = {k: v for k, v in os.environ.items() if not k.startswith("PYTHON")}
             proc = subprocess.run([sys.executable, "-E", "-s", "-B", "-X", f"pycache_prefix={prefix}", "-m",
                                    "greg.cognition.evolution", "--inside", "--target", target_name, "--freeze",

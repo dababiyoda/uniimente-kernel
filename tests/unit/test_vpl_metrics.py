@@ -111,3 +111,25 @@ def test_a_complete_preregistration_passes_and_each_gap_the_frozen_runs_had_is_n
     assert any("licence" in p for p in M.validate_preregistration(_prereg(data_provenance={"source": "x"})))
     assert any("before" in p for p in M.validate_preregistration(_prereg(declared_before_heldout=False)))
     assert M.validate_preregistration({"family_id": "F7"})[0].startswith("missing")
+
+
+def test_f8_reads_its_fractile_from_the_truth_counts_fallbacks_as_abstentions_and_flags_an_idle_static_arm():
+    def arm(cost, agents=None, result="decided", seconds=1.0):
+        return {"cost": cost, "result": result, "seconds": seconds,
+                "answer": {"agents": agents} if agents is not None else None}
+    rows = [{"item_id": f"F8-bronx-2015-03-0{d}-0800", "family": "F8",
+             "truth": {"required": 10, "quantile_level": q},
+             "arms": {"routed_composition": arm(10.0, 10), "erlang_alone": arm(12.0, result="fallback"),
+                      "static_composition": arm(14.0, result="fallback"), "standing_plan_then_staff": arm(14.0, 9),
+                      "cumulative_ratio_then_staff": arm(11.0, 11), "ewma_ratio_then_staff": arm(9.0, 9)}}
+            for d, q in ((1, 0.9), (2, 0.966667), (3, 0.9))]
+    report = {"source_commit": "x", "heldout": rows,
+              "summary": {"F8": {"best_constituent": "erlang_alone", "lift": True}, "VPL_v5": {}}}
+    m = M.metrics(report)["families"]["F8"]
+    assert m["abstention_delta"] == -3 and m["false_answer_delta"] == 0
+    assert m["calibration"]["routed_composition"]["0.9"] == {"nominal": 0.9, "covered": 1.0, "blocks": 2, "gap": 0.1}
+    assert m["calibration"]["erlang_alone"] == {}                              # a fallback is not the arm's answer
+    f8 = M.accounting([report])["families"]["F8"]
+    assert f8["routed_vs_static"]["static_arm"] == "DEGENERATE"
+    assert set(f8["practitioner"]) == set(M.PRACTITIONER_ARMS["F8"])
+    assert f8["practitioner"]["ewma_ratio_then_staff"]["losses"] == 3 and "total_cost" in f8["practitioner"]["ewma_ratio_then_staff"]

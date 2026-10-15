@@ -17,7 +17,7 @@ capability.
 |---|---|---|
 | common base | `92bc6e31e0baa8fd507833e0f272b4a5e532e4d3` | P4 v2 result |
 | PR #155 head | `ef5f078013b549a51458dc9f6b5f34b324ea70b0` | 60 files changed since the base |
-| PR #158 head | `047549f352c74ac5f098ec04762b8095f44c9fde` | 147 files changed since the base; includes `a832c73` and `77b61a1` |
+| PR #158 head | `202b932` (merged in this PR); earlier merges at `77b61a1` and `047549f352c74ac5f098ec04762b8095f44c9fde` | 154 files changed since the base |
 | shared paths | 22 | 8 are frozen-path collisions |
 
 Convergence commits:
@@ -26,6 +26,9 @@ Convergence commits:
   `a832c73` plus the graph_or review fix `99e6d83`.
 - `49b2d58`, `8bbd3b8` and `6e62b59` are Track B work.
 - `e21bb5b` merges #158 `047549f`.
+- `8a43e70` records the institutional verifier run (PASS, bound to `ccd38a2`).
+- A later merge brings #158 to `202b932`: the F8 (P6 v5) pre-registration, freeze, suite and data. F8's held-out
+  arms had not run at merge time.
 
 The eight collided frozen files are byte-identical at `a832c73`, `77b61a1` and `047549f`.
 
@@ -209,6 +212,14 @@ The founder's VPL definition says "beats the strongest single available intellig
 `flow_expansion_mcf` is admitted, F7 should be re-measured with it as a constituent. A tie at higher latency
 would remove F7's lift. That is an expectation, not evidence.
 
+**F8 and the converged tree.** F8's frozen harness, `run_v5.py`, refuses to report from this tree by design
+(`FROZEN_INPUT_CHANGED`). Twelve files in its frozen code closure differ here, including the converged compiler,
+catalog, solvers, verification and evidence index. F8's held-out result therefore measures #158's lineage at its
+freeze commit.
+
+Measuring the converged Mind on F8, including its compiled arm, needs a fresh pre-registered freeze on this
+branch, under a lineage-unique path. It is listed with the remaining falsification tests.
+
 ## 9. Retained alternatives (isolated, registered, none live)
 
 | alternative | where | state | what would decide it |
@@ -332,10 +343,11 @@ Remaining falsification tests:
 3. A frozen comparison of #155's operator library against the Foundry library on the same problems.
 4. Version-bound re-admission of the operation families (they carry no version).
 5. A natural family that uses an admitted Layer 1 or Layer 2 genome.
+6. F8 re-measured on the converged Mind under a fresh pre-registered freeze (its #158 freeze refuses here).
 
 ## 12. Third-party data rights: release blocker
 
-This repository is **public**. Three extracts were committed by #158 on a public feature branch (not `main`)
+This repository is **public**. Four extracts were committed by #158 on a public feature branch (not `main`)
 and are carried by this PR:
 
 | file | source | terms verified this session | status |
@@ -343,6 +355,7 @@ and are carried by this PR:
 | `cortex/evaluation/data/sndlib_networks.json.gz` | SNDlib 1.0 networks via TopoHub 1.5.1 | TopoHub is MIT. Its PyPI page states no terms for the bundled datasets. SNDlib's site could not be reached (DNS failure), so the builder's note ("research purposes only, no open licence") is **unverified**. | uncleared |
 | `cortex/evaluation/data/m4_weekly.json.gz` | M4 competition, `Mcompetitions/M4-methods` | the GitHub repository has **no licence file or statement** (verified) | uncleared |
 | `cortex/evaluation/data/bank_calls_halfhour.json.gz` | fpp3 `bank_calls` (credited to Weinberg, Brown and Stroud 2007) | no dataset-specific licence found; the package is listed GPL-3; CRAN was unreachable (403) | uncleared |
+| `cortex/evaluation/data/uber_nyc_2015_halfhour.json.gz` (F8, merged from #158 `202b932`) | NYC TLC Uber pickups, January to June 2015, released under a Freedom of Information Law request and published in `fivethirtyeight/uber-tlc-foil-response` | That repository has **no licence statement** (verified). FiveThirtyEight's CC BY 4.0 statement covers only its `data` repository. The builder's own note says neither the TLC nor FiveThirtyEight states an open licence. | uncleared (public records; lower risk, not cleared) |
 
 Founder or legal decision, before any merge to `main` or any release:
 - obtain permission (SNDlib maintainers at Poznan University of Technology; the M4 organisers); or

@@ -490,3 +490,25 @@ def test_a_method_that_answers_a_relaxation_is_rejected_not_allowed_to_answer():
     formal = {"variables": {"x": [0, 5]}, "constraints": [], "objective": {"coefficients": {"x": 1}, "sense": "max"}}
     rows = compiler.candidates(formal, compiler.CompetencyGeometry.parse({}), compiler.evidence_index())
     assert "answers a relaxation" in next(row["rejected"] for row in rows if row["method"] == "cognition.formal")
+
+
+def test_a_tracker_staffing_request_compiles_to_the_basal_tracker_recipe():
+    """Regression (P6 v5): {observed_today, standing_plan, staffing} is the track_then_staff geometry. No single
+    genome reads those inputs, so the compiler must reach the composition (basal Kalman tracker -> Erlang C), plan
+    it without running it, then run it through the same canonical path when execution is asked for."""
+    attached = registry_view()
+    for cid in ("cognition.basal_kalman", "cognition.queue_erlang"):
+        attached.set_state(cid, "ATTACHED")
+    noise = [0.05, -0.12, 0.08, 0.15, -0.04, 0.1, -0.09, 0.02, 0.11, -0.13, 0.06, 0.0, -0.07, 0.12, 0.03]
+    data = {"observed_today": [round(110 * (1 + e)) for e in noise],
+            "standing_plan": {"blocks": [100.0] * 48, "decision_block": 16},
+            "staffing": {"block_seconds": 1800.0, "mean_service_time": 1200.0, "target_wait": 120.0,
+                         "max_wait_probability": 0.2, "agent_cost": 1.0, "shortage_penalty": 10.0},
+            "tracker": {"q": 1e-5, "r": 0.01, "prior": {"mean": [1.0, 0.0], "var": [0.04, 1e-5]}}}
+    planned = compile_(attached, {"consequence_class": "read_only"}, data, execute=False)
+    assert planned["state"] == "PLANNED" and planned["method_or_composition_selected"] == "composition:track_then_staff"
+    assert not planned["intermediate_receipts"]
+    r = compile_(attached, {"consequence_class": "read_only"}, data)
+    assert r["state"] == "ANSWERED" and r["method_or_composition_selected"] == "composition:track_then_staff"
+    assert len(r["intermediate_receipts"]) == 2 and type(r["result"]["agents"]) is int
+    assert r["authority_created"] is False

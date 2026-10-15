@@ -15,7 +15,7 @@ State: active. Authority delta: none.
 Track B execution, 2026-10-14 (draft PR from `claude/greg-mind-lineage-convergence` into #155's head; record:
 [reconciliation](collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md), [map](collaboration/MIND-LINEAGE-RECONCILIATION-MAP-2026-10-14.json)):
 
-- **Scope:** #155 `ef5f078` and #158 `047549f` merged. Every one of the 185 changed files has a disposition, and
+- **Scope:** #155 `ef5f078` and #158 (through `202b932`, the F8 freeze) merged. Every one of the 185 changed files has a disposition, and
   the eight frozen-path collisions are archived byte-identical in both versions.
 - **Canonical by evidence:** #158's evolution controller, frozen benchmark and Lawful Leverage Foundry; one
   Landlock grant path; one evidence index that both the compiler and the inventory read.
@@ -26,7 +26,8 @@ Track B execution, 2026-10-14 (draft PR from `claude/greg-mind-lineage-convergen
 - **F7 independently audited:** CONFIRMED (200 of 200), and parametric min-cost flow ties F7. Recommended:
   `flow_expansion_mcf` becomes canonical for capacity expansion once admitted at its exact version.
 - **Horizon added:** `immune_function`.
-- **Release blocker:** third-party data rights (SNDlib, M4, fpp3) are uncleared in a public repository.
+- **Release blocker:** third-party data rights (SNDlib, M4, fpp3, and the F8 NYC TLC/FiveThirtyEight Uber
+  extract) are uncleared in a public repository.
 
 Authority delta: none.
 

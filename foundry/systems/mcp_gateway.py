@@ -29,6 +29,7 @@ import contextlib
 import hashlib
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -56,11 +57,26 @@ def _confined(provider: dict):
     python = root / "bin" / "python"       # a virtualenv's base interpreter may live under the hidden home
     if python.exists():
         shown.append(str(python.resolve().parent.parent))
-    argv = namespace_argv(writable=[str(scratch)], readonly=shown, chdir=str(scratch))
-    env = {"PATH": f"{root / 'bin'}:/usr/local/bin:/usr/bin:/bin", "HOME": str(home), "TMPDIR": str(temporary),
-           "LANG": "C.UTF-8"}
-    return StdioServerParameters(command=argv[0], args=[*argv[1:], *map(str, provider["command"])], env=env,
-                                 cwd=str(scratch))
+    path = [str(root / "bin"), str(root / "node_modules" / ".bin")]
+    entry = Path(provider["command"][0])
+    try:
+        shebang = entry.resolve().read_bytes()[:128].split(b"\n", 1)[0]
+    except OSError:
+        shebang = b""
+    node = shutil.which("node") if b"node" in shebang else None
+    if node:                               # an npm server: its Node runtime, wherever it is installed (nvm keeps it
+        node = Path(node).resolve()        # under the hidden home)
+        path.append(str(node.parent))
+        shown.append(str(node.parent.parent))
+    writable = [str(scratch), *(str(Path(p).resolve()) for p in provider.get("writable", ()))]
+    argv = namespace_argv(writable=writable, readonly=shown, chdir=str(scratch))
+    command = [*map(str, provider["command"])]
+    if provider.get("door"):               # its only way out: a door to a relay allowing exactly the signed hosts
+        from foundry.systems.relay_door import door_argv
+        command = door_argv(sys.executable, provider["door"], command)
+    env = {"PATH": ":".join([*path, "/usr/local/bin", "/usr/bin", "/bin"]), "HOME": str(home),
+           "TMPDIR": str(temporary), "LANG": "C.UTF-8", **provider.get("env", {})}
+    return StdioServerParameters(command=argv[0], args=[*argv[1:], *command], env=env, cwd=str(scratch))
 
 
 def _params(provider: dict):
@@ -128,7 +144,13 @@ async def _call(provider: dict, tool: str, args: dict) -> dict:
             if result.is_error:
                 raise GatewayError(f"{provider['name']}.{tool} failed: "
                                    f"{result.content[0].text if result.content else ''}")
-            value = result.structured_content.get("result") if result.structured_content else result.content[0].text
+            structured = result.structured_content
+            if structured and set(structured) == {"result"}:   # the SDK's wrapping of a plain return value
+                value = structured["result"]
+            elif structured:                                     # a server's own structure, kept whole
+                value = structured
+            else:
+                value = "\n".join(getattr(c, "text", "") for c in result.content) if result.content else None
             return {"provider": provider["name"], "value": value, "provider_claims_read_only": claim}
 
 

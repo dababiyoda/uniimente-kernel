@@ -1182,6 +1182,170 @@ path, its command, the tool's name and its argument schema. Now the founder only
   (`greg model set`) can fill them from the schemas.
 - Discovery covers Python virtualenv installs. npm-installed servers are not found yet.
 
+## Increment 19 (2026-10-15): npm-installed MCP servers, launch configuration, structured answers
+
+- **npm servers are found.** `npm install --prefix <folder> @modelcontextprotocol/server-<name>` puts the entry point at
+  `<folder>/node_modules/.bin/mcp-server-<name>`, and discovery now finds it there too. The entry point is a symlink
+  into the package; it resolves inside the installation, so it passes the same check. The Node runtime (nvm keeps it
+  under the hidden home) is shown read-only inside the namespace, and its `bin` is on the server's `PATH`.
+- **Launch configuration.** Some servers need launch arguments; the filesystem server takes the directories it may
+  serve. The founder writes them in an optional `greg-mcp.json` beside the server (`args`, `readable`). Discovery,
+  tool listing and the planner use it, and a broken file is reported, not guessed. Every path in it is still checked
+  against the read roots when a mission runs, so the file cannot widen what a mission may read.
+- **Fixed: a server's own structured answer was dropped.** The gateway took `structured_content["result"]`, which is
+  how GREG's SDK wraps a plain return value. A server with its own output schema (the official filesystem server)
+  returned `{"content": ...}`, and GREG recorded `None`. A lone `result` key is now unwrapped, any other structure is
+  kept whole, and plain text is the fallback.
+
+### Evidence
+
+- **`tests/unit/test_greg_mcp_npm.py` (6 tests),** with a Python stand-in laid out exactly as npm lays out a
+  package:
+  - the npm layout and its launch configuration are found;
+  - a broken configuration is reported;
+  - the launch arguments reach the server;
+  - a structured answer (declared output schema) is kept;
+  - words reach the npm server with its configuration;
+  - a configuration naming a path outside the read roots is refused when the mission runs.
+- **Mutant.** With the old `result`-only extraction, the structured answer is `None` and the test fails.
+- **The official `@modelcontextprotocol/server-filesystem`** (Node 22, MIT per its README), run locally. A signed
+  mission reads the founder's note through `read_text_file` and closes. Its `write_file` and `edit_file` fail with
+  Node's `EROFS: read-only file system`, and the folder and the note are unchanged.
+- **Planner.** "Use the filesystem server to read the text file …" proposes `read_text_file`.
+
+## Increment 20 (2026-10-15): MCP tools that change things, inside exactly what the founder approved
+
+Increments 17 to 19 let GREG use installed MCP tools that only read. A tool that writes a file, posts to a service or
+uses a credential had no path: inside the read-only namespace it simply failed. Now it has one, and the founder sees
+its exact reach before it runs.
+
+- **The capability is `mcp.act`** (`greg/mcp_tools.py`), class `external_contact`, target `mcp:<server>`. A mission
+  names the tool and its arguments, as with `mcp.call`, plus three things the server may have:
+  - `writable`: existing paths under the read roots. They are bound writable; everything else the server sees stays
+    read-only, and anything it writes outside them lands in its discarded scratch.
+  - `hosts`: exact host names. The server's only way out is a door to a relay that allows exactly those hosts on
+    443, chained through the body's mandated proxy and journaled. Hosts need a body with confined egress; without
+    one, the call is refused before anything starts.
+  - `secrets`: environment variables, each naming a credential handle in the `mcp:` namespace
+    (`greg secret set mcp:<name>`, which accepts that namespace; before, it accepted only handles a capability
+    declares). Values reach the server's environment only. The record keeps the variable names.
+- **Every use waits for the founder.** The class is above any read-only light cone, so the mission stops with one
+  approval request bound to the exact scope digest of those params. The request now shows that scope before the
+  founder answers: the tool, `may_write`, `may_reach` and `credentials` (handles only). An approval runs that scope
+  once; a rejection never runs it; an interrupted act is not retried blindly (`retry_safe` is false).
+- **Refused before anything starts:** a handle outside `mcp:`, an environment name that is not UPPER_CASE, a
+  missing credential, a host with a scheme, port or wildcard, a writable path outside the read roots or not
+  existing, and an act that names neither paths nor hosts (that is `mcp.call`).
+- **Found on the way, fixed:** a writable folder inside a readable one came out read-only, because bubblewrap applies
+  mounts in order and the parent's read-only bind landed last. Binds are now sorted parent-first. The door socket
+  now lives in a short private directory shown read-only to the server: a socket inside a deep mission workspace
+  exceeded the 108-byte path limit and the server could not reach the relay.
+- **Discovery.** "Write a file with a tool from the MCP server I installed" ranks `mcp.act` first; "use a tool from
+  the MCP server I installed" still ranks the read-only `mcp.call` first.
+- **Mission Control** says how a writing tool runs, and the planner's note on tools without a read-only claim says a
+  change needs an approved `mcp.act` mission.
+
+### Evidence
+
+- **`tests/unit/test_greg_mcp_act.py` (15 tests),** with a stand-in "scribe" server:
+  - the note lands only in the named folder; a shown file answers "Read-only file system"; a file in an unshown
+    folder lands in the discarded scratch, and the founder's copy never appears;
+  - a credential reaches the server (it reports the value's SHA-256) and the value appears nowhere in the result;
+  - seven unsigned-exactly cases are refused with no server started;
+  - writable paths outside the read roots or not existing are refused;
+  - the manifest's class, retry rule and relay membership;
+  - a writable folder inside a readable one stays writable;
+  - a single file can be granted, its sibling stays untouched, and the server's own installation answers
+    "Read-only file system";
+  - discovery in both directions;
+  - `greg secret set mcp:courier-token` stores the value from stdin without printing it, and malformed handles
+    are refused.
+- **`tests/integration/test_greg_mcp_act_mission.py` (3 tests in CI, 1 local):**
+  - a signed mission stops for approval, the request shows `may_write` and "no network", nothing runs before the
+    answer, and after approval the mission closes with the chain verified and the founder's other file unchanged;
+  - a rejected scope never runs;
+  - on a body with confined egress, a "courier" server fetches `https://service.test/hello` with its credential in
+    the request header and saves the page. The proxy saw only `service.test`; `elsewhere.test` was denied by the
+    relay (journaled as `mcp.act` DENIED) and the direct network was unreachable. No file in the body home except
+    the secret store contains the credential value: not the ledger, the journals, the receipts or the workspace;
+  - locally (`GREG_TEST_MCP_SERVERS`), the official `@modelcontextprotocol/server-filesystem`, serving two folders,
+    wrote the approved note through a signed, approved mission, and its own `write_file` into the folder the mission
+    only showed failed with "read-only file system".
+- **Mutants: 13 of 13 fail the tests.** The class set to read-only (runs without asking); the whole read root made
+  writable; the relay allowing a second host; the credential value recorded; the approval not showing the scope;
+  a non-`mcp:` handle resolved; the CLI refusing `mcp:` handles; the CLI accepting any name; a missing writable path
+  accepted; hosts accepted without confined egress; `mcp.act` not given the body's relay; binds in caller order;
+  the door socket in the deep workspace.
+
+### What this does not cover
+
+- **Credentials are environment variables only.** Servers that need an OAuth flow or a credential file have no path.
+- **Remote (HTTP) MCP transport** is not built.
+- **The founder's words do not yet produce an `mcp.act` mission.** The planner proposes read-only calls; a writing
+  mission is signed from a template or the model route.
+- **Inside the approved scope the server is trusted.** It may write anything in the named folders and send anything
+  to the named hosts, including data it read from the shown paths. The approval is the control; the mission's
+  check, not the server's answer, decides whether the effect happened.
+- **Same-kernel isolation** (#10) and **not yet observed on the founder's Chromebook** (#26).
+
+Foundry #28 stays PARTIAL: remote transport, other credential forms, words-to-act proposals and the founder's device.
+
+### Five roles and two passes (a consequential capability was added)
+
+**Builder.**
+- No new authority path: `mcp.act` is one more manifest through the same office, gate, scope digest and founder
+  request as every external act.
+- The network route is the existing relay and door; the credential route is the existing secret broker.
+- The approval request gained a general hook (`exact_reach`) that any capability can use to show its reach.
+
+**Adversary.**
+- A server granted a folder can destroy everything in it. The approval names the folder, not the files.
+- A server granted a host can exfiltrate whatever it was shown to that host. The approval names both.
+- A malicious server can lie in its answer. The mission's own check decides, and the answer is recorded as untrusted.
+- Hosts are matched by name at the relay. A host the founder approves that later changes owner is still allowed.
+
+**Operator.**
+- The door socket directory is created per call under the system temporary directory and removed afterwards,
+  also on failure; a body killed mid-call can leave an empty one behind.
+- A failing server's stderr tail is in the refusal, so a founder sees why without opening logs.
+
+**Beneficiary representative.**
+- The founder sees, in plain fields, what they are approving before they approve it. Before this increment the
+  request said only "mcp.act on mcp:scribe".
+- Third parties reached by a server are reached only on hosts the founder named, and only after approval.
+
+**Constitutional reviewer.**
+- No standing authority is created: each scope is approved once, bound to its digest, and a rejection is final for
+  that scope.
+- Credentials are released per call, by handle, only in the `mcp:` namespace, so a mission cannot name the founder's
+  model or GitHub credentials.
+- Nothing was merged, published, sent or spent; the network tests are loopback only.
+
+**Pass 1 (structural inversion).**
+- **Advantage:** any MCP server becomes an actuator without GREG rebuilding it, and the founder's approval becomes the
+  default pathway for every such act, with its reach visible. It reverses into a liability if approvals become
+  routine clicks; bounded by asking per exact scope, never per server.
+- **Disadvantage, folder-granular writes:** made observable (the request names the folder), bounded (a single file
+  can be named, since a bind can be a file), and reversible only by the founder's own backups. Converted into a
+  rule for the planner work: propose the narrowest existing path that contains the target.
+- **Disadvantage, host trust by name:** bounded to port 443 and exact names, journaled per connection.
+- **Is this a metaphor taken literally?** No. The effect is "use the tools that exist"; the mechanism is the protocol
+  those tools already speak.
+
+**Pass 2 (adversarial compounding), against the deployed design.**
+- **Approval fatigue:** a model-route mission could split one change into many small acts, each a new request. Kept
+  visible: every request is one row in Mission Control. Kill condition: if a mission produces more than a handful of
+  act requests for one effect, the founder should reject and the planner work must batch scopes.
+- **Data movement between shown paths and hosts:** a mission that shows the founder's notes and grants a host lets
+  the server send the notes there. Accepted with the founder as owner; the request lists both, side by side.
+- **A server that keeps state in its installation:** its installation is read-only, so it cannot persist anything
+  except in the named paths. Tested: a write into its own installation answers "Read-only file system".
+- **Pass-1 downsides carried:** folder granularity (owner: founder; threshold: any regretted write), host ownership
+  change (owner: founder; revisit when hosts are pinned by certificate), approval fatigue (kill condition above).
+- **Dissent kept.** A dry-run first (run the act against a copy, show the diff, then approve the real one) would make
+  writes reviewable before they happen. Not built: servers that reach hosts cannot be dry-run without sending, and a
+  copy of a large folder is costly. Revisit for write-only scopes once the planner proposes acts from words.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

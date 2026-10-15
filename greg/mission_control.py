@@ -385,15 +385,19 @@ def _tool_servers_section(console, p, form) -> str:
     out = ("<section><h2>Tool servers you installed (MCP)</h2><p class=reality>Found under GREG's read roots: a folder "
            "whose <code>bin</code> holds <code>mcp-server-&lt;name&gt;</code>. A mission may call one of their tools "
            "(<code>mcp.call</code>): the server runs with no network and a read-only view, so nothing it does can "
-           "change anything; its own claims are not trusted.</p>")
+           "change anything; its own claims are not trusted. A tool that writes or reaches the network runs as "
+           "<code>mcp.act</code>, and only after you approve its exact scope: the folders it may write, the hosts it "
+           "may reach through the relay, and the credential handles it receives.</p>")
     answers = p.get("tool_answers") or []
     if answers:
         out += ("<h3>Latest answers</h3>" + _table(["Server · tool", "Answer (untrusted data)", "Receipt"], [
             [f"<code>{_e(a['server'])}</code> · <code>{_e(a['tool'])}</code>", f"<pre>{_e(a['text'][:600])}</pre>",
              f"<code>{_e(str(a['receipt'])[:23])}</code><br><span class=muted>{_e(a['at'])}</span>"] for a in answers]))
     if not servers:
-        return out + ("<p class=empty>None installed. Example: <code>python3 -m venv &lt;read root&gt;/tools/git &amp;&amp; "
-                      "&lt;read root&gt;/tools/git/bin/pip install mcp-server-git</code></p></section>")
+        return out + ("<p class=empty>None installed. Examples: <code>python3 -m venv &lt;read root&gt;/tools/git &amp;&amp; "
+                      "&lt;read root&gt;/tools/git/bin/pip install mcp-server-git</code>, or <code>npm install --prefix "
+                      "&lt;read root&gt;/tools/filesystem @modelcontextprotocol/server-filesystem</code> (a server that needs "
+                      "launch arguments reads them from <code>greg-mcp.json</code> beside it).</p></section>")
     out += _table(["Server", "Installation", ""], [[f"<code>{_e(n)}</code>", f"<code>{_e(s['root'])}</code>",
                                                    f"<a href='/mc/command?q=tools:{_e(n)}'>List its tools</a>"]
                                                   for n, s in servers.items()])

@@ -275,8 +275,9 @@ def _mcp_route(text: str, ctx: PlannerContext) -> dict | None:
     if missing:
         return {"status": "NEEDS_INPUT", "origin": origin,
                 "questions": [f"The {name} server's {tool['name']} needs " + "; ".join(missing) + "."]}
-    spec = templates.mcp_tool(server=name, root=server["root"], command=server["command"], tool=tool["name"],
-                              arguments=arguments, readable=readable, founder_expression=text)
+    readable = list(dict.fromkeys([*server.get("readable", []), *readable]))
+    spec = templates.mcp_tool(server=name, root=server["root"], command=[*server["command"], *server.get("args", [])],
+                              tool=tool["name"], arguments=arguments, readable=readable, founder_expression=text)
     return _proposal(spec, origin, notes=[
         f"the {name} server's {tool['name']} tool, with {json.dumps(arguments)}",
         "read-only by construction: the server runs with no network and a read-only view of what this mission "
@@ -284,7 +285,8 @@ def _mcp_route(text: str, ctx: PlannerContext) -> dict | None:
         "the server's own claims about its tools are not trusted; its answer is shown as untrusted data"]
         + ([] if tool.get("claims_read_only") else [
             f"the server does not claim {tool['name']} is read-only: if it tries to change something, it fails inside "
-            "GREG's namespace and nothing changes"]))
+            "GREG's namespace and nothing changes (a change needs an mcp.act mission naming what it may write, "
+            "approved by you)"]))
 
 
 def template_route(text: str, ctx: PlannerContext) -> dict | None:

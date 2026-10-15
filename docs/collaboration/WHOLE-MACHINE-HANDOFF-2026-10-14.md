@@ -14,6 +14,7 @@ OPUS MAXIMUS continuation directive (section 16) requires.
 | Search **"What outcome do you want?"** | Ranks mission paths, capabilities and the 55 Foundry systems against his words, each shown with its true state and gap | A request GREG could not plan was a dead end |
 | Commission a coding work order | The worker runs in a bubblewrap OS envelope, or not at all. GREG's git never runs a worker-planted hook. A signed STOP kills it mid-run, and an interrupted run is reconciled as UNCERTAIN with its spend reserved | Workers were bounded by tool permissions only |
 | Initialise a body with `--confined-egress` | `http.get`, GitHub reads and briefs, `browser.render` and coding workers reach the network only through one relay. The relay enforces per-identity allowlists, journals every decision in a hash chain, and chains through the mandated proxy | Every capability had its own direct network access |
+| Install an MCP server under the read roots and ask for one of its tools | Read-only tools: the words become one signed mission, the server runs with no network and nothing writable, and the answer appears in Mission Control as untrusted data with its receipt. A tool that writes or reaches the network (`mcp.act`) runs only after Alfonso approves its exact scope: the folders it may write, the hosts it may reach through the relay, the credential handles it receives | Each tool had to be rebuilt inside GREG |
 | Rehearse the commerce loop on the dossier (FIXTURE) | Company assembly, a signed fixture order, delivery, signed acceptance, and books reconciled to the cent. No money moves | Not connected to any mission |
 
 What GREG now refuses or surfaces on its own, each attacked through a signed mission on a real body (all 14
@@ -135,10 +136,13 @@ The 13 holes were:
   - Since increment 16, no door program can read the founder's signing key or the body's home. Before it, every
     door program could read both, and the Claude Code route and builder had the founder's home writable.
 - **#9, #10, #28 and #52 PARTIAL** (Foundry 50/55).
-  - #28 narrowed in increment 17: a signed mission can now use a tool from any stdio MCP server the founder
-    installs, read-only by construction. Still missing: servers that need the network, consequential MCP tools
-    through the Consequence Gate, and remote transport. Since increment 18 the founder reaches those tools by
-    saying what they want, and Mission Control lists the installed servers, their tools and the latest answers.
+  - #28 narrowed in increments 17 to 20. A signed mission can use a tool from any stdio MCP server the founder
+    installs: read-only by construction (`mcp.call`), or, for a tool that writes or reaches the network, only after
+    the founder approves its exact scope (`mcp.act`): the paths it may write, the hosts it may reach through the
+    relay and the credential handles it receives. The founder reaches read-only tools by saying what they want;
+    Mission Control lists the installed servers (virtualenv or npm), their tools and the latest answers. Still
+    missing: remote transport, credentials other than environment variables, and proposals of `mcp.act` missions
+    from the founder's words.
 - **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
   `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
   measured from this tree. Porting them is its own increment. #168's three runbook defects (a stranded attach;

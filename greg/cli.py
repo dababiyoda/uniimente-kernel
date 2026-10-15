@@ -60,6 +60,12 @@ def _known_handles() -> set:
                                                                                     "openai_api_key"}
 
 
+def mcp_handle(name: str) -> bool:
+    """A handle the founder names for an MCP server's credential; a mission's mcp.act releases it by this name."""
+    from greg.mcp_tools import HANDLE
+    return bool(HANDLE.fullmatch(name))
+
+
 def _secret_value(name: str) -> str:
     """From a hidden prompt, or piped stdin; never from the command line (shell history, ps)."""
     value = getpass.getpass(f"value for {name} (hidden): ") if sys.stdin.isatty() else sys.stdin.readline()
@@ -743,8 +749,9 @@ def main(argv=None) -> int:
             broker, known = SecretBroker(Layout(home).secrets), _known_handles()
             if args.secret_cmd == "list":
                 print(json.dumps({"stored": broker.names(), "known_handles": sorted(known)}, indent=1))
-            elif args.name not in known:
-                raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}")
+            elif args.name not in known and not mcp_handle(args.name):
+                raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}, "
+                                "or mcp:<name> for an MCP server you installed")
             elif args.secret_cmd == "set":
                 broker.put(args.name, _secret_value(args.name))
                 print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); "

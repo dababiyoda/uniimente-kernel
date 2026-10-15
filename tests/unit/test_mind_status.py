@@ -197,16 +197,23 @@ def test_composition_families_are_declared_as_the_frozen_runs_describe_them_and_
         world = worlds.world("p6_family", family)
         assert world is not None, family
         assert (world == "natural_data") == (real and not constructed), (family, limits)
+    from greg.cognition.compiler import recipe_stale
     rows = _rows(M.status())
+
+    def expected(recipe, label):
+        # a lift measured on recipe code that has since changed is BUILT until re-measured (review of #179, H5)
+        return "BUILT" if recipe_stale(recipe, index["recipes"][recipe]) else label
     for recipe in ("estimate_then_optimize", "identify_then_optimize", "bayes_then_voi"):    # F1, F2R, F4
-        assert rows[f"recipe.{recipe}"]["label"] == "SIMULATED", recipe
+        assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "SIMULATED"), recipe
     for recipe in ("forecast_then_staff", "graph_then_allocate", "track_then_staff"):        # F6, F7, F8: real data
-        assert rows[f"recipe.{recipe}"]["label"] == "HELDOUT_SUPPORTED", recipe
+        assert rows[f"recipe.{recipe}"]["label"] == expected(recipe, "HELDOUT_SUPPORTED"), recipe
+    # the complete closure (review of #179, B2) shows the code F8 measured has changed on the converged tree
+    assert rows["recipe.track_then_staff"]["label"] == "BUILT"
 
 
 def test_a_version_bump_makes_positive_evidence_stale_while_negative_evidence_persists(tmp_path):
     def bump(index):
-        for family in ("basal_kalman", "flow_maxflow", "collective_quorum", "flow_reinforce_greedy"):
+        for family in ("basal_kalman", "flow_maxflow", "grid_dijkstra", "flow_reinforce_greedy"):
             index["genomes"][family]["version"] = "0.0.0-old"
     fixture = _fixture(tmp_path, bump)
     rows = _rows(M.status(index_path=fixture))
@@ -214,8 +221,8 @@ def test_a_version_bump_makes_positive_evidence_stale_while_negative_evidence_pe
         row = rows[f"cognition.{family}"]
         assert row["label"] == "BUILT" and row["heldout"]["current"] is False
         assert row["heldout"]["version_measured"] == "0.0.0-old" and "needs re-admission" in row["basis"]
-    assert rows["cognition.collective_quorum"]["label"] == "UNRESOLVED"       # EXPERIMENTAL persists
-    assert "persists until a re-admission" in rows["cognition.collective_quorum"]["basis"]
+    assert rows["cognition.grid_dijkstra"]["label"] == "UNRESOLVED"       # EXPERIMENTAL persists
+    assert "persists until a re-admission" in rows["cognition.grid_dijkstra"]["basis"]
     assert rows["cognition.flow_reinforce_greedy"]["label"] == "BUILT"        # SUPERSEDED persists
     assert "refuted" in rows["cognition.flow_reinforce_greedy"]["basis"]
     # the compiler reads the same fixture the same way
@@ -254,7 +261,8 @@ def test_external_verification_counts_only_when_it_resolves_for_the_current_vers
     assert rows["cognition.flow_maxflow"]["label"] == "EXTERNALLY_VERIFIED"
     assert rows["recipe.bayes_then_voi"]["label"] == "EXTERNALLY_VERIFIED"
     assert rows["cognition.queue_erlang"]["label"] == "HELDOUT_SUPPORTED"     # an old version's check does not count
-    assert rows["recipe.forecast_then_staff"]["label"] == "HELDOUT_SUPPORTED"  # nor another code digest's
+    # nor another code digest's; its held-out lift is itself stale (recipe code changed since F6), so BUILT
+    assert rows["recipe.forecast_then_staff"]["label"] == "BUILT"
     assert rows["cognition.basal_breaker"]["label"] == "SIMULATED"            # a bare ref is not evidence
     assert rows["cognition.collective_aco"]["label"] == "HELDOUT_SUPPORTED"
     assert len(rows["cognition.collective_aco"]["external_verification_unresolved"]) == 4
@@ -392,7 +400,7 @@ def test_every_executor_the_reserved_record_names_is_labelled_and_p8_carries_its
     cycles = sorted(ROOT.glob("docs/evidence/greg-protected-evolution/*/cycle-*.json"))
     decisions = [json.loads(p.read_text())["decision"] for p in cycles]
     p8 = rows["greg.cognition.evolution:cycle"]
-    assert len(p8["evidence_outside_index"]) == len(cycles) == 3
+    assert len(p8["evidence_outside_index"]) == len(cycles) == 4
     assert sorted(c["decision"] for c in p8["evidence_outside_index"]) == sorted(decisions)
     assert ("never kept an improvement" in p8["basis"]) == all(d == "REJECT" for d in decisions)
 

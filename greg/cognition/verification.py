@@ -121,6 +121,11 @@ def verify(family, data, answer, proof_class):
             checks["integer_domain"] = all(v.denominator == 1 for v in values.values())
             objective = sum(c * values[n] for n, c in data["objective"]["coefficients"].items())
             checks["objective_substitution"] = math.isclose(float(objective), output["objective_value"], abs_tol=1e-6)
+            if output["solver_status"] == "OPTIMAL":
+                # OPTIMAL is a claim about the bound: the proof's best bound must meet the objective (gap 0).
+                bound = (answer.get("proof") or {}).get("bound")
+                checks["optimality_bound_met"] = bound is not None and math.isclose(
+                    float(bound), float(objective), abs_tol=1e-6)
             if output["solver_status"] == "OPTIMAL" and checks["constraint_substitution"] and checks["integer_domain"]:
                 # A second engine attacks the optimality claim: no feasible assignment may beat it.
                 better = _z3_integer_check(data, strictly_better_than=objective)
@@ -226,6 +231,13 @@ def verify(family, data, answer, proof_class):
         if mad > 0:
             checks["independent_flags"] = output["anomalies"] == [
                 i for i, v in enumerate(values) if abs(0.6745 * (v - median) / mad) > threshold]
+        else:
+            # More than half the values equal the median: the documented fallback scale is 1.253314 x the mean
+            # absolute deviation; a constant series flags nothing. Re-derived here, never skipped.
+            mean_ad = sum(abs(v - median) for v in values) / len(values)
+            expected = ([i for i, v in enumerate(values) if abs(v - median) / (1.253314 * mean_ad) > threshold]
+                        if mean_ad > 0 else [])
+            checks["independent_flags"] = output["anomalies"] == expected
         dissent.append("Flags are statistical; a flagged value is not shown to be an error or an attack.")
     elif family == "crowd":
         classes = data["classes"]
@@ -243,15 +255,77 @@ def verify(family, data, answer, proof_class):
         checks["every_decidable_item_answered"] = set(labels) == decided
         objective = [step["map_objective"] for step in artifact["trace"]["em"]]
         checks["em_objective_non_decreasing"] = all(b >= a - 1e-6 * max(1.0, abs(a)) for a, b in zip(objective, objective[1:]))
+        # Tie the answer to the votes (review 2026-10-15, H3): recompute one E-step from the artifact's fitted model
+        # and the raw votes, check the model is (near) a fixed point of one M-step from the reported posteriors,
+        # and resolve label switching by the standard convention that observers are better than chance.
+        k = len(classes)
+        model = artifact.get("model") or {}
+        prior, confusion = model.get("prior"), model.get("confusion") or {}
+        votes = {}
+        for (item, group), got in tally.items():
+            counts = {c: got.count(c) for c in set(got)}
+            top = max(counts.values())
+            winners = [c for c in classes if counts.get(c) == top]
+            if len(winners) == 1:
+                votes.setdefault(item, {})[group] = classes.index(winners[0])
+        well_formed = (isinstance(prior, list) and len(prior) == k and set(confusion) >= {g for v in votes.values()
+                                                                                         for g in v})
+        checks["fitted_model_present"] = well_formed
+        if well_formed:
+            recomputed = {}
+            for item, by_group in votes.items():
+                logs = [math.log(prior[c]) + sum(math.log(confusion[g][c][label]) for g, label in by_group.items())
+                        for c in range(k)]
+                top = max(logs)
+                total = sum(math.exp(x - top) for x in logs)
+                recomputed[item] = [math.exp(x - top) / total for x in logs]
+            checks["posteriors_recomputed_from_votes"] = set(recomputed) == set(post) and all(
+                all(math.isclose(a, b, abs_tol=1e-6) for a, b in zip(recomputed[i], post[i])) for i in post)
+            smoothing = float(artifact["trace"].get("smoothing", data.get("smoothing", 1.0)))
+            em = artifact["trace"]["em"]
+            converged = len(em) >= 2 and abs(em[-1]["map_objective"] - em[-2]["map_objective"]) < 1e-7
+            if converged:
+                counts = {g: [[smoothing] * k for _ in range(k)] for g in confusion}
+                for item, by_group in votes.items():
+                    for g, label in by_group.items():
+                        for c in range(k):
+                            counts[g][c][label] += post[item][c]
+                checks["model_is_m_step_fixed_point"] = all(
+                    math.isclose(counts[g][c][j] / sum(counts[g][c]), confusion[g][c][j], abs_tol=1e-3)
+                    for g in counts for c in range(k) for j in range(k))
+            else:
+                dissent.append("EM stopped at its iteration cap: the M-step fixed-point check was not applied.")
+            reliability = [sum(prior[c] * confusion[g][c][c] for c in range(k)) for g in confusion]
+            checks["observers_better_than_chance_on_average"] = sum(reliability) / len(reliability) > 1 / k
         dissent.append("Dawid-Skene assumes observers err independently given the true class; correlated error "
                        "outside the declared independence groups is not detected.")
     elif family in ("swarm", "blackbox"):
-        from .repertoire import objective
-        f, bounds, budget = objective(data)
+        # Closed forms written here, independently of greg.cognition.repertoire (review 2026-10-15, M5).
+        closed = {"sphere": lambda z: sum(v * v for v in z),
+                  "rastrigin": lambda z: 10 * len(z) + sum(v * v - 10 * math.cos(2 * math.pi * v) for v in z),
+                  "ackley": lambda z: (-20 * math.exp(-0.2 * math.sqrt(sum(v * v for v in z) / len(z)))
+                                       - math.exp(sum(math.cos(2 * math.pi * v) for v in z) / len(z)) + 20 + math.e),
+                  # declared with its minimum at the shift: evaluated at z + 1
+                  "rosenbrock": lambda z: sum(100 * ((z[i + 1] + 1) - (z[i] + 1) ** 2) ** 2 + (1 - (z[i] + 1)) ** 2
+                                              for i in range(len(z) - 1)),
+                  "griewank": lambda z: (1 + sum(v * v for v in z) / 4000
+                                         - math.prod(math.cos(v / math.sqrt(i + 1)) for i, v in enumerate(z)))}
+        shift = [float(v) for v in data["shift"]]
+        bounds = [(float(lo), float(hi)) for lo, hi in data["bounds"]]
+        budget = int(data["budget"])
         x = output["candidate"]
         checks["candidate_in_bounds"] = len(x) == len(bounds) and all(lo <= v <= hi for v, (lo, hi) in zip(x, bounds))
-        checks["independent_fitness"] = math.isclose(f(x), output["fitness"], rel_tol=1e-9, abs_tol=1e-12)
+        checks["independent_fitness"] = (data["function"] in closed and len(x) == len(shift) and math.isclose(
+            closed[data["function"]]([a - b for a, b in zip(x, shift)]), output["fitness"], rel_tol=1e-9,
+            abs_tol=1e-12))
         checks["evaluation_budget"] = output["evaluations"] <= budget
+        trace = artifact.get("trace") or []
+        if family == "swarm":                      # the swarm always spends its whole budget
+            checks["evaluation_count_matches_method"] = output["evaluations"] == budget
+        if trace:                                  # the last recorded improvement is the reported best
+            checks["trace_consistent"] = (math.isclose(trace[-1]["fitness"], output["fitness"], rel_tol=1e-12,
+                                                       abs_tol=1e-15)
+                                          and trace[-1]["evaluation"] <= output["evaluations"])
         dissent.append("A heuristic search returns the best point it evaluated; no global-optimality certificate.")
     elif proof_class == "genome_certificate":
         # IntelligenceGenome library: the genome's own independent check (never its solve path) plus

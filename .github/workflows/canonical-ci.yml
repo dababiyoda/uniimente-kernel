@@ -20,6 +20,7 @@ on:
   pull_request:
   push:
     branches: [main]
+    tags: ["*"]          # a tag is a release candidate: the release-exclusion check must run on it
   workflow_dispatch:
 
 permissions:
@@ -51,6 +52,13 @@ jobs:
         run: python -m pytest -q tests/unit/test_greg_landlock.py tests/unit/test_greg_mcp_worker.py
       - name: Native company runtime regression checks
         run: python -m pytest -q tests/unit/test_greg_owned_company.py
+      - name: Release exclusions (uncleared third-party data never ships)
+        run: python scripts/check_release_exclusions.py
+      - name: Release exclusions on a tag's source archive
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          git archive --format=tar --prefix=release/ HEAD > "$RUNNER_TEMP/release.tar"
+          python scripts/check_release_exclusions.py --archive "$RUNNER_TEMP/release.tar"
       - name: Full unit and integration suite
         run: python -m pytest -q
       - name: Frozen cognition assessment

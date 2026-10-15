@@ -145,6 +145,8 @@
     "cortex/evaluation/pr155_f7_audit/__init__.py",
     "cortex/evaluation/pr155_f7_audit/audit.py",
     "cortex/evaluation/pr155_f7_audit/freeze.json",
+    "cortex/evaluation/pr155_f7_spend_diagnostic/__init__.py",
+    "cortex/evaluation/pr155_f7_spend_diagnostic/probe.py",
     "cortex/evaluation/pr155_f8_fallback_diagnostic/__init__.py",
     "cortex/evaluation/pr155_f8_fallback_diagnostic/diagnose.py",
     "cortex/evaluation/pr155_f8_fallback_diagnostic/prereg-draft.json",

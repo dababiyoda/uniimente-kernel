@@ -43,7 +43,7 @@ POSITIVE = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY")
 # than read from the index builder's table). A family a new run adds must be named here before the test passes.
 P6_RECIPE = {"F1": "estimate_then_optimize", "F2": "identify_then_optimize", "F2R": "identify_then_optimize",
              "F3": "graph_then_allocate", "F4": "bayes_then_voi", "F5": "forecast_then_allocate",
-             "F6": "forecast_then_staff", "F7": "graph_then_allocate"}
+             "F6": "forecast_then_staff", "F7": "graph_then_allocate", "F8": "track_then_staff"}
 
 
 def _index() -> dict:

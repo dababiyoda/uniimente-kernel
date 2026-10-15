@@ -200,7 +200,7 @@ def test_composition_families_are_declared_as_the_frozen_runs_describe_them_and_
     rows = _rows(M.status())
     for recipe in ("estimate_then_optimize", "identify_then_optimize", "bayes_then_voi"):    # F1, F2R, F4
         assert rows[f"recipe.{recipe}"]["label"] == "SIMULATED", recipe
-    for recipe in ("forecast_then_staff", "graph_then_allocate"):                            # F6, F7: real data
+    for recipe in ("forecast_then_staff", "graph_then_allocate", "track_then_staff"):        # F6, F7, F8: real data
         assert rows[f"recipe.{recipe}"]["label"] == "HELDOUT_SUPPORTED", recipe
 
 

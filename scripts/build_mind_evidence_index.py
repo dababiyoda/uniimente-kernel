@@ -29,6 +29,7 @@ P6_RUNS = (
       "F5": "forecast_then_allocate"}),
     ("docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json", {"F6": "forecast_then_staff"}),
     ("docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json", {"F7": "graph_then_allocate"}),
+    ("docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json", {"F8": "track_then_staff"}),
 )
 P4_RUNS = ("docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
            "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json")

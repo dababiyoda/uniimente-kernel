@@ -79,6 +79,7 @@
    "rules_under_open_requests": "rules cannot change under open requests; close them first",
    "self_dealing": "a buyer cannot bid on its own request (self-dealing)",
    "settle_before_verification": "match:r-big is not verified; settlement refused (status awarded)",
+   "settle_forged_grant": "grant not honoured: not a grant the governing Consequence Gate issued (unregiste",
    "settle_grant_for_other_match": "a charge needs a Consequence Gate grant issued for this exact case",
    "settle_refuted": "match:r-gamma-3 is not verified; settlement refused (status refuted)",
    "settle_twice": "match:r-big is not verified; settlement refused (status settled)",
@@ -124,6 +125,6 @@
   },
   "truthful_bidding_dominant": true
  },
- "result_sha256": "sha256:7c2bf2293293e3b26f13928329dca28e6256f9375755935c73dcd39831e5af20",
+ "result_sha256": "sha256:8c27c71b1e313132fb18acb2d598a83307a0f6ef5e109aee32551c9aa56da567",
  "system": 37
 }

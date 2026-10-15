@@ -408,13 +408,20 @@ def exercise(root) -> dict:
     refused("rules_under_open_requests", lambda: open_market(root, {"take_bps": 0}))
 
     # settlement: only the verified match, only through the rail, only under a grant for this exact match
+    from foundry.systems.kernel_stack import gate_stack
     server, emulator = payments.start_emulator()
     try:
-        rail = payments.Rail(root / "rail", api_key="sk_test_emulator", base=f"http://127.0.0.1:{server.server_address[1]}")
+        gate = gate_stack()[0]                  # the Gate governing the rail: only its grants settle a match
+        rail = payments.Rail(root / "rail", api_key="sk_test_emulator", base=f"http://127.0.0.1:{server.server_address[1]}",
+                             gate=gate)
         refused("settle_grant_for_other_match", lambda: settle(root, big["match_id"], rail=rail,
-                                                               grant=payments.charge_grant("match:r-other", big["price_cents"])))
-        settled = settle(root, big["match_id"], rail=rail, grant=payments.charge_grant(big["match_id"], big["price_cents"]))
-        refused("settle_twice", lambda: settle(root, big["match_id"], rail=rail, grant=payments.charge_grant(big["match_id"], big["price_cents"])))
+                                                               grant=payments.charge_grant("match:r-other", big["price_cents"],
+                                                                                           gate=gate)))
+        refused("settle_forged_grant", lambda: settle(root, big["match_id"], rail=rail,
+                                                      grant={"grant_id": "forged", "objective": f"charge:{big['match_id']}"}))
+        settled = settle(root, big["match_id"], rail=rail, grant=payments.charge_grant(big["match_id"], big["price_cents"], gate=gate))
+        refused("settle_twice", lambda: settle(root, big["match_id"], rail=rail,
+                                               grant=payments.charge_grant(big["match_id"], big["price_cents"], gate=gate)))
         books = accounting.trial_balance(rail.books)
         processor = emulator.balance()
     finally:

@@ -111,3 +111,74 @@ def test_the_door_refuses_a_program_argv_that_is_not_strings():
         door_argv(sys.executable, 3, [])
     with pytest.raises(ValueError):
         door_argv(sys.executable, 3, ["ok", 5])
+
+
+KEEPER = r'''
+import json, os, sys
+kept, stray = int(sys.argv[1]), int(sys.argv[2])
+out = {"kept": os.read(kept, 64).decode()}
+try:
+    os.fstat(stray)
+    out["other"] = "INHERITED"
+except OSError:
+    out["other"] = "closed"
+print(json.dumps(out))
+'''
+
+
+def test_a_door_on_a_path_serves_a_program_another_launcher_started_and_keeps_only_its_descriptors(tmp_path, upstream):
+    """Playwright's driver, not the body, starts Chromium: no body descriptor survives that way. The door then reaches
+    the relay over a one-time Unix socket in a private directory, and the program keeps only the launcher's pipe."""
+    import os
+    private = tmp_path / "private"
+    private.mkdir(mode=0o700)
+    journal = Journal(tmp_path / "egress.jsonl")
+    relay = Relay({"browser.session": {"allow": [["127.0.0.1", upstream]], "external": False}}, journal)
+    read, write = os.pipe()
+    stray_read, stray_write = os.pipe()              # stands for anything else of the launcher's: must not arrive
+    os.write(write, b"from the launcher")
+    os.close(write)
+    with Door(relay, "browser.session", path=private / "door.sock") as door:
+        assert door.control == f"unix:{private / 'door.sock'}"
+        with pytest.raises(ValueError):
+            door.fd
+        argv = [BWRAP, "--unshare-user", "--unshare-pid", "--unshare-net", "--die-with-parent", "--ro-bind", "/", "/",
+                "--proc", "/proc", "--dev", "/dev", "--bind", str(private), str(private), "--",
+                *door_argv(sys.executable, door.control, [sys.executable, "-c", KEEPER, str(read), str(stray_read)],
+                           keep_fds=[read])]
+        run = subprocess.run(argv, pass_fds=[read, stray_read], capture_output=True, text=True, timeout=60)
+    assert run.returncode == 0, run.stderr[-800:]
+    out = json.loads(run.stdout)
+    assert out == {"kept": "from the launcher", "other": "closed"}   # the launcher's other descriptors stay out
+    assert not (private / "door.sock").exists()            # one connection, then the path is gone
+    for fd in (read, stray_read, stray_write):
+        os.close(fd)
+
+
+def test_a_door_on_a_path_serves_one_program_and_lets_it_reach_only_its_allowlist(tmp_path, upstream):
+    private = tmp_path / "private"
+    private.mkdir(mode=0o700)
+    journal = Journal(tmp_path / "egress.jsonl")
+    relay = Relay({"browser.session": {"allow": [["127.0.0.1", upstream]], "external": False}}, journal)
+    with Door(relay, "browser.session", path=private / "door.sock") as door:
+        argv = [BWRAP, "--unshare-user", "--unshare-pid", "--unshare-net", "--die-with-parent", "--ro-bind", "/", "/",
+                "--proc", "/proc", "--dev", "/dev", "--bind", str(private), str(private), "--",
+                *door_argv(sys.executable, door.control, [sys.executable, "-c", CLIENT, str(upstream), "x"])]
+        run = subprocess.run(argv, capture_output=True, text=True, timeout=60)
+    assert run.returncode == 0, run.stderr[-800:]
+    out = json.loads(run.stdout)
+    assert out["allowed"]["path"] == "/hello" and "403" in out["denied"]
+    assert {e["identity"] for e in journal.read()} == {"browser.session"} and journal.verify()["intact"]
+
+
+def test_a_door_path_must_sit_in_a_directory_private_to_the_body(tmp_path):
+    shared = tmp_path / "shared"
+    shared.mkdir(mode=0o755)
+    shared.chmod(0o755)
+    with pytest.raises(ValueError):
+        Door(Relay({}, Journal(tmp_path / "egress.jsonl")), "x", path=shared / "door.sock")
+
+
+def test_a_door_refuses_kept_descriptors_that_are_standard_streams():
+    with pytest.raises(ValueError):
+        door_argv(sys.executable, 3, ["ok"], keep_fds=[2])

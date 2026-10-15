@@ -90,3 +90,25 @@ def test_a_confined_fetch_refuses_header_injection_before_launch(tmp_path):
         except SegmentationError as exc:
             assert "refused" in str(exc)
     assert Journal(tmp_path / "j").read() == []                 # refused before any connection was asked for
+
+
+def _append_many(path, n, tag):
+    from foundry.systems.segmentation import Journal
+    journal = Journal(path)
+    for i in range(n):
+        journal.append({"identity": tag, "i": i})
+
+
+def test_appends_from_several_processes_keep_one_unbroken_chain(tmp_path):
+    """The body and its console both decide egress into one journal: concurrent writers must not fork the chain."""
+    import multiprocessing
+    from foundry.systems.segmentation import Journal
+    context = multiprocessing.get_context("fork")
+    path = tmp_path / "egress-journal.jsonl"
+    writers = [context.Process(target=_append_many, args=(path, 40, f"w{k}")) for k in range(4)]
+    for w in writers:
+        w.start()
+    for w in writers:
+        w.join(60)
+    journal = Journal(path)
+    assert len(journal.read()) == 160 and journal.verify()["intact"]

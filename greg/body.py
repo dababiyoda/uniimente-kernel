@@ -127,6 +127,22 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
     return config
 
 
+def egress_relay(home: Path, config: dict):
+    """#26: the body's one relay when the founder enabled confined egress, else None. Chained through a mandated proxy
+    when the environment declares one. The console process builds the same relay over the same hash-chained journal
+    (appends are locked across processes) so its model calls are decided and journaled alike.
+
+    Every namespace this process builds from now on hides this body's home (its secrets, keys and ledger)."""
+    from foundry.systems.relay_door import hide_from_namespaces
+    hide_from_namespaces(home)
+    if not config.get("confined_egress"):
+        return None
+    from foundry.systems.segmentation import Journal as EgressJournal, Relay, policy_from_manifests, \
+        proxy_from_environment
+    return Relay(policy_from_manifests(), EgressJournal(Path(home) / "egress-journal.jsonl"),
+                 proxy=proxy_from_environment())
+
+
 class Body:
     def __init__(self, home: str | Path, *, clock=None, builder=None, monotonic=None):
         self.layout = Layout(home)
@@ -166,6 +182,9 @@ class Body:
             self.registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
+        self.egress = self._egress_relay()      # before the builder: paid model routes reach providers through it
+        if self._builder_factory is None and self.egress is not None and hasattr(self.builder, "egress"):
+            self.builder.egress = self.egress   # a ready builder that reaches a provider (Claude Code) gets it too
         self._refresh_builder()
         self.genesis = Genesis(journal=self.journal, registry=self.registry, workspace_root=self.layout.workspace,
                                builder=self.builder, read_roots=self.config["read_roots"])
@@ -175,25 +194,20 @@ class Body:
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
-        self.engine.egress = self._egress_relay()
+        self.engine.egress = self.egress
         return self
 
     def _egress_relay(self):
-        """#26: one relay per body when the founder enabled confined egress; refused (fail closed) where the kernel
-        filter is unavailable, and chained through a mandated proxy when the environment declares one."""
-        if not self.config.get("confined_egress"):
-            return None
-        from foundry.systems.segmentation import Journal as EgressJournal, Relay, policy_from_manifests, \
-            proxy_from_environment
-        return Relay(policy_from_manifests(), EgressJournal(self.layout.home / "egress-journal.jsonl"),
-                     proxy=proxy_from_environment())
+        return egress_relay(self.layout.home, self.config)
 
     def _refresh_builder(self):
         """Replace the model adapter, never the mission engine, ledger or authority office."""
         if self._builder_factory is not None:
             try:
                 config = {**self.config, "models": models.effective_route_config(self.config.get("models"), self.journal)}
-                self.builder = self._builder_factory(self.secrets, config)
+                # A confined body hands its relay to the factory; one that cannot take it builds nothing (fail closed).
+                extra = {"egress": self.egress} if getattr(self, "egress", None) is not None else {}
+                self.builder = self._builder_factory(self.secrets, config, **extra)
             except Exception as exc:
                 why = f"{type(exc).__name__}: {exc}"[:300]
                 self.builder = None
@@ -453,7 +467,9 @@ class Body:
         settle_cognition(self.journal)
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)
-        anchored = anchor.anchor_once(self.journal, now) if anchor.due(self.journal, now) else None
+        transport = (anchor.relay_transport(self.egress, self.layout.workspace / ".anchor")
+                     if getattr(self, "egress", None) is not None else None)
+        anchored = anchor.anchor_once(self.journal, now, transport=transport) if anchor.due(self.journal, now) else None
         return {"commands": commands, "missions": summary, "anchor": anchored, "recovery": recovered}
 
     def _close_out(self, now):
@@ -485,7 +501,8 @@ class Body:
                    "head": self.ledger.head, "mission_id": mission_id, "read_roots": self.config["read_roots"],
                    "deliver_root": str(self.deliver_root),
                    "artifact_root": str(self.layout.artifacts),
-                   "workspace": str(self.layout.workspace / mission_id.replace(":", "_"))}
+                   "workspace": str(self.layout.workspace / mission_id.replace(":", "_")),
+                   "confined_egress": bool(self.config.get("confined_egress"))}
         if closure_event:
             request["closure_event"] = closure_event
         env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1",
@@ -607,6 +624,30 @@ def morning_projection(home: str | Path) -> dict:
         return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat)
 
 
+def _attach_waiting(journal, achieved: set) -> list[dict]:
+    """Verified capabilities Genesis is waiting for the founder to attach, whatever the ask's answer.
+
+    Ported from #168 (``8531595``). An Approve on a capability ask only records an answer (greg/asks.py);
+    attaching is its own signed command. Derived from the ledger, so a mission stays unblockable from the console
+    after an answer given there or on the phone (which can never attach)."""
+    mission_of = {e.payload["deficit_id"]: e.payload.get("mission_id") for e in journal.replay("deficit.opened")}
+    resolved = {e.payload["deficit_id"] for e in journal.replay("deficit.resolved")}
+    latest = {}
+    for e in journal.replay("capability.state"):
+        latest[e.payload["capability_id"]] = e.payload["state"]
+    waiting = {}
+    for e in journal.replay("deficit.awaiting_attach"):
+        p = e.payload
+        mission_id = mission_of.get(p["deficit_id"])
+        if p["deficit_id"] in resolved or mission_id in achieved or latest.get(p["capability_id"]) in (
+                "ATTACHED", "QUARANTINED", "DETACHED"):
+            continue
+        waiting[(p["deficit_id"], p["capability_id"])] = {"deficit_id": p["deficit_id"],
+                                                          "capability_id": p["capability_id"],
+                                                          "mission_id": mission_id, "why": p.get("why")}
+    return list(waiting.values())
+
+
 def status(home: str | Path) -> dict:
     """Read-only projection for the founder; safe while the body runs."""
     layout = Layout(home)
@@ -621,9 +662,8 @@ def status(home: str | Path) -> dict:
         journal = Journal(spine, actor="spiffe://uniimente.internal/greg/status-reader")
         registered = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
         achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
-        answered = {e.payload["request_id"] for e in journal.replay("decision.answered")}
-        answered |= {e.payload["request_id"] for e in journal.replay("decision.withdrawn")}
-        requests = [e.payload for e in journal.replay("decision.requested") if e.payload["request_id"] not in answered]
+        requests = asks.open_requests(journal.replay("decision.") + journal.replay("mission.achieved")
+                                      + journal.replay("mission.lifecycle"))
         founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
         boots = journal.replay("body.booted")
         # The same states the body uses: catalog initial state, then every recorded transition.
@@ -647,6 +687,7 @@ def status(home: str | Path) -> dict:
                        "closure": spec["closure"]["kind"], "achieved": mid in achieved}
                       for mid, spec in registered.items()],
             "decisions_required": [asks.surface(r) for r in requests],
+            "attach_waiting": _attach_waiting(journal, achieved),
             "capabilities": registry.inventory(), "permissions": {"read_roots": config["read_roots"]},
             "compute": compute.sample(layout.home),
             "secret_handles": SecretBroker(layout.secrets).names(),
@@ -654,6 +695,7 @@ def status(home: str | Path) -> dict:
                                               if e.payload["quarantined"]),
             "single_bottleneck_metric": metrics.vepmc(journal),
             "external_anchor": anchor.summary(journal),
+            "egress": _egress_summary(layout.home, config),
             "presence": presence.summary(journal, now=utcnow(), since=utcnow() - presence.REVIEW_WINDOW,
                                          heartbeat=heartbeat),
             "designation": [e.payload for e in journal.replay("body.designated")],
@@ -668,6 +710,18 @@ def status(home: str | Path) -> dict:
         }
     finally:
         ledger.close()
+
+
+def _egress_summary(home: Path, config: dict) -> dict:
+    """#26 as the founder sees it: is the network confined, and what has the relay decided (read-only)."""
+    if not config.get("confined_egress"):
+        return {"confined": False, "why": "this body was created without confined egress (greg init --confined-egress)"}
+    from foundry.systems.segmentation import Journal as EgressJournal
+    journal = EgressJournal(Path(home) / "egress-journal.jsonl")
+    rows = journal.read()
+    return {"confined": True, "decisions": len(rows), "denied": sum(1 for r in rows if r.get("verdict") == "DENIED"),
+            "chain_intact": journal.verify()["intact"],
+            "scope": "every mission-path connection crosses the relay or has no network"}
 
 
 def _path_summary(journal: Journal) -> dict:

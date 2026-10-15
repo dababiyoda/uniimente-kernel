@@ -187,7 +187,9 @@ def appraise(request: dict) -> dict:
             receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
             output = receipt.payload["result"].get("output") if receipt else None
             verify_delivery = importlib.import_module(DELIVERING[action["capability"]]).verify_delivery
-            ok, detail = verify_delivery(output, Path(request["deliver_root"]) if request.get("deliver_root") else None)
+            # #26: on a confined body the re-derivation runs as confined as the original did (organs: no network).
+            ok, detail = verify_delivery(output, Path(request["deliver_root"]) if request.get("deliver_root") else None,
+                                         confined=bool(request.get("confined_egress")))
             if not ok:
                 delivered_ok = False
                 findings.append(f"{action['action_id']}: {detail}")

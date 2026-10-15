@@ -112,9 +112,11 @@ def main():
     ap.add_argument('--freeze', action='store_true')
     ap.add_argument('--out', type=Path)
     args = ap.parse_args()
-    # v5 = the committed converged tree (v4 was written before the final greg/models.py merge and the
-    # protobuf pin in the same commit, so CI refused it); v1-v4 kept.
-    manifest = HERE / 'freeze-v5.json'
+    # v7 = the tree after the door namespace stopped showing the founder's home to the Claude Code CLI (greg/models.py
+    # changed for confinement only: the seed path and its static rules are untouched, and its model baselines stay
+    # NOT_RUN); v6 = the tree after #26 confined the paid model routes, again for egress only; v5 = the committed
+    # converged tree (v4 was written before the final greg/models.py merge and the protobuf pin); v1-v6 kept.
+    manifest = HERE / 'freeze-v7.json'
     frozen = inputs()
     if args.freeze:
         if manifest.exists():

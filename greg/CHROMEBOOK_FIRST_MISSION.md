@@ -2,7 +2,7 @@
 
 The intended first body is the computer Alfonso actually owns. This is a
 **developmental** run through ChromeOS's Linux environment (Crostini), not a
-claim that it has been run on his Chromebook. The iPhone can become a remote
+claim that it has been run on their Chromebook. The iPhone can become a remote
 interface after its transport has been tested on these devices; it cannot
 replace the persistent Linux process. No model key, paid API, public posting or
 community data is required for this bounded local mission.
@@ -221,6 +221,37 @@ In **Ventures**, prepare the commerce rehearsal. It sells your latest dossier th
 fixture buyer: offer, signed order, delivery, signed acceptance and books reconciled to the cent. The buyer is a
 published test key and no payment rail is called. It shows the machinery cooperating; it is not evidence that
 anyone would buy anything.
+
+## 6a. Give GREG a tool you install (optional)
+
+GREG can use tools from MCP servers you install, without anyone rebuilding them. A server runs with no network and a
+read-only view of what the mission names, so nothing it does can change anything you own.
+
+```bash
+sudo apt install -y python3-venv
+python3 -m venv ~/src/tools/git && ~/src/tools/git/bin/pip install mcp-server-git
+```
+
+In Mission Control, **Command → Tool servers you installed** now lists `git`; **List its tools** shows what it offers.
+Then ask in words, for example *Use the git server to show the status of ~/src/uniimente-kernel*. Review the
+proposal (read-only, nothing to approve beyond observing), sign it, and the answer appears under **Latest answers**,
+marked as untrusted data with its receipt. Ask it to commit and GREG asks for the commit message, which it does not
+guess from your words. A commit could not happen anyway: the repository is read-only to the server, and git's own
+"Read-only file system" error is what a write gets. `greg mcp list --tools` shows the same in a terminal. A server that needs launch arguments (the filesystem server takes the folders it may serve) reads them
+from a `greg-mcp.json` beside it: `{"args": ["/home/<you>/src/notes"], "readable": ["/home/<you>/src/notes"]}`.
+
+A tool that changes something (writes a file, posts to a service) runs only as an `mcp.act` mission, and GREG
+stops and asks you first. The request shows the folders it may write, the hosts it may reach through the relay
+and the credential handles it receives (`greg secret set mcp:<name>`); approve exactly that, or reject. Everything
+else stays read-only. For a change to a file, say it with the text in quotes, for example *Use the notes server to
+append "call the broker" to ~/src/notes/plan.md*: GREG proposes the mission, asks before it runs, and closes it
+only when it reads the file itself and finds the text. Words do not grant hosts or credentials; those missions are
+signed by hand.
+
+A hosted MCP server (a URL rather than something installed) works the same way, and every call to it waits for
+you: the decision names the server, its one host and the credential handle. Store its token with
+`greg secret set mcp:<name>`, and make the token as narrow as the service allows, because an approved call can do
+whatever the token permits. GREG's words do not propose remote calls yet; such a mission is signed by hand.
 
 ## 7. Founder control
 

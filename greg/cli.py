@@ -56,6 +56,12 @@ def _known_handles() -> set:
                                                                                     "openai_api_key"}
 
 
+def mcp_handle(name: str) -> bool:
+    """A handle the founder names for an MCP server's credential; a mission's mcp.act releases it by this name."""
+    from greg.mcp_tools import HANDLE
+    return bool(HANDLE.fullmatch(name))
+
+
 def _secret_value(name: str) -> str:
     """From a hidden prompt, or piped stdin; never from the command line (shell history, ps)."""
     value = getpass.getpass(f"value for {name} (hidden): ") if sys.stdin.isatty() else sys.stdin.readline()
@@ -70,11 +76,12 @@ def _drop(home: str, kind: str, body: dict, args) -> Path:
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
 
 
-def _model_builder(secrets, config):
-    """Builder factory for ``run --builder models``: every reachable model route behind one router."""
+def _model_builder(secrets, config, egress=None):
+    """Builder factory for ``run --builder models``: every reachable model route behind one router (behind the body's
+    #26 relay when confined egress is on)."""
     from greg.builders import BuildError, ModelBuilder
     from greg.models import ModelRouter, available_routes
-    routes, unavailable = available_routes(secrets, config=config.get("models"))
+    routes, unavailable = available_routes(secrets, config=config.get("models"), egress=egress)
     if not routes:
         raise BuildError(f"no model route is available: {unavailable}")
     return ModelBuilder(ModelRouter(routes))
@@ -226,6 +233,10 @@ def main(argv=None) -> int:
     gv.add_argument("--situation", required=True, help="typed situation JSON (sensing evidence, never authority)")
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
+    mcp = sub.add_parser("mcp", help="MCP tool servers you installed under GREG's read roots (read-only)")
+    mcps = mcp.add_subparsers(dest="mcp_cmd", required=True)
+    mcl = mcps.add_parser("list", help="the servers found; with --tools, each one's tools (run confined, no network)")
+    mcl.add_argument("--tools", action="store_true")
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
     doc.add_argument("--chromebook", action="store_true", required=True)
     fd = sub.add_parser("foundry", help="the Foundry arsenal: completion status, systems, GREG's own graph and reputation")
@@ -541,15 +552,19 @@ def main(argv=None) -> int:
             from greg.console import Console, serve
             key = load_founder_key(args.key, _passphrase(args)) if args.key else None
             layout = Layout(home)
-            models_config = None
+            models_config, egress = None, None
             if layout.config.is_file():
+                body_config = json.loads(layout.config.read_text())
                 with observe(home, actor="spiffe://uniimente.internal/greg/model-reader") as journal:
                     from greg.models import effective_route_config
-                    models_config = effective_route_config(json.loads(layout.config.read_text()).get("models"), journal)
+                    models_config = effective_route_config(body_config.get("models"), journal)
+                from greg.body import egress_relay
+                egress = egress_relay(layout.home, body_config)       # #26: the console's model calls too
             transport = None if args.no_model else planner.default_transport(SecretBroker(layout.secrets),
-                                                                            config=models_config)
+                                                                            config=models_config, egress=egress)
             replacement = (None if args.no_model else
-                           lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection))
+                           lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection,
+                                                                       egress=egress))
             console = Console(home, key=key, transport=transport, transport_factory=replacement)
             server = serve(console, port=args.port)
             print(f"GREG console: open this private link once, in this computer's browser:\n  "
@@ -616,8 +631,9 @@ def main(argv=None) -> int:
             broker, known = SecretBroker(Layout(home).secrets), _known_handles()
             if args.secret_cmd == "list":
                 print(json.dumps({"stored": broker.names(), "known_handles": sorted(known)}, indent=1))
-            elif args.name not in known:
-                raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}")
+            elif args.name not in known and not mcp_handle(args.name):
+                raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}, "
+                                "or mcp:<name> for an MCP server you installed")
             elif args.secret_cmd == "set":
                 broker.put(args.name, _secret_value(args.name))
                 print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); "
@@ -637,6 +653,18 @@ def main(argv=None) -> int:
                 print(json.dumps(improvement.report(journal, journal.ledger), indent=1, default=str))
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
+        elif args.cmd == "mcp":
+            from greg import mcp_tools
+            servers = mcp_tools.installed_servers(json.loads(Layout(home).config.read_text())["read_roots"])
+            if args.tools:
+                for server in servers.values():
+                    try:
+                        server["tools"] = [{k: t[k] for k in ("name", "description", "claims_read_only")} | {
+                            "needs": (t.get("input_schema") or {}).get("required", [])}
+                            for t in mcp_tools.server_tools(server, scratch_parent=Layout(home).workspace / "mcp-listing")]
+                    except Exception as exc:
+                        server["tools"] = f"not listed: {str(exc)[:200]}"
+            print(json.dumps(servers, indent=1))
         elif args.cmd == "doctor":
             from greg.doctor import chromebook
             report = chromebook()

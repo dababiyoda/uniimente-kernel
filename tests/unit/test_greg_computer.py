@@ -110,3 +110,72 @@ def test_bot_challenges_are_never_solved(tmp_path, site):
 def test_plain_http_off_loopback_is_refused(tmp_path):
     with pytest.raises(CapabilityError, match="https"):
         computer.session({"url": "http://example.com/", "steps": [{"op": "screenshot"}]}, ctx(tmp_path))
+
+
+@pytest.fixture
+def listener():
+    """Raw sockets on two loopback addresses that the signed session never names: any byte arriving is a leak."""
+    import socket
+    hits, servers = [], []
+    for address in ("127.0.0.1", "127.0.0.2"):
+        server = socket.socket()
+        server.bind((address, 0))
+        server.listen(8)
+        servers.append(server)
+
+        def accept(server=server):
+            while True:
+                try:
+                    conn, _ = server.accept()
+                except OSError:
+                    return
+                hits.append(conn.recv(80))
+                conn.close()
+        threading.Thread(target=accept, daemon=True).start()
+    yield hits, [s.getsockname() for s in servers]
+    for server in servers:
+        server.close()
+
+
+def test_a_page_cannot_open_websockets_or_reach_other_ports_outside_the_signed_origins(tmp_path, listener):
+    """Measured 2026-10-14 before this fix: Playwright's context.route never sees a WebSocket, so a page opened one to an
+    unlisted host; and the allowlist compared host names only, so a page on a loopback target reached the body's other
+    loopback ports. Both are now refused in the browser and counted."""
+    import functools
+    hits, ((own, own_port), (other, other_port)) = listener
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "index.html").write_text(
+        "<html><head><title>probe</title></head><body><p id=x>static</p><script>"
+        f"try{{new WebSocket('ws://{other}:{other_port}/ws')}}catch(e){{}};"
+        f"try{{new WebSocket('ws://{own}:{own_port}/ws')}}catch(e){{}};"
+        f"fetch('http://{own}:{own_port}/other-port').catch(()=>{{}});"
+        "document.getElementById('x').textContent='ran';</script></body></html>")
+
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(Quiet, directory=str(site)))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        out = computer.session({"url": f"http://127.0.0.1:{server.server_address[1]}/index.html", "session": "probe",
+                                "steps": [{"op": "wait_for", "selector": "#x"},
+                                          {"op": "expect_text", "selector": "#x", "value": "ran"}]}, ctx(tmp_path))
+    finally:
+        server.shutdown()
+    assert out["status"] == "COMPLETED", out["boundary"]
+    assert hits == []
+    assert out["blocked_websockets"] == {other: 1, own: 1}
+    assert out["blocked_requests"].get(own, 0) >= 1
+    assert out["allowed_origins"] == [f"127.0.0.1:{server.server_address[1]}"]
+
+
+def test_signed_origins_come_from_the_start_url_absolute_gotos_and_also_hosts():
+    url, _, hosts, origins = computer._validate({
+        "url": "https://shop.example/a", "also_hosts": ["cdn.example", "api.example:8443"],
+        "steps": [{"op": "goto", "url": "https://shop.example:8080/b"}, {"op": "goto", "url": "https://elsewhere.example/"},
+                  {"op": "goto", "url": "/relative"}]})
+    assert hosts == {"shop.example", "cdn.example", "api.example"}
+    assert origins == {("shop.example", 443), ("shop.example", 8080), ("cdn.example", 443), ("api.example", 8443)}
+    with pytest.raises(CapabilityError, match="also_hosts"):
+        computer._validate({"url": "https://a.example/", "steps": [{"op": "screenshot"}], "also_hosts": ["b:http"]})

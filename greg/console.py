@@ -36,7 +36,7 @@ import threading
 import time
 from urllib.parse import parse_qs, quote, urlsplit
 
-from greg import metrics, planner
+from greg import asks, metrics, planner
 from greg.body import Layout, morning_projection, observe, send_signed, status
 
 MAX_BODY = 16 * 1024
@@ -205,8 +205,10 @@ class Console:
 
     def attach(self, request_id: str, capability_id: str) -> Path:
         """Sign CAPABILITY_ATTACH only for a verified candidate that an open capability ask names."""
-        open_asks = {r["request_id"]: r for r in status(self.home)["decisions_required"]}
-        if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))}:
+        st = status(self.home)
+        open_asks = {r["request_id"]: r for r in st["decisions_required"]}
+        waiting = {w["capability_id"] for w in st.get("attach_waiting", [])}   # an answered ask's mission (#168)
+        if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))} | waiting:
             raise ValueError("that capability is not a verified candidate of an open capability ask")
         return self.sign("CAPABILITY_ATTACH", {"capability_id": capability_id})
 
@@ -245,6 +247,17 @@ def _ask_details(r: dict) -> str:
     if r.get("wording_withheld"):
         parts.append("<br><b>GREG's wording was withheld</b> (" + _e(", ".join(r["wording_withheld"]["rules"]))
                      + "); the facts and options below are unchanged.")
+    places = [p for p in (r.get("evidence") or {}).get("deliverable_observed_by") or []
+              if isinstance((p.get("params") or {}).get("path"), str)]
+    if places:
+        # The only thing that moves a person's step forward: say exactly which file, and where (#168, 3c92bc9).
+        parts.append("<br><b>Where GREG looks:</b><ul>" + "".join(
+            f"<li>save <code>{_e(Path(p['params']['path']).name)}</code> in "
+            f"<code>{_e(str(Path(p['params']['path']).parent))}</code>"
+            + (f": {_e(p['description'])}" if p.get("description") else "") + "</li>" for p in places) + "</ul>")
+    if r.get("answered") is not None:
+        parts.append(f"<br><b>You answered {_e(r['answered'])}; that is only recorded.</b> "
+                     "The mission still waits for the file above.")
     if r.get("answer_effect"):
         parts.append("<br><b>What your answer does:</b> " + _e(r["answer_effect"]))
     if r.get("expected_effect"):
@@ -263,6 +276,20 @@ def _ask_details(r: dict) -> str:
                      + (f": {_e(mech.get('distribution'))} {_e(mech.get('version'))}, license {_e(mech.get('license'))}, "
                         f"{_e(source)}; qualified on {_e(q.get('cases'))} frozen cases with {_e(q.get('failures'))} "
                         f"failures; {_e(mech.get('competence'))}" if mech else ""))
+    reach = {k: v for k, v in (r.get("authority_requested") or {}).items()
+             if k in ("tool", "remote_server", "may_write", "may_reach", "credentials")}
+    if reach:
+        # The approval is bound to this exact scope; show it before the founder answers (increment 20).
+        shown = lambda v: ", ".join(map(str, v)) if isinstance(v, list) else str(v)
+        parts.append("<br><b>Approving lets it:</b><ul>"
+                     + (f"<li>run <code>{_e(reach['tool'])}</code></li>" if "tool" in reach else "")
+                     + (f"<li>on the remote server <code>{_e(reach['remote_server'])}</code></li>"
+                        if "remote_server" in reach else "")
+                     + (f"<li>write: <code>{_e(shown(reach['may_write']))}</code> (nothing else)</li>"
+                        if "may_write" in reach else "")
+                     + (f"<li>reach: {_e(shown(reach['may_reach']))}</li>" if "may_reach" in reach else "")
+                     + (f"<li>credentials: {_e(shown(reach['credentials']))}</li>" if "credentials" in reach else "")
+                     + "</ul>")
     if r.get("resource"):
         parts.append("<br><span class=muted>Authority needed: "
                      + _e("; ".join(f"{k}: {v}" for k, v in r["authority_requested"].items())) + "</span>")
@@ -376,8 +403,12 @@ def home_parts(console: Console) -> dict:
     signer = ("<span class=ok>founder key unlocked in this console</span>" if console.key is not None
               else "<span class=warn>read-only (start with --key to sign)</span>")
     can = console.key is not None
+    egress = st.get("egress") or {}
+    network = ((f"network confined: {egress['decisions']} relay decisions, {egress['denied']} denied"
+                + ("" if egress.get("chain_intact") else " · <b class=warn>relay journal FAILED</b>"))
+               if egress.get("confined") else "<span class=warn>network not confined</span>")
     add("header", f"<h1>GREG</h1><p class=muted>Body {_e(st['body_id'])} · {body_state} · {signer} · "
-           f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'}</p>")
+           f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'} · {network}</p>")
     for message in console.flash[-3:]:
         add("flash", f"<section class=ok>{_e(message)}</section>")
     console.flash.clear()
@@ -392,11 +423,21 @@ def home_parts(console: Console) -> dict:
                "Every morning tell me which of my pull requests are failing checks and what is stale.'></textarea>"
                "<p><button>Propose a mission</button> <span class=muted>Nothing runs until you review and sign."
                "</span></p></form></section>")
-    if st["decisions_required"]:
+    asked = {c["capability_id"] for r in st["decisions_required"] for c in _attachable(r)}
+    waiting = [w for w in st.get("attach_waiting", []) if w["capability_id"] not in asked]
+    if st["decisions_required"] or waiting:
         rows = []
         for r in st["decisions_required"]:
-            actions = (_form(console, "/decide", {"request_id": r["request_id"], "answer": "approve"}, "Approve",
-                             disabled=not can) + " " +
+            # On a capability ask Approve would only record an answer, never attach (greg/asks.py), and answering
+            # removes the ask; offer Attach and Reject instead (#168).
+            approve = "" if _attachable(r) else _form(console, "/decide", {"request_id": r["request_id"],
+                                                                           "answer": "approve"}, "Approve",
+                                                      disabled=not can) + " "
+            if r["kind"] in asks.OPEN_UNTIL_OBSERVED:
+                # Answering changes nothing for the mission; only the file does. No button to mistake for it.
+                actions = "<span class=muted>Nothing to click: save the file, and GREG notices it.</span>"
+            else:
+                actions = (approve +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reject"}, "Reject",
                              cls="secondary", disabled=not can)) if r["kind"] != "RECONCILIATION" else (
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_executed"},
@@ -411,7 +452,17 @@ def home_parts(console: Console) -> dict:
             rows.append(f"<tr><td><span class=pill>{_e(r['kind'])}</span></td><td>{_e(r['why_now'])}<br>"
                         f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r)}</td>"
                         f"<td>{actions}</td></tr>")
-        add("decisions", "<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>")
+        html = ("<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>") if rows else ""
+        if waiting:
+            html += "<section><h2>Waiting for an attach</h2><table>" + "".join(
+                f"<tr><td><span class=pill>ATTACH</span></td><td>{_e(w['mission_id'] or '')} is waiting for "
+                f"{_e(w['capability_id'])}<br><span class=muted>Verified by Genesis; your earlier answer did not "
+                "attach it. Attaching is a signed command.</span></td><td>"
+                + _form(console, "/attach", {"request_id": "", "capability_id": w["capability_id"]},
+                        f"Attach {w['capability_id']}", disabled=not can,
+                        confirm=f"Sign CAPABILITY_ATTACH for {w['capability_id']}?") + "</td></tr>"
+                for w in waiting) + "</table></section>"
+        add("decisions", html)
     closures = [r for r in vepmc["missions"]]
     if closures:
         rows = []

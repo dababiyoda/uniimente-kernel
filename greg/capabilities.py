@@ -500,7 +500,7 @@ def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, prof
     scoped = Relay({"browser.render": {"allow": [[host, port]], "external": not loopback}}, relay.journal,
                    connect=relay.connect, proxy=relay.proxy)
     with Door(scoped, "browser.render") as door:
-        namespace = namespace_argv(writable=[profile], chdir=profile)
+        namespace = namespace_argv(writable=[profile], readonly=[str(Path(argv[0]).resolve().parent)], chdir=profile)
         return subprocess.run(namespace + door_argv(sys.executable, door.fd, argv), pass_fds=[door.fd],
                               capture_output=True, timeout=45, env=env)
 

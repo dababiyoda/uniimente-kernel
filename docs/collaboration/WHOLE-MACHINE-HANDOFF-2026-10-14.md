@@ -132,6 +132,8 @@ The 13 holes were:
   founder's installer now creates the body confined whenever `greg doctor` finds the kernel filter and network
   namespaces. What remains is to observe that on the founder's Chromebook (`greg doctor --chromebook` shows
   `confined_egress.available`, and `greg status` shows `egress.confined`).
+  - Since increment 16, no door program can read the founder's signing key or the body's home. Before it, every
+    door program could read both, and the Claude Code route and builder had the founder's home writable.
 - **#9, #10, #28 and #52 PARTIAL** (Foundry 50/55).
 - **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
   `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
@@ -142,7 +144,9 @@ The 13 holes were:
   - the owner link can leak through terminal scrollback;
   - the rights screen checks wording and declarations and does not prove title, so "emergency" in a title is a
     false positive;
-  - regression blame is by sequence, not proven causation.
+  - regression blame is by sequence, not proven causation;
+  - the door namespace hides secrets by location (the founder's home, the body home, `.git`): a credential kept
+    elsewhere, or inside GREG's checkout, is visible to door programs.
 - **Untested here.**
   - DALEOBANKS real-organ runs (run locally since increment 12, against `e2f1ebe`; not in CI).
   - A storage device that loses whole lines it already acknowledged. The hash chain cannot detect a lost suffix of

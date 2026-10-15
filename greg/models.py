@@ -236,17 +236,17 @@ class OpenAIRoute(_APIRoute):
 CONFINED_CALL_SECONDS = 660   # the SDK's own 600 s timeout, plus its retries' backoff
 
 
-def _namespace(scratch: str, *, home: str | None = None, readonly=()) -> list:
-    """A bubblewrap network namespace (no privilege): read-only root, private /tmp, the call's scratch directory and,
-    for a CLI that keeps its login there, the user's home. ``readonly`` re-exposes files the private /tmp would hide
-    (a trust anchor, the CLI itself). Refused (fail closed) without namespaces."""
+def _namespace(scratch: str, *, readonly=()) -> list:
+    """A bubblewrap network namespace (no privilege): read-only root with the founder's and the body's homes hidden,
+    private /tmp, and the call's scratch directory. ``readonly`` re-exposes what the call needs (a trust anchor, the
+    CLI itself). Refused (fail closed) without namespaces."""
     from foundry.systems.relay_door import namespace_argv
     from greg.worker_isolation import WorkerIsolationError, _backend
     try:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:
         raise RouteError(f"confined egress needs bubblewrap network namespaces here: {exc}", kind=UNAVAILABLE) from None
-    return namespace_argv(writable=[scratch, home], readonly=readonly, chdir=scratch)
+    return namespace_argv(writable=[scratch], readonly=readonly, chdir=scratch)
 
 
 def _scoped_relay(relay, identity: str, host: str):
@@ -254,6 +254,24 @@ def _scoped_relay(relay, identity: str, host: str):
     from foundry.systems.segmentation import Relay
     return Relay({identity: {"allow": [[host, 443]], "external": True}}, relay.journal,
                  connect=relay.connect, proxy=relay.proxy)
+
+
+CLI_LOGIN = ".claude/.credentials.json"   # the one file of the founder's home the Claude Code CLI needs
+
+
+def cli_home(scratch: str) -> tuple[dict, list]:
+    """A private home for the Claude Code CLI inside the call's scratch directory, holding a copy of its login and
+    nothing else of the founder's home; returns the environment that points the CLI at it and the read-only paths
+    its installation needs (the CLI's own directory and, for an npm install, the Node runtime)."""
+    import os
+    home = Path(scratch) / "home"
+    source = Path.home() / CLI_LOGIN
+    (home / CLI_LOGIN).parent.mkdir(parents=True, exist_ok=True)
+    if source.is_file() and not source.is_symlink():
+        shutil.copyfile(source, home / CLI_LOGIN)
+        (home / CLI_LOGIN).chmod(0o600)
+    node = shutil.which("node")
+    return {**os.environ, "HOME": str(home)}, [str(Path(node).resolve().parent.parent)] if node else []
 
 
 class _ChildFailure(Exception):
@@ -445,21 +463,19 @@ class ClaudeCodeRoute:
                 "served_model": self.model or "claude-code default"}
 
     def _behind_door(self, argv: list, user: str, scratch: str):
-        """The CLI in a network namespace whose only way out is the relay, allowlisted for the Anthropic API host. It
-        keeps its login in the user's home, so the home is bound; nothing else of the body's becomes writable."""
-        import os
+        """The CLI in a network namespace whose only way out is the relay, allowlisted for the Anthropic API host. Its
+        home is a private one holding a copy of its login; the founder's home and the body's are hidden."""
         import sys
         import urllib.parse
         from pathlib import Path
         from foundry.systems.relay_door import Door, door_argv
         from greg import model_child
-        home = os.environ.get("HOME")
-        namespace = _namespace(scratch, home=home if home and Path(home).is_dir() else None,
-                               readonly=(str(Path(self.binary).resolve().parent),))
+        env, runtime = cli_home(scratch)
+        namespace = _namespace(scratch, readonly=(str(Path(self.binary).resolve().parent), *runtime))
         host = urllib.parse.urlsplit(model_child.BASE_URLS["anthropic"]).hostname
         with Door(_scoped_relay(self.egress, "model.claude-code", host), "model.claude-code") as door:
             return self.runner(namespace + door_argv(sys.executable, door.fd, argv), input=user, capture_output=True,
-                               text=True, timeout=self.timeout, cwd=scratch, pass_fds=[door.fd])
+                               text=True, timeout=self.timeout, cwd=scratch, pass_fds=[door.fd], env=env)
 
 
 class ModelRouter:

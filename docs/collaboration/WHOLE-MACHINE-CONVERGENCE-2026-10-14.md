@@ -910,6 +910,151 @@ The test checks:
   cannot detect that loss at the end of the file, because a shorter chain still verifies; only a head recorded
   somewhere else would reveal it.
 
+## Increment 16 (2026-10-15): confined programs can no longer read the founder's key or the body's home
+
+### The defect
+
+Every door program runs in one namespace, `relay_door.namespace_argv`. It mounted the whole filesystem read-only.
+That blocked writes and the network, but not reads. Its callers:
+
+- the browser (`browser.render`, `browser.session`);
+- the model SDK child behind the paid routes;
+- the Claude Code route and the Claude Code Genesis builder;
+- the DALEOBANKS bridge;
+- the venture organs.
+
+On the founder's Chromebook, the installer puts the founder's signing key at `~/.greg-founder.pem`. It puts the body
+at `~/.uniimente/greg`, which holds `secrets.json`, the device and witness keys, and the ledger. Every door program
+could read all of it. The Claude Code route and builder went further: they mounted the founder's whole home
+**writable**.
+
+- **Reproduced.** A fixture key in a directory outside `/tmp` was printed by `cat` inside the namespace.
+- **Why no test caught it.** Every test home lives under pytest's `/tmp`, and the namespace already masked `/tmp`.
+- **Who could use it:**
+  - The browser renders untrusted pages without Chromium's own sandbox (`os_sandboxed: false`). A renderer exploit
+    could read the key and send it to a signed origin.
+  - DALEOBANKS's third-party dependencies run with the X API reachable during a publish.
+  - The Claude Code CLI runs with `--tools ""`, so model output cannot direct it. The exposure there is the CLI
+    binary itself, if compromised or vulnerable.
+- **Why it matters.** Whoever holds the founder's key can sign any founder command. That is the root of authority.
+
+### The fix
+
+- **The namespace hides** the founder's home, the repository's `.git`, and every registered body home, behind empty
+  private mounts.
+  - `egress_relay` registers the body home in both the body process and the console process.
+  - `.git` is hidden because a clone can hold credentials in its config: GitHub Actions' checkout keeps the job's
+    token there.
+- **It then shows again,** read-only, GREG's runtime (the interpreter's prefixes and GREG's code), plus the paths
+  each caller names.
+  - A named directory that contains a hidden root does not reveal it. The hidden root is masked again, and the
+    named paths inside it are restored.
+  - The root directory, the system trees and their ancestors are never hidden.
+- **The Claude Code route and builder** get a private home inside the call's scratch directory. It holds a copy of
+  the CLI's login (`.claude/.credentials.json`) and nothing else. This is the rule the coding workers already used.
+  For an npm install, the Node runtime is shown read-only.
+- **Browsers** see their own installation directory read-only (Playwright keeps Chromium under `~/.cache`).
+  **DALEOBANKS** sees its interpreter's installation.
+- **Unchanged:** the coding workers already ran under their own stricter isolation (#157).
+
+### Evidence
+
+- **`tests/unit/test_foundry_namespace_privacy.py` (10 tests).** These run with `/tmp` unmasked, so only the new rule
+  can hide anything:
+  - the founder key, an SSH key, the body's secrets and its ledger are unreadable;
+  - nothing a program writes reaches the body home;
+  - a named path is shown, and nothing beside it;
+  - naming the body home's parent directory does not reveal the body home;
+  - GREG's Python runs with the repository, or the virtualenv, under the hidden home;
+  - GREG's code is shown, but its `.git/config` is not;
+  - a symlink in a shown path that points at the founder key leads nowhere;
+  - the body's process is invisible from inside (its `/proc` entries do not exist there);
+  - system directories are never hidden.
+- **`tests/integration/test_greg_namespace_privacy.py` (3 tests):**
+  - A compromised DALEOBANKS organ, and a compromised Claude Code CLI (both the model route and the Genesis
+    builder), each try to read the founder key, the body's secrets and the CLI's own conversation history. All
+    reads fail.
+  - The body's real ledger is unchanged.
+  - The CLI's home holds only its login, and it still reaches its provider through the relay.
+- **Mutants.**
+  - With nothing hidden (the old exposure), 8 of the first 10 tests fail.
+  - With the CLI shown the founder's home, both CLI cases fail: the CLI reads the key.
+  - With `.git` not hidden, the `.git` test fails.
+- **The Chromebook layout.** I ran every test that launches a door program with `HOME=/home/user`, so the repository,
+  the virtualenv, and the DALEOBANKS and WealthMachine checkouts all sit under the hidden home. 91 tests passed. They
+  include:
+  - the real DALEOBANKS organ;
+  - the real RailScout (`232f724`) and WealthMachine (`ec82b80`) organs;
+  - Chromium behind the relay;
+  - the model routes;
+  - the whole Chromebook rehearsal.
+- **Seed Genome.** `greg/models.py` is a frozen input, so `freeze-v7` was written under the existing convention, and
+  v1–v6 are kept. In the CI-matching virtualenv, the unchanged tree under v6 and this tree under v7 give the same
+  result:
+  - INCONCLUSIVE;
+  - timing-independent gain 0.0;
+  - 100/100 matched and 0 hard failures in both arms;
+  - 3 blocked baselines;
+  - no authority change.
+
+  The held-out run is clean.
+
+### What this does not cover
+
+- A secret the founder keeps outside their home and outside the body home is not hidden. The rule hides by location,
+  and the two default locations are where the installer puts the key and the body.
+- The CLI sees its own login, which it needs.
+- Bubblewrap namespaces share the kernel; a kernel exploit crosses them. This is not gVisor-class isolation, and #10
+  stays PARTIAL.
+- A hidden directory is an empty private mount. A program can write there, and the write vanishes when the program
+  ends.
+
+### Five roles and two passes (the authority root's exposure changed)
+
+**Builder.**
+- One change to the one namespace definition closes the read path for all seven callers.
+- The CLI's private home reuses the coding workers' credential-file rule instead of adding a third convention.
+- The next increment's third-party tool servers inherit the rule by construction.
+
+**Adversary.**
+- Hiding by location is a denylist: a key kept elsewhere leaks.
+- Showing GREG's code shows whatever sits in the checkout.
+- A symlink inside a shown path that points into the home resolves to the hidden, empty mount and reveals nothing
+  (tested).
+- The program has its own pid namespace, so it cannot read the body's `/proc` entries or descriptors (tested).
+
+**Operator.**
+- An installation that keeps a dependency somewhere unusual (pyenv, nix) may miss a runtime path. The failure is
+  loud: the confined program does not start, and the route reports it unavailable. Confinement is never widened
+  silently.
+- The Chromebook-layout run covers a Debian virtualenv under the home.
+
+**Beneficiary representative.**
+- The founder's signing key and the body's secrets no longer depend on every confined component being uncompromised.
+- No new step is asked of the founder.
+
+**Constitutional reviewer.**
+- No authority is added; components see less.
+- Nothing was merged, published or spent.
+
+**Pass 1 (structural inversion).**
+- **Advantage:** the authority root is unreachable from every door program by default. That property becomes a
+  default pathway: anything later confined in this namespace inherits it.
+- **Disadvantage, hiding by location:** bounded to the installer's two default locations, plus `.git`. It is made
+  observable here, with a path to an allowlist (the workers' model) if a third location appears.
+
+**Pass 2 (adversarial compounding), against the deployed rule.**
+- **A checkout file holding a credential** (a `.env`, a token in a test fixture) would be shown.
+  - Accepted with the founder as owner.
+  - Kill condition: any credential found in the repository tree moves runtime exposure from GREG's whole checkout to
+    an allowlist of its package directories.
+- **A future caller that names `$HOME` itself** would re-expose it. The rule is now explicit: an exact named path
+  wins, by design, so naming the home is a visible choice in code review, not an accident.
+- **Dissent kept.** An allowlist-only namespace (show nothing but declared paths) would be stronger. It was not built
+  now because each of seven callers would need its full dependency set enumerated, which risks breaking the founder's
+  first run on unenumerated paths. Revisit when the founder's device run shows which paths those callers actually
+  touch.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

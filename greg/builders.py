@@ -240,22 +240,20 @@ class ClaudeCodeBuilder:
 
     def _behind_door(self, argv: list, prompt: str, scratch: str):
         """The same confinement as ``models.ClaudeCodeRoute`` (its namespace and per-call relay), as its own identity."""
-        import os
         import sys
         import urllib.parse
         from foundry.systems.relay_door import Door, door_argv
         from greg import model_child
-        from greg.models import RouteError, _namespace, _scoped_relay
-        home = os.environ.get("HOME")
+        from greg.models import RouteError, _namespace, _scoped_relay, cli_home
+        env, runtime = cli_home(scratch)
         try:
-            namespace = _namespace(scratch, home=home if home and Path(home).is_dir() else None,
-                                   readonly=(str(Path(self.binary).resolve().parent),))
+            namespace = _namespace(scratch, readonly=(str(Path(self.binary).resolve().parent), *runtime))
         except RouteError as exc:
             raise BuildError(str(exc)) from None
         host = urllib.parse.urlsplit(model_child.BASE_URLS["anthropic"]).hostname
         with Door(_scoped_relay(self.egress, "genesis.claude-code", host), "genesis.claude-code") as door:
             return self.runner(namespace + door_argv(sys.executable, door.fd, argv), input=prompt, capture_output=True,
-                               text=True, timeout=self.timeout, cwd=scratch, pass_fds=[door.fd])
+                               text=True, timeout=self.timeout, cwd=scratch, pass_fds=[door.fd], env=env)
 
 
 BUILDER_SYSTEM = ("You write one small, pure Python function to an exact contract. You have no tools. "

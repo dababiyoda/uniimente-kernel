@@ -343,7 +343,9 @@ def _behind_door(home: Path, binary: str, door) -> str:
     import shlex
     from foundry.systems.relay_door import door_argv, namespace_argv
     # Playwright's per-launch profile lives in the scratch roots, private to the namespace.
-    namespace = namespace_argv(writable=[home], chdir=home, tmp_roots=("/tmp", tempfile.gettempdir()))
+    from foundry.systems.relay_door import SCRATCH_ROOTS
+    namespace = namespace_argv(writable=[home], readonly=[str(Path(binary).resolve().parent)], chdir=home,
+                               tmp_roots=(*SCRATCH_ROOTS, tempfile.gettempdir()))
     command = namespace + door_argv(sys.executable, door.control, [binary], keep_fds=(3, 4))
     launcher = home / "chromium-behind-door"
     launcher.write_text("#!/bin/sh\nexec " + " ".join(shlex.quote(a) for a in command) + ' "$@"\n')

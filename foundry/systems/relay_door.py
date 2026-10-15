@@ -20,15 +20,21 @@ door instead connects once to a Unix socket in a private directory; the body acc
 own user and stops listening. Descriptors the launcher hands the program (Playwright's pipe on 3 and 4) are kept with
 ``keep_fds``; nothing else of the door's, the control channel included, reaches the program.
 
+Privacy: the founder's home and every registered body home are hidden from the program, so it cannot read the
+founder's signing key or the body's secrets, keys and ledger; only GREG's runtime and the paths its caller names are
+shown again.
+
 Limits, stated: the namespace needs bubblewrap with unprivileged user namespaces; without it nothing is launched
-(fail closed). The door trusts nothing the program sends beyond one request line per connection; a program that
-ignores the proxy settings simply has no network. Name resolution happens at the relay, never inside the namespace.
+(fail closed). Files the founder keeps outside their home and outside a registered body home are not hidden. The
+door trusts nothing the program sends beyond one request line per connection; a program that ignores the proxy
+settings simply has no network. Name resolution happens at the relay, never inside the namespace.
 """
 from __future__ import annotations
 
 import os
 from pathlib import Path
 import socket
+import sys
 import threading
 import time
 
@@ -143,22 +149,75 @@ sys.exit(subprocess.call([a.replace("{door}", door) for a in argv], env=env, pas
 '''
 
 
-def namespace_argv(*, writable=(), readonly=(), chdir: str, tmp_roots=("/tmp",)) -> list[str]:
+ROOT = Path(__file__).resolve().parents[2]      # GREG's own code, shown read-only to every door program
+
+# Directories no door program may see: the founder's home (the signing key's default place, SSH and cloud
+# credentials) is always hidden; each body registers its own home (secrets, device and witness keys, ledger).
+_PRIVATE_ROOTS: set[str] = set()
+SCRATCH_ROOTS = ("/tmp",)   # private, empty scratch in every namespace
+# Never hidden: the root, these trees, anything inside them, or any directory holding one (nothing could run).
+_SYSTEM = tuple(Path(p) for p in ("/usr", "/etc", "/bin", "/sbin", "/lib", "/lib64", "/lib32", "/proc", "/dev",
+                                  "/sys", "/run", "/boot"))
+_SYSTEM_PARENTS = tuple(Path(p) for p in ("/var", "/opt", "/srv", "/home", "/tmp", "/mnt", "/media"))
+
+
+def hide_from_namespaces(path) -> None:
+    """Hide ``path`` (a body home) from every namespace this process builds from now on."""
+    _PRIVATE_ROOTS.add(str(Path(path).resolve()))
+
+
+def _hideable(path: Path) -> bool:
+    if path == Path("/") or path in _SYSTEM_PARENTS:
+        return False
+    return not any(path == s or s in path.parents or path in s.parents for s in _SYSTEM)
+
+
+def private_roots(extra=()) -> list[str]:
+    """The founder's home, every registered body home, and the repository's ``.git`` (a clone can hold credentials in
+    its config: GitHub Actions' checkout keeps its token there), all hidden even where GREG's code is shown again."""
+    roots = {Path.home().resolve(), ROOT / ".git", *(Path(p) for p in _PRIVATE_ROOTS),
+             *(Path(p).resolve() for p in extra)}
+    return sorted(str(p) for p in roots if p.is_dir() and _hideable(p))
+
+
+def runtime_paths() -> list[str]:
+    """What any door program needs to run GREG's Python: the interpreter's prefixes and GREG's code."""
+    executable = Path(sys.executable).resolve()
+    return sorted({str(Path(p).resolve()) for p in (sys.prefix, sys.base_prefix, sys.exec_prefix,
+                                                     executable.parent.parent, ROOT)})
+
+
+def _inside(path: str, root: str) -> bool:
+    return path == root or path.startswith(root.rstrip("/") + "/")
+
+
+def namespace_argv(*, writable=(), readonly=(), chdir: str, tmp_roots=None, hidden=None) -> list[str]:
     """The one bubblewrap network namespace every door program runs in (no privilege): its own user, pid, ipc, uts
-    and network namespaces, the read-only root, private /dev/shm and scratch roots, then the program's own writable
-    directories and read-only files (re-exposed when a private scratch root hid them). Callers check that bubblewrap
-    namespaces work first and refuse without them (fail closed)."""
+    and network namespaces, the read-only root, private /dev/shm and scratch roots.
+
+    The founder's home and every registered body home are hidden behind empty private mounts, so no door program
+    can read the founder's signing key or the body's secrets, keys and ledger. Then GREG's runtime and the paths the
+    caller names are shown again (writable or read-only, as named). A named directory that contains a hidden root
+    does not reveal it: the hidden root is masked again, then the named paths inside it restored. Callers check that
+    bubblewrap namespaces work first and refuse without them (fail closed)."""
     import shutil
     bwrap = shutil.which("bwrap")
     if not bwrap:
         raise FileNotFoundError("bubblewrap (bwrap) is not installed")
-    roots = sorted({str(r) for r in tmp_roots})
+    scratch = sorted({str(r) for r in (SCRATCH_ROOTS if tmp_roots is None else tmp_roots)})
+    hidden = [h for h in (private_roots() if hidden is None else hidden)
+              if not any(_inside(h, s) for s in scratch)]               # already private under a scratch root
+    masked = scratch + hidden
+    binds = [("--ro-bind", p) for p in runtime_paths() if Path(p).exists() and any(_inside(p, m) for m in masked)]
+    binds += [("--bind", str(w)) for w in writable if w]
+    binds += [("--ro-bind", str(r)) for r in readonly if r and Path(r).exists()]
+    again = [h for h in hidden if any(_inside(h, p) and p != h for _, p in binds)]
+    mounts = [a for kind, p in binds for a in (kind, p, p)]
+    restore = [a for kind, p in binds if any(_inside(p, h) for h in again) for a in (kind, p, p)]
     return [bwrap, "--unshare-user", "--unshare-pid", "--unshare-ipc", "--unshare-uts", "--unshare-net",
             "--die-with-parent", "--new-session", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
-            "--tmpfs", "/dev/shm", *[a for r in roots for a in ("--tmpfs", r)],
-            *[a for w in writable if w for a in ("--bind", str(w), str(w))],
-            *[a for r in readonly if r and Path(r).exists() for a in ("--ro-bind", str(r), str(r))],
-            "--chdir", str(chdir), "--"]
+            "--tmpfs", "/dev/shm", *[a for r in masked for a in ("--tmpfs", r)], *mounts,
+            *[a for h in again for a in ("--tmpfs", h)], *restore, "--chdir", str(chdir), "--"]
 
 
 def door_argv(python: str, control, argv: list[str], *, keep_fds=()) -> list[str]:

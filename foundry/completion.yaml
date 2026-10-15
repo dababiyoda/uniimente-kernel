@@ -486,7 +486,13 @@
     Stripe test-mode, OCI registry and federation code is reachable only outside the mission path), and the local
     Ollama route is a fixed numeric loopback address. The founder''s installer (greg/chromebook/install.sh) creates
     the body confined whenever greg doctor finds the kernel filter and network namespaces, says so, and warns with the
-    fix otherwise; status and Mission Control show the relay''s decisions. Not COMPLETE: the probe and a confined body
+    fix otherwise; status and Mission Control show the relay''s decisions. Since 2026-10-15 the namespace also hides
+    the founder''s home (the signing key''s default place), the repository''s .git and every registered body home
+    (secrets, keys, ledger) from every door program, showing again only GREG''s runtime and the paths each caller
+    names; the Claude Code route and builder get a private home holding only the CLI''s login, where they had the
+    founder''s whole home writable (tests/unit/test_foundry_namespace_privacy.py,
+    tests/integration/test_greg_namespace_privacy.py; also run with the repository and virtualenv under the hidden
+    home). Not COMPLETE: the probe and a confined body
     have not yet been observed on the founder''s Chromebook; a body made without the installer stays opt-in; and a
     host without bubblewrap and libseccomp cannot confine. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
   implementation:
@@ -505,11 +511,14 @@
   - tests/unit/test_greg_chromebook_doctor.py
   - tests/integration/test_greg_confined_egress.py
   - tests/integration/test_greg_chromebook_rehearsal.py
+  - tests/unit/test_foundry_namespace_privacy.py
+  - tests/integration/test_greg_namespace_privacy.py
   limitations: Linux with libseccomp only (refused elsewhere); the door also needs bubblewrap network namespaces
     (refused without them). Exact host/port allowlists; no wildcard. Covers only components launched through
     run_confined or behind the door. Inside the namespace Chromium runs without its own sandbox (it cannot nest a user
     namespace there; reported as os_sandboxed false); its filesystem is read-only except a private tmpfs and the
-    session''s own directory.
+    session''s own directory. Hiding is by location, so a secret kept outside the founder's home and every body home
+    is not hidden; namespaces share the kernel (not gVisor-class; that is system 10).
   recovery: A refused or unavailable filter refuses the launch (fail closed); a broken journal chain is reported, never
     repaired silently.
   state: PARTIAL

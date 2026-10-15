@@ -110,7 +110,8 @@ def _behind_door(argv: list, request: dict, env: dict, ctx: InvocationContext, *
     identity, hosts = ctx.manifest.capability_id, tuple(ctx.manifest.egress_allowlist or ())
     scoped = Relay({identity: {"allow": [[h, 443] for h in hosts], "external": bool(hosts)}}, ctx.egress.journal,
                    connect=ctx.egress.connect, proxy=ctx.egress.proxy)
-    namespace = namespace_argv(writable=[ledger_dir], readonly=[root, draft], chdir=root)
+    interpreter = str(Path(argv[0]).resolve().parent.parent)     # the venv's base Python may live under $HOME
+    namespace = namespace_argv(writable=[ledger_dir], readonly=[root, draft, interpreter], chdir=root)
     with Door(scoped, identity) as door:
         return subprocess.run(namespace + door_argv(sys.executable, door.fd, argv), pass_fds=[door.fd],
                               input=json.dumps(request), capture_output=True, text=True, env=env, timeout=120)

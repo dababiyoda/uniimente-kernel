@@ -130,7 +130,11 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
 def egress_relay(home: Path, config: dict):
     """#26: the body's one relay when the founder enabled confined egress, else None. Chained through a mandated proxy
     when the environment declares one. The console process builds the same relay over the same hash-chained journal
-    (appends are locked across processes) so its model calls are decided and journaled alike."""
+    (appends are locked across processes) so its model calls are decided and journaled alike.
+
+    Every namespace this process builds from now on hides this body's home (its secrets, keys and ledger)."""
+    from foundry.systems.relay_door import hide_from_namespaces
+    hide_from_namespaces(home)
     if not config.get("confined_egress"):
         return None
     from foundry.systems.segmentation import Journal as EgressJournal, Relay, policy_from_manifests, \

@@ -12,7 +12,8 @@
    "2026-10-15: Mission I requirements I1, I2, I4 and I7 proven at BODY tier by a live-process attack campaign; I gap G2 closed, the uncovered attack classes opened as G6",
    "2026-10-15: Mission L requirement L3 proven at SANDBOX tier by one nine-link run; L gap G1 closed, the real-process run opened as L.G3",
    "2026-10-15: H gap G5 closed by the crash-loop breaker (unit and real-process tests)",
-   "2026-10-15: Mission L requirements L1 and L3 proven at BODY tier by a real-process nine-link run; L gap G3 closed"
+   "2026-10-15: Mission L requirements L1 and L3 proven at BODY tier by a real-process nine-link run; L gap G3 closed",
+   "2026-10-15: C gap G6 closed by a genuine-deficit negative control"
   ]
  },
  "tier_reading": {
@@ -434,14 +435,15 @@
      "id": "R1",
      "obligation": "R1. A mission reaches a genuinely missing function: a founder-signed mission's check or strategy needs a function that no ATTACHED, usable, non-builtin capability provides. GREG opens a verified CapabilityDeficit (required_by, failed, unserviceable) instead of faking the result or stopping.",
      "coverage": "covered",
-     "notes": "The Chromebook rehearsal runs a real Body process under supervisord with signed commands from the console and kill -9 restarts. Two closures (hash.sha256 and text.wordcount) count through greg/path.py genesis_closure: the deficit is opened by the same mission, the capability is not in BUILTINS, and the deficit resolves before the mission is achieved. In-process tests assert the verified-deficit facts, including unserviceable='no registered implementation of this function'. Signatures use a per-test key, so this is not FOUNDER_ACCEPTED. 'Missing' means missing from the registry. For hash.sha256 and text.wordcount, GREG's own oracle (hashlib, str.split) is itself an implementation. No negative control shows that a function that is already ATTACHED opens no deficit (gap G6).",
+     "notes": "The Chromebook rehearsal runs a real Body process under supervisord with signed commands from the console and kill -9 restarts. Two closures (hash.sha256 and text.wordcount) count through greg/path.py genesis_closure: the deficit is opened by the same mission, the capability is not in BUILTINS, and the deficit resolves before the mission is achieved. In-process tests assert the verified-deficit facts, including unserviceable='no registered implementation of this function'. Signatures use a per-test key, so this is not FOUNDER_ACCEPTED. 'Missing' means missing from the registry. For hash.sha256 and text.wordcount, GREG's own oracle (hashlib, str.split) is itself an implementation. No negative control shows that a function that is already ATTACHED opens no deficit (gap G6). 2026-10-15: negative control: once the function is attached, a second mission needing it and a third needing only a builtin open no deficit, no Genesis route and no verification, and the second is served (per its Commit Witness) by the capability already attached.",
      "tests": [
-      "tests/unit/test_greg_missions.py::test_capability_genesis_acquires_installed_tool_and_resumes_mission",
-      "tests/unit/test_greg_verify_download.py::test_a_matching_file_forms_a_capability_asks_before_filing_and_closes_verified",
-      "tests/unit/test_greg_open_source_genesis.py::test_console_words_become_a_read_only_mission_that_needs_a_formed_capability",
-      "tests/unit/test_greg_genesis_builder.py::test_deficit_is_built_verified_attached_and_the_original_mission_closes",
+      "tests/integration/test_greg_chromebook_rehearsal.py::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model",
       "tests/integration/test_greg_cognition_mission.py::test_a_cognition_deficit_opens_capability_genesis_then_asks_the_founder_once",
-      "tests/integration/test_greg_chromebook_rehearsal.py::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model"
+      "tests/unit/test_greg_genesis_builder.py::test_deficit_is_built_verified_attached_and_the_original_mission_closes",
+      "tests/unit/test_greg_genesis_negative_control.py::test_a_function_already_attached_or_builtin_opens_no_deficit",
+      "tests/unit/test_greg_missions.py::test_capability_genesis_acquires_installed_tool_and_resumes_mission",
+      "tests/unit/test_greg_open_source_genesis.py::test_console_words_become_a_read_only_mission_that_needs_a_formed_capability",
+      "tests/unit/test_greg_verify_download.py::test_a_matching_file_forms_a_capability_asks_before_filing_and_closes_verified"
      ],
      "tier": "BODY_VERIFIED",
      "implementation": "IMPLEMENTED"
@@ -640,10 +642,11 @@
     {
      "id": "G6",
      "gap": "G6. No negative control proves the deficit is genuine.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Test in tests/unit/test_greg_missions.py: after m:hash ACHIEVED, submit a second signed mission that needs hash.sha256, and a third that uses only the builtin fs.read. Assert both close with no new deficit.opened, genesis.route or genesis.verified events, and that the second mission's receipts name the already-ATTACHED acquired.hash.sha256.* capability."
+     "next": "Test in tests/unit/test_greg_missions.py: after m:hash ACHIEVED, submit a second signed mission that needs hash.sha256, and a third that uses only the builtin fs.read. Assert both close with no new deficit.opened, genesis.route or genesis.verified events, and that the second mission's receipts name the already-ATTACHED acquired.hash.sha256.* capability.",
+     "closed_by": "tests/unit/test_greg_genesis_negative_control.py (SANDBOX)"
     },
     {
      "id": "G7",

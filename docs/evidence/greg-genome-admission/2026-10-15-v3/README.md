@@ -246,7 +246,7 @@ Each item quotes the original wording, which stays in place above, and states th
    - All four wins are abstentions on instances where the competitor answered wrongly (seeds 1201, 1210, 1211 and 1222).
    - Both losses are abstentions where the competitor answered correctly (seeds 1200 and 1219).
    - On the competitor's other four wrong answers (seeds 1207, 1213, 1220 and 1225), the candidate was wrong too. It never answered correctly where the competitor erred.
-   - It abstained on 6 of 30 instances, so "4 wrong answers against the competitor's 8" is those same four abstentions.
+   - It abstained on 6 of 30 instances. Its 4 wrong answers are real: seeds 1207, 1213, 1220 and 1225, listed above. The gap of 4 between those 4 and the competitor's 8 is the four abstentions where the competitor erred.
    - The NICHE_CAPABILITY verdict is the frozen rule's and stands. The edge it records is abstention, not a correct answer.
 4. **Wrong answers and abstentions.** Original: "Three candidates still gave wrong answers: `bootstrap_ci` 4, `collective_quorum` 4 and `mc_expectation` 1." and "`collective_flock` abstained on 5 instances and gave no wrong answer."
    - Four candidates gave wrong answers, 20 in all: `flow_reinforce_greedy` 11, `bootstrap_ci` 4, `collective_quorum` 4 and `mc_expectation` 1.
@@ -268,7 +268,7 @@ Each item quotes the original wording, which stays in place above, and states th
    - The genome was not run on F7's SNDlib items. The one-seventh latency (0.66 ms against 4.57 ms) and the tie on all 30 instances were measured on the synthetic instances.
    - "This geometry" therefore means the capacity-expansion geometry as that generator samples it.
 8. **The freeze and the run.** Original: "It hashes 117 code files: the import closure of the harness and the isolated worker, and all of `greg/cognition`. It also records the M4 extract, the requirement files, ..." and "once, in a clean worktree at `878f76c`".
-   - `freeze.json` hashes 117 files. 114 are Python: the import closure plus all of `greg/cognition`, including `tools/offline_test.py`. The other three are the M4 extract and the two requirement files. They are part of the 117, not in addition to it.
+   - `freeze.json` hashes 117 files. 113 are the Python import closure of the harness and the isolated worker, plus all of `greg/cognition`. The other four are the `FREEZE_EXTRA` entries in `admission.py`: `tools/offline_test.py` (the 114th Python file, outside that closure), the M4 extract and the two requirement files. They are part of the 117, not in addition to it.
    - `results.json` records `source_commit` 878f76c but no dirty-tree state, and the harness had no dirty check. So "clean" and "once" are the operator's statements, not recorded facts.
    - What is enforced: `--run` rehashes every frozen input and would have refused with `FROZEN_INPUT_CHANGED` had any hashed file differed from the freeze.
    - Future runs record `source_dirty` in `results.json`. It lists the frozen files whose bytes differ from their blob at HEAD; see `greg/cognition/genomes/admission.py`.

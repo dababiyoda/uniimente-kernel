@@ -84,6 +84,12 @@ def _params(provider: dict):
     return StdioServerParameters(command=sys.executable, args=["-s", "-m", provider["module"]], env=env, cwd=str(ROOT))
 
 
+def _schema(tool) -> dict:
+    """The tool's declared input schema (JSON Schema), as the provider states it."""
+    schema = getattr(tool, "input_schema", None) or getattr(tool, "inputSchema", None) or {}
+    return schema if isinstance(schema, dict) else {}
+
+
 def _claim(tool) -> bool | None:
     """The provider's own read-only claim, recorded as a claim and never used for authority."""
     a = tool.annotations
@@ -131,8 +137,8 @@ def list_tools(provider: dict) -> list[dict]:
         from mcp import Client
         with _server(provider) as server:
             async with Client(server, read_timeout_seconds=30) as client:
-                return [{"name": t.name, "description": t.description,
-                         "claims_read_only": _claim(t)}
+                return [{"name": t.name, "description": t.description, "claims_read_only": _claim(t),
+                         "input_schema": _schema(t)}
                         for t in (await client.list_tools()).tools]
     return asyncio.run(run())
 

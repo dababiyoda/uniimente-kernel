@@ -194,6 +194,99 @@ def _first_mission_route(text: str, ctx: PlannerContext) -> dict:
         "an independent appraisal re-derives the dossier before the mission counts as achieved"])
 
 
+MCP_WORDS = re.compile(r"\b(?:mcp|(?:tool\s+)?servers?)\b", re.I)
+GENERIC_VERBS = {"get", "show", "list", "find", "read", "fetch", "give", "tell", "use", "run", "make", "do", "ask"}
+TIMEZONE = re.compile(r"\b(?:UTC|[A-Z][A-Za-z_]+/[A-Za-z_]+(?:/[A-Za-z_]+)?)\b")
+
+
+def _words(text: str) -> set:
+    return {w[:-1] if len(w) > 3 and w.endswith("s") else w for w in re.findall(r"[a-z0-9]+", text.lower())}
+
+
+def _mcp_route(text: str, ctx: PlannerContext) -> dict | None:
+    """Words that name an installed MCP server: one read-only ``mcp.call`` mission, its tool and arguments taken from
+    the server's own tool list and schemas. Anything the words do not settle becomes a question, never a guess."""
+    from greg import mcp_tools
+    origin = "template:mcp-tool"
+    servers = mcp_tools.installed_servers(ctx.read_roots)
+    words = _words(text)
+    named = [n for n in servers if re.search(rf"\b{re.escape(n)}\s+(?:mcp\s+)?(?:tool\s+)?server", text, re.I)]
+    if not named and not re.search(r"\bmcp\b", text, re.I):
+        return None                                  # "server" alone, without an installed server named: not ours
+    if not servers:
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            "No MCP servers are installed under GREG's read roots. Install one into its own folder there, for example "
+            "python3 -m venv <read root>/tools/git && <read root>/tools/git/bin/pip install mcp-server-git"]}
+    if len(named) != 1:
+        if not named and len(servers) == 1:
+            named = list(servers)
+        else:
+            return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+                "Which server? Installed: " + ", ".join(servers) + " (say e.g. 'the git server')"]}
+    name, server = named[0], servers[named[0]]
+    scratch = Path(ctx.workspace or Path.home() / ".cache" / "greg") / "mcp-planner"
+    try:
+        tools = mcp_tools.server_tools(server, scratch_parent=scratch)
+    except Exception as exc:
+        return {"status": "NEEDS_INPUT", "origin": origin,
+                "questions": [f"The {name} server did not list its tools: {str(exc)[:200]}"]}
+
+    def fit(tool):
+        """(distinctive words of the tool's name present in the request, minus those absent); generic verbs and the
+        server's own name do not count. Naming the tool exactly wins."""
+        if re.search(rf"\b{re.escape(tool['name'])}\b", text):
+            return (99, 0)
+        parts = {w[:-1] if len(w) > 3 and w.endswith("s") else w
+                 for w in re.findall(r"[a-z0-9]+", tool["name"].lower())} - GENERIC_VERBS - {name}
+        return (len(parts & words), -len(parts - words))
+    ranked = sorted((t for t in tools if fit(t)[0] > 0), key=fit, reverse=True)
+    matching = ranked
+    if not matching or (len(matching) > 1 and fit(matching[0]) == fit(matching[1])):
+        return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+            f"Which of the {name} server's tools? " + "; ".join(
+                f"{t['name']}: {(t['description'] or '').strip().splitlines()[0][:80] if t['description'] else ''}"
+                for t in tools[:20])]}
+    tool = matching[0]
+    schema = tool.get("input_schema") or {}
+    properties = schema.get("properties", {})
+    arguments, readable, missing = {}, [], []
+    roots = [Path(r).expanduser().resolve() for r in ctx.read_roots]
+    for prop in schema.get("required", []):
+        spec = properties.get(prop, {})
+        key = prop.lower()
+        if any(k in key for k in ("path", "repo", "file", "dir", "folder")):
+            found = FILE_PATH.search(text)
+            target = Path(found.group(1).rstrip(".,;")).expanduser().resolve() if found else None
+            if target is None or not target.exists():
+                missing.append(f"{prop} (a path under {', '.join(map(str, roots))})")
+            elif not any(target == r or r in target.parents for r in roots):
+                return {"status": "NEEDS_INPUT", "origin": origin, "questions": [
+                    f"GREG may only read under {', '.join(map(str, roots))}; {target} is outside."]}
+            else:
+                arguments[prop], readable = str(target), [str(target)]
+        elif "timezone" in key or key in ("tz", "zone"):
+            zone = TIMEZONE.search(text)
+            if zone:
+                arguments[prop] = zone.group(0)
+            else:
+                missing.append(f"{prop} (an IANA zone such as Asia/Tokyo)")
+        else:
+            missing.append(f"{prop}: {spec.get('description') or spec.get('type') or 'a value'}")
+    if missing:
+        return {"status": "NEEDS_INPUT", "origin": origin,
+                "questions": [f"The {name} server's {tool['name']} needs " + "; ".join(missing) + "."]}
+    spec = templates.mcp_tool(server=name, root=server["root"], command=server["command"], tool=tool["name"],
+                              arguments=arguments, readable=readable, founder_expression=text)
+    return _proposal(spec, origin, notes=[
+        f"the {name} server's {tool['name']} tool, with {json.dumps(arguments)}",
+        "read-only by construction: the server runs with no network and a read-only view of what this mission "
+        "names; a tool that tries to write or send fails and nothing changes",
+        "the server's own claims about its tools are not trusted; its answer is shown as untrusted data"]
+        + ([] if tool.get("claims_read_only") else [
+            f"the server does not claim {tool['name']} is read-only: if it tries to change something, it fails inside "
+            "GREG's namespace and nothing changes"]))
+
+
 def template_route(text: str, ctx: PlannerContext) -> dict | None:
     lowered = text.lower()
     if (work := CODE_WORK.match(text)):    # software-development work: a temporary coding worker, appraised
@@ -238,6 +331,8 @@ def template_route(text: str, ctx: PlannerContext) -> dict | None:
             "GLOP), qualifies it, and asks you to attach it, showing its version and license",
             "the plan counts only if GREG's own duality certificate proves no plan does better; if no plan meets "
             "every limit, GREG proves that and names the limits in conflict"])
+    if MCP_WORDS.search(text) and (proposal := _mcp_route(text, ctx)) is not None:
+        return proposal                     # a tool on an MCP server the founder installed, named in the words
     if templates.FIRST_MISSION_WORDS.search(text):      # the founder's first mission: where am I going, what next
         return _first_mission_route(text, ctx)
     if BRIEF.search(text):
@@ -314,9 +409,20 @@ def _prompt(text: str, ctx: PlannerContext) -> str:
     from greg.missions import MISSION_SCHEMA
     inventory = [{k: c.get(k) for k in ("capability_id", "function", "description", "consequence_class", "inputs",
                                          "outputs", "target_prefix", "state")} for c in ctx.capabilities]
-    return json.dumps({"founder_words": text, "today": ctx.today, "capability_inventory": inventory,
-                       "readable_repositories": ctx.repos(), "mission_json_schema": MISSION_SCHEMA},
-                      sort_keys=True, indent=1)
+    context = {"founder_words": text, "today": ctx.today, "capability_inventory": inventory,
+               "readable_repositories": ctx.repos(), "mission_json_schema": MISSION_SCHEMA}
+    if MCP_WORDS.search(text):          # the founder's installed MCP servers and their tools, for an mcp.call mission
+        from greg import mcp_tools
+        servers = {}
+        for name, server in list(mcp_tools.installed_servers(ctx.read_roots).items())[:5]:
+            try:
+                tools = mcp_tools.server_tools(server, scratch_parent=Path(ctx.workspace or Path.home() / ".cache" /
+                                                                           "greg") / "mcp-planner")
+            except Exception as exc:
+                tools = f"unlisted: {str(exc)[:120]}"
+            servers[name] = {**server, "tools": tools}
+        context["installed_mcp_servers"] = servers
+    return json.dumps(context, sort_keys=True, indent=1, default=str)
 
 
 def _first_json_object(text: str) -> dict:

@@ -1116,6 +1116,72 @@ now offered, so GREG uses the server the founder chooses instead of rebuilding e
 
 Foundry #28 stays PARTIAL. Its gap narrows to network-reaching servers, consequential tools and remote transport.
 
+## Increment 18 (2026-10-15): installed MCP tools in Mission Control and in the founder's words
+
+Increment 17 let a signed mission call an installed MCP tool. Writing that mission by hand meant knowing the server's
+path, its command, the tool's name and its argument schema. Now the founder only says what they want.
+
+- **GREG finds the servers.** A server is a folder under the read roots whose `bin` holds `mcp-server-<name>`, which is
+  what `python3 -m venv <folder> && <folder>/bin/pip install mcp-server-<name>` produces. The scan reads directories
+  only; nothing is started.
+- **It lists their tools on request,** with each tool's input schema and its own read-only claim. Listing runs the
+  server exactly as a mission does: confined, no network, read-only, scratch discarded.
+- **Words become one mission.** "Use the git server to show the status of ~/src/kernel" becomes one read-only
+  `mcp.call` mission (`template:mcp-tool`):
+  - the tool comes from its own name: the distinctive words of the name must be present, generic verbs are ignored,
+    and naming the tool exactly wins;
+  - required arguments come from the words (a path under the read roots, an IANA zone).
+- **Whatever the words do not settle becomes a question, never a guess:**
+  - which server;
+  - which tool;
+  - a missing argument, named with the schema's own description;
+  - a path outside the read roots.
+
+  A tool the server does not claim is read-only gets a note that, inside GREG's namespace, its writes fail and
+  nothing changes.
+- **The model route** sees the installed servers and their tools whenever the words mention a server or MCP.
+- **Mission Control** (Command view) shows:
+  - the installed servers;
+  - on request, one server's tools, with what each says it does, what it needs and its claim, marked not trusted;
+  - the latest answers, labelled untrusted data and linked to their receipts.
+
+  With nothing installed, it says how to install one.
+- **`greg mcp list [--tools]`** shows the same from a terminal.
+
+### Evidence
+
+- **`tests/unit/test_greg_mcp_planner.py` (11 tests):**
+  - discovery skips non-executable and too-deep entries and starts nothing;
+  - tools are listed with their schemas and claims;
+  - words become one valid read-only mission, whose authority summary says it may observe through `mcp.call` and
+    nothing else;
+  - the four unsettled cases become questions, and with nothing installed the founder is told how to install a
+    server;
+  - "restart the web server" is not taken for a tool;
+  - the model route sees the tools;
+  - the CLI lists the server.
+- **`tests/integration/test_greg_mcp_founder_path.py`,** over real HTTP with the owner's session:
+  - Mission Control lists the server and, on request, its two tools and their claims;
+  - the words become a proposal that states, before signing, that it is read-only by construction;
+  - signing runs the mission to ACHIEVED with the chain verified;
+  - the Command view then shows the tool's answer ("3 lines") as untrusted data with its receipt.
+- **Mutants.**
+  - Dropping a missing argument instead of asking fails two of the question cases.
+  - Accepting a path outside the read roots fails the third.
+- **The real servers, locally.** Against the official `mcp-server-git` and `mcp-server-time`, the same route turned
+  these requests into proposals:
+  - "show the status of", "show me the log of" and "show the unstaged diff in" a repository;
+  - "the current time in Asia/Tokyo".
+
+  It asked for a target, a revision, a commit message or a zone where those were missing. `greg mcp list --tools`
+  listed their 12 and 2 tools.
+
+### What this does not cover
+
+- Argument filling is lexical and covers paths and time zones. Other arguments become questions. A model route
+  (`greg model set`) can fill them from the schemas.
+- Discovery covers Python virtualenv installs. npm-installed servers are not found yet.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

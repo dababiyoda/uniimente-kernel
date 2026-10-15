@@ -37,6 +37,58 @@ TOOL = re.compile(r"[A-Za-z0-9_.-]{1,64}")
 MAX_RESULT_BYTES = 256 * 1024
 
 
+SKIP_DIRS = {".git", "node_modules", "__pycache__", ".cache", "lib", "lib64", "include", "share", "site-packages"}
+
+
+def installed_servers(read_roots, *, max_depth: int = 4) -> dict:
+    """The MCP servers the founder installed under the body's read roots: ``name -> {"root", "command"}``.
+
+    A server is an installation directory whose ``bin`` holds an executable named ``mcp-server-<name>`` (what
+    ``python -m venv <dir> && <dir>/bin/pip install mcp-server-<name>`` produces). Nothing is started: this only reads
+    the directory tree, a few levels deep, skipping library and cache trees."""
+    found: dict = {}
+    for read_root in read_roots:
+        base = Path(read_root).expanduser()
+        if not base.is_dir():
+            continue
+        stack = [(base, 0)]
+        while stack:
+            directory, depth = stack.pop()
+            try:
+                entries = sorted(directory.iterdir())
+            except OSError:
+                continue
+            for entry in entries:
+                if entry.name == "bin" and entry.is_dir():
+                    for executable in sorted(entry.glob("mcp-server-*")):
+                        name = executable.name[len("mcp-server-"):].lower()
+                        if (NAME.fullmatch(name) and executable.is_file() and name not in found
+                                and executable.stat().st_mode & 0o111):
+                            found[name] = {"root": str(directory.resolve()), "command": [str(executable)]}
+                elif (entry.is_dir() and not entry.is_symlink() and depth < max_depth
+                      and entry.name not in SKIP_DIRS and not entry.name.startswith(".")):
+                    stack.append((entry, depth + 1))
+    return dict(sorted(found.items()))
+
+
+def server_tools(server: dict, *, scratch_parent: Path) -> list[dict]:
+    """The tools one installed server offers, each with its input schema and its own read-only claim. The server runs
+    exactly as ``mcp.call`` runs it: confined, no network, read-only, discarded scratch. Read-only discovery."""
+    from foundry.systems.mcp_gateway import list_tools
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        raise CapabilityError(f"an MCP server runs only in a bubblewrap namespace, unavailable here: {exc}") from None
+    Path(scratch_parent).mkdir(parents=True, exist_ok=True)
+    scratch = Path(tempfile.mkdtemp(prefix="mcp-list-", dir=scratch_parent))
+    try:
+        return list_tools({"name": Path(server["command"][0]).name, "command": server["command"],
+                           "root": server["root"], "scratch": str(scratch)})
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
 def _command(params: dict, root: Path) -> list[str]:
     command = params.get("command")
     if not isinstance(command, list) or not command or not all(isinstance(a, str) for a in command):

@@ -577,6 +577,8 @@
   - tests/unit/test_greg_mcp_worker.py
   - tests/unit/test_greg_mcp_tools.py
   - tests/integration/test_greg_mcp_mission.py
+  - tests/unit/test_greg_mcp_planner.py
+  - tests/integration/test_greg_mcp_founder_path.py
 29:
   acceptance:
   - External agents discover, negotiate and perform bounded work through an embassy

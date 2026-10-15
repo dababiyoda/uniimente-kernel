@@ -573,6 +573,35 @@ def schedule_in_words(*, text: str, horizon_days: float = 2) -> dict:
 TEMPLATES["schedule-in-words"] = schedule_in_words
 
 
+def mcp_tool(*, server: str, root: str, command: list[str], tool: str, arguments: dict, readable=(),
+             expect: dict | None = None, founder_expression: str | None = None, horizon_days: float = 1) -> dict:
+    """Ask one tool of an MCP server the founder installed (``mcp.call``), read-only by construction.
+
+    The server runs confined with no network and a read-only filesystem, so whatever the tool does, nothing changes.
+    The check passes when the server answers (or, with ``expect``, when its answer meets that predicate); the answer
+    itself is kept with the observation's receipt, as untrusted external data."""
+    digest = hashlib.sha256(json.dumps([tool, arguments], sort_keys=True).encode()).hexdigest()[:8]
+    params = {"server": server, "root": str(root), "command": [str(c) for c in command], "tool": tool,
+              "arguments": dict(arguments)}
+    if readable:
+        params["readable"] = [str(r) for r in readable]
+    return {
+        "mission_id": f"m:mcp-{_slug(server, 20)}-{_slug(tool, 30)}-{digest}",
+        "founder_expression": founder_expression or f"Ask the {server} server: {tool}",
+        "intended_effect": f"the {server} server's {tool} tool answers, and the answer is kept with its receipt",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [{
+            "check_id": "answered", "description": f"the {server} server's {tool} answered",
+            "sensor": {"capability": "mcp.call", "params": params, "target": f"mcp:{server}"},
+            "predicate": expect or {"op": "exists", "field": "text"}}],
+        "strategies": [],
+        "light_cone": {"capabilities": ["mcp.call"], "targets": [f"mcp:{server}"],
+                       "max_consequence_class": "read_only", "budget_usd": 0.0, "horizon": _horizon(horizon_days)}}
+
+
+TEMPLATES["mcp-tool"] = mcp_tool
+
+
 NETWORK_NAME = r"[A-Za-z][A-Za-z0-9_-]{0,31}"
 NETWORK_NUMBER = r"\d+(?:\.\d+)?"
 NETWORK_LINK = re.compile(rf"^(?P<a>{NETWORK_NAME})\s+(?P<how>to|and)\s+(?P<b>{NETWORK_NAME})\s*[:,]?\s*"

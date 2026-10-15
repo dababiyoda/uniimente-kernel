@@ -194,6 +194,11 @@ def test_a_tampered_or_inconsistent_seed_never_boots(tmp_path):
     obj.write_bytes(obj.read_bytes() + b"x")
     with pytest.raises(cas.IntegrityError):
         restore_body(store, made["seed"], tmp_path / "t3" / "body")
+    manifest_object = cas._path(store, made["seed"])          # the manifest itself, edited in place
+    manifest_object.write_bytes(manifest_object.read_bytes().replace(b"uniimente-seed/1", b"uniimente-seed/9"))
+    with pytest.raises(cas.IntegrityError):
+        restore_body(store, made["seed"], tmp_path / "t4" / "body")
+    assert not (tmp_path / "t4").exists()
 
 
 @pytest.mark.parametrize("rel,why", [("../outside.txt", "leaves the restore target"),

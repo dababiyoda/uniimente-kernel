@@ -105,14 +105,22 @@ class Journal:
         self.lock = threading.Lock()
 
     def append(self, entry: dict) -> dict:
+        # One chain, possibly several writers (the body and its console both decide egress): the read of the head and
+        # the append are one step under an exclusive file lock, not only a thread lock.
+        import fcntl
         with self.lock:
-            rows = self.read()
-            prev = rows[-1]["hash"] if rows else GENESIS
-            body = {**entry, "seq": len(rows), "prev": prev}
-            body["hash"] = "sha256:" + hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
             self.path.parent.mkdir(parents=True, exist_ok=True)
-            with open(self.path, "a") as fh:
-                fh.write(json.dumps(body, sort_keys=True) + "\n")
+            with open(self.path.with_name(self.path.name + ".lock"), "a") as guard:
+                fcntl.flock(guard, fcntl.LOCK_EX)
+                try:
+                    rows = self.read()
+                    prev = rows[-1]["hash"] if rows else GENESIS
+                    body = {**entry, "seq": len(rows), "prev": prev}
+                    body["hash"] = "sha256:" + hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
+                    with open(self.path, "a") as fh:
+                        fh.write(json.dumps(body, sort_keys=True) + "\n")
+                finally:
+                    fcntl.flock(guard, fcntl.LOCK_UN)
             return body
 
     def read(self) -> list[dict]:

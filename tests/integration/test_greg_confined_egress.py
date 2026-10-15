@@ -613,3 +613,159 @@ def test_a_coding_worker_reaches_its_provider_only_through_the_relay(tmp_path, m
     mine = [e for e in journal if e["identity"] == "worker.commission"]
     assert {(e["host"], e["port"]) for e in mine if e["verdict"] == "DENIED"} == {("example.com", 443)}
     assert any(e["verdict"] == "ALLOWED" and e["port"] == up and e.get("bytes_received", 0) > 0 for e in mine)
+
+
+def provider_server(cert_path, key_path, reply):
+    """A loopback TLS stand-in for a model provider: reads one HTTP/1.1 request (headers and body) per connection,
+    records it, and answers ``reply(path, body) -> (status, json)``."""
+    seen = []
+    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    context.load_cert_chain(cert_path, key_path)
+    listener = socket.create_server(("127.0.0.1", 0))
+
+    def serve():
+        while True:
+            try:
+                conn, _ = listener.accept()
+            except OSError:
+                return
+            try:
+                with context.wrap_socket(conn, server_side=True) as tls:
+                    data = b""
+                    while b"\r\n\r\n" not in data:
+                        chunk = tls.recv(65536)
+                        if not chunk:
+                            break
+                        data += chunk
+                    head, _, body = data.partition(b"\r\n\r\n")
+                    lines = head.decode("latin-1").split("\r\n")
+                    headers = {k.strip().lower(): v.strip() for k, _, v in (l.partition(":") for l in lines[1:])}
+                    while len(body) < int(headers.get("content-length", 0)):
+                        body += tls.recv(65536)
+                    path = lines[0].split()[1]
+                    seen.append({"path": path, "headers": headers, "body": json.loads(body or b"{}")})
+                    status, payload = reply(path, seen[-1]["body"])
+                    raw = json.dumps(payload).encode()
+                    tls.sendall(f"HTTP/1.1 {status} X\r\nContent-Type: application/json\r\nContent-Length: {len(raw)}\r\n"
+                                f"request-id: req_fixture\r\nConnection: close\r\n\r\n".encode() + raw)
+            except (OSError, ssl.SSLError, ValueError):
+                pass
+    threading.Thread(target=serve, daemon=True).start()
+    return listener, seen
+
+
+ANTHROPIC_OK = {"id": "msg_fixture", "type": "message", "role": "assistant", "model": "claude-opus-5",
+                "content": [{"type": "text", "text": "answered behind the relay"}], "stop_reason": "end_turn",
+                "stop_sequence": None, "usage": {"input_tokens": 12, "output_tokens": 5}}
+OPENAI_OK = {"id": "resp_fixture", "object": "response", "created_at": 0, "model": "gpt-x", "status": "completed",
+             "output": [{"type": "message", "id": "msg_1", "role": "assistant", "status": "completed",
+                         "content": [{"type": "output_text", "text": "openai behind the relay", "annotations": []}]}],
+             "usage": {"input_tokens": 7, "output_tokens": 3, "total_tokens": 10}}
+FLAGGED = {"error": {"message": "Invalid prompt: your prompt was flagged as potentially violating our usage policy.",
+                     "type": "invalid_request_error", "param": None, "code": "invalid_prompt"}}
+
+
+@pytest.fixture
+def provider(tmp_path, monkeypatch):
+    """A stand-in provider on loopback behind a fake mandated proxy; the relay is the body's own (journal, proxy)."""
+    pytest.importorskip("anthropic")
+    pytest.importorskip("openai")
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        pytest.skip(f"no bubblewrap network namespaces here: {exc}")
+
+    def build(host, reply):
+        cert, key = certificate(tmp_path, name=host)
+        server, seen = provider_server(cert, key, reply)
+        proxy, heads = fake_proxy(server.getsockname()[1], host=host)
+        monkeypatch.setenv("HTTPS_PROXY", f"http://fixture-user:fixture-secret@127.0.0.1:{proxy.getsockname()[1]}")
+        monkeypatch.setenv("GREG_EGRESS_CAFILE", str(cert))
+        from greg.body import egress_relay
+        relay = egress_relay(tmp_path, {"confined_egress": True})
+        return relay, seen, heads
+    return build
+
+
+def test_a_paid_anthropic_route_runs_its_sdk_behind_the_relay_and_the_key_crosses_only_stdin(tmp_path, provider):
+    """#26 for paid model routes: on a confined body the vendor SDK, which holds the founder's key, runs in a network
+    namespace whose only way out is the relay, allowlisted for the route's pinned host. The body process opens no
+    socket of its own for the call; the relay decides, journals and chains through the mandated proxy."""
+    from greg import models
+    from foundry.systems.segmentation import Journal
+    replies = iter([(200, ANTHROPIC_OK), (200, {**ANTHROPIC_OK, "stop_reason": "refusal", "content": []})])
+    relay, seen, heads = provider("api.anthropic.com", lambda path, body: next(replies))
+    route = models.AnthropicRoute("sk-ant-fixture-key", model="claude-opus-5", egress=relay)
+    assert route.client is None                                       # no SDK client exists in the body process
+    answer = route.complete("be brief", "say hello")
+    assert answer["text"] == "answered behind the relay" and answer["served_model"] == "claude-opus-5"
+    assert answer["cost_usd"] == pytest.approx((12 * 5.0 + 5 * 25.0) / 1e6)
+    assert seen[0]["path"].startswith("/v1/messages") and seen[0]["headers"]["x-api-key"] == "sk-ant-fixture-key"
+    assert seen[0]["body"]["messages"] == [{"role": "user", "content": "say hello"}]
+    assert heads[0].startswith("CONNECT api.anthropic.com:443 ") and "Proxy-Authorization" in heads[0]
+    with pytest.raises(models.Refusal) as refused:                    # a refusal is still terminal, never re-asked
+        route.complete("be brief", "say hello")
+    assert refused.value.kind == models.SAFETY_REFUSAL
+    journal = (tmp_path / "egress-journal.jsonl").read_text()
+    entries = [json.loads(line) for line in journal.splitlines()]
+    assert {(e["identity"], e["host"], e["port"], e["verdict"]) for e in entries} == {
+        ("model.anthropic", "api.anthropic.com", 443, "ALLOWED")}
+    assert "sk-ant-fixture-key" not in journal and "fixture-secret" not in journal
+    assert Journal(tmp_path / "egress-journal.jsonl").verify()["intact"]
+
+
+def test_a_paid_openai_route_behind_the_relay_keeps_failure_classes_across_the_namespace(tmp_path, provider):
+    """The child returns a failure's status, body and class name; the parent classifies it with the one classifier:
+    a provider policy verdict stays a terminal refusal, an outage stays a fallback, and an answer stays an answer."""
+    from greg import models
+    replies = iter([(200, OPENAI_OK), (400, {"error": {**FLAGGED["error"], "code": "content_policy_violation"}}),
+                    (500, {"error": {"message": "overloaded", "type": "server_error"}})] + [(500, {"error": {}})] * 4)
+    relay, seen, _ = provider("api.openai.com", lambda path, body: next(replies))
+    route = models.OpenAIRoute("sk-openai-fixture", model="gpt-x", price=(2.0, 12.0), egress=relay)
+    answer = route.complete("be brief", "say hello")
+    assert answer["text"] == "openai behind the relay" and seen[0]["path"] == "/v1/responses"
+    assert seen[0]["headers"]["authorization"] == "Bearer sk-openai-fixture"
+    with pytest.raises(models.Refusal) as policy:
+        route.complete("be brief", "say hello")
+    assert policy.value.kind == models.PROVIDER_POLICY_REFUSAL
+    with pytest.raises(models.RouteError) as outage:
+        route.complete("be brief", "say hello")
+    assert outage.value.kind == models.TRANSIENT and not isinstance(outage.value, models.Refusal)
+
+
+CLI = r'''#!{python}
+import json, os, socket, sys
+report = {"prompt": sys.stdin.read()}
+port = int(os.environ["HTTPS_PROXY"].rsplit(":", 1)[1])
+for host in ("api.anthropic.com", "example.com"):
+    s = socket.create_connection(("127.0.0.1", port))
+    s.sendall(("CONNECT %s:443 HTTP/1.1\r\nHost: %s:443\r\n\r\n" % (host, host)).encode())
+    report[host] = s.recv(120).split(b"\r\n")[0].decode()
+try:
+    socket.create_connection(("1.1.1.1", 443), timeout=2)
+    report["direct"] = "REACHED"
+except OSError as exc:
+    report["direct"] = type(exc).__name__
+print(json.dumps({"result": json.dumps(report), "total_cost_usd": 0.0, "is_error": False}))
+'''
+
+
+def test_the_claude_code_route_runs_its_cli_behind_the_relay(tmp_path, provider):
+    """The founder's CLI route: the CLI process gets the namespace and the door, and reaches the Anthropic API host
+    only through the relay; another host is refused there, and there is no direct route at all."""
+    import sys
+    from greg import models
+    relay, _, heads = provider("api.anthropic.com", lambda path, body: (200, {}))
+    cli = tmp_path / "claude"
+    cli.write_text(CLI.replace("{python}", sys.executable))
+    cli.chmod(0o755)
+    route = models.ClaudeCodeRoute(str(cli), egress=relay)
+    answer = route.complete("be brief", "the founder's question")
+    report = json.loads(answer["text"])
+    assert report["prompt"] == "the founder's question"
+    assert report["api.anthropic.com"].startswith("HTTP/1.1 200") and report["example.com"].startswith("HTTP/1.1 403")
+    assert report["direct"] in ("OSError", "ConnectionRefusedError", "TimeoutError")
+    entries = [json.loads(line) for line in (tmp_path / "egress-journal.jsonl").read_text().splitlines()]
+    assert {(e["host"], e["verdict"]) for e in entries if e["identity"] == "model.claude-code"} == {
+        ("api.anthropic.com", "ALLOWED"), ("example.com", "DENIED")}

@@ -621,6 +621,68 @@ Still outside the relay:
 
 Confinement is still opt-in.
 
+## Increment 11 (2026-10-15): the paid model routes behind the #26 relay
+
+### What changed for GREG
+
+On a body initialised with `--confined-egress`, a paid model route no longer opens a network connection from the body
+process.
+
+- **Anthropic and OpenAI routes.** The vendor SDK holds the founder's key. It now runs as `python -I` inside a
+  bubblewrap network namespace whose only way out is the relay door, allowlisted for the route's pinned host
+  (`api.anthropic.com:443`, `api.openai.com:443`).
+  - The key crosses only stdin, never argv, the environment or the journal.
+  - The child returns normalised fields, or a failure's status, body and class name. The parent classifies that
+    failure with the same `classify` as before, so a policy verdict stays a terminal refusal and an outage stays a
+    fallback.
+  - One function, `greg/model_child.py`, calls the SDK and normalises its answer in both places: the body process
+    (unconfined body, or a test's injected client) and the confined child.
+- **The Claude Code CLI route.** The CLI runs behind its own door, allowlisted for the Anthropic API host. Its home
+  is bound because it keeps its login there.
+- **Every place a paid route is built receives the relay.**
+  - The body's Genesis builder factory gets it. A factory that cannot take it builds nothing (fail closed), rather
+    than calling a provider around the relay.
+  - The console's proposal transport gets it too: `greg console` builds the same relay over the same journal.
+- **The journal is locked across processes.** The body and its console now both decide egress into one hash chain.
+  The test with four concurrent writer processes keeps one unbroken chain. With the lock removed, three runs lost
+  entries or broke the chain (122/160, broken at 160, 141/160).
+- **Without bubblewrap**, a confined paid route reports `capability_unavailable`, so the router falls to the next
+  route. It never runs unconfined.
+
+### Evidence
+
+- `tests/integration/test_greg_confined_egress.py` runs the real `anthropic` (1.14) and `openai` (3.31) SDKs inside
+  the namespace, through the door, the relay and a fake mandated proxy, to a loopback TLS stand-in for each provider:
+  - the answer, served model and cost come back;
+  - the key reaches the provider header and appears nowhere in the journal;
+  - the proxy saw `CONNECT api.anthropic.com:443` with the relay's credentials;
+  - a refusal is terminal, a policy 400 is `provider_policy_refusal`, and a 500 is `transient` after the SDK's
+    retries;
+  - a stand-in Claude Code CLI reaches the API host through the relay, is refused at `example.com` and has no
+    direct route.
+- `tests/unit/test_greg_models.py`: the relay reaches the builder; an unaware factory builds nothing; a route without
+  namespaces is unavailable, never unconfined; child failures keep their class.
+- `tests/unit/test_foundry_segmentation.py`: four writer processes keep one chain.
+- `requirements-dev.txt` now installs both SDKs. CI therefore runs these tests and
+  `test_greg_routing_integrity_sdk.py`, which it previously skipped.
+
+### Negative evidence
+
+- The first run failed in the child with `FileNotFoundError`. The namespace's private `/tmp` hid the operator's trust
+  anchor (and, for the CLI test, the CLI itself). Both are now re-exposed read-only.
+- The stand-in CLI is not the real Claude Code: no real provider was called and no key was used. Which other hosts
+  the real CLI contacts (telemetry, login refresh) is unverified. On the founder's device, those attempts would show
+  up as DENIED in the journal.
+
+### #26 stays PARTIAL
+
+Still outside the relay:
+
+- anchoring;
+- the DALEOBANKS bridge.
+
+Confinement is still opt-in.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

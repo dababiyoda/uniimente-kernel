@@ -127,6 +127,18 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
     return config
 
 
+def egress_relay(home: Path, config: dict):
+    """#26: the body's one relay when the founder enabled confined egress, else None. Chained through a mandated proxy
+    when the environment declares one. The console process builds the same relay over the same hash-chained journal
+    (appends are locked across processes) so its model calls are decided and journaled alike."""
+    if not config.get("confined_egress"):
+        return None
+    from foundry.systems.segmentation import Journal as EgressJournal, Relay, policy_from_manifests, \
+        proxy_from_environment
+    return Relay(policy_from_manifests(), EgressJournal(Path(home) / "egress-journal.jsonl"),
+                 proxy=proxy_from_environment())
+
+
 class Body:
     def __init__(self, home: str | Path, *, clock=None, builder=None, monotonic=None):
         self.layout = Layout(home)
@@ -166,6 +178,7 @@ class Body:
             self.registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
         self._apply_capability_states()
         self.secrets = SecretBroker(self.layout.secrets)
+        self.egress = self._egress_relay()      # before the builder: paid model routes reach providers through it
         self._refresh_builder()
         self.genesis = Genesis(journal=self.journal, registry=self.registry, workspace_root=self.layout.workspace,
                                builder=self.builder, read_roots=self.config["read_roots"])
@@ -175,25 +188,20 @@ class Body:
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
-        self.engine.egress = self._egress_relay()
+        self.engine.egress = self.egress
         return self
 
     def _egress_relay(self):
-        """#26: one relay per body when the founder enabled confined egress; refused (fail closed) where the kernel
-        filter is unavailable, and chained through a mandated proxy when the environment declares one."""
-        if not self.config.get("confined_egress"):
-            return None
-        from foundry.systems.segmentation import Journal as EgressJournal, Relay, policy_from_manifests, \
-            proxy_from_environment
-        return Relay(policy_from_manifests(), EgressJournal(self.layout.home / "egress-journal.jsonl"),
-                     proxy=proxy_from_environment())
+        return egress_relay(self.layout.home, self.config)
 
     def _refresh_builder(self):
         """Replace the model adapter, never the mission engine, ledger or authority office."""
         if self._builder_factory is not None:
             try:
                 config = {**self.config, "models": models.effective_route_config(self.config.get("models"), self.journal)}
-                self.builder = self._builder_factory(self.secrets, config)
+                # A confined body hands its relay to the factory; one that cannot take it builds nothing (fail closed).
+                extra = {"egress": self.egress} if getattr(self, "egress", None) is not None else {}
+                self.builder = self._builder_factory(self.secrets, config, **extra)
             except Exception as exc:
                 why = f"{type(exc).__name__}: {exc}"[:300]
                 self.builder = None

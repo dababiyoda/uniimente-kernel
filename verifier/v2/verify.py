@@ -45,7 +45,9 @@ else:
 proc = subprocess.run([sys.executable, "-m", "pytest", "tests/unit", "-q"],
                       capture_output=True, text=True, cwd=ROOT)
 tail = (proc.stdout.strip().splitlines() or [""])[-1]
-check("V2", proc.returncode == 0, f"pytest tests/unit: {tail}")
+# Name what failed: a CI log that says only "1 failed" cannot be reproduced or attributed.
+failed = [line for line in proc.stdout.splitlines() if line.startswith(("FAILED ", "ERROR "))]
+check("V2", proc.returncode == 0, f"pytest tests/unit: {tail}" + "".join(f"\n    {line}" for line in failed[:20]))
 
 # V3: core plus explicitly integrated organ closures
 try:

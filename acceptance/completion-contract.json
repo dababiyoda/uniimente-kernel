@@ -168,14 +168,12 @@
    "authority": "A reconciliation answer settles exactly one dispatch.",
    "missing_dependencies": [],
    "observed_failures": [
-    "No crash-loop breaker at the process level (H gap G5)",
     "Runtime services other than the Body host are not interrupted in tests (H gap G7)"
    ],
-   "recovery": "See H1-H3 and the read-only boundary (docs/collaboration/MISSION-DEFECTS-2026-10-15.md).",
+   "recovery": "See H1-H3 and the read-only boundary (docs/collaboration/MISSION-DEFECTS-2026-10-15.md); a process that keeps dying holds after 5 unfinished main-loop boots in 10 minutes until a signed BODY_RESUME.",
    "resources": "Unknown spend is reserved at its signed cap until reconciled.",
    "next_work": [
-    "Crash-loop breaker",
-    "Interrupt the appraiser, console and builder mid-operation"
+    "Interrupt the appraiser, console and builder mid-operation (H gap G7)"
    ],
    "blocking": [
     "Irreversible external consequences under interruption need AUTHORIZED_LIVE (founder)"
@@ -697,7 +695,7 @@
    "n": 9,
    "condition": "Recovery and shutdown behave correctly in the exercised environments.",
    "met": "partly",
-   "evidence": "Mid-dispatch SIGKILL (H), founder pause/resume and device revocation across a SIGKILL (K) at BODY tier; a crash-loop breaker and interruption of services other than the Body host are open (H gaps G5, G7)."
+   "evidence": "Mid-dispatch SIGKILL (H), crash-loop hold, founder pause/resume and device revocation across a SIGKILL (K) at BODY tier; interruption of services other than the Body host is open (H gap G7)."
   },
   {
    "n": 10,
@@ -721,7 +719,7 @@
    "n": 13,
    "condition": "No readily buildable required subsystem has been replaced by a stub, placeholder, or future-work paragraph.",
    "met": "no",
-   "evidence": "Buildable gaps remain open (e.g. D G8, H G5, I G6, L G3)."
+   "evidence": "Buildable gaps remain open (e.g. D G8, H G7, I G6, L G3)."
   },
   {
    "n": 14,

@@ -10,7 +10,8 @@
    "2026-10-15: Mission K requirement K1 proven at BODY tier by a real-process pause/resume test; K gap G1 closed",
    "2026-10-15: Mission K requirements K2, K5 and K6 proven at BODY tier by a real-process device-revocation test; K gap G2 closed",
    "2026-10-15: Mission I requirements I1, I2, I4 and I7 proven at BODY tier by a live-process attack campaign; I gap G2 closed, the uncovered attack classes opened as G6",
-   "2026-10-15: Mission L requirement L3 proven at SANDBOX tier by one nine-link run; L gap G1 closed, the real-process run opened as L.G3"
+   "2026-10-15: Mission L requirement L3 proven at SANDBOX tier by one nine-link run; L gap G1 closed, the real-process run opened as L.G3",
+   "2026-10-15: H gap G5 closed by the crash-loop breaker (unit and real-process tests)"
   ]
  },
  "tier_reading": {
@@ -1566,15 +1567,17 @@
      "id": "H.3",
      "obligation": "H.3 No unbounded retry loop",
      "coverage": "partial",
-     "notes": "REQUIREMENT NOT MET (counterexamples below).\n\nWhat the tests show:\n- SANDBOX_VERIFIED (in-process Body): two failing strategies settle into ACTED, ACTED, BLOCKED, WAITING, WAITING and stay that way across a restart; a tampered capability is re-formed rather than crash-looping; repairs share one signed build budget.\n- BODY_VERIFIED for a narrower property only: the approval request is not re-escalated across SIGKILL and restart.\n- UNIT_VERIFIED bounds: DurableWorkflow max_retries leading to compensation, foundry with_retries (5 attempts, exponential backoff that honours retry-after), and the cognition model-call governor.\n\nCounterexample 1 (probe.py): a retry_safe read_only capability that raises every time returns RETRYING on 12 of 12 ticks. Each tick makes a new dispatch; there is no cap, no backoff and no founder ask. UNCERTAIN never enters m.failed.\n\nCounterexample 2 (probe.py and probe_budget.py): after one signed reconcile_not_executed answer, a non-retry_safe internal_write action is redispatched on every tick with no new founder ask (9 dispatches in 11 ticks).\n\nProcess level: the restart policy is unbounded by design. supervisord uses autorestart=unexpected, and startretries=100 counts only start failures; systemd uses Restart=on-failure with RestartSec=5 and no StartLimitBurst; launchd uses KeepAlive with ThrottleInterval=10. Body.boot counts unfinished boots but never holds. local_mission's max_attempts<=3 bound is not exercised by any test.\n\nProbe paths: /tmp/claude 2026-10-15: H2 regression added; the bound is SANDBOX tier (in-process Body).",
+     "notes": "REQUIREMENT NOT MET (counterexamples below).\n\nWhat the tests show:\n- SANDBOX_VERIFIED (in-process Body): two failing strategies settle into ACTED, ACTED, BLOCKED, WAITING, WAITING and stay that way across a restart; a tampered capability is re-formed rather than crash-looping; repairs share one signed build budget.\n- BODY_VERIFIED for a narrower property only: the approval request is not re-escalated across SIGKILL and restart.\n- UNIT_VERIFIED bounds: DurableWorkflow max_retries leading to compensation, foundry with_retries (5 attempts, exponential backoff that honours retry-after), and the cognition model-call governor.\n\nCounterexample 1 (probe.py): a retry_safe read_only capability that raises every time returns RETRYING on 12 of 12 ticks. Each tick makes a new dispatch; there is no cap, no backoff and no founder ask. UNCERTAIN never enters m.failed.\n\nCounterexample 2 (probe.py and probe_budget.py): after one signed reconcile_not_executed answer, a non-retry_safe internal_write action is redispatched on every tick with no new founder ask (9 dispatches in 11 ticks).\n\nProcess level: the restart policy is unbounded by design. supervisord uses autorestart=unexpected, and startretries=100 counts only start failures; systemd uses Restart=on-failure with RestartSec=5 and no StartLimitBurst; launchd uses KeepAlive with ThrottleInterval=10. Body.boot counts unfinished boots but never holds. local_mission's max_attempts<=3 bound is not exercised by any test.\n\nProbe paths: /tmp/claude 2026-10-15: H2 regression added; the bound is SANDBOX tier (in-process Body). 2026-10-15: a process-level crash loop is bounded too: a real Body process that dies in every tick holds after 5 such boots within 10 minutes (heartbeat HELD, no mission tick) until a signed BODY_RESUME.",
      "tests": [
       "tests/integration/test_goal_chase.py::test_duplicate_observation_trigger_and_escalation_spam_suppressed",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
+      "tests/integration/test_greg_crash_loop_process.py::test_a_body_that_dies_on_every_tick_holds_after_the_limit_until_the_founder_resumes",
       "tests/unit/test_cognition_runtime_budget.py::test_existing_model_call_governor_counts_attempts_and_prevents_retries",
       "tests/unit/test_cognition_runtime_budget.py::test_terminal_refusal_at_deadline_remains_refusal_without_retry",
       "tests/unit/test_events.py::TestDurability::test_retries_exhausted_compensates_in_reverse",
       "tests/unit/test_foundry_systems.py::test_distributed_controls_charge_exactly_once_resume_and_compensate",
       "tests/unit/test_greg_continuity.py::test_two_ineffective_strategies_wait_for_the_founder_instead_of_crash_looping",
+      "tests/unit/test_greg_crash_loop_breaker.py",
       "tests/unit/test_greg_mission_retry_bound.py",
       "tests/unit/test_greg_models.py::test_installed_body_can_build_and_a_missing_route_degrades_instead_of_crash_looping",
       "tests/unit/test_greg_platform.py::test_supervisor_configs_restart_crashes_but_respect_stop",
@@ -1681,10 +1684,11 @@
     {
      "id": "G5",
      "gap": "G5 No crash-loop breaker at the process level: supervisord, systemd and launchd restart a Body that crashes after start indefinitely, and Body.boot records unfinished boots without ever holding.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Design and test a breaker: K unfinished boots inside a window W put the Body in a recorded HOLD state, raise one founder ask ('crash loop'), and stop executing mission ticks while staying observable.\n\nTest: run under supervisord with a driver that raises on tick 1 after startsecs (for example a capability state file that makes Body.open succeed and tick fail). Assert that after K restarts there is 1 hold event, 1 decision.requested, no new mission.action, and the heartbeat state is HELD. Also tighten service.systemd_unit with StartLimitBurst/StartLimitIntervalSec, plus a unit assertion."
+     "next": "Design and test a breaker: K unfinished boots inside a window W put the Body in a recorded HOLD state, raise one founder ask ('crash loop'), and stop executing mission ticks while staying observable.\n\nTest: run under supervisord with a driver that raises on tick 1 after startsecs (for example a capability state file that makes Body.open succeed and tick fail). Assert that after K restarts there is 1 hold event, 1 decision.requested, no new mission.action, and the heartbeat state is HELD. Also tighten service.systemd_unit with StartLimitBurst/StartLimitIntervalSec, plus a unit assertion.",
+     "closed_by": "greg/body.py crash-loop breaker with tests/unit/test_greg_crash_loop_breaker.py and tests/integration/test_greg_crash_loop_process.py (real process; the hold is lifted only by a signed BODY_RESUME)"
     },
     {
      "id": "G6",

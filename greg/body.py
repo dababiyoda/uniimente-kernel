@@ -66,6 +66,41 @@ def founder_keys(journal: Journal) -> dict[str, str]:
     return keys
 
 
+# Crash-loop breaker (acceptance H.G5). supervisord, systemd and launchd restart a crashing body forever. Once
+# CRASH_LOOP_BOOTS main-loop boots in a row ended without a clean stop within CRASH_LOOP_WINDOW_SECONDS, the next
+# boot holds the body: it keeps running, stays observable and reads its inbox, ticks no mission, and only the
+# founder's signed BODY_RESUME lifts the hold. The hold is the breaker's own record, never shown as the founder's.
+CRASH_LOOP_BOOTS = 5          # above deliberate use: the founder runbook kill -9s a body three times in minutes
+CRASH_LOOP_WINDOW_SECONDS = 600
+BREAKER = "crash-loop breaker"
+
+
+def unfinished_main_loop_boots(journal: Journal, now: datetime) -> list[str]:
+    """Main-loop boots that never recorded a clean stop, since the last pause or resume, within the window.
+
+    Only boots made by ``Body.run`` count: an embedded or test host that opens the body and boots it without the
+    main loop is not a process lifetime under a supervisor."""
+    stopped = {e.payload["boot_id"] for e in journal.replay("body.stopped")}
+    recent: list[dict] = []
+    for event in journal.replay("body."):
+        if event.type in ("greg.body.paused", "greg.body.resumed"):
+            recent = []
+        elif event.type == "greg.body.booted" and event.payload.get("main_loop") \
+                and event.payload["boot_id"] not in stopped:
+            recent.append(event.payload)
+    floor = now - timedelta(seconds=CRASH_LOOP_WINDOW_SECONDS)
+    return [b["boot_id"] for b in recent if datetime.fromisoformat(b["at"].replace("Z", "+00:00")) >= floor]
+
+
+def crash_loop_hold(journal: Journal) -> dict | None:
+    """The breaker's hold when it is the pause in force; None otherwise (a founder pause is not a hold)."""
+    toggles = [e for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
+    last = toggles[-1] if toggles else None
+    if last is not None and last.type == "greg.body.paused" and last.payload.get("by") == BREAKER:
+        return last.payload
+    return None
+
+
 def device_delegations(journal: Journal) -> dict[str, dict]:
     """Currently delegated device keys (enrolled by the founder key, not revoked).
     Expiry is enforced at verification time, so an expired delegation is listed but unusable."""
@@ -436,7 +471,8 @@ class Body:
         return results
 
     # -- lifecycle -----------------------------------------------------------------
-    def boot(self) -> dict:
+    def boot(self, *, main_loop: bool = False) -> dict:
+        crashed = unfinished_main_loop_boots(self.journal, self.clock()) if main_loop else []
         boots = self.journal.replay("body.booted")
         stops = {e.payload["boot_id"] for e in self.journal.replay("body.stopped")}
         unfinished = [b.payload["boot_id"] for b in boots if b.payload["boot_id"] not in stops]
@@ -452,12 +488,22 @@ class Body:
             last = None
         if last is not None:
             record["previous_heartbeat"] = last
+        if main_loop:
+            record["main_loop"] = True
         self.journal.record("body.booted", record, key=boot_id)
         if unfinished:
             self.journal.record("body.recovered", {"boot_id": boot_id, "previous_unfinished_boots": unfinished,
                                                    "action": "missions reconstructed from retained history; "
                                                              "uncertain dispatches reconcile, never blind-retry"},
                                 key=[boot_id, "recovered"])
+        if len(crashed) >= CRASH_LOOP_BOOTS and not self.paused():
+            hold = {"by": BREAKER, "boot_id": boot_id, "unfinished_boots": crashed,
+                    "window_seconds": CRASH_LOOP_WINDOW_SECONDS, "at": iso(self.clock()),
+                    "why": f"{len(crashed)} main-loop boots ended without a clean stop within "
+                           f"{CRASH_LOOP_WINDOW_SECONDS} s; no mission runs until the founder resumes",
+                    "lifted_by": "a founder-signed BODY_RESUME"}
+            self.journal.record("body.paused", hold, key=[boot_id, "crash-loop"])
+            record["held"] = hold["why"]
         self.boot_id = boot_id
         return record
 
@@ -467,8 +513,9 @@ class Body:
         if self.stop_requested:
             return {"commands": commands, "stopped": True}
         if self.paused():
-            self._heartbeat("PAUSED", [])
-            return {"commands": commands, "paused": True}
+            hold = crash_loop_hold(self.journal)
+            self._heartbeat("HELD" if hold else "PAUSED", [])
+            return {"commands": commands, "paused": True, **({"held": hold["why"]} if hold else {})}
         # Goal Gravity first, so an awake goal's pulled observation is stepped in this same tick. Without a
         # founder-signed goal on the ledger it does no work and writes nothing (None).
         from greg import goal_gravity
@@ -556,7 +603,7 @@ class Body:
         reason = "unknown"
         self.open()
         try:
-            self.boot()
+            self.boot(main_loop=True)
             ticks = 0
             last_seen = None
             while True:
@@ -577,7 +624,8 @@ class Body:
                     compute.recommend(self.journal)
                     presence.recommend(self.journal, now=self.clock(),
                                        platform_hint="chromeos" if doctor.is_crostini() else None)
-                self._heartbeat("PAUSED" if result.get("paused") else "RUNNING", result.get("missions", []))
+                self._heartbeat("HELD" if result.get("held") else "PAUSED" if result.get("paused") else "RUNNING",
+                                result.get("missions", []))
                 if max_ticks is not None and ticks >= max_ticks:
                     reason = "max_ticks reached"
                     break
@@ -700,7 +748,8 @@ def status(home: str | Path) -> dict:
                          "devices": [{k: d[k] for k in ("device_key_id", "label", "kinds", "expires_at")}
                                      for d in device_delegations(journal).values()],
                          "stop_file_present": layout.stop_file.exists(),
-                         "pause_file_present": layout.pause_file.exists()},
+                         "pause_file_present": layout.pause_file.exists(),
+                         "crash_loop_hold": (crash_loop_hold(journal) or {}).get("why")},
             # Missions and persistent goals are different objects: missions under "missions" (and under
             # "goals", the legacy key older phone/Mac clients read), founder-signed Goal Gravity goals under
             # "gravity". Neither key is ambiguous once "keys" is read.

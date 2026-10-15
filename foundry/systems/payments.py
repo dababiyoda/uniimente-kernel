@@ -177,6 +177,13 @@ def client(api_key: str, base: str | None):
     return stripe.StripeClient(api_key, **kwargs)
 
 
+def money_label(intent: dict) -> dict:
+    """The processor's own word on whether money moved: only a live-mode intent is observed money. This rail
+    runs test mode only (live keys are refused), so every charge on it is labelled synthetic."""
+    live = intent.get("livemode") is True
+    return {"livemode": live, "money": "observed" if live else "synthetic"}
+
+
 class Rail:
     def __init__(self, root: Path, *, api_key: str, base: str | None, reserve_share: float = RESERVE_SHARE,
                  gate=None):
@@ -274,11 +281,12 @@ class Rail:
         for u in s["usage"]:
             if u["id"] in usage_ids:
                 u["billed"] = pi["id"]
+        money = money_label(pi)
         s["charges"][case_id] = {"status": "settled", "intent": pi["id"], "amount_cents": amount_cents, "fee_cents": fee,
                                  "reserve_cents": reserve, "delivery_receipt": delivery_receipt, "grant_id": grant["grant_id"],
-                                 "gate_receipt": record.receipt_hash, "idempotency_key": idem, "usage": usage_ids}
+                                 "gate_receipt": record.receipt_hash, "idempotency_key": idem, "usage": usage_ids, **money}
         self._save(s)
-        return {"status": "settled", "intent": pi["id"], "fee_cents": fee, "reserve_cents": reserve}
+        return {"status": "settled", "intent": pi["id"], "fee_cents": fee, "reserve_cents": reserve, **money}
 
     def refund(self, *, case_id: str, amount_cents: int, reason: str) -> dict:
         import stripe

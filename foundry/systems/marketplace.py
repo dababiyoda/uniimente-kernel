@@ -21,6 +21,10 @@ The rules are code, not guidance:
 
 Payouts to suppliers are a booked liability here; moving them to connected accounts (Stripe Connect)
 needs the founder's account and real supply.
+
+Synthetic is labelled synthetic: a party is synthetic unless enrolled with an identity observation from
+an external system of record, a match is synthetic when either side is, and a settlement's money is what
+the processor reports (test mode is synthetic). Nothing here is external verification of demand or money.
 """
 from __future__ import annotations
 
@@ -32,7 +36,7 @@ from pathlib import Path
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from business.commercial_loop import ACCEPTED_VERIFICATIONS
+from business.commercial_loop import ACCEPTED_VERIFICATIONS, observation_problems
 from foundry.systems import accounting, mechanism, reputation
 
 DEFAULT_RULES = {"newcomer_ceiling_cents": 25000, "take_bps": 500}
@@ -77,13 +81,25 @@ def open_market(root: Path, rules: dict | None = None) -> dict:
     return {"rules": state["rules"]}
 
 
-def enroll(root: Path, party_id: str, public_hex: str) -> dict:
+def _party_mode(state: dict, party_id: str) -> str:
+    """A party is synthetic unless it was enrolled with an external identity observation."""
+    return (state.get("party_labels") or {}).get(party_id, {}).get("mode", "synthetic")
+
+
+def enroll(root: Path, party_id: str, public_hex: str, *, identity_observation: dict | None = None) -> dict:
     state = _load(root)
     if state["parties"].get(party_id, public_hex) != public_hex:
         raise MarketError(f"{party_id} is already enrolled with a different key")
+    if identity_observation is not None:
+        problems = observation_problems(identity_observation, money=False)
+        if problems:
+            raise MarketError("identity observation refused: " + "; ".join(problems))
     state["parties"][party_id] = public_hex
+    label = ({"mode": "observed", "identity_ref": identity_observation["record_ref"],
+              "source": identity_observation["source"]} if identity_observation is not None else {"mode": "synthetic"})
+    state.setdefault("party_labels", {})[party_id] = label
     _save(root, state)
-    return {"party_id": party_id, "enrolled": True}
+    return {"party_id": party_id, "enrolled": True, "mode": label["mode"]}
 
 
 def sign(private_key, body: dict) -> dict:
@@ -220,10 +236,11 @@ def award(root: Path, request_id: str, *, now: str) -> dict:
     result = mechanism.vickrey_procurement(eligible)
     price = min(result["paid"] if len(eligible) > 1 else req["ceiling_cents"], req["ceiling_cents"])
     match_id = f"match:{request_id}"
+    synthetic = "synthetic" in (_party_mode(state, req["buyer"]), _party_mode(state, result["winner"]))
     state["matches"][match_id] = {"match_id": match_id, "request_id": request_id, "buyer": req["buyer"],
                                   "supplier": result["winner"], "price_cents": price, "produces": req["produces"],
                                   "status": "awarded", "awarded_at": now, "delivery_receipt": None,
-                                  "verification": None, "settlement": None}
+                                  "verification": None, "settlement": None, "synthetic": synthetic}
     req["status"] = "awarded"
     _save(root, state)
     return {"request_id": request_id, "status": "awarded", "match_id": match_id, "winner": result["winner"],
@@ -277,7 +294,7 @@ def settle(root: Path, match_id: str, *, rail, grant: dict) -> dict:
     charge = rail.charge(case_id=match_id, customer=m["buyer"], amount_cents=m["price_cents"],
                          delivery_receipt=m["delivery_receipt"], grant=grant)
     if charge["status"] != "settled":
-        m["settlement"] = {"status": charge["status"]}
+        m["settlement"] = {"status": charge["status"], "synthetic": True}
         _save(root, state)
         return {"match_id": match_id, **charge}
     take = m["price_cents"] * state["rules"]["take_bps"] // 10000
@@ -287,8 +304,10 @@ def settle(root: Path, match_id: str, *, rail, grant: dict) -> dict:
                     lines=[{"account": "revenue:services", "debit": m["price_cents"]},
                            {"account": "payable:suppliers", "credit": m["price_cents"] - take},
                            {"account": "revenue:marketplace_fee", "credit": take}])
+    money = charge.get("money", "synthetic")
     m["settlement"] = {"status": "settled", "intent": charge["intent"], "supplier_payable_cents": m["price_cents"] - take,
-                       "take_cents": take, "processor_fee_cents": charge["fee_cents"]}
+                       "take_cents": take, "processor_fee_cents": charge["fee_cents"], "money": money,
+                       "synthetic": m.get("synthetic", True) or money != "observed"}
     m["status"] = "settled"
     _save(root, state)
     return {"match_id": match_id, **m["settlement"]}
@@ -299,13 +318,15 @@ def board(root: Path) -> dict:
     public = ("request_id", "buyer", "produces", "ceiling_cents", "closes_at", "verification_methods", "min_reputation", "status")
     return {"rules": state["rules"],
             "requests": [{k: r[k] for k in public} for _, r in sorted(state["requests"].items())],
-            "matches": [{k: m[k] for k in ("match_id", "supplier", "price_cents", "status")} for _, m in sorted(state["matches"].items())],
+            "matches": [{**{k: m[k] for k in ("match_id", "supplier", "price_cents", "status")},
+                         "synthetic": m.get("synthetic", True)} for _, m in sorted(state["matches"].items())],
             "sealed_bids": {rid: len(b) for rid, b in sorted(state["bids"].items())}}
 
 
 QUERY_OPS = {"board": lambda a, r: board(r), "standing": lambda a, r: standing(r, now=a["now"])}
 APPLY_OPS = {"open_market": lambda a, r: open_market(r, a.get("rules")),
-             "enroll": lambda a, r: enroll(r, a["party_id"], a["public_key"]),
+             "enroll": lambda a, r: enroll(r, a["party_id"], a["public_key"],
+                                           identity_observation=a.get("identity_observation")),
              "post_request": lambda a, r: post_request(r, a["signed"]),
              "commit_bid": lambda a, r: commit_bid(r, a["signed"], now=a["now"]),
              "reveal_bid": lambda a, r: reveal_bid(r, a["signed"], now=a["now"]),
@@ -440,7 +461,13 @@ def exercise(root) -> dict:
             "sole_eligible_bidder_paid_ceiling": strict["price_cents"] == 50000,
             "standing": rows,
             "truthful_bidding_dominant": mechanism.bid_gain(80000.0, grid, grid) <= 0,
-            "settlement": {k: settled[k] for k in ("status", "supplier_payable_cents", "take_cents", "processor_fee_cents")},
+            "settlement": {k: settled[k] for k in ("status", "supplier_payable_cents", "take_cents", "processor_fee_cents",
+                                                   "money", "synthetic")},
+            "synthetic_labels": {"parties": sorted({_party_mode(_load(root), p) for p in _load(root)["parties"]}),
+                                 "matches": sorted({m["synthetic"] for m in _load(root)["matches"].values()}),
+                                 "rail_charges": sorted({c.get("money") for c in json.loads(
+                                     (root / "rail" / "rail.json").read_text())["charges"].values()
+                                     if c["status"] == "settled"})},
             "refuted_never_charged": "match:r-gamma-3" not in json.loads((root / "rail" / "rail.json").read_text())["charges"],
             "books": {"equation_holds": books["equation_holds"], "payable_to_suppliers": books["balances"]["payable:suppliers"],
                       "market_fee_revenue": books["balances"]["revenue:marketplace_fee"], "processor_net_cents": processor["net_cents"],

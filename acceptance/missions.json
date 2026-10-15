@@ -9,7 +9,8 @@
    "2026-10-15: Mission F requirements R1 and R3-R7 proven at BODY tier by a real-process Goal Gravity test; F gap G1 closed",
    "2026-10-15: Mission K requirement K1 proven at BODY tier by a real-process pause/resume test; K gap G1 closed",
    "2026-10-15: Mission K requirements K2, K5 and K6 proven at BODY tier by a real-process device-revocation test; K gap G2 closed",
-   "2026-10-15: Mission I requirements I1, I2, I4 and I7 proven at BODY tier by a live-process attack campaign; I gap G2 closed, the uncovered attack classes opened as G6"
+   "2026-10-15: Mission I requirements I1, I2, I4 and I7 proven at BODY tier by a live-process attack campaign; I gap G2 closed, the uncovered attack classes opened as G6",
+   "2026-10-15: Mission L requirement L3 proven at SANDBOX tier by one nine-link run; L gap G1 closed, the real-process run opened as L.G3"
   ]
  },
  "tier_reading": {
@@ -2233,10 +2234,11 @@
     {
      "id": "L1",
      "obligation": "From the founder interface, a single mission can be traced: its decisions, actions, costs and outcomes, and why a metric moved.",
-     "coverage": "partial",
+     "coverage": "covered",
      "tier": "SANDBOX_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
+      "tests/integration/test_whole_machine_trace.py::test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_it",
       "tests/unit/test_foundry_systems.py::test_observability_explains_a_real_greg_mission_and_why_a_metric_moved"
      ],
      "notes": "`greg foundry trace --mission` and `greg foundry why` over the Body ledger."
@@ -2255,19 +2257,24 @@
     {
      "id": "L3",
      "obligation": "One mission is traced through all nine links in a single run: Goal -> Mind -> Organs -> Body -> Action -> Evidence -> Outcome -> Learning -> Updated Goal.",
-     "coverage": "gap",
-     "status": "IMPLEMENTED",
-     "notes": "Each link is implemented and proven separately (trace); no single run chains all nine for one mission (gap G1)."
+     "coverage": "covered",
+     "notes": "2026-10-15: one founder-signed mission bound to a signed GOAL thinks (cognition.seed.solve), assesses a venture through both organs (stand-in organs with the real entry points), writes through the Gate, waits for and executes the signed approve, is receipted on the verified chain, verified by the separate appraiser, becomes routing knowledge for every capability it used, moves the goal's active node, and appears in `greg foundry trace`. In-process Body (SANDBOX).",
+     "tests": [
+      "tests/integration/test_whole_machine_trace.py::test_one_signed_mission_runs_goal_to_updated_goal_and_the_founder_can_trace_it"
+     ],
+     "tier": "SANDBOX_VERIFIED",
+     "implementation": "INTEGRATED"
     }
    ],
    "gaps": [
     {
      "id": "G1",
      "gap": "No single run carries one founder-signed mission through all nine links.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "One Body test: a signed GOAL bound to a mission whose strategy calls cognition (Mind) and venture.assess (Organs), closes through the Gate with appraisal, feeds a brief or routing outcome into improvement.learn, and asserts the goal's active node moves; then `greg foundry trace` shows it."
+     "next": "One Body test: a signed GOAL bound to a mission whose strategy calls cognition (Mind) and venture.assess (Organs), closes through the Gate with appraisal, feeds a brief or routing outcome into improvement.learn, and asserts the goal's active node moves; then `greg foundry trace` shows it.",
+     "closed_by": "tests/integration/test_whole_machine_trace.py (one mission through all nine links in one run, traced by `greg foundry trace`; SANDBOX tier)"
     },
     {
      "id": "G2",
@@ -2276,6 +2283,14 @@
      "buildable_now": false,
      "dependency": "external",
      "next": "Provision the organ checkouts beside the Kernel in CI (see Mission E gaps)."
+    },
+    {
+     "id": "G3",
+     "gap": "The nine-link run is in-process (SANDBOX); no real `greg run` process carries one mission through all nine links.",
+     "state": "OPEN",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "Run the same mission on a supervised Body process (the Goal Gravity process test pattern) and trace it with the `greg foundry trace` CLI subprocess."
     }
    ],
    "trace": [

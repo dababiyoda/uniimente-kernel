@@ -624,7 +624,7 @@
    "source": "claude/greg-full-machine-convergence-20261013 (PR #173 line)",
    "interface": "`python -m acceptance`; `greg foundry trace|why`",
    "implementation": "IMPLEMENTED",
-   "integration": "PARTIAL",
+   "integration": "INTEGRATED",
    "evidence": [
     "L.L1",
     "L.L2",
@@ -633,12 +633,12 @@
    "authority": "Reads only.",
    "missing_dependencies": [],
    "observed_failures": [
-    "No single run chains all nine links (L gap G1)"
+    "The nine-link run is in-process (SANDBOX); no real-process run yet (L gap G3)"
    ],
    "recovery": "Stateless.",
    "resources": "Offline.",
    "next_work": [
-    "L gap G1"
+    "L gap G3"
    ],
    "blocking": []
   }
@@ -720,7 +720,7 @@
    "n": 13,
    "condition": "No readily buildable required subsystem has been replaced by a stub, placeholder, or future-work paragraph.",
    "met": "no",
-   "evidence": "Buildable gaps remain open (e.g. D G1, H G5, I G6, L G1)."
+   "evidence": "Buildable gaps remain open (e.g. D G1, H G5, I G6, L G3)."
   },
   {
    "n": 14,

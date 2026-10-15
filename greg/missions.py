@@ -534,8 +534,9 @@ class MissionEngine:
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 journal=self.journal if manifest.capability_id == "memory.precedents" or
-                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.", "organ.")) else None,
+                                 journal=self.journal if manifest.capability_id in ("memory.precedents", "daleobanks.outcome") or
+                                 manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.", "organ.",
+                                                                    "foundry.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
                                  cognition_model=getattr(self, "cognition_model", None),

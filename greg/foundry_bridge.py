@@ -90,6 +90,19 @@ def _call(params, ctx: InvocationContext, table: str) -> dict:
         os.close(lock)
 
 
+def _canonical_state(ctx) -> str | None:
+    """state_after of this mission's last canonical foundry.apply receipt ("absent" before any; None if unknown)."""
+    state = "absent"
+    for event in ctx.journal.replay("mission.action"):
+        p = event.payload
+        if p.get("mission_id") != ctx.mission_id or p.get("capability") != "foundry.apply" or p.get("status") != "DONE":
+            continue
+        record = ctx.journal.ledger.find(p["receipt"]) if p.get("receipt") else None
+        output = record.payload.get("result", {}).get("output") if record and record.record_type == "receipt" else None
+        state = (output.get("execution") or {}).get("state_after") if isinstance(output, dict) else None
+    return state
+
+
 def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
     from greg.foundry_state import stage, commit
     params = json.loads(request)
@@ -97,6 +110,11 @@ def _execute(request, ctx, table, root, workspace, env, kernel_root, preexec):
     with tempfile.TemporaryDirectory(prefix="greg-foundry-", dir=workspace) as temporary:
         staged = Path(temporary) / "stores"
         before = stage(root.parent, staged)
+        # The store is a projection of this mission's Gate receipts: an edit outside foundry.apply is never
+        # served (query) nor laundered into a new receipted state (apply). Standalone callers pass no journal.
+        if ctx.journal is not None and ctx.mission_id and before != (expected := _canonical_state(ctx)):
+            raise CapabilityError(f"Foundry store {before} differs from this mission's last canonical foundry.apply "
+                                  f"state_after {expected}; refused", failure_class="verifier_insufficient")
         with open(Path(temporary) / "request.json", "w+b") as inp, \
                 open(Path(temporary) / "result.json", "w+b") as out, \
                 open(Path(temporary) / "error.txt", "w+b") as err:

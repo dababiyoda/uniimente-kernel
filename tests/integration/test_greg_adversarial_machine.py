@@ -3,13 +3,14 @@
 Each test attacks a whole-machine boundary through the real body, Gate, Foundry worker and appraisal, not a helper
 in isolation. A per-test Ed25519 key stands in for the founder.
 """
+import hashlib
 import json
 
 import pytest
 
 from greg.body import Body
 from greg.templates import first_mission
-from tests.greg_fixtures import drop, make_body, signed
+from tests.greg_fixtures import drop, make_body, mission, signed, write_strategy
 from tests.integration.test_greg_first_mission import actions, kernel_copy, run_until_settled, setup
 
 
@@ -229,3 +230,44 @@ def test_an_interrupted_capability_construction_resumes_once_and_serves_nothing_
     assert len(composed) == 1 and registered == composed                 # one construction, registered once
     assert len(attached) == 1                                            # attached once, never twice
     assert final and all(a["certified"] and a["staffed"] == 8 for a in final)
+
+
+def chained(*events):
+    """A DALEOBANKS DecisionLedger as its own code writes it: every entry hash-chained to its predecessor."""
+    lines, prev = [], "0" * 64
+    for seq, (event, payload) in enumerate(events, 1):
+        entry = {"seq": seq, "ts": "2026-10-14T00:00:00+00:00", "event": event, "payload": payload, "prev_hash": prev}
+        entry["hash"] = prev = hashlib.sha256(json.dumps(entry, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        lines.append(json.dumps(entry))
+    return "\n".join(lines) + "\n"
+
+
+def test_forged_organ_ledger_cannot_close_a_publish_mission(tmp_path):
+    """A signed fs.write strategy writes a chain-valid DALEOBANKS ledger claiming a live post. The outcome sensor
+    projects only this mission's canonical daleobanks.publish receipts, so no publish -> no PUBLISHED, no closure."""
+    from greg import routing
+    home, key, body_id, _ = make_body(tmp_path)
+    forged = chained(("publish_attempt", {"platform": "x"}),
+                     ("publish_result", {"platform": "x", "dry_run": False, "post_id": "forged"}))
+    spec = mission("m:forged-publish",
+                   checks=[{"check_id": "published", "description": "DALEOBANKS reports the post published",
+                            "sensor": {"capability": "daleobanks.outcome", "params": {}, "target": "daleobanks:outcome"},
+                            "predicate": {"op": "equals", "field": "outcome", "value": "PUBLISHED"}}],
+                   strategies=[write_strategy("forge", "daleobanks/decision_ledger.jsonl", forged, ["published"])],
+                   capabilities=["fs.write", "daleobanks.outcome"], targets=("workspace:*", "daleobanks:*"))
+    drop(home, signed(key, body_id, "MISSION", spec), "m.json")
+    with Body(home) as body:
+        body.boot()
+        states = [{m["mission_id"]: m["state"] for m in body.tick()["missions"]}[spec["mission_id"]] for _ in range(6)]
+        journal = body.journal
+        forged_written = [a for a in journal.replay("mission.action")
+                          if a.payload["capability"] == "fs.write" and a.payload["status"] == "DONE"]
+        achieved = [e for e in journal.replay("mission.achieved") if e.payload["mission_id"] == spec["mission_id"]]
+        verified = [e for e in journal.replay("mission.appraised")
+                    if e.payload["mission_id"] == spec["mission_id"] and e.payload["verdict"] == "VERIFIED"]
+        observed = [e.payload for e in journal.replay("mission.observed") if e.payload["mission_id"] == spec["mission_id"]]
+        fs_write = routing.track_record(journal).get("fs.write", {})
+    assert forged_written                                               # the forgery really landed in the workspace
+    assert "ACHIEVED" not in states and not achieved and not verified
+    assert observed and not any(o["passed"] for o in observed)
+    assert fs_write.get("verified", 0) == 0

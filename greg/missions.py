@@ -1010,8 +1010,10 @@ class MissionEngine:
         if m.status in TERMINAL:
             if m.status == "ACHIEVED":
                 return {"state": m.status}
-            if m.blocker is None and m.uncertain:
-                self._resume_unsettled(m, now)        # a question lost to a crash is asked before anything is undone
+            if m.uncertain and self._unsettled(m) is not None:
+                # A question lost to a crash, or a reconciliation block a later decision displaced (the horizon's
+                # SCOPE_RENEWAL), is asked (an open one reused) before anything is undone.
+                self._resume_unsettled(m, now, displace=True)
                 self.book.rebuild()
                 m = self.book.missions[m.mission_id]
             if m.blocker and m.blocker.get("type") == "reconciliation":
@@ -1029,7 +1031,12 @@ class MissionEngine:
             return {"state": m.status, **self._compensate(m, now)}
         if m.paused:
             return {"state": "PAUSED"}
-        if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now:
+        resumed = self._resume_unsettled(m, now)     # no blocker: a question a crash lost comes first
+        if resumed is not None:
+            return resumed
+        # An open reconciliation stays the blocker past the horizon: its answer is recorded first, then renewal.
+        if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now and \
+                (m.blocker or {}).get("type") != "reconciliation":
             self._block(m, {"type": "decision", "request_id": self._request(
                 m, kind="SCOPE_RENEWAL", scope_digest=sha256_json({"horizon": m.cone.horizon}), action_id=None,
                 why="the mission mandate horizon expired", recommendation="renew with a new signed MISSION",
@@ -1056,6 +1063,10 @@ class MissionEngine:
             resolved, why = self._blocker_resolved(m)
             if not resolved:
                 if m.pull is not None and self._awaiting_approval(m):
+                    # Preparation dispatches while the APPROVAL stays open: a question a crash lost comes first.
+                    resumed = self._resume_unsettled(m, now, displace=True)
+                    if resumed is not None:
+                        return resumed
                     return self._prepare(m, now)
                 return {"state": "WAITING", "blocker": m.blocker, "why": why}
             if m.blocker["type"] == "reconciliation":
@@ -1082,9 +1093,6 @@ class MissionEngine:
                     self._escalate_capability(m, function, waiting[-1] if waiting else None, purpose, now,
                                               awaiting=bool(waiting))
                     return {"state": "BLOCKED", "blocker": m.blocker}
-        resumed = self._resume_unsettled(m, now)
-        if resumed is not None:
-            return resumed
         if m.next_observe_at and now < datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")):
             return {"state": "WAITING", "until": m.next_observe_at}
 
@@ -1159,12 +1167,29 @@ class MissionEngine:
                         "reconsider": "founder reconciliation decision"})
         return {"state": "BLOCKED", "blocker": m.blocker}
 
-    def _resume_unsettled(self, m: MissionState, now: datetime) -> dict | None:
+    def _resume_unsettled(self, m: MissionState, now: datetime, *, displace: bool = False) -> dict | None:
         """A dispatch recorded UNCERTAIN whose settlement never became durable: the body died after that record
         and before its reconciliation question (or the block on it) was retained. Settle it now, exactly as the
-        dispatch would have, instead of letting the next tick dispatch the next attempt with no answer."""
-        if m.blocker is not None:
+        dispatch would have, instead of letting the next tick dispatch the next attempt with no answer.
+
+        ``displace``: another blocker (a goal's open APPROVAL during preparation, the horizon's SCOPE_RENEWAL on an
+        ended mission) stands where the reconciliation block would have been. It is lifted first, as the dispatch
+        itself would have replaced it, so the question comes before anything else is dispatched or undone; the
+        lifted decision stays open and is asked again by the path that raised it."""
+        if (m.blocker or {}).get("type") == "reconciliation" or (m.blocker is not None and not displace):
             return None
+        unsettled = self._unsettled(m)
+        if unsettled is None:
+            return None
+        if m.blocker is not None:
+            self._unblock(m, "an interrupted dispatch is reconciled before anything else is dispatched or undone")
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
+        return self._settle_uncertain(m, *unsettled, now)
+
+    def _unsettled(self, m: MissionState):
+        """The first non-retry-safe action whose latest record is UNCERTAIN: (strategy, manifest, action id,
+        attempt, scope digest), or None."""
         for aid, record in sorted(m.uncertain.items()):
             strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), None)
             manifest = self.registry.manifests.get(record.get("capability"))
@@ -1172,8 +1197,7 @@ class MissionEngine:
                 manifest = self._manifest_for(strategy)
             if strategy is None or (manifest is not None and manifest.retry_safe):
                 continue
-            return self._settle_uncertain(m, strategy, manifest, aid, record["attempt"], record.get("scope_digest"),
-                                          now)
+            return strategy, manifest, aid, record["attempt"], record.get("scope_digest")
         return None
 
     def _inputs(self, m: MissionState, s: dict) -> tuple[dict, list, list]:
@@ -1531,9 +1555,15 @@ class MissionEngine:
         asked = (self.book.requests.get(m.blocker["request_id"]) or {}).get("scope_digest")
         expected = dispatch.get("scope_digest") if not attempt or not dispatch.get("scope_digest") else \
             sha256_json({"scope": dispatch["scope_digest"], "attempt": attempt})
-        if dispatch and asked and expected and asked != expected:
-            # A blocker retained from before each dispatch had its own question names an earlier
-            # attempt's answered request: that answer is not about this attempt. Ask again.
+        owned_earlier = asked is not None and any(
+            e.payload.get("mission_id") == m.mission_id and e.payload.get("action_id") == aid
+            and e.payload.get("status") == "UNCERTAIN" and e.payload.get("attempt", 0) < attempt
+            and e.payload.get("scope_digest") == asked for e in self.journal.replay("mission.action"))
+        if dispatch and asked and expected and asked != expected and owned_earlier:
+            # A blocker retained from before each dispatch had its own question names an earlier attempt's
+            # answered request (an earlier UNCERTAIN attempt carried that same scope): that answer is not about
+            # this attempt. Ask again. An unsalted question no earlier attempt owned (asked by code from before
+            # questions were salted) is this attempt's own, and its answer is recorded below.
             self._unblock(m, "the retained reconciliation answered an earlier attempt; asking for this one")
             self.book.rebuild()
             m = self.book.missions[m.mission_id]
@@ -1546,6 +1576,9 @@ class MissionEngine:
                             "why": "uncertain completion; no blind retry",
                             "reconsider": "founder reconciliation decision"})
             return {"state": "BLOCKED", "blocker": m.blocker}
+        key = [m.mission_id, aid, "reconciled", m.blocker["request_id"]]
+        if self.journal.retained("mission.action", key) is not None:
+            return None      # recorded before a crash that came before the unblock: never re-stamped
         strategy = next((x for x in m.spec["strategies"] if x["action_id"] == aid), {})
         cap = float(strategy.get("cost_usd", 0.0))
         # Executed, but no adapter measured the provider's spend: book the signed cap (metered_spend's
@@ -1559,8 +1592,7 @@ class MissionEngine:
             "capability": dispatch.get("capability") or strategy.get("capability"),
             "route": "founder_reconciliation", "dispatch_route": dispatch.get("route"),
             "receipt": None, "at": iso(now),
-            "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0, **spend},
-            key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
+            "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0, **spend}, key=key)
         return None
 
     def _after_outage(self, m: MissionState, now: datetime) -> dict:
@@ -1934,6 +1966,9 @@ class MissionEngine:
         to static strategies whose exact scope lies inside the cone: nothing is asked, nothing blocks,
         and the awaited strategy itself never runs here."""
         from greg.pipeline import resolve, BindingError
+        if self._unsettled(m) is not None:     # never dispatch past an unsettled interruption, whatever the path
+            resumed = self._resume_unsettled(m, now, displace=True)
+            return resumed if resumed is not None else {"state": "BLOCKED", "blocker": m.blocker}
         candidates = []
         records = routing.track_record(self.journal)
         value = float(m.spec.get("value_per_check_usd", 1.0))

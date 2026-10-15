@@ -426,6 +426,14 @@ def _evidence_of(envelope: dict):
         raise
 
 
+def _found(name: str) -> str | None:
+    """A provider CLI on GREG's PATH, made absolute: ``shutil.which`` keeps a relative PATH entry (for example
+    ``./node_modules/.bin``) relative to GREG's own working directory, and the envelope must run that file, never a
+    file of the same name inside the worker's clone."""
+    binary = shutil.which(name)
+    return str(Path(binary).absolute()) if binary else None
+
+
 def _fds(envelope: dict) -> dict:
     """Only the door's descriptor crosses into the worker, and only when there is one."""
     return {"pass_fds": envelope["pass_fds"]} if envelope.get("pass_fds") else {}
@@ -467,7 +475,7 @@ class ClaudeCodeWorker:
     DENIED = ("WebFetch", "WebSearch", "Bash(git push:*)", "Bash(git commit:*)", "Bash(curl:*)", "Bash(wget:*)")
 
     def __init__(self, binary: str | None = None, *, model: str | None = None, runner=supervised_run):
-        self.binary = binary or shutil.which("claude")
+        self.binary = binary or _found("claude")
         self.model, self.runner = model, runner
 
     def available(self) -> tuple[bool, str]:
@@ -552,7 +560,7 @@ class CliAgentWorker:
                  reviewed: bool = False):
         self.name, self.template, self.stdin, self.runner = name, argv, stdin, runner
         self.reviewed = reviewed
-        self.binary = shutil.which(argv[0])
+        self.binary = _found(argv[0])
 
     def available(self) -> tuple[bool, str]:
         return (True, "") if self.binary else (False, f"{self.template[0]} is not installed on this body")

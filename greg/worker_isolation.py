@@ -31,15 +31,28 @@ class WorkerIsolationError(CapabilityError):
 
 
 # The two refusals that mean the envelope cannot confine a worker at all: this host has no backend
-# (``unsupported``) or the provider is not reviewed (``unreviewed``). Every other refusal is about one input or one
-# host setting (a certificate path, a credential file, a timeout, the task margin) and is never a reason to run
-# the worker with less confinement.
+# (``unsupported``) or the provider is not reviewed (``unreviewed``). On a host with the envelope every other
+# refusal is about one input or one host setting (a certificate path, a credential file, a timeout, the task
+# margin) and is never a reason to run the worker with less confinement.
 CANNOT_CONFINE = ("unsupported", "unreviewed")
 
 
+def host_has_envelope() -> bool:
+    """Whether this host can provide the bubblewrap envelope at all (the probe ``prepare_worker`` runs)."""
+    try:
+        _backend(require_bubblewrap=True)
+        return True
+    except WorkerIsolationError:
+        return False
+
+
 def envelope_cannot_confine(exc: WorkerIsolationError) -> bool:
-    """Whether a refusal is one the founder's ``supervised`` setting covers (see ``CANNOT_CONFINE``)."""
-    return isinstance(exc, WorkerIsolationError) and (exc.evidence or {}).get("status") in CANNOT_CONFINE
+    """Whether a refusal is one the founder's ``supervised`` setting covers: ``CANNOT_CONFINE``, or any refusal on
+    a host with no envelope (an input check may refuse before the backend probe runs, as a symlinked temporary
+    directory does on macOS; nothing on such a host could have confined the worker)."""
+    if not isinstance(exc, WorkerIsolationError):
+        return False
+    return (exc.evidence or {}).get("status") in CANNOT_CONFINE or not host_has_envelope()
 
 
 _READ = (1 << 0) | (1 << 2) | (1 << 3)  # execute, read file, read directory
@@ -258,9 +271,10 @@ def prepare_worker(argv, cwd, timeout_seconds, provider, reviewed=False, config_
         raise WorkerIsolationError("worker cwd must be a private workspace directory")
     if Path(argv[0]).is_absolute():
         binary = argv[0]
-    elif "/" in argv[0]:
-        # A path such as ./check.sh names a file in the workspace, not in GREG's own working directory; it must
-        # stay inside the workspace, which the envelope already binds.
+    elif "/" in argv[0] and not network:
+        # Acceptance only (no network): a path such as ./check.sh names a file in the workspace, not in GREG's own
+        # working directory; it must stay inside the workspace, which the envelope already binds. A provider's
+        # binary is absolute (``greg.workers._found``), and a relative one still resolves from GREG's directory.
         binary = str(cwd / argv[0])
         if not Path(binary).resolve().is_relative_to(cwd):
             raise WorkerIsolationError("worker executable path leaves the workspace")

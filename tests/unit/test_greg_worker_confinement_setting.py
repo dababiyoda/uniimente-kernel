@@ -206,11 +206,16 @@ def test_only_a_missing_envelope_or_an_unreviewed_provider_counts_as_unconfinabl
     with pytest.raises(isolation.WorkerIsolationError) as unreviewed:
         isolation.prepare_worker(["true"], Path("/tmp"), 10, "t", reviewed=False)
     assert isolation.envelope_cannot_confine(host.value) and isolation.envelope_cannot_confine(unreviewed.value)
-    for refusal in ("transport certificate path outside supported certificate roots: SSL_CERT_FILE",
-                    "worker credential source must be a regular non-symlink file",
-                    "shared UID task count leaves no bounded worker process margin",
-                    "worker executable is unavailable"):
+    inputs = ("transport certificate path outside supported certificate roots: SSL_CERT_FILE",
+              "worker credential source must be a regular non-symlink file",
+              "shared UID task count leaves no bounded worker process margin",
+              "worker executable is unavailable")
+    monkeypatch.setattr(isolation, "host_has_envelope", lambda: True)     # on a host with the envelope
+    for refusal in inputs:
         assert not isolation.envelope_cannot_confine(isolation.WorkerIsolationError(refusal))
+    monkeypatch.setattr(isolation, "host_has_envelope", lambda: False)    # on a host without one, nothing confines
+    for refusal in inputs:
+        assert isolation.envelope_cannot_confine(isolation.WorkerIsolationError(refusal))
 
 
 def test_a_reviewed_provider_refused_over_a_host_setting_is_not_run_unconfined_under_supervised(tmp_path, monkeypatch):

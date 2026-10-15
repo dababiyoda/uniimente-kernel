@@ -248,6 +248,7 @@ def projection(console) -> dict:
         "foundry": _foundry(), "mind": _mind(), "read_roots": st.get("permissions", {}).get("read_roots", []),
         "tool_servers": _tool_servers(console.home), "tool_answers": tool_answers,
         "resilience": _resilience(console), "credentials": _credentials(console.home, st.get("secret_handles", [])),
+        "refused_keys": st.get("refused_model_keys", []),
     }
     out["costs"] = cost_rows(action_rows, out["missions"], out["rehearsals"])
     return out
@@ -567,6 +568,13 @@ def _authority(console, p, form) -> str:
                  _e(_when(c.get("expires_at"))), f"<code>greg secret remove {_e(c['handle'])}</code>"
                  + (" and remove GREG's access at the service" if c["kind"] == "OAuth login" else "")]
                 for c in p.get("credentials", [])]) if p.get("credentials") else "<p class=empty>None.</p>")
+            + ("<h2>Model keys a vendor refused</h2><p class=warn>GREG stopped using each of these routes when the vendor "
+               "refused its key, and will not try it again until a new key is stored.</p>"
+               + _table(["Route", "Refused at", "What to do"], [
+                   [f"<code>{_e(k['route'])}</code>", _e(k["refused_at"]),
+                    "A new key is stored; GREG tries it next." if k["replaced"] else
+                    f"Store a new key: <code>greg secret set {_e(k['handle'] or 'the route key')}</code>"]
+                   for k in p["refused_keys"]]) if p.get("refused_keys") else "")
             + "<h2>Money, kept in separate columns</h2><p class=reality>Booked spend comes from recorded actions. "
             "Provider-measured is what a provider reported. Unknown is booked at the signed cap, never assumed lower. "
             "FIXTURE amounts are rehearsal books and moved no money.</p>"

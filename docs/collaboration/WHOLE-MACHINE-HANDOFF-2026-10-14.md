@@ -163,8 +163,9 @@ The 13 holes were:
   - DALEOBANKS real-organ runs (run locally since increment 12, against `e2f1ebe`; not in CI).
   - A storage device that loses whole lines it already acknowledged. The hash chain cannot detect a lost suffix of
     the ledger.
-  - A vendor that fails slowly, streams partially or rejects the key, over real HTTP. Classification of those
-    failures is tested at component level only.
+  - Tested since increment 25: a vendor that is slow, cuts its answer off or rejects the key, over real HTTP
+    through the real SDKs. A rejected key is now benched until the founder stores a new one (it used to be retried
+    like an outage).
   - Tested since increment 15: a process kill in the middle of a self-repair, including a torn ledger append, and the
     loss of a model vendor end to end through the real SDKs.
 - **Future technology.** Chromium cannot run its own sandbox inside GREG's namespace (`os_sandboxed: false`). A

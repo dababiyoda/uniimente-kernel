@@ -1600,6 +1600,47 @@ Evidence: `tests/integration/test_greg_credentials_view.py`, over real HTTP with
 and an OAuth login (access, refresh and client secret) are listed with their revoke instructions, and none of the
 four values appears anywhere on the page.
 
+## Increment 25 (2026-10-15): a vendor that is slow, cuts off or refuses the key, over real HTTP; a refused key is benched
+
+The handoff listed as untested here "a vendor that fails slowly, streams partially or rejects the key, over real
+HTTP". Testing it found a product defect in the third case.
+
+- **The three failures, end to end** (`tests/integration/test_greg_vendor_failures.py`): the real Anthropic SDK
+  against a local endpoint that (a) does not answer before the SDK's timeout, (b) sends headers and part of the body
+  and then drops the connection, or (c) answers HTTP 401 `authentication_error`. Each time the founder's mission
+  closes through the vendor that answers (the real OpenAI SDK, also local). The failure keeps its true class: (a)
+  and (b) are outages, (c) is the founder's credential. The test turns the SDK's own retries off so each case is
+  one request; GREG's routes keep the SDK's default retries. GREG's routes do not stream, so "cuts off" is a body
+  that ends before its declared length.
+- **The defect: a refused key was treated as an outage.** The router demotes a failing route and tries it again
+  after a ten-minute cooldown, so a refused key would have been sent again and again. That means repeated failed
+  authentications at the vendor, and the founder would never be told the key needs replacing.
+- **The fix** (`greg/model_keys.py`, wired where the body builds its router; the frozen `greg/models.py` is
+  unchanged):
+  - the refusal is recorded with the key's fingerprint (the first 12 hex digits of its SHA-256, never the key);
+  - the route leaves the router at once, and again after a restart from the record, while it holds that key;
+  - storing a new key gives the route a new fingerprint, and the next body tries it once.
+- **Mission Control** (Authority view) lists each refused key with when it was refused and the command to store a
+  new one, or says a new key is stored and will be tried next.
+
+### Evidence
+
+- The three failure modes above, each closing the original mission (3 tests).
+- **A refused key, over a body's life:**
+  - after the mission closes, a call an hour later (past any cooldown) goes straight to the vendor that answers,
+    and the refusing vendor saw exactly one request;
+  - status and Mission Control name the route, the time and `greg secret set anthropic_api_key`;
+  - no file in the body home contains the key;
+  - after a restart the key is still not sent;
+  - once a new key is stored, status says so and the next body sends the new key, once.
+- **Mutants: 6 of 6 fail the tests:** no bench (the old behavior); benched only after a restart; not benched after a
+  restart; a new key never tried; the key itself recorded; "a new key is stored" said when none is.
+
+### What this does not cover
+
+- The console's own planner route (used when drafting proposals) is a separate router and is not benched by this.
+- A vendor that refuses a key only for some models (403 entitlement) is benched for the route that was refused.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

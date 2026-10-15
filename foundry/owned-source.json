@@ -417,6 +417,7 @@
     "greg/mission_control.py",
     "greg/missions.py",
     "greg/model_child.py",
+    "greg/model_keys.py",
     "greg/models.py",
     "greg/path.json",
     "greg/path.py",

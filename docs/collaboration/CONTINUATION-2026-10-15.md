@@ -19,9 +19,10 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
 | Converged GREG lineage | PR #173, `claude/greg-full-machine-convergence-20261013` | Draft. Not merged to `main`; merging is Alfonso's decision |
 | Gate hardening (#55 CASE 27, #21, #12) | Draft PR #182, `claude/greg-gate-hardening-20261015` | Waits on Alfonso's key enrollment and INTEGRITY_AUTHORIZE; CI job 3 is red by design until then |
 | Merge records | `docs/collaboration/MISSION-DEFECTS-2026-10-15.md`, `INSTALLED-BODY-CONVERGENCE-2026-10-14.md`, `SECURITY-PORTS-2026-10-15.md` | Each names its residuals |
-| Acceptance missions A–L | `acceptance/missions.json` | 85 obligations, 349 test nodes, 21 gaps closed |
+| Acceptance missions A–L | `acceptance/missions.json` | 85 obligations, 350 test nodes, 22 gaps closed |
 | Completion contract | `acceptance/completion-contract.json` | 18 functions; tiers are computed from the acceptance run |
 | Verifier | `verifier/runs/` | PASS V1–V5 at 0655f13 |
+| Acceptance run | `docs/evidence/acceptance/2026-10-15-7cfa0bc.json` | 81/85 requirements at their declared tier; the 4 short need the real organ checkouts, which skip here |
 
 ## Open gaps (from `acceptance/missions.json`)
 
@@ -39,7 +40,7 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
 6. **E.G1–E.G7:** cross-organ work with real organs. This needs the organ checkouts in CI (E.G4), which is an
    environment step, not a founder act.
 7. **J.G1–J.G8:** compounding learning (counterfactuals, ablations, acquired capability and SOP compounding).
-8. **B.G2–B.G6, A.G2–A.G4, F.G3, H.G10, I.G5.**
+8. **B.G3–B.G6, B.G9, A.G2–A.G4, F.G3, H.G10, I.G5.**
 
 **Blocked (23).**
 

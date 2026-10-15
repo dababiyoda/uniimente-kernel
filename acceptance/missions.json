@@ -15,7 +15,8 @@
    "2026-10-15: Mission L requirements L1 and L3 proven at BODY tier by a real-process nine-link run; L gap G3 closed",
    "2026-10-15: C gap G6 closed by a genuine-deficit negative control",
    "2026-10-15: G gap G4 closed by the QC rejection-path test",
-   "2026-10-15: H gap G6 closed by driving the proof-host attempt bound to exhaustion"
+   "2026-10-15: H gap G6 closed by driving the proof-host attempt bound to exhaustion",
+   "2026-10-15: B gap G2 closed by recomputing recorded comparisons; B.G9 opened for genome admission rows"
   ]
  },
  "tier_reading": {
@@ -344,18 +345,19 @@
      "id": "B6",
      "obligation": "B6. Compare the Mind against a competent simpler baseline",
      "coverage": "partial",
-     "notes": "The tests check the comparison instrument rather than its result. They cover the loss and verdict rules, the requirement that every declared baseline ran plus a margin, that withholding cannot win, that an unavailable model is recorded as NOT_RUN rather than simulated, freeze-hash matching, and that arms never see the gold answers. Live comparisons are limited to single dev instances: genome candidates against their simple baselines, which call genome.solve directly rather than the canonical reason path, and causal adjustment against a naive difference. Held-out comparisons exist only as recorded sandbox evidence, and no test recomputes them. (1) tests/evidence/greg-crossgeo-v0.3/results.json: GAIN_VERIFIED_AGAINST_RUN_BASELINES against static_router, n=1200, relative loss reduction 0.256; always_llm and tool_llm NOT_RUN. I recomputed crossgeo_loss.verdict from the recorded rows and it matches to float rounding. (2) docs/evidence/greg-composition-lift/2026-10-07: F1 composition beats optimize-at-point 13-0 (p=0.00012); F2 does not reach lift. (3) docs/evidence/greg-genome-admission/2026-10-13-v1: 31 genomes against a baseline and a competitor; 6 SUPERSEDED, 2 EXPERIMENTAL. The composition test named here asserts the composed answer is correct but does not run the point-estimate arm. The most relevant simpler baseline, semantic text prediction alone, is BLOCKED_WITH_REASON (gap 1).",
+     "notes": "The tests check the comparison instrument rather than its result. They cover the loss and verdict rules, the requirement that every declared baseline ran plus a margin, that withholding cannot win, that an unavailable model is recorded as NOT_RUN rather than simulated, freeze-hash matching, and that arms never see the gold answers. Live comparisons are limited to single dev instances: genome candidates against their simple baselines, which call genome.solve directly rather than the canonical reason path, and causal adjustment against a naive difference. Held-out comparisons exist only as recorded sandbox evidence, and no test recomputes them. (1) tests/evidence/greg-crossgeo-v0.3/results.json: GAIN_VERIFIED_AGAINST_RUN_BASELINES against static_router, n=1200, relative loss reduction 0.256; always_llm and tool_llm NOT_RUN. I recomputed crossgeo_loss.verdict from the recorded rows and it matches to float rounding. (2) docs/evidence/greg-composition-lift/2026-10-07: F1 composition beats optimize-at-point 13-0 (p=0.00012); F2 does not reach lift. (3) docs/evidence/greg-genome-admission/2026-10-13-v1: 31 genomes against a baseline and a competitor; 6 SUPERSEDED, 2 EXPERIMENTAL. The composition test named here asserts the composed answer is correct but does not run the point-estimate arm. The most relevant simpler baseline, semantic text prediction alone, is BLOCKED_WITH_REASON (gap 1). 2026-10-15: the recorded cross-geometry verdict and composition-lift summary are recomputed from their retained rows and must equal the record; an edited record is caught.",
      "tests": [
+      "tests/integration/test_greg_cognitive_composition.py::test_estimate_then_optimize_covers_the_true_quantile_where_a_point_estimate_does_not",
       "tests/unit/test_cortex_crossgeo.py",
       "tests/unit/test_cortex_pipeline.py::TestEvaluationIntegrity",
+      "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_causal_estimate_recovers_planted_effect_and_beats_naive",
       "tests/unit/test_genomes_basal.py::test_candidates_beat_their_baselines_on_a_dev_instance",
+      "tests/unit/test_genomes_library.py::test_a_refuted_candidate_answer_is_scored_as_a_false_answer_below_abstention",
+      "tests/unit/test_genomes_library.py::test_admission_rule_outcomes",
       "tests/unit/test_genomes_solvers_b.py::test_candidates_beat_their_baselines_on_a_dev_instance",
       "tests/unit/test_genomes_solvers_c.py::test_candidate_is_not_worse_than_the_baseline_on_a_dev_instance",
       "tests/unit/test_genomes_solvers_c.py::test_causal_answering_a_non_identified_instance_is_wrong_and_abstaining_is_not",
-      "tests/unit/test_genomes_library.py::test_admission_rule_outcomes",
-      "tests/unit/test_genomes_library.py::test_a_refuted_candidate_answer_is_scored_as_a_false_answer_below_abstention",
-      "tests/unit/test_cortex_routes.py::TestEvidenceCausal::test_causal_estimate_recovers_planted_effect_and_beats_naive",
-      "tests/integration/test_greg_cognitive_composition.py::test_estimate_then_optimize_covers_the_true_quantile_where_a_point_estimate_does_not"
+      "tests/unit/test_mission_b_recorded_comparisons.py"
      ],
      "tier": "UNIT_VERIFIED",
      "implementation": "IMPLEMENTED"
@@ -373,10 +375,11 @@
     {
      "id": "G2",
      "gap": "No test recomputes the recorded held-out baseline verdicts. Tests check only freeze hashes and row shape, so an edited verdict field in results.json would pass.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Add tests/unit/test_mission_b_recorded_comparisons.py. (a) Load tests/evidence/greg-crossgeo-v0.3/results.json, call cortex.evaluation.crossgeo_loss.verdict(d['heldout']['arms'], d['heldout']['rows'], d['adversarial']['rows'], d['planning']), and assert the verdict and strongest_run_baseline equal the recorded values and every gain field is pytest.approx(recorded, rel=1e-9). I checked by hand that this recomputes. (b) Recompute docs/evidence/greg-composition-lift/2026-10-07/results.json per-family lift with cortex.evaluation.composition_lift.run.summarize(rows) and compare with the recorded summary. (c) For each genome in docs/evidence/greg-genome-admission/2026-10-13-v1/results.json, rerun greg.cognition.genomes.admission.decide on the recorded rows and assert the recorded status."
+     "next": "Add tests/unit/test_mission_b_recorded_comparisons.py. (a) Load tests/evidence/greg-crossgeo-v0.3/results.json, call cortex.evaluation.crossgeo_loss.verdict(d['heldout']['arms'], d['heldout']['rows'], d['adversarial']['rows'], d['planning']), and assert the verdict and strongest_run_baseline equal the recorded values and every gain field is pytest.approx(recorded, rel=1e-9). I checked by hand that this recomputes. (b) Recompute docs/evidence/greg-composition-lift/2026-10-07/results.json per-family lift with cortex.evaluation.composition_lift.run.summarize(rows) and compare with the recorded summary. (c) For each genome in docs/evidence/greg-genome-admission/2026-10-13-v1/results.json, rerun greg.cognition.genomes.admission.decide on the recorded rows and assert the recorded status.",
+     "closed_by": "tests/unit/test_mission_b_recorded_comparisons.py (cross-geometry verdict and composition lift recomputed; genome admission split out as B.G9)"
     },
     {
      "id": "G3",
@@ -425,6 +428,14 @@
      "buildable_now": false,
      "dependency": "founder",
      "next": "Alfonso submits a Mission-B mission on his enrolled body, signed with his own key, for example through the console 'schedule-in-words' route or the gap-3 comparison mission. He then accepts the outcome through the signed decide path, and the ledger and appraisal are retained as evidence."
+    },
+    {
+     "id": "G9",
+     "gap": "Genome admission results (docs/evidence/greg-genome-admission) retain only aggregates, not the per-seed rows its decide() rule reads, so recorded statuses cannot be recomputed from the evidence.",
+     "state": "OPEN",
+     "buildable_now": true,
+     "dependency": "none",
+     "next": "In the next admission run version (a new run id; never rewrite a frozen run), retain the per-seed rows beside results.json and add a recompute test like the crossgeo one."
     }
    ]
   },

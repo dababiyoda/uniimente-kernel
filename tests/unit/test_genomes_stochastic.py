@@ -969,6 +969,18 @@ def test_mc_answers_near_underflow_while_the_standard_error_is_normal(mean):
     assert abs(est - math.exp(50.0 * mean + 1250.0 * 0.01 ** 2)) <= 4.0 * se
 
 
+def test_mc_underflow_refusal_states_its_own_margin():
+    # fourth review: the refusal said the standard error fell below 2.2e-308, but the solver refuses below twice that.
+    # Here the standard error (3.1e-308) is a normal double inside the margin, and the stated reason must be true of it
+    data = {"coordinates": [{"distribution": "normal", "mean": -14.0, "sd": 0.01}],
+            "function": {"family": "exp_linear", "weights": [50.0]}, "evaluations": 4096, "seed": 3000}
+    out = stochastic.mc_solve(data, BUDGET)
+    assert out["status"] == "UNKNOWN", out
+    se = out["certificate"]["std_error"]
+    assert sys.float_info.min <= se < 2.0 * sys.float_info.min
+    assert "4.45e-308" in out["missing"][0] and "2.2e-308" not in out["missing"][0]
+
+
 @pytest.mark.parametrize("data", [
     {"coordinates": [{"distribution": "normal", "mean": -16.902, "sd": 1.2}],
      "function": {"family": "exp_linear", "weights": [50.0]}, "evaluations": 1024, "seed": 2},

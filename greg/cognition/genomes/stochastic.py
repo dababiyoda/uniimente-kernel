@@ -121,7 +121,8 @@ MC_NOISE_SE = 2.0 / MC_EST_TOL
 # tolerance is a fraction of the standard error, so an answer needs a normal standard error (the solver keeps a factor
 # of two). An estimate, a fitted coefficient or a value of f may be subnormal: the checks bound their absolute rounding.
 # The rule is on the standard error, not on mean |f|: f near 1e-300 has a standard error that keeps its last places.
-_MC_UNDERFLOW = "the standard error underflows double precision's normal range (below 2.2e-308)"
+_MC_UNDERFLOW = ("near underflow: the standard error is below twice the smallest normal double (4.45e-308), so the "
+                 "reported numbers' fixed rounding is no longer negligible against it")
 
 
 def _mc(data):

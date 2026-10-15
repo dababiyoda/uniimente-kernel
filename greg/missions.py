@@ -355,6 +355,9 @@ class MissionBook:
                 self.requests[data["request_id"]] = data
             elif kind == "decision.withdrawn":
                 self.withdrawn[data["request_id"]] = data
+                request = self.requests.get(data["request_id"])
+                if data.get("voids_approval") and request:   # a restore from a backup: the approval is asked again
+                    m.approved_scopes.discard(request["scope_digest"])
             elif kind == "decision.answered":
                 self.answers[data["request_id"]] = data
                 request = self.requests.get(data["request_id"])

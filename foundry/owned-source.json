@@ -431,6 +431,7 @@
     "greg/precedents.py",
     "greg/presence.py",
     "greg/presentation.py",
+    "greg/recovery.py",
     "greg/remote.py",
     "greg/resilience.py",
     "greg/routing.py",

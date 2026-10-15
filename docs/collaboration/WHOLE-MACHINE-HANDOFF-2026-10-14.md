@@ -142,8 +142,9 @@ The 13 holes were:
     relay and the credential handles it receives. The founder reaches read-only tools by saying what they want;
     Mission Control lists the installed servers (virtualenv or npm), their tools and the latest answers. Since
     increment 21 the founder asks for a file change in words, approves the scope shown on the decision, and GREG
-    closes the mission on its own read of the file. Still missing: remote transport, credentials other than
-    environment variables, and changes GREG cannot read back as a file (a commit, a post) from words.
+    closes the mission on its own read of the file. Since increment 22 a remote server is reached by URL, each
+    call approved, through the relay, with a bearer token by handle. Still missing: OAuth flows, credential files,
+    discovery of remote servers, and proposals from words for remote calls or changes GREG cannot read back.
 - **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
   `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
   measured from this tree. Porting them is its own increment. #168's three runbook defects (a stranded attach;

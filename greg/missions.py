@@ -100,10 +100,15 @@ def exact_reach(capability_id: str, params: dict) -> dict:
     bound to the scope digest of these params; this makes the same params readable. Credentials by handle only."""
     if capability_id != "mcp.act":
         return {}
+    from urllib.parse import urlsplit
+    hosts = params.get("hosts") or ([urlsplit(str(params["url"])).hostname] if params.get("url") else [])
+    credentials = [str(v) for v in (params.get("secrets") or {}).values()] + \
+                  ([str(params["bearer"])] if params.get("bearer") else [])
     return {"tool": f"{params.get('server')}.{params.get('tool')}",
+            **({"remote_server": str(params["url"])} if params.get("url") else {}),
             "may_write": list(params.get("writable") or []) or "nothing",
-            "may_reach": [f"{h}:443 through the relay" for h in params.get("hosts") or []] or "no network",
-            "credentials": sorted(str(v) for v in (params.get("secrets") or {}).values()) or "none"}
+            "may_reach": [f"{h}:443 through the relay" for h in hosts] or "no network",
+            "credentials": sorted(credentials) or "none"}
 
 
 # Capabilities whose network access runs behind the body's #26 relay when the body confines egress.

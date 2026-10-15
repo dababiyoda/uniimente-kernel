@@ -207,3 +207,34 @@ def test_the_founder_stores_a_server_credential_by_its_mcp_handle(tmp_path):
         refused = greg("set", bad, stdin="x\n")
         assert refused.returncode != 0 and "unknown credential handle" in refused.stdout + refused.stderr, bad
     assert SecretBroker(home / "secrets.json").names() == ["mcp:courier-token"]
+
+
+REMOTE = {"server": "scribe", "url": "https://service.test/mcp", "tool": "add_note", "arguments": {"text": "x"}}
+
+
+@pytest.mark.parametrize("change, why", [
+    ({"url": "http://service.test/mcp"}, "url must be https"),
+    ({"url": "https://user:pw@service.test/mcp"}, "url must be https"),
+    ({"url": "https://service.test:8443/mcp"}, "url must be https"),
+    ({"url": "https://*.test/mcp"}, "url must be https"),
+    ({"hosts": ["other.test"]}, "exactly its own host"),
+    ({"writable": ["/tmp"]}, "no local paths"),
+    ({"secrets": {"TOKEN": "mcp:scribe-token"}}, "no local paths and no environment"),
+    ({"bearer": "github_token"}, "mcp:<name> credential handle"),
+    ({}, "confined egress"),
+    ({"bearer": "mcp:missing", "_egress": True}, "unavailable"),
+])
+def test_a_remote_call_not_signed_exactly_is_refused_before_any_client_starts(world, monkeypatch, change, why):
+    import subprocess
+    from types import SimpleNamespace
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: pytest.fail("a client was started"))
+    ctx = world["ctx"]
+    if change.pop("_egress", False):
+        ctx = replace(ctx, egress=SimpleNamespace(journal=None, connect=None, proxy=None))
+    with pytest.raises(CapabilityError, match=why):
+        mcp_tools.act({**REMOTE, **change}, ctx)
+
+
+def test_a_remote_server_is_never_a_read_only_call(world):
+    with pytest.raises(CapabilityError, match="cannot make a call read-only"):
+        mcp_tools.call({**REMOTE}, replace(world["ctx"], manifest=BUILTINS["mcp.call"][0]))

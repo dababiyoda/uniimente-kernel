@@ -119,10 +119,29 @@ def root_cause(exc: BaseException) -> BaseException:
     return exc
 
 
+@contextlib.asynccontextmanager
+async def _remote(provider: dict):
+    """A remote (Streamable HTTP) server. Used only inside GREG's confined client (``greg/mcp_remote.py``), whose
+    only way out is a door to a relay allowing the server's host: proxies come from the environment the door sets,
+    the bearer token from a credential handle, and certificates are verified (against ``cafile`` when given)."""
+    import ssl
+    import httpx2
+    from mcp.client.streamable_http import streamable_http_client
+    headers = {"Authorization": f"Bearer {provider['bearer']}"} if provider.get("bearer") else {}
+    verify = ssl.create_default_context(cafile=provider["cafile"]) if provider.get("cafile") else True
+    async with httpx2.AsyncClient(headers=headers, verify=verify, trust_env=True,
+                                  timeout=httpx2.Timeout(30.0, read=60.0)) as http:
+        async with streamable_http_client(provider["url"], http_client=http) as streams:
+            yield streams
+
+
 @contextlib.contextmanager
 def _server(provider: dict):
     """The transport for ``provider``. A confined server's stderr goes to ``server-stderr.log`` in its scratch
     directory (diagnostics stay with the call instead of the body's own stderr)."""
+    if "url" in provider:
+        yield _remote(provider)
+        return
     if "command" not in provider:
         yield _params(provider)
         return

@@ -277,12 +277,14 @@ def _ask_details(r: dict) -> str:
                         f"{_e(source)}; qualified on {_e(q.get('cases'))} frozen cases with {_e(q.get('failures'))} "
                         f"failures; {_e(mech.get('competence'))}" if mech else ""))
     reach = {k: v for k, v in (r.get("authority_requested") or {}).items()
-             if k in ("tool", "may_write", "may_reach", "credentials")}
+             if k in ("tool", "remote_server", "may_write", "may_reach", "credentials")}
     if reach:
         # The approval is bound to this exact scope; show it before the founder answers (increment 20).
         shown = lambda v: ", ".join(map(str, v)) if isinstance(v, list) else str(v)
         parts.append("<br><b>Approving lets it:</b><ul>"
                      + (f"<li>run <code>{_e(reach['tool'])}</code></li>" if "tool" in reach else "")
+                     + (f"<li>on the remote server <code>{_e(reach['remote_server'])}</code></li>"
+                        if "remote_server" in reach else "")
                      + (f"<li>write: <code>{_e(shown(reach['may_write']))}</code> (nothing else)</li>"
                         if "may_write" in reach else "")
                      + (f"<li>reach: {_e(shown(reach['may_reach']))}</li>" if "may_reach" in reach else "")

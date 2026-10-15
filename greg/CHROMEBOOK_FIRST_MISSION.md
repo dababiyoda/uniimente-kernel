@@ -246,7 +246,12 @@ and the credential handles it receives (`greg secret set mcp:<name>`); approve e
 else stays read-only. For a change to a file, say it with the text in quotes, for example *Use the notes server to
 append "call the broker" to ~/src/notes/plan.md*: GREG proposes the mission, asks before it runs, and closes it
 only when it reads the file itself and finds the text. Words do not grant hosts or credentials; those missions are
-signed from a template.
+signed by hand.
+
+A hosted MCP server (a URL rather than something installed) works the same way, and every call to it waits for
+you: the decision names the server, its one host and the credential handle. Store its token with
+`greg secret set mcp:<name>`, and make the token as narrow as the service allows, because an approved call can do
+whatever the token permits. GREG's words do not propose remote calls yet; such a mission is signed by hand.
 
 ## 7. Founder control
 

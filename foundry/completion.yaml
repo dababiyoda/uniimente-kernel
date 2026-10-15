@@ -555,6 +555,7 @@
   - foundry/systems/__init__.py
   - greg/foundry_bridge.py
   - greg/mcp_tools.py
+  - greg/mcp_remote.py
   gap: The exact reviewed first-party MCP now runs through official SDK/stdio against canonical staged Foundry stores.
     Since 2026-10-15 any third-party stdio provider given as a command (any language, its own installation) runs
     confined in the door namespace with no network, a read-only filesystem and the founder's and body homes hidden,
@@ -566,15 +567,17 @@
     hosts it may reach on 443 through the body's relay (confined bodies only; every other host and the direct
     network are refused), and credential handles in the mcp namespace whose values reach only the server's
     environment (tests/unit/test_greg_mcp_act.py, tests/integration/test_greg_mcp_act_mission.py; the official
-    filesystem server wrote the approved folder locally and its write elsewhere failed read-only). Still missing -
-    remote (HTTP) transport, credentials other than environment variables (OAuth flows, files), proposals from
-    words for changes GREG cannot read back as a file (a commit, a post; file changes are proposed since increment
-    21, tests/unit/test_greg_mcp_act_words.py, tests/integration/test_greg_mcp_act_founder_path.py), and
-    observation on the founder's device. Original failover and authority component
-    evidence is retained.
+    filesystem server wrote the approved folder locally and its write elsewhere failed read-only). File changes
+    are proposed from the founder's words since increment 21 (tests/unit/test_greg_mcp_act_words.py,
+    tests/integration/test_greg_mcp_act_founder_path.py). Since increment 22 a remote Streamable HTTP server is
+    reached by URL as an approved mcp.act - GREG's own client runs confined behind a relay allowing only the URL's
+    host, with a bearer token by mcp handle (tests/integration/test_greg_mcp_remote_mission.py). Still missing -
+    OAuth flows and credential files, discovery of remote servers, proposals from words for remote calls or for
+    changes GREG cannot read back as a file, a real hosted server observed, and observation on the founder's
+    device. Original failover and authority component evidence is retained.
   implementation: *id001
   interface: foundry.query foundry_tool|list_foundry_tools (system 28); Gateway.call for governed third-party tools
-  limitations: Stdio providers only (no remote HTTP providers configured); the third-party provider in CI is a local
+  limitations: Remote HTTP providers by bearer token only, through mcp.act; the third-party provider in CI is a local
     hostile stand-in, and the official reference servers run only where GREG_TEST_MCP_SERVERS points at them. Uses the
     official MCP Python SDK 2.x; a 1.x server answers after rejecting the 2.x discovery request (logged, not fatal).
     Servers installed as a Python virtualenv or an npm prefix are found; a server needing launch arguments reads
@@ -594,6 +597,7 @@
   - tests/integration/test_greg_mcp_act_mission.py
   - tests/unit/test_greg_mcp_act_words.py
   - tests/integration/test_greg_mcp_act_founder_path.py
+  - tests/integration/test_greg_mcp_remote_mission.py
 29:
   acceptance:
   - External agents discover, negotiate and perform bounded work through an embassy

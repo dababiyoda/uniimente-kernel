@@ -1420,6 +1420,75 @@ Increment 20 gave writing tools a path, but only through a hand-signed mission. 
   nothing else in the folder changed (a before/after digest of the folder). Not built; it is the next strengthening
   if a server is ever seen writing outside its named file.
 
+## Increment 22 (2026-10-15): remote MCP servers by URL, each call approved, through the relay
+
+Most hosted services now offer their tools as remote MCP servers over Streamable HTTP. GREG can now use one, under
+the same approval as any other act.
+
+- **`mcp.act` with `url`** instead of an installation: `{"server": "notes", "url": "https://service.test/mcp",
+  "tool": "add_note", "arguments": {...}, "bearer": "mcp:notes-token"}`.
+- **A remote call is never read-only.** The tool runs on someone else's machine, so GREG cannot make it read-only;
+  `mcp.call` refuses a URL, and every remote call is an `mcp.act` that waits for the founder's decision. The
+  decision shows the remote server, `may_reach` (exactly the URL's host, on 443, through the relay),
+  `may_write: nothing` and the credential handle.
+- **GREG's own MCP client runs confined** (`greg/mcp_remote.py`): the door namespace, with no network of its own,
+  the founder's home and the body home hidden, and only its scratch directory, the door socket and the CA file
+  shown. Its only way out is a door to a relay that allows exactly the URL's host on 443, chained through the
+  mandated proxy and journaled.
+- **The token travels by environment from an `mcp:` handle**, never in argv, and is removed from the client's
+  `os.environ` before anything else runs. It reaches the service's `Authorization` header and nothing GREG records.
+- **Refused before anything starts:** a URL that is not https, carries credentials, or names a port other than 443;
+  hosts beyond the URL's own; local paths or environment variables (a remote server gets none); a bearer that is not
+  an `mcp:` handle or is not stored; a body without confined egress.
+
+### Evidence
+
+- **`tests/integration/test_greg_mcp_remote_mission.py` (2 tests),** against a real Streamable HTTP MCP server
+  (the official SDK's `MCPServer` under uvicorn with a test certificate for `service.test`) behind the fake CONNECT
+  proxy:
+  - the mission waits; nothing reaches the service before approval; the decision shows the server, the host, "nothing"
+    to write and the handle;
+  - after approval the note is added exactly once, and GREG closes the mission on its own confined `http.get` of
+    `/notes`, with the chain verified;
+  - the service saw `Bearer <token>`; the relay journal holds only `service.test` ALLOWED for `mcp.act`; the proxy
+    saw only `service.test`; no file in the body home except the secret store holds the token;
+  - the client was started once, by `bwrap` with `--unshare-net`, with the body home hidden and only the call's own
+    discarded scratch directory shown from it, and with the token in its environment, not its argv;
+  - a rejected call never reaches the service.
+- **`tests/unit/test_greg_mcp_act.py`** gains 11 cases: the 10 refusals above, each with no process started, and
+  `mcp.call` refusing a URL.
+- **Mutants: 9 of 9 fail the tests:** the client outside the namespace; the token in argv; the token recorded;
+  any https URL accepted; hosts beyond its own; a remote call as a read-only call; the approval hiding the host;
+  the approval hiding the handle; no relay required.
+
+### What this does not cover
+
+- **OAuth.** Bearer tokens only. A server that requires an OAuth authorization flow has no path yet.
+- **Discovery and words.** Remote servers are not discovered or listed (listing would contact the host without a
+  decision), and words do not propose remote calls; a remote mission is signed by hand.
+- **The relay's one-host scope is defense in depth.** GREG's own client connects only to the URL; the scope would
+  matter only if the client were made to connect elsewhere, which no test can provoke.
+- **Not yet observed against a real hosted server** or on the founder's Chromebook.
+
+### Five roles and two passes (a new external-contact path)
+
+- **Builder:** the existing gateway call path, a remote transport in the SDK, the existing door and relay; one small
+  client program.
+- **Adversary:** a hostile remote server can return anything (recorded as untrusted) and can act on the founder's
+  account within the token's own permissions; the approval names the server and the handle, and the token's scope is
+  the founder's to choose when they create it.
+- **Operator:** a failing call reports the client's error with the token redacted; a hung server times out at 180 s.
+- **Beneficiary representative:** third parties are reached only at the host the founder approved, per call.
+- **Constitutional reviewer:** no standing grant: each call is one approved scope, and a rejection is final for it.
+  The token never enters the ledger.
+- **Pass 1.** Advantage: GREG reaches hosted services without rebuilding their APIs, and every such reach is one
+  visible decision. Reverses if approvals become routine. Disadvantage, per-call approval friction: bounded; a signed
+  standing mandate per server and tool is the later route, not built.
+- **Pass 2.** A token with broad permissions turns one approved call into broad reach on that service. Accepted with
+  the founder as owner: the runbook will say to create narrow tokens. **Dissent kept:** verify the server's
+  certificate against a pinned key, so a host that changes hands is refused. Not built: hosted services rotate
+  certificates; revisit with the first real hosted server.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

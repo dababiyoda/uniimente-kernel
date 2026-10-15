@@ -251,19 +251,21 @@ def _genomes(index: dict, ctx: dict) -> list[dict]:
         measured = (record or {}).get("version")
         stale = bool(status in POSITIVE and measured and measured != g.version)
         history, changes, unresolved = _history(family, record or {})
-        regime = history[-1]["regime"] if history else None
-        flipped = [h for h in history if h["version"] == measured and h["status"] != status]
+        runs = [h for h in history if h["version"] == measured]
+        within = any(a["regime"] == b["regime"] and a["status"] != b["status"]
+                     for i, a in enumerate(runs) for b in runs[i + 1:])
+        across = any(a["regime"] != b["regime"] and a["status"] != b["status"] for a, b in zip(runs, runs[1:]))
         heldout = None if record is None else {
             "status": status, "version_measured": measured,
             "current": None if measured is None else measured == g.version,
             "evidence": record.get("evidence"),
             "history": history,
-            # a status that differs between frozen runs at the same version and in the same evaluation regime sits
-            # near a rule boundary (or the rule changed between runs); one that differs across a regime change the
-            # later run's pre-registration declared measured another evaluation. The latest run decides, as it
-            # does for the compiler
-            "status_changed_at_same_version": any(h["regime"] == regime for h in flipped),
-            "status_changed_with_declared_regime_change": any(h["regime"] != regime for h in flipped),
+            # a status that differs between any two frozen runs at the same version and in the same evaluation regime
+            # sits near a rule boundary (or the rule changed between runs), whichever regime they share; one that
+            # differs between the runs either side of a regime change the later run's pre-registration declared
+            # measured another evaluation. The latest run decides, as it does for the compiler
+            "status_changed_at_same_version": within,
+            "status_changed_with_declared_regime_change": across,
             **({"regime_changes": changes} if changes else {}),
             **({"regime_declarations_unresolved": unresolved} if unresolved else {}),
             **({"stale": f"{status} was measured at version {measured}; version {g.version} needs re-admission"}

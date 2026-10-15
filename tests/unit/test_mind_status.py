@@ -451,6 +451,32 @@ def test_a_declared_regime_change_is_not_reported_as_a_rule_boundary_sample(monk
     assert "regime_changes" not in held and held["regime_declarations_unresolved"]
 
 
+@pytest.mark.parametrize("statuses, within, across", [
+    # flipped inside regime v1 (v1 -> v2), then held across v3's declared change: a rule-boundary flip only
+    (("EXPERIMENTAL", "NICHE_CAPABILITY", "NICHE_CAPABILITY"), True, False),
+    # held inside v1, then changed across the declared change: a regime change only
+    (("EXPERIMENTAL", "EXPERIMENTAL", "NICHE_CAPABILITY"), False, True),
+    # both
+    (("EXPERIMENTAL", "NICHE_CAPABILITY", "EXPERIMENTAL"), True, True),
+    (("NICHE_CAPABILITY",) * 3, False, False)])
+def test_a_flip_inside_an_older_regime_is_not_hidden_by_a_later_declared_regime_change(tmp_path, statuses, within,
+                                                                                         across):
+    """Found by the fix verifier (2026-10-15): the regime split compared each run only with the latest status, so a
+    flip between two runs of an older regime, followed by a declared regime change across which the status held,
+    was reported as a regime change and not as a flip at the same version."""
+    runs = ("2026-10-13-v1", "2026-10-14-v2", "2026-10-15-v3")
+
+    def change(index):
+        record = index["genomes"]["collective_quorum"]
+        record["history"] = [{"run": r, "status": s, "version": record["version"]} for r, s in zip(runs, statuses)]
+        record["status"] = statuses[-1]
+
+    held = _rows(M.status(index_path=_fixture(tmp_path, change)))["cognition.collective_quorum"]["heldout"]
+    assert [h["regime"] for h in held["history"]] == [runs[0], runs[0], runs[2]]
+    assert held["status_changed_at_same_version"] is within
+    assert held["status_changed_with_declared_regime_change"] is across
+
+
 def test_a_catalog_family_without_an_executor_is_unresolved(monkeypatch):
     monkeypatch.setitem(FAMILIES, "unbuilt_probe", (3, ("unbuilt_op",), ("estimate",), "bounded_estimate", None))
     row = _rows(M.status())["cognition.unbuilt_probe"]

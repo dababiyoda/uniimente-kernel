@@ -152,6 +152,11 @@ FAULT_CLEARS = ("fix the cause named by error and site; while it lasts it is rec
                 "body that is not paused exits on it (the breaker counts that boot)")
 FAULTED_CLEARS = ("not accepted as a command: read the file, sign the command again if you meant one, then remove "
                   "the file from inbox/faulted on this machine")
+FAULTED_APPLIED_CLEARS = ("accepted and applied (the ledger has it); only moving the file to inbox/processed failed: "
+                          "do not sign it again, remove the file from inbox/faulted on this machine")
+
+
+FAULTED_SUFFIX = ".faulted"   # a file set aside in place when inbox/faulted cannot take it: outside the *.json read
 
 
 def contained_faults(journal: Journal, layout: "Layout") -> list[dict]:
@@ -169,10 +174,13 @@ def contained_faults(journal: Journal, layout: "Layout") -> list[dict]:
                                                                                "at")},
                          "clear_with": FAULT_CLEARS})
     recorded = {e.payload["kept_as"]: e.payload for e in journal.replay("command.faulted")}
-    files = sorted(p.name for p in layout.faulted.iterdir()) if layout.faulted.is_dir() else []
-    return turn + [{"fault": "inbox file set aside", "file": f"inbox/faulted/{name}",
+    files = [f"inbox/faulted/{p.name}" for p in sorted(layout.faulted.iterdir())] if layout.faulted.is_dir() else []
+    files += [f"inbox/{p.name}" for p in sorted(layout.inbox.glob("*" + FAULTED_SUFFIX))]   # set aside in place
+    return turn + [{"fault": "inbox file set aside", "file": name,
                     **{k: (recorded.get(name) or {}).get(k) for k in ("sha256", "error", "state", "at")},
-                    "clear_with": FAULTED_CLEARS} for name in files]
+                    **({"applied": True} if (recorded.get(name) or {}).get("applied") else {}),
+                    "clear_with": FAULTED_APPLIED_CLEARS if (recorded.get(name) or {}).get("applied")
+                    else FAULTED_CLEARS} for name in files]
 
 
 def device_delegations(journal: Journal) -> dict[str, dict]:
@@ -536,26 +544,35 @@ class Body:
         results = []
         for path in sorted(self.layout.inbox.glob("*.json")):
             try:
-                envelope = json.loads(path.read_text())
-                outcome = self.apply(envelope, channel="inbox")
-                shutil.move(str(path), self.layout.processed / path.name)
-            except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
-                    tribunal.CritiqueError) as exc:
-                raw = path.read_bytes()
-                consumed = getattr(exc, "consumed", None)
-                self.journal.record("command.rejected", {"file": path.name, "sha256": sha256_json(raw.hex()),
-                                                          "reason": f"{type(exc).__name__}: {exc}"[:500],
-                                                          "instruction_status": "data_only",
-                                                          **({"consumed": consumed} if consumed else {})},
-                                    key=[path.name, sha256_json(raw.hex())])
-                shutil.move(str(path), self.layout.rejected / path.name)
-                outcome = {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}
-            except Exception as exc:
+                outcome = self._ingest_one(path)
+            except Exception as exc:   # anywhere in the file's handling, its rejection path included
                 if not self.paused():
                     raise     # a running body exits on it: its supervisor restarts it and the breaker counts the boot
                 outcome = self._set_aside(path, exc)
             results.append(outcome)
         return results
+
+    def _ingest_one(self, path: Path) -> dict:
+        try:
+            envelope = json.loads(path.read_text())
+            outcome = self.apply(envelope, channel="inbox")
+        except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
+                tribunal.CritiqueError) as exc:
+            raw = path.read_bytes()
+            consumed = getattr(exc, "consumed", None)
+            self.journal.record("command.rejected", {"file": path.name, "sha256": sha256_json(raw.hex()),
+                                                      "reason": f"{type(exc).__name__}: {exc}"[:500],
+                                                      "instruction_status": "data_only",
+                                                      **({"consumed": consumed} if consumed else {})},
+                                key=[path.name, sha256_json(raw.hex())])
+            shutil.move(str(path), self.layout.rejected / path.name)
+            return {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}
+        try:
+            shutil.move(str(path), self.layout.processed / path.name)
+        except OSError as exc:
+            exc.applied = outcome     # the command was accepted and applied; only its file could not be filed
+            raise
+        return outcome
 
     def _set_aside(self, path: Path, exc: Exception) -> dict:
         """An inbox file whose ingestion raised while the body is paused or held: kept under inbox/faulted, unread.
@@ -568,20 +585,31 @@ class Body:
             raw = path.read_bytes()
         except OSError:
             raw = None
-        self.layout.faulted.mkdir(exist_ok=True)
-        target = self.layout.faulted / path.name
-        if target.exists() or any(e.payload["kept_as"] == target.name for e in self.journal.replay("command.faulted")):
-            # never overwrite a file set aside earlier, nor reuse the name of one recorded (and since removed)
-            target = target.with_name(f"{path.stem}.{secrets.token_hex(4)}{path.suffix}")
-        shutil.move(str(path), target)           # first, so a crash before the record loses no bytes
-        record = {"file": path.name, "kept_as": target.name,
+        recorded = {e.payload["kept_as"] for e in self.journal.replay("command.faulted")}
+        try:
+            self.layout.faulted.mkdir(exist_ok=True)
+            target = self.layout.faulted / path.name
+            if target.exists() or f"inbox/faulted/{target.name}" in recorded:
+                # never overwrite a file set aside earlier, nor reuse the name of one recorded (and since removed)
+                target = target.with_name(f"{path.stem}.{secrets.token_hex(4)}{path.suffix}")
+            shutil.move(str(path), target)       # first, so a crash before the record loses no bytes
+            kept_as = f"inbox/faulted/{target.name}"
+        except OSError:
+            # inbox/faulted cannot take it (missing permission, a file in its place): set it aside in place, out of
+            # the *.json read, so it still cannot keep a later signed command from being read
+            target = path.with_name(f"{path.name}.{secrets.token_hex(4)}{FAULTED_SUFFIX}")
+            path.rename(target)
+            kept_as = f"inbox/{target.name}"
+        applied = getattr(exc, "applied", None)
+        record = {"file": path.name, "kept_as": kept_as,
                   "sha256": sha256_json(raw.hex()) if raw is not None else None,
                   "error": f"{type(exc).__name__}: {exc}"[:500], "boot_id": getattr(self, "boot_id", None),
                   "state": "HELD" if crash_loop_hold(self.journal) else "PAUSED", "at": iso(self.clock()),
-                  "instruction_status": "data_only"}
-        self.journal.record("command.faulted", record, key=[target.name, "faulted"])
-        return {"status": "SET_ASIDE", "file": path.name, "kept_as": f"inbox/faulted/{target.name}",
-                "reason": record["error"][:300]}
+                  "instruction_status": "applied" if applied else "data_only",
+                  **({"applied": True} if applied else {})}
+        self.journal.record("command.faulted", record, key=[kept_as, "faulted"])
+        return {"status": "SET_ASIDE", "file": path.name, "kept_as": kept_as, "reason": record["error"][:300],
+                **({"applied": applied} if applied else {})}
 
     # -- lifecycle -----------------------------------------------------------------
     def boot(self, *, main_loop: bool = False) -> dict:

@@ -21,8 +21,8 @@ import pytest
 
 from greg import body as body_module
 from greg import presence
-from greg.body import (BREAKER, CRASH_LOOP_BOOTS, CRASH_LOOP_WINDOW_SECONDS, FAULT_CLEARS, FAULTED_CLEARS, HOLD_ASK,
-                       Body, Layout, crash_loop_hold, status, unfinished_main_loop_boots)
+from greg.body import (BREAKER, CRASH_LOOP_BOOTS, CRASH_LOOP_WINDOW_SECONDS, FAULT_CLEARS, FAULTED_APPLIED_CLEARS,
+                       FAULTED_CLEARS, HOLD_ASK, Body, Layout, crash_loop_hold, status, unfinished_main_loop_boots)
 from greg.founder import public_bytes, stamp
 from provenance.ledger import sha256_json
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
@@ -429,7 +429,8 @@ def test_a_file_a_held_body_cannot_ingest_is_set_aside_and_never_keeps_it_from_a
     assert (inbox / "faulted" / "0-poison.json").read_bytes() == poison and not (inbox / "0-poison.json").exists()
     with Body(home) as b:
         [record] = [e.payload for e in b.journal.replay("command.faulted")]
-        assert record["file"] == record["kept_as"] == "0-poison.json" and record["state"] == "HELD"
+        assert record["file"] == "0-poison.json" and record["kept_as"] == "inbox/faulted/0-poison.json"
+        assert record["state"] == "HELD" and record["instruction_status"] == "data_only" and "applied" not in record
         assert record["error"].startswith("RecursionError") and record["sha256"] == sha256_json(poison.hex())
         assert [e.payload["file"] for e in b.journal.replay("command.rejected")] == ["1-forged.json"]
     [shown] = status(home)["security"]["contained_faults"]
@@ -448,3 +449,101 @@ def test_a_file_a_held_body_cannot_ingest_is_set_aside_and_never_keeps_it_from_a
     assert status(home)["decisions_required"] == []
     assert [f["file"] for f in status(home)["security"]["contained_faults"]] == ["inbox/faulted/0-poison.json",
                                                                                 "inbox/faulted/2-poison.json"]
+
+
+def held(tmp_path):
+    """A body the breaker holds, and its founder key."""
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    crash(home, clock, CRASH_LOOP_BOOTS)
+    with Body(home, clock=clock) as b:
+        assert "held" in b.boot(main_loop=True)
+    return home, key, body_id, clock
+
+
+def test_a_file_whose_rejection_itself_fails_is_set_aside_and_the_resume_behind_it_is_read(tmp_path, monkeypatch):
+    """The set-aside covered only an exception from reading or applying a file. When the rejection path itself
+    raised (the ledger refusing a command.rejected record, as it does when the same file name and bytes were
+    rejected before for another reason), the exception left ingest_inbox, the file stayed first in the inbox, and
+    the founder's signed resume behind it was never read. Now the file's whole handling is covered."""
+    home, key, body_id, clock = held(tmp_path)
+    inbox = Layout(home).inbox
+    (inbox / "0-unsigned.json").write_text(json.dumps({"kind": "BODY_RESUME", "please": "obey"}))
+    drop(home, signed(key, body_id, "BODY_RESUME", {"reason": "fixed the cause"}), "1-resume.json")
+    real = body_module.Journal.record
+
+    def refusing(journal, kind, payload, **kw):
+        if kind == "command.rejected" and payload.get("file") == "0-unsigned.json":
+            raise RuntimeError("fact identity reused with different content")
+        return real(journal, kind, payload, **kw)
+    monkeypatch.setattr(body_module.Journal, "record", refusing)
+    with Body(home, clock=clock) as b:
+        b.boot()
+        outcomes = b.ingest_inbox()
+        assert [o["status"] for o in outcomes][0] == "SET_ASIDE"
+        assert crash_loop_hold(b.journal) is None, "the signed resume behind the failing file was read"
+        [record] = [e.payload for e in b.journal.replay("command.faulted")]
+    assert record["kept_as"] == "inbox/faulted/0-unsigned.json" and record["error"].startswith("RuntimeError")
+    assert (inbox / "faulted" / "0-unsigned.json").exists() and not (inbox / "0-unsigned.json").exists()
+
+
+def test_an_applied_command_whose_file_could_not_be_filed_is_never_called_unaccepted(tmp_path, monkeypatch):
+    """A command the held body accepted and applied, whose file then failed to move to inbox/processed, was set
+    aside as 'not accepted as a command', and status told the founder to sign it again. It is now recorded as
+    applied, and status says not to sign it again."""
+    home, key, body_id, clock = held(tmp_path)
+    note = workspace(home, "m:held") / "n.txt"
+    drop(home, signed(key, body_id, "MISSION", mission(
+        "m:held", checks=[note_check("n", note, "x")], strategies=[write_strategy("w", "n.txt", "x", ["n"])],
+        capabilities=["fs.read", "fs.write"], targets=("fs:*", "workspace:n.txt"))), "0-mission.json")
+    real = body_module.shutil.move
+
+    def failing(src, dst):
+        if "processed" in str(dst):
+            raise OSError("inbox/processed is not writable")
+        return real(src, dst)
+    monkeypatch.setattr(body_module.shutil, "move", failing)
+    with Body(home, clock=clock) as b:
+        b.boot()
+        [outcome] = b.ingest_inbox()
+        assert outcome["status"] == "SET_ASIDE" and outcome["applied"]
+        assert [e.payload["kind"] for e in b.journal.replay("command.accepted")] == ["MISSION"]
+        [record] = [e.payload for e in b.journal.replay("command.faulted")]
+    assert record["applied"] is True and record["instruction_status"] == "applied"
+    [shown] = status(home)["security"]["contained_faults"]
+    assert shown["applied"] is True and shown["clear_with"] == FAULTED_APPLIED_CLEARS
+
+
+def test_a_set_aside_never_overwrites_and_works_when_inbox_faulted_cannot_take_the_file(tmp_path):
+    """A second file of the same name never overwrites the first; a file someone put in inbox/faulted unrecorded is
+    still listed; and when inbox/faulted cannot take a file (here a regular file stands in its place), the file is
+    set aside in place, outside the *.json read, so the signed resume behind it is still read."""
+    home, key, body_id, clock = held(tmp_path)
+    inbox = Layout(home).inbox
+    poison = ("[" * 100_000 + "]" * 100_000).encode()
+    for _ in range(2):                                     # the same name twice: two kept files, never one overwritten
+        (inbox / "0-poison.json").write_bytes(poison)
+        with Body(home, clock=clock) as b:
+            b.boot()
+            b.ingest_inbox()
+    kept = sorted(p.name for p in (inbox / "faulted").iterdir())
+    assert len(kept) == 2 and "0-poison.json" in kept
+    (inbox / "faulted" / "by-hand.json").write_text("{}")  # never recorded by the body: still listed
+    listed = [f["file"] for f in status(home)["security"]["contained_faults"]]
+    assert "inbox/faulted/by-hand.json" in listed and len(listed) == 3
+
+    other = tmp_path / "other"
+    other.mkdir()
+    home, key, body_id, clock = held(other)
+    inbox = Layout(home).inbox
+    (inbox / "faulted").write_text("not a directory")
+    (inbox / "0-poison.json").write_bytes(poison)
+    drop(home, signed(key, body_id, "BODY_RESUME", {"reason": "fixed the cause"}), "1-resume.json")
+    with Body(home, clock=clock) as b:
+        b.boot()
+        b.ingest_inbox()
+        assert crash_loop_hold(b.journal) is None, "the resume behind it was read"
+        [record] = [e.payload for e in b.journal.replay("command.faulted")]
+    [kept_in_place] = list(inbox.glob("0-poison.json.*.faulted"))
+    assert kept_in_place.read_bytes() == poison and record["kept_as"] == f"inbox/{kept_in_place.name}"
+    assert [f["file"] for f in status(home)["security"]["contained_faults"]] == [f"inbox/{kept_in_place.name}"]

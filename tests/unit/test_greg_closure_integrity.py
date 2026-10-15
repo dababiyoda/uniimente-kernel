@@ -393,6 +393,43 @@ def test_a_legacy_answered_scope_renewal_reopens_one_ask(tmp_path):
         assert len(renewals) == 2 and body.engine.book.missions[mid].blocker["request_id"] == renewals[1]
 
 
+# -- findings 3 and 10: the founder tier is a claim, and every surface says so ----------------------
+
+def test_an_unprotected_key_can_self_attest_and_every_result_says_the_tier_is_a_claim(tmp_path):
+    """The documented residual, pinned: the body cannot see key custody. A fixture key with NO passphrase
+    signs FOUNDER_TIER through the API (the CLI would refuse it) and its closure reads FOUNDER_TIER. What
+    the repair guarantees is that nothing presents that as verified custody."""
+    from greg import path as devpath
+    from greg.body import status
+    from greg.founder import FOUNDER_TIER_BODY
+    home, key, body_id, _ = make_body(tmp_path, passphrase=None)
+    clock = Clock()
+    assert status(home)["founder_tier"]["enrolled_key_attested"] is False
+    assert "greg founder attest" in status(home)["founder_tier"]["how"]
+    mid = "m:one-note"
+    spec = mission(mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "x")],
+                   strategies=[write_strategy("w", "n.txt", "x", ["n"])], capabilities=["fs.read"], ceiling="read_only")
+    with Body(home, clock=clock) as body:
+        body.boot()
+        drop(home, signed(key, body_id, "FOUNDER_TIER", dict(FOUNDER_TIER_BODY), now=clock.now))
+        tick(body, clock, 1)
+        drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
+        tick(body, clock, 1)
+        tiers = metrics.founder_tier(body.journal)
+    assert tiers[mid]["tier"] == metrics.FOUNDER_TIER                 # the residual: accepted, undetectable
+    assert tiers[mid]["custody"] == metrics.CUSTODY_CLAIM and "cannot verify" in metrics.CUSTODY_CLAIM
+    tier = status(home)["founder_tier"]
+    assert tier["enrolled_key_attested"] is True and tier["basis"] == metrics.CUSTODY_CLAIM
+    met = devpath._tiered({"value": 1}, structural=True, passed=[mid], refused={})
+    assert met["met"] is True and met["founder_tier_basis"] == metrics.CUSTODY_CLAIM
+    root = Path(__file__).resolve().parents[2]
+    readme = (root / "greg/README.md").read_text()
+    assert "deliberately makes and protects a key" not in readme and "not verified custody" in readme
+    assert "never sign it, so their closures stay" not in (root / "greg/founder.py").read_text()
+    n1 = next(n for n in devpath.load()["nodes"] if n["id"] == "N1")
+    assert "not verified custody" in n1["open_founder_decision"]
+
+
 # -- findings 9 and 14: an external node needs recorded external evidence -------------------------
 
 def test_an_external_node_never_passes_on_its_ledger_predicate_alone(monkeypatch):
@@ -416,3 +453,14 @@ def test_an_external_node_never_passes_on_its_ledger_predicate_alone(monkeypatch
     for name in list(devpath.PREDICATES):
         monkeypatch.setitem(devpath.PREDICATES, name, lambda journal: {"met": True, "external_evidence": ["c1"]})
     assert {"N6", "N7"} <= set(devpath.position(journal, data)["achieved"])
+
+
+def test_mission_control_and_the_classic_page_show_whether_the_key_is_attested(tmp_path):
+    from greg.console import Console, render_mission_control
+    home, *_ = make_body(tmp_path)
+    console = Console(home, key=None)
+    overview = render_mission_control(console).decode()
+    assert "Founder tier: not attested" in overview and "greg founder attest" in overview
+    proof = render_mission_control(console, "proof").decode()
+    assert "not attested" in proof and "cannot verify" in proof
+    assert "verified persistent closures" not in overview

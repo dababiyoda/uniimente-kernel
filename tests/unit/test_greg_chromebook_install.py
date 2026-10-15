@@ -185,3 +185,26 @@ def test_founder_public_unlocks_encrypted_key_without_opening_a_body(tmp_path, m
     key.chmod(0o644)
     with pytest.raises(FounderAuthError, match="readable by others"):
         main(["--home", str(missing_body), "founder", "public", "--key", str(key)])
+
+
+def test_a_rerun_offers_the_founder_tier_to_a_body_designated_without_it(tmp_path):
+    """A body designated before FOUNDER_TIER existed stayed silently unattested (review of 2026-10-14).
+    The re-run now sees it in ``greg status`` and queues the attestation with the protected key."""
+    args = [a for a in dev_args(tmp_path) if a != "--no-passphrase"]
+    env = {**os.environ, "HOME": str(tmp_path / "home"), "PATH": f"{tmp_path / 'bin'}:{os.environ['PATH']}",
+           "GREG_FOUNDER_PASSPHRASE": "a test passphrase, not Alfonso's"}
+    (tmp_path / "home").mkdir(exist_ok=True)
+    first = subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, env=env, timeout=300)
+    assert first.returncode == 0, first.stdout[-3000:] + first.stderr[-3000:]
+    for queued in (tmp_path / "body/inbox").glob("*founder_tier*.json"):
+        queued.unlink()                                  # as if designated before the attestation existed
+    greg(tmp_path, "run", "--tick-seconds", "0.05", "--max-ticks", "2")
+    assert json.loads(greg(tmp_path, "status"))["founder_tier"]["enrolled_key_attested"] is False
+    second = subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, env=env, timeout=300)
+    assert second.returncode == 0, second.stdout[-3000:] + second.stderr[-3000:]
+    assert "already designated" in second.stdout and "Founder-tier attestation queued" in second.stdout
+    assert list((tmp_path / "body/inbox").glob("*founder_tier*.json"))
+    greg(tmp_path, "run", "--tick-seconds", "0.05", "--max-ticks", "2")
+    assert json.loads(greg(tmp_path, "status"))["founder_tier"]["enrolled_key_attested"] is True
+    third = subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, env=env, timeout=300)
+    assert "has claimed the founder tier" in third.stdout and not list((tmp_path / "body/inbox").glob("*.json"))

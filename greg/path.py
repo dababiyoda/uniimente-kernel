@@ -144,9 +144,14 @@ def genesis_closure(journal: Journal) -> dict:
 # the result is a STRUCTURAL_CANDIDATE that names why each closure was refused. (#137 verifier condition
 # for N3, N4, N6 and N7; #138's structural-candidate gate for N1 and N2 (673726a) uses the same rule
 # instead of a hardcoded ``met=False``, so a genuine founder run can still clear N1.) Neither tier is an
-# external verification: the ledger cannot prove whose machine this is or who held the key.
+# external verification: the ledger cannot prove whose machine this is or who held the key, and the founder
+# tier is the key holder's unverified claim of custody (a direct self-attestation reaches it; review of
+# 2026-10-14).
 FOUNDER_TIER_RULE = ("the founder's path moves only on a closure signed by the enrolled founder key at the founder "
-                     "tier; a test key, a fixture or a --no-passphrase rehearsal is structural evidence only")
+                     "tier; a test key, a fixture or a --no-passphrase rehearsal is structural evidence only "
+                     "through the supported tools")
+# The tier is the key holder's claim, not verified custody (greg/metrics.py CUSTODY_CLAIM); a met result
+# says so, so no reader takes FOUNDER_TIER for proof that the key is protected or is Alfonso's.
 
 
 def _at_founder_tier(journal: Journal | None, groups: dict) -> tuple[list, dict]:
@@ -167,6 +172,8 @@ def _tiered(result: dict, *, structural: bool, passed: list, refused: dict) -> d
     out = {**result, "met": met, "structurally_met": bool(structural),
            "evidence_level": metrics.FOUNDER_TIER if met else
            (metrics.STRUCTURAL_CANDIDATE if structural else "NONE")}
+    if met:
+        out["founder_tier_basis"] = metrics.CUSTODY_CLAIM
     if structural and not met:
         out["blocker"] = FOUNDER_TIER_RULE
         out["not_founder_tier"] = refused or {"(none)": "the result names no closure to attest"}

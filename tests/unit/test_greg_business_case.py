@@ -159,6 +159,8 @@ def test_a_case_closes_in_commercial_order_with_people_doing_every_outward_act(t
         # Reason (#137 verifier): a closure signed with a test key never moves the founder's path (N1 kill condition).
         assert after["met"] is False and after["evidence_level"] == "STRUCTURAL_CANDIDATE" and after["value"] == 0
         assert after["not_founder_tier"] == {mid: NOT_FOUNDER_TIER} and "founder tier" in after["blocker"]
+        # Deliberately the documented residual: this UNPROTECTED fixture key self-attests through the API (the CLI
+        # would refuse it; greg/metrics.py CUSTODY_CLAIM). Only the timing rule is under test here.
         drop(home, signed(key, body_id, "FOUNDER_TIER", {"key_custody": "passphrase"}, now=clock.now))
         run(body, clock, 1, 0)                                 # an attestation after the fact does not reach back
         late = devpath.business_loop_closed(body.journal)

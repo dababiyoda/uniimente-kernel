@@ -54,8 +54,10 @@ COMMAND_KINDS = (
     "FOUNDER_TIER",       # the signing key attests passphrase custody; grants nothing (greg/metrics.py founder_tier)
 )
 # FOUNDER_TIER's only body. The CLI signs it only from a passphrase-encrypted key file (``greg founder attest``,
-# and ``greg body designate`` when the key is protected); a --no-passphrase key, a test fixture's key and the
-# ``greg rehearse`` throwaway key never sign it, so their closures stay structural evidence on the founder's path.
+# and ``greg body designate`` when the key is protected), so the supported tools never sign it for a
+# --no-passphrase key, a test fixture's key or the ``greg rehearse`` throwaway key. It is the key holder's claim,
+# not verified custody: the body cannot see how a key is stored, and any holder of an enrolled key, protected or
+# not, can sign this body directly (greg/metrics.py founder_tier states the residual).
 FOUNDER_TIER_BODY = {"key_custody": "passphrase"}
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only

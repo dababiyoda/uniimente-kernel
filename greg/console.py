@@ -399,12 +399,17 @@ def home_parts(console: Console) -> dict:
     can = console.key is not None
     add("header", f"<h1>GREG</h1><p class=muted>Body {_e(st['body_id'])} · {body_state} · {signer} · "
            f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'}</p>")
+    tier = st.get("founder_tier") or {}
+    if tier and not tier.get("enrolled_key_attested"):
+        add("founder_tier", "<section class=warn><b>Founder tier: not attested.</b> " + _e(tier.get("consequence", ""))
+            + ". Run <code>" + _e(tier.get("how", "")) + "</code> once.</section>")
     for message in console.flash[-3:]:
         add("flash", f"<section class=ok>{_e(message)}</section>")
     console.flash.clear()
     vepmc = snap["vepmc"]
     add("stats", "<section><div class=grid>"
-               f"<div class=stat><b>{vepmc['VEPMC']}</b>verified persistent closures</div>"
+               f"<div class=stat><b>{vepmc['VEPMC']}</b>structural candidates (VEPMC; ledger checks only)</div>"
+               f"<div class=stat><b>{vepmc.get('founder_tier_count', 0)}</b>at the founder tier</div>"
                f"<div class=stat><b>{len(snap['missions'])}</b>missions</div>"
                f"<div class=stat><b>{len(st['decisions_required'])}</b>decisions waiting</div>"
                f"<div class=stat><b>{len(snap['deliveries'])}</b>recent deliveries</div></div></section>")
@@ -521,7 +526,7 @@ def render_mission_control(console: Console, view: str = "overview") -> bytes:
     if view not in dict(mission_control.VIEWS):
         raise FileNotFoundError(view)
     parts = home_parts(console)
-    body = parts.get("flash", "") + mission_control.render_view(console, view, parts)
+    body = parts.get("flash", "") + parts.get("founder_tier", "") + mission_control.render_view(console, view, parts)
     body += "<p class=muted><a href=/classic>Classic page</a> · <a href=/morning>Morning report</a> · <a href=/api/mc>JSON</a></p>"
     return _page("GREG Mission Control", f"<style>{mission_control.STYLE_EXTRA}</style>" + body,
                  refresh=view == "overview")

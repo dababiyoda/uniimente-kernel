@@ -215,6 +215,23 @@ fi
 DESIGNATED="$(status_field 'len(s.get("designation", []))')"
 if [ "${DESIGNATED:-0}" -gt 0 ] 2>/dev/null; then
   echo "This body is already designated as your first body."
+  # A body designated before FOUNDER_TIER existed (or whose attestation was lost) stays silently unattested:
+  # every closure would remain a structural candidate. Offer the attestation; never for an unprotected key.
+  ATTESTED="$(status_field 's.get("founder_tier", {}).get("enrolled_key_attested", False)')"
+  if [ "$ATTESTED" = "True" ]; then
+    echo "Your founder key has claimed the founder tier on this body."
+  elif ls "$GREG_HOME_DIR"/inbox/*founder_tier*.json >/dev/null 2>&1; then
+    echo "A signed founder-tier attestation is already waiting in the inbox for the body to accept."
+  elif [ "$NO_PASSPHRASE" = 1 ]; then
+    echo "Founder tier: not attested. An unprotected (--no-passphrase) key never claims it; its closures stay structural candidates."
+  else
+    echo "Founder tier: not attested, so no closure would move greg path. Sign the attestation (your passphrase again):"
+    if "$GREG" founder attest --key "$KEY" >/dev/null; then
+      echo "Founder-tier attestation queued; the running body accepts it on its next tick."
+    else
+      echo "Not attested. Run later: greg founder attest --key $KEY"
+    fi
+  fi
 elif ls "$GREG_HOME_DIR"/inbox/*body_designate*.json >/dev/null 2>&1; then
   echo "A signed designation is already waiting in the inbox for the body to accept."
 else

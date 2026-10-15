@@ -98,9 +98,13 @@ you recognize the new body ID and that this is the device you intend to use.
 The next command queues a founder-signed **designation**, which the body must
 accept before your first mission. It does not grant GREG new capabilities or
 permissions. Because your key is protected by your passphrase, the same command
-also queues a **founder-tier attestation**: the ledger's record that the key
-signing your missions is a passphrase-protected founder key, not a test key or a
-`--no-passphrase` rehearsal. It grants nothing either. Without it, every closure,
+also queues a **founder-tier attestation**: the ledger's record that the holder of
+the key signing your missions claims it is passphrase-protected. The `greg` commands
+make that claim only after decrypting a protected key file, so a test key or a
+`--no-passphrase` rehearsal never gets it by accident. It is a claim, not proof: the
+body sees only your public key, and anything that can read an enrolled private key
+could sign the same attestation itself. Keep your key file protected and never give
+it to an agent. It grants nothing either. Without it, every closure,
 your first one (N1) included, stays a *structural candidate* and never moves
 `greg path`. If you rotate
 your key, or your body was designated before this existed, run
@@ -164,8 +168,9 @@ each row's `evidence_level` says `STRUCTURAL_CANDIDATE` or, when the mission was
 with your attested key, `FOUNDER_TIER` (`founder_tier_count`). `greg path` leaves N1
 only on a founder-tier closure; a `--no-passphrase` rehearsal that satisfies all nine
 ledger checks stays at N1 with `structurally_met: true`. Neither level is an external
-verification: the ledger still cannot prove this Chromebook or this key is yours, so
-your inspection and acceptance remain the external check. This does not stop the
+verification: the ledger still cannot prove this Chromebook or this key is yours, nor
+that the key is protected (the founder tier records the key holder's claim), so your
+inspection and acceptance remain the external check. This does not stop the
 signed mission runtime or delete later capability nodes.
 
 ## After the first closure: the second node (N2), still without a model

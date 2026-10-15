@@ -669,6 +669,7 @@ def status(home: str | Path) -> dict:
             "external_items_quarantined": sum(1 for e in journal.replay("external.ingested")
                                               if e.payload["quarantined"]),
             "single_bottleneck_metric": metrics.vepmc(journal),
+            "founder_tier": metrics.tier_status(journal, founder),
             "external_anchor": anchor.summary(journal),
             "presence": presence.summary(journal, now=utcnow(), since=utcnow() - presence.REVIEW_WINDOW,
                                          heartbeat=heartbeat),

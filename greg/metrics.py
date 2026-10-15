@@ -20,8 +20,9 @@ Fixture results are structural tests, never external VEPMC evidence.
 ``VEPMC`` stays the compatibility name of ``structural_candidate_count`` (#138, 673726a):
 a row with all nine conditions is a STRUCTURAL_CANDIDATE. It is at the FOUNDER_TIER
 (``founder_tier_count``) only when its mission was signed by the enrolled founder key
-after that key attested passphrase custody (``founder_tier`` below); only then does it
-move the founder's path (greg/path.py). Neither level is an external verification.
+after that key's holder claimed passphrase custody (``founder_tier`` below); only then does it
+move the founder's path (greg/path.py). The claim is not verified custody, and neither level is
+an external verification.
 """
 from __future__ import annotations
 
@@ -95,15 +96,25 @@ def vepmc(journal: Journal) -> dict:
 # A ledger can prove that a closure was signed by the key enrolled on this body. It cannot tell
 # Alfonso's key from a test key, a fixture's key or the throwaway key of a --no-passphrase
 # rehearsal, and N1's own kill condition forbids counting a closure "with a test key". The
-# founder tier is the one ledger fact that separates them. The key that signed the mission had
-# already signed a FOUNDER_TIER attestation, which the CLI signs only after decrypting a
+# founder tier is the one ledger fact that separates the supported paths: the key that signed the
+# mission had already signed a FOUNDER_TIER attestation, which the CLI signs only after decrypting a
 # passphrase-protected key file (``greg body designate`` / ``greg founder attest``). The tier grants
 # nothing: no capability, budget or command depends on it. Path predicates read it to decide whether
 # a structurally complete closure moves the founder's path (met) or stays a STRUCTURAL_CANDIDATE.
-# Residual: whoever controls the body's filesystem enrolls the founder key (trust on first use,
-# greg/founder.py). Someone who deliberately generates and protects a key there can attest it.
-# The tier excludes accidents (test keys, fixtures, rehearsals), not a forged enrollment.
+#
+# What the tier is, exactly: the key holder's CLAIM of passphrase custody, never verified custody.
+# The body holds only the public key and cannot check how the private key is stored. The CLI's
+# refusal is the only custody check, so an accident through the supported tools (a test key, a
+# fixture, a --no-passphrase rehearsal) stays a structural candidate. But anything that can read an
+# enrolled private key, protected or not (any process or agent holding an unprotected rehearsal or
+# fixture key), can sign {"key_custody": "passphrase"} itself in one sign_command call, and its later
+# closures then read FOUNDER_TIER (review of 2026-10-14; tests/unit/test_greg_closure_integrity.py pins
+# it). The tier therefore does not enforce N1's kill condition against a deliberate self-attestation;
+# it only keeps the supported tools from making that claim falsely. It never proves the key is
+# Alfonso's or that it is protected. That residual is an open founder decision on N1 (greg/path.json).
 
+CUSTODY_CLAIM = ("the signing key's holder claimed passphrase custody (FOUNDER_TIER); the body cannot verify "
+                 "custody: the CLI refuses an unprotected key, a direct signature does not")
 FOUNDER_TIER = "FOUNDER_TIER"
 STRUCTURAL_CANDIDATE = "STRUCTURAL_CANDIDATE"
 NOT_FOUNDER_TIER = ("its signing key never attested passphrase custody: a test key, a fixture's key or a "
@@ -144,5 +155,26 @@ def founder_tier(journal: Journal | None) -> dict:
         else:
             why = None
         out.setdefault(mid, {"tier": STRUCTURAL_CANDIDATE if why else FOUNDER_TIER, "key_id": key,
-                             **({"why_not": why} if why else {})})
+                             **({"why_not": why} if why else {"custody": CUSTODY_CLAIM})})
     return out
+
+
+def tier_status(journal: Journal | None, enrolled: list) -> dict:
+    """Whether each currently enrolled founder key has claimed the founder tier, for every founder surface.
+
+    Without it, a body designated before FOUNDER_TIER existed stayed silently unattested: every later
+    closure was a structural candidate and no surface said why (review of 2026-10-14)."""
+    from greg.founder import FOUNDER_TIER_BODY
+    attested = {}
+    for event in (journal.replay("command.accepted") if journal is not None else []):
+        command = event.payload
+        if (command.get("kind") == "FOUNDER_TIER" and command.get("signer") == "founder"
+                and command.get("body") == FOUNDER_TIER_BODY):
+            attested.setdefault(command.get("founder_key_id"), command.get("issued_at"))
+    ok = bool(enrolled) and all(k in attested for k in enrolled)
+    return {"enrolled_key_attested": ok,
+            "attested": [{"key_id": k, "issued_at": attested[k]} for k in enrolled if k in attested],
+            "basis": CUSTODY_CLAIM,
+            **({} if ok else {"consequence": "every closure stays a STRUCTURAL_CANDIDATE and greg path does not move",
+                              "how": "greg founder attest --key ~/.greg-founder.pem (asks your passphrase)"})}
+

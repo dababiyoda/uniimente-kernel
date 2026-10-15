@@ -139,3 +139,5 @@ The original wording stays in place above. Every number here was recomputed from
    - 4.7% takes the ablation's total as its base: routed costs 656,324, which is 4.7% more than the ablation's 626,736. This is the base of the cost-reduction table (-4.7%) and of the predictions row ("4.7% dearer").
    - Taking the routed total as the base, the ablation costs 4.5% less: (656,324 - 626,736) / 656,324 = 4.51%.
    - The sentence should read: the ablation "costs 4.5% less in total" (routed is 4.7% dearer).
+2. **"Once, in a clean worktree."** Original: "Run: once, in a clean worktree at `202b932`."
+   - `results-v5.json` records the source commit but no dirty-tree state, and `run_v5.py` has no dirty check, so "once" and "clean worktree" are the operator's statements, not recorded facts. The frozen manifest check (the run refuses changed code) bounds the effect. The same holds for genome admission v3 (its errata item 8); the admission harness now records `source_dirty` for future runs.

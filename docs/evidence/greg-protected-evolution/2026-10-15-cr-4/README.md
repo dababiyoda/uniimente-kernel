@@ -56,11 +56,11 @@ The cycle refuses to run unless every frozen input matches, and it refuses a dir
 
 ## Errata (2026-10-15 independent review)
 
-Each item quotes the original wording, which stays in place above, and states the correction. Every number here was recomputed from `cycle-cr-4.json`. No frozen file was changed, and nothing was re-run.
+Each item quotes the original wording, which stays in place above, and states the correction. The record's numbers were recomputed from `cycle-cr-4.json`; the protocol's seed ranges and settings were checked against `freeze.json` and `CR_SPLITS` in `greg/cognition/evolution.py`, which the record does not hold. No frozen file was changed, and nothing was re-run.
 
 1. **"By script".** Original: "Every number below is copied from `cycle-cr-4.json` by script."
    - No script is committed for this README. The directory holds only `PREREGISTRATION.md`, `README.md`, `cycle-cr-4.json`, `cycle-cr-4.log` and `freeze.json`.
-   - The review recomputed every number in the *Protocol* and *Result* tables from the record, and they match.
+   - The review recomputed the *Result* table from the record and checked the *Protocol* table against the record, `freeze.json` and `CR_SPLITS` (the seed ranges are not in the record); they match.
    - The *Reading* section is hand-written. Item 2 corrects one of its claims.
 2. **The search did move `p_restart`.** Original: "**The headroom is real, but this closed space does not reach it.**" and "(`p_restart` is in the space, but the search did not move it)".
    - Three of the 39 evaluated configurations set `p_restart` above 0:

@@ -230,7 +230,7 @@ The harness refuses with `FROZEN_INPUT_CHANGED` if any frozen input differs, and
 
 ## Errata (2026-10-15 independent review)
 
-Each item quotes the original wording, which stays in place above, and states the correction. Every number here was recomputed from `results.json`, `freeze.json` and the evidence index at `878f76c`. No frozen file was changed, and nothing was re-run.
+Each item quotes the original wording, which stays in place above, and states the correction. The numbers here were recomputed from `results.json`, `freeze.json` and the evidence index at `878f76c`, with three exceptions: item 2's component list is from `PREREGISTRATION.md`, item 7's generator figures are read from `greg/cognition/genomes/flow.py` at `878f76c` (the freeze holds only its digest), and item 8's 113 comes from running `code_closure` on that commit. No frozen file was changed, and no evaluation was re-run.
 
 1. **Scope of "by script".** Original: "Every number in the tables below was copied from `results.json` by script (`make_readme_tables.py`, listed under *Reproduce*)."
    - The script generates only the section *Results (scripted from `results.json`)*: the source-commit line, the three tables with their captions and the two summary lines. Those 142 lines regenerate byte for byte from `results.json` and the index at `878f76c`.

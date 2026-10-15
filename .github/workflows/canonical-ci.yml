@@ -35,8 +35,9 @@ jobs:
     runs-on: ubuntu-latest
     # The job runs the whole suite and then the verifier's V2 runs tests/unit again. Hosted runners differ in
     # speed: on 2026-10-15 the suite took 11 min on one (a48e8fa) and 17.5 min on another (349e732), whose V2 was
-    # still running at 30 min. 45 leaves room for the slow runner without hiding a hang for long.
-    timeout-minutes: 45
+    # still running at 30 min; with 45 the whole job then took 34.5 and 38.5 min on slow runners. 60 leaves room for
+    # the suite to keep growing on a slow runner without hiding a hang for long.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:

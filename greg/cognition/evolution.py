@@ -552,8 +552,8 @@ def _clean_room_violations(code: dict | None) -> list[str]:
     return found
 
 
-# Held-out splits each cycle before freezes existed looked at, by target (cycles 1-3; their evidence is pinned by its
-# source commit). Every later look is a committed freeze under EVIDENCE.
+# Held-out splits of the cycles before freezes existed, by target (cycles 1-3; their evidence is pinned by its source
+# commit). A split is spent only if its record shows the look; every later look is a committed freeze under EVIDENCE.
 PRE_FREEZE_HELDOUT = {
     "2026-10-08/cycle-forecast-1": ("forecast_quantile", lambda: set(_FORECASTING_SPLIT(
         COMPLETED_FORECAST_CYCLES["2026-10-08/cycle-forecast-1"]["seed"],
@@ -562,9 +562,16 @@ PRE_FREEZE_HELDOUT = {
     "2026-10-14/cycle-cr-3": ("constraint_release", lambda: {f"s{s}" for s in CR_SPLITS["cycle-3"][1]})}
 
 
+def _looked(cycle: str) -> bool:
+    """Whether a pre-freeze cycle's record shows the held-out look (cycles 2 and 3 stopped at the stress gate)."""
+    record = EVIDENCE / f"{cycle}.json"
+    return not record.is_file() or "heldout" in json.loads(record.read_text())
+
+
 def _spent_heldout(target_name: str, exclude: Path | None = None) -> dict:
     """Held-out item ids already looked at on this target, by the cycle or freeze that looked: one look per item."""
-    spent = {name: ids() for name, (target, ids) in PRE_FREEZE_HELDOUT.items() if target == target_name}
+    spent = {name: ids() for name, (target, ids) in PRE_FREEZE_HELDOUT.items()
+             if target == target_name and _looked(name)}
     for manifest in sorted(EVIDENCE.rglob("freeze.json")) if EVIDENCE.is_dir() else []:
         if exclude is not None and manifest.resolve() == Path(exclude).resolve():
             continue

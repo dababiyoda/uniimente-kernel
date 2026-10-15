@@ -603,11 +603,10 @@ def test_a_freeze_refuses_a_held_out_split_an_earlier_cycle_or_freeze_looked_at(
     with pytest.raises(E.EvolutionError, match="SPLIT_SPENT.*2026-10-15-cr-4/freeze.json"):
         E.freeze("constraint_release", tmp_path / "f.json")
     assert not (tmp_path / "f.json").exists()
-    monkeypatch.setattr(E, "cr_split", lambda name=E.CR_CURRENT_SPLIT: ({"s3": item}, {"s7300": item}, []))
-    with pytest.raises(E.EvolutionError, match="SPLIT_SPENT.*cycle-cr-3"):
-        E.freeze("constraint_release", tmp_path / "f.json")
-    spent = E._spent_heldout("immune_detect")
-    assert {f"s{s}" for s in E.IMMUNE_HELDOUT_SEEDS} <= set().union(*spent.values())
+    # cycles 2 and 3 stopped at the stress gate: their held-out items were never looked at, so they stay usable
+    assert "2026-10-14/cycle-cr-3" not in E._spent_heldout("constraint_release")
+    assert E._spent_heldout("immune_detect") == {}
+    assert set(E._spent_heldout("forecast_quantile")) == {"2026-10-08/cycle-forecast-1"}   # cycle 1 looked
 
 
 def test_a_recorded_cycle_needs_a_committed_freeze_confinement_and_the_clean_room(monkeypatch, tmp_path):

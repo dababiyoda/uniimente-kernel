@@ -194,6 +194,8 @@ def test_the_constraint_release_target_is_a_closed_data_space_over_fresh_reserve
         set(E.IMMUNE_TRAIN_SEEDS) | set(E.IMMUNE_HELDOUT_SEEDS)
     assert not used & (set(E.CR_TRAIN_SEEDS) | set(E.CR_HELDOUT_SEEDS))
     assert set(E.CR_TRAIN_SEEDS) | set(E.CR_HELDOUT_SEEDS) <= set(admission.P8_RESERVED)
+    every = [s for train, held in E.CR_SPLITS.values() for s in (*train, *held)]
+    assert len(every) == len(set(every)) and not used & set(every) and set(every) <= set(admission.P8_RESERVED)
     rng = random.Random(3)
     child, _ = E.mutate(target, dict(D.CR_DEFAULT_CONFIG), rng)
     data, _ = D.constraint_release_instance(3)                              # development seed
@@ -390,3 +392,14 @@ def test_a_confined_sandbox_cannot_signal_its_parent_or_list_the_repository():
     out = json.loads(proc.stdout)
     assert out["signal"] == "PermissionError" and out["list"] == "PermissionError", out
     assert out["info"]["signals"] == "scoped to the domain" and out["info"]["repository_listing"] == "denied"
+
+
+def test_an_earlier_cycles_split_reproduces_its_frozen_evaluator_seals():
+    """Splits are named per cycle, so adding cycle 4 leaves cycle 3 reproducible: its evaluators re-seal to the
+    digests its frozen record states (evaluator code, score function, rule, outcomes and inputs)."""
+    from greg.cognition.genomes import developmental as D
+    record = json.loads((E.ROOT / "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.json").read_text())
+    train, held, _ = E.cr_split("cycle-3")
+    assert E.SealedEvaluator(train, D.constraint_release_score).seal == record["evaluator_seals"]["train"]
+    assert E.SealedEvaluator(held, D.constraint_release_score).seal == record["evaluator_seals"]["heldout"]
+    assert E.CR_CURRENT_SPLIT != "cycle-3"

@@ -200,6 +200,11 @@ def _immune_spec() -> TargetSpec:
 # restart beat the incumbent 15-5 on fresh seeds). Seeds inside P8's reserved range, used by no earlier cycle.
 CR_TRAIN_SEEDS = tuple(range(7200, 7260))
 CR_HELDOUT_SEEDS = tuple(range(7300, 7390))
+# Each cycle on this target draws its own split; earlier splits stay reproducible by name. Cycle 4 (2026-10-15):
+# admission v3 still measured headroom (random restart 13-10 against version 1.2.0).
+CR_SPLITS = {"cycle-3": (CR_TRAIN_SEEDS, CR_HELDOUT_SEEDS),
+             "cycle-4": (tuple(range(7400, 7460)), tuple(range(7500, 7590)))}
+CR_CURRENT_SPLIT = "cycle-4"
 
 
 def cr_target() -> Target:
@@ -207,18 +212,22 @@ def cr_target() -> Target:
     return Target("constraint_release", developmental.CR_CONFIG_SPACE, dict(developmental.CR_DEFAULT_CONFIG))
 
 
-def cr_split() -> tuple[dict, dict, list[str]]:
-    """Seeded scheduling instances reserved for P8, disjoint from every admission and earlier P8 seed."""
+def cr_split(name: str = CR_CURRENT_SPLIT) -> tuple[dict, dict, list[str]]:
+    """Seeded scheduling instances reserved for P8, disjoint from every admission seed, every other P8 target's
+    seeds and every other cycle's split on this target."""
     from .genomes import admission, developmental
+    train_seeds, heldout_seeds = CR_SPLITS[name]
     reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
-                | set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS))
-    if reserved & (set(CR_TRAIN_SEEDS) | set(CR_HELDOUT_SEEDS)) or set(CR_TRAIN_SEEDS) & set(CR_HELDOUT_SEEDS):
+                | set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS)
+                | {s for other, seeds in CR_SPLITS.items() if other != name for part in seeds for s in part})
+    if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
+            or not (set(train_seeds) | set(heldout_seeds)) <= set(admission.P8_RESERVED)):
         raise EvolutionError("P8 constraint-release seeds overlap admission or earlier P8 seeds")
 
     def item(seed):
         data, truth = developmental.constraint_release_instance(seed)
         return f"s{seed}", {"data": data, "truth": truth, "category": developmental.constraint_release_subregion(data)}
-    return (dict(item(s) for s in CR_TRAIN_SEEDS), dict(item(s) for s in CR_HELDOUT_SEEDS),
+    return (dict(item(s) for s in train_seeds), dict(item(s) for s in heldout_seeds),
             sorted(f"s{s}" for s in reserved))
 
 

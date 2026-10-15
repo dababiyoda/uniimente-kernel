@@ -83,6 +83,11 @@ def validate_mission(spec: dict) -> dict:
         if requires & set(strategy["advances"]):
             raise MissionError(f"strategy {strategy['action_id']} cannot require a check it advances")
         _validate_bindings(strategy, set(actions))
+        for ref in inline_refs(strategy.get("params", {})):
+            source = ref.get("action_id")
+            if source not in actions or source == strategy["action_id"]:
+                raise MissionError(f"strategy {strategy['action_id']} consumes inline input from unknown or own "
+                                   f"action {source!r}")
     _acyclic_bindings(spec["strategies"])
     _validate_appraised_handoffs(spec)
     ladder = spec["closure"].get("ladder", [])
@@ -188,7 +193,7 @@ def _validate_bindings(strategy: dict, actions: set):
 
 
 def _acyclic_bindings(strategies: list):
-    edges = {s["action_id"]: {e["from"]["action_id"] for e in s.get("bind", [])} for s in strategies}
+    edges = {s["action_id"]: handoff_producers(s) for s in strategies}   # signed bind and inline $from_action
     state = {}
 
     def visit(node):
@@ -1491,6 +1496,7 @@ class MissionEngine:
         value = float(m.spec.get("value_per_check_usd", 1.0))
         held = {}                            # strategies waiting on a precondition observation says fails
         bound = {}                           # action_id -> (params, binding provenance, source receipts)
+        inline = {}                          # action_id -> (params, provenance) of inline $from_action inputs
         for index, s in enumerate(m.spec["strategies"]):
             gain = len(set(s["advances"]) & failing)
             if not gain or s["action_id"] in m.failed or s["action_id"] in m.excluded:
@@ -1510,10 +1516,11 @@ class MissionEngine:
             if inline_refs(s.get("params", {})):
                 from greg.pipeline import resolve, BindingError
                 try:
-                    links += [(p["action_id"], p["receipt"])
-                              for p in resolve(s.get("params", {}), self.journal, m.mission_id)[1]]
-                except BindingError:
-                    pass                     # not available yet: resolved again after selection
+                    inline[s["action_id"]] = resolve(s.get("params", {}), self.journal, m.mission_id)
+                except BindingError as why:  # not available (or not usable) yet: held with its reason, never
+                    held[s["action_id"]] = [f"input: {why}"]   # chosen ahead of the producer it waits on
+                    continue
+                links += [(p["action_id"], p["receipt"]) for p in inline[s["action_id"]][1]]
             holds = [h for h in (self._handoff_hold(m, producer, receipt) for producer, receipt in links) if h]
             if holds:
                 held[s["action_id"]] = [f"input: {h}" for h in holds]
@@ -1563,10 +1570,15 @@ class MissionEngine:
         # receipts of this mission; neither can touch capability, target, cost or scope.
         from greg.pipeline import resolve, BindingError
         try:
-            bound_params, input_bindings = resolve(params, self.journal, m.mission_id)
-        except BindingError as exc:
-            self._block(m, {"type": "no_strategy", "why": "pipeline input unavailable: " + str(exc)})
-            return {"state": "BLOCKED", "blocker": m.blocker}
+            bound_params, input_bindings = inline[aid] if aid in inline and not bindings else \
+                resolve(params, self.journal, m.mission_id)
+        except BindingError as exc:          # held during selection; reaching here is a recorded refusal
+            self.journal.record("mission.action", {
+                "mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": "REFUSED",
+                "reasons": ["pipeline input unavailable: " + str(exc)[:280]], "receipt": None,
+                "cost_usd": 0.0, "at": iso(now)},       # no capability: its input failed, not the capability
+                key=[m.mission_id, aid, attempt, "input"])
+            return {"state": "REPLANNING", "action": aid, "why": "pipeline input unavailable"}
         # A worker's own provider budget never exceeds the cost Alfonso signed for the strategy: whatever the
         # params say, the dispatch carries at most the signed ceiling, so no spend can escape the budget.
         budget_capped = None

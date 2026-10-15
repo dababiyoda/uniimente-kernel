@@ -193,3 +193,35 @@ def test_a_worker_handoff_without_an_independent_appraisal_is_refused_at_registr
     spec["strategies"][0]["advances"] = ["b_accepted"]
     with pytest.raises(MissionError, match="appraisal"):
         validate_mission(spec)
+
+
+# -- D3 -------------------------------------------------------------------------------------------------
+def test_an_inline_consumer_listed_first_waits_for_its_producer(tmp_path, monkeypatch):
+    run = _run(tmp_path, monkeypatch, {"handoff": "inline", "consumer_first": True}, ticks=8, seconds=4000)
+    assert [c["order"] for c in run["double"].calls] == ["a", "b"], run["states"]
+    assert run["m"].status == "ACHIEVED"
+    consumer = next(a for a in run["actions"] if a["action_id"] == "worker-b")
+    assert consumer["input_bindings"][0]["action_id"] == "worker-a"
+
+
+def test_an_inline_consumer_whose_producer_cannot_run_is_a_recorded_ask(tmp_path, monkeypatch):
+    def producer_refused(body, spec):   # the producer names a provider this body does not have: it is refused
+        spec["strategies"][1]["params"]["provider"] = "absent-provider"
+        body.journal.record("mission.registered", {"mission_id": spec["mission_id"], "spec": validate_mission(spec),
+                                                   "command_digest": "sha256:" + "1" * 64}, key=spec["mission_id"])
+    run = _run(tmp_path, monkeypatch, {"handoff": "inline", "consumer_first": True}, register=producer_refused,
+               ticks=8, seconds=4000)
+    assert run["double"].calls == []
+    no_strategy = [a for a in run["asks"] if a["kind"] == "NO_STRATEGY"]
+    assert len(no_strategy) == 1, run["states"]
+    held = no_strategy[0]["evidence"]["held_by_precondition"]["worker-b"]
+    assert any("worker-a" in h for h in held)
+    assert run["m"].blocker["request_id"] == no_strategy[0]["request_id"]
+
+
+def test_an_inline_reference_to_an_unknown_or_own_action_is_refused_at_registration(tmp_path):
+    for ref in ("worker-zz", "worker-b"):
+        spec = _spec(_repo(tmp_path / ref), handoff="inline")
+        spec["strategies"][1]["params"]["context"]["$from_action"]["action_id"] = ref
+        with pytest.raises(MissionError, match="unknown or own action"):
+            validate_mission(spec)

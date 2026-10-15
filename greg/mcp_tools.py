@@ -16,13 +16,17 @@ So the call is read-only by construction, whatever the server does. A tool that 
 nothing writable and no network. The server's own claim about its tools (``readOnlyHint``) is recorded as a claim
 and never used. Its answer is untrusted external data, and the mission's predicate decides what it means.
 
+``mcp.act`` is the same call for a tool that changes something: the founder approves its exact scope (the paths it
+may write, the hosts it may reach through the body's relay, the credential handles it receives) before it runs.
+
 Limits, stated: bubblewrap namespaces are required (refused without them); namespaces share the kernel, so this is
-not gVisor-class isolation of arbitrary code (Foundry #10). A server that needs the network is refused here; that
-needs signed hosts behind the relay, which is not built.
+not gVisor-class isolation of arbitrary code (Foundry #10). Credentials reach a server as environment variables only,
+and remote (HTTP) transport is not built.
 """
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import hashlib
 import json
 from pathlib import Path
@@ -125,8 +129,14 @@ def _command(params: dict, root: Path) -> list[str]:
     return command
 
 
-def call(params: dict, ctx: InvocationContext) -> dict:
-    from foundry.systems.mcp_gateway import GatewayError, _call, root_cause
+HOST = re.compile(r"[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+")
+ENV_NAME = re.compile(r"[A-Z_][A-Z0-9_]{0,63}")
+HANDLE = re.compile(r"mcp:[a-z0-9][a-z0-9._-]{0,60}")     # the founder's own credential handles for MCP servers
+
+
+def _common(params: dict, ctx: InvocationContext) -> dict:
+    """What every MCP invocation checks: the signed target names the server; the installation, its command and every
+    named path are inside the read roots; the arguments are an object; namespaces exist (else nothing starts)."""
     from greg.worker_isolation import WorkerIsolationError, _backend
     server, tool = params.get("server", ""), params.get("tool", "")
     if not NAME.fullmatch(str(server)) or not TOOL.fullmatch(str(tool)):
@@ -143,26 +153,96 @@ def call(params: dict, ctx: InvocationContext) -> dict:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:
         raise CapabilityError(f"an MCP server runs only in a bubblewrap namespace, unavailable here: {exc}") from None
+    return {"server": server, "tool": tool, "root": root, "command": command, "readable": readable,
+            "arguments": arguments}
+
+
+def _invoke(c: dict, ctx: InvocationContext, *, writable=(), hosts=(), env=None) -> dict:
+    """Start the server confined (behind a door to a relay allowing exactly ``hosts`` when there are any), call the
+    tool once, discard the scratch directory, and report the answer as untrusted data."""
+    from foundry.systems.mcp_gateway import GatewayError, _call, root_cause
     ctx.workspace.mkdir(parents=True, exist_ok=True)
-    scratch = Path(tempfile.mkdtemp(prefix=f"mcp-{server}-", dir=ctx.workspace))
-    provider = {"name": server, "command": command, "root": str(root), "readable": readable, "scratch": str(scratch)}
+    scratch = Path(tempfile.mkdtemp(prefix=f"mcp-{c['server']}-", dir=ctx.workspace))
+    provider = {"name": c["server"], "command": c["command"], "root": str(c["root"]), "readable": c["readable"],
+                "writable": list(writable), "env": dict(env or {}), "scratch": str(scratch)}
     try:
-        out = asyncio.run(_call(provider, tool, arguments))
+        with contextlib.ExitStack() as stack:
+            if hosts:
+                from foundry.systems.relay_door import Door
+                from foundry.systems.segmentation import Relay
+                scoped = Relay({"mcp.act": {"allow": [[h, 443] for h in hosts], "external": True}},
+                               ctx.egress.journal, connect=ctx.egress.connect, proxy=ctx.egress.proxy)
+                # The SDK starts the server, so the door listens on a socket the namespace is shown read-only, in a
+                # short private directory: a socket path in a deep workspace would exceed the 108-byte limit.
+                sockets = Path(tempfile.mkdtemp(prefix="greg-door-"))
+                stack.callback(shutil.rmtree, sockets, True)
+                door = stack.enter_context(Door(scoped, "mcp.act", path=sockets / "door.sock"))
+                provider["door"], provider["readable"] = door.control, [*provider["readable"], str(sockets)]
+            out = asyncio.run(_call(provider, c["tool"], c["arguments"]))
     except Exception as exc:              # a refusal, a crash, a protocol break: say what actually failed
         cause = root_cause(exc)
         log = scratch / "server-stderr.log"
         tail = log.read_text(errors="replace")[-300:].strip() if log.exists() else ""
         what = " ".join((str(cause) if isinstance(cause, GatewayError) else f"{type(cause).__name__}: {cause}").split())
         tail = " ".join(tail.split())[-200:]
-        raise CapabilityError(f"MCP server {server}: {what}"[:700] + (f" | stderr: {tail}" if tail else "")) from None
+        raise CapabilityError(f"MCP server {c['server']}: {what}"[:700] + (f" | stderr: {tail}" if tail else "")) from None
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     value = out["value"]
     text = value if isinstance(value, str) else json.dumps(value, sort_keys=True, default=str)
     if len(text.encode()) > MAX_RESULT_BYTES:
         raise CapabilityError("the server's answer exceeds the read ceiling")
-    return {"server": server, "tool": tool, "result": value, "text": text,
+    return {"server": c["server"], "tool": c["tool"], "result": value, "text": text,
             "result_sha256": "sha256:" + hashlib.sha256(text.encode()).hexdigest(),
-            "trust": "untrusted-external-data", "server_claims_read_only": out["provider_claims_read_only"],
-            "confinement": {"network": "none", "filesystem": "read-only except a discarded scratch directory",
-                            "shown": [str(root), *readable]}}
+            "trust": "untrusted-external-data", "server_claims_read_only": out["provider_claims_read_only"]}
+
+
+def call(params: dict, ctx: InvocationContext) -> dict:
+    """``mcp.call``: read-only by construction (no network, nothing writable but a discarded scratch directory)."""
+    c = _common(params, ctx)
+    out = _invoke(c, ctx)
+    out["confinement"] = {"network": "none", "filesystem": "read-only except a discarded scratch directory",
+                          "shown": [str(c["root"]), *c["readable"]]}
+    return out
+
+
+def act(params: dict, ctx: InvocationContext) -> dict:
+    """``mcp.act``: one tool that may change something, inside exactly what the founder signed for this use.
+
+    - ``writable``: paths under the read roots the server may write (nothing else is writable);
+    - ``hosts``: exact host names it may reach on port 443, through the body's relay (confined bodies only);
+    - ``secrets``: environment variables for the server, each naming a credential handle in the ``mcp:`` namespace
+      (``greg secret set mcp:<name>``); values reach the server's environment only, never the ledger.
+
+    The capability's class is ``external_contact``, so outside a signed standing mandate every use stops for the
+    founder's decision on its exact scope, and an uncertain outcome is never retried blindly."""
+    c = _common(params, ctx)
+    writable = []
+    for path in params.get("writable") or []:
+        resolved = _inside(Path(path), ctx.read_roots)
+        if not resolved.exists():
+            raise CapabilityError(f"{resolved} does not exist; a mission names existing paths to write")
+        writable.append(str(resolved))
+    c["readable"] = [r for r in c["readable"] if r not in writable]     # a path named both ways is writable
+    hosts = [str(h).lower() for h in params.get("hosts") or []]
+    bad = [h for h in hosts if not HOST.fullmatch(h)]
+    if bad:
+        raise CapabilityError(f"hosts must be exact host names (no scheme, port or wildcard): {bad}")
+    if hosts and ctx.egress is None:
+        raise CapabilityError("a server that reaches the network runs only on a body with confined egress "
+                              "(its connections cross the relay); this body has none")
+    secrets = params.get("secrets") or {}
+    if not isinstance(secrets, dict):
+        raise CapabilityError("secrets must map environment names to credential handles")
+    env = {}
+    for name, handle in secrets.items():
+        if not ENV_NAME.fullmatch(str(name)) or not HANDLE.fullmatch(str(handle)):
+            raise CapabilityError("each secret maps an UPPER_CASE environment name to an mcp:<name> credential handle")
+        env[name] = ctx.secrets.resolve(str(handle), declared=(str(handle),))
+    if not writable and not hosts:
+        raise CapabilityError("nothing to act on: name writable paths or hosts, or use mcp.call for a read-only call")
+    out = _invoke(c, ctx, writable=writable, hosts=hosts, env=env)
+    out["confinement"] = {"network": f"only {', '.join(hosts)} through the relay" if hosts else "none",
+                          "writable": writable, "shown": [str(c["root"]), *c["readable"]],
+                          "secrets": sorted(secrets)}
+    return out

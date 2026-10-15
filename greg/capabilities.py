@@ -62,7 +62,7 @@ class CapabilityManifest:
     inputs: dict
     outputs: dict
     target_prefix: str                 # every target this capability touches starts with this
-    network: str = "none"              # none | egress-allowlist
+    network: str = "none"              # none | egress-allowlist | target-host-only | signed-hosts (named per mission)
     egress_allowlist: tuple = ()
     filesystem: str = "none"           # none | read-scoped | workspace-write | artifact-write | deliver-write
     credentials: tuple = ()            # secret handle names; values never enter manifests or ledger
@@ -87,13 +87,14 @@ class CapabilityManifest:
             problems.append(f"unknown route {self.route!r}")
         if self.consequence_class not in CONSEQUENCE_CLASSES:
             problems.append(f"unknown consequence class {self.consequence_class!r}")
-        if self.network not in ("none", "egress-allowlist", "target-host-only"):
-            problems.append("network must be none, egress-allowlist or target-host-only")
+        if self.network not in ("none", "egress-allowlist", "target-host-only", "signed-hosts"):
+            problems.append("network must be none, egress-allowlist, target-host-only or signed-hosts")
         if (self.network == "target-host-only") != bool(self.target_from):
             problems.append("target-host-only network requires target_from (and only it may use target_from)")
         if self.network == "egress-allowlist" and not self.egress_allowlist:
             problems.append("egress allowlist required")
-        if self.filesystem not in ("none", "read-scoped", "workspace-write", "artifact-write", "deliver-write"):
+        if self.filesystem not in ("none", "read-scoped", "workspace-write", "artifact-write", "deliver-write",
+                                   "named-write"):
             problems.append("unknown filesystem class")
         if self.route == "cli" and not self.binaries:
             problems.append("cli capability must name exact binaries")
@@ -603,6 +604,7 @@ STRENGTHENS = {
     "institution.dossier": ("settlement", "routing", "compounding"),
     "institution.appraise": ("proof", "reliability"),
     "mcp.call": ("capability_formation", "routing", "proof"),
+    "mcp.act": ("capability_formation", "routing", "settlement"),
 }
 
 
@@ -855,6 +857,20 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                       "mechanism_from": "Model Context Protocol (official Python SDK, MIT); "
                                                         "foundry/systems/mcp_gateway.py; relay_door namespace"}),
                  _lazy("greg.mcp_tools", "call")),
+    "mcp.act": (_builtin("mcp.act", "tool.mcp_act",
+                         "Call one tool on a founder-installed MCP server that may write only the paths and reach "
+                         "only the hosts (through the relay) the founder approved for this call; credentials by handle",
+                         "app_integration", "external_contact", "mcp:",
+                         {"server": "str", "root": "path", "command": "list", "tool": "str", "arguments": "dict?",
+                          "readable": "list[path]?", "writable": "list[path]?", "hosts": "list?", "secrets": "dict?"},
+                         {"server": "str", "tool": "str", "result": "str|dict", "text": "str",
+                          "result_sha256": "str", "trust": "str", "confinement": "dict"},
+                         network="signed-hosts", filesystem="named-write", data_classes=("project_sources",),
+                         tests=("tests/unit/test_greg_mcp_act.py", "tests/integration/test_greg_mcp_act_mission.py"),
+                         provenance={"source": "uniimente-kernel/greg/mcp_tools.py",
+                                     "mechanism_from": "Model Context Protocol (official Python SDK, MIT); relay_door "
+                                                       "namespace and door; the authority office's exact-scope decisions"}),
+                _lazy("greg.mcp_tools", "act")),
     "daleobanks.verify": (_builtin("daleobanks.verify", "media.verify_draft",
                                    "DALEOBANKS EthicsGuard/Critic/PromptFirewall on a draft plus figure-to-source "
                                    "binding (DALEOBANKS code, DALEOBANKS interpreter)", "cli", "read_only",

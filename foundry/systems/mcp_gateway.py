@@ -68,11 +68,15 @@ def _confined(provider: dict):
         node = Path(node).resolve()        # under the hidden home)
         path.append(str(node.parent))
         shown.append(str(node.parent.parent))
-    argv = namespace_argv(writable=[str(scratch)], readonly=shown, chdir=str(scratch))
+    writable = [str(scratch), *(str(Path(p).resolve()) for p in provider.get("writable", ()))]
+    argv = namespace_argv(writable=writable, readonly=shown, chdir=str(scratch))
+    command = [*map(str, provider["command"])]
+    if provider.get("door"):               # its only way out: a door to a relay allowing exactly the signed hosts
+        from foundry.systems.relay_door import door_argv
+        command = door_argv(sys.executable, provider["door"], command)
     env = {"PATH": ":".join([*path, "/usr/local/bin", "/usr/bin", "/bin"]), "HOME": str(home),
-           "TMPDIR": str(temporary), "LANG": "C.UTF-8"}
-    return StdioServerParameters(command=argv[0], args=[*argv[1:], *map(str, provider["command"])], env=env,
-                                 cwd=str(scratch))
+           "TMPDIR": str(temporary), "LANG": "C.UTF-8", **provider.get("env", {})}
+    return StdioServerParameters(command=argv[0], args=[*argv[1:], *command], env=env, cwd=str(scratch))
 
 
 def _params(provider: dict):

@@ -560,9 +560,15 @@
     confined in the door namespace with no network, a read-only filesystem and the founder's and body homes hidden,
     in every context; GREG's mcp.call capability puts such a tool on the mission path through the authority office
     (tests/unit/test_greg_mcp_tools.py, tests/integration/test_greg_mcp_mission.py; the official mcp-server-time and
-    mcp-server-git ran locally, and the git server's add and commit were refused by the read-only filesystem). Still
-    missing - servers that need the network (signed hosts behind the relay), consequential MCP tools through the
-    Consequence Gate on the mission path, and remote (HTTP) transport. Original failover and authority component
+    mcp-server-git ran locally, and the git server's add and commit were refused by the read-only filesystem). Since
+    increment 20, consequential tools run as mcp.act (class external_contact) only after the founder approves the
+    exact scope, shown before answering - the folders the server may write (everything else stays read-only), the
+    hosts it may reach on 443 through the body's relay (confined bodies only; every other host and the direct
+    network are refused), and credential handles in the mcp namespace whose values reach only the server's
+    environment (tests/unit/test_greg_mcp_act.py, tests/integration/test_greg_mcp_act_mission.py; the official
+    filesystem server wrote the approved folder locally and its write elsewhere failed read-only). Still missing -
+    remote (HTTP) transport, credentials other than environment variables (OAuth flows, files), words-to-mcp.act
+    proposals in the planner, and observation on the founder's device. Original failover and authority component
     evidence is retained.
   implementation: *id001
   interface: foundry.query foundry_tool|list_foundry_tools (system 28); Gateway.call for governed third-party tools
@@ -582,6 +588,8 @@
   - tests/unit/test_greg_mcp_planner.py
   - tests/integration/test_greg_mcp_founder_path.py
   - tests/unit/test_greg_mcp_npm.py
+  - tests/unit/test_greg_mcp_act.py
+  - tests/integration/test_greg_mcp_act_mission.py
 29:
   acceptance:
   - External agents discover, negotiate and perform bounded work through an embassy

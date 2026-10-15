@@ -95,10 +95,21 @@ BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "bool
 DEFAULT_BIND_BYTES = 16 * 1024
 
 
+def exact_reach(capability_id: str, params: dict) -> dict:
+    """What approving this exact scope lets the capability touch, shown before the founder answers. The approval is
+    bound to the scope digest of these params; this makes the same params readable. Credentials by handle only."""
+    if capability_id != "mcp.act":
+        return {}
+    return {"tool": f"{params.get('server')}.{params.get('tool')}",
+            "may_write": list(params.get("writable") or []) or "nothing",
+            "may_reach": [f"{h}:443 through the relay" for h in params.get("hosts") or []] or "no network",
+            "credentials": sorted(str(v) for v in (params.get("secrets") or {}).values()) or "none"}
+
+
 # Capabilities whose network access runs behind the body's #26 relay when the body confines egress.
 CONFINED_EGRESS = frozenset({"http.get", "github.pulls", "brief.engineering", "browser.render",
                              "browser.session", "worker.commission", "daleobanks.verify", "daleobanks.publish",
-                             "venture.assess"})
+                             "venture.assess", "mcp.act"})
 
 
 class Unbound(Exception):
@@ -1164,6 +1175,7 @@ class MissionEngine:
                                 requested={"capability": manifest.capability_id, "target": s["target"],
                                            "consequence_class": manifest.consequence_class,
                                            "cost_usd": s.get("cost_usd", 0.0),
+                                           **exact_reach(manifest.capability_id, params),
                                            **({"spend": f"${float(s['cost_usd']):.2f} for this one action"}
                                               if float(s.get("cost_usd", 0.0)) > 0 else {})},
                                 now=now, resource=self._spend_ask(m, s, outcome, routing_decision)

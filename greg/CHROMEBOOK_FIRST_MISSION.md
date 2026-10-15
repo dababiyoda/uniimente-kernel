@@ -240,6 +240,11 @@ guess from your words. A commit could not happen anyway: the repository is read-
 "Read-only file system" error is what a write gets. `greg mcp list --tools` shows the same in a terminal. A server that needs launch arguments (the filesystem server takes the folders it may serve) reads them
 from a `greg-mcp.json` beside it: `{"args": ["/home/<you>/src/notes"], "readable": ["/home/<you>/src/notes"]}`.
 
+A tool that changes something (writes a file, posts to a service) runs only as an `mcp.act` mission, and GREG
+stops and asks you first. The request shows the folders it may write, the hosts it may reach through the relay
+and the credential handles it receives (`greg secret set mcp:<name>`); approve exactly that, or reject. Everything
+else stays read-only. Your words do not yet produce such a mission; the read-only ones above are the first step.
+
 ## 7. Founder control
 
 From Mission Control, **Pause GREG (signed)** then **Resume**; prepare any mission and **Revoke** it before it

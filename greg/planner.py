@@ -285,7 +285,8 @@ def _mcp_route(text: str, ctx: PlannerContext) -> dict | None:
         "the server's own claims about its tools are not trusted; its answer is shown as untrusted data"]
         + ([] if tool.get("claims_read_only") else [
             f"the server does not claim {tool['name']} is read-only: if it tries to change something, it fails inside "
-            "GREG's namespace and nothing changes"]))
+            "GREG's namespace and nothing changes (a change needs an mcp.act mission naming what it may write, "
+            "approved by you)"]))
 
 
 def template_route(text: str, ctx: PlannerContext) -> dict | None:

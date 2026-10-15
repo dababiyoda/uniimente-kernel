@@ -211,6 +211,7 @@ def namespace_argv(*, writable=(), readonly=(), chdir: str, tmp_roots=None, hidd
     binds = [("--ro-bind", p) for p in runtime_paths() if Path(p).exists() and any(_inside(p, m) for m in masked)]
     binds += [("--bind", str(w)) for w in writable if w]
     binds += [("--ro-bind", str(r)) for r in readonly if r and Path(r).exists()]
+    binds.sort(key=lambda b: len(Path(b[1]).parts))     # parents before children: a named child keeps its mode
     again = [h for h in hidden if any(_inside(h, p) and p != h for _, p in binds)]
     mounts = [a for kind, p in binds for a in (kind, p, p)]
     restore = [a for kind, p in binds if any(_inside(p, h) for h in again) for a in (kind, p, p)]

@@ -375,7 +375,9 @@ def _tool_servers_section(console, p, form) -> str:
     out = ("<section><h2>Tool servers you installed (MCP)</h2><p class=reality>Found under GREG's read roots: a folder "
            "whose <code>bin</code> holds <code>mcp-server-&lt;name&gt;</code>. A mission may call one of their tools "
            "(<code>mcp.call</code>): the server runs with no network and a read-only view, so nothing it does can "
-           "change anything; its own claims are not trusted.</p>")
+           "change anything; its own claims are not trusted. A tool that writes or reaches the network runs as "
+           "<code>mcp.act</code>, and only after you approve its exact scope: the folders it may write, the hosts it "
+           "may reach through the relay, and the credential handles it receives.</p>")
     answers = p.get("tool_answers") or []
     if answers:
         out += ("<h3>Latest answers</h3>" + _table(["Server · tool", "Answer (untrusted data)", "Receipt"], [

@@ -69,6 +69,24 @@ def compile_problem(params):
     return geometry, consequence
 
 
+def _cpu_seconds():
+    """CPU seconds of this thread plus every child process the body has waited for (directive section 12: count
+    local compute even when it costs no tokens). ``None`` where the platform offers no resource accounting; peak
+    memory cannot be split per call this way and stays unmeasured."""
+    try:
+        import resource
+    except ImportError:
+        return None
+    own = resource.getrusage(getattr(resource, "RUSAGE_THREAD", resource.RUSAGE_SELF))
+    kids = resource.getrusage(resource.RUSAGE_CHILDREN)
+    return own.ru_utime + own.ru_stime + kids.ru_utime + kids.ru_stime
+
+
+def _cpu_delta(started):
+    now = _cpu_seconds()
+    return round(now - started, 4) if started is not None and now is not None else "unmeasured"
+
+
 def geometry_key(geometry):
     fields = ("epistemic_class", "domain", "objective_type", "static_or_sequential", "discrete_or_continuous", "graph_structure", "consequence_class")
     return digest({k: getattr(geometry, k) for k in fields})
@@ -167,7 +185,7 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         from .bridge import reason_cortex
         return reason_cortex(params, registry=registry, journal=journal, model_config=model_config,
                              forced=forced_family)
-    started = time.monotonic()
+    started, cpu_started = time.monotonic(), _cpu_seconds()
     geometry, consequences = compile_problem(params)
     rows = candidates(params, geometry, registry, journal)
     eligible = [r for r in rows if r["eligible"] and (forced_family is None or r["family"] == forced_family)]
@@ -248,7 +266,11 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         falsification_condition="independent recomputation, invalid assumptions, counterexample or observed outcome contradicts this receipt",
         abstention_state=state, missing_information=missing,
         compute_cost={"operation_ceiling": geometry.compute_limit, "memory_ceiling_bytes": 2 * 1024**3,
-                      "model_calls": int(bool(answer and chosen["family"] == "semantic")), "energy": "unmeasured"},
+                      "model_calls": int(bool(answer and chosen["family"] == "semantic")), "energy": "unmeasured",
+                      "cpu_seconds": _cpu_delta(cpu_started),
+                      "cpu_scope": ("this thread plus child processes waited for during the call: the solver and "
+                                    "verifier, and any child another thread reaped meanwhile"),
+                      "peak_memory": "unmeasured"},
         money_cost=0.0, latency=time.monotonic() - started, evaluator="greg.cognition.verification/0.1.0", evaluator_result=evaluator,
         formal_validity=answer.get("formal_validity", "NOT_APPLICABLE") if answer else "NOT_APPLICABLE",
         reason_code=reason_code, outcome_state="ANSWERED_WITHIN_SCOPE" if state == "NONE" else "ESCALATE" if state == "HUMAN_REVIEW_REQUIRED" else "CONDITIONAL_RESULT" if state == "WORLD_UNVERIFIED" else "ABSTAIN",

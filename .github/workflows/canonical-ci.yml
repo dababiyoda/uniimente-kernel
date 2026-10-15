@@ -34,7 +34,10 @@ jobs:
   tests:
     name: "1 · Kernel and organ tests"
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The unit suite runs twice here: the full suite, then verifier V2 (tests/unit). At #179 c6c4d74 that took 24
+    # of 30 minutes, and on 2026-10-15 four stacked heads run at once were cancelled inside the verifier with the
+    # suite itself green (17-19 minutes under load). The limit bounds a hung run; it is not a speed target.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -138,6 +141,10 @@ jobs:
         run: python -m pytest -q tests/unit/test_greg_cognition_seed_path.py tests/integration/test_greg_cognition_process.py
       - name: GREG cognition boundary mutation check
         run: python scripts/ci/check_greg_cognition_mutants.py
+      - name: Residual safeguards (cross-engine certificates, legitimacy, disclosure packages, characterization, thinking budget) and their mutation check
+        run: |
+          python -m pytest -q tests/unit/test_cognition_residual_safeguards.py tests/unit/test_cognition_disclosure.py tests/unit/test_cognition_characterize.py tests/unit/test_cognition_thinking_budget.py
+          python scripts/ci/check_cognition_residual_mutants.py
       - name: Seed Genome 120-case frozen engineering comparison
         run: python -m cortex.evaluation.seed_genome.run --out seed-genome-results.json
       - name: Held-out run against the freeze manifest (refuses if frozen inputs changed)

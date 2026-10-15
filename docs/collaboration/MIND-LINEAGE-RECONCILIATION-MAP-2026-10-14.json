@@ -912,8 +912,8 @@
    "path": "greg/cognition/cortex.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); extended on the convergence port (#180) with #163's CPU accounting in compute_cost (directive section 12: local compute counted even when it costs no tokens)"
   },
   {
    "path": "greg/cognition/evolution.py",

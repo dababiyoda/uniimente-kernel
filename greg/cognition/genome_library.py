@@ -149,7 +149,8 @@ def admission_of(family: str, index: dict) -> tuple[str, str, str | None]:
 
     A genome-library family reads ``genomes`` with the compiler's version rule: positive evidence binds the
     version measured, so a bumped version is EXPERIMENTAL until re-admitted; negative evidence persists. Any
-    other family reads ``operations``. No index row means no frozen run: EXPERIMENTAL, labelled UNEVALUATED."""
+    other family reads ``operations`` with the same rule applied to its solver code digest. No index row means
+    no frozen run: EXPERIMENTAL, labelled UNEVALUATED."""
     from .compiler import NOT_POSITIVE
     from .genomes import library
     genomes = library.executables()
@@ -165,8 +166,11 @@ def admission_of(family: str, index: dict) -> tuple[str, str, str | None]:
     record = (index.get("operations") or {}).get(family)
     if not record:
         return "EXPERIMENTAL", "UNEVALUATED", None
-    raw = record["raw_status"]
-    return STRUCTURAL.get(raw, raw), raw, record["evidence"].partition("#")[0]
+    from .compiler import operation_status
+    raw, ref = record["raw_status"], record["evidence"].partition("#")[0]
+    if operation_status(family, record)[1]:            # positive evidence measured on other solver code
+        return "EXPERIMENTAL", f"{raw} (stale: the solver changed since it was measured)", ref
+    return STRUCTURAL.get(raw, raw), raw, ref
 
 
 def _families() -> list[GenomeEntry]:

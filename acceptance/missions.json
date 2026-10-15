@@ -6,7 +6,8 @@
   "lineage": [
    "Missions A-E, G, H, J first mapped against 5c4f4aa (2026-10-14) by an independent mapping run; every cited node re-resolved against this tree",
    "2026-10-15: A (R2, R3) and F re-mapped onto Goal Gravity on the Body (76832db); D, G and H updated with the Mission D/G/H defect fixes and their regressions (docs/collaboration/MISSION-DEFECTS-2026-10-15.md); I, K and L mapped",
-   "2026-10-15: Mission F requirements R1 and R3-R7 proven at BODY tier by a real-process Goal Gravity test; F gap G1 closed"
+   "2026-10-15: Mission F requirements R1 and R3-R7 proven at BODY tier by a real-process Goal Gravity test; F gap G1 closed",
+   "2026-10-15: Mission K requirement K1 proven at BODY tier by a real-process pause/resume test; K gap G1 closed"
   ]
  },
  "tier_reading": {
@@ -2090,18 +2091,19 @@
     {
      "id": "K1",
      "obligation": "Suspend: a founder pause or stop admits no further dispatch, and nothing resumes a paused mission except the founder.",
-     "coverage": "partial",
-     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
+      "tests/integration/test_goal_chase_host.py::test_host_wakes_registered_mission_once_across_processes_and_pauses",
+      "tests/integration/test_greg_body_pause_process.py::test_a_signed_pause_holds_a_real_body_across_a_forged_resume_and_a_kill_until_the_founder_resumes",
+      "tests/unit/test_egregore_runtime.py::test_suspend_always_stops_cognition_and_resume_requires_external_hash",
       "tests/unit/test_greg_continuity.py::test_stop_arriving_mid_tick_admits_no_further_dispatch",
       "tests/unit/test_greg_goal_gravity.py::test_a_goal_never_resumes_a_paused_mission",
-      "tests/unit/test_greg_gravity.py::test_a_paused_or_expired_mission_lends_no_authority",
       "tests/unit/test_greg_goal_gravity_reattack.py::test_a_founder_pause_of_the_mission_ends_its_pending_pull",
-      "tests/unit/test_egregore_runtime.py::test_suspend_always_stops_cognition_and_resume_requires_external_hash",
-      "tests/integration/test_goal_chase_host.py::test_host_wakes_registered_mission_once_across_processes_and_pauses"
+      "tests/unit/test_greg_gravity.py::test_a_paused_or_expired_mission_lends_no_authority"
      ],
-     "notes": "A whole-Body BODY_PAUSE/BODY_RESUME cycle in a real process is not asserted (gap G1)."
+     "notes": "2026-10-15: a signed BODY_PAUSE holds a real `greg run` process: nothing is dispatched for ~20 ticks, a BODY_RESUME signed by another key is refused as data, a SIGKILL restart does not lift the pause, and the founder's signed BODY_RESUME lets each mission act exactly once."
     },
     {
      "id": "K2",
@@ -2179,10 +2181,11 @@
     {
      "id": "G1",
      "gap": "No real Body process is paused and resumed by signed BODY_PAUSE/BODY_RESUME with every mission's dispatch asserted halted in between.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Supervised-Body test: two missions running, signed BODY_PAUSE, assert no dispatch for N ticks and across a SIGKILL restart, signed BODY_RESUME, assert both continue once."
+     "next": "Supervised-Body test: two missions running, signed BODY_PAUSE, assert no dispatch for N ticks and across a SIGKILL restart, signed BODY_RESUME, assert both continue once.",
+     "closed_by": "tests/integration/test_greg_body_pause_process.py (real `greg run` process, forged resume, SIGKILL restart, signed resume)"
     },
     {
      "id": "G2",

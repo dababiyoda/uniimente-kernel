@@ -1018,11 +1018,13 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                                         "foundry/systems/mcp_gateway.py; relay_door namespace"}),
                  _lazy("greg.mcp_tools", "call")),
     "mcp.act": (_builtin("mcp.act", "tool.mcp_act",
-                         "Call one tool on a founder-installed MCP server that may write only the paths and reach "
-                         "only the hosts (through the relay) the founder approved for this call; credentials by handle",
+                         "Call one tool on a founder-installed MCP server, or a remote one by URL, that may write "
+                         "only the paths and reach only the hosts (through the relay) the founder approved for this "
+                         "call; credentials by handle",
                          "app_integration", "external_contact", "mcp:",
-                         {"server": "str", "root": "path", "command": "list", "tool": "str", "arguments": "dict?",
-                          "readable": "list[path]?", "writable": "list[path]?", "hosts": "list?", "secrets": "dict?"},
+                         {"server": "str", "root": "path?", "command": "list?", "url": "str?", "tool": "str",
+                          "arguments": "dict?", "readable": "list[path]?", "writable": "list[path]?", "hosts": "list?",
+                          "secrets": "dict?", "bearer": "str?"},
                          {"server": "str", "tool": "str", "result": "str|dict", "text": "str",
                           "result_sha256": "str", "trust": "str", "confinement": "dict"},
                          network="signed-hosts", filesystem="named-write", data_classes=("project_sources",),

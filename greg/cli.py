@@ -30,6 +30,7 @@ import argparse
 from datetime import datetime, timedelta, timezone
 import getpass
 import json
+from urllib.parse import urlsplit
 import os
 from pathlib import Path
 import sys
@@ -344,6 +345,10 @@ def main(argv=None) -> int:
     mcps = mcp.add_subparsers(dest="mcp_cmd", required=True)
     mcl = mcps.add_parser("list", help="the servers found; with --tools, each one's tools (run confined, no network)")
     mcl.add_argument("--tools", action="store_true")
+    mlo = mcps.add_parser("login", help="authorize GREG at a remote MCP server (OAuth; you approve in your browser); "
+                                        "the tokens stay in this body's secret broker under mcp:<name>")
+    mlo.add_argument("name")
+    mlo.add_argument("url")
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
     doc.add_argument("--chromebook", action="store_true", required=True)
     fd = sub.add_parser("foundry", help="the Foundry arsenal: completion status, systems, GREG's own graph and reputation")
@@ -771,6 +776,25 @@ def main(argv=None) -> int:
                 print(json.dumps(improvement.report(journal, journal.ledger), indent=1, default=str))
         elif args.cmd == "status":
             print(json.dumps(status(home), indent=1, default=str))
+        elif args.cmd == "mcp" and args.mcp_cmd == "login":
+            import asyncio
+            import os
+            from greg import mcp_login
+            from greg.capabilities import SecretBroker
+
+            def show(link):
+                print(f"Open this link to authorize GREG at {args.url} (it waits up to 5 minutes):\n{link}",
+                      file=sys.stderr, flush=True)
+            from greg.capabilities import CapabilityError
+            try:
+                out = asyncio.run(mcp_login.login(args.name, args.url, SecretBroker(Layout(home).secrets),
+                                                  open_url=show, cafile=os.environ.get("GREG_EGRESS_CAFILE")))
+            except CapabilityError as exc:
+                raise BodyError(f"not logged in: {exc}") from None
+            print(json.dumps({**out, "next": f"a mission names bearer {out['handle']}; every call still waits for "
+                                             "your approval" + (f", and names {out['renews_at']} in hosts so an "
+                                             "expired login can renew" if out["renews_at"] != urlsplit(args.url).hostname
+                                             else "")}, indent=1))
         elif args.cmd == "mcp":
             from greg import mcp_tools
             servers = mcp_tools.installed_servers(json.loads(Layout(home).config.read_text())["read_roots"])

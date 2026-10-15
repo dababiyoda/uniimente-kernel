@@ -645,6 +645,41 @@ def mcp_tool(*, server: str, root: str, command: list[str], tool: str, arguments
 TEMPLATES["mcp-tool"] = mcp_tool
 
 
+def mcp_act(*, server: str, root: str, command: list[str], tool: str, arguments: dict, writable: list,
+            check_path: str, expect: dict, readable=(), founder_expression: str | None = None,
+            horizon_days: float = 1) -> dict:
+    """One change by a tool of an MCP server the founder installed (``mcp.act``), inside the scope they approve.
+
+    The light cone stops at read-only, so the act always waits for the founder's decision on its exact scope: the
+    paths it may write (everything else stays read-only), no network, no credentials. GREG checks the effect itself
+    by reading ``check_path``; the server's own answer is untrusted data. If the effect is already there, nothing
+    runs."""
+    digest = hashlib.sha256(json.dumps([tool, arguments, writable], sort_keys=True).encode()).hexdigest()[:8]
+    params = {"server": server, "root": str(root), "command": [str(c) for c in command], "tool": tool,
+              "arguments": dict(arguments), "writable": [str(w) for w in writable]}
+    if readable:
+        params["readable"] = [str(r) for r in readable]
+    name = Path(check_path).name
+    return {
+        "mission_id": f"m:mcp-act-{_slug(server, 20)}-{_slug(tool, 30)}-{digest}",
+        "founder_expression": founder_expression or f"Use the {server} server's {tool}",
+        "intended_effect": f"{check_path} shows the change made by the {server} server's {tool}; nothing outside "
+                           f"{', '.join(params['writable'])} changes",
+        "priority": 50, "closure": {"kind": "bounded"},
+        "success_checks": [{
+            "check_id": "changed", "description": f"GREG reads {name} and finds the change",
+            "sensor": {"capability": "fs.read", "params": {"path": str(check_path)}, "target": f"fs:{name}"},
+            "predicate": expect}],
+        "strategies": [{"action_id": "act", "capability": "mcp.act", "params": params, "target": f"mcp:{server}",
+                        "advances": ["changed"],
+                        "rationale": f"the {server} server's {tool}, inside the scope the founder approves"}],
+        "light_cone": {"capabilities": ["mcp.act", "fs.read"], "targets": [f"mcp:{server}", f"fs:{name}"],
+                       "max_consequence_class": "read_only", "budget_usd": 0.0, "horizon": _horizon(horizon_days)}}
+
+
+TEMPLATES["mcp-act"] = mcp_act
+
+
 NETWORK_NAME = r"[A-Za-z][A-Za-z0-9_-]{0,31}"
 NETWORK_NUMBER = r"\d+(?:\.\d+)?"
 NETWORK_LINK = re.compile(rf"^(?P<a>{NETWORK_NAME})\s+(?P<how>to|and)\s+(?P<b>{NETWORK_NAME})\s*[:,]?\s*"

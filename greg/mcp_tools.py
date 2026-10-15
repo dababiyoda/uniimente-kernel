@@ -135,9 +135,9 @@ HANDLE = re.compile(r"mcp:[a-z0-9][a-z0-9._-]{0,60}")     # the founder's own cr
 
 
 def _common(params: dict, ctx: InvocationContext) -> dict:
-    """What every MCP invocation checks: the signed target names the server; the installation, its command and every
-    named path are inside the read roots; the arguments are an object; namespaces exist (else nothing starts)."""
-    from greg.worker_isolation import WorkerIsolationError, _backend
+    """What every MCP invocation checks first: the signed target names the server; the installation, its command and
+    every named path are inside the read roots; the arguments are an object. Whether this host has namespaces is
+    asked only after everything signed has been checked (``_invoke``)."""
     server, tool = params.get("server", ""), params.get("tool", "")
     if not NAME.fullmatch(str(server)) or not TOOL.fullmatch(str(tool)):
         raise CapabilityError("server must be a lowercase name and tool a plain identifier")
@@ -149,10 +149,6 @@ def _common(params: dict, ctx: InvocationContext) -> dict:
     arguments = params.get("arguments") or {}
     if not isinstance(arguments, dict):
         raise CapabilityError("arguments must be an object")
-    try:
-        _backend(require_bubblewrap=True)
-    except WorkerIsolationError as exc:
-        raise CapabilityError(f"an MCP server runs only in a bubblewrap namespace, unavailable here: {exc}") from None
     return {"server": server, "tool": tool, "root": root, "command": command, "readable": readable,
             "arguments": arguments}
 
@@ -161,6 +157,11 @@ def _invoke(c: dict, ctx: InvocationContext, *, writable=(), hosts=(), env=None)
     """Start the server confined (behind a door to a relay allowing exactly ``hosts`` when there are any), call the
     tool once, discard the scratch directory, and report the answer as untrusted data."""
     from foundry.systems.mcp_gateway import GatewayError, _call, root_cause
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        raise CapabilityError(f"an MCP server runs only in a bubblewrap namespace, unavailable here: {exc}") from None
     ctx.workspace.mkdir(parents=True, exist_ok=True)
     scratch = Path(tempfile.mkdtemp(prefix=f"mcp-{c['server']}-", dir=ctx.workspace))
     provider = {"name": c["server"], "command": c["command"], "root": str(c["root"]), "readable": c["readable"],
@@ -199,6 +200,9 @@ def _invoke(c: dict, ctx: InvocationContext, *, writable=(), hosts=(), env=None)
 
 def call(params: dict, ctx: InvocationContext) -> dict:
     """``mcp.call``: read-only by construction (no network, nothing writable but a discarded scratch directory)."""
+    if "url" in params:
+        raise CapabilityError("a remote server's tools run on someone else's machine, so GREG cannot make a call "
+                              "read-only; each call is an mcp.act the founder approves")
     c = _common(params, ctx)
     out = _invoke(c, ctx)
     out["confinement"] = {"network": "none", "filesystem": "read-only except a discarded scratch directory",
@@ -214,8 +218,13 @@ def act(params: dict, ctx: InvocationContext) -> dict:
     - ``secrets``: environment variables for the server, each naming a credential handle in the ``mcp:`` namespace
       (``greg secret set mcp:<name>``); values reach the server's environment only, never the ledger.
 
+    With ``url`` instead of an installation, the server is remote (Streamable HTTP): GREG's own client runs confined,
+    reaching only that URL's host through the relay, with the token from ``bearer`` (an ``mcp:`` handle).
+
     The capability's class is ``external_contact``, so outside a signed standing mandate every use stops for the
     founder's decision on its exact scope, and an uncertain outcome is never retried blindly."""
+    if "url" in params:
+        return _remote_act(params, ctx)
     c = _common(params, ctx)
     writable = []
     for path in params.get("writable") or []:
@@ -246,3 +255,111 @@ def act(params: dict, ctx: InvocationContext) -> dict:
                           "writable": writable, "shown": [str(c["root"]), *c["readable"]],
                           "secrets": sorted(secrets)}
     return out
+
+
+def remote_url(url) -> str:
+    """The host of an https URL GREG may connect to: https only, no credentials, no port but 443."""
+    from urllib.parse import urlsplit
+    parts = urlsplit(str(url))
+    host = (parts.hostname or "").lower()
+    if parts.scheme != "https" or parts.username or parts.password or parts.port not in (None, 443) \
+            or not HOST.fullmatch(host):
+        raise CapabilityError("url must be https://<exact host>/<path>, without credentials or a port other than 443")
+    return host
+
+
+def _remote_act(params: dict, ctx: InvocationContext) -> dict:
+    """``mcp.act`` against a remote server: one tool call from GREG's confined client, through the relay."""
+    import os
+    import subprocess
+    import sys
+    from foundry.systems.relay_door import ROOT, Door, door_argv, namespace_argv
+    from foundry.systems.segmentation import Relay
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    server, tool = params.get("server", ""), params.get("tool", "")
+    if not NAME.fullmatch(str(server)) or not TOOL.fullmatch(str(tool)):
+        raise CapabilityError("server must be a lowercase name and tool a plain identifier")
+    if ctx.target != f"mcp:{server}":
+        raise CapabilityError(f"the signed target {ctx.target!r} does not name server {server!r}")
+    host = remote_url(params["url"])
+    named = [str(h).lower() for h in params.get("hosts") or [host]]
+    if params.get("writable") or params.get("readable") or params.get("secrets"):
+        raise CapabilityError("a remote server is given no local paths and no environment; its credential is bearer")
+    arguments = params.get("arguments") or {}
+    if not isinstance(arguments, dict):
+        raise CapabilityError("arguments must be an object")
+    bearer = params.get("bearer")
+    if bearer is not None and not HANDLE.fullmatch(str(bearer)):
+        raise CapabilityError("bearer names an mcp:<name> credential handle")
+    from greg import mcp_login
+    login = mcp_login.record(ctx.secrets, str(bearer)) if bearer else None     # reading the broker contacts nobody
+    renew_at = mcp_login.public(login)["renews_at"] if login else None
+    if host not in named or any(h not in (host, renew_at) for h in named):
+        raise CapabilityError(f"a remote server reaches exactly its own host ({host})"
+                              + (f", and its login renews at {renew_at}" if renew_at and renew_at != host else ""))
+    if ctx.egress is None:
+        raise CapabilityError("a remote server is reached only from a body with confined egress (its connections "
+                              "cross the relay); this body has none")
+    renewal = None
+    if login:
+        token = login["tokens"]["access_token"]
+        if mcp_login.expired(login):
+            if not login["tokens"].get("refresh_token"):
+                raise CapabilityError(f"the login {bearer} has expired and cannot renew; run greg mcp login again")
+            if renew_at != host and renew_at not in named:
+                raise CapabilityError(f"the login {bearer} has expired and renews at {renew_at}, which this approved "
+                                      "call does not name in hosts; name it, or run greg mcp login again")
+            renewal = {"token_endpoint": login["token_endpoint"], "refresh_token": login["tokens"]["refresh_token"],
+                       "client_id": login["client"]["client_id"],
+                       **({"client_secret": login["client"]["client_secret"]}
+                          if login["client"].get("client_secret") else {})}
+    else:
+        token = ctx.secrets.resolve(str(bearer), declared=(str(bearer),)) if bearer else ""
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        raise CapabilityError(f"GREG's MCP client runs only in a bubblewrap namespace, unavailable here: {exc}") from None
+    ctx.workspace.mkdir(parents=True, exist_ok=True)
+    scratch = Path(tempfile.mkdtemp(prefix=f"mcp-{server}-", dir=ctx.workspace))
+    sockets = Path(tempfile.mkdtemp(prefix="greg-door-"))
+    cafile = os.environ.get("GREG_EGRESS_CAFILE")
+    allowed = sorted({host, *([renew_at] if renewal else [])})
+    scoped = Relay({"mcp.act": {"allow": [[h, 443] for h in allowed], "external": True}}, ctx.egress.journal,
+                   connect=ctx.egress.connect, proxy=ctx.egress.proxy)
+    try:
+        with Door(scoped, "mcp.act", path=sockets / "door.sock") as door:
+            (scratch / "home").mkdir()
+            argv = namespace_argv(writable=[str(scratch)], readonly=[str(sockets), *([cafile] if cafile else [])],
+                                  chdir=str(ROOT))
+            argv += door_argv(sys.executable, door.control,
+                              [sys.executable, "-m", "greg.mcp_remote", "call", str(params["url"]), tool])
+            env = {"PATH": "/usr/local/bin:/usr/bin:/bin", "HOME": str(scratch / "home"), "TMPDIR": str(scratch),
+                   "LANG": "C.UTF-8", "PYTHONDONTWRITEBYTECODE": "1", "GREG_MCP_BEARER": token,
+                   **({"GREG_MCP_RENEW": json.dumps(renewal)} if renewal else {}),
+                   **({"GREG_EGRESS_CAFILE": cafile} if cafile else {})}
+            done = subprocess.run(argv, input=json.dumps(arguments), capture_output=True, text=True, env=env,
+                                  timeout=180)
+    except subprocess.TimeoutExpired:
+        raise CapabilityError(f"MCP server {server}: no answer within 180 s") from None
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+        shutil.rmtree(sockets, ignore_errors=True)
+    try:
+        answer = json.loads(done.stdout.strip().splitlines()[-1])
+        if answer.get("renewed") and login:          # the renewed login goes back to the broker, never the record
+            mcp_login.store_renewal(ctx.secrets, str(bearer), login, answer.pop("renewed"))
+    except (ValueError, IndexError):
+        tail = " ".join(done.stderr.split())[-300:].replace(token, "[credential]") if token else done.stderr[-300:]
+        raise CapabilityError(f"MCP server {server}: GREG's client failed (exit {done.returncode}): {tail}") from None
+    if "error" in answer:
+        raise CapabilityError(f"MCP server {server}: {answer['error']}"[:700])
+    value = answer["ok"]["value"]
+    text = value if isinstance(value, str) else json.dumps(value, sort_keys=True, default=str)
+    if len(text.encode()) > MAX_RESULT_BYTES:
+        raise CapabilityError("the server's answer exceeds the read ceiling")
+    return {"server": server, "tool": tool, "result": value, "text": text,
+            "result_sha256": "sha256:" + hashlib.sha256(text.encode()).hexdigest(),
+            "trust": "untrusted-external-data", "server_claims_read_only": answer["ok"]["provider_claims_read_only"],
+            "confinement": {"network": f"only {', '.join(allowed)} through the relay", "writable": [], "shown": [],
+                            "secrets": [str(bearer)] if bearer else [], "remote": str(params["url"]),
+                            **({"login_renewed": True} if renewal else {})}}

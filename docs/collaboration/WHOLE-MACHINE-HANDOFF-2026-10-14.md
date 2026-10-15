@@ -9,12 +9,12 @@ OPUS MAXIMUS continuation directive (section 16) requires.
 
 | Command | What happens | Before this branch |
 |---|---|---|
-| Press **Run the First Mission** in Mission Control (or `greg rehearse` with a throwaway key) | One signed mission does five things: (1) reads GREG's own developmental path and Foundry contract; (2) sends what only Alfonso can unblock to his decision queue; (3) selects the best work under a signed effort budget with an exact solver, against a greedy baseline; (4) names the existing machinery and the missing capabilities; (5) delivers one private dossier, renders it as a Foundry page and retains its bytes. An independent appraisal re-derives all of it before it counts | No such mission; "what next" was a chat answer |
+| Press **Run the First Mission** in Mission Control (or `greg rehearse` with a throwaway key) | One signed mission does five things: (1) reads GREG's own developmental path and Foundry contract; (2) sends what only Alfonso can unblock to their decision queue; (3) selects the best work under a signed effort budget with an exact solver, against a greedy baseline; (4) names the existing machinery and the missing capabilities; (5) delivers one private dossier, renders it as a Foundry page and retains its bytes. An independent appraisal re-derives all of it before it counts | No such mission; "what next" was a chat answer |
 | Open the private link `greg console` prints | Mission Control answers the five questions from retained state (what GREG is, what it can do now, what it is doing, what it can be commanded to do, what needs Alfonso's authority). It has ten views, and signed controls for pause, resume, revoke, attach, decide, accept and stop. Only the owner's browser session can sign | Two of five questions answered (baseline in `docs/evidence/mission-control-acceptance/2026-10-14/baseline.json`); any local process could get a mission signed |
-| Search **"What outcome do you want?"** | Ranks mission paths, capabilities and the 55 Foundry systems against his words, each shown with its true state and gap | A request GREG could not plan was a dead end |
+| Search **"What outcome do you want?"** | Ranks mission paths, capabilities and the 55 Foundry systems against their words, each shown with its true state and gap | A request GREG could not plan was a dead end |
 | Commission a coding work order | The worker runs in a bubblewrap OS envelope, or not at all. GREG's git never runs a worker-planted hook. A signed STOP kills it mid-run, and an interrupted run is reconciled as UNCERTAIN with its spend reserved | Workers were bounded by tool permissions only |
 | Initialise a body with `--confined-egress` | `http.get`, GitHub reads and briefs, `browser.render` and coding workers reach the network only through one relay. The relay enforces per-identity allowlists, journals every decision in a hash chain, and chains through the mandated proxy | Every capability had its own direct network access |
-| Install an MCP server under the read roots and ask for one of its tools | Read-only tools: the words become one signed mission, the server runs with no network and nothing writable, and the answer appears in Mission Control as untrusted data with its receipt. A tool that writes or reaches the network (`mcp.act`) runs only after Alfonso approves its exact scope: the folders it may write, the hosts it may reach through the relay, the credential handles it receives | Each tool had to be rebuilt inside GREG |
+| Install an MCP server under the read roots and ask for one of its tools | Read-only tools: the words become one signed mission, the server runs with no network and nothing writable, and the answer appears in Mission Control as untrusted data with its receipt. A tool that writes or reaches the network (`mcp.act`) runs only after Alfonso approves its exact scope: the folders it may write, the hosts it may reach through the relay, the credential handles it receives. For a file change, the words are enough: *append "x" to ~/notes/plan.md*. A hosted server works by URL, with an OAuth login (`greg mcp login`), and the Authority view lists every credential GREG holds and how to revoke it | Each tool had to be rebuilt inside GREG |
 | Rehearse the commerce loop on the dossier (FIXTURE) | Company assembly, a signed fixture order, delivery, signed acceptance, and books reconciled to the cent. No money moves | Not connected to any mission |
 
 What GREG now refuses or surfaces on its own, each attacked through a signed mission on a real body (all 14
@@ -140,9 +140,13 @@ The 13 holes were:
     installs: read-only by construction (`mcp.call`), or, for a tool that writes or reaches the network, only after
     the founder approves its exact scope (`mcp.act`): the paths it may write, the hosts it may reach through the
     relay and the credential handles it receives. The founder reaches read-only tools by saying what they want;
-    Mission Control lists the installed servers (virtualenv or npm), their tools and the latest answers. Still
-    missing: remote transport, credentials other than environment variables, and proposals of `mcp.act` missions
-    from the founder's words.
+    Mission Control lists the installed servers (virtualenv or npm), their tools and the latest answers. Since
+    increment 21 the founder asks for a file change in words, approves the scope shown on the decision, and GREG
+    closes the mission on its own read of the file. Since increment 22 a remote server is reached by URL, each
+    call approved, through the relay, with a bearer token by handle; since increment 23 the founder can log GREG
+    in with OAuth (`greg mcp login`), and approved calls renew an expired login. Still missing: credential files,
+    discovery of remote servers, proposals from words for remote calls or changes GREG cannot read back, and a real
+    hosted service observed.
 - **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
   `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
   measured from this tree. Porting them is its own increment. #168's three runbook defects (a stranded attach;
@@ -159,8 +163,9 @@ The 13 holes were:
   - DALEOBANKS real-organ runs (run locally since increment 12, against `e2f1ebe`; not in CI).
   - A storage device that loses whole lines it already acknowledged. The hash chain cannot detect a lost suffix of
     the ledger.
-  - A vendor that fails slowly, streams partially or rejects the key, over real HTTP. Classification of those
-    failures is tested at component level only.
+  - Tested since increment 25: a vendor that is slow, cuts its answer off or rejects the key, over real HTTP
+    through the real SDKs. A rejected key is now benched until the founder stores a new one (it used to be retried
+    like an outage). Since increment 27 the console's drafting router honours the same bench.
   - Tested since increment 15: a process kill in the middle of a self-repair, including a torn ledger append, and the
     loss of a model vendor end to end through the real SDKs.
 - **Future technology.** Chromium cannot run its own sandbox inside GREG's namespace (`os_sandboxed: false`). A

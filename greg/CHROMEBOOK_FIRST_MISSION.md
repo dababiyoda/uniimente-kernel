@@ -2,7 +2,7 @@
 
 The intended first body is the computer Alfonso actually owns. This is a
 **developmental** run through ChromeOS's Linux environment (Crostini), not a
-claim that it has been run on his Chromebook. The iPhone can become a remote
+claim that it has been run on their Chromebook. The iPhone can become a remote
 interface after its transport has been tested on these devices; it cannot
 replace the persistent Linux process. No model key, paid API, public posting or
 community data is required for this bounded local mission.
@@ -243,7 +243,16 @@ from a `greg-mcp.json` beside it: `{"args": ["/home/<you>/src/notes"], "readable
 A tool that changes something (writes a file, posts to a service) runs only as an `mcp.act` mission, and GREG
 stops and asks you first. The request shows the folders it may write, the hosts it may reach through the relay
 and the credential handles it receives (`greg secret set mcp:<name>`); approve exactly that, or reject. Everything
-else stays read-only. Your words do not yet produce such a mission; the read-only ones above are the first step.
+else stays read-only. For a change to a file, say it with the text in quotes, for example *Use the notes server to
+append "call the broker" to ~/src/notes/plan.md*: GREG proposes the mission, asks before it runs, and closes it
+only when it reads the file itself and finds the text. Words do not grant hosts or credentials; those missions are
+signed by hand.
+
+A hosted MCP server (a URL rather than something installed) works the same way, and every call to it waits for
+you: the decision names the server, its one host and the credential handle. If the service signs in with OAuth,
+run `greg mcp login <name> <url>` and approve GREG in your browser; otherwise store its token with
+`greg secret set mcp:<name>`. Either way, grant only what the service lets you narrow, because an approved call can
+do whatever the login permits. GREG's words do not propose remote calls yet; such a mission is signed by hand.
 
 ## 7. Founder control
 

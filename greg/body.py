@@ -268,7 +268,8 @@ class Body:
         if router is not None and hasattr(router, "observe"):
             for event in self.journal.replay("model.route"):
                 router.observe(event.payload)
-            router.record = lambda e: self.journal.record("model.route", e, key=[e["route"], e["at"], e["outcome"]])
+            from greg import model_keys        # a refused key is benched until a new one is stored, and recorded
+            model_keys.attach(router, self.journal)
         if hasattr(self, "genesis"):
             self.genesis.builder = self.builder
 
@@ -784,6 +785,8 @@ def status(home: str | Path) -> dict:
             "capabilities": registry.inventory(), "permissions": {"read_roots": config["read_roots"]},
             "compute": compute.sample(layout.home),
             "secret_handles": SecretBroker(layout.secrets).names(),
+            "refused_model_keys": __import__("greg.model_keys", fromlist=["summary"]).summary(
+                journal, SecretBroker(layout.secrets)),
             "external_items_quarantined": sum(1 for e in journal.replay("external.ingested")
                                               if e.payload["quarantined"]),
             "single_bottleneck_metric": metrics.vepmc(journal),

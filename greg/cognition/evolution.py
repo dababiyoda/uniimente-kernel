@@ -28,6 +28,21 @@ any value outside the space, and any name touching constitutional or evaluation 
 greg.improvement's constitutional terms plus evaluator, threshold, acceptance, seal, label, truth,
 score). Nothing here can change the Constitution, founder identity, authority, approvals, consequence
 classes, credentials, budgets, shutdown, targets, frozen evidence, its own acceptance rule or the Gate.
+
+Pre-registration: a cycle that writes a record runs against a committed freeze (``freeze``: the digests of every
+trusted file, the rule and its constants, the settings, the split and both evaluator seals) and refuses any
+difference at the start, before every evaluation and before writing. The parent checks the method module each
+sandbox imported, and that the sandbox cannot read the evaluator's module once confined.
+
+Candidates are data. A code-level candidate space (a candidate that is a program) is refused by construction
+(``Target.validate``) and stays refused until these latent channels are closed, each with a test: the sandbox
+must not receive regenerable instance identity (seeds), must not be able to recover truth by matching inputs
+against generators it can import, and its confinement must be checked by the parent rather than reported by the
+child. Signal and abstract-socket scoping (Landlock ABI >= 6) and the withdrawn repository listing are in place.
+
+A shipped evolvable configuration is pinned to its genome's version (``EVOLVABLE_CONFIG_PINS``): adopting any
+configuration changes the version, so the admission evidence measured at the old version stops routing until
+re-admission.
 """
 from __future__ import annotations
 
@@ -85,7 +100,9 @@ class Target:
             raise EvolutionError(f"a candidate must set exactly the {self.name} space: {sorted(self.space)}")
         for key, (kind, values) in self.space.items():
             value = config[key]
-            if kind == "choice" and value not in values:
+            # canonically equal, so equal value AND type at every depth: True == 1, 2.0 == 2 and [0, 0.02] ==
+            # [0.0, 0.02] compare equal in Python but are not the declared choices
+            if kind == "choice" and not any(canonical(value) == canonical(v) for v in values):
                 raise EvolutionError(f"{key}={value!r} is outside the declared space")
             if kind == "float" and (type(value) not in (int, float) or not values[0] <= value <= values[1]):
                 raise EvolutionError(f"{key}={value!r} is outside [{values[0]}, {values[1]}]")
@@ -183,6 +200,11 @@ def _immune_spec() -> TargetSpec:
 # restart beat the incumbent 15-5 on fresh seeds). Seeds inside P8's reserved range, used by no earlier cycle.
 CR_TRAIN_SEEDS = tuple(range(7200, 7260))
 CR_HELDOUT_SEEDS = tuple(range(7300, 7390))
+# Each cycle on this target draws its own split; earlier splits stay reproducible by name. Cycle 4 (2026-10-15):
+# admission v3 still measured headroom (random restart 13-10 against version 1.2.0).
+CR_SPLITS = {"cycle-3": (CR_TRAIN_SEEDS, CR_HELDOUT_SEEDS),
+             "cycle-4": (tuple(range(7400, 7460)), tuple(range(7500, 7590)))}
+CR_CURRENT_SPLIT = "cycle-4"
 
 
 def cr_target() -> Target:
@@ -190,18 +212,22 @@ def cr_target() -> Target:
     return Target("constraint_release", developmental.CR_CONFIG_SPACE, dict(developmental.CR_DEFAULT_CONFIG))
 
 
-def cr_split() -> tuple[dict, dict, list[str]]:
-    """Seeded scheduling instances reserved for P8, disjoint from every admission and earlier P8 seed."""
+def cr_split(name: str = CR_CURRENT_SPLIT) -> tuple[dict, dict, list[str]]:
+    """Seeded scheduling instances reserved for P8, disjoint from every admission seed, every other P8 target's
+    seeds and every other cycle's split on this target."""
     from .genomes import admission, developmental
+    train_seeds, heldout_seeds = CR_SPLITS[name]
     reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
-                | set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS))
-    if reserved & (set(CR_TRAIN_SEEDS) | set(CR_HELDOUT_SEEDS)) or set(CR_TRAIN_SEEDS) & set(CR_HELDOUT_SEEDS):
+                | set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS)
+                | {s for other, seeds in CR_SPLITS.items() if other != name for part in seeds for s in part})
+    if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
+            or not (set(train_seeds) | set(heldout_seeds)) <= set(admission.P8_RESERVED)):
         raise EvolutionError("P8 constraint-release seeds overlap admission or earlier P8 seeds")
 
     def item(seed):
         data, truth = developmental.constraint_release_instance(seed)
         return f"s{seed}", {"data": data, "truth": truth, "category": developmental.constraint_release_subregion(data)}
-    return (dict(item(s) for s in CR_TRAIN_SEEDS), dict(item(s) for s in CR_HELDOUT_SEEDS),
+    return (dict(item(s) for s in train_seeds), dict(item(s) for s in heldout_seeds),
             sorted(f"s{s}" for s in reserved))
 
 
@@ -232,6 +258,17 @@ def _cr_spec() -> TargetSpec:
 
 
 TARGET_SPECS = {"forecast_quantile": _forecasting_spec, "immune_detect": _immune_spec, "constraint_release": _cr_spec}
+# Each evolvable target's shipped configuration, pinned to the genome version its admission evidence measured.
+# Adopting a configuration (a reviewed change; founder decision) must bump the genome's version and this pin
+# together, so evidence measured on the old configuration routes as stale until re-admission.
+EVOLVABLE_CONFIG_PINS = {
+    "forecast_quantile": ("forecast_quantile", "1.1.0",
+                          "sha256:1214fa9e37a47f722bd1a2c0f05a81f4e88c4c201b755b3958665bb5f0de2382"),
+    "immune_detect": ("collective_immune", "1.0.2",
+                      "sha256:68b55c07dbdc2b44ce47e6644cc47beaa669cca996da0c4ed35ae70fa9366262"),
+    "constraint_release": ("develop_constraint_release", "1.2.0",
+                           "sha256:111751096c0d4bf7944981c16390f423bfcb196081502df233dd1ac55811ba10"),
+}
 
 
 def config_id(config: dict) -> str:
@@ -259,14 +296,23 @@ def crossover(target: Target, a: dict, b: dict, rng: random.Random) -> tuple[dic
 
 
 # ------------------------------------------------------------------ isolation
+def _method_module(target_name: str) -> str:
+    from .evolution_sandbox import TARGETS
+    return TARGETS[target_name][0].replace(".", "/") + ".py"
+
+
 def run_candidate(target: Target, config: dict, problems: list[dict], *, require_confinement: bool = True,
-                  probe_read: str | None = None, timeout: int = 600) -> dict:
-    """Execute one validated configuration on problem inputs in the confined sandbox."""
+                  probe_read: str | None = None, timeout: int = 600, expected_module: str | None = None) -> dict:
+    """Execute one validated configuration on problem inputs in the confined sandbox.
+
+    The parent checks two things itself rather than trusting the child's report alone: the sandbox must fail to
+    read a repository file after confining itself (by default this module, which holds the evaluator), and the
+    method module it imported must have the digest the parent expects (``expected_module``: the pre-registered
+    digest; by default the file as this process reads it)."""
     from greg.capabilities import run_isolated
     request = {"target": target.name, "config": target.validate(config),
-               "problems": [{"id": p["id"], "data": p["data"]} for p in problems], "confine": True}
-    if probe_read is not None:
-        request["probe_read"] = probe_read
+               "problems": [{"id": p["id"], "data": p["data"]} for p in problems], "confine": True,
+               "probe_read": probe_read or str(Path(__file__).resolve())}
     proc = run_isolated([sys.executable, "-I", str(SANDBOX)], cwd=ROOT, timeout=timeout,
                         input_bytes=json.dumps(request).encode())
     if proc.returncode:
@@ -274,6 +320,12 @@ def run_candidate(target: Target, config: dict, problems: list[dict], *, require
     result = json.loads(proc.stdout)
     if require_confinement and not result.get("confined"):
         raise EvolutionError(result.get("error") or "candidate ran without filesystem confinement")
+    if require_confinement and probe_read is None and not str(result.get("probe")).startswith("DENIED"):
+        raise EvolutionError("CONFINEMENT_UNVERIFIED: the sandbox could read the evaluator's module")
+    expected = expected_module or _sha(ROOT / _method_module(target.name))
+    if (result.get("imported") or {}).get("sha256") != expected:
+        raise EvolutionError(f"METHOD_CHANGED: the sandbox imported {_method_module(target.name)} at "
+                             f"{(result.get('imported') or {}).get('sha256')}, not the expected {expected}")
     return result
 
 
@@ -338,6 +390,70 @@ def sign_test(wins: int, losses: int) -> float:
     return 1.0 if n == 0 else sum(math.comb(n, k) for k in range(wins, n + 1)) / 2 ** n
 
 
+# ------------------------------------------------------------------ pre-registration (the cycle's freeze)
+# Everything a cycle trusts: this controller, the sandbox and its confinement, the network isolation, the genome
+# contract, the cognition contracts, the improvement module's protected terms and the admission harness that
+# reserves seeds. The target's genome module and finite data are added per target.
+TRUSTED_CLOSURE = ("greg/cognition/evolution.py", "greg/cognition/evolution_sandbox.py", "greg/isolation.py",
+                   "greg/capabilities.py", "tools/offline_test.py", "greg/cognition/genomes/contract.py",
+                   "greg/cognition/contracts.py", "greg/improvement.py", "greg/cognition/genomes/admission.py")
+TARGET_DATA = {"forecast_quantile": ("cortex/evaluation/data/m4_weekly.json.gz",)}
+FREEZE_SCHEMA = "greg-protected-evolution-freeze/1"
+
+
+def _sha(path: Path) -> str:
+    return "sha256:" + hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def trusted_closure(target_name: str) -> list[str]:
+    spec = TARGET_SPECS[target_name]()
+    return sorted({*TRUSTED_CLOSURE, spec.proposal["module"], _method_module(target_name),
+                   *TARGET_DATA.get(target_name, ())})
+
+
+def _code(target_name: str) -> dict:
+    return {p: _sha(ROOT / p) for p in trusted_closure(target_name)}
+
+
+def _dirty(paths) -> list[str]:
+    out = subprocess.run(["git", "status", "--porcelain", "--", *paths], cwd=ROOT, capture_output=True, text=True)
+    return [line[3:] for line in out.stdout.splitlines()] if out.returncode == 0 else list(paths)
+
+
+def freeze_inputs(target_name: str, *, generations: int, population: int, seed: int) -> dict:
+    """What a cycle's pre-registration fixes before any candidate runs: the rule and its constants, the search
+    settings, the split (item ids) and both evaluators' seals (code, outcomes and inputs), and the digest of every
+    file the cycle trusts. ``cycle`` refuses to report if any of them differs."""
+    if target_name not in TARGET_SPECS:
+        raise EvolutionError(f"unknown evolution target {target_name!r}")
+    spec = TARGET_SPECS[target_name]()
+    train_items, heldout_items, excluded = spec.split()
+    return {"schema": FREEZE_SCHEMA, "target": target_name, "rule": RULE,
+            "constants": {"failure_rate_trigger": FAILURE_RATE_TRIGGER, "train_gain_min": TRAIN_GAIN_MIN,
+                          "stress_tolerance": STRESS_TOLERANCE, "alpha": ALPHA},
+            "settings": {"generations": generations, "population": population, "seed": seed},
+            "split": {"train": sorted(train_items), "heldout": sorted(heldout_items), "excluded": len(excluded)},
+            "seals": {"train": SealedEvaluator(train_items, spec.score).seal,
+                      "heldout": SealedEvaluator(heldout_items, spec.score).seal},
+            "code": _code(target_name)}
+
+
+def freeze(target_name: str, path: Path, *, generations: int = 5, population: int = 8, seed: int = 20261008) -> dict:
+    """Write a cycle's pre-registration. Refuses to overwrite one, and refuses a trusted file with uncommitted
+    changes (the freeze must describe committed code)."""
+    path = Path(path)
+    if path.exists():
+        raise EvolutionError("refusing to overwrite a cycle freeze; use a new path")
+    dirty = _dirty(trusted_closure(target_name))
+    if dirty:
+        raise EvolutionError(f"DIRTY_TREE: commit the trusted files before freezing: {dirty}")
+    manifest = {"frozen_at": datetime.now(timezone.utc).isoformat(),
+                "inputs": freeze_inputs(target_name, generations=generations, population=population, seed=seed)}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(manifest, indent=1) + "\n")
+    return manifest
+
+
 # ------------------------------------------------------------------ the forecasting cycle
 # Seeds whose series each completed forecasting cycle excluded, as that cycle ran (its evidence is pinned by its
 # source commit). Replaying a cycle's split names the series it used, so a later admission can refuse them.
@@ -386,17 +502,58 @@ def _stress(items: dict) -> dict:
 
 
 def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, out: Path | None = None,
-          require_confinement: bool = True, target_name: str = "forecast_quantile") -> dict:
+          require_confinement: bool = True, target_name: str = "forecast_quantile", freeze: Path | None = None,
+          allow_dirty_for_test: bool = False) -> dict:
+    """One protected-evolution cycle. A cycle that writes a record (``out``) must name its pre-registered freeze
+    (``freeze``, written by ``freeze()`` and committed before the run): the trusted code, the rule, the settings,
+    the split and both evaluator seals must equal it at the start, before every evaluation and before the record
+    is written, and the method module each sandbox imported must match its frozen digest. A trusted file with
+    uncommitted changes is refused, so the recorded commit describes the code that ran; only a test writing
+    outside the evidence tree may pass ``allow_dirty_for_test``, and its record says so."""
     if target_name not in TARGET_SPECS:
         raise EvolutionError(f"unknown evolution target {target_name!r}")
+    if out is not None and freeze is None:
+        raise EvolutionError("FREEZE_REQUIRED: a cycle that writes a record must name its pre-registered freeze")
+    if allow_dirty_for_test and out is not None and (ROOT / "docs" / "evidence") in Path(out).resolve().parents:
+        raise EvolutionError("allow_dirty_for_test never writes into the evidence tree")
     spec = TARGET_SPECS[target_name]()
     target = spec.target()
+    manifest = json.loads(Path(freeze).read_text())["inputs"] if freeze is not None else None
+    closure = trusted_closure(target_name)
+    dirty = _dirty(closure)
+
+    def check_frozen():
+        if manifest is None:
+            return
+        if manifest.get("schema") != FREEZE_SCHEMA or manifest["target"] != target_name or manifest["rule"] != RULE:
+            raise EvolutionError("FROZEN_INPUT_CHANGED: the freeze names another target, schema or rule")
+        if manifest["settings"] != {"generations": generations, "population": population, "seed": seed}:
+            raise EvolutionError("FROZEN_INPUT_CHANGED: the search settings differ from the freeze")
+        if manifest["constants"] != {"failure_rate_trigger": FAILURE_RATE_TRIGGER, "train_gain_min": TRAIN_GAIN_MIN,
+                                     "stress_tolerance": STRESS_TOLERANCE, "alpha": ALPHA}:
+            raise EvolutionError("FROZEN_INPUT_CHANGED: the rule's constants differ from the freeze")
+        now = _code(target_name)
+        changed = sorted(p for p in set(now) | set(manifest["code"]) if now.get(p) != manifest["code"].get(p))
+        if changed:
+            raise EvolutionError(f"FROZEN_INPUT_CHANGED: trusted files differ from the freeze: {changed}")
+
+    if dirty and not allow_dirty_for_test and (out is not None or manifest is not None):
+        raise EvolutionError(f"DIRTY_TREE: trusted files have uncommitted changes: {dirty}")
+    check_frozen()
     train_items, heldout_items, excluded = spec.split()
     train = SealedEvaluator(train_items, spec.score)
     heldout = SealedEvaluator(heldout_items, spec.score)
+    if manifest is not None and (manifest["seals"] != {"train": train.seal, "heldout": heldout.seal}
+                                 or manifest["split"]["train"] != sorted(train_items)
+                                 or manifest["split"]["heldout"] != sorted(heldout_items)):
+        raise EvolutionError("EVALUATOR_TAMPERED: the evaluators' seals or split differ from the freeze")
     record = {"schema": "greg-protected-evolution/1", "target": target.name, "rule": RULE,
               "started_at": datetime.now(timezone.utc).isoformat(),
               "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+              "source_dirty": dirty,
+              "freeze": ({"path": str(Path(freeze).resolve().relative_to(ROOT)) if ROOT in Path(freeze).resolve().parents
+                          else str(freeze), "sha256": _sha(Path(freeze))} if freeze is not None
+                         else "NONE: a development run, not evidence"),
               "evaluator_seals": {"train": train.seal, "heldout": heldout.seal},
               "split": {"train": len(train_items), "heldout": len(heldout_items),
                         "excluded_admission_items": len(excluded)},
@@ -404,8 +561,14 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     rng = random.Random(seed)
 
     def evaluate(config, evaluator):
-        run = run_candidate(target, config, evaluator.problems(), require_confinement=require_confinement)
+        check_frozen()
+        run = run_candidate(target, config, evaluator.problems(), require_confinement=require_confinement,
+                            expected_module=manifest["code"][_method_module(target_name)] if manifest else None)
         return evaluator.losses(run["outputs"]), run
+
+    def finish():
+        check_frozen()
+        return _finish(record, out)
 
     # 1. detect a recurring failure (incumbent vs the simple baseline on the train split)
     incumbent_train, run0 = evaluate(target.incumbent, train)
@@ -418,7 +581,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
                          round(statistics.fmean(incumbent_train.values()), 6)}
     if rate < FAILURE_RATE_TRIGGER:
         record["decision"] = "NO_RECURRING_FAILURE"
-        return _finish(record, out)
+        return finish()
     # 2. residual geometry
     geometry = {}
     for key, item in train_items.items():
@@ -458,7 +621,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     if best_id == record["incumbent"]["id"] or gain <= TRAIN_GAIN_MIN:
         record["decision"] = "REJECT"
         record["reason"] = f"no candidate beat the incumbent's train loss by more than {TRAIN_GAIN_MIN:.0%}"
-        return _finish(record, out)
+        return finish()
     # 5. adversarial evaluation (derived stress sets + independent verification of every output)
     stress = SealedEvaluator(spec.stress(train_items), spec.score)
     inc_s, _ = evaluate(target.incumbent, stress)
@@ -475,7 +638,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
                            for k, v in adversarial.items() if isinstance(v, dict)):
         record["decision"] = "REJECT"
         record["reason"] = "adversarial evaluation failed"
-        return _finish(record, out)
+        return finish()
     # 6. one held-out look against the incumbent
     train.check()
     inc_h, _ = evaluate(target.incumbent, heldout)
@@ -503,7 +666,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
                           "activation": "a reviewed change adopting the configuration; founder decision",
                           "rollback": {"to": record["incumbent"]["id"], "config": target.incumbent},
                           "canary": spec.proposal["canary"]} if retain else None
-    return _finish(record, out)
+    return finish()
 
 
 def _finish(record: dict, out: Path | None) -> dict:
@@ -520,9 +683,16 @@ def _finish(record: dict, out: Path | None) -> dict:
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--target", default="forecast_quantile", choices=sorted(TARGET_SPECS))
+    ap.add_argument("--write-freeze", type=Path, help="pre-register a cycle: write its freeze, then commit it")
+    ap.add_argument("--freeze", type=Path, help="the committed freeze the cycle must match")
+    ap.add_argument("--out", type=Path)
     args = ap.parse_args()
-    result = cycle(out=args.out, target_name=args.target)
+    if args.write_freeze:
+        print(json.dumps(freeze(args.target, args.write_freeze)["inputs"]["seals"], indent=1))
+        raise SystemExit(0)
+    if not (args.out and args.freeze):
+        raise SystemExit("--out and --freeze are required (pre-register with --write-freeze first)")
+    result = cycle(out=args.out, target_name=args.target, freeze=args.freeze)
     print(json.dumps({k: result.get(k) for k in ("failure", "candidate", "adversarial", "heldout", "decision",
                                                  "reason")}, indent=1))

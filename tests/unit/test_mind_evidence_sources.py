@@ -106,7 +106,14 @@ def _recipe_verdict(cited: dict) -> dict:
     lift = bool(cited["lift"])
     return {"lift": lift, "status": "VPL_LIFT" if lift else "NO_LIFT", "wins": cited["routed_wins"],
             "losses": cited["routed_losses"], "p_one_sided": cited["sign_test_p_one_sided"],
-            "prefer": None if lift else cited["best_constituent"]}
+            "prefer": None if lift else cited["best_constituent"],
+            # practitioner and exact-single arms of the same run (review of #179, L11): no discordant item is a tie
+            "tied_by": sorted(k for k, v in (cited.get("versus") or {}).items()
+                              if k not in ("static_composition", "compiled", cited["best_constituent"])
+                              and v["wins"] == 0 and v["losses"] == 0) or None,
+            "loses_to": sorted(k for k, v in (cited.get("versus") or {}).items()
+                               if k not in ("static_composition", "compiled", cited["best_constituent"])
+                               and v["losses"] > v["wins"]) or None}
 
 
 def test_every_cited_verdict_matches_the_source_it_cites():
@@ -130,10 +137,21 @@ def test_every_cited_verdict_matches_the_source_it_cites():
             cited = _cite(verdict["evidence"], listed, problems)
             if cited is None:
                 continue
+            exact = _sign_p(cited["routed_wins"], cited["routed_losses"])
+            if round(exact, 6) != cited["sign_test_p_one_sided"]:
+                problems.append(f"recipe {recipe} ({verdict.get('family')}): the source's p "
+                                f"{cited['sign_test_p_one_sided']} is not its counts' exact p {exact} rounded to six "
+                                f"decimals")
             expected = _recipe_verdict(cited)
+            if "p_one_sided_as_recorded" in verdict:
+                # the builder recomputes the exact p from the counts; the source's rounded value is kept beside it.
+                # An index built before that copies the rounded value (0.0 for F7's 92-0) and is checked as a copy.
+                expected.update(p_one_sided=exact, p_one_sided_as_recorded=cited["sign_test_p_one_sided"])
             observed = {k: verdict.get(k) for k in expected}
             if observed != expected:
-                problems.append(f"recipe {recipe} ({verdict.get('family')}): index {observed} but source {expected}")
+                diff = {k: (observed[k], expected[k]) for k in expected if observed[k] != expected[k]}
+                problems.append(f"recipe {recipe} ({verdict.get('family')}): index but source differ (index, "
+                                f"source): {diff}")
     for name, row in index["routing"].items():
         cited = _cite(row["evidence"], listed, problems)
         if cited is not None and cited.get("verdict") != row["verdict"]:
@@ -142,7 +160,11 @@ def test_every_cited_verdict_matches_the_source_it_cites():
         cited = _cite(row["evidence"], listed, problems)
         if cited is not None and cited.get("status") != row["raw_status"]:
             problems.append(f"operation {family}: index {row['raw_status']} but source {cited.get('status')}")
-        routed = row["raw_status"] if row["raw_status"] in MEASURED else "UNEVALUATED"
+        from scripts.build_mind_evidence_index import ERRATA
+        routed = ERRATA.get((family, row["raw_status"]), (row["raw_status"] if row["raw_status"] in MEASURED
+                                                          else "UNEVALUATED",))[0]
+        if (family, row["raw_status"]) in ERRATA and row.get("erratum") != ERRATA[(family, row["raw_status"])][1]:
+            problems.append(f"operation {family}: the erratum on its verdict is missing or altered")
         if (row["status"], row["measured"]) != (routed, row["raw_status"] in MEASURED):
             problems.append(f"operation {family}: routes as {row['status']} but source label {row['raw_status']}")
         history = row.get("history") or []
@@ -152,7 +174,9 @@ def test_every_cited_verdict_matches_the_source_it_cites():
             run = _cite(entry["evidence"], listed, problems)
             if run is not None and run.get("status") != entry["status"]:
                 problems.append(f"operation {family}: history {entry} disagrees with its run")
-    assert not problems, problems
+    # a str message, one problem per line: pytest shortens a non-str message to about 240 characters, which
+    # can elide the problem that failed
+    assert not problems, "\n".join(problems)
 
 
 def _runs(paths) -> list[tuple[str, dict]]:
@@ -210,19 +234,34 @@ def test_every_frozen_run_is_indexed_and_the_latest_run_decides():
             if family not in P6_RECIPE:
                 problems.append(f"{rel}: family {family} measures no recipe named in this test")
                 continue
-            families.setdefault(P6_RECIPE[family], []).append(f"{rel}#summary.{family}")
+            families.setdefault(P6_RECIPE[family], []).append((f"{rel}#summary.{family}", data, family))
+    from scripts.build_mind_evidence_index import p4_instances, p6_instances
+
+    def deciding(runs):
+        """The latest run that measured instances the deciding run had not (a same-instance re-run never decides;
+        review of #179, H1); every run is cited once, in history or as the deciding row."""
+        best, keys = None, set()
+        for evidence, new in runs:
+            if best is None or not new or not new <= keys:
+                best, keys = evidence, new
+        return best
+
     for recipe in sorted(set(families) | set(index["recipes"])):
         row = index["recipes"].get(recipe)
         if recipe not in families or row is None:
             problems.append(f"recipe {recipe}: index row {row is not None}, frozen families {families.get(recipe)}")
             continue
-        cited = [h.get("evidence") for h in row.get("history", [])] + [row.get("evidence")]
-        if cited != families[recipe]:
-            problems.append(f"recipe {recipe}: not the frozen runs in order: cites {cited}, runs {families[recipe]}")
-    # routing: the conditional-competence verdict comes from the latest frozen P4 run
+        cited = sorted([h.get("evidence") for h in row.get("history", [])] + [row.get("evidence")])
+        runs = [(e, p6_instances(d, f)) for e, d, f in families[recipe]]
+        if cited != sorted(e for e, _ in runs):
+            problems.append(f"recipe {recipe}: not every frozen run once: cites {cited}, runs {[e for e, _ in runs]}")
+        if row.get("evidence") != deciding(runs):
+            problems.append(f"recipe {recipe}: not the latest run with new instances: cites {row.get('evidence')}, "
+                            f"expected {deciding(runs)}")
+    # routing: the conditional-competence verdict comes from the latest frozen P4 run with new instances
     if routing:
-        rel, data = routing[-1]
-        expected = f"{rel}#summary.{_conditional_key(data['summary'])}"
+        expected = deciding([(f"{rel}#summary.{_conditional_key(data['summary'])}", p4_instances(rel, data))
+                             for rel, data in routing])
         if (index["routing"].get("conditional_competence") or {}).get("evidence") != expected:
             cited = (index["routing"].get("conditional_competence") or {}).get("evidence")
             problems.append(f"routing: not the latest frozen P4 run: cites {cited}, latest {expected}")
@@ -357,6 +396,13 @@ def test_every_operation_verdict_is_bound_to_the_solver_code_its_run_measured():
     assert not problems, problems
 
 
+def _sign_p(wins: int, losses: int) -> float:
+    """Exact one-sided sign test, this test's own code: P(X >= wins), X ~ Binomial(wins + losses, 1/2)."""
+    from math import comb
+    n = wins + losses
+    return 1.0 if n == 0 else sum(comb(n, k) for k in range(wins, n + 1)) / 2 ** n
+
+
 def _flip_genome_status(index):
     row = index["genomes"][sorted(index["genomes"])[0]]
     row["status"] = "NICHE_CAPABILITY" if row["status"] == "DEFAULT_FOR_GEOMETRY" else "DEFAULT_FOR_GEOMETRY"
@@ -409,7 +455,7 @@ COMMITS = test_every_source_names_a_commit_present_in_this_repository
 BOUND = test_every_operation_verdict_is_bound_to_the_solver_code_its_run_measured
 
 
-@pytest.mark.parametrize("corrupt, check, needle", [
+CORRUPTIONS = [
     (lambda i: i["sources"][0].update(sha256="sha256:" + "0" * 64), DIGESTS, "changed"),
     (lambda i: i["sources"][0].update(path="docs/evidence/nowhere.json"), DIGESTS, "absent"),
     (_flip_genome_status, VERDICTS, "but source"),
@@ -423,7 +469,7 @@ BOUND = test_every_operation_verdict_is_bound_to_the_solver_code_its_run_measure
     (lambda i: i["genomes"]["collective_market"].update(history=i["genomes"]["collective_market"]["history"][-1:]),
      COMPLETE, "history is not every run in order"),
     (lambda i: i["genomes"].update(never_measured={"status": "DEFAULT_FOR_GEOMETRY"}), COMPLETE, "no status in any"),
-    (_older_family_decides, COMPLETE, "not the frozen runs in order"),
+    (_older_family_decides, COMPLETE, "not every frozen run once"),
     (lambda i: i["recipes"].pop("bayes_then_voi"), COMPLETE, "recipe bayes_then_voi"),
     (lambda i: i["routing"]["conditional_competence"].update(
         evidence=f"{P4}/2026-10-07/results-v2.json#summary.conditional_vs_static"), COMPLETE,
@@ -444,13 +490,64 @@ BOUND = test_every_operation_verdict_is_bound_to_the_solver_code_its_run_measure
     (lambda i: i["operations"]["control"].update(code=None), BOUND, "without a solver-code binding"),
     (lambda i: i["operations"]["graph"]["code"].update(closure_sha256="sha256:" + "0" * 64), BOUND,
      "closure sha256:"),
-])
-def test_the_checks_fail_on_a_corrupted_index(tmp_path, monkeypatch, corrupt, check, needle):
-    """Each check is falsifiable: a corrupted copy of the real index must fail it."""
-    index = _index()
+]
+
+
+def _fails(index, tmp_path, monkeypatch, corrupt, check, needle):
     corrupt(index)
     fake = tmp_path / "index.json"
     fake.write_text(json.dumps(index))
     monkeypatch.setitem(globals(), "INDEX", fake)
     with pytest.raises(AssertionError, match=needle):
         check()
+
+
+def test_a_same_instance_rerun_never_decides_and_is_labelled():
+    """Review of #179 (H1): #155's F2b re-measured a subset of #158's F2R instances (same generator, seeds 25-72 of
+    25-88), and #155's P4 v3 re-measured 130 of #158's 191 payloads. Neither is a replication; the superset run
+    decides and the re-run is recorded as such. F2 to F2R is a genuine replication (no shared instance)."""
+    index = _index()
+    recipe = index["recipes"]["identify_then_optimize"]
+    assert recipe["family"] == "F2R" and recipe["instances"]["count"] == 64
+    history = {h["family"]: h for h in recipe["history"]}
+    assert history["F2b"]["kind"] == "same-instance re-run" and history["F2b"]["overlap"] == 48
+    assert "kind" not in history["F2"] and recipe["overlap_with_previous"] == 0
+    routing = index["routing"]["conditional_competence"]
+    assert routing["evidence"].startswith("docs/evidence/greg-learned-routing/2026-10-08/")
+    assert routing["verdict"] == "REGRESSION" and routing["consequence"]
+    rerun = [h for h in routing["history"] if h.get("kind") == "same-instance re-run"]
+    assert [(h["verdict"], h["overlap"]) for h in rerun] == [("NO_GAIN", 130)]
+
+
+@pytest.mark.parametrize("corrupt, check, needle", CORRUPTIONS)
+def test_the_checks_fail_on_a_corrupted_index(tmp_path, monkeypatch, corrupt, check, needle):
+    """Each check is falsifiable: a corrupted copy of the real index must fail it."""
+    _fails(_index(), tmp_path, monkeypatch, corrupt, check, needle)
+
+
+def _rebuilt_index() -> dict:
+    """The index scripts/build_mind_evidence_index.py builds from the current sources, in memory. It is only the
+    input a corruption is applied to; no check above reads the builder. Built once per session (the builder binds
+    code from git history, so a rebuild per corruption case is slow); each case corrupts its own copy."""
+    import copy
+    return copy.deepcopy(_rebuilt_once())
+
+
+@__import__("functools").lru_cache(maxsize=1)
+def _rebuilt_once() -> dict:
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_build_mind_evidence_index",
+                                                  ROOT / "scripts" / "build_mind_evidence_index.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.build()
+
+
+@pytest.mark.parametrize("corrupt, check, needle", CORRUPTIONS)
+def test_the_checks_fail_on_a_corrupted_rebuilt_index(tmp_path, monkeypatch, corrupt, check, needle):
+    """Review 2026-10-14 (round 2): rebuilding the index, as the exact-p fix prescribes, made one falsifiability
+    case fail. The check still fired, but its problems were reported as a list, which pytest shortens to about 240
+    characters; the longer rebuilt recipe rows (an exact p beside the recorded one) pushed the problem into the
+    elided middle. A check's message must carry every problem, on the index the builder writes as on the
+    committed one."""
+    _fails(_rebuilt_index(), tmp_path, monkeypatch, corrupt, check, needle)

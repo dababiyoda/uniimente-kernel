@@ -104,6 +104,21 @@ def _mind() -> dict:
     return {"genomes": out, "counts": counts, "frozen": data.get("freeze_sha256", "")[:16], "source_commit": data.get("source_commit")}
 
 
+def _credentials(home, handles) -> list[dict]:
+    """Every credential GREG holds, by handle and kind; for an OAuth login, what the founder authorized and where it
+    may renew. Values are never read into the page."""
+    from greg import mcp_login
+    from greg.body import Layout
+    from greg.capabilities import SecretBroker
+    broker = SecretBroker(Layout(home).secrets)
+    rows = []
+    for handle in handles:
+        login = mcp_login.record(broker, handle) if handle.startswith("mcp:") else None
+        rows.append({"handle": handle, "kind": "OAuth login" if login else "token or key",
+                     **(mcp_login.public(login) if login else {})})
+    return rows
+
+
 def _tool_servers(home) -> dict:
     """MCP servers the founder installed under the body's read roots (a directory scan; nothing is started)."""
     from greg.body import Layout
@@ -232,7 +247,7 @@ def projection(console) -> dict:
                                    if m["mission_id"].startswith("m:venture-rehearsal-")) if b],
         "foundry": _foundry(), "mind": _mind(), "read_roots": st.get("permissions", {}).get("read_roots", []),
         "tool_servers": _tool_servers(console.home), "tool_answers": tool_answers,
-        "resilience": _resilience(console),
+        "resilience": _resilience(console), "credentials": _credentials(console.home, st.get("secret_handles", [])),
     }
     out["costs"] = cost_rows(action_rows, out["missions"], out["rehearsals"])
     return out
@@ -545,6 +560,13 @@ def _authority(console, p, form) -> str:
         ["Founder keys enrolled", _e(p["identity"]["founder_keys"])], ["Delegated devices", _e(len(p["devices"]))],
         ["Read roots", _e(", ".join(p["read_roots"]))], ["Pause file", _e(p["identity"]["pause"])], ["Stop file", _e(p["identity"]["stop"])]])
             + "<h2>Mission envelopes</h2>" + _table(["Mission", "May use without asking", "Ceiling", "Budget", "Expires"], rows)
+            + "<h2>Credentials GREG holds</h2><p class=reality>From this body's secret broker, by name only; values never "
+            "leave it. A credential is used only inside an approved call that names it.</p>"
+            + (_table(["Handle", "Kind", "Server", "Renews at", "Expires", "To revoke"], [
+                [f"<code>{_e(c['handle'])}</code>", _e(c["kind"]), _e(c.get("server") or "—"), _e(c.get("renews_at") or "—"),
+                 _e(_when(c.get("expires_at"))), f"<code>greg secret remove {_e(c['handle'])}</code>"
+                 + (" and remove GREG's access at the service" if c["kind"] == "OAuth login" else "")]
+                for c in p.get("credentials", [])]) if p.get("credentials") else "<p class=empty>None.</p>")
             + "<h2>Money, kept in separate columns</h2><p class=reality>Booked spend comes from recorded actions. "
             "Provider-measured is what a provider reported. Unknown is booked at the signed cap, never assumed lower. "
             "FIXTURE amounts are rehearsal books and moved no money.</p>"
@@ -554,6 +576,13 @@ def _authority(console, p, form) -> str:
                       for c in p["costs"]])
             + "<p class=muted>Intelligence never creates authority. A recommendation becomes an action only through a signed mission or "
             "decision, and only inside its envelope.</p></section>" + (form.get("stop", "") if isinstance(form, dict) else ""))
+
+
+def _when(epoch) -> str:
+    if not epoch:
+        return "—"
+    from datetime import datetime, timezone
+    return datetime.fromtimestamp(float(epoch), timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
 
 def _night(console, p, form) -> str:

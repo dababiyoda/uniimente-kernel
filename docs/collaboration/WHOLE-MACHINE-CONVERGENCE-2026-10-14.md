@@ -1586,6 +1586,20 @@ use, and when needed renew, that login.
   the relay on a confined body. Not built: the login is the founder's act in their own terminal, and its browser
   half cannot be confined by GREG anyway.
 
+## Increment 24 (2026-10-15): Mission Control shows every credential GREG holds
+
+Increments 20 to 23 gave GREG ways to hold credentials (tokens by `mcp:` handle, OAuth logins). The founder could
+see none of them in Mission Control. Now the Authority view lists every credential in the body's secret broker:
+- by handle and kind ("OAuth login" or "token or key");
+- for a login, the server, the host where it may renew and when it expires;
+- how to revoke each one (`greg secret remove <handle>`, and for a login, removing GREG's access at the service).
+
+Values never leave the broker: the page reads only the public part of a login.
+
+Evidence: `tests/integration/test_greg_credentials_view.py`, over real HTTP with the owner's session. A plain token
+and an OAuth login (access, refresh and client secret) are listed with their revoke instructions, and none of the
+four values appears anywhere on the page.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

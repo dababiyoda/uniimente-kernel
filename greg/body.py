@@ -91,7 +91,7 @@ def _private_write(path: Path, data: bytes):
 
 
 def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Path | None = None,
-              local_model: str | None = None) -> dict:
+              local_model: str | None = None, confined_egress: bool = False) -> dict:
     """Create a new body directory. Refuses to overwrite an existing body.
 
     ``deliver_root`` is the founder-visible folder where deliverables (briefs,
@@ -121,6 +121,8 @@ def init_body(home: str | Path, *, read_roots: list[str], deliver_root: str | Pa
               "version": BODY_VERSION}
     if local_model is not None:
         config["models"] = {"order": ["ollama"], "ollama_model": local_model}
+    if confined_egress:
+        config["confined_egress"] = True
     _private_write(layout.config, json.dumps(config, indent=2).encode())
     return config
 
@@ -173,7 +175,18 @@ class Body:
                                     read_roots=tuple(self.config["read_roots"]), genesis=self.genesis,
                                     deliver_root=self.deliver_root, artifact_root=self.layout.artifacts)
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
+        self.engine.egress = self._egress_relay()
         return self
+
+    def _egress_relay(self):
+        """#26: one relay per body when the founder enabled confined egress; refused (fail closed) where the kernel
+        filter is unavailable, and chained through a mandated proxy when the environment declares one."""
+        if not self.config.get("confined_egress"):
+            return None
+        from foundry.systems.segmentation import Journal as EgressJournal, Relay, policy_from_manifests, \
+            proxy_from_environment
+        return Relay(policy_from_manifests(), EgressJournal(self.layout.home / "egress-journal.jsonl"),
+                     proxy=proxy_from_environment())
 
     def _refresh_builder(self):
         """Replace the model adapter, never the mission engine, ledger or authority office."""
@@ -255,7 +268,9 @@ class Body:
         kind, body = env["kind"], env["body"]
         # Commands are applied before the next tick's rebuild; a request raised during the
         # previous tick must already be visible, or a fast approval is refused as "unknown".
-        self.engine.book.rebuild()
+        # A STOP authenticated mid-tick (while a worker runs) must not rebuild in-flight state.
+        if kind != "BODY_STOP":
+            self.engine.book.rebuild()
         result = self._dispatch(kind, body, digest)
         self.journal.record("command.accepted", {"kind": kind, "digest": digest, "nonce": env["nonce"],
                                                   "founder_key_id": env["founder_key_id"], "signer": principal,
@@ -360,6 +375,11 @@ class Body:
         raise MissionError(f"unsupported command kind {kind}")
 
     def _stop_now(self) -> bool:
+        if not self.stop_requested and not self.layout.stop_file.exists() and self.ledger is not None:
+            # Extracted from #157: a paid worker can run for minutes. While it is supervised, only pending
+            # founder-signed STOP commands are authenticated; every other command waits for the next tick
+            # and cannot change in-flight strategy or approval state.
+            self.ingest_inbox(only_kind="BODY_STOP")
         return self.stop_requested or self.layout.stop_file.exists()
 
     def paused(self) -> bool:
@@ -368,11 +388,13 @@ class Body:
         state = [e.type for e in self.journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
         return bool(state) and state[-1] == "greg.body.paused"
 
-    def ingest_inbox(self) -> list[dict]:
+    def ingest_inbox(self, *, only_kind: str | None = None) -> list[dict]:
         results = []
         for path in sorted(self.layout.inbox.glob("*.json")):
             try:
                 envelope = json.loads(path.read_text())
+                if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
+                    continue
                 outcome = self.apply(envelope, channel="inbox")
                 shutil.move(str(path), self.layout.processed / path.name)
             except (FounderAuthError, MissionError, ValueError, KeyError, TypeError,
@@ -424,6 +446,8 @@ class Body:
         self.engine.cognition_model = models.effective_route_config(self.config.get("models"), self.journal)
         recovered = self.genesis.recover(now)     # quarantined capabilities may earn back eligibility (sandbox)
         summary = self.engine.tick(now, should_stop=self._stop_now)
+        if self._stop_now():
+            return {"commands": commands, "missions": summary, "stopped": True}
         self._close_out(now)
         from greg.cognition.settlement import reconcile as settle_cognition
         settle_cognition(self.journal)

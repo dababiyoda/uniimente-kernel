@@ -53,8 +53,10 @@ def test_first_mission_runs_end_to_end_and_is_independently_verified(tmp_path):
     out, _ = run_until_settled(home)
     assert out["missions"][0]["state"] == "ACHIEVED", out
     done = [a for a in actions(home, spec["mission_id"]) if a["status"] == "DONE"]
-    assert [a["action_id"] for a in done] == ["survey", "select", "compose", "dossier"] or \
-        [a["action_id"] for a in done] == ["survey", "compose", "select", "dossier"]
+    order = [a["action_id"] for a in done]
+    assert sorted(order) == sorted(["survey", "select", "compose", "dossier", "owned-page", "retain"]), order
+    assert order[0] == "survey" and order.index("dossier") > max(order.index("select"), order.index("compose"))
+    assert order.index("dossier") < min(order.index("owned-page"), order.index("retain"))
     assert all(a.get("bindings") for a in done if a["action_id"] != "survey"), "typed edges, no manual relay"
     delivered = sorted((home / "deliveries" / "first-mission").glob("*.json"))
     assert len(delivered) == 1

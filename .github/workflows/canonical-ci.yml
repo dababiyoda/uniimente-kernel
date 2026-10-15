@@ -51,6 +51,16 @@ jobs:
         run: python -m pytest -q tests/unit/test_greg_landlock.py tests/unit/test_greg_mcp_worker.py
       - name: Native company runtime regression checks
         run: python -m pytest -q tests/unit/test_greg_owned_company.py
+      - name: Provision worker namespace isolation (bubblewrap) and report whether this runner can use it
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          if bwrap --unshare-user --unshare-pid --unshare-net --die-with-parent --ro-bind / / -- /usr/bin/true; then
+            echo "bubblewrap namespaces: usable"
+          else
+            echo "bubblewrap namespaces: NOT usable on this runner; real-isolation tests skip and say why"
+          fi
+      - name: Worker confinement, acceptance and collector escape regressions (skip reasons shown)
+        run: python -m pytest -q -rs tests/unit/test_greg_worker_isolation.py tests/unit/test_greg_workers.py
       - name: Full unit and integration suite
         run: python -m pytest -q
       - name: Frozen cognition assessment

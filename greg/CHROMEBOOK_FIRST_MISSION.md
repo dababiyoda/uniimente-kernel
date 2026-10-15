@@ -35,6 +35,7 @@ checks to diagnose the local runtime. The diagnostic creates no key or body.
 
 ```bash
 sudo apt install -y python3 python3-venv git          # once; skip if already installed
+sudo apt install -y bubblewrap   # optional: only coding workers need it; without it worker.commission refuses
 mkdir -p ~/src && cd ~/src
 git clone -b claude/uniimente-greg-reconciliation-39syff https://github.com/dababiyoda/uniimente-kernel
 cd uniimente-kernel && bash greg/chromebook/install.sh
@@ -112,7 +113,7 @@ description is at
 greg console --key ~/.greg-founder.pem --no-model
 ```
 
-Open `http://localhost:8766/` in the Chromebook's Chrome browser. ChromeOS
+Open the private link `greg console` prints (it works once) in the Chromebook's Chrome browser. ChromeOS
 forwards local Linux ports into its browser. Ask **“Brief me on the state of my
 repositories.”** Review the proposed read and delivery scope, sign it, then
 close the browser tab and press Ctrl-C in the Terminal. The service should
@@ -188,3 +189,54 @@ To stop: `greg stop --local`, then
 
 The original Mac instructions are retained in [`FIRST_MISSION.md`](FIRST_MISSION.md)
 for other environments and historical evidence; no Mac is required here.
+
+## 4. The Founder's First Mission in Mission Control
+
+`greg console --key ~/.greg-founder.pem --no-model`, then open the private link it prints. The first page is
+Mission Control. It answers what GREG is, what it can do on this body now, what it is doing, what you can
+command and what needs your authority. Put the kernel checkout GREG should read under `~/src` (for example
+`git clone https://github.com/dababiyoda/uniimente-kernel ~/src/uniimente-kernel`), then:
+
+1. **Prepare the Founder's First Mission** with an effort budget (8 is a good start). Review exactly what
+   signing allows: read-only survey, selection and composition; one private dossier into `~/GREG/first-mission/`;
+   a private Foundry page; the dossier kept by digest. Budget $0. Sign.
+2. GREG stops once and asks you to **Attach `cognition.dp_knapsack`**, its exact selection engine. That ask is
+   the approval boundary: attaching is your decision. Attach it from the front page.
+3. While it works, run `greg status`, note the PID and `kill -9 <PID>`. The service restarts the body. Nothing
+   is repeated: every completed step is a retained receipt, and the next one binds its input from it.
+4. When it closes, open the dossier from the front page. **Accept result** or reject it truthfully.
+
+`greg vepmc` then shows whether this closure meets every condition on your designated body. Only you can judge
+the dossier; GREG's appraisal only proves it re-derives from the sources.
+
+## 5. Run it again (memory)
+
+Run the First Mission a second time, after you or another agent change the repository. Its dossier gains
+"What changed since last time" and the lesson retained by the first run. That comparison comes from the ledger,
+so it survives restarts.
+
+## 6. Ventures: the commerce rehearsal (FIXTURE)
+
+In **Ventures**, prepare the commerce rehearsal. It sells your latest dossier through GREG's company loop to a
+fixture buyer: offer, signed order, delivery, signed acceptance and books reconciled to the cent. The buyer is a
+published test key and no payment rail is called. It shows the machinery cooperating; it is not evidence that
+anyone would buy anything.
+
+## 7. Founder control
+
+From Mission Control, **Pause GREG (signed)** then **Resume**; prepare any mission and **Revoke** it before it
+acts; **Stop GREG** writes the local stop file (`greg start --local` to run again). From the phone, the existing
+channel stays the route: `greg serve` plus `tailscale serve --bg --https=443 http://127.0.0.1:8765`, with a
+delegated, expiring device key (`greg device enroll`). The phone reads status and decisions and signs commands;
+it never holds your founder key.
+
+## 8. Record what actually happened
+
+```bash
+greg acceptance
+```
+
+It reads this body's own ledger (read-only) and reports each property as PASS or NOT_YET with the step above
+that produces it, and keeps a copy in `~/GREG/acceptance/`. It says FOUNDER-DEVICE only when the mission ran on
+your designated first body; a ledger still cannot prove who held the keyboard. Send that file with your
+judgment of the dossier: that is the founder-device evidence nothing in a sandbox can supply.

@@ -93,6 +93,11 @@ BIND_TYPES = {"string": (str,), "number": (int, float), "integer": (int,), "bool
 DEFAULT_BIND_BYTES = 16 * 1024
 
 
+# Capabilities whose network access runs behind the body's #26 relay when the body confines egress.
+CONFINED_EGRESS = frozenset({"http.get", "github.pulls", "brief.engineering", "browser.render",
+                             "worker.commission"})
+
+
 class Unbound(Exception):
     """A bound input is not available yet (or no longer matches its declared type)."""
 
@@ -205,6 +210,22 @@ def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
             "spend_basis": "provider_reported"}
 
 
+def disagreement(output) -> dict | None:
+    """The views behind a composition that reported CONFLICT, kept side by side for the founder: which question,
+    which method said what (a digest and a short preview of each output), and the dissent. Nothing is ranked."""
+    meta = output.get("metaconsensus") if isinstance(output, dict) else None
+    if not isinstance(meta, dict) or meta.get("state") != "CONFLICT":
+        return None
+    questions = {(q.get("problem_id"), q.get("epistemic_class")) for q in meta.get("conflicting_questions") or []}
+    views = [{"problem_id": r.get("problem_id"), "method": r.get("method"), "receipt_id": r.get("receipt_id"),
+              "output_digest": sha256_json(r.get("output")), "output_preview": json.dumps(r.get("output"),
+                                                                                         default=str)[:160]}
+             for r in output.get("receipts") or [] if isinstance(r, dict)
+             and (r.get("problem_id"), r.get("epistemic_class")) in questions]
+    return {"questions": sorted(f"{p}" for p, _ in questions), "views": views,
+            "dissent": [str(d)[:200] for d in meta.get("dissent") or []][:4], "vote_taken": False}
+
+
 def _field(output, path: str):
     value = output
     for part in path.split(".") if path else []:
@@ -288,6 +309,7 @@ class MissionState:
     actions_done: int = 0
     setpoints_reached: int = 0
     pending_effect: dict = field(default_factory=dict)  # action_id -> checks it should change
+    collateral: dict = field(default_factory=dict)      # action_id -> passing checks it does not advance
 
     @property
     def mission_id(self):
@@ -348,15 +370,31 @@ class MissionBook:
                         # instead of repeating; eligible again after a later pass.
                         # A producer whose output another strategy binds changed its consumers' input,
                         # not the world: it is done, not ineffective, and is not re-run either.
-                        if any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
+                        if m.failed.get(aid, "").startswith("regressed "):
+                            pass                     # blame for damaging the whole is never washed out by drift
+                        elif any(e["from"]["action_id"] == aid for s in m.spec["strategies"] for e in s.get("bind", [])):
                             m.failed[aid] = f"produced bound input; {data['check_id']} awaits its consumers"[:300]
                         else:
                             m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
                     if not checks:
                         m.pending_effect.pop(aid, None)
+                # Section 13, a local gain that damages the whole: a check that passed just before an action ran,
+                # which that action does not advance, is re-observed failing. The action is blamed and not re-run
+                # automatically; if only such trade-offs remain, the founder decides. Unmeasured is not a regression.
+                for aid, watched in list(m.collateral.items()):
+                    if data["check_id"] not in watched or data["detail"].startswith("sensor "):
+                        continue
+                    watched.discard(data["check_id"])
+                    if not data["passed"]:
+                        m.failed[aid] = f"regressed {data['check_id']}, which passed before it ran: {data['detail']}"[:300]
+                        watched.clear()
+                    if not watched:
+                        m.collateral.pop(aid, None)
             elif kind == "mission.action":
                 aid = data["action_id"]
                 m.attempts[aid] = data["attempt"] + 1
+                if data.get("cost_reserved") and data["status"] == "UNCERTAIN":
+                    m.spent_usd += data.get("cost_usd", 0.0)      # unknown spend holds the signed cap
                 if data["status"] == "DONE":
                     m.actions_done += 1
                     m.spent_usd += data.get("cost_usd", 0.0)
@@ -364,6 +402,9 @@ class MissionBook:
                     strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
                     if strategy:
                         m.pending_effect[aid] = set(strategy["advances"])
+                        current = {c["check_id"] for c in m.current_checks()}
+                        m.collateral[aid] = {c for c, o in m.observations.items()
+                                             if o["passed"] and c in current and c not in strategy["advances"]}
                 elif data["status"] in ("REFUSED", "UNAVAILABLE"):
                     m.failed[aid] = "; ".join(data["reasons"])[:300]
             elif kind == "mission.blocked":
@@ -494,7 +535,8 @@ class MissionEngine:
                                  manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
-                                 cognition_model=getattr(self, "cognition_model", None))
+                                 cognition_model=getattr(self, "cognition_model", None),
+                                 egress=getattr(self, "egress", None) if manifest.capability_id in CONFINED_EGRESS else None)
 
     def _request(self, m: MissionState, *, kind: str, scope_digest: str, action_id: str | None, why: str,
                  recommendation: str, alternatives: list | None = None, requested: dict, now: datetime,
@@ -725,6 +767,7 @@ class MissionEngine:
         failing, evidence = set(), []
         sensor_errors = self.sensor_errors = set()
         self.capability_faults = {}
+        self.disagreements = {}
         for check in m.current_checks():
             sensor = check["sensor"]
             manifest, adapter, missing = self._resolve(sensor)
@@ -786,6 +829,9 @@ class MissionEngine:
                     # retry cadence (learned routing settles the lead engine's resource failure
                     # from these retries); _record_routing_outcomes never blames the strategy.
                     detail = f"sensor inconclusive ({why}): {detail}"
+                views = disagreement(outcome.output)
+                if views and not passed:
+                    self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
                     "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
@@ -1078,17 +1124,35 @@ class MissionEngine:
             candidates.append((-expected, route, index, s, estimate))
         if not candidates:
             key = sha256_json({"failing": sorted(failing), "failed": sorted(m.failed), "excluded": sorted(m.excluded)})
-            rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None,
-                                why=("the remaining strategies wait on checks that observation says fail: "
-                                     + ", ".join(sorted({c for cs in held.values() for c in cs})))
-                                if held else "every strategy for the failing checks is exhausted, refused or excluded",
-                                recommendation="add or revise strategies, widen scope, or abandon the mission",
+            split = {c: v for c, v in sorted(getattr(self, "disagreements", {}).items()) if c in failing}
+            why = (("the remaining strategies wait on checks that observation says fail: "
+                    + ", ".join(sorted({c for cs in held.values() for c in cs})))
+                   if held else "every strategy for the failing checks is exhausted, refused or excluded")
+            if split:
+                why = (f"qualified intelligences disagree on {', '.join(split)}; GREG keeps every view and does not "
+                       f"vote, so it cannot close on either; " + why)
+            tradeoffs = {a: r for a, r in sorted(m.failed.items()) if r.startswith("regressed ")}
+            routes = [s["action_id"] for s in m.spec["strategies"] if set(s["advances"]) & failing]
+            blamed = "; ".join(f"{a} {r.split(',')[0]}" for a, r in tradeoffs.items())
+            if tradeoffs and not split and routes and all(a in tradeoffs for a in routes):
+                why = ("every remaining route improves one check only by breaking another that already passed ("
+                       + blamed + "); GREG will not trade one for the other on its own")
+            elif tradeoffs and not split:
+                why += "; routes that broke a check which already passed are not repeated (" + blamed + ")"
+            rid = self._request(m, kind="NO_STRATEGY", scope_digest=key, action_id=None, why=why,
+                                recommendation=("review both views and decide, or add an independent verifier that "
+                                                "can settle the question" if split else
+                                                "decide which check matters more, or add a strategy that satisfies "
+                                                "both" if tradeoffs and routes and all(a in tradeoffs for a in routes) else
+                                                "add or revise strategies, widen scope, or abandon the mission"),
                                 alternatives=["add or revise strategies for the failing checks", "widen the scope",
                                               "abandon the mission"],
                                 requested={"failing_checks": sorted(failing)}, now=now,
                                 evidence={"failing_checks": sorted(failing), "failed": dict(sorted(m.failed.items())),
                                           "excluded": dict(sorted(m.excluded.items())),
-                                          **({"held_by_precondition": held} if held else {})})
+                                          **({"held_by_precondition": held} if held else {}),
+                                          **({"tradeoffs": tradeoffs} if tradeoffs else {}),
+                                          **({"disagreement": split} if split else {})})
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}
@@ -1124,6 +1188,13 @@ class MissionEngine:
             evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
             spent_usd=m.spent_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)))
+        if (manifest.capability_id == "worker.commission" and outcome.status == "DONE"
+                and isinstance(outcome.output, dict) and outcome.output.get("status") == "UNCERTAIN"):
+            # Extracted from #157: the Gate completed collection, but the cancellable worker stopped after
+            # possible partial effects and spend. Keep its receipt and route it through the same
+            # no-blind-retry reconciliation as any uncertain act, with the signed cap reserved.
+            outcome.status = "UNCERTAIN"
+            outcome.reasons = ["worker execution interrupted; partial outcome and spend require reconciliation"]
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,
@@ -1132,6 +1203,10 @@ class MissionEngine:
                   "input_bindings": input_bindings}
         if outcome.status == "DONE" and float(s.get("cost_usd", 0.0)) > 0:
             record.update(metered_spend(manifest.capability_id, outcome.output, outcome.cost_usd))
+        elif outcome.status == "UNCERTAIN" and manifest.capability_id == "worker.commission":
+            cap = float(s.get("cost_usd", 0.0))
+            record.update(cost_usd=cap, cost_cap_usd=cap, cost_reserved=True, provider_reported_usd=None,
+                          spend_basis="signed_cap: worker outcome or spend unknown; reserved")
         if bindings:
             record["bindings"] = bindings
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):

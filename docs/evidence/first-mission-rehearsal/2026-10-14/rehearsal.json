@@ -1,0 +1,70 @@
+{
+ "label": "REHEARSAL",
+ "directory": "/tmp/claude-0/-home-user/1db5b0b3-4ec3-5deb-8d93-155545e891c1/scratchpad/reh3",
+ "home": "/tmp/claude-0/-home-user/1db5b0b3-4ec3-5deb-8d93-155545e891c1/scratchpad/reh3/body",
+ "throwaway_key": "/tmp/claude-0/-home-user/1db5b0b3-4ec3-5deb-8d93-155545e891c1/scratchpad/reh3/REHEARSAL-throwaway-founder-key.pem",
+ "kernel_root": "/home/user/greg-converge",
+ "mission_id": "m:first-mission-789fe5a98a",
+ "state": "ACHIEVED",
+ "steps_done": [
+  "survey",
+  "compose",
+  "select",
+  "dossier",
+  "retain",
+  "owned-page"
+ ],
+ "steps_repeated": [],
+ "appraisal": "VERIFIED",
+ "dossier": "/tmp/claude-0/-home-user/1db5b0b3-4ec3-5deb-8d93-155545e891c1/scratchpad/reh3/body/deliveries/first-mission/m_first-mission-789fe5a98a.md",
+ "ledger_chain_verified": true,
+ "venture_rehearsal": {
+  "mission_id": "m:venture-rehearsal-8bd1bf19c1",
+  "state": "ACHIEVED",
+  "books": {
+   "mission_id": "m:venture-rehearsal-8bd1bf19c1",
+   "mode": "FIXTURE",
+   "money_moved": false,
+   "currency": "USD",
+   "balances": {
+    "fixture_consideration": 1200,
+    "fixture_receipts": 1200
+   },
+   "totals": {
+    "asset": 1200,
+    "liability": 0,
+    "equity": 0,
+    "revenue": 1200,
+    "expense": 0
+   },
+   "equation_holds": true
+  }
+ },
+ "second_first_mission": {
+  "mission_id": "m:first-mission-4c8f94d782",
+  "state": "ACHIEVED",
+  "since_last": {
+   "newly_selected": [],
+   "no_longer_selected": [],
+   "previous_lesson": "With 11 candidates and an effort budget of 8, the greedy baseline matched the exact optimum (99); the simpler method suffices at this scale.",
+   "previous_mission": "m:first-mission-789fe5a98a",
+   "previous_receipt": "sha256:9bcfe29eefa5c9db894bf6848ec0fe6dec16b9a67a56f8b0baed85b7a2c14893",
+   "still_selected": [
+    "horizon:competency_compiler",
+    "horizon:founder_interface",
+    "horizon:persistent_goal_pursuit",
+    "horizon:capability_genesis"
+   ]
+  },
+  "lesson": "With 11 candidates and an effort budget of 8, the greedy baseline matched the exact optimum (99); the simpler method suffices at this scale."
+ },
+ "elapsed_seconds": 60.64,
+ "counts_toward_vepmc": false,
+ "authenticates_founder": false,
+ "used": {
+  "network": false,
+  "models": false,
+  "money": false,
+  "messages": false
+ }
+}

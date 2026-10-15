@@ -199,7 +199,7 @@ The older Mac option remains in [`FIRST_MISSION.md`](FIRST_MISSION.md).
 
 ```bash
 python -m greg --home ~/.uniimente/greg init --read-root ~/Projects --deliver-root ~/GREG
-python -m greg --home ~/.uniimente/greg console --key ~/.greg-founder.pem   # the one interface (127.0.0.1:8766)
+python -m greg --home ~/.uniimente/greg console --key ~/.greg-founder.pem   # the one interface; open the private link it prints
 python -m greg --home ~/.uniimente/greg mission new engineering-brief --local kernel=~/src/uniimente-kernel \
        --github dababiyoda/uniimente-kernel [--daily] --key ~/.greg-founder.pem
 python -m greg --home ~/.uniimente/greg run --builder models          # Genesis builds/repairs via any reachable model

@@ -34,8 +34,8 @@ file the cycle can execute or read - the static import closure, as the admission
 its constants, the settings, the split and both evaluator seals) and refuses any difference at the start, before
 every evaluation and before writing. Every repository file either process executes must be in that closure at its
 frozen digest: the sandbox hashes the bytes it compiles and never reads repository bytecode; the parent's run is a
-clean room (``python -m greg.cognition.evolution --freeze F --out O``: a fresh detached checkout of HEAD and an
-empty bytecode prefix). The freeze and the trusted files must equal their committed blobs, compared by content.
+clean room (``python -m greg.cognition.evolution --freeze F --out O``: a fresh detached checkout of HEAD, entered
+through ``evolution_room.py``, whose source-only loader hashes what it compiles and reads no bytecode). The freeze and the trusted files must equal their committed blobs, compared by content.
 A held-out split is looked at once: only under a freeze, and never a split an earlier cycle or freeze looked at.
 The parent checks that the sandbox cannot read the evaluator's module once confined.
 
@@ -439,7 +439,8 @@ def sign_test(wins: int, losses: int) -> float:
 # target's genome module and all of greg/cognition (code that imports genomes by name), as the admission harness
 # freezes it, plus the target's finite data. At run time every repository file either process executes must be
 # in it (``_loaded_repository_files`` here; the sandbox reports the bytes it compiled).
-TRUSTED_CLOSURE = ("greg/cognition/evolution.py", "greg/cognition/evolution_sandbox.py", "greg/isolation.py",
+TRUSTED_CLOSURE = ("greg/cognition/evolution.py", "greg/cognition/evolution_sandbox.py",
+                   "greg/cognition/evolution_room.py", "greg/isolation.py",
                    "greg/capabilities.py", "tools/offline_test.py", "greg/cognition/genomes/contract.py",
                    "greg/cognition/contracts.py", "greg/improvement.py", "greg/cognition/genomes/admission.py")
 TARGET_DATA = {"forecast_quantile": ("cortex/evaluation/data/m4_weekly.json.gz",)}
@@ -490,6 +491,11 @@ def _dirty(paths) -> list[str]:
     return dirty
 
 
+def _installed(path: Path) -> bool:
+    """An installed package, even inside the repository (a virtualenv under it): not repository code."""
+    return bool({"site-packages", "dist-packages"} & set(path.parts)) or Path(sys.prefix).resolve() in path.parents
+
+
 def _loaded_repository_files() -> set[str]:
     """Every repository file this process has executed (a module whose file lies under the repository)."""
     out = set()
@@ -497,7 +503,7 @@ def _loaded_repository_files() -> set[str]:
         path = getattr(module, "__file__", None)
         if path:
             resolved = Path(path).resolve()
-            if ROOT in resolved.parents:
+            if ROOT in resolved.parents and not _installed(resolved):
                 out.add(resolved.relative_to(ROOT).as_posix())
     return out
 
@@ -506,14 +512,24 @@ def _clean_room_violations(code: dict | None) -> list[str]:
     """Why this process cannot vouch that the frozen code is the code it ran (empty when it can): a working tree
     that is not a fresh checkout (any untracked or ignored file, __pycache__ included), repository bytecode it may
     have read instead of the hashed source, and (given the freeze's ``code``) repository files it executed outside
-    the freeze. ``python -m greg.cognition.evolution --freeze F --out O`` provides the clean room: a fresh
-    detached checkout of HEAD, checked out with git hooks disabled, and an empty bytecode prefix, with nothing
-    written.
+    the freeze, or compiled source that differs from it. ``python -m greg.cognition.evolution --freeze F --out O``
+    provides the clean room: a fresh detached checkout of HEAD, checked out with git hooks disabled, an empty
+    bytecode prefix with nothing written, and ``evolution_room.py`` as the entry, which installs a source-only
+    loader before any repository module is imported.
 
     Scope: this defends the record against a dirty or stale working tree and against the run's own code. It cannot
     defend against whoever controls the machine, who can write any record; re-executing the frozen cycle at the
     recorded commit is that check."""
+    import importlib.machinery
     found = []
+    entry = getattr(importlib.machinery.SourceFileLoader.get_data, "executed", None)
+    if entry is None:
+        found.append("not started through the clean-room entry (greg/cognition/evolution_room.py), so bytecode may "
+                     "have run instead of the hashed source")
+    elif code is not None:
+        unlike = sorted(p for p, sha in entry.items() if code.get(p) != sha)
+        if unlike:
+            found.append(f"compiled repository source outside or unlike the freeze: {unlike[:10]}")
     status = subprocess.run(["git", "status", "--porcelain", "--ignored", "--untracked-files=all"], cwd=ROOT,
                             capture_output=True, text=True)
     if status.returncode or status.stdout.strip():
@@ -912,8 +928,9 @@ def _finish(record: dict, out: Path | None) -> dict:
 
 def run_recorded(target_name: str, freeze: Path, out: Path, *, timeout: int = 6 * 3600) -> int:
     """Run a recorded cycle in a clean room: a fresh detached checkout of HEAD (no uncommitted edit, index flag,
-    untracked file or __pycache__ of the working tree reaches it) and a fresh, empty bytecode prefix with nothing
-    written, so the code that runs is the committed code the freeze hashes. The freeze must be committed."""
+    untracked file or __pycache__ of the working tree reaches it), a fresh, empty bytecode prefix with nothing
+    written, and the source-only entry ``evolution_room.py``, so the code that runs is the committed code the
+    freeze hashes. The freeze must be committed, and the launching tree must equal HEAD."""
     import os
     import tempfile
     resolved = Path(freeze).resolve()
@@ -940,8 +957,9 @@ def run_recorded(target_name: str, freeze: Path, out: Path, *, timeout: int = 6 
             if any(prefix.iterdir()):
                 raise EvolutionError("CLEAN_ROOM_REQUIRED: the room's bytecode prefix was written before the run")
             env = {k: v for k, v in os.environ.items() if not k.startswith("PYTHON")}
-            proc = subprocess.run([sys.executable, "-E", "-s", "-B", "-X", f"pycache_prefix={prefix}", "-m",
-                                   "greg.cognition.evolution", "--inside", "--target", target_name, "--freeze",
+            proc = subprocess.run([sys.executable, "-E", "-s", "-B", "-X", f"pycache_prefix={prefix}",
+                                   str(tree / "greg" / "cognition" / "evolution_room.py"),
+                                   "--inside", "--target", target_name, "--freeze",
                                    relative, "--out", str(Path(out).resolve()), "--launcher",
                                    f"fresh detached checkout of {commit}"], cwd=tree, env=env, timeout=timeout)
         finally:

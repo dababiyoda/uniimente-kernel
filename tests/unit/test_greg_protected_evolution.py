@@ -376,22 +376,27 @@ def _shipped(target_name):
     assert seen, (target_name, "the shipped executable never ran its evolvable method")
     assert all(c == seen[0] for c in seen) and seen[0] == json.loads(json.dumps(constant)), target_name
     # what the method reports it ran (the verifier's round 2: a substitution inside the method passed the spy)
-    ran = _effective(target_name, out["certificate"])
+    ran = _effective(target_name, out["certificate"], data)
     assert ran == {k: seen[0][k] for k in ran}, (target_name, ran)
     return seen[0]
 
 
-def _effective(target_name, certificate):
-    """The configuration fields each method's certificate records about the run itself. The constraint-release
-    certificate records the whole search configuration; the forecasting and immune certificates record the fields
-    below (their remaining keys - origins, error model, uniform share, scale set, alarm fraction, whitening - are
-    not observable from the certificate and rest on the argument check above and on review)."""
+def _effective(target_name, certificate, data):
+    """The configuration a certificate shows the run used, from values the run computed rather than copied from
+    its argument (the verifier's round 3: the forecasting certificate copies fit_window, the grids and the scale
+    from the argument). Constraint release: the whole search configuration. Immune: detectors, folds, the alarm
+    fraction (target_rate / tolerance) and the whitening (a Cholesky factor is full whitening). Forecasting: the
+    rolling origins actually evaluated (one more than the configured count on this long development series).
+    The rest - forecasting's window, grids, error model and scale; immune's uniform share and scale set - is not
+    observable from the certificate and rests on the argument check above and on review."""
     if target_name == "constraint_release":
         return certificate["search_config"]
     if target_name == "forecast_quantile":
-        return {k: certificate[k] for k in ("fit_window", "beta_set", "phi_set", "interval_scale")}
-    folds = int(certificate["calibration"]["method"].split("-fold")[0])
-    return {"detectors": certificate["detectors_generated"], "calibration_folds": folds}
+        return {"origins": certificate["rolling_origins"] - 1}
+    cal = certificate["calibration"]
+    return {"detectors": certificate["detectors_generated"], "calibration_folds": int(cal["method"].split("-fold")[0]),
+            "alarm_fraction": round(cal["target_rate"] / data["max_false_alarm_rate"], 9),
+            "whitening": "full" if "cholesky" in certificate["standardisation"] else "diagonal"}
 
 
 def test_no_rejected_p8_configuration_is_shipped_and_every_incumbent_still_is():
@@ -631,8 +636,12 @@ def test_a_recorded_cycle_needs_a_committed_freeze_confinement_and_the_clean_roo
 def test_the_clean_room_names_repository_bytecode_and_unfrozen_executed_code(monkeypatch, tmp_path):
     import sys
     import types
+    import importlib.machinery
     monkeypatch.setattr(E.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0, stdout="",
                                                                                      stderr=""))  # a fresh checkout
+    entry = lambda loader, path: b""                                            # the clean-room entry's loader
+    entry.executed = {}
+    monkeypatch.setattr(importlib.machinery.SourceFileLoader, "get_data", entry)
     code = {p: "x" for p in E._loaded_repository_files()}
     monkeypatch.setattr(sys, "pycache_prefix", None)
     assert any("bytecode" in v for v in E._clean_room_violations(code))
@@ -778,6 +787,10 @@ def test_the_clean_room_requires_a_fresh_checkout(monkeypatch, tmp_path):
     (tmp_path / "a.py").write_text("x = 1\n")
     git("add", ".")
     git("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "c")
+    import importlib.machinery
+    entry = importlib.machinery.SourceFileLoader.get_data
+    monkeypatch.setattr(importlib.machinery.SourceFileLoader, "get_data", lambda loader, path: entry(loader, path))
+    importlib.machinery.SourceFileLoader.get_data.executed = {}
     monkeypatch.setattr(E, "ROOT", tmp_path)
     monkeypatch.setattr(sys, "pycache_prefix", str(tmp_path.parent / "fresh-prefix"))
     assert E._clean_room_violations(None) == []
@@ -825,6 +838,13 @@ def test_the_launcher_refuses_a_dirty_or_bytecode_bearing_tree_and_disables_hook
         E.run_recorded("constraint_release", committed, tmp_path / "c.json")
     add = next(argv for argv in calls if "worktree" in argv)
     assert add[:3] == ["git", "-c", "core.hooksPath=/dev/null"] and "add" in add
+    calls.clear()
+    monkeypatch.setattr(E.subprocess, "run", lambda argv, **kw: calls.append(argv) or
+                        subprocess.CompletedProcess(argv, 0, b"", b""))
+    assert E.run_recorded("constraint_release", committed, tmp_path / "c.json") == 0
+    inner = next(argv for argv in calls if "--inside" in argv)
+    assert inner[1:5] == ["-E", "-s", "-B", "-X"] and inner[5].startswith("pycache_prefix=")
+    assert inner[6].endswith("greg/cognition/evolution_room.py")          # the source-only entry, not -m
 
 
 def test_never_checked_bytecode_of_a_loaded_module_is_named(monkeypatch, tmp_path):
@@ -848,3 +868,51 @@ def test_the_spent_ledger_reads_every_freeze_under_the_evidence_tree(monkeypatch
                                                                "split": {"heldout": ["s9"]}}}))
     monkeypatch.setattr(E, "EVIDENCE", tmp_path)
     assert E._spent_heldout("constraint_release")["a/b/freeze.json"] == {"s9"}
+
+
+# ------------------------------------------------------------------ verifier's round 3 on the P8 fix (2026-10-15)
+def test_the_clean_room_entry_compiles_from_source_and_reads_no_bytecode():
+    """evolution.py's own import chain loads every genome module, so a check after it is too late; the entry is
+    stdlib-only and installs its loader before the first repository import."""
+    import ast
+    import importlib.machinery
+    from greg.cognition import evolution_room as R
+    source = E.ROOT / "greg/cognition/evolution_room.py"
+    imported = {a.name.split(".")[0] for n in ast.walk(ast.parse(source.read_text()))
+                for a in getattr(n, "names", []) if isinstance(n, (ast.Import, ast.ImportFrom))}
+    imported |= {n.module.split(".")[0] for n in ast.walk(ast.parse(source.read_text()))
+                 if isinstance(n, ast.ImportFrom) and n.module}
+    assert not imported & {"greg", "cortex", "capabilities", "events", "provenance"}, imported
+    loader = importlib.machinery.SourceFileLoader("greg.isolation", str(E.ROOT / "greg/isolation.py"))
+    for pyc in ("/usr/lib/python3.13/json/__pycache__/decoder.cpython-313.pyc",
+                str(E.ROOT / "greg/__pycache__/isolation.cpython-313.pyc")):
+        with pytest.raises(OSError, match="never reads bytecode"):
+            R.get_data(loader, pyc)
+    assert R.get_data(loader, str(E.ROOT / "greg/isolation.py")) == (E.ROOT / "greg/isolation.py").read_bytes()
+    assert R.get_data.executed["greg/isolation.py"] == E._sha(E.ROOT / "greg/isolation.py")
+    assert importlib.machinery.SourceFileLoader.get_data is not R.get_data       # importing it installs nothing
+
+
+def test_a_recorded_cycle_needs_the_clean_room_entry_and_its_compiled_digests_to_match(monkeypatch):
+    import importlib.machinery
+    import types
+    monkeypatch.setattr(E.subprocess, "run", lambda *a, **k: types.SimpleNamespace(returncode=0, stdout="",
+                                                                                     stderr=""))
+    monkeypatch.setattr(E.sys, "pycache_prefix", "/nonexistent-fresh-prefix")
+    code = {p: "x" for p in E._loaded_repository_files()}
+    assert any("clean-room entry" in v for v in E._clean_room_violations(code))     # started any other way
+    entry = lambda loader, path: b""
+    entry.executed = {"greg/cognition/genomes/developmental.py": "sha256:" + "5" * 64}
+    monkeypatch.setattr(importlib.machinery.SourceFileLoader, "get_data", entry)
+    assert any("unlike the freeze" in v for v in E._clean_room_violations(code))
+    entry.executed = {"greg/cognition/genomes/developmental.py": "x"}
+    assert E._clean_room_violations(code) == []
+
+
+def test_a_virtualenv_inside_the_repository_is_not_repository_code(monkeypatch):
+    """The launcher refused an honest run from a tree holding .venv (its .pth-loaded modules lie under ROOT)."""
+    import types
+    stray = types.ModuleType("greg_review_venv")
+    stray.__file__ = str(E.ROOT / ".venv/lib/python3.11/site-packages/_distutils_hack/__init__.py")
+    monkeypatch.setitem(E.sys.modules, "greg_review_venv", stray)
+    assert not any(p.startswith(".venv/") for p in E._loaded_repository_files())

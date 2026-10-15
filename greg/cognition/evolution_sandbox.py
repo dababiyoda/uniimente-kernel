@@ -36,7 +36,7 @@ def _get_data(loader, path):
     if inside and resolved.suffix == ".pyc":
         raise OSError("repository bytecode is never executed in the P8 sandbox")
     data = _READ(loader, path)
-    if inside and resolved.suffix == ".py":
+    if inside and resolved.suffix == ".py" and not ({"site-packages", "dist-packages"} & set(resolved.parts)):
         _EXECUTED[resolved.relative_to(ROOT).as_posix()] = "sha256:" + hashlib.sha256(data).hexdigest()
     return data
 
@@ -81,7 +81,9 @@ def executed() -> dict:
         if not path:
             continue
         resolved = Path(path).resolve()
-        if ROOT in resolved.parents:
+        installed = {"site-packages", "dist-packages"} & set(resolved.parts) or Path(sys.prefix).resolve() in \
+            resolved.parents                                  # a virtualenv under the repository is not its code
+        if ROOT in resolved.parents and not installed:
             out.setdefault(resolved.relative_to(ROOT).as_posix(), "UNHASHED")
     return dict(sorted(out.items()))
 

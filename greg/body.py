@@ -180,15 +180,17 @@ class Body:
         return self
 
     def _goal_gravity(self, missions) -> list[str]:
-        """Goal Gravity orders this tick's signed missions; each change of order is a ledger fact.
+        """Goal Gravity orders this tick's signed missions; each change of the ranking (order, learned
+        reliability or exclusions) is a ledger fact a verifier can re-derive from the ledger before it.
 
-        A failure here never stops the missions: the engine keeps its static order and the
-        failure is recorded, so an unselected tick is visible rather than silent."""
+        A failure here never stops the missions: the engine keeps its static order and every
+        unselected tick is recorded, so it is visible rather than silent."""
         try:
             selection = gravity.select(missions, self.journal)
         except Exception as exc:
             why = f"{type(exc).__name__}: {exc}"[:300]
-            self.journal.record("gravity.unavailable", {"why": why}, key=["unavailable", why])
+            prior = len(self.journal.replay("gravity.unavailable"))
+            self.journal.record("gravity.unavailable", {"why": why}, key=["unavailable", prior, why])
             return []
         recorded = self.journal.replay("gravity.ranked")
         last = recorded[-1].payload if recorded else None

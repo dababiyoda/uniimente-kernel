@@ -22,8 +22,8 @@ What it re-derives, and from what (the producer's claims are inputs to check, ne
 5. Exactly one receipted DONE commission and one worker commit, despite the interruption, which the
    founder reconciled (either answer) instead of a blind retry. A commission reconciled as executed has
    no receipt, so its work is reported as not re-derivable, never counted as the commission.
-   Goal Gravity's ranking recorded before the mission's first action names it and follows its own
-   declared rule from the signed specs.
+   Goal Gravity's last ranking before the mission's first action selects it and equals the rule's
+   re-derivation over the ledger before that ranking.
 6. VEPMC stays 0: this is sandbox integration proof, not a founder-accepted closure.
 
 Limits: it runs on the same host as the body and reads the same files; it is a separate process
@@ -145,20 +145,22 @@ def main(argv=None) -> int:
         if not checks["mind_answer_is_optimal"]:
             findings.append(f"certified staffed={result.get('staffed')} but the exhaustive optimum is {truth}")
 
-        # 2b. Goal Gravity selected the work: a ranking recorded before this mission's first action names
-        #     it, and follows its own declared rule from the signed specs (re-derived here)
+        # 2b. Goal Gravity selected the work: the last ranking recorded before this mission's first action
+        #     selects it, equals what the rule re-derives from the ledger before that ranking (membership,
+        #     signed priorities, exclusions, learned reliability), and no unselected tick intervened
         seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
         first_action = min((seq[e.event_id] for e in journal.replay("mission.action")
                             if e.payload["mission_id"] == a.mission), default=None)
-        signed_priority = {e.payload["mission_id"]: e.payload["spec"]["priority"]
-                           for e in journal.replay("mission.registered")}
-        prior = [e.payload for e in journal.replay("gravity.ranked")
+        prior = [e for e in journal.replay("gravity.ranked")
                  if first_action is not None and seq[e.event_id] < first_action]
-        checks["selected_by_goal_gravity"] = bool(prior) and \
-            a.mission in [r["mission_id"] for r in prior[-1]["ranking"]] and \
-            not gravity.consistent(prior[-1], signed_priority)
+        unselected = [e for e in journal.replay("gravity.unavailable")
+                      if prior and seq[prior[-1].event_id] < seq[e.event_id] < first_action]
+        rederived = gravity.consistent(journal, prior[-1]) if prior else ["no ranking before the first action"]
+        checks["selected_by_goal_gravity"] = bool(prior) and prior[-1].payload.get("selected") == a.mission \
+            and not rederived and not unselected
         if not checks["selected_by_goal_gravity"]:
-            findings.append("no consistent Goal Gravity ranking named this mission before it acted")
+            findings.append("Goal Gravity did not demonstrably select this mission before it acted: "
+                            + "; ".join(rederived + [f"{len(unselected)} unselected tick(s)"] * bool(unselected)))
 
         # 5. exactly one receipted DONE commission despite the interruption
         commissions = commission_outcomes(actions, ledger)

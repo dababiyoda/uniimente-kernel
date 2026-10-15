@@ -293,10 +293,10 @@
    ]
   },
   {
-   "attack": "a forged Goal Gravity ranking (priority not the signed one, or not following its rule)",
-   "expected": "the verifier re-derives the ranking from the signed specs and refuses it",
+   "attack": "a forged Goal Gravity ranking (a mission dropped, learned reliability swapped, another mission selected)",
+   "expected": "the verifier re-derives the ranking from the ledger before it (membership, signed priorities, exclusions, learned reliability) and refuses any difference",
    "tests": [
-    "tests/integration/test_goal_gravity_orders_missions.py::test_a_forged_ranking_is_detected_against_the_signed_specs"
+    "tests/integration/test_goal_gravity_orders_missions.py::test_a_forged_ranking_is_detected_by_rederivation"
    ]
   },
   {
@@ -304,6 +304,13 @@
    "expected": "never counted, even with all nine conditions met; the conditions are unchanged",
    "tests": [
     "tests/unit/test_greg_one_machine_gates.py::test_fixture_evidence_never_moves_vepmc_even_when_every_condition_holds"
+   ]
+  },
+  {
+   "attack": "the Goal Gravity selector fails on several ticks",
+   "expected": "missions still run in the static order and every unselected tick is a ledger fact; the verifier refuses a selection an unselected tick interrupted",
+   "tests": [
+    "tests/integration/test_goal_gravity_orders_missions.py::test_every_unselected_tick_is_recorded"
    ]
   }
  ],

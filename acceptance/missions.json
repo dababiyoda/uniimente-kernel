@@ -5,7 +5,8 @@
   "section": "33. REQUIRED END-TO-END ACCEPTANCE MISSIONS",
   "lineage": [
    "Missions A-E, G, H, J first mapped against 5c4f4aa (2026-10-14) by an independent mapping run; every cited node re-resolved against this tree",
-   "2026-10-15: A (R2, R3) and F re-mapped onto Goal Gravity on the Body (76832db); D, G and H updated with the Mission D/G/H defect fixes and their regressions (docs/collaboration/MISSION-DEFECTS-2026-10-15.md); I, K and L mapped"
+   "2026-10-15: A (R2, R3) and F re-mapped onto Goal Gravity on the Body (76832db); D, G and H updated with the Mission D/G/H defect fixes and their regressions (docs/collaboration/MISSION-DEFECTS-2026-10-15.md); I, K and L mapped",
+   "2026-10-15: Mission F requirements R1 and R3-R7 proven at BODY tier by a real-process Goal Gravity test; F gap G1 closed"
   ]
  },
  "tier_reading": {
@@ -1101,15 +1102,16 @@
      "id": "R1",
      "obligation": "A dormant goal is awakened by relevant evidence.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
-      "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
+      "tests/integration/test_greg_goal_gravity_process.py::test_a_goal_on_a_real_body_process_wakes_on_meaning_not_noise_and_asks_once_across_a_kill",
       "tests/unit/test_greg_goal_gravity.py::test_a_dormant_goal_with_no_new_evidence_costs_no_record",
       "tests/unit/test_greg_goal_gravity.py::test_a_signed_goal_lives_on_the_body_ledger_and_survives_restart",
+      "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
       "tests/unit/test_greg_goal_gravity_founder_effect.py::test_a_goal_derived_without_code_wakes_on_external_evidence_and_its_mission_repairs"
      ],
-     "notes": "Founder-signed GOAL on the Body ledger (per-test key), in-process Body with a deterministic clock."
+     "notes": "Founder-signed GOAL on the Body ledger (per-test key), in-process Body with a deterministic clock. 2026-10-15: proven in a real `greg run` process: a signed GOAL survives a SIGKILL with exactly one open ask, the approve (via `greg decide`) runs the move once, noise wakes nothing and relevant evidence pulls the mission into an in-cone repair."
     },
     {
      "id": "R2",
@@ -1129,81 +1131,87 @@
      "id": "R3",
      "obligation": "GREG recalculates the active bottleneck.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
+      "tests/integration/test_greg_goal_gravity_process.py::test_a_goal_on_a_real_body_process_wakes_on_meaning_not_noise_and_asks_once_across_a_kill",
       "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
       "tests/unit/test_greg_goal_gravity.py::test_one_backcast_greg_path_and_the_goal_agree"
      ],
-     "notes": "active_node_id asserted before the decision (ship) and after it (n1)."
+     "notes": "active_node_id asserted before the decision (ship) and after it (n1). 2026-10-15: proven in a real `greg run` process: a signed GOAL survives a SIGKILL with exactly one open ask, the approve (via `greg decide`) runs the move once, noise wakes nothing and relevant evidence pulls the mission into an in-cone repair."
     },
     {
      "id": "R4",
      "obligation": "GREG performs permitted preparation, inside held authority and through the mission's own Gate, and never runs the awaited consequential move.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
-      "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
-      "tests/unit/test_greg_goal_gravity_founder_effect.py::test_a_pulled_mission_awaiting_an_approval_repairs_in_cone_and_never_runs_the_awaited_move",
-      "tests/unit/test_greg_goal_gravity_reattack.py::test_preparation_withdraws_an_ask_the_world_made_moot",
+      "tests/integration/test_greg_goal_gravity_process.py::test_a_goal_on_a_real_body_process_wakes_on_meaning_not_noise_and_asks_once_across_a_kill",
       "tests/unit/test_greg_goal_gravity.py::test_a_body_hosted_loop_refuses_a_gate_executor_or_grant",
-      "tests/unit/test_greg_goal_gravity.py::test_the_binding_holds_no_second_authority"
+      "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
+      "tests/unit/test_greg_goal_gravity.py::test_the_binding_holds_no_second_authority",
+      "tests/unit/test_greg_goal_gravity_founder_effect.py::test_a_pulled_mission_awaiting_an_approval_repairs_in_cone_and_never_runs_the_awaited_move",
+      "tests/unit/test_greg_goal_gravity_reattack.py::test_preparation_withdraws_an_ask_the_world_made_moot"
      ],
-     "notes": ""
+     "notes": "2026-10-15: proven in a real `greg run` process: a signed GOAL survives a SIGKILL with exactly one open ask, the approve (via `greg decide`) runs the move once, noise wakes nothing and relevant evidence pulls the mission into an in-cone repair."
     },
     {
      "id": "R5",
      "obligation": "GREG presents only the consequential decision needing Alfonso: one compressed ask, never a duplicate.",
      "coverage": "covered",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
+      "tests/integration/test_greg_goal_gravity_process.py::test_a_goal_on_a_real_body_process_wakes_on_meaning_not_noise_and_asks_once_across_a_kill",
       "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end_while_the_decision_is_open",
-      "tests/unit/test_greg_goal_gravity_reattack.py::test_two_alternatives_give_one_ask_and_its_approve_ships_once",
-      "tests/unit/test_greg_goal_gravity_reattack.py::test_a_goal_declaring_only_the_alternative_gets_a_notice_not_a_second_ask",
-      "tests/unit/test_greg_goal_gravity_founder_effect.py::test_a_refused_ask_is_settled_until_the_founder_resumes_the_mission_then_asked_once",
       "tests/unit/test_greg_goal_gravity_founder_effect.py::test_a_mission_without_a_goal_still_only_waits_on_its_decision",
+      "tests/unit/test_greg_goal_gravity_founder_effect.py::test_a_refused_ask_is_settled_until_the_founder_resumes_the_mission_then_asked_once",
+      "tests/unit/test_greg_goal_gravity_reattack.py::test_a_goal_declaring_only_the_alternative_gets_a_notice_not_a_second_ask",
+      "tests/unit/test_greg_goal_gravity_reattack.py::test_two_alternatives_give_one_ask_and_its_approve_ships_once",
       "tests/unit/test_greg_goal_gravity_surfaces.py::test_status_morning_report_and_console_show_goals_apart_from_missions"
      ],
-     "notes": ""
+     "notes": "2026-10-15: proven in a real `greg run` process: a signed GOAL survives a SIGKILL with exactly one open ask, the approve (via `greg decide`) runs the move once, noise wakes nothing and relevant evidence pulls the mission into an in-cone repair."
     },
     {
      "id": "R6",
      "obligation": "The system distinguishes a meaningful trigger from irrelevant noise.",
      "coverage": "partial",
-     "tier": "SANDBOX_VERIFIED",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
-      "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
+      "tests/integration/test_greg_goal_gravity_process.py::test_a_goal_on_a_real_body_process_wakes_on_meaning_not_noise_and_asks_once_across_a_kill",
       "tests/unit/test_greg_goal_gravity.py::test_a_dormant_goal_with_no_new_evidence_costs_no_record",
-      "tests/unit/test_greg_goal_gravity_founder_effect.py::test_intake_wakes_a_goal_by_what_its_content_names_not_by_its_channel",
-      "tests/unit/test_greg_goal_gravity_founder_effect.py::test_a_channel_only_goal_wakes_only_on_content_about_it"
+      "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
+      "tests/unit/test_greg_goal_gravity_founder_effect.py::test_a_channel_only_goal_wakes_only_on_content_about_it",
+      "tests/unit/test_greg_goal_gravity_founder_effect.py::test_intake_wakes_a_goal_by_what_its_content_names_not_by_its_channel"
      ],
-     "notes": "Off-topic noise, unchanged evidence and channel-only matches wake nothing. Weighting by confidence, trust level and freshness of on-topic evidence is not shown (gap G3)."
+     "notes": "Off-topic noise, unchanged evidence and channel-only matches wake nothing. Weighting by confidence, trust level and freshness of on-topic evidence is not shown (gap G3). 2026-10-15: proven in a real `greg run` process: a signed GOAL survives a SIGKILL with exactly one open ask, the approve (via `greg decide`) runs the move once, noise wakes nothing and relevant evidence pulls the mission into an in-cone repair."
     },
     {
      "id": "R7",
      "obligation": "The loop runs on the canonical GREG Body and its one ledger, with no second authority.",
-     "coverage": "partial",
-     "tier": "SANDBOX_VERIFIED",
+     "coverage": "covered",
+     "tier": "BODY_VERIFIED",
      "implementation": "INTEGRATED",
      "tests": [
+      "tests/integration/test_goal_gravity_acceptance.py::test_section_33_acceptance_chain",
+      "tests/integration/test_greg_goal_gravity_process.py::test_a_goal_on_a_real_body_process_wakes_on_meaning_not_noise_and_asks_once_across_a_kill",
       "tests/unit/test_greg_goal_gravity.py::test_a_body_without_goals_does_no_gravity_work_and_writes_nothing",
-      "tests/unit/test_greg_goal_gravity.py::test_ledger_closure_traces_every_dispatch_to_a_signed_mission",
-      "tests/integration/test_goal_gravity_acceptance.py::test_section_33_acceptance_chain"
+      "tests/unit/test_greg_goal_gravity.py::test_ledger_closure_traces_every_dispatch_to_a_signed_mission"
      ],
-     "notes": "In-process Body; no real `greg run` process drives a GOAL yet (gap G1)."
+     "notes": "In-process Body; no real `greg run` process drives a GOAL yet (gap G1). 2026-10-15: proven in a real `greg run` process: a signed GOAL survives a SIGKILL with exactly one open ask, the approve (via `greg decide`) runs the move once, noise wakes nothing and relevant evidence pulls the mission into an in-cone repair."
     }
    ],
    "gaps": [
     {
      "id": "G1",
      "gap": "No real `greg run` process (BODY tier) wakes a founder-signed GOAL from relevant evidence; every Goal Gravity test drives an in-process Body.",
-     "state": "OPEN",
+     "state": "CLOSED",
      "buildable_now": true,
      "dependency": "none",
-     "next": "Extend the supervisord pattern of tests/integration/test_greg_body_supervised.py: submit a signed MISSION and GOAL through the CLI, ingest relevant and irrelevant evidence, assert one wake, one in-cone repair through the Gate and one APPROVAL ask, then SIGKILL and restart and assert no second ask."
+     "next": "Extend the supervisord pattern of tests/integration/test_greg_body_supervised.py: submit a signed MISSION and GOAL through the CLI, ingest relevant and irrelevant evidence, assert one wake, one in-cone repair through the Gate and one APPROVAL ask, then SIGKILL and restart and assert no second ask.",
+     "closed_by": "tests/integration/test_greg_goal_gravity_process.py (real `greg run` process, SIGKILL restart, `greg decide`, noise and relevant evidence)"
     },
     {
      "id": "G2",

@@ -518,12 +518,12 @@
    "authority": "A goal acts only through its founder-signed mission; it holds no authority of its own.",
    "missing_dependencies": [],
    "observed_failures": [
-    "Not yet run in a real Body process (F gap G1)"
+    "Relevance is lexical: on-topic evidence is not weighed by confidence, trust or freshness (F gap G3)"
    ],
    "recovery": "Goal records replay to one goal after a crash; faults are contained and recorded once.",
    "resources": "No record when nothing new arrives.",
    "next_work": [
-    "F gaps G1, G3"
+    "F gap G3"
    ],
    "blocking": [
     "Standing approval semantics are a founder decision (F gap G4)"
@@ -674,7 +674,7 @@
    "n": 5,
    "condition": "Persistent goals can activate the correct operating loop.",
    "met": "partly",
-   "evidence": "Goal Gravity on the Body at SANDBOX tier; no real-process run (F gap G1)."
+   "evidence": "Goal Gravity runs in a real `greg run` process (BODY tier): wake on relevant evidence, in-cone repair, one ask across a SIGKILL, noise ignored. Relevance weighting (F gap G3) and standing approval (F gap G4, founder) remain open."
   },
   {
    "n": 6,
@@ -722,7 +722,7 @@
    "n": 13,
    "condition": "No readily buildable required subsystem has been replaced by a stub, placeholder, or future-work paragraph.",
    "met": "no",
-   "evidence": "Buildable gaps remain open (e.g. D G1, F G1, I G2, K G1-G2, L G1)."
+   "evidence": "Buildable gaps remain open (e.g. D G1, I G2, K G1-G2, L G1)."
   },
   {
    "n": 14,

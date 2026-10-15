@@ -56,6 +56,15 @@ class AuthorityOffice:
         return sha256_json({"mission_id": mission_id, "capability": capability_id, "params": params,
                             "target": target, "consequence_class": consequence_class, "cost_usd": cost_usd})
 
+    @staticmethod
+    def proposal_id(scope: str, attempt) -> str:
+        """The one proposal (hence at most one Gate dispatch) of this exact scope at this attempt."""
+        return "greg-" + sha256_json({"scope": scope, "attempt": attempt})[7:39]
+
+    def prior(self, proposal_id: str):
+        """Retained dispatch claim and receipt of this exact proposal: what the Gate itself recorded."""
+        return self._prior(proposal_id)
+
     def _prior(self, proposal_id: str):
         """Retained dispatch/receipt for this exact proposal, if any (crash recovery)."""
         claims = [r for r in self.ledger.by_type("grant_dispatch") if r.payload.get("proposal_id") == proposal_id]
@@ -72,7 +81,7 @@ class AuthorityOffice:
         consequence = manifest.consequence_class
         scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
                                   target=target, consequence_class=consequence, cost_usd=cost_usd)
-        proposal_id = "greg-" + sha256_json({"scope": scope, "attempt": attempt})[7:39]
+        proposal_id = self.proposal_id(scope, attempt)
         base = dict(proposal_id=proposal_id, scope_digest=scope)
 
         ok, why = manifest.available()
@@ -96,8 +105,9 @@ class AuthorityOffice:
             return ActionOutcome("DONE", ["retained receipt reused after restart"], output=receipt.payload["result"].get("output"),
                                  receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
                                  cost_usd=cost_usd, **base)
-        if claim is not None:
-            return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; outcome unknown"], **base)
+        if claim is not None:  # the dispatch the claim names, so its reconciliation settles exactly that one
+            return ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; outcome unknown"],
+                                 grant_id=claim.payload.get("grant_id"), **base)
 
         worker = self.passports.issue(kind="agent", creator="greg-authority-office", owner_organ="uniimente-kernel",
                                       legal_principal=PRINCIPAL, declared_capabilities=[manifest.capability_id],

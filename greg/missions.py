@@ -29,7 +29,7 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from greg.authority import AuthorityOffice
+from greg.authority import ActionOutcome, AuthorityOffice
 from greg.capabilities import InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
@@ -956,6 +956,9 @@ class MissionEngine:
             return {"state": m.status}
         if m.paused:
             return {"state": "PAUSED"}
+        recovered = self._recover_dispatch(m, now)
+        if recovered is not None:
+            return recovered
         if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now:
             self._block(m, {"type": "decision", "request_id": self._request(
                 m, kind="SCOPE_RENEWAL", scope_digest=sha256_json({"horizon": m.cone.horizon}), action_id=None,
@@ -1587,6 +1590,16 @@ class MissionEngine:
                 and requested > float(s.get("cost_usd", 0.0)) + 1e-9:
             budget_capped = {"signed_cost_usd": float(s.get("cost_usd", 0.0)), "requested_usd": float(requested)}
             bound_params = {**bound_params, "max_budget_usd": float(s.get("cost_usd", 0.0))}
+        # Write-ahead: the exact proposal is on the ledger before the Gate is asked, so a body that dies inside
+        # the dispatch finds it again on restart and settles it from the Gate's own record (_recover_dispatch).
+        scope = AuthorityOffice.scope_digest(mission_id=m.mission_id, capability_id=manifest.capability_id,
+                                             params=bound_params, target=s["target"],
+                                             consequence_class=manifest.consequence_class,
+                                             cost_usd=float(s.get("cost_usd", 0.0)))
+        self.journal.record("mission.dispatching", {
+            "mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "capability": manifest.capability_id,
+            "scope_digest": scope, "proposal_id": AuthorityOffice.proposal_id(scope, attempt)},
+            key=[m.mission_id, aid, attempt, scope])
         outcome = self.office.act(
             mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
             adapter=adapter, ctx=self._context(m, manifest), params=bound_params, target=s["target"],
@@ -1594,6 +1607,52 @@ class MissionEngine:
             evidence_refs=evidence + [r for r in sources if r not in evidence], attempt=attempt,
             spent_usd=m.committed_usd, approved_scopes=m.approved_scopes,
             evidence_confidence=float(s.get("evidence_confidence", 1.0)))
+        return self._record_outcome(m, s, manifest, outcome, attempt=attempt, routing_decision=routing_decision,
+                                    input_bindings=input_bindings, bindings=bindings, budget_capped=budget_capped,
+                                    prepare_for=prepare_for, now=now)
+
+    def _recover_dispatch(self, m: MissionState, now: datetime) -> dict | None:
+        """Settle a dispatch this body began but never recorded, before anything else is decided.
+
+        A body killed inside ``office.act`` leaves its write-ahead intent (mission.dispatching) and possibly the
+        Gate's dispatch claim, but no mission.action: the world may already show the effect, and observing first
+        would close the mission over an unrecorded, unreconciled dispatch. The Gate's own record decides: a
+        receipt is reused (DONE, its spend booked), a claim without a receipt is UNCERTAIN (its cap reserved,
+        one reconciliation of exactly that dispatch, never a blind retry), and no claim means nothing happened."""
+        recorded = {(e.payload["action_id"], e.payload["attempt"]) for e in self.journal.replay("mission.action")
+                    if e.payload.get("mission_id") == m.mission_id}
+        for intent in [e.payload for e in self.journal.replay("mission.dispatching")
+                       if e.payload.get("mission_id") == m.mission_id]:
+            if (intent["action_id"], intent["attempt"]) in recorded:
+                continue
+            claim, receipt = self.office.prior(intent["proposal_id"])
+            s = next((x for x in m.spec["strategies"] if x["action_id"] == intent["action_id"]), None)
+            manifest = self.registry.manifests.get(intent["capability"])
+            if claim is None and receipt is None or s is None or manifest is None:
+                continue                     # the Gate never dispatched it: nothing happened, nothing to settle
+            base = dict(proposal_id=intent["proposal_id"], scope_digest=intent["scope_digest"])
+            if receipt is not None:
+                result = receipt.payload.get("result") or {}
+                outcome = ActionOutcome(
+                    "DONE" if result.get("result_class") == "positive" else "REFUSED",
+                    ["retained receipt of a dispatch the body did not record before it stopped"]
+                    if result.get("result_class") == "positive" else [result.get("observed_outcome", "failed")],
+                    output=result.get("output"), receipt_hash=receipt.hash, grant_id=receipt.payload.get("grant_id"),
+                    cost_usd=float(s.get("cost_usd", 0.0)), **base)
+            else:
+                outcome = ActionOutcome("UNCERTAIN", ["dispatch claimed without receipt; the body stopped inside "
+                                                      "it, so its outcome is unknown"],
+                                        grant_id=claim.payload.get("grant_id"), **base)
+            return {**self._record_outcome(m, s, manifest, outcome, attempt=intent["attempt"],
+                                           routing_decision={"chosen": s["action_id"], "recovered": True},
+                                           input_bindings=[], bindings=[], budget_capped=None, prepare_for=None,
+                                           now=now), "recovered": intent["proposal_id"]}
+        return None
+
+    def _record_outcome(self, m: MissionState, s: dict, manifest, outcome, *, attempt, routing_decision: dict,
+                        input_bindings: list, bindings: list, budget_capped, prepare_for, now: datetime) -> dict:
+        """Record one Gate outcome of strategy ``s`` and decide what the mission does next."""
+        aid = s["action_id"]
         record = {"mission_id": m.mission_id, "action_id": aid, "attempt": attempt, "status": outcome.status,
                   "reasons": [str(r)[:300] for r in outcome.reasons], "receipt": outcome.receipt_hash,
                   "capability": manifest.capability_id, "route": manifest.route,

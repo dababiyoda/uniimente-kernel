@@ -126,6 +126,7 @@
     "cortex/evaluation/seed_genome/__init__.py",
     "cortex/evaluation/seed_genome/build.py",
     "cortex/evaluation/seed_genome/freeze-v10.json",
+    "cortex/evaluation/seed_genome/freeze-v11.json",
     "cortex/evaluation/seed_genome/freeze-v2.json",
     "cortex/evaluation/seed_genome/freeze-v3.json",
     "cortex/evaluation/seed_genome/freeze-v4.json",

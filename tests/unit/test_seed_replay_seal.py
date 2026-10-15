@@ -1,7 +1,7 @@
 """The sealed-case seed replay seals the runner twice: by its v3 scoring and by the current freeze.
 
 run.py's import path, file list and freeze pointer changed with the seed module rename and
-the v4-v10 re-freezes; its loss() and SPEC did not. The scoring seal keeps the replay tied to the
+the v4-v11 re-freezes; its loss() and SPEC did not. The scoring seal keeps the replay tied to the
 v3 labels; the whole-file seal against the pinned current runner freeze refuses any other edit.
 """
 import importlib.util
@@ -20,7 +20,7 @@ def test_current_runner_scores_with_the_v3_loss_function():
 
 def test_a_changed_loss_function_is_refused_and_unrelated_edits_are_not():
     text = (ROOT / "cortex/evaluation/seed_genome/run.py").read_text()
-    pointer_moved = text.replace("freeze-v10.json", "freeze-v11.json")
+    pointer_moved = text.replace("freeze-v11.json", "freeze-v12.json")
     assert replay._sealed_loss_sha256(pointer_moved) == replay.LOSS_V3_SHA256
     tampered = text.replace("matched = receipt['answered'] == expected['answered']",
                             "matched = True", 1)

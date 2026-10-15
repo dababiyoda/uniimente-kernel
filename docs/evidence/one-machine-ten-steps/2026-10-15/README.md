@@ -103,7 +103,8 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 
 | Artifact | sha256 |
 |---|---|
-| `cortex/evaluation/seed_genome/freeze-v10.json` (seal of the joined tree; `RUNNER_FREEZE`) | `be5beafb740b494568b15f76c4bec6cdf242ead931c9cffc5352d0914f563a73` |
+| `cortex/evaluation/seed_genome/freeze-v11.json` (seal of the joined tree; `RUNNER_FREEZE`) | `bd3f9bddb3911d47f6b86e7a1772b5a77cfe811a8076d053f3e91b2606977b42` |
+| `cortex/evaluation/seed_genome/freeze-v10.json` (the seal at `16900ca`) | `be5beafb740b494568b15f76c4bec6cdf242ead931c9cffc5352d0914f563a73` |
 | `cortex/evaluation/seed_genome/freeze-v9.json` (the seal at `cd8046a`) | `761b35411ad15f303f92ed6248eefe521c04d3167c02845511af176a401994a9` |
 | `cortex/evaluation/seed_genome/freeze-v8-pr184.json` (this branch's v8, the seal at `d965bb7`) | `c253504c11eb1f128d0687f6c5fbce2e5479b70b9b8bd183c5d5b22ec3d96039` |
 | `cortex/evaluation/seed_genome/freeze-v8.json` (#178's v8) | `236da72cac0cf883688cb4e30aeabf7523caec8cb643aaa89ed62a99a0bf5b86` |

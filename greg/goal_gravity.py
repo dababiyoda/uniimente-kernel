@@ -81,11 +81,11 @@ APPROVE_MEANS = ("standing approval of this exact scope for the mission's lifeti
                  "mission closes or its signed horizon passes; to end it sooner, exclude the strategy with a signed "
                  "critique or pause or abandon the mission. It is not a one-time execution")
 # A paid scope includes the mission's spend state (AuthorityOffice.scope_digest, #157): one paid approval funds one run.
-APPROVE_MEANS_PAID = ("approval of this one paid run at the mission's current spend: the mission runs it once, when its "
-                      "own loop selects it; once that run's cost (or any other spend) is booked the approved scope no "
-                      "longer matches, and the mission asks you again before spending again (for example after the "
-                      "check regresses). Until it runs you may end it by rejecting it, excluding the strategy with a "
-                      "signed critique, or pausing or abandoning the mission")
+APPROVE_MEANS_PAID = ("approval of one paid run at the spend this ask shows: the mission runs it once, when its own loop "
+                      "selects it, and asks you again before any later run (for example after the check regresses). If "
+                      "the mission spends before you answer, this ask is withdrawn and asked again at the new spend. "
+                      "To end it before it runs, exclude the strategy with a signed critique, or pause or abandon the "
+                      "mission; a reject after an approve is refused")
 
 
 def approve_means(cost_usd, budget_usd) -> str:
@@ -103,14 +103,25 @@ def _approve_means_of(r: dict) -> str:
 
 def asks_for_move(r: dict, scope: dict) -> bool:
     """Whether a recorded request is the engine's APPROVAL ask for this exact goal move (``scope`` from
-    ``strategy_scope``). It compares the spend-free move digest, so the link survives the mission's spending; a request
-    recorded before the move digest existed compares the scope digest, as it always did. A compensation APPROVAL
-    naming the same strategy is a different move (other capability, params or target)."""
+    ``strategy_scope``). It compares the spend-free move digest, so the link survives the mission's spending. A paid
+    request recorded before the move digest existed is matched at the spend state its own ask shows
+    (``evidence.budget``), an unpaid one by its scope digest. A compensation APPROVAL naming the same strategy is a
+    different move (other capability, params or target)."""
     if r.get("kind") != "APPROVAL" or r.get("mission_id") != scope["mission_id"]:
         return False
     if "move_digest" in r:
         return r["move_digest"] == scope["move_digest"]
-    return r.get("scope_digest") == scope["scope_digest"]
+    if r.get("scope_digest") == scope["scope_digest"]:
+        return True
+    evidence = r.get("evidence") if isinstance(r.get("evidence"), dict) else {}
+    budget = evidence.get("budget") if isinstance(evidence.get("budget"), dict) else {}
+    if float(scope.get("cost_usd") or 0.0) <= 0 or "spent_usd" not in budget or "strategy" not in scope:
+        return False
+    return r.get("scope_digest") == AuthorityOffice.scope_digest(
+        mission_id=scope["mission_id"], capability_id=scope["capability"],
+        params=scope["strategy"].get("params", {}), target=scope["target"],
+        consequence_class=scope["consequence_class"], cost_usd=scope["cost_usd"],
+        spent_usd=budget["spent_usd"], budget_usd=budget.get("budget_usd"))
 
 
 class _Genomes:
@@ -670,9 +681,15 @@ class BodyAttentionStore:
         book = self.body.engine.book
         for rid in self._requests(scope):
             answer = book.answers.get(rid)
-            if answer and answer.get("answer") in ANSWER and signed_answer(self.signed, rid, answer):
-                return {"decision": ANSWER[answer["answer"]], "request_id": rid,
-                        "command_digest": answer["command_digest"]}
+            if not (answer and answer.get("answer") in ANSWER and signed_answer(self.signed, rid, answer)):
+                continue
+            # A paid approve funds one run at the spend it named (#157): once that run happened, or the mission
+            # spent since, it no longer answers this move and the goal may ask again. A reject answers the move.
+            if answer["answer"] == "approve" and (rid in book.consumed
+                                                  or book.requests[rid].get("scope_digest") != scope["scope_digest"]):
+                continue
+            return {"decision": ANSWER[answer["answer"]], "request_id": rid,
+                    "command_digest": answer["command_digest"]}
         return None
 
     def _notice(self, item: AttentionItem, *, kind: str, lane: str, why: str = "") -> None:

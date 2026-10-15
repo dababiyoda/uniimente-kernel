@@ -467,6 +467,7 @@ class MissionBook:
 
     def rebuild(self):
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
+        self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened
         self._deficit_of = {}              # deficit_id -> the mission whose light cone pays for its builds
         for event in self.journal.replay():
             self.fold(event.type[len("greg."):], event.payload)
@@ -560,6 +561,13 @@ class MissionBook:
                 m.actions_done += 1
                 m.spent_usd += data.get("cost_usd", 0.0)
                 m.failed.pop(aid, None)
+                if data.get("cost_cap_usd", 0.0) > 0 and data.get("scope_digest") in m.approved_scopes:
+                    # One paid approval funds one run (#157), even a run that books $0 (a provider reporting no
+                    # spend leaves the spend state, and so the digest, unchanged): the next selection asks again.
+                    m.approved_scopes.discard(data["scope_digest"])
+                    self.consumed |= {rid for rid, r in self.requests.items()
+                                      if r.get("mission_id") == m.mission_id and r.get("kind") == "APPROVAL"
+                                      and r.get("scope_digest") == data["scope_digest"] and rid in self.answers}
                 strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
                 if strategy:
                     m.pending_effect[aid] = set(strategy["advances"])
@@ -896,9 +904,9 @@ class MissionEngine:
         while True:
             rid = "req-" + sha256_json({"mission": m.mission_id, "kind": kind, "scope": scope_digest,
                                         **({"epoch": epoch} if epoch else {})})[7:31]
-            if rid not in self.book.withdrawn:
+            if rid not in self.book.withdrawn and rid not in self.book.consumed:
                 break
-            epoch += 1  # the same discrepancy returned after healing: a new escalation
+            epoch += 1  # the same discrepancy returned after healing, or a paid approval used: a new escalation
         if rid in self.book.requests:
             return rid  # one escalation per exact scope; waiting creates no spam
         why = why.strip() or f"{kind.lower().replace('_', ' ')} needs your decision"   # never an empty ask
@@ -975,6 +983,34 @@ class MissionEngine:
         rid = b.get("request_id")
         return (b.get("type") == "decision" and bool(b.get("action_id")) and rid not in self.book.answers
                 and rid not in self.book.withdrawn and (self.book.requests.get(rid) or {}).get("kind") == "APPROVAL")
+
+    def _withdraw_spent_paid_asks(self, m: MissionState, now: datetime) -> MissionState:
+        """A paid APPROVAL names the spend state it was asked at (#157); once the mission spends, an approve of it
+        could fund nothing. Withdraw it (a body event, never a founder answer) so every open ask is one an approve
+        can run; when it was the blocker, the loop goes on and asks again at the current spend."""
+        stale = []
+        for rid, r in self.book.requests.items():
+            if r.get("kind") != "APPROVAL" or r.get("mission_id") != m.mission_id or rid in self.book.answers \
+                    or rid in self.book.withdrawn or r.get("move_digest", r.get("scope_digest")) == r.get("scope_digest"):
+                continue                       # another mission's, answered, withdrawn, unpaid, or recorded before
+            evidence = r.get("evidence") if isinstance(r.get("evidence"), dict) else {}
+            state = evidence.get("budget") if isinstance(evidence.get("budget"), dict) else None
+            if state is None or (abs(float(state.get("spent_usd", 0.0)) - m.spent_usd) < 1e-9
+                                 and state.get("budget_usd") == m.cone.budget_usd):
+                continue
+            stale.append((rid, state))
+        for rid, state in stale:
+            why = (f"the mission has spent since this paid move was asked (${float(state.get('spent_usd', 0.0)):.2f} "
+                   f"then, ${m.spent_usd:.2f} now): an approve of it could fund nothing, so it is asked again at the "
+                   "current spend")
+            self.journal.record("decision.withdrawn", {"request_id": rid, "mission_id": m.mission_id, "why": why,
+                                                       "at": iso(now)}, key=[rid, "withdrawn"])
+            if (m.blocker or {}).get("request_id") == rid:
+                self._unblock(m, why)
+        if stale:
+            self.book.rebuild()
+            m = self.book.missions[m.mission_id]
+        return m
 
     def _inside_cone(self, m: MissionState, s: dict, now: datetime) -> bool:
         """A static strategy whose exact scope the mission's signed light cone admits now (no decision needed)."""
@@ -1053,6 +1089,7 @@ class MissionEngine:
         resumed = self._resume_unsettled(m, now)     # no blocker: a question a crash lost comes first
         if resumed is not None:
             return resumed
+        m = self._withdraw_spent_paid_asks(m, now)   # a paid ask the mission's spend has made unfundable
         # An open reconciliation stays the blocker past the horizon: its answer is recorded first, then renewal.
         if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now and \
                 (m.blocker or {}).get("type") != "reconciliation":

@@ -278,9 +278,11 @@ that exact scope (the mission engine's semantics, unchanged by goals). For an un
 the mission's lifetime: the mission runs it whenever its own loop selects it again, for example after the check
 regresses, with no new ask, until the mission closes or its signed horizon passes. A paid move's scope also names the
 mission's spend at the time of the ask (#157: one paid approval cannot fund a second attempt), so the approve funds
-one run: once that run's cost, or any other spend, is booked, the mission asks again before spending again. To end
-either sooner, reject it, exclude the strategy with a signed critique, or pause or abandon the mission. The goal's ask
-and each ask in `greg gravity evidence` state which applies (`approve_means`); `greg gravity goals` shows both texts.
+one run, even a run that books $0, and the mission asks again before any later run. If the mission spends while a paid
+ask is open (for example during permitted preparation), the ask is withdrawn and asked again at the new spend, so an
+approve always funds what it shows. To end either before it runs, exclude the strategy with a signed critique, or pause
+or abandon the mission (a reject after an approve is refused). The goal's ask and each ask in `greg gravity evidence`
+state which applies (`approve_means`); `greg gravity goals` shows both texts.
 A goal links its move to the engine's asks by the move itself (`move_digest`, without the spend), so its open ask, a
 signed reject of it and its evidence stay attached when the mission spends in between.
 

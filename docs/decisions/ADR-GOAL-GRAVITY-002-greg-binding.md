@@ -142,7 +142,9 @@ decision, once, on the one ask path; the approve then executes it. (An earlier v
 "approval executes once"; that was wrong: an approve is a standing approval of that exact scope for the mission's
 lifetime, the mission engine's semantics, which the binding does not change; see fix stage 3, finding 5. For a paid
 move that scope includes the mission's spend state (#157), so its approve funds one run and the mission asks again
-after spending; PR #184's second review corrected every goal surface to say so.)
+after spending; PR #184's second review corrected every goal surface to say so, and its third made the engine hold to
+it: a paid approve is used by its one run even when that run books $0, and a paid ask the mission's spend has made
+unfundable is withdrawn and asked again.)
 Mechanisms chosen are the simplest that produce it:
 a lexical relevance rule over names the founder already signed (no model), the mission engine's own loop and Gate
 for preparation (no new executor), observation-tier reopening (no new goal status). Each fix has a regression test

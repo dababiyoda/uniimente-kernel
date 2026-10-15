@@ -65,19 +65,28 @@ def test_a_paid_goal_approval_says_what_the_engine_does_one_run_then_one_new_ask
     assert world.projection()["approve_means"] == {"free": gg.APPROVE_MEANS, "paid": gg.APPROVE_MEANS_PAID}
 
 
+def _open_w2(world):
+    return [r["request_id"] for r in world.book().open_requests() if r.get("action_id") == "w2"]
+
+
 def test_a_signed_reject_of_the_goals_paid_ask_is_remembered_by_the_goal_after_preparation_spends(tmp_path, fast):
     """Finding 9: a preparation spend moved the digest, so the goal blamed its own open ask and never mirrored the
-    founder's signed reject into its refused routes."""
+    founder's signed reject into its refused routes. Since the third review the spent ask is withdrawn and asked again
+    at the new spend (an approve of the old one could fund nothing); the founder rejects the ask that is open."""
     world = PaidRepairWorld(tmp_path)
     gid, _ = world.start(GOAL(moves=(ship_move(estimated_cost_usd=0.10),)))
     world.tick(6)
     ask = [r for r in world.w2_requests() if (r.get("evidence") or {}).get("goal_id") == gid]
     assert len(ask) == 1
-    rid = ask[0]["request_id"]
+    first = ask[0]["request_id"]
     spent_at_ask = world.book().missions[MID].spent_usd
     _regress_c_and_prepare(world)
     assert world.book().missions[MID].spent_usd > spent_at_ask      # preparation spent while the founder decides
-    assert not [n for n in world.events("goal.notice") if n["kind"] == "ask_not_recorded" and rid in n.get("why", "")]
+    assert first in world.book().withdrawn                          # its spend state is gone: withdrawn, not left dead
+    assert len(_open_w2(world)) == 1 and _open_w2(world) != [first]  # one live ask for the move, at the new spend
+    rid = _open_w2(world)[0]
+    assert not [n for n in world.events("goal.notice") if n["kind"] == "ask_not_recorded"
+                and (rid in n.get("why", "") or first in n.get("why", ""))]
     world.submit("DECISION", {"request_id": rid, "answer": "reject", "reason": "not this way"})
     world.tick(6)
     assert world.book().missions[MID].failed["w2"].startswith("founder rejected")   # the mission took the reject
@@ -97,10 +106,13 @@ def test_the_goal_surfaces_keep_the_open_approval_for_its_move_after_preparation
     assert world.projection()["goals"][0]["open_requests"] == [rid]
     _regress_c_and_prepare(world)
     book = world.book()
-    assert book.missions[MID].blocker["request_id"] == rid and rid in [r["request_id"] for r in book.open_requests()]
-    assert world.projection()["goals"][0]["open_requests"] == [rid]     # the mission is blocked on the goal's move
+    assert rid in book.withdrawn                                         # spent past: withdrawn, asked again
+    current = _open_w2(world)
+    assert len(current) == 1 and book.missions[MID].blocker["request_id"] == current[0]
+    assert world.projection()["goals"][0]["open_requests"] == current   # the mission is blocked on the goal's move
     with world.body() as b:
-        assert rid in [a["request_id"] for a in gg.evidence(b.journal, gid)["asks"]]
+        asks = [a["request_id"] for a in gg.evidence(b.journal, gid)["asks"]]
+    assert rid in asks and current[0] in asks                           # both asks stay on the goal's record
 
 
 def test_goal_evidence_keeps_the_signed_approval_behind_its_executed_paid_move(tmp_path, fast):

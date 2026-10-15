@@ -48,6 +48,7 @@ from datetime import datetime, timedelta, timezone
 import http.client
 import json
 import math
+import os
 from pathlib import Path
 import re
 import shutil
@@ -559,17 +560,49 @@ class OllamaRoute:
         return {"text": content, "cost_usd": 0.0, "served_model": served, "model_digest": digest}
 
 
+# The CLI's own model swaps (a refused turn re-run on a fallback model, or any other substitution) are off: GREG
+# routes between models itself, never shops a refusal, and names the model that wrote each answer.
+CLI_NO_MODEL_FALLBACK = {"CLAUDE_CODE_NO_MODEL_FALLBACK": "1", "CLAUDE_CODE_DISABLE_REFUSAL_FALLBACK": "1"}
+
+
 def cli_report(proc) -> dict | None:
     """The Claude Code CLI's JSON result on stdout, or None when there is none.
 
     The CLI prints it, with what the run cost and why it stopped, whether or not it succeeded: it exits 1 on every
     ``is_error`` result (a refusal, an API error, an exhausted ``--max-budget-usd``), so the exit status alone says
-    neither what was billed nor whether the model declined."""
+    neither what was billed nor whether the model declined. With verbose output on in the founder's Claude Code
+    settings it prints every message as a JSON array, the result object last."""
     try:
         result = json.loads(proc.stdout)
     except (json.JSONDecodeError, TypeError):
         return None
+    if isinstance(result, list):
+        result = next((m for m in reversed(result) if isinstance(m, dict) and m.get("type") == "result"), None)
     return result if isinstance(result, dict) else None
+
+
+def cli_cost(result: dict, cap: float) -> float:
+    """What a CLI run cost: its own finite, non-negative ``total_cost_usd``, else the cap it ran under. Missing
+    billing is never booked as zero (the CLI prints null when its session cost is not a number), as
+    ``workers.worker_spend`` reserves the whole cap for the same evidence."""
+    billed = result.get("total_cost_usd")
+    if isinstance(billed, bool) or not isinstance(billed, (int, float)) or not math.isfinite(billed) or billed < 0:
+        return float(cap)
+    return float(billed)
+
+
+def cli_reason(result: dict) -> str:
+    """Why the CLI says the run ended: ``result`` on success, ``errors`` on every ``error_*`` subtype."""
+    if result.get("result") is not None:
+        return str(result["result"])
+    errors = result.get("errors")
+    return "; ".join(map(str, errors)) if isinstance(errors, list) and errors else str(result.get("subtype") or "")
+
+
+def cli_authors(result: dict) -> list[str]:
+    """The models the CLI's report says wrote the turn (``modelUsage``), its auxiliary haiku calls left out."""
+    usage = result.get("modelUsage")
+    return sorted(k for k in usage if "haiku" not in k) if isinstance(usage, dict) else []
 
 
 class ClaudeCodeRoute:
@@ -596,10 +629,13 @@ class ClaudeCodeRoute:
             argv += ["--model", self.model]
         with tempfile.TemporaryDirectory(prefix="greg-model-") as empty:   # nothing to read or write
             try:
-                proc = (self.runner(argv, input=user, capture_output=True, text=True, timeout=self.timeout, cwd=empty)
+                proc = (self.runner(argv, input=user, capture_output=True, text=True, timeout=self.timeout, cwd=empty,
+                                    env={**os.environ, **CLI_NO_MODEL_FALLBACK})
                         if self.egress is None else self._behind_door(argv, user, empty))
             except (subprocess.TimeoutExpired, OSError) as exc:
-                raise RouteError(f"{type(exc).__name__}: {exc}"[:300], kind=TRANSIENT) from exc
+                # A CLI killed at the timeout may have spent up to its cap: booked, never as zero.
+                raise RouteError(f"{type(exc).__name__}: {exc}"[:300], kind=TRANSIENT,
+                                 cost_usd=cap if isinstance(exc, subprocess.TimeoutExpired) else None) from exc
         result = cli_report(proc)
         if result is None:
             if proc.returncode:
@@ -609,8 +645,8 @@ class ClaudeCodeRoute:
                                   kind=PROVIDER_POLICY_REFUSAL)
                 raise RouteError(f"Claude Code exited {proc.returncode}: {detail}", kind=UNKNOWN)
             raise RouteError("Claude Code produced unreadable output", kind=BAD_OUTPUT)
-        billed = result.get("total_cost_usd")          # the CLI's own report of what the run cost, failed or not
-        detail = str(result.get("result"))[:300]
+        billed = cli_cost(result, cap)                 # what the run cost, failed or not; unknown books the cap
+        detail = cli_reason(result)[:300]
         if result.get("stop_reason") == "refusal":
             # The model declined, as AnthropicRoute reads the same stop reason: an answer, never shopped elsewhere.
             raise Refusal(f"Claude Code: the model declined: {detail}"[:300], kind=SAFETY_REFUSAL, cost_usd=billed)
@@ -620,8 +656,13 @@ class ClaudeCodeRoute:
                               kind=PROVIDER_POLICY_REFUSAL, cost_usd=billed)
             exited = f" (exit {proc.returncode})" if proc.returncode else ""
             raise RouteError(f"Claude Code reported an error{exited}: {detail}", kind=UNKNOWN, cost_usd=billed)
-        return {"text": str(result.get("result", "")), "cost_usd": result.get("total_cost_usd"),
-                "served_model": self.model or "claude-code default"}
+        authors = cli_authors(result)
+        if self.model and any(self.model not in a for a in authors):
+            # Another model wrote the answer (a CLI swap the variables above did not stop): withheld, billed.
+            raise ModelSubstitution(f"Claude Code: requested {self.model}, the report names {authors}"[:300],
+                                    requested=self.model, served=authors, cost_usd=billed)
+        return {"text": str(result.get("result", "")), "cost_usd": billed,
+                "served_model": self.model or (", ".join(authors) or "claude-code default")}
 
     def _behind_door(self, argv: list, user: str, scratch: str):
         """The CLI in a network namespace whose only way out is the relay, allowlisted for the Anthropic API host. Its
@@ -636,7 +677,8 @@ class ClaudeCodeRoute:
         host = urllib.parse.urlsplit(model_child.BASE_URLS["anthropic"]).hostname
         with Door(_scoped_relay(self.egress, "model.claude-code", host), "model.claude-code") as door:
             return self.runner(namespace + door_argv(sys.executable, door.fd, argv), input=user, capture_output=True,
-                               text=True, timeout=self.timeout, cwd=scratch, pass_fds=[door.fd], env=env)
+                               text=True, timeout=self.timeout, cwd=scratch, pass_fds=[door.fd],
+                               env={**env, **CLI_NO_MODEL_FALLBACK})
 
 
 class ModelRouter:

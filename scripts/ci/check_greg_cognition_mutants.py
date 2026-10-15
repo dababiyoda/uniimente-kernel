@@ -11,7 +11,8 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 MUTANTS = [
- ('removed permission', 'greg/authority.py', 'if outside and scope not in approved_scopes:', 'if False:',
+ ('removed permission', 'greg/authority.py',
+  'if outside and scope not in approved_scopes and scope not in signed_scopes:', 'if False:',
   'test_missing_permission_then_signed_approval_and_revocation_survive_restart'),
  ('dropped constraint', 'cortex/seed/methods.py', "for c in d['constraints']:", "for c in d['constraints'][:1]:",
   'test_real_heterogeneous_methods_and_separate_verifier'),

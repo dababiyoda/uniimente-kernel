@@ -260,12 +260,54 @@ FOUNDER_TIER_BODY_MUTANTS = [
      "FOUNDER_TIER"),
 ]
 
+# 2026-10-14 installed-body review: closure integrity. Each guard below was a reproduced defect.
+CLOSURE_INTEGRITY_TESTS = ["tests/unit/test_greg_closure_integrity.py", "tests/unit/test_greg_human_work_latency.py",
+                           "tests/unit/test_greg_capabilities.py"]
+CLOSURE_INTEGRITY_MUTANTS = [
+    ("the appraiser trusts the engine's asks instead of the signed cone", "greg/appraisal.py",
+     "                if (outside or human) and not _approved_before(",
+     "                if False and not _approved_before("),
+    ("the appraiser accepts an approval no founder DECISION carries", "greg/appraisal.py",
+     '                and _decision_signed(journal, ledger, seq, answer[0], answer[1], data["request_id"], at_seq)):',
+     "                and True):"),
+    ("a signed pre-approval admits every strategy of its capability and class", "greg/missions.py",
+     '        p["action_id"] == strategy["action_id"] and p["capability"] == manifest.capability_id\n'
+     '        and p["target"] == strategy["target"] and p["consequence_class"] == manifest.consequence_class\n',
+     '        p["capability"] == manifest.capability_id\n'
+     '        and p["consequence_class"] == manifest.consequence_class\n'),
+    ("a handoff picks the file fs.write overwrites", "greg/capabilities.py",
+     "    if ctx.target != named:", "    if False:"),
+    ("N3 counts a statement GREG wrote", "greg/path.py",
+     '        missing += [f"greg_wrote_human_evidence:{aid}" for aid in _greg_wrote_human_evidence(journal, mid, spec)]\n'
+     '        human = [',
+     "        human = ["),
+    ("N3 counts a declined step as observed work", "greg/path.py",
+     '        if [h["request_id"] for h in human if not withdrawn.get(h["request_id"], "").startswith(OBSERVED)]:',
+     '        if [h["request_id"] for h in human if h["request_id"] not in withdrawn]:'),
+    ("an external node passes on its ledger predicate alone", "greg/path.py",
+     '            if node["evidence_source"] == "external" and passed and not measured.get("external_evidence"):',
+     "            if False:"),
+    ("a decision closes a scope renewal", "greg/missions.py",
+     '        if request["kind"] in NOT_ANSWERABLE:\n            raise MissionError(NOT_ANSWERABLE[request["kind"]])',
+     '        if False:\n            raise MissionError(NOT_ANSWERABLE[request["kind"]])'),
+    ("only fs.read deliverables are noticed early", "greg/missions.py",
+     '            if manifest is None or manifest.consequence_class != "read_only" or not isinstance(path, str):',
+     '            if sensor.get("capability") != "fs.read" or not isinstance(path, str):'),
+    ("an SOP run keeps the taught directory in its signed text", "greg/sop.py",
+     '            if prefix and "/" in value and not _names_directory(prefix.group(1), value):',
+     "            if False:"),
+    ("a signing command without a key crashes", "greg/cli.py",
+     '    if not getattr(args, "key", None):\n        raise BodyError(f"{what} needs your founder key',
+     '    if False:\n        raise BodyError(f"{what} needs your founder key'),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
           ("evidence chain at commit", COMMIT_CHAIN_TESTS, COMMIT_CHAIN_MUTANTS),
           ("founder tier", FOUNDER_TIER_TESTS, FOUNDER_TIER_MUTANTS),
-          ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS)]
+          ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
+          ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS)]
 
 
 def main() -> int:

@@ -1639,6 +1639,7 @@ HTTP". Testing it found a product defect in the third case.
 ### What this does not cover
 
 - The console's own planner route (used when drafting proposals) is a separate router and is not benched by this.
+  Closed in increment 27.
 - A vendor that refuses a key only for some models (403 entitlement) is benched for the route that was refused.
 
 ## Increment 26 (2026-10-15): the hosted servers GREG is logged in to, and their tools, in Mission Control
@@ -1656,6 +1657,32 @@ Evidence:
 
 Not covered: a hosted server used with a plain token (`greg secret set`) is not listed, because GREG never asked it
 for its tools.
+
+## Increment 27 (2026-10-15): the console stops offering a refused key while drafting
+
+Increment 25 left the console's drafting router unbenched: every proposal drafted by a model would have sent the
+refused key to its vendor again. The console cannot write the body's ledger (it reads it while the body runs), so it
+does two things instead:
+
+- before each draft it reads the body's record of refused keys and leaves out any route still holding one;
+- a key refused while drafting in this console is benched in memory for the life of the console. The body records
+  its own refusal the next time it calls that vendor with the same key.
+
+When every route is benched, a request that needs a model gets `NO_ROUTE`, with the reason "the vendor refused the
+stored key", the route names and where to find the handle. Requests that a template answers still draft. Storing a new
+key (`greg secret set`) changes the secret file, so an open console rebuilds its router and tries the new key once.
+
+Evidence (`tests/integration/test_greg_vendor_failures.py`, real SDKs over local HTTP):
+- in one console, the refused key is sent once, the other vendor drafts, and the second draft does not send it again;
+- a new console with nothing in memory still does not send it, because the body recorded the refusal;
+- with only the refusing vendor configured, the draft is `NO_ROUTE` with that reason and no vendor is contacted;
+- after a new key is stored, the open console sends the new key once;
+- a router handed to the console (not rebuilt) is held back after its first refusal.
+
+Mutants: 5 of 5 fail the test (no read of the record, no in-memory bench, no rebuild on a new key, no reason given,
+the handed-in router left unheld).
+
+Not covered: a refusal seen only by the console is not in Mission Control's list until the body meets it.
 
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 

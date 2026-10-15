@@ -40,18 +40,42 @@ def bench(router, name: str) -> None:
     router.routes = [r for r in router.routes if r.name != name]
 
 
+def bench_refused(router, events) -> list[str]:
+    """Bench every route whose current key is the one its vendor last refused; returns the benched names."""
+    keys = {r.name: route_key(r) for r in router.routes}
+    benched = [name for name, refusal in refusals(events).items()
+               if keys.get(name) and refusal["credential"] == keys[name]]
+    for name in benched:
+        bench(router, name)
+    return benched
+
+
+def _refused(event, keys):
+    return event.get("outcome") == "failed" and event.get("class") == AUTH and keys.get(event.get("route"))
+
+
 def attach(router, journal) -> None:
     """Record refusals with the key's fingerprint and bench the route while it holds that key."""
     keys = {r.name: route_key(r) for r in router.routes}
-    for name, refusal in refusals(e.payload for e in journal.replay("model.route")).items():
-        if keys.get(name) and refusal["credential"] == keys[name]:
-            bench(router, name)
+    bench_refused(router, (e.payload for e in journal.replay("model.route")))
 
     def record(event):
-        if event.get("outcome") == "failed" and event.get("class") == AUTH and keys.get(event["route"]):
+        if _refused(event, keys):
             event = {**event, "credential": keys[event["route"]]}
             bench(router, event["route"])
         journal.record("model.route", event, key=[event["route"], event["at"], event["outcome"]])
+    router.record = record
+
+
+def hold(router) -> None:
+    """For a process that cannot write the body's ledger (the console): a refusal benches the route in memory.
+
+    The refusal is not recorded; the body records its own when it next calls that vendor with the same key."""
+    keys = {r.name: route_key(r) for r in router.routes}
+
+    def record(event):
+        if _refused(event, keys):
+            bench(router, event["route"])
     router.record = record
 
 

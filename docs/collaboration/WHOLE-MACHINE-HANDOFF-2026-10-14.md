@@ -165,7 +165,7 @@ The 13 holes were:
     the ledger.
   - Tested since increment 25: a vendor that is slow, cuts its answer off or rejects the key, over real HTTP
     through the real SDKs. A rejected key is now benched until the founder stores a new one (it used to be retried
-    like an outage).
+    like an outage). Since increment 27 the console's drafting router honours the same bench.
   - Tested since increment 15: a process kill in the middle of a self-repair, including a torn ledger append, and the
     loss of a model vendor end to end through the real SDKs.
 - **Future technology.** Chromium cannot run its own sandbox inside GREG's namespace (`os_sandboxed: false`). A

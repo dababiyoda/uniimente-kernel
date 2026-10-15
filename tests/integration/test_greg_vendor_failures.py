@@ -143,3 +143,52 @@ def test_a_refused_key_is_not_tried_again_until_the_founder_stores_a_new_one(tmp
     finally:
         bad.shutdown()
         good.shutdown()
+
+
+def test_the_console_drafts_without_offering_a_refused_key_again(tmp_path):
+    """The console drafts missions through its own router. It cannot write the body's ledger, so it reads the body's
+    record of refused keys and benches in memory what a vendor refuses while drafting; a newly stored key is tried."""
+    from greg.capabilities import SecretBroker
+    from greg.console import Console
+    home, key, body_id, _ = make_body(tmp_path)
+    bad, seen = misbehaving("rejected")
+    good, calls = _openai_endpoint(GOOD)
+    a, o = bad.server_address[1], good.server_address[1]
+    broker = SecretBroker(home / "secrets.json")
+    broker.put("anthropic_api_key", "sk-ant-fixture")
+
+    def factory(selection, *, with_openai=True):
+        api_key = broker.resolve("anthropic_api_key", declared=("anthropic_api_key",))
+        first = models.AnthropicRoute(api_key, client=anthropic.Anthropic(
+            api_key=api_key, base_url=f"http://127.0.0.1:{a}", max_retries=0, timeout=1))
+        return models.ModelRouter([first] + (routes(a, o)[1:] if with_openai else []))
+    words = "Compose a short poem about the harbour at dawn"
+    try:
+        console = Console(home, key=key, transport_factory=factory)
+        console.ask(words)
+        assert seen == ["sk-ant-fixture"] and len(calls) == 1          # refused once, drafted by the other vendor
+        console.ask(words)
+        assert seen == ["sk-ant-fixture"] and len(calls) == 2          # not offered the refused key again
+
+        restarted = Console(home, key=key, transport_factory=factory)   # a new console holds nothing in memory...
+        with Body(home, clock=Clock(), builder=lambda s, c: builders.ModelBuilder(factory(None))) as body:
+            body.builder.router.complete("system", "user")              # ...but the body records its own refusal
+        assert seen == ["sk-ant-fixture"] * 2
+        restarted.ask(words)
+        assert seen == ["sk-ant-fixture"] * 2 and len(calls) == 4       # read from the record: still not offered
+
+        alone = Console(home, key=key, transport_factory=lambda s: factory(s, with_openai=False))
+        proposal = alone.proposals[alone.ask(words)]["proposal"]
+        assert proposal["status"] == "NO_ROUTE" and "refused the stored key" in proposal["why"], proposal
+        assert seen == ["sk-ant-fixture"] * 2                            # nothing left to ask, so no vendor is asked
+
+        broker.put("anthropic_api_key", "sk-ant-new")                    # the founder stores a new key
+        restarted.ask(words)
+        assert seen == ["sk-ant-fixture"] * 2 + ["sk-ant-new"]           # the open console tries it, once
+
+        fixed = Console(home, key=key, transport=factory(None))          # a router handed in, never rebuilt
+        fixed.ask(words), fixed.ask(words)
+        assert seen == ["sk-ant-fixture"] * 2 + ["sk-ant-new"] * 2       # refused once here, then held back
+    finally:
+        bad.shutdown()
+        good.shutdown()

@@ -31,7 +31,7 @@ founder key can be.
 | binding_scope | Package 3 continuity readings and the live constitutional-integrity check; no grant, policy or Gate behaviour |
 | constitutional_constraints | Only a signature by Alfonso's enrolled founder key authenticates him; no pinned historical hash is re-measured; the two mechanisms do not import each other |
 | success_evidence | `evolution/repair/continuity/` reproduces FROZEN, SR-001 and SR-002 and the sealed Package 3 evidence record; `python -m governance.integrity --check` names every unauthorized artifact; tests `test_repair_continuity_history.py`, `test_governance_integrity.py` |
-| failure_evidence | A tampered frozen copy, a forged/replayed/unsigned authorization or an unenrolled signer must fail (tested); no founder key enrolled yet, so nothing can be authorized today |
+| failure_evidence | A tampered frozen copy, a forged/replayed/unsigned authorization, an unenrolled signer, a changed committed genesis or a removed/reordered committed record must fail (tested); no founder key enrolled yet, so nothing can be authorized today |
 | dependencies | Alfonso enrolls his own public key (his commit) before any authorization exists |
 | conflicts | #87's `Amendment.authorization` path string is superseded by signed envelopes; #87's per-path frozen copies would trip `check_authority_singleton`, so the store is content-addressed |
 | next_review_trigger | First founder enrollment, or the first founder-signed `INTEGRITY_AUTHORIZE` |

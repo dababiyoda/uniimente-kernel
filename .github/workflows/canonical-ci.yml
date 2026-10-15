@@ -116,6 +116,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The integrity check reads every committed version of its record files:
+          # a genesis key never changes and no signed record is removed.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"

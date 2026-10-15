@@ -28,8 +28,8 @@ import sys
 
 from . import (AUTHORIZATIONS, AUTHORIZE, FOUNDER_KEYS, KEYS, KERNEL_ROOT, IntegrityRecordError,
                Verdict, authorization_body, authorizations_from, authorized_state,
-               founder_keys_from, key_id, key_set_digest, load_founder_keys, load_manifest,
-               public_hex_of, sign_envelope, verify)
+               founder_keys_from, key_id, key_set_digest, load_authorizations, load_founder_keys,
+               load_manifest, public_hex_of, record_history, sign_envelope, verify)
 
 DEFAULT_KEY = "~/.greg-founder.pem"
 
@@ -88,6 +88,7 @@ def _check(args) -> int:
     print(f"  baseline: {source.get('subject_id', '?')} @ {str(source.get('source_commit', '?'))[:12]}"
           f"  authorizations on record: {report.authorizations}")
     print(f"  founder keys: {', '.join(sorted(keys.keys)) if keys.enrolled else 'none enrolled'}")
+    print(f"  record history: {report.history.note}")
     print()
     for status in report.statuses:
         mark = "ok     " if status.ok else "FINDING"
@@ -152,6 +153,7 @@ def _rewrite(root: str, relative: str, update, validate) -> None:
 
 def _enroll(args) -> int:
     keys = load_founder_keys(args.root)
+    record_history(args.root)
     if keys.enrolled:
         raise IntegrityRecordError("a founder key is already enrolled; a key change needs a signature "
                                    "by it: python -m governance.integrity keys ...")
@@ -194,6 +196,16 @@ def _keys(args) -> int:
         raise IntegrityRecordError(f"{kid} is not an enrolled founder key")
     if bool(args.add) == bool(args.remove):
         raise IntegrityRecordError("give exactly one of --add or --remove")
+    record_history(args.root)
+    if args.remove:
+        signed = sum(1 for envelope in load_authorizations(args.root)
+                     if isinstance(envelope, dict) and envelope.get("founder_key_id") == args.remove)
+        if signed:
+            raise IntegrityRecordError(
+                f"{args.remove} signed {signed} authorization(s) on record. They are verified against the "
+                "current key set and the record is append-only, so removing this key would leave the record "
+                "unsound for good. To rotate, add the new key and stop signing with this one; revoking a "
+                "compromised key with signatures on record is not supported in record version 1")
     add = [{"public_key": args.add, "label": args.label}] if args.add else []
     if args.add:
         key_id(args.add)

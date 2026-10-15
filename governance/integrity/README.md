@@ -50,8 +50,34 @@ committed (tests generate keys in temporary directories).
   states; the check prints the enrolled key ids on every run.
 * After that, the key set changes only by an `INTEGRITY_KEYS` record signed by
   a key already listed, which names the digest of the key set it changes.
-* Removing a key retires its signatures: authorizations it signed stop
-  counting, so the founder re-signs them with a current key.
+* Authorizations are verified against the current key set, so a removed
+  key's signatures stop verifying and the record becomes unsound. Because
+  the record is append-only (below), `keys --remove` refuses to remove a key
+  that signed an authorization on record. To rotate, add the new key and stop
+  signing with the old one. Revoking a compromised key whose signatures are
+  on record is not supported in record version 1; it is a founder decision.
+
+## The records only grow
+
+A record file cannot remember its own past, so in a git checkout the check
+reads every committed version of `founder-keys.json` and
+`authorizations.json` reachable from HEAD (`git rev-list --full-history`,
+`git cat-file`; plumbing only, no hook, filter or repository code runs, and
+`GIT_*` variables are ignored):
+
+* once a genesis has been committed, it never changes;
+* no committed key change or authorization is removed or reordered (each
+  committed list must stay a subsequence of the current one, so two branches
+  that each appended a signed record can merge in either order).
+
+A violation makes the record unsound (exit 2), and no signature can authorize
+a rewrite. This closes two holes the files alone cannot see: an edited
+genesis before the founder's first signature (nothing else in the file
+depends on it yet), and a dropped authorization that makes bytes he later
+superseded read as authorized again. A shallow checkout in which a record
+file already exists at the shallow boundary is refused, so CI job 3 checks
+out full history (`fetch-depth: 0`). Outside a git checkout (an export, a
+test tree) the history is not checked and the report says so.
 
 Keys are those `python -m greg founder keygen` makes. Key ids and canonical
 JSON follow `greg/founder.py` and `egregore.contracts` exactly (asserted by
@@ -87,6 +113,11 @@ the exact path and digest for each finding.
   SR-002 digests and to git at the SR-002 witness commit `d7c235ae`.
 * Before a founder key is enrolled, replacing the empty key file is
   indistinguishable from enrollment. That is the trust-on-first-use window; it
-  closes with Alfonso's own commit.
+  closes with Alfonso's own commit, after which the committed history pins
+  his genesis. The check cannot tell who made a commit: a git author string
+  authenticates nobody, so the first enrollment is reviewed as his.
+* The history is only as good as the history: someone who can rewrite the
+  branch itself (force-push) can rewrite the record's past. Branch protection
+  and review cover that, not this check.
 * It reports. It does not block, ratify or grant: CI fails and a human reads
   why. Authorizing a digest here changes no grant, policy or Gate behaviour.

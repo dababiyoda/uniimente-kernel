@@ -34,6 +34,24 @@ sees any change). After that, the key set changes only by an
 ``INTEGRITY_KEYS`` envelope signed by a key already listed, so a replaced or
 added key without such a signature makes the record unsound.
 
+## The records only grow
+
+A record file cannot remember its own past, so the check reads it from git.
+In a checkout, every committed version of ``founder-keys.json`` and
+``authorizations.json`` reachable from HEAD is read with git plumbing
+(``rev-list``, ``cat-file``; no hook, filter or repository code runs): once a
+genesis has been committed it never changes, and no committed key change or
+authorization may be removed or reordered (each committed list must remain a
+subsequence of the current one, so merged concurrent appends pass). This
+closes the window in which an edited genesis or a truncated log would
+otherwise read as sound: replacing the founder's key before his first
+signature, or deleting the latest authorization so that bytes he had since
+superseded read as authorized again. A rewrite makes the record unsound; no
+signature can authorize one. A shallow checkout in which a record file
+already exists at the shallow boundary cannot show that history and is
+refused; outside a git checkout (an export, a test tree) the history is not
+checked and the report says so.
+
 ## Same scheme as greg/founder.py, without importing it at check time
 
 Keys are the PKCS8 Ed25519 keys ``python -m greg founder keygen`` makes; key
@@ -62,6 +80,7 @@ import json
 import os
 import re
 import secrets
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -82,6 +101,8 @@ AUTHORIZATIONS = "governance/integrity/authorizations.json"
 #: Governed by their own rules; never moved by an INTEGRITY_AUTHORIZE envelope.
 RECORD_FILES = (MANIFEST, FOUNDER_KEYS, AUTHORIZATIONS)
 FOUNDER_KEY_LOG = "founder-key-log"
+#: Record logs whose committed entries are never removed or reordered.
+APPEND_ONLY = {FOUNDER_KEYS: "changes", AUTHORIZATIONS: "authorizations"}
 
 #: A new file here is a constitutional change even though no baseline moved.
 WATCHED_TREES = {"constitution": (".ucl",), "authority": (".yaml",), "identity": (".yaml",)}
@@ -412,6 +433,133 @@ def authorized_state(manifest: Manifest, keys: FounderKeys, envelopes: list) -> 
     return AuthorizedState(digests=digests, applied=tuple(applied), counts=counts)
 
 
+# -- the committed history of the record files -----------------------------------
+
+@dataclass(frozen=True)
+class RecordHistory:
+    checked: bool
+    versions: int
+    note: str
+
+
+def _git(root: str, *args: str) -> subprocess.CompletedProcess:
+    """Run a git plumbing command on ``root``. GIT_* variables are dropped so the
+    environment cannot point the reading at another repository."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env["GIT_TERMINAL_PROMPT"] = "0"
+    try:
+        return subprocess.run(["git", "-c", "core.fsmonitor=false", "-C", root, *args],
+                              capture_output=True, env=env, timeout=120)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise IntegrityRecordError(f"the git history of the record files is unreadable: {exc}") from exc
+
+
+def _git_out(root: str, *args: str) -> str:
+    proc = _git(root, *args)
+    if proc.returncode != 0:
+        detail = proc.stderr.decode("utf-8", "replace").strip()[:300]
+        raise IntegrityRecordError(f"the git history of the record files is unreadable "
+                                   f"(git {args[0]}): {detail}")
+    return proc.stdout.decode("utf-8")
+
+
+def committed_versions(root: str):
+    """Every committed version of each append-only record reachable from HEAD,
+    oldest first, as ``{path: [(commit, parsed JSON), ...]}``.
+
+    ``None`` when ``root`` is not a git checkout (an export or a test tree).
+    Raises when it is one whose record history cannot be read in full: git
+    fails, ``root`` is not the top of the checkout, or a record file already
+    exists at a shallow boundary, so its earlier versions are not here.
+    """
+    root = str(root)
+    if not os.path.lexists(os.path.join(root, ".git")):
+        return None
+    top = _git_out(root, "rev-parse", "--show-toplevel").strip()
+    if os.path.realpath(top) != os.path.realpath(root):
+        raise IntegrityRecordError(f"{root} is not the top of its git checkout ({top})")
+    boundary: list[str] = []
+    if _git_out(root, "rev-parse", "--is-shallow-repository").strip() == "true":
+        shallow = _git_out(root, "rev-parse", "--git-path", "shallow").strip()
+        with open(shallow if os.path.isabs(shallow) else os.path.join(root, shallow),
+                  encoding="ascii") as handle:
+            boundary = handle.read().split()
+    if _git(root, "rev-parse", "--verify", "--quiet", "HEAD^{commit}").returncode != 0:
+        return {rel: [] for rel in APPEND_ONLY}
+    out = {}
+    for rel in APPEND_ONLY:
+        for commit in boundary:
+            if _git(root, "cat-file", "-e", f"{commit}:{rel}").returncode == 0:
+                raise IntegrityRecordError(
+                    f"{rel} already exists at the shallow boundary {commit[:12]}, so its earlier "
+                    "committed versions are not in this checkout; fetch the full history "
+                    "(git fetch --unshallow, or actions/checkout with fetch-depth: 0)")
+        versions = []
+        for commit in _git_out(root, "rev-list", "--full-history", "--reverse", "HEAD", "--", rel).split():
+            shown = _git(root, "cat-file", "blob", f"{commit}:{rel}")
+            if shown.returncode != 0:
+                continue                  # this commit removed the file
+            try:
+                versions.append((commit, json.loads(shown.stdout.decode("utf-8"), parse_constant=_no_constant)))
+            except (UnicodeDecodeError, json.JSONDecodeError, IntegrityRecordError):
+                continue                  # never sound at that commit; it constrains nothing
+        out[rel] = versions
+    return out
+
+
+def _canonical_items(entries) -> list[str]:
+    return [canonical_json(entry) for entry in entries]
+
+
+def _is_subsequence(earlier: list[str], later: list[str]) -> bool:
+    remaining = iter(later)
+    return all(any(item == candidate for candidate in remaining) for item in earlier)
+
+
+def check_record_history(current: dict, versions) -> RecordHistory:
+    """Committed records only grow. ``current`` maps each record path to its
+    parsed content; ``versions`` is ``committed_versions(root)``.
+
+    Raises when a committed genesis changed, or a committed key change or
+    authorization was removed or reordered: the record no longer follows from
+    its own history, and no signature can authorize a rewrite.
+    """
+    if versions is None:
+        return RecordHistory(False, 0, "not a git checkout: the append-only history of the "
+                                       "record files was not checked")
+    seen = 0
+    for rel, list_name in APPEND_ONLY.items():
+        now = _canonical_items(current[rel][list_name])
+        for commit, old in versions.get(rel, []):
+            seen += 1
+            if not isinstance(old, dict):
+                continue
+            genesis = old.get("genesis") if rel == FOUNDER_KEYS else None
+            if isinstance(genesis, list) and genesis and \
+                    canonical_json(genesis) != canonical_json(current[rel]["genesis"]):
+                raise IntegrityRecordError(
+                    f"{FOUNDER_KEYS}: genesis differs from the genesis committed in {commit[:12]}. "
+                    "Genesis is the founder's own first commit and never changes; a key change is a "
+                    f"signed {KEYS} record appended to changes. Restore it: git show {commit}:{FOUNDER_KEYS}")
+            entries = old.get(list_name)
+            if isinstance(entries, list) and not _is_subsequence(_canonical_items(entries), now):
+                raise IntegrityRecordError(
+                    f"{rel}: a {list_name} record committed in {commit[:12]} was removed or reordered. "
+                    "The record is append-only and no signature authorizes a rewrite; restore it "
+                    f"(git show {commit}:{rel}) and append instead.")
+    return RecordHistory(True, seen, f"append-only: {seen} committed version(s) of the record files "
+                                     "checked; none removed, reordered or re-founded")
+
+
+def record_history(root: str) -> RecordHistory:
+    """``check_record_history`` for the records on disk under ``root``."""
+    root = str(root)
+    current = {rel: _load(root, rel) for rel in APPEND_ONLY}
+    founder_keys_from(current[FOUNDER_KEYS])
+    authorizations_from(current[AUTHORIZATIONS])
+    return check_record_history(current, committed_versions(root))
+
+
 # -- the live reading -----------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -439,6 +587,7 @@ class IntegrityReport:
     founder_keys: FounderKeys
     authorizations: int
     manifest: Manifest
+    history: RecordHistory = RecordHistory(False, 0, "record history not read")
 
     @property
     def intact(self) -> bool:
@@ -455,6 +604,8 @@ class IntegrityReport:
                                  "genesis_by_commit": list(self.founder_keys.genesis),
                                  "signed_changes": self.founder_keys.changes},
                 "authorizations": self.authorizations,
+                "record_history": {"checked": self.history.checked, "versions": self.history.versions,
+                                   "note": self.history.note},
                 "baseline_source": self.manifest.source}
 
 
@@ -482,6 +633,7 @@ def verify(root: str = KERNEL_ROOT) -> IntegrityReport:
     manifest = load_manifest(root)
     keys = load_founder_keys(root)
     state = authorized_state(manifest, keys, load_authorizations(root))
+    history = record_history(root)
     statuses = []
     for artifact, expected in sorted(state.digests.items()):
         observed = _sha256_of(root, artifact)
@@ -500,7 +652,7 @@ def verify(root: str = KERNEL_ROOT) -> IntegrityReport:
     for rel in _ungoverned(root, set(state.digests)):
         statuses.append(ArtifactStatus(rel, Verdict.UNGOVERNED_ADDITION, None, _sha256_of(root, rel)))
     return IntegrityReport(statuses=tuple(statuses), founder_keys=keys,
-                           authorizations=len(state.applied), manifest=manifest)
+                           authorizations=len(state.applied), manifest=manifest, history=history)
 
 
 def authorization_body(root: str, artifact: str, new_sha256: str, reason: str) -> dict:
@@ -511,6 +663,7 @@ def authorization_body(root: str, artifact: str, new_sha256: str, reason: str) -
     manifest = load_manifest(root)
     keys = load_founder_keys(root)
     state = authorized_state(manifest, keys, load_authorizations(root))
+    record_history(root)
     previous = state.digests.get(artifact)
     if previous is None and not any(artifact.startswith(f"{t}/") and artifact.endswith(s)
                                     for t, s in WATCHED_TREES.items()):

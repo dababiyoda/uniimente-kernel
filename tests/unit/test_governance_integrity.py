@@ -12,6 +12,8 @@ from __future__ import annotations
 import ast
 import hashlib
 import json
+import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -166,6 +168,7 @@ def test_ci_runs_the_live_check_in_the_one_source_of_authority_job():
     job = workflow.split("  authority:\n", 1)[1].split("\n  sealed:\n", 1)[0]
     assert "python -m governance.integrity --check" in job
     assert "check_authority_singleton.py" in job
+    assert "fetch-depth: 0" in job, "the check reads the committed history of its records"
 
 
 # -- a clean tree, and silent changes -----------------------------------------
@@ -452,7 +455,9 @@ def test_the_key_log_refuses_unsigned_or_out_of_order_changes(tree, tmp_path):
 
 def test_an_authorization_by_a_removed_key_stops_counting(tree, tmp_path):
     """Revocation is conservative: after a key is removed its signatures no
-    longer authorize anything, so the founder re-signs with the current key."""
+    longer verify, so the record is unsound. Because the record is append-only,
+    `keys --remove` refuses to remove a key with signatures on record
+    (test_keys_remove_refuses_a_key_with_signatures_on_record)."""
     _, public_a, key_a = _key(tmp_path, "a")
     _, public_b, key_b = _key(tmp_path, "b")
     _enroll(tree, public_a)
@@ -461,6 +466,227 @@ def test_an_authorization_by_a_removed_key_stops_counting(tree, tmp_path):
     _key_change(tree, key_a, add=[public_b], remove=[integrity.key_id(public_a)])
     with pytest.raises(IntegrityRecordError, match="not an enrolled founder key"):
         verify(tree)
+
+
+def test_keys_remove_refuses_a_key_with_signatures_on_record(tree, tmp_path, capsys):
+    pem_a, public_a, key_a = _key(tmp_path, "a")
+    pem_b, public_b, _ = _key(tmp_path, "b")
+    _enroll(tree, public_a)
+    _key_change(tree, key_a, add=[public_b])
+    _authorize(tree, key_a, GATE, _sha(_git_show(SR002_WITNESS, GATE)), _edit(tree))
+    before = (tree / FOUNDER_KEYS).read_bytes()
+    capsys.readouterr()
+    assert _cli(tree, "keys", "--key", str(pem_b), "--no-passphrase", "--remove",
+                integrity.key_id(public_a), "--reason", "rotate") == 2
+    assert "signed 1 authorization(s) on record" in capsys.readouterr().err
+    assert (tree / FOUNDER_KEYS).read_bytes() == before
+    assert verify(tree).intact
+
+
+# -- the records only grow: their committed history ----------------------------
+
+def _git_in(tree, *args, check=True):
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    env.update(GIT_AUTHOR_NAME="test", GIT_AUTHOR_EMAIL="test@example.invalid",
+               GIT_COMMITTER_NAME="test", GIT_COMMITTER_EMAIL="test@example.invalid")
+    return subprocess.run(["git", "-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false",
+                           "-C", str(tree), *args], check=check, capture_output=True, env=env)
+
+
+def _commit(tree, message):
+    _git_in(tree, "add", "-A")
+    _git_in(tree, "commit", "-q", "--allow-empty", "-m", message)
+
+
+@pytest.fixture()
+def repo(tree):
+    """The ratified tree as a git checkout: an unrelated first commit, then the tree."""
+    _git_in(tree, "init", "-q", "-b", "main")
+    (tree / "README").write_text("scratch checkout\n")
+    _git_in(tree, "add", "README")
+    _git_in(tree, "commit", "-q", "-m", "before the records")
+    _commit(tree, "ratified tree and empty records")
+    return tree
+
+
+def test_outside_a_checkout_the_history_is_not_checked_and_the_report_says_so(tree, capsys):
+    report = verify(tree)
+    assert report.intact and not report.history.checked
+    assert "not a git checkout" in report.history.note
+    capsys.readouterr()
+    assert _cli(tree, "--check") == 0
+    assert "record history: not a git checkout" in capsys.readouterr().out
+
+
+def test_the_live_checkout_reads_the_history_of_its_records():
+    report = verify(ROOT)
+    assert report.history.checked, report.history.note
+    assert report.history.versions >= 2
+
+
+@pytest.mark.parametrize("swap", ["replace", "add", "relabel", "empty"])
+def test_a_committed_genesis_never_changes(repo, tmp_path, swap):
+    """The trust-on-first-use window closes with the founder's commit. Before
+    his first signature nothing else in the file depends on the genesis key,
+    so only the committed history can show that it was swapped."""
+    _, public, _ = _key(tmp_path, "founder")
+    agent_pem, agent, agent_key = _key(tmp_path, "agent")
+    _enroll(repo, public, label="alfonso")
+    _commit(repo, "founder enrolls his key")
+    assert verify(repo).intact and verify(repo).history.checked
+    entry = {"public_key": agent, "label": "alfonso"}
+    mutate = {"replace": lambda r: r.__setitem__("genesis", [entry]),
+              "add": lambda r: r["genesis"].append(entry),
+              "relabel": lambda r: r["genesis"][0].__setitem__("label", "founder"),
+              "empty": lambda r: r.__setitem__("genesis", [])}[swap]
+    _record(repo, FOUNDER_KEYS, mutate)
+    with pytest.raises(IntegrityRecordError, match="genesis differs"):
+        verify(repo)
+    _commit(repo, "re-found the key file")
+    with pytest.raises(IntegrityRecordError, match="genesis differs"):
+        verify(repo)
+    assert _cli(repo, "--check") == 2
+    if swap in ("replace", "add"):
+        observed = _edit(repo)
+        assert _cli(repo, "authorize", "--artifact", GATE, "--sha256", observed, "--key", str(agent_pem),
+                    "--no-passphrase", "--reason", "x") == 2, "the signing command refuses too"
+        _authorize(repo, agent_key, GATE, _sha(_git_show(SR002_WITNESS, GATE)), observed)
+        with pytest.raises(IntegrityRecordError, match="genesis differs"):
+            verify(repo)
+    # The same files outside git read as sound: the history is what catches it.
+    shutil.rmtree(repo / ".git")
+    assert verify(repo).intact
+
+
+def test_dropping_a_committed_authorization_cannot_revive_superseded_bytes(repo, tmp_path):
+    """The founder authorized X, then reverted to the baseline. Deleting his
+    revert from the record would make X read as authorized again."""
+    _, public, key = _key(tmp_path)
+    _enroll(repo, public)
+    _commit(repo, "enroll")
+    baseline_bytes = (repo / GATE).read_bytes()
+    changed = _edit(repo)
+    changed_bytes = (repo / GATE).read_bytes()
+    _authorize(repo, key, GATE, _sha(baseline_bytes), changed)
+    _commit(repo, "founder authorizes X")
+    (repo / GATE).write_bytes(baseline_bytes)
+    _authorize(repo, key, GATE, changed, _sha(baseline_bytes))
+    _commit(repo, "founder reverts X")
+    assert verify(repo).intact
+
+    (repo / GATE).write_bytes(changed_bytes)
+    _record(repo, AUTHORIZATIONS, lambda r: r["authorizations"].pop())
+    with pytest.raises(IntegrityRecordError, match="removed or reordered"):
+        verify(repo)
+    _commit(repo, "drop the revert")
+    with pytest.raises(IntegrityRecordError, match="removed or reordered"):
+        verify(repo)
+    assert _cli(repo, "--check") == 2
+    shutil.rmtree(repo / ".git")
+    assert verify(repo).intact, "outside git the truncated record reads as sound"
+
+
+@pytest.mark.parametrize("damage", ["drop-all", "reorder"])
+def test_committed_authorizations_are_never_removed_or_reordered(repo, tmp_path, damage):
+    _, public, key = _key(tmp_path)
+    _enroll(repo, public)
+    gate = _sha((repo / GATE).read_bytes())
+    sovereignty = "constitution/sovereignty.ucl"
+    before = _sha((repo / sovereignty).read_bytes())
+    _authorize(repo, key, GATE, gate, _edit(repo))
+    _authorize(repo, key, sovereignty, before, _edit(repo, sovereignty))
+    _commit(repo, "two authorizations")
+    assert verify(repo).intact
+    if damage == "drop-all":
+        (repo / GATE).write_bytes(_git_show(SR002_WITNESS, GATE))
+        (repo / sovereignty).write_bytes(_git_show(SR002_WITNESS, sovereignty))
+        _record(repo, AUTHORIZATIONS, lambda r: r["authorizations"].clear())
+    else:
+        _record(repo, AUTHORIZATIONS, lambda r: r["authorizations"].reverse())
+    with pytest.raises(IntegrityRecordError, match="removed or reordered"):
+        verify(repo)
+
+
+def test_a_committed_key_change_is_never_dropped(repo, tmp_path):
+    _, public_a, key_a = _key(tmp_path, "a")
+    _, public_b, _ = _key(tmp_path, "b")
+    _enroll(repo, public_a)
+    _commit(repo, "enroll")
+    _key_change(repo, key_a, add=[public_b])
+    _commit(repo, "add b")
+    assert verify(repo).intact
+    _record(repo, FOUNDER_KEYS, lambda r: r["changes"].clear())
+    with pytest.raises(IntegrityRecordError, match="removed or reordered"):
+        verify(repo)
+
+
+def test_appends_and_merged_concurrent_appends_follow_from_history(repo, tmp_path):
+    """Uncommitted appends pass, and two branches that each appended a signed
+    record merge in either order: committed records only have to survive in
+    their own order."""
+    _, public, key = _key(tmp_path)
+    _enroll(repo, public)
+    assert verify(repo).intact, "an uncommitted genesis is the founder's enrollment in progress"
+    _commit(repo, "enroll")
+    sovereignty = "constitution/sovereignty.ucl"
+    _git_in(repo, "checkout", "-q", "-b", "side")
+    side = _authorize(repo, key, sovereignty, _sha((repo / sovereignty).read_bytes()), _edit(repo, sovereignty))
+    _commit(repo, "side authorizes sovereignty")
+    _git_in(repo, "checkout", "-q", "main")
+    main_record = _authorize(repo, key, GATE, _sha((repo / GATE).read_bytes()), _edit(repo))
+    assert verify(repo).intact
+    _commit(repo, "main authorizes the gate")
+    assert _git_in(repo, "merge", "-q", "--no-edit", "side", check=False).returncode != 0
+    (repo / AUTHORIZATIONS).write_text(json.dumps({"version": 1, "authorizations": [main_record, side]}))
+    _commit(repo, "merge side")
+    report = verify(repo)
+    assert report.intact and report.history.checked and report.history.versions >= 5
+
+
+def test_a_genesis_on_a_merged_side_line_is_not_hidden_by_an_ours_merge(repo, tmp_path):
+    """Every committed version counts, not only those on the line git would
+    simplify to: the founder's genesis committed on a side branch, then merged
+    with `-s ours` into a line that enrolled another key, is still seen."""
+    _, public, _ = _key(tmp_path, "founder")
+    _, agent, _ = _key(tmp_path, "agent")
+    _git_in(repo, "checkout", "-q", "-b", "founder")
+    _enroll(repo, public, label="alfonso")
+    _commit(repo, "founder enrolls")
+    _git_in(repo, "checkout", "-q", "main")
+    _enroll(repo, agent, label="alfonso")
+    _commit(repo, "another key enrolled on main")
+    _git_in(repo, "merge", "-q", "-s", "ours", "--no-edit", "founder")
+    with pytest.raises(IntegrityRecordError, match="genesis differs"):
+        verify(repo)
+
+
+def test_the_environment_cannot_point_the_history_at_another_repository(repo, tmp_path, monkeypatch):
+    _, public, _ = _key(tmp_path, "founder")
+    _, agent, _ = _key(tmp_path, "agent")
+    decoy = tmp_path / "decoy"
+    shutil.copytree(repo, decoy)
+    _enroll(repo, public)
+    _commit(repo, "enroll")
+    _record(repo, FOUNDER_KEYS, lambda r: r.__setitem__("genesis", [{"public_key": agent, "label": "x"}]))
+    monkeypatch.setenv("GIT_DIR", str(decoy / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(decoy))
+    with pytest.raises(IntegrityRecordError, match="genesis differs"):
+        verify(repo)
+
+
+def test_a_shallow_checkout_is_refused_unless_it_holds_the_whole_record_history(repo, tmp_path):
+    complete = tmp_path / "complete"
+    _git_in(tmp_path, "clone", "-q", "--depth", "2", f"file://{repo}", str(complete))
+    assert _git_in(complete, "rev-parse", "--is-shallow-repository").stdout.strip() == b"true"
+    assert verify(complete).history.checked, "the records were created after the boundary"
+    _, public, _ = _key(tmp_path)
+    _enroll(repo, public)
+    _commit(repo, "enroll")
+    partial = tmp_path / "partial"
+    _git_in(tmp_path, "clone", "-q", "--depth", "1", f"file://{repo}", str(partial))
+    with pytest.raises(IntegrityRecordError, match="shallow boundary"):
+        verify(partial)
+    assert main(["--root", str(partial), "--check"]) == 2
 
 
 # -- unsound records give no verdict -------------------------------------------

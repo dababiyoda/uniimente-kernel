@@ -474,9 +474,15 @@
     founder''s key, run in such a namespace (greg/model_child.py; the key crosses only stdin) allowlisted for the
     route''s pinned host, and the Claude Code CLI runs behind its own door; the body''s builder and the console''s
     proposal transport both receive the relay, a factory that cannot take it builds nothing, and journal appends are
-    locked across processes (without the lock, concurrent writers lost entries or broke the chain). Not COMPLETE:
-    anchoring and the DALEOBANKS bridge still have unconfined network; and confined egress is opt-in, so the second criterion does not
-    hold machine-wide. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
+    locked across processes (without the lock, concurrent writers lost entries or broke the chain). Anchoring and the
+    DALEOBANKS bridge join it too: the RFC 3161 query is posted by a component with no socket of its own to the
+    founder-signed TSA origin alone, and DALEOBANKS''s interpreter runs in a namespace that may reach nothing during
+    verify and only its manifest''s declared X API hosts during publish. Every door program now runs in one namespace
+    definition (relay_door.namespace_argv). Inventory 2026-10-15: on a confined body every mission-path egress
+    crosses the relay or has none; Foundry systems on the mission path run in a seccomp worker with no network at all
+    (their Stripe test-mode, OCI registry and federation code is reachable only outside the mission path), and the
+    local Ollama route is a fixed numeric loopback address. Not COMPLETE: confined egress is opt-in, so the second
+    criterion does not hold machine-wide. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
   implementation:
   - foundry/systems/segmentation.py
   - foundry/systems/relay_door.py
@@ -488,6 +494,7 @@
   - tests/unit/test_foundry_relay_door.py
   - tests/unit/test_greg_computer.py
   - tests/unit/test_greg_models.py
+  - tests/unit/test_greg_daleobanks_bridge.py
   - tests/integration/test_greg_confined_egress.py
   limitations: Linux with libseccomp only (refused elsewhere); the door also needs bubblewrap network namespaces
     (refused without them). Exact host/port allowlists; no wildcard. Covers only components launched through

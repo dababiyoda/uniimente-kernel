@@ -472,8 +472,7 @@ def browser_render(params, ctx: InvocationContext) -> dict:
 def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, profile: Path, env: dict):
     """Run the browser in a bubblewrap network namespace behind a door to a relay allowlisted for the target alone.
     The per-call relay shares the body relay's journal and mandated proxy; without namespaces nothing runs."""
-    import shutil
-    from foundry.systems.relay_door import Door, door_argv
+    from foundry.systems.relay_door import Door, door_argv, namespace_argv
     from foundry.systems.segmentation import Relay
     from greg.worker_isolation import WorkerIsolationError, _backend
     try:
@@ -483,10 +482,7 @@ def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, prof
     scoped = Relay({"browser.render": {"allow": [[host, port]], "external": not loopback}}, relay.journal,
                    connect=relay.connect, proxy=relay.proxy)
     with Door(scoped, "browser.render") as door:
-        namespace = [shutil.which("bwrap"), "--unshare-user", "--unshare-pid", "--unshare-ipc", "--unshare-uts",
-                     "--unshare-net", "--die-with-parent", "--new-session", "--ro-bind", "/", "/", "--proc", "/proc",
-                     "--dev", "/dev", "--tmpfs", "/dev/shm", "--tmpfs", "/tmp", "--bind", str(profile), str(profile),
-                     "--chdir", str(profile), "--"]
+        namespace = namespace_argv(writable=[profile], chdir=profile)
         return subprocess.run(namespace + door_argv(sys.executable, door.fd, argv), pass_fds=[door.fd],
                               capture_output=True, timeout=45, env=env)
 
@@ -845,6 +841,10 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                     {"daleobanks_root": "path", "draft": "path", "python": "path?"},
                                     {"status": "str", "why": "str", "published": "dict", "daleobanks_ledger": "dict"},
                                     filesystem="workspace-write", binaries=(sys.executable,),
+                                    # DALEOBANKS's X client (tweepy): the API and media-upload hosts. A confined
+                                    # body's relay allows exactly these; nothing is reachable unless LIVE is armed.
+                                    network="egress-allowlist", egress_allowlist=("api.twitter.com",
+                                                                                  "upload.twitter.com"),
                                     data_classes=("public_web",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),
                                     provenance={"source": "uniimente-kernel/greg/daleobanks_bridge.py",
                                                 "mechanism_from": "DALEOBANKS services/multiplexer.py, "

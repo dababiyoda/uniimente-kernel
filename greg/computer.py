@@ -341,13 +341,9 @@ def _behind_door(home: Path, binary: str, door) -> str:
     """The executable Playwright launches: Chromium in a bubblewrap network namespace (no privilege), the door in front.
     Playwright's pipe (descriptors 3 and 4) is all of the launcher's that reaches Chromium."""
     import shlex
-    import shutil
-    from foundry.systems.relay_door import door_argv
-    scratch = sorted({"/tmp", tempfile.gettempdir()})          # Playwright's per-launch profile lives there
-    namespace = [shutil.which("bwrap"), "--unshare-user", "--unshare-pid", "--unshare-ipc", "--unshare-uts",
-                 "--unshare-net", "--die-with-parent", "--new-session", "--ro-bind", "/", "/", "--proc", "/proc",
-                 "--dev", "/dev", "--tmpfs", "/dev/shm", *[a for d in scratch for a in ("--tmpfs", d)],
-                 "--bind", str(home), str(home), "--chdir", str(home), "--"]
+    from foundry.systems.relay_door import door_argv, namespace_argv
+    # Playwright's per-launch profile lives in the scratch roots, private to the namespace.
+    namespace = namespace_argv(writable=[home], chdir=home, tmp_roots=("/tmp", tempfile.gettempdir()))
     command = namespace + door_argv(sys.executable, door.control, [binary], keep_fds=(3, 4))
     launcher = home / "chromium-behind-door"
     launcher.write_text("#!/bin/sh\nexec " + " ".join(shlex.quote(a) for a in command) + ' "$@"\n')

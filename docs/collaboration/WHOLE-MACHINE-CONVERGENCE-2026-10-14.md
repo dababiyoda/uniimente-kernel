@@ -683,6 +683,74 @@ Still outside the relay:
 
 Confinement is still opt-in.
 
+## Increment 12 (2026-10-15): anchoring and the DALEOBANKS bridge behind the #26 relay, and the egress inventory
+
+### What changed for GREG
+
+- **Anchoring.** On a confined body, the RFC 3161 query (a SHA-256 of the ledger head) is posted by a component with
+  no socket of its own (`confined_request`, the seccomp child that `http.get` uses, extended to POST and to loopback
+  http). It goes through the relay, allowlisted for the founder-signed TSA origin alone. Without the kernel filter,
+  the query is refused and recorded like any TSA outage; it is never sent around the relay.
+- **The DALEOBANKS bridge.** DALEOBANKS's own interpreter runs in a bubblewrap network namespace behind the door:
+  - `daleobanks.verify` may reach nothing;
+  - `daleobanks.publish` may reach only the hosts its manifest now declares: the X API and media-upload hosts its
+    tweepy client uses (`api.twitter.com`, `upload.twitter.com`). The manifest previously claimed `network: none`,
+    which was false for a LIVE publish.
+- **One namespace definition.** `browser.render`, `browser.session`, the model routes and DALEOBANKS each built
+  nearly the same bubblewrap command. All four now use `relay_door.namespace_argv`.
+- **DALEOBANKS real-organ runs.** A `.venv` was built from its own `requirements.txt` (gitignored, at `e2f1ebe`). The
+  three real-organ tests that had always skipped here now run, plus a fourth, confined one.
+
+### Egress inventory, 2026-10-15
+
+On a confined body, every mission-path egress crosses the relay or has no network.
+
+| Path | On a confined body |
+|---|---|
+| `http.get`, `github.pulls`, `brief.engineering` | seccomp child, relay (increments 3, 6) |
+| `browser.render`, `browser.session`, coding workers | namespace and door (increments 8, 10) |
+| Paid model routes (Anthropic, OpenAI, Claude Code) | namespace and door (increment 11) |
+| Anchoring | seccomp child, relay (this increment) |
+| DALEOBANKS verify and publish | namespace and door (this increment) |
+| Foundry systems (`foundry.query`, `foundry.apply`) | seccomp worker with no network at all; their Stripe test-mode, OCI registry and federation code is reachable only outside the mission path |
+| Local model (Ollama) | fixed numeric loopback address, no DNS or proxy |
+
+### Evidence
+
+- `test_a_confined_body_anchors_its_ledger_through_the_relay_from_a_component_without_a_socket` uses OpenSSL's real
+  RFC 3161 responder behind a loopback TSA, with the direct route poisoned. The anchor verifies, and only
+  `proof.anchor → 127.0.0.1:<port>` is ALLOWED. With the body reverted to the direct transport, the test fails with
+  "the TSA was contacted around the relay".
+- `test_the_real_organ_runs_inside_the_confined_namespace_and_reaches_nothing_while_disarmed` runs DALEOBANKS's
+  actual EthicsGuard, Critic, PromptFirewall and disarmed publishing gate inside the namespace. Verify returns
+  VERIFIED, publish returns BLOCKED_BY_DALEOBANKS, its ledger chain is OK, and the relay journal is empty.
+- `test_a_compromised_daleobanks_organ_reaches_only_the_platform_hosts_its_capability_declares`: during verify the
+  stand-in organ is refused even at the X API. During publish it reaches only the X API (through the fake mandated
+  proxy), is refused at `example.com`, and has no direct route.
+
+### CI: the Seed Genome freeze and `greg/models.py`
+
+Check 6 failed on `4c84d61` (increment 11) with `FROZEN_INPUT_CHANGED`. The Seed Genome evaluation pins
+`greg/models.py`, and increment 11 changed it, for egress only. Reproduced here: of the pinned inputs, only that file
+differs. Under the freeze convention, v5 is kept and `freeze-v6.json` is written over this tree (`run.py` names v6).
+
+The re-run in a venv built exactly as check 6 builds it gives the same result three ways: INCONCLUSIVE,
+timing-independent gain 0.0, 100/100 matched in both arms, 0 hard failures, no authority change. The three runs are:
+
+- the recorded v5 run;
+- the tree before increment 11, under v5;
+- this tree, under v6 (`docs/evidence/whole-machine-handoff/2026-10-15/seed-genome-v6-results.json`).
+
+The held-out evaluation, which pins only `cortex/` files, also runs clean.
+
+Negative evidence: my development venv crashes the evaluation (an item's claim with `result: None`) on the
+unchanged tree too, so that crash belongs to its engine versions, not to this change. The CI-matching venv does not.
+
+### #26 stays PARTIAL
+
+Confined egress is still opt-in, so the second acceptance criterion does not hold machine-wide. Turning it on by
+default is the remaining step; it changes what the founder's body does on a host without namespaces.
+
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 
 **Builder.** Every change closes a hole that was reproduced on this branch first: the console signing for any local

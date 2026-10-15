@@ -345,21 +345,32 @@ FETCH = r'''
 import base64, json, os, ssl, sys
 from foundry.systems.segmentation import egress_connect
 host, port, path, limit = sys.argv[1], int(sys.argv[2]), sys.argv[3], int(sys.argv[4])
-# Extra request headers (e.g. a credential) arrive on stdin, never in argv or the environment.
-extra = json.loads(sys.stdin.read() or "{}") if len(sys.argv) > 5 and sys.argv[5] == "--headers-stdin" else {}
-context = ssl.create_default_context(cafile=os.environ.get("GREG_EGRESS_CAFILE") or None)
+flags = sys.argv[5:]
+# Extra request headers (e.g. a credential) and a request body arrive on stdin, never in argv or the environment.
+method, extra, payload = "GET", {}, b""
+if "--headers-stdin" in flags:
+    extra = json.loads(sys.stdin.read() or "{}")
+elif "--request-stdin" in flags:
+    spec = json.loads(sys.stdin.read())
+    method, extra, payload = spec["method"], spec.get("headers", {}), base64.b64decode(spec.get("body_b64", ""))
 try:
     raw = egress_connect(host, port)
 except PermissionError as exc:
     print(json.dumps({"denied": str(exc)}))
     sys.exit(0)
-headers = {"Host": host, "User-Agent": "uniimente-greg/0.1", **extra, "Connection": "close"}
-request = f"GET {path} HTTP/1.1\r\n" + "".join(f"{k}: {v}\r\n" for k, v in headers.items()) + "\r\n"
-with context.wrap_socket(raw, server_hostname=host) as tls:
-    tls.sendall(request.encode())
+headers = {"Host": host, "User-Agent": "uniimente-greg/0.1", **extra,
+           **({"Content-Length": str(len(payload))} if payload or method != "GET" else {}), "Connection": "close"}
+request = (f"{method} {path} HTTP/1.1\r\n" + "".join(f"{k}: {v}\r\n" for k, v in headers.items()) + "\r\n").encode()
+if "--plain" in flags:                      # loopback only; the parent refuses plain http anywhere else
+    stream = raw
+else:
+    context = ssl.create_default_context(cafile=os.environ.get("GREG_EGRESS_CAFILE") or None)
+    stream = context.wrap_socket(raw, server_hostname=host)
+with stream:
+    stream.sendall(request + payload)
     data = b""
     while len(data) <= limit + 65536:
-        chunk = tls.recv(65536)
+        chunk = stream.recv(65536)
         if not chunk:
             break
         data += chunk
@@ -375,7 +386,8 @@ if any(l.lower().replace(b" ", b"") == b"transfer-encoding:chunked" for l in lin
             break
         decoded, rest = decoded + rest[:size], rest[size + 2:]
     body = decoded
-print(json.dumps({"status": status, "body": base64.b64encode(body[:limit + 1]).decode(), "peer_verified": True}))
+print(json.dumps({"status": status, "body": base64.b64encode(body[:limit + 1]).decode(),
+                  "peer_verified": "--plain" not in flags}))
 '''
 
 
@@ -388,10 +400,21 @@ def confined_fetch(url: str, *, identity: str, relay: Relay, cwd: Path, max_byte
     happens inside the confined child, the bytes cross only the relay, and the relay journals the decision.
     ``headers`` reach the child on stdin only, so a credential never appears in argv, the environment or the
     egress journal."""
+    return confined_request(url, identity=identity, relay=relay, cwd=cwd, max_bytes=max_bytes, timeout=timeout,
+                            headers=headers)
+
+
+def confined_request(url: str, *, identity: str, relay: Relay, cwd: Path, max_bytes: int, timeout: int = 30,
+                     headers: dict | None = None, method: str = "GET", body: bytes | None = None) -> dict:
+    """``confined_fetch`` for any of GET or POST with a body (an RFC 3161 query, say). HTTPS; plain http only to a
+    loopback host. Headers and body reach the child on stdin only."""
     from urllib.parse import urlsplit
     parts = urlsplit(url)
-    if parts.scheme != "https" or not parts.hostname:
-        raise SegmentationError("confined fetch is HTTPS only")
+    plain = parts.scheme == "http" and _loopback(parts.hostname or "")
+    if not parts.hostname or not (parts.scheme == "https" or plain):
+        raise SegmentationError("confined fetch is HTTPS only (plain http only to loopback)")
+    if method not in ("GET", "POST") or (body is not None and method != "POST"):
+        raise SegmentationError("confined requests are GET, or POST with a body")
     path = (parts.path or "/") + (("?" + parts.query) if parts.query else "")
     for name, value in (headers or {}).items():
         if not HEADER_NAME.match(str(name)) or any(c in str(value) for c in "\r\n\x00") or \
@@ -400,17 +423,23 @@ def confined_fetch(url: str, *, identity: str, relay: Relay, cwd: Path, max_byte
     env = {}
     if os.environ.get("GREG_EGRESS_CAFILE"):
         env["GREG_EGRESS_CAFILE"] = os.environ["GREG_EGRESS_CAFILE"]
-    argv = [sys.executable, "-s", "-c", FETCH, parts.hostname, str(parts.port or 443), path, str(max_bytes)]
-    proc = run_confined(argv + (["--headers-stdin"] if headers else []), identity=identity, relay=relay, cwd=cwd,
-                        timeout=timeout, env=env,
-                        input_bytes=json.dumps(headers).encode() if headers else None)
+    argv = [sys.executable, "-s", "-c", FETCH, parts.hostname, str(parts.port or (80 if plain else 443)), path,
+            str(max_bytes)]
+    import base64
+    if method == "GET":
+        flags, stdin = (["--headers-stdin"] if headers else []), (json.dumps(headers).encode() if headers else None)
+    else:
+        flags = ["--request-stdin"]
+        stdin = json.dumps({"method": method, "headers": headers or {},
+                            "body_b64": base64.b64encode(body or b"").decode()}).encode()
+    proc = run_confined(argv + flags + (["--plain"] if plain else []), identity=identity, relay=relay, cwd=cwd,
+                        timeout=timeout, env=env, input_bytes=stdin)
     relay.drain()
     if proc.returncode != 0:
         raise SegmentationError("confined fetch failed: " + proc.stderr.decode("utf-8", "replace")[-300:])
     out = json.loads(proc.stdout)
     if "denied" in out:
         raise PermissionError(out["denied"])
-    import base64
     return {"status": out["status"], "body": base64.b64decode(out["body"])}
 
 

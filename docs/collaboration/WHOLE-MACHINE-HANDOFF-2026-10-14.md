@@ -127,11 +127,9 @@ The 13 holes were:
   - Choose a dedicated host for #9/#10 privileged runtimes, or decline
     (`PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md`).
   - Decide on merging PR #169.
-- **#26 PARTIAL.** `browser.session` joined the relay in increment 10, and the paid model routes in increment 11.
-  Still outside the relay:
-  - anchoring;
-  - the DALEOBANKS bridge.
-  Confinement is also still opt-in.
+- **#26 PARTIAL.** `browser.session`, the paid model routes, anchoring and the DALEOBANKS bridge joined the relay in
+  increments 10 to 12. On a confined body, every mission-path egress now crosses the relay or has none (inventory in
+  the convergence record, increment 12). What remains is that confinement is still opt-in.
 - **#9, #10, #28 and #52 PARTIAL** (Foundry 50/55).
 - **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
   `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
@@ -143,7 +141,7 @@ The 13 holes were:
     false positive;
   - regression blame is by sequence, not proven causation.
 - **Untested here.**
-  - DALEOBANKS real-organ runs.
+  - DALEOBANKS real-organ runs (run locally since increment 12, against `e2f1ebe`; not in CI).
   - A process kill in the middle of a self-repair.
   - Loss of a model vendor end to end; it is tested at component level only.
 - **Future technology.** Chromium cannot run its own sandbox inside GREG's namespace (`os_sandboxed: false`). A
@@ -184,6 +182,5 @@ GREG_TEST_RAILSCOUT=<railscout checkout with railscout/appraise.py> GREG_TEST_WM
   - greedy tying the exact solver;
   - the proxy-bypass evidence from 2026-09-30.
 - **Next active dependency.** The founder's first-body run, which is the N1 gate. Until then, the strongest next
-  buildable work is to bring anchoring and the DALEOBANKS bridge behind the relay door (`browser.session` and the
-  paid model routes joined it in increments 10 and 11). That would make confined egress safe to turn on by default,
-  which is the remaining #26 criterion.
+  buildable decision is whether confined egress is on by default, which is the remaining #26 criterion. Every
+  mission-path egress is behind the relay since increment 12.

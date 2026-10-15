@@ -18,6 +18,9 @@ Two verifiers, with different trust:
 Authority: anchoring is off until Alfonso signs ``ANCHOR_CONFIGURE`` naming the
 TSA and pinning its root certificate(s). Only a SHA-256 digest of the ledger
 head leaves the machine. A TSA failure is recorded and never blocks a mission.
+On a body with confined egress (#26) the query is sent by a component with no
+socket of its own, through the body relay allowlisted for the signed TSA origin
+alone, and the decision is journaled (``relay_transport``).
 Verification uses rfc3161-client (the verifier sigstore-python uses); GREG
 implements no timestamp cryptography of its own.
 """
@@ -97,6 +100,30 @@ def _post(url: str, request: bytes) -> bytes:
     if len(body) > MAX_RESPONSE_BYTES:
         raise AnchorError("TSA response too large")
     return body
+
+
+def relay_transport(relay, cwd):
+    """#26: the TSA query leaves through the body relay, from a confined component (no socket of its own), to the
+    signed TSA origin alone; every decision is journaled. Without the kernel filter the query is refused and the
+    failure recorded like any TSA outage; it is never sent around the relay."""
+    from pathlib import Path
+    from foundry.systems.segmentation import Relay, _loopback, confined_request
+
+    def post(url: str, request: bytes) -> bytes:
+        parts = urlparse(url)
+        port = parts.port or (443 if parts.scheme == "https" else 80)
+        scoped = Relay({"proof.anchor": {"allow": [[parts.hostname, port]], "external": not _loopback(parts.hostname)}},
+                       relay.journal, connect=relay.connect, proxy=relay.proxy)
+        Path(cwd).mkdir(parents=True, exist_ok=True)
+        answer = confined_request(url, identity="proof.anchor", relay=scoped, cwd=Path(cwd), method="POST",
+                                  body=request, headers={"Content-Type": "application/timestamp-query"},
+                                  max_bytes=MAX_RESPONSE_BYTES, timeout=TIMEOUT_SECONDS)
+        if answer["status"] != 200:
+            raise AnchorError(f"TSA answered HTTP {answer['status']}")
+        if len(answer["body"]) > MAX_RESPONSE_BYTES:
+            raise AnchorError("TSA response too large")
+        return answer["body"]
+    return post
 
 
 def _message(head: str) -> bytes:

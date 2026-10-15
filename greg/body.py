@@ -460,7 +460,9 @@ class Body:
         settle_cognition(self.journal)
         improvement.learn(self.journal, self.ledger, now)   # held-out evidence from this tick's briefs
         sop.propose(self.journal)
-        anchored = anchor.anchor_once(self.journal, now) if anchor.due(self.journal, now) else None
+        transport = (anchor.relay_transport(self.egress, self.layout.workspace / ".anchor")
+                     if getattr(self, "egress", None) is not None else None)
+        anchored = anchor.anchor_once(self.journal, now, transport=transport) if anchor.due(self.journal, now) else None
         return {"commands": commands, "missions": summary, "anchor": anchored}
 
     def _close_out(self, now):

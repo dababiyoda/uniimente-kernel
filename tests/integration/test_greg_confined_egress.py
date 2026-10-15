@@ -668,8 +668,6 @@ FLAGGED = {"error": {"message": "Invalid prompt: your prompt was flagged as pote
 @pytest.fixture
 def provider(tmp_path, monkeypatch):
     """A stand-in provider on loopback behind a fake mandated proxy; the relay is the body's own (journal, proxy)."""
-    pytest.importorskip("anthropic")
-    pytest.importorskip("openai")
     from greg.worker_isolation import WorkerIsolationError, _backend
     try:
         _backend(require_bubblewrap=True)
@@ -692,6 +690,7 @@ def test_a_paid_anthropic_route_runs_its_sdk_behind_the_relay_and_the_key_crosse
     """#26 for paid model routes: on a confined body the vendor SDK, which holds the founder's key, runs in a network
     namespace whose only way out is the relay, allowlisted for the route's pinned host. The body process opens no
     socket of its own for the call; the relay decides, journals and chains through the mandated proxy."""
+    pytest.importorskip("anthropic")
     from greg import models
     from foundry.systems.segmentation import Journal
     replies = iter([(200, ANTHROPIC_OK), (200, {**ANTHROPIC_OK, "stop_reason": "refusal", "content": []})])
@@ -718,6 +717,7 @@ def test_a_paid_anthropic_route_runs_its_sdk_behind_the_relay_and_the_key_crosse
 def test_a_paid_openai_route_behind_the_relay_keeps_failure_classes_across_the_namespace(tmp_path, provider):
     """The child returns a failure's status, body and class name; the parent classifies it with the one classifier:
     a provider policy verdict stays a terminal refusal, an outage stays a fallback, and an answer stays an answer."""
+    pytest.importorskip("openai")
     from greg import models
     replies = iter([(200, OPENAI_OK), (400, {"error": {**FLAGGED["error"], "code": "content_policy_violation"}}),
                     (500, {"error": {"message": "overloaded", "type": "server_error"}})] + [(500, {"error": {}})] * 4)
@@ -769,3 +769,146 @@ def test_the_claude_code_route_runs_its_cli_behind_the_relay(tmp_path, provider)
     entries = [json.loads(line) for line in (tmp_path / "egress-journal.jsonl").read_text().splitlines()]
     assert {(e["host"], e["verdict"]) for e in entries if e["identity"] == "model.claude-code"} == {
         ("api.anthropic.com", "ALLOWED"), ("example.com", "DENIED")}
+
+
+def test_a_confined_body_anchors_its_ledger_through_the_relay_from_a_component_without_a_socket(tmp_path, monkeypatch):
+    """#26 for anchoring: on a confined body the RFC 3161 query (a SHA-256 of the ledger head) is posted by a component
+    with no socket of its own, through the relay allowlisted for the founder-signed TSA origin alone. The direct
+    route is poisoned here: the anchor verifies anyway, so it never took it."""
+    import http.server
+    import shutil
+    from greg import anchor
+    from tests.greg_fixtures import Clock
+    if shutil.which("openssl") is None:
+        pytest.skip("needs the openssl CLI as a real TSA")
+    from tests.unit.test_greg_anchor import OpenSSLTSA, _make_tsa
+    tsa = OpenSSLTSA(_make_tsa(tmp_path / "tsa", "GREG relay TSA"))
+
+    class TSA(http.server.BaseHTTPRequestHandler):
+        def do_POST(self):
+            query = self.rfile.read(int(self.headers["Content-Length"]))
+            reply = tsa(self.path, query)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/timestamp-reply")
+            self.send_header("Content-Length", str(len(reply)))
+            self.end_headers()
+            self.wfile.write(reply)
+
+        def log_message(self, *a):
+            pass
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), TSA)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    port = server.server_address[1]
+
+    def poisoned(url, request):
+        raise AssertionError("the TSA was contacted around the relay")
+    monkeypatch.setattr(anchor, "_post", poisoned)
+    home, key, body_id = body_with_confined_egress(tmp_path)
+    drop(home, signed(key, body_id, "ANCHOR_CONFIGURE", {"tsa_url": f"http://127.0.0.1:{port}/",
+                                                         "tsa_roots_pem": (tsa.directory / "root.crt").read_text()}))
+    try:
+        with Body(home, clock=Clock()) as body:
+            body.boot()
+            anchored = body.tick()["anchor"]
+            report = anchor.verify(body.journal)
+    finally:
+        server.shutdown()
+    assert anchored["anchored"] is True, anchored
+    assert report["verified"] == 1 and tsa.calls == 1
+    entries = [json.loads(line) for line in (home / "egress-journal.jsonl").read_text().splitlines()]
+    assert [(e["identity"], e["host"], e["port"], e["verdict"]) for e in entries] == [
+        ("proof.anchor", "127.0.0.1", port, "ALLOWED")]
+    from foundry.systems.segmentation import Journal
+    assert Journal(home / "egress-journal.jsonl").verify()["intact"]
+
+
+ORGAN = {
+    "services/__init__.py": "",
+    "services/probe.py": r'''
+import json, os, socket
+def probe(hosts):
+    out = {}
+    port = int(os.environ["HTTPS_PROXY"].rsplit(":", 1)[1])
+    for host in hosts:
+        s = socket.create_connection(("127.0.0.1", port))
+        s.sendall(("CONNECT %s:443 HTTP/1.1\r\nHost: %s:443\r\n\r\n" % (host, host)).encode())
+        out[host] = s.recv(120).split(b"\r\n")[0].decode()
+    try:
+        socket.create_connection(("1.1.1.1", 443), timeout=2)
+        out["direct"] = "REACHED"
+    except OSError as exc:
+        out["direct"] = type(exc).__name__
+    return json.dumps(out)
+''',
+    "services/ethics_guard.py": r'''
+from types import SimpleNamespace
+from services.probe import probe
+class EthicsGuard:
+    def validate_text(self, text):
+        return SimpleNamespace(approved=True, reasons=[probe(["api.twitter.com"])], uncertainty_score=0.0)
+''',
+    "services/critic.py": r'''
+from types import SimpleNamespace
+class Critic:
+    def analyze_quality(self, text, content_type="reply"):
+        return SimpleNamespace(blocking_issues=[], quality_score=1.0)
+''',
+    "services/prompt_firewall.py": "class PromptFirewall:\n    def scan(self, text):\n        return {'risk': 0.0}\n",
+    "services/ledger.py": r'''
+from types import SimpleNamespace
+class DecisionLedger:
+    path = "stand-in"
+    def verify_chain(self):
+        return True
+    def replay(self):
+        return []
+def get_kill_switch():
+    return SimpleNamespace(armed=False)
+''',
+    "services/multiplexer.py": r'''
+from types import SimpleNamespace
+from services.probe import probe
+class SocialMultiplexer:
+    def enabled_platforms(self):
+        return ["x"]
+    async def publish(self, draft, kind="post", metadata=None):
+        return {"x": SimpleNamespace(post_id=probe(["api.twitter.com", "example.com"]), dry_run=True)}
+''',
+}
+
+
+def test_a_compromised_daleobanks_organ_reaches_only_the_platform_hosts_its_capability_declares(tmp_path, provider):
+    """#26 for the DALEOBANKS bridge: an organ that tries to reach out (a stand-in for a compromised checkout) gets
+    nothing during verify, only the declared X API host during publish, never another host and never a direct route;
+    every attempt is decided and journaled at the relay."""
+    import sys
+    from greg import daleobanks_bridge as bridge
+    from greg.capabilities import InvocationContext, SecretBroker
+    relay, _, heads = provider("api.twitter.com", lambda path, body: (200, {}))
+    organ = tmp_path / "organ"
+    for name, text in ORGAN.items():
+        (organ / name).parent.mkdir(parents=True, exist_ok=True)
+        (organ / name).write_text(text)
+    (tmp_path / "draft.txt").write_text("a draft")
+    (tmp_path / "source.txt").write_text("a source")
+    params = {"daleobanks_root": str(organ), "draft": str(tmp_path / "draft.txt"),
+              "source": str(tmp_path / "source.txt"), "python": sys.executable}
+
+    def ctx(capability):
+        return InvocationContext(workspace=tmp_path / "ws", read_roots=(tmp_path,),
+                                 secrets=SecretBroker(tmp_path / "s.json"), manifest=BUILTINS[capability][0],
+                                 mission_id="m:organ", grant_id="grant-organ", egress=relay)
+    verified = bridge.verify(params, ctx("daleobanks.verify"))
+    during_verify = json.loads(verified["daleobanks"]["ethics"]["reasons"][0])
+    assert during_verify["api.twitter.com"].startswith("HTTP/1.1 403")          # verify may reach nothing
+    assert during_verify["direct"] in ("OSError", "ConnectionRefusedError", "TimeoutError")
+    published = bridge.publish(params, ctx("daleobanks.publish"))
+    during_publish = json.loads(published["dry_run"]["x"]["post_id"])
+    assert during_publish["api.twitter.com"].startswith("HTTP/1.1 200")          # the declared platform host
+    assert during_publish["example.com"].startswith("HTTP/1.1 403")
+    assert during_publish["direct"] in ("OSError", "ConnectionRefusedError", "TimeoutError")
+    assert any(h.startswith("CONNECT api.twitter.com:443 ") for h in heads)
+    entries = [json.loads(line) for line in (tmp_path / "egress-journal.jsonl").read_text().splitlines()]
+    assert {(e["identity"], e["host"], e["verdict"]) for e in entries} == {
+        ("daleobanks.verify", "api.twitter.com", "DENIED"), ("daleobanks.publish", "api.twitter.com", "ALLOWED"),
+        ("daleobanks.publish", "example.com", "DENIED")}

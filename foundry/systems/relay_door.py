@@ -143,6 +143,24 @@ sys.exit(subprocess.call([a.replace("{door}", door) for a in argv], env=env, pas
 '''
 
 
+def namespace_argv(*, writable=(), readonly=(), chdir: str, tmp_roots=("/tmp",)) -> list[str]:
+    """The one bubblewrap network namespace every door program runs in (no privilege): its own user, pid, ipc, uts
+    and network namespaces, the read-only root, private /dev/shm and scratch roots, then the program's own writable
+    directories and read-only files (re-exposed when a private scratch root hid them). Callers check that bubblewrap
+    namespaces work first and refuse without them (fail closed)."""
+    import shutil
+    bwrap = shutil.which("bwrap")
+    if not bwrap:
+        raise FileNotFoundError("bubblewrap (bwrap) is not installed")
+    roots = sorted({str(r) for r in tmp_roots})
+    return [bwrap, "--unshare-user", "--unshare-pid", "--unshare-ipc", "--unshare-uts", "--unshare-net",
+            "--die-with-parent", "--new-session", "--ro-bind", "/", "/", "--proc", "/proc", "--dev", "/dev",
+            "--tmpfs", "/dev/shm", *[a for r in roots for a in ("--tmpfs", r)],
+            *[a for w in writable if w for a in ("--bind", str(w), str(w))],
+            *[a for r in readonly if r and Path(r).exists() for a in ("--ro-bind", str(r), str(r))],
+            "--chdir", str(chdir), "--"]
+
+
 def door_argv(python: str, control, argv: list[str], *, keep_fds=()) -> list[str]:
     """The command that runs inside the namespace: the door first, then the program behind it.
 

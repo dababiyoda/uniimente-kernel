@@ -240,17 +240,13 @@ def _namespace(scratch: str, *, home: str | None = None, readonly=()) -> list:
     """A bubblewrap network namespace (no privilege): read-only root, private /tmp, the call's scratch directory and,
     for a CLI that keeps its login there, the user's home. ``readonly`` re-exposes files the private /tmp would hide
     (a trust anchor, the CLI itself). Refused (fail closed) without namespaces."""
-    import shutil
+    from foundry.systems.relay_door import namespace_argv
     from greg.worker_isolation import WorkerIsolationError, _backend
     try:
         _backend(require_bubblewrap=True)
     except WorkerIsolationError as exc:
         raise RouteError(f"confined egress needs bubblewrap network namespaces here: {exc}", kind=UNAVAILABLE) from None
-    binds = (["--bind", scratch, scratch] + (["--bind", home, home] if home else [])
-             + [a for path in readonly if path and Path(path).exists() for a in ("--ro-bind", str(path), str(path))])
-    return [shutil.which("bwrap"), "--unshare-user", "--unshare-pid", "--unshare-ipc", "--unshare-uts",
-            "--unshare-net", "--die-with-parent", "--new-session", "--ro-bind", "/", "/", "--proc", "/proc",
-            "--dev", "/dev", "--tmpfs", "/tmp", *binds, "--chdir", scratch, "--"]
+    return namespace_argv(writable=[scratch, home], readonly=readonly, chdir=scratch)
 
 
 def _scoped_relay(relay, identity: str, host: str):

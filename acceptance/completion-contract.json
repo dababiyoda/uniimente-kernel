@@ -636,15 +636,15 @@
    "authority": "Reads only.",
    "missing_dependencies": [],
    "observed_failures": [
-    "No test asserts costs, outcomes or why a metric moved through the founder trace for the traced mission (L1 is SANDBOX_VERIFIED and partial)",
-    "The nine-link run's Learning link is vacuous: no test asserts the appraisal-to-learning edge (L3 partial)"
+    "Costs are not shown at the real-process tier: every cost in the traced mission is $0 and the span cost is the same ledger field it is compared with; a nonzero cost through the trace is shown only by the Foundry audit's re-derived system-44 evidence (L1 partial)",
+    "At the real-process tier the Learning link is a tally: the run asserts the verified credit a VERIFIED appraisal gives, but routing.reliability never reads that credit, so it changes nothing that ranks the next mission; that the verdict changes ranking (a REFUTED appraisal lowers reliability) is shown only in-process (L3 partial)"
    ],
    "recovery": "Stateless.",
    "resources": "Offline.",
    "next_work": [
     "Run the trace with the real organ checkouts (L gap G2)",
-    "Assert costs, the appraisal outcome and a metric movement with its cause in `greg foundry trace` / `greg foundry why` output on the real-process run (L1)",
-    "Assert that the separate appraisal's verdict changes what the run learns (L3)"
+    "Trace a mission with a nonzero signed cost on the real-process run and compare the span cost with the Gate's receipt (L1)",
+    "Show on a real Body process that a REFUTED appraisal of an act lowers the routing that ranks the next mission's strategies (L3)"
    ],
    "blocking": []
   }

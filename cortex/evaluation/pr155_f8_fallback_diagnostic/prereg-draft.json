@@ -1,0 +1,26 @@
+{
+ "schema": "f8-fallback-prereg-draft/1",
+ "status": "DRAFT_NOT_FROZEN: one owner adopts it, completes it and freezes it under a new unique path before any held-out arm runs",
+ "proposed_owner": "the PR #158 session (F8's builder and the owner of P6 v5); this convergence PR does not run it",
+ "origin": "founder review 2026-10-15, point 5; diagnostic docs/evidence/pr155-f8-fallback-diagnostic/2026-10-15/results.json (exposed data, not a claim)",
+ "preserved": "F8's freeze, suite, results and verdict at 202b932 stay exactly as they are; this is a new evaluation, not a re-run",
+ "hypothesis": "replacing the standing-plan fallback with the EWMA ratio + quantile when the Kalman tracker abstains lowers total modelled cost below the simpler EWMA-quantile ablation, without raising tail loss",
+ "arms": {
+  "unchanged": "track_then_staff with the standing-plan fallback, exactly as F8",
+  "simpler_ablation": "ewma_ratio_quantile_then_staff",
+  "proposed": "track_then_staff, falling back to ewma_ratio_quantile_then_staff when the tracker abstains"
+ },
+ "equivalent_execution": "all three arms run through the same path (greg.cognition.cortex.reason with isolated workers) or all in process, on the same pinned cores; latency is compared only within one of those conditions",
+ "abstention": {
+  "kept": "the tracker's abstention contract is unchanged: fewer than 3 usable measurements, or its innovation test refusing the declared noise model",
+  "recorded": "every abstention records an explicit reason code (INSUFFICIENT_MEASUREMENTS or NOISE_MODEL_REFUSED) and the stage, not only STAGE_ABSTAINED; the fallback taken is recorded per item"
+ },
+ "metrics_reported": ["total modelled cost", "tail loss: p95, p99 and max excess over hindsight cost", "coverage (share decided without fallback) and fallback rate by reason", "median and p95 latency", "item and per-date sign tests against each other arm", "per-stream totals"],
+ "decision_rule_to_complete": "proposed beats simpler_ablation on total cost, does not exceed it on p99 excess, one-sided per-date sign test p < 0.05; if the simpler ablation wins, the report says so and the ablation is recommended",
+ "data": {
+  "requirement": "fresh held-out data never used by F8 or by this diagnostic; reusing the 2015 rows is diagnostic only",
+  "candidate": "NYC TLC High Volume For-Hire Vehicle trip records (2019 onwards), aggregated to the same six streams and half-hour blocks",
+  "blocked_until": "the TLC's terms of use are read from an unrestricted network (record section 12); no new uncleared extract is committed"
+ },
+ "declared_model": "the Erlang C staffing and cost model of F8 is unchanged; results are modelled costs on historical demand, not realised business savings"
+}

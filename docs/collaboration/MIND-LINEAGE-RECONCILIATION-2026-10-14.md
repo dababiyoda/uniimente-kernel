@@ -127,7 +127,7 @@ Single-lineage duplicates and overlaps:
 | operation-family verdicts | #155's frozen admission runs, through the index | held-out runs against stated competitors; structural labels kept but non-routing | n/a |
 | P4 deciding row | #155's NO_GAIN (later run) | #158's own rule: the latest frozen run decides. Both runs are negative, so the default stays shadow | #158's REGRESSION in the row's `history` |
 | identify_then_optimize deciding family | #155's F2b (later run) | #158's own rule; F2, F2R and F2b form an independent replication of the lift | F2 and F2R in `history` |
-| lawful intervention generation | #158 `foundry/lawful_leverage.py` | See the note below the table. | #155's typed-operator library in `advantage.py`: registered alternative, CLI only, `authority_created` false |
+| lawful intervention generation | #158 `foundry/lawful_leverage.py`, extended with #155's seven uncovered operator classes | See the note below the table. | #155's `compile_map`: superseded as a generator; read-only structural view (CLI), `authority_created` false |
 | founder-effect backcasts | `greg/path.json` horizons | the developmental-inheritance rule: one Backcast GPS | `advantage.DESTINATIONS` becomes a live buildability view naming its horizon (tested) |
 | composition | both | #158's operation recipes and #155's dataflow derivation answer different request shapes; derived chains are NICHE (they lift over singles, not over the fixed recipe) | n/a |
 
@@ -137,7 +137,81 @@ narrower target with one REJECT.
 
 Lawful intervention evidence: #158's generator has consent, harm-ceiling and eligibility gates, Monte Carlo
 estimates with falsifiers, and an independent five-lens review whose defects were fixed. #155's generator
-emits only UNESTIMATED candidates. Neither has outcome evidence.
+emits only UNESTIMATED candidates, which the ranker drops. Neither has outcome evidence.
+
+How the two generators were reconciled (2026-10-15, revised after the founder's review the same day):
+
+- **Crosswalk.** Each of #155's twelve operators was matched to the Foundry library by mechanism, not by
+  name (`advantage.FOUNDRY_MECHANISM`, tested).
+  - Five had an equivalent primary: receipts, a published eligibility standard, milestone escrow, a second
+    source, and evidence-based triage.
+  - Seven had none: incumbent integration, counter-positioning, verified compliance as a qualification, a
+    consented supply pool, accountability, a regenerative participant benefit, and step removal (via negativa).
+- **The seven classes are in the Foundry library** (`lawful_leverage.PORTED_FROM`), so they pass the Foundry's
+  gates and estimator instead of staying unestimated.
+  - Accountability became four legal channels (below).
+  - #155's `compile_map` is a historical, read-only view. Its operator table is pinned by digest, so it cannot
+    evolve as a second generator.
+- **One evidentiary standard for every template, whatever its lineage.** Each template, reviewed or ported,
+  carries a weak template prior.
+  - A route whose estimate rests on priors alone is labelled (`selection_basis`, `selection_basis_note`).
+  - It ranks after any defensible route with observed evidence.
+  - It cannot win the "dominates the direct-labour baseline" branch. Prior-drawn samples show what a template
+    assumed, not what the route does.
+  - **Superseded attempts:**
+    - The first port changed the default test problem's selected route to step removal, on priors alone.
+    - The second gave ported templates a floor prior, which restored the old winner. That was tuning for an
+      expected result, so it was removed.
+  - On that problem, the old winner (receipts plus eligibility) and the new one (step removal plus an internal
+    tool) both rest on priors alone. Neither has defensible observed evidence there. The new selection is
+    labelled `PRIOR_ONLY`, and the next step is its staged pilot or evidence keyed to it.
+  - A ported template backed by evidence keyed to its own id is selected (tested).
+- **Mechanism identity, made explicit now that a surface holds more than one mechanism.**
+  - Recombination pairs every recombinable mechanism across complementary surfaces. Pairs that existed before
+    the port come first and unchanged (tested against `_recombine` without the added templates). On `e19226a`,
+    `_recombine` keyed a dict by surface, so a second mechanism on a surface overwrote the first.
+  - Each component keeps its own surface record, evidence keys and consent check.
+  - Surface-keyed evidence was recorded when each surface had one mechanism, so it informs only that
+    surface's primary. An intervention cites only the evidence its estimate used.
+- **Contract ceiling (64 candidates): evidence first, nothing silently starved.**
+  - The pool admits direct labour, then every candidate whose every channel has observed evidence, then the
+    rest (reviewed templates before added ones).
+  - Each candidate over the ceiling is listed in `generated.deferred` with its reason (`OVER_CEILING_PRIOR_ONLY`
+    or `OVER_CEILING`) and a bounded sandbox route, `evaluate_deferred`. That route compiles the candidate on its
+    own surfaces only and executes nothing.
+  - With every surface declared, an evidence-backed ported template is evaluated (tested).
+  - Without such evidence, the reviewed library's evaluated set and the selection are identical to the
+    pre-port Foundry (checked against the `e19226a` tree).
+- **Consent is purpose-bound and never a wildcard.**
+  - A non-primary mechanism needs a consent record that names it (`for_mechanisms`). Writing the tests showed
+    an accountability record would otherwise clear the gate on the payers' agreement to a receipts pilot.
+  - A consent naming a mechanism on another surface is refused.
+  - A revoked record (`revoked_at`) clears nothing, for primaries, mutations and combinations alike.
+  - Both fields are optional additions to the problem contract.
+- **Consent, lawful basis and execution authority are separate.**
+  - Accountability is four channels, each with its own access restriction and evidence standard
+    (`LEGAL_CHANNELS`): private evidence preservation, confidential counsel review, submission to an
+    appropriate authority, and public publication.
+  - Only publication is gated on the affected parties' consent. A subject's refusal does not remove
+    preservation, review or authority submission.
+  - That rule is not a universal claim either way. Some regimes protect reporting without the reported
+    party's approval. Under Rule 21F-17(a), SEC orders treat a requirement to obtain company approval before
+    contacting the Commission as impeding a whistleblower
+    (https://www.sec.gov/enforcement-litigation/whistleblower-program/whistleblower-protections). That rule is
+    scoped to information flowing to the Commission and clears no other disclosure. Each channel still needs its
+    own applicable basis.
+  - No channel is ever recombined with a commercial lever.
+  - Every channel's authority state is `LEGAL_BASIS_REVIEW_REQUIRED`. The Foundry establishes no lawful basis,
+    and a problem cannot assert one (the contract refuses the field).
+  - Each eligible channel yields a review request for a licensed professional through the existing ask path
+    (`legal_review_packets`; Goal Gravity validates, screens and prepares them, unrecorded). Its disposition is
+    `LEGAL_REVIEW`, never `EXECUTE_THROUGH_GATE`.
+  - These controls govern GREG's actions only. They do not limit anyone's own right to report.
+- **One governed path, tested end to end** through Goal Gravity: problem, generation, eligibility, estimation,
+  the institutional-leverage ranker, CandidateProposals for the Gate, and a receipt. Consent and evidence stay
+  scoped to each mechanism throughout. Nothing is written or executed.
+- **Not measured:** whether the added classes produce better outcomes. No real institutional map with settled
+  outcomes exists in the repository. The crosswalk decides coverage, not merit.
 
 **Routing deltas the convergence makes** (one request per input signature):
 
@@ -230,7 +304,7 @@ branch, under a lineage-unique path. It is listed with the remaining falsificati
 | alternative | where | state | what would decide it |
 |---|---|---|---|
 | routing-genome protected evolution (#155) | `greg/cognition/evolution_routing.py`, `tests/unit/test_greg_evolution_routing.py` | not imported by any runtime module (AST test); its frozen runner refuses changed inputs | a target where routing configurations, not method configurations, carry headroom |
-| typed mental-model operator library (#155) | `greg/cognition/advantage.py` | CLI only (`greg advantage`); emits UNESTIMATED candidates that the existing ranker drops without estimates | a frozen comparison: does it add lawful candidates the Foundry's library misses on the same problems? |
+| typed mental-model operator library (#155) | `greg/cognition/advantage.py` | superseded as a generator: every operator maps to a Foundry mechanism, seven of them ported (section 5); `compile_map` stays a read-only CLI view (`greg cognition advantage`) | decided by the crosswalk (coverage). Merit needs real maps with outcomes |
 | both lineages' colliding frozen files | `docs/collaboration/lineage-archive/` | byte-identical archival copies (tested against git and the manifest's digests) | n/a: evidence |
 | #155's benchmark reconciliation table | git history at `ef5f078` | superseded | n/a |
 
@@ -260,8 +334,8 @@ audits are deliberately independent: agreement between them is evidence, and dis
 2. **Systems Architect.**
    - One entry point, one Layer 5 compiler, one evolution controller, one evidence index, one Landlock grant
      path, one Backcast GPS.
-   - **Remaining duplication:** two intervention generators, kept because their relative merit is
-     unmeasured.
+   - **Remaining duplication:** none in generation. One intervention generator (the Foundry), carrying #155's
+     seven uncovered operator classes; #155's `compile_map` is a read-only view.
    - **Dissent:** `greg/path.json` now carries `pr155_lineage` records on five nodes, which raises reading
      cost. Fold them into the live fields once the founder decides the merge.
 3. **Adversarial Reviewer.** Attacks tried, each with its outcome:
@@ -328,7 +402,7 @@ Weaknesses found:
 | (c) | resolved: lineage-qualified table, non-recipe list, unique paths |
 | (d) | resolved: horizons named and tested |
 | (e) | resolved: horizon added |
-| (f) | kept: unresolved merit, isolated, with the deciding experiment named |
+| (f) | resolved (2026-10-15): one generator; the crosswalk found seven uncovered #155 classes, now ported at the floor prior with purpose-bound consent (section 5) |
 | (g) | resolved: one path |
 | (h) | resolved: audit CONFIRMED |
 | (i) | escalated: legal / founder |
@@ -345,30 +419,49 @@ Remaining falsification tests:
 
 1. Pre-registered admission of `flow_expansion_mcf` 1.0.0 against the composition on items F7 never used.
 2. F7 VPL re-measured with that genome as a constituent.
-3. A frozen comparison of #155's operator library against the Foundry library on the same problems.
+3. Whether the ported operator classes improve outcomes. This needs real institutional maps with settled
+   outcomes; the crosswalk settled coverage only.
 4. Re-admission of any operation family whose solver code changes. Each verdict is now bound to its entry function's source digest; helper functions are not covered.
 5. A natural family that uses an admitted Layer 1 or Layer 2 genome.
 6. F8 re-measured on the converged Mind under a fresh pre-registered freeze (its #158 freeze refuses here).
 
-## 12. Third-party data rights: release blocker
+## 12. Third-party data rights: an existing distribution question and a release blocker
 
-This repository is **public**. Four extracts were committed by #158 on a public feature branch (not `main`)
-and are carried by this PR:
+This repository is **public** (verified 2026-10-15) and MIT-licensed. None of the four extracts is on `main`,
+but each has been on public feature branches since it was first committed. Taking it off a branch tip would not
+take it out of git history. So this is already a distribution question, not only a question about a future
+release.
 
-| file | source | terms verified this session | status |
-|---|---|---|---|
-| `cortex/evaluation/data/sndlib_networks.json.gz` | SNDlib 1.0 networks via TopoHub 1.5.1 | TopoHub is MIT. Its PyPI page states no terms for the bundled datasets. SNDlib's site could not be reached (DNS failure), so the builder's note ("research purposes only, no open licence") is **unverified**. | uncleared |
-| `cortex/evaluation/data/m4_weekly.json.gz` | M4 competition, `Mcompetitions/M4-methods` | the GitHub repository has **no licence file or statement** (verified) | uncleared |
-| `cortex/evaluation/data/bank_calls_halfhour.json.gz` | fpp3 `bank_calls` (credited to Weinberg, Brown and Stroud 2007) | no dataset-specific licence found; the package is listed GPL-3; CRAN was unreachable (403) | uncleared |
-| `cortex/evaluation/data/uber_nyc_2015_halfhour.json.gz` (F8, merged from #158 `202b932`) | NYC TLC Uber pickups, January to June 2015, released under a Freedom of Information Law request and published in `fivethirtyeight/uber-tlc-foil-response` | That repository has **no licence statement** (verified). FiveThirtyEight's CC BY 4.0 statement covers only its `data` repository. The builder's own note says neither the TLC nor FiveThirtyEight states an open licence. | uncleared (public records; lower risk, not cleared) |
+| file | first committed | public branches carrying it (2026-10-15) |
+|---|---|---:|
+| `cortex/evaluation/data/m4_weekly.json.gz` | `4e84d6f`, 2026-10-08 | 16 |
+| `cortex/evaluation/data/bank_calls_halfhour.json.gz` | `dd9bccc`, 2026-10-13 | 14 |
+| `cortex/evaluation/data/sndlib_networks.json.gz` | `9434224`, 2026-10-14 | 7 |
+| `cortex/evaluation/data/uber_nyc_2015_halfhour.json.gz` | `53082f4`, 2026-10-14 | 4 |
 
-Founder or legal decision, before any merge to `main` or any release:
-- obtain permission (SNDlib maintainers at Poznan University of Technology; the M4 organisers); or
-- move the extracts out of the tree and rebuild them on demand from source (each builder already verifies a
-  source sha256); or
-- substitute openly licensed data.
+The founder's approval does not grant a third party's rights. For each source, the table below gives what was
+verified, the three ways to resolve it, and what needs a separate decision. Sites marked "unreachable" failed
+DNS from this container; their terms are unverified, not absent.
 
-Removal from a branch does not remove the files from public history; this PR does not attempt that.
+| source | verified | (a) permission or terms | (b) permitted acquisition | (c) replacement |
+|---|---|---|---|---|
+| SNDlib 1.0 networks (via TopoHub 1.5.1) | TopoHub's code is MIT; its package states no terms for the bundled data. SNDlib's site says a licence applies to its data and format definitions, but the text was unreachable here. | Read SNDlib's licence (Poznan University of Technology) from an unrestricted network. If it does not allow redistribution, ask its maintainers. | Fetch the networks from SNDlib at evaluation time into an untracked cache. The builder already checks the source sha256, so frozen evaluations stay verifiable. | Another topology set whose licence is verified first. None is verified yet. |
+| M4 weekly series (`Mcompetitions/M4-methods`) | The repository README describes the data and states no licence; no licence file was found. The series were sampled from the ForeDeCk database. | Ask the M4 organisers for terms. | Download from the repository at evaluation time; do not commit the extract. | A forecasting corpus under a verified open licence. None is verified yet. |
+| fpp3 `bank_calls` | The package's own DESCRIPTION says `License: GPL-3` (primary source). Its documentation credits the data to Jonathan Weinberg (Weinberg, Brown and Stroud, JASA 2007). | GPL-3 terms appear to allow redistribution under GPL-3. This repository is MIT, so whether a GPL-3 derived extract may sit in it, and whether the original provider's rights are covered, is a question for counsel. | Install fpp3 from CRAN at evaluation time and derive the half-hour series locally. | Call-centre arrivals under a verified licence. |
+| NYC TLC Uber pickups, January to June 2015 (FOIL release, `fivethirtyeight/uber-tlc-foil-response`) | That repository has no licence statement. FiveThirtyEight's CC BY 4.0 covers only its separate `data` repository. These are public records released under New York's FOIL. | Counsel can say whether public-records status is enough for redistribution with attribution. | Fetch from the source at evaluation time. | The TLC's own published High Volume For-Hire Vehicle trip records (2019 onwards). They hold later, independent periods, which also makes them the fresh held-out source for F8's follow-up (section 15). Their terms page was unreachable here, so they are adopted only after it is read. |
+
+Each of these remediations needs a separate decision, and none is taken here:
+- **Founder or counsel:** whether to rewrite public history to remove extracts already distributed. It is
+  destructive across many branches, so it is not done by an agent.
+- **Founder:** whether to make the repository private while terms are resolved.
+- **Founder:** contacting SNDlib's maintainers or the M4 organisers for permission. Contacting third parties is
+  outside development authority.
+- **Founder:** any merge to `main` or any release that carries an uncleared extract.
+
+What an agent can do without those decisions:
+- keep provenance and frozen evidence intact;
+- add no further uncleared extract. F8's follow-up takes its fresh data from (c) only once its terms are read;
+- move toward (b): build a fetch-at-evaluation path that the existing builders already make byte-reproducible.
 
 ## 13. Acceptance gates
 
@@ -384,7 +477,7 @@ Removal from a branch does not remove the files from public history; this PR doe
 | no rejected P8 configuration promoted | met | nothing attached; P8 `exit_met` false (`test_frontier_backcasts.py`) |
 | no NO_GAIN presented as positive lift | met | P4 row and status label; `forecast_then_allocate` NO_LIFT demoted |
 | strong standalone and practitioner baselines included | met where measured | F7 PMCF and SP-upgrade; F6 weekly mean; crowd-sparse one-step vote; F7 audit |
-| genome admission bound to the exact tested version | met | genomes: compiler stale guard on the genome version; #155's operation families: each verdict is bound to its solver function's source digest at the run's source commit (`compiler.operation_status`), so changed code routes as UNEVALUATED. The compiler and the inventory share the rule (`test_greg_mind_convergence.py`), and the bindings are re-derived from git (`test_mind_evidence_sources.py`). The binding covers the solver's entry function, not the helpers it calls. |
+| genome admission bound to the exact tested version | met | genomes: compiler stale guard on the genome version. #155's operation families: each positive verdict is bound to the solver's static dependency closure at the run's source commit (`greg/cognition/code_binding.py`). The closure covers the function, the repository helpers, classes and module constants it reaches, and excludes locals that shadow them. A changed member routes the family as UNEVALUATED and names the member; a verdict bound to the entry function only is not trusted; negative verdicts keep their scope. Helper and constant mutations are tested, and the closures are re-derived from git. Not covered: third-party package versions, dynamic dispatch by string, data files opened by path. All 11 current positive verdicts match their measured closures. |
 | interruption and restart do not duplicate consequential actions | met in tests | `test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation`, `test_greg_cognition_mission.py::test_detachment_survives_restart...` |
 | Kernel, event spine, authority, shutdown and founder boundaries preserved | met | no change to `policy/`, `provenance/`, `authority/`, `greg/founder.py` or the Gate |
 | no live deployment or external consequence | met | draft PR only |
@@ -407,20 +500,28 @@ Removal from a branch does not remove the files from public history; this PR doe
 - the converged Mind on a body or with a founder (VEPMC 0);
 - any real-mission settlement of an admitted genome;
 - reboot persistence;
-- the SNDlib and fpp3 data terms.
+- the SNDlib, M4, fpp3 and NYC TLC data terms (section 12).
 
 **Not done here:**
 - `flow_expansion_mcf` admission and F7 re-measurement (left to #158's scheduled admission v3; see section 8);
-- version binding for operation families beyond the solver entry function (its helpers are not covered);
-- an evaluation of #155's operator library against the Foundry.
+- binding of operation verdicts to third-party package versions, dynamic dispatch and data files (the closure
+  covers repository code only);
+- F8's fallback evaluation: proposed to the #158 session as its one owner. A diagnostic on the exposed rows and a
+  draft pre-registration are in `docs/evidence/pr155-f8-fallback-diagnostic/2026-10-15/` and
+  `cortex/evaluation/pr155_f8_fallback_diagnostic/`. A claim needs fresh held-out data whose terms are read.
+- an outcome evaluation of the seven operator classes ported into the Foundry (coverage is decided; merit needs
+  real maps with settled outcomes).
 
 **Escalations (founder-only):**
 1. Merge of this PR, and of #155 and #158.
-2. Data rights (section 12): a release blocker.
+2. Data rights (section 12): an existing public distribution and a release blocker. History rewriting,
+   making the repository private, and contacting rights holders are separate founder decisions.
 3. Whether `flow_expansion_mcf` becomes canonical for capacity expansion once admitted (recommended).
 4. Attaching any family (none recommended by this PR).
 5. Whether a sign disagreement between lineages' frozen verdicts should go to the founder instead of the
    finish-time rule.
+6. Any accountability channel beyond preparation: a lawful basis established by counsel, then a founder-signed
+   decision and the Gate. The Foundry prepares the review request only.
 
 ## 16. Product delta
 
@@ -429,6 +530,17 @@ Compared with either lineage alone, GREG can now:
 - refuse to answer with methods that lost on held-out data in either lineage;
 - recruit #155's crowd and swarm families under their measured status;
 - report every family's true measured admission in `greg genomes` and in its attach asks;
-- route on one digest-checked index that holds both lineages' frozen evidence.
+- route on one digest-checked index that holds both lineages' frozen evidence;
+- generate, filter and estimate in Goal Gravity's Foundry the seven intervention classes that only #155's
+  unestimated operator library had:
+  - incumbent integration;
+  - counter-positioning;
+  - verified compliance;
+  - a consented supply pool;
+  - a regenerative participant benefit;
+  - step removal;
+  - accountability, as four legal channels that end in a legal-review request.
+- hold every template to one evidentiary standard, with prior-only selections labelled;
+- bind every positive operation verdict to the code closure it measured.
 
 #158's F7 result is independently verified. The immune-system destination is back on the one Backcast GPS.

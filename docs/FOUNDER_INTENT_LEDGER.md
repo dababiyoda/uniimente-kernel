@@ -19,7 +19,16 @@ Track B execution, 2026-10-14 (draft PR from `claude/greg-mind-lineage-convergen
   the eight frozen-path collisions are archived byte-identical in both versions.
 - **Canonical by evidence:** #158's evolution controller, frozen benchmark and Lawful Leverage Foundry; one
   Landlock grant path; one evidence index that both the compiler and the inventory read.
-- **Retained, isolated:** #155's routing-genome evolution and its operator library.
+- **Retained, isolated:** #155's routing-genome evolution.
+- **One intervention generator (2026-10-15):**
+  - The Foundry is the one generator. It now holds the seven #155 operator classes it lacked under one
+    evidentiary standard, and prior-only routes are labelled.
+  - Accountability is four legal channels that need a human-established lawful basis. Consent gates only
+    publication, and no channel executes.
+  - Consent is purpose-bound and revocable.
+  - #155's operator library is a pinned historical view.
+- **Admission binding (2026-10-15):** positive operation verdicts are bound to the solver's dependency closure,
+  not only its entry function.
 - **Negative evidence now routes:** #155's held-out REJECTED and SUPERSEDED verdicts change compiler routing.
 - **Replications across lineages:** P4 no gain twice; F2 lift twice; four P8 REJECTs; no replicated Layer 4
   advantage.

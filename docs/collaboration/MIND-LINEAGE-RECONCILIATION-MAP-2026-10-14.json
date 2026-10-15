@@ -20,7 +20,10 @@
   "cortex/evaluation/pr155_f7_audit/",
   "docs/evidence/pr155-f7-audit/2026-10-14/",
   "tests/unit/test_pr155_f7_audit.py",
-  "docs/collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md"
+  "docs/collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md",
+  "greg/cognition/code_binding.py",
+  "cortex/evaluation/pr155_f8_fallback_diagnostic/",
+  "docs/evidence/pr155-f8-fallback-diagnostic/2026-10-15/"
  ],
  "entries": [
   {
@@ -742,7 +745,7 @@
    "lineage": "pr158",
    "classification": "interchangeable",
    "disposition": "selected:pr158",
-   "note": "canonical lawful intervention generator (see greg/cognition/advantage.py)"
+   "note": "canonical lawful intervention generator; extended with the seven #155 operator classes it lacked (PORTED_FROM; accountability as four legal channels with a lawful-basis review packet), one evidentiary standard for every template, every-pair recombination without surface overwrite, evidence-first ceiling with deferred routes, purpose-bound and revocable consent (see greg/cognition/advantage.py)"
   },
   {
    "path": "foundry/owned-source.json",
@@ -776,8 +779,8 @@
    "path": "greg/cognition/advantage.py",
    "lineage": "pr155",
    "classification": "interchangeable",
-   "disposition": "alternative:isolated",
-   "note": "intervention generation overlaps #158's foundry/lawful_leverage.py (canonical: consent and harm gates, Monte Carlo estimates, independent review); #155's operator library stays a registered alternative with no outcome evidence; its destinations are now views of greg/path.json horizons"
+   "disposition": "superseded:generator",
+   "note": "intervention generation overlaps #158's foundry/lawful_leverage.py, the canonical generator (consent and harm gates, Monte Carlo estimates, ranker hand-off); every #155 operator now maps to Foundry mechanisms (FOUNDRY_MECHANISM): five equivalents, seven classes ported; compile_map is a historical read-only view with its operator table pinned and its destinations are views of greg/path.json horizons"
   },
   {
    "path": "greg/cognition/assignment.py",

@@ -177,3 +177,36 @@ def test_a_billed_attempt_without_a_candidate_carries_its_cost():
     with pytest.raises(builders.BuildError) as info:
         builders.ClaudeCodeBuilder("/usr/bin/claude", max_budget_usd=0.4, runner=runner).build(request)
     assert info.value.cost_usd == 0.4
+
+
+def test_a_file_over_the_input_ceiling_is_not_a_fault_of_the_built_capability(tmp_path):
+    """Second review (typed failures 0): the world changed (the file grew past the built-capability
+    input ceiling), not the capability. That refusal used to default to executor_error: the working
+    capability was quarantined, a second deficit generation opened and the builder was called again."""
+    home, key, body_id, data = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", _mission(data)))
+    builder = builders.StaticBuilder(GOOD, GOOD, GOOD, identity="static-test")
+    body, states = _run(home, builder)
+    try:
+        assert "ACHIEVED" in states
+        cid = body.journal.replay("capability.registered")[0].payload["manifest"]["capability_id"]
+        calls, deficits = len(builder.calls), len(body.journal.replay("deficit.opened"))
+        big = data / "BIG.md"
+        big.write_text("- [ ] x\n" * (builders.MAX_INPUT // 8 + 10))
+        check = {"check_id": "big-counted", "description": "count",
+                 "sensor": {"function": FUNCTION, "params": {"path": str(big)}, "target": "fs:BIG.md"},
+                 "predicate": {"op": "equals", "field": "unchecked", "value": 1}}
+        spec = mission("m:big", checks=[check], strategies=[], ceiling="read_only", budget=1.0,
+                       capabilities=["fs.read", f"built.{FUNCTION}.*"], auto_attach=True)
+        spec["capability_specs"] = [dict(CONTRACT, build_budget_usd=1.0)]
+        drop(home, signed(key, body_id, "MISSION", spec))
+        clock = body.clock
+        for _ in range(8):
+            clock.advance(31)
+            body.tick()
+        assert body.registry.state[cid] == "ATTACHED"
+        assert len(builder.calls) == calls and len(body.journal.replay("deficit.opened")) == deficits
+        observed = [e.payload for e in body.journal.replay("mission.observed") if e.payload["mission_id"] == "m:big"]
+        assert observed and all(p.get("failure_class") != "executor_error" for p in observed)
+    finally:
+        body.close()

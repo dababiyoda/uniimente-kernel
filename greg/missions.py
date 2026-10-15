@@ -30,7 +30,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator, FormatChecker
 
 from greg.authority import AuthorityOffice
-from greg.capabilities import InvocationContext, ROUTES
+from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
 from greg.journal import Journal, iso
@@ -602,6 +602,8 @@ class MissionEngine:
             return ok, why
         if b["type"] == "no_strategy":
             return True, "re-evaluate strategies at cadence"
+        if b["type"] == "outage":                # the schedule set at deferral holds the next search
+            return True, "re-search after a host outage"
         if b["type"] == "human_work":            # an answer is not the work; only observing the deliverable is
             return False, f"awaiting the deliverable for {b['function']}; GREG does not perform or fake it"
         return False, "unknown blocker"
@@ -678,7 +680,11 @@ class MissionEngine:
                 # the step that reported the deficit does not repeat. It still waits for its own attach.
                 function = lifted["function"]
                 purpose = f"construction of {function} over its attached engine"
-                if self.genesis.resolve(mission=m, function=function, purpose=purpose, now=now) is None:
+                formed, deferred = self._form(m, function, now, lambda: self.genesis.resolve(
+                    mission=m, function=function, purpose=purpose, now=now))
+                if deferred:
+                    return {"state": "BLOCKED", "blocker": m.blocker}
+                if formed is None:
                     waiting = [c.capability_id for c in self.registry.by_function(function)
                                if self.registry.state[c.capability_id] == "VERIFIED"]
                     self._escalate_capability(m, function, waiting[-1] if waiting else None, purpose, now,
@@ -778,8 +784,10 @@ class MissionEngine:
                 streak += 1
             if streak < 2:
                 continue
-            repaired = self.genesis.repair(mission=m, capability_id=manifest.capability_id, failure=detail,
-                                           params=params, now=now)
+            repaired, deferred = self._form(m, manifest.function, now, lambda: self.genesis.repair(
+                mission=m, capability_id=manifest.capability_id, failure=detail, params=params, now=now))
+            if deferred:
+                return {"state": "BLOCKED", "blocker": m.blocker}
             if repaired is not None:   # the next tick re-measures with the re-formed capability
                 return {"state": "REPAIRED", "replaced": manifest.capability_id, "by": repaired.capability_id}
             self._escalate_capability(m, manifest.function, None, f"self-repair of {manifest.capability_id}", now)
@@ -966,10 +974,36 @@ class MissionEngine:
         if resource is not None:                  # never searched, built or attached: a person does this work
             return self._escalate_human(m, spec, function, resource, purpose, now)
         if self.genesis is not None:
-            capability = self.genesis.resolve(mission=m, function=function, purpose=purpose, now=now)
+            capability, deferred = self._form(m, function, now, lambda: self.genesis.resolve(
+                mission=m, function=function, purpose=purpose, now=now))
+            if deferred:
+                return None
             if capability is not None:
                 return capability
         return self._escalate_capability(m, function, spec.get("capability"), purpose, now)
+
+    OUTAGE_DEFERRALS = 5          # host outages while forming one function for a mission before the founder is asked
+
+    def _form(self, m: MissionState, function: str, now: datetime, formation):
+        """Run a Genesis formation. A host outage while qualifying (a runner timeout, isolation unavailable)
+        is no evidence about any candidate: nothing was qualified, failed or built, so the formation is
+        deferred and re-run after a back-off instead of escalated. Returns (result, deferred)."""
+        try:
+            return formation(), False
+        except CapabilityError as exc:
+            if exc.failure_class != "transient":
+                raise
+            prior = sum(1 for e in self.journal.replay("mission.blocked") if e.payload["mission_id"] == m.mission_id
+                        and e.payload["blocker"].get("type") == "outage"
+                        and e.payload["blocker"].get("function") == function)
+            if prior >= self.OUTAGE_DEFERRALS:
+                self._escalate_capability(m, function, None, f"{function}: the host failed {prior + 1} times while "
+                                                             f"forming it ({str(exc)[:120]})", now)
+                return None, True
+            self._schedule(m, now, min(60 * 2 ** prior, 3600))
+            self._block(m, {"type": "outage", "function": function, "attempt": prior + 1, "why": str(exc)[:200],
+                            "reconsider": "re-searched after the back-off; nothing was qualified, failed or built"})
+            return None, True
 
     def _escalate_capability(self, m: MissionState, function: str, capability_id, purpose: str, now: datetime,
                              *, awaiting: bool = False):

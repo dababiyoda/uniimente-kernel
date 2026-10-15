@@ -283,3 +283,131 @@ def test_an_outage_is_not_a_capability_fault_and_opens_no_deficit(tmp_path, monk
         classes = {e.payload.get("failure_class") for e in body.journal.replay("mission.observed")
                    if not e.payload.get("passed") and e.payload.get("failure_class")}
         assert classes == {"transient"}
+
+
+def _quarantined(body, capability_id):
+    return [e for e in body.journal.replay("capability.state")
+            if e.payload.get("capability_id") == capability_id and e.payload.get("state") == "QUARANTINED"]
+
+
+def test_a_malformed_request_to_a_working_engine_is_not_a_capability_fault(tmp_path):
+    """Second review (typed failures 0): an untyped refusal defaulted to executor_error, so a request the
+    engine rightly refused (source == sink) quarantined the working engine, then its alternative, and the
+    next tick raised EventError. A refusal is evidence against the capability only when it says so."""
+    import copy
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", network_in_words(text=FLOW, auto_attach=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 2)
+        assert body.registry.state[NX] == "ATTACHED"
+        spec = network_in_words(text=FLOW, auto_attach=True)
+        spec["mission_id"] = "m:bad-request"
+        for step in (spec["success_checks"][0]["sensor"], spec["strategies"][0]):
+            step["params"] = copy.deepcopy(step["params"])
+            step["params"]["sink"] = step["params"]["source"]
+        drop(home, signed(key, body_id, "MISSION", spec))
+        ticks(body, clock, 8)                                    # raised EventError before the fix
+        assert body.registry.state[NX] == "ATTACHED" and SP not in body.registry.state
+        assert not _quarantined(body, NX)
+        refused = [e.payload for e in body.journal.replay("mission.observed")
+                   if e.payload["mission_id"] == "m:bad-request" and not e.payload["passed"]]
+        assert refused and all(p.get("failure_class") != "executor_error" for p in refused)
+
+
+def test_an_engine_that_crashes_natively_is_a_capability_fault_and_is_re_formed(tmp_path, monkeypatch):
+    """Second review (typed failures 1): every negative return code was typed budget_exceeded, so an
+    engine that segfaulted on every call was never repaired. Only the CPU ceiling's signals are a budget."""
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", network_in_words(text=FLOW, auto_attach=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 1)
+        assert body.registry.state[NX] == "ATTACHED"
+        crash = network.RUNNERS["networkx.max_flow"].replace(
+            "def solve(req):", "def solve(req):\n    import ctypes; ctypes.string_at(0)\ndef _honest(req):", 1)
+        monkeypatch.setitem(network.RUNNERS, "networkx.max_flow", crash)
+        out = ticks(body, clock, 10)
+        faults = {e.payload.get("failure_class") for e in body.journal.replay("mission.observed")
+                  if not e.payload["passed"] and "exited -" in e.payload["detail"]}
+        assert faults == {"executor_error"}
+        assert _quarantined(body, NX) and body.registry.state.get(SP) == "ATTACHED"
+        assert "ACHIEVED" in states(out)
+
+
+@pytest.mark.parametrize("signum, expected", [(24, "budget_exceeded"), (9, "budget_exceeded"),
+                                              (11, "executor_error"), (6, "executor_error")])
+def test_only_the_cpu_ceilings_signals_are_typed_as_a_budget(monkeypatch, signum, expected):
+    import subprocess
+    from greg.capabilities import CapabilityError
+    candidate = mechanisms.PackageCandidate("networkx", "networkx", "networkx.max_flow", (), "", "")
+    monkeypatch.setattr(mechanisms, "run_isolated",
+                        lambda argv, **kw: subprocess.CompletedProcess(argv, -signum, b"", b""))
+    with pytest.raises(CapabilityError) as raised:
+        mechanisms.run(candidate, "def solve(req):\n    return 1\n", [{}], location="x", version="0")
+    assert raised.value.failure_class == expected
+
+
+def test_an_outage_during_recovery_probes_is_not_a_failed_probe(tmp_path, monkeypatch):
+    """Second review (typed failures 2): a probe that the host could not run (runner timeout) counted as
+    a failed probe; five of them stopped recovery for good, and the engine stayed QUARANTINED after the
+    outage ended. An outage now defers the probe: no failure, no backoff growth, no stop."""
+    import subprocess
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", network_in_words(text=FLOW, auto_attach=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 1)
+        honest, _ = lose_every_engine(body, clock, monkeypatch)
+        assert body.registry.state[NX] == "QUARANTINED"
+        monkeypatch.setitem(network.RUNNERS, "networkx.max_flow", honest["networkx.max_flow"])  # the fault clears
+        real = mechanisms.run_isolated
+
+        def down(argv, **kw):
+            raise subprocess.TimeoutExpired(argv, kw.get("timeout", 1))
+
+        monkeypatch.setattr(mechanisms, "run_isolated", down)               # ...but the host is down
+        for _ in range(12):
+            clock.advance(24 * 3600)
+            ticks(body, clock, 1)
+        assert not [p for p in probes(body) if p["passed"] is False]
+        assert not body.journal.replay("capability.recovery_stopped")
+        assert body.journal.replay("capability.deferred_probe")
+        monkeypatch.setattr(mechanisms, "run_isolated", real)               # the outage ends
+        for _ in range(2):
+            clock.advance(24 * 3600)
+            ticks(body, clock, 1)
+        assert [p["passed"] for p in probes(body)] == [True]
+        assert body.registry.state[NX] in ("VERIFIED", "ATTACHED")
+
+
+def test_an_outage_during_acquisition_records_no_failed_qualification_and_builds_nothing(tmp_path, monkeypatch):
+    """Second review (typed failures 2): during an outage both working packages were recorded as failing
+    qualification; the deficit reused those records ('not re-run'), moved to the builder route, and the
+    mission stayed blocked on the founder after the outage ended. Now nothing is qualified or failed:
+    the search is deferred and re-run, and the mission closes once the host is back."""
+    import subprocess
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", network_in_words(text=FLOW, auto_attach=True)))
+    clock = Clock()
+    real = mechanisms.run_isolated
+
+    def down(argv, **kw):
+        raise subprocess.TimeoutExpired(argv, kw.get("timeout", 1))
+
+    monkeypatch.setattr(mechanisms, "run_isolated", down)
+    with Body(home, clock=clock) as body:
+        body.boot()
+        out = ticks(body, clock, 3)
+        assert not [e for e in body.journal.replay("genesis.verified") if not e.payload["passed"]]
+        assert not [e for e in body.journal.replay("decision.requested")
+                    if e.payload.get("kind") == "CAPABILITY_ATTACH"]
+        assert "BLOCKED" not in states(out) or body.engine.book.missions[
+            next(iter(body.engine.book.missions))].blocker["type"] == "outage"
+        monkeypatch.setattr(mechanisms, "run_isolated", real)               # the outage ends
+        out = ticks(body, clock, 8, step=600)
+        assert body.registry.state.get(NX) == "ATTACHED"
+        assert "ACHIEVED" in states(out)

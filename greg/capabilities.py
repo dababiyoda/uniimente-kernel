@@ -51,13 +51,16 @@ class CapabilityError(RuntimeError):
 
     ``failure_class`` says what failed, typed where the failure is raised and never read back from
     the message (evolution.failure_analysis.FAILURE_CLASSES): ``executor_error`` (the capability
-    itself, the default), ``transient`` (the host or infrastructure: a timeout, unavailable
-    isolation), ``budget_exceeded`` (a resource ceiling). Only ``executor_error`` is evidence
-    against the capability; Genesis never quarantines or re-forms one for an outage."""
+    itself), ``transient`` (the host or infrastructure: a timeout, unavailable isolation),
+    ``budget_exceeded`` (a resource ceiling). Only ``executor_error`` is evidence against the
+    capability; Genesis never quarantines or re-forms one for an outage. Untyped (None) is the
+    default: most refusals are of the request or the world (bad input, a path outside the roots, a
+    file over a ceiling), and a default must never count against a working capability; for those
+    genesis.is_capability_fault reads only its explicit capability-fault wording."""
 
-    def __init__(self, *args, failure_class: str = "executor_error"):
+    def __init__(self, *args, failure_class: str | None = None):
         from evolution.failure_analysis import FAILURE_CLASSES
-        if failure_class not in FAILURE_CLASSES:
+        if failure_class is not None and failure_class not in FAILURE_CLASSES:
             raise ValueError(f"unknown failure class {failure_class!r}")
         super().__init__(*args)
         self.failure_class = failure_class

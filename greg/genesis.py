@@ -286,6 +286,8 @@ def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed
         claims = mechanisms.run(candidate, spec["runners"][candidate.runner], requests, location=card["location"],
                                 version=card["version"], cpu_seconds=60)
     except CapabilityError as exc:
+        if exc.failure_class == "transient":
+            raise                                 # the host could not run it: no result either way
         report["failures"].append({"case": "all", "error": str(exc)[:300]})
         return False, report
     wall = time.perf_counter() - started
@@ -308,6 +310,8 @@ def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed
             extras = mechanisms.run(candidate, spec["runners"][candidate.runner], flat, location=card["location"],
                                     version=card["version"], cpu_seconds=60)
         except CapabilityError as exc:
+            if exc.failure_class == "transient":
+                raise
             extras = [{"error": str(exc)}] * len(flat)
         position = 0
         for i in pending:
@@ -606,13 +610,27 @@ class Genesis:
                 continue
             wait = min(RECOVERY_BASE * 2 ** (len(failed) + len(faults) - 1), RECOVERY_CAP)
             since = datetime.fromisoformat(last["at"].replace("Z", "+00:00"))
-            if failed:
-                since = max(since, datetime.fromisoformat(failed[-1]["at"].replace("Z", "+00:00")))
+            deferred = [d for d in self.journal.replay("capability.deferred_probe")
+                        if d.payload["capability_id"] == cid and d.payload["incident"] == incident]
+            for latest in ([failed[-1]] if failed else []) + ([deferred[-1].payload] if deferred else []):
+                since = max(since, datetime.fromisoformat(latest["at"].replace("Z", "+00:00")))
             if now < since + wait:
                 continue
             attempt = len(failed) + 1
             seed = int(sha256_json({"probe": cid, "incident": incident, "attempt": attempt})[7:15], 16)
-            outcome = self._probe(manifest, seed)
+            try:
+                outcome = self._probe(manifest, seed)
+            except CapabilityError as exc:
+                if exc.failure_class != "transient":
+                    raise
+                # The host could not run the probe (a runner timeout, isolation unavailable): no evidence
+                # either way. Not a failed probe, no backoff growth; the same attempt runs after the wait.
+                self.journal.record("capability.deferred_probe", {
+                    "capability_id": cid, "incident": incident, "attempt": attempt, "why": str(exc)[:300],
+                    "failure_class": exc.failure_class, "at": iso(now)},
+                    key=[cid, incident, attempt, "deferred", len(deferred)])
+                results.append({"capability_id": cid, "result": "probe deferred: host outage", "attempt": attempt})
+                continue
             if outcome is None:                            # a dependency has not recovered yet: not a failure
                 results.append({"capability_id": cid, "result": "waiting on its engine"})
                 continue
@@ -834,7 +852,13 @@ class Genesis:
                             f"{'qualified' if prior['passed'] else 'failed qualification'} earlier on this deficit "
                             "(recorded; not re-run)", manifest.capability_id)
                 continue
-            passed, report = qualify_package(function, candidate, card, seed)
+            try:
+                passed, report = qualify_package(function, candidate, card, seed)
+            except CapabilityError as exc:
+                if exc.failure_class == "transient":
+                    self._route(deficit_id, "installed_package", f"{candidate.distribution} not evaluated: host "
+                                f"outage ({str(exc)[:200]})", None)
+                raise
             self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
                                                      "passed": passed, "report": report, "mechanism": card,
                                                      "verifier": "frozen oracle and GREG certificate, independent of "
@@ -888,7 +912,13 @@ class Genesis:
                         "earlier on this deficit (recorded; not re-run)", manifest.capability_id)
             return False
         adapter = recombine.composed_adapter(path, self.registry)
-        passed, report = recombine.qualify(path, adapter, manifest, seed)
+        try:
+            passed, report = recombine.qualify(path, adapter, manifest, seed)
+        except CapabilityError as exc:
+            if exc.failure_class == "transient":
+                self._route(deficit_id, "constructed", f"not evaluated: host outage ({str(exc)[:200]})",
+                            manifest.capability_id)
+            raise
         self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
                                                  "passed": passed, "report": report,
                                                  "mechanism": [r.card | {"reduction_id": r.reduction_id}

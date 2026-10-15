@@ -54,3 +54,19 @@ quote the directive are not founder messages and are not counted.
 Repetition creates no additional authority and changes no requirement. It is applied by closing the next residual
 the requirement map records: §16's media case, truth-preserving paraphrase against source evidence, recorded in
 `tests/evidence/media-case-convergence-2026-10-15/`.
+
+## Repeated 2026-10-15, with a new opening line
+
+Alfonso sent the directive a fourth time, at transcript timestamp 2026-10-15T17:32:27Z, prefixed by a new opening
+line and a blank line:
+
+> Continue building, and achieving EVERYTHING IN THE PROMPT:
+
+The whole message has SHA-256 `9b9eed0c126ff343d388ce0870a5f665330bf9dc1f6c0d3d7a71684797187c1f` (87,209
+characters). Everything after the prefix is byte-identical to the three earlier messages (SHA-256 `ee71d7de…`). It
+was extracted from the transcript the same way.
+
+The new line asks for continued building; it creates no authority and changes no requirement. It is applied by the
+next residual: §14's antifragility test, with stress, a frozen holdout, a pre-stress twin and a no-learning
+control. That test found that settled competence never heard failures, and the fix makes it hear them
+(`tests/evidence/antifragility-2026-10-15/`).

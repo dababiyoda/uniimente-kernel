@@ -1073,8 +1073,8 @@
    "path": "greg/cognition/settlement.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); extended on the antifragility branch: verified failure closures (VERIFIED_UNMET) settle as incorrect outcomes, and a claim's identity is its signed sensor params, so a re-observed failure settles once (directive sections 11 and 14)"
   },
   {
    "path": "greg/cognition/solvers.py",

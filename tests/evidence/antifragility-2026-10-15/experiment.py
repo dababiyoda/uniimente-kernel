@@ -83,9 +83,13 @@ def stress(home: Path, key, body_id: str, items: list) -> dict:
             log.append({"id": item["id"], "function": item["function"],
                         "swarm_settled": [n, k], "demoted": compiler._settled_inhibition(n, k) is not None})
         outcomes = [(o["method"], o["correct"]) for o in settlement.measured_outcomes(body.journal)]
+        achieved = {e.payload["mission_id"] for e in body.journal.replay("mission.achieved")}
     first = next((i + 1 for i, row in enumerate(log) if row["demoted"]), None)
+    # Damage is counted from the missions themselves, not from settled outcomes: run 1 showed that settlement
+    # heard only successes, so a settled count reported no damage while five of twelve missions had failed.
     return {"missions": len(items), "settled": len(outcomes),
-            "damage_failed_missions": sum(1 for _, ok in outcomes if not ok),
+            "damage_failed_missions": sum(1 for item in items if f"m:{item['id']}" not in achieved),
+            "settled_failures": sum(1 for _, ok in outcomes if not ok),
             "by_method": {m: [sum(1 for x, _ in outcomes if x == m), sum(1 for x, ok in outcomes if x == m and ok)]
                           for m in METHODS},
             "recovery_cost_missions_until_demotion": first, "log": log}

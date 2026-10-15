@@ -44,6 +44,11 @@ MISSION_SCHEMA = json.loads((ROOT / "contracts/greg-mission.schema.json").read_t
 TERMINAL = {"ACHIEVED", "ABANDONED", "SUPERSEDED"}
 LIFECYCLE_STATES = {"ACTIVE", "PAUSED", "ABANDONED", "SUPERSEDED"}
 DECISION_ANSWERS = {"approve", "reject", "reconcile_executed", "reconcile_not_executed"}
+# Asks no DECISION can close. An expired mandate is renewed only by a new signed MISSION, or ended by a
+# LIFECYCLE abandon/supersede; an "approve" here changed nothing and left the mission blocked with no
+# ask left to answer (review of 2026-10-14).
+NOT_ANSWERABLE = {"SCOPE_RENEWAL": "an expired mandate is not renewed by a decision: sign a new MISSION with a "
+                                   "new horizon (and supersede this one), or LIFECYCLE abandon it"}
 
 
 class MissionError(ValueError):
@@ -480,6 +485,8 @@ class MissionEngine:
             if self.book.answers[rid]["answer"] == answer:
                 return  # duplicate approval: no duplicate action
             raise MissionError("decision already answered differently")
+        if request["kind"] in NOT_ANSWERABLE:
+            raise MissionError(NOT_ANSWERABLE[request["kind"]])
         if request["kind"] == "RECONCILIATION" and not answer.startswith("reconcile_"):
             raise MissionError("reconciliation requests take reconcile_* answers")
         if request["kind"] != "RECONCILIATION" and answer.startswith("reconcile_"):
@@ -532,9 +539,10 @@ class MissionEngine:
         while True:
             rid = "req-" + sha256_json({"mission": m.mission_id, "kind": kind, "scope": scope_digest,
                                         **({"epoch": epoch} if epoch else {})})[7:31]
-            if rid not in self.book.withdrawn:
+            if rid not in self.book.withdrawn and not (kind in NOT_ANSWERABLE and rid in self.book.answers):
                 break
-            epoch += 1  # the same discrepancy returned after healing: a new escalation
+            epoch += 1  # the same discrepancy returned after healing (or a legacy answer closed an
+            # unanswerable ask): a new escalation
         if rid in self.book.requests:
             return rid  # one escalation per exact scope; waiting creates no spam
         why = why.strip() or f"{kind.lower().replace('_', ' ')} needs your decision"   # never an empty ask
@@ -866,8 +874,8 @@ class MissionEngine:
     def _deliverable_arrived(self, m: MissionState) -> bool:
         """A person's work landed since GREG last looked: observe now, not at the next cadence slot.
 
-        Only for a human_work blocker, only the file paths the founder-signed mission's own fs.read
-        sensors name (the checks this work advances, and its declined_if), and only their metadata:
+        Only for a human_work blocker, only the file paths the founder-signed mission's own read-only
+        sensors name in their ``path`` param (the checks this work advances, and its declined_if), and only their metadata:
         no content is read, no grant is issued and nothing is recorded until the governed
         observation runs. ctime counts as well as mtime, because a downloaded or copied file keeps
         an old mtime but gets a new ctime when it lands. Without this, an hourly cadence left each
@@ -883,8 +891,11 @@ class MissionEngine:
         if strategy and strategy.get("declined_if"):
             sensors.append(strategy["declined_if"]["sensor"])
         for sensor in sensors:
+            # Any read-only sensor whose signed params name a file: fs.read, and business.reconcile over
+            # the exported statement (the payment step was still noticed only at the hourly slot).
             path = (sensor.get("params") or {}).get("path")
-            if sensor.get("capability") != "fs.read" or not isinstance(path, str):
+            manifest = self.registry.manifests.get(sensor.get("capability"))
+            if manifest is None or manifest.consequence_class != "read_only" or not isinstance(path, str):
                 continue
             try:
                 st = os.stat(path)

@@ -306,6 +306,13 @@ ANSWER_ONLY_RECORDS = {
 }
 
 
+# Asks that no DECISION closes (greg/missions.py refuses one); every surface says what does close them.
+NOT_ANSWERABLE = {
+    "SCOPE_RENEWAL": "Approve or Reject cannot renew a mandate. Sign a new MISSION with a new horizon and "
+                     "supersede this one (`greg mission ...`, then LIFECYCLE SUPERSEDED), or abandon it.",
+}
+
+
 def surface(request: dict) -> dict:
     """The fields every founder surface (console, phone, status, morning report) shows."""
     keys = ("request_id", "kind", "mission_id", "resource", "why_now", "recommendation", "expected_effect",
@@ -314,4 +321,7 @@ def surface(request: dict) -> dict:
     shown = {k: request[k] for k in keys if k in request}
     if request.get("kind") in ANSWER_ONLY_RECORDS:
         shown["answer_effect"] = ANSWER_ONLY_RECORDS[request["kind"]]
+    if request.get("kind") in NOT_ANSWERABLE:     # no Approve/Reject on any surface: the body refuses them
+        shown["answerable"] = False
+        shown["answer_effect"] = NOT_ANSWERABLE[request["kind"]]
     return shown

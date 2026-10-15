@@ -217,7 +217,9 @@ greg mission new business-case --case "lease review 01" --buyer "Acme Property L
   are all observed. The separate appraiser re-checks that order.
 
 `greg path` measures N3 from the ledger: a founder-signed case on this body, payment reconciled,
-every outward step done by a person, GREG's own actions internal only, appraised VERIFIED and
+every outward step done by a person and observed (a step the person declined does not count),
+GREG's own actions internal only and never a write to a file a person's step is measured by (a
+statement GREG wrote is not a payment), appraised VERIFIED and
 accepted by you, signed with your key at the founder tier (a case signed with a test key or a
 `--no-passphrase` rehearsal shows as `structurally_met` with `evidence_level: STRUCTURAL_CANDIDATE`
 and never moves the path). Your acceptance is what attests the buyer is real; the ledger cannot prove it.

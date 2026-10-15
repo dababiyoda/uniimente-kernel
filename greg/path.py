@@ -178,6 +178,7 @@ def _tiered(result: dict, *, structural: bool, passed: list, refused: dict) -> d
 N3_CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
                  "appraised_verified", "founder_accepted", "founder_body")
 INTERNAL_CLASSES = ("read_only", "internal_write")
+OBSERVED = "the deliverable is observed"        # the only withdrawal reason that counts a person's work done
 
 
 def business_loop_closed(journal: Journal) -> dict:
@@ -186,14 +187,17 @@ def business_loop_closed(journal: Journal) -> dict:
     The ledger proves: the founder-signed mission named the buyer, price and acceptance terms
     before anything ran; payment was reconciled to the cent by ``business.reconcile``; every act
     that reached a person outside the body was ``human.*`` work whose ask closed only when its
-    evidence was observed; GREG's own actions stayed read-only or internal; the separate appraiser
-    verified the closure and Alfonso accepted it. That the buyer is a real customer is attested by
-    that acceptance, not provable from the ledger.
+    evidence was observed (a step the person declined is not observed work); no write of GREG's
+    own landed on a file that a person's step is measured by (a statement GREG wrote is not a
+    payment); GREG's own actions stayed read-only or internal; the separate appraiser verified
+    the closure and Alfonso accepted it. That the buyer is a real customer is attested by that
+    acceptance, not provable from the ledger.
     """
     from greg.capabilities import BUILTINS
     specs = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
     rows = {r["mission_id"]: r for r in metrics.vepmc(journal)["missions"]}
-    withdrawn = {e.payload["request_id"] for e in journal.replay("decision.withdrawn")}
+    withdrawn = {e.payload["request_id"]: e.payload.get("why", "") for e in journal.replay("decision.withdrawn")}
+    refusals = [e.payload for e in journal.replay("human.refusal_honored")]
     cases, incomplete = [], []
     for mid, spec in specs.items():
         paid = [c["check_id"] for c in spec.get("success_checks", [])
@@ -211,12 +215,15 @@ def business_loop_closed(journal: Journal) -> dict:
                                 or BUILTINS[a.payload["capability"]][0].consequence_class not in INTERNAL_CLASSES)})
         if external:
             missing.append(f"greg_external_action:{','.join(map(str, external))}")
+        missing += [f"greg_wrote_human_evidence:{aid}" for aid in _greg_wrote_human_evidence(journal, mid, spec)]
         human = [e.payload for e in journal.replay("decision.requested")
                  if e.payload["mission_id"] == mid and e.payload["kind"] == "HUMAN_WORK"]
         if not human:
             missing.append("no_person_did_the_outward_work")
-        if [h["request_id"] for h in human if h["request_id"] not in withdrawn]:
+        # N6's rule: only an ask withdrawn because its evidence was observed counts as the work done.
+        if [h["request_id"] for h in human if not withdrawn.get(h["request_id"], "").startswith(OBSERVED)]:
             missing.append("human_work_not_observed")
+        missing += [f"person_declined:{r['action_id']}" for r in refusals if r["mission_id"] == mid]
         (incomplete if missing else cases).append({"mission_id": mid, **({"missing": missing} if missing else {}),
                                                    "human_steps": len(human)})
     passed, refused = _at_founder_tier(journal, {c["mission_id"]: [c["mission_id"]] for c in cases})
@@ -224,6 +231,52 @@ def business_loop_closed(journal: Journal) -> dict:
                     "reality": "order, reconciliation and GREG's own effects are proven from the ledger; that the "
                                "buyer is a real customer is attested by Alfonso's acceptance, not provable here"},
                    structural=bool(cases), passed=passed, refused=refused)
+
+
+def _acceptances(journal: Journal, missions) -> list[str]:
+    """Critique ids of Alfonso's signed accepting critiques of these missions' closures (or appraisals).
+
+    For an ``external`` node this is the recorded external evidence ``position`` requires: the person or
+    the second venture is attested by the founder's signed acceptance, which the ledger cannot produce
+    by itself (review of 2026-10-14: the label was otherwise inert)."""
+    missions = set(missions)
+    if journal is None or not missions:
+        return []
+    targets = {e.event_id for kind in ("mission.achieved", "mission.appraised") for e in journal.replay(kind)
+               if e.payload.get("mission_id") in missions}
+    return sorted({e.payload["critique_id"] for e in journal.replay("critique.recorded")
+                   if e.payload.get("verdict") == "accept" and e.payload.get("target_event_id") in targets})
+
+
+def _greg_wrote_human_evidence(journal: Journal, mid: str, spec: dict) -> list[str]:
+    """Action ids of GREG's own completed writes that landed on a file a person's step is measured by.
+
+    A check that a ``human.*`` (or ``professional.*``) step advances, and that step's ``declined_if``,
+    read evidence only a person may produce. If GREG wrote that file, the check measured GREG, not the
+    person: a statement GREG filed is not a payment (review of 2026-10-14). The written path comes from
+    the action's own receipt, never from the spec's intent."""
+    import os
+    from greg import asks
+    from greg.capabilities import BUILTINS
+    person = [s for s in spec.get("strategies", []) if asks.human_work(s.get("function"))]
+    advanced = {c for s in person for c in s.get("advances", [])}
+    sensors = [c["sensor"] for c in spec.get("success_checks", []) if c["check_id"] in advanced]
+    sensors += [s["declined_if"]["sensor"] for s in person if s.get("declined_if")]
+    evidence = {os.path.realpath(p) for p in ((x.get("params") or {}).get("path") for x in sensors)
+                if isinstance(p, str)}
+    wrote = []
+    for event in journal.replay("mission.action"):
+        action = event.payload
+        manifest = BUILTINS.get(action.get("capability"), (None,))[0]
+        if (action["mission_id"] != mid or action.get("status") != "DONE" or not action.get("receipt")
+                or manifest is None or manifest.consequence_class == "read_only"):
+            continue
+        record = journal.ledger.find(action["receipt"])
+        output = (record.payload.get("result") or {}).get("output") if record is not None else None
+        path = output.get("path") if isinstance(output, dict) else None
+        if isinstance(path, str) and os.path.realpath(path) in evidence:
+            wrote.append(action["action_id"])
+    return sorted(set(wrote))
 
 
 N4_CONDITIONS = ("founder_signed", "interface_detached", "persistent_runtime", "real_capability",
@@ -263,17 +316,14 @@ def sop_compounding(journal: Journal) -> dict:
                    structural=bool(met), passed=passed, refused=refused)
 
 
-OBSERVED = "the deliverable is observed"
-
-
 def human_work_shared(journal: Journal) -> dict:
     """Alfonso, GREG and a named person closed one piece of work together.
 
     The ledger proves: the founder-signed mission named the person, the relationship and the
     acceptance terms; GREG wrote the handoff before any person was asked anything; each of the
     person's steps (those they may decline) closed because its evidence was observed, never
-    by an answer; Alfonso's own review closed the same way; GREG's actions stayed read-only or
-    internal; the separate appraiser verified the closure and Alfonso accepted it. A refusal is
+    by an answer; Alfonso's own review closed the same way; no write of GREG's own landed on a
+    file those steps are measured by; GREG's actions stayed read-only or internal; the separate appraiser verified the closure and Alfonso accepted it. A refusal is
     honored when GREG asked that step nothing more afterwards; a declined case is not a
     completed one. That the person is real and the relationship lawful is attested by
     Alfonso's acceptance, not provable here.
@@ -314,10 +364,12 @@ def human_work_shared(journal: Journal) -> dict:
                                 or BUILTINS[a.payload["capability"]][0].consequence_class not in INTERNAL_CLASSES)})
         if external:
             missing.append(f"greg_external_action:{','.join(map(str, external))}")
+        missing += [f"greg_wrote_human_evidence:{aid}" for aid in _greg_wrote_human_evidence(journal, mid, spec)]
         (incomplete if missing else cases).append({"mission_id": mid, **({"missing": missing} if missing else {}),
                                                    "person_steps": len(person)})
     passed, refused = _at_founder_tier(journal, {c["mission_id"]: [c["mission_id"]] for c in cases})
     return _tiered({"value": len(passed), "structural_value": len(cases), "cases": cases, "incomplete": incomplete,
+                    "external_evidence": _acceptances(journal, passed),
                     "reality": "handoff order, observed evidence, honored refusals and GREG's own effects are proven "
                                "from the ledger; that the person is real and the relationship lawful is attested by "
                                "Alfonso's acceptance, not provable here"},
@@ -358,11 +410,16 @@ def venture_compounding(journal: Journal) -> dict:
                       | {m for b in funded for m in b.get("cases", [])})
     passed, refused = _at_founder_tier(journal, {"N7": evidence})
     return _tiered({"value": len(funded) if passed else 0, "structural_value": len(funded), "transfers": moved,
+                    "external_evidence": _acceptances(journal, {m for b in funded for m in b.get("cases", [])})
+                    if passed else [],
                     "books": ledgers, **({"missing": missing} if missing else {}),
                     "reality": "transfer, reconciliation and the waterfall are computed from the ledger; GREG moves no "
                                "money; whether the second venture could stand alone is Alfonso's judgment"},
                    structural=not missing, passed=passed, refused=refused)
 
+
+EXTERNAL_GATE = ("an external node passes only on recorded external evidence (Alfonso's signed acceptance of the "
+                 "closures it rests on); the ledger predicate alone does not cross it")
 
 PREDICATES = {"vepmc_at_least_one": vepmc_at_least_one, "genesis_closure": genesis_closure,
               "business_loop_closed": business_loop_closed, "sop_compounding": sop_compounding,
@@ -381,6 +438,10 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
             measured = PREDICATES[node["predicate"]](journal)
             measurements[node["id"]] = {"source": "ledger", **measured}
             passed = measured["met"]
+            if node["evidence_source"] == "external" and passed and not measured.get("external_evidence"):
+                # An external gate is crossed on recorded external evidence, never on the ledger predicate alone.
+                passed = False
+                measurements[node["id"]]["external_gate"] = EXTERNAL_GATE
         else:
             passed = False
             why = ("no body ledger here: measure on the body" if node.get("predicate")

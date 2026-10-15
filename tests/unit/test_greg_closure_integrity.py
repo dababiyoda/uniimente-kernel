@@ -215,3 +215,204 @@ def test_a_handoff_cannot_choose_which_file_a_write_lands_in(tmp_path):
     assert not (folder / "statement.csv").exists() and not (folder / "copied.txt").exists()
     assert copies and all(c["status"] == "REFUSED" for c in copies)
     assert "does not match the signed target" in " ".join(copies[0]["reasons"])
+
+
+# -- findings 4 and 6: N3 counts only a person's observed work, never GREG's own evidence ----------
+
+def _business_body(tmp_path, monkeypatch):
+    from tests.greg_fixtures import TEST_PASSPHRASE, attest_founder_tier
+    from tests.unit.test_greg_business_case import run
+    home, key, body_id, _ = make_body(tmp_path, passphrase=TEST_PASSPHRASE)
+    clock = Clock()
+    body = Body(home, clock=clock).open()
+    body.boot()
+    drop(home, signed(key, body_id, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, now=clock.now))
+    attest_founder_tier(home, tmp_path / "founder.pem", TEST_PASSPHRASE, monkeypatch)
+    run(body, clock, 1, 0)
+    return home, key, body_id, clock, body
+
+
+def _case(home):
+    from greg.templates import business_case
+    return business_case(case="lease review 01", buyer="Acme Property LLC", offer="a reviewed lease summary",
+                         price="250", currency="USD", acceptance="summary delivered within 5 business days",
+                         workspace_root=Path(home).resolve() / "workspace")
+
+
+def _accept(home, key, body_id, clock, body, mid):
+    from tests.unit.test_greg_business_case import run
+    [achieved] = [e for e in body.journal.replay("mission.achieved") if e.payload["mission_id"] == mid]
+    drop(home, signed(key, body_id, "CRITIQUE", {"target_event_id": achieved.event_id, "verdict": "accept",
+                                                 "evidence_type": "founder_judgment", "text": "ok"}, now=clock.now))
+    run(body, clock, 1, 0)
+
+
+def test_n3_never_counts_a_payment_greg_wrote_into_the_statement(tmp_path, monkeypatch):
+    from greg import path as devpath
+    from greg.missions import validate_mission
+    from tests.unit.test_greg_business_case import HEADER, REF, human_asks, run
+    home, key, body_id, clock, body = _business_body(tmp_path, monkeypatch)
+    try:
+        spec = _case(home)
+        spec["strategies"].insert(2, {   # in the template's own cone: no ask is raised for it
+            "action_id": "file-statement", "capability": "fs.write", "target": "workspace:statement.csv",
+            "params": {"relative_path": "statement.csv", "content": HEADER + f"2026-10-02,Payment {REF},250.00,USD\n"},
+            "requires": ["buyer_accepted"], "advances": ["paid"], "rationale": "keep the statement in the case folder"})
+        spec = validate_mission(spec)
+        mid = spec["mission_id"]
+        folder = workspace(home, mid)
+        drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
+        run(body, clock, 3, 0)
+        (folder / "acceptance.txt").write_text(f"Acme accepts {REF}: summary within 5 business days\n")
+        run(body, clock)
+        (folder / "delivery.txt").write_text(f"Summary for {REF} sent to Acme on 2026-10-04\n")
+        run(body, clock)
+        (folder / "outcome.txt").write_text(f"Acme confirms {REF} met the terms\n")
+        run(body, clock, 6)
+        assert "human.collect_payment" not in [a["evidence"]["function"] for a in human_asks(body, mid)]
+        _accept(home, key, body_id, clock, body, mid)
+        result = devpath.business_loop_closed(body.journal)
+    finally:
+        body.close()
+    assert result["met"] is False and result["structurally_met"] is False
+    assert "greg_wrote_human_evidence:file-statement" in result["incomplete"][0]["missing"]
+
+
+def _crafted_case(j, spec, *, deliver_refused: bool):
+    import os
+    observed = "the deliverable is observed: the checks this work advances now pass, and GREG took no action for it"
+    refused = "the person declined; the refusal is legitimate, and GREG asks nothing more of them in this mission"
+    mid = spec["mission_id"]
+    j.record("command.accepted", {"kind": "BODY_DESIGNATE", "digest": "sha256:designate", "signer": "founder"},
+             key="designate")
+    j.record("body.designated", {"body_id": "b1", "platform": os.uname().sysname, "purpose": "first_founder_body",
+                                 "command_digest": "sha256:designate"}, key="designated")
+    j.record("mission.registered", {"mission_id": mid, "spec": spec, "command_digest": "sha256:m"}, key=mid)
+    for n, step in enumerate(("send-offer", "collect-payment", "deliver", "confirm-outcome")):
+        rid = f"req-{n}"
+        j.record("decision.requested", {"request_id": rid, "mission_id": mid, "kind": "HUMAN_WORK",
+                                        "action_id": step}, key=rid)
+        declined = deliver_refused and step == "deliver"
+        if declined:
+            j.record("human.refusal_honored", {"mission_id": mid, "action_id": step, "function": "human.deliver",
+                                               "request_id": rid, "evidence": [], "detail": "declined", "at": "t"},
+                     key=[mid, step, "refusal"])
+        j.record("decision.withdrawn", {"request_id": rid, "mission_id": mid, "why": refused if declined else observed,
+                                        "evidence": [], "at": "t"}, key=[rid, "withdrawn"])
+    j.record("mission.observed", {"mission_id": mid, "check_id": "paid", "passed": True, "detail": "one posting",
+                                  "receipt": "sha256:r", "rung": 0, "at": "t"}, key=[mid, "paid"])
+    j.record("mission.closure_context", {"mission_id": mid, "hosted": True, "body_id": "b1",
+                                         "platform": os.uname().sysname}, key=[mid, "ctx"])
+    achieved = j.record("mission.achieved", {"mission_id": mid, "evidence": []}, key=[mid, "achieved"])
+    j.record("mission.appraised", {"mission_id": mid, "verdict": "VERIFIED", "findings": [],
+                                   "checks": {"founder_signature_verified": True, "arrived_via_inbox": True}},
+             key=[mid, "appraised"])
+    j.record("critique.recorded", {"critique_id": "c1", "target_event_id": achieved.event_id, "verdict": "accept",
+                                   "evidence_type": "founder_judgment", "text": "ok"}, key="c1")
+
+
+import pytest  # noqa: E402
+
+
+@pytest.mark.parametrize("deliver_refused", [False, True])
+def test_n3_does_not_count_a_step_the_person_declined(tmp_path, deliver_refused):
+    from greg import path as devpath
+    from tests.unit.test_greg_business_case import case_spec
+    home, *_ = make_body(tmp_path)
+    spec = case_spec(home)
+    with Body(home) as body:
+        _crafted_case(body.journal, spec, deliver_refused=deliver_refused)
+        result = devpath.business_loop_closed(body.journal)
+    if not deliver_refused:                          # control: the same history with every step observed
+        assert result["structurally_met"] is True and result["cases"][0]["human_steps"] == 4
+        return
+    assert result["structurally_met"] is False
+    assert {"human_work_not_observed", "person_declined:deliver"} <= set(result["incomplete"][0]["missing"])
+
+
+# -- finding 8: an expired mandate is renewed by a signed MISSION, never by a decision ------------
+
+def test_a_scope_renewal_ask_refuses_a_decision_and_stays_open(tmp_path):
+    from greg.body import status
+    from greg.console import Console, home_parts
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    mid = "m:short"
+    spec = mission(mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "x")], strategies=[],
+                   capabilities=["fs.read"], ceiling="read_only")
+    spec["light_cone"]["horizon"] = (clock.now + timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+    with Body(home, clock=clock) as body:
+        body.boot()
+        drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
+        body.tick()
+        clock.advance(7200)                                   # the mandate expires
+        body.tick()
+        [renewal] = [r for r in status(home)["decisions_required"]
+                     if r["mission_id"] == mid and r["kind"] == "SCOPE_RENEWAL"]
+        assert renewal["answerable"] is False
+        assert "new MISSION" in renewal["answer_effect"]
+        for answer in ("approve", "reject"):
+            drop(home, signed(key, body_id, "DECISION", {"request_id": renewal["request_id"], "answer": answer},
+                              now=clock.now))
+            body.tick()
+            clock.advance(60)
+        rejected = [e.payload["reason"] for e in body.journal.replay("command.rejected")]
+        assert len(rejected) == 2 and all("not renewed by a decision" in r for r in rejected)
+        assert not body.journal.replay("decision.answered")
+    still = [r for r in status(home)["decisions_required"] if r["mission_id"] == mid and r["kind"] == "SCOPE_RENEWAL"]
+    assert [r["request_id"] for r in still] == [renewal["request_id"]]          # the ask is still there to act on
+    page = home_parts(Console(home, key=None))["decisions"]
+    row = next(r for r in page.split("<tr>") if "SCOPE_RENEWAL" in r)
+    assert "/decide" not in row                                                  # no Approve/Reject is offered
+    assert "answerable === false" in (Path(__file__).resolve().parents[2] / "greg/phone/app.js").read_text()
+
+
+def test_a_legacy_answered_scope_renewal_reopens_one_ask(tmp_path):
+    """A ledger written before the refusal may hold an answered renewal: the mission gets one new ask."""
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    mid = "m:short"
+    spec = mission(mid, checks=[note_check("n", workspace(home, mid) / "n.txt", "x")], strategies=[],
+                   capabilities=["fs.read"], ceiling="read_only")
+    spec["light_cone"]["horizon"] = (clock.now + timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+    with Body(home, clock=clock) as body:
+        body.boot()
+        drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
+        body.tick()
+        clock.advance(7200)
+        body.tick()
+        [old] = [r.payload for r in body.journal.replay("decision.requested") if r.payload["kind"] == "SCOPE_RENEWAL"]
+        body.journal.record("decision.answered", {"request_id": old["request_id"], "mission_id": mid,
+                                                  "answer": "approve", "reason": "", "command_digest": "sha256:old"},
+                            key=old["request_id"])
+        for _ in range(3):
+            body.tick()
+            clock.advance(60)
+        renewals = [r.payload["request_id"] for r in body.journal.replay("decision.requested")
+                    if r.payload["kind"] == "SCOPE_RENEWAL"]
+        assert len(renewals) == 2 and body.engine.book.missions[mid].blocker["request_id"] == renewals[1]
+
+
+# -- findings 9 and 14: an external node needs recorded external evidence -------------------------
+
+def test_an_external_node_never_passes_on_its_ledger_predicate_alone(monkeypatch):
+    import copy
+    from greg import path as devpath
+    data = copy.deepcopy(devpath.load())
+    for node in data["nodes"]:
+        if node["id"] == "N5":                        # latent until N5 has a predicate; give it one here
+            node["predicate"] = "vepmc_at_least_one"
+    journal = type("J", (), {"replay": lambda self, *a: []})()
+    for name in list(devpath.PREDICATES):
+        monkeypatch.setitem(devpath.PREDICATES, name, lambda journal: {"met": True})
+    external = devpath.position(journal, data)
+    assert external["achieved"][-1] == "N5" and external["active"]["id"] == "N6"
+    assert external["active"]["measurement"]["external_gate"] == devpath.EXTERNAL_GATE
+    relabelled = copy.deepcopy(data)
+    for node in relabelled["nodes"]:
+        if node["id"] in ("N6", "N7"):
+            node["evidence_source"] = "ledger"
+    assert {"N6", "N7"} <= set(devpath.position(journal, relabelled)["achieved"])   # the label now matters
+    for name in list(devpath.PREDICATES):
+        monkeypatch.setitem(devpath.PREDICATES, name, lambda journal: {"met": True, "external_evidence": ["c1"]})
+    assert {"N6", "N7"} <= set(devpath.position(journal, data)["achieved"])

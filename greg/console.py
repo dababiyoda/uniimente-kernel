@@ -421,7 +421,7 @@ def home_parts(console: Console) -> dict:
             approve = "" if _attachable(r) else _form(console, "/decide", {"request_id": r["request_id"],
                                                                            "answer": "approve"}, "Approve",
                                                       disabled=not can) + " "
-            actions = (approve +
+            actions = "" if r.get("answerable") is False else (approve +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reject"}, "Reject",
                              cls="secondary", disabled=not can)) if r["kind"] != "RECONCILIATION" else (
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_executed"},

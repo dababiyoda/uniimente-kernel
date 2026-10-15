@@ -88,3 +88,33 @@ def test_an_unrelated_file_does_not_trigger_an_early_observation(tmp_path):
         assert counts(body) == before
     finally:
         body.close()
+
+
+def test_the_exported_payment_statement_is_noticed_within_minutes(tmp_path):
+    """The payment step's sensor is business.reconcile, not fs.read: it was still noticed only at the
+    hourly slot (review of 2026-10-14). Any read-only sensor naming a file path now counts."""
+    from tests.unit.test_greg_business_case import HEADER, REF as CASE_REF, case_spec, human_asks
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock(datetime.now(timezone.utc) - timedelta(hours=1))
+    body = Body(home, clock=clock).open()
+    body.boot()
+    try:
+        drop(home, signed(key, body_id, "BODY_DESIGNATE", {"purpose": "first_founder_body"}, now=clock.now))
+        body.tick()
+        spec = case_spec(home)
+        mid, folder = spec["mission_id"], workspace(home, spec["mission_id"])
+        drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
+        for _ in range(3):
+            body.tick()
+            clock.advance(1)
+        (folder / "acceptance.txt").write_text(f"Acme accepts {CASE_REF}: summary within 5 business days\n")
+        quiet_ticks(body, clock, n=2)
+        [_, collect] = human_asks(body, mid)
+        assert collect["evidence"]["function"] == "human.collect_payment"
+        quiet_ticks(body, clock, n=5)              # the person takes five minutes; GREG's observation round ran
+        (folder / "statement.csv").write_text(HEADER + f"2026-10-02,Payment {CASE_REF},250.00,USD\n")
+        quiet_ticks(body, clock, n=2)              # two minutes later, well inside the hour
+        withdrawn = {e.payload["request_id"] for e in body.journal.replay("decision.withdrawn")}
+        assert collect["request_id"] in withdrawn
+    finally:
+        body.close()

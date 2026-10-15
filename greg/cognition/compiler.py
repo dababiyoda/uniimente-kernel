@@ -604,6 +604,28 @@ def _usable(registry, row: dict) -> tuple[bool, str]:
     return bool(ok), str(why)
 
 
+FIT_KINDS = ("operation", "problem", "composition")
+
+
+def fitting(rows: list[dict]) -> list[dict]:
+    """The rows that fit a request, as a capability deficit records them: what ``runnable`` needs to apply this
+    compiler's own test to them later, without the request's values (an organ's or a recipe's fit depends on them)."""
+    return [{"method": r["method"], "kind": r["kind"], "operation": r["operation"]} for r in rows]
+
+
+def runnable(registry, rows) -> str | None:
+    """The first of ``rows`` (recorded by ``fitting``) that can run now by this compiler's own test (``_usable``):
+    the method a request whose eligible rows these are would be routed to if compiled now, else None. A deficit's
+    need is served exactly when this names one."""
+    for row in rows:
+        try:
+            if _usable(registry, row)[0]:
+                return row["method"]
+        except Exception:           # a row this compiler cannot test (an unknown recipe) is not runnable
+            continue
+    return None
+
+
 def _state(registry, method: str) -> str | None:
     try:
         return registry.state.get(method)
@@ -973,6 +995,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             "verification": {"failed": "no catalogued, admitted, attached-or-attachable method fits this geometry",
                              "unserviceable": receipt["methods_rejected"] or "no method declares these inputs",
                              "verified": True},
+            "fitting": [],                          # nothing fits: only a formed mechanism can serve it
             "search_order": list(GENESIS_SEARCH),
             "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority"}
         return finish("CAPABILITY_DEFICIT")
@@ -1020,6 +1043,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             "verification": {"failed": "every fitting method is registered but not attached",
                              "unserviceable": [{"method": r["method"], "why": r["usable_why"]} for r in eligible],
                              "verified": True},
+            "fitting": fitting(eligible),           # the need is served once one can run (``runnable``)
             "search_order": list(GENESIS_SEARCH),
             "route": "founder attach of the prepared ask, or greg.genesis under the enclosing mission's authority"}
         return finish("CAPABILITY_DEFICIT")

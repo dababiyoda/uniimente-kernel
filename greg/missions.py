@@ -526,12 +526,12 @@ class MissionEngine:
             return (answer is not None, f"founder answered {answer['answer']}" if answer else "awaiting founder")
         if b["type"] == "capability":
             ok, why = self.registry.usable(b["capability_id"]) if b.get("capability_id") else (False, "none")
-            attached = next((cid for cid in b.get("attach_candidates", ()) if self.registry.usable(cid)[0]), None)
-            if not ok and attached:          # a cognition deficit's candidate carries another function name
-                return True, f"attach candidate {attached} is now attached"
             if not ok and self.genesis is not None and b.get("function"):
-                cap = self.genesis.find_attached(b["function"])
-                return (cap is not None, "capability now attached" if cap else why)
+                # the rule that decides whether a mission arriving now has this need (Genesis.serving), never only
+                # what this blocker offered: a fitting method that could not run when the mission blocked (founder-
+                # detached, unregistered, unavailable) serves it once it can, whatever its function name
+                served = self.genesis.serving(m.mission_id, b["function"])
+                return (served is not None, f"{served} now serves {b['function']}" if served else why)
             return ok, why
         if b["type"] == "no_strategy":
             return True, "re-evaluate strategies at cadence"
@@ -577,7 +577,7 @@ class MissionEngine:
             if not resolved and self._shared_ask_lapsed(m):
                 # the shared ask no longer stands for this mission's need and part of it was never decided: that part
                 # is asked about once, on another standing ask naming an undecided candidate or on the mission's own
-                # ask naming only those; an attach of any candidate it waited on still resolves it
+                # ask naming only those; an attach of any method that fits the need still resolves it
                 self._escalate_capability(m, m.blocker["function"], m.blocker.get("capability_id"),
                                           self._deficit_purpose(m, m.blocker["function"]), now,
                                           keep=m.blocker.get("attach_candidates", ()))
@@ -916,8 +916,8 @@ class MissionEngine:
 
     def _escalate_capability(self, m: MissionState, function: str, capability_id, purpose: str, now: datetime,
                              keep=()):
-        """Ask once about this need's undecided candidates (``keep``: candidates a lapsed blocker waited on, so an
-        attach of any of them still resolves the need even if it is no longer offered)."""
+        """Ask once about this need's undecided candidates. The blocker records every candidate the mission waited
+        on (``keep``: those of a lapsed blocker, no longer offered); what resolves it is ``_blocker_resolved``."""
         candidates = self._attach_candidates(m, function)
         shared = self._shared_attach_ask(self._undecided(m, function))
         rid = shared or self._request(

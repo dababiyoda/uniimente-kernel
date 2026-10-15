@@ -294,6 +294,21 @@ def cognition_record(function: str, deficit: dict | None = None) -> dict:
     return record
 
 
+def compiler_fitting(deficit) -> list[dict] | None:
+    """The methods the compiler found fitting the request (``compiler.fitting``: genome families, cortex organs,
+    compositions), as its capability deficit reports them, else None (a deficit the compiler did not report). The
+    need is served once one of them can run (``compiler.runnable``). An entry that is not such a row is dropped: it
+    names nothing the compiler routes to, so it could never serve the need."""
+    from greg.cognition import compiler
+    rows = deficit.get("fitting") if isinstance(deficit, dict) else None
+    if not isinstance(rows, list):
+        return None
+    return [{"method": r["method"], "kind": r["kind"], "operation": r["operation"]} for r in rows[:MAX_INPUTS]
+            if isinstance(r, dict) and r.get("kind") in compiler.FIT_KINDS
+            and isinstance(r.get("method"), str) and 0 < len(r["method"]) <= 200
+            and isinstance(r.get("operation"), str) and 0 < len(r["operation"]) <= 200]
+
+
 def residual_mechanisms(record: dict) -> list[str]:
     """Catalogued installed mechanisms that serve a residual record exactly as the compiler would route to them: a
     mechanism reads an exact set of input names, so an input that is not a name leaves none."""
@@ -640,14 +655,53 @@ class Genesis:
             if e.payload["deficit_id"] == opened[-1]]
         return [cid for cid in dict.fromkeys(offered) if self.registry.state.get(cid) == "VERIFIED"]
 
-    def _offer(self, deficit_id: str, offered: list):
-        """Record the attach candidates one search pass found, when they differ from the previous pass's."""
+    def serving(self, mission_id: str, function: str) -> str | None:
+        """The capability that now serves this mission's need for ``function``, else None, by the rule that decides
+        whether a mission arriving now with the same request has the need at all. A usable capability for the
+        function itself serves it. A cognition residual is also served once a method the compiler found fitting the
+        request can run (``compiler.runnable`` on the rows the latest search pass recorded), or once a mechanism
+        Genesis formed for the residual is usable and is not one the compile already tried without a certified
+        answer. Never only what was offered: a fitting method that was founder-detached, unregistered, quarantined or
+        unavailable when the mission blocked serves it once usable, the same as for a mission arriving then."""
+        found = self.find_attached(function)
+        if found is not None:
+            return found.capability_id
+        if not is_cognition_deficit(function):
+            return None
+        opened = [e.payload for e in self.journal.replay("deficit.opened")
+                  if e.payload["mission_id"] == mission_id and e.payload["function"] == function]
+        if not opened:
+            return None
+        record = opened[-1].get("cognition") or cognition_record(function)
+        passes = [e.payload for e in self.journal.replay("deficit.candidates")
+                  if e.payload["deficit_id"] == opened[-1]["deficit_id"]]
+        latest = passes[-1] if passes else {}
+        from greg.cognition import compiler
+        # a pass recorded before fits were: Genesis's own fit for the residual (the compiler's family rows)
+        rows = latest["fitting"] if isinstance(latest.get("fitting"), list) else self._family_fitting(record)
+        method = compiler.runnable(self.registry, rows)
+        if method is not None:
+            return method
+        tried = {tuple(t) for t in latest.get("tried", ())}
+        return next((m.capability_id for m in self._formed_for(record) if self.registry.usable(m.capability_id)[0]
+                     and (m.capability_id, m.digest()) not in tried), None)
+
+    def _formed_for(self, record: dict) -> list:
+        """Every capability Genesis formed for a mechanism that serves this residual, in any state."""
+        return [m for mechanism in residual_mechanisms(record) for m in self.registry.by_function(mechanism)
+                if is_formed(m)]
+
+    def _offer(self, deficit_id: str, offered: list, fitting: list | None = None, tried: list | None = None):
+        """Record what one search pass found, when it differs from the previous pass: the attach candidates offered to
+        the founder, the methods that fit the request (the compiler's own rows: any of them serves the need once it can
+        run, offered or not) and the formed mechanisms the compile already tried (usable, yet no certified answer)."""
         offered = list(dict.fromkeys(offered))
+        found = {"candidates": offered, "fitting": list(fitting or []), "tried": list(tried or [])}
         passes = [e.payload for e in self.journal.replay("deficit.candidates") if e.payload["deficit_id"] == deficit_id]
-        if passes and passes[-1]["candidates"] == offered:
+        if passes and all(passes[-1].get(k) == v for k, v in found.items()):
             return
-        self.journal.record("deficit.candidates", {"deficit_id": deficit_id, "candidates": offered,
-                                                   "pass": len(passes)}, key=[deficit_id, "candidates", len(passes)])
+        self.journal.record("deficit.candidates", {"deficit_id": deficit_id, **found, "pass": len(passes)},
+                            key=[deficit_id, "candidates", len(passes)])
 
     def resolve(self, *, mission, function: str, purpose: str, now, repair: dict | None = None,
                 deficit: dict | None = None):
@@ -773,10 +827,17 @@ class Genesis:
             if repair is not None:
                 opened["repair"] = repair
             self.journal.record("deficit.opened", opened, key=deficit_id)
+        # what serves the need, as the compile that reported it saw the body: the rows the compiler found fitting
+        # (else Genesis's own family fit), and the formed mechanisms it could already run and got no certified answer
+        fitting = compiler_fitting(deficit)
+        if fitting is None:
+            fitting = self._family_fitting(record)
+        tried = [[m.capability_id, m.digest()] for m in self._formed_for(record)
+                 if self.registry.usable(m.capability_id)[0]]
         offered = []
         found = self._search_cognition(mission, function, deficit_id, record, mechanisms, contract, seed, repair, now,
                                        offered)
-        self._offer(deficit_id, offered)
+        self._offer(deficit_id, offered, fitting, tried)
         return found
 
     def _search_cognition(self, mission, function, deficit_id, record, matched, contract, seed, repair, now,
@@ -831,20 +892,10 @@ class Genesis:
         from greg.cognition import catalog, compiler
         from greg.cognition.genomes import library
         provided, declared = set(record["required_inputs"]), record["geometry"]
-        if not record["inputs_known"]:
-            self._route(deficit_id, "genome_library", "the deficit names no usable inputs, so no registered "
-                                                      "intelligence can be matched to it", None)
+        fits = self._fits(record)
+        if isinstance(fits, str):
+            self._route(deficit_id, "genome_library", fits, None)
             return []
-        if declared and not is_epistemic_class(declared):
-            self._route(deficit_id, "genome_library", f"the declared geometry {str(declared)[:80]!r} is not an "
-                                                      "epistemic class, so no registered intelligence matches it (the "
-                                                      "compiler's own result)", None)
-            return []
-        rows = compiler.family_rows(provided, compiler.CompetencyGeometry(geometry=declared), compiler.evidence_index())
-        fits = {}
-        for row in rows:
-            if not declared or declared in row["epistemic_classes"]:   # else the compiler rejects it by geometry
-                fits.setdefault(row["method"], []).append(row)
         found, noted = [], False
         for cid, own in sorted(fits.items()):
             row = next((r for r in own if not r["rejected"]), None)
@@ -889,6 +940,33 @@ class Genesis:
                                                       f"{'of geometry ' + declared + ' ' if declared else ''}takes "
                                                       f"its native inputs from {shown(sorted(provided))}", None)
         return found
+
+    @staticmethod
+    def _fits(record: dict):
+        """The compiler's family rows for a residual, by method (``compiler.family_rows`` on its declared geometry and
+        input names), or why none can be matched to it."""
+        from greg.cognition import compiler
+        declared = record["geometry"]
+        if not record["inputs_known"]:
+            return "the deficit names no usable inputs, so no registered intelligence can be matched to it"
+        if declared and not is_epistemic_class(declared):
+            return (f"the declared geometry {str(declared)[:80]!r} is not an epistemic class, so no registered "
+                    "intelligence matches it (the compiler's own result)")
+        rows = compiler.family_rows(set(record["required_inputs"]), compiler.CompetencyGeometry(geometry=declared),
+                                    compiler.evidence_index())
+        fits = {}
+        for row in rows:
+            if not declared or declared in row["epistemic_classes"]:   # else the compiler rejects it by geometry
+                fits.setdefault(row["method"], []).append(row)
+        return fits
+
+    def _family_fitting(self, record: dict) -> list[dict]:
+        """Genesis's own fit for a residual the compiler did not describe, in ``compiler.fitting``'s form: every family
+        row the compiler would not reject for these inputs."""
+        from greg.cognition import compiler
+        fits = self._fits(record)
+        return [] if isinstance(fits, str) else compiler.fitting(
+            [row for own in fits.values() for row in own if not row["rejected"]])
 
     def _package_route(self, mission, function, spec, deficit_id, seed, repair, now, offered=None):
         """Existing project mechanisms first, then installed open-source packages (DEPEND).

@@ -859,6 +859,169 @@ def test_a_mission_with_an_undecided_candidate_only_ever_waits_on_an_ask_that_st
         assert stands or not undecided, (rid, undecided)
 
 
+def test_a_founder_attach_of_a_fitting_method_detached_when_the_mission_blocked_resolves_it(tmp_path, index):
+    """A candidate the founder detached is not offered, but it still fits the need: when the founder later attaches it,
+    every mission waiting on that need resumes, whether it blocked before the detach or after it, across a restart,
+    the same as a mission arriving now. Each mission's own ask is then withdrawn as resolved."""
+    from greg.console import _attachable
+    dp = library.executables()["dp_knapsack"]
+    detached = "cognition.dp_knapsack"
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+
+    def run(body, n):
+        states = {}
+        for _ in range(n):
+            states.update({s["mission_id"]: s["state"] for s in body.tick()["missions"]})
+            clock.advance(31)
+        return states
+
+    with Body(home, clock=clock) as body:
+        body.boot()
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:pack", {"geometry": "optimization"},
+                                                                   dp.instance(2)[0])))     # development seed
+        run(body, 3)
+        body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": detached}))   # no ask is answered
+        run(body, 3)
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:pack2", {"geometry": "optimization"},
+                                                                   dp.instance(3)[0])))     # development seed
+        run(body, 3)
+        book = body.engine.book
+        later = book.missions["m:pack2"].blocker
+        assert later["attach_candidates"] == ["cognition.knapsack_bnb"]       # the detached one is not offered
+        [own] = [r for r in book.open_requests() if r["mission_id"] == "m:pack2"]
+        assert [c["capability_id"] for c in _attachable(own)] == ["cognition.knapsack_bnb"]
+        assert any(e.payload["result"] == f"{detached} fits but is not a candidate: founder-detached; explicit "
+                                          "attach required" for e in body.journal.replay("genesis.route"))
+    with Body(home, clock=clock) as body:                                    # the need survives a restart
+        body.boot()
+        assert run(body, 2) == {"m:pack": "WAITING", "m:pack2": "WAITING"}
+        mine = sorted(r["request_id"] for r in body.engine.book.open_requests() if r["mission_id"])
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": detached}))   # the founder relents
+        assert run(body, 3) == {"m:pack": "ACHIEVED", "m:pack2": "ACHIEVED"}
+        assert sorted(e.payload["request_id"] for e in body.journal.replay("decision.withdrawn")) == mine
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:pack3", {"geometry": "optimization"},
+                                                                   dp.instance(4)[0])))     # development seed
+        assert run(body, 3)["m:pack3"] == "ACHIEVED"                           # the same need, arriving now
+
+
+def _compiled_now(body, mission_id):
+    """What the compiler would do now with a mission's own request (planned on the body's registry, never run)."""
+    params = body.engine.book.missions[mission_id].spec["strategies"][0]["params"]
+    return reason({"problem_id": params["problem_id"], "compile": {**params["compile"], "execute": False}},
+                  registry=body.registry)["state"]
+
+
+def _knapsack():
+    return {"geometry": "optimization"}, library.executables()["dp_knapsack"].instance(2)[0]   # development seed
+
+
+def _formal():
+    from cortex.examples import STAFFING
+    return {"geometry": "optimization"}, STAFFING["payload"]
+
+
+def _assignment():
+    return {"geometry": "optimization", "subgeometry": "assignment"}, {"costs": COSTS}
+
+
+Z3, ROUTER = "cognition.cortex.formal.z3", "cognition.cortex"
+DP, BNB = "cognition.dp_knapsack", "cognition.knapsack_bnb"
+
+
+@pytest.mark.parametrize("request_of, before, acts", [
+    (_knapsack, [], [("ATTACH", DP)]),
+    (_knapsack, [("DETACH", DP)], [("ATTACH", DP)]),
+    (_knapsack, [("DETACH", DP)], [("DETACH", BNB), ("ATTACH", DP)]),
+    (_knapsack, [("DETACH", DP), ("DETACH", BNB)], [("ATTACH", BNB)]),
+    (_knapsack, [], [("DETACH", DP), ("ATTACH", DP)]),
+    (_formal, [("DETACH", Z3)], [("ATTACH", Z3)]),
+    (_formal, [("DETACH", Z3), ("DETACH", ROUTER)], [("ATTACH", Z3), ("ATTACH", ROUTER)]),
+    (_assignment, [("FORM", SCIPY), ("DETACH", SCIPY)], [("ATTACH", SCIPY)]),
+], ids=["offered family", "family detached before", "detach the offered, attach the detached",
+        "both families detached", "detach then attach", "cortex organ detached", "organ and router detached",
+        "formed mechanism detached"])
+def test_a_waiting_mission_resumes_exactly_when_a_mission_arriving_now_would_be_served(tmp_path, index, request_of,
+                                                                                         before, acts):
+    """The rule for the whole class: a mission waiting on a cognition deficit resumes after a founder act exactly when
+    the compiler would now serve the same request, whatever fits it (a genome family, a cortex organ behind its router,
+    a mechanism Genesis formed) and whatever state that method was in when the mission blocked. While it is not
+    served the mission only waits: it never re-runs its step."""
+    geometry, data = request_of()
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        for act, cid in before:
+            if act == "FORM":           # an earlier mission with the same need forms it; the founder never attaches
+                body.apply(signed(key, body_id, "MISSION", compile_mission("m:former", geometry, data)))
+                ticks(body, clock, 3)
+                assert body.registry.state[cid] == "VERIFIED"
+                continue
+            body.apply(signed(key, body_id, f"CAPABILITY_{act}", {"capability_id": cid}))
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:wait", geometry, data)))
+
+        def step():
+            states = []
+            for _ in range(3):
+                states += [s["state"] for s in body.tick()["missions"] if s["mission_id"] == "m:wait"]
+                clock.advance(31)
+            return states
+
+        assert step()[-1] == "WAITING" and _compiled_now(body, "m:wait") == "CAPABILITY_DEFICIT"
+        for act, cid in acts:
+            body.apply(signed(key, body_id, f"CAPABILITY_{act}", {"capability_id": cid}))
+            served = _compiled_now(body, "m:wait") != "CAPABILITY_DEFICIT"
+            acted = sum(1 for e in body.journal.replay("mission.action") if e.payload["mission_id"] == "m:wait")
+            states = step()
+            assert ("ACHIEVED" in states) == served, (act, cid, states)
+            if not served:
+                assert states == ["WAITING"] * 3 or states[0] == "BLOCKED", states
+                assert acted == sum(1 for e in body.journal.replay("mission.action")
+                                    if e.payload["mission_id"] == "m:wait")
+        assert body.engine.book.missions["m:wait"].status == "ACHIEVED"
+
+
+def test_a_formed_mechanism_the_compile_already_tried_is_not_retried_while_the_mission_waits(tmp_path, index):
+    """A mechanism Genesis formed may refuse a request (here, costs outside its competence). The compile tried it when
+    the mission blocked, so the mission waits instead of re-running the step every tick; a detach and re-attach of the
+    same implementation changes nothing, and a mission arriving now with the same request is refused the same way."""
+    big = {"costs": [[1, 2], [3]]}                                             # not rectangular: outside competence
+    geometry = {"geometry": "optimization", "subgeometry": "assignment"}
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:first", geometry, {"costs": COSTS})))
+        ticks(body, clock, 3)
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": SCIPY}))
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:big", geometry, big)))
+
+        def big_states(n):
+            out = []
+            for _ in range(n):
+                out += [s["state"] for s in body.tick()["missions"] if s["mission_id"] == "m:big"]
+                clock.advance(31)
+            return out
+
+        assert big_states(3)[-1] == "WAITING"
+        refused = [c for c in compilations(body) if c["problem_id"] == "real:m:big"]
+        assert refused and refused[-1]["state"] == "CAPABILITY_DEFICIT"
+        assert any(a.startswith(f"{SCIPY} refused") for a in refused[-1]["abstentions"])
+        acted = len([e for e in body.journal.replay("mission.action") if e.payload["mission_id"] == "m:big"])
+        assert big_states(3) == ["WAITING"] * 3
+        body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": SCIPY}))
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": SCIPY}))
+        assert big_states(3) == ["WAITING"] * 3
+        assert len([e for e in body.journal.replay("mission.action") if e.payload["mission_id"] == "m:big"]) == acted
+        body.apply(signed(key, body_id, "MISSION", compile_mission("m:big2", geometry, big)))
+        for _ in range(3):
+            body.tick()
+            clock.advance(31)
+        assert body.engine.book.missions["m:big2"].blocker["type"] == "capability"
+
+
 def test_several_withheld_genomes_fit_and_the_founder_is_asked_once(tmp_path, index):
     data, _ = library.executables()["dp_knapsack"].instance(2)               # development seed
     home, key, body_id, _ = make_body(tmp_path)

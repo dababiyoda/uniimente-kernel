@@ -460,12 +460,18 @@
     --confined-egress (TLS verified inside the confined child; tests/integration/test_greg_confined_egress.py, loopback
     fake proxy and TLS server only). github.pulls and brief.engineering read GitHub the same way (the credential travels
     on the stdin of the confined child only, never in argv, environment, journal or receipt; chunked replies decoded;
-    header injection refused). browser.render and coding workers run in a bubblewrap network namespace whose only way
-    out is a door to the same relay (foundry/systems/relay_door.py): an HTTP CONNECT front on the namespace loopback,
-    each request decided against the identity allowlist and journaled; the browser is allowlisted for the signed target
-    alone, workers for their provider endpoint (tests/integration/test_greg_confined_egress.py, loopback only). Not
-    COMPLETE: browser.session (Playwright), the paid model routes called from the body process, anchoring and the
-    DALEOBANKS bridge still have unconfined network; and confined egress is opt-in, so the second criterion does not
+    header injection refused). browser.render, browser.session and coding workers run in a bubblewrap network
+    namespace whose only way out is a door to the same relay (foundry/systems/relay_door.py): an HTTP CONNECT front on
+    the namespace loopback, each request decided against the identity allowlist and journaled; the browsers are
+    allowlisted for the signed origins alone, workers for their provider endpoint (tests/integration/
+    test_greg_confined_egress.py, loopback only). Playwright starts browser.session''s Chromium from its own driver, so
+    that door reaches the relay over a one-time Unix socket in the session''s private directory and Chromium keeps only
+    Playwright''s pipe. Negative evidence 2026-10-14 (unconfined browser.session): Playwright''s context.route never sees
+    a WebSocket, so a page opened one to an unlisted host, and the allowlist compared host names only, so a page on a
+    loopback target reached other loopback ports; both are now refused in the browser as well
+    (tests/unit/test_greg_computer.py), and behind the relay Chromium''s own background connections are denied and
+    journaled too. Not COMPLETE: the paid model routes called from the body process, anchoring and the DALEOBANKS
+    bridge still have unconfined network; and confined egress is opt-in, so the second criterion does not
     hold machine-wide. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
   implementation:
   - foundry/systems/segmentation.py
@@ -476,10 +482,13 @@
   tests:
   - tests/unit/test_foundry_segmentation.py
   - tests/unit/test_foundry_relay_door.py
+  - tests/unit/test_greg_computer.py
   - tests/integration/test_greg_confined_egress.py
   limitations: Linux with libseccomp only (refused elsewhere); the door also needs bubblewrap network namespaces
     (refused without them). Exact host/port allowlists; no wildcard. Covers only components launched through
-    run_confined or behind the door.
+    run_confined or behind the door. Inside the namespace Chromium runs without its own sandbox (it cannot nest a user
+    namespace there; reported as os_sandboxed false); its filesystem is read-only except a private tmpfs and the
+    session''s own directory.
   recovery: A refused or unavailable filter refuses the launch (fail closed); a broken journal chain is reported, never
     repaired silently.
   state: PARTIAL

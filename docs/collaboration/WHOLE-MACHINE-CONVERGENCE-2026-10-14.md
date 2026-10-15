@@ -202,7 +202,7 @@ mission. Three attacks were added this increment; the rest existed and were loca
 |---|---|---|
 | Compromised or lying cognitive provider | `test_greg_adversarial_machine::test_lying_solver_is_caught_by_the_independent_profit_dp`; `test_greg_recombine::test_a_lying_engine_is_caught_through_the_construction_and_both_are_replaced`; `test_greg_missions::test_genesis_rejects_a_lying_tool_and_escalates` | INTEGRATED |
 | Conflicting outputs from two qualified intelligences | **new** `test_greg_adversarial_machine::test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_voted` | INTEGRATED |
-| Malicious page and prompt injection | **new** `test_greg_confined_egress::test_a_malicious_page_fetched_by_a_mission_stays_data`; **new (increment 8)** `test_the_browser_renders_behind_the_relay_and_its_page_cannot_reach_anything_else`; `test_greg_adversarial_machine::test_prompt_injection_in_sources_stays_data` | INTEGRATED (pages fetched by `http.get` and rendered by `browser.render`; the Playwright `browser.session` is not exercised) |
+| Malicious page and prompt injection | **new** `test_greg_confined_egress::test_a_malicious_page_fetched_by_a_mission_stays_data`; **new (increment 8)** `test_the_browser_renders_behind_the_relay_and_its_page_cannot_reach_anything_else`; `test_greg_adversarial_machine::test_prompt_injection_in_sources_stays_data` | INTEGRATED (pages fetched by `http.get`, rendered by `browser.render`, and, from increment 10, driven by the Playwright `browser.session` behind the relay: `test_a_browser_session_drives_pages_behind_the_relay_and_nothing_else_leaves`) |
 | Worker modifying its acceptance criteria | `test_greg_workers::test_no_test_change_means_no_acceptance`, `test_appraisal_binds_acceptance_to_the_original_commission`, `test_a_change_to_a_protected_surface_is_never_accepted` | INTEGRATED (signed mission on a real body, real git clone; corrected from COMPONENT in increment 5) |
 | Crash during an unknown external outcome | `test_greg_capabilities::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused`; `test_greg_local_mission::test_lost_host_claim_requires_reconciliation`; `test_greg_first_mission::test_crash_after_survey_resumes_without_repeating_a_completed_step` | INTEGRATED |
 | Duplicate payment or publication | `test_greg_adversarial_machine::test_duplicate_fixture_order_does_not_double_book`; `test_greg_community_journeys::test_journeys_measure_sequences_separate_tiers_and_refuse_duplicate_money` | INTEGRATED (FIXTURE) |
@@ -556,6 +556,70 @@ Not ported, recorded as an open cross-lineage obligation: `greg/path.json` names
 This branch's runbook steps 4–8 are its own (First Mission, memory, Ventures, founder control, acceptance) and run
 here, but N3 and later cannot be measured from this tree. Porting them spans path measures, two templates, venture
 books and the engine's `declined_if`, so it is its own increment.
+
+## Increment 10 (same day): `browser.session` behind the #26 relay, and two leaks found on the way
+
+### Negative evidence, measured before the change
+
+Unconfined `browser.session` claimed that "every other request is aborted and counted". A probe on this branch at
+`28c3e9c` showed that was false in two ways:
+
+- **WebSockets bypassed the allowlist.** Playwright's `context.route` never sees a WebSocket. A page signed for
+  `127.0.0.1` opened one to `127.0.0.2`, which was not on the list. The bytes arrived, and nothing was counted.
+- **The allowlist compared host names only.** A page on a loopback target reached another port on `127.0.0.1` by
+  `fetch` and by WebSocket. On a real body that means the Console, the model server or any other local service.
+
+### What changed for GREG
+
+- **In the browser.** The allowlist is now exact origins (host and port), taken from the signed params:
+  - the start URL;
+  - absolute `goto` URLs on the signed hosts;
+  - `also_hosts` (`host` means port 443; `host:port` means that port).
+
+  WebSockets are routed too. One outside those origins is never connected and is counted in `blocked_websockets`.
+  Refusal means not connecting: a synchronous `close()` inside Playwright's WebSocket handler never returns,
+  because the handler runs on Playwright's own event loop. That hang was hit and diagnosed here.
+- **On a body with `--confined-egress`.** `browser.session` is in `CONFINED_EGRESS`. Its Chromium runs in a bubblewrap
+  network namespace whose only way out is the relay door, allowlisted for exactly those origins. Every connection is
+  decided and journaled at the relay, WebSockets included. Two adaptations were needed:
+  - Playwright's driver, not the body, starts Chromium, so no descriptor of the body's survives that route. The
+    door therefore reaches the relay over a one-time Unix socket in the session's private (0700) directory. The
+    body accepts one connection, from its own user only, then removes the path.
+  - The door keeps Playwright's pipe (descriptors 3 and 4) for Chromium and closes everything else of the
+    launcher's.
+- **Downloads still work.** They land in the session's directory through the namespace.
+- **Fail closed.** Without bubblewrap network namespaces, nothing is launched.
+
+### Evidence
+
+- `tests/integration/test_greg_confined_egress.py::test_a_browser_session_drives_pages_behind_the_relay_and_nothing_else_leaves`,
+  run twice:
+  - **`kept`.** A signed mission drives two pages and downloads a file. The page's WebSocket, `fetch` by IP and
+    `fetch` by name reach nothing. The relay journals only the signed origin as allowed, and its chain verifies.
+  - **`removed`.** Playwright's `route` and `route_web_socket` are patched out, as if a bypass or regression removed
+    the in-browser wall. The relay alone still refuses the page's attempts and journals each one.
+  - **Mutation.** With `browser.session` taken out of `CONFINED_EGRESS`, the `removed` variant shows three
+    connections reaching the unlisted port.
+- `tests/unit/test_greg_computer.py::test_a_page_cannot_open_websockets_or_reach_other_ports_outside_the_signed_origins`.
+  It failed on the previous `greg/computer.py` at `hits == []`, with the leaked `GET /ws` upgrade bytes.
+- `tests/unit/test_foundry_relay_door.py`, four new tests:
+  - a door on a path serves a program another launcher started;
+  - only the kept descriptors arrive;
+  - the path must sit in a private directory;
+  - standard streams cannot be "kept".
+- Behind the relay, Chromium's own background connections (`www.google.com`, `redirector.gvt1.com`,
+  `clients2.google.com`) are denied and journaled. Unconfined, they leave the browser process directly, and an
+  in-browser route never sees them.
+
+### #26 stays PARTIAL
+
+Still outside the relay:
+
+- the paid model routes, called from the body process;
+- anchoring;
+- the DALEOBANKS bridge.
+
+Confinement is still opt-in.
 
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 

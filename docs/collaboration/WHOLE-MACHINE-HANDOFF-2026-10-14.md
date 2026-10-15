@@ -127,8 +127,7 @@ The 13 holes were:
   - Choose a dedicated host for #9/#10 privileged runtimes, or decline
     (`PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md`).
   - Decide on merging PR #169.
-- **#26 PARTIAL.** Still outside the relay:
-  - `browser.session` (Playwright);
+- **#26 PARTIAL.** `browser.session` joined the relay in increment 10. Still outside the relay:
   - the paid model routes, called from the body process;
   - anchoring;
   - the DALEOBANKS bridge.
@@ -185,5 +184,5 @@ GREG_TEST_RAILSCOUT=<railscout checkout with railscout/appraise.py> GREG_TEST_WM
   - greedy tying the exact solver;
   - the proxy-bypass evidence from 2026-09-30.
 - **Next active dependency.** The founder's first-body run, which is the N1 gate. Until then, the strongest next
-  buildable work is to bring `browser.session` and the paid model routes behind the relay door. That would make
-  confined egress safe to turn on by default, which is the remaining #26 criterion.
+  buildable work is to bring the paid model routes behind the relay door (`browser.session` joined it in
+  increment 10). That would make confined egress safe to turn on by default, which is the remaining #26 criterion.

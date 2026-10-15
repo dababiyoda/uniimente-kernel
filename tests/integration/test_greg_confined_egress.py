@@ -422,6 +422,108 @@ def test_the_browser_renders_behind_the_relay_and_its_page_cannot_reach_anything
                for e in mine)
 
 
+@pytest.mark.parametrize("in_browser_allowlist", ["kept", "removed"])
+def test_a_browser_session_drives_pages_behind_the_relay_and_nothing_else_leaves(tmp_path, monkeypatch,
+                                                                                 in_browser_allowlist):
+    """#26 for multi-step computer use: on a confined body, browser.session's Chromium runs in a network namespace whose
+    only way out is the relay door, allowlisted for the signed origin alone. The mission completes two pages; the page's
+    fetch, WebSocket and named beacon, and Chromium's own background traffic, reach nothing. With the in-browser
+    allowlist removed (a Playwright regression, a bypass), the relay alone still holds and journals each attempt."""
+    import http.server
+    import socket
+    from functools import partial
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    manifest, _ = BUILTINS["browser.session"]
+    pytest.importorskip("playwright")
+    if not manifest.available()[0]:
+        pytest.skip("no runnable browser here")
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        pytest.skip(f"no bubblewrap network namespaces here: {exc}")
+    if in_browser_allowlist == "removed":
+        from playwright.sync_api import BrowserContext
+        monkeypatch.setattr(BrowserContext, "route", lambda self, *a, **k: None)
+        monkeypatch.setattr(BrowserContext, "route_web_socket", lambda self, *a, **k: None)
+    hits, raw = [], socket.socket()
+    raw.bind(("127.0.0.1", 0))
+    raw.listen(8)
+    b = raw.getsockname()[1]
+
+    def accept():
+        while True:
+            try:
+                conn, _ = raw.accept()
+            except OSError:
+                return
+            hits.append(conn.recv(80))
+            conn.close()
+    threading.Thread(target=accept, daemon=True).start()
+    site = tmp_path / "site"
+    site.mkdir()
+    (site / "index.html").write_text(
+        "<html><head><title>session probe</title></head><body><p id=x>static</p><a id=n href='/next.html'>next</a>"
+        "<a id=d href='/report.txt' download>report</a>"
+        f"<script>try{{new WebSocket('ws://127.0.0.1:{b}/ws')}}catch(e){{}};"
+        f"fetch('http://127.0.0.1:{b}/by-ip').catch(()=>{{}});"
+        f"fetch('http://beacon.example.com:{b}/by-name').catch(()=>{{}});"
+        "document.getElementById('x').textContent='driven behind the relay';</script></body></html>")
+    (site / "next.html").write_text("<html><head><title>second</title></head><body><p id=y>second page</p></body></html>")
+    (site / "report.txt").write_text("quarterly numbers\n")
+
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+    page = http.server.ThreadingHTTPServer(("127.0.0.1", 0), partial(Quiet, directory=str(site)))
+    threading.Thread(target=page.serve_forever, daemon=True).start()
+    port = page.server_address[1]
+    url = f"http://127.0.0.1:{port}/index.html"
+    home, key, body_id = body_with_confined_egress(tmp_path)
+    steps = [{"op": "wait_for", "selector": "#x"}, {"op": "extract", "selector": "#x", "as": "first"},
+             {"op": "download", "selector": "#d", "as": "report"},
+             {"op": "click", "selector": "#n"}, {"op": "extract", "selector": "#y", "as": "second"}]
+    check = {"check_id": "browsed", "description": "the two-page session completed and its trace is intact",
+             "sensor": {"capability": "browser.trace", "params": {"session": "relay-probe"}, "target": "web:127.0.0.1"},
+             "predicate": {"op": "equals", "field": "status", "value": "COMPLETED"}}
+    strategy = {"action_id": "browse", "capability": "browser.session", "target": "web:127.0.0.1",
+                "params": {"url": url, "session": "relay-probe", "steps": steps}, "cost_usd": 0, "advances": ["browsed"],
+                "rationale": "drive the two pages and extract what they show"}
+    drop(home, signed(key, body_id, "MISSION", mission("m:relay-session", checks=[check], strategies=[strategy],
+                                                       capabilities=["browser.session", "browser.trace"],
+                                                       targets=("web:127.0.0.1",), ceiling="internal_write")))
+    try:
+        with Body(home) as body:
+            body.boot()
+            for _ in range(4):
+                out = body.tick()["missions"][0]
+                if out["state"] == "ACHIEVED":
+                    break
+            receipts = [r.payload["result"].get("output") for r in body.ledger.by_type("receipt")]
+    finally:
+        page.shutdown()
+        raw.close()
+    assert out["state"] == "ACHIEVED", out
+    session = [r for r in receipts if isinstance(r, dict) and r.get("session") == "relay-probe" and "egress" in r]
+    assert session and session[-1]["egress"].startswith("relay: only the signed origins")
+    extracted = session[-1]["extracted"]
+    assert {k: extracted[k] for k in ("first", "second")} == {"first": "driven behind the relay", "second": "second page"}
+    assert extracted["report"]["bytes"] == len("quarterly numbers\n")     # a download lands through the namespace
+    assert hits == []                                                    # nothing reached the unlisted port
+    journal = [json.loads(line) for line in (home / "egress-journal.jsonl").read_text().splitlines()]
+    mine = [e for e in journal if e["identity"] == "browser.session"]
+    assert {(e["host"], e["port"]) for e in mine if e["verdict"] == "ALLOWED"} == {("127.0.0.1", port)}
+    denied = {(e["host"], e["port"]) for e in mine if e["verdict"] == "DENIED"}
+    if in_browser_allowlist == "removed":
+        # The page's three attempts were never stopped in the browser; the relay refused each one.
+        assert {("127.0.0.1", b), ("beacon.example.com", b)} <= denied
+        assert session[-1]["blocked_requests"] == {} and session[-1]["blocked_websockets"] == {}
+    else:
+        assert session[-1]["blocked_websockets"] == {"127.0.0.1": 1}
+        assert session[-1]["blocked_requests"].get("beacon.example.com") == 1
+    from foundry.systems.segmentation import Journal
+    assert Journal(home / "egress-journal.jsonl").verify()["intact"]
+
+
 PROVIDER = r'''
 import json, os, socket, sys, urllib.request
 from pathlib import Path

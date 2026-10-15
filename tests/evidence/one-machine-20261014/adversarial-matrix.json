@@ -462,6 +462,34 @@
       "tests": [
         "tests/unit/test_greg_reconciliation.py::test_a_ledger_wedged_by_the_old_shared_reconciliation_question_is_asked_again"
       ]
+    },
+    {
+      "attack": "a superseded mission's compensation ask is passed off as the goal's own decision about its move",
+      "expected": "goal views link asks by the move's exact scope; the undo ask stays the mission's, never labelled a standing approval",
+      "tests": [
+        "tests/unit/test_greg_goal_gravity_merge.py::test_a_compensation_ask_is_never_shown_as_the_goals_own_decision"
+      ]
+    },
+    {
+      "attack": "a strategy held for an unresolvable input blocks the goal's ask as 'could change nothing'",
+      "expected": "asking ahead applies the loop's own input holds: one decision, one ask",
+      "tests": [
+        "tests/unit/test_greg_goal_gravity_merge.py::test_asking_ahead_holds_a_strategy_whose_inputs_cannot_resolve_as_the_loop_does"
+      ]
+    },
+    {
+      "attack": "a refused or host-stopped sensor read reopens a completed goal and pulls its mission",
+      "expected": "a read that did not measure the world is never goal evidence",
+      "tests": [
+        "tests/unit/test_greg_goal_gravity_merge.py::test_a_read_that_did_not_measure_the_world_never_reopens_a_completed_goal"
+      ]
+    },
+    {
+      "attack": "a goal keeps claiming it holds after GREG's own compensation undid the observed effect",
+      "expected": "the completion label says it no longer holds and names the compensation",
+      "tests": [
+        "tests/unit/test_greg_goal_gravity_merge.py::test_a_goal_does_not_claim_to_hold_after_gregs_compensation_undid_its_effect"
+      ]
     }
   ],
   "observed": "see observed-run.json: the pytest outcome of every listed test on the recorded code head, with live organs and Landlock required (regenerate: python scripts/observe_adversarial_matrix.py)"

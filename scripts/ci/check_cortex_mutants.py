@@ -174,6 +174,12 @@ OSS_MUTANTS = [
 # Frontier leap 2026-10-13 (RECOMBINE, #164): a construction is controlled by its own certificate and lifecycle.
 RECOMBINE_TESTS = ["tests/unit/test_greg_recombine.py"]
 RECOMBINE_MUTANTS = [
+    ("a portfolio that skips a prerequisite is certified", "greg/recombine.py",
+     "    if missing:\n        raise ReductionError(f\"the chosen set is not closed", "    if False:\n        raise ReductionError(f\"the chosen set is not closed"),
+    ("a portfolio below the funding bound is certified", "greg/recombine.py",
+     "    if profit != gain - funded:", "    if False:"),
+    ("funding along a made-up edge is accepted", "greg/recombine.py",
+     "        elif (u, v) not in requires:", "        elif False:"),
     ("repair re-admits the construction that failed in service", "greg/genesis.py",
      'if repair and repair.get("capability_id") == manifest.capability_id:\n            self._route(deficit_id, "constructed"',
      'if False:\n            self._route(deficit_id, "constructed"'),
@@ -247,10 +253,22 @@ RECOVERY_MUTANTS = [
      '            if False:\n                self._route(deficit_id, "installed_package"'),
 ]
 
+# 2026-10-15: capability formation is perception for Goal Gravity (a blocked goal wakes when what it waits on changes).
+CAPABILITY_PERCEPTION_TESTS = ["tests/integration/test_greg_capability_wakes_goal.py"]
+CAPABILITY_PERCEPTION_MUTANTS = [
+    ("a capability change is invisible to Goal Gravity", "greg/goal_gravity.py",
+     'elif t in ("greg.capability.registered", "greg.capability.state"):', "elif False:"),
+    ("a blocked construction does not perceive its engine", "greg/goal_gravity.py",
+     "        if function in (waiting, engine):", "        if function == waiting:"),
+    ("a capability state is flattened to available or not", "greg/goal_gravity.py",
+     'rec.hash, p["state"], "attributed")', 'rec.hash, p["state"] != "QUARANTINED", "attributed")'),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
-          ("recovery", RECOVERY_TESTS, RECOVERY_MUTANTS)]
+          ("recovery", RECOVERY_TESTS, RECOVERY_MUTANTS),
+          ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS)]
 
 
 def main() -> int:

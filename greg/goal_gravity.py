@@ -1151,6 +1151,16 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
         elif t == "greg.mission.appraised" and p.get("verdict") in ("VERIFIED", "REFUTED"):
             latest[(p["mission_id"], "appraised_verified")] = (rec.payload["event_id"], rec.ts_utc, rec.hash,
                                                                p["verdict"] == "VERIFIED", "attributed")
+        elif t in ("greg.capability.registered", "greg.capability.state"):
+            # Capability formation as perception: a capability that became usable (formed, recovered, attached)
+            # or stopped being usable changes what a mission blocked on its function can do. Recorded by Genesis
+            # or the founder's own command on the ledger; it creates no authority and pulls only timing.
+            cid = (p.get("manifest") or {}).get("capability_id") or p.get("capability_id")
+            manifest = body.registry.manifests.get(cid)
+            if manifest is not None and p.get("state") in CAPABILITY_USABLE:
+                for mid, waiting in _blocked_on(body, book, manifest.function):
+                    latest[(mid, f"capability:{waiting}")] = (rec.payload["event_id"], p.get("at") or rec.ts_utc,
+                                                              rec.hash, p["state"], "attributed")
         elif t == "greg.external.ingested" and not p.get("quarantined"):
             about, terms = intake_about(p.get("content", ""), book, loop.registry)
             emit(rec.payload["event_id"], p["at"], rec.hash, trust="untrusted", tags=[p["channel"]],
@@ -1167,6 +1177,26 @@ def _sense(body, loop: GoalGravityLoop, cursor: int) -> tuple[list[SignalEnvelop
                 emit(f"greg.path:{node}:{met}:{end}", iso(body.clock()), body.ledger.head,
                      [{"subject": "greg.path", "attribute": node, "value": met, "confidence": 1.0}])
     return out, end
+
+
+# Each transition is its own change: formed or recovered (VERIFIED: attachable), attached (usable now),
+# quarantined or detached (no longer usable). The value is the state, so every one of them can wake a goal.
+CAPABILITY_USABLE = ("VERIFIED", "ATTACHED", "QUARANTINED", "DETACHED")
+
+
+def _blocked_on(body, book: MissionBook, function: str) -> list[tuple[str, str]]:
+    """(mission, the function it waits on) for open missions blocked on ``function`` directly, or on a
+    construction whose engine provides ``function``."""
+    genesis = getattr(body, "genesis", None)
+    out = []
+    for mid, m in sorted(book.missions.items()):
+        waiting = (m.blocker or {}).get("function")
+        if not waiting or m.status in TERMINAL:
+            continue
+        engine = genesis.construction_engine(waiting) if genesis is not None else None
+        if function in (waiting, engine):
+            out.append((mid, waiting))
+    return out
 
 
 def _sensor_receipt(ledger, gate: dict, m, check: dict, receipt_hash: str):

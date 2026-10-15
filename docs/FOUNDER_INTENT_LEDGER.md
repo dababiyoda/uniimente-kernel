@@ -118,6 +118,15 @@ The founder's OPUS MAXIMUS continuation directive is implemented on draft branch
 - Increment 30 serves MCP servers that read their credential from a file (a service-account key, a kubeconfig): `greg secret set mcp:<name> --from-file <path>` keeps the whole file in the secret broker, and an approved `mcp.act` naming it in `secret_files` gives the server a private 0600 file, shown read-only, at the path in the named variable, removed when the call ends. The approval names it as a file.
 - State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
 
+## Frontier leap, continued: portfolio decisions and capability perception — 2026-10-15
+
+Same intent (`INTENT-20261013-FRONTIER-LEAP-RECOMBINE`; the directive was re-issued verbatim and its founder instructions A–D stay preserved in that record). Built:
+
+- `selection.closure`: which projects or offers to take when some require others, constructed over the max-flow engine with a funding proof checked from the original items.
+- Goal Gravity now perceives capability formation, recovery, attachment and quarantine as observations about the missions waiting on them, so a blocked goal wakes when what it waits on changes. Timing only.
+
+Evidence: [README](evidence/greg-selection/2026-10-15/README.md). State: active. Authority delta: none. VEPMC: 0.
+
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
 
 `INTENT-20261013-FRONTIER-LEAP-RECOMBINE` ([record](intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json), [full directive, verbatim](intent/sources/FRONTIER-LEAP-DIRECTIVE-2026-10-13-source.md)): stop treating Capability Genesis as part replacement and make it construct new, integrated capabilities from harvested mechanisms, on GREG's one path. Founder instructions A-D are preserved verbatim in the record's `founder_quotations` and in the source file. They are read under INTENT-0030. "Meniscus", "impermeable shield" and "systemic dominance" keep the 2026-10-07 executable interpretation. They authorize no crossing of legal boundaries, no coercion and no immunity from shutdown.

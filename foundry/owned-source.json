@@ -340,6 +340,7 @@
     "greg/cognition/disclosure.py",
     "greg/cognition/evidence.py",
     "greg/cognition/evolution.py",
+    "greg/cognition/evolution_room.py",
     "greg/cognition/evolution_sandbox.py",
     "greg/cognition/genomes/__init__.py",
     "greg/cognition/genomes/admission.py",

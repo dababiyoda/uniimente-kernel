@@ -15,6 +15,11 @@ from pathlib import Path
 import resource
 import sys
 
+# Landlock confines the calling thread only, and confine() refuses a multi-threaded process: a numeric library a
+# reviewed system imports before confinement must not start a thread pool.
+for _name in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ[_name] = "1"
+
 
 def source_files():
     code = Path(__file__).resolve().parents[1]

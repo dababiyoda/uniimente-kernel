@@ -231,6 +231,34 @@ def inputs(families, heldout=HELDOUT_SEEDS) -> dict:
             "dependencies": dependency_versions()}
 
 
+def source_dirty(paths, root: Path = ROOT) -> list[str]:
+    """The frozen files whose bytes are not their blob at HEAD (modified, staged, untracked or absent from HEAD);
+    every path when git cannot tell. The freeze digests bind the bytes a run executes; this binds them to the
+    recorded ``source_commit``, as P8's ``source_dirty`` does (2026-10-15 independent review)."""
+    paths = sorted(paths)
+    try:
+        tree = subprocess.run(["git", "ls-tree", "-r", "-z", "HEAD", "--", *paths], cwd=root,
+                              capture_output=True, check=True).stdout
+        work = subprocess.run(["git", "hash-object", "--", *paths], cwd=root, capture_output=True, text=True,
+                              check=True).stdout.split()
+    except (OSError, subprocess.CalledProcessError):
+        return paths
+    committed = {}
+    for entry in filter(None, tree.split(b"\0")):
+        meta, _, name = entry.partition(b"\t")
+        committed[name.decode()] = meta.split()[2].decode()
+    return [p for p, blob in zip(paths, work) if committed.get(p) != blob] if len(work) == len(paths) else paths
+
+
+def report_header(target: Path, frozen: dict) -> dict:
+    """What results.json records about the run before any genome result: the freeze, the commit and whether the
+    frozen files were the committed ones."""
+    return {"schema": "greg-genome-admission/1", "freeze_sha256": _sha(target / "freeze.json"),
+            "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+            "source_dirty": source_dirty(frozen["inputs"]["code"]),
+            "platform": platform.platform(), "python": sys.version.split()[0], "rule": RULE, "genomes": {}}
+
+
 def smoke(family: str, seed: int = HELDOUT_SEEDS[0]) -> dict:
     """One held-out instance through GREG's canonical cognition path, family attached for evaluation only."""
     from greg.cognition.cortex import reason, registry_view
@@ -295,9 +323,7 @@ def main(argv=None):
         raise SystemExit("FROZEN_INPUT_CHANGED: admission results cannot be reported")
     if (target / "results.json").exists():
         raise SystemExit("refusing to overwrite admission results")
-    report = {"schema": "greg-genome-admission/1", "freeze_sha256": _sha(target / "freeze.json"),
-              "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
-              "platform": platform.platform(), "python": sys.version.split()[0], "rule": RULE, "genomes": {}}
+    report = report_header(target, frozen)
     for family in chosen:
         item = library.executables()[family]
         rows = evaluate(item, heldout)

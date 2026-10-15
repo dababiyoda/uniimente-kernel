@@ -45,7 +45,10 @@ Staleness mirrors greg/cognition/compiler.py: positive evidence binds the versio
 stale after a version bump (the compiler then routes the mechanism as UNEVALUATED); negative and inconclusive
 evidence (its NOT_POSITIVE statuses) persists until a re-admission replaces it. A genome's or organ's label is
 therefore supported (SIMULATED, HELDOUT_SUPPORTED or EXTERNALLY_VERIFIED) exactly when the compiler routes it on
-fresh positive evidence (tests/unit/test_mind_status.py checks this against the compiler).
+fresh positive evidence (tests/unit/test_mind_status.py checks this against the compiler). A genome's held-out
+history flags a status that changed between frozen runs at the same version: within one evaluation regime as
+``status_changed_at_same_version`` (a sample near a rule boundary, or a rule change), and across a regime change a
+run's pre-registration declared (``DECLARED_REGIMES``) as ``status_changed_with_declared_regime_change``.
 
 Every executor greg/cognition/reserved.py names has a row: catalog families, genomes and cortex organs have their
 own; a ``module:symbol`` executor gets an ``executor`` row. P8 protected evolution
@@ -76,7 +79,7 @@ INDEX = ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json"
 PATH = ROOT / "greg" / "path.json"
 P8_EVIDENCE = ROOT / "docs" / "evidence" / "greg-protected-evolution"
 P8_EXECUTOR = "greg.cognition.evolution:cycle"
-SCHEMA = "greg-mind-status/0.2"
+SCHEMA = "greg-mind-status/0.3"
 LABELS = ("BUILT", "SIMULATED", "HELDOUT_SUPPORTED", "EXTERNALLY_VERIFIED", "UNRESOLVED", "FRONTIER")
 SUPPORTED = ("SIMULATED", "HELDOUT_SUPPORTED", "EXTERNALLY_VERIFIED")
 POSITIVE = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY")
@@ -85,6 +88,19 @@ SUPPORTING_WORLDS = ("natural_data", "mathematical_instance")
 EXTERNAL_KIND = "external_outcome"
 # The code an external verification of a recipe or the P4 route must bind (its digest at verification time).
 CODE = {"recipe": "greg/cognition/composition.py", "routing": "greg/cognition/conditional_competence.py"}
+# Evaluation regimes a frozen admission run's pre-registration declared changed, before the run, for genomes whose
+# version did not change (instance generator, competitor or scorer): an earlier status at the same version measured
+# another evaluation, so a different status is a regime change, not a sample near a rule boundary. A declaration
+# binds its pre-registration's digest; one that does not resolve declares nothing and is reported on the row.
+DECLARED_REGIMES = {
+    "2026-10-15-v3": {
+        "declared_in": "docs/evidence/greg-genome-admission/2026-10-15-v3/PREREGISTRATION.md",
+        "sha256": "sha256:19924fff02c70a53985c646108293b462bafbd8a23a21e388fa4adfadb0b15d5",
+        "families": {"collective_quorum": "instance generator",
+                     "collective_immune": "instance generator and competitor",
+                     "collective_physarum": "instance generator, competitor and scorer",
+                     "collective_flock": "instance generator, competitor and scorer"}},
+}
 ALPHA = 0.05
 RULES = {
     "EXTERNALLY_VERIFIED": "fresh positive held-out evidence plus a resolved external_verification entry (a "
@@ -203,6 +219,27 @@ def _admission_label(status, measured, current, stale: bool, world, why) -> tupl
     return "BUILT", "no frozen held-out admission (UNEVALUATED)"
 
 
+def _history(family: str, record: dict) -> tuple[list, list, list]:
+    """A genome's frozen runs, oldest first, each with ``regime``: the run whose evaluation regime it was measured
+    under (its first run, or the latest run whose pre-registration declared a regime change for this genome).
+    Returns (history, the resolved regime changes, the declarations that did not resolve)."""
+    history, changes, unresolved, regime = [], [], [], None
+    for h in record.get("history", []):
+        declared = DECLARED_REGIMES.get(h.get("run")) or {}
+        changed = declared.get("families", {}).get(family)
+        if changed:
+            file = ROOT / declared["declared_in"]
+            if file.is_file() and _sha(file) == declared["sha256"]:
+                regime = h.get("run")
+                changes.append({"run": regime, "changed": changed, "declared_in": declared["declared_in"]})
+            else:
+                unresolved.append(f"{h.get('run')}: {declared['declared_in']} is absent or changed since its "
+                                  f"declaration was bound, so it declares no regime change")
+        regime = regime or h.get("run")
+        history.append({**{k: h.get(k) for k in ("run", "status", "version")}, "regime": regime})
+    return history, changes, unresolved
+
+
 def _genomes(index: dict, ctx: dict) -> list[dict]:
     from greg.cognition import worlds
     from greg.cognition.genomes import library
@@ -213,15 +250,24 @@ def _genomes(index: dict, ctx: dict) -> list[dict]:
         status = (record or {}).get("status")
         measured = (record or {}).get("version")
         stale = bool(status in POSITIVE and measured and measured != g.version)
+        history, changes, unresolved = _history(family, record or {})
+        runs = [h for h in history if h["version"] == measured]
+        within = any(a["regime"] == b["regime"] and a["status"] != b["status"]
+                     for i, a in enumerate(runs) for b in runs[i + 1:])
+        across = any(a["regime"] != b["regime"] and a["status"] != b["status"] for a, b in zip(runs, runs[1:]))
         heldout = None if record is None else {
             "status": status, "version_measured": measured,
             "current": None if measured is None else measured == g.version,
             "evidence": record.get("evidence"),
-            "history": [{k: h.get(k) for k in ("run", "status", "version")} for h in record.get("history", [])],
-            # a status that differs between frozen runs at the same version sits near a rule boundary (or the
-            # rule changed between runs); the latest run decides, as it does for the compiler
-            "status_changed_at_same_version": any(
-                h.get("version") == measured and h.get("status") != status for h in record.get("history", [])),
+            "history": history,
+            # a status that differs between any two frozen runs at the same version and in the same evaluation regime
+            # sits near a rule boundary (or the rule changed between runs), whichever regime they share; one that
+            # differs between the runs either side of a regime change the later run's pre-registration declared
+            # measured another evaluation. The latest run decides, as it does for the compiler
+            "status_changed_at_same_version": within,
+            "status_changed_with_declared_regime_change": across,
+            **({"regime_changes": changes} if changes else {}),
+            **({"regime_declarations_unresolved": unresolved} if unresolved else {}),
             **({"stale": f"{status} was measured at version {measured}; version {g.version} needs re-admission"}
                if stale else {})}
         world, why = worlds.GENOMES.get(family, (None, None))

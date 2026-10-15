@@ -82,6 +82,10 @@ def confine(root, public_files, *, list_code: bool = True):
     for directory in (prefix / "lib", Path(sys.prefix).resolve() / "lib"):
         if directory.is_dir():
             grants[directory] = READ_FILE | READ_DIR
+    # A virtual environment's interpreter reads pyvenv.cfg at startup: a confined worker's child interpreter needs it.
+    venv_config = Path(sys.prefix).resolve() / "pyvenv.cfg"
+    if sys.prefix != sys.base_prefix and venv_config.is_file():
+        grants[venv_config] = READ_FILE
     # Already-loaded ELF dependencies are explicit public runtime files.
     # No /proc hierarchy is granted; this read happens before confinement.
     for line in Path("/proc/self/maps").read_text().splitlines():
@@ -123,6 +127,12 @@ def confine(root, public_files, *, list_code: bool = True):
         directory = Path(directory)
         if directory.is_dir():
             grants[directory.resolve()] = grants.get(directory.resolve(), 0) | READ_FILE | READ_DIR
+    # landlock_restrict_self confines the calling thread (and what it later creates) only: a thread that already
+    # exists would keep unconfined access, so a multi-threaded caller is refused rather than half-confined.
+    threads = len(os.listdir("/proc/self/task"))
+    if threads != 1:
+        raise IsolationError(f"Landlock confines the calling thread only; {threads} threads exist (start numeric "
+                             f"libraries single-threaded, e.g. OPENBLAS_NUM_THREADS=1, before confining)")
     scoped = abi >= 6
     attr = _ScopedRules(ALL_FS, 0, SCOPE_ABSTRACT_UNIX_SOCKET | SCOPE_SIGNAL) if scoped else _Rules(ALL_FS)
     fd = libc.syscall(444, ctypes.byref(attr), ctypes.sizeof(attr), 0)
@@ -146,4 +156,5 @@ def confine(root, public_files, *, list_code: bool = True):
     return {"filesystem": "landlock", "abi": abi, "arbitrary_source": "refused",
             "scope": "published source/runtime read-only; staged store read/write",
             "repository_listing": "allowed" if list_code else "denied",
-            "signals": "scoped to the domain" if scoped else "unscoped (Landlock ABI < 6)"}
+            "signals": "scoped to the domain" if scoped else "unscoped (Landlock ABI < 6)",
+            "ipc_scopes": ["abstract_unix_socket", "signal"] if scoped else [], "threads": threads}

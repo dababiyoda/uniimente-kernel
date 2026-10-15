@@ -64,6 +64,23 @@ def test_sandbox_stages_are_bound_to_the_capability_they_name(tmp_path):
     assert row["worker_accepted"] is False and row["mind_certified_without_model"] is False
 
 
+
+def test_a_function_named_sensor_counts_through_the_capability_the_engine_resolved(tmp_path):
+    """Second review (measurement 2): stages were read from the spec's ``capability`` key only, so a
+    sensor naming a function (work.appraise, resolved to worker.appraise) never counted. The engine
+    now records the resolved capability on the observation, and that is what the stage reads."""
+    journal = Journal(EventSpine(EvidenceLedger("sha256:" + "3" * 64, path=str(tmp_path / "l.jsonl"))),
+                      actor="spiffe://uniimente.internal/test/metrics")
+    mid = "m:function-named"
+    journal.record("mission.registered", {"mission_id": mid, "spec": {"strategies": [], "success_checks": [
+        {"check_id": "appraised", "sensor": {"function": "work.appraise"}}]}}, key=[mid])
+    receipt = journal.ledger.append("receipt", {"result": {"output": {"verdict": "ACCEPTED"}}}).hash
+    journal.record("mission.observed", {"mission_id": mid, "check_id": "appraised", "passed": True,
+                                        "receipt": receipt, "capability": "worker.appraise"}, key=[mid, "observed"])
+    journal.record("mission.achieved", {"mission_id": mid}, key=[mid, "achieved"])
+    [row] = metrics.sandbox_whole_machine(journal)["missions"]
+    assert row["worker_accepted"] is True
+
 def closure(journal, mid, output):
     """A synthetic closure meeting all nine VEPMC conditions, with one receipted observation."""
     designation = journal.record("command.accepted", {"kind": "BODY_DESIGNATE", "signer": "founder", "digest": "d1"},

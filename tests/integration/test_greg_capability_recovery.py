@@ -411,3 +411,26 @@ def test_an_outage_during_acquisition_records_no_failed_qualification_and_builds
         out = ticks(body, clock, 8, step=600)
         assert body.registry.state.get(NX) == "ATTACHED"
         assert "ACHIEVED" in states(out)
+
+
+def test_an_outage_inside_a_construction_never_blames_the_strategy(tmp_path, monkeypatch):
+    """Second review (typed failures 3): the construction's engine timed out, the answer abstained, and
+    the abstention was read as the world unchanged: routing booked the compile strategy 'ineffective'
+    and the founder was asked NO_STRATEGY. An outage is an unmeasured observation (SENSOR_RETRY)."""
+    import subprocess
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = compiled_question(problem_id="staff-3", data=STAFFING, allow_construction=True)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 1)
+
+        def down(argv, **kw):
+            raise subprocess.TimeoutExpired(argv, kw.get("timeout", 1))
+
+        monkeypatch.setattr(mechanisms, "run_isolated", down)
+        out = ticks(body, clock, 12)
+        assert not [e for e in body.journal.replay("routing.outcome") if e.payload.get("verdict") == "ineffective"]
+        assert "NO_STRATEGY" not in [e.payload.get("kind") for e in body.journal.replay("decision.requested")]
+        assert "SENSOR_RETRY" in states(out)

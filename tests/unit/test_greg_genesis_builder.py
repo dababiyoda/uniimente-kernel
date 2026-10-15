@@ -210,3 +210,41 @@ def test_a_file_over_the_input_ceiling_is_not_a_fault_of_the_built_capability(tm
         assert observed and all(p.get("failure_class") != "executor_error" for p in observed)
     finally:
         body.close()
+
+
+def test_build_spend_counts_against_the_signed_light_cone_budget(tmp_path):
+    """Second review (spend 1): the build budget is carved from the light-cone budget, but only action
+    spend reached the budget gate; a mission could spend its budget on builds and then the whole budget
+    again on paid actions without an ask. Build spend now counts against the cone."""
+    from tests.greg_fixtures import note_check, workspace, write_strategy
+
+    class PaidBuilder(builders.StaticBuilder):
+        def build(self, request, feedback=None):
+            return {**super().build(request, feedback), "cost_usd": 0.9}
+
+    home, key, body_id, data = make_body(tmp_path)
+    doc = data / "FIRST_MISSION.md"
+    doc.write_text("# Runbook\n- [x] install\n- [ ] enroll key\n  - [ ] load launchd\n* [ ] accept closure\n")
+    note = workspace(home, "m:both") / "c.txt"
+    counted = {"check_id": "counted", "description": "open steps known",
+               "sensor": {"function": FUNCTION, "params": {"path": str(doc)}, "target": "fs:FIRST_MISSION.md"},
+               "predicate": {"op": "equals", "field": "unchecked", "value": 3}}
+    spec = mission("m:both", checks=[counted, note_check("note", note, "ok")],
+                   strategies=[write_strategy("w", "c.txt", "ok", ["note"], cost_usd=1.0)],
+                   capabilities=["fs.read", "fs.write", f"built.{FUNCTION}.*"], budget=1.0, auto_attach=True)
+    spec["capability_specs"] = [dict(CONTRACT, build_budget_usd=1.0)]
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    body = Body(home, clock=clock, builder=PaidBuilder(GOOD, identity="paid")).open()
+    try:
+        body.boot()
+        for _ in range(8):
+            clock.advance(30)
+            body.tick()
+        m = body.engine.book.missions["m:both"]
+        assert m.spent_usd == pytest.approx(0.9)                       # the build, booked on the cone
+        assert not [a for a in (e.payload for e in body.journal.replay("mission.action"))
+                    if a["status"] == "DONE" and a.get("cost_usd")]   # the paid action did not slip past it
+        assert "APPROVAL" in [e.payload["kind"] for e in body.journal.replay("decision.requested")]
+    finally:
+        body.close()

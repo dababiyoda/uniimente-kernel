@@ -343,10 +343,20 @@ class MissionBook:
 
     def rebuild(self):
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
+        deficit_of = {}                    # deficit_id -> the mission whose light cone pays for its builds
         for event in self.journal.replay():
             kind, data = event.type[len("greg."):], event.payload
             mid = data.get("mission_id")
             m = self.missions.get(mid)
+            if kind in ("genesis.built", "genesis.unbuilt"):
+                # The build budget is carved from the light-cone budget (validate_mission), so what a
+                # build was billed is spent from the cone that every later paid action is admitted against.
+                payer = self.missions.get(deficit_of.get(data.get("deficit_id")))
+                if payer is not None:
+                    payer.spent_usd += float(data.get("cost_usd") or 0.0)
+                continue
+            if kind == "deficit.opened" and mid is not None:
+                deficit_of[data["deficit_id"]] = mid
             if kind == "mission.registered":
                 self.missions[mid] = MissionState(spec=data["spec"], command_digest=data["command_digest"],
                                                   cone=LightCone.from_dict(data["spec"]["light_cone"]))
@@ -857,6 +867,11 @@ class MissionEngine:
                     failure_class = fault.get("failure_class")
                     if is_capability_fault(formed, detail, failure_class):
                         self.capability_faults[check["check_id"]] = (formed, detail, sensor.get("params", {}))
+                    elif failure_class in ("transient", "budget_exceeded"):
+                        # The host (or a resource ceiling) stopped the construction: the world was not
+                        # measured. The SENSOR_RETRY path applies; no strategy is blamed for it.
+                        detail = f"sensor inconclusive ({failure_class}): {detail}"
+                        sensor_errors.add(check["check_id"])
                 views = disagreement(outcome.output)
                 if views and not passed:
                     self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
@@ -867,7 +882,8 @@ class MissionEngine:
                     # from these retries); _record_routing_outcomes never blames the strategy.
                     detail = f"sensor inconclusive ({why}): {detail}"
             data = {"mission_id": m.mission_id, "check_id": check["check_id"], "passed": passed,
-                    "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now)}
+                    "detail": detail[:300], "receipt": outcome.receipt_hash, "rung": m.rung, "at": iso(now),
+                    "capability": manifest.capability_id}     # the sensor as resolved (a spec may name a function)
             if failure_class is not None:
                 data["failure_class"] = failure_class
             self.journal.record("mission.observed", data, key=[m.mission_id, check["check_id"], outcome.proposal_id])
@@ -1159,6 +1175,7 @@ class MissionEngine:
                                                                                  "no other strategy") + " or asks again"}]}
 
     def _pursue(self, m: MissionState, now: datetime, failing: set, evidence: list) -> dict:
+        from greg.pipeline import resolve, BindingError
         candidates = []
         records = routing.track_record(self.journal)
         value = float(m.spec.get("value_per_check_usd", 1.0))
@@ -1177,6 +1194,11 @@ class MissionEngine:
                 except Unbound as why:
                     held[s["action_id"]] = [f"input: {why}"]
                     continue
+            try:      # inline $from_action inputs are held the same way: an alternative runs, or the founder is asked
+                resolve(bound.get(s["action_id"], (s.get("params", {}),))[0], self.journal, m.mission_id)
+            except BindingError as why:
+                held[s["action_id"]] = [f"input: {why}"]
+                continue
             manifest = self.registry.manifests.get(s.get("capability"))
             if manifest is None and s.get("function") and self.genesis is not None:
                 manifest = self.genesis.find_attached(s["function"])
@@ -1227,7 +1249,6 @@ class MissionEngine:
         # Two typed-handoff syntaxes, one resolver order: signed ``bind`` edges (above) first, then
         # inline ``$from_action`` references (#156/#159 pipeline). Both read only retained Gate
         # receipts of this mission; neither can touch capability, target, cost or scope.
-        from greg.pipeline import resolve, BindingError
         try:
             bound_params, input_bindings = resolve(params, self.journal, m.mission_id)
         except BindingError as exc:
@@ -1276,7 +1297,11 @@ class MissionEngine:
         if outcome.status == "UNCERTAIN":
             if manifest.retry_safe:
                 return {"state": "RETRYING", "action": aid, "why": "read-only idempotent capability"}
-            rid = self._request(m, kind="RECONCILIATION", scope_digest=outcome.scope_digest, action_id=aid,
+            # Each uncertain dispatch is its own question: an answer about attempt 0 is never applied to a
+            # later attempt (attempt 0 keeps its retained request identity).
+            scope = outcome.scope_digest if not attempt else sha256_json({"scope": outcome.scope_digest,
+                                                                         "attempt": attempt})
+            rid = self._request(m, kind="RECONCILIATION", scope_digest=scope, action_id=aid,
                                 why="an action may or may not have executed before an interruption",
                                 recommendation="inspect the retained evidence, then state whether it executed",
                                 alternatives=["reconcile_executed", "reconcile_not_executed"],

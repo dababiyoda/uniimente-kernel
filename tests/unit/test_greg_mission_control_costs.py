@@ -22,7 +22,7 @@ def test_measured_unknown_and_fixture_amounts_are_never_netted():
                                                    [{"mission_id": "m:b", "totals": {"revenue": 1200}}])}
     a, b = rows["m:a"], rows["m:b"]
     assert a == {"mission_id": "m:a", "budget_usd": 2.0, "booked_usd": 1.12, "measured_usd": 0.12,
-                 "unknown_at_cap_usd": 1.0, "fixture_cents": 0, "money_moved": False}
+                 "unknown_at_cap_usd": 1.0, "build_usd": 0.0, "fixture_cents": 0, "money_moved": False}
     assert b["fixture_cents"] == 1200 and b["booked_usd"] == 0.0 and b["money_moved"] is False
     assert set(rows) == {"m:a", "m:b"}
 
@@ -31,3 +31,10 @@ def test_free_capabilities_book_zero_without_claiming_a_measurement():
     rows = cost_rows([{"mission_id": "m:a", "status": "DONE", "cost_usd": 0.0, "spend_basis": "signed_cap",
                        "provider_reported_usd": None}], [mission("m:a", 0)], [])
     assert rows[0]["booked_usd"] == 0.0 and rows[0]["measured_usd"] == 0.0 and rows[0]["unknown_at_cap_usd"] == 0.0
+
+
+def test_build_spend_is_its_own_column_and_part_of_the_booked_total():
+    """Second review (spend 1): Genesis build spend is paid from the mission's cone, so it is booked."""
+    rows = cost_rows([{"mission_id": "m:a", "status": "DONE", "cost_usd": 0.1}], [mission("m:a", 1.0)], [],
+                     [{"mission_id": "m:a", "cost_usd": 0.9}, {"mission_id": None, "cost_usd": 5.0}])
+    assert rows[0]["build_usd"] == 0.9 and rows[0]["booked_usd"] == 1.0

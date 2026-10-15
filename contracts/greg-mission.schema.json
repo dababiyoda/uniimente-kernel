@@ -446,6 +446,14 @@
               "why": {
                 "type": "string",
                 "maxLength": 300
+              },
+              "cost_usd": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "description": "What a failed or refused attempt was still billed, booked against the budget; null when the provider reported none."
               }
             }
           }

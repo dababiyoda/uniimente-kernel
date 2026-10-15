@@ -268,6 +268,7 @@ jobs:
         working-directory: kernel
         env:
           UNIIMENTE_REQUIRE_ORGANS: "1"
+          GREG_REQUIRE_LANDLOCK: "1"
           UNIIMENTE_DALEOBANKS_ROOT: "${{ github.workspace }}/organs/daleobanks"
           UNIIMENTE_DALEOBANKS_PYTHON: "${{ github.workspace }}/organs/daleobanks-venv/bin/python"
           UNIIMENTE_WEALTHMACHINE_ROOT: "${{ github.workspace }}/organs/wealthmachine"

@@ -112,8 +112,9 @@ def sandbox_whole_machine(journal: Journal) -> dict:
                                     counting only facts a DONE organ.exchange receipt stands behind
       worker_accepted               a passing check whose sensor is worker.appraise observed ACCEPTED
 
-    Each stage is read from the observation of the capability it names (resolved through the
-    registered spec), so another sensor's output that happens to look alike never counts.
+    Each stage is read from the observation of the capability it names (the capability the engine
+    resolved and recorded on the observation; for older observations, the registered spec's), so
+    another sensor's output that happens to look alike never counts.
       interruption_reconciled       a body recovery between registration and closure, and a founder
                                     reconciliation answered for this mission (no blind retry)
       appraised_verified            the separate-process closure appraisal returned VERIFIED
@@ -141,7 +142,7 @@ def sandbox_whole_machine(journal: Journal) -> dict:
         for o in observed:
             record = ledger.find(o.get("receipt") or "") if o.get("receipt") else None
             if record is not None and record.record_type == "receipt":
-                outputs.append((o, sensors.get((mid, o.get("check_id")), ""),
+                outputs.append((o, o.get("capability") or sensors.get((mid, o.get("check_id")), ""),
                                 record.payload.get("result", {}).get("output")))
         organ_facts = organ_bridge.bound_facts(journal, mid)
         organs = organ_facts["observed"]

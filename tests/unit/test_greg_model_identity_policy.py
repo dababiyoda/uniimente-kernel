@@ -284,3 +284,51 @@ def test_substitution_evidence_reaches_the_build_record_and_the_planner_provenan
     assert proposal["status"] == "PROPOSED", proposal                     # the mission schema admits the fields
     prov = proposal["spec"]["provenance"]
     assert prov["requested_model"] == prov["served_model"] == "claude-sonnet-5-5" and prov["substituted"] is False
+
+
+class Seen:
+    """A second route that records the budget it was bounded to."""
+    provider, name = "seen", "seen:model"
+
+    def __init__(self):
+        self.budgets = []
+
+    def complete(self, system, user, *, budget_usd=None):
+        self.budgets.append(budget_usd)
+        return {"text": "ok", "cost_usd": 0.1, "served_model": "seen-1"}
+
+
+def test_a_billed_empty_openai_answer_is_booked_and_bounds_the_next_route():
+    """Second review (spend 0): an incomplete answer (reasoning used every output token) is billed but
+    raised as a plain route failure with no cost, so the next route got the whole signed budget again."""
+    usage = NS(input_tokens=1000, output_tokens=100_000)
+    client = NS(responses=NS(create=lambda **kw: NS(output=[], output_text="", status="incomplete", usage=usage,
+                                                     model="gpt-5.5")))
+    seen = Seen()
+    router = models.ModelRouter([models.OpenAIRoute("k", model="gpt-5.5", price=(5.0, 10.0), client=client), seen])
+    result = router.complete("s", "u", budget_usd=2.0)
+    billed = (1000 * 5.0 + 100_000 * 10.0) / 1e6
+    assert seen.budgets == [pytest.approx(2.0 - billed)]
+    assert result["cost_usd"] == pytest.approx(billed + 0.1)
+    assert result["tried"][0]["cost_usd"] == pytest.approx(billed)
+
+
+def test_a_billed_refusal_is_booked_on_the_router_record():
+    """Second review (spend 0): a refusal after billed attempts was raised before any cost was computed."""
+    usage = NS(input_tokens=1000, output_tokens=1000, iterations=None)
+    client = NS(beta=NS(messages=NS(create=lambda **kw: NS(stop_reason="refusal", stop_details=NS(category="cyber"),
+                                                            content=[], model=kw["model"], usage=usage))))
+    router = models.ModelRouter([models.AnthropicRoute("k", model="claude-opus-5-5", client=client)])
+    with pytest.raises(models.Refusal) as info:
+        router.complete("s", "u", budget_usd=1.0)
+    assert info.value.cost_usd and router.last["cost_usd"] == pytest.approx(info.value.cost_usd)
+
+
+def test_a_claude_code_error_with_a_reported_cost_is_booked():
+    import json as _json
+    out = NS(returncode=0, stdout=_json.dumps({"is_error": True, "result": "overloaded", "total_cost_usd": 0.37}),
+             stderr="")
+    route = models.ClaudeCodeRoute(binary="/bin/true", runner=lambda *a, **k: out)
+    seen = Seen()
+    result = models.ModelRouter([route, seen]).complete("s", "u", budget_usd=1.0)
+    assert seen.budgets == [pytest.approx(0.63)] and result["cost_usd"] == pytest.approx(0.47)

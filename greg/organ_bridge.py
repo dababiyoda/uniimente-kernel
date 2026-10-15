@@ -110,16 +110,28 @@ def bound_facts(journal: Journal, mission_id: str, *, capability: str = "organ.e
     The adapter records its facts before the Gate writes the receipt. A crash between the two
     leaves facts that no receipt vouches for; if the founder then reconciles that dispatch as not
     executed, those facts must not satisfy the mission. A fact counts only when its digest appears
-    in the output of a DONE receipt of one of this mission's ``capability`` strategies, or when it
-    was recorded before a founder reconciliation that declared such a dispatch executed."""
+    in the output of a DONE receipt of this mission's ``capability`` dispatches, or when it was
+    recorded inside the one dispatch a founder reconciliation declared executed: after the
+    mission's previous action record and before that attempt's UNCERTAIN record. A dispatch is
+    read by the capability its action record names (function-named strategies included). An
+    appraisal retained before appraisals named their exchange binds to the receipted dispatch it
+    was recorded in, and is counted as a legacy binding."""
     ledger = journal.ledger
     seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
-    action_ids = {s["action_id"] for e in journal.replay("mission.registered") if e.payload.get("mission_id") == mission_id
-                  for s in e.payload.get("spec", {}).get("strategies", []) if s.get("capability") == capability}
-    digests, receipts, founder_cut = set(), [], None
-    for event in journal.replay("mission.action"):
-        p = event.payload
-        if p.get("mission_id") != mission_id or p.get("action_id") not in action_ids or p.get("status") != "DONE":
+    named = {s["action_id"] for e in journal.replay("mission.registered") if e.payload.get("mission_id") == mission_id
+             for s in e.payload.get("spec", {}).get("strategies", []) if s.get("capability") == capability}
+    records = [(seq.get(e.event_id, 0), e.payload) for e in journal.replay("mission.action")
+               if e.payload.get("mission_id") == mission_id]
+
+    def ours(p) -> bool:          # older reconciliation records may not name the dispatched capability
+        return p.get("capability") == capability or (p.get("capability") is None and p.get("action_id") in named)
+
+    def window(end: int) -> tuple[int, int]:
+        return max((s for s, _ in records if s < end), default=-1), end
+
+    digests, receipts, vouched, receipted = set(), [], [], []
+    for at, p in records:
+        if p.get("status") != "DONE" or not ours(p):
             continue
         if p.get("receipt"):
             record = ledger.find(p["receipt"])
@@ -128,18 +140,23 @@ def bound_facts(journal: Journal, mission_id: str, *, capability: str = "organ.e
             if isinstance(output, dict) and output.get("packet_sha256") and output.get("assessment_sha256"):
                 digests |= {output["packet_sha256"], output["assessment_sha256"]}
                 receipts.append(p["receipt"])
+                receipted.append(window(at))
         elif p.get("route") == "founder_reconciliation":
-            founder_cut = max(founder_cut or 0, seq.get(event.event_id, 0))
+            uncertain = next((s for s, q in records if q.get("action_id") == p.get("action_id")
+                              and q.get("attempt") == p.get("attempt") and q.get("status") == "UNCERTAIN"), None)
+            if uncertain is not None:
+                vouched.append(window(uncertain))
 
-    def before_cut(event) -> bool:
-        return founder_cut is not None and seq.get(event.event_id, founder_cut) < founder_cut
+    def inside(event, windows) -> bool:
+        at = seq.get(event.event_id)
+        return at is not None and any(lo < at < hi for lo, hi in windows)
 
-    observed, appraisals, unbound = [], [], 0
+    observed, appraisals, unbound, legacy = [], [], 0, 0
     for event in journal.replay("organ.observed"):
         p = event.payload
         if p.get("mission_id") != mission_id or not p.get("operation"):
             continue
-        if p.get("content_sha256") in digests or before_cut(event):
+        if p.get("content_sha256") in digests or inside(event, vouched):
             observed.append(p)
         else:
             unbound += 1
@@ -147,13 +164,17 @@ def bound_facts(journal: Journal, mission_id: str, *, capability: str = "organ.e
         p = event.payload
         if p.get("mission_id") != mission_id:
             continue
-        judged = p.get("exchange") or {}
-        if {judged.get("packet_sha256"), judged.get("assessment_sha256")} <= digests or before_cut(event):
+        judged = p.get("exchange")
+        if judged and {judged.get("packet_sha256"), judged.get("assessment_sha256")} <= digests \
+                or inside(event, vouched):
             appraisals.append(p)
+        elif not judged and inside(event, receipted):
+            appraisals.append(p)
+            legacy += 1
         else:
             unbound += 1
     return {"observed": observed, "appraisals": appraisals, "receipts": receipts,
-            "founder_reconciled": founder_cut is not None, "unbound": unbound}
+            "founder_reconciled": bool(vouched), "unbound": unbound, "legacy_appraisals": legacy}
 
 
 __all__ = ["APPRAISAL_VERDICT", "MissionBindingError", "bound_facts", "record_appraisal", "record_exchange"]

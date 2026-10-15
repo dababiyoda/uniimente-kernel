@@ -54,16 +54,29 @@ print(json.dumps(OpportunityIntakeService().evaluate_packet(json.load(sys.stdin)
 """
 
 
-def _organ(script: str, stdin: dict, *args: str, cwd: Path) -> dict:
-    """Run one organ in its own process: no GREG secrets, keys or ledger reach it."""
+def _organ(script: str, stdin: dict, *args: str, cwd: Path, confined: bool = False) -> dict:
+    """Run one organ in its own process: no GREG secrets, keys or ledger reach it.
+
+    ``confined`` (a body with confined egress, #26): an appraisal needs no network, so the organ runs in a bubblewrap
+    network namespace with no door at all, its checkouts read-only. Without namespaces nothing runs (fail closed)."""
     # A fresh bytecode cache per run: a stale .pyc (same size, same mtime second) must
     # never let a re-run execute code other than the organ's current source.
     with tempfile.TemporaryDirectory(prefix="greg-organ-pyc-") as pycache:
         env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "PYTHONHASHSEED": "0",
                "HOME": str(cwd), "LANG": "C.UTF-8", "PYTHONPYCACHEPREFIX": pycache}
+        argv = [sys.executable, "-s", "-c", script, *args]
+        if confined:
+            from foundry.systems.relay_door import namespace_argv
+            from greg.worker_isolation import WorkerIsolationError, _backend
+            try:
+                _backend(require_bubblewrap=True)
+            except WorkerIsolationError as exc:
+                raise CapabilityError(f"confined egress needs bubblewrap network namespaces here: {exc}") from None
+            argv = namespace_argv(writable=[pycache], readonly=[cwd, *(a for a in args if Path(a).is_absolute())],
+                                  chdir=cwd) + argv
         try:
-            done = subprocess.run([sys.executable, "-s", "-c", script, *args], input=json.dumps(stdin),
-                                  capture_output=True, text=True, timeout=ORGAN_TIMEOUT_SECONDS, cwd=cwd, env=env)
+            done = subprocess.run(argv, input=json.dumps(stdin), capture_output=True, text=True,
+                                  timeout=ORGAN_TIMEOUT_SECONDS, cwd=cwd, env=env)
         except subprocess.TimeoutExpired:
             raise CapabilityError(f"organ timed out after {ORGAN_TIMEOUT_SECONDS}s") from None
     if done.returncode != 0:
@@ -232,9 +245,12 @@ def assess(params, ctx: InvocationContext) -> dict:
     p = _paths(params, ctx)
     manifest_bytes = p["manifest"].read_bytes()
     manifest = json.loads(manifest_bytes.decode("utf-8"))
-    receipt = _organ(_RAILSCOUT, manifest, str(p["railscout_root"]), str(p["source_root"]), cwd=p["railscout_root"])
+    confined = ctx.egress is not None
+    receipt = _organ(_RAILSCOUT, manifest, str(p["railscout_root"]), str(p["source_root"]), cwd=p["railscout_root"],
+                     confined=confined)
     packet = packet_from_appraisal(receipt)
-    assessment = _organ(_WEALTHMACHINE, packet, str(p["wmi_root"]), str(KERNEL_ROOT), cwd=p["wmi_root"])
+    assessment = _organ(_WEALTHMACHINE, packet, str(p["wmi_root"]), str(KERNEL_ROOT), cwd=p["wmi_root"],
+                        confined=confined)
     verdict, why = binding_verdict(receipt["appraisal"]["status"], assessment["go_no_go"])
     inputs = {"renderer": RENDERER, "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
               "railscout": receipt, "packet": packet,
@@ -266,7 +282,7 @@ def status(params, ctx: InvocationContext) -> dict:
     return {"assessed": False, "verdict": None, "path": None, "manifest_sha256": digest}
 
 
-def verify_delivery(output: dict, deliver_root: Path | None) -> tuple[bool, str]:
+def verify_delivery(output: dict, deliver_root: Path | None, *, confined: bool = False) -> tuple[bool, str]:
     """Appraiser: the memo is the render of its receipt, and both organs reproduce the receipt."""
     if not isinstance(output, dict) or "inputs" not in output:
         return False, "receipt does not retain the assessment inputs"
@@ -293,13 +309,13 @@ def verify_delivery(output: dict, deliver_root: Path | None) -> tuple[bool, str]
             return False, "the signal manifest changed since the assessment"
         manifest = json.loads(manifest_bytes.decode("utf-8"))
         again = _organ(_RAILSCOUT, manifest, str(paths["railscout_root"]), str(paths["source_root"]),
-                       cwd=paths["railscout_root"])
+                       cwd=paths["railscout_root"], confined=confined)
         if again != inputs["railscout"]:
             return False, "RailScout does not reproduce the receipted appraisal (sources or manifest changed)"
         if packet_from_appraisal(again) != inputs["packet"]:
             return False, "the packet is not the deterministic mapping of the appraisal"
         engine = _organ(_WEALTHMACHINE, inputs["packet"], str(paths["wmi_root"]), str(KERNEL_ROOT),
-                        cwd=paths["wmi_root"])
+                        cwd=paths["wmi_root"], confined=confined)
     except (CapabilityError, OSError, ValueError) as exc:
         return False, f"organ re-run failed: {exc}"
     if any(engine[k] != inputs["assessment"][k] for k in STABLE_ASSESSMENT):

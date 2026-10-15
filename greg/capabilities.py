@@ -430,12 +430,30 @@ def run_cli(params, ctx: InvocationContext, *, isolate_network: bool = True, tim
             "stderr": proc.stderr[-4000:].decode("utf-8", errors="replace")}
 
 
+READ_ONLY_GIT_ENV = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "GIT_CONFIG_NOSYSTEM": "1",
+                     "GIT_CONFIG_GLOBAL": "/dev/null", "GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0",
+                     "GIT_NO_LAZY_FETCH": "1"}
+
+
+def read_only_git(repo: Path, *args, home: Path, timeout: int = 20) -> subprocess.CompletedProcess:
+    """git for a read-only sensor: nothing a repository's own config names is executed. A planted fsmonitor or hook
+    is switched off, and every clean/process filter driver the config defines is blanked (git skips an empty filter
+    command), so ``git status`` cannot run code from the repository it reads. Measured 2026-10-15: before this,
+    git.inspect on a repository whose local config set core.fsmonitor ran that command."""
+    base = ["git", "--no-pager", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null"]
+    env = {**READ_ONLY_GIT_ENV, "HOME": str(home)}
+    drivers = subprocess.run(base + ["-C", str(repo), "config", "--get-regexp", r"^filter\..*\.(clean|process|smudge)$"],
+                             capture_output=True, text=True, timeout=timeout, env=env)
+    blanks = [a for line in drivers.stdout.splitlines() if line.split(" ", 1)[0]
+              for a in ("-c", line.split(" ", 1)[0] + "=")]
+    return subprocess.run(base + blanks + ["-C", str(repo), *args], capture_output=True, text=True, timeout=timeout,
+                          env=env)
+
+
 def git_inspect(params, ctx: InvocationContext) -> dict:
     repo = _inside(Path(params["path"]), ctx.read_roots)
     def git(*args):
-        return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True,
-                              timeout=20, env={"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8",
-                                               "GIT_CONFIG_NOSYSTEM": "1", "HOME": str(ctx.workspace)})
+        return read_only_git(repo, *args, home=ctx.workspace)
     head, status, log = git("rev-parse", "HEAD"), git("status", "--porcelain"), git("log", "--oneline", "-10")
     if head.returncode:
         raise CapabilityError("not a git repository")
@@ -570,8 +588,7 @@ def browser_render(params, ctx: InvocationContext) -> dict:
 def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, profile: Path, env: dict):
     """Run the browser in a bubblewrap network namespace behind a door to a relay allowlisted for the target alone.
     The per-call relay shares the body relay's journal and mandated proxy; without namespaces nothing runs."""
-    import shutil
-    from foundry.systems.relay_door import Door, door_argv
+    from foundry.systems.relay_door import Door, door_argv, namespace_argv
     from foundry.systems.segmentation import Relay
     from greg.worker_isolation import WorkerIsolationError, _backend
     try:
@@ -581,10 +598,7 @@ def _render_behind_relay(argv, relay, host: str, port: int, loopback: bool, prof
     scoped = Relay({"browser.render": {"allow": [[host, port]], "external": not loopback}}, relay.journal,
                    connect=relay.connect, proxy=relay.proxy)
     with Door(scoped, "browser.render") as door:
-        namespace = [shutil.which("bwrap"), "--unshare-user", "--unshare-pid", "--unshare-ipc", "--unshare-uts",
-                     "--unshare-net", "--die-with-parent", "--new-session", "--ro-bind", "/", "/", "--proc", "/proc",
-                     "--dev", "/dev", "--tmpfs", "/dev/shm", "--tmpfs", "/tmp", "--bind", str(profile), str(profile),
-                     "--chdir", str(profile), "--"]
+        namespace = namespace_argv(writable=[profile], readonly=[str(Path(argv[0]).resolve().parent)], chdir=profile)
         return subprocess.run(namespace + door_argv(sys.executable, door.fd, argv), pass_fds=[door.fd],
                               capture_output=True, timeout=45, env=env)
 
@@ -970,6 +984,10 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                     {"daleobanks_root": "path", "draft": "path", "python": "path?"},
                                     {"status": "str", "why": "str", "published": "dict", "daleobanks_ledger": "dict"},
                                     filesystem="workspace-write", binaries=(sys.executable,),
+                                    # DALEOBANKS's X client (tweepy): the API and media-upload hosts. A confined
+                                    # body's relay allows exactly these; nothing is reachable unless LIVE is armed.
+                                    network="egress-allowlist", egress_allowlist=("api.twitter.com",
+                                                                                  "upload.twitter.com"),
                                     data_classes=("public_web",), tests=("tests/unit/test_greg_daleobanks_bridge.py",),
                                     provenance={"source": "uniimente-kernel/greg/daleobanks_bridge.py",
                                                 "mechanism_from": "DALEOBANKS services/multiplexer.py, "

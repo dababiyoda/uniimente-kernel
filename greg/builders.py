@@ -217,14 +217,18 @@ def _billed_source(reply: str, cost_usd) -> str:
 
 
 class ClaudeCodeBuilder:
-    """The installed Claude Code CLI as a coding agent: no tools, no disk, bounded spend."""
+    """The installed Claude Code CLI as a coding agent: no tools, no disk, bounded spend.
+
+    ``egress`` is set by a body with confined egress (#26): the CLI then runs in a network namespace whose only way
+    out is the relay door, allowlisted for the Anthropic API host, like the ``claude-code`` model route."""
 
     def __init__(self, binary: str | None = None, *, model: str | None = None, max_budget_usd: float = 1.00,
-                 timeout: int = 300, runner=subprocess.run):
+                 timeout: int = 300, runner=subprocess.run, egress=None):
         self.binary = binary or shutil.which("claude")
         if not self.binary:
             raise BuildError("Claude Code CLI is not installed")
         self.model, self.max_budget_usd, self.timeout, self.runner = model, max_budget_usd, timeout, runner
+        self.egress = egress
         self.identity = "claude-code" + (f":{model}" if model else "")
 
     def build(self, request: dict, feedback: list[str] | None = None) -> dict:
@@ -234,7 +238,8 @@ class ClaudeCodeBuilder:
         if self.model:
             argv += ["--model", self.model]
         with tempfile.TemporaryDirectory(prefix="greg-builder-") as empty:  # nothing to read, nothing to write
-            proc = self.runner(argv, input=prompt, capture_output=True, text=True, timeout=self.timeout, cwd=empty)
+            proc = (self.runner(argv, input=prompt, capture_output=True, text=True, timeout=self.timeout, cwd=empty)
+                    if self.egress is None else self._behind_door(argv, prompt, empty))
         if proc.returncode:
             raise BuildError(f"Claude Code exited {proc.returncode}: {(proc.stderr or proc.stdout)[-300:]}")
         result = json.loads(proc.stdout)
@@ -244,6 +249,24 @@ class ClaudeCodeBuilder:
         return {"source": _billed_source(str(result.get("result", "")), cost), "builder": self.identity,
                 "prompt_sha256": "sha256:" + hashlib.sha256(prompt.encode()).hexdigest(),
                 "cost_usd": cost}
+
+
+    def _behind_door(self, argv: list, prompt: str, scratch: str):
+        """The same confinement as ``models.ClaudeCodeRoute`` (its namespace and per-call relay), as its own identity."""
+        import sys
+        import urllib.parse
+        from foundry.systems.relay_door import Door, door_argv
+        from greg import model_child
+        from greg.models import RouteError, _namespace, _scoped_relay, cli_home
+        env, runtime = cli_home(scratch)
+        try:
+            namespace = _namespace(scratch, readonly=(str(Path(self.binary).resolve().parent), *runtime))
+        except RouteError as exc:
+            raise BuildError(str(exc)) from None
+        host = urllib.parse.urlsplit(model_child.BASE_URLS["anthropic"]).hostname
+        with Door(_scoped_relay(self.egress, "genesis.claude-code", host), "genesis.claude-code") as door:
+            return self.runner(namespace + door_argv(sys.executable, door.fd, argv), input=prompt, capture_output=True,
+                               text=True, timeout=self.timeout, cwd=scratch, pass_fds=[door.fd], env=env)
 
 
 BUILDER_SYSTEM = ("You write one small, pure Python function to an exact contract. You have no tools. "

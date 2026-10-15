@@ -53,3 +53,27 @@ def test_live_arming_is_never_forwarded_by_greg(tmp_path, monkeypatch):
     params = files(tmp_path, "z3-solver 5.1.0.0 is on PyPI.")
     out = bridge.publish(params, ctx(tmp_path, "daleobanks.publish"))
     assert out["kill_switch_armed"] is False and out["published"] == {}   # ...GREG never arms DALEOBANKS
+
+
+def test_the_real_organ_runs_inside_the_confined_namespace_and_reaches_nothing_while_disarmed(tmp_path):
+    """#26: on a confined body DALEOBANKS's own interpreter runs in a network namespace behind the relay. Its checks
+    and its disarmed publishing gate work unchanged there; anything it tried to reach would be journaled."""
+    from foundry.systems.segmentation import Journal, Relay
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError as exc:
+        pytest.skip(f"no bubblewrap network namespaces here: {exc}")
+    journal = Journal(tmp_path / "egress-journal.jsonl")
+    relay = Relay({}, journal)
+    params = files(tmp_path, "z3-solver 5.1.0.0 is on PyPI, after 5.0.0.0.")
+
+    def confined(capability):
+        return InvocationContext(workspace=tmp_path / "ws", read_roots=(tmp_path, DALEOBANKS),
+                                 secrets=SecretBroker(tmp_path / "s.json"), manifest=BUILTINS[capability][0],
+                                 mission_id="m:test", grant_id="grant-test", egress=relay)
+    assert bridge.verify(params, confined("daleobanks.verify"))["verdict"] == "VERIFIED"
+    out = bridge.publish(params, confined("daleobanks.publish"))
+    assert out["status"] == "BLOCKED_BY_DALEOBANKS" and out["published"] == {}
+    assert out["daleobanks_ledger"]["chain_ok"] is True
+    assert journal.read() == []                         # the disarmed organ asked the relay for nothing

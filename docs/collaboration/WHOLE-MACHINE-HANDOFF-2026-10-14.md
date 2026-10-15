@@ -127,22 +127,34 @@ The 13 holes were:
   - Choose a dedicated host for #9/#10 privileged runtimes, or decline
     (`PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md`).
   - Decide on merging PR #169.
-- **#26 PARTIAL.** Still outside the relay:
-  - `browser.session` (Playwright);
-  - the paid model routes, called from the body process;
-  - anchoring;
-  - the DALEOBANKS bridge.
-  Confinement is also still opt-in.
+- **#26 PARTIAL.** `browser.session`, the paid model routes, anchoring, the DALEOBANKS bridge, the venture organs
+  (with the appraiser's re-run) and the Claude Code Genesis builder joined the relay in increments 10 to 13. The
+  founder's installer now creates the body confined whenever `greg doctor` finds the kernel filter and network
+  namespaces. What remains is to observe that on the founder's Chromebook (`greg doctor --chromebook` shows
+  `confined_egress.available`, and `greg status` shows `egress.confined`).
+  - Since increment 16, no door program can read the founder's signing key or the body's home. Before it, every
+    door program could read both, and the Claude Code route and builder had the founder's home writable.
 - **#9, #10, #28 and #52 PARTIAL** (Foundry 50/55).
+- **N3 and later need #137/#168's business machinery.** `greg/path.json` names N3, N4, N6 and N7, but the
+  `business_case` and `shared_work` templates and their measures exist only on #137/#168, so those nodes cannot be
+  measured from this tree. Porting them is its own increment. #168's three runbook defects (a stranded attach;
+  human work noticed up to an hour late; a person's step that hid where the work goes) were ported in increments 9
+  and 14.
 - **Risks recorded with kill conditions in the convergence record:**
   - the owner link can leak through terminal scrollback;
   - the rights screen checks wording and declarations and does not prove title, so "emergency" in a title is a
     false positive;
-  - regression blame is by sequence, not proven causation.
+  - regression blame is by sequence, not proven causation;
+  - the door namespace hides secrets by location (the founder's home, the body home, `.git`): a credential kept
+    elsewhere, or inside GREG's checkout, is visible to door programs.
 - **Untested here.**
-  - DALEOBANKS real-organ runs.
-  - A process kill in the middle of a self-repair.
-  - Loss of a model vendor end to end; it is tested at component level only.
+  - DALEOBANKS real-organ runs (run locally since increment 12, against `e2f1ebe`; not in CI).
+  - A storage device that loses whole lines it already acknowledged. The hash chain cannot detect a lost suffix of
+    the ledger.
+  - A vendor that fails slowly, streams partially or rejects the key, over real HTTP. Classification of those
+    failures is tested at component level only.
+  - Tested since increment 15: a process kill in the middle of a self-repair, including a torn ledger append, and the
+    loss of a model vendor end to end through the real SDKs.
 - **Future technology.** Chromium cannot run its own sandbox inside GREG's namespace (`os_sandboxed: false`). A
   privileged or rootless-sandbox route depends on the #9/#10 host decision.
 
@@ -159,8 +171,8 @@ The 13 holes were:
 Reproduce:
 
 ```
-python -m pytest -q tests/unit                     # 2840 passed, 12 skipped
-python -m pytest -q tests/integration              # 201 passed
+python -m pytest -q tests/unit                     # 2866 passed, 9 skipped (increment 15)
+python -m pytest -q tests/integration              # 216 passed (increment 15)
 python scripts/ci/check_worker_appraisal_mutants.py
 python -m greg rehearse --dir /tmp/greg-rehearsal
 python scripts/mission_trace.py /tmp/greg-rehearsal/body <mission id from the rehearsal output>
@@ -181,5 +193,5 @@ GREG_TEST_RAILSCOUT=<railscout checkout with railscout/appraise.py> GREG_TEST_WM
   - greedy tying the exact solver;
   - the proxy-bypass evidence from 2026-09-30.
 - **Next active dependency.** The founder's first-body run, which is the N1 gate. Until then, the strongest next
-  buildable work is to bring `browser.session` and the paid model routes behind the relay door. That would make
-  confined egress safe to turn on by default, which is the remaining #26 criterion.
+  buildable work is the N3 business machinery from #137/#168. Confined egress is on by default for the founder's
+  body since increment 13; observing it on the Chromebook is part of the same founder run.

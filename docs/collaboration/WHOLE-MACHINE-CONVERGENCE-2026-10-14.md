@@ -202,7 +202,7 @@ mission. Three attacks were added this increment; the rest existed and were loca
 |---|---|---|
 | Compromised or lying cognitive provider | `test_greg_adversarial_machine::test_lying_solver_is_caught_by_the_independent_profit_dp`; `test_greg_recombine::test_a_lying_engine_is_caught_through_the_construction_and_both_are_replaced`; `test_greg_missions::test_genesis_rejects_a_lying_tool_and_escalates` | INTEGRATED |
 | Conflicting outputs from two qualified intelligences | **new** `test_greg_adversarial_machine::test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_voted` | INTEGRATED |
-| Malicious page and prompt injection | **new** `test_greg_confined_egress::test_a_malicious_page_fetched_by_a_mission_stays_data`; **new (increment 8)** `test_the_browser_renders_behind_the_relay_and_its_page_cannot_reach_anything_else`; `test_greg_adversarial_machine::test_prompt_injection_in_sources_stays_data` | INTEGRATED (pages fetched by `http.get` and rendered by `browser.render`; the Playwright `browser.session` is not exercised) |
+| Malicious page and prompt injection | **new** `test_greg_confined_egress::test_a_malicious_page_fetched_by_a_mission_stays_data`; **new (increment 8)** `test_the_browser_renders_behind_the_relay_and_its_page_cannot_reach_anything_else`; `test_greg_adversarial_machine::test_prompt_injection_in_sources_stays_data` | INTEGRATED (pages fetched by `http.get`, rendered by `browser.render`, and, from increment 10, driven by the Playwright `browser.session` behind the relay: `test_a_browser_session_drives_pages_behind_the_relay_and_nothing_else_leaves`) |
 | Worker modifying its acceptance criteria | `test_greg_workers::test_no_test_change_means_no_acceptance`, `test_appraisal_binds_acceptance_to_the_original_commission`, `test_a_change_to_a_protected_surface_is_never_accepted` | INTEGRATED (signed mission on a real body, real git clone; corrected from COMPONENT in increment 5) |
 | Crash during an unknown external outcome | `test_greg_capabilities::test_crash_after_dispatch_is_uncertain_and_receipts_are_reused`; `test_greg_local_mission::test_lost_host_claim_requires_reconciliation`; `test_greg_first_mission::test_crash_after_survey_resumes_without_repeating_a_completed_step` | INTEGRATED |
 | Duplicate payment or publication | `test_greg_adversarial_machine::test_duplicate_fixture_order_does_not_double_book`; `test_greg_community_journeys::test_journeys_measure_sequences_separate_tiers_and_refuse_duplicate_money` | INTEGRATED (FIXTURE) |
@@ -520,6 +520,540 @@ Still outside the relay:
 
 Confined egress is also still opt-in. The second acceptance criterion ("a compromised component cannot reach
 undeclared hosts") therefore does not hold machine-wide.
+
+## Increment 9 (same day): two founder-runbook defects ported from #168
+
+A cross-lineage handoff on PR #169 (measured at `0e557d8`, from rehearsing the founder's runbook on the installed
+body in #168) named two product defects this branch still had. Both were reproduced here first, then ported with
+tests adapted to this branch's own templates and to Mission Control, the founder's front page.
+
+- **A capability ask could be stranded** (`8531595`). On a capability ask, Mission Control's front page (which
+  reuses the classic decisions block) offered Approve beside Attach. Approve only records an answer, and answering
+  removed the ask with its Attach button, while the mission stayed blocked on the unattached capability. The phone
+  can approve but never attach, so an answer given there stranded missions the same way.
+  - `status()` now projects `attach_waiting` from the ledger: the verified candidates a mission still waits on,
+    whatever the ask's answer.
+  - The page lists them under "Waiting for an attach", and `Console.attach` accepts exactly those.
+  - Approve is no longer offered on an ask that has an Attach button.
+  - Attach remains the one signed `CAPABILITY_ATTACH` for a verified candidate.
+  - Test: `test_greg_linear_genesis::test_an_answered_capability_ask_still_leaves_the_founder_an_attach`, on both
+    pages. It failed here first, with Approve offered.
+- **A person's work was noticed up to an hour late** (`924bede`). A mission blocked on HUMAN_WORK re-observed only
+  at its cadence (3600 s). While blocked on human work, the engine now checks only the metadata of the `fs.read`
+  paths the founder-signed mission declares. When one has changed since the last observation, the governed
+  observation runs at once, and an early withdrawal reschedules the next step to now. No content is read, no grant
+  issued and nothing recorded until the real observation. Test: `test_greg_human_work_latency.py`, rewritten for this
+  branch's `templates.human_work`. A delivered lease review was unseen two minutes later here, and is now seen.
+
+Not ported, recorded as an open cross-lineage obligation: `greg/path.json` names N3, N4, N6 and N7, but the
+`business_case` and `shared_work` templates and their measures exist only on #137/#168:
+
+- `business_loop_closed`
+- `sop_compounding`
+- `human_work_shared`
+- `venture_compounding`
+
+This branch's runbook steps 4–8 are its own (First Mission, memory, Ventures, founder control, acceptance) and run
+here, but N3 and later cannot be measured from this tree. Porting them spans path measures, two templates, venture
+books and the engine's `declined_if`, so it is its own increment.
+
+## Increment 10 (same day): `browser.session` behind the #26 relay, and two leaks found on the way
+
+### Negative evidence, measured before the change
+
+Unconfined `browser.session` claimed that "every other request is aborted and counted". A probe on this branch at
+`28c3e9c` showed that was false in two ways:
+
+- **WebSockets bypassed the allowlist.** Playwright's `context.route` never sees a WebSocket. A page signed for
+  `127.0.0.1` opened one to `127.0.0.2`, which was not on the list. The bytes arrived, and nothing was counted.
+- **The allowlist compared host names only.** A page on a loopback target reached another port on `127.0.0.1` by
+  `fetch` and by WebSocket. On a real body that means the Console, the model server or any other local service.
+
+### What changed for GREG
+
+- **In the browser.** The allowlist is now exact origins (host and port), taken from the signed params:
+  - the start URL;
+  - absolute `goto` URLs on the signed hosts;
+  - `also_hosts` (`host` means port 443; `host:port` means that port).
+
+  WebSockets are routed too. One outside those origins is never connected and is counted in `blocked_websockets`.
+  Refusal means not connecting: a synchronous `close()` inside Playwright's WebSocket handler never returns,
+  because the handler runs on Playwright's own event loop. That hang was hit and diagnosed here.
+- **On a body with `--confined-egress`.** `browser.session` is in `CONFINED_EGRESS`. Its Chromium runs in a bubblewrap
+  network namespace whose only way out is the relay door, allowlisted for exactly those origins. Every connection is
+  decided and journaled at the relay, WebSockets included. Two adaptations were needed:
+  - Playwright's driver, not the body, starts Chromium, so no descriptor of the body's survives that route. The
+    door therefore reaches the relay over a one-time Unix socket in the session's private (0700) directory. The
+    body accepts one connection, from its own user only, then removes the path.
+  - The door keeps Playwright's pipe (descriptors 3 and 4) for Chromium and closes everything else of the
+    launcher's.
+- **Downloads still work.** They land in the session's directory through the namespace.
+- **Fail closed.** Without bubblewrap network namespaces, nothing is launched.
+
+### Evidence
+
+- `tests/integration/test_greg_confined_egress.py::test_a_browser_session_drives_pages_behind_the_relay_and_nothing_else_leaves`,
+  run twice:
+  - **`kept`.** A signed mission drives two pages and downloads a file. The page's WebSocket, `fetch` by IP and
+    `fetch` by name reach nothing. The relay journals only the signed origin as allowed, and its chain verifies.
+  - **`removed`.** Playwright's `route` and `route_web_socket` are patched out, as if a bypass or regression removed
+    the in-browser wall. The relay alone still refuses the page's attempts and journals each one.
+  - **Mutation.** With `browser.session` taken out of `CONFINED_EGRESS`, the `removed` variant shows three
+    connections reaching the unlisted port.
+- `tests/unit/test_greg_computer.py::test_a_page_cannot_open_websockets_or_reach_other_ports_outside_the_signed_origins`.
+  It failed on the previous `greg/computer.py` at `hits == []`, with the leaked `GET /ws` upgrade bytes.
+- `tests/unit/test_foundry_relay_door.py`, four new tests:
+  - a door on a path serves a program another launcher started;
+  - only the kept descriptors arrive;
+  - the path must sit in a private directory;
+  - standard streams cannot be "kept".
+- Behind the relay, Chromium's own background connections (`www.google.com`, `redirector.gvt1.com`,
+  `clients2.google.com`) are denied and journaled. Unconfined, they leave the browser process directly, and an
+  in-browser route never sees them.
+
+### #26 stays PARTIAL
+
+Still outside the relay:
+
+- the paid model routes, called from the body process;
+- anchoring;
+- the DALEOBANKS bridge.
+
+Confinement is still opt-in.
+
+## Increment 11 (2026-10-15): the paid model routes behind the #26 relay
+
+### What changed for GREG
+
+On a body initialised with `--confined-egress`, a paid model route no longer opens a network connection from the body
+process.
+
+- **Anthropic and OpenAI routes.** The vendor SDK holds the founder's key. It now runs as `python -I` inside a
+  bubblewrap network namespace whose only way out is the relay door, allowlisted for the route's pinned host
+  (`api.anthropic.com:443`, `api.openai.com:443`).
+  - The key crosses only stdin, never argv, the environment or the journal.
+  - The child returns normalised fields, or a failure's status, body and class name. The parent classifies that
+    failure with the same `classify` as before, so a policy verdict stays a terminal refusal and an outage stays a
+    fallback.
+  - One function, `greg/model_child.py`, calls the SDK and normalises its answer in both places: the body process
+    (unconfined body, or a test's injected client) and the confined child.
+- **The Claude Code CLI route.** The CLI runs behind its own door, allowlisted for the Anthropic API host. Its home
+  is bound because it keeps its login there.
+- **Every place a paid route is built receives the relay.**
+  - The body's Genesis builder factory gets it. A factory that cannot take it builds nothing (fail closed), rather
+    than calling a provider around the relay.
+  - The console's proposal transport gets it too: `greg console` builds the same relay over the same journal.
+- **The journal is locked across processes.** The body and its console now both decide egress into one hash chain.
+  The test with four concurrent writer processes keeps one unbroken chain. With the lock removed, three runs lost
+  entries or broke the chain (122/160, broken at 160, 141/160).
+- **Without bubblewrap**, a confined paid route reports `capability_unavailable`, so the router falls to the next
+  route. It never runs unconfined.
+
+### Evidence
+
+- `tests/integration/test_greg_confined_egress.py` runs the real `anthropic` (1.14) and `openai` (3.31) SDKs inside
+  the namespace, through the door, the relay and a fake mandated proxy, to a loopback TLS stand-in for each provider:
+  - the answer, served model and cost come back;
+  - the key reaches the provider header and appears nowhere in the journal;
+  - the proxy saw `CONNECT api.anthropic.com:443` with the relay's credentials;
+  - a refusal is terminal, a policy 400 is `provider_policy_refusal`, and a 500 is `transient` after the SDK's
+    retries;
+  - a stand-in Claude Code CLI reaches the API host through the relay, is refused at `example.com` and has no
+    direct route.
+- `tests/unit/test_greg_models.py`: the relay reaches the builder; an unaware factory builds nothing; a route without
+  namespaces is unavailable, never unconfined; child failures keep their class.
+- `tests/unit/test_foundry_segmentation.py`: four writer processes keep one chain.
+- `requirements-dev.txt` now installs both SDKs. CI therefore runs these tests and
+  `test_greg_routing_integrity_sdk.py`, which it previously skipped.
+
+### Negative evidence
+
+- The first run failed in the child with `FileNotFoundError`. The namespace's private `/tmp` hid the operator's trust
+  anchor (and, for the CLI test, the CLI itself). Both are now re-exposed read-only.
+- The stand-in CLI is not the real Claude Code: no real provider was called and no key was used. Which other hosts
+  the real CLI contacts (telemetry, login refresh) is unverified. On the founder's device, those attempts would show
+  up as DENIED in the journal.
+
+### #26 stays PARTIAL
+
+Still outside the relay:
+
+- anchoring;
+- the DALEOBANKS bridge.
+
+Confinement is still opt-in.
+
+## Increment 12 (2026-10-15): anchoring and the DALEOBANKS bridge behind the #26 relay, and the egress inventory
+
+### What changed for GREG
+
+- **Anchoring.** On a confined body, the RFC 3161 query (a SHA-256 of the ledger head) is posted by a component with
+  no socket of its own (`confined_request`, the seccomp child that `http.get` uses, extended to POST and to loopback
+  http). It goes through the relay, allowlisted for the founder-signed TSA origin alone. Without the kernel filter,
+  the query is refused and recorded like any TSA outage; it is never sent around the relay.
+- **The DALEOBANKS bridge.** DALEOBANKS's own interpreter runs in a bubblewrap network namespace behind the door:
+  - `daleobanks.verify` may reach nothing;
+  - `daleobanks.publish` may reach only the hosts its manifest now declares: the X API and media-upload hosts its
+    tweepy client uses (`api.twitter.com`, `upload.twitter.com`). The manifest previously claimed `network: none`,
+    which was false for a LIVE publish.
+- **One namespace definition.** `browser.render`, `browser.session`, the model routes and DALEOBANKS each built
+  nearly the same bubblewrap command. All four now use `relay_door.namespace_argv`.
+- **DALEOBANKS real-organ runs.** A `.venv` was built from its own `requirements.txt` (gitignored, at `e2f1ebe`). The
+  three real-organ tests that had always skipped here now run, plus a fourth, confined one.
+
+### Egress inventory, 2026-10-15
+
+On a confined body, every mission-path egress crosses the relay or has no network.
+
+| Path | On a confined body |
+|---|---|
+| `http.get`, `github.pulls`, `brief.engineering` | seccomp child, relay (increments 3, 6) |
+| `browser.render`, `browser.session`, coding workers | namespace and door (increments 8, 10) |
+| Paid model routes (Anthropic, OpenAI, Claude Code) | namespace and door (increment 11) |
+| Anchoring | seccomp child, relay (this increment) |
+| DALEOBANKS verify and publish | namespace and door (this increment) |
+| Foundry systems (`foundry.query`, `foundry.apply`) | seccomp worker with no network at all; their Stripe test-mode, OCI registry and federation code is reachable only outside the mission path |
+| Local model (Ollama) | fixed numeric loopback address, no DNS or proxy |
+
+### Evidence
+
+- `test_a_confined_body_anchors_its_ledger_through_the_relay_from_a_component_without_a_socket` uses OpenSSL's real
+  RFC 3161 responder behind a loopback TSA, with the direct route poisoned. The anchor verifies, and only
+  `proof.anchor → 127.0.0.1:<port>` is ALLOWED. With the body reverted to the direct transport, the test fails with
+  "the TSA was contacted around the relay".
+- `test_the_real_organ_runs_inside_the_confined_namespace_and_reaches_nothing_while_disarmed` runs DALEOBANKS's
+  actual EthicsGuard, Critic, PromptFirewall and disarmed publishing gate inside the namespace. Verify returns
+  VERIFIED, publish returns BLOCKED_BY_DALEOBANKS, its ledger chain is OK, and the relay journal is empty.
+- `test_a_compromised_daleobanks_organ_reaches_only_the_platform_hosts_its_capability_declares`: during verify the
+  stand-in organ is refused even at the X API. During publish it reaches only the X API (through the fake mandated
+  proxy), is refused at `example.com`, and has no direct route.
+
+### CI: the Seed Genome freeze and `greg/models.py`
+
+Check 6 failed on `4c84d61` (increment 11) with `FROZEN_INPUT_CHANGED`. The Seed Genome evaluation pins
+`greg/models.py`, and increment 11 changed it, for egress only. Reproduced here: of the pinned inputs, only that file
+differs. Under the freeze convention, v5 is kept and `freeze-v6.json` is written over this tree (`run.py` names v6).
+
+The re-run in a venv built exactly as check 6 builds it gives the same result three ways: INCONCLUSIVE,
+timing-independent gain 0.0, 100/100 matched in both arms, 0 hard failures, no authority change. The three runs are:
+
+- the recorded v5 run;
+- the tree before increment 11, under v5;
+- this tree, under v6 (`docs/evidence/whole-machine-handoff/2026-10-15/seed-genome-v6-results.json`).
+
+The held-out evaluation, which pins only `cortex/` files, also runs clean.
+
+Negative evidence: my development venv crashes the evaluation (an item's claim with `result: None`) on the
+unchanged tree too, so that crash belongs to its engine versions, not to this change. The CI-matching venv does not.
+
+### #26 stays PARTIAL
+
+Confined egress is still opt-in, so the second acceptance criterion does not hold machine-wide. Turning it on by
+default is the remaining step; it changes what the founder's body does on a host without namespaces.
+
+## Increment 13 (2026-10-15): confinement on by default for the founder's body; the inventory corrected
+
+### Correction to increment 12
+
+Increment 12 said that on a confined body "every mission-path egress crosses the relay or has none". That was
+wrong. An audit of every process GREG spawns, not only of its network calls, found three more paths:
+
+- `venture.assess` ran the RailScout and WealthMachine organs' own code in a plain subprocess with full network.
+- The separate appraiser re-ran those organs the same way, to re-derive a delivered memo.
+- The Claude Code Genesis builder (`greg run --builder claude-code`) is handed to the body ready-made, so it never
+  received the relay.
+
+All three are now confined:
+
+- **Organs.** An appraisal needs no network, so on a confined body each organ runs in a namespace with no door at
+  all, its checkouts read-only. The appraiser receives `confined_egress` with its request and re-derives under the
+  same confinement.
+- **The builder.** The body hands its relay to any ready builder that can take one. The CLI then runs behind its own
+  door (`genesis.claude-code`).
+
+### Confinement on by default for the founder's body
+
+- **The doctor.** `greg doctor --chromebook` probes confined egress: it installs the Kernel seccomp filter in a
+  throwaway child, and runs `/usr/bin/true` in a bubblewrap network namespace.
+- **The installer.** `greg/chromebook/install.sh` creates the body with `--confined-egress` whenever the probe passes.
+  It prints "Network: confined." When the probe fails, it warns with the reason and the fix (`sudo apt install -y
+  bubblewrap libseccomp2`). `--no-confined-egress` opts out.
+- **Visibility.** `status` gains `egress` (confined or not, relay decisions, denials, chain intact). Mission Control's
+  header shows the same line.
+- **Not changed.** The library default (`init_body`, plain `greg init`) stays opt-in, so other platforms and the
+  test suite are unaffected.
+
+### Found on the way: `git.inspect` ran repository-configured code
+
+`git.inspect` is a read-only sensor, and the appraiser re-observes with it. On a repository whose local config set
+`core.fsmonitor`, inspecting it ran that command; a `.gitattributes` clean filter is the other route `git status`
+takes into repository-chosen code. Now `read_only_git`:
+
+- ignores system and global config;
+- switches off fsmonitor and hooks;
+- blanks every clean, process and smudge filter driver the config defines (git skips an empty filter command).
+
+The regression test plants both. On the previous code the fsmonitor ran once and the filter process twice; now
+nothing runs, and a real modification still reads as dirty.
+
+### Evidence
+
+- `test_greg_chromebook_rehearsal::test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_a_model`
+  now also asserts that the installer confined the body exactly when the doctor says it can. The whole runbook
+  (install, N1, N2, the console, supervised restarts) passes on that confined body.
+  `test_the_founder_can_decline_network_confinement_at_install` covers the opt-out.
+- `test_greg_ventures`:
+  - a probe that reaches a listener on the body's loopback unconfined reaches nothing confined, and sees only `lo`;
+  - on a confined body a signed venture mission is ACHIEVED and VERIFIED, with the organ having seen only `lo`;
+  - with the appraiser's re-run left unconfined, the appraisal is REFUTED ("RailScout does not reproduce the
+    receipted appraisal");
+  - the real RailScout (`232f724`, exported read-only) and WealthMachine (`ec82b80`) organs give the same assessment
+    unconfined and with no network, and the confined re-run reproduces it (`GREG_TEST_RAILSCOUT`/`GREG_TEST_WMI`;
+    19/19).
+- `test_the_claude_code_genesis_builder_runs_behind_the_relay_on_a_confined_body`: the body hands the builder its
+  relay. The stand-in CLI reaches the API host as `genesis.claude-code`, is refused at `example.com`, and has no
+  direct route.
+
+### #26 stays PARTIAL
+
+The probe and a confined body have not yet been observed on the founder's Chromebook, which is the remaining
+acceptance step. A body made without the installer stays opt-in, and a host without bubblewrap and libseccomp
+cannot confine.
+
+## Increment 14 (2026-10-15): a third founder-runbook defect ported from #168
+
+A second cross-lineage handoff on PR #169 (2026-10-14 22:05, measured at `28c3e9c`) reported one more defect from
+rehearsing the runbook on #168's installed body. I reproduced it here first.
+
+- **The defect.** A person's step never said where the work goes, and an answer hid it.
+  - The HUMAN_WORK ask told the founder to "put the deliverable where the mission's check reads it". The file and
+    folder lived only in `evidence.deliverable_observed_by`, which no surface rendered.
+  - An answer to the ask is only recorded and changes nothing for the mission. Yet `status()`, the morning report
+    and the phone (which reads `status()`) dropped answered asks.
+  - So one Approve left the mission waiting on a file, with no instruction anywhere.
+- **The fix** (`3c92bc9` on #168):
+  - `asks.open_requests` is the one open-ask rule, used by `status()` and the morning report. An answered HUMAN_WORK
+    ask stays open, marked with the answer, until GREG withdraws it on seeing the work or its mission ends.
+  - The classic page and Mission Control (which reuses its decisions block) say which file and which folder GREG
+    reads. They say that an answer was only recorded, and offer no Approve or Reject button on these asks.
+- **Tests.** `test_greg_human_work.py`, the last two tests, adapted to cover Mission Control too:
+  - before the fix, both failed here: neither page named the file, and after an answer the ask left `status()`;
+  - with only `tribunal.py` reverted, the morning-report assertion fails.
+
+## Increment 15 (2026-10-15): two "untested here" items now tested end to end
+
+The handoff listed two recovery paths that had been tested only in parts. Both now have end-to-end tests. Neither
+test needed a code change: the existing recovery logic held.
+
+### A hard kill in the middle of a self-repair
+
+`tests/integration/test_greg_self_repair_kill.py` runs the body in its own process. A journal hook sends the
+process SIGKILL immediately after one chosen repair fact is written. Nothing flushes, closes or cleans up, as with a
+power loss or the out-of-memory killer. The three kill points are:
+
+- the repair deficit has opened (`deficit.opened`, carrying `repair`);
+- the replacement has been verified (`genesis.verified`);
+- the replacement has been registered but not yet attached (`capability.registered`);
+- the same point, with the kill landing in the middle of the next ledger append, so half a line is on disk.
+
+The test then reopens the same home with a working builder and ticks. For each kill point:
+
+- exactly one repair deficit exists, and it is resolved once, by the replacement;
+- nothing is registered twice;
+- the broken capability stays QUARANTINED and the replacement is ATTACHED;
+- the original mission returns to HOLDING with its check passing;
+- the ledger chain verifies;
+- in the torn case, the half line is moved to a sidecar file (kept as evidence) and the ledger records one
+  `unacknowledged_tail_quarantined` recovery. Without a tear, neither appears.
+
+**Mutants** (applied, then reverted):
+
+- `greg/genesis.py`, a restart that ignores the open deficit (`_deficit_for` always opens a new generation): every
+  kill point fails, with two repair deficits instead of one.
+- `greg/genesis.py`, a restart that skips a verified but unattached replacement: the `capability.registered` kill
+  point fails, because the replacement is built and registered a second time.
+- `greg/body.py`, the ledger opened with `tail="refuse"`: the torn case fails, because the body cannot open
+  ("partial or blank history record") and would crash-loop under its supervisor.
+
+### Losing a model vendor
+
+`tests/integration/test_greg_vendor_loss.py` uses the real `anthropic` and `openai` SDK clients over real HTTP,
+through the body's single Genesis path. Each client points at a local endpoint:
+
+- Nothing listens on Anthropic's port. The SDK retries and fails, as it would against an outage.
+- OpenAI's endpoint answers through the Responses API.
+
+The test checks:
+
+- The founder's signed mission needs a function GREG lacks. Genesis builds it through OpenAI, and the **original**
+  mission reaches ACHIEVED.
+- The routing evidence records Anthropic as `failed`, class `transient` (an outage, never a refusal), and OpenAI as
+  `ok`.
+- A restarted body replays that evidence into route health: Anthropic has one consecutive failure, OpenAI none.
+- With both vendors down, nothing is built and the mission is not closed. Both outages are recorded as transient.
+
+**Mutants** (applied to `greg/models.py`, then reverted; `greg/models.py` is unchanged, so the Seed Genome freeze
+`freeze-v6` still holds):
+
+- With no fallback to the next vendor, both tests fail.
+- With routing evidence never replayed into health, the restart assertion fails.
+- With `APIConnectionError` dropped from the transient classes, the outage is recorded as `unknown` and both tests
+  fail.
+
+### What this does not show
+
+- The outage is a closed local port. A real vendor can also fail slowly, return partial streams, or fail on
+  authentication. The component tests in `test_greg_models.py` cover classification of status codes and timeouts,
+  but not over a real provider.
+- The kill is SIGKILL of one process on one filesystem, and the torn line is written by the test, not produced by
+  a real power cut. A device that loses whole lines already acknowledged is not covered. The hash chain alone
+  cannot detect that loss at the end of the file, because a shorter chain still verifies; only a head recorded
+  somewhere else would reveal it.
+
+## Increment 16 (2026-10-15): confined programs can no longer read the founder's key or the body's home
+
+### The defect
+
+Every door program runs in one namespace, `relay_door.namespace_argv`. It mounted the whole filesystem read-only.
+That blocked writes and the network, but not reads. Its callers:
+
+- the browser (`browser.render`, `browser.session`);
+- the model SDK child behind the paid routes;
+- the Claude Code route and the Claude Code Genesis builder;
+- the DALEOBANKS bridge;
+- the venture organs.
+
+On the founder's Chromebook, the installer puts the founder's signing key at `~/.greg-founder.pem`. It puts the body
+at `~/.uniimente/greg`, which holds `secrets.json`, the device and witness keys, and the ledger. Every door program
+could read all of it. The Claude Code route and builder went further: they mounted the founder's whole home
+**writable**.
+
+- **Reproduced.** A fixture key in a directory outside `/tmp` was printed by `cat` inside the namespace.
+- **Why no test caught it.** Every test home lives under pytest's `/tmp`, and the namespace already masked `/tmp`.
+- **Who could use it:**
+  - The browser renders untrusted pages without Chromium's own sandbox (`os_sandboxed: false`). A renderer exploit
+    could read the key and send it to a signed origin.
+  - DALEOBANKS's third-party dependencies run with the X API reachable during a publish.
+  - The Claude Code CLI runs with `--tools ""`, so model output cannot direct it. The exposure there is the CLI
+    binary itself, if compromised or vulnerable.
+- **Why it matters.** Whoever holds the founder's key can sign any founder command. That is the root of authority.
+
+### The fix
+
+- **The namespace hides** the founder's home, the repository's `.git`, and every registered body home, behind empty
+  private mounts.
+  - `egress_relay` registers the body home in both the body process and the console process.
+  - `.git` is hidden because a clone can hold credentials in its config: GitHub Actions' checkout keeps the job's
+    token there.
+- **It then shows again,** read-only, GREG's runtime (the interpreter's prefixes and GREG's code), plus the paths
+  each caller names.
+  - A named directory that contains a hidden root does not reveal it. The hidden root is masked again, and the
+    named paths inside it are restored.
+  - The root directory, the system trees and their ancestors are never hidden.
+- **The Claude Code route and builder** get a private home inside the call's scratch directory. It holds a copy of
+  the CLI's login (`.claude/.credentials.json`) and nothing else. This is the rule the coding workers already used.
+  For an npm install, the Node runtime is shown read-only.
+- **Browsers** see their own installation directory read-only (Playwright keeps Chromium under `~/.cache`).
+  **DALEOBANKS** sees its interpreter's installation.
+- **Unchanged:** the coding workers already ran under their own stricter isolation (#157).
+
+### Evidence
+
+- **`tests/unit/test_foundry_namespace_privacy.py` (10 tests).** These run with `/tmp` unmasked, so only the new rule
+  can hide anything:
+  - the founder key, an SSH key, the body's secrets and its ledger are unreadable;
+  - nothing a program writes reaches the body home;
+  - a named path is shown, and nothing beside it;
+  - naming the body home's parent directory does not reveal the body home;
+  - GREG's Python runs with the repository, or the virtualenv, under the hidden home;
+  - GREG's code is shown, but its `.git/config` is not;
+  - a symlink in a shown path that points at the founder key leads nowhere;
+  - the body's process is invisible from inside (its `/proc` entries do not exist there);
+  - system directories are never hidden.
+- **`tests/integration/test_greg_namespace_privacy.py` (3 tests):**
+  - A compromised DALEOBANKS organ, and a compromised Claude Code CLI (both the model route and the Genesis
+    builder), each try to read the founder key, the body's secrets and the CLI's own conversation history. All
+    reads fail.
+  - The body's real ledger is unchanged.
+  - The CLI's home holds only its login, and it still reaches its provider through the relay.
+- **Mutants.**
+  - With nothing hidden (the old exposure), 8 of the first 10 tests fail.
+  - With the CLI shown the founder's home, both CLI cases fail: the CLI reads the key.
+  - With `.git` not hidden, the `.git` test fails.
+- **The Chromebook layout.** I ran every test that launches a door program with `HOME=/home/user`, so the repository,
+  the virtualenv, and the DALEOBANKS and WealthMachine checkouts all sit under the hidden home. 91 tests passed. They
+  include:
+  - the real DALEOBANKS organ;
+  - the real RailScout (`232f724`) and WealthMachine (`ec82b80`) organs;
+  - Chromium behind the relay;
+  - the model routes;
+  - the whole Chromebook rehearsal.
+- **Seed Genome.** `greg/models.py` is a frozen input, so `freeze-v7` was written under the existing convention, and
+  v1–v6 are kept. In the CI-matching virtualenv, the unchanged tree under v6 and this tree under v7 give the same
+  result:
+  - INCONCLUSIVE;
+  - timing-independent gain 0.0;
+  - 100/100 matched and 0 hard failures in both arms;
+  - 3 blocked baselines;
+  - no authority change.
+
+  The held-out run is clean.
+
+### What this does not cover
+
+- A secret the founder keeps outside their home and outside the body home is not hidden. The rule hides by location,
+  and the two default locations are where the installer puts the key and the body.
+- The CLI sees its own login, which it needs.
+- Bubblewrap namespaces share the kernel; a kernel exploit crosses them. This is not gVisor-class isolation, and #10
+  stays PARTIAL.
+- A hidden directory is an empty private mount. A program can write there, and the write vanishes when the program
+  ends.
+
+### Five roles and two passes (the authority root's exposure changed)
+
+**Builder.**
+- One change to the one namespace definition closes the read path for all seven callers.
+- The CLI's private home reuses the coding workers' credential-file rule instead of adding a third convention.
+- The next increment's third-party tool servers inherit the rule by construction.
+
+**Adversary.**
+- Hiding by location is a denylist: a key kept elsewhere leaks.
+- Showing GREG's code shows whatever sits in the checkout.
+- A symlink inside a shown path that points into the home resolves to the hidden, empty mount and reveals nothing
+  (tested).
+- The program has its own pid namespace, so it cannot read the body's `/proc` entries or descriptors (tested).
+
+**Operator.**
+- An installation that keeps a dependency somewhere unusual (pyenv, nix) may miss a runtime path. The failure is
+  loud: the confined program does not start, and the route reports it unavailable. Confinement is never widened
+  silently.
+- The Chromebook-layout run covers a Debian virtualenv under the home.
+
+**Beneficiary representative.**
+- The founder's signing key and the body's secrets no longer depend on every confined component being uncompromised.
+- No new step is asked of the founder.
+
+**Constitutional reviewer.**
+- No authority is added; components see less.
+- Nothing was merged, published or spent.
+
+**Pass 1 (structural inversion).**
+- **Advantage:** the authority root is unreachable from every door program by default. That property becomes a
+  default pathway: anything later confined in this namespace inherits it.
+- **Disadvantage, hiding by location:** bounded to the installer's two default locations, plus `.git`. It is made
+  observable here, with a path to an allowlist (the workers' model) if a third location appears.
+
+**Pass 2 (adversarial compounding), against the deployed rule.**
+- **A checkout file holding a credential** (a `.env`, a token in a test fixture) would be shown.
+  - Accepted with the founder as owner.
+  - Kill condition: any credential found in the repository tree moves runtime exposure from GREG's whole checkout to
+    an allowlist of its package directories.
+- **A future caller that names `$HOME` itself** would re-expose it. The rule is now explicit: an exact named path
+  wins, by design, so naming the home is a visible choice in code review, not an accident.
+- **Dissent kept.** An allowlist-only namespace (show nothing but declared paths) would be stronger. It was not built
+  now because each of seven callers would need its full dependency set enumerated, which risks breaking the founder's
+  first run on unenumerated paths. Revisit when the founder's device run shows which paths those callers actually
+  touch.
 
 ### Five roles and two passes for increments 4–6 (authority boundaries changed)
 

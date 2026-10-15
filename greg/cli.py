@@ -156,11 +156,12 @@ def _gravity_action(home: str, args) -> None:
     print(_drop(home, "GOAL_CONTROL", body, args))
 
 
-def _model_builder(secrets, config):
-    """Builder factory for ``run --builder models``: every reachable model route behind one router."""
+def _model_builder(secrets, config, egress=None):
+    """Builder factory for ``run --builder models``: every reachable model route behind one router (behind the body's
+    #26 relay when confined egress is on)."""
     from greg.builders import BuildError, ModelBuilder
     from greg.models import ModelRouter, available_routes
-    routes, unavailable = available_routes(secrets, config=config.get("models"))
+    routes, unavailable = available_routes(secrets, config=config.get("models"), egress=egress)
     if not routes:
         raise BuildError(f"no model route is available: {unavailable}")
     return ModelBuilder(ModelRouter(routes))
@@ -659,15 +660,19 @@ def main(argv=None) -> int:
             from greg.console import Console, serve
             key = load_founder_key(args.key, _passphrase(args)) if args.key else None
             layout = Layout(home)
-            models_config = None
+            models_config, egress = None, None
             if layout.config.is_file():
+                body_config = json.loads(layout.config.read_text())
                 with observe(home, actor="spiffe://uniimente.internal/greg/model-reader") as journal:
                     from greg.models import effective_route_config
-                    models_config = effective_route_config(json.loads(layout.config.read_text()).get("models"), journal)
+                    models_config = effective_route_config(body_config.get("models"), journal)
+                from greg.body import egress_relay
+                egress = egress_relay(layout.home, body_config)       # #26: the console's model calls too
             transport = None if args.no_model else planner.default_transport(SecretBroker(layout.secrets),
-                                                                            config=models_config)
+                                                                            config=models_config, egress=egress)
             replacement = (None if args.no_model else
-                           lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection))
+                           lambda selection: planner.default_transport(SecretBroker(layout.secrets), config=selection,
+                                                                       egress=egress))
             console = Console(home, key=key, transport=transport, transport_factory=replacement)
             server = serve(console, port=args.port)
             print(f"GREG console: open this private link once, in this computer's browser:\n  "

@@ -521,9 +521,10 @@ def propose(text: str, ctx: PlannerContext, *, transport=None) -> dict:
     return model_route(text, ctx, transport)
 
 
-def default_transport(secrets=None, *, config: dict | None = None):
-    """Every model route this body can reach behind one router, or None when there is none."""
-    routes, _ = models.available_routes(secrets, config=config)
+def default_transport(secrets=None, *, config: dict | None = None, egress=None):
+    """Every model route this body can reach behind one router, or None when there is none. ``egress`` is the body's
+    #26 relay when confined egress is on; paid routes then reach their providers only through it."""
+    routes, _ = models.available_routes(secrets, config=config, egress=egress)
     return models.ModelRouter(routes) if routes else None
 
 

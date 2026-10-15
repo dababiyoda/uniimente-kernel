@@ -1,6 +1,6 @@
 """Routing integrity through the real ``openai`` and ``anthropic`` SDK clients.
 
-The SDKs are optional dependencies (not installed in CI); these tests run wherever they are.
+The SDKs are optional product dependencies; requirements-dev.txt installs them so CI runs these tests.
 Each client talks to an in-process HTTP stub (httpx MockTransport), so the error objects,
 request shapes and response parsing are the SDKs' own. No network, no key, no spend.
 """

@@ -167,7 +167,7 @@ OSS_MUTANTS = [
      '            if answer.get("follow_up") and spec.get("follow_up"):\n                # The engine',
      '            if False:\n                # The engine'),
     ("console attaches a capability no ask names", "greg/console.py",
-     "if capability_id not in {c[\"capability_id\"] for c in _attachable(open_asks.get(request_id, {}))}:",
+     "if capability_id not in {c[\"capability_id\"] for c in _attachable(open_asks.get(request_id, {}))} | waiting:",
      "if False:"),
 ]
 

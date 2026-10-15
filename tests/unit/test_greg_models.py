@@ -180,3 +180,58 @@ def test_installed_body_can_build_and_a_missing_route_degrades_instead_of_crash_
     assert why["available"] is False and "credential unavailable" in why["why"]
     body.close()
 
+
+def test_a_confined_body_hands_its_relay_to_the_model_builder_and_an_unaware_factory_builds_nothing(tmp_path):
+    """#26: on a body with confined egress the builder factory receives the body's relay, so paid routes reach their
+    providers only through it. A factory that cannot take the relay builds nothing (fail closed) rather than calling
+    a provider around it; an unconfined body is unchanged."""
+    from greg.body import init_body
+    from foundry.systems.segmentation import Relay
+    home = tmp_path / "confined"
+    init_body(home, read_roots=[str(tmp_path)], confined_egress=True)
+    seen = {}
+
+    def aware(secrets, config, egress=None):
+        seen["egress"] = egress
+        return builders.StaticBuilder(GOOD)
+    body = Body(home, clock=Clock(), builder=aware).open()
+    assert isinstance(seen["egress"], Relay) and seen["egress"] is body.engine.egress and body.builder is not None
+    body.close()
+    body = Body(home, clock=Clock(), builder=lambda s, c: builders.StaticBuilder(GOOD)).open()
+    assert body.builder is None
+    why = body.journal.replay("genesis.builder")[-1].payload
+    assert why["available"] is False and "TypeError" in why["why"]
+    body.close()
+    plain = tmp_path / "plain"
+    init_body(plain, read_roots=[str(tmp_path)])
+    body = Body(plain, clock=Clock(), builder=lambda s, c: builders.StaticBuilder(GOOD)).open()
+    assert body.builder is not None and body.engine.egress is None
+    body.close()
+
+
+def test_a_confined_paid_route_without_namespaces_is_unavailable_never_unconfined(monkeypatch, tmp_path):
+    import greg.worker_isolation as isolation
+
+    def missing(**kwargs):
+        raise isolation.WorkerIsolationError("bubblewrap not installed")
+    monkeypatch.setattr(isolation, "_backend", missing)
+    relay = object()                        # never touched: the route stops before any door is opened
+    for route in (models.AnthropicRoute("k", egress=relay), models.OpenAIRoute("k", price=(1.0, 4.0), egress=relay),
+                  models.ClaudeCodeRoute("/usr/bin/true", egress=relay)):
+        assert getattr(route, "client", None) is None
+        with pytest.raises(models.RouteError) as stopped:
+            route.complete("system", "user")
+        assert stopped.value.kind == models.UNAVAILABLE and "bubblewrap" in str(stopped.value)
+    with pytest.raises(ValueError):
+        models.AnthropicRoute("k", client=FakeAnthropic(), egress=relay)
+
+
+def test_a_child_failure_keeps_the_class_the_one_classifier_reads():
+    rebuilt = models._rebuilt({"type": "APIConnectionError", "status_code": None, "body": None, "message": "reset"})
+    assert models.classify(rebuilt) == models.TRANSIENT
+    policy = models._rebuilt({"type": "BadRequestError", "status_code": 400, "message": "x",
+                              "body": {"error": {"code": "content_policy_violation"}}})
+    assert models.classify(policy) == models.PROVIDER_POLICY_REFUSAL
+    assert models.classify(models._rebuilt({"type": "ConnectionRefusedError", "message": "no"})) == models.TRANSIENT
+    assert models.classify(models._rebuilt({"type": "AuthenticationError", "status_code": 401})) == models.AUTH
+    assert models.classify(models._rebuilt({"type": "not an identifier!", "status_code": 404})) == models.UNAVAILABLE

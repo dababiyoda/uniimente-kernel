@@ -236,8 +236,12 @@ def _graph_then_allocate(payload, pid, kw, receipt, finish):
         receipt["translation_failures"].append(f"optimiser claimed flow {claimed}; max-flow organ found "
                                                f"{check['output']['value']}")
         return finish("TRANSLATION_FAILED", "cross-intelligence flow check disagreed")
+    # the optimiser's own status travels with the answer: FEASIBLE is feasible with optimality unproven
     return finish("ANSWERED", None, {"increments": increments, "flow_value": claimed,
-                                     "control_points": check["output"]["cut_edges"]})
+                                     "control_points": check["output"]["cut_edges"],
+                                     "solver_status": out["solver_status"],
+                                     "optimality": ("proven by the solver's bound" if out["solver_status"] == "OPTIMAL"
+                                                    else "feasible; optimality unproven")})
 
 
 def _bayes_then_voi(payload, pid, kw, receipt, finish):

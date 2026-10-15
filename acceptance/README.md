@@ -45,10 +45,12 @@ python -m acceptance report --outcomes o.json   # report from recorded outcomes
   loop `greg run` runs, with a test capability added), as a file or with `-c`. The reader follows
   values through names, list displays and concatenation, starred arguments, `+`, f-strings, `str()` and
   files written with `write_text`, into the same-module functions the test calls and the same-module
-  fixtures it requests. It never counts an argv that is only built, an in-process `Body.run`, a
+  fixtures it requests. It does not count an argv that is only built, an in-process `Body.run`, a
   supervisord configuration that is written but not launched, a driver that is never spawned, a
-  function or lambda that is never called, a constant-false branch, or a test that patches the
-  spawning calls. An in-process Body with a test clock is `SANDBOX_VERIFIED` at most.
+  function or lambda that is never called, a constant-false `if`, or a spawning call the test patches
+  with `mock.patch` as a decorator or `monkeypatch.setattr`. It is a pattern reader, not an evaluator:
+  the limits below say what it still counts that never runs. An in-process Body with a test clock is
+  `SANDBOX_VERIFIED` at most.
 - Tests can establish at most `BODY_VERIFIED`. `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE`,
   `EXTERNALLY_VERIFIED` and `COMMERCIAL_OUTCOME_VERIFIED` need records that no test produces, so the
   manifest cannot declare them and the harness never assigns them.
@@ -73,8 +75,14 @@ python -m acceptance report --outcomes o.json   # report from recorded outcomes
   only by review.
 - Whether `coverage` is honest. The harness enforces what each value permits, but a requirement marked
   `covered` whose tests miss a clause is caught only by review, against the obligation and the notes.
-- Process detection is static and conservative. It does not evaluate conditions other than constants,
-  so a spawn in a branch counts. A test that starts its process through code in another module (a
+- Process detection is static and only partly conservative. It does not evaluate conditions other than
+  constants, so a spawn in a branch counts, and so do some spawns that never run: code after a `return`,
+  `raise` or `pytest.skip()`, a loop over an empty sequence, a generator or coroutine helper never
+  iterated or awaited, `greg run --help`, a `-c` driver whose `Body(...).run(` is only a comment or a
+  printed string, and a spawn patched by an autouse fixture, `usefixtures`, a conftest, a direct
+  assignment such as `subprocess.Popen = ...` or `mock.patch.multiple`. No registered test relies on any
+  of these (each was read on 2026-10-15), and a patched test that asserts real-process effects fails when
+  run; the registry and the run are the backstops. A test that starts its process through code in another module (a
   fixture from a conftest, a helper imported from elsewhere), through a method, or with an argv it
   cannot follow is not recognised, and its requirement cannot declare `BODY_VERIFIED` until the start
   is visible in its own module.

@@ -144,7 +144,10 @@
       "tests/integration/test_goal_gravity_acceptance.py::test_section_33_acceptance_chain",
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
       "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
+      "tests/unit/test_greg_active_constraint.py::test_a_legacy_answer_to_an_unanswerable_ask_does_not_change_its_lifter",
       "tests/unit/test_greg_active_constraint.py::test_a_pause_in_force_is_named_first_with_what_lifts_it",
+      "tests/unit/test_greg_active_constraint.py::test_a_withdrawn_ask_whose_unblock_was_lost_is_lifted_by_the_next_tick",
+      "tests/unit/test_greg_active_constraint.py::test_an_answer_that_is_only_a_record_keeps_the_blockers_lifter",
       "tests/unit/test_greg_active_constraint.py::test_the_active_constraint_names_the_failing_check_the_held_work_and_what_lifts_the_block",
       "tests/unit/test_greg_goal_gravity.py::test_mission_F_end_to_end",
       "tests/unit/test_greg_gravity.py::test_one_turn_reaches_a_founder_decision_with_a_screened_ask_and_gate_proposals"
@@ -155,8 +158,8 @@
     {
      "id": "R4",
      "obligation": "R4. GREG performs permitted work: work runs inside the signed light cone, or after explicit approval, through the Authority Office and Consequence Gate, with receipts and exactly once.",
-     "coverage": "covered",
-     "notes": "Out-of-cone work stays undone until the founder approves. The supervised test then shows exactly one receipted fs.write, with receipts unique per grant_id. product_path shows exactly one brief.engineering delivery to the founder folder across SIGKILL and a torn write. The cognition process tests run in-cone work (cognition.seed.solve) with no approval, under a real SIGKILL, and never compute twice. The chromebook run acquires missing capabilities through Genesis inside scope and gets exactly one DONE per approved delivery. In-process controls (SANDBOX_VERIFIED) cover in-cone work closing without the founder, and a duplicate approval producing no duplicate action. These are local filesystem and Git effects only; there is no external consequence (not AUTHORIZED_LIVE).",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): a duplicate approval producing no duplicate action is shown only in-process (SANDBOX_VERIFIED); every other clause has real-process evidence. Out-of-cone work stays undone until the founder approves. The supervised test then shows exactly one receipted fs.write, with receipts unique per grant_id. product_path shows exactly one brief.engineering delivery to the founder folder across SIGKILL and a torn write. The cognition process tests run in-cone work (cognition.seed.solve) with no approval, under a real SIGKILL, and never compute twice. The chromebook run acquires missing capabilities through Genesis inside scope and gets exactly one DONE per approved delivery. In-process controls (SANDBOX_VERIFIED) cover in-cone work closing without the founder, and a duplicate approval producing no duplicate action. These are local filesystem and Git effects only; there is no external consequence (not AUTHORIZED_LIVE).",
      "tests": [
       "tests/integration/test_greg_body_supervised.py::test_body_survives_hard_kill_waits_for_founder_and_stops_on_command",
       "tests/integration/test_greg_product_path.py::test_founder_product_path_survives_kill_and_torn_write_and_delivers_once",
@@ -1440,8 +1443,8 @@
     {
      "id": "R7",
      "obligation": "R7 Quality control: an independent party (not the supplier) accepts or rejects the delivery; rejection blocks charging and is recorded",
-     "coverage": "covered",
-     "notes": "#37 enforces four QC rules: the verifier must not be the supplier, the method must be one the buyer accepts, the verdict is VERIFIED or REFUTED, and a refuted match is never charged. In #54 the seller cannot confirm its own delivery, and an undeliverable order is refunded. Before 2026-10-15 the Body test exercised only the 'accept' path, and no test exercised offers.accept with verdict 'reject'. Since then, the rejection path: a signed buyer rejection is not accepted, books no revenue, records no purchase journey, lowers the offer's rating, and cannot be flipped by a later accept.",
+     "coverage": "partial",
+     "notes": "Partial (coverage audit 2026-10-15): the rejection clause never runs through the Body; it is shown by the components on their own (#37, and #54 offers with media_company and journeys, no Body, ledger or Gate), the same standard that made G.R3 partial. #37 enforces four QC rules: the verifier must not be the supplier, the method must be one the buyer accepts, the verdict is VERIFIED or REFUTED, and a refuted match is never charged. In #54 the seller cannot confirm its own delivery, and an undeliverable order is refunded. Before 2026-10-15 the Body test exercised only the 'accept' path, and no test exercised offers.accept with verdict 'reject'. Since then, the rejection path: a signed buyer rejection is not accepted, books no revenue, records no purchase journey, lowers the offer's rating, and cannot be flipped by a later accept.",
      "tests": [
       "tests/unit/test_business.py::test_self_report_does_not_verify_customer_value",
       "tests/unit/test_foundry_systems.py::test_agent_commerce_sells_by_card_402_and_processor_verified_receipts",

@@ -1,0 +1,49 @@
+{
+ "arms": {
+  "proposed fallback (routed composition; EWMA-quantile when the tracker abstains)": {
+   "coverage_without_fallback": 1.0,
+   "max_excess": 2088.0,
+   "median_seconds": 1.4263,
+   "p95_excess": 249.0,
+   "p99_excess": 518.0,
+   "sum_excess": 117168.0,
+   "total_cost": 608686.0,
+   "vs_simpler_ablation": -0.02880000510581804
+  },
+  "simpler ablation (EWMA ratio + quantile, then Erlang)": {
+   "coverage_without_fallback": 1.0,
+   "max_excess": 1508.0,
+   "median_seconds": 0.0007,
+   "p95_excess": 324.0,
+   "p99_excess": 568.0,
+   "sum_excess": 135218.0,
+   "total_cost": 626736.0,
+   "vs_simpler_ablation": 0.0
+  },
+  "unchanged (routed composition, standing-plan fallback)": {
+   "coverage_without_fallback": 0.9075591985428051,
+   "max_excess": 14529.0,
+   "median_seconds": 1.4263,
+   "p95_excess": 233.0,
+   "p99_excess": 537.0,
+   "sum_excess": 164806.0,
+   "total_cost": 656324.0,
+   "vs_simpler_ablation": 0.047209670419442906
+  }
+ },
+ "fallbacks": 203,
+ "frozen_source": {
+  "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json",
+  "sha256": "sha256:1d2a488063598a155620ec243ce174297501d467166644e92bfee76c949d438a",
+  "source_commit": "202b932b015c2623798229db085f68728468b8b6"
+ },
+ "latency_note": "the ablation runs in process, so its latency is not comparable with the GREG arms'; the proposed arm adds the ablation's in-process time on fallback items",
+ "refusal_reasons_inferred": {
+  "INSUFFICIENT_MEASUREMENTS (no stage ran: fewer than 3 usable measurements)": 118,
+  "TRACKER_REFUSED (one stage ran: the tracker's own abstention contract, read as its NIS test)": 85
+ },
+ "schema": "pr155-f8-fallback-diagnostic/1",
+ "selection_bias": "the proposed fallback was suggested by these held-out rows (README, 'two improvements are suggested by the data'); its cost here is biased in its favour",
+ "simpler_method_wins_total_cost": false,
+ "status": "DIAGNOSTIC_ON_EXPOSED_DATA_NOT_A_CLAIM"
+}

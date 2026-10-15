@@ -37,6 +37,8 @@ This branch began on 2026-10-14 as a separate trunk (#175 + #169). On 2026-10-15
 | `6352c68` | Findings 7-13: a goal links its move by a spend-free `move_digest`, says a paid approve funds one run, and does not ask about a move its body cannot run (`AuthorityOffice.precheck`); the Claude Code CLI's report is read before its exit status, so its billed failures are booked and its refusals are final (Seed Genome `freeze-v10.json`); the bundle's digest table corrected and tested | 11 of 12 regression tests fail on `2cf4bdc`; affected suites 227 passed; seed replay 120 of 120 |
 | `fd45060` | Merge #169 `854a021` (increment 29: the founder's words to an approved call on a hosted MCP server, checked on a page they name). Clean merge | Full suite 3,851 passed, 29 skipped, 1 failed (negative result 4); both proofs with the real organs passed |
 | `16900ca` | The institutional verifier names the unit tests that fail | Verifier only; no test change |
+| `a229f70` | CI fix: the provider-binary regression test holds on a host whose bubblewrap is installed but unusable | All nine CI jobs green |
+| `f59eee4` | A third adversarial review (12 findings, 9 confirmed): one paid approval funds one run even at $0 (`MissionBook.consumed`); a paid ask overtaken by spend is withdrawn and asked again; the goal ignores a used-up approve and matches pre-upgrade paid asks; the Claude Code CLI's verbose array, unknown cost, own model fallback and error reasons handled (Seed Genome `freeze-v11.json`) | 25 of 26 regression tests fail on `a229f70`; full suite 3,877 passed, 29 skipped, 1 failed (negative result 4); both proofs with the real organs passed |
 
 ## Where two lines fixed the same defect
 

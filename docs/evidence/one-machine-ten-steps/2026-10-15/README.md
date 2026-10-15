@@ -11,7 +11,7 @@ Deliverable J. Each claim below is a command that was run, on the commit named, 
 | Isolation | bubblewrap 0.9.0 with unprivileged namespaces available |
 | Organs | DALEOBANKS `667439f`, WealthMachineIntelligence `ec82b80` (local checkouts; organ venv on Python 3.13.16) |
 | Base | #178 `claude/greg-one-machine` at `baf630d` (merged here in `8cb4043` for `44f7c35` and `cd8046a` for `baf630d`; it was `4ed91f7` until about 16:40 UTC) |
-| Final code commit | `16900ca`: `fd45060` (#169 `854a021` joined with the second review's fixes) plus the verifier's failure names (earlier finals: `cd8046a` and `d965bb7`, results kept below) |
+| Final code commit | `f59eee4`: the third adversarial review's fixes on `a229f70` (earlier finals: `16900ca`, `cd8046a` and `d965bb7`, results kept below) |
 
 The organ variables used by every proof run:
 
@@ -31,12 +31,27 @@ python -m pytest -q -p no:cacheprovider tests/integration/test_one_machine_ten_s
 python -m pytest -q -p no:cacheprovider -rfEs --ignore=tests/integration/test_one_machine.py \
     --ignore=tests/integration/test_one_machine_ten_steps.py                            # full suite (the two proofs run separately)
 python -m greg rehearse --dir <scratch> --kernel-root <tree>                             # credential-free rehearsal
-python -m cortex.evaluation.seed_genome.run --freeze                                     # wrote freeze-v8.json, then v9 and v10, once each
+python -m cortex.evaluation.seed_genome.run --freeze                                     # wrote freeze-v8.json, then v9, v10 and v11, once each
 python scripts/ci/replay_seed_compatibility.py --out <file>                              # the runner freeze CI pins
 python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pipeline_mutants.py
 ```
 
-## Results on the final code commit `16900ca`
+## Results on the final code commit `f59eee4`
+
+`f59eee4` closes the third adversarial review (negative result 12) on `a229f70`, which had fixed CI's job 1 (negative result 13).
+
+| Run | Result |
+|---|---|
+| Full suite (`python -m pytest -q -p no:cacheprovider -rfs`, the two proofs included without organ variables) | **3,877 passed, 29 skipped, 1 failed** in 2,332 s. The failure is negative result 4 (environment only) |
+| `tests/unit/test_greg_organs.py` with the real organs | 39 passed |
+| #178's one-mission proof with the real organs | **Passed** (31.1 s). Independent verifier REDERIVED, 16 of 16 checks, no findings; three boots, two recoveries |
+| Ten-step proof with the real organ checkouts | **Passed** (238.3 s): 11 missions closed, every appraisal VERIFIED |
+| Seed replay and the frozen seed evaluation | Valid, 120 of 120; the evaluation accepts `freeze-v11.json` (each arm 100 of 100 matched, 0 hard failures) |
+| The third review's regression tests | 25 of 26 fail on `a229f70` (the twenty-sixth is a control: the CLI's plain object output, which passes on both); the suites the fixes touch, 383 passed |
+| CI on `a229f70` | All nine jobs green, including job 9 |
+| VEPMC | 0. Local bodies only |
+
+## Results on the code commit `16900ca`
 
 `fd45060` joins #169 `854a021` (increments 21-29: MCP tools from the founder's words, hosted servers by URL, login or plain token, the credentials view, a benched refused key) with the second adversarial review's fixes (`2cf4bdc`, `6352c68`, negative result 10). `16900ca` changes only `verifier/v2/verify.py`, which neither proof imports; the proofs ran on `fd45060`, the full suite on `48e5116` (`16900ca` plus the ledger).
 
@@ -98,6 +113,9 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 9. **CI's institutional verifier reported a unit failure it did not name.** On `bc6c4b3`, job 9's V2 (`pytest tests/unit`, no bubblewrap on the runner) printed only "1 failed, 3446 passed, 82 skipped". Job 1's full suite passed on the same commit, and the unit suite passed here with bubblewrap hidden (3,456 passed, 80 skipped), so the failure could not be named or reproduced. `16900ca` makes V2 print the FAILED and ERROR lines; the next CI run names it if it recurs.
 10. **A second adversarial review, of `3ded0a7`, `8cb4043` and `cd8046a`, confirmed 13 of 14 findings** (a separate skeptic reproduced each at `3cf5dab`; one, about in-process providers, was rejected). Fixed in `2cf4bdc`: a kill in the uncertain window during Goal Gravity preparation or behind another blocker still retried blind; a crash between a reconciliation's record and its unblock crash-looped; #178's "asked again" check dropped the answer to a legacy unsalted question; provider binaries on a relative PATH resolved inside the worker's clone; a supervised Mac body's appraisal refused acceptance. Fixed in `6352c68`: a goal lost its ask, its signed reject and its evidence when the mission spent, and told the founder a paid approve was standing (it funds one run, #157); a goal asked about moves its body cannot run; the Claude Code CLI exits 1 on every error and refusal, so a billed CLI failure was booked at $0 and a refusal was shopped to the next vendor (Seed Genome re-sealed as `freeze-v10.json`); this README's digest table named the wrong seal.
 11. **Two runs were stopped by limits, not by results.** The first full-suite run on `fd45060` was stopped at 63% by the tool's 30-minute background limit, with one failure shown at collection position 1,242, which is negative result 4's test; the complete re-run is the row above. The third review's finders hit a session limit before reporting and were re-run.
+12. **A third adversarial review, of `6352c68` and the #169 `854a021` merge, confirmed 9 of 12 findings** (a separate skeptic reproduced each at `fd45060`; two were rejected: a goal ask beside a detached capability, which is the ask the loop raises once it is attached, and the digest test's coupling of this bundle's seal row to `RUNNER_FREEZE`, which is intended). Fixed in `f59eee4`. A paid approval is now used by its one run even when the run books $0 (the script worker reports no spend), where before a regression re-ran the move unasked. A paid ask the mission's spend overtook (Mission F's paid preparation) is withdrawn and asked again, where before an approve of it funded nothing. The goal no longer takes a used-up approve as the founder's answer, and matches pre-upgrade paid asks at the spend they show. The wording no longer offers a reject after an approve. The Claude Code CLI's verbose JSON array is read, an unknown cost or a timeout books the cap, the CLI's own model and refusal fallback is off, an answer its report says another model wrote is withheld, and `error_*` results keep their reason. Seed Genome re-sealed as `freeze-v11.json`.
+13. **CI's job 1 on `77a3893` failed one of this branch's own regression tests** (`test_repository_file_never_runs_as_the_provider_through_commission`). It skipped only when the `bwrap` binary was missing; the runner has `bwrap` installed but its namespaces are unusable, so the required posture refused the order. Fixed in `a229f70`: on such a host the test asserts that neither binary ran. It passes with bubblewrap usable, missing, and installed but unusable (emulated with a `bwrap` that fails the namespace probe).
+
 
 ## Digests
 
@@ -111,6 +129,8 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 | Ten-step body ledger file, 848 records (not committed; the per-mission ledger heads are in `ten-step/mission-traces.json`) | `e38f1b79fb9d4a4c400cab5524604622187a161a9d89e36b20a5ac508fb250d7` |
 | Ten-step body ledger file on `fd45060`, 849 records (not committed) | `03576a7ddf84eb133e26c4316d64c38d7bfdd53219411639c3a23a238cfef5a1` |
 | One-mission ledger head on `fd45060` (`run.json` of that run, not committed) | `bea7e74f637e1dc425661d18d32102d04615da4a26eba37c97548eb233534cca` |
+| Ten-step body ledger file on `f59eee4`, 849 records (not committed) | `7dd05a3cbab1941737bf0adb6887279f956439c48cd79502c1781217698d1c42` |
+| One-mission ledger head on `f59eee4` (`run.json` of that run, not committed) | `df3ca819f5600cbf71947284ddd9347d5a88a2dd80be2a74f3551be19ee5293a` |
 | One-mission ledger head (`one-mission/run.json`) | `0e1cb9cf01996baaecd969a4b64d96ee16a84e21435cab1eca6a63276f5a373c` |
 | `ten-step/one-machine-trace.json` | `dd29bdbb89484f4c2d9b59d4ba70e3fc8a7ffcd013ce2183c544168a5baf9514` |
 | `one-mission/verify.json` | `b3437146e3d4f8cfc0588699977012e3d41d308cdd055105adffeb440081451d` |

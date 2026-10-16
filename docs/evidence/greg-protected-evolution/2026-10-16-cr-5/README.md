@@ -31,7 +31,7 @@ Every number below is copied from `cycle-cr-5.json` by script. Nothing was re-ru
   - 10 evaluated configurations share the anchor's exact train loss.
   - The frozen rule selects the lowest train mean loss. Among near-ties, that picked an operator variant (`offspring` 6), which then failed the lean-budget stress set.
 - **This is the failure the pilot predicted for this selection signal.** Train mean loss did not rank configurations on review seeds (Spearman −0.179 between pilot halves, `PREREGISTRATION.md`, *Pilot*). The pilot measured headroom in the restart region; this cycle cannot say whether that headroom holds on the cycle-5 held-out split, because the split was never evaluated.
-- **The held-out split (7700-7879) was never looked at.** Under `_looked`, it is not spent by this record.
+- **The held-out split (7700-7879) was never looked at, but it is spent.** A committed freeze spends its split whether or not the run looked (`_spent_heldout`, the conservative rule), so the next cycle needs a fresh split.
 - **Protected evolution has still never kept an improvement:** five cycles, five REJECTs. Section 31 item 7 remains unmet.
   - Cycle 1: an overfit.
   - Cycle 2: a scarce-sample fragility.

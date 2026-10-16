@@ -136,7 +136,8 @@ def test_the_p8_next_experiment_states_how_far_the_latest_search_moved_p_restart
     upper = CR_CONFIG_SPACE["p_restart"][1][1]
     p8 = {n["id"]: n for n in path.load()["subordinate_workstreams"]["polyintelligence_cortex"]["nodes"]}["P8"]
     plan = p8["smallest_next_experiment"]
-    assert f"the {WORDS[len(tried)]} searched configurations with p_restart above 0" in plan, plan
+    count = WORDS[len(tried)] if len(tried) < len(WORDS) else str(len(tried))
+    assert f"the {count} searched configurations with p_restart above 0" in plan, plan
     assert f"at most {max(tried)} of the allowed {upper}" in plan, plan
     if max(tried) < upper:
         assert f"nothing above {max(tried)} was tried" in plan and "closed space can reach" not in plan, plan

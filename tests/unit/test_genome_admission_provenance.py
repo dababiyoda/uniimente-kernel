@@ -135,11 +135,16 @@ def test_per_arm_median_cpu_seconds_are_reported_and_rows_from_before_read_as_no
     del rows[0]["arms"]["baseline"]["cpu_seconds"]
     assert admission.diagnostics(rows)["median_cpu_seconds"]["baseline"] is None      # never a partial median
     runs = sorted(ADMISSION_RUNS.glob("*/results.json"))
-    assert len(runs) >= 3                                                    # v1-v3, written before diagnostics
+    before = [p for p in runs if p.parent.name < "2026-10-16"]           # v1-v3, written before diagnostics
+    assert len(before) == 3
     for path in runs:
         for family, entry in json.loads(path.read_text())["genomes"].items():
-            assert admission.diagnostics(entry["heldout"])["median_cpu_seconds"] == {
-                "candidate": None, "baseline": None, "competitor": None}, (path, family)
+            medians = admission.diagnostics(entry["heldout"])["median_cpu_seconds"]
+            if path in before:
+                assert medians == {"candidate": None, "baseline": None, "competitor": None}, (path, family)
+            else:                                                             # v4 on: recorded, and what they record
+                assert medians == entry["diagnostics"]["median_cpu_seconds"] and None not in medians.values(), \
+                    (path, family)
 
 
 def _stat(proc: Path, pid: int, comm: str, state: str, processor: int, cmdline: bytes) -> None:

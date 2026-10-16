@@ -599,9 +599,6 @@ What an agent can do without those decisions:
 - the SNDlib, M4, fpp3 and NYC TLC data terms (section 12).
 
 **Not done here:**
-- a live harness that can re-admit #155's operation families. #155's runners refuse at this head
-  (`FROZEN_INPUT_CHANGED`), and #158's harness enumerates genome executables only. Until those families are
-  wrapped as versioned genomes, their routes are lineage verdicts bound to code closures (review M17);
 - an `independently_verified` field in the inventory, backed by verifier-mutation evidence (review L21);
 - a cross-lineage seed and data-identity registry that the freeze tools consult (review L3). Known overlap:
   #155's crowd-sparse seeds 3001-3040 and P6 v3's 3101-3148 sit inside the 3000-3999 range used for review and
@@ -671,7 +668,7 @@ the row says otherwise.
 | M11, M12, M13, L2, L10, L11, L13, L15 | Spend diagnostic; like-for-like latency in an erratum beside the frozen audit; F4, F3 and F7 caveats; practitioner ties in the index; ledger erratum. |
 | M14, L5, L6 | #158's `af258bf` is selected (section 9). This branch's parallel fix is history only. |
 | L7, L8, L9 | The single-controller test covers every tree and dynamic import by string. The path.json and ledger overclaims are corrected. The adopting decider is escalated. |
-| M17 | Not fixed: no live harness can re-admit #155's operation families (section 15). |
+| M17 | Fixed: `cortex/evaluation/genome_admission/run_ops_v3.py` re-admits #155's operation families on this tree under a pre-registration and a freeze that binds each solver closure. Its first run, on fresh seeds 5001-5040, replicates 14 of 17 rows and disagrees on `graph`, `robust_pattern` and `collective` (section 18). |
 | M18 | #158 is merged at `f8e8fd2` and later at `10fdbab`. The map pins `10fdbab`, and a test asserts it is an ancestor. |
 | M19 | Release-exclusion list, CI check and test (section 12). |
 | M20 | The original runner is archived; dispositions are checked against git. |
@@ -700,3 +697,25 @@ and `mind_status` reports them as BUILT, until a fresh pre-registered run measur
 positive operation verdicts keep their status: their dispatch and closures are unchanged since their run.
 Non-literal table updates (the genome comprehension) are counted, not resolved. They cannot rebind a literal key
 they do not name.
+
+## 18. Operation-family re-admission on the converged tree (review M17)
+
+- **Harness:** `cortex/evaluation/genome_admission/run_ops_v3.py`. It imports v1's, v2's and the sparse-crowd
+  benchmarks and v1's frozen status rule unchanged, and its freeze binds the static dependency closure of every
+  family's dispatched solver. It refuses on a dirty tree or on any changed input.
+- **Pre-registration and freeze:** `prereg-ops-v3.json` at `1213394`; `freeze-ops-v3.json` at `dfdcfe9`. It ran
+  once, in a clean detached worktree at the freeze commit, under `python -I`, on seeds 5001-5040.
+- **Evidence:** `docs/evidence/greg-operation-admission/2026-10-16-v3/`.
+- **Result:** 14 of 17 rows replicate #155's statuses. Three disagree, and both readings are kept in history:
+  - `graph`: DEFAULT became EXPERIMENTAL. Only 4 items are discordant, 4-0, p = 0.0625.
+  - `robust_pattern`: EXPERIMENTAL became DEFAULT. It beats the baseline 14-5 and ties Rosner's ESD.
+  - `collective`: EXPERIMENTAL, against the baseline that knows hidden accuracies. This agrees with the M3
+    erratum.
+- **Observation outside the rule:** on sparse crowds the one-step weighted vote beats Dawid-Skene 27-12
+  (p = 0.012).
+- **Routing:** the index appends the run after #155's three runs, so the latest reading routes. `graph` now
+  routes as EXPERIMENTAL and `robust_pattern` as DEFAULT. Every positive reading is bound to the closure measured
+  at `dfdcfe9`.
+- **What it closes:** a drifted operation family can now be re-admitted, not only demoted. Re-running under a new
+  freeze path is the procedure; nothing attaches.
+

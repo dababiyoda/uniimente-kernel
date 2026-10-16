@@ -61,6 +61,10 @@ Track B update, 2026-10-16 (record sections 1, 3, 7 and 8): #158 is merged at `1
 - **Admission v4:** `grid_dijkstra` 1.1.0 is DEFAULT_FOR_GEOMETRY, and the flow genomes replicate.
 - **P8 cycle 5:** REJECTED. Protected evolution has still never kept an improvement.
 - **Release guard:** 26 uncleared paths, including F7 v6's SNDlib-derived files.
+- **Operation re-admission (review M17):** a live, pre-registered harness re-admits #155's operation families on
+  this tree. Its first run, on fresh seeds 5001-5040, replicates 14 of 17 rows. `graph` falls to EXPERIMENTAL
+  (4-0, too few discordant items), `robust_pattern` rises to DEFAULT, and `collective` reads EXPERIMENTAL, as its
+  erratum said (record section 18).
 
 Authority delta: none.
 

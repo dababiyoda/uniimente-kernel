@@ -116,11 +116,16 @@ def _decide(rows: dict, key: str, new: dict, keys: set, seen: dict) -> None:
     new["history"] = history
     new["overlap_with_previous"] = overlap
     rows[key], seen[key] = new, keys
-# PR #155 lineage, in run order: (file, key holding the rows, family when the file measures one family).
+# Operation-family runs, in run order: PR #155 lineage, then the converged re-admission harness. (file, key holding
+# the rows, family when the file measures one family).
 OPERATION_RUNS = (
     ("docs/evidence/greg-genome-admission/2026-10-14/results.json", "families", None),
     ("docs/evidence/greg-genome-admission/2026-10-14/results-v2.json", "families", None),
     ("docs/evidence/pr155-crowd-sparse/2026-10-14/results.json", "status", "crowd"),
+    # the converged tree's live re-admission harness (review of #179, M17), pre-registered and frozen: every
+    # family's row, then the sparse-crowd geometry for crowd, in the order the lineage ran them
+    ("docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json", "families", None),
+    ("docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json", "crowd_sparse", "crowd"),
 )
 # Verdicts measured against a competitor on held-out data; any other label is structural and changes no route.
 MEASURED = ("DEFAULT_FOR_GEOMETRY", "NICHE_CAPABILITY", "COMPOSITION_ONLY", "EXPERIMENTAL", "SUPERSEDED", "REJECTED")

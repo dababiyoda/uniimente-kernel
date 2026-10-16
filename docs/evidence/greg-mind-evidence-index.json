@@ -2999,17 +2999,21 @@
     "dispatched": {
      "function": "evolve_blackbox",
      "path": "greg/cognition/repertoire.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "evolve_blackbox",
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:bc8515869200bac9590da13451cd7c1a63e89a32844bf41306d2ad24ad05010d"
    },
    "competitor": "multistart L-BFGS-B",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.blackbox",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.blackbox",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.blackbox",
+     "status": "SUPERSEDED"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.blackbox",
      "status": "SUPERSEDED"
     }
    ],
@@ -3030,17 +3034,21 @@
     "dispatched": {
      "function": "causal",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "causal",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:18bb4ca2af55d10020cfdc7f8a880ce72ac99e93bdc7691c55f40eb83d36addb"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.causal",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.causal",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.causal",
+     "status": "NOT_BENCHMARKED"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.causal",
      "status": "NOT_BENCHMARKED"
     }
    ],
@@ -3062,23 +3070,26 @@
     "dispatched": {
      "function": "quorum",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "quorum",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:4b7b82abe750b4403d8c285588d9166a831cad0aae6bc1954ad3c66f3ed3aa47"
    },
    "competitor": "simple majority",
-   "erratum": "review of #179 (M3): REJECTED came from 5-16 (p = 0.013) against the most-accurate-observer baseline, which uses the generator's hidden true accuracies and is not deployable; against the deployable competitor, simple majority, it tied 7-11 (p = 0.24). Not evidence of rejection; EXPERIMENTAL until a pre-registered comparison against deployable baselines",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.collective",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.collective",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.collective",
      "status": "REJECTED"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.collective",
+     "status": "EXPERIMENTAL"
     }
    ],
    "measured": true,
-   "raw_status": "REJECTED",
+   "raw_status": "EXPERIMENTAL",
    "status": "EXPERIMENTAL"
   },
   "control": {
@@ -3094,17 +3105,21 @@
     "dispatched": {
      "function": "control",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "control",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:2ae8bdc6ee56349a7649b602b10678d21c4af7f7772aab93fd338e921a6401b2"
    },
    "competitor": "P-only kp=2",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.control",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.control",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.control",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.control",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -3113,7 +3128,7 @@
    "status": "DEFAULT_FOR_GEOMETRY"
   },
   "crowd": {
-   "baseline": null,
+   "baseline": "majority vote",
    "code": {
     "closure_members": {
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
@@ -3121,20 +3136,20 @@
      "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
      "greg/cognition/repertoire.py::_result": "sha256:fbc4a38127b4d75c5f42aaadd951f64bf225b649ab8c7e12447a97c44604e887",
      "greg/cognition/repertoire.py::_voters": "sha256:ffbfc698ce51b6d3922b740818c130bf8716914c90d721ed160f4379fe914d72",
-     "greg/cognition/repertoire.py::crowd_label": "sha256:89ae5e1ce5b2838c67747623e8cf587f77ee07db5414d03717e602a296cb8d37"
+     "greg/cognition/repertoire.py::crowd_label": "sha256:532627ece28cf24cd8e944b0ab831e88a22f10482644815cf5bc49038d0f8fd1"
     },
-    "closure_sha256": "sha256:946eeb38740186bd80ae1d4d4b1a36597a7cf2171148df19d610933daf0aefcd",
+    "closure_sha256": "sha256:25fdad1e8f10cc935d34eeb0be69c54ac8f035817d9b69658fe97d38def45a48",
     "dispatched": {
      "function": "crowd_label",
      "path": "greg/cognition/repertoire.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "crowd_label",
     "path": "greg/cognition/repertoire.py",
-    "sha256": "sha256:89ae5e1ce5b2838c67747623e8cf587f77ee07db5414d03717e602a296cb8d37"
+    "sha256": "sha256:532627ece28cf24cd8e944b0ab831e88a22f10482644815cf5bc49038d0f8fd1"
    },
-   "competitor": null,
-   "evidence": "docs/evidence/pr155-crowd-sparse/2026-10-14/results.json#status",
+   "competitor": "one-step agreement-weighted vote",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#crowd_sparse",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.crowd",
@@ -3142,6 +3157,14 @@
     },
     {
      "evidence": "docs/evidence/pr155-crowd-sparse/2026-10-14/results.json#status",
+     "status": "EXPERIMENTAL"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.crowd",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#crowd_sparse",
      "status": "EXPERIMENTAL"
     }
    ],
@@ -3163,17 +3186,21 @@
     "dispatched": {
      "function": "fermi",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "fermi",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:e6be6f9cefdaff4b6d0ae0dbad075cb29eca40bc438c4badca56d7a74eec5b9d"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.estimation",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.estimation",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.estimation",
+     "status": "SUPERSEDED_BY_CANONICAL_ORGAN"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.estimation",
      "status": "SUPERSEDED_BY_CANONICAL_ORGAN"
     }
    ],
@@ -3195,17 +3222,21 @@
     "dispatched": {
      "function": "assess",
      "path": "greg/cognition/evidence.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "assess",
     "path": "greg/cognition/evidence.py",
     "sha256": "sha256:283071c0344f52a5fe722fe4b3476f83793889fff9acc024fac873a0d8a61519"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.evidence",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.evidence",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.evidence",
+     "status": "NOT_BENCHMARKED"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.evidence",
      "status": "NOT_BENCHMARKED"
     }
    ],
@@ -3227,17 +3258,21 @@
     "dispatched": {
      "function": "evolutionary",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "evolutionary",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:2eeab102c0127f3b5a61c06f367a01b2e9e005f2d09cf46878870731f82dbce2"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.evolutionary",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.evolutionary",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.evolutionary",
+     "status": "REJECTED"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.evolutionary",
      "status": "REJECTED"
     }
    ],
@@ -3259,17 +3294,21 @@
     "dispatched": {
      "function": "exact",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "exact",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:23af2684d00fad3753dba1f048a760eeac6dea669481e0c8a868533173b31f51"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.exact",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.exact",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.exact",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.exact",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -3284,25 +3323,29 @@
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
      "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
      "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
-     "greg/cognition/solvers.py::_model": "sha256:903e2f75f75e6180dd17bebd936d4be56e7e79fd0fae38b7f2e8b4687ec0d9c9",
-     "greg/cognition/solvers.py::formal": "sha256:017511faa362f9a46b8cad850cdc4221080b10c742548fef806dbc3cd066dd31",
+     "greg/cognition/solvers.py::_model": "sha256:312afe9b317c555fad3028dca759ad80e0013f07b301132f06b3beb6bbbb0387",
+     "greg/cognition/solvers.py::formal": "sha256:8a4b2be9e08c3bda20958e3b215afec0b9b5a296ec4a1a008c9c0d313bbd11d0",
      "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
     },
-    "closure_sha256": "sha256:930ca3b99eebeff065a586f04e16256bd7ac52086d8b008d465528dd10d2ccd1",
+    "closure_sha256": "sha256:f915ac395fa94d7745e42c554a604132e0e384ce6950cb2d9f85826edd54e3dc",
     "dispatched": {
      "function": "formal",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "formal",
     "path": "greg/cognition/solvers.py",
-    "sha256": "sha256:017511faa362f9a46b8cad850cdc4221080b10c742548fef806dbc3cd066dd31"
+    "sha256": "sha256:8a4b2be9e08c3bda20958e3b215afec0b9b5a296ec4a1a008c9c0d313bbd11d0"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.formal",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.formal",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.formal",
+     "status": "SUPERSEDED_BY_CANONICAL_ORGAN"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.formal",
      "status": "SUPERSEDED_BY_CANONICAL_ORGAN"
     }
    ],
@@ -3323,17 +3366,21 @@
     "dispatched": {
      "function": "game",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "game",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:9f02c16c3922903db88a1ffd3f3ef1eaa397227985af3b0a33e6fe62be004fb3"
    },
    "competitor": "pure maximin",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.game",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.game",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.game",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.game",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -3354,23 +3401,27 @@
     "dispatched": {
      "function": "graph",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "graph",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:7c1c2dedb42b3ea9bf4125b11e01e3bf2dbe94c26f54ec288f8b4774df5ffda9"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.graph",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.graph",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.graph",
      "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.graph",
+     "status": "EXPERIMENTAL"
     }
    ],
    "measured": true,
-   "raw_status": "DEFAULT_FOR_GEOMETRY",
-   "status": "DEFAULT_FOR_GEOMETRY"
+   "raw_status": "EXPERIMENTAL",
+   "status": "EXPERIMENTAL"
   },
   "human": {
    "baseline": null,
@@ -3383,17 +3434,21 @@
     "dispatched": {
      "function": "human",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "human",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:c17e4aed136bd7636b866b4f4f1f9d913f11ce8d727526c45a9b64481e281e26"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.human",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.human",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.human",
+     "status": "ROUTE_ONLY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.human",
      "status": "ROUTE_ONLY"
     }
    ],
@@ -3414,17 +3469,21 @@
     "dispatched": {
      "function": "information",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "information",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:849921f0695fcf0bfd39bfd506a140356ae4e5f1b2ffc37575bbf5dbf60311b2"
    },
    "competitor": "always acquire",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.information",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.information",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.information",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.information",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -3445,17 +3504,21 @@
     "dispatched": {
      "function": "micro",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "micro",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:7bef72bf1972b80fd0d8e9f261dd54ce18fce935aabd92ebb2823e53076900da"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.micro",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.micro",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.micro",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.micro",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -3470,25 +3533,29 @@
      "greg/cognition/contracts.py::CognitionError": "sha256:b9cae8a9ddca0ce5681fda257ad4abe7718319f96aceed33324f202273f9bbd1",
      "greg/cognition/contracts.py::integer": "sha256:c3eb6813a1dd773c3f719a77e2ebde7ebc5b47bc5b5a0b70b24cd402e7a95cc3",
      "greg/cognition/contracts.py::number": "sha256:278da4021dddc04890db8040e1b6caec8c8da2bdf7c70b4686c96de7b3815f42",
-     "greg/cognition/solvers.py::_model": "sha256:903e2f75f75e6180dd17bebd936d4be56e7e79fd0fae38b7f2e8b4687ec0d9c9",
-     "greg/cognition/solvers.py::optimization": "sha256:027a78219baf23432a9508950cabe4b160f208e1b2ef56e9c3501f0e934c5f5c",
+     "greg/cognition/solvers.py::_model": "sha256:312afe9b317c555fad3028dca759ad80e0013f07b301132f06b3beb6bbbb0387",
+     "greg/cognition/solvers.py::optimization": "sha256:e1d3c4ee64fd59ffbefcebac87d75336405720950810000544587591ac339f93",
      "greg/cognition/solvers.py::result": "sha256:06dcf798b7caebd7b2c2b28e70b6bc3643bc43f580a22408588c0b3411be798c"
     },
-    "closure_sha256": "sha256:a7251ba2863978b0043298e0384385d0fa4eaa49281d708819bac117f1d3a47e",
+    "closure_sha256": "sha256:55393a60242a113613869e9ff464e88e1cc03230fd174276f766935a77a07401",
     "dispatched": {
      "function": "optimization",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "optimization",
     "path": "greg/cognition/solvers.py",
-    "sha256": "sha256:027a78219baf23432a9508950cabe4b160f208e1b2ef56e9c3501f0e934c5f5c"
+    "sha256": "sha256:e1d3c4ee64fd59ffbefcebac87d75336405720950810000544587591ac339f93"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.optimization",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.optimization",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.optimization",
+     "status": "SUPERSEDED_BY_CANONICAL_ORGAN"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.optimization",
      "status": "SUPERSEDED_BY_CANONICAL_ORGAN"
     }
    ],
@@ -3509,17 +3576,21 @@
     "dispatched": {
      "function": "pattern",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "pattern",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:a3805d563c316dc33666186d6642901c7f2e2365d7e00f7b0185f2b61b11de29"
    },
    "competitor": "median/MAD robust z 3.5",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.pattern",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.pattern",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.pattern",
+     "status": "REJECTED"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.pattern",
      "status": "REJECTED"
     }
    ],
@@ -3541,17 +3612,21 @@
     "dispatched": {
      "function": "bayesian",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "bayesian",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:5f0ba505ab97fa60404fd466994e565a55aae58114b8b67ecd413ee341fa9ea5"
    },
    "competitor": "Jeffreys posterior mean",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.probabilistic",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.probabilistic",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.probabilistic",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.probabilistic",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -3575,17 +3650,21 @@
     "dispatched": {
      "function": "assess",
      "path": "greg/cognition/protection.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "assess",
     "path": "greg/cognition/protection.py",
     "sha256": "sha256:e6c5fe474641a259f9431da2be0d73895aafc652d26d87973e13e000366dfcc0"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.protection",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.protection",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.protection",
+     "status": "NOT_BENCHMARKED"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.protection",
      "status": "NOT_BENCHMARKED"
     }
    ],
@@ -3607,23 +3686,27 @@
     "dispatched": {
      "function": "robust_anomalies",
      "path": "greg/cognition/repertoire.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "robust_anomalies",
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:d7fbc08ac18dc7125f0c972d5a23b37a4574babb8665eb7da758c0e68eae91bf"
    },
    "competitor": "generalized ESD (Rosner)",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.robust_pattern",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.robust_pattern",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.robust_pattern",
      "status": "EXPERIMENTAL"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.robust_pattern",
+     "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
    "measured": true,
-   "raw_status": "EXPERIMENTAL",
-   "status": "EXPERIMENTAL"
+   "raw_status": "DEFAULT_FOR_GEOMETRY",
+   "status": "DEFAULT_FOR_GEOMETRY"
   },
   "search": {
    "baseline": null,
@@ -3638,17 +3721,21 @@
     "dispatched": {
      "function": "graph",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "graph",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:7c1c2dedb42b3ea9bf4125b11e01e3bf2dbe94c26f54ec288f8b4774df5ffda9"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.search",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.search",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.search",
+     "status": "ALIAS"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.search",
      "status": "ALIAS"
     }
    ],
@@ -3660,10 +3747,14 @@
    "baseline": null,
    "code": null,
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.semantic",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.semantic",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.semantic",
+     "status": "NOT_RUN"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.semantic",
      "status": "NOT_RUN"
     }
    ],
@@ -3685,17 +3776,21 @@
     "dispatched": {
      "function": "sequential",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "sequential",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:459e7655f9f6783fd6a30b44b05c1adea5ca35071f7eac3de540ddf60b24b53e"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.sequential",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.sequential",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.sequential",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.sequential",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -3717,17 +3812,21 @@
     "dispatched": {
      "function": "simulation",
      "path": "greg/cognition/solvers.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "simulation",
     "path": "greg/cognition/solvers.py",
     "sha256": "sha256:fa21b3abf12aaa4c9f21bd12ed4d4abd60e5dfa21aaf2b5e43e666791997bd20"
    },
    "competitor": null,
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.simulation",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.simulation",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results.json#families.simulation",
+     "status": "REJECTED"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.simulation",
      "status": "REJECTED"
     }
    ],
@@ -3757,17 +3856,21 @@
     "dispatched": {
      "function": "swarm_minimize",
      "path": "greg/cognition/repertoire.py",
-     "unresolved_updates": 0
+     "unresolved_updates": 1
     },
     "function": "swarm_minimize",
     "path": "greg/cognition/repertoire.py",
     "sha256": "sha256:b80e76d4640cdafeb05d6d9b6b7c0cce5b6d02be369d7bfdc4ab732452314f4a"
    },
    "competitor": "differential evolution (GREG blackbox)",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.swarm",
+   "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.swarm",
    "history": [
     {
      "evidence": "docs/evidence/greg-genome-admission/2026-10-14/results-v2.json#families.swarm",
+     "status": "DEFAULT_FOR_GEOMETRY"
+    },
+    {
+     "evidence": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json#families.swarm",
      "status": "DEFAULT_FOR_GEOMETRY"
     }
    ],
@@ -6229,6 +6332,16 @@
    "path": "docs/evidence/pr155-crowd-sparse/2026-10-14/results.json",
    "sha256": "sha256:7e1e34376aec775ec3168d2c19c160fc6ab750b0d6919ff7e4204963f72452da",
    "source_commit": "85ce2750203097177ce752bf7e50a8bc8c9cda17"
+  },
+  {
+   "path": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json",
+   "sha256": "sha256:bd217350b651b26203fb7bafa331bd172398402bcea39116dafa53d9290bc632",
+   "source_commit": "dfdcfe92f00449039686c922623a925910aeb8a2"
+  },
+  {
+   "path": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json",
+   "sha256": "sha256:bd217350b651b26203fb7bafa331bd172398402bcea39116dafa53d9290bc632",
+   "source_commit": "dfdcfe92f00449039686c922623a925910aeb8a2"
   }
  ]
 }

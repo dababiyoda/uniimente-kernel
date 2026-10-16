@@ -1030,7 +1030,17 @@ INTELLIGENCES = [
                                         "1.3-5.2 ms, NetworkX 16-22 ms. The sixth was EXPERIMENTAL: candidate 3.0 ms "
                                         "against the baseline's 2.5 ms while other processes shared the pinned core. "
                                         "1.0.0 measured the same way: 1.01-1.08 ms against 1.23-1.35 ms (1.14-1.34x) "
-                                        "over three runs"}),
+                                        "over three runs",
+               "review_projection": "review seeds 3000-3099 (not admission evidence), admission.evaluate as admission "
+                                    "runs it, protocol declared before the runs, at load average 5.6-9.5 on 4 cores: "
+                                    "100 ties with baseline and competitor and 100% verifier passes in every run; "
+                                    "median baseline / candidate latency 3.85-7.62 in five single-shot runs and "
+                                    "2.85-3.07 on per-instance minima of five repetitions (95% bootstrap lower bounds "
+                                    "2.24-3.64). The same protocol read 1.0.0 at 1.71-4.02, where admission v3 "
+                                    "measured 1.22, so this load inflates the ratio. Measured together, 1.1.0's own "
+                                    "median is 1.53-1.78x below 1.0.0's; scaled from v3 (1.328 ms against 1.618 ms) "
+                                    "that projects 1.9-2.2x. By subregion the edge is on open weighted and walls-"
+                                    "and-mud grids; on uniform-cost obstacle grids it was 0.96-1.24x A*"}),
     Executable(
         genome=IntelligenceGenome(
             intelligence_id="solver.game.zero_sum_lp_dual", version="1.0.0", family="game_lp_dual", layer=3,

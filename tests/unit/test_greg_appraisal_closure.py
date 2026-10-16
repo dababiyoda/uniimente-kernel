@@ -550,7 +550,8 @@ def test_a_second_dispatch_claim_for_a_completed_action_is_reported_as_a_duplica
 # appraiser re-derives device delegations itself; before it applied the same rule it accepted an approval that a
 # re-delegated phone signed under its revoked delegation, so a body that wrongly accepted the old token was VERIFIED.
 
-def test_the_appraiser_refuses_an_approval_a_re_delegated_device_signed_before_its_re_delegation(tmp_path):
+@pytest.mark.parametrize("signed_when", ["before_its_revocation", "while_it_stood_revoked"])
+def test_the_appraiser_refuses_an_approval_a_re_delegated_device_signed_before_its_re_delegation(tmp_path, signed_when):
     from datetime import timedelta
     import greg.body as body_module
     from greg.founder import generate_founder_key, instant, key_id, load_founder_key, stamp
@@ -571,11 +572,16 @@ def test_the_appraiser_refuses_an_approval_a_re_delegated_device_signed_before_i
         body.boot()
         assert _run(body, clock, ticks=2)[-1] == "WAITING"
         [ask] = [e.payload for e in body.journal.replay("decision.requested") if e.payload["kind"] == "APPROVAL"]
-        old = signed(phone, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "approve"}, now=clock.now)
+        answer = {"request_id": ask["request_id"], "answer": "approve"}
+        if signed_when == "before_its_revocation":
+            old = signed(phone, body_id, "DECISION", answer, now=clock.now)
         clock.advance(60)
         body.apply(signed(key, body_id, "DEVICE_REVOKE", {"device_key_id": key_id(phone_public)}, now=clock.now),
                    channel="inbox")
-        clock.advance(60)
+        clock.advance(30)
+        if signed_when == "while_it_stood_revoked":   # the rule is anchored at the re-delegation, not the revocation
+            old = signed(phone, body_id, "DECISION", answer, now=clock.now)
+        clock.advance(30)
         body.apply(signed(key, body_id, "DEVICE_ENROLL", grant, now=clock.now), channel="inbox")
         [device] = body.device_keys().values()
         assert instant(device["signed_not_before"]) > instant(old["issued_at"])   # the body's own verifier refuses it

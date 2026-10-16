@@ -367,7 +367,8 @@ class Body:
         body. A ledger without it was truncated, restored from an older copy or forked; it is refused before
         anything is written to it, on every start, until a person on this machine restores the history or removes
         the heartbeat. Whatever state the heartbeat reports counts alike: RUNNING after a SIGKILL or power loss,
-        STOPPED after a clean stop, PAUSED or HELD.
+        STOPPED after a clean stop, PAUSED or HELD (the tests pin RUNNING and STOPPED, and a truncated ledger; a
+        PAUSED or HELD heartbeat and a deleted ledger take the same path but are not tested on their own).
 
         Window: Body.run writes the heartbeat once per turn, so the head it names trails the ledger by the records
         appended since: at most one turn's, or a boot's and its first turn's. A rollback that removes only those

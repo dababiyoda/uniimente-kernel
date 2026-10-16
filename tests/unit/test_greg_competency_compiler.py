@@ -994,6 +994,97 @@ def test_a_fit_demoted_by_its_settled_outcomes_is_labelled_so(registry, no_index
     assert r["selection_level"] == "demoted_by_settled_outcomes"
 
 
+def _f7_index_also(no_index, recipe=None, **statuses):
+    """``_f7_index`` with the recipe's lift verdict replaced by ``recipe`` and the shape's other genomes given these
+    admission statuses at their current versions."""
+    from greg.cognition.genomes import library
+    _f7_index(no_index)
+    index = json.loads(no_index.read_text())
+    for family, status in statuses.items():
+        index["genomes"][family] = {"status": status, "version": library.executables()[family].genome.version,
+                                    "evidence": f"docs/evidence/greg-genome-admission/x/results.json#{family}"}
+    if recipe:
+        index["recipes"]["graph_then_allocate"] = recipe
+    no_index.write_text(json.dumps(index))
+
+
+@pytest.mark.parametrize("genome", ["attached", "withheld"])
+def test_a_recipe_whose_matched_genome_its_settled_outcomes_demote_does_not_claim_to_rank_after_it(no_index,
+                                                                                                    monkeypatch,
+                                                                                                    genome):
+    """Fix verification 2026-10-15: when the genome that matched a recipe's twin is itself demoted by its settled
+    outcomes on this body, both are demoted fits and the recipe may rank first (best_of_demoted_fits, a label no
+    test reached), yet the recipe's demotion reason, repeated in dissent, said the recipe ranks after the genome.
+    Attached or withheld, the demoted genome ranks after the recipe, so the recipe serves as the best demoted fit."""
+    from greg.cognition.genomes import library
+    _f7_index_also(no_index, flow_reinforce_greedy="SUPERSEDED")      # admission v3's verdict on the other genome
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)                # development seed
+    if genome == "attached":
+        registry = _everything_attached()
+    else:
+        registry = registry_view()
+        for cid in ("cognition.flow_capacity_plan", "cognition.optimization", "cognition.flow_maxflow"):
+            registry.set_state(cid, "ATTACHED")
+    run = _f7_run(registry)
+    control = run({"capacity_network": data}, execute=False)          # no settled outcomes: the genome ranks first
+    assert (control["method_or_composition_selected"] == "cognition.flow_expansion_mcf" if genome == "attached"
+            else control["withheld_best_fit"]["method"] == "cognition.flow_expansion_mcf")
+    assert {d["method"]: d["why"] for d in control["methods_demoted"]}["composition:graph_then_allocate"].endswith(
+        "the single method is canonical for this geometry and the recipe ranks after it")
+    monkeypatch.setattr(compiler, "_settled_counts", lambda journal: {"cognition.flow_expansion_mcf": (12, 2)})
+    r = run({"capacity_network": data}, execute=False)
+    assert r["method_or_composition_selected"] == "composition:graph_then_allocate" and "withheld_best_fit" not in r
+    assert r["selection_level"] == "best_of_demoted_fits"
+    demoted = {d["method"]: d["why"] for d in r["methods_demoted"]}
+    assert "2 of 12 correct" in demoted["cognition.flow_expansion_mcf"]
+    why = demoted["composition:graph_then_allocate"]
+    assert "matched this recipe's twin" in why and "ranks after" not in why
+    assert why.endswith("the single method is canonical for this geometry, but settled outcomes on this body demote "
+                        "cognition.flow_expansion_mcf too, so the recipe is ordered with it among the demoted fits by "
+                        "the other rank keys") and why in r["dissent"]
+
+
+@pytest.mark.parametrize("case", ["after a no-lift verdict", "beside a matched genome ahead", "both demoted"])
+def test_the_matched_reason_is_qualified_inside_the_recipes_whole_demotion_reason(no_index, monkeypatch, case):
+    """Fix verification 2026-10-15: the qualified reason replaces the matched one inside the recipe's composed
+    demotion reason. A NO_LIFT verdict before it is kept; a second matched genome that is not demoted still ranks
+    before the recipe, and the reason says so; two demoted matched genomes are named as such (the
+    flow_reinforce_greedy DEFAULT verdict is hypothetical: admission v3 found it SUPERSEDED)."""
+    from greg.cognition.genomes import library
+    if case == "after a no-lift verdict":
+        _f7_index_also(no_index, recipe={"lift": False, "status": "NO_LIFT"}, flow_reinforce_greedy="SUPERSEDED")
+    else:
+        _f7_index_also(no_index, flow_reinforce_greedy="DEFAULT_FOR_GEOMETRY")
+    settled = {"cognition.flow_expansion_mcf": (12, 2)}
+    if case == "both demoted":
+        settled["cognition.flow_reinforce_greedy"] = (12, 2)
+    monkeypatch.setattr(compiler, "_settled_counts", lambda journal: settled)
+    data, _ = library.executables()["flow_expansion_mcf"].instance(3)                # development seed
+    r = _f7_run(_everything_attached())({"capacity_network": data}, execute=False)
+    why = {d["method"]: d["why"] for d in r["methods_demoted"]}["composition:graph_then_allocate"]
+    assert why.count("matched this recipe's twin") == 1 and "ranks after it" not in why
+    if case == "after a no-lift verdict":                    # the lift verdict ranks the recipe after the genome
+        assert why.startswith("frozen VPL verdict (evidence index): no lift over its best constituent; ranked after "
+                              "every other fit; admitted single genome cognition.flow_expansion_mcf matched")
+        assert why.endswith(", but settled outcomes on this body demote cognition.flow_expansion_mcf too, so the "
+                            "recipe is ordered with it among the demoted fits by the other rank keys")
+        assert r["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+        assert r["selection_level"] == "demoted_by_settled_outcomes"
+    elif case == "beside a matched genome ahead":
+        assert why.endswith("the single method is canonical for this geometry and the recipe ranks after "
+                            "cognition.flow_reinforce_greedy, but settled outcomes on this body demote "
+                            "cognition.flow_expansion_mcf too, so the recipe is ordered with it among the demoted fits "
+                            "by the other rank keys")
+        assert r["method_or_composition_selected"] == "cognition.flow_reinforce_greedy"
+        assert r["selection_level"] == "admission_status"
+    else:
+        assert why.endswith("the single method is canonical for this geometry, but settled outcomes on this body "
+                            "demote cognition.flow_expansion_mcf, cognition.flow_reinforce_greedy too, so the recipe is "
+                            "ordered with them among the demoted fits by the other rank keys")
+        assert r["method_or_composition_selected"] == "composition:graph_then_allocate"
+        assert r["selection_level"] == "best_of_demoted_fits" and why in r["dissent"]
+
+
 @pytest.mark.parametrize("promotion", ["registered", "not registered"])
 def test_no_acquisition_candidate_is_named_for_a_geometry_the_declaration_excludes(registry, no_index, monkeypatch,
                                                                                    promotion):

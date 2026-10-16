@@ -405,10 +405,7 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
         matched = [m for m in _matched_by_single_genome(recipe, evidence) if m["method"] in fits]
         if matched and not row["rejected"]:
             row["matched_by"] = matched
-            row["demoted"] = "; ".join(filter(None, [row.get("demoted"), (
-                f"admitted single genome {', '.join(m['method'] for m in matched)} matched this recipe's twin "
-                f"({', '.join(m['evidence'] for m in matched)}); the single method is canonical for this geometry "
-                f"and the recipe ranks after it")]))
+            row["demoted"] = "; ".join(filter(None, [row.get("demoted"), _matched_reason(matched)]))
     return rows
 
 
@@ -506,6 +503,24 @@ def _settle_promotions(pending: list, rows: list[dict]) -> None:
             # mechanism stays an acquisition candidate, and the reason is kept. A declared geometry that excludes the
             # promoted genome excludes this row too (promotion keeps the class), and run names no candidate for it
             row["superseded_by"]["promoted_rejected"] = {"method": method, "why": why[method]}
+
+
+def _matched_reason(matched: list[dict], inhibited=frozenset()) -> str:
+    """Why a recipe is demoted by the single genomes that matched its twin. The recipe ranks after each matched genome
+    that is not demoted. One that settled outcomes on this body demote (``inhibited``) is a demoted fit too, so the
+    recipe need not rank after it: the demoted fits are ordered among themselves by the other rank keys."""
+    def them(methods):
+        return "it" if len(methods) == 1 else "them"
+    text = (f"admitted single genome {', '.join(m['method'] for m in matched)} matched this recipe's twin "
+            f"({', '.join(m['evidence'] for m in matched)}); the single method is canonical for this geometry")
+    ahead = [m["method"] for m in matched if m["method"] not in inhibited]
+    demoted = [m["method"] for m in matched if m["method"] in inhibited]
+    if not demoted:
+        return text + f" and the recipe ranks after {them(ahead)}"
+    if ahead:
+        text += f" and the recipe ranks after {', '.join(ahead)}"
+    return text + (f", but settled outcomes on this body demote {', '.join(demoted)} too, so the recipe is ordered "
+                   f"with {them(demoted)} among the demoted fits by the other rank keys")
 
 
 def _matched_by_single_genome(recipe: str, evidence: dict) -> list[dict]:
@@ -1348,6 +1363,13 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         if inhibited and not r.get("demoted"):
             r["demoted"] = inhibited                    # live negative evidence changes routing
             r["settled_inhibition"] = True
+    by_outcomes = {r["method"] for r in eligible if r.get("settled_inhibition")}
+    for r in eligible:
+        if r.get("matched_by") and by_outcomes & {m["method"] for m in r["matched_by"]}:
+            # a matched genome is a demoted fit too: the recipe need not rank after it. candidates composed the
+            # reason from this same list after any earlier one (a lift verdict), and a demoted row is not rewritten
+            r["demoted"] = r["demoted"].replace(_matched_reason(r["matched_by"]),
+                                                _matched_reason(r["matched_by"], by_outcomes))
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
     for r in eligible:
@@ -1505,7 +1527,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
 def _demoted_level(chosen: dict, best: dict) -> str:
     """Why a demoted fit serves. A demoted row ranks after every fit that is not, so either a better-ranked fit cannot
     run (the receipt names it in ``withheld_best_fit``) or every fit is demoted and this one ranks first, labelled by
-    what demoted it: no verified lift, or settled outcomes on this body."""
+    what demoted it: no verified lift, settled outcomes on this body, or else best of the demoted fits (a recipe
+    matched by a single genome that settled outcomes on this body demote too)."""
     if chosen is not best:
         return "serves_while_best_fit_withheld"
     if chosen["status"] == "NO_LIFT":

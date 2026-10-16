@@ -11,7 +11,7 @@ Deliverable J. Each claim below is a command that was run, on the commit named, 
 | Isolation | bubblewrap 0.9.0 with unprivileged namespaces available |
 | Organs | DALEOBANKS `667439f`, WealthMachineIntelligence `ec82b80` (local checkouts; organ venv on Python 3.13.16) |
 | Base | #178 `claude/greg-one-machine` at `baf630d` (merged here in `8cb4043` for `44f7c35` and `cd8046a` for `baf630d`; it was `4ed91f7` until about 16:40 UTC) |
-| Final code commit | `f59eee4`: the third adversarial review's fixes on `a229f70` (earlier finals: `16900ca`, `cd8046a` and `d965bb7`, results kept below) |
+| Final code commit | `16f53f5`: the Track B Mind line (#181 `79c38f8`, with #179 `c6c4d74` and #180 `e4674f9`) merged onto `24d5ebe` (earlier finals: `f59eee4`, `16900ca`, `cd8046a` and `d965bb7`, results kept below) |
 
 The organ variables used by every proof run:
 
@@ -36,7 +36,22 @@ python scripts/ci/replay_seed_compatibility.py --out <file>                     
 python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pipeline_mutants.py
 ```
 
-## Results on the final code commit `f59eee4`
+## Results on the final code commit `16f53f5`
+
+`16f53f5` joins the converged Mind (Track B: #155 and #158 via #179, #180's fixes, #181's venture case on real organs) with this branch (negative result 14).
+
+| Run | Result |
+|---|---|
+| Full suite (`python -m pytest -q -p no:cacheprovider -rfs`, the two proofs included without organ variables) | **5,084 passed, 31 skipped, 1 failed** in 2,850 s. The failure is negative result 4 (environment only) |
+| `tests/unit/test_greg_organs.py` with the real organs | 39 passed |
+| #178's one-mission proof with the real organs | **Passed** (51.8 s). Independent verifier REDERIVED, 16 of 16 checks, no findings; three boots, two recoveries; Genesis formed `composed.assignment.staffing.networkx.5670bf4c5c` |
+| Ten-step proof with the real organ checkouts | **Passed** (255.3 s): 11 missions closed, every appraisal VERIFIED |
+| Every mutation gate CI runs | cortex 85 of 85 caught; cognition residual 28 of 28; budget 3 of 3; native 4 of 4; GREG cognition 6 of 6; pipeline, worker appraisal and WASM lifecycle all caught |
+| Seed replay and seals | Valid, 120 of 120; `freeze-v11.json` stays sealed (the merge changes none of its inputs) |
+| CI on `24d5ebe` | All nine jobs green |
+| VEPMC | 0. Local bodies only |
+
+## Results on the code commit `f59eee4`
 
 `f59eee4` closes the third adversarial review (negative result 12) on `a229f70`, which had fixed CI's job 1 (negative result 13).
 
@@ -117,6 +132,8 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 13. **CI's job 1 on `77a3893` failed one of this branch's own regression tests** (`test_repository_file_never_runs_as_the_provider_through_commission`). It skipped only when the `bwrap` binary was missing; the runner has `bwrap` installed but its namespaces are unusable, so the required posture refused the order. Fixed in `a229f70`: on such a host the test asserts that neither binary ran. It passes with bubblewrap usable, missing, and installed but unusable (emulated with a `bwrap` that fails the namespace probe).
 
 
+14. **Merging the Track B Mind line took decisions, recorded here.** 30 files conflicted; three readers mapped them and a completeness critic trial-merged the result, ran the full suite, both proofs with the real organs and every mutation gate, and found what the readers missed: the adversarial-machine test hook needed `Genesis._attach`'s new argument, and two cortex mutants survived until their anchors were re-pointed and two tests strengthened. Track B's code binding marks the control, game, information and probabilistic operation verdicts stale on the merged code, because this branch's #159 solvers changed what they measured; the binding was kept, they route as UNEVALUATED, and re-admission is a future pre-registered run (`docs/collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md`, section 18). Ten reconciliation-map dispositions became "extended". A venture memo receipted before Track B's revenue section raised KeyError on the merged code; it now renders and verifies as it was. Deferred, each recorded: construction answers carrying `selected_receipt` and a Controller step; the compile route forwarding the caller's grant window; organ-stage Landlock signal scoping; a release guard for tags; real-organ venture tests as a CI gate (needs a RailScout checkout). Not brought in: #173's second worker-confinement mechanism, which is the founder's decision.
+
 ## Digests
 
 | Artifact | sha256 |
@@ -131,6 +148,8 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 | One-mission ledger head on `fd45060` (`run.json` of that run, not committed) | `bea7e74f637e1dc425661d18d32102d04615da4a26eba37c97548eb233534cca` |
 | Ten-step body ledger file on `f59eee4`, 849 records (not committed) | `7dd05a3cbab1941737bf0adb6887279f956439c48cd79502c1781217698d1c42` |
 | One-mission ledger head on `f59eee4` (`run.json` of that run, not committed) | `df3ca819f5600cbf71947284ddd9347d5a88a2dd80be2a74f3551be19ee5293a` |
+| Ten-step body ledger file on `16f53f5`, 849 records (not committed) | `be54708c1f2f93c8033bca971b2843a506eebcc2238ed942ca079477c9f73d1b` |
+| One-mission ledger head on `16f53f5` (`run.json` of that run, not committed) | `346493c30b97be70f57cae521e4ed460eb0fad65f98584b9a4d2f09c5bb1e39c` |
 | One-mission ledger head (`one-mission/run.json`) | `0e1cb9cf01996baaecd969a4b64d96ee16a84e21435cab1eca6a63276f5a373c` |
 | `ten-step/one-machine-trace.json` | `dd29bdbb89484f4c2d9b59d4ba70e3fc8a7ffcd013ce2183c544168a5baf9514` |
 | `one-mission/verify.json` | `b3437146e3d4f8cfc0588699977012e3d41d308cdd055105adffeb440081451d` |

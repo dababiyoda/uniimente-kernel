@@ -39,7 +39,8 @@
     "A second adversarial review (13 of 14 findings confirmed by separate skeptics) found the first review's kill-window fix incomplete in Goal Gravity preparation, a reconciliation crash loop, goal-side links broken by paid spend, a standing-approval claim false for paid moves, asks about unrunnable moves, and Claude Code CLI failures booked at $0 with refusals shopped to another vendor; fixed in 2cf4bdc and 6352c68",
     "CI job 9 on bc6c4b3 reported one unit failure without its name; job 1's full suite passed on the same commit and the unit suite passed locally without bubblewrap; the verifier now names failures (16900ca)",
     "A third adversarial review (9 of 12 findings confirmed) found a paid approval left live by a $0 run, paid asks left unfundable by spend, a used-up approve taken as an answer, wording offering a reject the engine refuses, and Claude Code CLI verbose output, unknown cost, model fallback and error reasons mishandled; fixed in f59eee4",
-    "CI job 1 on 77a3893 failed this branch's own provider-binary test on a runner whose bubblewrap is installed but unusable; fixed in a229f70"
+    "CI job 1 on 77a3893 failed this branch's own provider-binary test on a runner whose bubblewrap is installed but unusable; fixed in a229f70",
+    "Merging Track B made four operation verdicts (control, game, information, probabilistic) stale under Track B's code binding, because this branch's #159 solvers changed what they measured; they route as UNEVALUATED pending a pre-registered re-admission"
   ],
   "dependencies": [
     "INTENT-20261014-ONE-MACHINE (#178)",
@@ -72,6 +73,7 @@
     "6352c68 second review findings 7-13: greg/missions.py move_digest; greg/goal_gravity.py asks_for_move and approve_means; greg/authority.py AuthorityOffice.precheck; greg/models.py cli_report; greg/builders.py; freeze-v10.json; tests/unit/test_evidence_bundle_digests.py",
     "fd45060 merge #169 854a021 (increment 29); 16900ca verifier/v2/verify.py names failing unit tests",
     "a229f70 CI fix for the provider-binary test on unusable bubblewrap; f59eee4 third review: greg/missions.py MissionBook.consumed and _withdraw_spent_paid_asks; greg/goal_gravity.py answer_for and legacy asks_for_move; greg/models.py cli_report (verbose), cli_cost, cli_reason, cli_authors, CLI_NO_MODEL_FALLBACK; greg/builders.py; freeze-v11.json",
+    "24d5ebe stage-leftover test robust to a loaded runner; 16f53f5 merge of Track B (#181 79c38f8 with #179 c6c4d74 and #180 e4674f9): greg/cognition budget, compiler, cortex, verification; greg/missions.py and greg/genesis.py both lineages; greg/ventures.py legacy memo; docs/collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md section 18",
     "greg/improvement.py",
     "greg/organ_exchange.py",
     "tests/integration/test_one_machine_ten_steps.py",

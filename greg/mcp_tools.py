@@ -154,6 +154,39 @@ def _common(params: dict, ctx: InvocationContext) -> dict:
             "arguments": arguments}
 
 
+def _scrub(text: str, values) -> str:
+    """Remove every credential value the server was handed from text it produced (an error, its stderr), before
+    the text can reach a receipt on the append-only ledger: each value whole, each of its lines, and each of its
+    tokens of eight characters or more (a parser that fails on a key file quotes a line or a token of it)."""
+    pieces = set()
+    for value in values:
+        value = str(value)
+        if not value.strip():
+            continue
+        pieces |= {value.strip(), " ".join(value.split())}
+        pieces |= {line.strip() for line in value.splitlines() if len(line.strip()) >= 4}
+        pieces |= {t for t in re.split(r"[\s\"',:;=(){}\[\]<>]+", value) if len(t) >= 8}
+    for piece in sorted(pieces, key=len, reverse=True):
+        text = text.replace(piece, "[credential]")
+    return text
+
+
+LEFTOVER = re.compile(r"(?:cred|mcp)-[a-z0-9][a-z0-9._-]*-[a-z0-9_]{8}")
+
+
+def sweep_leftovers(workspace_root: Path) -> list[str]:
+    """Remove what a call left in a mission workspace when the process running it was killed mid-call (SIGKILL,
+    out of memory, power loss): the credential files a server was shown and its scratch home. A finished call
+    removes its own; this runs when the body opens, as the one writer, before any capability can read a workspace."""
+    removed = []
+    root = Path(workspace_root)
+    for directory in sorted(root.glob("*/*")) if root.is_dir() else []:
+        if directory.is_dir() and not directory.is_symlink() and LEFTOVER.fullmatch(directory.name):
+            shutil.rmtree(directory, ignore_errors=True)
+            removed.append(str(directory.relative_to(root)))
+    return removed
+
+
 def _invoke(c: dict, ctx: InvocationContext, *, writable=(), hosts=(), env=None, files=None) -> dict:
     """Start the server confined (behind a door to a relay allowing exactly ``hosts`` when there are any), call the
     tool once, discard the scratch directory, and report the answer as untrusted data. ``files`` maps an environment
@@ -196,9 +229,10 @@ def _invoke(c: dict, ctx: InvocationContext, *, writable=(), hosts=(), env=None,
     except Exception as exc:              # a refusal, a crash, a protocol break: say what actually failed
         cause = root_cause(exc)
         log = scratch / "server-stderr.log"
-        tail = log.read_text(errors="replace")[-300:].strip() if log.exists() else ""
-        what = " ".join((str(cause) if isinstance(cause, GatewayError) else f"{type(cause).__name__}: {cause}").split())
-        tail = " ".join(tail.split())[-200:]
+        handed = [*(env or {}).values(), *(files or {}).values()]
+        tail = _scrub(log.read_text(errors="replace"), handed)[-300:].strip() if log.exists() else ""
+        what = _scrub(str(cause) if isinstance(cause, GatewayError) else f"{type(cause).__name__}: {cause}", handed)
+        what, tail = _scrub(" ".join(what.split()), handed), _scrub(" ".join(tail.split()), handed)[-200:]
         raise CapabilityError(f"MCP server {c['server']}: {what}"[:700] + (f" | stderr: {tail}" if tail else "")) from None
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
@@ -221,6 +255,26 @@ def call(params: dict, ctx: InvocationContext) -> dict:
     out["confinement"] = {"network": "none", "filesystem": "read-only except a discarded scratch directory",
                           "shown": [str(c["root"]), *c["readable"]]}
     return out
+
+
+def reach_problem(params: dict) -> str | None:
+    """Why this mcp.act scope cannot run as signed (a malformed credential map, a host that is no exact host),
+    checked before the founder is asked to approve it, so a malformed scope is refused, never asked about."""
+    if not isinstance(params, dict):
+        return "params must be an object"
+    for key in ("secrets", "secret_files"):
+        mapping = params.get(key) or {}
+        if not isinstance(mapping, dict) or not all(
+                ENV_NAME.fullmatch(str(k)) and isinstance(v, str) and HANDLE.fullmatch(v) for k, v in mapping.items()):
+            return f"{key} must map UPPER_CASE environment names to mcp:<name> credential handles"
+    for key in ("hosts", "writable"):
+        if not isinstance(params.get(key) or [], list):
+            return f"{key} must be a list"
+    if not all(isinstance(h, str) and HOST.fullmatch(h.lower()) for h in params.get("hosts") or []):
+        return "hosts must be exact host names (no scheme, port or wildcard)"
+    if params.get("bearer") is not None and not (isinstance(params["bearer"], str) and HANDLE.fullmatch(params["bearer"])):
+        return "bearer must be an mcp:<name> credential handle"
+    return None
 
 
 def act(params: dict, ctx: InvocationContext) -> dict:

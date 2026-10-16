@@ -118,6 +118,11 @@ def exact_reach(capability_id: str, params: dict) -> dict:
     if capability_id != "mcp.act":
         return {}
     from urllib.parse import urlsplit
+    from greg.mcp_tools import reach_problem
+    problem = reach_problem(params)
+    if problem is not None:       # a malformed scope is shown as such, never parsed into a misleading reach
+        return {"tool": f"{params.get('server')}.{params.get('tool')}" if isinstance(params, dict) else None,
+                "malformed": problem}
     hosts = params.get("hosts") or ([urlsplit(str(params["url"])).hostname] if params.get("url") else [])
     credentials = [str(v) for v in (params.get("secrets") or {}).values()] + \
                   [f"{v} (as a file)" for v in (params.get("secret_files") or {}).values()] + \
@@ -2320,6 +2325,14 @@ class MissionEngine:
             record["bindings"] = bindings
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION") and prepare_for is not None:
             return {"state": "NOTHING_TO_PREPARE"}    # preparation never asks; nothing was dispatched
+        if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION") and manifest.capability_id == "mcp.act":
+            from greg.mcp_tools import reach_problem
+            problem = reach_problem(bound_params)
+            if problem is not None:          # refused before anyone is asked: the signed scope cannot run as written
+                record["status"] = "REFUSED"
+                record["reasons"].append(f"the signed mcp.act scope cannot run: {problem}")
+                self.journal.record("mission.action", record, key=[m.mission_id, aid, attempt, "malformed"])
+                return {"state": "REPLANNING", "action": aid}
         if outcome.status in ("OUTSIDE_SCOPE", "NEEDS_DECISION"):
             if outcome.scope_digest in m.rejected_scopes:
                 record["status"] = "REFUSED"
@@ -2339,7 +2352,8 @@ class MissionEngine:
                                 requested={"capability": manifest.capability_id, "target": s["target"],
                                            "consequence_class": manifest.consequence_class,
                                            "cost_usd": s.get("cost_usd", 0.0),
-                                           **exact_reach(manifest.capability_id, params),
+                                           # what the bound scope (the one the digest covers) lets it touch
+                                           **exact_reach(manifest.capability_id, bound_params),
                                            **({"spend": f"${float(s['cost_usd']):.2f} for this one action"}
                                               if float(s.get("cost_usd", 0.0)) > 0 else {})},
                                 now=now, resource=self._spend_ask(m, s, outcome, routing_decision)

@@ -17,7 +17,10 @@ class PendingInput(BindingError):
 
 PROTECTED = frozenset({"allowed_paths", "tools", "provider", "max_budget_usd", "timeout_seconds",
     "repo", "base", "acceptance", "credentials", "credential_refs", "also_hosts", "url",
-    "network", "read_roots", "write_scope", "authority", "policy", "command", "argv"})
+    "network", "read_roots", "write_scope", "authority", "policy", "command", "argv",
+    # mcp.act's reach: which credentials a server is handed (as values or files), which hosts it may reach and
+    # which paths it may write are founder-signed literals, never an earlier action's output
+    "secrets", "secret_files", "bearer", "hosts", "writable"})
 TYPES = {"string": str, "object": dict, "array": list, "boolean": bool, "integer": int, "number": (int, float)}
 
 def resolve(params, journal, mission_id, *, before_seq=None):

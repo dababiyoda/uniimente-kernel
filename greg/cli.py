@@ -79,7 +79,8 @@ def _secret_value(name: str) -> str:
 def _secret_file(path: str) -> str:
     """A whole credential file (64 KiB at most, text); its contents never reach the command line or the output."""
     try:
-        data = Path(path).expanduser().read_bytes()
+        with Path(path).expanduser().open("rb") as fh:
+            data = fh.read(64 * 1024 + 1)       # never more than the ceiling plus one byte, whatever the source is
     except OSError as exc:
         raise BodyError(f"cannot read {path}: {exc.strerror}") from None
     if not data.strip() or len(data) > 64 * 1024:

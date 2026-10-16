@@ -199,6 +199,15 @@ class Body:
                                              legal_principal="alfonso_lopez", declared_capabilities=[],
                                              budget_ceiling_usd=0.0, consequence_class="read_only")
         self.journal = Journal(self.spine, actor=self.identity.passport_id)
+        # As the one writer, before any capability can read a workspace: remove the credential files and scratch
+        # homes a call left when the process running it was killed mid-call.
+        from greg.mcp_tools import sweep_leftovers
+        removed = sweep_leftovers(self.layout.workspace)
+        if removed:
+            self.journal.record("mcp.leftovers_removed", {
+                "directories": removed, "why": "a call ended with its process killed; its credential files and "
+                                               "scratch home were removed before anything could read them"},
+                key=["leftovers", sha256_json(removed), len(self.journal.replay("mcp.leftovers_removed"))])
         signer = WitnessSigner(key=self.layout.witness_key.read_bytes(), env="production")
         self.office = AuthorityOffice(compiled=self.compiled, passports=self.passports, signer=signer,
                                       ledger=self.ledger)

@@ -20,6 +20,7 @@ CONSTRUCTED = 'tests/unit/test_greg_constructed_route_rules.py'
 WINDOW = 'tests/unit/test_cognition_compile_grant_window.py'
 ECONOMICS_BINDING = 'tests/unit/test_greg_ventures_economics_binding.py'
 OUTAGE = 'tests/unit/test_greg_outage_retry_cognition.py'
+SECRET_FILES = 'tests/integration/test_greg_mcp_secret_files_review.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -154,6 +155,25 @@ MUTANTS = [
  ('Genesis marks as tried what became usable after the compile', 'greg/genesis.py',
   '        tried = compiler_tried(deficit)', '        tried = None',
   'test_a_mechanism_attached_during_an_outage_backoff_serves_the_waiting_mission[True]', OUTAGE),
+ # mcp.act's secret_files (#169 46719e4): credentials stay out of records, readable workspaces and bindings.
+ ('a server echoing its key writes it into the ledger', 'greg/mcp_tools.py',
+  '        tail = _scrub(log.read_text(errors="replace"), handed)[-300:].strip() if log.exists() else ""\n'
+  '        what = _scrub(str(cause) if isinstance(cause, GatewayError) else f"{type(cause).__name__}: {cause}", handed)\n'
+  '        what, tail = _scrub(" ".join(what.split()), handed), _scrub(" ".join(tail.split()), handed)[-200:]',
+  '        tail = log.read_text(errors="replace")[-300:].strip() if log.exists() else ""\n'
+  '        what = str(cause) if isinstance(cause, GatewayError) else f"{type(cause).__name__}: {cause}"\n'
+  '        what, tail = " ".join(what.split()), " ".join(tail.split())[-200:]',
+  'test_a_server_echoing_its_key_file_never_writes_the_key_into_a_record[bad_key]', SECRET_FILES),
+ ('a killed call leaves its key file in the workspace', 'greg/body.py',
+  'removed = sweep_leftovers(self.layout.workspace)', 'removed = []',
+  'test_the_body_removes_call_leftovers_when_it_opens_and_keeps_everything_else', SECRET_FILES),
+ ('an earlier output chooses the credential file', 'greg/pipeline.py',
+  '"secrets", "secret_files", "bearer", "hosts", "writable"})', '"secrets", "bearer", "hosts", "writable"})',
+  'test_an_earlier_actions_output_cannot_choose_a_servers_reach[secret_files]', SECRET_FILES),
+ ('a malformed scope is asked about instead of refused', 'greg/missions.py',
+  '            if problem is not None:          # refused before anyone is asked: the signed scope cannot run as written',
+  '            if False:',
+  'test_a_malformed_secret_files_is_refused_before_anyone_is_asked[malformed2]', SECRET_FILES),
  ('the organ bridge is handed the writable journal', 'greg/missions.py',
   'journal=self._ledger_reader() if manifest.capability_id == "venture.assess"',
   'journal=self.journal if manifest.capability_id == "venture.assess"',

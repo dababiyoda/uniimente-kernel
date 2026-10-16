@@ -20,9 +20,10 @@ with code that shares nothing with the solver it checks.
   dynamic program written here (over capacity or over profit, whichever is smaller).
 * ``grid_dijkstra`` (``grid_dijkstra_route``): SciPy's compiled Dijkstra on the grid's digraph, returning a
   dual certificate: one potential per cell. The verifier checks the potential is feasible on every edge and
-  tight on the route (LP duality for shortest paths); it never searches. Version 1.1.0 builds the same digraph as
-  a fixed-degree CSR with a vectorised input check and returns 1.0.0's answers; 1.0.0's solve is kept as
-  ``grid_dijkstra_solve_v100``, the regression reference.
+  tight on the route (LP duality for shortest paths); it never searches. Version 1.1.0 builds the same edges as
+  a fixed-degree CSR (zero-weight self-loops fill the empty slots) with a vectorised input check. It keeps 1.0.0's
+  distances, costs and certificates by construction, and has traced 1.0.0's routes on every grid tested, which is
+  an observation, not a guarantee. 1.0.0's solve is kept as ``grid_dijkstra_solve_v100``, the regression reference.
 * ``game_lp_dual`` (``zero_sum_lp_dual_equilibrium``): one LP (OR-Tools GLOP) whose dual values are the column
   player's strategy, SciPy HiGHS as a fallback, each at tight and then at its default feasibility tolerances. An
   attempt is answered only when it passes the verifier's own conditions at half their tolerances. Verified by exact
@@ -211,13 +212,24 @@ def grid_dijkstra_solve(data, budget):
     """SciPy's compiled Dijkstra from the start on the grid's digraph (edge u -> v weighs the cost of entering v), with
     the potential certificate pi(v) = min(dist(v), dist(goal)).
 
-    1.1.0 builds 1.0.0's digraph in fixed-degree CSR form: every cell owns four slots (up, down, left, right), and a
+    1.1.0 builds 1.0.0's edges in fixed-degree CSR form: every cell owns four slots (up, down, left, right), and a
     slot whose neighbour is off the grid or blocked holds a zero-weight self-loop, so the CSR arrays are written by
     whole-grid slices with no edge list, no COO-to-CSR sort and no compaction; the input check is vectorised
-    (``_gd_grid``). A zero-weight self-loop offers a node its own distance, never a lower one, so no distance or
-    predecessor changes: the route and certificate are 1.0.0's (``grid_dijkstra_solve_v100``, the regression
-    reference; identical on every development and test grid), and only the time to build them changed. The verifier
-    checks the certificate either way."""
+    (``_gd_grid``).
+
+    Guaranteed against 1.0.0 (``grid_dijkstra_solve_v100``, the regression reference): the real edges and their
+    weights are 1.0.0's, and a zero-weight self-loop offers a node only its own distance, so every distance is
+    unchanged. Hence so are reachability, the cost, the potential certificate (a function of the distances alone),
+    the settled-cell and component counts, and every abstention and refusal.
+
+    Not guaranteed: the route. The neighbour scan order changed (1.0.0's sorted CSR scans up, left, right, down;
+    1.1.0 scans up, down, left, right, with self-loops in the empty slots), so where several routes are optimal, the
+    one the predecessors trace rests on how SciPy's heap breaks ties, which its documented API does not fix.
+    Identical routes are an observed regularity of that tie-breaking, not a property of the construction: under
+    SciPy 1.18.1 they held on every grid tested (development seeds 0-9, review seeds 3000-3999, 1000 random review
+    grids and the tests' edge grids), and the predecessors did not change under any of the 24 slot orders on 40
+    random review grids (seeds 3000-3039). Another route would still be optimal and still verify, because its cost
+    equals pi(goal). The verifier checks the certificate either way."""
     import numpy as np
     from scipy.sparse import csr_matrix
     from scipy.sparse.csgraph import dijkstra
@@ -261,9 +273,10 @@ def grid_dijkstra_solve(data, budget):
 
 
 def grid_dijkstra_solve_v100(data, budget):
-    """grid_dijkstra 1.0.0's solve, kept as the regression reference for 1.1.0 (same answers and certificates) and as
-    the code admission v3 measured (EXPERIMENTAL: 1.22x its baseline's median latency, short of 1.25x). It builds the
-    digraph as an edge list (COO -> CSR) and checks every cell through ``solvers_b._grid``. Not routed."""
+    """grid_dijkstra 1.0.0's solve, kept as the regression reference for 1.1.0 (the same distances, cost and
+    certificate by construction; the same route on every grid tested, by observation) and as the code admission v3
+    measured (EXPERIMENTAL: 1.22x its baseline's median latency, short of 1.25x). It builds the digraph as an edge
+    list (COO -> CSR) and checks every cell through ``solvers_b._grid``. Not routed."""
     import numpy as np
     from scipy.sparse import csr_matrix
     from scipy.sparse.csgraph import dijkstra
@@ -965,8 +978,10 @@ INTELLIGENCES = [
             algorithm_or_runtime="compiled single-source Dijkstra (SciPy csgraph) on a fixed-degree CSR digraph "
                                  "written by whole-grid slices (four slots per cell; a missing neighbour is a "
                                  "zero-weight self-loop) after a vectorised input check; potentials = distances "
-                                 "capped at the goal's. 1.1.0 changes how the digraph is built, not the digraph, "
-                                 "the answer or the certificate",
+                                 "capped at the goal's. 1.1.0 changes how the digraph is built (zero-weight "
+                                 "self-loops, another neighbour scan order), not its distances, the cost or the "
+                                 "certificate; its routes have equalled 1.0.0's on every grid tested, which SciPy's "
+                                 "tie-breaking does not guarantee",
             parameters={"native_side": GD_NATIVE},
             composition_inputs=("terrain cost grid",), composition_outputs=("moves", "cost"),
             evidence_type="optimality_certificate",
@@ -1005,8 +1020,10 @@ INTELLIGENCES = [
         subregion=solvers_b.astar_subregion, tolerance=1e-9, promotes="search_astar",
         notes={"weak_competitor": "the strongest different alternative found is slower than the baseline; an "
                                   "admission will mostly measure this genome against the A* it replaces",
-               "version_1_1_0": "same digraph, Dijkstra, answer and certificate as 1.0.0 (identical outputs and "
-                                "certificates on development seeds 0-9 and review seeds 3100-3199); 1.0.0 spent most "
+               "version_1_1_0": "same edges, Dijkstra, distances, cost and certificate as 1.0.0 by construction "
+                                "(a zero-weight self-loop changes no distance); identical routes too on development "
+                                "seeds 0-9 and review seeds 3100-3199, an observation about SciPy's heap tie-breaking "
+                                "under the new neighbour scan order, not a guarantee; 1.0.0 spent most "
                                 "of its time outside Dijkstra: building the edge list and its COO -> CSR conversion "
                                 "and checking each cell in Python. Its admission v3 status (EXPERIMENTAL at 1.0.0) "
                                 "is negative evidence that persists until a re-admission at 1.1.0",

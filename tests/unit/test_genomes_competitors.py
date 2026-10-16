@@ -7,6 +7,7 @@ held-out admission seeds are never generated here, and nothing here runs or free
 from __future__ import annotations
 
 import copy
+import itertools
 import json
 import math
 from pathlib import Path
@@ -616,7 +617,7 @@ def test_grid_answers_up_to_one_hundred_cells_a_side_within_the_worker_output_bo
     _json_clean(out["certificate"])
 
 
-# ------------------------------------------------------------------ grid_dijkstra 1.1.0: 1.0.0's answers, built faster
+# --------------------------- grid_dijkstra 1.1.0: 1.0.0's distances and certificate (guaranteed), route (observed)
 def _grid_case(r, rows, cols, blocked, high):
     """A review-seed grid (seeds 3700-3799): rows x cols, a blocked fraction, costs 1..high, passable endpoints."""
     grid = [[0 if r.random() < blocked else r.randint(1, high) for _ in range(cols)] for _ in range(rows)]
@@ -640,27 +641,111 @@ def _grid_edge_cases():
     return cases
 
 
+ROUTE = ("moves", "steps")      # which optimal route was traced: observed equal to 1.0.0's, never guaranteed
+
+
+def _without_route(result):
+    return {**result, "output": {k: v for k, v in result["output"].items() if k not in ROUTE}}
+
+
+def _route(result):
+    return {k: result["output"].get(k) for k in ROUTE}
+
+
+def _assert_1_0_guarantee(new, ref, data):
+    """What 1.1.0 guarantees against 1.0.0 (``grid_dijkstra_solve``'s docstring): every distance is unchanged, so the
+    status, reachability, cost and the whole certificate (the potential and the settled-cell and component counts
+    are functions of the distances) are equal, and the answer verifies. The route is not compared here: which optimal
+    route the predecessors trace depends on SciPy's heap tie-breaking (the observation test checks it apart)."""
+    assert new["status"] == ref["status"] == "ANSWER"
+    assert _without_route(new) == _without_route(ref)
+    assert all(competitors.grid_dijkstra_verify(data, new["output"], new["certificate"]).values())
+
+
+def _tight_route(data, potential, order):
+    """An optimal route traced back from the goal along tight edges of the potential, preferring moves in ``order``:
+    a stand-in for the route another tie-break would trace."""
+    step = {"U": (-1, 0), "D": (1, 0), "L": (0, -1), "R": (0, 1)}
+    grid, start, (r, c) = data["grid"], tuple(data["start"]), data["goal"]
+    path = []
+    while (r, c) != start:
+        m = next(m for m in order if 0 <= r - step[m][0] < len(grid) and 0 <= c - step[m][1] < len(grid[0])
+                 and grid[r - step[m][0]][c - step[m][1]]
+                 and potential[r - step[m][0]][c - step[m][1]] + grid[r][c] == potential[r][c])
+        path.append(m)
+        r, c = r - step[m][0], c - step[m][1]
+    return "".join(reversed(path))
+
+
 @pytest.mark.parametrize("seed", range(10))
-def test_grid_1_1_returns_exactly_the_answer_and_certificate_of_1_0_on_every_dev_seed(seed):
+def test_grid_1_1_keeps_the_distances_cost_and_certificate_of_1_0_on_every_dev_seed(seed):
     data, truth = dev("grid_dijkstra", seed)
     new = competitors.grid_dijkstra_solve(copy.deepcopy(data), BUDGET)
-    assert new == competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET)
+    _assert_1_0_guarantee(new, competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET), data)
     assert new["output"]["cost"] == truth["cost"] == competitors.grid_networkx_bidirectional(data)["cost"]
-    assert all(competitors.grid_dijkstra_verify(data, new["output"], new["certificate"]).values())
 
 
 def test_grid_1_1_matches_1_0_and_networkx_on_edge_and_review_grids_and_every_answer_verifies():
     reachable = unreachable = 0
     for data in _grid_edge_cases():
         new = competitors.grid_dijkstra_solve(copy.deepcopy(data), BUDGET)
-        assert new == competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET), data["start"]
-        assert new["status"] == "ANSWER" and new["certificate"]["method"] == competitors.GD_METHOD
-        assert all(competitors.grid_dijkstra_verify(data, new["output"], new["certificate"]).values())
+        _assert_1_0_guarantee(new, competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET), data)
+        assert new["certificate"]["method"] == competitors.GD_METHOD
         other = competitors.grid_networkx_bidirectional(copy.deepcopy(data))
         assert new["output"]["reachable"] == other["reachable"] and new["output"]["cost"] == other["cost"]
         reachable += new["output"]["reachable"]
         unreachable += not new["output"]["reachable"]
     assert reachable >= 20 and unreachable >= 5          # both branches are exercised
+
+
+def test_the_grid_1_0_guarantee_holds_for_another_optimal_route_and_fails_on_another_cost_or_potential():
+    """A SciPy tie-break change must not fail the guarantee tests: an answer that traces another optimal route (here
+    traced along tight edges of the potential with other move preferences) still meets the 1.0 guarantee and
+    verifies, while the observation test would report it; a changed cost or potential fails the guarantee."""
+    data, _, new = solved("grid_dijkstra", 1)                # a uniform-cost obstacle grid: optimal routes tie
+    ref = competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET)
+    potential = new["certificate"]["potential"]
+    others = sorted({_tight_route(data, potential, order) for order in itertools.permutations("UDLR")}
+                    - {new["output"]["moves"]})
+    assert others                                            # this grid has another optimal route
+    other = {**new, "output": {**new["output"], "moves": others[0], "steps": len(others[0])}}
+    _assert_1_0_guarantee(other, ref, data)
+    assert _route(other) != _route(ref)
+    broken = ({**other, "output": {**other["output"], "cost": other["output"]["cost"] + 1}},
+              {**other, "certificate": {**other["certificate"], "potential": [[x + 1 for x in row]
+                                                                              for row in potential]}})
+    for answer in broken:
+        with pytest.raises(AssertionError):
+            _assert_1_0_guarantee(answer, ref, data)
+
+
+def _grid_inputs_answered():
+    """The inputs of the input-check test that the contract accepts (a plain grid and a list-subclass grid)."""
+    out = []
+    for data in GRID_INPUTS + [{"grid": [_Row([1, 2]), _Row([3, 4])], "start": [0, 0], "goal": [1, 1]}]:
+        try:
+            solvers_b._grid(copy.deepcopy(data))
+        except GenomeError:
+            continue
+        out.append(data)
+    return out
+
+
+def test_observation_not_a_guarantee_1_1_traces_1_0s_route_on_every_grid_tested():
+    """OBSERVATION, not a guarantee (``grid_dijkstra_solve``'s docstring). 1.1.0 scans neighbours in another order
+    than 1.0.0's sorted CSR, so where several routes are optimal the one traced depends on SciPy's heap tie-breaking.
+    On every grid tested both trace the same route. If this fails while the guarantee tests pass, SciPy's tie-breaking
+    changed: the answers are still optimal and verified; correct the genome's notes that report identical routes."""
+    cases = [dev("grid_dijkstra", seed)[0] for seed in range(10)] + _grid_edge_cases() + _grid_inputs_answered()
+    differ = []
+    for data in cases:
+        new = competitors.grid_dijkstra_solve(copy.deepcopy(data), BUDGET)
+        ref = competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET)
+        if _route(new) != _route(ref):
+            differ.append((data["start"], data["goal"], _route(new), _route(ref)))
+    assert len(cases) >= 58 and not differ, (
+        f"OBSERVATION changed, not a guarantee failure: 1.1.0 traced another optimal route than 1.0.0 on "
+        f"{len(differ)} grid(s): {differ[:3]}")
 
 
 def test_grid_1_1_certificate_is_a_feasible_tight_potential_checked_here_independently():
@@ -734,7 +819,7 @@ def test_the_vectorised_input_check_is_solvers_b_grid_contract_with_the_same_ref
     assert (costs.ravel().tolist(), rows2, cols2, s2, t2) == (cells, rows, cols, s, t)
     assert str(costs.dtype) == "int64" and costs.shape == (rows, cols)
     new = competitors.grid_dijkstra_solve(copy.deepcopy(data), BUDGET)
-    assert new == competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET)
+    _assert_1_0_guarantee(new, competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET), data)
 
 
 def test_a_plain_grid_takes_the_vectorised_check_and_never_the_per_cell_one(monkeypatch):

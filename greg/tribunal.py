@@ -62,7 +62,6 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
             if later and not later[0]["passed"]:
                 surprises.append({"action_id": action["action_id"], "check_id": check,
                                   "expected": "check passes after action", "observed": later[0]["detail"]})
-    open_requests = asks.open_requests(all_events)
     critiques = [e.payload for e in all_events if e.type == "greg.critique.recorded"]
     closed = set()   # closed only through its own proven close condition; a reverted fix reopens it
     for e in all_events:
@@ -79,6 +78,10 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
         for mid, m in engine.book.missions.items():
             status[mid] = {"status": m.status, "paused": m.paused, "rung": m.rung, "blocker": m.blocker,
                            "next_observe_at": m.next_observe_at, "spent_usd": m.spent_usd}
+    from greg.missions import MissionBook
+    # an answer row the mission book does not count (no founder-signed DECISION behind it) leaves its ask open
+    open_requests = asks.open_requests(all_events, counted=(engine.book if engine is not None
+                                                            else MissionBook(journal)).answers)
     from greg import presence
     reviews = [e.payload for e in all_events if e.type == "greg.tribunal.reported"]
     since = presence._t(reviews[-1]["at"]) if reviews and reviews[-1].get("at") else None

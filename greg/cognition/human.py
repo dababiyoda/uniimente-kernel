@@ -66,13 +66,22 @@ def validate(raw, *, allow_empty: bool = False) -> list[dict]:
 
 
 def signed_answer(journal, request_id: str, scope_digest: str) -> dict | None:
-    """The founder's signed answer to this request, when the request on record is this question."""
+    """The founder's signed answer to this request, when the request on record is this question.
+
+    On a body journal (one with a ledger) it is the answer the mission fold counts, by the same predicate
+    (``greg.missions.signed_answer`` over ``greg.goal_gravity.verified_decisions``): the record
+    ``MissionEngine.answer`` wrote for a founder-signed DECISION verified at its own ledger position. A row any
+    other writer appended decides nothing. A replay-only stand-in (no ledger) reads the recorded row."""
     if journal is None:
         return None
     requested = [e.payload for e in journal.replay("decision.requested")
                  if e.payload.get("request_id") == request_id]
     if not requested or any(r.get("scope_digest") != scope_digest for r in requested):
         return None                        # no request for this question, or a request under this id is another
+    if getattr(journal, "ledger", None) is not None:
+        from greg.missions import MissionBook
+        p = MissionBook(journal).answers.get(request_id)
+        return p if p is not None and p.get("answer") in DECIDING_ANSWERS else None
     for e in journal.replay("decision.answered"):
         p = e.payload
         if p.get("request_id") == request_id and p.get("command_digest") and p.get("answer") in DECIDING_ANSWERS:

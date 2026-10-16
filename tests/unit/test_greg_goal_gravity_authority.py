@@ -66,12 +66,13 @@ def test_a_forged_approve_is_never_reported_signature_verified(world, fast):
     world.tick(3)
     rid, _ = expected_w2_request(world)
     _forge_answer(world, rid, "approve", sha256_json(goal_env))
-    world.tick(4)                     # the mission fold still executes on it (ADR P2); the goal side never vouches
+    world.tick(4)    # the mission fold no longer counts it (next-wave item 7) and the goal side never vouches for it
     with world.body() as b:
         ev = gg.evidence(b.journal, gid)
         closure = gg.ledger_closure(b.journal)
     ask = next(a for a in ev["asks"] if a["request_id"] == rid)
     assert ask["answer"] == "approve" and ask["answer_signature_verified"] is False
+    assert ask["answer_counted"] is False
     assert not closure["ok"] and closure["unsigned_answers"] == 1
     assert any(p["problem"].startswith("decision.answered without a signature-verified DECISION")
                for p in closure["problems"])

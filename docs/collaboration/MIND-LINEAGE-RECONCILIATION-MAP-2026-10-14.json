@@ -1052,8 +1052,8 @@
    "path": "greg/cognition/human.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); kept until next-wave item 7 on PR #184 (2026-10-16, fold-time re-verification of decision.answered) made signed_answer read the answer the mission fold counts on a body journal; replay-only stand-ins keep #158's read"
   },
   {
    "path": "greg/cognition/repertoire.py",

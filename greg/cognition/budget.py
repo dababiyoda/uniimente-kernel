@@ -257,8 +257,8 @@ def window_limit(caller_window=None, shared_deadline=None):
     now, bounds = datetime.now(timezone.utc), {}
     if caller_window is not None:
         bounds["latency_ceiling"] = float(number(caller_window.latency_ceiling_seconds, low=0, high=30))
-        for name in ("horizon", "grant_expires_at"):
-            bounds[name] = (_instant(getattr(caller_window, name)) - now).total_seconds()
+        for bound in ("horizon", "grant_expires_at"):
+            bounds[bound] = (_instant(getattr(caller_window, bound)) - now).total_seconds()
     if shared_deadline is not None:
         bounds["shared_deadline"] = float(number(shared_deadline, low=0)) - time.monotonic()
     return {"seconds": max(0.0, min(bounds.values())), "bounds": {k: round(v, 4) for k, v in bounds.items()}}

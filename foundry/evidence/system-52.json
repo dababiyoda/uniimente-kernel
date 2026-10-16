@@ -11,6 +11,74 @@
   "procedure_version": 1,
   "regression_before": "1 failed",
   "rejected_that_broke_existing_tests": [],
+  "source_repair": {
+   "after": {
+    "test_dsl_runs_narrow_rules_and_rejects_code": "passed",
+    "test_regression_lte_boundary": "passed"
+   },
+   "after_passed": true,
+   "applies_to_source": false,
+   "candidates": [
+    {
+     "diff_lines": 2,
+     "origin": "mutation",
+     "outcome": "regression_still_fails",
+     "patch": "line 21 col 29-34: flip comparison"
+    },
+    {
+     "diff_lines": 2,
+     "origin": "mutation",
+     "outcome": "survived",
+     "patch": "line 21 col 58-63: flip comparison"
+    },
+    {
+     "diff_lines": 2,
+     "origin": "mutation",
+     "outcome": "regression_still_fails",
+     "patch": "line 21 col 86-91: flip comparison"
+    }
+   ],
+   "chosen": "line 21 col 58-63: flip comparison",
+   "diff": "--- a/foundry/systems/dsl.py\n+++ b/foundry/systems/dsl.py\n@@ -18,7 +18,7 @@\n FUNCS = {\"min\": min, \"max\": max, \"round\": round}\n _BIN = {ast.Add: lambda a, b: a + b, ast.Sub: lambda a, b: a - b, ast.Mult: lambda a, b: a * b,\n         ast.Div: lambda a, b: a / b}\n-_CMP = {ast.Lt: lambda a, b: a < b, ast.LtE: lambda a, b: a < b, ast.Gt: lambda a, b: a > b,\n+_CMP = {ast.Lt: lambda a, b: a < b, ast.LtE: lambda a, b: a <= b, ast.Gt: lambda a, b: a > b,\n         ast.GtE: lambda a, b: a >= b, ast.Eq: lambda a, b: a == b, ast.NotEq: lambda a, b: a != b}\n LANGUAGES = {\n     \"pricing\": {\"variables\": {\"base_price\", \"units\", \"customer_tier\", \"cost_per_unit\"}, \"min\": 0, \"max\": None},\n",
+   "existing_tests": [
+    "test_dsl_runs_narrow_rules_and_rejects_code"
+   ],
+   "fault": "ast.LtE: lambda a, b: a < b",
+   "frozen_files": 284,
+   "isolation": {
+    "cpu_seconds": 120,
+    "file_bytes": 8388608,
+    "mechanism": "bubblewrap",
+    "network": "isolated-network-namespace",
+    "network_isolated": true,
+    "process_isolation": "private-pid-user-ipc-uts-namespaces",
+    "wall_timeout_seconds": 120.0,
+    "writable": "the run's own tree copy and private runtime only"
+   },
+   "procedure_version": 1,
+   "promotion": "none: applying the patch to a real tree is a separate reviewed act",
+   "regression_before": {
+    "failed_for_intended_reason": true,
+    "message": "AssertionError: repair-regression: observed differs from expected\nassert 2 == 1",
+    "reason": "the regression test failed by its own comparing assertion"
+   },
+   "repository_unchanged": true,
+   "source_tree_unchanged": true,
+   "status": "PROPOSED",
+   "survivors": [
+    "line 21 col 58-63: flip comparison"
+   ],
+   "suspects": [
+    21,
+    89
+   ],
+   "symptom": {
+    "expected": "1",
+    "observed": "2",
+    "raised": null
+   },
+   "target": "foundry/systems/dsl.py"
+  },
   "survivors": [
    "line 7: drop '- 1'",
    "line 7: 1 -> 0"
@@ -30,6 +98,6 @@
   ],
   "tied": true
  },
- "result_sha256": "sha256:5cf4419e01018305668ed1c85b702e45f69530d22be145f2a83837aa176d0d5f",
+ "result_sha256": "sha256:add5e7f53beaabbae018588eba0c515a52c9cf8b8e517241abc53da2f48e1e32",
  "system": 52
 }

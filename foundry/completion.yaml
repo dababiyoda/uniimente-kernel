@@ -1168,19 +1168,32 @@
   - foundry/systems/versions.py
   - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  gap: Component repair fixtures execute; GREG source admission remains refused pending a reviewed isolated source recipe
-    and complete escape/resource/verification evidence. Actual CI provides Landlock ABI7 for reviewed workers; local host
-    unsupported probes do not define a project-wide blocker. Preserve general repair capability.
+  - greg/worker_isolation.py
+  - greg/workers.py
+  gap: repair_source now repairs a copied multi-file source tree (evidence - an off-by-one seeded into a copy of
+    foundry/systems/dsl.py, diagnosed, three competing patches, regression failing by its own assertion before and
+    passing after with the module's real test, proposal recorded), every execution inside the bubblewrap no-network
+    worker envelope with frozen acceptance digests. Still open - GREG source admission through foundry.apply remains
+    refused by greg/foundry_bridge.py (any system-52 call) pending a reviewed decision to admit this recipe; hosts
+    without user/network namespaces refuse source repair (fail closed), so the evidence re-derives only on such hosts;
+    a proposal patch executes inside the evaluator's own pytest process and could subvert it in memory (file tampering
+    is detected, in-process subversion is not); no escape/resource red-team evidence beyond the envelope's own tests.
+    Preserve general repair capability.
   implementation: *id002
-  interface: foundry.query localize; foundry.apply repair (system 52)
+  interface: foundry.query localize; foundry.apply repair|repair_source (system 52; greg/foundry_bridge.py refuses
+    system-52 source execution)
   limitations: 'Mutation operators are small (integer +-1, drop constant term, swap +/-, flip comparison). Negative evidence:
-    Ochiai cannot discriminate when failing and passing runs share coverage; ties are all searched (bounded at 8 lines).
-    A pytest collection error is not accepted as failing-before evidence.'
-  recovery: Original source is never modified; the chosen patch, regression test and rejected candidates are a versioned
-    recovery procedure.
+    Ochiai cannot discriminate when failing and passing runs share coverage; whole score bands are searched (bounded at
+    8 lines) and a band that does not fit is never truncated. A pytest collection error, ImportError, other exception or
+    timeout is not accepted as failing-before evidence. The source recipe is a static import closure plus named extras;
+    data read at import time must be named. Failing-case arguments and expectation must be JSON values.'
+  recovery: Original source is never modified (digests checked before and after); the chosen patch, regression test, frozen
+    acceptance digests and every candidate outcome are a versioned recovery procedure marked PROPOSED, never applied or
+    promoted by the repair itself.
   state: PARTIAL
   tests:
   - tests/unit/test_foundry_systems.py
+  - tests/unit/test_foundry_repair_source.py
 53:
   acceptance:
   - Critical compilers, schemas, registries and proof systems build from UNIIMENTE-owned source with pinned toolchains

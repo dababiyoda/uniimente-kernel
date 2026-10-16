@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fractions import Fraction
 import math
+import time
 
 from .contracts import CognitionError, ProofArtifact, digest
 
@@ -16,8 +17,14 @@ from .contracts import CognitionError, ProofArtifact, digest
 # development items certifies within 10k units in under 60 ms. Of the honest random answers on review seeds
 # 3000-3999, 100k leaves 8 UNKNOWN, each reaching the resource limit in 0.06-1.0 s, so close to the backstop; 2M
 # certifies one of them (seed 3082, in 1.0-1.3 s, so only without the 1 s backstop) and stops the other 7 after 2-9 s.
+# The backstop is also cut to the time the verifier has left (``deadline``): a fixed 1 s spent on an answer's
+# certificate at a tight latency limit timed out answers c360103 verified without one (review seeds 3181 and 3356
+# through cortex.reason at a 1.8 s limit). A check the remaining budget cannot afford is NOT_RUN, so an uncertifiable
+# check never costs the answer; the claim then stays uncertified and unrefuted, as an UNKNOWN one does. A timeout of 0
+# is not a short check: Z3 reads it as no limit.
 Z3_RLIMIT = 100_000
 Z3_TIMEOUT_MS = 1000
+Z3_MIN_TIMEOUT_MS = 20
 
 
 def _exact(value):
@@ -36,11 +43,25 @@ def _near(value, exact):
     return value is not None and abs(value - exact) < Fraction(1, 2)
 
 
-def _z3_certificate(data, *, integers, better_than=None, sense="max"):
+def _z3_certificate(data, *, integers, better_than=None, sense="max", deadline=None):
     """Ask Z3 for an assignment within the model's bounds and constraints, strictly better than ``better_than`` when
     it is given. Z3 shares no code with CP-SAT: sat REFUTES the claim (the witness is returned), unsat certifies it,
-    and unknown (the resource or time limit) leaves it uncertified, never refuted."""
+    and unknown (the resource or time limit) leaves it uncertified, never refuted. A ``deadline`` (time.monotonic())
+    cuts the time limit to what is left before it; with less than Z3_MIN_TIMEOUT_MS left the check is NOT_RUN."""
     limits = {"rlimit": Z3_RLIMIT, "timeout_ms": Z3_TIMEOUT_MS}
+
+    def unaffordable():
+        if deadline is None:
+            return None
+        left = math.floor(min(max(0.0, deadline - time.monotonic()), Z3_TIMEOUT_MS / 1000) * 1000)
+        limits["timeout_ms"] = left
+        if left < Z3_MIN_TIMEOUT_MS:            # nor may the timeout reach 0, which Z3 reads as no limit
+            return {"engine": "z3", "status": "NOT_RUN", "limits": limits,
+                    "reason": f"the verifier's remaining latency budget ({left} ms) cannot afford the check"}
+        return None
+    # asked before importing Z3 and building the model too, which take time of their own (0.1-0.2 s on a loaded core)
+    if spent := unaffordable():
+        return spent
     try:
         import z3
     except ImportError:
@@ -64,7 +85,6 @@ def _z3_certificate(data, *, integers, better_than=None, sense="max"):
         return z3.Sum([const(co) * vs[n] for n, co in coefficients.items()]) if coefficients else const(0)
     solver = z3.Solver(ctx=ctx)
     solver.set("rlimit", Z3_RLIMIT)
-    solver.set("timeout", Z3_TIMEOUT_MS)
     for n, (lo, hi) in data["variables"].items():
         solver.add(vs[n] >= const(lo), vs[n] <= const(hi))
     for c in data["constraints"]:
@@ -76,6 +96,9 @@ def _z3_certificate(data, *, integers, better_than=None, sense="max"):
         value = (z3.IntVal(better_than.numerator, ctx) if integers and better_than.denominator == 1
                  else z3.Q(better_than.numerator, better_than.denominator, ctx))
         solver.add(objective > value if sense == "max" else objective < value)
+    if spent := unaffordable():
+        return spent
+    solver.set("timeout", limits["timeout_ms"])
     status = solver.check()
     out = {"engine": "z3", "version": z3.get_version_string(), "limits": limits,
            "question": ("assignment within the bounds and constraints" +
@@ -91,8 +114,11 @@ def _z3_certificate(data, *, integers, better_than=None, sense="max"):
     return {**out, "status": "UNKNOWN", "reason": str(solver.reason_unknown())[:200]}
 
 
-def verify(family, data, answer, proof_class):
-    checks, dissent, claimed_optimum = {}, [], None
+def verify(family, data, answer, proof_class, *, deadline=None):
+    """``deadline`` (time.monotonic()) bounds the Z3 certificate's time, never the checks; the verifier worker passes
+    the end of its caller's budget less a reserve for returning the answer. Without one (an in-process caller) the
+    certificate has its fixed backstop."""
+    checks, dissent, beyond, own_report = {}, [], None, None
     from .catalog import FAMILIES
     if family not in FAMILIES or proof_class != FAMILIES[family][3]:
         raise CognitionError("false proof type for selected method")
@@ -191,7 +217,22 @@ def verify(family, data, answer, proof_class):
                     bound > objective - Fraction(1, 2) if maximise else bound < objective + Fraction(1, 2))
             if gap is not None:
                 checks["optimality_gap_recomputed"] = bound is not None and _near(gap, abs(objective - bound))
-            claimed_optimum = objective if output["solver_status"] == "OPTIMAL" else None
+            failed = [k for k in ("optimal_objective_meets_its_bound", "feasible_bound_beyond_its_objective",
+                                  "optimality_gap_recomputed") if checks.get(k) is False]
+            if failed:
+                own_report = (f"its solution's objective is {objective}, its bound {artifact.get('bound')} and its gap "
+                              f"{gap} ({' and '.join(failed)} failed)")
+            # What the certificate below asks Z3 to beat: an OPTIMAL claim's own objective, or a FEASIBLE claim's
+            # bound (review r2: a forged bound, and the gap measured from it, verified unchecked). CP-SAT reports an
+            # integer bound with rounding noise, as it does an objective, so the bound stands for the integers within
+            # 1/2 of it: only an assignment at least 1/2 beyond it refutes, and an honest bound is never refuted. On
+            # review seeds 3000-3999 (2026-10-15), 697 honest FEASIBLE answers from CP-SAT runs cut to 1-100 ms: 543
+            # bounds certified, 154 UNKNOWN, none refuted; on the 685 with a proven optimum, every bound holds.
+            if output["solver_status"] == "OPTIMAL":
+                beyond = objective
+            elif output["solver_status"] == "FEASIBLE" and bound is not None:
+                beyond = Fraction(math.ceil(bound + Fraction(1, 2)) - 1 if maximise else
+                                  math.floor(bound - Fraction(1, 2)) + 1)
     elif family in ("graph", "search"):
         # GREG's own Dijkstra (greg/cognition/network.py) shares no code with NetworkX. It refutes a
         # valid but longer path and a false "no path", which form checks alone let through.
@@ -270,24 +311,35 @@ def verify(family, data, answer, proof_class):
             checks["unknown_not_valid"] = answer["formal_validity"] == "UNKNOWN" and answer["status"] != "ANSWER"
         claim, certificate = output["solver_status"], None
         negative = claim in ("UNSAT", "INFEASIBLE")
-        if (negative or claimed_optimum is not None) and all(checks.values()):
+        if (negative or beyond is not None) and all(checks.values()):
             # A negative claim is checked like a positive one (review: a false INFEASIBLE or UNSAT verified on
-            # artifact coherence alone), and an OPTIMAL claim gets a certificate rather than the solver's own bound
-            # (review V2): any assignment within the bounds and constraints (strictly better, for OPTIMAL) refutes.
+            # artifact coherence alone), and an OPTIMAL or FEASIBLE claim gets a certificate rather than the solver's
+            # own bound (review V2): any assignment within the bounds and constraints (strictly better than the
+            # OPTIMAL objective, or beyond the FEASIBLE bound) refutes.
             certificate = {"claim": claim, **_z3_certificate(
-                data, integers=family == "optimization", better_than=claimed_optimum,
-                sense=(data.get("objective") or {}).get("sense", "max")),
+                data, integers=family == "optimization", better_than=beyond,
+                sense=(data.get("objective") or {}).get("sense", "max"), deadline=deadline),
                 # the formal family's own engine is Z3: its re-check catches a forged or corrupted claim, not a Z3
                 # defect
                 "independence": "same engine as the solver (Z3), separate encoding and process" if family == "formal"
                 else "different engine from the solver (Z3 against CP-SAT)"}
-            checks["no_feasible_assignment_found" if negative else "no_strictly_better_assignment_found"] = (
+            checks["no_feasible_assignment_found" if negative else "no_strictly_better_assignment_found"
+                   if claim == "OPTIMAL" else "no_assignment_beyond_its_bound_found"] = (
                 certificate["status"] != "REFUTED")
         settled = certificate["status"] if certificate else None
         why = f"Z3: {certificate.get('reason')}" if certificate else "Z3 did not run"
         if settled == "REFUTED":
-            dissent.append(f"Z3 found an {certificate['question']}: {certificate['witness']}; the {claim} claim is "
-                           "false.")
+            dissent.append(f"Z3 found an {certificate['question']}: {certificate['witness']}; the " +
+                           (f"FEASIBLE claim's bound {artifact['bound']} is false." if claim == "FEASIBLE" else
+                            f"{claim} claim is false."))
+        elif own_report:
+            # its bound or gap contradicts its own solution: neither solver-reported optimality nor a certificate
+            dissent.append(f"The {claim} claim is refuted by its own report: {own_report}.")
+        elif claim == "FEASIBLE":
+            dissent.append("FEASIBLE claims a verified feasible assignment only; its optimality is not established, "
+                           + (f"and its bound {artifact['bound']} is independently certified: Z3, a different engine "
+                              f"from CP-SAT, finds no {certificate['question']}." if settled == "CERTIFIED" else
+                              f"and CP-SAT's bound is not independently certified ({why})."))
         elif settled == "CERTIFIED" and family == "optimization":
             dissent.append(f"{claim} independently certified: Z3, a different engine from CP-SAT, finds no "
                            f"{certificate['question']}.")
@@ -299,9 +351,6 @@ def verify(family, data, answer, proof_class):
         elif claim == "OPTIMAL":
             dissent.append("Optimality is solver-reported (CP-SAT OPTIMAL; bound equals objective) and not "
                            f"independently certified ({why}).")
-        elif claim == "FEASIBLE":
-            dissent.append("FEASIBLE claims a verified feasible assignment only; its optimality and CP-SAT's bound are "
-                           "not independently certified.")
     else:
         certificate = None
     return {"verdict": "REFUTED" if not all(checks.values()) else "STRUCTURALLY_VERIFIED",

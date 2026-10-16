@@ -1,10 +1,18 @@
 """Optimisation and formal verifier certificates (independent review of 2026-10-15, verifier lane V1-V7).
 
-The verifier's own bound check is self-consistency of one untrusted answer: an optimality or infeasibility claim is
-certified only by a different engine (Z3 against CP-SAT) finding no strictly better, or no feasible, assignment.
-Every forgery here is injected into an honest answer; the canonical-path cases forge only the solver worker's output,
-and the real verifier still runs in its own worker."""
+The verifier's own bound check is self-consistency of one untrusted answer: an optimality, bound or infeasibility claim
+is certified only by a different engine (Z3 against CP-SAT) finding no strictly better assignment, none beyond the
+bound, or no feasible one.
+Every forgery here is injected into an honest answer. The canonical-path cases forge the solver worker's output and the
+real verifier still runs in its own worker; two of them also rewrite that verifier's certificate status to UNKNOWN, to
+simulate an inconclusive certificate (never a CERTIFIED or REFUTED one). One worker test runs the real worker with a
+stand-in verifier that only reports the deadline it is handed."""
 import copy
+from dataclasses import asdict, replace
+import json
+from pathlib import Path
+import sys
+import time
 
 import pytest
 
@@ -14,7 +22,7 @@ pytest.importorskip("z3")
 from cortex.evaluation.composition_lift import run_v2 as R  # noqa: E402
 from greg.cognition import cortex, verification  # noqa: E402
 from greg.cognition.catalog import FAMILIES  # noqa: E402
-from greg.cognition.contracts import CognitionError  # noqa: E402
+from greg.cognition.contracts import CognitionError, canonical  # noqa: E402
 from greg.cognition.cortex import reason, registry_view  # noqa: E402
 from greg.cognition.genomes import flow, library  # noqa: E402
 from greg.cognition.genomes.contract import GenomeError  # noqa: E402
@@ -31,6 +39,16 @@ BIG = {"variables": {"x": [0, 100000], "y": [0, 100]}, "constraints": [],
 MIN = {"variables": {"x": [0, 9], "y": [0, 9]},
        "constraints": [{"coefficients": {"x": 1, "y": 1}, "op": ">=", "rhs": 4}],
        "objective": {"coefficients": {"x": 2, "y": 3}, "sense": "min"}}
+# review seed 3181: an honest OPTIMAL answer whose certificate runs 0.8 s to the resource limit and ends UNKNOWN
+SLOW = {"variables": {"x0": [-935122, -636587], "x1": [-710394, -245690], "x2": [450275, 919078],
+                      "x3": [-601524, -294517], "x4": [745963, 749003]},
+        "constraints": [{"coefficients": {"x3": -548617, "x0": -532779, "x2": 995588, "x1": 789694}, "op": ">=",
+                         "rhs": -123792},
+                        {"coefficients": {"x0": 623395, "x2": -952486, "x4": 932236, "x1": -524860}, "op": "<=",
+                         "rhs": 916415},
+                        {"coefficients": {"x0": 433339, "x1": 932236, "x3": -588212, "x4": 718423}, "op": "==",
+                         "rhs": -57768}],
+        "objective": {"coefficients": {"x4": -59757, "x3": -243968, "x0": 405944}, "sense": "max"}}
 
 
 def solve(data):
@@ -54,6 +72,26 @@ def registry():
     for cid in R.EVAL_ATTACH:
         r.set_state(cid, "ATTACHED")
     return r
+
+
+def feasible(answer, solution, objective, bound):
+    """A FEASIBLE claim: a plan, and a bound with the gap from it."""
+    claim = plan(answer, solution, objective, solver_status="FEASIBLE", bound=bound,
+                 optimality_gap=abs(objective - bound))
+    claim["output"]["solver_status"] = "FEASIBLE"
+    return claim
+
+
+def inconclusive_certificates(monkeypatch):
+    """The real verifier still judges every answer; only its certificate's status is rewritten to UNKNOWN."""
+    real = cortex.independent_verify
+
+    def inconclusive(*a, **k):
+        out = real(*a, **k)
+        if "certificate" in out:
+            out["certificate"] = {**out["certificate"], "status": "UNKNOWN"}
+        return out
+    monkeypatch.setattr(cortex, "independent_verify", inconclusive)
 
 
 def forge_worker(monkeypatch, change):
@@ -188,6 +226,169 @@ def test_one_process_asking_again_gets_the_same_certificate(monkeypatch):
     assert statuses()[1::3] == ["CERTIFIED"] * 3
 
 
+def test_a_certificate_the_deadline_cannot_afford_is_not_run_and_never_costs_the_answer():
+    """Fix review 2026-10-15 r2, item 1: the certificate's fixed 1 s backstop ignored the time the verifier had left."""
+    infeasible = {**SMALL, "constraints": SMALL["constraints"] + [{"coefficients": {"x": 1}, "op": ">=", "rhs": 6}]}
+    for data, said in ((SMALL, "not independently certified"), (infeasible, "not conclusive")):
+        result = verify("optimization", data, solve(data), OPT, deadline=-1e308)            # long spent, never a crash
+        assert result["verdict"] == "STRUCTURALLY_VERIFIED" and result["certificate"]["status"] == "NOT_RUN"
+        assert "remaining latency budget" in result["certificate"]["reason"]
+        assert result["certificate"]["limits"]["timeout_ms"] == 0
+        assert any(said in d and "remaining latency budget" in d for d in result["dissent"])
+    # a spent budget is NOT_RUN before Z3 is even imported, which takes time of its own
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setitem(sys.modules, "z3", None)                                  # importing it would fail
+        result = verify("optimization", SMALL, solve(SMALL), OPT, deadline=time.monotonic() - 1)
+        assert "remaining latency budget" in result["certificate"]["reason"]
+    # with time left the limit is cut to it; without a deadline the backstop stands
+    soon = verify("optimization", SMALL, solve(SMALL), OPT, deadline=time.monotonic() + 0.4)
+    assert soon["certificate"]["status"] == "CERTIFIED" and soon["certificate"]["limits"]["timeout_ms"] <= 400
+    assert verify("optimization", SMALL, solve(SMALL), OPT)["certificate"]["limits"]["timeout_ms"] == 1000
+
+
+def verifier_worker(data, answer, geometry, **deadline):
+    """The real verifier worker, launched as cortex.independent_verify launches it, with the caller's deadline given."""
+    from greg.capabilities import run_isolated
+    payload = canonical({"family": "optimization", "data": data, "answer": answer, "proof_class": OPT,
+                         "geometry": asdict(geometry), **deadline})
+    proc = run_isolated([sys.executable, "-I", str(Path(cortex.__file__).with_name("worker.py")), "verify", payload],
+                        cwd=cortex.ROOT, timeout=30)
+    assert proc.returncode == 0, proc.stderr.decode()[-2000:]
+    return json.loads(proc.stdout)
+
+
+# The real worker, with a verifier that reports the deadline it was handed as seconds left (time.monotonic()), and
+# when it was handed it: wall-clock time and seconds since the worker started (its imports, which set the reserve)
+_DEADLINE_DRIVER = r'''
+import json, sys, time
+sys.path.insert(0, sys.argv[1])
+from greg.cognition import worker
+import greg.cognition.verification as verification
+verification.verify = lambda *a, deadline: {"verdict": "STRUCTURALLY_VERIFIED", "left": deadline - time.monotonic(),
+                                            "at": time.time(), "since_start": time.monotonic() - worker.STARTED,
+                                            "reserve": worker.VERIFY_RESERVE_SECONDS}
+time.sleep(0.3)                                  # a slow start-up: the reserve, twice it, outgrows the 0.25 s floor
+sys.argv = ["worker.py", "verify", sys.argv[2]]
+worker.main()
+'''
+
+
+def test_the_verifier_worker_hands_the_certificate_its_callers_deadline_less_the_reserve():
+    """Fix review 2026-10-15 r2, item 1: what is left of the caller's deadline, never more than the latency limit
+    timed from the worker's start, less the reserve for importing Z3 and returning the answer, which grows with the
+    machine's present slowness (twice the worker's own imports)."""
+    from greg.capabilities import run_isolated
+
+    def handed(latency_limit, **deadline):
+        request = {"family": "x", "data": {}, "answer": {}, "proof_class": "x",
+                   "geometry": {"latency_limit": latency_limit}, **deadline}
+        proc = run_isolated([sys.executable, "-I", "-c", _DEADLINE_DRIVER, str(cortex.ROOT), canonical(request)],
+                            cwd=cortex.ROOT, timeout=30)
+        out = json.loads(proc.stdout)
+        assert out["reserve"] >= 0.2 and out["since_start"] >= 0.3, out
+        return {**out, "reserve": max(out["reserve"], 2 * out["since_start"])}
+    caller = time.time() + 5
+    out = handed(10.0, deadline=caller)                                    # the caller's, not the worker's 10 s
+    assert abs(out["left"] - (caller - out["at"] - out["reserve"])) < 0.05, out
+    for out in (handed(2.0, deadline=time.time() + 5), handed(2.0)):       # nor more than the latency limit
+        assert abs(out["left"] - (2.0 - out["since_start"] - out["reserve"])) < 0.05, out
+    assert handed(10.0, deadline=time.time() - 1)["left"] < -1             # spent: the certificate is NOT_RUN
+
+
+def test_the_verifier_worker_spends_only_what_is_left_of_its_callers_deadline():
+    """Fix review 2026-10-15 r2, item 1. The caller's deadline counts the worker's start-up (fork, network filter,
+    interpreter), which the worker's own clock cannot see: a budget timed only from the worker's start gave this
+    certificate the full backstop although the caller had no time left."""
+    geometry = replace(cortex.compile_problem({"problem_id": "budget", "operation": "optimize", "data": SMALL})[0],
+                       latency_limit=10.0)
+    gone = verifier_worker(SMALL, solve(SMALL), geometry, deadline=time.time() - 1)
+    assert gone["verdict"] == "STRUCTURALLY_VERIFIED" and gone["certificate"]["status"] == "NOT_RUN"
+    assert any("not independently certified" in d and "remaining latency budget" in d for d in gone["dissent"])
+    soon = verifier_worker(SLOW, solve(SLOW), geometry, deadline=time.time() + 0.6)
+    assert soon["verdict"] == "STRUCTURALLY_VERIFIED" and soon["certificate"]["status"] in ("UNKNOWN", "NOT_RUN")
+    assert soon["certificate"]["limits"]["timeout_ms"] <= 600 - 250                    # less the reserve at least
+    # with no deadline the latency limit, timed from the worker's start, bounds it, under the 1 s backstop
+    free = verifier_worker(SMALL, solve(SMALL), geometry)
+    assert free["certificate"]["status"] == "CERTIFIED" and free["certificate"]["limits"]["timeout_ms"] == 1000
+
+
+def test_the_verifier_worker_spends_only_its_remaining_budget_on_the_certificate(monkeypatch):
+    """Review seeds 3181 and 3356 through cortex.reason at a 1.8 s limit: verified without a certificate at c360103,
+    TIMEOUT once the certificate took its fixed 1 s. cortex.independent_verify now hands the worker its own deadline,
+    and the answer comes back within the caller's budget, the worker's start-up included. The budget is generous so
+    that a loaded machine passes too: on a heavily shared core a worker that never runs the certificate took 1.75 s
+    here (2026-10-15), and the worker cuts its certificate the same way at any budget."""
+    from greg import capabilities
+    launched, run = [], capabilities.run_isolated
+
+    def watched(argv, **kw):
+        launched.append((time.time(), json.loads(argv[-1]).get("deadline")))
+        return run(argv, **kw)
+    monkeypatch.setattr(capabilities, "run_isolated", watched)
+    geometry = cortex.compile_problem({"problem_id": "budget", "operation": "optimize", "data": SMALL})[0]
+    for data in (SMALL, SLOW):
+        began = time.monotonic()
+        out = cortex.independent_verify("optimization", data, solve(data), OPT, replace(geometry, latency_limit=3.0))
+        assert time.monotonic() - began < 3.0
+        assert out["verdict"] == "STRUCTURALLY_VERIFIED", failed(out)
+    assert out["certificate"]["status"] in ("UNKNOWN", "NOT_RUN")
+    assert any("not independently certified" in d for d in out["dissent"])
+    # the caller's own deadline, set before the worker's start-up: its latency limit from the call
+    assert len(launched) == 2 and all(0 < deadline - at <= 3.0 for at, deadline in launched)
+
+
+def test_an_optimal_claim_refuted_by_its_own_bound_or_gap_is_not_called_solver_reported(monkeypatch):
+    """Fix review 2026-10-15 r2, item 2: such a claim's dissent said 'Optimality is solver-reported (CP-SAT OPTIMAL;
+    bound equals objective)', though its bound or gap contradicted its own solution."""
+    honest = solve(SMALL)
+    short = plan(honest, {"x": 1, "y": 2}, 3.0)                                 # the honest bound 4 kept
+    gap7 = copy.deepcopy(honest)
+    gap7["proof"]["optimality_gap"] = 7.0
+    below = feasible(honest, {"x": 1, "y": 2}, 3.0, 2.0)
+    for forged, said in (
+            (short, "The OPTIMAL claim is refuted by its own report: its solution's objective is 3, its bound 4.0 and "
+                    "its gap 0.0 (optimal_objective_meets_its_bound and optimality_gap_recomputed failed)."),
+            (gap7, "The OPTIMAL claim is refuted by its own report: its solution's objective is 4, its bound 4.0 and "
+                   "its gap 7.0 (optimality_gap_recomputed failed)."),
+            (below, "The FEASIBLE claim is refuted by its own report: its solution's objective is 3, its bound 2.0 and "
+                    "its gap 1.0 (feasible_bound_beyond_its_objective failed).")):
+        result = verify("optimization", SMALL, forged, OPT)
+        assert result["verdict"] == "REFUTED" and "certificate" not in result
+        assert said in result["dissent"]
+        assert not [d for d in result["dissent"] if "solver-reported" in d or "verified feasible assignment" in d]
+    # a self-consistent claim whose certificate is inconclusive is still solver-reported, and says so
+    monkeypatch.setattr(verification, "Z3_RLIMIT", 1)
+    result = verify("optimization", SMALL, honest, OPT)
+    assert result["verdict"] == "STRUCTURALLY_VERIFIED" and result["certificate"]["status"] == "UNKNOWN"
+    assert any(d.startswith("Optimality is solver-reported (CP-SAT OPTIMAL; bound equals objective) and not "
+                            "independently certified (Z3: ") for d in result["dissent"])
+
+
+@pytest.mark.parametrize("data,solution,objective,optimum", [(SMALL, {"x": 1, "y": 2}, 3, 4),
+                                                             (MIN, {"x": 0, "y": 5}, 15, 8)])
+def test_a_feasible_claims_bound_is_certified_and_a_forged_one_is_refuted(data, solution, objective, optimum):
+    """Fix review 2026-10-15 r2, item 3: a FEASIBLE claim's bound was never checked against the model, so a plan short
+    of the optimum with its bound forged to its objective (gap 0) verified. Z3 now looks for an assignment beyond the
+    bound; CP-SAT's rounding noise in an honest bound is never a refutation, and a bound 1/2 or more short is."""
+    honest = solve(data)
+    assert honest["output"]["objective_value"] == optimum
+    forged = feasible(honest, solution, objective, float(objective))
+    result = verify("optimization", data, forged, OPT)
+    assert failed(result) == ["no_assignment_beyond_its_bound_found"] and result["certificate"]["status"] == "REFUTED"
+    witness = result["certificate"]["witness"]
+    beyond = sum(c * witness[n] for n, c in data["objective"]["coefficients"].items())
+    assert (beyond > objective) if data["objective"]["sense"] == "max" else (beyond < objective)
+    assert any(d.endswith(f"the FEASIBLE claim's bound {float(objective)} is false.") for d in result["dissent"])
+    toward = 1 if data["objective"]["sense"] == "max" else -1                   # from the optimum, away from the plan
+    for off, holds in ((0, True), (-0.00003, True), (0.00003, True), (-0.4, True), (-0.5, False), (3, True)):
+        bound = optimum + toward * off
+        result = verify("optimization", data, feasible(honest, solution, objective, bound), OPT)
+        assert (result["verdict"] == "STRUCTURALLY_VERIFIED") is holds, (bound, failed(result))
+        assert result["certificate"]["status"] == ("CERTIFIED" if holds else "REFUTED")
+        if holds:
+            assert any(f"its bound {bound} is independently certified" in d for d in result["dissent"])
+
+
 def test_a_false_infeasible_and_a_false_unsat_are_refuted_and_honest_ones_are_certified():
     """Missed by the review: a negative claim verified on artifact coherence alone."""
     honest = solve(SMALL)
@@ -243,12 +444,11 @@ def test_a_reported_gap_must_be_the_distance_to_the_bound_and_a_feasible_bound_l
     gap7["proof"]["optimality_gap"] = 7.0
     assert failed(verify("optimization", SMALL, gap7, OPT)) == ["optimality_gap_recomputed"]
     # an honest time-limited run: a feasible plan, its bound above it (max), the gap between them
-    feasible = plan(honest, {"x": 1, "y": 2}, 3.0, solver_status="FEASIBLE", bound=4.0, optimality_gap=1.0)
-    feasible["output"]["solver_status"] = "FEASIBLE"
-    result = verify("optimization", SMALL, feasible, OPT)
-    assert result["verdict"] == "STRUCTURALLY_VERIFIED" and "certificate" not in result
+    time_limited = feasible(honest, {"x": 1, "y": 2}, 3.0, 4.0)
+    result = verify("optimization", SMALL, time_limited, OPT)
+    assert result["verdict"] == "STRUCTURALLY_VERIFIED" and result["certificate"]["status"] == "CERTIFIED"
     assert any("FEASIBLE claims a verified feasible assignment only" in d for d in result["dissent"])
-    below = plan(feasible, {"x": 1, "y": 2}, 3.0, bound=2.0, optimality_gap=1.0)
+    below = plan(time_limited, {"x": 1, "y": 2}, 3.0, bound=2.0, optimality_gap=1.0)
     assert failed(verify("optimization", SMALL, below, OPT)) == ["feasible_bound_beyond_its_objective"]
     minimise = solve(MIN)
     above = plan(minimise, {"x": 0, "y": 5}, 15.0, solver_status="FEASIBLE", bound=16.0, optimality_gap=1.0)
@@ -300,19 +500,13 @@ def test_graph_then_allocate_is_proven_only_by_the_certificate(registry, monkeyp
     assert [s["verifier"] for s in r["stages"] if s["stage"] == "optimize"] == ["REFUTED"]
     monkeypatch.undo()
 
-    real = cortex.independent_verify
-
-    def inconclusive(*a, **k):
-        out = real(*a, **k)
-        if "certificate" in out:
-            out["certificate"] = {**out["certificate"], "status": "UNKNOWN"}
-        return out
-    monkeypatch.setattr(cortex, "independent_verify", inconclusive)
+    inconclusive_certificates(monkeypatch)
     r = reason({"problem_id": "f3-unknown", "chain": {"payload": item["payload"], "recipe": "graph_then_allocate"}},
                registry=registry)
     assert r["state"] == "ANSWERED" and r["answer"]["solver_status"] == "OPTIMAL"
     assert r["answer"]["optimality"].startswith("solver-reported") and "not independently certified" in \
         r["answer"]["optimality"]
+    assert r["answer"]["optimality_gap"] is None                     # the solver's word only (fix review r2, item 3)
 
 
 def test_a_feasible_optimize_stage_is_labelled_unproven_and_its_summary_keeps_the_status(registry, monkeypatch):
@@ -331,6 +525,41 @@ def test_a_feasible_optimize_stage_is_labelled_unproven_and_its_summary_keeps_th
     assert r["answer"]["optimality"].startswith("unproven") and r["answer"]["optimality_gap"] == 2.0
     assert r["stages"][1]["stage"] == "optimize" and r["stages"][1]["solver_status"] == "FEASIBLE"
     assert r["stages"][1]["verifier"] == "STRUCTURALLY_VERIFIED"
+
+
+def test_graph_then_allocate_refutes_a_forged_feasible_bound_and_omits_an_uncertified_gap(registry, monkeypatch):
+    """Fix review 2026-10-15 r2, item 3: a FEASIBLE plan short of the optimum with its bound forged to its objective
+    was answered with optimality_gap 0.0. The optimize stage is now refuted; and a gap whose bound the certificate did
+    not settle is omitted rather than copied as if verified."""
+    item = R.f3(3)
+
+    def short_with_gap_0(family, data, answer):
+        if family != "optimization":
+            return None
+        restricted = copy.deepcopy(data)
+        for c in restricted["constraints"]:
+            if c.get("requirement_id") == "budget":
+                c["rhs"] //= 3
+        worse = solve(restricted)["output"]
+        return feasible(answer, worse["solution"], worse["objective_value"], worse["objective_value"])
+    forge_worker(monkeypatch, short_with_gap_0)
+    r = reason({"problem_id": "f3-gap0", "chain": {"payload": item["payload"], "recipe": "graph_then_allocate"}},
+               registry=registry)
+    assert r["state"] == "STAGE_ABSTAINED" and r["answer"] is None
+    assert [s["verifier"] for s in r["stages"] if s["stage"] == "optimize"] == ["REFUTED"]
+    monkeypatch.undo()
+
+    def time_limited(family, data, answer):                 # an honest bound: 2 beyond the optimum it reached
+        if family != "optimization" or answer["output"]["solver_status"] != "OPTIMAL":
+            return None
+        return feasible(answer, answer["output"]["solution"], answer["output"]["objective_value"],
+                        answer["proof"]["bound"] + 2)
+    forge_worker(monkeypatch, time_limited)
+    inconclusive_certificates(monkeypatch)
+    r = reason({"problem_id": "f3-unsettled", "chain": {"payload": item["payload"], "recipe": "graph_then_allocate"}},
+               registry=registry)
+    assert r["state"] == "ANSWERED" and r["answer"]["solver_status"] == "FEASIBLE"
+    assert r["answer"]["optimality"].startswith("unproven") and r["answer"]["optimality_gap"] is None
 
 
 def test_forecast_then_allocate_reports_each_weeks_status_and_the_weakest_certificate(registry, monkeypatch):

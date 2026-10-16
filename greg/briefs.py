@@ -22,6 +22,7 @@ morning brief (what changed / blocker / next action), #113 appraiser re-derivati
 """
 from __future__ import annotations
 
+import contextvars
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -76,6 +77,49 @@ def _unreachable(reason) -> str:
 NOW = _utcnow
 FETCH = _https_json
 
+# #26: when the body confines egress, GitHub reads for the current capability call go through the relay from a
+# component with no socket of its own. Scoped to one call; ``FETCH`` stays the seam tests replace.
+_CONFINED = contextvars.ContextVar("greg_briefs_confined_fetch", default=None)
+
+
+def _fetch(url: str, token: str | None):
+    return (_CONFINED.get() or FETCH)(url, token)
+
+
+def _confined_fetcher(ctx: InvocationContext):
+    from foundry.systems.segmentation import SegmentationError, confined_fetch
+
+    def fetch(url: str, token: str | None):
+        parts = urllib.parse.urlsplit(url)
+        if parts.scheme != "https" or parts.hostname != API:
+            raise CapabilityError(f"egress to {parts.hostname!r} not allowed")
+        headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28",
+                   "User-Agent": "uniimente-greg/0.2", **({"Authorization": f"Bearer {token}"} if token else {})}
+        ctx.workspace.mkdir(parents=True, exist_ok=True)
+        try:
+            out = confined_fetch(url, identity=ctx.manifest.capability_id, relay=ctx.egress, cwd=ctx.workspace,
+                                 max_bytes=2 * 1024 * 1024, headers=headers)
+        except PermissionError as exc:                # the relay refused: nothing left this machine
+            return None, {"unreachable": f"egress refused by the relay: {str(exc)[:160]}"}
+        except SegmentationError as exc:              # proxy or upstream unreachable: a gap, not an uncertain effect
+            return None, {"unreachable": str(exc)[:200]}
+        if len(out["body"]) > 2 * 1024 * 1024:
+            raise CapabilityError("GitHub response exceeds read ceiling")
+        if out["status"] != 200:
+            return out["status"], None
+        return out["status"], json.loads(out["body"])
+    return fetch
+
+
+def _with_egress(ctx: InvocationContext, call):
+    if getattr(ctx, "egress", None) is None:
+        return call()
+    token = _CONFINED.set(_confined_fetcher(ctx))
+    try:
+        return call()
+    finally:
+        _CONFINED.reset(token)
+
 
 # -- gathering ----------------------------------------------------------------------
 
@@ -112,7 +156,7 @@ MAX_TRUTH_CALLS = 30          # ceiling on the independent observation made whil
 
 
 def _check_run_tally(repo: str, sha: str, token: str | None):
-    code, runs = FETCH(f"https://{API}/repos/{repo}/commits/{sha}/check-runs?per_page=100", token)
+    code, runs = _fetch(f"https://{API}/repos/{repo}/commits/{sha}/check-runs?per_page=100", token)
     if code != 200 or not isinstance(runs, dict):
         return code, None
     tally = {"passed": 0, "failing": 0, "pending": 0, "other": 0, "failing_names": []}
@@ -148,7 +192,7 @@ def gather_github(repos: list[str], *, token: str | None, max_pulls: int = MAX_P
         if unreachable:
             result[repo] = {"fetched": False, "gap": "not fetched: GitHub unreachable earlier"}
             continue
-        status, pulls = FETCH(f"https://{API}/repos/{repo}/pulls?state=open&per_page={max_pulls}", token)
+        status, pulls = _fetch(f"https://{API}/repos/{repo}/pulls?state=open&per_page={max_pulls}", token)
         calls += 1
         if status is None:   # a failed read is a gap in the brief, not an uncertain effect
             unreachable = (pulls or {}).get("unreachable") or "no response"
@@ -472,11 +516,15 @@ def _repos(params) -> list[str]:
 
 
 def github_pulls(params, ctx: InvocationContext) -> dict:
-    data = gather_github(_repos(params), token=_token(ctx))
+    data = _with_egress(ctx, lambda: gather_github(_repos(params), token=_token(ctx)))
     return {**data, "access_gap": gap} if (gap := access_gap(data)) else data
 
 
 def engineering_brief(params, ctx: InvocationContext) -> dict:
+    return _with_egress(ctx, lambda: _engineering_brief(params, ctx))
+
+
+def _engineering_brief(params, ctx: InvocationContext) -> dict:
     local = params.get("local", [])
     if not isinstance(local, list) or len(local) > MAX_REPOS:
         raise CapabilityError("local must be a list of {name, path}")
@@ -515,8 +563,10 @@ def brief_freshness(params, ctx: InvocationContext) -> dict:
             "sha256": hashlib.sha256(latest.read_bytes()).hexdigest()}
 
 
-def verify_delivery(output: dict, deliver_root: Path | None) -> tuple[bool, str]:
-    """Appraiser check: the delivered file is exactly the render of the receipted inputs."""
+def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, confined: bool = False) -> tuple[bool, str]:
+    """Appraiser check: the delivered file is exactly the render of the receipted inputs. It re-renders from the
+    receipt and opens no network, so ``confined`` (#26, shared with the venture check) changes nothing here; nor
+    does ``ledger`` (shared with the venture check, which binds its cognition receipts to the canonical ledger)."""
     if not isinstance(output, dict) or "inputs" not in output:
         return False, "receipt does not retain the brief inputs"
     if inputs_digest(output["inputs"]) != output.get("inputs_digest"):

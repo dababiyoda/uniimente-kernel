@@ -2,12 +2,86 @@
 
 # Founder Intent Ledger
 
+## FABLE 5.1 OPUS MAXIMUS: one GREG, stacked on #178 — 2026-10-15
+
+`INTENT-20261014-FABLE-OPUS-MAXIMUS` ([record](intent/INTENT-20261014-FABLE-OPUS-MAXIMUS.json), [verbatim prompt](intent/sources/FABLE-5-1-MASTER-BUILD-PROMPT-2026-10-14-source.md)): the greatest technically defensible realization of BODY + ORGANS + MIND on one canonical reviewable trunk, with no parallel GREG. Deliverables A-L are in [`opus-maximus/`](opus-maximus/). Convergence decision: [stack on #178](collaboration/deliberation-opus-maximus-converge-on-178-20261015.json) instead of running a second trunk.
+
+- **Merged:** #178 (one-machine trunk, through `baf630d`: its second review and the Goal Gravity merge fixes), #175 `0ae4c94` (Goal Gravity bound to the body), the Track B Mind line at #181 `79c38f8` (with #179 and #180: #155 and #158 converged, the venture case on real organs) and #169 at `ebfc5f7` (confined egress by default; paid routes, `browser.session`, anchoring and the DALEOBANKS bridge behind the relay; MCP tools, read-only by construction or writing only what the founder approves, local or hosted, by login or plain token, with a credential a server reads from a file, and from the founder's words; device acceptance read from the body's relay journal; Foundry #52 repairing a copied source tree inside the worker envelope). #178's mission ordering and #175's persistent goals both run. #169's confined model child now keeps #178's model policy: only the founder's priced allowlist, never the provider-chosen `default`.
+- **Defects found by the merged suites and fixed:** a Goal Gravity name collision (86 failing tests); a reconciliation that left an interrupted attempt's signed cap held, which stalled #178's whole-machine test, and booked it twice when "executed"; resilience dropping reconciled interruptions; three of #178's attack tests failing since the #178 merge; an organ exchange that kept the body's network on a confined body and whose appraisal the #169 merge broke; #178's independent verifier omitting the body's worker posture, which CI found on a host without bubblewrap.
+- **An adversarial review of this branch, fixed:** 12 findings, each reproduced by a separate skeptic. A body killed between an uncertain run's record and its question no longer retries it blind on restart; supervision now covers only workers the envelope cannot confine at all; a workspace acceptance script runs inside the envelope; the confined organ exchange gets no network on the mission path; a receipt states supervision only when it happened; and a goal's ask for a paid move, or for an `mcp.act` call, is exactly the ask the mission would make, reach shown. Four were fixed by #178's second review (two of them carried here onto the confined model path); each of the rest has a test that fails without its fix.
+- **A second adversarial review, of those fixes and merges, fixed:** 14 findings, 13 confirmed by a separate skeptic, 1 rejected. A kill in the uncertain window during Goal Gravity preparation, or behind another blocker, no longer leads to a blind retry; a crash between a reconciliation's record and its unblock no longer crash-loops; a founder's answer to a question from before #178's per-attempt salting is kept; provider binaries cannot be shadowed by a file in the worker's clone; a supervised Mac body's appraisal re-runs acceptance. A goal keeps its ask, its signed reject and its evidence when the mission spends, and says that a paid approve funds one run (#157), not a standing one; it no longer asks about a move its body cannot run. A Claude Code CLI failure is booked at what it cost, and its refusal is final, as the real CLI exits 1 on both (Seed Genome freeze-v10). Each has a test that fails without its fix.
+- **A third adversarial review, fixed:** 12 findings, 9 confirmed by a separate skeptic. One paid approval now funds exactly one run, even a run that books $0; a paid ask the mission's spend has overtaken is withdrawn and asked again, so every open ask is one an approve can run; a goal no longer takes a used-up approve as the founder's answer. Claude Code's verbose output, unknown costs, built-in model fallback and error reasons are handled (Seed Genome freeze-v11).
+- **A fourth adversarial review, of the Track B merge and #169's secret files, fixed:** 16 findings, 15 confirmed by a separate skeptic, 1 rejected. An attached construction now meets every compile route's rules: a high-consequence answer needs a formal model and stays conditional, and its call draws on the decision's thinking budget. The compile and chain routes carry the caller's grant window. A venture memo answers only the mission whose economics it was computed from. A mission held by a host outage resumes when the founder attaches a mechanism during the back-off. A credential handed to an MCP server as a file never reaches the ledger or a readable workspace, and an earlier action's output cannot choose it. Each has a test that fails without its fix.
+- **A fifth adversarial review, of #169's `ebfc5f7` merge, fixed in two rounds:** 8 findings in #169's newest code (6 reproduced by a separate skeptic, 2 here, 1 refuted), then 9 in the fixes (4 reproduced by a skeptic, 5 confirmed here, 2 refuted, 3 accepted and recorded). What code under repair leaves behind (a FIFO, a socket, a link, a flood of sparse files, a rewritten report) can no longer hang, steer or stall Foundry #52's repair; its recorded evidence reproduces again and no record claims a CI re-run its row does not get. The device acceptance report counts only what its properties claim, names who made the connections, and survives a torn or damaged relay journal line; a page on another tenant or address is never labelled the service's own; the acceptance procedure points to the steps that produce its evidence, including installing Chromium in the Linux container. Each has a test that fails without its fix.
+- **The Mind joined to the machine (Track B):** one tree now carries the converged Mind and the one-machine trunk, both whole-machine proofs pass on it with the real organs, and every mutation gate catches all its mutants. Track B's code binding keeps four operation verdicts (control, game, information, probabilistic) UNEVALUATED until they are re-admitted on the merged code; nothing was weakened to make them pass.
+- **Founder decision made executable with a safe default:** worker confinement is the founder's `greg init` choice, `required` by default, `supervised` by opt-in.
+- **Invention (field B):** proof-carrying standing reconciliation. A founder-signed mission may let GREG settle an interruption it can prove was consequence-inert (the script worker: no network, no credentials, no paid route, writes only inside a discarded clone), at most twice per action. Measured on a real in-flight SIGKILL: founder questions 1 to 0, duplicate consequences 0 (ten-step proof steps 7b and 7c).
+- **Proof:** the ten-step proof and #178's one-mission test both pass on one tree with real DALEOBANKS and WealthMachine code.
+- **Open founder decisions:** VEPMC device and acceptance; organ pin upgrade; the canonical Goal Gravity runtime; contacting brokers for the freight proof-of-delivery cell; merge of this branch.
+- State: active. Reality: INTEGRATION and SANDBOX-WHOLE-MACHINE. VEPMC 0. No authority, spending, publication, contact or merge.
+
+## Convergence of the two Mind lineages — 2026-10-14
+
+`INTENT-20261014-MIND-LINEAGE-CONVERGENCE` ([record](intent/INTENT-20261014-MIND-LINEAGE-CONVERGENCE.json), [verbatim source](intent/sources/MIND-LINEAGE-CONVERGENCE-2026-10-14-source.md), [source-location manifest](collaboration/MIND-LINEAGE-SOURCE-MANIFEST-2026-10-14.json)): two sessions implemented the 2026-10-07 directive in parallel (PR #158 and PR #155) and froze different evaluations at eight identical paths. Neither session is the winner; both contribute to one GREG Mind.
+
+- **Track A:** restore CI on #158 by retargeting it to a branch pinned at its original base `92bc6e3`. Both lineages are snapshotted at full SHAs. Every frozen artifact keeps its identity as (source commit, original path, sha256) and is never renamed or rewritten. CI on the pinned base is evidence for that lineage only.
+- **Track B:** build the converged Mind now, in a dedicated draft PR on the latest verified #155 head. Inventory both lineages and disposition every conflict. Select canonical mechanisms by evidence. Keep unresolved alternatives isolated and withheld, with one cognition entry point, one authority system and one evolution controller. Run five review responsibilities and exactly two strengthening passes, and pre-register a fresh freeze for every integrated evaluation.
+- **Coordination:** neither session overwrites, regenerates, renames or supersedes the other's frozen evidence, and new evaluations use uniquely identified paths.
+
+State: active. Authority delta: none.
+
+Track B execution, 2026-10-14 (draft PR from `claude/greg-mind-lineage-convergence` into #155's head; record:
+[reconciliation](collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md), [map](collaboration/MIND-LINEAGE-RECONCILIATION-MAP-2026-10-14.json)):
+
+- **Scope:** #155 `ef5f078` and #158 (through `202b932`, the F8 freeze) merged. Every one of the 185 changed files has a disposition, and
+  the eight frozen-path collisions are archived byte-identical in both versions.
+- **Canonical by evidence:** #158's evolution controller, frozen benchmark and Lawful Leverage Foundry; one
+  Landlock grant path; one evidence index that both the compiler and the inventory read.
+- **Retained, isolated:** #155's routing-genome evolution.
+- **One intervention generator (2026-10-15):**
+  - The Foundry is the one generator. It now holds the seven #155 operator classes it lacked under one
+    evidentiary standard, and prior-only routes are labelled.
+  - Accountability is four legal channels that need a human-established lawful basis. Consent gates only
+    publication, and no channel executes.
+  - Consent is purpose-bound and revocable.
+  - #155's operator library is a pinned historical view.
+- **Admission binding (2026-10-15):** positive operation verdicts are bound to the solver's dependency closure,
+  not only its entry function.
+- **Negative evidence now routes:** #155's held-out REJECTED and SUPERSEDED verdicts change compiler routing.
+- **Replications across lineages** (corrected after the review of #179, H1): #155's P4 and F2b runs re-measured
+  subsets of #158's instances, so they show reproducibility, not replication. F2 to F2R is the one replicated
+  lift. Four P8 REJECTs; no replicated Layer 4 advantage.
+- **F7 independently audited:** CONFIRMED (200 of 200), and parametric min-cost flow ties F7. Recommended:
+  `flow_expansion_mcf` becomes canonical for capacity expansion once admitted at its exact version.
+- **Horizon added:** `immune_function`.
+- **Release blocker:** third-party data rights (SNDlib, M4, fpp3, and the F8 NYC TLC/FiveThirtyEight Uber
+  extract) are uncleared in a public repository.
+
+Authority delta: none.
+
+Track B update, 2026-10-15 (founder review of #179 and the independent review; record sections 5, 8, 9, 12 and 17):
+- **Foundry:** #155's seven operator classes run through the canonical Foundry. They carry surface-instance
+  identity and purpose-bound, revocable consent. Accountability is split into four legal channels that end in a
+  legal-review request and never unlock execution.
+- **Code binding:** positive operation admission binds the code closure it measured.
+- **Re-merge:** #158 is merged at `f8e8fd2`. Its pre-registered admission v3 makes `flow_expansion_mcf` the routed
+  default for budgeted capacity expansion; attaching it is the founder's.
+- **Release guard:** uncleared third-party data cannot ship in a release (CI check). The distribution question
+  stays with the founder and counsel.
+
+Authority delta: none.
+
 ## Whole-machine convergence and the Founder's First Mission — 2026-10-14
 
-The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`.
+The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`. The section 16 handoff (nine items, with a recorded mission trace) is `collaboration/WHOLE-MACHINE-HANDOFF-2026-10-14.md`.
 
 - The Mind line is the canonical base. #160 and #132 are joined, and #132's Foundry modules keep the Mind-line modules as registered alternates behind one dispatch rule.
-- #159 is ported. #157's worker isolation is the named next extraction.
+- #159 is ported.
+- #157's worker isolation is extracted (increment 4):
+  - workers and their acceptance tests run in bubblewrap envelopes or not at all;
+  - GREG's git never runs a worker-planted hook or filter;
+  - an interrupted worker is reconciled as UNCERTAIN.
+- The console signs only for its owner (increment 5). Before, any local process, including a worker with provider networking, could get a MISSION signed with the founder's key; this was reproduced, and is now refused.
 - The executable Founder's First Mission and the five-question Mission Control are on the one mission path. `greg rehearse` runs both without credentials.
 - Increment 3 adds:
   - discovery by intention;
@@ -15,6 +89,31 @@ The founder's OPUS MAXIMUS continuation directive is implemented on draft branch
   - money kept in separate columns;
   - recovery evidence on the Proof view;
   - a section 13 attack map covering all 14 classes, with three new integrated attacks: disagreeing intelligences, network loss and interrupted construction.
+- Increments 6 and 7 bring the last three section 13 classes onto signed missions: stale community state, a profitable action that violates participant rights, and a local gain that damages the whole. Two were real holes on the mission path:
+  - an offer with pressured copy for unlicensed content could be published straight onto Foundry #54, around the company's editorial constitution; it is now refused at publication and at sale;
+  - the engine oscillated forever between a strategy that broke safety and one that broke throughput; it now blames the one that broke a passing check and asks the founder to decide the trade-off.
+- Increment 8 puts the browser (`browser.render`) and coding workers behind the #26 relay. They run in a bubblewrap network namespace whose only way out is a door to the relay, and every request is allowlisted and journaled. #26 stays PARTIAL: `browser.session`, the paid model routes, anchoring and the DALEOBANKS bridge remain outside, and confinement is opt-in.
+- Increment 10 puts the Playwright `browser.session` behind the same relay. On the way it found and closed two leaks in the unconfined browser: a page's WebSocket bypassed the allowlist, and the allowlist ignored ports. #26 stays PARTIAL: the paid model routes, anchoring and the DALEOBANKS bridge remain outside, and confinement is opt-in.
+- Increment 11 puts the paid model routes behind the same relay. On a confined body, the Anthropic and OpenAI SDKs, which hold the founder's key, run in a network namespace that reaches only their provider. The Claude Code CLI runs behind its own door. The builder and the console both receive the relay. #26 stays PARTIAL: anchoring and the DALEOBANKS bridge remain outside, and confinement is opt-in.
+- Increment 12 puts anchoring and the DALEOBANKS bridge behind the relay. On a confined body every mission-path egress now crosses the relay or has none. DALEOBANKS's real organ runs inside the namespace. #26 stays PARTIAL only because confinement is opt-in.
+- Increment 13 corrects increment 12. The venture organs, the appraiser's re-run of them and the Claude Code Genesis builder were still outside the relay; they are now confined. The founder's installer creates the body confined whenever the machine can, and says so. On the way, `git.inspect` was found running repository-configured code, and that is now prevented. #26 stays PARTIAL until this is observed on the founder's Chromebook.
+- Increment 14 ports #168's third runbook defect: a person's step now says which file and folder GREG reads, and stays on every surface after an answer until the work is seen.
+- Increment 15 tests two recovery paths end to end that had been tested only in parts. A body killed in the middle of a self-repair, including one killed during a ledger append, finishes the repair exactly once after restart. When one model vendor is down, Genesis builds through the other over the real SDKs, the original mission closes, and the outage survives a restart as routing evidence. No code changed; each test fails against a mutant of the recovery it covers.
+- Increment 16 closes a path to the founder's authority root. Every confined program (browser, model SDK child, Claude Code CLI, DALEOBANKS, venture organs) could read the founder's signing key and the body's secrets and ledger, and the Claude Code routes had the founder's home writable. The one namespace now hides the founder's home, every body home and the repository's `.git`, showing again only GREG's runtime and the paths each caller names; the CLI gets a private home holding only its login. Seed Genome freeze-v7 records the `greg/models.py` change; the evaluation is unchanged.
+- Increment 17 gives GREG the MCP ecosystem's tools without rebuilding them: a signed mission can call a tool on any stdio MCP server the founder installs (`mcp.call`). The server runs in the hardened namespace with no network and a read-only filesystem, so the call cannot change anything whatever the server claims; the official time and git servers ran through it, and the git server's commit was refused by the operating system. Servers that need the network, consequential tools and remote transport remain open (#28 PARTIAL).
+- Increment 18 puts those tools within the founder's words: GREG finds the MCP servers installed under its read roots, lists their tools confined, and turns "use the git server to show the status of ~/src/kernel" into one read-only mission, asking instead of guessing whatever the words do not settle. Mission Control shows the installed servers, their tools and the latest answers as untrusted data with receipts.
+- Increment 19 extends those tools to npm-installed servers (the official filesystem server read through a signed mission and could not write), lets the founder give a server launch arguments in `greg-mcp.json`, and fixes a gateway defect that recorded a server's own structured answer as nothing.
+- Increment 20 lets those tools change things, inside exactly what the founder approves. A tool that writes or reaches the network runs as `mcp.act` (class external_contact): the mission stops for the founder's decision, the request shows the folders it may write, the hosts it may reach through the relay and the credential handles it receives, and only that scope runs. Everything else stays read-only, every other host is refused, and a credential's value never enters GREG's records. The official filesystem server wrote an approved folder and was refused elsewhere by the operating system. Remote transport, other credential forms and words-to-act proposals remain open (#28 PARTIAL).
+- Increment 21 puts those changes within the founder's words: *Use the notes server to append "ship the wedge" to ~/src/notes/plan.md* becomes one `mcp.act` proposal that may write that file's folder and nothing else, with no network and no credentials. It waits for the founder's approval, which Mission Control now shows with its exact scope, and closes only when GREG reads the file itself and finds the text. On the way, the signing summary stopped reading unknown capabilities as read-only.
+- Increment 22 reaches remote MCP servers by URL, the way most hosted services now offer their tools. Every remote call is an approved `mcp.act`, since GREG cannot make a call on someone else's machine read-only. The decision shows the server, its one host and the credential handle. GREG's own client runs confined, its only way out a relay allowing that host, with the token by handle in its environment and in nothing GREG records. OAuth flows, discovery and proposals from words remain open (#28 PARTIAL).
+- Increment 23 lets the founder log GREG in to a hosted MCP server with OAuth (`greg mcp login`): the official SDK runs the flow, the founder approves at the service, and the tokens stay in the body's secret broker. Approved calls use the login; an expired one renews once inside the approved call, only at the server's host or a host the approval names, and the rotated tokens never enter GREG's records. Not yet tried against a real hosted service.
+- Increment 24 shows the founder, in Mission Control's Authority view, every credential GREG holds: by name and kind, for a login the server, renewal host and expiry, and how to revoke each. Values never leave the secret broker.
+- Increment 25 tests a model vendor that is slow, cuts its answer off or refuses the key, over real HTTP through the real SDKs: the mission closes through the vendor that answers each time. It found that a refused key was retried like an outage forever; a refused key is now benched until the founder stores a new one, and Mission Control says which key and what to run.
+- Increment 26 shows, in Mission Control, the hosted servers GREG is logged in to and the tools each listed at login, as the server's claim, without contacting it again.
+- Increment 27 extends the refused-key bench to the console: drafting a mission no longer sends a refused key to its vendor, and when no other model is available the console says which key to replace.
+- Increment 28 lets the founder register a hosted MCP server that uses a plain token (`greg mcp token`): GREG keeps the token only if the server accepts it, records the server and the tools it listed, shows them in Mission Control, and sends the token only inside an approved call to that server.
+- Increment 29 puts those hosted servers within the founder's words: *Use the notes service to add "ship the wedge", then check https://…/board* becomes one approved `mcp.act` by URL, its tool chosen from the list the service gave at login so drafting contacts nobody, and the mission closes only when GREG renders the named page and finds the text. Whatever the words do not settle is asked.
+- Increment 30 serves MCP servers that read their credential from a file (a service-account key, a kubeconfig): `greg secret set mcp:<name> --from-file <path>` keeps the whole file in the secret broker, and an approved `mcp.act` naming it in `secret_files` gives the server a private 0600 file, shown read-only, at the path in the named variable, removed when the call ends. The approval names it as a file.
 - State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
 
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
@@ -79,9 +178,78 @@ Progress 2026-10-13 (measured, frozen, negative results kept):
 - **Independent review (2026-10-13):** five lenses by separate agents found verifier, Gravity, Foundry, resilience, community-evidence and cortex defects, each reproduced and fixed with a regression test that fails on the old code (`4d99fb0`, `ed0f00b`, `9a799ed`). The evidence lens confirmed the admission evidence and corrected its prose (erratum in the admission README).
 - **Next gate:** P6 v3, VPL re-measured with the admitted genomes on a new natural family.
 
+Progress 2026-10-14 (measured, frozen, negative results kept):
+
+- **P6 v3** ([evidence](evidence/greg-composition-lift/2026-10-14-v3/README.md)): the natural call-centre family F6 (real bank arrivals, forecast quantile -> Erlang C staffing) **lifts**: 74-16 against the best constituent, 6.1% cheaper, no infeasible plan. Natural families are now 1 of 2.
+  - The lift is composition, not routing: the router chose the static recipe on all 90 days.
+  - Composition does not beat the weekly-mean practitioner pipeline on day count (40-50).
+- **Genome admission v2** ([evidence](evidence/greg-genome-admission/2026-10-14-v2/README.md)): ten families re-measured on fresh seeds 1100-1129. Six replicated.
+  - `basal_pid` is SUPERSEDED (0-30); `develop_constraint_release` fell to NICHE (5-15 against random restart).
+  - New: `basal_bayes_filter` is DEFAULT (13-1-2 under high noise).
+  - `forecast_quantile`'s held-out series had been used by P8. The seeds were fresh, the data were not; this is recorded in an erratum, and the harness now checks data identity.
+  - 21 of 32 genomes are admitted. None is attached.
+- **Independent review of `bb65d6f..8e37cd8`:** 15 reproduced defects, all fixed with regression tests.
+  - High severity: any signed founder answer to any request decided a human-judgment question. Human judgment is now bound to its own recorded question, and only the founder's signed answer to that request decides.
+  - The "miscalibrated" forecast claim was a multiple-testing artefact; it is corrected.
+- **Product delta:** forecast calibration is live through a founder-signed `greg realize`, and `greg cognition calibration` reports it.
+- **After the directive audit:**
+  - The Competency Compiler now reaches the cortex organs (Z3, CP-SAT, Fermi, evidence/causal, semantic).
+  - It records its attach and human-judgment asks on the body, once each.
+  - It demotes methods whose settled outcomes on the body are significantly poor.
+  - It reports the geometry a request's inputs imply.
+- **P8 cycle 3** ([evidence](evidence/greg-protected-evolution/2026-10-14/README.md)) targeted the constraint-release search policy. It was **REJECTED** at the adversarial gate: the candidate was 20% better on training, but 6.3% worse when validation was cut to four cases. Protected evolution has still never kept an improvement.
+- **VPL accounting** ([post hoc](evidence/greg-composition-lift/2026-10-14-accounting/README.md)):
+  - every lift costs latency (1.5-5.2x);
+  - routing adds nothing within a family;
+  - no practitioner pipeline was beaten where one was measured.
+- **P6 v4** ([evidence](evidence/greg-composition-lift/2026-10-14-v4/README.md)): F7 was pre-registered with every section-16 element (`888003c`, checked by `validate_preregistration`) and frozen at `14ec7a6`. It is surge capacity leasing on 20 held-out SNDlib backbones with real topologies, lengths, demand pairs and ECMP loads.
+  - **It lifts:** the composition was optimal on 200 of 200 items against greedy's 108 (92-0), at 5.3x the latency inside the declared 10x. It also beat the shortest-path-upgrade practitioner 130-0, the first practitioner pipeline beaten in any run.
+  - **It was tied:** parametric min-cost flow, the truth algorithm, ties it on every item. The lift is over GREG's repertoire, not over an OR practitioner. Routed, static and compiled answers were identical.
+  - **The residual capability is built:** `flow_expansion_mcf`, one certified intelligence, registered and withheld.
+  - Natural families are now 2 of 3. F7's truth is a computed optimum, not a realised outcome.
+- **Layer 5 defects fixed, each with a regression test that fails on the old code:**
+  - the compiler answered a capacity-expansion request with `max_flow`, which ignores the budget; relaxations are now rejected;
+  - compiled requests never settled; they now credit the executed method through its own receipt, and outcome links are projected;
+  - a Goal Gravity turn recorded an ask on the body; it now writes nothing and reports measured trust.
+- **Next gate:**
+  - one pre-registered admission v3 on fresh seeds 1200-1229 for every new or version-bumped genome (promoted competitors, Layer 3 packs A-C, `flow_expansion_mcf`, the Layer 2 native regimes, `basal_bayes_filter` 1.0.1, `develop_constraint_release` 1.2.0);
+  - a composition family that uses an admitted Layer 1 or Layer 2 genome;
+  - new data before any further forecast admission.
+
+Progress 2026-10-15 (measured, frozen, negative results kept):
+
+- **P6 v5** ([evidence](evidence/greg-composition-lift/2026-10-14-v5/README.md)): the natural family F8 (real NYC 2015 pickups; basal Kalman tracker -> Erlang C staffing) **lifts** over the best single intelligence, 8.6% cheaper (1589-204 items, 120-2 days). The EWMA-ratio-plus-quantile ablation is 4.7% cheaper still, and all of that comes from the tracker's fallbacks. Natural families are now 3 of 4. The data's redistribution terms are unverified (release blocker).
+- **Genome admission v3** ([evidence](evidence/greg-genome-admission/2026-10-15-v3/README.md)), pre-registered at `878f76c` on fresh seeds 1200-1229, measured 24 families: 15 new, 5 version-bumped and the 4 Layer 2 genomes on their native regimes.
+  - `flow_expansion_mcf` is DEFAULT against the F7 composition twin, with equal quality on all 30 instances at about one seventh of the latency. On F7's geometry the single exact method is canonical, which answers the founder's audit question at an exact version.
+  - Eight DEFAULT verdicts rest on latency at equal quality.
+  - `bootstrap_ci` is REJECTED.
+  - Grid shortest paths have no admitted genome: `grid_dijkstra` is EXPERIMENTAL at 1.22x its baseline's speed, short of 1.25x.
+  - `basal_bayes_filter` fell to NICHE and `develop_constraint_release` rose to DEFAULT. Both crossed a rule boundary, recorded as a replication finding.
+  - All 47 genomes carry current-version evidence: 34 admitted, none attached.
+- **P8 integrity and cycle 4** ([evidence](evidence/greg-protected-evolution/2026-10-15-cr-4/README.md)):
+  - A cycle that writes a record now has to match a committed freeze. The freeze holds the trusted-code digests, the rule, the settings, the split and both seals.
+  - The parent checks the method each sandbox imported, and confinement is scoped.
+  - Cycle 4 is the first cycle run under the freeze. It targeted the constraint-release search policy on a fresh split and was REJECTED at the held-out gate.
+    - On train the candidate was 23.7% better and improved on both stress sets.
+    - On held-out it lost 26-37 (p = 0.94) and its mean loss was 46% worse.
+    - Random restart beat both configurations on held-out.
+  - Protected evolution has still never kept an improvement: 4 cycles, 4 REJECTs.
+- **Fix rounds merged after independent verification:** packs B and C, Capability Genesis (five rounds) and the solo compiler work (three rounds).
+- **Independent review of PR #179** posted, plus a review of its closure binding. A family re-pointed to another solver keeps a positive verdict after an index rebuild (confirmed).
+- **Blocked by the environment:** fresh NYC TLC data for F8's next evaluation. The network policy refuses `data.cityofnewyork.us` and the TLC CDN.
+
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 
 `INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT` ([record](intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json), [verbatim source](intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md)): founder review of PR #155. P4 learned routing and P6 typed composition are Layer 5 substrate, not the Polyintelligence Mind; all five layers (basal, collective, solver, developmental, meta) remain obligations. Metric: held-out problem families where geometry routing or composition beats the strongest single available intelligence, net of cost/latency, with no added false answers or unauthorized effects; 0 means "a sophisticated router". Sequence: P6 cognitive composition lift → P4 conditional competence memory (hierarchical fallback) → P8 protected evolutionary cognition → IntelligenceGenome library expansion, each family admitted only when it beats simpler baselines on its native geometry. State: active. VPL: 0. Authority delta: none.
+
+Execution record, 2026-10-14 (directive of 2026-10-07, steps 2-13): P6 v2 lift on F2b, X1, X2 (VPL = 4 distinct families with F1); P4 v3, the one pre-registered decisive retest, NO_GAIN (111 = 111 of 130), so per the founder's rule conditional solver learning is not currently worth its complexity (learned mode not recommended; shadow kept for real-mission evidence); P8 protected evolution REJECT (no headroom; every protection held); admission v1/v2: Dawid-Skene and PSO admitted, four families rejected, DE superseded by multistart L-BFGS-B; Layer 4 unseen-damage sweep PARITY. Evidence under `docs/evidence/` (greg-learned-routing, greg-protected-evolution, greg-genome-admission, greg-composition-lift, greg-developmental-sweep). Authority delta: none.
+
+Erratum, 2026-10-15 (review of #179, L2; the line above is kept as written). It is superseded by the convergence accounting in `collaboration/MIND-LINEAGE-RECONCILIATION-2026-10-14.md` section 7:
+- "VPL = 4 distinct families" counts X2, whose strongest single was NOT_RUN, and X1, a structural lift over constituents that are incomplete by design.
+- F2b is a same-instance re-run of F2R, not a fresh family.
+- "Dawid-Skene and PSO admitted": #155 later found the crowd verifier EXPERIMENTAL, and L-BFGS-B beats PSO 32/7 post hoc.
+- "NO_GAIN" re-measured 130 of the same payloads as #158's REGRESSION; that retest decides.
+- "every protection held" (P8): the review found three adversarial probes accepted on #155's routing-genome evaluator (a module edit, a mid-run data edit, a hash/exec swap). The REJECT verdict stands; the protection claim does not.
 
 ## Seed genome: the Competency Compiler on GREG's path — 2026-10-01
 
@@ -94,7 +262,9 @@ Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSU
 - **§9:** selective-disclosure evidence packages, built from retained receipts. They use the salted-hash disclosures of RFC 9901, include every same-input receipt, and append institutional responses rather than editing them in. `greg cognition package` exports one read-only; nothing is sent.
 - **§5:** a measured characterization harness covering latency, error correction against self-consistent lies, a problem-space ladder and invariance, with Wilson intervals.
 - **§13 and §15:** the verifier cross-checks and evidence-backed legitimacy in #161.
-- **§12:** wiring the budget controller into a runtime optional step is deferred until the next freeze, because the frozen evaluations pin `cortex.py`.
+- **§12:** (superseded 2026-10-14, kept as written: "wiring the budget controller into a runtime optional step is deferred until the next freeze, because the frozen evaluations pin `cortex.py`.") A thinking-budget controller now governs the compile path. One declared `latency_budget` covers the answer, the premises check and every sensitivity re-run, where each run had previously been handed the whole budget. Required steps are never priced away; an exhausted budget narrows the result. An optional re-run starts only when the slowest measured step fits. Every run and stop is kept with its reason, and cortex receipts record measured CPU seconds. The earlier deferral was wrong: frozen evaluations run at their freeze commits, so changing `cortex.py` on a branch alters no recorded result.
+
+Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12.
 
 Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
 

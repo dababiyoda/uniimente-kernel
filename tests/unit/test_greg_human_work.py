@@ -145,3 +145,58 @@ def test_the_cli_drafts_a_human_work_mission_without_signing(tmp_path):
     spec = spec.get("spec", spec)
     assert spec["strategies"][0]["function"] == "professional.tax_return"
     assert spec["success_checks"][0]["sensor"]["params"]["path"].endswith("return.pdf")
+
+
+def test_an_answer_never_hides_a_persons_step_and_every_surface_says_where_the_work_goes(tmp_path):
+    """Ported from #168 (3c92bc9), found rehearsing the business case on the installed body: the ask told the
+    founder to "put the deliverable where the mission's check reads it" without saying where, and one Approve
+    (console or phone) removed the ask while the mission kept waiting for the file. Mission Control, this branch's
+    front page, is checked as well as the classic page."""
+    from greg.console import Console, render_home, render_mission_control
+    from greg.tribunal import morning_report
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = mission(home)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    run(home, clock, 3)
+    [ask] = events(home, "decision.requested")
+    deliverable = Path(ask["evidence"]["deliverable_observed_by"][0]["params"]["path"])
+    for page in (render_home(Console(home)).decode(), render_mission_control(Console(home), "overview").decode()):
+        assert "lease-review.pdf" in page and str(deliverable.parent) in page          # which file, and where
+        assert f"value='{ask['request_id']}'" not in page                              # no button that does nothing
+
+    drop(home, signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "approve"}))
+    run(home, clock, 2)
+    assert [e["request_id"] for e in events(home, "decision.answered")] == [ask["request_id"]]
+    [shown] = [r for r in status(home)["decisions_required"] if r["request_id"] == ask["request_id"]]
+    assert shown["answered"] == "approve"                                               # still waiting, still visible
+    with Body(home, clock=clock) as body:
+        [q12] = [r for r in morning_report(body.journal, body.engine)["q12_decisions_required"]
+                 if r["request_id"] == ask["request_id"]]
+    assert q12["answered"] == "approve"
+    for page in (render_home(Console(home)).decode(), render_mission_control(Console(home), "overview").decode()):
+        assert "lease-review.pdf" in page and "You answered approve; that is only recorded." in page
+
+    deliverable.parent.mkdir(parents=True, exist_ok=True)
+    deliverable.write_bytes(b"%PDF-1.4 attorney opinion\n")
+    clock.advance(4000)
+    run(home, clock, 3)
+    assert events(home, "mission.achieved")
+    assert ask["request_id"] not in {r["request_id"] for r in status(home)["decisions_required"]}
+
+
+def test_an_answered_persons_step_leaves_the_surfaces_when_its_mission_is_abandoned(tmp_path):
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = mission(home)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    run(home, clock, 3)
+    [ask] = events(home, "decision.requested")
+    drop(home, signed(key, body_id, "DECISION", {"request_id": ask["request_id"], "answer": "reject"}))
+    run(home, clock, 2)
+    assert ask["request_id"] in {r["request_id"] for r in status(home)["decisions_required"]}
+    drop(home, signed(key, body_id, "LIFECYCLE", {"mission_id": spec["mission_id"], "state": "ABANDONED",
+                                                    "reason": "no longer needed"}, now=clock.now))
+    run(home, clock, 2)
+    assert events(home, "mission.lifecycle")
+    assert ask["request_id"] not in {r["request_id"] for r in status(home)["decisions_required"]}

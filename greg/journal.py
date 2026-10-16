@@ -58,6 +58,10 @@ class Journal:
             return next(e for e in self.spine.replay("greg." + kind) if e.event_id == event.event_id)
         return accepted
 
+    def retained(self, kind: str, key: object) -> Event | None:
+        """The fact already recorded under this kind and identity key, if any (a re-entry after a crash)."""
+        return self._retained(str(uuid.uuid5(NAMESPACE, sha256_json({"kind": kind, "key": key}))))
+
     def _retained(self, event_id: str) -> Event | None:
         for record in reversed(self.ledger.records):
             if record.record_type == "event" and record.payload.get("event_id") == event_id:

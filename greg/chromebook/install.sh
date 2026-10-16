@@ -35,6 +35,7 @@ SKIP_DEPS=0
 NO_PASSPHRASE=0
 ALLOW_OTHER_LINUX=0
 ENGINES=1
+CONFINE=1
 
 usage() {
   cat <<'EOF'
@@ -49,6 +50,7 @@ Usage: bash greg/chromebook/install.sh [options]
   --no-service          do not install/enable the systemd user service (development only)
   --skip-deps           use the chosen interpreter as is, no venv or pip (development only)
   --no-engines          skip the open-source reasoning engines (Z3, OR-Tools, SciPy, NetworkX, SymPy)
+  --no-confined-egress  do not confine GREG's network behind its egress relay (on by default when this machine can)
   --no-passphrase       UNPROTECTED founder key (tests only; never for Alfonso's key)
   --allow-other-linux   run outside ChromeOS Linux (the body will not be your Chromebook)
 EOF
@@ -66,6 +68,7 @@ while [ $# -gt 0 ]; do
     --no-service) SERVICE="no"; shift ;;
     --skip-deps) SKIP_DEPS=1; shift ;;
     --no-engines) ENGINES=0; shift ;;
+    --no-confined-egress) CONFINE=0; shift ;;
     --no-passphrase) NO_PASSPHRASE=1; shift ;;
     --allow-other-linux) ALLOW_OTHER_LINUX=1; shift ;;
     -h|--help) usage; exit 0 ;;
@@ -153,11 +156,22 @@ printf '%s' "$DOCTOR" | "$GREG_PY" -c 'import json,sys; e=json.load(sys.stdin).g
 
 step "6/8 Body"
 mkdir -p "$READ_ROOT" "$DELIVER_ROOT"
+# #26: GREG's network is confined behind its egress relay whenever this machine can do it (doctor probe).
+CONFINABLE="$(printf '%s' "$DOCTOR" | "$GREG_PY" -c 'import json,sys; print(1 if json.load(sys.stdin).get("confined_egress", {}).get("available") else 0)' || echo 0)"
+INIT_FLAGS=()
+if [ "$CONFINE" = 1 ] && [ "$CONFINABLE" = 1 ]; then INIT_FLAGS+=(--confined-egress); fi
 if [ -f "$GREG_HOME_DIR/body.json" ]; then
   echo "A body already exists at $GREG_HOME_DIR; keeping it."
 else
-  "$GREG" init --read-root "$READ_ROOT" --deliver-root "$DELIVER_ROOT" >/dev/null
+  "$GREG" init --read-root "$READ_ROOT" --deliver-root "$DELIVER_ROOT" "${INIT_FLAGS[@]}" >/dev/null
   echo "Created a body at $GREG_HOME_DIR (reads $READ_ROOT, delivers into $DELIVER_ROOT)."
+  if [ "${#INIT_FLAGS[@]}" -gt 0 ]; then
+    echo "Network: confined. Every connection GREG makes is decided by its egress relay and journaled."
+  elif [ "$CONFINE" = 1 ]; then
+    printf '%s' "$DOCTOR" | "$GREG_PY" -c 'import json,sys; e=json.load(sys.stdin).get("confined_egress", {}); print("WARNING: this machine cannot confine GREG'"'"'s network (%s). The body runs unconfined; to fix: %s, then create the body again." % (e.get("why"), e.get("fix")))' || true
+  else
+    echo "Network confinement skipped (--no-confined-egress)."
+  fi
 fi
 
 status_field() {  # $1: python expression over the status dict
@@ -206,7 +220,7 @@ fi
 cat <<EOF
 
 GREG is installed. Open Mission Control (greg/CHROMEBOOK_FIRST_MISSION.md, steps 2 and 4):
-  greg console --key $KEY --no-model     then open http://localhost:8766/ in Chrome
+  greg console --key $KEY --no-model     then open the private link it prints in Chrome
   Ask: "Brief me on the state of my repositories." Review, sign, close the tab.
   greg status        note the PID, then: kill -9 <PID>   (the service restarts GREG)
   Approve the one waiting delivery in the console, read the brief in $DELIVER_ROOT/briefs/, accept or reject it.

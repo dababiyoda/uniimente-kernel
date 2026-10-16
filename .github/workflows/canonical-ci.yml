@@ -24,6 +24,7 @@ on:
   pull_request:
   push:
     branches: [main]
+    tags: ["*"]          # a tag is a release candidate: the release-exclusion check must run on it
   workflow_dispatch:
 
 permissions:
@@ -37,7 +38,12 @@ jobs:
   tests:
     name: "1 · Kernel and organ tests"
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The limit bounds a hung run; it is not a speed target. Track B (#180 e4674f9) raised it from 30 when the unit
+    # suite ran twice here (full suite, then verifier V2): 24 of 30 minutes at #179 c6c4d74, and four stacked heads
+    # cancelled inside the verifier on 2026-10-15 with the suite green (17-19 minutes under load). Verifier V2 now
+    # runs once, in job 9 (44f7c35); this job still carries the full suite, the worker-isolation regressions and the
+    # mutation checks, so the 45-minute bound is kept.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,6 +61,23 @@ jobs:
         run: python -m pytest -q tests/unit/test_greg_landlock.py tests/unit/test_greg_mcp_worker.py
       - name: Native company runtime regression checks
         run: python -m pytest -q tests/unit/test_greg_owned_company.py
+      - name: Provision worker namespace isolation (bubblewrap) and report whether this runner can use it
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          if bwrap --unshare-user --unshare-pid --unshare-net --die-with-parent --ro-bind / / -- /usr/bin/true; then
+            echo "bubblewrap namespaces: usable"
+          else
+            echo "bubblewrap namespaces: NOT usable on this runner; real-isolation tests skip and say why"
+          fi
+      - name: Worker confinement, acceptance and collector escape regressions (skip reasons shown)
+        run: python -m pytest -q -rs tests/unit/test_greg_worker_isolation.py tests/unit/test_greg_workers.py
+      - name: Release exclusions (uncleared third-party data never ships)
+        run: python scripts/check_release_exclusions.py
+      - name: Release exclusions on a tag's source archive
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          git archive --format=tar --prefix=release/ HEAD > "$RUNNER_TEMP/release.tar"
+          python scripts/check_release_exclusions.py --archive "$RUNNER_TEMP/release.tar"
       - name: Full unit and integration suite
         run: python -m pytest -q
       - name: Frozen cognition assessment
@@ -82,7 +105,8 @@ jobs:
     # suite grew (the base 0ae4c94 times out there too). It reads nothing job 1 produces.
     name: "9 · Institutional verifier V1-V5"
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Same rationale as job 1 (#180): V2 re-runs tests/unit, which Track B's Mind tests enlarged; bounds a hung run.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -182,9 +206,9 @@ jobs:
         run: python -m pytest -q tests/unit/test_greg_cognition_seed_path.py tests/unit/test_greg_seed_compat.py tests/integration/test_greg_cognition_process.py
       - name: GREG cognition boundary mutation check
         run: python scripts/ci/check_greg_cognition_mutants.py
-      - name: Residual safeguards (cross-engine certificates, legitimacy, disclosure packages, characterization) and their mutation check
+      - name: Residual safeguards (cross-engine certificates, legitimacy, disclosure packages, characterization, thinking budget, venture case) and their mutation check
         run: |
-          python -m pytest -q tests/unit/test_cognition_residual_safeguards.py tests/unit/test_cognition_disclosure.py tests/unit/test_cognition_characterize.py
+          python -m pytest -q tests/unit/test_cognition_residual_safeguards.py tests/unit/test_cognition_disclosure.py tests/unit/test_cognition_characterize.py tests/unit/test_cognition_thinking_budget.py tests/unit/test_greg_ventures.py
           python scripts/ci/check_cognition_residual_mutants.py
       - name: Seed Genome 120-case frozen engineering comparison
         run: python -m cortex.evaluation.seed_genome.run --out seed-genome-results.json

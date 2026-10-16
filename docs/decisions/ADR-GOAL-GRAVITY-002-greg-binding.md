@@ -140,7 +140,11 @@ meaningful evidence judged by content, recalculates the bottleneck, has its miss
 preparation through the Gate even while a consequential decision is pending, and asks Alfonso only for that
 decision, once, on the one ask path; the approve then executes it. (An earlier version of this paragraph said
 "approval executes once"; that was wrong: an approve is a standing approval of that exact scope for the mission's
-lifetime, the mission engine's semantics, which the binding does not change; see fix stage 3, finding 5.)
+lifetime, the mission engine's semantics, which the binding does not change; see fix stage 3, finding 5. For a paid
+move that scope includes the mission's spend state (#157), so its approve funds one run and the mission asks again
+after spending; PR #184's second review corrected every goal surface to say so, and its third made the engine hold to
+it: a paid approve is used by its one run even when that run books $0, and a paid ask the mission's spend has made
+unfundable is withdrawn and asked again.)
 Mechanisms chosen are the simplest that produce it:
 a lexical relevance rule over names the founder already signed (no model), the mission engine's own loop and Gate
 for preparation (no new executor), observation-tier reopening (no new goal status). Each fix has a regression test
@@ -245,7 +249,7 @@ nonces `consumed_nonces` collected before; the extracted ranking computes the sa
 
 | Role | Position | Material concern | Recommendation |
 |---|---|---|---|
-| Builder | Mission F runs end to end on a real body with a real Ed25519 test key, in both orders: with the ask still open, noise on the goal's own channel is silent, meaningful text on it wakes the goal, the mission repairs `c` in cone through the Gate, nothing new is asked and the awaited move does not run; then the approve executes it (a standing approval of that exact scope: a later regression re-runs it with no new ask, as every surface now says) and the bottleneck re-fixes to N1 | goal-level moves must restate a static mission strategy the mission pursues; relevance is lexical | EXPERIMENT |
+| Builder | Mission F runs end to end on a real body with a real Ed25519 test key, in both orders: with the ask still open, noise on the goal's own channel is silent, meaningful text on it wakes the goal, the mission repairs `c` in cone through the Gate, nothing new is asked and the awaited move does not run; then the approve executes it (a standing approval of that exact scope: a later regression re-runs an unpaid move with no new ask, and a paid move after a new ask, as every surface now says) and the bottleneck re-fixes to N1 | goal-level moves must restate a static mission strategy the mission pursues; relevance is lexical | EXPERIMENT |
 | Adversary | forged goal, smuggled acceptance, backdated envelope, over-ceiling GOAL, duplicate intent, device-signed GOAL, unsigned un-pause, retired-key GOAL, revoked-device DECISION, forged founder answer, forged executor pass: all refused or not mirrored (tests) | in-process writers can still narrow goals (stop, supersede) and the mission fold still trusts unsigned `decision.answered` (P2) | EXPERIMENT with P2 as a named follow-up |
 | Operator | one ledger file; idle body writes nothing; dormant goal writes nothing; faults contained once per reason; one CLI entry | O(commands) signature checks per tick; ledger growth per non-dormant turn | EXPERIMENT; cache by digest if measured hot |
 | Beneficiary Representative | the founder signs a pre-filled GOAL from a mission instead of writing JSON; asks keep the section-60 contract and wording screen; a phone can only quiet a goal | attention defaults have no founder-signed quiet hours yet | EXPERIMENT |

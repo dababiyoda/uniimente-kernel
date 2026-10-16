@@ -63,8 +63,9 @@ def test_the_mind_prices_the_test_through_the_one_cognition_path():
     registry.set_state("cognition.information", "ATTACHED")    # evaluation-only view; the body is unchanged
     attached = gravity.step(situation(p), registry=registry)
     voi = attached["mind"]["value_of_information"]
-    assert voi["state"] == "ANSWERED" and voi["method"] == "cognition.information"
-    assert voi["recomputation"]["consistent"] is True
+    # the pilot's consequence class is high, so the canonical path returns a conditional result, never ANSWERED
+    assert voi["state"] == "WORLD_UNVERIFIED" and voi["method"] == "cognition.information"
+    assert voi["recomputation"]["consistent"] is True and voi["conditional"] is True
 
 
 def test_dormant_goals_wake_only_as_a_founder_proposal(tmp_path):
@@ -206,3 +207,44 @@ def test_the_cli_reports_a_refused_situation_instead_of_crashing(tmp_path, capsy
     path.write_text(json.dumps(stale))
     assert main(["--home", str(tmp_path / "nohome"), "gravity", "--situation", str(path)]) == 2
     assert "gravity refused the situation" in capsys.readouterr().err
+
+
+def test_the_turn_reports_measured_trust_from_the_body_record(tmp_path):
+    """Audit item 8: Goal Gravity shows what GREG's own record says about trusting its methods this turn."""
+    from greg.body import Body
+    from tests.greg_fixtures import drop, make_body, signed
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "trust:exact", "operation": "calculate", "data": {"expression": "2+3"}}
+    spec = mission("m:trust", checks=[{"check_id": "sum", "description": "exact sum",
+                                       "sensor": {"capability": "cognition.solve", "target": "cognition:sum",
+                                                  "params": params},
+                                       "predicate": {"op": "equals", "field": "output.exact", "value": "5"}}],
+                   strategies=[], capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        body.tick()
+        report = gravity.step(situation(), journal=body.journal)
+    trust = report["mind"]["measured_trust"]
+    assert trust["settled_outcomes"] == 1 and trust["settled_correct"] == 1
+    assert trust["forecast_calibration"] == "unmeasured" and trust["awaiting_realization"] == 0
+    assert gravity.step(situation())["mind"]["measured_trust"]["forecast_calibration"] == "unmeasured"
+    assert report["ledger_writes"] == 0 and report["authority_created"] is False
+
+
+def test_a_turn_on_a_real_body_writes_no_ledger_event_even_when_the_compiler_would_ask(tmp_path):
+    """Reproduced defect: a turn's value-of-information compile recorded a CAPABILITY_ATTACH ask on the body,
+    contradicting the turn's read-only contract (ledger_writes 0) and opening a second ask channel."""
+    from greg.body import Body
+    from tests.greg_fixtures import make_body
+    home, _, _, _ = make_body(tmp_path)
+    p = favourable()
+    p["mechanism_overrides"] = {"proof.verifiable_receipts": {"cost_usd": 0, "effort_hours": 0}}
+    with Body(home) as body:
+        body.boot()
+        before = [e.event_id for e in body.journal.replay("")]
+        report = gravity.step(situation(p), journal=body.journal)
+        assert [e.event_id for e in body.journal.replay("")] == before
+    voi = report["mind"]["value_of_information"]
+    assert voi["state"] == "CAPABILITY_DEFICIT" and voi["attach_ask_prepared"]["state"] == "PREPARED_NOT_RECORDED"
+    assert report["ledger_writes"] == 0

@@ -29,7 +29,7 @@ from greg import doctor, service
 from greg import path as devpath
 from tests.integration.test_greg_body_supervised import (SUPERVISORD, events, heartbeat, history,
                                                          supervisor_endpoint, wait_for)
-from tests.integration.test_greg_product_path import free_port, http
+from tests.integration.test_greg_product_path import enter_console, free_port, http
 
 ROOT = Path(__file__).resolve().parents[2]
 INSTALL = ROOT / "greg/chromebook/install.sh"
@@ -61,6 +61,14 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         assert out.returncode == 0, out.stderr[-2000:]
         return out.stdout
 
+    # #26: the installer confines GREG's network whenever this machine can, and says which it did.
+    from greg import doctor
+    confinable = doctor.confined_egress()["available"]
+    egress = json.loads(greg("status"))["egress"]
+    assert egress["confined"] is confinable
+    assert ("Network: confined." in installed.stdout) is confinable
+    assert confinable or "cannot confine GREG's network" in installed.stdout
+
     # The systemd user unit, played by supervisord: same program, restarts a crash, honours STOP.
     conf = tmp_path / "supervisord.conf"
     (home / "logs").mkdir(exist_ok=True)              # what `greg service install` creates; journald on systemd
@@ -77,15 +85,7 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
         proc = subprocess.Popen([str(bin_dir / "greg"), "console", "--key", str(key), "--no-passphrase", "--no-model",
                                  "--port", str(port)], env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                 text=True)
-        deadline = time.time() + 30
-        while time.time() < deadline:
-            try:
-                http(port, "/")
-                return proc
-            except OSError:
-                assert proc.poll() is None, proc.stdout.read()
-                time.sleep(0.2)
-        raise AssertionError("console did not start")
+        return enter_console(proc, port)
 
     def close(proc):
         proc.terminate()
@@ -221,3 +221,19 @@ def test_the_chromebook_runbook_reaches_n1_and_then_n2_on_the_same_body_without_
             supervisor.wait(timeout=20)
         except subprocess.TimeoutExpired:
             supervisor.kill()
+
+
+def test_the_founder_can_decline_network_confinement_at_install(tmp_path):
+    env = {**os.environ, "HOME": str(tmp_path / "home")}
+    env.pop("GREG_FOUNDER_PASSPHRASE", None)
+    (tmp_path / "home").mkdir()
+    home, bin_dir = tmp_path / "body", tmp_path / "bin"
+    installed = subprocess.run(
+        ["bash", str(INSTALL), "--allow-other-linux", "--no-service", "--skip-deps", "--no-passphrase",
+         "--no-confined-egress", "--python", sys.executable, "--home", str(home), "--key", str(tmp_path / "k.pem"),
+         "--bin-dir", str(bin_dir), "--read-root", str(tmp_path / "src"), "--deliver-root", str(tmp_path / "out")],
+        capture_output=True, text=True, env=env, timeout=300)
+    assert installed.returncode == 0, installed.stdout[-2000:] + installed.stderr[-2000:]
+    assert "Network confinement skipped (--no-confined-egress)." in installed.stdout
+    status = subprocess.run([str(bin_dir / "greg"), "status"], capture_output=True, text=True, env=env, timeout=120)
+    assert json.loads(status.stdout)["egress"]["confined"] is False

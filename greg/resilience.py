@@ -37,6 +37,21 @@ def failed(payload: dict) -> bool:
     return status in FAILED_ACTIONS or (status == "REFUSED" and bool(payload.get("receipt")))
 
 
+def _acts(journal) -> list:
+    """Capability acts in time order, one record per dispatched attempt.
+
+    Resilience measures execution: an interrupted dispatch (UNCERTAIN) is a failure episode whatever the founder
+    later states about it. A reconciliation is a later statement about the same (mission, action, attempt), so
+    where that attempt's UNCERTAIN record is retained the statement is not counted again: "not executed" is not a
+    second failure and a receiptless "executed" is not a completion. A reconciliation whose UNCERTAIN record is
+    absent (older ledgers) is the only record of its attempt and is kept."""
+    from greg.routing import founder_reconciled
+    events = _events(journal, "mission.action")
+    key = lambda p: (p.get("mission_id"), p.get("action_id"), p.get("attempt"))
+    interrupted = {key(e.payload or {}) for e in events if (e.payload or {}).get("status") == "UNCERTAIN"}
+    return [e for e in events if not (founder_reconciled(e.payload or {}) and key(e.payload or {}) in interrupted)]
+
+
 def _lever_capability(lever) -> str | None:
     """Improvements and closed regressions name a lever, not a capability; every lever belongs to the
     improvement loop's one capability (greg.improvement.CAPABILITY)."""
@@ -62,7 +77,7 @@ def _events(journal, prefix):
 
 def episodes(journal) -> list[dict]:
     """Failure -> recovery episodes per (mission, check), in time order."""
-    actions = _events(journal, "mission.action")
+    actions = _acts(journal)
     answers = _events(journal, "decision.answered")
     state, open_, recovered_before, out = {}, {}, defaultdict(int), []
     for event in _events(journal, "mission.observed"):
@@ -91,7 +106,7 @@ def episodes(journal) -> list[dict]:
 
 
 def common_causes(journal, window: timedelta = timedelta(hours=1)) -> list[dict]:
-    failures = [e for e in _events(journal, "mission.action") if failed(e.payload)]
+    failures = [e for e in _acts(journal) if failed(e.payload)]
     by_cap = defaultdict(list)
     for e in failures:
         by_cap[e.payload.get("capability") or "?"].append(e)
@@ -109,7 +124,7 @@ def common_causes(journal, window: timedelta = timedelta(hours=1)) -> list[dict]
 
 def concentration(journal) -> dict:
     done = defaultdict(int)
-    for e in journal.replay("mission.action"):
+    for e in _acts(journal):
         if e.payload.get("status") == "DONE":
             done[e.payload.get("capability") or "?"] += 1
     total = sum(done.values())
@@ -124,7 +139,7 @@ def concentration(journal) -> dict:
 def after_failure(journal) -> dict:
     """Per capability: completion rate of the WINDOW actions after each failure vs the WINDOW before."""
     by_cap = defaultdict(list)
-    for e in _events(journal, "mission.action"):
+    for e in _acts(journal):
         status = e.payload.get("status")
         if status == "DONE" or failed(e.payload):
             by_cap[e.payload.get("capability") or "?"].append(
@@ -193,7 +208,7 @@ def decoupling_from_journal(journal) -> list[dict]:
     origin = min(whole_days)
     whole = [((d - origin).days, statistics.fmean(v)) for d, v in sorted(whole_days.items())]
     per_cap = defaultdict(lambda: defaultdict(list))
-    for e in journal.replay("mission.action"):
+    for e in _acts(journal):
         status = e.payload.get("status")
         if status == "DONE" or failed(e.payload):
             per_cap[e.payload.get("capability") or "?"][_at(e).date()].append(1.0 if status == "DONE" else 0.0)

@@ -167,7 +167,7 @@ OSS_MUTANTS = [
      '            if answer.get("follow_up") and spec.get("follow_up"):\n                # The engine',
      '            if False:\n                # The engine'),
     ("console attaches a capability no ask names", "greg/console.py",
-     "if capability_id not in {c[\"capability_id\"] for c in _attachable(open_asks.get(request_id, {}))}:",
+     "if capability_id not in {c[\"capability_id\"] for c in _attachable(open_asks.get(request_id, {}))} | waiting:",
      "if False:"),
 ]
 
@@ -210,7 +210,7 @@ MIND_CONSTRUCTION_MUTANTS = [
      'if is_capability_fault(formed, detail, failure_class):\n                        self.capability_faults',
      'if False:\n                        self.capability_faults'),
     ("attaching the engine never forms the construction", "greg/missions.py",
-     'if cap is None and self.genesis.construction_ready(b["function"]):', "if False:"),
+     'if self.genesis.construction_ready(b["function"]):', "if False:"),
     ("the construction awaiting attach is hidden behind the old ask", "greg/missions.py",
      "                                              awaiting=bool(waiting))",
      "                                              awaiting=False)"),
@@ -239,7 +239,7 @@ RECOVERY_MUTANTS = [
      'if capability_id == self._engine_id and self.state.get(capability_id) in ("ATTACHED", "VERIFIED"):',
      'if capability_id == self._engine_id and self.state.get(capability_id) == "ATTACHED":'),
     ("a recovered capability is never offered back to its mission", "greg/missions.py",
-     "                    if fresh:", "                    if False:"),
+     "                if fresh:", "                if False:"),
     ("an identical re-block after an unblock is swallowed", "greg/missions.py",
      'key=[m.mission_id, blocker, self._generation(m, "mission.unblocked")])', "key=[m.mission_id, blocker])"),
     ("a recorded qualification is re-run on the same deficit", "greg/genesis.py",

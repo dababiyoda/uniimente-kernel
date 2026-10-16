@@ -1,0 +1,243 @@
+{
+ "VEPMC": 0,
+ "missions": [
+  {
+   "mission_id": "m:engineering-brief-2026-10-15",
+   "closure_event_id": "58d3ca9f-40c9-508c-b316-591067909cb7",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": true,
+   "interruption_survived": true,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "founder_accepted",
+    "founder_body"
+   ]
+  },
+  {
+   "mission_id": "m:one-cortex",
+   "closure_event_id": "530819be-3be8-5cb8-9e8e-ee5f012b7240",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": false,
+   "interruption_survived": false,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "approval_boundary",
+    "interruption_survived",
+    "founder_accepted",
+    "founder_body"
+   ]
+  },
+  {
+   "mission_id": "m:compiled-one-staff",
+   "closure_event_id": "da86e038-7c96-505b-a615-2d13e121bd3e",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": false,
+   "interruption_survived": false,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "approval_boundary",
+    "interruption_survived",
+    "founder_accepted",
+    "founder_body"
+   ]
+  },
+  {
+   "mission_id": "m:work-one-sub",
+   "closure_event_id": "741a7749-7bb2-5808-9652-c7ef361b65cc",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": false,
+   "interruption_survived": false,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "approval_boundary",
+    "interruption_survived",
+    "founder_accepted",
+    "founder_body"
+   ]
+  },
+  {
+   "mission_id": "m:work-slow-sub",
+   "closure_event_id": "aefec4ad-46b9-5e9a-ac23-032a6cce4c4e",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": false,
+   "interruption_survived": true,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "approval_boundary",
+    "founder_accepted",
+    "founder_body"
+   ]
+  },
+  {
+   "mission_id": "m:work-slow-standing",
+   "closure_event_id": "efb5c5c2-b839-540d-ab98-5ed0ff9c7413",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": false,
+   "interruption_survived": true,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "approval_boundary",
+    "founder_accepted",
+    "founder_body"
+   ]
+  },
+  {
+   "mission_id": "m:organs-d868e8c7afca",
+   "closure_event_id": "ab009bcb-f347-5f8f-9441-1d253b62581e",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": true,
+   "interruption_survived": false,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "interruption_survived",
+    "founder_accepted",
+    "founder_body"
+   ]
+  },
+  {
+   "mission_id": "m:engineering-brief-one-machine-0",
+   "closure_event_id": "d719bfaf-c228-5cde-a8f5-d60dec993b51",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": false,
+   "interruption_survived": false,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "approval_boundary",
+    "interruption_survived",
+    "founder_accepted",
+    "founder_body"
+   ]
+  },
+  {
+   "mission_id": "m:engineering-brief-one-machine-1",
+   "closure_event_id": "837a59b3-19a6-5b4e-b1f1-b87c1abb5a7c",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": false,
+   "interruption_survived": false,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "approval_boundary",
+    "interruption_survived",
+    "founder_accepted",
+    "founder_body"
+   ]
+  },
+  {
+   "mission_id": "m:engineering-brief-one-machine-2",
+   "closure_event_id": "c8ee6746-2eae-5463-8059-d086bdb72066",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": false,
+   "interruption_survived": false,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "approval_boundary",
+    "interruption_survived",
+    "founder_accepted",
+    "founder_body"
+   ]
+  },
+  {
+   "mission_id": "m:engineering-brief-one-machine-learned",
+   "closure_event_id": "1e579f37-39c2-5e2e-a997-40bd2816cd34",
+   "founder_signed": true,
+   "interface_detached": true,
+   "persistent_runtime": true,
+   "real_capability": true,
+   "approval_boundary": false,
+   "interruption_survived": false,
+   "appraised_verified": true,
+   "founder_accepted": false,
+   "founder_body": false,
+   "fixture_evidence": false,
+   "counts": false,
+   "missing": [
+    "approval_boundary",
+    "interruption_survived",
+    "founder_accepted",
+    "founder_body"
+   ]
+  }
+ ],
+ "conditions": [
+  "founder_signed",
+  "interface_detached",
+  "persistent_runtime",
+  "real_capability",
+  "approval_boundary",
+  "interruption_survived",
+  "appraised_verified",
+  "founder_accepted",
+  "founder_body"
+ ],
+ "external_confirmation_required": "ledger checks cannot prove physical ownership or personal presence"
+}

@@ -171,7 +171,7 @@
     identical output under runc and gVisor. Not registered or CI-exercised. Execution paused 2026-09-30: running privileged
     OCI runtimes (runc/runsc as root) and sandbox escape probes in the development container was denied by the session''s
     safety classifier (containment escape). Resuming needs Alfonso''s explicit authorization for where these may run (e.g.
-    CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md.'
+    CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md. Status 2026-10-16: location authorization received from the founder; earlier unvalidated groundwork preserved inactive in docs/evidence/validation-groundwork-2026-10-16/; validation not performed; further execution blocked by a safety restriction reported in this session.'
   state: PARTIAL
 10:
   acceptance:
@@ -196,7 +196,7 @@
     proxy. The probe set was then redesigned (host control limited to self-created resources; network probe targets RFC 5737
     TEST-NET) and has not been re-run. Execution paused 2026-09-30: running privileged OCI runtimes (runc/runsc as root) and
     sandbox escape probes in the development container was denied by the session''s safety classifier (containment escape).
-    Resuming needs Alfonso''s explicit authorization for where these may run (e.g. CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md.'
+    Resuming needs Alfonso''s explicit authorization for where these may run (e.g. CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md. Status 2026-10-16: location authorization received from the founder; earlier unvalidated groundwork preserved inactive in docs/evidence/validation-groundwork-2026-10-16/; validation not performed; further execution blocked by a safety restriction reported in this session.'
   state: PARTIAL
   state_lineage: '#158 line recorded OUTSTANDING (Landlock worker confinement only); #132 recorded PARTIAL (unexercised gVisor
     runner). Reconciled to PARTIAL because both partial mechanisms now exist in one tree; neither meets the acceptance criteria
@@ -490,17 +490,67 @@
     (HTTPS_PROXY; credentials never journaled), the 2026-09-30 negative evidence being that a direct connection bypassed
     the configured proxy. http.get runs as a confined component behind the body relay when the body is initialized with
     --confined-egress (TLS verified inside the confined child; tests/integration/test_greg_confined_egress.py, loopback
-    fake proxy and TLS server only). Not COMPLETE: github.pulls, browser capabilities and coding workers still run
-    unconfined, and confined egress is opt-in, so the second criterion does not hold machine-wide. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
+    fake proxy and TLS server only). github.pulls and brief.engineering read GitHub the same way (the credential travels
+    on the stdin of the confined child only, never in argv, environment, journal or receipt; chunked replies decoded;
+    header injection refused). browser.render, browser.session and coding workers run in a bubblewrap network
+    namespace whose only way out is a door to the same relay (foundry/systems/relay_door.py): an HTTP CONNECT front on
+    the namespace loopback, each request decided against the identity allowlist and journaled; the browsers are
+    allowlisted for the signed origins alone, workers for their provider endpoint (tests/integration/
+    test_greg_confined_egress.py, loopback only). Playwright starts browser.session''s Chromium from its own driver, so
+    that door reaches the relay over a one-time Unix socket in the session''s private directory and Chromium keeps only
+    Playwright''s pipe. Negative evidence 2026-10-14 (unconfined browser.session): Playwright''s context.route never sees
+    a WebSocket, so a page opened one to an unlisted host, and the allowlist compared host names only, so a page on a
+    loopback target reached other loopback ports; both are now refused in the browser as well
+    (tests/unit/test_greg_computer.py), and behind the relay Chromium''s own background connections are denied and
+    journaled too. The paid model routes join it on a confined body: the Anthropic and OpenAI SDKs, which hold the
+    founder''s key, run in such a namespace (greg/model_child.py; the key crosses only stdin) allowlisted for the
+    route''s pinned host, and the Claude Code CLI runs behind its own door; the body''s builder and the console''s
+    proposal transport both receive the relay, a factory that cannot take it builds nothing, and journal appends are
+    locked across processes (without the lock, concurrent writers lost entries or broke the chain). Anchoring and the
+    DALEOBANKS bridge join it too: the RFC 3161 query is posted by a component with no socket of its own to the
+    founder-signed TSA origin alone, and DALEOBANKS''s interpreter runs in a namespace that may reach nothing during
+    verify and only its manifest''s declared X API hosts during publish. Every door program now runs in one namespace
+    definition (relay_door.namespace_argv). The venture organs (RailScout appraiser, WealthMachine intake), in the
+    assessment and in the separate appraiser''s re-run, run in a namespace with no network at all, and the Claude Code
+    Genesis builder runs behind its own door; the first inventory (increment 12) had missed all three. Inventory after
+    an audit of every process GREG spawns (2026-10-15): on a confined body every mission-path connection crosses the
+    relay or has no network; Foundry systems on the mission path run in a seccomp worker with no network at all (their
+    Stripe test-mode, OCI registry and federation code is reachable only outside the mission path), and the local
+    Ollama route is a fixed numeric loopback address. The founder''s installer (greg/chromebook/install.sh) creates
+    the body confined whenever greg doctor finds the kernel filter and network namespaces, says so, and warns with the
+    fix otherwise; status and Mission Control show the relay''s decisions. Since 2026-10-15 the namespace also hides
+    the founder''s home (the signing key''s default place), the repository''s .git and every registered body home
+    (secrets, keys, ledger) from every door program, showing again only GREG''s runtime and the paths each caller
+    names; the Claude Code route and builder get a private home holding only the CLI''s login, where they had the
+    founder''s whole home writable (tests/unit/test_foundry_namespace_privacy.py,
+    tests/integration/test_greg_namespace_privacy.py; also run with the repository and virtualenv under the hidden
+    home). Not COMPLETE: the probe and a confined body
+    have not yet been observed on the founder''s Chromebook; a body made without the installer stays opt-in; and a
+    host without bubblewrap and libseccomp cannot confine. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10. Since 2026-10-16 greg acceptance reports network_confined and undeclared_destination_denied from the body''s own relay journal (an edited record fails both; tests/integration/test_greg_acceptance.py); founder steps in docs/collaboration/ACCEPTANCE-26-28-2026-10-16.md.'
   implementation:
   - foundry/systems/segmentation.py
+  - foundry/systems/relay_door.py
   - tools/offline_test.py
-  interface: foundry.query policy|journal (system 26); run_confined/egress_connect for components the body launches
+  interface: foundry.query policy|journal (system 26); run_confined/egress_connect for components the body launches;
+    relay_door.Door for programs that need ordinary sockets
   tests:
   - tests/unit/test_foundry_segmentation.py
+  - tests/unit/test_foundry_relay_door.py
+  - tests/unit/test_greg_computer.py
+  - tests/unit/test_greg_models.py
+  - tests/unit/test_greg_daleobanks_bridge.py
+  - tests/unit/test_greg_ventures.py
+  - tests/unit/test_greg_chromebook_doctor.py
   - tests/integration/test_greg_confined_egress.py
-  limitations: Linux with libseccomp only (refused elsewhere). Exact host/port allowlists; no wildcard. Covers only
-    components launched through run_confined.
+  - tests/integration/test_greg_chromebook_rehearsal.py
+  - tests/unit/test_foundry_namespace_privacy.py
+  - tests/integration/test_greg_namespace_privacy.py
+  limitations: Linux with libseccomp only (refused elsewhere); the door also needs bubblewrap network namespaces
+    (refused without them). Exact host/port allowlists; no wildcard. Covers only components launched through
+    run_confined or behind the door. Inside the namespace Chromium runs without its own sandbox (it cannot nest a user
+    namespace there; reported as os_sandboxed false); its filesystem is read-only except a private tmpfs and the
+    session''s own directory. Hiding is by location, so a secret kept outside the founder's home and every body home
+    is not hidden; namespaces share the kernel (not gVisor-class; that is system 10).
   recovery: A refused or unavailable filter refuses the launch (fail closed); a broken journal chain is reported, never
     repaired silently.
   state: PARTIAL
@@ -536,19 +586,64 @@
   - policy/consequence_gate.py
   - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  gap: The exact reviewed first-party MCP now runs through official SDK/stdio against canonical staged Foundry stores. General
-    external providers and remote transport still require stronger OS filesystem confinement; original failover and authority
-    component evidence is retained.
+  - greg/mcp_tools.py
+  - greg/mcp_remote.py
+  - greg/mcp_login.py
+  gap: The exact reviewed first-party MCP now runs through official SDK/stdio against canonical staged Foundry stores.
+    Since 2026-10-15 any third-party stdio provider given as a command (any language, its own installation) runs
+    confined in the door namespace with no network, a read-only filesystem and the founder's and body homes hidden,
+    in every context; GREG's mcp.call capability puts such a tool on the mission path through the authority office
+    (tests/unit/test_greg_mcp_tools.py, tests/integration/test_greg_mcp_mission.py; the official mcp-server-time and
+    mcp-server-git ran locally, and the git server's add and commit were refused by the read-only filesystem). Since
+    increment 20, consequential tools run as mcp.act (class external_contact) only after the founder approves the
+    exact scope, shown before answering - the folders the server may write (everything else stays read-only), the
+    hosts it may reach on 443 through the body's relay (confined bodies only; every other host and the direct
+    network are refused), and credential handles in the mcp namespace whose values reach only the server's
+    environment (tests/unit/test_greg_mcp_act.py, tests/integration/test_greg_mcp_act_mission.py; the official
+    filesystem server wrote the approved folder locally and its write elsewhere failed read-only). File changes
+    are proposed from the founder's words since increment 21 (tests/unit/test_greg_mcp_act_words.py,
+    tests/integration/test_greg_mcp_act_founder_path.py). Since increment 22 a remote Streamable HTTP server is
+    reached by URL as an approved mcp.act - GREG's own client runs confined behind a relay allowing only the URL's
+    host, with a bearer token by mcp handle (tests/integration/test_greg_mcp_remote_mission.py). Since increment 23
+    the founder logs GREG in with OAuth (greg mcp login, the SDK's own client flow) and approved calls renew an
+    expired login at the recorded endpoint only (tests/integration/test_greg_mcp_oauth.py,
+    tests/unit/test_greg_mcp_login.py); Mission Control lists each logged-in hosted server with the tools it listed
+    at login. Since increment 28 a plain bearer token is registered with its server and tools (greg mcp token;
+    tests/integration/test_greg_mcp_token.py), kept only when the server accepts it, and listed the same way.
+    Since increment 29 the founder's words propose a call to such a server, closed only when GREG renders a page
+    the words name and finds the text (tests/unit/test_greg_mcp_remote_words.py, test_greg_mcp_token.py).
+    Since increment 30 a server that reads its credential from a file gets a private read-only file, removed after
+    the call (secret_files; greg secret set --from-file; tests/unit/test_greg_mcp_act.py).
+    Each hosted proposal now labels its page check as a read-after-write through the same service or a read through
+    a separate host (not proven independent); the service's own answer never closes a mission. Founder steps and
+    the open evidence decision are in docs/collaboration/ACCEPTANCE-26-28-2026-10-16.md.
+    Still missing - a remote change no page shows, a real hosted server observed, and
+    observation on the founder's device. Original failover and authority component evidence is retained.
   implementation: *id001
   interface: foundry.query foundry_tool|list_foundry_tools (system 28); Gateway.call for governed third-party tools
-  limitations: Stdio providers only (no remote HTTP providers configured); the third-party provider in tests is a local
-    stand-in. Uses the official MCP Python SDK 2.x.
+  limitations: Remote HTTP providers by bearer token or OAuth login, through mcp.act; the third-party provider in CI is a local
+    hostile stand-in, and the official reference servers run only where GREG_TEST_MCP_SERVERS points at them. Uses the
+    official MCP Python SDK 2.x; a 1.x server answers after rejecting the 2.x discovery request (logged, not fatal).
+    Servers installed as a Python virtualenv or an npm prefix are found; a server needing launch arguments reads
+    them from greg-mcp.json beside it.
   recovery: Provider failure fails over to the next listed provider; disagreement under cross-check is refused; ungranted
     consequential calls never reach a provider (gate refuses first).
   state: PARTIAL
   tests:
   - tests/unit/test_foundry_systems.py
   - tests/unit/test_greg_mcp_worker.py
+  - tests/unit/test_greg_mcp_tools.py
+  - tests/integration/test_greg_mcp_mission.py
+  - tests/unit/test_greg_mcp_planner.py
+  - tests/integration/test_greg_mcp_founder_path.py
+  - tests/unit/test_greg_mcp_npm.py
+  - tests/unit/test_greg_mcp_act.py
+  - tests/integration/test_greg_mcp_act_mission.py
+  - tests/unit/test_greg_mcp_act_words.py
+  - tests/integration/test_greg_mcp_act_founder_path.py
+  - tests/integration/test_greg_mcp_remote_mission.py
+  - tests/integration/test_greg_mcp_oauth.py
+  - tests/unit/test_greg_mcp_login.py
 29:
   acceptance:
   - External agents discover, negotiate and perform bounded work through an embassy
@@ -1233,19 +1328,36 @@
   - foundry/systems/versions.py
   - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  gap: Component repair fixtures execute; GREG source admission remains refused pending a reviewed isolated source recipe
-    and complete escape/resource/verification evidence. Actual CI provides Landlock ABI7 for reviewed workers; local host
-    unsupported probes do not define a project-wide blocker. Preserve general repair capability.
+  - greg/worker_isolation.py
+  - greg/workers.py
+  gap: repair_source now repairs a copied multi-file source tree (evidence - an off-by-one seeded into a copy of
+    foundry/systems/dsl.py, diagnosed, three competing patches, regression failing by its own assertion before and
+    passing after with the module's real test, proposal recorded), every execution inside the bubblewrap no-network
+    worker envelope with frozen acceptance digests. Still open - GREG source admission through foundry.apply remains
+    refused by greg/foundry_bridge.py (any system-52 call) pending a reviewed decision to admit this recipe; hosts
+    without user/network namespaces refuse source repair (fail closed), so the evidence re-derives only on such hosts;
+    free-form proposals are refused at every public door, because an independent review (2026-10-16) showed that code
+    running inside the process that reports its own result can forge it (a rewritten junit report, a value equal to
+    anything, tests changed and restored within the run); candidates are AST mutants of the original source only, and
+    the after-run file comparison catches a change left in place, not one restored before the run ends; judging
+    arbitrary candidates needs judgement outside the candidate's process and frozen files mounted read-only; no
+    escape/resource red-team evidence beyond the envelope's own tests.
+    Preserve general repair capability.
   implementation: *id002
-  interface: foundry.query localize; foundry.apply repair (system 52)
+  interface: foundry.query localize; foundry.apply repair|repair_source (system 52; greg/foundry_bridge.py refuses
+    system-52 source execution)
   limitations: 'Mutation operators are small (integer +-1, drop constant term, swap +/-, flip comparison). Negative evidence:
-    Ochiai cannot discriminate when failing and passing runs share coverage; ties are all searched (bounded at 8 lines).
-    A pytest collection error is not accepted as failing-before evidence.'
-  recovery: Original source is never modified; the chosen patch, regression test and rejected candidates are a versioned
-    recovery procedure.
+    Ochiai cannot discriminate when failing and passing runs share coverage; whole score bands are searched (bounded at
+    8 lines) and a band that does not fit is never truncated. A pytest collection error, ImportError, other exception or
+    timeout is not accepted as failing-before evidence. The source recipe is a static import closure plus named extras;
+    data read at import time must be named. Failing-case arguments and expectation must be JSON values.'
+  recovery: Original source is never modified (digests checked before and after); the chosen patch, regression test, frozen
+    acceptance digests and every candidate outcome are a versioned recovery procedure marked PROPOSED, never applied or
+    promoted by the repair itself.
   state: PARTIAL
   tests:
   - tests/unit/test_foundry_systems.py
+  - tests/unit/test_foundry_repair_source.py
 53:
   acceptance:
   - Critical compilers, schemas, registries and proof systems build from UNIIMENTE-owned source with pinned toolchains

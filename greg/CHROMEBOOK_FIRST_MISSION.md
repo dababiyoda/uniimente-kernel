@@ -2,7 +2,7 @@
 
 The intended first body is the computer Alfonso actually owns. This is a
 **developmental** run through ChromeOS's Linux environment (Crostini), not a
-claim that it has been run on his Chromebook. The iPhone can become a remote
+claim that it has been run on their Chromebook. The iPhone can become a remote
 interface after its transport has been tested on these devices; it cannot
 replace the persistent Linux process. No model key, paid API, public posting or
 community data is required for this bounded local mission.
@@ -35,6 +35,7 @@ checks to diagnose the local runtime. The diagnostic creates no key or body.
 
 ```bash
 sudo apt install -y python3 python3-venv git          # once; skip if already installed
+sudo apt install -y bubblewrap   # optional: only coding workers need it; without it worker.commission refuses
 mkdir -p ~/src && cd ~/src
 git clone -b claude/uniimente-greg-reconciliation-39syff https://github.com/dababiyoda/uniimente-kernel
 cd uniimente-kernel && bash greg/chromebook/install.sh
@@ -112,7 +113,7 @@ description is at
 greg console --key ~/.greg-founder.pem --no-model
 ```
 
-Open `http://localhost:8766/` in the Chromebook's Chrome browser. ChromeOS
+Open the private link `greg console` prints (it works once) in the Chromebook's Chrome browser. ChromeOS
 forwards local Linux ports into its browser. Ask **“Brief me on the state of my
 repositories.”** Review the proposed read and delivery scope, sign it, then
 close the browser tab and press Ctrl-C in the Terminal. The service should
@@ -191,7 +192,7 @@ for other environments and historical evidence; no Mac is required here.
 
 ## 4. The Founder's First Mission in Mission Control
 
-`greg console --key ~/.greg-founder.pem --no-model`, then open `http://localhost:8766/`. The first page is
+`greg console --key ~/.greg-founder.pem --no-model`, then open the private link it prints. The first page is
 Mission Control. It answers what GREG is, what it can do on this body now, what it is doing, what you can
 command and what needs your authority. Put the kernel checkout GREG should read under `~/src` (for example
 `git clone https://github.com/dababiyoda/uniimente-kernel ~/src/uniimente-kernel`), then:
@@ -220,6 +221,44 @@ In **Ventures**, prepare the commerce rehearsal. It sells your latest dossier th
 fixture buyer: offer, signed order, delivery, signed acceptance and books reconciled to the cent. The buyer is a
 published test key and no payment rail is called. It shows the machinery cooperating; it is not evidence that
 anyone would buy anything.
+
+## 6a. Give GREG a tool you install (optional)
+
+GREG can use tools from MCP servers you install, without anyone rebuilding them. A server runs with no network and a
+read-only view of what the mission names, so nothing it does can change anything you own.
+
+```bash
+sudo apt install -y python3-venv
+python3 -m venv ~/src/tools/git && ~/src/tools/git/bin/pip install mcp-server-git
+```
+
+In Mission Control, **Command → Tool servers you installed** now lists `git`; **List its tools** shows what it offers.
+Then ask in words, for example *Use the git server to show the status of ~/src/uniimente-kernel*. Review the
+proposal (read-only, nothing to approve beyond observing), sign it, and the answer appears under **Latest answers**,
+marked as untrusted data with its receipt. Ask it to commit and GREG asks for the commit message, which it does not
+guess from your words. A commit could not happen anyway: the repository is read-only to the server, and git's own
+"Read-only file system" error is what a write gets. `greg mcp list --tools` shows the same in a terminal. A server that needs launch arguments (the filesystem server takes the folders it may serve) reads them
+from a `greg-mcp.json` beside it: `{"args": ["/home/<you>/src/notes"], "readable": ["/home/<you>/src/notes"]}`.
+
+A tool that changes something (writes a file, posts to a service) runs only as an `mcp.act` mission, and GREG
+stops and asks you first. The request shows the folders it may write, the hosts it may reach through the relay
+and the credential handles it receives (`greg secret set mcp:<name>`, or `--from-file <path>` for a server that
+reads a key file, such as a service-account JSON); approve exactly that, or reject. Everything
+else stays read-only. For a change to a file, say it with the text in quotes, for example *Use the notes server to
+append "call the broker" to ~/src/notes/plan.md*: GREG proposes the mission, asks before it runs, and closes it
+only when it reads the file itself and finds the text. Words do not grant hosts or credentials; those missions are
+signed by hand.
+
+A hosted MCP server (a URL rather than something installed) works the same way, and every call to it waits for
+you: the decision names the server, its one host and the credential handle. If the service signs in with OAuth,
+run `greg mcp login <name> <url>` and approve GREG in your browser; if it gave you a token instead, run
+`greg mcp token <name> <url>` and paste it at the hidden prompt. GREG keeps it only if the server accepts it, and
+Mission Control then lists the server and the tools it offered. Either way, grant only what the service lets you narrow, because an approved call can
+do whatever the login permits. Then ask in words, naming a page that will show the change:
+*Use the notes service to add "ship the wedge", then check https://notes.example.com/board*. GREG picks the tool
+from the list the service gave at login, asks for your approval, and closes the mission only when it renders that
+page and finds the text. Rendering a page needs Chromium inside the Linux container (`sudo apt install -y chromium`);
+ChromeOS's own Chrome is outside it.
 
 ## 7. Founder control
 

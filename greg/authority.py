@@ -53,9 +53,35 @@ class AuthorityOffice:
 
     @staticmethod
     def scope_digest(*, mission_id: str, capability_id: str, params: dict, target: str,
-                     consequence_class: str, cost_usd: float) -> str:
-        return sha256_json({"mission_id": mission_id, "capability": capability_id, "params": params,
-                            "target": target, "consequence_class": consequence_class, "cost_usd": cost_usd})
+                     consequence_class: str, cost_usd: float, spent_usd: float = 0.0,
+                     budget_usd: float | None = None) -> str:
+        material = {"mission_id": mission_id, "capability": capability_id, "params": params,
+                    "target": target, "consequence_class": consequence_class, "cost_usd": cost_usd}
+        if cost_usd > 0 and budget_usd is not None:
+            # Extracted from #157: approval of one paid attempt cannot also approve another attempt after known
+            # spend, or an unknown-spend reservation, changed the remaining mandate. Free reads keep their
+            # stable exact scope.
+            material["paid_budget_state"] = {"spent_usd": spent_usd, "budget_usd": budget_usd}
+        return sha256_json(material)
+
+    @staticmethod
+    def precheck(manifest: CapabilityManifest, *, target: str, params: dict) -> tuple[str, str] | None:
+        """(status, reason) when this capability cannot act on this target here, before any cone or approval
+        question: unavailable on this body, or a target its manifest does not admit. None when it can.
+
+        ``act`` returns these before it reaches the cone, so a mission never asks about such an act; asking the
+        founder about it ahead of the mission's loop (``MissionEngine._askable``) applies the same test."""
+        ok, why = manifest.available()
+        if not ok:
+            return "UNAVAILABLE", why
+        if not target.startswith(manifest.target_prefix):
+            return "REFUSED", f"target {target!r} outside capability prefix {manifest.target_prefix!r}"
+        if manifest.target_from:  # the founder-signed target must name the host actually contacted
+            host = urllib.parse.urlsplit(str(params.get(manifest.target_from, ""))).hostname or ""
+            if target != manifest.target_prefix + host:
+                return "REFUSED", (f"target {target!r} does not name the host {host!r} "
+                                   f"that {manifest.target_from} would contact")
+        return None
 
     def _prior(self, proposal_id: str):
         """Retained dispatch/receipt for this exact proposal, if any (crash recovery)."""
@@ -72,21 +98,32 @@ class AuthorityOffice:
             approved_scopes: set, evidence_confidence: float = 1.0) -> ActionOutcome:
         consequence = manifest.consequence_class
         scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
-                                  target=target, consequence_class=consequence, cost_usd=cost_usd)
+                                  target=target, consequence_class=consequence, cost_usd=cost_usd,
+                                  spent_usd=spent_usd, budget_usd=cone.budget_usd)
         proposal_id = "greg-" + sha256_json({"scope": scope, "attempt": attempt})[7:39]
         base = dict(proposal_id=proposal_id, scope_digest=scope)
 
-        ok, why = manifest.available()
-        if not ok:
-            return ActionOutcome("UNAVAILABLE", [why], **base)
-        if not target.startswith(manifest.target_prefix):
-            return ActionOutcome("REFUSED", [f"target {target!r} outside capability prefix "
-                                             f"{manifest.target_prefix!r}"], **base)
-        if manifest.target_from:  # the founder-signed target must name the host actually contacted
-            host = urllib.parse.urlsplit(str(params.get(manifest.target_from, ""))).hostname or ""
-            if target != manifest.target_prefix + host:
-                return ActionOutcome("REFUSED", [f"target {target!r} does not name the host {host!r} "
-                                                 f"that {manifest.target_from} would contact"], **base)
+        refused = self.precheck(manifest, target=target, params=params)
+        if refused is not None:
+            return ActionOutcome(refused[0], [refused[1]], **base)
+        # Exactly-once recovery for a body stopped between a paid dispatch or receipt and the mission projection
+        # under the earlier scope form: only a retained exact legacy dispatch is used; legacy approvals grant
+        # no new action.
+        legacy_scope = self.scope_digest(mission_id=mission_id, capability_id=manifest.capability_id, params=params,
+                                         target=target, consequence_class=consequence, cost_usd=cost_usd)
+        if legacy_scope != scope:
+            legacy_id = "greg-" + sha256_json({"scope": legacy_scope, "attempt": attempt})[7:39]
+            old_claim, old_receipt = self._prior(legacy_id)
+            old_base = dict(proposal_id=legacy_id, scope_digest=legacy_scope)
+            if old_receipt is not None:
+                result = old_receipt.payload["result"]
+                positive = result.get("result_class") == "positive"
+                return ActionOutcome("DONE" if positive else "REFUSED", ["retained legacy receipt; no redispatch"],
+                                     output=result.get("output"), receipt_hash=old_receipt.hash,
+                                     grant_id=old_receipt.payload.get("grant_id"),
+                                     cost_usd=cost_usd if positive else 0.0, **old_base)
+            if old_claim is not None:
+                return ActionOutcome("UNCERTAIN", ["retained legacy dispatch; no receipt or blind retry"], **old_base)
         outside = cone.admits(capability=manifest.capability_id, target=target, consequence_class=consequence,
                               cost_usd=cost_usd, spent_usd=spent_usd)
         if outside and scope not in approved_scopes:

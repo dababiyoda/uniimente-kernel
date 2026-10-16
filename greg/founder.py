@@ -52,6 +52,7 @@ COMMAND_KINDS = (
     "ANCHOR_CONFIGURE",   # enable/disable RFC 3161 anchoring of the ledger head at a pinned TSA
     "GOAL",               # authorize (or supersede) a persistent Goal Gravity goal bound to signed missions
     "GOAL_CONTROL",       # stop/resume/lower/never/mute/ask-before/forget/revoke one admitted goal
+    "REALIZATION",        # bind observed values to one retained forecast receipt: evidence only, no consequence
 )
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only

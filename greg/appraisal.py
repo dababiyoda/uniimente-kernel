@@ -33,11 +33,12 @@ from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
                 "memory.precedents", "artifact.inspect", "cognition.status", "foundry.query", "pipeline.inspect",
-                "worker.appraise", "browser.trace", "daleobanks.outcome",
+                "worker.appraise", "browser.trace", "daleobanks.outcome", "organs.exchange_status",
                 "institution.appraise", "organ.status"}
 REOBSERVABLE.update(cid for cid in BUILTINS if cid.startswith("cognition.") and
                     cid not in ("cognition.semantic", "cognition.compose", "cognition.knowledge"))
-DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures"}  # re-rendered from receipts
+DELIVERING = {"brief.engineering": "greg.briefs", "venture.assess": "greg.ventures",
+              "organs.exchange": "greg.organ_exchange"}  # re-rendered from receipts
 
 
 def _founder_keys(journal: Journal, before_seq: int, ledger) -> dict:
@@ -140,11 +141,18 @@ def appraise(request: dict) -> dict:
                                         if request.get("artifact_root") else None,
                                         target=check["sensor"].get("target", ""),
                                         capability_registry=_formed_registry(journal, request["workspace"])
-                                        if cap.startswith("cognition.") else None)
+                                        if cap.startswith("cognition.") else None,
+                                        worker_confinement=request.get("worker_confinement", "required"))
                 try:
                     from greg.pipeline import resolve
                     bound_params, _ = resolve(check["sensor"].get("params", {}), journal, mid)
-                    now_ok, now_detail = evaluate_predicate(check["predicate"], adapter(bound_params, ctx))
+                    output = adapter(bound_params, ctx)
+                    now_ok, now_detail = evaluate_predicate(check["predicate"], output)
+                    reasons = output.get("findings") if isinstance(output, dict) else None
+                    if not now_ok and isinstance(reasons, list) and reasons:
+                        # Say why, in the capability's own words: a forged acceptance and a host that cannot
+                        # re-run the acceptance envelope must not read the same on the Proof view.
+                        now_detail += "; because: " + "; ".join(str(r)[:200] for r in reasons[:3])
                 except Exception as exc:  # the world could not be re-read: not verified
                     now_ok, now_detail = False, type(exc).__name__
                 if not now_ok:
@@ -190,7 +198,10 @@ def appraise(request: dict) -> dict:
             receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
             output = receipt.payload["result"].get("output") if receipt else None
             verify_delivery = importlib.import_module(DELIVERING[action["capability"]]).verify_delivery
-            ok, detail = verify_delivery(output, Path(request["deliver_root"]) if request.get("deliver_root") else None)
+            # #26: on a confined body the re-derivation runs as confined as the original did (organs: no network);
+            # the venture bridge also checks each cognition receipt it rendered is on the canonical ledger.
+            ok, detail = verify_delivery(output, Path(request["deliver_root"]) if request.get("deliver_root") else None,
+                                         ledger=ledger, confined=bool(request.get("confined_egress")))
             if not ok:
                 delivered_ok = False
                 findings.append(f"{action['action_id']}: {detail}")

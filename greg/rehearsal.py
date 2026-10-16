@@ -111,7 +111,8 @@ def main(args) -> int:
         from greg.founder import load_founder_key
         console = Console(result["home"], key=load_founder_key(result["throwaway_key"], None))
         server = serve(console, port=args.console)
-        print(f"[{REHEARSAL}] Mission Control: http://127.0.0.1:{server.server_address[1]}/  (Ctrl-C to stop)")
+        print(f"[{REHEARSAL}] Mission Control (private link, works once): "
+              f"{console.owner_url(server.server_address[1])}  (Ctrl-C to stop)")
         try:
             server.serve_forever()
         except KeyboardInterrupt:

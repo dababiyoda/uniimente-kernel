@@ -549,3 +549,27 @@ def test_when_the_host_recovers_but_nothing_qualifies_the_outage_ask_gives_way_t
         assert outage_ask["request_id"] in body.engine.book.withdrawn
         [real_ask] = [r for r in body.engine.book.open_requests() if r["kind"] == "CAPABILITY_ATTACH"]
         assert real_ask["request_id"] != outage_ask["request_id"] and "host failed" not in real_ask["why_now"]
+
+
+def test_an_identical_blocker_after_an_unblock_is_recorded_as_its_own_fact(tmp_path):
+    """The block key carries the unblock generation: a blocker identical to one already lifted (same request id,
+    as when a shared ask is not withdrawn) is a new fact, never deduplicated into the old block."""
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", network_in_words(text=FLOW)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks(body, clock, 1)
+        engine = body.engine
+        mission = next(iter(engine.book.missions.values()))
+        blocker = dict(mission.blocker)
+        engine._unblock(mission, "lifted for the test")
+        engine.book.rebuild()
+        mission = engine.book.missions[mission.mission_id]
+        engine._block(mission, blocker)
+        engine.book.rebuild()
+        mission = engine.book.missions[mission.mission_id]
+        assert mission.blocker == blocker
+        same = [e for e in body.journal.replay("mission.blocked")
+                if e.payload["mission_id"] == mission.mission_id and e.payload["blocker"] == blocker]
+        assert len(same) == 2

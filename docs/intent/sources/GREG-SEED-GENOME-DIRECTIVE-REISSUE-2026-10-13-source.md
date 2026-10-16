@@ -28,3 +28,16 @@ were already mapped line by line. Re-issuing it adds the instruction to meet and
 applied by working through the section residuals the requirement map records, on the canonical path. It is not
 applied by rebuilding a parallel cortex, which §2 and §3 of the directive forbid. The residual work of this
 re-issuance is recorded in `tests/evidence/seed-genome-residuals-2026-10-13/`.
+
+## Repeated 2026-10-14
+
+Alfonso sent the same message again in the same session, at transcript timestamp 2026-10-14T04:59:45Z. It was
+extracted from the transcript the same way. The whole message has the same SHA-256,
+`ee71d7de66adad8ce5ace61ee05c0b9329b01e09f2e757e047d4eadf2effc6e1` (87,149 characters): opening line and
+directive are both byte-identical to the 2026-10-13 message. A transcript entry at 2026-10-14T00:52Z also
+contains the directive text, but it is the session's compaction summary, not a founder message, and is not
+counted.
+
+Repetition creates no additional authority and changes no requirement. It is applied the same way: by closing the
+next residual the requirement map records. This time that is §12, the decision-aware thinking budget on the
+compile path (`greg/cognition/budget.py`), recorded in `tests/evidence/seed-genome-residuals-2026-10-13/`.

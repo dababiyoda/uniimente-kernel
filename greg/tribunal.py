@@ -62,12 +62,7 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
             if later and not later[0]["passed"]:
                 surprises.append({"action_id": action["action_id"], "check_id": check,
                                   "expected": "check passes after action", "observed": later[0]["detail"]})
-    open_requests = []
-    answered = {e.payload["request_id"] for e in all_events
-                if e.type in ("greg.decision.answered", "greg.decision.withdrawn")}
-    for e in all_events:
-        if e.type == "greg.decision.requested" and e.payload["request_id"] not in answered:
-            open_requests.append(e.payload)
+    open_requests = asks.open_requests(all_events)
     critiques = [e.payload for e in all_events if e.type == "greg.critique.recorded"]
     closed = set()   # closed only through its own proven close condition; a reverted fix reopens it
     for e in all_events:

@@ -208,6 +208,7 @@ def test_a_version_bump_makes_positive_evidence_stale_while_negative_evidence_pe
     def bump(index):
         for family in ("basal_kalman", "flow_maxflow", "grid_dijkstra", "flow_reinforce_greedy"):
             index["genomes"][family]["version"] = "0.0.0-old"
+        index["genomes"]["grid_dijkstra"]["status"] = "EXPERIMENTAL"   # as v3 left it; v4 re-admitted 1.1.0
     fixture = _fixture(tmp_path, bump)
     rows = _rows(M.status(index_path=fixture))
     for family in ("basal_kalman", "flow_maxflow"):        # positive -> stale -> BUILT, version kept on the row
@@ -392,7 +393,7 @@ def test_every_executor_the_reserved_record_names_is_labelled_and_p8_carries_its
     cycles = sorted(ROOT.glob("docs/evidence/greg-protected-evolution/*/cycle-*.json"))
     decisions = [json.loads(p.read_text())["decision"] for p in cycles]
     p8 = rows["greg.cognition.evolution:cycle"]
-    assert len(p8["evidence_outside_index"]) == len(cycles) == 4
+    assert len(p8["evidence_outside_index"]) == len(cycles) == 5
     assert sorted(c["decision"] for c in p8["evidence_outside_index"]) == sorted(decisions)
     assert ("never kept an improvement" in p8["basis"]) == all(d == "REJECT" for d in decisions)
 

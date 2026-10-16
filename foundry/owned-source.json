@@ -82,6 +82,7 @@
     "cortex/evaluation/composition_lift/freeze-v3.json",
     "cortex/evaluation/composition_lift/freeze-v4.json",
     "cortex/evaluation/composition_lift/freeze-v5.json",
+    "cortex/evaluation/composition_lift/freeze-v6-attempt2.json",
     "cortex/evaluation/composition_lift/freeze-v6.json",
     "cortex/evaluation/composition_lift/prereg-v4.json",
     "cortex/evaluation/composition_lift/prereg-v5.json",

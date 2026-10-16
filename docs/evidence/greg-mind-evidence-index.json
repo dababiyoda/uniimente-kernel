@@ -994,7 +994,7 @@
    "version": "1.0.1"
   },
   "flow_capacity_plan": {
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json#genomes.flow_capacity_plan",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json#genomes.flow_capacity_plan",
    "history": [
     {
      "run": "2026-10-13-v1",
@@ -1005,11 +1005,16 @@
      "run": "2026-10-15-v3",
      "status": "COMPOSITION_ONLY",
      "version": "1.0.2"
+    },
+    {
+     "run": "2026-10-16-v4",
+     "status": "COMPOSITION_ONLY",
+     "version": "1.0.3"
     }
    ],
-   "median_seconds": 0.000107,
+   "median_seconds": 0.000101,
    "status": "COMPOSITION_ONLY",
-   "version": "1.0.2"
+   "version": "1.0.3"
   },
   "flow_expansion_mcf": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json#genomes.flow_expansion_mcf",
@@ -1038,7 +1043,7 @@
    "version": "1.0.1"
   },
   "flow_reinforce_greedy": {
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json#genomes.flow_reinforce_greedy",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json#genomes.flow_reinforce_greedy",
    "history": [
     {
      "run": "2026-10-13-v1",
@@ -1049,11 +1054,16 @@
      "run": "2026-10-15-v3",
      "status": "SUPERSEDED",
      "version": "1.0.1"
+    },
+    {
+     "run": "2026-10-16-v4",
+     "status": "SUPERSEDED",
+     "version": "1.0.2"
     }
    ],
-   "median_seconds": 0.001465,
+   "median_seconds": 0.001211,
    "status": "SUPERSEDED",
-   "version": "1.0.1"
+   "version": "1.0.2"
   },
   "forecast_quantile": {
    "evidence": "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json#genomes.forecast_quantile",
@@ -1192,16 +1202,21 @@
   },
   "grid_dijkstra": {
    "competitor": "NetworkX bidirectional Dijkstra on the equivalent digraph: the strongest installed implementation that is not this genome's own routine; OR-Tools min-cost flow (one unit, start to goal) and SciPy yen (K = 1) were also measured - the first slower, the second the same compiled Dijkstra; no faster different deployable alternative was found installed",
-   "evidence": "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json#genomes.grid_dijkstra",
+   "evidence": "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json#genomes.grid_dijkstra",
    "history": [
     {
      "run": "2026-10-15-v3",
      "status": "EXPERIMENTAL",
      "version": "1.0.0"
+    },
+    {
+     "run": "2026-10-16-v4",
+     "status": "DEFAULT_FOR_GEOMETRY",
+     "version": "1.1.0"
     }
    ],
-   "median_seconds": 0.001328,
-   "status": "EXPERIMENTAL",
+   "median_seconds": 0.000839,
+   "status": "DEFAULT_FOR_GEOMETRY",
    "subregions_vs_competitor": {
     "obstacle_uniform": {
      "losses": 0,
@@ -1228,7 +1243,7 @@
      "wins": 0
     }
    },
-   "version": "1.0.0"
+   "version": "1.1.0"
   },
   "info_experiment": {
    "competitor": "best, by exact expected value, of adaptive uncertainty sampling, a fixed expert order, one-step greedy on the declared objective (Bayes-risk value of information) and a two-step lookahead on that objective",
@@ -2045,6 +2060,11 @@
    "source_commit": "202b932b015c2623798229db085f68728468b8b6"
   },
   {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/results-v6.json",
+   "sha256": "sha256:7b746a749f9eb620ac47d82c8c081fb036c4efa6c996b4748250c1fd4087a392",
+   "source_commit": "91b826cbff7e7856a30c01e073e4094039181708"
+  },
+  {
    "path": "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
    "sha256": "sha256:e8cced6452c1418a6e4051a40c068e7d24ee517a5b812a304086fd043f5f4608",
    "source_commit": "557fd77479d06f68742ccfc668a2ab488e52b1c8"
@@ -2068,6 +2088,11 @@
    "path": "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json",
    "sha256": "sha256:a172add5232805c51f2f056459c672eddba2d00244d24a24d324e575f90081d9",
    "source_commit": "878f76c1b836674f59507f50c5a39ba55337f2d7"
+  },
+  {
+   "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json",
+   "sha256": "sha256:9927a6fd940046b0af70bb7e9f78f84f58f896719af8487c7c77dfa827643e42",
+   "source_commit": "3da09c0382d91c4755725329223359e9c1d62ca4"
   }
  ]
 }

@@ -2,6 +2,8 @@
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
+import pytest
+
 from greg import resilience as R
 
 T0 = datetime(2026, 10, 1, tzinfo=timezone.utc)
@@ -188,3 +190,30 @@ def test_one_interrupted_dispatch_counts_once_in_routing_and_resilience():
     assert routing.track_record(j)["worker.commission"]["failed"] == 3
     assert routing.track_record(lone)["tool.x"]["failed"] == 1
     assert R.after_failure(lone)["tool.x"]["failures"] == 1
+    # The dispatch is identified by mission, action and attempt together: a settlement matching an UNCERTAIN of
+    # another mission, or of another attempt of the same action, settles nothing counted and is a failure itself.
+    other = Journal().add("mission.action", 0, mission_id="m1", action_id="commission", attempt=0,
+                          capability="worker.commission", status="UNCERTAIN")
+    other.add("mission.action", 5, mission_id="m2", action_id="commission", attempt=0,
+              capability="worker.commission", status="RECONCILED_NOT_EXECUTED")
+    other.add("mission.action", 10, mission_id="m1", action_id="commission", attempt=1,
+              capability="worker.commission", status="RECONCILED_NOT_EXECUTED")
+    assert routing.track_record(other)["worker.commission"]["failed"] == 3
+    assert R.after_failure(other)["worker.commission"]["failures"] == 3
+
+
+def test_an_interrupted_dispatch_counts_once_in_the_daily_completion_rate():
+    # decoupling_from_journal reads the same outcomes: day d has one DONE and d interrupted dispatches, each an
+    # UNCERTAIN and its RECONCILED_NOT_EXECUTED settlement, so the day's completion rate is 1/(1+d), not 1/(1+2d)
+    j = Journal()
+    for day in range(4):
+        minutes = day * 24 * 60
+        j.add("mission.action", minutes, mission_id="m1", action_id=f"ok{day}", capability="worker.commission",
+              status="DONE")
+        for k in range(day):
+            for status in ("UNCERTAIN", "RECONCILED_NOT_EXECUTED"):
+                j.add("mission.action", minutes + 1 + k, mission_id="m1", action_id=f"w{day}{k}", attempt=0,
+                      capability="worker.commission", status=status)
+        j.add("mission.observed", minutes, mission_id="m1", check_id=f"c{day}", passed=True)
+    [flag] = R.decoupling_from_journal(j)
+    assert flag["local_slope"] == pytest.approx(R._theil_sen([(d, 1 / (1 + d)) for d in range(4)]))

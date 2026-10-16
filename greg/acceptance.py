@@ -34,10 +34,11 @@ def _egress(home: Path, config: dict) -> dict:
     mission made them."""
     if not config.get("confined_egress"):
         return {"confined": False, "chain_intact": False, "allowed": 0, "denied": 0, "denied_other": 0,
-                "identities": [], "allowed_identities": [], "torn_tail": False}
+                "identities": [], "allowed_identities": [], "torn_tail": False, "quarantined_tails": 0}
     from foundry.systems.segmentation import DESTINATION_REFUSALS, Journal as EgressJournal
     journal = EgressJournal(Path(home) / "egress-journal.jsonl")
-    rows, check = journal.read(), journal.verify()
+    check = journal.verify()                     # damage is a result: a row that does not parse fails the chain
+    rows = [] if check.get("malformed") else journal.read()
     refused = [r for r in rows if r.get("verdict") == "DENIED"]
     destination = [r for r in refused if r.get("host") and r.get("why") in DESTINATION_REFUSALS]
     allowed = [r for r in rows if r.get("verdict") == "ALLOWED"]
@@ -45,7 +46,8 @@ def _egress(home: Path, config: dict) -> dict:
             "denied": len(destination), "denied_other": len(refused) - len(destination),
             "identities": sorted({str(r.get("identity")) for r in rows}),
             "allowed_identities": sorted({str(r.get("identity")) for r in allowed}),
-            "torn_tail": bool(check.get("torn_tail_bytes"))}
+            "torn_tail": bool(check.get("torn_tail_bytes")), "quarantined_tails": check.get("quarantined_tails", 0),
+            **({"broken_at": check["broken_at"]} if "broken_at" in check else {})}
 
 
 def report(home: str | Path) -> dict:

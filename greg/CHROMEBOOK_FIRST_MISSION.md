@@ -257,7 +257,8 @@ Mission Control then lists the server and the tools it offered. Either way, gran
 do whatever the login permits. Then ask in words, naming a page that will show the change:
 *Use the notes service to add "ship the wedge", then check https://notes.example.com/board*. GREG picks the tool
 from the list the service gave at login, asks for your approval, and closes the mission only when it renders that
-page and finds the text.
+page and finds the text. Rendering a page needs Chromium inside the Linux container (`sudo apt install -y chromium`);
+ChromeOS's own Chrome is outside it.
 
 ## 7. Founder control
 

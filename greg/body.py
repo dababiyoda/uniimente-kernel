@@ -834,9 +834,10 @@ def _egress_summary(home: Path, config: dict) -> dict:
         return {"confined": False, "why": "this body was created without confined egress (greg init --confined-egress)"}
     from foundry.systems.segmentation import Journal as EgressJournal
     journal = EgressJournal(Path(home) / "egress-journal.jsonl")
-    rows = journal.read()
+    check = journal.verify()                     # a damaged row is reported as a broken chain, never a crash
+    rows = [] if check.get("malformed") else journal.read()
     return {"confined": True, "decisions": len(rows), "denied": sum(1 for r in rows if r.get("verdict") == "DENIED"),
-            "chain_intact": journal.verify()["intact"],
+            "chain_intact": check["intact"], **({"broken_at": check["broken_at"]} if "broken_at" in check else {}),
             "scope": "every mission-path connection crosses the relay or has no network"}
 
 

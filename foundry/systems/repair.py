@@ -382,14 +382,94 @@ def _entry(path: Path) -> str:
 
 def _manifest(tree: Path) -> dict[str, str]:
     """Every directory, file and symlink under ``tree`` with its content digest. The frozen tree holds only
-    directories and regular files, so any other entry differs from it and its run is rejected as tampering."""
+    directories and regular files, so any other entry differs from it and its run is rejected as tampering. The walk
+    never stats through a link (``os.walk`` classifies with ``is_dir()``, which follows one, so a link into a stale
+    host mount could block the parent)."""
     out: dict[str, str] = {}
-    for directory, dirs, files in os.walk(tree, followlinks=False):
-        base = Path(directory)
-        for name in sorted(dirs) + sorted(files):
-            path = base / name
-            out[path.relative_to(tree).as_posix()] = _entry(path)
-    return out
+    stack = [Path(tree)]
+    while stack:
+        with os.scandir(stack.pop()) as entries:
+            for entry in entries:
+                path = Path(entry.path)
+                out[path.relative_to(tree).as_posix()] = _entry(path)
+                if entry.is_dir(follow_symlinks=False):
+                    stack.append(path)
+    return dict(sorted(out.items()))
+
+
+def _changed(tree: Path, expected: dict[str, str], sizes: dict[str, int], limit: int = 8) -> list[str]:
+    """The paths of a run's tree that differ from its frozen manifest (changed, added or removed), found without
+    letting the tree's code set the parent's cost: a path the frozen tree lacks is a difference at once and is never
+    descended into or read, a frozen file is hashed only when its size still matches, nothing is followed through a
+    link, and the scan stops at ``limit`` differences."""
+    found: list[str] = []
+    present: set[str] = set()
+    stack = [Path(tree)]
+    while stack and len(found) < limit:
+        directory = stack.pop()
+        try:
+            entries = os.scandir(directory)
+        except OSError:
+            found.append(directory.relative_to(tree).as_posix())
+            continue
+        with entries:
+            for entry in entries:
+                path = Path(entry.path)
+                rel = path.relative_to(tree).as_posix()
+                want = expected.get(rel)
+                if want is None:
+                    found.append(rel)
+                elif want == "dir":
+                    present.add(rel)
+                    if entry.is_dir(follow_symlinks=False):
+                        stack.append(path)
+                    else:
+                        found.append(rel)
+                else:
+                    present.add(rel)
+                    try:
+                        info = entry.stat(follow_symlinks=False)
+                    except OSError:
+                        found.append(rel)
+                        continue
+                    if want.startswith("sha256:") and (not stat.S_ISREG(info.st_mode) or info.st_size != sizes.get(rel)):
+                        found.append(rel)
+                    elif _entry(path) != want:
+                        found.append(rel)
+                if len(found) >= limit:
+                    break
+    if len(found) < limit:
+        found.extend(sorted(set(expected) - present)[:limit - len(found)])
+    return sorted(found)
+
+
+def _read_report(run_dir: Path, report: Path) -> bytes | None:
+    """The report a run wrote, opened one name at a time from the run's own directory, never through a link and
+    never blocking. After a timeout the sandbox can still be running, and it can swap any name it can write (its
+    runtime's tmp directory, the report itself) for a link to a host path or for a FIFO."""
+    fds: list[int] = []
+    try:
+        fds.append(os.open(run_dir, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW))
+        *folders, name = report.relative_to(run_dir).parts
+        for folder in folders:
+            fds.append(os.open(folder, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fds[-1]))
+        fds.append(os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=fds[-1]))
+        info = os.fstat(fds[-1])
+        if not stat.S_ISREG(info.st_mode) or info.st_size > MAX_REPORT_BYTES:
+            return None
+        chunks, total = [], 0
+        while total <= MAX_REPORT_BYTES:
+            chunk = os.read(fds[-1], MAX_REPORT_BYTES + 1 - total)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            total += len(chunk)
+        return b"".join(chunks) if total <= MAX_REPORT_BYTES else None
+    except OSError:
+        return None
+    finally:
+        for fd in reversed(fds):
+            os.close(fd)
 
 
 def _report_rows(rows, count: int) -> bool:
@@ -582,6 +662,8 @@ class _Runner:
     def __init__(self, scratch: Path, pristine: Path, manifest: dict, target: str, timeout: float):
         self.scratch, self.pristine, self.manifest, self.target = scratch, pristine, manifest, target
         self.timeout, self.count, self.isolation = timeout, 0, None
+        self.sizes = {rel: os.lstat(pristine / rel).st_size for rel, value in manifest.items()
+                      if value.startswith("sha256:")}
 
     def run(self, argv_for, target_source: str | None = None) -> dict:
         from greg import worker_isolation
@@ -592,10 +674,11 @@ class _Runner:
         tree = run_dir / "tree"
         try:
             shutil.copytree(self.pristine, tree, symlinks=True)
-            expected = dict(self.manifest)
+            expected, sizes = dict(self.manifest), dict(self.sizes)
             if target_source is not None:
                 (tree / self.target).write_text(target_source, encoding="utf-8")
                 expected[self.target] = _sha256(target_source.encode("utf-8"))
+                sizes[self.target] = len(target_source.encode("utf-8"))
             report = run_dir / ".worker-runtime" / _RUN_PROVIDER / "tmp" / "report"
             argv = argv_for(report)
             try:
@@ -626,10 +709,8 @@ class _Runner:
                 status = "timeout"
             except (WorkerError, OSError, subprocess.SubprocessError) as exc:
                 status, output = "crashed", str(exc)[:300]
-            data = None
-            if report.is_file() and not report.is_symlink() and report.stat().st_size <= MAX_REPORT_BYTES:
-                data = report.read_bytes()
-            changed = tampered(expected, _manifest(tree))
+            data = _read_report(run_dir, report)
+            changed = _changed(tree, expected, sizes)
             return {"status": status, "code": code, "tail": output[-1500:], "report": data, "tampered": changed}
         finally:
             shutil.rmtree(run_dir, ignore_errors=True)
@@ -776,7 +857,7 @@ def _repair_source(root, *, source_root, target: str, func: str, failing: dict, 
         if traced["status"] == "exited" and traced["code"] == 0 and not traced["tampered"] and traced["report"]:
             try:
                 rows = json.loads(traced["report"])
-            except ValueError:
+            except (ValueError, RecursionError):        # a report nested deep enough exhausts the decoder's stack
                 rows = None
         if not _report_rows(rows, len(cases)):
             raise RepairError(f"diagnosis could not run the target ({traced['status']}, exit {traced['code']}, "

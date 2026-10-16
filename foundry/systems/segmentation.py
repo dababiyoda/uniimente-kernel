@@ -103,6 +103,7 @@ NO_POLICY = "identity has no egress policy"
 NOT_ALLOWED = "host and port are not on this identity's allowlist"
 NOT_EXTERNAL = "external upstream not declared for this identity"
 DESTINATION_REFUSALS = frozenset({NO_POLICY, NOT_ALLOWED, NOT_EXTERNAL})
+QUARANTINED = "TORN_TAIL_QUARANTINED"   # a chained record that a torn final line was moved to a sidecar
 
 
 class Journal:
@@ -121,64 +122,108 @@ class Journal:
             with open(self.path.with_name(self.path.name + ".lock"), "a") as guard:
                 fcntl.flock(guard, fcntl.LOCK_EX)
                 try:
-                    self._repair_tail()
-                    rows = self.read()
-                    prev = rows[-1]["hash"] if rows else GENESIS
-                    body = {**entry, "seq": len(rows), "prev": prev}
-                    body["hash"] = "sha256:" + hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
-                    with open(self.path, "a") as fh:
-                        fh.write(json.dumps(body, sort_keys=True) + "\n")
+                    moved = self._repair_tail()
+                    rows = self.read()                     # damage in a committed row raises: never append onto it
+                    if moved:
+                        rows.append(self._chain(rows, {"verdict": QUARANTINED, **moved}))
+                    return self._chain(rows, entry)
                 finally:
                     fcntl.flock(guard, fcntl.LOCK_UN)
-            return body
 
-    def _rows(self) -> tuple[list[dict], bytes]:
-        """The complete rows, and a final line cut short by a crash mid-append (no newline, not JSON). A malformed
-        line anywhere else still raises: that is damage, not an interrupted append."""
+    def _chain(self, rows: list[dict], entry: dict) -> dict:
+        prev = rows[-1]["hash"] if rows else GENESIS
+        body = {**entry, "seq": len(rows), "prev": prev}
+        body["hash"] = "sha256:" + hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
+        with open(self.path, "a") as fh:
+            fh.write(json.dumps(body, sort_keys=True) + "\n")
+        return body
+
+    def _rows(self) -> tuple[list[dict], bytes, int | None]:
+        """The complete rows; a final line cut short by a crash mid-append (no newline, not JSON); and the index of
+        the first committed row that does not parse, if any (damage, not an interrupted append)."""
         if not self.path.is_file():
-            return [], b""
+            return [], b"", None
         *lines, tail = self.path.read_bytes().split(b"\n")
-        rows = [json.loads(line) for line in lines if line.strip()]
+        rows = []
+        for line in lines:
+            if not line.strip():
+                continue
+            try:
+                rows.append(json.loads(line))
+            except ValueError:
+                return rows, b"", len(rows)
         if tail.strip():
             try:
                 rows.append(json.loads(tail))
             except ValueError:
-                return rows, tail
-        return rows, b""
+                return rows, tail, None
+        return rows, b"", None
 
-    def _repair_tail(self):
-        """Before an append (under the file lock): a torn final line moves to a sidecar, never into the chain, and a
-        complete final row that lost its newline gets one, so the next row is never glued onto it."""
+    def _repair_tail(self) -> dict | None:
+        """Before an append (under the file lock): a torn final line moves to a sidecar named by its digest, created
+        exclusively and synced before the journal is cut back, so a later crash never overwrites an earlier one; the
+        move is then chained as its own row. A complete final row that lost its newline gets one, so the next row is
+        never glued onto it."""
         if not self.path.is_file():
-            return
+            return None
         raw = self.path.read_bytes()
         if not raw or raw.endswith(b"\n"):
-            return
+            return None
         cut = raw.rfind(b"\n") + 1
+        tail = raw[cut:]
         try:
-            json.loads(raw[cut:])
+            json.loads(tail)
         except ValueError:
-            self.path.with_name(f"{self.path.name}.torn-{cut}").write_bytes(raw[cut:])
+            digest = hashlib.sha256(tail).hexdigest()
+            side = self.path.with_name(f"{self.path.name}.torn-{cut}-{digest[:16]}")
+            try:
+                fd = os.open(side, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            except FileExistsError:
+                if hashlib.sha256(side.read_bytes()).hexdigest() != digest:
+                    raise SegmentationError(f"{side.name} exists with other bytes") from None
+            else:
+                with os.fdopen(fd, "wb") as fh:
+                    fh.write(tail)
+                    fh.flush()
+                    os.fsync(fh.fileno())
+            folder = os.open(self.path.parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(folder)
+            finally:
+                os.close(folder)
             os.truncate(self.path, cut)
-            return
+            return {"offset": cut, "bytes": len(tail), "sha256": "sha256:" + digest, "sidecar": side.name}
         with open(self.path, "ab") as fh:
             fh.write(b"\n")
+        return None
 
     def read(self) -> list[dict]:
-        return self._rows()[0]
+        rows, _, damaged = self._rows()
+        if damaged is not None:
+            raise ValueError(f"the relay journal does not parse at entry {damaged}")
+        return rows
 
     def verify(self) -> dict:
+        """The chain's state, as a result, never an exception: damage that does not parse is reported where it is."""
         prev = GENESIS
-        rows, torn = self._rows()
+        rows, torn, damaged = self._rows()
         for i, row in enumerate(rows):
             body = {k: v for k, v in row.items() if k != "hash"}
             digest = "sha256:" + hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
             if row.get("seq") != i or row.get("prev") != prev or row.get("hash") != digest:
                 return {"intact": False, "broken_at": i}
             prev = row["hash"]
+        if damaged is not None:
+            return {"intact": False, "broken_at": damaged, "malformed": True}
         out = {"intact": True, "entries": len(rows), "head": prev}
         if torn:
-            out["torn_tail_bytes"] = len(torn)     # an append a crash cut short: never a decision, shown not hidden
+            # An append a crash cut short. A torn ALLOWED row can be the record of a connection that already ran (the
+            # relay journals it when the connection ends), so it counts as no verdict and is shown, never dropped:
+            # the next append moves it to a sidecar and chains the move.
+            out["torn_tail_bytes"] = len(torn)
+        quarantined = sum(1 for r in rows if r.get("verdict") == QUARANTINED)
+        if quarantined:
+            out["quarantined_tails"] = quarantined
         return out
 
 

@@ -416,7 +416,7 @@ def _stub_heldout_run(monkeypatch, tmp_path, warmup, heldout, after=None):
         calls.append(("read", partition))
         return [{"item_id": f"F7-synthetic-{partition}-{i}", "partition": partition} for i in range(3)]
 
-    def run(items_, partition, workers=1, cores=None, token=None):
+    def run(items_, partition, workers=1, cores=None, token=None, pool=None):
         calls.append(("run", partition))
         if partition == "heldout":
             assert token is gate["token"]
@@ -1107,3 +1107,31 @@ def test_a_development_smoke_run_on_two_items_reads_development_items_only(tmp_p
     secondary = summary["f7_lift_with_genome"]                # two development items are not v4's 50: no reading
     assert secondary["outcome"] == "INCONCLUSIVE" and secondary["why"][0].startswith("ITEMS_DIFFER")
     assert secondary["counts_source"] == V6.V4_EVIDENCE["dev"] and summary["arm_exceptions"]["count"] == {}
+
+
+def test_the_heldout_pool_is_forked_before_the_warmup_starts_any_solver_thread(tmp_path, monkeypatch):
+    """2026-10-16, first held-out attempt: the pool was forked after the warm-up had started the solver libraries'
+    native threads (8 after one item), and the forked workers deadlocked before any held-out item finished. The
+    pool is now forked first and handed to the held-out run; it is terminated whatever happens."""
+    synthetic = _ran([_full_row(0, "dev")])
+    calls = _stub_heldout_run(monkeypatch, tmp_path, synthetic, synthetic)
+    pools = []
+
+    class Pool:
+        def terminate(self):
+            calls.append(("terminate",))
+
+    def worker_pool(workers, cores=None):
+        calls.append(("fork", workers))
+        pools.append(Pool())
+        return pools[-1]
+    monkeypatch.setattr(V6, "worker_pool", worker_pool)
+    seen = []
+    run = V6.run_items
+    monkeypatch.setattr(V6, "run_items", lambda *a, **k: (seen.append(k.get("pool")), run(*a, **k))[1])
+    try:
+        V6.main(["--out", str(tmp_path / "results.json"), "--workers", "2", "--cores", "0,1"])
+    except SystemExit:
+        pass
+    assert calls[:2] == [("fork", 2), ("read", "dev")] and calls[-1] == ("terminate",)
+    assert seen[-1] is pools[0] and seen[0] is None          # the warm-up runs here; the look on the early pool

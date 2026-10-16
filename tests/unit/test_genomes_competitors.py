@@ -841,11 +841,28 @@ def test_the_grid_abstention_and_refusals_are_unchanged_from_1_0():
         assert str(new.value) == str(old.value)
 
 
-def test_the_version_bump_keeps_the_v3_verdict_as_negative_evidence_until_a_readmission():
+def _index_as_at_v3():
+    """The committed index with grid_dijkstra's row as admission v3 left it (EXPERIMENTAL at 1.0.0), rebuilt from v3's
+    own results file; admission v4 (2026-10-16) has since replaced that row."""
+    index = json.loads((ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json").read_text())
+    v3 = json.loads((ROOT / competitors.V3).read_text())["genomes"]["grid_dijkstra"]
+    index["genomes"]["grid_dijkstra"] = {
+        **index["genomes"]["grid_dijkstra"], "status": v3["status"], "version": v3["version"],
+        "evidence": competitors.V3 + "#genomes.grid_dijkstra", "median_seconds": v3["arms"]["candidate"]["median_seconds"],
+        "subregions_vs_competitor": {k: v["vs_competitor"] for k, v in v3["subregions"].items()},
+        "history": [{"run": "2026-10-15-v3", "status": v3["status"], "version": v3["version"]}]}
+    return index
+
+
+def test_the_version_bump_keeps_the_v3_verdict_as_negative_evidence_until_a_readmission(tmp_path):
     """grid_dijkstra 1.0.0 was measured EXPERIMENTAL (admission v3). 1.1.0 inherits no positive verdict, and the
     negative one stays on record (labelled as measured at 1.0.0) until a held-out re-admission at 1.1.0 replaces it."""
     import importlib.util
-    index = json.loads((ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json").read_text())
+    committed = json.loads((ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json").read_text())
+    now = committed["genomes"]["grid_dijkstra"]                # admission v4 re-admitted 1.1.0 (2026-10-16)
+    assert (now["status"], now["version"]) == ("DEFAULT_FOR_GEOMETRY", "1.1.0")
+    assert now["evidence"].startswith("docs/evidence/greg-genome-admission/2026-10-16-v4/")
+    index = _index_as_at_v3()
     record = index["genomes"]["grid_dijkstra"]
     assert record["status"] == "EXPERIMENTAL" and record["version"] == "1.0.0"
     assert record["evidence"] == competitors.V3 + "#genomes.grid_dijkstra"
@@ -858,19 +875,24 @@ def test_the_version_bump_keeps_the_v3_verdict_as_negative_evidence_until_a_read
     spec = importlib.util.spec_from_file_location("_mind_status_grid", ROOT / "scripts" / "mind_status.py")
     status = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(status)
-    entry = next(e for e in status.status()["mechanisms"] if e["id"] == "cognition.grid_dijkstra")
+    fixture = tmp_path / "index.json"
+    fixture.write_text(json.dumps(index))
+    entry = next(e for e in status.status(index_path=fixture)["mechanisms"] if e["id"] == "cognition.grid_dijkstra")
     assert entry["label"] == "UNRESOLVED" and entry["version_current"] == "1.1.0"
     assert entry["heldout"]["version_measured"] == "1.0.0" and entry["heldout"]["current"] is False
     assert "current 1.1.0" in entry["basis"] and "persists until a re-admission" in entry["basis"]
 
 
-def test_1_0s_held_out_latency_and_subregions_are_reported_as_1_0s_and_never_rank_1_1():
+def test_1_0s_held_out_latency_and_subregions_are_reported_as_1_0s_and_never_rank_1_1(tmp_path, monkeypatch):
     """Review of 1.1.0: the compiler attached 1.0.0's held-out median (1.328 ms) to the 1.1.0 row as 'held-out, this
     version', a latency tie-break. On the committed index the row, the receipt, the withheld best fit and the founder's
     attach ask now carry 1.0.0's measurements labelled with the version measured, and the row carries no
     ``median_seconds`` or ``subregion`` to rank on."""
     from greg import asks
-    index = json.loads((ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json").read_text())
+    index = _index_as_at_v3()
+    fixture = tmp_path / "index.json"
+    fixture.write_text(json.dumps(index))
+    monkeypatch.setattr(compiler, "EVIDENCE_INDEX", fixture)        # reason() reads the index as v3 left it
     record = index["genomes"]["grid_dijkstra"]
     data, _ = dev("grid_dijkstra", 1)
     name = solvers_b.astar_subregion(data)

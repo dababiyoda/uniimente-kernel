@@ -1107,7 +1107,11 @@ def test_the_cycle_5_split_is_fresh_and_checked_without_generating_an_instance(m
         set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
     assert others <= reserved and not (set(train) | set(held)) & others
     assert set(train) | set(held) <= set(admission.P8_RESERVED)
-    assert not any({f"s{s}" for s in held} & ids for ids in E._spent_heldout("constraint_release").values())
+    # its freeze is committed (2026-10-16-cr-5), so the split counts as spent although the cycle stopped at the
+    # adversarial gate before the held-out look: a committed freeze spends its split whether or not it looked
+    spent = E._spent_heldout("constraint_release")
+    assert {f"s{s}" for s in held} <= set().union(*spent.values())
+    assert any("2026-10-16-cr-5" in key for key, ids in spent.items() if {f"s{s}" for s in held} <= set(ids))
     assert {f"s{s}" for s in held} <= E._registered_heldout("constraint_release")   # a test run never looks at it
     for bad in ({"cycle-x": (tuple(range(7450, 7470)), tuple(range(7800, 7810)))},     # overlaps cycle 4's train
                 {"cycle-x": (tuple(range(3000, 3010)), tuple(range(7800, 7810)))},     # outside P8's range

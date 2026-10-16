@@ -152,8 +152,8 @@ Generations 5 and population 8 unless stated.
 | Split | named `cycle-5` in `CR_SPLITS`: train seeds 7600-7659 (60), held-out seeds 7700-7879 (180). Inside P8's reserved range and disjoint from every admission seed and spent seed, the immune target's seeds, and cycles 3 and 4's splits (`cr_split_seeds`). |
 | Settings | generations 5, population 8, search seed 20261016, search policy **cover/1** with `lhs` 0. The freeze lists all 16 declared configurations; the cycle re-derives the list and refuses any difference. |
 | Rule | **unchanged**, verbatim in `freeze.json` (`inputs.rule`): see *Rule* below. Constants: trigger 0.25, train gain 0.01, stress tolerance 0.05, alpha 0.05. |
-| Seals | train `sha256:…`, held-out `sha256:…` (filled from `freeze.json` when the owner writes it) |
-| Trusted code | the static import closure as frozen by `freeze()` (filled from `freeze.json`; schema `greg-protected-evolution-freeze/3`) |
+| Seals | train `sha256:4d3c458942c852f561397a86563fed629354aab1a8a6a3b125618662cd20e728`, held-out `sha256:3275a5ac6f82b58c31e4c783d384b9e83459bb4695eae937dc45870be2ad87c4` (from `freeze.json`) |
+| Trusted code | the static import closure as frozen by `freeze()`: 115 files (`freeze.json`, schema `greg-protected-evolution-freeze/3`); freeze file `sha256:1142c7d09d47a1dde244e2284b2b167ff0d60b93468fb83ea4aa2d87823e52d9` |
 | Run | once, by `python -m greg.cognition.evolution --freeze F --out O` (the clean room), at the commit that adds `freeze.json`, pinned to one CPU core |
 
 The 16 declared configurations are the incumbent with one key moved. `cfg-12b387892289` is the restart-heavy anchor.

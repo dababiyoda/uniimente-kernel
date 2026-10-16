@@ -727,3 +727,28 @@ def test_the_historical_and_live_readings_may_disagree(tree):
     assert SR002.matches()                     # history still reproduces
     assert not verify(tree).intact             # the live tree is not authorized
     assert not SR002.matches(tree)
+
+
+# -- live findings on this tree -------------------------------------------------
+
+def test_every_live_finding_is_carried_by_a_decision_record():
+    """The suite tolerates a live finding only while a docs/decisions record
+    names it, with its exact authorized and observed digests, as awaiting a
+    founder signature. CI job 3 still fails on it; any other drift fails here
+    too. A carried item that the founder has since authorized is simply no
+    longer a finding."""
+    carried = {}
+    for path in sorted((ROOT / "docs" / "decisions").glob("*.json")):
+        record = json.loads(path.read_text())
+        block = record.get("live_integrity") if isinstance(record, dict) else None
+        for item in (block or {}).get("pending_founder_authorization", []):
+            carried[(item["artifact"], item["observed_sha256"])] = (item["authorized_sha256"], path.name)
+            if {"artifact", "pinned_sha256", "hardened_sha256"} <= set(record) and \
+                    item["artifact"] == record["artifact"]:
+                assert (item["authorized_sha256"], item["observed_sha256"]) == \
+                    (record["pinned_sha256"], record["hardened_sha256"]), path.name
+    for finding in verify(ROOT).findings:
+        key = (finding.artifact, finding.observed_sha256)
+        assert key in carried, (f"{finding.artifact} ({finding.verdict.value}, {finding.observed_sha256}) "
+                                "is unauthorized and no decision record carries it")
+        assert carried[key][0] == finding.authorized_sha256, carried[key][1]

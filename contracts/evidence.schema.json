@@ -15,6 +15,11 @@
       "format": "date-time",
       "description": "RFC 3339 UTC timestamp"
     },
+    "fresh_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Optional RFC 3339 UTC timestamp. The packet must not support a consequential decision at or after this instant. It can only shorten the consequence class's maximum evidence age from captured_at (policy/engine.py EVIDENCE_MAX_AGE); absent, that age alone applies."
+    },
     "captured_by": {
       "type": "string",
       "pattern": "^spiffe://uniimente\\.internal/",

@@ -47,7 +47,7 @@ from v4's frozen evidence. It does not change v4's verdict; its rule is ``F7_RUL
 An exception that escapes an arm on an item is recorded on that arm (``ARM_EXCEPTION``, scored no_decision) and the
 run goes on; the report is always written. An exception on the warm-up item stops the run before the look.
 
-Held-out runs need a committed freeze (``--freeze`` writes ``freeze-v6.json``), and ``heldout_gate`` refuses when
+Held-out runs need a committed freeze (``--freeze`` writes ``freeze-v6-attempt2.json``), and ``heldout_gate`` refuses when
 any frozen input differs (code, data, rule, thresholds, Python version, distribution versions), the working tree is
 not the committed one, the checkout holds bytecode or ignored files, the process was not started as
 ``python -I .../run_v6.py`` (whose first statements install a source-only loader: no bytecode is read and every
@@ -118,7 +118,8 @@ from cortex.evaluation.composition_lift import run as V1  # noqa: E402
 from cortex.evaluation.composition_lift import run_v4 as V4  # noqa: E402
 
 SUITE = V4.SUITE                                   # suite-v4.json, read only (frozen v4 evidence)
-MANIFEST = HERE / "freeze-v6.json"
+# attempt 1 froze freeze-v6.json (4430138) and hung before any held-out item finished; that file is kept as it was
+MANIFEST = HERE / "freeze-v6-attempt2.json"
 PREREG = HERE / "prereg-v6.json"
 GENOME = "flow_expansion_mcf"
 GENOME_CAPABILITY = f"cognition.{GENOME}"
@@ -1027,10 +1028,26 @@ def _merge(records) -> dict:
     return {"loaded": sorted(loaded), "executed": executed, "distributions": dict(sorted(distributions.items()))}
 
 
-def run_items(items, partition, workers=1, cores=None, token=None):
+def worker_pool(workers, cores=None):
+    """The pinned fork pool, or None for one process. Fork it while this process is still single-threaded: the
+    solver libraries start native threads (8 after one item), and a pool forked after them deadlocked the first
+    held-out attempt of 2026-10-16 before any held-out item finished."""
+    if workers <= 1:
+        return None
+    import multiprocessing
+    cores = sorted(cores or os.sched_getaffinity(0))
+    if len(cores) < workers:
+        raise SystemExit(f"{workers} workers need {workers} cores; {len(cores)} available")
+    context = multiprocessing.get_context("fork")
+    counter = context.Value("i", 0)
+    return context.Pool(workers, initializer=V4._pin, initargs=(cores[:workers], counter), maxtasksperchild=None)
+
+
+def run_items(items, partition, workers=1, cores=None, token=None, pool=None):
     """Each item runs whole on one process (arms rotated by index, as in v4); with ``workers`` > 1 the items are
-    spread over that many processes, each pinned to its own core. Held-out items need the token ``heldout_gate``
-    issued (used once). Returns the rows in suite order and what every process loaded and executed."""
+    spread over that many processes, each pinned to its own core (or over ``pool``, forked earlier by
+    ``worker_pool``). Held-out items need the token ``heldout_gate`` issued (used once). Returns the rows in suite
+    order and what every process loaded and executed."""
     if any(i["partition"] != partition for i in items):
         raise SystemExit(f"refusing to run an item outside the {partition} partition")
     if partition == "heldout":
@@ -1038,18 +1055,13 @@ def run_items(items, partition, workers=1, cores=None, token=None):
             raise SystemExit("HELDOUT_TOKEN: held-out items run only with the token heldout_gate issues, once")
         _ISSUED.discard(token)
     jobs = [(index, item) for index, item in enumerate(items)]
-    if workers <= 1:
+    if pool is not None:
+        done = list(pool.imap(_job, jobs, chunksize=1))
+    elif workers <= 1:
         done = [_job(j) for j in jobs]
     else:
-        import multiprocessing
-        cores = sorted(cores or os.sched_getaffinity(0))
-        if len(cores) < workers:
-            raise SystemExit(f"{workers} workers need {workers} cores; {len(cores)} available")
-        context = multiprocessing.get_context("fork")
-        counter = context.Value("i", 0)
-        with context.Pool(workers, initializer=V4._pin, initargs=(cores[:workers], counter),
-                          maxtasksperchild=None) as pool:
-            done = list(pool.imap(_job, jobs, chunksize=1))
+        with worker_pool(workers, cores) as own:
+            done = list(own.imap(_job, jobs, chunksize=1))
     return {"rows": [row for row, _ in done], **_merge([_process_record(), *(record for _, record in done)])}
 
 
@@ -1114,9 +1126,23 @@ def _after_the_look(rows, ran, frozen, v4):
     return summary, invalid
 
 
+def _look(args, gate, pool):
+    """The warm-up (one development item in this process, never scored), then the one held-out run."""
+    warmup = run_items(suite_items("dev")[:1], "dev")                  # imports before the look, never scored
+    problems = integrity(gate["inputs"]["code"], warmup) + receipt_problems(warmup["rows"])
+    if problems:
+        raise SystemExit(f"UNFROZEN_CODE: the warm-up executed code the freeze does not cover: {problems}")
+    raised = [f"{arm}: {record['exception']}" for row in warmup["rows"] for arm, record in row["arms"].items()
+              if record.get("state") == ARM_EXCEPTION]
+    if raised:
+        raise SystemExit(f"WARMUP_ARM_EXCEPTION: an arm raised on the warm-up item, so the look would not measure "
+                         f"it: {raised}")
+    return run_items(suite_items("heldout"), "heldout", args.workers, token=gate["token"], pool=pool), warmup
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--freeze", action="store_true", help="write freeze-v6.json (a clean tree is required)")
+    ap.add_argument("--freeze", action="store_true", help="write freeze-v6-attempt2.json (a clean tree is required)")
     ap.add_argument("--development", action="store_true",
                     help="builders only: run the development items, never the held-out items")
     ap.add_argument("--check-gate", action="store_true",
@@ -1169,16 +1195,12 @@ def main(argv=None):
     frozen = gate["inputs"]
     v4 = v4_constituents("heldout")                                    # v4's frozen counts, read before the look
     header = _header(args.workers, cores)
-    warmup = run_items(suite_items("dev")[:1], "dev")                  # imports before the look, never scored
-    problems = integrity(frozen["code"], warmup) + receipt_problems(warmup["rows"])
-    if problems:
-        raise SystemExit(f"UNFROZEN_CODE: the warm-up executed code the freeze does not cover: {problems}")
-    raised = [f"{arm}: {record['exception']}" for row in warmup["rows"] for arm, record in row["arms"].items()
-              if record.get("state") == ARM_EXCEPTION]
-    if raised:
-        raise SystemExit(f"WARMUP_ARM_EXCEPTION: an arm raised on the warm-up item, so the look would not measure "
-                         f"it: {raised}")
-    ran = run_items(suite_items("heldout"), "heldout", args.workers, cores, token=gate["token"])
+    pool = worker_pool(args.workers, cores)          # forked before the warm-up starts any solver thread
+    try:
+        ran, warmup = _look(args, gate, pool)
+    finally:
+        if pool is not None:
+            pool.terminate()
     rows = ran["rows"]
     try:
         summary, invalid = _after_the_look(rows, ran, frozen, v4)

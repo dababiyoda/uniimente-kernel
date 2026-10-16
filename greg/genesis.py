@@ -70,7 +70,7 @@ import time
 from greg.capabilities import (CapabilityError, CapabilityManifest, InvocationContext, installed_binary,
                                run_isolated)
 from greg.artifacts import ArtifactStore
-from greg import builders, mechanisms
+from greg import builders, mechanisms, recombine
 from greg.cognition import assignment, linear, network
 from greg.journal import Journal, iso
 from greg.mechanisms import PackageCandidate
@@ -378,18 +378,21 @@ def run_formed(manifest, adapter, data: dict) -> dict:
 
 
 def package_adapter(function: str, candidate: PackageCandidate):
-    """Adapter bound to one qualified package; re-pinned and certificate-checked on every call."""
+    """Adapter bound to one qualified package; re-pinned and certificate-checked on every call.
+
+    ``adapter.batch`` answers many requests in one isolated run under the same pin check, and
+    certifies each answer separately; a refused answer is returned in its place, never hidden."""
     spec = CATALOG[function]
 
-    def adapter(params, ctx: InvocationContext):
-        request = spec["normalize"](params)          # competence is enforced before the engine sees anything
+    def pinned(ctx):
         prov = ctx.manifest.provenance
         dist = mechanisms.installed(candidate.distribution)
         if dist is None or dist.version != prov["version"] \
                 or mechanisms.digest(dist, candidate.digest_paths)[0] != prov["package_digest"]:
             raise CapabilityError("capability refused: package changed since qualification; quarantine required")
-        [claim] = mechanisms.run(candidate, spec["runners"][candidate.runner], [request],
-                                 location=prov["location"], version=prov["version"])
+        return prov
+
+    def settle(request, claim, prov):
         if "error" in claim:
             raise CapabilityError(f"capability refused: package {candidate.distribution} raised "
                                   f"{claim['error'][:200]}")
@@ -408,6 +411,37 @@ def package_adapter(function: str, candidate: PackageCandidate):
         answer.pop("follow_up", None)
         return {**answer, "engine": f"{candidate.distribution} {prov['version']}", "license": prov["license"],
                 "authority_created": False}
+
+    def adapter(params, ctx: InvocationContext):
+        request = spec["normalize"](params)          # competence is enforced before the engine sees anything
+        prov = pinned(ctx)
+        [claim] = mechanisms.run(candidate, spec["runners"][candidate.runner], [request],
+                                 location=prov["location"], version=prov["version"])
+        return settle(request, claim, prov)
+
+    def batch(params_list, ctx: InvocationContext) -> list:
+        requests = []
+        for params in params_list:
+            try:
+                requests.append(spec["normalize"](params))
+            except CapabilityError as exc:
+                requests.append(exc)
+        prov = pinned(ctx)
+        valid = [r for r in requests if not isinstance(r, Exception)]
+        claims = iter(mechanisms.run(candidate, spec["runners"][candidate.runner], valid, location=prov["location"],
+                                     version=prov["version"], cpu_seconds=60) if valid else [])
+        out = []
+        for request in requests:
+            if isinstance(request, Exception):
+                out.append(request)
+                continue
+            try:
+                out.append(settle(request, next(claims), prov))
+            except CapabilityError as exc:
+                out.append(exc)
+        return out
+
+    adapter.batch = batch
     return adapter
 
 
@@ -501,9 +535,9 @@ def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed
     return not report["failures"] and report["scale_probe"]["certified"], report
 
 
-FORMED = ("built:", "installed:")      # providers Genesis formed, and therefore can re-form
+FORMED = ("built:", "installed:", "composed:")   # providers Genesis formed, and therefore can re-form
 FAULT_MARKERS = ("capability refused: built capability", "capability refused: installed binary changed",
-                 "capability refused: package")
+                 "capability refused: package", "capability refused: composed")
 
 
 def is_formed(manifest) -> bool:
@@ -568,6 +602,9 @@ class Genesis:
             if origin.get("kind") == "package":
                 self._restore_package(cid, manifest, origin, state)
                 continue
+            if origin.get("kind") == "composed":
+                self._restore_composed(cid, manifest, origin, state)
+                continue
             binary = manifest.binaries[0]
             candidate = Candidate(origin["binary_name"], tuple(origin["argv"]), origin["parse"])
             intact = Path(binary).exists() and hashlib.sha256(
@@ -603,6 +640,23 @@ class Genesis:
             self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED", "why": why},
                                 key=[cid, "quarantine", manifest.provenance.get("package_digest"), why])
 
+    def _restore_composed(self, cid, manifest, origin, state):
+        """A constructed capability is trusted again only with the same reduction code over the same engine."""
+        found = recombine.chain(origin["function"], CATALOG)
+        why = None
+        if found is None or [r.reduction_id for r in found[0]] != origin["chain"]:
+            why = "the reduction chain no longer resolves as qualified"
+        elif recombine.chain_digest(found[0]) != origin["chain_digest"]:
+            why = "reduction code changed since qualification"
+        elif origin["target_capability_id"] not in self.registry.manifests:
+            why = "the engine it was qualified over is no longer registered"
+        path = found[0] if found else []
+        self.registry.register(manifest, recombine.composed_adapter(path, self.registry),
+                               state="QUARANTINED" if why else state)
+        if why and state != "QUARANTINED":
+            self.journal.record("capability.state", {"capability_id": cid, "state": "QUARANTINED", "why": why},
+                                key=[cid, "quarantine", origin["chain_digest"], why])
+
     # -- the loop -------------------------------------------------------------------
     def _deficit_for(self, mission_id: str, function: str):
         """The open deficit for (mission, function), else the id of the next generation.
@@ -631,6 +685,19 @@ class Genesis:
                                                  "by": "self-repair (repeated capability fault)",
                                                  "mission_id": mission.mission_id},
                             key=[capability_id, "quarantine", incident])
+        engine_id = manifest.provenance.get("target_capability_id") if manifest.provider.startswith("composed:") \
+            else None
+        if engine_id and f"composed engine {engine_id} faulted" in failure \
+                and self.registry.state.get(engine_id) == "ATTACHED":
+            # The fault was the engine's, observed through the constructed capability: the engine is
+            # quarantined with the same evidence, so re-forming acquires a different provider for it.
+            self.registry.set_state(engine_id, "QUARANTINED")
+            self.journal.record("capability.state", {"capability_id": engine_id, "state": "QUARANTINED",
+                                                     "why": "failed in service inside " + capability_id + ": "
+                                                            + failure[:300],
+                                                     "by": "self-repair (repeated capability fault)",
+                                                     "mission_id": mission.mission_id},
+                                key=[engine_id, "quarantine", incident])
         return self.resolve(mission=mission, function=manifest.function, now=now,
                             purpose=f"self-repair of {capability_id}",
                             repair={"capability_id": capability_id, "failure": failure[:300],
@@ -726,7 +793,11 @@ class Genesis:
                       "vector_digest": sha256_json([{k: (v.hex() if isinstance(v, bytes) else v)
                                                      for k, v in c.items()} for c in spec["oracle"](seed)])
                       if spec else None}
-        if spec is None and contract is not None:
+        reduction = recombine.REDUCTIONS.get(function)
+        if spec is None and reduction is not None:
+            acceptance = {"oracle": f"reduction:{reduction.reduction_id}", "seed": seed,
+                          "vector_digest": sha256_json(reduction.oracle(seed))}
+        elif spec is None and contract is not None:
             acceptance = {"oracle": "founder-signed mission contract", "public_examples": len(contract["examples"]),
                           "held_out_vectors": len(contract["held_out"]),
                           "vector_digest": sha256_json([contract["examples"], contract["held_out"]])}
@@ -745,6 +816,8 @@ class Genesis:
             if spec and spec.get("kind") == "package":
                 opened["search_order"] = ["attached", "verified_detached", "existing_project", "installed_package",
                                           "builder", "founder"]
+            elif spec is None and reduction is not None:
+                opened["search_order"] = ["attached", "verified_detached", "constructed", "builder", "founder"]
             if repair is not None:
                 opened["repair"] = repair
             self.journal.record("deficit.opened", opened, key=deficit_id)
@@ -755,6 +828,12 @@ class Genesis:
                 self._route(deficit_id, "verified_detached", "found", manifest.capability_id)
                 return self._attach(mission, manifest, deficit_id, now)
         self._route(deficit_id, "verified_detached", "none", None)
+
+        if spec is None and reduction is not None:
+            found = self._recombine_route(mission, function, deficit_id, seed, repair, now)
+            if found is not False:
+                return found
+            return self._builder_route(mission, function, deficit_id, now, contract, repair)
 
         if spec is None:
             self._route(deficit_id, "installed_software", "no catalogued installed tool or oracle for this function",
@@ -1050,6 +1129,78 @@ class Genesis:
             self._route(deficit_id, "installed_package", "acquired", manifest.capability_id)
             return self._attach(mission, manifest, deficit_id, now, offered)
         return False
+
+    def _recombine_route(self, mission, function, deficit_id, seed, repair, now):
+        """Construct the function by certified reduction onto an engine GREG already trusts (RECOMBINE).
+
+        Returns the attached manifest, None while it (or its engine) awaits the founder's attach,
+        or False when no constructed capability qualified (the caller continues to the builder)."""
+        found = recombine.chain(function, CATALOG)
+        if found is None:
+            self._route(deficit_id, "constructed", "no reduction chain ends at a catalogued engine", None)
+            return False
+        path, engine_function = found
+        self._route(deficit_id, "constructed", "chain " + " -> ".join([r.function for r in path] + [engine_function]),
+                    None)
+        engine = self.find_attached(engine_function)
+        if engine is None:
+            # The engine is itself a deficit, searched by the same ladder and recorded with this lineage.
+            engine = self.resolve(mission=mission, function=engine_function, now=now,
+                                  purpose=f"engine for constructed {function} ({deficit_id})")
+        if engine is None:
+            self._route(deficit_id, "constructed", f"engine {engine_function} is not attached yet", None)
+            return None
+        manifest = self._composed_manifest(function, path, engine, deficit_id)
+        if self.registry.state.get(manifest.capability_id) == "DETACHED":
+            self._route(deficit_id, "constructed", "founder-detached; explicit attach required", manifest.capability_id)
+            return False
+        if repair and repair.get("capability_id") == manifest.capability_id:
+            self._route(deficit_id, "constructed", "this construction failed in service; a different engine is "
+                                                   "required (the founder may re-attach it)", manifest.capability_id)
+            return False
+        adapter = recombine.composed_adapter(path, self.registry)
+        passed, report = recombine.qualify(path, adapter, manifest, seed)
+        self.journal.record("genesis.verified", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,
+                                                 "passed": passed, "report": report,
+                                                 "mechanism": [r.card | {"reduction_id": r.reduction_id}
+                                                               for r in path],
+                                                 "verifier": "frozen brute-force oracle of the constructed function "
+                                                             "and GREG's problem-level certificate, independent of "
+                                                             "the engine"},
+                            key=[deficit_id, manifest.capability_id, manifest.provenance["chain_digest"]])
+        if not passed:
+            self._route(deficit_id, "constructed", "failed qualification", manifest.capability_id)
+            return False
+        manifest = self._composed_manifest(function, path, engine, deficit_id, report)
+        self.registry.register(manifest, adapter, state="VERIFIED")
+        self.journal.record("capability.registered", {
+            "manifest": manifest.to_dict(), "state": "VERIFIED", "deficit_id": deficit_id,
+            "origin": {"kind": "composed", "function": function, "chain": [r.reduction_id for r in path],
+                       "chain_digest": manifest.provenance["chain_digest"],
+                       "target_capability_id": engine.capability_id}},
+            key=[manifest.capability_id, manifest.digest()])
+        self._route(deficit_id, "constructed", "constructed and verified", manifest.capability_id)
+        return self._attach(mission, manifest, deficit_id, now)
+
+    def _composed_manifest(self, function, path, engine, deficit_id, report=None) -> CapabilityManifest:
+        head, digest = path[0], recombine.chain_digest(path)
+        if engine.consequence_class != "read_only":
+            raise CapabilityError("a constructed capability may only compose read-only engines")
+        return CapabilityManifest(
+            capability_id=f"composed.{function}.{engine.capability_id.rsplit('.', 1)[-1]}.{digest[:10]}",
+            version="1.0.0", provider="composed:" + "+".join(r.reduction_id for r in path), function=function,
+            description=head.description[:300], route="internal", consequence_class="read_only", inputs=head.inputs,
+            outputs={"certified": "bool", "certificate": "dict"}, target_prefix="cognition:", filesystem="none",
+            retry_safe=True, tests=(f"frozen-oracle:{function}", "certificate:every-call"),
+            strengthens=("capability_formation", "proof", "compounding"),
+            provenance={"mode": "RECOMBINE", "chain": [r.reduction_id for r in path], "chain_digest": digest,
+                        "source_digests": {r.reduction_id: recombine.source_digest(r) for r in path},
+                        "target_capability_id": engine.capability_id, "target_manifest_digest": engine.digest(),
+                        "engine_function": engine.function, "deficit_id": deficit_id,
+                        "baseline": head.baseline, "cards": [r.card for r in path],
+                        "builder": "none: constructed by certified reduction from GREG's reduction library",
+                        "license": "GREG code; the engine keeps its own license (see its manifest)",
+                        **({"qualification": report} if report else {})})
 
     def _package_manifest(self, function, candidate: PackageCandidate, card: dict, deficit_id: str,
                           report: dict | None = None) -> CapabilityManifest:

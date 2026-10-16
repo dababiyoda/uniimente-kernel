@@ -201,8 +201,20 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
     """Currently delegated device keys (enrolled by the founder key, not revoked).
     Expiry is enforced at verification time, so an expired delegation is listed but unusable.
 
-    A key delegated again after a revocation carries ``signed_not_before`` (that delegation's enrollment time):
-    a command it signed before then, under the revoked delegation, never verifies again (FounderVerifier)."""
+    A key delegated again after a revocation carries ``signed_not_before``: this body's clock when it recorded the
+    re-delegation (``at``). A command whose ``issued_at`` is earlier never verifies again (FounderVerifier), so
+    neither a token signed under the revoked delegation nor one signed while the key stood revoked reactivates.
+    The anchor is that processing time, not the enrollment envelope's ``issued_at``: the founder may sign the
+    re-delegation before the revocation, and an envelope anchor would then reactivate tokens signed between that
+    envelope and the revocation; subtracting the founder clock-skew allowance (five minutes) would reactivate
+    tokens signed in the five minutes before the re-delegation. The body records a re-delegation only after the
+    revocation and after the founder signed it, so on one clock the processing time is the latest of these
+    instants and refuses every token they refuse (a founder clock ahead of the body's, within the allowed skew,
+    is the exception). Its cost: a command signed after the founder signed the
+    re-delegation but before this body recorded it, or by a device whose clock runs behind this body's, is
+    refused and must be signed again. A token whoever held the key forward-dated is not one this rule can tell
+    from a new one: re-delegate only a key that was not compromised; a compromised device gets a new key.
+    greg.appraisal._devices_before re-derives the same rule."""
     devices, revoked = {}, set()
     for event in journal.replay("device."):
         if event.type == "greg.device.enrolled":
@@ -354,8 +366,14 @@ class Body:
         torn-tail quarantine only removes bytes no append acknowledged, so it is in every honest history of this
         body. A ledger without it was truncated, restored from an older copy or forked; it is refused before
         anything is written to it, on every start, until a person on this machine restores the history or removes
-        the heartbeat. A guard against rollback by accident or a stale copy, not against someone who can rewrite
-        both files (greg/anchor.py witnesses cover that). An unreadable heartbeat is not evidence (presence)."""
+        the heartbeat. Whatever state the heartbeat reports counts alike: RUNNING after a SIGKILL or power loss,
+        STOPPED after a clean stop, PAUSED or HELD.
+
+        Window: Body.run writes the heartbeat once per turn, so the head it names trails the ledger by the records
+        appended since: at most one turn's, or a boot's and its first turn's. A rollback that removes only those
+        records is not detected here. A guard against rollback by accident or a stale copy, not against someone
+        who can rewrite both files (greg/anchor.py witnesses cover that). An unreadable heartbeat is not evidence
+        (presence). Cost: a start reads and verifies the whole chain twice, here and in the writer's own open."""
         try:
             published = json.loads(self.layout.heartbeat.read_text()).get("ledger_head")
         except (OSError, ValueError, AttributeError):

@@ -8,6 +8,7 @@ real verifier still runs in its own worker; two of them also rewrite that verifi
 simulate an inconclusive certificate (never a CERTIFIED or REFUTED one). One worker test runs the real worker with a
 stand-in verifier that only reports the deadline it is handed."""
 import copy
+from fractions import Fraction
 from dataclasses import asdict, replace
 import json
 import math
@@ -788,3 +789,18 @@ def test_graph_then_allocate_never_answers_a_network_with_parallel_edges(registr
     r = reason({"problem_id": "parallel", "chain": {"payload": {"capacity_network": network},
                                                     "recipe": "graph_then_allocate"}}, registry=registry)
     assert r["state"] == "STAGE_ABSTAINED" and r["answer"] is None and r["reason"].startswith("compile")
+
+
+@pytest.mark.parametrize("beyond", [Fraction(3, 10), Fraction(1, 10**6)])
+def test_a_feasible_minimisation_bound_on_the_wrong_side_is_refuted_by_its_own_report(beyond):
+    """Round-4 check: no test held the minimisation side of the FEASIBLE self-check to rounding noise, so widening
+    it to 1/2 left a self-contradictory report to Z3 alone. A min bound above the objective is refuted by the
+    report itself, whatever the certificate concludes."""
+    honest = solve(MIN)
+    objective = honest["output"]["objective_value"]
+    forged = plan(honest, honest["output"]["solution"], objective, solver_status="FEASIBLE",
+                  bound=float(objective + beyond), optimality_gap=None)
+    forged["output"]["solver_status"] = "FEASIBLE"
+    result = verify("optimization", MIN, forged, OPT)
+    assert result["verdict"] == "REFUTED"
+    assert result["checks"]["feasible_bound_beyond_its_objective"] is False

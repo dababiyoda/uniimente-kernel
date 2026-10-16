@@ -72,12 +72,14 @@ def test_an_expired_grant_runs_no_mechanism_on_the_compile_route(mechanism_calls
 
 
 def test_a_live_grant_is_named_on_the_compiled_answer_and_bounds_the_decision(mechanism_calls):
-    r = reason(compile_request(), registry=registry_view(), caller_window=window(latency_ceiling_seconds=1))
-    assert r["state"] == "ANSWERED"
+    # 15 s: binding below the 20 s default, and room for a cold process (the compile's own preparation is timed too)
+    r = reason(compile_request(), registry=registry_view(), caller_window=window(latency_ceiling_seconds=15))
+    assert r["state"] == "ANSWERED", r["abstentions"]
     refs = r["selected_receipt"]["authority_refs"]
     assert refs["live_grant"] is True and refs["scope"] == "canonical_Kernel_dispatch"
     budget = r["resource_use"]["budget"]
-    assert budget["total_s"] <= 1 and budget["window"]["bounds"]["latency_ceiling"] == 1
+    assert budget["total_s"] <= 15 and budget["window"]["bounds"]["latency_ceiling"] == 15
+    assert budget["total_source"] == "the caller's grant window"
 
 
 def test_a_passed_shared_deadline_bounds_the_compile_decision(mechanism_calls):

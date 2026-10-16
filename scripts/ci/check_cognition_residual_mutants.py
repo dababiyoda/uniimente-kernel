@@ -186,6 +186,14 @@ def main():
     with tempfile.TemporaryDirectory(prefix='greg-residual-mutants-') as temp:
         repo = Path(temp) / 'repo'
         shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns('.git', '__pycache__', '.pytest_cache'))
+        # A mutant is caught only by a test that passes without it: a test already failing would "catch" anything.
+        nodes = sorted({f'{tests[0] if tests else TESTS}::{test}' for _, _, _, _, test, *tests in MUTANTS})
+        clean = subprocess.run([sys.executable, '-m', 'pytest', '-q', '-p', 'no:cacheprovider', *nodes], cwd=repo,
+                               env={**os.environ, 'PYTHONPATH': str(repo)}, capture_output=True, text=True, timeout=1800)
+        if clean.returncode != 0:
+            print('BASELINE_FAILS: the targeted tests must pass on the unmutated tree first')
+            print('\n'.join(line for line in clean.stdout.splitlines() if line.startswith(('FAILED', 'ERROR'))))
+            return 1
         for name, rel, old, new, test, *tests in MUTANTS:
             target = tests[0] if tests else TESTS
             path = repo / rel

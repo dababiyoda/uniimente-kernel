@@ -263,10 +263,16 @@ def test_the_pr184_merge_leaves_four_operation_verdicts_awaiting_re_admission():
     measures the merged code; this test records that state and fails, prompting its update, once they are re-admitted."""
     from greg.cognition import compiler as C
     index = C.evidence_index()
+    solver = {"control": "control", "game": "game", "information": "information", "probabilistic": "bayesian"}
     for family in ("control", "game", "information", "probabilistic"):
         status, why = C.operation_status(family, index["operations"][family])
-        assert status == "UNEVALUATED" and "changed since" in why and "needs re-admission" in why, (family, why)
-        assert "greg/cognition/solvers.py::_native_source" in why, (family, why)
+        assert status == "UNEVALUATED" and "needs re-admission" in why, (family, why)
+        # fourth review, R2: only the solver function itself changed; the helpers #159 added, and the unchanged
+        # contracts functions they bring in, are newly reached members, never reported as changed
+        changed = why.split("changed since: ", 1)[1].split(";", 1)[0]
+        assert changed == f"greg/cognition/solvers.py::{solver[family]}", (family, why)
+        added = why.split("added to the closure since: ", 1)[1].split(";", 1)[0]
+        assert "greg/cognition/solvers.py::_native_source" in added and "contracts.py::canonical" in added, why
 
 
 # ---------------------------------------------------------------- conflict (f): one intervention generator

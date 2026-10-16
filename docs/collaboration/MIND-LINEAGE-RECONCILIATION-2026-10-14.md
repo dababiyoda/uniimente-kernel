@@ -667,7 +667,7 @@ the row says otherwise.
 
 | finding | disposition |
 |---|---|
-| B1 (high) | Fixed. The builder resolves `SOLVERS[family]` statically at the run's commit, including `T[k] = f`, `T.update({...})`, an imported dict literal and `__import__(...).f`. It binds that function's closure. `operation_status` routes a family whose dispatch changed as UNEVALUATED. Regression: re-pointing `control` to `graph`, then rebuilding, no longer keeps the verdict. |
+| B1 (high) | Fixed. The builder resolves `SOLVERS[family]` statically at the run's commit, including `T[k] = f`, `T.update({...})`, an imported dict literal and `__import__(...).f`. It binds that function's closure. `operation_status` routes a family whose dispatch changed as UNEVALUATED. Regression: re-pointing `control` to `graph`, then rebuilding, no longer keeps the verdict (on PR #184's tree the regression re-points `swarm`, the positive verdict still in force there, section 18). |
 | B2 (medium, latent) | Fixed, with all six cases as regressions: in-body imports, a later subscript mutation, `.update(...)`, `global`, dotted chains and per-method locals. |
 
 **Consequence, stated rather than hidden.** With the complete closure, every recipe lift measured on a lineage's
@@ -682,11 +682,14 @@ they do not name.
 
 The sentence above ("All nine positive operation verdicts keep their status") was true of this lineage when it was
 written and is kept as written. PR #184 joined this lineage (Track B, #181 `79c38f8` containing #179 `c6c4d74` and
-#180 `e4674f9`) with the one-machine trunk (#178, #175, #169), whose #159 native-qualified solvers changed
-`greg/cognition/solvers.py` (`_native_source`, `_request`, `_work` and the solvers themselves) and
-`greg/cognition/contracts.py` (`canonical`, `digest`, `integer`). The code binding (`c6c4d74`) therefore routes the
-control, game, information and probabilistic verdicts as UNEVALUATED on that tree, each naming the changed functions
-and "needs re-admission"; swarm keeps DEFAULT_FOR_GEOMETRY, and the four baseline-only verdicts (micro, exact, graph,
+#180 `e4674f9`) with the one-machine trunk (#178, #175, #169), whose #159 native-qualified solvers changed the four
+solver functions in `greg/cognition/solvers.py` (`control`, `game`, `information`, `bayesian`). They also added
+helpers (`_native_source`, `_request`, `_work`) that bring the unchanged `contracts.canonical`, `contracts.digest`
+and (for control, game and information) `contracts.integer` into those closures. (Corrected after the fourth review,
+R2: this paragraph first said the contracts functions changed; their digests are identical on both trees, and
+`operation_status` now reports newly reached members apart from changed ones.) The code binding (`c6c4d74`)
+therefore routes the control, game, information and probabilistic verdicts as UNEVALUATED on that tree, each naming
+the changed solver function, the newly reached members and "needs re-admission"; swarm keeps DEFAULT_FOR_GEOMETRY, and the four baseline-only verdicts (micro, exact, graph,
 sequential) stay UNEVALUATED as before. The binding was not weakened.
 `tests/unit/test_greg_mind_convergence.py::test_the_pr184_merge_leaves_four_operation_verdicts_awaiting_re_admission`
 records the state and fails once they are re-admitted. Re-admission is a new pre-registered genome-admission run on

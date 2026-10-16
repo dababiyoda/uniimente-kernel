@@ -425,9 +425,16 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
                                "needs re-admission")
     if measured != now.get("closure_sha256"):
         then, current = code.get("closure_members") or {}, now.get("closure_members") or {}
-        changed = sorted(k for k in set(then) | set(current) if then.get(k) != current.get(k))
+        # a member whose own code changed, apart from one the closure now reaches that it did not (unchanged code
+        # newly called by a changed member), apart from one it no longer reaches
+        changed = sorted(k for k in set(then) & set(current) if then[k] != current[k])
+        added, removed = sorted(set(current) - set(then)), sorted(set(then) - set(current))
         return "UNEVALUATED", (f"{status} was measured on solver closure {measured}; changed since: "
-                               f"{', '.join(changed) or 'unknown'}; needs re-admission")
+                               f"{', '.join(changed) or 'none'}"
+                               + (f"; added to the closure since: {', '.join(added)}" if added else "")
+                               + (f"; no longer in the closure: {', '.join(removed)}" if removed else "")
+                               + ("" if changed or added or removed else " (members not recorded)")
+                               + "; needs re-admission")
     return status, None
 
 
@@ -1286,6 +1293,7 @@ def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool,
         except Exception as exc:
             receipt["abstentions"].append(f"{cid} refused: {exc}"[:300])
             receipt["method_or_composition_selected"] = receipt["selection_level"] = None
+            receipt.setdefault("formed_tried", []).append([cid, manifest.digest()])   # ran, no certified answer
             continue
         finally:
             budget.done(step)
@@ -1312,18 +1320,13 @@ def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool,
 
 
 def _formed_tried(registry, receipt: dict) -> list:
-    """The formed mechanisms this compile ran and got no certified answer from, as ``[capability_id, digest]``.
+    """The formed mechanisms this compile ran and got no certified answer from, as ``[capability_id, digest]``
+    (recorded by ``_formed`` as each one refused).
 
     Capability Genesis records them on the deficit's search pass; a mechanism is excluded from serving the need
     only if this compile tried it, never because it became usable later (an attach during a host outage's
-    back-off, for one)."""
-    try:
-        from greg.genesis import is_formed
-        manifests = registry.manifests
-    except Exception:                 # a registry view without manifests: nothing formed was consulted
-        return []
-    return [[cid, manifests[cid].digest()] for cid in dict.fromkeys(receipt["methods_considered"])
-            if cid in manifests and is_formed(manifests[cid])]
+    back-off, for one) and never because it was merely considered."""
+    return [list(pair) for pair in receipt.get("formed_tried", [])]
 
 
 def _formed_receipt(pid: str, manifest, spec: dict, g: CompetencyGeometry, vector, data: dict, answer: dict,

@@ -1,4 +1,8 @@
 """Cognition through signed missions, the real Gate, retained receipts and restart."""
+import subprocess
+
+import pytest
+
 from greg.body import Body
 from greg.cognition.settlement import competence
 from tests.greg_fixtures import Clock, drop, make_body, mission, signed
@@ -112,7 +116,21 @@ def test_a_cognition_deficit_opens_capability_genesis_then_asks_the_founder_once
         assert len(done) == 1 and done[0]["status"] == "DONE"
 
 
-def test_recombined_native_game_uses_same_gate_appraisal_and_learning_after_restart(tmp_path):
+@pytest.mark.parametrize("first_solve", ["answers", "times_out"])
+def test_recombined_native_game_uses_same_gate_appraisal_and_learning_after_restart(tmp_path, monkeypatch, first_solve):
+    # A first solve that times out (a cold solver under load) abstains with no verification ("NOT_RUN"); the mission
+    # closes on a later solve. The receipt checked below is the one the passing observation was served by, never
+    # simply the first receipt for the problem, which was an abstention in that case (acceptance run, 2026-10-16).
+    if first_solve == "times_out":
+        from greg.cognition import cortex
+        real, calls = cortex._numeric, []
+
+        def cold(*args, **kwargs):
+            calls.append(1)
+            if len(calls) == 1:
+                raise subprocess.TimeoutExpired("cognition.game", 1)
+            return real(*args, **kwargs)
+        monkeypatch.setattr(cortex, "_numeric", cold)
     home, key, body_id, _ = make_body(tmp_path)
     params = {"problem_id": "qualified:game", "operation": "minimax",
               "data": {"payoffs": [[1, -1], [-1, 1]]}}
@@ -141,9 +159,10 @@ def test_recombined_native_game_uses_same_gate_appraisal_and_learning_after_rest
         assert body.engine.book.missions["m:native-game"].status == "ACHIEVED"
         assert not [e for e in body.journal.replay("routing.outcome")
                     if e.payload["mission_id"] == "m:native-game"], "an abstaining sensor never books a strategy ineffective"
-        cognitive = next(r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
-                         if isinstance(r.payload["result"].get("output"), dict)
-                         and r.payload["result"]["output"].get("problem_id") == "qualified:game")
+        [*_, passed] = [e.payload for e in body.journal.replay("mission.observed")
+                        if e.payload["mission_id"] == "m:native-game" and e.payload["passed"]]
+        cognitive = body.ledger.find(passed["receipt"]).payload["result"]["output"]
+        assert cognitive["problem_id"] == "qualified:game"
         assert cognitive["method"] == "cognition.game" and cognitive["method_version"] == "0.3.0"
         assert cognitive["evaluator"] == "greg.cognition.verification/0.3.0"
         assert cognitive["evaluator_result"]["checks"]["independent_minimax_primal_dual"]

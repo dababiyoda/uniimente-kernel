@@ -1311,6 +1311,21 @@ def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool,
     return None
 
 
+def _formed_tried(registry, receipt: dict) -> list:
+    """The formed mechanisms this compile ran and got no certified answer from, as ``[capability_id, digest]``.
+
+    Capability Genesis records them on the deficit's search pass; a mechanism is excluded from serving the need
+    only if this compile tried it, never because it became usable later (an attach during a host outage's
+    back-off, for one)."""
+    try:
+        from greg.genesis import is_formed
+        manifests = registry.manifests
+    except Exception:                 # a registry view without manifests: nothing formed was consulted
+        return []
+    return [[cid, manifests[cid].digest()] for cid in dict.fromkeys(receipt["methods_considered"])
+            if cid in manifests and is_formed(manifests[cid])]
+
+
 def _formed_receipt(pid: str, manifest, spec: dict, g: CompetencyGeometry, vector, data: dict, answer: dict,
                     latency: float, high: bool, considered: list) -> dict:
     """The formed mechanism's own CognitiveReceipt. Its method is the capability id and its version the package
@@ -1664,6 +1679,7 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
                                                or "no catalogued method or recipe reads any of these inputs"),
                              "verified": True},
             "fitting": [],                          # nothing fits: only a formed mechanism can serve it
+            "tried": _formed_tried(registry, receipt),   # formed mechanisms this compile ran with no answer
             "search_order": list(GENESIS_SEARCH),
             "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority"}
         buildable = [r for r in rows if r.get("constructible")]
@@ -1725,6 +1741,7 @@ def run(params, *, registry, journal=None, model_config=None, caller_window=None
                              "unserviceable": [{"method": r["method"], "why": r["usable_why"]} for r in eligible],
                              "verified": True},
             "fitting": fitting(eligible),           # the need is served once one can run (``runnable``)
+            "tried": _formed_tried(registry, receipt),   # formed mechanisms this compile ran with no answer
             "search_order": list(GENESIS_SEARCH),
             "route": "founder attach of the prepared ask, or greg.genesis under the enclosing mission's authority"}
         return finish("CAPABILITY_DEFICIT")

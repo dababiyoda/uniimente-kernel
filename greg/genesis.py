@@ -296,6 +296,16 @@ def cognition_record(function: str, deficit: dict | None = None) -> dict:
     return record
 
 
+def compiler_tried(deficit) -> list[list[str]] | None:
+    """The formed mechanisms the compile that reported this deficit ran and got no certified answer from
+    (``compiler._formed_tried``), as ``[capability_id, digest]`` pairs, else None (a deficit that does not say)."""
+    rows = deficit.get("tried") if isinstance(deficit, dict) else None
+    if not isinstance(rows, list):
+        return None
+    return [[r[0], r[1]] for r in rows[:MAX_INPUTS] if isinstance(r, (list, tuple)) and len(r) == 2
+            and all(isinstance(x, str) and 0 < len(x) <= 200 for x in r)]
+
+
 def compiler_fitting(deficit) -> list[dict] | None:
     """The methods the compiler found fitting the request (``compiler.fitting``: genome families, cortex organs,
     compositions), as its capability deficit reports them, else None (a deficit the compiler did not report). The
@@ -1126,8 +1136,12 @@ class Genesis:
         fitting = compiler_fitting(deficit)
         if fitting is None:
             fitting = self._family_fitting(record)
-        tried = [[m.capability_id, m.digest()] for m in self._formed_for(record)
-                 if self.registry.usable(m.capability_id)[0]]
+        # the formed mechanisms the compile ran with no certified answer (its deficit says which), else those usable
+        # now, for a deficit recorded before compiles reported them
+        tried = compiler_tried(deficit)
+        if tried is None:
+            tried = [[m.capability_id, m.digest()] for m in self._formed_for(record)
+                     if self.registry.usable(m.capability_id)[0]]
         offered = []
         found = self._search_cognition(mission, function, deficit_id, record, mechanisms, contract, seed, repair, now,
                                        offered)

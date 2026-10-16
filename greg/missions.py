@@ -1601,7 +1601,7 @@ class MissionEngine:
             # a cognition residual carries the compiler's own deficit (geometry, inputs, fitting methods) to Genesis
             extra = {"deficit": cognition} if cognition is not None else {}
             capability, deferred = self._form(m, function, now, lambda: self.genesis.resolve(
-                mission=m, function=function, purpose=purpose, now=now, **extra), purpose=purpose)
+                mission=m, function=function, purpose=purpose, now=now, **extra), purpose=purpose, deficit=cognition)
             if deferred:
                 return None
             if capability is not None:
@@ -1611,7 +1611,8 @@ class MissionEngine:
     OUTAGE_DEFERRALS = 5          # consecutive host outages forming one function before the founder is also told
     OUTAGE_RETRY_CAP = 3600       # seconds: the longest back-off between searches during an outage
 
-    def _form(self, m: MissionState, function: str, now: datetime, formation, *, purpose: str, attempt: int = 0):
+    def _form(self, m: MissionState, function: str, now: datetime, formation, *, purpose: str, attempt: int = 0,
+              deficit: dict | None = None):
         """Run a Genesis formation. A host outage while qualifying (a runner timeout, isolation unavailable)
         is no evidence about any candidate: nothing was qualified, failed or built. The mission waits on an
         outage blocker that re-runs this formation after a growing back-off (``_after_outage``); it does not
@@ -1628,6 +1629,10 @@ class MissionEngine:
                        "why": str(exc)[:200],
                        "retry_at": iso(now + timedelta(seconds=min(60 * 2 ** (attempt - 1), self.OUTAGE_RETRY_CAP))),
                        "reconsider": "the search re-runs after the back-off; nothing was qualified, failed or built"}
+            if deficit is not None:
+                # the retry searches for the need the compile reported (its fitting rows and what it tried), not
+                # for the body as it stands when the back-off ends
+                blocker["deficit"] = deficit
             if attempt >= self.OUTAGE_DEFERRALS:
                 blocker["request_id"] = self._capability_request(
                     m, function, f"{purpose}: the host failed {attempt} times in a row while forming {function} "
@@ -1704,8 +1709,11 @@ class MissionEngine:
         if self.genesis is None:
             self._escalate_capability(m, function, None, purpose, now)
             return {"state": "BLOCKED", "blocker": m.blocker}
+        deficit = b.get("deficit")
+        extra = {"deficit": deficit} if deficit is not None else {}
         formed, deferred = self._form(m, function, now, lambda: self.genesis.resolve(
-            mission=m, function=function, purpose=purpose, now=now), purpose=purpose, attempt=b.get("attempt", 0))
+            mission=m, function=function, purpose=purpose, now=now, **extra), purpose=purpose,
+            attempt=b.get("attempt", 0), deficit=deficit)
         if deferred:
             return {"state": "BLOCKED", "blocker": m.blocker}
         rid = b.get("request_id")

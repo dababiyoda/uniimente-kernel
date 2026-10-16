@@ -19,6 +19,7 @@ VENTURES = 'tests/unit/test_greg_ventures.py'
 CONSTRUCTED = 'tests/unit/test_greg_constructed_route_rules.py'
 WINDOW = 'tests/unit/test_cognition_compile_grant_window.py'
 ECONOMICS_BINDING = 'tests/unit/test_greg_ventures_economics_binding.py'
+OUTAGE = 'tests/unit/test_greg_outage_retry_cognition.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -147,6 +148,12 @@ MUTANTS = [
   'ids = {"revenue": f"venture-revenue-{thread}{suffix}", "causal": f"venture-causal-{thread}{suffix}"}',
   'ids = {"revenue": f"venture-revenue-{thread}", "causal": f"venture-causal-{thread}"}',
   'test_missions_with_different_economics_are_different_missions_with_their_own_questions', ECONOMICS_BINDING),
+ ('an outage retry forgets the compile deficit', 'greg/missions.py',
+  '                blocker["deficit"] = deficit', '                pass',
+  'test_a_mechanism_attached_during_an_outage_backoff_serves_the_waiting_mission[True]', OUTAGE),
+ ('Genesis marks as tried what became usable after the compile', 'greg/genesis.py',
+  '        tried = compiler_tried(deficit)', '        tried = None',
+  'test_a_mechanism_attached_during_an_outage_backoff_serves_the_waiting_mission[True]', OUTAGE),
  ('the organ bridge is handed the writable journal', 'greg/missions.py',
   'journal=self._ledger_reader() if manifest.capability_id == "venture.assess"',
   'journal=self.journal if manifest.capability_id == "venture.assess"',

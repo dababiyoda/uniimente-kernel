@@ -33,9 +33,8 @@ jobs:
   tests:
     name: "1 · Kernel and organ tests"
     runs-on: ubuntu-latest
-    # The unit suite runs twice here: the full suite, then verifier V2 (tests/unit). On 2026-10-15 this job was
-    # cancelled at 30 minutes inside the verifier with the suite green, on the base (b318309) and on four stacked
-    # heads. The limit bounds a hung run; it is not a speed target.
+    # The suite runs twice here (the full suite, then the institutional verifier's V2 re-run of tests/unit): about
+    # 15 + 12 minutes at c360103, 28 of the 30 then allowed, so a few minutes of added tests cancelled the job.
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4

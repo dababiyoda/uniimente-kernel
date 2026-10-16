@@ -649,7 +649,26 @@ def _tree_digest(source_root: Path, files: list[str]) -> str:
 def repair_source(root, *, source_root, target: str, func: str, failing: dict, passing: list[dict],
                   existing_tests: list[str], include=(), proposals=(), max_candidates: int = MAX_CANDIDATES,
                   run_timeout: float = SOURCE_RUN_TIMEOUT) -> dict:
-    """Repair ``func`` in ``target`` inside a copy of ``source_root``; return a proposal, never apply it."""
+    """Repair ``func`` in ``target`` inside a copy of ``source_root``; return a proposal, never apply it.
+
+    Candidates are AST mutants of the original source only. A free-form proposal is refused: its code runs inside
+    the process that reports its own test results, so it can forge the verdict (a rewritten junit report, a value
+    that compares equal to anything, tests changed and restored within the run; independent review, 2026-10-16).
+    Judging arbitrary candidate code needs the judgement outside the candidate's process and the frozen files
+    mounted read-only; until then it is not admitted."""
+    if proposals:
+        raise RepairError("refused: a free-form proposal would run inside the process that reports its own result and "
+                          "could forge it; only mutants of the original source are evaluated")
+    return _repair_source(root, source_root=source_root, target=target, func=func, failing=failing, passing=passing,
+                          existing_tests=existing_tests, include=include, max_candidates=max_candidates,
+                          run_timeout=run_timeout)
+
+
+def _repair_source(root, *, source_root, target: str, func: str, failing: dict, passing: list[dict],
+                   existing_tests: list[str], include=(), max_candidates: int = MAX_CANDIDATES,
+                   run_timeout: float = SOURCE_RUN_TIMEOUT, _untrusted=()) -> dict:
+    """The repair loop. ``_untrusted`` lets tests feed hostile candidates to the defense-in-depth checks (tampering
+    left in place, timeouts, crashes, a patch that passes only once); no operation or interface reaches it."""
     source_root = Path(source_root).resolve(strict=True)
     target = _relative(target)
     module = module_name(target)
@@ -665,7 +684,7 @@ def repair_source(root, *, source_root, target: str, func: str, failing: dict, p
     test_files = sorted({_relative(n.split("::", 1)[0]) for n in nodes})
     if REGRESSION_FILE in test_files:
         raise RepairError(f"{REGRESSION_FILE} is reserved for the generated regression test")
-    proposals = [{"label": str(p["label"]), "source": str(p["source"])} for p in proposals]
+    proposals = [{"label": str(p["label"]), "source": str(p["source"])} for p in _untrusted]
     try:
         cases = [{"args": list(failing["args"]), "expect": failing["expect"]}] + [{"args": list(c["args"])} for c in passing]
         json.dumps({"failing": failing, "passing": passing}, allow_nan=False)
@@ -676,7 +695,20 @@ def repair_source(root, *, source_root, target: str, func: str, failing: dict, p
     source_before = _tree_digest(source_root, files)
     original = (source_root / target).read_text(encoding="utf-8")
 
-    scratch = Path(tempfile.mkdtemp(prefix="foundry-repair-"))
+    # Scratch lives under the store, held by one lock: a run killed mid-way leaves its directory behind, and the
+    # next run, holding the same lock, removes it before starting.
+    import fcntl
+    parent = Path(root) / "repair-scratch"
+    parent.mkdir(parents=True, exist_ok=True)
+    guard = open(parent / ".lock", "a")
+    try:
+        fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        guard.close()
+        raise RepairError("another source repair is running on this store") from None
+    for stale in parent.glob("foundry-repair-*"):
+        shutil.rmtree(stale, ignore_errors=True)
+    scratch = Path(tempfile.mkdtemp(prefix="foundry-repair-", dir=parent))
     try:
         pristine = scratch / "pristine"
         for rel in files:
@@ -743,9 +775,12 @@ def repair_source(root, *, source_root, target: str, func: str, failing: dict, p
         pool = [{"label": label, "origin": "mutation", "source": patched}
                 for label, patched in source_mutants(original, suspects)]
         pool += [{"label": p["label"], "origin": "proposal", "source": p["source"]} for p in proposals]
+        labels = [c["label"] for c in pool]
+        if len(set(labels)) != len(labels):
+            raise RepairError("candidate labels must be unique: the recorded patch must be the one verified")
         evaluated, not_evaluated = pool[:max_candidates], len(pool) - min(len(pool), max_candidates)
         tried = []
-        for candidate in evaluated:
+        for index, candidate in enumerate(evaluated):
             outcome = _evaluate(runner.pytest([REGRESSION_FILE, *nodes], candidate["source"]),
                                 regression_name, existing_names)
             if not acceptance_intact(acceptance, evaluator, pristine, target):
@@ -755,7 +790,7 @@ def repair_source(root, *, source_root, target: str, func: str, failing: dict, p
             tried.append({"patch": candidate["label"], "origin": candidate["origin"], "outcome": outcome,
                           "diff_lines": sum(1 for ln in diff.splitlines() if ln[:1] in "+-" and ln[:3] not in ("+++", "---")),
                           "size": len(candidate["source"]), "diff": diff,
-                          "sha256": _sha256(candidate["source"].encode("utf-8"))})
+                          "sha256": _sha256(candidate["source"].encode("utf-8")), "index": index})
         survivors = sorted((t for t in tried if t["outcome"] == "survived"),
                            key=lambda t: (t["diff_lines"], t["size"], t["patch"]))
         outcomes = [{k: t[k] for k in ("patch", "origin", "outcome", "diff_lines")} for t in tried]
@@ -765,7 +800,9 @@ def repair_source(root, *, source_root, target: str, func: str, failing: dict, p
                 {"status": "ESCALATED", "symptom": symptom, "diagnosis": [d for d in diagnosis if d["line"] in suspects],
                  "suspects": suspects, "candidates": outcomes, "not_evaluated": not_evaluated, "acceptance": acceptance})
         chosen = survivors[0]
-        fixed = next(c["source"] for c in evaluated if c["label"] == chosen["patch"])
+        fixed = evaluated[chosen["index"]]["source"]
+        if _sha256(fixed.encode("utf-8")) != chosen["sha256"]:
+            raise RepairError("the patch to verify is not the one recorded")
 
         # -- verified recovery: an independent fresh run of the chosen patch ---------------------------
         after = runner.pytest([REGRESSION_FILE, *nodes], fixed)
@@ -776,6 +813,7 @@ def repair_source(root, *, source_root, target: str, func: str, failing: dict, p
         isolation = runner.isolation
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
+        guard.close()
 
     if _tree_digest(source_root, files) != source_before:
         raise RepairError("the source tree changed during repair; the proposal is void")

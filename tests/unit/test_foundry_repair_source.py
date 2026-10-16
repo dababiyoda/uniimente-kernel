@@ -62,6 +62,9 @@ def tree_hash(base: Path) -> str:
 
 def run_repair(tmp_path, tree, **kw):
     kw = {"failing": FAILING, "passing": PASSING, "existing_tests": ["tests/test_calc.py"], "run_timeout": 60} | kw
+    if "proposals" in kw:      # hostile candidates reach only the private loop, to exercise its defense checks
+        return repair._repair_source(tmp_path / "store", source_root=tree, target="pkg/util.py", func="ceil_div",
+                                     _untrusted=kw.pop("proposals"), **kw)
     return repair.repair_source(tmp_path / "store", source_root=tree, target="pkg/util.py", func="ceil_div", **kw)
 
 
@@ -320,3 +323,62 @@ def test_a_source_tree_that_changes_during_repair_voids_the_proposal(tmp_path, m
     with pytest.raises(repair.RepairError, match="source tree changed"):
         run_repair(tmp_path, tree)
     assert not (tmp_path / "store" / "procedures").exists()
+
+
+FORGE = ("import atexit, os, sys\n"
+         "def _forge():\n"
+         "    path = next(a.split('=', 1)[1] for a in sys.argv if a.startswith('--junitxml='))\n"
+         "    open(path, 'w').write('<testsuites><testsuite><testcase name=\"x\"/></testsuite></testsuites>')\n"
+         "    os._exit(0)\n"
+         "atexit.register(_forge)\n")
+
+
+def test_a_free_form_proposal_is_refused_at_every_public_door(tmp_path):
+    """Independent review 2026-10-16: code that reports its own result can forge it; it is never evaluated."""
+    tree = make_tree(tmp_path / "t")
+    for proposal in ({"label": "forges-junit", "source": FORGE + UTIL},
+                     {"label": "always-equal", "source": "class _Any(int):\n    __eq__ = lambda s, o: True\n" + UTIL}):
+        with pytest.raises(repair.RepairError, match="free-form proposal"):
+            repair.repair_source(tmp_path / "store", source_root=tree, target="pkg/util.py", func="ceil_div",
+                                 failing=FAILING, passing=PASSING, existing_tests=["tests/test_calc.py"],
+                                 proposals=[proposal])
+        with pytest.raises(repair.RepairError, match="free-form proposal"):
+            repair.APPLY_OPS["repair_source"]({"source_root": str(tree), "target": "pkg/util.py", "func": "ceil_div",
+                                               "failing": FAILING, "passing": PASSING,
+                                               "existing_tests": ["tests/test_calc.py"], "proposals": [proposal]},
+                                              tmp_path / "store")
+    assert not (tmp_path / "store" / "procedures").exists()
+
+
+def test_candidate_labels_must_be_unique_so_the_verified_patch_is_the_recorded_one(tmp_path):
+    tree = make_tree(tmp_path / "t")
+    twins = [{"label": "p", "source": UTIL.replace("- 2", "- 1")}, {"label": "p", "source": UTIL.replace("- 2", "- 1")}]
+    with pytest.raises(repair.RepairError, match="labels must be unique"):
+        run_repair(tmp_path, tree, proposals=twins)
+
+
+def test_a_run_killed_midway_leaves_nothing_after_the_next_run_starts(tmp_path):
+    stale = tmp_path / "store" / "repair-scratch" / "foundry-repair-killed"
+    (stale / "pristine").mkdir(parents=True)
+    tree = make_tree(tmp_path / "t")
+    with pytest.raises(repair.RepairError):           # refused before any execution; the sweep has already run
+        repair.repair_source(tmp_path / "store", source_root=tree, target="pkg/util.py", func="ceil_div",
+                             failing=FAILING, passing=PASSING, existing_tests=[])
+    assert stale.exists()                             # an argument refusal happens before the store is touched
+    import fcntl
+    held = open(tmp_path / "store" / "repair-scratch" / ".lock", "a")
+    fcntl.flock(held, fcntl.LOCK_EX)
+    try:
+        with pytest.raises(repair.RepairError, match="another source repair is running"):
+            run_repair(tmp_path, tree)
+    finally:
+        held.close()
+
+
+@needs_namespaces
+def test_the_next_run_sweeps_what_a_killed_run_left(tmp_path):
+    stale = tmp_path / "store" / "repair-scratch" / "foundry-repair-killed"
+    (stale / "runs" / "009").mkdir(parents=True)
+    out = run_repair(tmp_path, make_tree(tmp_path / "t"))
+    assert out["status"] == "PROPOSED" and not stale.exists()
+    assert not list((tmp_path / "store" / "repair-scratch").glob("foundry-repair-*"))   # and its own is gone too

@@ -1176,8 +1176,12 @@
     worker envelope with frozen acceptance digests. Still open - GREG source admission through foundry.apply remains
     refused by greg/foundry_bridge.py (any system-52 call) pending a reviewed decision to admit this recipe; hosts
     without user/network namespaces refuse source repair (fail closed), so the evidence re-derives only on such hosts;
-    a proposal patch executes inside the evaluator's own pytest process and could subvert it in memory (file tampering
-    is detected, in-process subversion is not); no escape/resource red-team evidence beyond the envelope's own tests.
+    free-form proposals are refused at every public door, because an independent review (2026-10-16) showed that code
+    running inside the process that reports its own result can forge it (a rewritten junit report, a value equal to
+    anything, tests changed and restored within the run); candidates are AST mutants of the original source only, and
+    the after-run file comparison catches a change left in place, not one restored before the run ends; judging
+    arbitrary candidates needs judgement outside the candidate's process and frozen files mounted read-only; no
+    escape/resource red-team evidence beyond the envelope's own tests.
     Preserve general repair capability.
   implementation: *id002
   interface: foundry.query localize; foundry.apply repair|repair_source (system 52; greg/foundry_bridge.py refuses

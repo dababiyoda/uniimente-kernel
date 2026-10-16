@@ -158,7 +158,7 @@
     identical image digest across builds and identical output under runc and gVisor. Not registered or CI-exercised. Execution
     paused 2026-09-30: running privileged OCI runtimes (runc/runsc as root) and sandbox escape probes in the development
     container was denied by the session''s safety classifier (containment escape). Resuming needs Alfonso''s explicit authorization
-    for where these may run (e.g. CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md.'
+    for where these may run (e.g. CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md. Status 2026-10-16: location authorization received from the founder; earlier unvalidated groundwork preserved inactive in docs/evidence/validation-groundwork-2026-10-16/; validation not performed; further execution blocked by a safety restriction reported in this session.'
   state: PARTIAL
 10:
   acceptance:
@@ -178,7 +178,7 @@
     proxy. The probe set was then redesigned (host control limited to self-created resources; network probe targets RFC
     5737 TEST-NET) and has not been re-run. Execution paused 2026-09-30: running privileged OCI runtimes (runc/runsc as
     root) and sandbox escape probes in the development container was denied by the session''s safety classifier (containment
-    escape). Resuming needs Alfonso''s explicit authorization for where these may run (e.g. CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md.'
+    escape). Resuming needs Alfonso''s explicit authorization for where these may run (e.g. CI only, or a dedicated VM). Non-privileged hardening 2026-10-14: containers.run refuses before building any command unless UNIIMENTE_PRIVILEGED_RUNTIME_HOST names this host (founder-approved dedicated host or CI only); root images are refused; extraction confinement is tested without privilege (tests/unit/test_foundry_containers_hardening.py). Dedicated-host specification: docs/collaboration/PRIVILEGED-RUNTIME-TEST-HOST-2026-10-14.md. Status 2026-10-16: location authorization received from the founder; earlier unvalidated groundwork preserved inactive in docs/evidence/validation-groundwork-2026-10-16/; validation not performed; further execution blocked by a safety restriction reported in this session.'
   state: PARTIAL
 11:
   acceptance:
@@ -494,7 +494,7 @@
     tests/integration/test_greg_namespace_privacy.py; also run with the repository and virtualenv under the hidden
     home). Not COMPLETE: the probe and a confined body
     have not yet been observed on the founder''s Chromebook; a body made without the installer stays opt-in; and a
-    host without bubblewrap and libseccomp cannot confine. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10.'
+    host without bubblewrap and libseccomp cannot confine. The privileged alternative (network namespaces) still waits on the founder decision shared with #9/#10. Since 2026-10-16 greg acceptance reports network_confined and undeclared_destination_denied from the body''s own relay journal (an edited record fails both; tests/integration/test_greg_acceptance.py); founder steps in docs/collaboration/ACCEPTANCE-26-28-2026-10-16.md.'
   implementation:
   - foundry/systems/segmentation.py
   - foundry/systems/relay_door.py
@@ -582,6 +582,9 @@
     the words name and finds the text (tests/unit/test_greg_mcp_remote_words.py, test_greg_mcp_token.py).
     Since increment 30 a server that reads its credential from a file gets a private read-only file, removed after
     the call (secret_files; greg secret set --from-file; tests/unit/test_greg_mcp_act.py).
+    Each hosted proposal now labels its page check as a read-after-write through the same service or a read through
+    a separate host (not proven independent); the service's own answer never closes a mission. Founder steps and
+    the open evidence decision are in docs/collaboration/ACCEPTANCE-26-28-2026-10-16.md.
     Still missing - a remote change no page shows, a real hosted server observed, and
     observation on the founder's device. Original failover and authority component evidence is retained.
   implementation: *id001

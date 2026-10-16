@@ -1,0 +1,321 @@
+{
+ "schema": "greg-p6-single-genome-preregistration/1",
+ "id": "P6-v6-F7-single-genome",
+ "title": "F7 re-measured: the admitted single genome flow_expansion_mcf against the routed composition on v4's real held-out items",
+ "intent_refs": [
+  "INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT",
+  "INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION"
+ ],
+ "question": "On F7's held-out items (suite-v4.json, partition heldout: 200 items on 20 real SNDlib backbones), does the admitted single genome flow_expansion_mcf, served through GREG's canonical path (greg.cognition.cortex.reason with an isolated solver worker and an independent verifier, attached in an evaluation-only registry view exactly as run_v4 attaches its families), decide every item with no wrong answer, without being significantly worse than the routed composition graph_then_allocate, at no more than 1.25x its median latency?",
+ "runner": "cortex/evaluation/composition_lift/run_v6.py",
+ "items": {
+  "suite": "cortex/evaluation/composition_lift/suite-v4.json",
+  "suite_sha256": "4822eeb343cb1594e86cbb3bac4d6204634ad8e587b5c3f7d76025b1e8249602",
+  "suite_frozen_by": "cortex/evaluation/composition_lift/freeze-v4.json (commit 14ec7a6)",
+  "heldout": "the 200 items with partition heldout (20 networks x 10 largest demand pairs); every one is run, none is selected",
+  "development": "the 50 items with partition dev (abilene, di-yuan, india35, nobel-germany, polska)",
+  "partition_rule": "v4's: networks sorted by name; index % 5 == 0 is development; the other 20 networks are held out",
+  "truth": "v4's suite truth (the exact optimum of v4's declared planning problem, greg.cognition.genomes.flow.expansion_truth); not recomputed for the primary scoring; re-solved independently for the secondary scoring (see independent_rescoring)",
+  "scoring": "run_v4.f7_score, imported: optimal (achieved throughput equals the optimum), suboptimal, wrong (over budget, out of bounds, or a flow claim the recomputation contradicts) or no_decision. A genome receipt the independent verifier REFUTED is scored wrong whatever its plan scores (the plan's own score is recorded as plan_score). An arm whose runner raised on an item is scored no_decision (execution.arm_exceptions)."
+ },
+ "n_heldout": 200,
+ "data_provenance": {
+  "source": "SNDlib 1.0 networks (Orlowski, Wessaely, Pioro, Tomaszewski, Networks 55:276-286, 2010) as bundled by TopoHub 1.5.1; extract built by cortex/evaluation/data/build_sndlib_networks.py",
+  "file": "cortex/evaluation/data/sndlib_networks.json.gz",
+  "sha256": "f9b1d3d45ba9a70e8d2d6dc1db0a674eb21a7bb7559bb6ae7d2debcf65e7fc47",
+  "licence": "TopoHub conversion MIT; SNDlib publishes no open licence and states its data is meant for research use (cite the paper); evaluation use only; redistribution beyond research is a founder decision (unresolved, release blocker)"
+ },
+ "genome": {
+  "family": "flow_expansion_mcf",
+  "capability": "cognition.flow_expansion_mcf",
+  "intelligence_id": "solver.graph.capacity_expansion_mcf",
+  "version": "1.0.0",
+  "operation": "expand_capacity_mcf",
+  "admission": "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json#genomes.flow_expansion_mcf: DEFAULT_FOR_GEOMETRY against the graph_then_allocate twin, 30 of 30 ties on synthetic instances (seeds 1200-1229); latencies measured in process (candidate median 0.000664 s, twin 0.004567 s)",
+  "precondition": "run_v6.preconditions(): the library genome is at 1.0.0, the evidence index records DEFAULT_FOR_GEOMETRY at 1.0.0, and greg.cognition.compiler._matched_by_single_genome('graph_then_allocate', index) names it; the freeze and a held-out run refuse otherwise",
+  "receipt_identity": "every genome receipt must name the method cognition.flow_expansion_mcf, and every receipt that carries an output must carry a proof artifact naming solver.graph.capacity_expansion_mcf at 1.0.0 (run_v6.receipt_problems); otherwise the run is INVALID_RUN (a warm-up receipt that fails it stops the run before the look). The receipt's method_version (0.2.0) is the cognition capability manifest's version (greg/cognition/catalog.py), not the genome's, and is recorded as such. By the receipt contract an abstention carries no proof artifact; it fails GENOME_DECIDES_EVERY_ITEM rather than the identity check."
+ },
+ "path": "Every GREG arm through greg.cognition.cortex.reason: one evaluation-only registry view, in memory only, with run_v4.EVAL_ATTACH (cognition.flow_maxflow, cognition.flow_capacity_plan, cognition.flow_reinforce_greedy, cognition.optimization) plus cognition.flow_expansion_mcf attached. On the body nothing changes.",
+ "arms": [
+  {
+   "name": "flow_expansion_mcf",
+   "role": "primary (the rule's subject)",
+   "call": "{problem_id, operation: expand_capacity_mcf, data: <capacity_network>, geometry: {latency_limit: 20}} through cortex.reason (run_v4's single-operation budget); one isolated solver worker and one independent verifier worker"
+  },
+  {
+   "name": "routed_composition",
+   "role": "comparator (the rule's competitor)",
+   "call": "run_v4.chain without a pinned recipe (60 s chain budget): compile -> optimize (CP-SAT) -> max_flow cross-check, three cortex.reason operations, each with its own solver and verifier worker; re-run on the same machine in the same process as the genome so latencies are comparable; v4's recorded latencies are not used"
+  },
+  {
+   "name": "compiled",
+   "role": "secondary (reported, not in the rule)",
+   "call": "run_v4.compiled: {compile: {geometry: {consequence_class: read_only}, data: {capacity_network: ...}}} with the genome attached and the current evidence index (frozen); the selected method is recorded"
+  },
+  {
+   "name": "parametric_min_cost_flow",
+   "role": "secondary: truth algorithm and practitioner, in process",
+   "call": "run_v4.parametric_min_cost_flow; latency not comparable with the GREG arms"
+  }
+ ],
+ "execution": {
+  "order": "arms rotated by item index, as in v4 (index % 4); the independent rescoring of each item runs after all four arms, outside every timed call",
+  "command": "in a fresh checkout at the freeze's commit (git worktree add --detach <dir> <commit>; nothing else written into it): python -I cortex/evaluation/composition_lift/run_v6.py --workers 2 --cores 0,1 --out <results path>. No PYTHON* variable is set: -I ignores every one of them (PYTHONDONTWRITEBYTECODE included), and run_v6.py and greg/cognition/worker.py set sys.dont_write_bytecode themselves before their first repository import. python -I cortex/evaluation/composition_lift/run_v6.py --check-gate runs first (see check_gate)",
+  "check_gate": "--check-gate runs heldout_gate and stops before any held-out item is read. It checks this process only as it is at gate time: the repository modules the gate and preconditions() import, through the source-only loader, and the distributions loaded so far. The modules the arms import, and the distributions they load, are checked first at the warm-up of the real run (execution.warmup), so a --check-gate PASS is not the whole pre-look check: the warm-up completes it, and a refusal there still precedes any held-out item",
+  "arm_exceptions": "an exception that escapes an arm's runner on an item (any Exception) is caught for that arm on that item: the arm's record has state ARM_EXCEPTION, result no_decision, no plan, the exception's type and message (first 500 characters), and as seconds the time until the exception, which enters the medians like any other record; the item's other arms and the remaining items still run. For flow_expansion_mcf that is a no_decision (GENOME_DECIDES_EVERY_ITEM fails, and it is a loss against any routed plan); for the routed composition it is a non-optimal item, so the comparator does not replicate; for compiled and PMCF it is reported. A runner that raised returned no receipt, so the receipt identity check skips it; summary.arm_exceptions counts them per arm and lists every one. The independent rescoring of an item is guarded the same way (a rescoring that raises is a disagreement on every count). The report is always written after the look: when the summary or a post-run check raises, the run is INVALID_RUN (POST_RUN_EXCEPTION) and the rows are kept. An exception on the warm-up item stops the run before the look (WARMUP_ARM_EXCEPTION)",
+  "workers": "--workers 2 --cores 0,1 as v4's held-out run (each item whole on one pinned core); the count used is recorded",
+  "machine": "the look runs on a quiet machine: no other evaluation, test suite or fuzz job running. The results header records the load at start and end (os.getloadavg, os.cpu_count, the affinity, and the count of other python processes from /proc); no load threshold is applied, because both arms of the latency ratio run interleaved on the same pinned core",
+  "warmup": "before any held-out item, one development item (the first in suite order) runs through every arm in the parent process; it is recorded under warmup and never scored. The run refuses before the look (UNFROZEN_CODE) when the warm-up executed repository code outside or unlike the freeze, loaded a module around the source-only loader or loaded a distribution the freeze does not bind, or when its genome receipt fails the identity check; it refuses (WARMUP_ARM_EXCEPTION) when any arm raised on the warm-up item",
+  "freeze": "python -I run_v6.py --freeze writes freeze-v6.json: the static import closure of run_v6.py (which includes run_v4.py and run.py) and greg/cognition/worker.py, all of greg/cognition, the SNDlib extract and its build script, this pre-registration, the evidence index the compiler reads, v4's frozen F7 evidence (results-v4.json and development-v4.json, from which the secondary decision reads v4's constituent counts), tools/offline_test.py, the requirement pins, suite-v4.json, the rule, its conditions and deviations, the secondary rule F7_RULE with its conditions, v4's rule and latency multiplier and v4's held-out constituent counts, the thresholds, the arms, the attachments, the genome's identity, the Python version and implementation, and the versions of every distribution in run_v6.DISTRIBUTIONS. It refuses an existing freeze, an interpreter not started with -I, a dirty tree and a failed precondition",
+  "distributions": {
+   "frozen": [
+    "attrs",
+    "charset-normalizer",
+    "idna",
+    "jsonschema",
+    "jsonschema-specifications",
+    "networkx",
+    "numpy",
+    "ortools",
+    "pandas",
+    "python-dateutil",
+    "referencing",
+    "rfc3339-validator",
+    "rpds-py",
+    "scipy",
+    "setuptools",
+    "six",
+    "sympy",
+    "typing-extensions",
+    "z3-solver"
+   ],
+   "how_derived": "strace -f (openat) of a one-development-item run under python -I, over the parent and every worker it launched: every site-packages or dist-packages module file opened, attributed to its distribution, plus the six numerical pins earlier freezes bound (sympy and z3-solver were not opened). The parent and its forked pool check at the warm-up and after the run that every distribution they loaded is in this list; the isolated workers are covered by the traced list only",
+   "python": "the Python version and implementation are frozen; a run under any other version is refused (FROZEN_INPUT_CHANGED: python)"
+  },
+  "held_out_gate": "heldout_gate refuses, before any held-out item is read: (1) NO_FREEZE without freeze-v6.json; (2) FROZEN_INPUT_CHANGED when any frozen input differs (code digests, suite, prereg, rule, conditions, deviations, thresholds, arms, attachments, partition, genome identity, the secondary rule and v4's constituent counts, Python version, distribution versions); (3) DIRTY_TREE when any frozen file or the suite, the prereg or the freeze is not byte-identical to its blob at HEAD, or git status lists any tracked change or untracked file; (4) CLEAN_ROOM_REQUIRED when any __pycache__ directory or .pyc file exists anywhere under the repository root (.git aside), when git status --ignored lists any ignored file, when the process was not started with python -I, when bytecode writing is on, when the source-only loader is not installed (it is installed by run_v6.py's first statements when the file is started as a script, mirroring greg/cognition/evolution_room.py: it reads no bytecode at all and records the sha256 of every repository source it compiles), when any repository source the process compiled is outside the freeze or unlike its frozen digest, when a repository module was loaded around the loader, or when the process loaded a distribution outside run_v6.DISTRIBUTIONS; (5) PRECONDITION. It then issues a one-use token, the only thing run_items accepts for held-out items (an accident guard inside one process, not a security boundary). A refusal of an existing --out precedes the gate. SCOPE: the parent process and its forked pool compile only source, and each repository file they compile is compared with the freeze; the isolated solver and verifier workers (python -I worker.py, launched by greg/cognition/cortex.py, which this run does not change) use Python's normal loader, which reads bytecode whose recorded timestamp and size match the source; they are covered because the gate refuses any bytecode in the checkout and the run is checked again for bytecode afterwards (worker.py turns bytecode writing off before its first repository import, and -I ignores PYTHONPYCACHEPREFIX, so no other bytecode location applies), because their sources are byte-identical to the freeze, and through the static closure, which a traced development run confirmed covers every repository file any process opened. It does not defend against whoever controls the machine during the run (bytecode or source written between the gate and a worker's import, or a modified interpreter or distribution of the same version); re-executing the frozen run at the recorded commit is that check. It runs once, in a clean checkout at the freeze's commit, by the session owner",
+  "integrity_after_the_run": "the run is marked INVALID_RUN, with the measured rule kept as as_measured, when: the parent or its pool executed repository source outside or unlike the freeze, or loaded a repository module around the loader; the parent or its pool loaded a distribution outside run_v6.DISTRIBUTIONS; any genome receipt fails the identity check (genome.receipt_identity); bytecode appeared under the repository during the run; the frozen inputs differ when recomputed after the run; or the summary or a post-run check raised (POST_RUN_EXCEPTION). INVALID_RUN replaces both the rule's outcome and F7_LIFT_WITH_GENOME's, each measured outcome kept as as_measured"
+ },
+ "rule": {
+  "text": "flow_expansion_mcf MATCHES the routed composition on F7's held-out items when all four conditions hold and the comparator replicates v4. (1) NO_WRONG_ANSWER: no held-out item is scored wrong for flow_expansion_mcf; wrong is run_v4.f7_score's 'wrong' (over budget, out of bounds or a flow claim the recomputation contradicts) or a receipt the independent verifier REFUTED, which is scored wrong whatever its plan, as admission v3 scores a refuted answer. (2) GENOME_DECIDES_EVERY_ITEM: no held-out item is scored no_decision for the genome (an abstention of any kind, or an output f7_score cannot read as a plan). (3) NOT_SIGNIFICANTLY_WORSE: the one-sided exact sign test over discordant items gives p >= 0.05 for 'the genome is worse'. A loss is an item where routed is optimal and the genome is not, or where the genome is scored no_decision and routed is not (routed returned a plan, even a wrong one); a win is an item where the genome is optimal and routed is not; every other item is a tie, so the count is asymmetric against the genome. (4) LATENCY_WITHIN_RATIO: the genome's median latency over the held-out items is at most 1.25x the routed composition's, both end to end through greg.cognition.cortex.reason on this machine. Outcome: INCONCLUSIVE when the independent rescoring disagrees with the primary scoring on any genome or routed plan or on any item's truth, except on the plan of a genome receipt the verifier REFUTED (the refutation scores that row wrong whatever its plan scores, so it decides NO_WRONG_ANSWER); a disagreement on a secondary arm (compiled, PMCF) is reported, makes the run informative and does not change the outcome; otherwise NO_MATCH, naming every failed condition, when a condition fails, except that a failure of LATENCY_WITHIN_RATIO alone is INCONCLUSIVE when the comparator did not replicate; otherwise INCONCLUSIVE when the comparator did not replicate v4 (routed optimal on every held-out item); otherwise MATCH. INVALID_RUN replaces the outcome when an integrity check fails; the measured outcome is kept beside it. The thresholds are admission v3's DEFAULT rule's (alpha 0.05, 1.25x); the rule deviates from that rule in the ways DEVIATIONS lists.",
+  "decided_by": "cortex/evaluation/composition_lift/run_v6.py: decide(rows), on the held-out rows only",
+  "outcomes": [
+   "MATCH",
+   "NO_MATCH",
+   "INCONCLUSIVE",
+   "INVALID_RUN (an integrity check failed; the measured outcome is kept beside it)"
+  ],
+  "conditions": [
+   {
+    "id": "NO_WRONG_ANSWER",
+    "metric": "count of held-out items whose flow_expansion_mcf result is 'wrong' (run_v4.f7_score's wrong, or a REFUTED receipt)",
+    "holds_when": "== 0"
+   },
+   {
+    "id": "GENOME_DECIDES_EVERY_ITEM",
+    "metric": "count of held-out items whose flow_expansion_mcf result is 'no_decision' (any abstention state, or an output f7_score cannot read as a plan)",
+    "holds_when": "== 0"
+   },
+   {
+    "id": "NOT_SIGNIFICANTLY_WORSE",
+    "metric": "one-sided exact sign test p for 'genome worse' = P(Binomial(wins + losses, 1/2) >= losses); p = 1 when there is no discordant item",
+    "holds_when": ">= alpha"
+   },
+   {
+    "id": "LATENCY_WITHIN_RATIO",
+    "metric": "median over all held-out items of the genome arm's seconds, against 1.25 x the same median for routed_composition (per-item seconds as recorded, 4 decimals)",
+    "holds_when": "genome median <= 1.25 x routed median"
+   }
+  ],
+  "discordance": {
+   "loss": "routed is optimal and the genome is not; or the genome is scored no_decision and routed is not (routed returned a plan, even a wrong one)",
+   "win": "the genome is optimal and routed is not",
+   "tie": "every other item: both optimal; the genome returned a non-optimal plan (suboptimal or wrong) and routed is not optimal (suboptimal, wrong or no_decision), whatever their throughputs; or neither decided (both no_decision). A genome no_decision against any routed plan, even a suboptimal or wrong one, is a loss, never a tie; the count is asymmetric against the genome",
+   "by_outcome_pair": {
+    "optimal/optimal": "tie",
+    "optimal/suboptimal": "win",
+    "optimal/wrong": "win",
+    "optimal/no_decision": "win",
+    "suboptimal/optimal": "loss",
+    "suboptimal/suboptimal": "tie",
+    "suboptimal/wrong": "tie",
+    "suboptimal/no_decision": "tie",
+    "wrong/optimal": "loss",
+    "wrong/suboptimal": "tie",
+    "wrong/wrong": "tie",
+    "wrong/no_decision": "tie",
+    "no_decision/optimal": "loss",
+    "no_decision/suboptimal": "loss",
+    "no_decision/wrong": "loss",
+    "no_decision/no_decision": "tie"
+   },
+   "by_outcome_pair_key": "<genome result>/<routed result>: the rule's classification of every pair of scored results",
+   "secondary": "summary.versus_optimal_vs_not reports v4's symmetric optimal-versus-not discordance for every arm pair; it is not the rule's definition"
+  },
+  "outcome_precedence": [
+   "INCONCLUSIVE when the independent rescoring disagrees with the primary scoring on any genome or routed plan, or on any item's truth (including a rescoring that could not run), except a disagreement on the plan of a genome receipt the verifier REFUTED: the refutation scores that row wrong whatever its plan scores, so it decides NO_WRONG_ANSWER (the outcome is then NO_MATCH unless another disagreement makes it INCONCLUSIVE), and the disagreement is reported (refuted_plan_rescoring_disagreements). A disagreement on a secondary arm (compiled, PMCF) is reported (rescoring_disagreements_on_secondary_arms) and makes the run informative; it never changes the outcome",
+   "otherwise NO_MATCH when any condition fails, naming every failed condition; except that LATENCY_WITHIN_RATIO failing alone is INCONCLUSIVE when the comparator did not replicate, since a failing composition's latency is not its serving latency",
+   "otherwise INCONCLUSIVE when the comparator did not replicate v4 (routed optimal on every held-out item, as in v4 and in the Track B audit's rescoring)",
+   "otherwise MATCH",
+   "INVALID_RUN replaces any of these when an integrity check fails (execution.integrity_after_the_run)"
+  ],
+  "informative": "derived from the counts: informative unless the outcome is MATCH with both arms optimal on every item, every genome state NONE and every routed state ANSWERED, no win or loss, the independent rescoring agreeing with the primary scoring on the genome's and the routed composition's plans and on every item's truth (what the rule checks), and no secondary arm (compiled, PMCF) whose rescoring disagrees. A secondary disagreement is information: it makes the run informative and is reported as such, without changing the outcome. The reading is built from the same counts and claims agreement only for what was checked",
+  "alpha": 0.05,
+  "latency_ratio": 1.25,
+  "tests": "one primary test (the sign test in condition 3); every other comparison is secondary and unadjusted, including the sign test of the secondary decision F7_LIFT_WITH_GENOME (secondary_decision), which never changes this rule's outcome"
+ },
+ "deviations_from_admission_rule": [
+  {
+   "id": "ZERO_WRONG",
+   "text": "zero wrong answers are required; admission's DEFAULT requires no more wrong answers than the competitor. Both score a refuted answer wrong, so this condition is stricter."
+  },
+  {
+   "id": "DECIDES_EVERY_ITEM",
+   "text": "the genome must return a plan on every item; admission has no such condition (there an abstention is a lower native quality and weighs only through the sign test)."
+  },
+  {
+   "id": "OPTIMAL_VS_NOT_DISCORDANCE",
+   "text": "discordance is optimal-versus-not, as in v4, plus a genome abstention against a routed plan as a loss; admission compares native quality with the genome's tolerance. Here two non-optimal plans tie whatever their throughputs, and a genome plan against a routed abstention is not a win unless it is optimal."
+  },
+  {
+   "id": "NO_SIGNIFICANCE_ESCAPE",
+   "text": "the latency condition is always required; admission's DEFAULT also passes a candidate that is significantly better than the competitor at any latency."
+  },
+  {
+   "id": "NO_BASELINE_CLAUSE",
+   "text": "there is no simple baseline: admission's DEFAULT requires beating one (significantly better, or equal quality at >= 1.25x lower latency) and its REJECTED and EXPERIMENTAL outcomes precede it; here the genome is compared with the routed composition only."
+  },
+  {
+   "id": "LATENCY_END_TO_END",
+   "text": "latency is measured end to end through cortex.reason for both arms (isolated worker launches included); admission v3 measured both arms in process."
+  },
+  {
+   "id": "INCONCLUSIVE_OUTCOME",
+   "text": "admission has no INCONCLUSIVE outcome; here MATCH is withheld unless the comparator replicates v4 and the independent rescoring agrees, and the outcome is an answer to this question, not an admission status (no SUPERSEDED or NICHE_CAPABILITY)."
+  }
+ ],
+ "independent_rescoring": {
+  "what": "every arm's plan and every item's truth, re-scored after the arms ran: run_v6.independent_instance reads the declared problem from the item data (arcs, free capacity, lease price, per-arc limit, budget); independent_max_flow is scipy.sparse.csgraph.maximum_flow on free capacity plus leased units; independent_score applies f7_score's categories (wrong for a key that names no arc, a non-integral or out-of-bounds unit count, a plan over budget, or a flow claim unlike the recomputed flow; then optimal or suboptimal against the independent optimum) and reports a false 'spent' claim without changing the category, as f7_score does; independent_optimum solves max F with arc flow <= free capacity + leased units, integer units in [0, limit], conservation and total price <= budget by HiGHS (scipy.optimize.milp, mip_rel_gap 0), and accepts it only when the value is integral and the MILP's own plan re-checks under the independent max flow and budget",
+  "agreement": "an arm agrees on an item when the independent (category, throughput) equals the primary score of its plan (for the genome, the plan's score before a refutation sets the result to wrong); the truth agrees when the independent optimum equals the suite truth. Agreement counts per arm and for the truth are reported with every disagreement",
+  "effect": "a disagreement on the genome's or the routed composition's plan or on a truth makes the outcome INCONCLUSIVE, except on the plan of a refuted genome receipt (rule.outcome_precedence); a disagreement on the compiled arm or PMCF is reported, makes that secondary claim inconclusive (summary.independent_rescoring.secondary_inconclusive) and makes the run informative, without changing the rule's outcome",
+  "code_independence": "the secondary scorer calls nothing in greg/cognition/genomes/flow.py or run_v4.py. The genome's solver (mcf_expansion_solve), its verifier (mcf_expansion_verify, which calls flow.expansion_value), the primary scorer (run_v4.f7_score, which calls flow.expansion_value and its Edmonds-Karp) and the suite truth (flow.expansion_truth) all live in or call flow.py, so without this scorer a defect there could make the genome, its verifier, its score and the truth agree and all be wrong. Shared with the primary path: the item payload, which run_v4.f7 built, and the SciPy/NumPy libraries. The Track B audit rebuilt every held-out instance (arcs, free capacities, prices, budget) with its own implementation of the declared rules; its identity check matched the arcs, the no-lease throughput and the path and arc counts on all 200 items, and its optimum on the rebuilt instances equalled the suite truth on all 200 (prices and budgets were not compared field by field). flow.py calls SciPy's HiGHS only in its max-flow LP competitor (maxflow_lp) and, through greg/cognition/genomes/contract.model_optimum, in its semantic evaluator (compile_score); the genome's solver (mcf_expansion_solve), its verifier (mcf_expansion_verify) and f7_score call neither. The method mirrors the Track B audit (cortex/evaluation/pr155_f7_audit/audit.py at 49b2d58, not on this branch), adapted to read the suite payload instead of rebuilding it"
+ },
+ "secondary": [
+  "the compiler arm selects cognition.flow_expansion_mcf on every held-out item, and its outcome and throughput equal the genome arm's on every item (counts reported; identical increments counted)",
+  "PMCF (in process): optimal count, equality with the suite truth on every item, and every arm against it (optimal-versus-not)",
+  "per-network breakdown: optimal counts and median latency per arm for each of the 20 networks",
+  "latency ratios: genome / routed, compiled / routed, compiled / genome, genome / PMCF (the last not comparable)",
+  "receipts: the method, the capability-manifest version, the proof artifact's intelligence and version, the verifier verdict and the abstention state of every genome call, with the result counted per abstention state; the recipe and state of every routed chain",
+  "independent rescoring: agreement counts per arm and for the truth, MILP statuses, false 'spent' claims, every disagreement",
+  "throughput shortfall against the optimum per arm",
+  "F7_LIFT_WITH_GENOME: v4's F7 rule with flow_expansion_mcf as a constituent (secondary_decision)",
+  "arm exceptions: the count per arm and every item with its exception (summary.arm_exceptions)"
+ ],
+ "secondary_decision": {
+  "id": "F7_LIFT_WITH_GENOME",
+  "status": "secondary: pre-registered and reported beside the rule (summary.f7_lift_with_genome). It does not change v4's frozen verdict (LIFT), the VPL count, the natural-family tally or the rule's outcome",
+  "why": "PR #179 frames this run as 'F7 re-measured with flow_expansion_mcf as a constituent'. This decision is that reading: v4's own F7 rule, re-evaluated with the genome added to v4's constituent set",
+  "rule": "F7_LIFT_WITH_GENOME (secondary; it does not change v4's frozen verdict, LIFT): v4's F7 rule, verbatim 'F7 (natural instances, exact truth): routed optimal > best constituent optimal, routed wrong <= best constituent wrong, one-sided exact sign test over discordant held-out items p < 0.05, routed median latency <= 60 s and <= 10x the best constituent's median. Best constituent chosen on held-out results (most optimal, then fewest wrong). Practitioner, compiled-arm and per-network comparisons reported, not part of the rule. VPL = families meeting their rule.', re-evaluated with the constituent set v4's two constituents (graph_alone_greedy, optimize_flow_blind: their optimal and wrong counts on the same items, as v4's frozen evidence records them, which do not depend on the machine) plus flow_expansion_mcf from this run, with routed being this run's routed_composition. The best constituent is chosen as v4 chooses it (most optimal, then fewest wrong; a full tie keeps v4's order, so a v4 constituent precedes the genome). When the genome is the best constituent, five conditions are read from this run's genome and routed rows (one machine): (1) ROUTED_MORE_OPTIMAL: routed optimal > the genome's optimal; (2) ROUTED_NO_MORE_WRONG: routed wrong <= the genome's wrong; (3) SIGN_TEST_P_BELOW_ALPHA: over the discordant items (routed optimal and the genome not is a routed win, the reverse a routed loss) the one-sided exact sign test for 'routed is better' gives p < 0.05; (4) ROUTED_MEDIAN_WITHIN_CHAIN_BUDGET: routed median latency <= 60 s; (5) ROUTED_MEDIAN_WITHIN_MULTIPLIER: routed median latency <= 10x the genome's median (medians of the recorded seconds rounded to 4 decimals, as run_v4 rounds them). LIFT when all five hold, otherwise NO_LIFT naming every failed condition. INCONCLUSIVE instead when the rows are not exactly the items v4's counts cover; when the independent rescoring disagrees with the primary scoring on a genome or routed plan or a truth (with the primary rule's exception for a refuted genome receipt); or when a v4 constituent is the best constituent: its paired rows and latencies are v4's, from another run on another machine, so the sign test and the latency conditions cannot be computed from this run's rows, and v4's verdict against it stands. A REFUTED genome receipt counts as wrong here, as in the primary rule; v4 scored its constituents through run_v4.op(), which counted a receipt in any state but NONE as no decision, so a refutation weighs against the genome in ROUTED_NO_MORE_WRONG and in the wrong-count tie-break where v4's scoring would not (v4's held-out constituent counts hold no such receipt). INVALID_RUN replaces the outcome when an integrity check fails.",
+  "v4_rule_verbatim": "F7 (natural instances, exact truth): routed optimal > best constituent optimal, routed wrong <= best constituent wrong, one-sided exact sign test over discordant held-out items p < 0.05, routed median latency <= 60 s and <= 10x the best constituent's median. Best constituent chosen on held-out results (most optimal, then fewest wrong). Practitioner, compiled-arm and per-network comparisons reported, not part of the rule. VPL = families meeting their rule.",
+  "v4_rule_source": "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json (summary.VPL_v4.rule; quoted verbatim in that directory's README.md)",
+  "constituents": [
+   {
+    "name": "graph_alone_greedy",
+    "from": "v4's frozen held-out results (not re-run)",
+    "heldout_optimal": 108,
+    "heldout_wrong": 0
+   },
+   {
+    "name": "optimize_flow_blind",
+    "from": "v4's frozen held-out results (not re-run)",
+    "heldout_optimal": 19,
+    "heldout_wrong": 0
+   },
+   {
+    "name": "flow_expansion_mcf",
+    "from": "this run's flow_expansion_mcf arm (the rule's subject)"
+   }
+  ],
+  "v4_counts": "run_v6.v4_constituents('heldout'): counted from results-v4.json's per-item held-out rows (the 200 items of this run), checked against that file's summary and rule; the counts do not depend on the machine. A development run reads development-v4.json's rows (v4_constituents('dev')) for the builders' check only",
+  "routed": "this run's routed_composition arm",
+  "best_constituent": "most optimal, then fewest wrong, as v4 chooses it; a full tie keeps v4's order (graph_alone_greedy, optimize_flow_blind, then flow_expansion_mcf), as run_v4.summarize's max() would with the genome appended",
+  "conditions": [
+   {
+    "id": "ROUTED_MORE_OPTIMAL",
+    "holds_when": "routed optimal > the genome's optimal"
+   },
+   {
+    "id": "ROUTED_NO_MORE_WRONG",
+    "holds_when": "routed wrong <= the genome's wrong"
+   },
+   {
+    "id": "SIGN_TEST_P_BELOW_ALPHA",
+    "holds_when": "one-sided exact sign test for 'routed is better' over discordant items (routed optimal and the genome not is a routed win; the reverse a routed loss) gives p < 0.05"
+   },
+   {
+    "id": "ROUTED_MEDIAN_WITHIN_CHAIN_BUDGET",
+    "holds_when": "routed median seconds <= 60"
+   },
+   {
+    "id": "ROUTED_MEDIAN_WITHIN_MULTIPLIER",
+    "holds_when": "routed median seconds <= 10 x the genome's median seconds (medians rounded to 4 decimals, as run_v4 rounds them)"
+   }
+  ],
+  "same_machine": "when the genome is the best constituent, the sign test and both latency conditions use this run's genome and routed rows, measured interleaved on the same machine",
+  "outcomes": [
+   "LIFT",
+   "NO_LIFT",
+   "INCONCLUSIVE",
+   "INVALID_RUN"
+  ],
+  "precedence": [
+   "INCONCLUSIVE (ITEMS_DIFFER) when the rows are not exactly the items v4's counts cover",
+   "INCONCLUSIVE (INDEPENDENT_RESCORING_DISAGREES) when the independent rescoring disagrees with the primary scoring on a genome or routed plan or a truth, with the primary rule's exception for the plan of a refuted genome receipt",
+   "INCONCLUSIVE (BEST_CONSTITUENT_IS_V4s) when a v4 constituent is the best constituent (the genome has fewer optimal items than it, or as many and more wrong ones, or ties it exactly): that constituent's paired rows and latencies are v4's, from another run on another machine, so the sign test and the latency conditions cannot be computed from this run's rows; v4's verdict against it stands",
+   "otherwise LIFT when all five conditions hold, else NO_LIFT naming every failed condition",
+   "INVALID_RUN replaces any of these when an integrity check fails (execution.integrity_after_the_run)"
+  ],
+  "decided_by": "run_v6.f7_lift_with_genome(rows, run_v6.v4_constituents('heldout')) on the held-out rows",
+  "expected": "NO_LIFT, failing ROUTED_MORE_OPTIMAL and SIGN_TEST_P_BELOW_ALPHA: admission v3 found the genome tied with the graph_then_allocate twin on 30 of 30 synthetic instances, and the builders' development runs had both arms optimal on every development item. This is the expectation, not a result",
+  "alpha": 0.05,
+  "latency_multiplier": 10.0,
+  "chain_budget_s": 60.0
+ },
+ "expected_outcome": "a tie: every arm optimal on every item, the genome faster than the chain (one cortex.reason call against three), the independent rescoring agreeing everywhere. Only a non-tie (any win or loss), a wrong answer, a refutation, an abstention, a latency failure, a comparator that does not replicate or a rescoring disagreement (on any arm, or on a truth) is informative. The secondary decision F7_LIFT_WITH_GENOME is expected to be NO_LIFT (secondary_decision.expected).",
+ "disclosures": [
+  "(a) RE-USE, LOOKED AT TWICE. This is a declared re-use of P6 v4's held-out items. They have been looked at twice before this run: (1) v4's held-out run (routed composition and PMCF optimal on 200 of 200, docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json); (2) the Track B audit on branch claude/greg-mind-lineage-convergence (frozen at 49b2d58, cortex/evaluation/pr155_f7_audit/freeze.json; evidence docs/evidence/pr155-f7-audit/2026-10-14/ committed in 8bbd3b8), which rebuilt all 200 held-out items from the SNDlib extract without importing run_v4.py or flow.py, re-solved every truth by HiGHS MILP (truth agreement 200 of 200) and re-scored v4's recorded plans for its seven arms (verdict CONFIRMED). The audit did not run any GREG arm and did not run flow_expansion_mcf. Their truths and every v4 arm's results are public in the repository. This run cannot change v4's verdict (LIFT over GREG's then repertoire) and is not a new natural family: it does not count toward VPL or toward the natural-family tally.",
+  "(b) EXPECTED TIE. The genome and PMCF solve the same split-arc formulation (a free arc at the free capacity and a priced arc up to 20 units per edge) that defines the truth, and the genome certifies its own optimum. The expected outcome is a tie, so only the cases listed under expected_outcome are informative; a MATCH replicates admission v3's verdict on real instances and is reported as a replication, not as a new capability.",
+  "(c) DATA TERMS. SNDlib publishes no open licence; its terms for redistribution beyond research remain unresolved. That is a release blocker and a founder decision; this run uses the committed extract for evaluation only.",
+  "(d) WHAT THE RESULT CAN AND CANNOT CHANGE. It can change: whether the compiler's routing of F7's geometry to flow_expansion_mcf (its single-genome match against graph_then_allocate) rests on real-instance evidence; the genome's known_strengths text in greg/cognition/genomes/flow.py, which today says it was not run on F7; and the Founder Intent Ledger and Backcast GPS records of F7. A NO_MATCH is a reason to re-examine the genome's DEFAULT status on this geometry through a new admission, not an automatic demotion: the admission status changes only through a pre-registered admission run. An INCONCLUSIVE or INVALID_RUN changes nothing but the records, which report it with its cause. It cannot change: v4's verdict, the VPL count, the natural-family tally, any attachment on the body (attaching is the founder's decision), or any authority.",
+  "(e) DESIGN KNOWLEDGE. flow_expansion_mcf was built after v4, as the residual capability v4's README named; its designer knew F7's geometry and v4's aggregate results. Its known_strengths text records that it was not run on F7, and no record in the repository shows it run on F7's held-out items before this pre-registration (the Track B audit did not run it).",
+  "(f) DEVELOPMENT RUNS. The builders ran the 50 development items with every arm while preparing this pre-registration (run_v6.py --development; development runs, not evidence, written outside docs/evidence). The first run, under the first rule, had every arm optimal on all 50 items. An independent critique then showed that degenerate arms satisfied that rule and that a refuted genome answer was scored as an abstention; the conditions, the outcome precedence, the independent rescoring and the integrity checks were revised for those reasons, after that first run and before the development run that reports them. A third revision followed an independent re-check of the second: a refutation now outranks a disagreement on its own plan's score, a secondary-arm rescoring disagreement makes the run informative, the tie definition was corrected to match the code, an exception in an arm is recorded instead of aborting the run, and the secondary decision F7_LIFT_WITH_GENOME was added. The builders added that decision after their development runs had shown the genome and the routed composition optimal on all 50 development items, so its expected development reading (NO_LIFT) was known when it was written; its rule is v4's frozen rule, not one chosen on those results. No development result changed a threshold: alpha 0.05 and 1.25x are admission v3's, and 10x and 60 s are v4's.",
+  "(g) LATENCY COMPOSITION. Both GREG arms' latencies are dominated by isolated-worker launches: by greg/cognition/cortex.py each operation launches a solver worker and an independent verifier worker; the genome arm makes one such call and the chain three. With no bytecode in the checkout every worker compiles the repository source it imports, a cost both arms pay per launch. The ratio therefore measures GREG's canonical serving cost of one method against a three-stage composition, not the algorithms' compute.",
+  "(h) DEPENDENCE. Items within one network share its topology; the item-level sign test treats them as independent. The per-network breakdown is reported alongside.",
+  "(i) CODE INDEPENDENCE. The genome, its verifier, the primary scorer and the truth share greg/cognition/genomes/flow.py; the independent rescoring does not (see independent_rescoring.code_independence).",
+  "(j) VALIDATOR. vpl_metrics.validate_preregistration does not apply (see vpl_validator).",
+  "(k) SECONDARY DECISION. F7_LIFT_WITH_GENOME re-reads v4's frozen F7 rule with the genome as a third constituent. v4's constituents are not re-run: their held-out optimal and wrong counts are v4's (machine-independent), and their latencies, measured on v4's machine, are never compared with this run's. It cannot change v4's verdict; a LIFT under it would describe this run's routed composition against the genome on re-used items, not a new natural family."
+ ],
+ "vpl_validator": {
+  "applies": false,
+  "why": "validate_preregistration checks a new P6 family's VPL pre-registration: at least two constituent intelligences, a static recipe chosen on development items that must decide every held-out item, a routed arm, a compiled arm, and declared_before_heldout = true (committed before the held-out partition is generated). This question is a single genome against one composition on a held-out partition generated and evaluated in v4: there are no constituents to beat, no static recipe to choose, and the held-out partition already exists. Forcing the fields would misdescribe the test, so they are omitted and the validator's report is recorded here as it stands.",
+  "problems_reported": [
+   "missing family_id",
+   "missing natural",
+   "missing partition_rule",
+   "missing constituents",
+   "missing static_arm",
+   "missing routed_arm",
+   "missing compiled_arm",
+   "missing practitioner_arms",
+   "missing cost_metric",
+   "missing latency_rule",
+   "missing alpha",
+   "missing declared_before_heldout"
+  ]
+ },
+ "heldout_previously_evaluated": true,
+ "heldout_previous_looks": [
+  "P6 v4 held-out run (results-v4.json)",
+  "Track B F7 audit (49b2d58 freeze, 8bbd3b8 evidence; did not run the genome)"
+ ],
+ "declared_before_this_heldout_look": true
+}

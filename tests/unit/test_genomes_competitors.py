@@ -7,6 +7,7 @@ held-out admission seeds are never generated here, and nothing here runs or free
 from __future__ import annotations
 
 import copy
+import itertools
 import json
 import math
 from pathlib import Path
@@ -33,6 +34,7 @@ EVIDENCE = {"knapsack_bnb": "exact_calculation", "grid_dijkstra": "optimality_ce
             "game_lp_dual": "optimality_certificate", "pid_simopt": "control_trace"}
 FROZEN = {"dp_knapsack": competitors.V1, "search_astar": competitors.V1, "game_minimax": competitors.V1,
           "basal_pid": competitors.V2}
+VERSIONS = {"grid_dijkstra": "1.1.0"}           # 1.0.0 measured EXPERIMENTAL in admission v3; 1.1.0 is faster
 BUDGET = {"latency_s": 5.0, "compute": 100000}
 _CACHE: dict = {}
 
@@ -83,7 +85,8 @@ def test_genomes_validate_and_reuse_the_superseded_geometry():
     for x in competitors.INTELLIGENCES:
         g, former = x.genome, old(x.genome.family)
         assert isinstance(g, IntelligenceGenome) and g.validate() is g
-        assert g.layer == 3 and g.buildability == "BUILDABLE_NOW" and g.standalone_decision and g.version == "1.0.0"
+        assert g.layer == 3 and g.buildability == "BUILDABLE_NOW" and g.standalone_decision
+        assert g.version == VERSIONS.get(g.family, "1.0.0")
         assert g.operation == OPS[g.family] and g.evidence_type == EVIDENCE[g.family]
         # the same requests fit it: same native geometry and input contract as the genome it replaces
         assert g.epistemic_class == former.genome.epistemic_class
@@ -612,6 +615,289 @@ def test_grid_answers_up_to_one_hundred_cells_a_side_within_the_worker_output_bo
     assert all(competitors.grid_dijkstra_verify(data, out["output"], out["certificate"]).values())
     assert len(json.dumps(out)) < 256 * 1024                 # the isolated worker's output bound
     _json_clean(out["certificate"])
+
+
+# --------------------------- grid_dijkstra 1.1.0: 1.0.0's distances and certificate (guaranteed), route (observed)
+def _grid_case(r, rows, cols, blocked, high):
+    """A review-seed grid (seeds 3700-3799): rows x cols, a blocked fraction, costs 1..high, passable endpoints."""
+    grid = [[0 if r.random() < blocked else r.randint(1, high) for _ in range(cols)] for _ in range(rows)]
+    start, goal = [r.randrange(rows), r.randrange(cols)], [r.randrange(rows), r.randrange(cols)]
+    for rr, cc in (start, goal):
+        grid[rr][cc] = grid[rr][cc] or 1
+    return {"grid": grid, "start": start, "goal": goal}
+
+
+def _grid_edge_cases():
+    cases = [{"grid": [[1]], "start": [0, 0], "goal": [0, 0]},                                   # start is the goal
+             {"grid": [[1, 0, 1]], "start": [0, 0], "goal": [0, 2]},                             # isolated endpoints
+             {"grid": [[1, 0, 1], [1, 0, 1], [1, 0, 1]], "start": [0, 0], "goal": [2, 2]},      # a wall: unreachable
+             {"grid": [[5] * 7], "start": [0, 6], "goal": [0, 0]},                               # one row, leftwards
+             {"grid": [[2] for _ in range(7)], "start": [6, 0], "goal": [0, 0]},                 # one column, upwards
+             {"grid": [[1000] * 100 for _ in range(100)], "start": [99, 99], "goal": [0, 0]}]    # largest, dearest
+    for seed in range(3700, 3740):
+        r = random.Random(seed)
+        cases.append(_grid_case(r, r.randint(1, 100), r.randint(1, 100), r.choice((0.0, 0.2, 0.45, 0.6)),
+                                r.choice((1, 9, 1000))))
+    return cases
+
+
+ROUTE = ("moves", "steps")      # which optimal route was traced: observed equal to 1.0.0's, never guaranteed
+
+
+def _without_route(result):
+    return {**result, "output": {k: v for k, v in result["output"].items() if k not in ROUTE}}
+
+
+def _route(result):
+    return {k: result["output"].get(k) for k in ROUTE}
+
+
+def _assert_1_0_guarantee(new, ref, data):
+    """What 1.1.0 guarantees against 1.0.0 (``grid_dijkstra_solve``'s docstring): every distance is unchanged, so the
+    status, reachability, cost and the whole certificate (the potential and the settled-cell and component counts
+    are functions of the distances) are equal, and the answer verifies. The route is not compared here: which optimal
+    route the predecessors trace depends on SciPy's heap tie-breaking (the observation test checks it apart)."""
+    assert new["status"] == ref["status"] == "ANSWER"
+    assert _without_route(new) == _without_route(ref)
+    assert all(competitors.grid_dijkstra_verify(data, new["output"], new["certificate"]).values())
+
+
+def _tight_route(data, potential, order):
+    """An optimal route traced back from the goal along tight edges of the potential, preferring moves in ``order``:
+    a stand-in for the route another tie-break would trace."""
+    step = {"U": (-1, 0), "D": (1, 0), "L": (0, -1), "R": (0, 1)}
+    grid, start, (r, c) = data["grid"], tuple(data["start"]), data["goal"]
+    path = []
+    while (r, c) != start:
+        m = next(m for m in order if 0 <= r - step[m][0] < len(grid) and 0 <= c - step[m][1] < len(grid[0])
+                 and grid[r - step[m][0]][c - step[m][1]]
+                 and potential[r - step[m][0]][c - step[m][1]] + grid[r][c] == potential[r][c])
+        path.append(m)
+        r, c = r - step[m][0], c - step[m][1]
+    return "".join(reversed(path))
+
+
+@pytest.mark.parametrize("seed", range(10))
+def test_grid_1_1_keeps_the_distances_cost_and_certificate_of_1_0_on_every_dev_seed(seed):
+    data, truth = dev("grid_dijkstra", seed)
+    new = competitors.grid_dijkstra_solve(copy.deepcopy(data), BUDGET)
+    _assert_1_0_guarantee(new, competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET), data)
+    assert new["output"]["cost"] == truth["cost"] == competitors.grid_networkx_bidirectional(data)["cost"]
+
+
+def test_grid_1_1_matches_1_0_and_networkx_on_edge_and_review_grids_and_every_answer_verifies():
+    reachable = unreachable = 0
+    for data in _grid_edge_cases():
+        new = competitors.grid_dijkstra_solve(copy.deepcopy(data), BUDGET)
+        _assert_1_0_guarantee(new, competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET), data)
+        assert new["certificate"]["method"] == competitors.GD_METHOD
+        other = competitors.grid_networkx_bidirectional(copy.deepcopy(data))
+        assert new["output"]["reachable"] == other["reachable"] and new["output"]["cost"] == other["cost"]
+        reachable += new["output"]["reachable"]
+        unreachable += not new["output"]["reachable"]
+    assert reachable >= 20 and unreachable >= 5          # both branches are exercised
+
+
+def test_the_grid_1_0_guarantee_holds_for_another_optimal_route_and_fails_on_another_cost_or_potential():
+    """A SciPy tie-break change must not fail the guarantee tests: an answer that traces another optimal route (here
+    traced along tight edges of the potential with other move preferences) still meets the 1.0 guarantee and
+    verifies, while the observation test would report it; a changed cost or potential fails the guarantee."""
+    data, _, new = solved("grid_dijkstra", 1)                # a uniform-cost obstacle grid: optimal routes tie
+    ref = competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET)
+    potential = new["certificate"]["potential"]
+    others = sorted({_tight_route(data, potential, order) for order in itertools.permutations("UDLR")}
+                    - {ref["output"]["moves"]})       # differs from the reference whatever 1.1.0 traced
+    assert others                                            # this grid has another optimal route
+    other = {**new, "output": {**new["output"], "moves": others[0], "steps": len(others[0])}}
+    _assert_1_0_guarantee(other, ref, data)
+    assert _route(other) != _route(ref)
+    broken = ({**other, "output": {**other["output"], "cost": other["output"]["cost"] + 1}},
+              {**other, "certificate": {**other["certificate"], "potential": [[x + 1 for x in row]
+                                                                              for row in potential]}})
+    for answer in broken:
+        with pytest.raises(AssertionError):
+            _assert_1_0_guarantee(answer, ref, data)
+
+
+def _grid_inputs_answered():
+    """The inputs of the input-check test that the contract accepts (a plain grid and a list-subclass grid)."""
+    out = []
+    for data in GRID_INPUTS + [{"grid": [_Row([1, 2]), _Row([3, 4])], "start": [0, 0], "goal": [1, 1]}]:
+        try:
+            solvers_b._grid(copy.deepcopy(data))
+        except GenomeError:
+            continue
+        out.append(data)
+    return out
+
+
+def test_observation_not_a_guarantee_1_1_traces_1_0s_route_on_every_grid_tested():
+    """OBSERVATION, not a guarantee (``grid_dijkstra_solve``'s docstring). 1.1.0 scans neighbours in another order
+    than 1.0.0's sorted CSR, so where several routes are optimal the one traced depends on SciPy's heap tie-breaking.
+    On every grid tested both trace the same route. If this fails while the guarantee tests pass, SciPy's tie-breaking
+    changed: the answers are still optimal and verified; correct the genome's notes that report identical routes."""
+    cases = [dev("grid_dijkstra", seed)[0] for seed in range(10)] + _grid_edge_cases() + _grid_inputs_answered()
+    differ = []
+    for data in cases:
+        new = competitors.grid_dijkstra_solve(copy.deepcopy(data), BUDGET)
+        ref = competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET)
+        if _route(new) != _route(ref):
+            differ.append((data["start"], data["goal"], _route(new), _route(ref)))
+    assert len(cases) >= 58 and not differ, (
+        f"OBSERVATION changed, not a guarantee failure: 1.1.0 traced another optimal route than 1.0.0 on "
+        f"{len(differ)} grid(s): {differ[:3]}")
+
+
+def test_grid_1_1_certificate_is_a_feasible_tight_potential_checked_here_independently():
+    """The dual certificate, checked by this test's own loop (not the genome's verifier): integer, zero at the start,
+    no edge into a passable cell rises by more than that cell's cost, tight at the goal, capped at the route cost."""
+    for seed in (0, 4, 8):
+        data, _, out = solved("grid_dijkstra", seed)
+        grid, (sr, sc), (gr, gc) = data["grid"], data["start"], data["goal"]
+        pi, cost = out["certificate"]["potential"], out["output"]["cost"]
+        assert all(type(x) is int and 0 <= x <= cost for row in pi for x in row)
+        assert pi[sr][sc] == 0 and pi[gr][gc] == cost == out["certificate"]["potential_cap"]
+        rows, cols = len(grid), len(grid[0])
+        for r in range(rows):
+            for c in range(cols):
+                for rr, cc in ((r + 1, c), (r - 1, c), (r, c + 1), (r, c - 1)):
+                    if grid[r][c] and 0 <= rr < rows and 0 <= cc < cols and grid[rr][cc]:
+                        assert pi[rr][cc] <= pi[r][c] + grid[rr][cc]
+
+
+GRID_INPUTS = [
+    {"grid": [[1, 2], [3, 4]], "start": [0, 0], "goal": [1, 1]},                        # valid, fast path
+    {"grid": [[1, True], [3, 4]], "start": [0, 0], "goal": [1, 1]},                     # bool is not an int
+    {"grid": [[1, 2.0], [3, 4]], "start": [0, 0], "goal": [1, 1]},
+    {"grid": [[1, "2"], [3, 4]], "start": [0, 0], "goal": [1, 1]},
+    {"grid": [[1, None], [3, 4]], "start": [0, 0], "goal": [1, 1]},
+    {"grid": [[1, -1], [3, 4]], "start": [0, 0], "goal": [1, 1]},
+    {"grid": [[1, 1001], [3, 4]], "start": [0, 0], "goal": [1, 1]},
+    {"grid": [[1, 2 ** 70], [3, 4]], "start": [0, 0], "goal": [1, 1]},                 # beyond int64
+    {"grid": [[1, -(2 ** 70)], [3, 4]], "start": [0, 0], "goal": [1, 1]},
+    {"grid": [[1, 2], [3]], "start": [0, 0], "goal": [1, 0]},                           # ragged
+    {"grid": [[1], [3, 4]], "start": [0, 0], "goal": [1, 0]},
+    {"grid": [[], []], "start": [0, 0], "goal": [1, 0]},
+    {"grid": [], "start": [0, 0], "goal": [0, 0]},
+    {"grid": [[[1]]], "start": [0, 0], "goal": [0, 0]},                                 # one level too deep
+    {"grid": [[1, 2], 3], "start": [0, 0], "goal": [0, 1]},
+    {"grid": ((1, 2), (3, 4)), "start": [0, 0], "goal": [1, 1]},                        # a tuple is not a list
+    {"grid": [(1, 2), (3, 4)], "start": [0, 0], "goal": [1, 1]},
+    {"grid": [[1] * 201], "start": [0, 0], "goal": [0, 1]},                             # beyond GRID_MAX columns
+    {"grid": [[1] for _ in range(201)], "start": [0, 0], "goal": [1, 0]},               # beyond GRID_MAX rows
+    {"grid": [[1, 2], [3, 4]], "start": [0, 2], "goal": [1, 1]},                        # start off the grid
+    {"grid": [[1, 2], [3, 4]], "start": [0], "goal": [1, 1]},
+    {"grid": [[1, 2], [3, 4]], "start": [0, True], "goal": [1, 1]},
+    {"grid": [[1, 2], [3, 4]], "start": "0,0", "goal": [1, 1]},
+    {"grid": [[1, 2], [3, 4]], "start": [0, 0]},                                         # no goal
+    {"grid": [[0, 2], [3, 4]], "start": [0, 0], "goal": [1, 1]},                        # blocked start
+    {"grid": [[1, 2], [3, 0]], "start": [0, 0], "goal": [1, 1]},                        # blocked goal
+    {"start": [0, 0], "goal": [1, 1]},                                                   # no grid
+    [], "grid", None, 3,                                                                 # not an object
+]
+
+
+class _Row(list):
+    """A list subclass: the reference contract (isinstance) accepts it; the fast path leaves it to the reference."""
+
+
+@pytest.mark.parametrize("data", GRID_INPUTS + [{"grid": [_Row([1, 2]), _Row([3, 4])], "start": [0, 0],
+                                                 "goal": [1, 1]}])
+def test_the_vectorised_input_check_is_solvers_b_grid_contract_with_the_same_refusals(data):
+    try:
+        cells, rows, cols, s, t = solvers_b._grid(copy.deepcopy(data))
+    except GenomeError as exc:
+        with pytest.raises(GenomeError) as raised:
+            competitors._gd_grid(copy.deepcopy(data))
+        assert str(raised.value) == str(exc)
+        for solve in (competitors.grid_dijkstra_solve, competitors.grid_dijkstra_solve_v100):
+            with pytest.raises(GenomeError) as refused:
+                solve(copy.deepcopy(data), BUDGET)
+            assert str(refused.value) == str(exc)
+        return
+    costs, rows2, cols2, s2, t2 = competitors._gd_grid(copy.deepcopy(data))
+    assert (costs.ravel().tolist(), rows2, cols2, s2, t2) == (cells, rows, cols, s, t)
+    assert str(costs.dtype) == "int64" and costs.shape == (rows, cols)
+    new = competitors.grid_dijkstra_solve(copy.deepcopy(data), BUDGET)
+    _assert_1_0_guarantee(new, competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET), data)
+
+
+def test_a_plain_grid_takes_the_vectorised_check_and_never_the_per_cell_one(monkeypatch):
+    data, _ = dev("grid_dijkstra", 5)
+    monkeypatch.setattr(solvers_b, "_grid", lambda d: pytest.fail("a plain grid must not take the per-cell check"))
+    costs, rows, cols, s, t = competitors._gd_grid(data)
+    assert costs.shape == (rows, cols) and costs.ravel().tolist() == [x for row in data["grid"] for x in row]
+    assert competitors.grid_dijkstra_solve(data, BUDGET)["status"] == "ANSWER"
+
+
+def test_the_grid_abstention_and_refusals_are_unchanged_from_1_0():
+    big = copy.deepcopy(ABSTAIN["grid_dijkstra"])
+    assert competitors.grid_dijkstra_solve(big, BUDGET) == competitors.grid_dijkstra_solve_v100(big, BUDGET)
+    for data in INVALID["grid_dijkstra"]:
+        with pytest.raises(GenomeError) as new:
+            competitors.grid_dijkstra_solve(copy.deepcopy(data), BUDGET)
+        with pytest.raises(GenomeError) as old:
+            competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET)
+        assert str(new.value) == str(old.value)
+
+
+def test_the_version_bump_keeps_the_v3_verdict_as_negative_evidence_until_a_readmission():
+    """grid_dijkstra 1.0.0 was measured EXPERIMENTAL (admission v3). 1.1.0 inherits no positive verdict, and the
+    negative one stays on record (labelled as measured at 1.0.0) until a held-out re-admission at 1.1.0 replaces it."""
+    import importlib.util
+    index = json.loads((ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json").read_text())
+    record = index["genomes"]["grid_dijkstra"]
+    assert record["status"] == "EXPERIMENTAL" and record["version"] == "1.0.0"
+    assert record["evidence"] == competitors.V3 + "#genomes.grid_dijkstra"
+    genome = library.genome("grid_dijkstra")
+    assert genome.version == "1.1.0" and any(entry.startswith(competitors.V3) for entry in genome.lineage)
+    data = {k: 0 for k in genome.required_inputs}
+    row = next(c for c in compiler.candidates(data, compiler.CompetencyGeometry(), index)
+               if c["method"] == "cognition.grid_dijkstra")
+    assert row["status"] == "EXPERIMENTAL" and "stale_evidence" not in row
+    spec = importlib.util.spec_from_file_location("_mind_status_grid", ROOT / "scripts" / "mind_status.py")
+    status = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(status)
+    entry = next(e for e in status.status()["mechanisms"] if e["id"] == "cognition.grid_dijkstra")
+    assert entry["label"] == "UNRESOLVED" and entry["version_current"] == "1.1.0"
+    assert entry["heldout"]["version_measured"] == "1.0.0" and entry["heldout"]["current"] is False
+    assert "current 1.1.0" in entry["basis"] and "persists until a re-admission" in entry["basis"]
+
+
+def test_1_0s_held_out_latency_and_subregions_are_reported_as_1_0s_and_never_rank_1_1():
+    """Review of 1.1.0: the compiler attached 1.0.0's held-out median (1.328 ms) to the 1.1.0 row as 'held-out, this
+    version', a latency tie-break. On the committed index the row, the receipt, the withheld best fit and the founder's
+    attach ask now carry 1.0.0's measurements labelled with the version measured, and the row carries no
+    ``median_seconds`` or ``subregion`` to rank on."""
+    from greg import asks
+    index = json.loads((ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json").read_text())
+    record = index["genomes"]["grid_dijkstra"]
+    data, _ = dev("grid_dijkstra", 1)
+    name = solvers_b.astar_subregion(data)
+    row = next(c for c in compiler.candidates(data, compiler.CompetencyGeometry.parse({"geometry": "optimization"}),
+                                              index) if c["method"] == "cognition.grid_dijkstra")
+    assert "median_seconds" not in row and "subregion" not in row
+    stale = row["stale_measurements"]
+    assert (stale["version_measured"], stale["version_current"], stale["status"]) == ("1.0.0", "1.1.0", "EXPERIMENTAL")
+    assert stale["median_seconds"] == record["median_seconds"] == 0.001328
+    assert stale["evidence"] == competitors.V3 + "#genomes.grid_dijkstra"
+    assert stale["subregion"]["name"] == name and stale["subregion"]["vs_competitor"] == \
+        record["subregions_vs_competitor"][name]
+    assert "measured at version 1.0.0, not the current 1.1.0" in stale["stale_evidence"]
+    r = reason({"problem_id": "grid-stale", "compile": {"geometry": {"geometry": "optimization"}, "data": data,
+                                                        "execute": False}}, registry=registry_view())
+    assert r["state"] == "CAPABILITY_DEFICIT"                     # 1.1.0 is registered and withheld
+    assert r["withheld_best_fit"]["method"] == "cognition.grid_dijkstra"
+    assert r["withheld_best_fit"]["stale_measurements"] == stale and "subregion" not in r["withheld_best_fit"]
+    ask = r["founder_attach_ask"]
+    assert ask["evidence"]["measured_version"] == "1.0.0" and ask["evidence"]["stale_measurements"] == stale
+    assert "subregion" not in ask["evidence"] and asks.screen(ask) == []
+    attached = registry_view()
+    attached.set_state("cognition.grid_dijkstra", "ATTACHED")     # evaluation-only founder pin, in memory
+    r = reason({"problem_id": "grid-stale", "compile": {"geometry": {"geometry": "optimization"}, "data": data,
+                                                        "execute": False}}, registry=attached)
+    assert r["method_or_composition_selected"] == "cognition.grid_dijkstra" and r["stale_measurements"] == stale
+    assert "subregion_evidence" not in r
 
 
 @pytest.mark.parametrize("scale,offset", ((1e-9, 0.0), (1e8, 0.0), (1.0, 999_999_000.0), (0.01, 1e6),

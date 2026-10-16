@@ -441,6 +441,8 @@ def _family_rows(keys: set, g: CompetencyGeometry, evidence: dict, data: dict | 
         for op in ops:
             stale = None
             outputs = None
+            record = {}
+            other_version = False             # the family's evidence was measured at another version of its code
             if family in genomes:
                 need = genomes[family].genome.required_inputs
                 outputs = sorted(genomes[family].genome.output_contract)
@@ -448,7 +450,8 @@ def _family_rows(keys: set, g: CompetencyGeometry, evidence: dict, data: dict | 
                 status = record.get("status", "UNEVALUATED")
                 standalone = genomes[family].genome.standalone_decision
                 measured, current = record.get("version"), genomes[family].genome.version
-                if measured and measured != current and status not in NOT_POSITIVE:
+                other_version = bool(measured) and measured != current
+                if other_version and status not in NOT_POSITIVE:
                     # positive evidence binds the version measured; negative evidence persists until a
                     # re-admission replaces it
                     stale = f"{status} was measured at version {measured}; version {current} needs re-admission"
@@ -469,17 +472,24 @@ def _family_rows(keys: set, g: CompetencyGeometry, evidence: dict, data: dict | 
             elif not standalone:
                 reason = "composition stage only (no standalone decision)"
             elif status in EXCLUDED:
-                reason = f"frozen admission status {status}"
+                reason = f"frozen admission status {status}" + (
+                    f", measured at version {measured} (it persists until a re-admission at {current})"
+                    if other_version else "")
             row = {"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
                    "epistemic_classes": list(classes), "rejected": reason, "inputs": sorted(need), "outputs": outputs,
                    **({"stale_evidence": stale} if stale else {})}
-            if family in genomes and not stale and evidence["genomes"].get(family, {}).get("median_seconds") is not None:
-                row["median_seconds"] = evidence["genomes"][family]["median_seconds"]   # held-out, this version
-            if family in genomes and not stale and data is not None:
-                # subregion verdicts bind the version they were measured at, like the status they refine
-                measured = _subregion_evidence(genomes[family], data, evidence["genomes"].get(family, {}))
-                if measured:
-                    row["subregion"] = measured
+            # Held-out measurements (median latency, subregion verdicts) bind the version they were measured at.
+            # Measured at another version, they never rank, order fits or name acquisitions, whatever the status:
+            # a negative status persists, but the latency and verdicts it came with describe other code. They
+            # are reported under ``stale_measurements``, labelled with the version measured.
+            if family in genomes and not other_version and record.get("median_seconds") is not None:
+                row["median_seconds"] = record["median_seconds"]          # held-out, measured at this version
+            if family in genomes and not other_version and data is not None:
+                placed = _subregion_evidence(genomes[family], data, record)
+                if placed:
+                    row["subregion"] = placed
+            if other_version:
+                row["stale_measurements"] = _stale_measurements(genomes[family], record, data)
             if family in genomes and status == "SUPERSEDED":
                 item = genomes[family]
                 row["superseded_by"] = {"mechanism": item.genome.competitor,
@@ -842,6 +852,25 @@ def _subregion_evidence(item, data: dict, record: dict) -> dict | None:
             "competitor_deployable": item.competitor_deployable, "evidence": record.get("evidence")}
 
 
+def _stale_measurements(item, record: dict, data: dict | None) -> dict:
+    """A genome's frozen held-out evidence measured at another version of its code, labelled with that version.
+
+    Reported in rows, receipts and attach asks, and never used to rank, order fits or name acquisitions: the median
+    latency and subregion verdicts describe the code that was measured. Its status is handled by the status rule
+    (positive evidence counts as UNEVALUATED; negative evidence persists until a re-admission replaces it)."""
+    measured, current, status = record.get("version"), item.genome.version, record.get("status")
+    persists = status in NOT_POSITIVE
+    region = _subregion_evidence(item, data, record) if data is not None else None
+    return {k: v for k, v in {
+        "version_measured": measured, "version_current": current, "status": status,
+        "evidence": record.get("evidence"), "median_seconds": record.get("median_seconds"), "subregion": region,
+        "stale_evidence": (f"measured at version {measured}, not the current {current}: reported, never used to rank, "
+                           f"order fits or name acquisitions; "
+                           + (f"the {status} status persists until a re-admission at {current} replaces it"
+                              if persists else f"the {status} status counts as UNEVALUATED until a re-admission"))
+    }.items() if v is not None}
+
+
 def _rank(row: dict, prefer: list, competence: dict) -> tuple:
     status = 0 if row["status"] == "VPL_LIFT" else STATUS_RANK.get(row["status"], 5)
     preferred = 0 if (row["operation"] in prefer or row["method"] in prefer) else 1
@@ -850,7 +879,8 @@ def _rank(row: dict, prefer: list, competence: dict) -> tuple:
     latency = row.get("median_seconds")
     # Frozen negative evidence outranks an operator's preference: evidence over heuristics. Within one status,
     # the measured subregion verdict orders fits before settled competence, then measured held-out latency
-    # (unmeasured last), then operations before compositions and organs.
+    # (unmeasured last), then operations before compositions and organs. Both measurements count only at the
+    # version they were measured at (_family_rows reports another version's under stale_measurements).
     return (1 if row.get("demoted") else 0, preferred, status, region, settled,
             latency if latency is not None else float("inf"), 0 if row["kind"] == "operation" else 1, row["method"])
 
@@ -1073,7 +1103,8 @@ def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> d
     record = evidence.get("genomes", {}).get(family, {})
     measured = {k: v for k, v in {"admission_status": best["status"], "admission_evidence": record.get("evidence"),
                                   "measured_version": record.get("version"),
-                                  "subregion": best.get("subregion"), "current_state": best["usable_why"]}.items()
+                                  "subregion": best.get("subregion"), "current_state": best["usable_why"],
+                                  "stale_measurements": best.get("stale_measurements")}.items()
                 if v is not None}
     if best.get("promotes"):
         # the frozen evidence that made this mechanism worth promoting, labelled for what it measured
@@ -1392,6 +1423,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                         "status": best["status"], "served_by": runnable[0]["method"] if runnable
                                         else None, **({"subregion": best["subregion"]} if best.get("subregion")
                                                       else {}),
+                                        **({"stale_measurements": best["stale_measurements"]}
+                                           if best.get("stale_measurements") else {}),
                                         **({"promotes": best["promotes"]} if best.get("promotes") else {})}
         state = _state(registry, best["method"])
         if best["kind"] == "composition" or state != "VERIFIED":
@@ -1431,6 +1464,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     if chosen.get("stale_evidence"):
         receipt["selection_level"] = "unevaluated_at_current_version"
         receipt["dissent"].append(f"stale admission evidence: {chosen['stale_evidence']}")
+    if chosen.get("stale_measurements"):
+        # held-out evidence of another version of this method's code, labelled with that version (never ranked)
+        receipt["stale_measurements"] = chosen["stale_measurements"]
     region = chosen.get("subregion")
     if region:
         receipt["subregion_evidence"] = region

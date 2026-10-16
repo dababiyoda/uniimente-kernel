@@ -365,6 +365,41 @@ def test_a_deficit_that_fits_a_withheld_genome_names_it_as_the_attach_candidate(
         assert len(attach_asks(body)) == 1 and not list(body.journal.replay("decision.withdrawn"))
 
 
+def test_an_attach_candidate_whose_frozen_status_was_measured_at_another_version_is_labelled_with_it(tmp_path,
+                                                                                                     index):
+    """grid_dijkstra 1.1.0 carries 1.0.0's EXPERIMENTAL verdict (negative evidence persists until a re-admission).
+    Genesis named it 'attach candidate: cognition.grid_dijkstra (EXPERIMENTAL)' as if 1.1.0 had been measured."""
+    from greg.cognition.genomes import solvers_b
+    grid, astar = library.genome("grid_dijkstra"), library.genome("search_astar")
+    assert grid.version != "1.0.0"
+    index.write_text(json.dumps({"genomes": {
+        "grid_dijkstra": {"status": "EXPERIMENTAL", "version": "1.0.0", "evidence": "v3.json#grid_dijkstra",
+                          "median_seconds": 0.001328},
+        "search_astar": {"status": "SUPERSEDED", "version": astar.version, "evidence": "v1.json#search_astar"}},
+        "recipes": {}, "routing": {}}))
+    home, key, body_id, _ = make_body(tmp_path)
+    data, _ = solvers_b.astar_instance(1)                                 # development seed
+    drop(home, signed(key, body_id, "MISSION", compile_mission("m:grid", {"geometry": "optimization"}, data,
+                                                                auto_attach=True)))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock, 3)[-1]["state"] in ("BLOCKED", "WAITING")
+        routes = {e.payload["capability_id"]: e.payload["result"] for e in body.journal.replay("genesis.route")
+                  if e.payload["route"] == "genome_library"}
+        assert routes["cognition.grid_dijkstra"] == (
+            "attach candidate: cognition.grid_dijkstra (EXPERIMENTAL, measured at version 1.0.0) fits by native "
+            "class and inputs ['goal', 'grid', 'start']; registered and withheld; GREG does not attach it")
+        assert routes["cognition.search_astar"] == "cognition.search_astar fits but is not a candidate: frozen " \
+                                                   "admission status SUPERSEDED"
+        [awaiting] = [e.payload for e in body.journal.replay("deficit.awaiting_attach")]
+        assert awaiting["capability_id"] == "cognition.grid_dijkstra" and awaiting["admission_status"] == "EXPERIMENTAL"
+        assert (awaiting["admission_version"], awaiting["current_version"]) == ("1.0.0", grid.version)
+        [ask] = attach_asks(body)
+        assert ask["evidence"]["stale_measurements"]["version_measured"] == "1.0.0"
+        assert ask["evidence"]["stale_measurements"]["median_seconds"] == 0.001328
+
+
 def test_without_the_compiler_genesis_alone_names_the_withheld_genome_in_the_one_mission_ask(tmp_path, index):
     item = library.executables()["queue_erlang"]
     index.write_text(json.dumps({"genomes": {"queue_erlang": {"status": "NICHE_CAPABILITY",

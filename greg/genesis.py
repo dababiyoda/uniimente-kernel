@@ -913,11 +913,17 @@ class Genesis:
                 noted = True
                 continue
             found.append(cid)
-            self._route(deficit_id, "genome_library", f"attach candidate: {cid} ({row['status']}) fits by native class "
+            # a frozen status that persists from another version of the code (negative evidence awaiting a
+            # re-admission) is labelled with the version it was measured at, never presented as this version's
+            stale = row.get("stale_measurements") if not row.get("stale_evidence") else None
+            at = {"admission_version": stale["version_measured"], "current_version": stale["version_current"]} \
+                if stale else {}
+            label = row["status"] + (f", measured at version {at['admission_version']}" if at else "")
+            self._route(deficit_id, "genome_library", f"attach candidate: {cid} ({label}) fits by native class "
                                                       f"and inputs {row['inputs']}; registered and withheld; GREG "
                                                       "does not attach it", cid)
             self.journal.record("deficit.awaiting_attach", {
-                "deficit_id": deficit_id, "capability_id": cid, "admission_status": row["status"],
+                "deficit_id": deficit_id, "capability_id": cid, "admission_status": row["status"], **at,
                 "why": "a registered, withheld intelligence fits the residual geometry; attaching it is the "
                        "founder's decision"}, key=[deficit_id, "await", cid, row["status"]])
         # operation rows the compiler fitted to the request's one typed part: its row, not the residual's input names,

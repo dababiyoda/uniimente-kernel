@@ -1,0 +1,32 @@
+{
+  "card_id": "MC-0002",
+  "title": "Governed half-open recovery of quarantined capabilities",
+  "classification": "BUILDABLE",
+  "mode": "HARVEST+MUTATE",
+  "source": [
+    "opossum 10.0.0 (nodeshift/opossum), lib/circuit.js — analysed with REA, read in source",
+    "existing GREG precursor: greg/models.py route demotion with cooldown"
+  ],
+  "source_version_and_license": "opossum 10.0.0, Apache-2.0, tarball sha256 6bc54f2dff664f33bafd82d2a60e98b581a2e74461a9095ee5a675f59cb9c637; no code copied",
+  "observed_behavior": "after a failure threshold the breaker opens; a fixed resetTimeout timer moves it to half-open; the next live call is the probe; success closes, failure re-opens and restarts the same timer",
+  "underlying_function": "time-delayed, evidence-gated re-admission of a component that was excluded for failing",
+  "state_and_transitions": "CLOSED -> OPEN (threshold) -> HALF_OPEN (timer) -> CLOSED (probe success) | OPEN (probe failure)",
+  "inputs_and_outputs": {
+    "in": "call outcomes, error-rate window, resetTimeout",
+    "out": "state transitions and events (open, halfOpen, close, failure)"
+  },
+  "resource_consumption": "one timer per breaker; the probe is a real call",
+  "feedback_loops": "failure in half-open immediately re-opens; no growth of the wait",
+  "selection_rules": "volumeThreshold and errorThresholdPercentage decide opening; any single half-open success closes",
+  "trust_and_authority_boundaries": "none: the component re-enters service on one live success",
+  "failure_behavior": "a flapping dependency re-enters and fails repeatedly at a fixed cadence; the probe consumes a live request",
+  "recovery_behavior": "automatic close after one success",
+  "evidence_and_uncertainties": "REA evidence ev_bda547f2…781b (static, inert parse; 2,708 unresolved dynamic calls package-wide); confirmed by reading lib/circuit.js; runtime not observed",
+  "reusable_primitive": "quarantine with timed, evidence-gated re-admission",
+  "candidate_transformation": "probe in the sandbox on a fresh frozen-oracle seed (counterfactual, never live work); success restores eligibility (VERIFIED) never authority (ATTACHED); exponential backoff per failed probe and per prior quarantine; flapping stops recovery for the founder; dependency-ordered probing (engines before constructions, a construction probes through its own pinned engine)",
+  "new_failure_risk": "a component that passes the oracle but fails on live inputs can be re-admitted; bounded by the flapping stop (more than 3 in-service quarantines) and by founder-or-scope attach",
+  "intended_greg_capability": "a function lost to transient faults returns without founder attention, under the mission's own signed scope",
+  "independent_verifier": "the capability's own frozen oracle (brute force / certificate) in an isolated interpreter, fresh seed per attempt",
+  "integration_interface": "Genesis.recover(now) each Body tick; MissionEngine re-admits once per recovery through Genesis.resolve (verified_detached route)",
+  "replacement_and_rollback": "revert the commit; recovery writes only capability.probe, capability.state VERIFIED and capability.recovery_stopped facts; the founder can detach any recovered capability"
+}

@@ -568,15 +568,20 @@ class MissionEngine:
                                                                      list(m.excluded.values())]))
         return rid
 
+    def _generation(self, m: MissionState, kind: str) -> int:
+        # Blocks and unblocks are facts per occurrence: the same blocker after an unblock is a new block,
+        # never deduplicated into the old one (which silently left the mission unblocked).
+        return sum(1 for e in self.journal.replay(kind) if e.payload["mission_id"] == m.mission_id)
+
     def _block(self, m: MissionState, blocker: dict):
         if m.blocker != blocker:
             self.journal.record("mission.blocked", {"mission_id": m.mission_id, "blocker": blocker},
-                                key=[m.mission_id, blocker])
+                                key=[m.mission_id, blocker, self._generation(m, "mission.unblocked")])
             m.blocker = blocker
 
     def _unblock(self, m: MissionState, why: str):
         self.journal.record("mission.unblocked", {"mission_id": m.mission_id, "resolved": m.blocker, "why": why},
-                            key=[m.mission_id, "unblock", m.blocker])
+                            key=[m.mission_id, "unblock", m.blocker, self._generation(m, "mission.blocked")])
         m.blocker = None
 
     def _blocker_resolved(self, m: MissionState) -> tuple[bool, str]:
@@ -588,6 +593,15 @@ class MissionEngine:
             ok, why = self.registry.usable(b["capability_id"]) if b.get("capability_id") else (False, "none")
             if not ok and self.genesis is not None and b.get("function"):
                 cap = self.genesis.find_attached(b["function"])
+                if cap is None and self.genesis.construction_ready(b["function"]):
+                    # once: the engine a construction needs was attached, so Genesis can now form it
+                    return True, "the engine this function is constructed over is now attached"
+                if cap is None:
+                    lifted = " ".join(e.payload.get("why", "") for e in self.journal.replay("mission.unblocked")
+                                      if e.payload["mission_id"] == m.mission_id)
+                    fresh = [k for k in self.genesis.recovered_for(b["function"]) if k not in lifted]
+                    if fresh:   # once per recovery: re-admission is offered under the mission's own scope
+                        return True, f"recovered and eligible again: {fresh[0]}"
                 return (cap is not None, "capability now attached" if cap else why)
             return ok, why
         if b["type"] == "no_strategy":
@@ -641,9 +655,22 @@ class MissionEngine:
                     "status": "DONE" if answer == "reconcile_executed" else "RECONCILED_NOT_EXECUTED",
                     "reasons": ["founder reconciliation: " + answer], "cost_usd": 0.0},
                     key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
+            lifted = m.blocker
             self._unblock(m, why)
             self.book.rebuild()
             m = self.book.missions[m.mission_id]
+            if lifted["type"] == "capability" and lifted.get("function") and self.genesis is not None \
+                    and self.genesis.find_attached(lifted["function"]) is None:
+                # Lifted because a construction's engine was attached: form the construction now, since
+                # the step that reported the deficit does not repeat. It still waits for its own attach.
+                function = lifted["function"]
+                purpose = f"construction of {function} over its attached engine"
+                if self.genesis.resolve(mission=m, function=function, purpose=purpose, now=now) is None:
+                    waiting = [c.capability_id for c in self.registry.by_function(function)
+                               if self.registry.state[c.capability_id] == "VERIFIED"]
+                    self._escalate_capability(m, function, waiting[-1] if waiting else None, purpose, now,
+                                              awaiting=bool(waiting))
+                    return {"state": "BLOCKED", "blocker": m.blocker}
         if m.next_observe_at and now < datetime.fromisoformat(m.next_observe_at.replace("Z", "+00:00")):
             return {"state": "WAITING", "until": m.next_observe_at}
 
@@ -776,6 +803,15 @@ class MissionEngine:
                     self.capability_faults[check["check_id"]] = (manifest, detail, sensor.get("params", {}))
             else:
                 passed, detail = evaluate_predicate(check["predicate"], outcome.output)
+                fault = outcome.output.get("capability_fault") if isinstance(outcome.output, dict) else None
+                if not passed and isinstance(fault, dict) and self.genesis is not None \
+                        and fault.get("capability_id") in self.registry.manifests:
+                    # A construction the Mind invoked faulted: attribute it to that capability, so the
+                    # same two-strike self-repair re-forms it (cognition itself did not fail).
+                    formed = self.registry.manifests[fault["capability_id"]]
+                    detail = f"{detail}; {str(fault.get('detail'))[:300]}"
+                    if is_capability_fault(formed, detail):
+                        self.capability_faults[check["check_id"]] = (formed, detail, sensor.get("params", {}))
                 views = disagreement(outcome.output)
                 if views and not passed:
                     self.disagreements[check["check_id"]] = {**views, "observation": outcome.receipt_hash}
@@ -814,6 +850,12 @@ class MissionEngine:
         failing, evidence = self._observe(m, now)
         if failing is None:
             return {"state": "BLOCKED", "blocker": m.blocker}
+        if failing and self.capability_faults and m.blocker["type"] != "human_work":
+            # A formed capability faulting is repairable machinery, not a reason to wait on the founder:
+            # the same two-strike self-repair runs; the next observation then withdraws a moot blocker.
+            repaired = self._self_repair(self.book.missions[m.mission_id], now)
+            if repaired is not None and repaired["state"] == "REPAIRED":
+                return repaired
         human = m.blocker["type"] == "human_work"   # it waits only on the checks the person's work advances
         waiting_on = failing & set(m.blocker["failing_checks"]) if human else failing
         if waiting_on:
@@ -917,8 +959,11 @@ class MissionEngine:
                 return capability
         return self._escalate_capability(m, function, spec.get("capability"), purpose, now)
 
-    def _escalate_capability(self, m: MissionState, function: str, capability_id, purpose: str, now: datetime):
-        rid = self._request(m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json({"function": function}),
+    def _escalate_capability(self, m: MissionState, function: str, capability_id, purpose: str, now: datetime,
+                             *, awaiting: bool = False):
+        # ``awaiting``: a named, newly formed capability waits for its attach; that is a new ask, not the old one
+        scope = {"function": function, **({"awaiting": capability_id} if awaiting else {})}
+        rid = self._request(m, kind="CAPABILITY_ATTACH", scope_digest=sha256_json(scope),
                             action_id=None, why=f"missing capability for {purpose}",
                             recommendation="attach a verified capability for this function, or revise the mission",
                             requested={"function": function,
@@ -990,6 +1035,11 @@ class MissionEngine:
                                     **({"mechanism": _mechanism_summary(c.provenance)}
                                        if c.provider.startswith("installed:python:") else {})}
                                    for c in self.registry.by_function(function)]}
+        engine = self.genesis.construction_engine(function) if self.genesis is not None else None
+        if engine:   # a constructible function first needs its engine; both are attachable from this ask
+            evidence["registered"] += [{"capability_id": c.capability_id, "state": self.registry.state[c.capability_id],
+                                        "role": f"engine ({engine}) {function} is constructed over"}
+                                       for c in self.registry.by_function(engine)]
         return {"resource": "capability", "evidence": evidence,
                 "expected_effect": f"the blocked step ({purpose}) proceeds once a verified capability for "
                                    f"{function} is attached",

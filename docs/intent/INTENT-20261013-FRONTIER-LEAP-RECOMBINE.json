@@ -25,7 +25,7 @@
   "not_established_by_rhetoric": [
     "any market advantage",
     "founder use of the constructed capabilities",
-    "REA-derived evidence (REA was inspected, not run, for this leap)"
+    "REA evidence is static inference on opossum's shipped artifact, confirmed in source; runtime behaviour was not observed"
   ],
   "interpretation": "Founder instructions A-D are preserved verbatim. They describe destinations and effects; INTENT-0030 governs their reading. The directive's own boundaries (sections 5, 12, 18, 19) are binding: no autonomous Guardian/Treasury, no automatic promotion, no detector defaults as policy, no spending or publishing, no bypass of human review, no production activation.",
   "canonical_owner": "GREG genesis (greg/genesis.py) on the greg lineage; egregore/genesis.py (kernel PR #129) is reconciled as a standing-cognition-slot specialization, not a second mission genesis",
@@ -66,16 +66,29 @@
   "implementation_refs": [
     "greg/recombine.py",
     "greg/genesis.py (_recombine_route, _composed_manifest, _restore_composed, repair)",
-    "greg/templates.py (constructed_question)"
+    "greg/templates.py (constructed_question)",
+    "greg/cognition/compiler.py (constructed_candidates, _run_constructed, constructible deficit)",
+    "greg/missions.py (capability_fault attribution, construction_ready unblock, awaiting asks, repair while blocked)",
+    "greg/appraisal.py (_formed_registry)",
+    "greg/genesis.py (construction_ready, restore(record=False))",
+    "greg/templates.py (compiled_question)",
+    "greg/genesis.py (recover, _probe, _ProbeView, _recorded_qualification)",
+    "greg/missions.py (generation-keyed blocks, recovery re-admission)",
+    "greg/body.py (recover each tick)",
+    "docs/mechanisms/MC-0002-governed-half-open-recovery.json"
   ],
   "tests": [
-    "tests/unit/test_greg_recombine.py"
+    "tests/unit/test_greg_recombine.py",
+    "tests/integration/test_greg_mind_constructs_capability.py",
+    "tests/integration/test_greg_capability_recovery.py"
   ],
   "evidence_refs": [
-    "docs/evidence/greg-recombine/2026-10-13/README.md"
+    "docs/evidence/greg-recombine/2026-10-13/README.md",
+    "docs/evidence/greg-mind-constructs/2026-10-14/README.md",
+    "docs/evidence/greg-recovery/2026-10-14/README.md"
   ],
   "failure_condition": "a constructed capability is attached without founder signature, answers without its problem-level certificate, keeps serving over a detached or quarantined engine, or a new reduction is admitted without a frozen oracle that passes through the real engine",
-  "next_gate": "connect the Competency Compiler's CAPABILITY_DEFICIT geometry to the reduction library so a deficit can name a constructible function, then measure VPL on a family served only by construction",
+  "next_gate": "reductions demanded by real founder missions; Goal Gravity waking a compiled question; VPL on a family only construction serves",
   "review_trigger": "every new reduction, any certificate fault in service, founder correction",
   "named_skill": "mechanism-recombination-foundry (reasoning), install-recursive-founder-intent-collaboration-protocol (records); one agent performed every review role, which is not independent peer review"
 }

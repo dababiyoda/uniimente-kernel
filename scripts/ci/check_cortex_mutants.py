@@ -199,8 +199,57 @@ RECOMBINE_MUTANTS = [
      "if not chain or any([a, b] not in p[\"precedences\"] for a, b in zip(chain, chain[1:])):", "if False:"),
 ]
 
+# 2026-10-14: the Mind names constructible deficits, uses attached constructions, and repairs them.
+MIND_CONSTRUCTION_TESTS = ["tests/integration/test_greg_mind_constructs_capability.py"]
+MIND_CONSTRUCTION_MUTANTS = [
+    ("the Mind uses a construction that is not attached", "greg/cognition/compiler.py",
+     "and registry.usable(m.capability_id)[0]]", "]"),
+    ("the deficit names an unbuildable geometry label", "greg/cognition/compiler.py",
+     "        if buildable:\n", "        if False:\n"),
+    ("a construction's fault is charged to cognition, not repaired", "greg/missions.py",
+     'if is_capability_fault(formed, detail):\n                        self.capability_faults',
+     'if False:\n                        self.capability_faults'),
+    ("attaching the engine never forms the construction", "greg/missions.py",
+     'if cap is None and self.genesis.construction_ready(b["function"]):', "if False:"),
+    ("the construction awaiting attach is hidden behind the old ask", "greg/missions.py",
+     "awaiting=bool(waiting))", "awaiting=False)"),
+    ("a formed-capability fault waits on the founder while blocked", "greg/missions.py",
+     'if failing and self.capability_faults and m.blocker["type"] != "human_work":', "if False:"),
+    ("the appraiser cannot see formed capabilities", "greg/appraisal.py",
+     'capability_registry=_formed_registry(journal, request["workspace"])', "capability_registry=None"),
+    ("restore writes to the appraiser's read-only ledger", "greg/genesis.py",
+     'if getattr(self, "_recording", True):', "if True:"),
+]
+
+# 2026-10-14: governed recovery (opossum half-open, mutated) and the re-escalation fixes it exposed.
+RECOVERY_TESTS = ["tests/integration/test_greg_capability_recovery.py"]
+RECOVERY_MUTANTS = [
+    ("a quarantined capability is probed before its backoff", "greg/genesis.py",
+     "            if now < since + wait:\n", "            if False:\n"),
+    ("a passing probe does not restore eligibility", "greg/genesis.py",
+     '            if passed:\n                self.registry.set_state(cid, "VERIFIED")',
+     '            if False:\n                self.registry.set_state(cid, "VERIFIED")'),
+    ("flapping never stops recovery", "greg/genesis.py",
+     "if len(faults) > RECOVERY_MAX_QUARANTINES", "if False"),
+    ("constructions are probed before their engines", "greg/genesis.py",
+     'key=lambda m: (m.provider.startswith("composed:"), m.capability_id)',
+     'key=lambda m: (not m.provider.startswith("composed:"), m.capability_id)'),
+    ("a construction's probe cannot reach its recovered engine", "greg/genesis.py",
+     'if capability_id == self._engine_id and self.state.get(capability_id) in ("ATTACHED", "VERIFIED"):',
+     'if capability_id == self._engine_id and self.state.get(capability_id) == "ATTACHED":'),
+    ("a recovered capability is never offered back to its mission", "greg/missions.py",
+     "                    if fresh:", "                    if False:"),
+    ("an identical re-block after an unblock is swallowed", "greg/missions.py",
+     'key=[m.mission_id, blocker, self._generation(m, "mission.unblocked")])', "key=[m.mission_id, blocker])"),
+    ("a recorded qualification is re-run on the same deficit", "greg/genesis.py",
+     '            if prior is not None:\n                self._route(deficit_id, "installed_package"',
+     '            if False:\n                self._route(deficit_id, "installed_package"'),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
-          ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS)]
+          ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
+          ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
+          ("recovery", RECOVERY_TESTS, RECOVERY_MUTANTS)]
 
 
 def main() -> int:

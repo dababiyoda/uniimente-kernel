@@ -1503,7 +1503,8 @@ def human_packet(g: CompetencyGeometry, body: dict) -> dict:
             "machine_role": "prepare evidence and alternatives only"}
 
 
-def run(params, *, registry, journal=None, model_config=None) -> dict:
+def run(params, *, registry, journal=None, model_config=None, caller_window=None, shared_deadline=None,
+        shared_compute_limit=None) -> dict:
     from .cortex import reason
     started = time.monotonic()
     pid, body = validate(params)
@@ -1511,8 +1512,10 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     from .budget import Controller
     # One thinking budget for the whole decision: the answer, the premises check and every sensitivity re-run
     # draw on the declared latency_budget. It used to be a per-run limit, so one request could spend it six times.
+    # Inside a canonical dispatch the caller's grant window bounds the whole decision and reaches every inner run.
     budget = Controller(float(g.latency_budget) if g.latency_budget else DEFAULT_BUDGET_S,
-                        declared=bool(g.latency_budget), clock=CLOCK)
+                        declared=bool(g.latency_budget), clock=CLOCK, caller_window=caller_window,
+                        shared_deadline=shared_deadline, shared_compute_limit=shared_compute_limit)
     data = body["data"]
     consequence = body.get("consequence") or {}
     evidence = evidence_index()
@@ -1771,13 +1774,13 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             receipt["abstentions"].append(budget.stops()[-1]["reason"])
             return finish("ABSTAIN")
         payload = data
-        if budget.declared:
+        if budget.bounded:
             resources = data.get("resources") or {}
             payload = {**data, "resources": {**resources, "max_latency_s": min(
                 float(resources.get("max_latency_s", 30.0)), limit)}}
         inner = reason({"problem_id": pid, "problem": {"question": g.objective or g.epistemic_question or pid,
                                                        "payload": payload}},
-                       registry=registry, journal=journal, model_config=model_config)
+                       registry=registry, journal=journal, model_config=model_config, **budget.inner)
         budget.done("answer")
         receipt["intermediate_receipts"] = [inner["receipt_id"]]
         receipt["selected_receipt"] = inner
@@ -1804,9 +1807,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
             receipt["abstentions"].append(budget.stops()[-1]["reason"])
             return finish("ABSTAIN")
         chain = {"question": g.objective or "compiled", "payload": data,
-                 **({"max_latency_s": limit} if budget.declared else {})}
+                 **({"max_latency_s": limit} if budget.bounded else {})}
         inner = reason({"problem_id": pid, "chain": chain}, registry=registry, journal=journal,
-                       model_config=model_config)
+                       model_config=model_config, **budget.inner)
         budget.done("answer")
         receipt["intermediate_receipts"] = [s["receipt_id"] for s in inner["stages"]]
         receipt["dissent"] += [f"stage {s['stage']} ({s['method']}): {s['counterargument']}"[:400]
@@ -1829,7 +1832,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         receipt["payload_part"] = chosen["part"]          # the method reads this part of the request: the question
         data = _part_data(data, chosen["part"])
     inner = reason({"problem_id": pid, "operation": chosen["operation"], "data": data, "geometry": geometry_hint,
-                    **extra}, registry=registry, journal=journal, model_config=model_config)
+                    **extra}, registry=registry, journal=journal, model_config=model_config, **budget.inner)
     budget.done("answer", cpu_seconds=(inner.get("compute_cost") or {}).get("cpu_seconds"))
     receipt["intermediate_receipts"] = [inner["receipt_id"]]
     # the executed method's own receipt, whole: settlement credits that method through this compilation
@@ -1881,7 +1884,7 @@ def _premises_check(pid, operation, claim, hint, verdict, registry, journal, mod
         return {**verdict, "premises": f"UNDECIDED ({budget.stops()[-1]['reason']}): the claim may hold vacuously"}
     check = reason({"problem_id": f"{pid}/premises"[:96], "operation": operation, "data": premises(claim),
                     "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
-                   model_config=model_config)
+                   model_config=model_config, **budget.inner)
     budget.done("premises", cpu_seconds=(check.get("compute_cost") or {}).get("cpu_seconds"))
     receipt["intermediate_receipts"].append(check["receipt_id"])
     status = check["output"].get("solver_status") if _has_answer(check) else None
@@ -1928,7 +1931,7 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
     def rerun(key, varied, limit):
         out = reason({"problem_id": f"{pid}/sens/{key}"[:128], "operation": operation, "data": varied,
                       "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
-                     model_config=model_config)
+                     model_config=model_config, **budget.inner)
         receipt["intermediate_receipts"].append(out["receipt_id"])
         return out
 

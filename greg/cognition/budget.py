@@ -246,19 +246,53 @@ class ThinkingBudget:
                 "stop_reason": self.stop_reason, "authority_created": False}
 
 
+def window_limit(caller_window=None, shared_deadline=None):
+    """Seconds the caller's canonical grant window still allows one whole decision, with each bound named;
+    ``None`` when the caller passed no window (a standalone evaluation).
+
+    The bounds are the ones ``ThinkingBudget`` enforces on a single run: the window's latency ceiling, its
+    horizon and grant expiry, and the dispatch's shared deadline (a ``time.monotonic()`` instant)."""
+    if caller_window is None and shared_deadline is None:
+        return None
+    now, bounds = datetime.now(timezone.utc), {}
+    if caller_window is not None:
+        bounds["latency_ceiling"] = float(number(caller_window.latency_ceiling_seconds, low=0, high=30))
+        for name in ("horizon", "grant_expires_at"):
+            bounds[name] = (_instant(getattr(caller_window, name)) - now).total_seconds()
+    if shared_deadline is not None:
+        bounds["shared_deadline"] = float(number(shared_deadline, low=0)) - time.monotonic()
+    return {"seconds": max(0.0, min(bounds.values())), "bounds": {k: round(v, 4) for k, v in bounds.items()}}
+
+
 class Controller:
-    """One bounded thinking budget for one decision, with a ledger of every spend and every stop."""
+    """One bounded thinking budget for one decision, with a ledger of every spend and every stop.
+
+    Inside a canonical dispatch the caller's grant window bounds the whole decision, and ``inner`` carries it
+    to every inner run (the window itself, one shared deadline for the decision, the shared compute limit),
+    so each run's ``ThinkingBudget`` enforces the same ceilings and its receipt names the live grant."""
 
     RULE = ("one total budget per decision; required steps are never value-gated and stop only below the minimum "
             "step; an optional step runs only when the slowest measured step fits in the remaining budget")
 
-    def __init__(self, total_seconds, *, declared=True, step_ceiling_seconds=30.0, clock=time.monotonic):
-        self.total = float(number(total_seconds, low=0))
+    def __init__(self, total_seconds, *, declared=True, step_ceiling_seconds=30.0, clock=time.monotonic,
+                 caller_window=None, shared_deadline=None, shared_compute_limit=None):
+        self.total = self.requested = float(number(total_seconds, low=0))
         self.ceiling = float(number(step_ceiling_seconds, low=MIN_STEP_SECONDS))
         self.declared, self.clock = declared, clock
         self.started = clock()
         self.ledger, self.costs, self.cpu = [], [], []
         self._open = None
+        self.window = window_limit(caller_window, shared_deadline)
+        self.inner = {}
+        if self.window is not None:
+            self.total = min(self.total, self.window["seconds"])
+            self.inner = {"caller_window": caller_window, "shared_deadline": time.monotonic() + self.total,
+                          "shared_compute_limit": shared_compute_limit}
+
+    @property
+    def bounded(self) -> bool:
+        """True when the total is a stated limit (a declared budget or the caller's window), not the default."""
+        return self.declared or self.window is not None
 
     def remaining(self) -> float:
         return max(0.0, self.total - (self.clock() - self.started))
@@ -306,7 +340,10 @@ class Controller:
     def summary(self) -> dict:
         costs = sorted(self.costs)
         return {"rule": self.RULE, "total_s": round(self.total, 4),
-                "total_source": "declared latency_budget" if self.declared else "default (no latency_budget declared)",
+                "total_source": ("the caller's grant window" if self.window is not None
+                                 and self.window["seconds"] < self.requested else
+                                 "declared latency_budget" if self.declared else "default (no latency_budget declared)"),
+                **({"window": self.window} if self.window is not None else {}),
                 "spent_s": round(self.clock() - self.started, 4), "remaining_s": round(self.remaining(), 4),
                 "steps": list(self.ledger),
                 "measured_step_s": {"count": len(costs), "p50": round(costs[len(costs) // 2], 4) if costs else None,

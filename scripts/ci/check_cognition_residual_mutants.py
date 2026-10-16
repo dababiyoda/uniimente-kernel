@@ -17,6 +17,7 @@ CHARACTERIZE = 'tests/unit/test_cognition_characterize.py'
 BUDGET = 'tests/unit/test_cognition_thinking_budget.py'
 VENTURES = 'tests/unit/test_greg_ventures.py'
 CONSTRUCTED = 'tests/unit/test_greg_constructed_route_rules.py'
+WINDOW = 'tests/unit/test_cognition_compile_grant_window.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -111,6 +112,22 @@ MUTANTS = [
  ('the implied geometry ignores constructions', 'greg/cognition/compiler.py',
   '                      + constructed_candidates(data, replace(g, geometry=None), registry)\n', '',
   'test_the_implied_geometry_counts_a_construction_the_declaration_excludes', CONSTRUCTED),
+ # The compile and chain routes carry the caller's grant window into every inner run (COG-5).
+ ('the compile route drops the caller window', 'greg/cognition/cortex.py',
+  'model_config=model_config,\n                            caller_window=caller_window, shared_deadline=shared_deadline,\n'
+  '                            shared_compute_limit=shared_compute_limit)', 'model_config=model_config)',
+  'test_an_expired_grant_runs_no_mechanism_on_the_compile_route', WINDOW),
+ ('the window does not bound the compiled decision', 'greg/cognition/budget.py',
+  '            self.total = min(self.total, self.window["seconds"])', '            pass',
+  'test_a_live_grant_is_named_on_the_compiled_answer_and_bounds_the_decision', WINDOW),
+ ('the compiled answer runs outside the live grant', 'greg/cognition/compiler.py',
+  '**extra}, registry=registry, journal=journal, model_config=model_config, **budget.inner)',
+  '**extra}, registry=registry, journal=journal, model_config=model_config)',
+  'test_a_live_grant_is_named_on_the_compiled_answer_and_bounds_the_decision', WINDOW),
+ ('a chain stage runs outside the caller window', 'greg/cognition/composition.py',
+  'kw = dict(registry=registry, journal=journal, model_config=model_config, **inner)',
+  'kw = dict(registry=registry, journal=journal, model_config=model_config)',
+  'test_the_chain_route_carries_the_window_into_every_stage', WINDOW),
  # Section 16 venture case (carried from #143): a revenue figure may not outrun its causal support.
  ('a revenue conclusion drawn from any causal receipt', 'greg/ventures.py',
   '    identified = bool(causal and causal.get("abstention_state") == "NONE"',

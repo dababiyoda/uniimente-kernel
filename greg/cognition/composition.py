@@ -212,9 +212,9 @@ def substitute(template, values: dict, bindings: list):
     return template
 
 
-def _stage(reason, pid: str, question: str, payload: dict, *, registry, journal, model_config) -> dict:
+def _stage(reason, pid: str, question: str, payload: dict, *, registry, journal, model_config, **window) -> dict:
     receipt = reason({"problem_id": pid[:128], "problem": {"question": question, "payload": payload}},
-                     registry=registry, journal=journal, model_config=model_config)
+                     registry=registry, journal=journal, model_config=model_config, **window)
     return receipt
 
 
@@ -226,11 +226,12 @@ def _summary(name: str, receipt: dict) -> dict:
             "counterargument": receipt.get("strongest_counterargument")}
 
 
-def _operation(reason, pid: str, operation: str, data: dict, *, registry, journal, model_config) -> dict:
-    """One operation-path stage on the same canonical cognition (isolated worker + independent verifier)."""
+def _operation(reason, pid: str, operation: str, data: dict, *, registry, journal, model_config, **window) -> dict:
+    """One operation-path stage on the same canonical cognition (isolated worker + independent verifier).
+    ``window`` carries the caller's grant window and the chain's shared deadline into the stage."""
     return reason({"problem_id": pid[:128], "operation": operation, "data": data,
                    "geometry": {"latency_limit": OPERATION_STAGE_LATENCY_S}},
-                  registry=registry, journal=journal, model_config=model_config)
+                  registry=registry, journal=journal, model_config=model_config, **window)
 
 
 def _op_summary(name: str, receipt: dict) -> dict:
@@ -544,13 +545,23 @@ def validate(params) -> tuple[str, dict]:
     return pid, chain
 
 
-def run(params, *, registry, journal=None, model_config=None) -> dict:
+def run(params, *, registry, journal=None, model_config=None, caller_window=None, shared_deadline=None,
+        shared_compute_limit=None) -> dict:
     from .cortex import reason
+    from .budget import window_limit
     started = time.monotonic()
     pid, chain = validate(params)
     payload = chain["payload"]
     question = str(chain.get("question", "")) or pid
     budget = float(chain.get("max_latency_s", 60.0))
+    # Inside a canonical dispatch the caller's grant window bounds the whole chain: one shared deadline for
+    # every stage, which each stage's own budget enforces.
+    window = window_limit(caller_window, shared_deadline)
+    inner = {}
+    if window is not None:
+        budget = min(budget, window["seconds"])
+        inner = {"caller_window": caller_window, "shared_deadline": started + budget,
+                 "shared_compute_limit": shared_compute_limit}
     recipe = chain.get("recipe") or route(payload)
     routed_by = "fixed" if chain.get("recipe") else "geometry"
     stages = RECIPES[recipe]["stages"] if recipe else None
@@ -588,7 +599,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     receipt["unconsumed_inputs"] = sorted(k for k in payload if k not in consumed | {"declared"})
     declared = payload.get("declared", DECL)
     values = {}
-    kw = dict(registry=registry, journal=journal, model_config=model_config)
+    kw = dict(registry=registry, journal=journal, model_config=model_config, **inner)
     if recipe in OPERATION_RECIPES:
         return OPERATION_RECIPES[recipe](payload, pid, kw, receipt, finish)
     if "estimate" in stages:

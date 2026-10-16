@@ -181,11 +181,15 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         # Layer 5 Competency Compiler: geometry -> smallest competent method or composition, run back
         # through this same entry; constitutional pre-filter and human route before any optimisation.
         from .compiler import run as run_compiler
-        return run_compiler(params, registry=registry, journal=journal, model_config=model_config)
+        return run_compiler(params, registry=registry, journal=journal, model_config=model_config,
+                            caller_window=caller_window, shared_deadline=shared_deadline,
+                            shared_compute_limit=shared_compute_limit)
     if isinstance(params, dict) and "chain" in params:
         # Composite problem (P6): geometry-routed chain of cortex stages with typed translation.
         from .composition import run as run_composition
-        return run_composition(params, registry=registry, journal=journal, model_config=model_config)
+        return run_composition(params, registry=registry, journal=journal, model_config=model_config,
+                               caller_window=caller_window, shared_deadline=shared_deadline,
+                               shared_compute_limit=shared_compute_limit)
     if isinstance(params, dict) and "problem" in params:
         # Cortex contract (cortex-problem): one entry, one receipt envelope, one learning plane.
         from .bridge import reason_cortex

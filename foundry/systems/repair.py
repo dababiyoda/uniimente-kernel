@@ -685,6 +685,8 @@ def _repair_source(root, *, source_root, target: str, func: str, failing: dict, 
     if REGRESSION_FILE in test_files:
         raise RepairError(f"{REGRESSION_FILE} is reserved for the generated regression test")
     proposals = [{"label": str(p["label"]), "source": str(p["source"])} for p in _untrusted]
+    if len({p["label"] for p in proposals}) != len(proposals):        # checked before anything executes
+        raise RepairError("candidate labels must be unique: the recorded patch must be the one verified")
     try:
         cases = [{"args": list(failing["args"]), "expect": failing["expect"]}] + [{"args": list(c["args"])} for c in passing]
         json.dumps({"failing": failing, "passing": passing}, allow_nan=False)

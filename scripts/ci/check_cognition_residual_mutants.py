@@ -166,7 +166,7 @@ MUTANTS = [
   '        tail = log.read_text(errors="replace")[-300:].strip() if log.exists() else ""\n'
   '        what = str(cause) if isinstance(cause, GatewayError) else f"{type(cause).__name__}: {cause}"\n'
   '        what, tail = " ".join(what.split()), " ".join(tail.split())[-200:]',
-  'test_a_server_echoing_its_key_file_never_writes_the_key_into_a_record[bad_key]', SECRET_FILES),
+  'test_a_failed_call_scrubs_the_key_from_its_error_and_stderr_on_any_host', SECRET_FILES),
  ('a killed call leaves its key file in the workspace', 'greg/body.py',
   'removed = sweep_leftovers(self.layout.workspace)', 'removed = []',
   'test_the_body_removes_call_leftovers_when_it_opens_and_keeps_everything_else', SECRET_FILES),
@@ -191,11 +191,18 @@ def main():
         shutil.copytree(ROOT, repo, ignore=shutil.ignore_patterns('.git', '__pycache__', '.pytest_cache'))
         # A mutant is caught only by a test that passes without it: a test already failing would "catch" anything.
         nodes = sorted({f'{tests[0] if tests else TESTS}::{test}' for _, _, _, _, test, *tests in MUTANTS})
-        clean = subprocess.run([sys.executable, '-m', 'pytest', '-q', '-p', 'no:cacheprovider', *nodes], cwd=repo,
-                               env={**os.environ, 'PYTHONPATH': str(repo)}, capture_output=True, text=True, timeout=1800)
+        clean = subprocess.run([sys.executable, '-m', 'pytest', '-q', '-rs', '-p', 'no:cacheprovider', *nodes],
+                               cwd=repo, env={**os.environ, 'PYTHONPATH': str(repo)}, capture_output=True, text=True,
+                               timeout=1800)
         if clean.returncode != 0:
             print('BASELINE_FAILS: the targeted tests must pass on the unmutated tree first')
             print('\n'.join(line for line in clean.stdout.splitlines() if line.startswith(('FAILED', 'ERROR'))))
+            return 1
+        # A test that skips on this host cannot catch its mutant here either: say so, instead of a survivor.
+        skipped = [line for line in clean.stdout.splitlines() if line.startswith('SKIPPED')]
+        if skipped:
+            print('BASELINE_SKIPPED: every targeted test must run on this host; these skip, so their mutants are unguarded')
+            print('\n'.join(skipped))
             return 1
         for name, rel, old, new, test, *tests in MUTANTS:
             target = tests[0] if tests else TESTS

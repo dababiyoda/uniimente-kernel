@@ -40,7 +40,8 @@
     "CI job 9 on bc6c4b3 reported one unit failure without its name; job 1's full suite passed on the same commit and the unit suite passed locally without bubblewrap; the verifier now names failures (16900ca)",
     "A third adversarial review (9 of 12 findings confirmed) found a paid approval left live by a $0 run, paid asks left unfundable by spend, a used-up approve taken as an answer, wording offering a reject the engine refuses, and Claude Code CLI verbose output, unknown cost, model fallback and error reasons mishandled; fixed in f59eee4",
     "CI job 1 on 77a3893 failed this branch's own provider-binary test on a runner whose bubblewrap is installed but unusable; fixed in a229f70",
-    "Merging Track B made four operation verdicts (control, game, information, probabilistic) stale under Track B's code binding, because this branch's #159 solvers changed what they measured; they route as UNEVALUATED pending a pre-registered re-admission"
+    "Merging Track B made four operation verdicts (control, game, information, probabilistic) stale under Track B's code binding, because this branch's #159 solvers changed what they measured; they route as UNEVALUATED pending a pre-registered re-admission",
+    "A fourth adversarial review, of the Track B merge (16f53f5) and the #169 46719e4 merge (b4b4784), confirmed 15 of 16 findings: an attached construction skipped every compile route's rules (high-consequence proof, thinking budget, sensitivity, implied geometry); the compile and chain routes dropped the caller's grant window; a venture mission closed on a memo built from other or no economics; an outage retry blocked a mission forever after the founder's attach; #169's secret files leaked a key into the ledger and a readable workspace and let an earlier output choose the credential; three records were wrong. Fixed in 39ff3b7, 70964a6, 2168e01, 6f2a44e, cc82deb and e3427ad; the residual mutation gate counted a test that already failed as catching its mutant, and now checks its baseline"
   ],
   "dependencies": [
     "INTENT-20261014-ONE-MACHINE (#178)",
@@ -77,7 +78,13 @@
     "greg/improvement.py",
     "greg/organ_exchange.py",
     "tests/integration/test_one_machine_ten_steps.py",
-    "docs/collaboration/deliberation-opus-maximus-converge-on-178-20261015.json"
+    "docs/collaboration/deliberation-opus-maximus-converge-on-178-20261015.json",
+    "tests/unit/test_greg_constructed_route_rules.py",
+    "tests/unit/test_cognition_compile_grant_window.py",
+    "tests/unit/test_greg_ventures_economics_binding.py",
+    "tests/unit/test_greg_outage_retry_cognition.py",
+    "tests/integration/test_greg_mcp_secret_files_review.py",
+    "tests/unit/test_convergence_map_names_the_live_seal.py"
   ],
   "reality_status": "LABORATORY-VERIFIED in one Linux container: INTEGRATION and SANDBOX-WHOLE-MACHINE. Not founder-device, not external, not commercial. VEPMC 0."
 }

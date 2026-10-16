@@ -97,6 +97,14 @@ def _loopback(host: str) -> bool:
 
 # -- evidence ----------------------------------------------------------------------------------------------------
 
+# The relay's refusals of a destination, as journaled. Its other DENIED rows (a request limit, an oversized or
+# malformed request) refuse a request without consulting any allowlist, so they are not destination decisions.
+NO_POLICY = "identity has no egress policy"
+NOT_ALLOWED = "host and port are not on this identity's allowlist"
+NOT_EXTERNAL = "external upstream not declared for this identity"
+DESTINATION_REFUSALS = frozenset({NO_POLICY, NOT_ALLOWED, NOT_EXTERNAL})
+
+
 class Journal:
     """Append-only, hash-chained relay decisions in one JSONL file."""
 
@@ -113,6 +121,7 @@ class Journal:
             with open(self.path.with_name(self.path.name + ".lock"), "a") as guard:
                 fcntl.flock(guard, fcntl.LOCK_EX)
                 try:
+                    self._repair_tail()
                     rows = self.read()
                     prev = rows[-1]["hash"] if rows else GENESIS
                     body = {**entry, "seq": len(rows), "prev": prev}
@@ -123,20 +132,54 @@ class Journal:
                     fcntl.flock(guard, fcntl.LOCK_UN)
             return body
 
-    def read(self) -> list[dict]:
+    def _rows(self) -> tuple[list[dict], bytes]:
+        """The complete rows, and a final line cut short by a crash mid-append (no newline, not JSON). A malformed
+        line anywhere else still raises: that is damage, not an interrupted append."""
         if not self.path.is_file():
-            return []
-        return [json.loads(line) for line in self.path.read_text().splitlines() if line.strip()]
+            return [], b""
+        *lines, tail = self.path.read_bytes().split(b"\n")
+        rows = [json.loads(line) for line in lines if line.strip()]
+        if tail.strip():
+            try:
+                rows.append(json.loads(tail))
+            except ValueError:
+                return rows, tail
+        return rows, b""
+
+    def _repair_tail(self):
+        """Before an append (under the file lock): a torn final line moves to a sidecar, never into the chain, and a
+        complete final row that lost its newline gets one, so the next row is never glued onto it."""
+        if not self.path.is_file():
+            return
+        raw = self.path.read_bytes()
+        if not raw or raw.endswith(b"\n"):
+            return
+        cut = raw.rfind(b"\n") + 1
+        try:
+            json.loads(raw[cut:])
+        except ValueError:
+            self.path.with_name(f"{self.path.name}.torn-{cut}").write_bytes(raw[cut:])
+            os.truncate(self.path, cut)
+            return
+        with open(self.path, "ab") as fh:
+            fh.write(b"\n")
+
+    def read(self) -> list[dict]:
+        return self._rows()[0]
 
     def verify(self) -> dict:
         prev = GENESIS
-        for i, row in enumerate(self.read()):
+        rows, torn = self._rows()
+        for i, row in enumerate(rows):
             body = {k: v for k, v in row.items() if k != "hash"}
             digest = "sha256:" + hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
             if row.get("seq") != i or row.get("prev") != prev or row.get("hash") != digest:
                 return {"intact": False, "broken_at": i}
             prev = row["hash"]
-        return {"intact": True, "entries": len(self.read()), "head": prev}
+        out = {"intact": True, "entries": len(rows), "head": prev}
+        if torn:
+            out["torn_tail_bytes"] = len(torn)     # an append a crash cut short: never a decision, shown not hidden
+        return out
 
 
 # -- relay -------------------------------------------------------------------------------------------------------
@@ -198,11 +241,11 @@ class Relay:
     def decide(self, identity: str, host: str, port: int) -> str | None:
         spec = self.policy.get(identity)
         if spec is None:
-            return "identity has no egress policy"
+            return NO_POLICY
         if [host.lower(), port] not in spec["allow"]:
-            return "host and port are not on this identity's allowlist"
+            return NOT_ALLOWED
         if not _loopback(host) and not spec["external"]:
-            return "external upstream not declared for this identity"
+            return NOT_EXTERNAL
         return None
 
     MAX_REQUESTS = 64          # per control channel: a compromised component cannot exhaust the relay

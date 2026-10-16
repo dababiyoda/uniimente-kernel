@@ -1,7 +1,7 @@
 {
  "command": "python -m foundry.completion --run 52",
  "name": "Failure-driven program repair",
- "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "note": "not re-run by the CI audit while the row is PARTIAL (it re-runs only COMPLETE rows); re-derive with `python -m foundry.completion --run 52`",
  "result": {
   "after": "5 passed",
   "after_passed": true,
@@ -44,7 +44,6 @@
     "test_dsl_runs_narrow_rules_and_rejects_code"
    ],
    "fault": "ast.LtE: lambda a, b: a < b",
-   "frozen_files": 284,
    "isolation": {
     "cpu_seconds": 120,
     "file_bytes": 8388608,
@@ -98,6 +97,6 @@
   ],
   "tied": true
  },
- "result_sha256": "sha256:add5e7f53beaabbae018588eba0c515a52c9cf8b8e517241abc53da2f48e1e32",
+ "result_sha256": "sha256:3e316a0300381255d053eddda919756a18d77016b0d2b3774cc547f82b56301d",
  "system": 52
 }

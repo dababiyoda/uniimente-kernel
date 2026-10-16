@@ -26,16 +26,26 @@ def _passed(journal, mission_id: str, check_id: str) -> bool:
 
 
 def _egress(home: Path, config: dict) -> dict:
-    """#26 on this body, from its own relay journal: confined or not, and what the relay allowed and refused."""
+    """#26 on this body, from its own relay journal: confined or not, and what the relay allowed and refused.
+
+    Only a refusal of a destination counts as one: the relay also refuses a request over its limit, oversized or
+    malformed without consulting any allowlist. Rows from any identity count as GREG's connections (the console's
+    model drafting and anchoring share this journal), so the report names the identities rather than claiming a
+    mission made them."""
     if not config.get("confined_egress"):
-        return {"confined": False, "chain_intact": False, "allowed": 0, "denied": 0, "identities": []}
-    from foundry.systems.segmentation import Journal as EgressJournal
+        return {"confined": False, "chain_intact": False, "allowed": 0, "denied": 0, "denied_other": 0,
+                "identities": [], "allowed_identities": [], "torn_tail": False}
+    from foundry.systems.segmentation import DESTINATION_REFUSALS, Journal as EgressJournal
     journal = EgressJournal(Path(home) / "egress-journal.jsonl")
-    rows = journal.read()
-    return {"confined": True, "chain_intact": bool(journal.verify()["intact"]),
-            "allowed": sum(1 for r in rows if r.get("verdict") == "ALLOWED"),
-            "denied": sum(1 for r in rows if r.get("verdict") == "DENIED"),
-            "identities": sorted({str(r.get("identity")) for r in rows})}
+    rows, check = journal.read(), journal.verify()
+    refused = [r for r in rows if r.get("verdict") == "DENIED"]
+    destination = [r for r in refused if r.get("host") and r.get("why") in DESTINATION_REFUSALS]
+    allowed = [r for r in rows if r.get("verdict") == "ALLOWED"]
+    return {"confined": True, "chain_intact": bool(check["intact"]), "allowed": len(allowed),
+            "denied": len(destination), "denied_other": len(refused) - len(destination),
+            "identities": sorted({str(r.get("identity")) for r in rows}),
+            "allowed_identities": sorted({str(r.get("identity")) for r in allowed}),
+            "torn_tail": bool(check.get("torn_tail_bytes"))}
 
 
 def report(home: str | Path) -> dict:
@@ -88,18 +98,22 @@ def report(home: str | Path) -> dict:
          "the First Mission crossed a body recovery (kill -9) before closing", "4. First Mission: kill -9"),
         ("founder_accepted", bool(first_row and first_row["founder_accepted"]), "you accepted the result", "4. Accept"),
         ("memory_across_missions", memory is not None, "a later First Mission compared itself with an earlier one",
-         "5. Run the First Mission again"),
+         "5. Run it again (memory)"),
         ("commerce_rehearsal_verified", bool(ventures), "the FIXTURE commerce loop closed and re-verified", "6. Ventures"),
         ("pause_and_resume_exercised", "greg.body.paused" in toggles and "greg.body.resumed" in toggles,
          "you paused and resumed the body with your key", "7. Founder control"),
         ("revoke_exercised", any(l.get("state") == "ABANDONED" for l in lifecycle),
          "you revoked a mission with your key", "7. Founder control"),
         ("network_confined", egress["confined"] and egress["chain_intact"] and egress["allowed"] > 0,
-         "the body was created confined, its relay journal chain verifies, and a mission's connection crossed the relay",
-         "1. Install (the installer confines when the doctor finds the kernel filter and namespaces)"),
+         "the body was created confined, its relay journal chain verifies, and at least one connection GREG made "
+         "crossed the relay (egress.allowed_identities names which parts of GREG made them)",
+         "1. Install (the installer confines when the doctor finds the kernel filter and namespaces), then "
+         "2. Run and judge one bounded mission (its public GitHub reads cross the relay)"),
         ("undeclared_destination_denied", egress["confined"] and egress["chain_intact"] and egress["denied"] > 0,
-         "the relay refused and journaled a connection to a destination no capability declared",
-         "6a. Render a page (browser.render): Chromium's own background connections are refused at the relay"),
+         "the relay refused and journaled a connection to a destination no capability declared for the part of GREG "
+         "asking (a request limit or a malformed request is not counted)",
+         "6a. A hosted MCP server: GREG renders the page you name, and Chromium's own background connections are "
+         "refused at the relay"),
     ]
     tier = ("FOUNDER-DEVICE (ledger evidence; physical ownership and presence are not provable from a ledger)"
             if designated and first_row and first_row.get("founder_body") else

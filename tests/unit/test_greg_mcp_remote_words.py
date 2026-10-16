@@ -79,7 +79,9 @@ def test_words_that_name_no_hosted_service_are_left_to_other_routes(tmp_path):
 def test_the_proposal_says_which_evidence_the_page_is(tmp_path):
     from greg.templates import remote_evidence
     assert remote_evidence("https://notes.example/mcp", "https://notes.example/board") == "same_service"
-    assert remote_evidence("https://mcp.notes.example/mcp", "https://www.notes.example/board") == "same_service"
+    # a sibling is not the service's own host; without a public-suffix list GREG cannot tell a sibling from another
+    # tenant of a shared suffix, so it gets the cautious label (fifth review of #184, F2)
+    assert remote_evidence("https://mcp.notes.example/mcp", "https://www.notes.example/board") == "separate_host"
     assert remote_evidence("https://notes.example/mcp", "https://status.other.example/board") == "separate_host"
     same = propose("Use the notes service to add 'x', then check https://notes.example/board", ctx(tmp_path))
     assert "not an independent corroboration" in " ".join(same["notes"])

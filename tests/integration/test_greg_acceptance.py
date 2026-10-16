@@ -39,7 +39,8 @@ def test_confinement_passes_only_on_a_confined_body_whose_relay_journal_verifies
     journal.append({"identity": "http.get", "host": "service.test", "port": 443, "verdict": "ALLOWED"})
     assert status_of(report(home))["network_confined"] == "PASS"
     assert status_of(report(home))["undeclared_destination_denied"] == "NOT_YET"
-    journal.append({"identity": "browser.render", "host": "beacon.example.com", "port": 443, "verdict": "DENIED"})
+    journal.append({"identity": "browser.render", "host": "beacon.example.com", "port": 443, "verdict": "DENIED",
+                    "why": "host and port are not on this identity's allowlist"})   # as the relay writes it
     result = report(home)
     assert status_of(result)["undeclared_destination_denied"] == "PASS"
     assert result["egress"]["identities"] == ["browser.render", "http.get"]

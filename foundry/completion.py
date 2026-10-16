@@ -109,6 +109,17 @@ def _reproduces(record_path: Path, fresh: dict) -> bool:
     return fresh["result_sha256"] == claimed.get("result_sha256") and as_recorded == claimed.get("result")
 
 
+AUDITED_NOTE = "re-derived by `python -m foundry.completion --audit` on every CI run"
+
+
+def evidence_note(system_id: int, state: str | None) -> str:
+    """What the record may say about who re-derives it: the CI audit re-runs only COMPLETE rows."""
+    if state == "COMPLETE":
+        return AUDITED_NOTE
+    return (f"not re-run by the CI audit while the row is {state or 'unlisted'} (it re-runs only COMPLETE rows); "
+            f"re-derive with `python -m foundry.completion --run {system_id}`")
+
+
 def record(system_id: int) -> Path:
     from foundry.arsenal import technology
     outcome = run(system_id)
@@ -117,7 +128,7 @@ def record(system_id: int) -> Path:
     path.write_text(json.dumps({"system": system_id, "name": technology(system_id).name,
                                 "command": f"python -m foundry.completion --run {system_id}",
                                 "result": outcome["result"], "result_sha256": outcome["result_sha256"],
-                                "note": "re-derived by `python -m foundry.completion --audit` on every CI run"},
+                                "note": evidence_note(system_id, contract().get(system_id, {}).get("state"))},
                                indent=1, sort_keys=True, default=str) + "\n")
     return path
 

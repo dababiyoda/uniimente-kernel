@@ -745,12 +745,26 @@ REMOTE_EVIDENCE = {
 
 
 def remote_evidence(url: str, check_url: str) -> str:
-    """Which evidence a page check is: a read-after-write through the same service, or a read through another host."""
+    """Which evidence a page check is: a read-after-write through the same service, or a read through another host.
+
+    Same service only when the page is on the service's own host or a name under it. Without a public-suffix list,
+    sharing the last two labels proves nothing (``alice.github.io`` and ``mallory.github.io``, ``evil.co.uk``), and
+    neither does a parent name, so every other case gets the cautious label, which claims no independence either."""
+    import ipaddress
     from urllib.parse import urlsplit
-    service, page = urlsplit(url).hostname or "", urlsplit(check_url).hostname or ""
-    same = page == service or page.endswith("." + service) or service.endswith("." + page) or \
-        page.split(".")[-2:] == service.split(".")[-2:]
-    return "same_service" if same else "separate_host"
+    service = (urlsplit(url).hostname or "").rstrip(".")
+    page = (urlsplit(check_url).hostname or "").rstrip(".")
+    if not service or not page:
+        return "separate_host"
+    if page == service:
+        return "same_service"
+    for host in (service, page):
+        try:
+            ipaddress.ip_address(host)
+            return "separate_host"      # an address is the same service only when it is the same address
+        except ValueError:
+            pass
+    return "same_service" if service.count(".") >= 1 and page.endswith("." + service) else "separate_host"
 
 
 def mcp_remote_act(*, server: str, url: str, tool: str, arguments: dict, bearer: str | None, check_url: str,

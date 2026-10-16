@@ -28,6 +28,7 @@ import math
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -355,20 +356,58 @@ def source_closure(source_root, entries, extra=()) -> list[str]:
     return sorted(seen)
 
 
+_SPECIAL = {stat.S_IFIFO: "fifo", stat.S_IFSOCK: "socket", stat.S_IFCHR: "chr", stat.S_IFBLK: "blk"}
+
+
+def _entry(path: Path) -> str:
+    """One manifest value, read without ever blocking on what tree code left behind. A FIFO, socket or device is
+    named by its type and never opened: a FIFO's writer died with the namespace, so opening it would wait forever.
+    A regular file is opened non-blocking and checked again on the descriptor, in case it was swapped in between."""
+    try:
+        info = os.lstat(path)
+        if stat.S_ISLNK(info.st_mode):
+            return "symlink:" + os.readlink(path)
+        if stat.S_ISDIR(info.st_mode):
+            return "dir"
+        if not stat.S_ISREG(info.st_mode):
+            return "special:" + _SPECIAL.get(stat.S_IFMT(info.st_mode), "other")
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except OSError as exc:
+        return f"unreadable:{exc.errno}"
+    with os.fdopen(fd, "rb") as fh:
+        if not stat.S_ISREG(os.fstat(fh.fileno()).st_mode):
+            return "special:swapped"
+        return _sha256(fh.read())
+
+
 def _manifest(tree: Path) -> dict[str, str]:
-    """Every directory, file and symlink under ``tree`` with its content digest."""
+    """Every directory, file and symlink under ``tree`` with its content digest. The frozen tree holds only
+    directories and regular files, so any other entry differs from it and its run is rejected as tampering."""
     out: dict[str, str] = {}
     for directory, dirs, files in os.walk(tree, followlinks=False):
         base = Path(directory)
-        for name in sorted(dirs):
+        for name in sorted(dirs) + sorted(files):
             path = base / name
-            rel = path.relative_to(tree).as_posix()
-            out[rel] = ("symlink:" + os.readlink(path)) if path.is_symlink() else "dir"
-        for name in sorted(files):
-            path = base / name
-            rel = path.relative_to(tree).as_posix()
-            out[rel] = ("symlink:" + os.readlink(path)) if path.is_symlink() else _sha256(path.read_bytes())
+            out[path.relative_to(tree).as_posix()] = _entry(path)
     return out
+
+
+def _report_rows(rows, count: int) -> bool:
+    """The tracer's report has the shape the parent reads: one row per case, each with the covered line numbers as
+    positive integers and the observation as text or nothing. Code under repair can rewrite the report file, so a
+    row of any other shape means the diagnosis did not run the target."""
+    if not isinstance(rows, list) or len(rows) != count:
+        return False
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("lines"), list):
+            return False
+        if not all(type(n) is int and n > 0 for n in row["lines"]):
+            return False
+        if any(row.get(k) is not None and not isinstance(row[k], str) for k in ("observed", "raised")):
+            return False
+        if "equals_expected" in row and type(row["equals_expected"]) is not bool:
+            return False
+    return True
 
 
 def tampered(expected: dict[str, str], observed: dict[str, str]) -> list[str]:
@@ -739,7 +778,7 @@ def _repair_source(root, *, source_root, target: str, func: str, failing: dict, 
                 rows = json.loads(traced["report"])
             except ValueError:
                 rows = None
-        if not isinstance(rows, list) or len(rows) != len(cases):
+        if not _report_rows(rows, len(cases)):
             raise RepairError(f"diagnosis could not run the target ({traced['status']}, exit {traced['code']}, "
                               f"tampered {traced['tampered'][:5]}): {traced['tail'][-300:]}")
         failing_row = rows[0]
@@ -933,11 +972,12 @@ def exercise_source(root) -> dict:
         if "isolation envelope" not in str(exc):
             raise
         return {"refused": "worker OS isolation (bubblewrap user/network namespaces) unavailable on this host"}
+    # The frozen closure's size is left out: it is the import closure of the target and its test, so any import added
+    # anywhere in that closure changed it and the recorded evidence stopped reproducing (fifth review, M1).
     return {k: out[k] for k in ("status", "target", "symptom", "suspects", "regression_before", "existing_tests",
                                 "candidates", "survivors", "chosen", "diff", "after", "after_passed", "isolation",
                                 "procedure_version", "source_tree_unchanged", "applies_to_source", "promotion")} | {
-        "fault": SEEDED_FAULT[1], "repository_unchanged": _tree_digest(REPO_ROOT, files) == repository_before,
-        "frozen_files": out["acceptance"]["frozen_files"]}
+        "fault": SEEDED_FAULT[1], "repository_unchanged": _tree_digest(REPO_ROOT, files) == repository_before}
 
 
 def exercise(root) -> dict:

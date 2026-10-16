@@ -107,6 +107,29 @@ Progress 2026-10-15 (measured, frozen, negative results kept):
   - **Records:** errata quote the original wording.
 - **Blocked by the environment:** fresh NYC TLC data for F8's next evaluation. The network policy refuses `data.cityofnewyork.us` and the TLC CDN.
 
+Progress 2026-10-16 (measured, frozen, negative results kept):
+
+- **F7 with `flow_expansion_mcf`** ([evidence](evidence/greg-composition-lift/2026-10-16-f7-mcf/README.md)): **MATCH.**
+  - It is a declared re-use of v4's 200 held-out SNDlib items, which had been looked at twice before.
+  - The admitted single genome, through `cortex.reason`, is optimal on 200/200, as is the composition, at 0.26x its median latency.
+  - The independent rescoring (SciPy max flow plus a HiGHS MILP, no code shared) agrees on every item, and the compiler selected the genome on all 200.
+  - With the genome as a constituent, F7's lift is NO_LIFT. v4's verdict is unchanged; the single exact method is canonical on F7's real geometry.
+  - Attempt 1 hung before any held-out item finished: the pool was forked after the solver threads started. No outcome was observed. It was fixed, disclosed and re-frozen at a new path.
+- **P8 cycle 5** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-5/README.md)): **REJECT at the adversarial gate.**
+  - The `cover/1` search, designed from a review-seed pilot, reached the restart anchor (`p_restart` 1.0) within 0.5% of the best train loss.
+  - The argmin of near-tied train means chose `offspring` 6, which failed the lean stress set (+27.5%).
+  - The held-out split was never evaluated, but it is spent by its committed freeze.
+  - Five cycles, five REJECTs; section 31 item 7 is unmet. Next: a pre-registered selection rule that does not rest on near-tied train means.
+- **Genome admission v4** ([evidence](evidence/greg-genome-admission/2026-10-16-v4/README.md)), seeds 1300-1329:
+  - `grid_dijkstra` 1.1.0 is **DEFAULT_FOR_GEOMETRY** at 2.60x its baseline, so the grid shortest-path geometry now has an admitted genome.
+  - `flow_reinforce_greedy` 1.0.2 (SUPERSEDED) and `flow_capacity_plan` 1.0.3 (COMPOSITION_ONLY) replicate.
+  - 35 of 47 are admitted; none is attached.
+- **Merged after independent verification:**
+  - the compiler lane (three rounds) and the optimisation-verifier lane (four rounds: deadline-bounded Z3 certificates, FEASIBLE bounds certified to rounding noise, truthful dissent);
+  - the P8 cycle-5 design;
+  - the grid genome, with version-bound compiler measurements and admission CPU and load diagnostics.
+- **CI:** job 1's limit was raised to 45 minutes; it runs the suite twice.
+
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 
 `INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT` ([record](intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json), [verbatim source](intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md)): founder review of PR #155. P4 learned routing and P6 typed composition are Layer 5 substrate, not the Polyintelligence Mind; all five layers (basal, collective, solver, developmental, meta) remain obligations. Metric: held-out problem families where geometry routing or composition beats the strongest single available intelligence, net of cost/latency, with no added false answers or unauthorized effects; 0 means "a sophisticated router". Sequence: P6 cognitive composition lift → P4 conditional competence memory (hierarchical fallback) → P8 protected evolutionary cognition → IntelligenceGenome library expansion, each family admitted only when it beats simpler baselines on its native geometry. State: active. VPL: 0. Authority delta: none.

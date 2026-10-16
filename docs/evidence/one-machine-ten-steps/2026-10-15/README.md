@@ -36,7 +36,24 @@ python scripts/ci/replay_seed_compatibility.py --out <file>                     
 python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pipeline_mutants.py
 ```
 
-## Results on the final code commit `16f53f5`
+## Results on the final code commit `e3427ad`
+
+`e3427ad` (with `a2b8b99`, a CI-gate fix that renames one loop variable) closes the fourth adversarial review (negative result 15) on `b4b4784`, which joins #169 `46719e4` (a credential a server reads from a file) onto `16f53f5`.
+
+| Run | Result |
+|---|---|
+| Full suite (`python -m pytest -q -p no:cacheprovider -rf`, the two proofs included without organ variables) | **5,125 passed, 31 skipped, 1 failed** in 2,629 s. The failure is negative result 4 (environment only) |
+| Full suite on `b4b4784` (the #169 merge, before the review's fixes) | 5,091 passed, 31 skipped, 1 failed (negative result 4) in 2,735 s |
+| `tests/unit/test_greg_organs.py` with the real organs | 39 passed |
+| #178's one-mission proof with the real organs | **Passed** (47.6 s). Independent verifier REDERIVED, 16 of 16 checks, no findings; three boots, two recoveries; Genesis formed `composed.assignment.staffing.networkx.5670bf4c5c` |
+| Ten-step proof with the real organ checkouts | **Passed** (216.6 s): 11 missions closed, every appraisal VERIFIED |
+| Real-organ venture tests (`GREG_TEST_RAILSCOUT` at the RailScout slice, `GREG_TEST_WMI` at WealthMachine) | 3 passed (run locally; CI has no RailScout checkout, so they skip there) |
+| Every mutation gate CI runs | cortex 85 of 85 caught; cognition residual 45 of 45 (28 before this review), each targeted test passing unmutated first; budget 3 of 3 (after `a2b8b99`: COG-5 had duplicated the line its grant-horizon mutant targets, which made it stale); native 4 of 4; GREG cognition 6 of 6; pipeline, worker appraisal and WASM lifecycle all caught; authority singleton, schema references and sealed developmental checks pass |
+| Seed replay and seals | Valid, 120 of 120; `freeze-v11.json` stays sealed (the review changes none of its inputs) |
+| CI on `6523d35` | All nine jobs green |
+| VEPMC | 0. Local bodies only |
+
+## Results on the code commit `16f53f5`
 
 `16f53f5` joins the converged Mind (Track B: #155 and #158 via #179, #180's fixes, #181's venture case on real organs) with this branch (negative result 14).
 
@@ -152,6 +169,8 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 | One-mission ledger head on `f59eee4` (`run.json` of that run, not committed) | `df3ca819f5600cbf71947284ddd9347d5a88a2dd80be2a74f3551be19ee5293a` |
 | Ten-step body ledger file on `16f53f5`, 849 records (not committed) | `be54708c1f2f93c8033bca971b2843a506eebcc2238ed942ca079477c9f73d1b` |
 | One-mission ledger head on `16f53f5` (`run.json` of that run, not committed) | `346493c30b97be70f57cae521e4ed460eb0fad65f98584b9a4d2f09c5bb1e39c` |
+| Ten-step body ledger file on `e3427ad`, 849 records (not committed) | `d04e1f20d88f2d66884d94423d5ccb0450ecb0578bdcf91c5a06fa32a56f22d6` |
+| One-mission ledger head on `e3427ad` (`run.json` of that run, not committed) | `34c10501b8c6cd111d539683d327d7ebaa2d5f115d41a60c3737668144ebe3aa` |
 | One-mission ledger head (`one-mission/run.json`) | `0e1cb9cf01996baaecd969a4b64d96ee16a84e21435cab1eca6a63276f5a373c` |
 | `ten-step/one-machine-trace.json` | `dd29bdbb89484f4c2d9b59d4ba70e3fc8a7ffcd013ce2183c544168a5baf9514` |
 | `one-mission/verify.json` | `b3437146e3d4f8cfc0588699977012e3d41d308cdd055105adffeb440081451d` |

@@ -222,12 +222,12 @@ def _graph_then_allocate(payload, pid, kw, receipt, finish):
         return finish("TRANSLATION_FAILED", "cross-intelligence flow check disagreed")
     # the composition's certificate is the optimiser's, as strong as its verifier made it: OPTIMAL is proven only
     # when the independent certificate held; FEASIBLE is a feasible plan whose flow the cross-check confirms. The
-    # gap is the proof artifact's, copied: the verifier accepted it only within 1/2 of |objective - bound|, with the
-    # objective recomputed exactly from the solution (objectives are integers), and it is reported only when the
-    # certificate held for the bound it is measured from (Z3 finds no assignment beyond it; an OPTIMAL claim's bound
-    # is its objective). Without the certificate the gap is only the solver's word, so it is omitted (None), never
-    # reported as if verified (review r2: a FEASIBLE plan 5 short with a forged bound answered with gap 0.0).
-    gap = (solved.get("proof_artifact") or {}).get("optimality_gap") if _certified(solved) else None
+    # gap is measured from the claimed flow (the solution's exact objective, which the verifier recomputed) to the
+    # bound the certificate held for (Z3 finds no assignment beyond it; an OPTIMAL claim's bound is its objective),
+    # never copied from the proof artifact (fix review r3: a bound and a gap each checked to 1/2 stacked, so a plan 1
+    # short answered with gap 0.02). Without the certificate the gap is only the solver's word, so it is omitted
+    # (None), never reported as if verified (review r2: a FEASIBLE plan 5 short with a forged bound answered 0.0).
+    gap = float(abs(claimed - solved["evaluator_result"]["certificate"]["bound"])) if _certified(solved) else None
     return finish("ANSWERED", None, {"increments": increments, "flow_value": claimed,
                                      "control_points": check["output"]["cut_edges"],
                                      "solver_status": out["solver_status"], "optimality_gap": gap,

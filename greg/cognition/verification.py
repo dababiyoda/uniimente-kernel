@@ -25,6 +25,17 @@ from .contracts import CognitionError, ProofArtifact, digest
 Z3_RLIMIT = 100_000
 Z3_TIMEOUT_MS = 1000
 Z3_MIN_TIMEOUT_MS = 20
+# CP-SAT reports the optimisation family's integer bound and objective as doubles computed from integers (a scaling
+# factor times an integer plus an offset), so an honest one sits within a few units in the last place of its integer
+# (review seed 3082: -172467568588.00003, one unit at that magnitude). A reported bound or gap is checked to that noise,
+# never to 1/2 (fix review r3: a bound and a gap each allowed 1/2 stacked, so a plan 1 short was certified with a gap
+# of 0.02): relative 1e-13 (at least 450 units in the last place at any magnitude, yet at most 0.1 up to the receipt's
+# 1e12 ceiling, where relative 1e-9 would allow 1000, review V1) with an absolute floor of 1e-9 near zero.
+# Calibration (2026-10-16, review seeds 3000-3999, honest CP-SAT answers from the review's, the round-3 fixer's and two
+# large-magnitude generators at full and 1-100 ms budgets): of 7,738 OPTIMAL and 1,112 FEASIBLE answers (1,198 of
+# them at magnitude 1e9 or more), 17 reported a bound, objective or gap off its exact value, each by at most one unit
+# in the last place (relative 2.1e-16).
+NOISE_REL, NOISE_ABS = Fraction(1, 10**13), Fraction(1, 10**9)
 
 
 def _exact(value):
@@ -41,6 +52,11 @@ def _near(value, exact):
     with rounding noise (-172467568588.00003 for -172467568588, review seed 3082)."""
     value = _exact(value)
     return value is not None and abs(value - exact) < Fraction(1, 2)
+
+
+def _noise(*values):
+    """The largest difference CP-SAT's honest rounding noise explains between numbers of these magnitudes."""
+    return max(NOISE_ABS, NOISE_REL * max(abs(v) for v in values))
 
 
 def _z3_certificate(data, *, integers, better_than=None, sense="max", deadline=None):
@@ -103,7 +119,9 @@ def _z3_certificate(data, *, integers, better_than=None, sense="max", deadline=N
     out = {"engine": "z3", "version": z3.get_version_string(), "limits": limits,
            "question": ("assignment within the bounds and constraints" +
                         (f" with objective {'>' if sense == 'max' else '<'} {better_than}" if better_than is not None
-                         else ""))}
+                         else "")),
+           # the bound the question tests: once CERTIFIED, no assignment's objective lies beyond it
+           **({"bound": int(better_than)} if better_than is not None and better_than.denominator == 1 else {})}
     if status == z3.sat:
         model = solver.model()
         value = (lambda v: model.eval(v, model_completion=True).as_long()) if integers else \
@@ -207,32 +225,34 @@ def verify(family, data, answer, proof_class, *, deadline=None):
             checks["objective_substitution"] = _near(output["objective_value"], objective)
             # Self-consistency of the solver's own report, not a certificate (review V2, V5): an OPTIMAL claim meets
             # its bound (zero gap, review of #179 M6); a FEASIBLE claim's bound lies on the far side of its
-            # objective; a reported gap is |objective - bound|.
+            # objective; a reported gap is |objective - bound|. Each to CP-SAT's rounding noise only (NOISE above).
             maximise = data["objective"]["sense"] == "max"
             bound, gap = _exact(artifact.get("bound")), artifact.get("optimality_gap")
+            noise = _noise(objective, bound) if bound is not None else None
             if output["solver_status"] == "OPTIMAL":
-                checks["optimal_objective_meets_its_bound"] = _near(artifact.get("bound"), objective)
+                checks["optimal_objective_meets_its_bound"] = bound is not None and abs(bound - objective) <= noise
             elif output["solver_status"] == "FEASIBLE":
                 checks["feasible_bound_beyond_its_objective"] = bound is not None and (
-                    bound > objective - Fraction(1, 2) if maximise else bound < objective + Fraction(1, 2))
+                    bound >= objective - noise if maximise else bound <= objective + noise)
             if gap is not None:
-                checks["optimality_gap_recomputed"] = bound is not None and _near(gap, abs(objective - bound))
+                checks["optimality_gap_recomputed"] = bound is not None and _exact(gap) is not None and \
+                    abs(_exact(gap) - abs(objective - bound)) <= noise
             failed = [k for k in ("optimal_objective_meets_its_bound", "feasible_bound_beyond_its_objective",
                                   "optimality_gap_recomputed") if checks.get(k) is False]
             if failed:
                 own_report = (f"its solution's objective is {objective}, its bound {artifact.get('bound')} and its gap "
                               f"{gap} ({' and '.join(failed)} failed)")
             # What the certificate below asks Z3 to beat: an OPTIMAL claim's own objective, or a FEASIBLE claim's
-            # bound (review r2: a forged bound, and the gap measured from it, verified unchecked). CP-SAT reports an
-            # integer bound with rounding noise, as it does an objective, so the bound stands for the integers within
-            # 1/2 of it: only an assignment at least 1/2 beyond it refutes, and an honest bound is never refuted. On
-            # review seeds 3000-3999 (2026-10-15), 697 honest FEASIBLE answers from CP-SAT runs cut to 1-100 ms: 543
-            # bounds certified, 154 UNKNOWN, none refuted; on the 685 with a proven optimum, every bound holds.
+            # bound (review r2: a forged bound, and the gap measured from it, verified unchecked). Objectives are
+            # integers, so a bound b stands for the integer floor(b + noise) (max) or ceil(b - noise) (min), the noise
+            # at b's own magnitude (the plan's objective may be far larger): any assignment beyond b by more than
+            # CP-SAT's rounding noise refutes it (fix review r3: with 1/2 here a bound 0.49 short of the optimum was
+            # certified), and an honest bound is never refuted. The certificate carries that integer as its bound,
+            # from which a consumer measures the gap, never from the artifact's own.
             if output["solver_status"] == "OPTIMAL":
                 beyond = objective
             elif output["solver_status"] == "FEASIBLE" and bound is not None:
-                beyond = Fraction(math.ceil(bound + Fraction(1, 2)) - 1 if maximise else
-                                  math.floor(bound - Fraction(1, 2)) + 1)
+                beyond = Fraction(math.floor(bound + _noise(bound)) if maximise else math.ceil(bound - _noise(bound)))
     elif family in ("graph", "search"):
         # GREG's own Dijkstra (greg/cognition/network.py) shares no code with NetworkX. It refutes a
         # valid but longer path and a false "no path", which form checks alone let through.
@@ -328,13 +348,22 @@ def verify(family, data, answer, proof_class, *, deadline=None):
                 certificate["status"] != "REFUTED")
         settled = certificate["status"] if certificate else None
         why = f"Z3: {certificate.get('reason')}" if certificate else "Z3 did not run"
+        violated = [k for k in ("solution_variable_set", "bounded_solution", "constraint_substitution",
+                                "integer_domain") if checks.get(k) is False]
         if settled == "REFUTED":
             dissent.append(f"Z3 found an {certificate['question']}: {certificate['witness']}; the " +
                            (f"FEASIBLE claim's bound {artifact['bound']} is false." if claim == "FEASIBLE" else
                             f"{claim} claim is false."))
+        elif violated:
+            # a solution outside its own model: never a solver-reported optimum or a verified feasible plan (fix
+            # review r3: an x+y=10 plan for x+y<=4, claimed OPTIMAL, was called solver-reported)
+            dissent.append(f"The {claim} claim is refuted: its solution violates its own model "
+                           f"({' and '.join(violated)} failed).")
         elif own_report:
             # its bound or gap contradicts its own solution: neither solver-reported optimality nor a certificate
             dissent.append(f"The {claim} claim is refuted by its own report: {own_report}.")
+        elif refuted := [k for k, ok in checks.items() if not ok]:
+            dissent.append(f"The {claim} claim is refuted: {' and '.join(refuted)} failed.")
         elif claim == "FEASIBLE":
             dissent.append("FEASIBLE claims a verified feasible assignment only; its optimality is not established, "
                            + (f"and its bound {artifact['bound']} is independently certified: Z3, a different engine "

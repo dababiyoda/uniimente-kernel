@@ -10,6 +10,7 @@ stand-in verifier that only reports the deadline it is handed."""
 import copy
 from dataclasses import asdict, replace
 import json
+import math
 from pathlib import Path
 import sys
 import time
@@ -369,7 +370,9 @@ def test_an_optimal_claim_refuted_by_its_own_bound_or_gap_is_not_called_solver_r
 def test_a_feasible_claims_bound_is_certified_and_a_forged_one_is_refuted(data, solution, objective, optimum):
     """Fix review 2026-10-15 r2, item 3: a FEASIBLE claim's bound was never checked against the model, so a plan short
     of the optimum with its bound forged to its objective (gap 0) verified. Z3 now looks for an assignment beyond the
-    bound; CP-SAT's rounding noise in an honest bound is never a refutation, and a bound 1/2 or more short is."""
+    bound; CP-SAT's rounding noise in an honest bound is never a refutation, and a bound short by more than that noise
+    is (fix review r3: 1/2 was allowed, so a bound 0.4 short, or 0.00003 short at magnitude 4, was certified). The
+    certificate's bound is the integer the claim's bound stands for."""
     honest = solve(data)
     assert honest["output"]["objective_value"] == optimum
     forged = feasible(honest, solution, objective, float(objective))
@@ -380,13 +383,121 @@ def test_a_feasible_claims_bound_is_certified_and_a_forged_one_is_refuted(data, 
     assert (beyond > objective) if data["objective"]["sense"] == "max" else (beyond < objective)
     assert any(d.endswith(f"the FEASIBLE claim's bound {float(objective)} is false.") for d in result["dissent"])
     toward = 1 if data["objective"]["sense"] == "max" else -1                   # from the optimum, away from the plan
-    for off, holds in ((0, True), (-0.00003, True), (0.00003, True), (-0.4, True), (-0.5, False), (3, True)):
+    # (offset from the optimum, offset of the certified integer bound, or None where an assignment beats the bound)
+    for off, certified in ((-0.00003, None), (-0.4, None), (-0.5, None),
+                           (0, 0), (-1e-12, 0), (1e-12, 0), (0.7, 0), (3, 3)):
         bound = optimum + toward * off
         result = verify("optimization", data, feasible(honest, solution, objective, bound), OPT)
-        assert (result["verdict"] == "STRUCTURALLY_VERIFIED") is holds, (bound, failed(result))
-        assert result["certificate"]["status"] == ("CERTIFIED" if holds else "REFUTED")
-        if holds:
+        assert (result["verdict"] == "STRUCTURALLY_VERIFIED") is (certified is not None), (bound, failed(result))
+        assert result["certificate"]["status"] == ("REFUTED" if certified is None else "CERTIFIED")
+        if certified is not None:
+            assert result["certificate"]["bound"] == optimum + toward * certified
             assert any(f"its bound {bound} is independently certified" in d for d in result["dissent"])
+        else:
+            assert failed(result) == ["no_assignment_beyond_its_bound_found"]
+
+
+def test_a_feasible_bound_short_by_more_than_rounding_noise_is_refuted_at_large_magnitudes():
+    """Fix review r3: the tolerance is CP-SAT's rounding noise (a few units in the last place), not 1/2, and not a
+    relative 1e-9 either, which is 100 units near 1e11 and 1000 near the receipt's 1e12 ceiling (review V1)."""
+    honest = solve(BIG)                                                      # max, optimum 100000000100 near 1e11
+    optimum, ulp = 100000000100, math.ulp(100000000100.0)
+    for bound, holds in ((optimum - 0.05, False), (optimum - 0.4, False), (optimum - 1.0, False),
+                         (optimum - ulp, True), (optimum + ulp, True), (optimum - 64 * ulp, True)):
+        result = verify("optimization", BIG, feasible(honest, {"x": 100000, "y": 0}, 100000000000.0, bound), OPT)
+        assert result["certificate"]["status"] == ("CERTIFIED" if holds else "REFUTED"), (bound, failed(result))
+        assert (result["verdict"] == "STRUCTURALLY_VERIFIED") is holds
+        if holds:
+            assert result["certificate"]["bound"] == optimum
+    edge = {"variables": {"x": [-1000000, 0]}, "constraints": [],              # min, optimum -1e12 at the ceiling
+            "objective": {"coefficients": {"x": 1000000}, "sense": "min"}}
+    honest, optimum = solve(edge), -10 ** 12
+    for bound, holds in ((optimum + 0.2, False), (optimum + 0.49, False),
+                         (optimum, True), (optimum + math.ulp(1e12), True)):          # never below the 1e12 ceiling
+        result = verify("optimization", edge, feasible(honest, {"x": -999999}, -999999000000.0, bound), OPT)
+        assert result["certificate"]["status"] == ("CERTIFIED" if holds else "REFUTED"), (bound, failed(result))
+        if holds:
+            assert result["certificate"]["bound"] == optimum
+
+
+def test_a_feasible_bounds_noise_is_measured_at_its_own_magnitude_not_its_plans():
+    """A forged worker can answer data the honest solver refuses (an objective range above 1e12): a plan near -5e12
+    must not widen the noise allowed on a bound of 3.6 to 1/2, which certified 'no objective > 4' for it although the
+    optimum 4 beats 3.6 (found fixing review r3)."""
+    xs = [f"x{i}" for i in range(5)]
+    data = {"variables": {**{x: [-1000000, 0] for x in xs}, "y": [0, 5]},
+            "constraints": [{"coefficients": {"y": 1}, "op": "<=", "rhs": 4}],
+            "objective": {"coefficients": {**{x: 1000000 for x in xs}, "y": 1}, "sense": "max"}}
+    with pytest.raises(CognitionError, match="objective range"):
+        solve(data)
+    forged = feasible(solve(SMALL), {**{x: -1000000 for x in xs}, "y": 0}, -5e12, 3.6)
+    forged["proof"].update(variables=data["variables"], objective=data["objective"], constraints=data["constraints"],
+                           optimality_gap=None)                                # its gap would exceed the ceiling
+    result = verify("optimization", data, forged, OPT)
+    assert failed(result) == ["no_assignment_beyond_its_bound_found"]
+    assert result["certificate"]["status"] == "REFUTED" and result["certificate"]["bound"] == 3
+
+
+def test_a_bound_or_gap_off_by_less_than_one_half_is_refuted_by_its_own_report():
+    """Fix review r3: each self-consistency check allowed 1/2, so an OPTIMAL claim whose bound sat 0.4 above its
+    objective, a FEASIBLE optimum whose bound sat 0.4 on the wrong side of it, and a gap 0.4 off all verified."""
+    honest = solve(SMALL)
+    above = plan(honest, honest["output"]["solution"], 4.0, bound=4.4, optimality_gap=0.4)
+    wrong_side = feasible(honest, honest["output"]["solution"], 4.0, 3.6)
+    gap = plan(honest, honest["output"]["solution"], 4.0, optimality_gap=0.4)
+    for forged, check in ((above, "optimal_objective_meets_its_bound"),
+                          (wrong_side, "feasible_bound_beyond_its_objective"), (gap, "optimality_gap_recomputed")):
+        result = verify("optimization", SMALL, forged, OPT)
+        assert failed(result) == [check] and "certificate" not in result
+        assert any(d.startswith(f"The {forged['output']['solver_status']} claim is refuted by its own report")
+                   for d in result["dissent"])
+    # the noise of an honest report at its magnitude still verifies (review seed 3082 above, at 1.7e11)
+    noisy = plan(honest, honest["output"]["solution"], 4.0, bound=4.0 + math.ulp(4.0), optimality_gap=math.ulp(4.0))
+    assert verify("optimization", SMALL, noisy, OPT)["verdict"] == "STRUCTURALLY_VERIFIED"
+    zero = {"variables": {"x": [0, 3]}, "constraints": [], "objective": {"coefficients": {"x": 1}, "sense": "min"}}
+    near_zero = plan(solve(zero), {"x": 0}, 0.0, bound=-5e-10, optimality_gap=5e-10)   # the absolute floor, near 0
+    assert verify("optimization", zero, near_zero, OPT)["verdict"] == "STRUCTURALLY_VERIFIED"
+
+
+def test_a_solution_outside_its_own_model_is_never_called_solver_reported_or_verified_feasible():
+    """Fix review r3, defect B: an x=5, y=5 plan for x+y<=4 was REFUTED, but its dissent read 'Optimality is
+    solver-reported ... not independently certified' (OPTIMAL) or 'FEASIBLE claims a verified feasible assignment
+    only' (FEASIBLE). Any other failed check is named too, never dressed as an uncertified claim."""
+    honest = solve(SMALL)
+    outside = plan(honest, {"x": 5, "y": 5}, 10.0, bound=10.0, optimality_gap=0.0)
+    beyond = feasible(honest, {"x": 5, "y": 5}, 10.0, 11.0)
+    off_bounds = plan(honest, {"x": 6, "y": -2}, 4.0, bound=4.0, optimality_gap=0.0)
+    for forged, said in (
+            (outside, "The OPTIMAL claim is refuted: its solution violates its own model (constraint_substitution "
+                      "failed)."),
+            (beyond, "The FEASIBLE claim is refuted: its solution violates its own model (constraint_substitution "
+                     "failed)."),
+            (off_bounds, "The OPTIMAL claim is refuted: its solution violates its own model (bounded_solution "
+                         "failed).")):
+        result = verify("optimization", SMALL, forged, OPT)
+        assert result["verdict"] == "REFUTED" and said in result["dissent"], result["dissent"]
+        assert not [d for d in result["dissent"] if "solver-reported" in d or "verified feasible assignment" in d]
+    wrong_objective = plan(honest, honest["output"]["solution"], 5.0)        # the solution's objective is 4
+    result = verify("optimization", SMALL, wrong_objective, OPT)
+    assert failed(result) == ["objective_substitution"]
+    assert "The OPTIMAL claim is refuted: objective_substitution failed." in result["dissent"]
+    assert not [d for d in result["dissent"] if "solver-reported" in d]
+    infeasible = {**SMALL, "constraints": SMALL["constraints"] + [{"coefficients": {"x": 1}, "op": ">=", "rhs": 6}]}
+    mismatched = solve(infeasible)
+    mismatched["proof"]["constraints"] = SMALL["constraints"]
+    result = verify("optimization", infeasible, mismatched, OPT)
+    assert "The INFEASIBLE claim is refuted: artifact_constraints_match_input failed." in result["dissent"]
+    assert not [d for d in result["dissent"] if "solver reports" in d]
+    formal = {"variables": {"x": [0, 2.5], "y": [0, 1]},
+              "constraints": [{"coefficients": {"x": 1, "y": 0.5}, "op": "<", "rhs": 1}]}
+    sat = SOLVERS["formal"](formal, {"latency_limit": 10, "compute_limit": 100000})
+    sat["output"]["solution"] = {"x": "2", "y": "0"}
+    result = verify("formal", formal, sat, FORMAL)
+    assert ("The SAT claim is refuted: its solution violates its own model (constraint_substitution failed)."
+            in result["dissent"])
+    # a solution inside its model, with an inconclusive certificate, is still solver-reported, and says so
+    assert any(d.startswith("Optimality is solver-reported") for d in verify("optimization", SMALL, honest, OPT,
+                                                                             deadline=-1e308)["dissent"])
 
 
 def test_a_false_infeasible_and_a_false_unsat_are_refuted_and_honest_ones_are_certified():
@@ -560,6 +671,54 @@ def test_graph_then_allocate_refutes_a_forged_feasible_bound_and_omits_an_uncert
                registry=registry)
     assert r["state"] == "ANSWERED" and r["answer"]["solver_status"] == "FEASIBLE"
     assert r["answer"]["optimality"].startswith("unproven") and r["answer"]["optimality_gap"] is None
+
+
+def one_short(gap):
+    """A solver-worker forgery (fix review r3, stack_tolerance.py): a FEASIBLE plan 1 short of the optimum, its bound
+    forged to its objective + 0.51 and its gap to ``gap``."""
+    def change(family, data, answer):
+        if family != "optimization":
+            return None
+        worse = copy.deepcopy(data)
+        optimum = round(answer["output"]["objective_value"])                       # F3 maximises the flow
+        worse["constraints"].append({"coefficients": dict(data["objective"]["coefficients"]), "op": "<=",
+                                     "rhs": optimum - 1})
+        short = solve(worse)["output"]
+        forged = feasible(answer, short["solution"], short["objective_value"], short["objective_value"] + 0.51)
+        forged["proof"]["optimality_gap"] = gap
+        return forged
+    return change
+
+
+@pytest.mark.parametrize("gap", [0.02, 0.51])
+def test_graph_then_allocate_never_answers_a_plan_one_short_with_a_stacked_tolerance(registry, monkeypatch, gap):
+    """Fix review r3, defect A: the bound and the gap were each checked to 1/2, and the stack let a plan 1 short of the
+    optimum answer with optimality_gap 0.02 (or 0.51) on F3 dev seeds 0-3. Its gap is now refuted by its own report
+    (0.02) or its bound by Z3 (0.51)."""
+    forge_worker(monkeypatch, one_short(gap))
+    for seed in range(4):
+        item = R.f3(seed)
+        r = reason({"problem_id": f"f3-short-{seed}", "chain": {"payload": item["payload"],
+                                                                "recipe": "graph_then_allocate"}}, registry=registry)
+        assert r["state"] == "STAGE_ABSTAINED" and r["answer"] is None, (seed, r["answer"])
+        assert [s["verifier"] for s in r["stages"] if s["stage"] == "optimize"] == ["REFUTED"]
+
+
+def test_graph_then_allocate_measures_the_gap_from_the_certified_bound(registry, monkeypatch):
+    """Fix review r3, defect A: the reported gap was the proof artifact's, copied. An honest-direction fractional bound
+    2.7 beyond the optimum stands for the integer 2 beyond it, which is what the certificate holds and what the gap is
+    measured from (2.0, not 2.7)."""
+    def fractional(family, data, answer):
+        if family != "optimization" or answer["output"]["solver_status"] != "OPTIMAL":
+            return None
+        return feasible(answer, answer["output"]["solution"], answer["output"]["objective_value"],
+                        answer["proof"]["bound"] + 2.7)
+    forge_worker(monkeypatch, fractional)
+    item = R.f3(3)
+    r = reason({"problem_id": "f3-fractional", "chain": {"payload": item["payload"], "recipe": "graph_then_allocate"}},
+               registry=registry)
+    assert r["state"] == "ANSWERED" and r["answer"]["flow_value"] == item["truth"]["optimum"]
+    assert r["answer"]["solver_status"] == "FEASIBLE" and r["answer"]["optimality_gap"] == 2.0
 
 
 def test_forecast_then_allocate_reports_each_weeks_status_and_the_weakest_certificate(registry, monkeypatch):

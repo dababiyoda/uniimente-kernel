@@ -263,7 +263,8 @@ def test_latency_and_subregion_verdicts_measured_at_another_version_never_rank(r
     stale = grid["stale_measurements"]
     assert (stale["version_measured"], stale["version_current"], stale["median_seconds"]) == ("1.0.0", current, 0.0001)
     assert stale["subregion"]["name"] == name and stale["subregion"]["verdict"] == "FAVOURED"
-    assert "never used to rank" in stale["stale_evidence"] and "persists until a re-admission" in stale["stale_evidence"]
+    assert "never used to rank" in stale["stale_evidence"]
+    assert "persists until a re-admission" in stale["stale_evidence"]
     assert rows["cognition.search_astar"]["median_seconds"] == 0.5 and "stale_measurements" not in rows[
         "cognition.search_astar"]
     no_index.write_text(json.dumps(_grid_index(current, favoured)))         # the same evidence at this version

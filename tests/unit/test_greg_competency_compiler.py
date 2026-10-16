@@ -226,6 +226,89 @@ def test_stale_subregion_evidence_never_steers_and_stale_negative_evidence_persi
     assert {r["status"] for r in rows if r["method"] == "cognition.develop_repair"} == {"EXPERIMENTAL"}
 
 
+def _grid_index(grid_version, grid_table, astar_status="EXPERIMENTAL", astar_version=None):
+    """search_astar and grid_dijkstra, the two families a grid request fits: search_astar measured at its current
+    version (median 0.5 s, neutral), grid_dijkstra at ``grid_version`` (median 0.1 ms, the given subregion table)."""
+    from greg.cognition.genomes import library
+    astar = library.genome("search_astar")
+    return {"genomes": {
+        "search_astar": {"status": astar_status, "version": astar_version or astar.version, "median_seconds": 0.5,
+                         "evidence": "astar.json#search_astar"},
+        "grid_dijkstra": {"status": "EXPERIMENTAL", "version": grid_version, "median_seconds": 0.0001,
+                          "subregions_vs_competitor": grid_table, "evidence": "grid.json#grid_dijkstra",
+                          "competitor": library.genome("grid_dijkstra").competitor}},
+        "recipes": {}, "routing": {}}
+
+
+def test_latency_and_subregion_verdicts_measured_at_another_version_never_rank(registry, no_index):
+    """Review of grid_dijkstra 1.1.0: the compiler attached a family's held-out median latency and subregion verdicts
+    whenever its evidence was not stale, and negative evidence never is, so 1.0.0's measurements (0.1 ms, FAVOURED
+    here) ranked 1.1.0 as if they were its own. Measured at another version they are reported, labelled with that
+    version, and never rank; the same measurements at the current version do."""
+    from greg.cognition.genomes import library, solvers_b
+    data, _ = solvers_b.astar_instance(1)                                   # development seed
+    name, current = solvers_b.astar_subregion(data), library.genome("grid_dijkstra").version
+    favoured = {name: {"n": 10, "wins": 10, "losses": 0, "ties": 0, "p_better": 0.000977, "p_worse": 1.0}}
+    assert current != "1.0.0"
+    for cid in ("cognition.search_astar", "cognition.grid_dijkstra"):
+        registry.set_state(cid, "ATTACHED")                                  # evaluation-only, in memory
+    no_index.write_text(json.dumps(_grid_index("1.0.0", favoured)))
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert r["method_or_composition_selected"] == "cognition.search_astar"   # measured 0.5 s beats unranked latency
+    rows = {x["method"]: x for x in compiler.candidates(data, compiler.CompetencyGeometry.parse(
+        {"geometry": "optimization"}), json.loads(no_index.read_text()))}
+    grid = rows["cognition.grid_dijkstra"]
+    assert grid["status"] == "EXPERIMENTAL" and "stale_evidence" not in grid         # negative evidence persists
+    assert "median_seconds" not in grid and "subregion" not in grid
+    stale = grid["stale_measurements"]
+    assert (stale["version_measured"], stale["version_current"], stale["median_seconds"]) == ("1.0.0", current, 0.0001)
+    assert stale["subregion"]["name"] == name and stale["subregion"]["verdict"] == "FAVOURED"
+    assert "never used to rank" in stale["stale_evidence"]
+    assert "persists until a re-admission" in stale["stale_evidence"]
+    assert rows["cognition.search_astar"]["median_seconds"] == 0.5 and "stale_measurements" not in rows[
+        "cognition.search_astar"]
+    no_index.write_text(json.dumps(_grid_index(current, favoured)))         # the same evidence at this version
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert r["method_or_composition_selected"] == "cognition.grid_dijkstra" and "stale_measurements" not in r
+    assert r["subregion_evidence"]["verdict"] == "FAVOURED"
+
+
+def test_a_dominated_verdict_of_another_version_names_no_acquisition_and_the_receipt_labels_it(registry, no_index):
+    """An old version's DOMINATED subregion verdict added dissent and named the competitor for Genesis acquisition
+    as if the current code had lost there. It is reported in the receipt, labelled, and steers nothing."""
+    from greg.cognition.genomes import library, solvers_b
+    data, _ = solvers_b.astar_instance(1)
+    name, current = solvers_b.astar_subregion(data), library.genome("grid_dijkstra").version
+    dominated = {name: {"n": 10, "wins": 0, "losses": 10, "ties": 0, "p_better": 1.0, "p_worse": 0.000977}}
+    registry.set_state("cognition.grid_dijkstra", "ATTACHED")
+    no_index.write_text(json.dumps(_grid_index("1.0.0", dominated, astar_status="SUPERSEDED")))
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert r["method_or_composition_selected"] == "cognition.grid_dijkstra"
+    assert "subregion_evidence" not in r and "acquisition_candidates" not in r
+    assert not any("lost 10-0" in d for d in r["dissent"])
+    assert r["stale_measurements"]["subregion"]["verdict"] == "DOMINATED"
+    assert r["stale_measurements"]["version_measured"] == "1.0.0"
+    assert r["stale_measurements"]["version_current"] == current
+    no_index.write_text(json.dumps(_grid_index(current, dominated, astar_status="SUPERSEDED")))
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert r["subregion_evidence"]["verdict"] == "DOMINATED" and r["acquisition_candidates"]
+    assert "stale_measurements" not in r
+
+
+def test_a_frozen_exclusion_of_another_version_is_labelled_with_that_version(registry, no_index):
+    from greg.cognition.genomes import library, solvers_b
+    data, _ = solvers_b.astar_instance(1)
+    astar = library.genome("search_astar").version
+    no_index.write_text(json.dumps(_grid_index("1.0.0", {}, astar_status="SUPERSEDED", astar_version="0.0.1")))
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert {"method": "cognition.search_astar",
+            "why": f"frozen admission status SUPERSEDED, measured at version 0.0.1 (it persists until a re-admission "
+                   f"at {astar})"} in r["methods_rejected"]
+    no_index.write_text(json.dumps(_grid_index("1.0.0", {}, astar_status="SUPERSEDED")))
+    r = compile_(registry, {"geometry": "optimization"}, data, execute=False)
+    assert {"method": "cognition.search_astar", "why": "frozen admission status SUPERSEDED"} in r["methods_rejected"]
+
+
 def test_a_superseded_fit_names_the_deployable_mechanism_that_superseded_it(registry, no_index, monkeypatch):
     """Admission v2: basal_pid was superseded 0-30 by the simulation-optimised PI. Where that mechanism is not a
     registered genome, a request only basal_pid fits is a capability deficit, and the receipt names the mechanism

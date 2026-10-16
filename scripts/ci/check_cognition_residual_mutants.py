@@ -18,6 +18,7 @@ BUDGET = 'tests/unit/test_cognition_thinking_budget.py'
 VENTURES = 'tests/unit/test_greg_ventures.py'
 CONSTRUCTED = 'tests/unit/test_greg_constructed_route_rules.py'
 WINDOW = 'tests/unit/test_cognition_compile_grant_window.py'
+ECONOMICS_BINDING = 'tests/unit/test_greg_ventures_economics_binding.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -139,6 +140,13 @@ MUTANTS = [
  ('an off-ledger receipt is accepted in a memo', 'greg/ventures.py',
   'if ledger is not None and not any(', 'if False and not any(',
   'test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forged_receipt_is_refuted', VENTURES),
+ ('a memo from other economics closes a venture mission', 'greg/ventures.py',
+  'if marker in text and _same_economics(text, params):', 'if marker in text:',
+  'test_a_memo_from_other_economics_does_not_close_a_mission', ECONOMICS_BINDING),
+ ('venture missions with different economics share their cognition questions', 'greg/templates.py',
+  'ids = {"revenue": f"venture-revenue-{thread}{suffix}", "causal": f"venture-causal-{thread}{suffix}"}',
+  'ids = {"revenue": f"venture-revenue-{thread}", "causal": f"venture-causal-{thread}"}',
+  'test_missions_with_different_economics_are_different_missions_with_their_own_questions', ECONOMICS_BINDING),
  ('the organ bridge is handed the writable journal', 'greg/missions.py',
   'journal=self._ledger_reader() if manifest.capability_id == "venture.assess"',
   'journal=self.journal if manifest.capability_id == "venture.assess"',

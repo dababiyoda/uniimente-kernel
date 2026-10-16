@@ -284,6 +284,7 @@ def render(inputs: dict) -> str:
               f"- Wire packet `{inputs['packet']['id']}` sent under the kernel identity; assessment adapted under "
               f"the wealthmachine identity; execution authority {inputs['canonical']['assessment_execution_authority']}",
               f"- Signal: manifest {inputs['manifest_sha256']}",
+              *([f"- Economics: {inputs['economics_sha256'] or 'none stated'}"] if "economics_sha256" in inputs else []),
               f"- Renderer {RENDERER}", ""]
     return "\n".join(lines)
 
@@ -349,16 +350,33 @@ def assess(params, ctx: InvocationContext) -> dict:
               "flip": flip_condition(receipt["appraisal"], assessment["go_no_go"], verdict),
               "organs": {"railscout_head": _git_head(p["railscout_root"]), "wmi_head": _git_head(p["wmi_root"])},
               "paths": {k: str(v) for k, v in p.items()}}
+    if "economics_sha256" in params:
+        # the economics the revenue section is computed from (None: none stated); a memo from other economics is
+        # a different memo, delivered beside it, never in its place
+        inputs["economics_sha256"] = params["economics_sha256"]
     text = render(inputs)
-    path = _deliver(text, ctx, f"venture-{receipt['receipt_sha256'][:16]}")
+    basis = inputs.get("economics_sha256")
+    path = _deliver(text, ctx, f"venture-{receipt['receipt_sha256'][:16]}" + (f"-{basis[7:15]}" if basis else ""))
     return {"path": str(path), "sha256": hashlib.sha256(text.encode()).hexdigest(), "bytes": len(text.encode()),
             "inputs": inputs, "inputs_digest": inputs_digest(inputs), "verdict": verdict,
             "railscout_status": receipt["appraisal"]["status"], "engine_verdict": assessment["go_no_go"],
             "manifest_sha256": inputs["manifest_sha256"]}
 
 
+def _same_economics(text: str, params: dict) -> bool:
+    """A memo answers this mission only if it was computed from the economics the mission was signed with. A
+    mission signed before economics were bound (no ``economics_sha256``) keeps matching by manifest alone; a memo
+    rendered before they were bound states none."""
+    if "economics_sha256" not in params:
+        return True
+    basis = params["economics_sha256"]
+    if basis is None:
+        return "- Economics: " not in text or "- Economics: none stated" in text
+    return f"- Economics: {basis}\n" in text
+
+
 def status(params, ctx: InvocationContext) -> dict:
-    """Sensor: has an assessment been delivered for this manifest's current receipt?"""
+    """Sensor: has an assessment been delivered for this manifest's current receipt and the signed economics?"""
     manifest = _inside(Path(params["manifest"]), ctx.read_roots)
     digest = hashlib.sha256(manifest.read_bytes()).hexdigest()
     folder = Path(ctx.deliver_root).resolve() / "ventures" if ctx.deliver_root else None
@@ -366,7 +384,7 @@ def status(params, ctx: InvocationContext) -> dict:
     marker = f"manifest {digest}"
     for path in found:
         text = path.read_text(encoding="utf-8")
-        if marker in text:
+        if marker in text and _same_economics(text, params):
             verdict = text.split("**Binding verdict: ", 1)[1].split("**", 1)[0]
             return {"assessed": True, "verdict": verdict, "path": path.name, "manifest_sha256": digest}
     return {"assessed": False, "verdict": None, "path": None, "manifest_sha256": digest}

@@ -197,9 +197,16 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
     digest = hashlib.sha256(Path(resolved["manifest"]).read_bytes()).hexdigest()
     thread = hashlib.sha256(resolved["manifest"].encode()).hexdigest()[:12]
     stated = read_economics(resolved["manifest"], economics)
+    # The memo's revenue section is computed from these economics: the memo, its cognition questions, the mission
+    # and the check that it was delivered are all bound to them, so a memo built from other (or no) economics on
+    # the same signal never closes this mission.
+    basis = "sha256:" + hashlib.sha256(json.dumps(stated, sort_keys=True, separators=(",", ":")).encode()
+                                       ).hexdigest() if stated else None
+    suffix = f"-{basis[7:15]}" if basis else ""
+    resolved = {**resolved, "economics_sha256": basis}
     cognition, checks = [], []
     if stated:
-        ids = {"revenue": f"venture-revenue-{thread}", "causal": f"venture-causal-{thread}"}
+        ids = {"revenue": f"venture-revenue-{thread}{suffix}", "causal": f"venture-causal-{thread}{suffix}"}
         asks = {"revenue": ("estimate", stated["revenue"], "revenue_estimated",
                             {"op": "equals", "field": "abstention_state", "value": "NONE"},
                             "GREG's own revenue range from the stated factors, with units and the dominant uncertainty"),
@@ -222,7 +229,7 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
     capabilities = ["venture.status", "fs.read"] + (["venture.assess"] if preauthorize_delivery else []) \
         + (["cognition.solve"] if cognition else [])
     return {
-        "mission_id": f"m:venture-watch-{thread}" if standing else f"m:venture-{digest[:12]}",
+        "mission_id": f"m:venture-watch-{thread}{suffix}" if standing else f"m:venture-{digest[:12]}{suffix}",
         "founder_expression": "Take this signal, find out whether it is a real business, and tell me what to do "
                               "next. Do not act on it; do not let a score outrun the evidence.",
         "intended_effect": "a source-bound venture decision memo for this signal is waiting for Alfonso, with "
@@ -234,7 +241,8 @@ def venture_assessment(*, railscout_root: str, wmi_root: str, manifest: str, sou
         "closure": {"kind": "infinite", "cadence_seconds": cadence_seconds} if standing else {"kind": "bounded"},
         "success_checks": checks + [{"check_id": "assessed", "description": "a memo exists for the current evidence",
                                      "sensor": {"capability": "venture.status",
-                                                "params": {"manifest": resolved["manifest"]},
+                                                "params": {"manifest": resolved["manifest"],
+                                                           "economics_sha256": basis},
                                                 "target": "deliver:ventures"},
                                      "predicate": {"op": "equals", "field": "assessed", "value": True}}],
         "strategies": cognition + [delivery],

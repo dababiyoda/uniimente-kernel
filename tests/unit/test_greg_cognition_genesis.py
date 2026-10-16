@@ -470,6 +470,80 @@ def test_genesis_offers_exactly_what_the_compiler_would_route_and_never_a_relaxa
                                              and body.registry.state.get(r["method"]) == "VERIFIED"})
 
 
+def test_a_request_in_a_one_part_recipe_shape_is_offered_the_genome_that_answers_its_part(tmp_path, index):
+    """Independent review 2026-10-15 (F1): a capacity network sent as ``{"capacity_network": {...}}`` fits
+    flow_expansion_mcf through the compiler's part row, and the compiler asked the founder to attach it. Genesis read
+    only the residual's input names (['capacity_network']), found no family, and the mission asked a second time, with
+    evidence.registered [] and a recommendation to buy or build a capability a withheld genome already serves."""
+    item = library.executables()["flow_expansion_mcf"]
+    index.write_text(json.dumps({"genomes": {               # admission v3's verdicts on the part's two genomes
+        "flow_expansion_mcf": {"status": "DEFAULT_FOR_GEOMETRY", "version": item.genome.version},
+        "flow_reinforce_greedy": {"status": "SUPERSEDED", "version": library.genome("flow_reinforce_greedy").version}},
+        "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}, "routing": {}}))
+    data, _ = item.instance(1)                                                     # development seed
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", compile_mission(
+        "m:xpand", {"geometry": "optimization", "subgeometry": "expansion"}, {"capacity_network": data})))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        assert ticks(body, clock, 3)[-1]["state"] in ("BLOCKED", "WAITING")
+        assert compilations(body)[-1]["withheld_best_fit"]["method"] == "cognition.flow_expansion_mcf"
+        routes = [(e.payload["route"], e.payload["result"]) for e in body.journal.replay("genesis.route")]
+        assert ("genome_library", "attach candidate: cognition.flow_expansion_mcf fits the request's one typed part by "
+                                  "the compiler's own row; registered and withheld; GREG does not attach it") in routes
+        assert not any(result.startswith("no registered intelligence fits") for _, result in routes)
+        [awaiting] = [e.payload for e in body.journal.replay("deficit.awaiting_attach")]
+        assert awaiting["capability_id"] == "cognition.flow_expansion_mcf"
+        blocker = body.engine.book.missions["m:xpand"].blocker
+        assert blocker["attach_candidates"] == ["cognition.flow_expansion_mcf"] and blocker["shared_ask"]
+        [ask] = attach_asks(body)                                                  # the compiler's one ask, shared
+        assert ask["mission_id"] is None and ask["request_id"] == blocker["request_id"]
+        assert ask["authority_requested"]["attach"] == "cognition.flow_expansion_mcf"
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": "cognition.flow_expansion_mcf"}))
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+        answered = [c for c in compilations(body) if c["state"] == "ANSWERED"][-1]
+        assert answered["method_or_composition_selected"] == "cognition.flow_expansion_mcf"
+        assert answered["payload_part"] == "capacity_network" and len(attach_asks(body)) == 1
+
+
+def test_a_founder_detached_genome_fitting_the_requests_part_is_reported_not_offered(tmp_path, index):
+    """Fix verification 2026-10-15 (F1): the part-addressed rows pass the same registry-state check as the family
+    rows. A genome the founder detached that fits a one-part request is reported, never offered: the search continues
+    past the repertoire, the mission asks on its own, and the founder's later attach resolves it."""
+    item = library.executables()["flow_expansion_mcf"]
+    index.write_text(json.dumps({"genomes": {
+        "flow_expansion_mcf": {"status": "DEFAULT_FOR_GEOMETRY", "version": item.genome.version},
+        "flow_reinforce_greedy": {"status": "SUPERSEDED", "version": library.genome("flow_reinforce_greedy").version}},
+        "recipes": {"graph_then_allocate": {"lift": True, "status": "VPL_LIFT"}}, "routing": {}}))
+    data, _ = item.instance(1)                                                     # development seed
+    detached = "cognition.flow_expansion_mcf"
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        body.apply(signed(key, body_id, "CAPABILITY_DETACH", {"capability_id": detached}))
+        body.apply(signed(key, body_id, "MISSION", compile_mission(
+            "m:xpand", {"geometry": "optimization", "subgeometry": "expansion"}, {"capacity_network": data})))
+        assert ticks(body, clock, 3)[-1]["state"] in ("BLOCKED", "WAITING")
+        routes = [(e.payload["route"], e.payload["result"]) for e in body.journal.replay("genesis.route")]
+        assert ("genome_library", f"{detached} fits the request's part but is not a candidate: founder-detached; "
+                                  "explicit attach required") in routes
+        assert not any(result.startswith("attach candidate") for _, result in routes)
+        assert not any(result.startswith("not searched") for _, result in routes)      # the search went on
+        assert not list(body.journal.replay("deficit.awaiting_attach"))
+        assert body.genesis.attach_candidates("m:xpand", "cognition.optimization:expansion") == []
+        blocker = body.engine.book.missions["m:xpand"].blocker
+        assert "shared_ask" not in blocker and not blocker.get("attach_candidates")
+        [ask] = attach_asks(body)                                                  # the mission's own ask
+        assert ask["mission_id"] == "m:xpand" and ask["evidence"]["registered"] == []
+        body.apply(signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": detached}))  # the founder relents
+        assert "ACHIEVED" in [s["state"] for s in ticks(body, clock, 3)]
+        answered = [c for c in compilations(body) if c["state"] == "ANSWERED"][-1]
+        assert answered["method_or_composition_selected"] == detached
+        assert answered["payload_part"] == "capacity_network"
+
+
 def test_auto_attach_inside_an_admitting_cone_never_attaches_a_mechanism_formed_for_cognition(tmp_path, index):
     home, key, body_id, _ = make_body(tmp_path)
     spec = compile_mission("m:assign", {"geometry": "optimization"}, {"costs": COSTS}, auto_attach=True)

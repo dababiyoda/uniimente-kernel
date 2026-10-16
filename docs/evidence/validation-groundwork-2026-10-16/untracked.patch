@@ -1,0 +1,212 @@
+diff --git a/foundry/validation/__init__.py b/foundry/validation/__init__.py
+new file mode 100644
+index 0000000..8dde10c
+--- /dev/null
++++ b/foundry/validation/__init__.py
+@@ -0,0 +1,16 @@
++"""Governed Foundry validation: build a capability reproducibly, run it under real OCI runtimes inside a disposable
++guest, check the raw observations independently, and record a qualification bound to what was tested.
++
++The parts, each owned by one module:
++
++  pins        every external input (guest image, runtimes, tools, Actions) by immutable digest
++  grant       the founder-signed execution grant (a Kernel command, ``VALIDATION_GRANT``) and its verification
++  controller  stages pinned inputs, builds the guest's disks and runs the guest with no network; never root
++  guest/      the harness that runs as root inside the guest only; its output is untrusted data
++  checker     the independent evaluator: re-derives every verdict from raw observations, never from a guest PASS
++  accept      verifies the grant and the run's provenance, runs the checker, records the qualification
++
++Authority stays where it was: the founder's key (or a founder-enrolled device delegated for VALIDATION_GRANT) signs
++the grant; the body verifies it against its enrolled keys; the tested branch and the guest can run, but an ungranted
++or mismatched run is never accepted as evidence.
++"""
+diff --git a/foundry/validation/grant.py b/foundry/validation/grant.py
+new file mode 100644
+index 0000000..efc47cd
+--- /dev/null
++++ b/foundry/validation/grant.py
+@@ -0,0 +1,133 @@
++"""The execution grant for privileged validation runs: a founder-signed Kernel command, not an environment variable.
++
++A grant is the body of a ``VALIDATION_GRANT`` command (greg.founder). The founder's key signs it, or a device the
++founder enrolled for exactly that kind (bounded delegation, at most 90 days). The body verifies the signature against
++its enrolled keys when the command arrives and records ``validation.granted``; acceptance reads grants only from that
++record. Nothing a tested branch or a guest writes can create, widen or extend one.
++
++A grant binds one execution envelope:
++
++  source_revision   the exact commit whose suite runs (40 hex)
++  suite_digest      the harness, guest code, checker and workflow at that commit (``suite_digest()``)
++  evaluator_digest  the checker and acceptance code alone, so a changed evaluator is named as such
++  pins_digest       every external input (``pins.pins_digest()``)
++  environment       controller and guest classes
++  resources         guest vCPUs, memory, wall-clock seconds, runs allowed, concurrency
++  network           the guest has none; the controller may reach only the pinned publishers
++
++The envelope's own expiry (at most 7 days) and nonce come from the signed command. ``UNIIMENTE_PRIVILEGED_RUNTIME_HOST``
++remains a compatibility check inside the guest; it is never a source of authority.
++"""
++from __future__ import annotations
++
++import hashlib
++import json
++import re
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[2]
++SCOPE = "foundry-validation/1"
++REPOSITORY = "dababiyoda/uniimente-kernel"
++SYSTEMS = [9, 10]
++WORKFLOW = ".github/workflows/foundry-validation.yml"
++# The files whose behavior a validation run depends on. A change to any of them is a new suite.
++SUITE = ("foundry/validation", "foundry/systems/containers.py", "foundry/systems/cas.py", "foundry/systems/dsl.py",
++         WORKFLOW)
++EVALUATOR = ("foundry/validation/checker.py", "foundry/validation/accept.py", "foundry/validation/grant.py",
++             "foundry/validation/pins.py")
++ENVIRONMENT = {"controller": "github-hosted", "runner_images": ["ubuntu-24.04", "ubuntu-22.04"],
++               "guest": "qemu:ubuntu-24.04-cloudimg"}
++NETWORK = {"guest": "none", "controller": ["cloud-images.ubuntu.com", "archive.ubuntu.com",
++                                           "storage.googleapis.com", "pypi.org", "files.pythonhosted.org",
++                                           "mirror.gcr.io", "public.ecr.aws", "registry-1.docker.io"]}
++CEILING = {"guest_vcpus": 4, "guest_memory_mb": 8192, "guest_wall_seconds": 3600, "max_runs": 20, "concurrency": 1}
++DEFAULT_RESOURCES = {"guest_vcpus": 2, "guest_memory_mb": 4096, "guest_wall_seconds": 2700, "max_runs": 5,
++                     "concurrency": 1}
++FIELDS = {"scope", "systems", "repository", "source_revision", "suite_digest", "evaluator_digest", "pins_digest",
++          "environment", "resources", "network"}
++SHA = re.compile(r"[0-9a-f]{40}")
++DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
++
++
++class GrantError(ValueError):
++    pass
++
++
++def _files(root: Path, paths) -> list[Path]:
++    out = []
++    for rel in paths:
++        p = root / rel
++        if p.is_dir():
++            out += [f for f in p.rglob("*") if f.is_file() and "__pycache__" not in f.parts]
++        elif p.is_file():
++            out.append(p)
++    return sorted(out)
++
++
++def _digest(root: Path, paths) -> str:
++    root = Path(root)
++    listing = [[str(p.relative_to(root)), hashlib.sha256(p.read_bytes()).hexdigest()] for p in _files(root, paths)]
++    if not listing:
++        raise GrantError("no suite files found")
++    return "sha256:" + hashlib.sha256(json.dumps(listing, separators=(",", ":")).encode()).hexdigest()
++
++
++def suite_digest(root: Path = ROOT) -> str:
++    return _digest(root, SUITE)
++
++
++def evaluator_digest(root: Path = ROOT) -> str:
++    return _digest(root, EVALUATOR)
++
++
++def body(source_revision: str, *, root: Path = ROOT, resources: dict | None = None) -> dict:
++    """The exact grant body for ``source_revision`` as it stands in ``root`` (a checkout of that revision)."""
++    from foundry.validation import pins
++    out = {"scope": SCOPE, "systems": list(SYSTEMS), "repository": REPOSITORY, "source_revision": source_revision,
++           "suite_digest": suite_digest(root), "evaluator_digest": evaluator_digest(root),
++           "pins_digest": pins.pins_digest(), "environment": ENVIRONMENT, "resources": dict(resources or
++                                                                                             DEFAULT_RESOURCES),
++           "network": NETWORK}
++    validate(out)
++    return out
++
++
++def validate(grant: dict) -> dict:
++    """The shape every grant must have; values above the ceiling are refused, never clipped."""
++    if not isinstance(grant, dict) or set(grant) != FIELDS:
++        raise GrantError(f"a validation grant has exactly the fields {sorted(FIELDS)}")
++    if grant["scope"] != SCOPE or grant["systems"] != SYSTEMS or grant["repository"] != REPOSITORY:
++        raise GrantError("this grant is not for foundry validation of systems 9 and 10 in this repository")
++    if not isinstance(grant["source_revision"], str) or not SHA.fullmatch(grant["source_revision"]):
++        raise GrantError("source_revision is one exact commit (40 lowercase hex)")
++    for key in ("suite_digest", "evaluator_digest", "pins_digest"):
++        if not isinstance(grant[key], str) or not DIGEST.fullmatch(grant[key]):
++            raise GrantError(f"{key} is a sha256 digest")
++    if grant["environment"] != ENVIRONMENT:
++        raise GrantError(f"environment must be {ENVIRONMENT}")
++    if grant["network"] != NETWORK:
++        raise GrantError("the guest has no network and the controller reaches only the pinned publishers")
++    resources = grant["resources"]
++    if not isinstance(resources, dict) or set(resources) != set(CEILING):
++        raise GrantError(f"resources name exactly {sorted(CEILING)}")
++    for key, ceiling in CEILING.items():
++        value = resources[key]
++        if not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= ceiling:
++            raise GrantError(f"resources.{key} must be an integer from 1 to {ceiling}")
++    if resources["concurrency"] != 1:
++        raise GrantError("validation runs one at a time")
++    return grant
++
++
++def covers(grant: dict, *, source_revision: str, suite: str, evaluator: str, pins_digest: str) -> list[str]:
++    """Why ``grant`` does not cover a run of this revision with this suite, evaluator and pins ([] when it does)."""
++    reasons = []
++    if grant["source_revision"] != source_revision:
++        reasons.append(f"granted revision {grant['source_revision'][:12]}, run revision {source_revision[:12]}")
++    if grant["suite_digest"] != suite:
++        reasons.append("the suite differs from the one granted")
++    if grant["evaluator_digest"] != evaluator:
++        reasons.append("the evaluator differs from the one granted")
++    if grant["pins_digest"] != pins_digest:
++        reasons.append("the pinned inputs differ from the ones granted")
++    return reasons
+diff --git a/foundry/validation/pins.py b/foundry/validation/pins.py
+new file mode 100644
+index 0000000..840d00d
+--- /dev/null
++++ b/foundry/validation/pins.py
+@@ -0,0 +1,45 @@
++"""Every external input of a validation run, by immutable identifier.
++
++Hashes were read from the publishers' own records on 2026-10-16: the Ubuntu cloud image from the dated release
++directory's SHA256SUMS, runc from the Ubuntu archive's Packages index (noble-updates; 1.3.4 carries the 2025 runc
++container-escape fixes that the noble release pocket's 1.1.12 lacks), gVisor from its release bucket's own .sha512.
++A pin that no longer resolves fails closed; it is never replaced by "latest".
++"""
++from __future__ import annotations
++
++import hashlib
++import json
++
++GUEST_IMAGE = {
++    "name": "ubuntu-24.04-server-cloudimg-amd64.img", "release": "noble/release-20260911",
++    "url": "https://cloud-images.ubuntu.com/releases/noble/release-20260911/ubuntu-24.04-server-cloudimg-amd64.img",
++    "sha256": "612b2c0cc1bc413a6cb8c38fd611794caf0f2b436c50013d8b3794db12ad7354"}
++RUNC = {
++    "name": "runc", "version": "1.3.4-0ubuntu1~24.04.1", "source": "Ubuntu archive noble-updates",
++    "url": "http://archive.ubuntu.com/ubuntu/pool/main/r/runc-app/runc_1.3.4-0ubuntu1~24.04.1_amd64.deb",
++    "sha256": "6ddd64ed7ef1693dd95620a2b1148a4187ef4fe0819c3c3049fad9385ecfd5dc"}
++GVISOR = {
++    "name": "runsc", "version": "release-20260914.0", "source": "gVisor release bucket",
++    "url": "https://storage.googleapis.com/gvisor/releases/release/20260914.0/x86_64/gvisor.tar.bz2",
++    "sha512": "ff1c0577c8daa0e3511aedad554c3d5e20fa184b4ddd422454f573d60a8b9774f972755ca5c7f56588c5b4f42345b60b2ead077f35d7d3235e23f57c0fa194ca"}
++PYCDLIB = {
++    "name": "pycdlib", "version": "1.20.0", "file": "pycdlib-1.20.0-py2.py3-none-any.whl",
++    "sha256": "cb675959dd6d61e94f02560ed7e9a5d368a3188b5f7f31813bc25a750cff0863"}
++QEMU = {"package": "qemu-system-x86", "provider": "Ubuntu archive (apt verifies the archive signature)",
++        "note": "installed version is recorded in the run; the guest, not QEMU, is the tested boundary"}
++ACTIONS = {
++    "actions/checkout": "11d5960a326750d5838078e36cf38b85af677262",          # v4.4.0
++    "actions/setup-python": "a26af69be951a213d495a4c3e4e4022e16d87065",      # v5.6.0
++    "actions/upload-artifact": "ea165f8d65b6e75b540449e92b4886f43607fa02",   # v4.6.2
++    "actions/download-artifact": "d3f86a106a0bac45b974a628896c90dbdf5c8093",  # v4.3.0
++}
++
++
++def all_pins() -> dict:
++    from foundry.systems import containers
++    return {"guest_image": GUEST_IMAGE, "runc": RUNC, "gvisor": GVISOR, "pycdlib": PYCDLIB, "qemu": QEMU,
++            "actions": ACTIONS, "base_image": containers.BASE}
++
++
++def pins_digest() -> str:
++    return "sha256:" + hashlib.sha256(json.dumps(all_pins(), sort_keys=True, separators=(",", ":")).encode()).hexdigest()

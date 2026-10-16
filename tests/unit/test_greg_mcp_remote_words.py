@@ -74,3 +74,16 @@ def test_words_that_name_no_hosted_service_are_left_to_other_routes(tmp_path):
     out = propose("Use the calendar service to add 'x'; check https://cal.example/", ctx(tmp_path))
     assert out.get("origin") != "template:mcp-remote-act"
     assert propose("add 'x' to my notes", ctx(tmp_path, notes=NOTES)).get("origin") != "template:mcp-remote-act"
+
+
+def test_the_proposal_says_which_evidence_the_page_is(tmp_path):
+    from greg.templates import remote_evidence
+    assert remote_evidence("https://notes.example/mcp", "https://notes.example/board") == "same_service"
+    assert remote_evidence("https://mcp.notes.example/mcp", "https://www.notes.example/board") == "same_service"
+    assert remote_evidence("https://notes.example/mcp", "https://status.other.example/board") == "separate_host"
+    same = propose("Use the notes service to add 'x', then check https://notes.example/board", ctx(tmp_path))
+    assert "not an independent corroboration" in " ".join(same["notes"])
+    assert "read-after-write" in same["spec"]["success_checks"][0]["description"]
+    other = propose("Use the notes service to add 'x', then check https://status.other.example/board", ctx(tmp_path))
+    assert "not proven independent corroboration" in " ".join(other["notes"])
+    assert "service's answer to the call is its own claim" in " ".join(other["notes"])

@@ -365,6 +365,8 @@ def _hosted_route(text: str, ctx: PlannerContext) -> dict | None:
                                                                            if hosts else "")
         + f" through the relay, with the credential {handle}; nothing on this computer is written",
         f"closes only when GREG itself renders {check_url} and finds {quotes[0]!r}; if it already does, nothing runs",
+        "evidence: the service's answer to the call is its own claim; the page render is "
+        + templates.REMOTE_EVIDENCE[templates.remote_evidence(server_url, check_url)],
         "the service's own answer is untrusted data"])
 
 

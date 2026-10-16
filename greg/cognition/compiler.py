@@ -1025,27 +1025,43 @@ def constructed_candidates(data: dict, g: CompetencyGeometry, registry) -> list[
     return rows
 
 
-def _run_constructed(chosen: dict, data: dict, pid: str, registry, receipt: dict, finish):
-    """Invoke an attached, read-only construction; its problem-level certificate is the evidence."""
-    import tempfile
-    from greg.capabilities import CapabilityError, InvocationContext
+def _run_constructed(chosen: dict, data: dict, pid: str, registry, receipt: dict, finish, *, high: bool = False,
+                     budget=None, evaluate=()):
+    """Invoke an attached, read-only construction; its problem-level certificate is the evidence.
+
+    A construction is optimisation-class (``recombine.Reduction.epistemic_classes``), so it meets the same rules
+    as every other compile route: under high consequence it needs a complete formal model and returns a
+    conditional result (WORLD_UNVERIFIED), never ANSWERED; its call is a required step on the decision's thinking
+    budget (refused below the minimum step, measured, any overrun disclosed); and the sensitivity operator, when
+    it applies, re-runs the construction itself on perturbed inputs."""
+    from greg.capabilities import CapabilityError
     manifest = registry.manifests[chosen["method"]]
     if manifest.consequence_class != "read_only" or not manifest.provider.startswith("composed:"):
         receipt["abstentions"].append("ABSTAIN: only a read-only construction may answer inside cognition")
         return finish("ABSTAIN")
+    if high and data.get("formalization_complete") is not True:
+        receipt["abstentions"].append("FORMALIZATION_INCOMPLETE: complete formal model plus independently "
+                                      "verified world assumptions")
+        return finish("FORMALIZATION_INCOMPLETE")
     request = {key: data[key] for key in chosen["inputs"]}
-    with tempfile.TemporaryDirectory(prefix="greg-constructed-") as tmp:
-        ctx = InvocationContext(workspace=Path(tmp), read_roots=(), secrets=None, manifest=manifest,
-                                target=f"cognition:{pid}")
-        try:
-            out = registry.adapters[manifest.capability_id](request, ctx)
-        except CapabilityError as exc:
-            if str(exc).startswith("capability refused:"):
-                # the mission's two-strike repair re-forms a construction that faults in service
-                receipt["capability_fault"] = {"capability_id": manifest.capability_id, "detail": str(exc)[:300],
-                                               "failure_class": getattr(exc, "failure_class", None)}
-            receipt["abstentions"].append(f"ABSTAIN: {str(exc)[:300]}")
-            return finish("ABSTAIN")
+    adapter = registry.adapters[manifest.capability_id]
+    step = f"constructed:{manifest.capability_id}"
+    allotted = budget.allot(step, required=True) if budget is not None else None
+    if budget is not None and allotted is None:
+        receipt["abstentions"].append(budget.stops()[-1]["reason"])
+        return finish("ABSTAIN")
+    try:
+        out = _call_construction(adapter, manifest, request, pid)
+    except CapabilityError as exc:
+        if str(exc).startswith("capability refused:"):
+            # the mission's two-strike repair re-forms a construction that faults in service
+            receipt["capability_fault"] = {"capability_id": manifest.capability_id, "detail": str(exc)[:300],
+                                           "failure_class": getattr(exc, "failure_class", None)}
+        receipt["abstentions"].append(f"ABSTAIN: {str(exc)[:300]}")
+        return finish("ABSTAIN")
+    finally:
+        if budget is not None:
+            _close_step(budget, step, allotted, receipt, f"{manifest.capability_id}")
     receipt["resource_use"]["stages"] = 1
     receipt["proof_artifacts"] = [{"type": "certificate", "evidence_type": (out.get("certificate") or {}).get("kind")}]
     receipt["verification_method"] = (out.get("certificate") or {}).get("checked_by") or \
@@ -1057,7 +1073,36 @@ def _run_constructed(chosen: dict, data: dict, pid: str, registry, receipt: dict
     # Set only once the certificate is in hand: a predicate on this label then implies an answer
     # that carries a problem-level certificate, never an abstention that merely tried.
     receipt["confidence_type"] = CERTIFIED
-    return finish("ANSWERED", out)
+    if high:
+        receipt["uncertainty"] = "exact for the declared inputs; whether they describe the world is not verified"
+    if "sensitivity" in evaluate and budget is not None:
+        def rerun(key, varied, limit):
+            try:
+                again = _call_construction(adapter, manifest, {k: varied[k] for k in chosen["inputs"]}, pid)
+            except CapabilityError as exc:
+                return {"abstention_state": f"ABSTAIN: {str(exc)[:120]}"}
+            return {"abstention_state": "NONE" if again.get("certified") is True else "NO_CERTIFICATE",
+                    "output": again}
+        receipt["sensitivity"] = _perturbation_runs(request, out, budget, receipt, rerun)
+    return finish("WORLD_UNVERIFIED" if high else "ANSWERED", out)
+
+
+def _call_construction(adapter, manifest, request: dict, pid: str) -> dict:
+    import tempfile
+    from greg.capabilities import InvocationContext
+    with tempfile.TemporaryDirectory(prefix="greg-constructed-") as tmp:
+        ctx = InvocationContext(workspace=Path(tmp), read_roots=(), secrets=None, manifest=manifest,
+                                target=f"cognition:{pid}")
+        return adapter(request, ctx)
+
+
+def _close_step(budget, step: str, allotted, receipt: dict, who: str) -> None:
+    """Record a required step's measured spend and disclose an overrun (the call itself is not interruptible)."""
+    budget.done(step)
+    used = budget.ledger[-1]["spent_s"]
+    if allotted is not None and used > allotted:
+        receipt["dissent"].append(f"{who} overran the thinking budget: {used:.3g}s spent of {allotted:.3g}s "
+                                  "allotted; the construction's engine, not the budget, bounds its call")
 
 
 def _rank(row: dict, prefer: list, competence: dict) -> tuple:
@@ -1556,6 +1601,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     # the geometry the inputs themselves imply (methods whose native inputs they carry), against the declaration
     from dataclasses import replace
     implied = sorted({c for r in candidates(data, replace(g, geometry=None), evidence)
+                      + constructed_candidates(data, replace(g, geometry=None), registry)
                       for c in r.get("epistemic_classes", [])})
     receipt["derived_geometry"] = {"declared": g.geometry, "fits_by_inputs": implied,
                                    "agrees": not g.geometry or not implied or g.geometry in implied}
@@ -1707,11 +1753,12 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         "no settled outcomes in this journal; admission evidence and cost decide"
     if body.get("execute") is False:
         return finish("PLANNED")
+    # 4. execute through the same canonical reason. High consequence raises the proof requirement on every route
+    # exactly as on the direct canonical path (FORMALIZATION_INCOMPLETE for formal/optimisation methods); a
+    # construction is optimisation-class, and its call draws on the same thinking budget.
     if chosen["kind"] == "constructed":
-        return _run_constructed(chosen, data, pid, registry, receipt, finish)
-    # 4. execute through the same canonical reason. High consequence raises the proof requirement on this path
-    # exactly as on the direct canonical path (FORMALIZATION_INCOMPLETE for formal/optimisation methods).
-    high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
+        return _run_constructed(chosen, data, pid, registry, receipt, finish, high=high, budget=budget,
+                                evaluate=plan["evaluate"])
     extra = {"consequences": consequence} if consequence else {}
     if chosen["kind"] == "problem":
         from cortex.routing import FORMAL_ENGINES
@@ -1877,6 +1924,20 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
     Each re-run is optional cognition: the thinking budget starts it only when the slowest measured run fits in
     what remains. An input it cannot afford is reported as untested, never as robust."""
     from .cortex import reason
+
+    def rerun(key, varied, limit):
+        out = reason({"problem_id": f"{pid}/sens/{key}"[:128], "operation": operation, "data": varied,
+                      "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
+                     model_config=model_config)
+        receipt["intermediate_receipts"].append(out["receipt_id"])
+        return out
+
+    return _perturbation_runs(data, baseline, budget, receipt, rerun)
+
+
+def _perturbation_runs(data, baseline, budget, receipt, rerun) -> dict:
+    """The sensitivity operator's measurement, shared by every route that answers: ``rerun(key, varied, limit)``
+    re-answers the request with one input perturbed and returns a receipt-shaped dict."""
     keys = [k for k in sorted(data) if _numbers(data[k])][:4]
     base = _numbers(baseline)
     rows, not_run = {}, {}
@@ -1886,11 +1947,8 @@ def _sensitivity_runs(pid, operation, data, baseline, hint, registry, journal, m
             not_run[key] = budget.stops()[-1]["reason"]
             continue
         varied = {**data, key: _scaled(data[key], 1.1)}
-        out = reason({"problem_id": f"{pid}/sens/{key}"[:128], "operation": operation, "data": varied,
-                      "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,
-                     model_config=model_config)
+        out = rerun(key, varied, limit)
         budget.done(f"sensitivity:{key}", cpu_seconds=(out.get("compute_cost") or {}).get("cpu_seconds"))
-        receipt["intermediate_receipts"].append(out["receipt_id"])
         if not _has_answer(out):
             rows[key] = {"state": out["abstention_state"]}
             continue

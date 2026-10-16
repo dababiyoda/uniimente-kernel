@@ -16,6 +16,7 @@ DISCLOSURE = 'tests/unit/test_cognition_disclosure.py'
 CHARACTERIZE = 'tests/unit/test_cognition_characterize.py'
 BUDGET = 'tests/unit/test_cognition_thinking_budget.py'
 VENTURES = 'tests/unit/test_greg_ventures.py'
+CONSTRUCTED = 'tests/unit/test_greg_constructed_route_rules.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -96,6 +97,20 @@ MUTANTS = [
  ('a formed engine\'s overrun is hidden', 'greg/cognition/compiler.py',
   '            if spent > limit:', '            if False:',
   'test_a_formed_mechanism_is_a_required_step_on_the_same_budget', BUDGET),
+ # Fourth review of the Track B merge: a construction answering inside the compiler meets every compile route's rules.
+ ('a construction answers a high-consequence request without a formal model', 'greg/cognition/compiler.py',
+  '        return finish("FORMALIZATION_INCOMPLETE")\n    request = {key: data[key] for key in chosen["inputs"]}',
+  '    request = {key: data[key] for key in chosen["inputs"]}',
+  'test_a_high_consequence_construction_answer_needs_a_formal_model_and_is_conditional', CONSTRUCTED),
+ ('a high-consequence construction answer is labelled ANSWERED', 'greg/cognition/compiler.py',
+  'return finish("WORLD_UNVERIFIED" if high else "ANSWERED", out)', 'return finish("ANSWERED", out)',
+  'test_a_high_consequence_construction_answer_needs_a_formal_model_and_is_conditional', CONSTRUCTED),
+ ('a construction runs off the decision budget', 'greg/cognition/compiler.py',
+  'finish, high=high, budget=budget,', 'finish, high=high, budget=None,',
+  'test_the_construction_call_is_a_required_step_on_the_decision_budget', CONSTRUCTED),
+ ('the implied geometry ignores constructions', 'greg/cognition/compiler.py',
+  '                      + constructed_candidates(data, replace(g, geometry=None), registry)\n', '',
+  'test_the_implied_geometry_counts_a_construction_the_declaration_excludes', CONSTRUCTED),
  # Section 16 venture case (carried from #143): a revenue figure may not outrun its causal support.
  ('a revenue conclusion drawn from any causal receipt', 'greg/ventures.py',
   '    identified = bool(causal and causal.get("abstention_state") == "NONE"',

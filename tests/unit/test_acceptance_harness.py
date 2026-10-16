@@ -223,6 +223,7 @@ def test_body_verified_needs_a_cited_node_that_drives_a_real_body_process(manife
     ("tests/integration/test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation[mission.action]",
      {"greg run"}),                                                        # through the cli(home, 'run', ...) helper
     ("tests/integration/test_greg_body_midflight_kill.py", {"Body.run driver"}),
+    ("tests/integration/test_greg_genesis_kill_process.py", {"Body.run driver"}),   # Body(home, builder=...).run(
     ("tests/unit/test_greg_presence.py::test_a_real_sigkilled_body_process_leaves_an_absence_bounded_by_its_last_heartbeat",
      {"greg run"}),
     # in-process main loops, supervisor configs written but never launched, and `greg sop run` are not processes
@@ -251,6 +252,26 @@ DRIVER = '''
 import sys
 from greg.body import Body
 sys.exit(Body(sys.argv[1]).run(tick_seconds=0.1))
+'''
+NESTED_DRIVER = '''
+import sys
+from greg.body import Body
+
+
+class Agent:
+    max_budget_usd = 0.4
+
+
+sys.exit(Body(sys.argv[1], builder=Agent(), clock=None).run(tick_seconds=float(sys.argv[2])))
+'''
+MENTION_ONLY = '''
+# Body(home).run(tick_seconds=0.1) is what greg run runs; this script only prints that, and runs something else.
+class Runner:
+    def run(self, **kwargs):
+        return 0
+
+
+print("Body(home).run(tick_seconds=0.1)", Runner().run(tick_seconds=0.1))
 '''
 SUPERVISORD = shutil.which("supervisord")
 
@@ -327,6 +348,16 @@ def test_driver_string_spawned(tmp_path):
     subprocess.run([sys.executable, "-c", DRIVER, str(tmp_path)], check=True)
 
 
+def test_nested_driver_file_spawned(tmp_path):
+    driver = tmp_path / "driver.py"
+    driver.write_text(NESTED_DRIVER)
+    subprocess.Popen([sys.executable, str(driver), str(tmp_path), "0.1"])
+
+
+def test_nested_driver_string_spawned(tmp_path):
+    subprocess.run([sys.executable, "-c", NESTED_DRIVER, str(tmp_path), "0.1"], check=True)
+
+
 def test_supervisord_launched(tmp_path):
     conf = supervisor_conf(tmp_path, tmp_path / "body")
     subprocess.Popen([SUPERVISORD, "-c", str(conf)])
@@ -366,6 +397,26 @@ def test_driver_string_never_spawned(tmp_path):
     driver = tmp_path / "driver.py"
     driver.write_text(DRIVER)
     subprocess.run([sys.executable, "-m", "greg", "--home", str(tmp_path), "status"])
+
+
+def test_in_process_nested_body_run(tmp_path):
+    class Agent:
+        max_budget_usd = 0.4
+    assert Body(tmp_path, builder=Agent(), clock=None).run(tick_seconds=float("0.01"), max_ticks=2) == 0
+    subprocess.run(["git", "status"])
+
+
+def test_nested_driver_file_read_not_run(tmp_path):
+    driver = tmp_path / "driver.py"
+    driver.write_text(NESTED_DRIVER)
+    subprocess.run(["cat", str(driver)])
+
+
+def test_a_script_that_only_mentions_body_run(tmp_path):
+    script = tmp_path / "mention.py"
+    script.write_text(MENTION_ONLY)
+    subprocess.Popen([sys.executable, str(script), str(tmp_path)])
+    subprocess.run([sys.executable, "-c", MENTION_ONLY])
 
 
 def test_driver_file_read_not_run(tmp_path):
@@ -423,6 +474,8 @@ def probe(tmp_path_factory):
     ("test_asyncio_exec", {"greg run"}),
     ("test_driver_file_spawned", {"Body.run driver"}),      # the driver string, written to a file python runs
     ("test_driver_string_spawned", {"Body.run driver"}),    # the driver string, passed to python -c
+    ("test_nested_driver_file_spawned", {"Body.run driver"}),   # Body(..., builder=Agent()).run(...): nested calls
+    ("test_nested_driver_string_spawned", {"Body.run driver"}),
     ("test_supervisord_launched", {"supervisord"}),         # its -c file holds service.supervisord_program
     # not recognised
     ("test_argv_built_never_spawned", set()),
@@ -432,6 +485,9 @@ def probe(tmp_path_factory):
     ("test_supervisord_launched_without_the_program", set()),
     ("test_driver_string_never_spawned", set()),
     ("test_driver_file_read_not_run", set()),
+    ("test_in_process_nested_body_run", set()),              # an in-process Body.run never counts, nested or not
+    ("test_nested_driver_file_read_not_run", set()),
+    ("test_a_script_that_only_mentions_body_run", set()),    # in a comment or a string, Body.run is not called
     ("test_another_subcommand", set()),
     ("test_launchers_defined_never_called", set()),
     ("test_a_constant_false_branch", set()),

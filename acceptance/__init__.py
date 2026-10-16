@@ -272,7 +272,6 @@ def shortfall_names(rep: dict) -> list[str]:
 # lambda, a method or a function from another module, and drops everything when the test patches the
 # spawning calls, so whatever it cannot see counts as in-process.
 
-_BODY_RUN = re.compile(r"\w*Body\([^()]*\)\.run\(")
 SPAWNERS = frozenset({"subprocess.Popen", "subprocess.run", "subprocess.call", "subprocess.check_call",
                       "subprocess.check_output", "asyncio.create_subprocess_exec"})
 _PROGRAM = "greg.service.supervisord_program"          # writes a supervisord program that runs `greg run`
@@ -337,6 +336,27 @@ def _argv_kind(argv: _Value) -> str | None:
         return "greg run" if i < len(const) and const[i] == "run" else None
     script = 2 if const[1:2] == ["-c"] else 1
     return "Body.run driver" if script < len(args) and "driver" in args[script].facts else None
+
+
+def _is_driver(text: str) -> bool:
+    """Whether ``text`` is a Python script that calls ``Body(...).run(``: ``run`` called on what a call of a
+    callee named ``...Body`` returned, whatever that call's arguments (nested calls and parentheses included).
+    The text is read as Python, so a mention in a comment or in a string, or text that is not Python source,
+    is no driver."""
+    if "Body" not in text or "run" not in text:      # most constants: nothing to parse
+        return False
+    try:
+        tree = ast.parse(text)
+    except (SyntaxError, ValueError):
+        return False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "run" \
+                and isinstance(node.func.value, ast.Call):
+            callee = node.func.value.func
+            name = callee.id if isinstance(callee, ast.Name) else getattr(callee, "attr", "")
+            if name.endswith("Body"):
+                return True
+    return False
 
 
 def _is_fixture(fn) -> bool:
@@ -473,7 +493,7 @@ class _Reader:
         if node is None:
             return _NOTHING
         if isinstance(node, ast.Constant):
-            driver = isinstance(node.value, str) and _BODY_RUN.search(node.value)
+            driver = isinstance(node.value, str) and _is_driver(node.value)
             return _Value(const=node.value, facts=frozenset({"driver"}) if driver else frozenset())
         if isinstance(node, ast.Name):
             return env[node.id] if node.id in env else _Value(qual=node.id)   # a builtin, or never bound

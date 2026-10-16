@@ -587,6 +587,19 @@ def _mission_costs(journal: Journal) -> dict:
         if cost is None:
             out[mid]["cost_known"] = False
         out[mid]["model_cost_usd"] += float(cost or 0.0)
+    # A builder call the body died inside never reported its cost. Genesis charges it against the signed build
+    # budget at the ceiling it was given (genesis.build_started, Genesis._build_spend); the measurement counts the
+    # call at that reservation too, and says that what it really spent is unknown.
+    settled = {(e.payload["deficit_id"], e.payload.get("build"))
+               for kind in ("genesis.built", "genesis.build_failed") for e in journal.replay(kind)}
+    for event in journal.replay("genesis.build_started"):
+        mid = deficits.get(event.payload["deficit_id"])
+        if mid is None or (event.payload["deficit_id"], event.payload["build"]) in settled:
+            continue
+        if event.payload.get("builder") != "static":
+            out[mid]["model_calls"] += 1
+        out[mid]["cost_known"] = False
+        out[mid]["model_cost_usd"] += float(event.payload["reserved_usd"])
     return out
 
 

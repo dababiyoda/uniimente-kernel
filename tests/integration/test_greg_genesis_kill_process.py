@@ -36,6 +36,7 @@ import time
 
 import pytest
 
+from greg import sop
 from greg.body import observe
 from tests.greg_fixtures import drop, make_body, mission, signed
 
@@ -43,7 +44,10 @@ ROOT = Path(__file__).resolve().parents[2]
 FUNCTION = "markdown.unchecked_count"
 GOOD = ("import re\n\ndef run(text):\n"
         "    return len(re.findall(r'^[ \\t]*[-*+] \\[ \\]', text, re.M))\n")
-BUILD_BUDGET, CEILING = 1.00, 0.40          # the founder-signed build budget; the agent's own per-call ceiling
+# The founder-signed build budget and the agent's own per-call ceiling. The ceiling is more than the budget left
+# once one call is reserved at it (1.00 - 0.60 = 0.40), so a retry's ceiling shows whether the interrupted call
+# was reserved: 0.40 if it was, 0.60 if it was booked at $0.
+BUILD_BUDGET, CEILING = 1.00, 0.60
 CONTRACT = {
     "function": FUNCTION,
     "description": "Count unchecked Markdown task items: lines that start with optional spaces or tabs, then "
@@ -150,6 +154,16 @@ def wait_for(predicate, *, timeout=60, what="condition"):
     raise AssertionError(f"timed out waiting for {what}")
 
 
+def more_ticks(home: Path, count: int = 5) -> None:
+    """Return once the Body wrote its heartbeat ``count`` more times (once per tick), however long that takes."""
+    seen = set()
+
+    def advanced():
+        seen.add(json.loads((home / "heartbeat.json").read_text())["at"])
+        return len(seen) > count
+    wait_for(advanced, what=f"{count} more ticks of the Body")
+
+
 def builder_calls(control: Path) -> list[dict]:
     path = control / "calls"
     return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
@@ -182,6 +196,11 @@ def books(home: Path) -> dict:
             "interrupted": [s for s in started if s["build"] not in settled],
             "charged": round(sum(b["cost_usd"] for b in built.values())
                              + sum(s["reserved_usd"] for s in started if s["build"] not in settled), 2)}
+
+
+def sop_usage(home: Path) -> dict:
+    with observe(home, actor="spiffe://uniimente.internal/greg/genesis-kill-test") as journal:
+        return sop.model_usage(journal)
 
 
 def nothing_half_built_attached(home: Path) -> None:
@@ -234,8 +253,11 @@ def test_a_body_killed_mid_build_attaches_nothing_half_built_and_charges_each_bu
     assert [s["build"] for s in ledger["interrupted"]] == ([1] if point == "in-build" else [])
     assert [s["reserved_usd"] for s in ledger["interrupted"]] == ([CEILING] if point == "in-build" else [])
     assert ledger["charged"] <= BUILD_BUDGET
-    if point == "in-build":   # the retry was bounded by what the interrupted build left of the signed budget
-        assert calls[1]["ceiling"] == min(CEILING, round(BUILD_BUDGET - CEILING, 2))
+    if point == "in-build":   # the retry was bounded by what the interrupted build's reservation left
+        assert calls[1]["ceiling"] == round(BUILD_BUDGET - CEILING, 2) < CEILING
+        usage = sop_usage(home)   # mission cost measurement sees the interrupted call at its reservation
+        assert usage["model_calls"] == 2 and usage["model_cost_usd"] == ledger["charged"]
+        assert usage["cost_known"] is False, "what the interrupted call really spent is unknown"
     assert len(events(home, "deficit.opened")) == 1, "the open deficit is reused across the restart"
     nothing_half_built_attached(home)
     built = hashlib.sha256(GOOD.encode()).hexdigest()
@@ -267,7 +289,7 @@ def test_builds_interrupted_every_time_stop_at_the_signed_budget_and_ask_the_fou
                 break
             kill(body)
             assert boots <= 5, "the interrupted builds never stop"
-        time.sleep(1.0)                                 # ~5 more ticks: the builder is not called again
+        more_ticks(home)                                # the builder is not called again in 5 more ticks
         assert body.poll() is None
     finally:
         if body is not None:
@@ -275,8 +297,8 @@ def test_builds_interrupted_every_time_stop_at_the_signed_budget_and_ask_the_fou
 
     calls = builder_calls(control)
     ledger = books(home)
-    assert [round(c["ceiling"], 2) for c in calls] == [0.40, 0.40, 0.20], "each retry gets only what the books leave"
-    assert len(ledger["interrupted"]) == 3 and ledger["built"] == {}
+    assert [round(c["ceiling"], 2) for c in calls] == [0.60, 0.40], "each retry gets only what the books leave"
+    assert len(ledger["interrupted"]) == 2 and ledger["built"] == {}
     assert ledger["charged"] == BUILD_BUDGET, "the signed budget is reserved, never exceeded"
     assert any("no founder-signed build budget remains" in r["result"] for r in events(home, "genesis.route"))
     assert len(events(home, "deficit.opened")) == 1 and events(home, "deficit.resolved") == []

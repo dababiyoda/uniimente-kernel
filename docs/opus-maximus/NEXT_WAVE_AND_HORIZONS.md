@@ -12,10 +12,10 @@ Deliverable K. The next wave is ordered by dependency: each item names what it n
 | 4 | DALEOBANKS publish bridge: forward a DALEOBANKS grant and draft id from a founder-signed GREG grant, and report `publish_gated` truthfully | Nothing for the code; founder authorization for any live post | A dry run returns `publish_gated` with the true reason; no live post | Agent; founder for live |
 | 5 | Land RailScout PR #9 on RailScout main, then pin `venture.assess` to it | RailScout maintainer review | `venture.assess` runs against RailScout main, not a draft branch | Agent |
 | 6 | P6 v3: Verified Polyintelligence Lift on a new natural family with the admitted genomes | Nothing | Pre-registered evaluation; lift net of cost and latency, or a recorded negative | Agent |
-| 7 | Fold-time re-verification of `decision.answered` on the mission side (#175 ADR known limitation) | Nothing | An unsigned `decision.answered` written straight to the ledger no longer moves a mission | Agent |
+| 7 | Fold-time re-verification of `decision.answered` on the mission side (#175 ADR known limitation). **Implemented 2026-10-16** (branch `conv-item7` on PR #184's `7418c82`; ADR-GOAL-GRAVITY-002 "Next-wave item 7"); `mission.registered` stays deferred | Nothing | An unsigned `decision.answered` written straight to the ledger no longer moves a mission: `tests/unit/test_greg_answer_reverification.py` fails on `7418c82` and passes here (targeted suites; the full suite and the proofs are run by the integrator) | Agent |
 | 8 | First real Venture Cell pilot with escrowed order budgets (invention configuration 11) | Founder authorization, a real buyer, a payment rail, legal principal | One accepted delivery with a reconciled payment and an independent appraisal | Founder authorizes; agent builds |
 
-Items 2, 4 (dry run), 5, 6 and 7 need no founder decision and can start immediately. Item 1 is the single bottleneck metric.
+Items 2, 4 (dry run), 5 and 6 need no founder decision and can start immediately; item 7 needed none and is implemented, awaiting integration. Item 1 is the single bottleneck metric.
 
 ## 2. 2026/27 horizon
 

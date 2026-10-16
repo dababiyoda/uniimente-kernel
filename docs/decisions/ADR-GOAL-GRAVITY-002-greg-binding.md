@@ -75,7 +75,8 @@ MissionEngine -> AuthorityOffice -> ConsequenceGate stays the only execution pat
 | 10 | Detective closure: every `grant_dispatch` traces to a `greg.authority.grant_issued` whose `authority_ref` is a verified founder MISSION digest | DONE | `greg/goal_gravity.py::ledger_closure`; `closure/gravity_registry.py::greg_goal_gravity_closures` (evidence closure); projection and morning report |
 | 11 | Retained envelopes verify against the founder key enrolled at that ledger position; device revocation and expiry apply to mirrored DECISIONs | DONE | `greg/goal_gravity.py::signed_commands` (ledger order; rotation, enrollment and revocation count only as founder-signed accepted commands) |
 | - | Fold signed LIFECYCLE PAUSED/ABANDONED of bound missions into goal preferences (optional) | SKIPPED | A paused mission already yields nothing to a goal: `observe_now` and `request_decision` refuse it, so no pull and no ask; the refused ask is one `ask_not_recorded` notice, recorded once and settled until the refusal reason changes (fix stage 2; before it, every later wake faulted the turn). Folding would make the binding a second writer of goal preferences from mission facts; revisit if notices for paused missions prove noisy |
-| - | Fold-time re-verification of `mission.registered` / `decision.answered` (ledger-first P2) | DEFERRED | A separate hardening scope (it changes every mission fold and fixtures that write `mission.registered` directly). The goal lineage already refuses unsigned answers; the mission lineage does not yet |
+| - | Fold-time re-verification of `decision.answered` (ledger-first P2, first half) | DONE (2026-10-16, next-wave item 7) | `greg/missions.py::MissionBook` (`_admit`, `answer_record`, `signed_answer`), `greg/goal_gravity.py::verified_decisions` / `decision_positions` (memoized) and `founder_facts`; see "Next-wave item 7" below. The mission lineage now counts an answer only as the goal lineage does, at the signed DECISION's acceptance |
+| - | Fold-time re-verification of `mission.registered` (ledger-first P2, second half) | DEFERRED | A separate hardening scope (it changes every mission fold and fixtures that write `mission.registered` directly). A forged `mission.registered` still dispatches under the digest it cites; the binding never vouches for it and the closure reports it |
 
 Existing tests touched: the phone guardrail in `test_greg_platform` adds `GOAL` to the founder-only set (an
 extension). The binding stage also *replaced* one assertion of
@@ -113,9 +114,13 @@ quarantined and labelled, never trusted. Each fix has a regression test that fai
   a `command.accepted` with an in-window `accepted_at` / `authorized_at`; the ledger cannot tell that from a real
   acceptance. Bounded: it must be founder-signed for this body, pass every validator at its position, cannot undo a
   later-signed stop / resume (stale stop controls are refused) and cannot re-open an intent the founder closed later.
-- **Mission-side P2 unchanged.** `MissionBook` still folds an unsigned `decision.answered` and executes on an approve;
-  the goal side never vouches for it and `ledger_closure` now reports it (`unsigned_answers`). Owner: Alfonso; trigger:
-  the separate fold-time re-verification change.
+- **Mission-side P2: the `decision.answered` half is closed (next-wave item 7, 2026-10-16); `mission.registered` is
+  open.** When this fix stage landed, `MissionBook` folded an unsigned `decision.answered` and executed on an approve.
+  It now counts an answer only as the record `MissionEngine.answer` writes for a founder-signed DECISION that
+  `founder_facts` counts as signed at its own `command.accepted` position, with the command path's checks holding
+  there; any other row stays in `MissionBook.unverified`, moves nothing, and `ledger_closure` still reports it
+  (`unsigned_answers`). What remains is listed under "Next-wave item 7" below. Owner: Alfonso; trigger: the
+  `mission.registered` re-verification change.
 - **Function sensors and bound params.** For a sensor named by function (capability resolved at run time) or with
   `$from_action` params, the receipt binding checks the mission's signed authority, the witness target and the grant
   link, but not the exact scope digest.
@@ -230,8 +235,78 @@ nonces `consumed_nonces` collected before; the extracted ranking computes the sa
   founder command (a record spending its nonce makes `Body.apply` refuse it; a copy of its envelope under a different
   record nonce makes `Body.apply` report `ALREADY_APPLIED` while nothing counts it), as it could delete the inbox file.
   Both are refusals of a founder act, never a widening, and the founder views show the goal unchanged.
-- **Mission-side P2 still open.** A forged `mission.registered` still dispatches through the Gate under the digest it
-  cites; the binding no longer vouches for it anywhere (admission, CLI, closure), and the closure now reports it.
+- **Mission-side P2 still open for `mission.registered`.** A forged `mission.registered` still dispatches through the
+  Gate under the digest it cites; the binding no longer vouches for it anywhere (admission, CLI, closure), and the
+  closure now reports it. (The `decision.answered` half closed in next-wave item 7, below.)
+
+## Next-wave item 7: fold-time re-verification of `decision.answered` (2026-10-16)
+
+Traceability: closes the `decision.answered` half of this ADR's deferred P2 row (founder intent references above;
+`docs/opus-maximus/NEXT_WAVE_AND_HORIZONS.md` item 7). Hardening of the existing authority path: it adds no command
+kind, grant or authority, and needs no founder decision. Extension, not a changed contract: `MissionBook` gains
+`unverified` and a `verify_answers` switch, new rows are keyed `[request_id, command_digest]`, and the evidence view
+adds `answer_counted`.
+
+Defect (reproduced on `7418c82`, PR #184 head): the ledger is an unkeyed hash chain, so any code in the body process,
+or a restored ledger, can append a chain-consistent `decision.answered`. The mission fold trusted the row: a forged
+approve executed an outside-cone action and the mission reached ACHIEVED; a forged `reconcile_not_executed` on an
+UNCERTAIN dispatch re-dispatched the effect (two adapter calls, a blind retry); a forged row under the request id
+made the founder's genuine signed reject fail "already answered differently"; a forged row with any digest decided a
+HUMAN_JUDGMENT question; a forged reason reached `founder_words` (exempt from the section-60 wording screen).
+
+Mechanism: one verifier. `goal_gravity.verified_decisions(ledger)` (the DECISIONs `founder_facts` counts as signed at
+their own position: a key valid there, this body, an unspent nonce, accepted inside the signed validity) and
+`missions.signed_answer` (moved from goal_gravity, re-exported, now also refusing a non-text digest). A row is held
+by its cited digest and counts only at the one `command.accepted` record that DECISION verified at
+(`decision_positions`), only if the request was recorded, not withdrawn and not yet answered there, the answer fits
+its kind, and the row equals `answer_record(request, signed body, digest)`; the applied record is that re-derived
+record. `founder_facts` folds `command.accepted` into its own book as each command verifies, so its book and the live
+book agree by construction (parity test after every append of a randomized sequence). `Body.apply` rebuilds the book
+after a DECISION's acceptance, so Goal Gravity reads the answer in the same tick. Every reader that decides on an
+answer reads the counted answers (`MissionBook.answers`, or the equal book of the same `founder_facts` pass):
+`AuthorityOffice` approvals, reconciliation, attach and compensation asks,
+rejected scopes, `founder_words`, `check_goal`, the human-judgment return path (`cognition/human.py`), the appraiser's
+check 5 (from the acceptance position) and the sandbox diagnostic's `interruption_reconciled`. The status, phone and
+morning-report surfaces (`asks.open_requests(counted=...)`) keep showing an ask that has only an uncounted row,
+labelled `unsigned_answer_recorded`; the console says GREG does not act on it. Replay-only test stand-ins (no ledger)
+fold rows as before.
+
+Memo: `verified_decisions` is cached per ledger and keyed on its last `command.accepted` / `command.rejected` /
+`founder.enrolled` record (the only inputs to a DECISION's verification), found by reading only the records appended
+since the last call. Measured on synthetic ledgers (20,602 records, 200 signed DECISIONs; scratch script
+`time_rebuild.py`): rebuild 250.8 / 264.9 ms (min, two runs) before, 244.9 ms after with the memo warm (between
+commands), within the 1.2x budget; the first rebuild after a command lands pays one `founder_facts` pass (479.6 ms).
+
+Regression tests: `tests/unit/test_greg_answer_reverification.py`. Run against `7418c82`'s code, 14 of its 22 fail
+(the forged approve executes; another command's or request's digest executes; the forged reconcile re-dispatches; the
+squat refuses the founder's reject; the altered words become the record; two smuggled refused DECISIONs count; the
+forged row decides the judgment; the appraiser verifies a closure approved by a forged row; the sandbox diagnostic
+counts a forged reconciliation; status hides the ask; the three parity seeds need the new verifier) and the 8 guards
+pass (both crash windows, the signed reconciliation, the ledgerless stand-in, the four retained evidence ledgers
+giving the same answers as before).
+`test_greg_goal_gravity_authority.py` passes with its assertions unchanged; the forged-approve test gains one
+(`answer_counted` is False) and its comment was corrected (the mission no longer executes on the row).
+
+What remains (preserved dissent, owner Alfonso):
+
+- **Smuggling a genuine, never-applied DECISION.** A refused DECISION spends no nonce (only GOAL / GOAL_CONTROL do),
+  so an in-process writer can pair such an envelope with a matching row and an in-window `command.accepted` for a
+  request that is still open, unwithdrawn and unanswered at that position. Bounded to exactly what the founder signed
+  for that request: the same class as "acceptance time is a body-clock claim". A smuggled DECISION the body refused
+  for a withdrawn request or a wrong answer kind does not count (tests).
+- **Unsigned `decision.requested`.** Requests are body-written and a DECISION binds only the request id, so a forged
+  request the founder then answers is answered as forged. Trigger: a follow-up that carries the request's scope
+  digest in the DECISION body and checks it at the fold.
+- **`mission.registered`** (the other half of P2) still folds unverified.
+- **Availability.** A same-UID writer can still make the body refuse or wait (for example a row under the founder's
+  exact future digest with other content, which makes the journal refuse the founder's own row so the command is
+  rejected and must be signed again, or a deleted inbox file). This protects integrity, not availability.
+- **Views that still read raw rows** (`presence.py`, `path.py`, `resilience.py`, `scripts/mission_trace.py`,
+  `scripts/greg_hands_proof.py`) decide no mission; they can disagree with the book about a forged row.
+- **Legacy ledgers.** An answer whose DECISION `command.accepted` carries no envelope (records before `d838077`,
+  2026-09-26) no longer counts; its mission re-blocks on the same request and the founder answers again (no identity
+  collision under the new key). None of the four retained evidence ledgers is affected (test), and no founder body
+  exists yet.
 
 ## Alternatives
 
@@ -250,7 +325,7 @@ nonces `consumed_nonces` collected before; the extracted ranking computes the sa
 | Role | Position | Material concern | Recommendation |
 |---|---|---|---|
 | Builder | Mission F runs end to end on a real body with a real Ed25519 test key, in both orders: with the ask still open, noise on the goal's own channel is silent, meaningful text on it wakes the goal, the mission repairs `c` in cone through the Gate, nothing new is asked and the awaited move does not run; then the approve executes it (a standing approval of that exact scope: a later regression re-runs an unpaid move with no new ask, and a paid move after a new ask, as every surface now says) and the bottleneck re-fixes to N1 | goal-level moves must restate a static mission strategy the mission pursues; relevance is lexical | EXPERIMENT |
-| Adversary | forged goal, smuggled acceptance, backdated envelope, over-ceiling GOAL, duplicate intent, device-signed GOAL, unsigned un-pause, retired-key GOAL, revoked-device DECISION, forged founder answer, forged executor pass: all refused or not mirrored (tests) | in-process writers can still narrow goals (stop, supersede) and the mission fold still trusts unsigned `decision.answered` (P2) | EXPERIMENT with P2 as a named follow-up |
+| Adversary | forged goal, smuggled acceptance, backdated envelope, over-ceiling GOAL, duplicate intent, device-signed GOAL, unsigned un-pause, retired-key GOAL, revoked-device DECISION, forged founder answer, forged executor pass: all refused or not mirrored (tests) | in-process writers can still narrow goals (stop, supersede) and the mission fold still trusts unsigned `decision.answered` (P2; that half closed 2026-10-16 in next-wave item 7, `mission.registered` open) | EXPERIMENT with P2 as a named follow-up |
 | Operator | one ledger file; idle body writes nothing; dormant goal writes nothing; faults contained once per reason; one CLI entry | O(commands) signature checks per tick; ledger growth per non-dormant turn | EXPERIMENT; cache by digest if measured hot |
 | Beneficiary Representative | the founder signs a pre-filled GOAL from a mission instead of writing JSON; asks keep the section-60 contract and wording screen; a phone can only quiet a goal | attention defaults have no founder-signed quiet hours yet | EXPERIMENT |
 | Constitutional Reviewer | intelligence creates no authority: the loop cannot hold a gate, executor or grant on a body; answers come only from signed DECISIONs; building is not activating (nothing runs without a signed GOAL) | the egregore lineage gained a host-detection marker (`greg.founder.enrolled`) | EXPERIMENT |
@@ -273,8 +348,11 @@ advanced".
   only; since the fix stage the guard restores every signed fact an unsigned record widened (closure, stop, narrowing
   preferences, priority floor) and the views label unsigned stops. Owner: kernel maintainers. Trigger: any narrowing
   record without a signed command observed on a real body.
-- Adversary: `MissionBook` folds unsigned `decision.answered` and `mission.registered` (P2). Owner: Alfonso. Trigger:
-  the separate fold-time re-verification change.
+- Adversary: `MissionBook` folds unsigned `decision.answered` and `mission.registered` (P2). Partly closed by
+  next-wave item 7 (2026-10-16): an answer counts only as re-derived from a founder-signed DECISION at its own
+  acceptance. What remains: `mission.registered`; unsigned `decision.requested` (a DECISION binds only the request
+  id); smuggling of a genuine, never-applied DECISION for a request still open at that position. Owner: Alfonso.
+  Trigger: the `mission.registered` re-verification change, and a DECISION bound to the request's scope digest.
 - Operator (closed by fix stage 2): a goal could not pull a mission blocked on a founder decision. A goal's pull now
   lets a mission awaiting an APPROVAL prepare in cone; the awaited move still waits for the signed answer. Residual:
   missions blocked on other decision kinds (scope renewal, sensor scope, capability) still only wait. Owner: kernel

@@ -2141,7 +2141,7 @@
         "cognition.evolutionary"
       ],
       "missing_capabilities": [
-        "a P8 cycle that keeps an improvement (cycles 1-4 were rejected under the sealed evaluator)",
+        "a P8 cycle that keeps an improvement (cycles 1-5 were rejected under the sealed evaluator)",
         "P9 constraint-release discovery (deferred)",
         "generation beyond a closed configuration space",
         "sustained novelty without evaluator capture or runaway resource use"

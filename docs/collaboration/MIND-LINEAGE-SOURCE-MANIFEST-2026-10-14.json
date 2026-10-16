@@ -224,5 +224,20 @@
       "verifier/runs/"
     ]
   },
-  "coordination_rule": "Neither session overwrites, regenerates, renames or silently supersedes the other's frozen evidence. New evaluations use uniquely identified paths that name their lineage or run id. Shared live-code conflicts are resolved in the dedicated convergence PR by comparative evidence, not branch priority. Neither lineage is automatically canonical."
+  "coordination_rule": "Neither session overwrites, regenerates, renames or silently supersedes the other's frozen evidence. New evaluations use uniquely identified paths that name their lineage or run id. Shared live-code conflicts are resolved in the dedicated convergence PR by comparative evidence, not branch priority. Neither lineage is automatically canonical.",
+  "post_decision_2026-10-16": {
+    "note": "Appended 2026-10-16 after the round-2 review of #179 (L1); the decision-time heads and directories above are unchanged.",
+    "pr155_final_head": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
+    "pr155_evidence_directories_added_after_decision": [
+      "docs/evidence/pr155-crowd-sparse/2026-10-14"
+    ],
+    "pr158_evidence_directories_added_after_decision": [
+      "docs/evidence/greg-composition-lift/2026-10-14-v5",
+      "docs/evidence/greg-genome-admission/2026-10-15-v3",
+      "docs/evidence/greg-protected-evolution/2026-10-15-cr-4",
+      "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf",
+      "docs/evidence/greg-protected-evolution/2026-10-16-cr-5",
+      "docs/evidence/greg-genome-admission/2026-10-16-v4"
+    ]
+  }
 }

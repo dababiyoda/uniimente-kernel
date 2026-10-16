@@ -41,7 +41,9 @@
     "A third adversarial review (9 of 12 findings confirmed) found a paid approval left live by a $0 run, paid asks left unfundable by spend, a used-up approve taken as an answer, wording offering a reject the engine refuses, and Claude Code CLI verbose output, unknown cost, model fallback and error reasons mishandled; fixed in f59eee4",
     "CI job 1 on 77a3893 failed this branch's own provider-binary test on a runner whose bubblewrap is installed but unusable; fixed in a229f70",
     "Merging Track B made four operation verdicts (control, game, information, probabilistic) stale under Track B's code binding, because this branch's #159 solvers changed what they measured; they route as UNEVALUATED pending a pre-registered re-admission",
-    "A fourth adversarial review, of the Track B merge (16f53f5) and the #169 46719e4 merge (b4b4784), confirmed 15 of 16 findings: an attached construction skipped every compile route's rules (high-consequence proof, thinking budget, sensitivity, implied geometry); the compile and chain routes dropped the caller's grant window; a venture mission closed on a memo built from other or no economics; an outage retry blocked a mission forever after the founder's attach; #169's secret files leaked a key into the ledger and a readable workspace and let an earlier output choose the credential; three records were wrong. Fixed in 39ff3b7, 70964a6, 2168e01, 6f2a44e, cc82deb and e3427ad; the residual mutation gate counted a test that already failed as catching its mutant, and now checks its baseline"
+    "A fourth adversarial review, of the Track B merge (16f53f5) and the #169 46719e4 merge (b4b4784), confirmed 15 of 16 findings: an attached construction skipped every compile route's rules (high-consequence proof, thinking budget, sensitivity, implied geometry); the compile and chain routes dropped the caller's grant window; a venture mission closed on a memo built from other or no economics; an outage retry blocked a mission forever after the founder's attach; #169's secret files leaked a key into the ledger and a readable workspace and let an earlier output choose the credential; three records were wrong. Fixed in 39ff3b7, 70964a6, 2168e01, 6f2a44e, cc82deb and e3427ad; the residual mutation gate counted a test that already failed as catching its mutant, and now checks its baseline",
+    "CI job 6 on b48c867 found two residual-gate mutants unguarded: their targeted tests skipped on a runner without bubblewrap and the gate counted a skip as passing unmutated; fixed in 55cf26a (namespace-free targets; BASELINE_SKIPPED)",
+    "A fifth adversarial review, of the #169 ebfc5f7 merge (029c3a8), confirmed 8 defects in #169's newest code (Foundry #52 tamper scan hung by a FIFO or aborted by a socket; misshapen report rows crashed it; system-52 evidence counted the import closure and records 28/52 claimed a CI re-run; remote_evidence called other tenants or addresses the service's own host; acceptance overclaimed connections and destination refusals and crashed on a torn journal line; a runbook pointer to a missing step), fixed in 6906df6; a second round confirmed 9 more in the fixes (a report swap or link after a timeout, links followed in walks, sparse-file floods, a RecursionError, sidecar overwrite, damaged rows crashing status, four acceptance-procedure errors), fixed in 42f888f; 3 residuals accepted and recorded"
   ],
   "dependencies": [
     "INTENT-20261014-ONE-MACHINE (#178)",
@@ -84,7 +86,8 @@
     "tests/unit/test_greg_ventures_economics_binding.py",
     "tests/unit/test_greg_outage_retry_cognition.py",
     "tests/integration/test_greg_mcp_secret_files_review.py",
-    "tests/unit/test_convergence_map_names_the_live_seal.py"
+    "tests/unit/test_convergence_map_names_the_live_seal.py",
+    "tests/integration/test_greg_ebfc5f7_review.py"
   ],
   "reality_status": "LABORATORY-VERIFIED in one Linux container: INTEGRATION and SANDBOX-WHOLE-MACHINE. Not founder-device, not external, not commercial. VEPMC 0."
 }

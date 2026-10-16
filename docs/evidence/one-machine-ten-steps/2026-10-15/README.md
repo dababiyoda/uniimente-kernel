@@ -11,7 +11,7 @@ Deliverable J. Each claim below is a command that was run, on the commit named, 
 | Isolation | bubblewrap 0.9.0 with unprivileged namespaces available |
 | Organs | DALEOBANKS `667439f`, WealthMachineIntelligence `ec82b80` (local checkouts; organ venv on Python 3.13.16) |
 | Base | #178 `claude/greg-one-machine` at `baf630d` (merged here in `8cb4043` for `44f7c35` and `cd8046a` for `baf630d`; it was `4ed91f7` until about 16:40 UTC) |
-| Final code commit | `16f53f5`: the Track B Mind line (#181 `79c38f8`, with #179 `c6c4d74` and #180 `e4674f9`) merged onto `24d5ebe` (earlier finals: `f59eee4`, `16900ca`, `cd8046a` and `d965bb7`, results kept below) |
+| Final code commit | `42f888f`: #169 `ebfc5f7` merged (`029c3a8`), with CI job 6's gate fix (`55cf26a`) and the fifth review's two rounds of fixes (`6906df6`, `42f888f`) (earlier finals: `e3427ad`, `16f53f5`, `f59eee4`, `16900ca`, `cd8046a` and `d965bb7`, results kept below) |
 
 The organ variables used by every proof run:
 
@@ -36,7 +36,26 @@ python scripts/ci/replay_seed_compatibility.py --out <file>                     
 python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pipeline_mutants.py
 ```
 
-## Results on the final code commit `e3427ad`
+## Results on the final code commit `42f888f`
+
+`029c3a8` merges #169 `ebfc5f7` onto `b48c867`. That head brings four commits: device acceptance reads #26 confinement from the body's relay journal, hosted page checks name their evidence kind, and Foundry #52 repairs a copied multi-file source tree inside the worker envelope. `55cf26a` fixes CI job 6 (negative result 16). `6906df6` and `42f888f` fix the fifth review (negative result 17).
+
+| Run | Result |
+|---|---|
+| Full suite on `42f888f` (`python -m pytest -q -p no:cacheprovider -rf`, the two proofs included without organ variables) | **5,186 passed, 31 skipped, 1 failed** in 2,887 s. The failure is negative result 4 (environment only) |
+| Full suite on `029c3a8` (the merge, before the review's fixes) | 5,150 passed, 31 skipped, 1 failed (negative result 4) in 2,730 s |
+| `tests/unit/test_greg_organs.py` with the real organs | 39 passed |
+| #178's one-mission proof with the real organs, on `42f888f` | **Passed** (50.9 s). Independent verifier REDERIVED, 16 of 16 checks, no findings; three boots, two recoveries; Genesis formed `composed.assignment.staffing.networkx.5670bf4c5c` |
+| Ten-step proof with the real organ checkouts, on `42f888f` | **Passed** (227.0 s): 11 missions closed, every appraisal VERIFIED |
+| Both proofs on `029c3a8` and on `6906df6` | Passed each time (49.4 s and 217.3 s; 51.2 s and 227.4 s) |
+| The fifth review's regression tests | 35 in `tests/integration/test_greg_ebfc5f7_review.py`; 24 fail on `8a03e40` (the merge plus `55cf26a`) and 7 more on `6906df6`, the rest are controls; all pass on `42f888f` |
+| Every mutation gate CI runs | cortex 85 of 85; cognition residual 45 of 45; budget 3 of 3; native 4 of 4; GREG cognition 6 of 6; pipeline, worker appraisal and WASM lifecycle all caught; authority singleton, schema references and sealed developmental checks pass |
+| Foundry #52 evidence | Re-recorded on this tree and re-derived (`completion._reproduces` is True); `completion.audit()` reports nothing |
+| Seed replay and seals | Valid, 120 of 120; `freeze-v11.json` stays sealed (none of the merged or fixed files is one of its inputs) |
+| CI on `55cf26a` | All nine jobs green |
+| VEPMC | 0. Local bodies only |
+
+## Results on the code commit `e3427ad`
 
 `e3427ad` (with `a2b8b99`, a CI-gate fix that renames one loop variable) closes the fourth adversarial review (negative result 15) on `b4b4784`, which joins #169 `46719e4` (a credential a server reads from a file) onto `16f53f5`.
 
@@ -155,6 +174,8 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 
 16. **CI job 6 found two of those 45 mutants unguarded on its runner.** On `b48c867` the residual gate reported "a server echoing its key writes it into the ledger" and "a malformed scope is asked about instead of refused" as survivors: their targeted tests carry `needs_namespaces`, and job 6 installs no bubblewrap, so both skipped. A skip exits 0, so the baseline check I added counted them as passing unmutated. Locally both ran, because this container has usable bubblewrap. Fixed in the next commit without weakening anything: the echoed-key mutant now targets a test that drives `mcp_tools._invoke`'s error path with the gateway call stubbed, so it runs on any host (the namespace test stays); the malformed-scope test needs no namespace (the scope is refused before anything is dispatched), so its marker is gone; and the gate now stops with BASELINE_SKIPPED when any targeted test skips on the host it runs on. With bubblewrap unusable (a PATH whose `bwrap` fails) and with it usable, all 45 mutants are caught.
 
+17. **A fifth adversarial review, of the #169 `ebfc5f7` merge (`029c3a8`), found eight defects in #169's newest code, and a second round on the fixes found nine more.** Round one (three finders by area; a separate skeptic reproduced six at `029c3a8`; two more, past the verification cap, were reproduced here; one finding was refuted: the relay journal's chain is unkeyed, so it records what the relay decided and is not proof against whoever can write the body's home, which the acceptance procedure now says). Fixed in `6906df6`: tree code that left a FIFO in its run's copy hung Foundry #52's tamper scan forever with the store locked, and a socket aborted it with a raw OSError; misshapen diagnosis rows crashed the repair; system 52's recorded evidence counted the frozen import closure (284 files then, 322 on this tree), so it stopped reproducing, and no CI check noticed because the audit re-runs only COMPLETE rows (records 28 and 52 claimed otherwise); `remote_evidence` called another tenant of a shared suffix (`vercel.app`, `github.io`, `co.uk`), a different IPv4 address or a bare suffix "the service's own host"; `network_confined` claimed a mission's connection while counting any part of GREG; `undeclared_destination_denied` counted a request limit as a destination refusal; a relay journal line a crash cut short crashed `greg acceptance` and `greg status`; and the report sent the founder to a runbook step that does not exist. Round two (three attackers on the fixes; each of the eight confirmed closed; four new findings reproduced by a skeptic, five more confirmed here by reading, two refuted). Fixed in `42f888f`: a sandbox still running after a timeout could swap the run's report for a FIFO between the parent's check and its blocking open, or point it at a host file through a link it made of its runtime tmp; `os.walk` stat-ed through links the tree planted; 600 sparse 8 MiB files made the tamper scan take minutes; a deeply nested report raised RecursionError; two torn tails at one offset overwrote one sidecar and the move left no record; a damaged committed row still crashed status and acceptance; and the acceptance procedure named the wrong relay identity, left out installing Chromium in the Linux container, described a render Mission Control does not show, and let step 2's own entries fail step 3. Accepted and recorded: system 52's evidence names lines of `dsl.py`, the file it repairs, so any edit to `dsl.py` needs a re-record; `greg status` keeps its broad denied count beside acceptance's destination count; the `system-35-media` record's command predates this branch. Each fix has a test that fails without it (two are controls the old code passes by chance). A handoff comment on #169 lists them.
+
 ## Digests
 
 | Artifact | sha256 |
@@ -173,6 +194,8 @@ python scripts/ci/check_worker_appraisal_mutants.py; python scripts/ci/check_pip
 | One-mission ledger head on `16f53f5` (`run.json` of that run, not committed) | `346493c30b97be70f57cae521e4ed460eb0fad65f98584b9a4d2f09c5bb1e39c` |
 | Ten-step body ledger file on `e3427ad`, 849 records (not committed) | `d04e1f20d88f2d66884d94423d5ccb0450ecb0578bdcf91c5a06fa32a56f22d6` |
 | One-mission ledger head on `e3427ad` (`run.json` of that run, not committed) | `34c10501b8c6cd111d539683d327d7ebaa2d5f115d41a60c3737668144ebe3aa` |
+| Ten-step body ledger file on `42f888f`, 849 records (not committed) | `abea6a09b3c6d9840c1ba9fc12636964372f24f5364cd0aafcd2deb4640d2417` |
+| One-mission ledger head on `42f888f` (`run.json` of that run, not committed) | `e6aaae09ed579743fe8f9749af74d323907d7263bdfd84120d0fcd9f55bddfa0` |
 | One-mission ledger head (`one-mission/run.json`) | `0e1cb9cf01996baaecd969a4b64d96ee16a84e21435cab1eca6a63276f5a373c` |
 | `ten-step/one-machine-trace.json` | `dd29bdbb89484f4c2d9b59d4ba70e3fc8a7ffcd013ce2183c544168a5baf9514` |
 | `one-mission/verify.json` | `b3437146e3d4f8cfc0588699977012e3d41d308cdd055105adffeb440081451d` |

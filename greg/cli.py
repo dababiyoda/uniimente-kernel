@@ -76,6 +76,20 @@ def _secret_value(name: str) -> str:
     return value
 
 
+def _secret_file(path: str) -> str:
+    """A whole credential file (64 KiB at most, text); its contents never reach the command line or the output."""
+    try:
+        data = Path(path).expanduser().read_bytes()
+    except OSError as exc:
+        raise BodyError(f"cannot read {path}: {exc.strerror}") from None
+    if not data.strip() or len(data) > 64 * 1024:
+        raise BodyError("a credential file is non-empty text of at most 64 KiB; nothing stored")
+    try:
+        return data.decode()
+    except UnicodeDecodeError:
+        raise BodyError("a credential file must be text (UTF-8); nothing stored") from None
+
+
 def _drop(home: str, kind: str, body: dict, args) -> Path:
     key = load_founder_key(args.key, _passphrase(args))
     return send_signed(home, key, kind, body, ttl=timedelta(hours=getattr(args, "ttl_hours", 24)))
@@ -326,7 +340,10 @@ def main(argv=None) -> int:
     sv2.add_argument("--host", default="127.0.0.1"); sv2.add_argument("--port", type=int, default=8765)
     se = sub.add_parser("secret", help="store a credential for GREG on this body (local; never in the ledger)")
     ses = se.add_subparsers(dest="secret_cmd", required=True)
-    ses.add_parser("set", help="value from a hidden prompt or stdin, never from the command line").add_argument("name")
+    sset = ses.add_parser("set", help="value from a hidden prompt or stdin, never from the command line")
+    sset.add_argument("name")
+    sset.add_argument("--from-file", help="an mcp: credential kept as a whole file (a service-account key, a "
+                                          "kubeconfig); a mission hands it to a server as a file (secret_files)")
     ses.add_parser("remove").add_argument("name")
     ses.add_parser("list", help="handle names only; values are never printed")
     st = sub.add_parser("start", help="clear a persisted stop (local physical authority)")
@@ -794,6 +811,14 @@ def main(argv=None) -> int:
             elif args.name not in known and not mcp_handle(args.name):
                 raise BodyError(f"unknown credential handle {args.name!r}; known: {', '.join(sorted(known))}, "
                                 "or mcp:<name> for an MCP server you installed")
+            elif args.secret_cmd == "set" and getattr(args, "from_file", None):
+                if not mcp_handle(args.name):
+                    raise BodyError("--from-file is for mcp:<name> credentials a server reads as a file")
+                broker.put(args.name, _secret_file(args.from_file))
+                print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); never the "
+                                  "ledger", "read_by": "only a mission that names it in secret_files or secrets, after "
+                                  "your approval", "original": f"{args.from_file} is unchanged; delete it if this "
+                                  "should be the only copy"}, indent=1))
             elif args.secret_cmd == "set":
                 broker.put(args.name, _secret_value(args.name))
                 print(json.dumps({"stored": args.name, "where": "this body's secret broker (mode 0600); "

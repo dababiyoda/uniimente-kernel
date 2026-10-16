@@ -706,7 +706,7 @@ def test_the_grid_1_0_guarantee_holds_for_another_optimal_route_and_fails_on_ano
     ref = competitors.grid_dijkstra_solve_v100(copy.deepcopy(data), BUDGET)
     potential = new["certificate"]["potential"]
     others = sorted({_tight_route(data, potential, order) for order in itertools.permutations("UDLR")}
-                    - {new["output"]["moves"]})
+                    - {ref["output"]["moves"]})       # differs from the reference whatever 1.1.0 traced
     assert others                                            # this grid has another optimal route
     other = {**new, "output": {**new["output"], "moves": others[0], "steps": len(others[0])}}
     _assert_1_0_guarantee(other, ref, data)

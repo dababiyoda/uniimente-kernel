@@ -56,7 +56,7 @@ print('WORK_REPORT: {{"changed": ["pkg/calc.py"], "confidence": 1.0}}')
 '''
 
 DRIVER = '''
-import os, sys
+import os, sys, time
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
 from greg import workers
@@ -77,6 +77,18 @@ class ScriptedWorker(workers.CliAgentWorker):
 
 
 workers.PROVIDERS["scripted"] = ScriptedWorker("scripted", [sys.executable, "-c", program, mode])
+if mode == "stop-after-evidence":
+    commission = workers.commission
+
+    def stops_after_evidence(params, ctx):
+        """The real commission, then this Body holds still until the test kills it: the WorkOrder's evidence.json
+        is written and the Gate has not recorded the receipt (a forced point, not a race)."""
+        commission(params, ctx)
+        calls.with_name("evidence-written").write_text(ctx.grant_id)
+        time.sleep(3600)
+        raise SystemExit(3)
+
+    workers.commission = stops_after_evidence
 sys.exit(Body(home).run(tick_seconds=0.2))
 '''
 
@@ -261,6 +273,9 @@ def test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly
         assert uncertain["reserved_usd"] == CAP and uncertain["cost_usd"] == 0.0   # unknown, reserved at its cap
         assert waiting["mission"].committed_usd == CAP
         assert request["authority_requested"]["grant_id"] == killed and request["authority_requested"]["attempt"] == 0
+        # The founder is told before answering that "not executed" still books the metered run's signed cap.
+        assert request["evidence"]["booked_usd_by_answer"] == {"reconcile_executed": CAP,
+                                                               "reconcile_not_executed": CAP}
         assert partial.exists(), "no blind re-execution touched the interrupted clone"
 
         drop(home, signed(key, body_id, "DECISION", {"request_id": request["request_id"],
@@ -298,11 +313,87 @@ def test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly
     # Spend: the interrupted run's spend was never measured, so its signed cap is booked, not zero; the provider of
     # the re-commission reported none either, so it is booked at its cap; at most twice the cap in all.
     assert settled["cost_usd"] == CAP, "an interrupted paid run's unmeasured spend is booked at its cap, not zero"
+    assert "whether its metered provider ran" in settled["spend_basis"]
     assert done["cost_usd"] == CAP and done["spend_basis"].startswith("signed_cap")
     m = final["mission"]
     assert (m.spent_usd, m.reserved_usd) == (2 * CAP, 0.0) and m.spent_usd <= 2 * CAP
 
     # No duplicate consequence: every grant is dispatched once and receipted at most once.
+    grants = [d["grant_id"] for d in final["dispatch"]]
+    assert len(grants) == len(set(grants))
+    receipted = [r["grant_id"] for r in final["receipt"].values()]
+    assert len(receipted) == len(set(receipted)) and killed not in receipted
+    with Body(home) as b:
+        assert b.ledger.verify_chain()[0]
+
+
+def test_a_body_killed_after_the_work_order_evidence_and_before_its_receipt_is_recommissioned_not_closed(tmp_path):
+    """Gap H.G11: the Body dies after the WorkOrder's evidence.json is written but before the Gate's receipt.
+
+    Before the fix, a signed reconcile_not_executed let the engine's own worker.appraise sensor accept that
+    unreceipted evidence: the mission closed ACHIEVED with one worker run and no receipted DONE action, and the
+    separate-process appraisal (which binds the evidence to its commission receipt) gave REFUTED. Now the engine's
+    sensor rejects it as the appraiser does, and the re-commission runs a new worker under a new grant."""
+    if not sys.platform.startswith("linux"):
+        pytest.skip("the parent-death signal is Linux-only (stated limit in greg/workers.py)")
+    data = tmp_path / "data"
+    data.mkdir()
+    repo = make_repo(data)
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    drop(home, signed(key, body_id, "MISSION", spec(repo)))
+    calls = tmp_path / "calls"
+    order_dir = workspace(home, MID) / "work-orders" / ORDER
+
+    body = start(tmp_path, home, calls, "stop-after-evidence")
+    try:
+        killed = wait_for(lambda: calls.with_name("evidence-written").read_text(),
+                          what="the work order's evidence, before its receipt")
+        evidence = json.loads((order_dir / "evidence.json").read_text())["summary"]
+        assert evidence["grant_id"] == killed and evidence["status"] == "COMPLETED"   # the worker finished
+        before = read(home)
+        assert [d["grant_id"] for d in commission_dispatches(before)] == [killed]
+        assert not [r for r in before["receipt"].values() if r["grant_id"] == killed] and not commissions(before)
+        body.send_signal(signal.SIGKILL)
+        body.wait(timeout=20)
+    finally:
+        if body.poll() is None:
+            body.kill()
+            body.wait(timeout=20)
+
+    body = start(tmp_path, home, calls, "normal")
+    try:
+        wait_for(lambda: [r for r in read(home)["decision.requested"] if r["kind"] == "RECONCILIATION"]
+                 or len(calls.read_text().split()) > 1, what="the reconciliation request")
+        waiting = read(home)
+        assert calls.read_text().split() == [killed], "nothing is commissioned while the reconciliation is open"
+        assert [(a["status"], a["attempt"]) for a in commissions(waiting)] == [("UNCERTAIN", 0)]
+        assert not waiting["mission.achieved"], "no closure over the unreceipted run while the founder decides"
+        [request] = [r for r in waiting["decision.requested"] if r["kind"] == "RECONCILIATION"]
+        drop(home, signed(key, body_id, "DECISION", {"request_id": request["request_id"],
+                                                     "answer": "reconcile_not_executed",
+                                                     "reason": "its receipt was never recorded"}))
+        wait_for(lambda: read(home)["mission.appraised"], timeout=90, what="the separate-process appraisal")
+        final = read(home)
+    finally:
+        stop(body)
+
+    # A new worker run under a new grant; the unreceipted evidence was neither accepted nor reused.
+    [first, second] = calls.read_text().split()
+    assert first == killed and second != killed
+    assert [(a["status"], a["attempt"]) for a in commissions(final)] == \
+        [("UNCERTAIN", 0), ("RECONCILED_NOT_EXECUTED", 0), ("DONE", 1)]
+    done = commissions(final)[2]
+    output = final["receipt"][done["receipt"]]["result"]["output"]
+    assert final["receipt"][done["receipt"]]["grant_id"] == second
+    assert output["grant_id"] == second and "reused" not in output
+    assert json.loads((order_dir / "evidence.json").read_text())["summary"]["grant_id"] == second
+    observed = [o for o in final["mission.observed"] if o["check_id"] == "work_accepted"]
+    assert any("REJECTED" in str(o.get("detail")) for o in observed), observed   # the engine refused it itself
+    assert [o["passed"] for o in observed].count(True) == 1 and observed[-1]["passed"]
+    assert [a["actions_done"] for a in final["mission.achieved"]] == [1]
+    assert [a["verdict"] for a in final["mission.appraised"]] == ["VERIFIED"], final["mission.appraised"]
+    m = final["mission"]
+    assert (m.spent_usd, m.reserved_usd) == (2 * CAP, 0.0)
     grants = [d["grant_id"] for d in final["dispatch"]]
     assert len(grants) == len(set(grants))
     receipted = [r["grant_id"] for r in final["receipt"].values()]

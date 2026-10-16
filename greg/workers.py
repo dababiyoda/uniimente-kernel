@@ -535,11 +535,11 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
         raise WorkerError(why)
     root = _order_dir(ctx, order.order)
     evidence_path = root / "evidence.json"
-    if evidence_path.is_file():                       # reconciliation said "not executed" but it had finished
-        prior = json.loads(evidence_path.read_text())
-        if prior.get("order_digest") == order.digest() and prior.get("status") in ("COMPLETED", "NO_CHANGE"):
-            return {**prior["summary"], "reused": True}
-    if root.exists():                                 # a partial, interrupted run: discard it, keep a note
+    # Every grant runs its own worker in a fresh clone. Evidence an earlier grant left (a body stopped after
+    # writing it but before the Gate's receipt, then reconciled "not executed") is never returned as this grant's
+    # result: its grant has no receipt, so the bound appraisal rejects it, and this grant's receipt would record a
+    # run that did not happen under it (acceptance H.G11). The earlier grant's receipt, if any, keeps its summary.
+    if root.exists():                                 # an earlier or interrupted run: discard it
         (ctx.workspace / "work-orders").mkdir(parents=True, exist_ok=True)
         shutil.rmtree(root)
     root.mkdir(parents=True)

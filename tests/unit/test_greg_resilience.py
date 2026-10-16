@@ -164,3 +164,27 @@ def test_learning_is_attributed_through_the_lever_and_the_critiqued_attempt():
     retried.add("mission.strategy_excluded", 200, mission_id="m1", action_id="a", reason="sloppy",
                 critique_ref="crit-x")
     assert R.after_failure(retried)["tool.x"]["learning_artifact_after_failure"] is False
+
+
+def test_one_interrupted_dispatch_counts_once_in_routing_and_resilience():
+    # review of d17996e: a metered RECONCILED_NOT_EXECUTED settlement carries its capability, so routing and
+    # resilience counted each interruption twice (the UNCERTAIN dispatch and the founder's settlement of it)
+    from greg import routing
+    j = actions(Journal(), "worker.commission", ["DONE"] * 5)
+    for minutes, mission in ((60, "m1"), (75, "m2")):
+        for status in ("UNCERTAIN", "RECONCILED_NOT_EXECUTED"):
+            j.add("mission.action", minutes, mission_id=mission, action_id="commission", attempt=0,
+                  capability="worker.commission", status=status)
+            minutes += 5
+    assert routing.track_record(j)["worker.commission"]["failed"] == 2
+    assert R.after_failure(j)["worker.commission"]["failures"] == 2
+    assert R.common_causes(j)[0]["failures"] == 2
+    # A later attempt of the same action is its own dispatch, and a settlement with no UNCERTAIN before it (an
+    # organ's or an older journal) is still a failure: only the second record of one dispatch is skipped.
+    j.add("mission.action", 90, mission_id="m1", action_id="commission", attempt=1, capability="worker.commission",
+          status="UNCERTAIN")
+    lone = Journal().add("mission.action", 0, mission_id="m3", action_id="x", attempt=0, capability="tool.x",
+                         status="RECONCILED_NOT_EXECUTED")
+    assert routing.track_record(j)["worker.commission"]["failed"] == 3
+    assert routing.track_record(lone)["tool.x"]["failed"] == 1
+    assert R.after_failure(lone)["tool.x"]["failures"] == 1

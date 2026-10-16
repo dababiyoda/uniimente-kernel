@@ -901,10 +901,12 @@ class MissionEngine:
         return summary
 
     def _context(self, m: MissionState, manifest) -> InvocationContext:
+        # worker.appraise reads the ledger to bind a retained WorkOrder to its canonical commission receipt, as the
+        # separate appraiser does: evidence a stopped body wrote before its receipt is never accepted (H.G11).
         return InvocationContext(workspace=self.workspace_root / m.mission_id.replace(":", "_"),
                                  read_roots=self.read_roots, secrets=self.secrets, manifest=manifest,
                                  deliver_root=self.deliver_root, learned=improvement.learned(self.journal),
-                                 journal=self.journal if manifest.capability_id == "memory.precedents" or
+                                 journal=self.journal if manifest.capability_id in ("memory.precedents", "worker.appraise") or
                                  manifest.capability_id.startswith(("artifact.", "cognition.", "pipeline.", "institution.")) else None,
                                  artifact_root=self.artifact_root, stop_check=self._stop_check,
                                  capability_registry=self.registry if manifest.capability_id.startswith("cognition.") else None,
@@ -1136,8 +1138,10 @@ class MissionEngine:
                                                "its spend was never measured")
                 elif booked:
                     settled.update(capability=capability, cost_cap_usd=worst, provider_reported_usd=None,
-                                   spend_basis="signed_cap: a metered run stopped before its spend was reported; "
-                                               "not executed settles its effect, not its provider's spend")
+                                   spend_basis="signed_cap: the dispatch was claimed and never receipted, so "
+                                               "whether its metered provider ran (the body may have stopped before "
+                                               "it started) and what it spent are unknown; not executed settles "
+                                               "its effect, not that possible spend")
                 self.journal.record("mission.action", settled,
                                     key=[m.mission_id, aid, "reconciled", m.blocker["request_id"]])
             lifted = m.blocker
@@ -1949,13 +1953,24 @@ class MissionEngine:
             # One reconciliation per dispatch: the request names this attempt's proposal and grant, so the answer
             # settles exactly this dispatch and a later uncertain dispatch opens its own request.
             dispatch = {"attempt": attempt, "proposal_id": outcome.proposal_id, "grant_id": outcome.grant_id}
+            reserved = record["reserved_usd"]
+            metered = manifest.capability_id in METERED_SPEND
+            recommendation = "inspect the retained evidence, then state whether it executed"
+            if metered:   # the founder learns before answering that "not executed" does not release the money
+                recommendation += (f". {manifest.capability_id} is metered: its provider may have spent while it "
+                                   f"ran, so either answer books ${reserved:.2f}, its signed cap, as spent; "
+                                   "'not executed' settles only whether its effect happened, and a new run "
+                                   "spends again")
             rid = self._request(m, kind="RECONCILIATION", scope_digest=outcome.scope_digest, action_id=aid,
                                 why="an action may or may not have executed before an interruption",
-                                recommendation="inspect the retained evidence, then state whether it executed",
+                                recommendation=recommendation,
                                 alternatives=["reconcile_executed", "reconcile_not_executed"],
                                 requested={"action_id": aid, **dispatch}, now=now, instance=dispatch,
                                 evidence={"dispatch": dispatch, "reasons": record["reasons"][:3],
-                                          "reserved_usd": record["reserved_usd"],
+                                          "reserved_usd": reserved,
+                                          "booked_usd_by_answer": {"reconcile_executed": reserved,
+                                                                   "reconcile_not_executed": reserved if metered
+                                                                   else 0.0},
                                           "budget": {"spent_usd": m.spent_usd, "budget_usd": m.cone.budget_usd}})
             self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid, **dispatch,
                             "scope_digest": outcome.scope_digest, "capability": manifest.capability_id,

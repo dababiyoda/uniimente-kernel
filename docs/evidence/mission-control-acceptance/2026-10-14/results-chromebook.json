@@ -1,0 +1,25 @@
+{
+ "device": "chromebook",
+ "viewport": {
+  "width": 1366,
+  "height": 768
+ },
+ "properties": {
+  "P01_five_questions": true,
+  "P02_fits_viewport": true,
+  "P03_every_view_renders": true,
+  "P04_capability_truth": true,
+  "P05_review_before_sign": true,
+  "P06_attach_is_founder_decision": true,
+  "P07_crash_resume_no_repeat": true,
+  "P08_one_consequence": true,
+  "P09_verified_and_readable": true,
+  "P10_cost_integrity": true,
+  "P11_pause_resume": true,
+  "P12_revoke": true,
+  "P13_memory_after_restart": true,
+  "P14_truth_and_refusals": true
+ },
+ "founder_clicks_to_verified_dossier_and_controls": 10,
+ "seconds": 54.16
+}

@@ -1,0 +1,46 @@
+{
+ "command": "python -m foundry.completion --run 12",
+ "name": "Capability Genome Registry",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "detached_keeps_versions": [
+   "1.0",
+   "2.0"
+  ],
+  "migrated": {
+   "active": "2.0",
+   "name": "buyer-scoring",
+   "rollback_to": "1.0"
+  },
+  "refusals": {
+   "attach_before_dependency": "RegistryError: offer-design needs buyer-scoring attached first",
+   "breaking_migration": "RegistryError: migration drops outputs ['reasons'] that dependents ['offer-design'] rely on",
+   "contraindicated": "RegistryError: offer-design is contraindicated when regulated_health_data",
+   "detach_with_dependents": "RegistryError: cannot detach buyer-scoring: attached dependents ['offer-design']",
+   "failing_tests_install": "RegistryError: x@1.0: acceptance tests failed; not installed",
+   "invalid_genome": "GenomeError: invalid genome: ['financial capabilities must require a human']"
+  },
+  "report": {
+   "buyer-scoring": {
+    "active": "1.0",
+    "incidents": 1,
+    "state": "DETACHED",
+    "versions": [
+     "1.0",
+     "2.0"
+    ]
+   },
+   "offer-design": {
+    "active": "1.0",
+    "incidents": 0,
+    "state": "DETACHED",
+    "versions": [
+     "1.0"
+    ]
+   }
+  },
+  "rolled_back_to": "1.0"
+ },
+ "result_sha256": "sha256:37882ca597938fd8a05dde50a8aa407f3ecd836c1adbe1bb210dcd038158306b",
+ "system": 12
+}

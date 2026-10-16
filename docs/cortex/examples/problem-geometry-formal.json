@@ -1,0 +1,56 @@
+{
+  "ambiguity": "low",
+  "causal_structure": "none",
+  "claim_type": null,
+  "consequence_class": "internal_write",
+  "consequence_vector": {
+    "discrimination": "none",
+    "financial": "none",
+    "irreversible_disclosure": "none",
+    "physical": "none",
+    "privacy": "none",
+    "reputational": "none",
+    "rights": "none",
+    "systemic": "none",
+    "tail_risk": "none",
+    "third_party": "none"
+  },
+  "constraints": [
+    "C_end_A",
+    "C_end_B",
+    "C_end_C",
+    "C_one_AB",
+    "C_one_AC",
+    "C_one_BC"
+  ],
+  "epistemic_class": "constraint_feasibility",
+  "evidence_quality": "none",
+  "exactness": "exact_required",
+  "objective": "decide_feasibility",
+  "problem_id": "H-F01",
+  "provenance": {
+    "consequence_class": {
+      "confidence": null,
+      "source": "requester_declared"
+    },
+    "epistemic_class": {
+      "confidence": 1.0,
+      "source": "payload_structure"
+    },
+    "reversibility": {
+      "confidence": null,
+      "source": "requester_declared"
+    }
+  },
+  "rejected_proposals": [],
+  "resource_limits": {
+    "max_cost_usd": 0.05,
+    "max_latency_s": 30.0,
+    "max_model_calls": 4,
+    "max_solver_calls": 64
+  },
+  "reversibility": "reversible",
+  "temporal_character": "static",
+  "uncertainty": "low",
+  "unresolved_fields": []
+}

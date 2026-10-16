@@ -1,6 +1,25 @@
+## Full-machine completion — controlling correction, October 1, 2026
+
+**BODY + ORGANS + MIND = GREG / UNIIMENTE** is the fixed completion boundary. Read `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and its verbatim source. Reconstruct the whole boundary, implement the highest-priority unfinished dependency in rigorous increments, prove and integrate each increment, then automatically resume the parent objective and the next unblocked requirement. Seeds, experiments, sandboxes, benchmarks, PRs and VEPMC are intermediate sequencing/evidence units; none may narrow the machine or stop unrelated feasible implementation. A future-family label preserves its obligation. Registered is not implemented; a tested component is not an integrated machine.
+
+Continue until the currently achievable machine is integrated and executable. A precise founder-only action, genuine external dependency or demonstrated technology limit blocks only the affected requirement; continue other buildable work, preserve the destination and implement the strongest defensible approximation/backcast. Prose and placeholders cannot replace executable machinery when feasible. Existing authority, resource, consent, refusal, pause/revocation and shutdown gates remain effective.
+
+> **Cognition continuity:** also read `docs/PROJECT_COGNITION_CONTINUITY.md` for continuous source ingestion, context checksum, repository registry, propagation receipts, and the anti-context-loss test.
+
 # UNIIMENTE GitHub Agent Instructions
 
-Read `AGENTS.md` and `docs/FOUNDER_EFFECT_COMPILER.md` before material work.
+## Current product priority
+
+Read `docs/intent/INTENT-2026-09-26-REAL-PRODUCT-METABOLISM.json` before proposing architecture.
+
+Repository history is feedstock, not a mandate to preserve every executable design. Prefer productizing/recombining mechanisms into the real `greg/` path. Preserve provenance and negative evidence, but do not preserve duplicate active architectures from sunk cost.
+
+Every material coding task must identify the product capability it creates and finish by answering: **What can actual GREG do after this change that it could not do before?** A test-only, simulation-only, benchmark-only or documentation-only result is subordinate evidence unless it removes a precise blocker to the next real product capability.
+
+Current bottleneck remains VEPMC 0 -> 1 until verified otherwise.
+
+
+Read `AGENTS.md`, `docs/PROJECT_COGNITION_SOP.md`, `docs/PROJECT_SOURCE_CENSUS_2026-09-26.md`, and `docs/FOUNDER_EFFECT_COMPILER.md` before material work.
 
 The founder's biological and science-fiction language expresses **desired effects and mechanism-discovery prompts**, not mandatory surface implementations, unless Alfonso explicitly specifies the implementation.
 

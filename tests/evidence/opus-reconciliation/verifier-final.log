@@ -1,0 +1,8 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "verifier/v2/verify.py"]
+PASS V1: all v1 canonical artifacts present (45/45)
+PASS V2: pytest tests/unit: 591 passed in 12.29s
+PASS V3: all modules closed: advantage_foundry, autonomy, business, capabilities, compiler, consequence_gate, developmental_substrate, embassy, events, evidence_ledger, evolution, foundry, identity, linker, loom, memory, omnimorph, proof, treasury, twins
+PASS V4: false closure -> FALSELY_CLOSED; gate loops -> CLOSED
+PASS V5: 18 module READMEs declare the buildability standard
+run recorded -> verifier/runs/v2-2026-09-11T05-11-45.052671+00-00.json :: PASS

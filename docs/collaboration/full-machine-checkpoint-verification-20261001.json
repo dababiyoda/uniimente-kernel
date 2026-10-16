@@ -1,0 +1,46 @@
+{
+  "checkpoint_commit": "bbc0ec61ff2a00faf027733f56841b07efd70f00",
+  "tree": "ad4f616434aee8be47752915169f907bddcc47a3",
+  "local_tests": {
+    "full_suite": {
+      "passed": 1678,
+      "skipped": 10,
+      "warnings": 3,
+      "seconds": 399.75
+    },
+    "focused": {
+      "passed": 113,
+      "seconds": 48.29
+    },
+    "institutional_verifier": {
+      "V1": "PASS",
+      "V2": "PASS",
+      "V3": "PASS",
+      "V4": "PASS",
+      "V5": "PASS",
+      "v2_unit": {
+        "passed": 1576,
+        "skipped": 8
+      }
+    }
+  },
+  "ci": {
+    "run": 36927752813,
+    "url": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36927752813",
+    "jobs": [
+      110589170325,
+      110589170579,
+      110589170599,
+      110589170619,
+      110589170640,
+      110589170684
+    ],
+    "all_job_conclusions": "success"
+  },
+  "claim_limits": [
+    "Checkpoint evidence applies only to the named commit/tree, not later deltas.",
+    "No full-machine completion or founder-use acceptance claim.",
+    "Python file guards are not OS filesystem containment."
+  ],
+  "continuation": "Fixed restricted-DSL protocol delta requires fresh CI; parent Body + Organs + Mind objective resumes automatically."
+}

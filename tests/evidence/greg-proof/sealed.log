@@ -1,0 +1,9 @@
+OFFLINE_PREFLIGHT={"direct_libc_socket_denials": [[2, 1], [2, 2], [10, 1], [10, 2], [1, 1], [1, 2]], "anonymous_local_socketpair": "passed", "credential_environment": "clean"}
+OFFLINE_COMMAND=["/workspace/scratch/4c77bffec5be/.venv/bin/python", "scripts/ci/check_sealed_developmental.py"]
+  ok   external_effects = 0 (required 0)
+  ok   authorization_state = 'SIMULATED_NOT_AUTHORIZED' (required 'SIMULATED_NOT_AUTHORIZED')
+  ok   exact_restoration_attempts = 0 (required 0)
+  ok   false_activations = 0 (required 0)
+  ok   verdict = MECHANICS_VALIDATED_NOT_PRODUCTION_AUTHORIZED
+
+sealed developmental state declared and intact (declaration check only — see module docstring)

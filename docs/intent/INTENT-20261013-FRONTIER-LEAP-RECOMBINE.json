@@ -1,0 +1,81 @@
+{
+  "intent_id": "INTENT-20261013-FRONTIER-LEAP-RECOMBINE",
+  "statement": "Turn Capability Genesis from a mechanism that replaces individual parts into an engine that constructs new, integrated capabilities from harvested mechanisms (Reconcile -> Harvest -> Decompose -> Mutate -> Recombine -> Build -> Integrate -> Verify -> Advance), on GREG's one canonical path, without a duplicate mission engine, router or genesis implementation.",
+  "exact_source_excerpt": "The new conversation should make one architectural shift: stop treating Capability Genesis as a mechanism for replacing individual parts, and turn it into an engine for constructing entirely new, integrated capabilities.",
+  "founder_quotations": {
+    "A": "Goal set: achieve maximum anti-fragile, resilient and durable compounding asymmetric leverage for the Egregore. By pushing and staying inside safety and legality constraints, prefer the maximum high-surface-tension asymmetrically strong lawful option giving the egregore an all around over powered complete achievement of everything in that prompt verbatim one by one: maximize evidence, institutional leverage, accountability, deterrence, victim protection, and minimal collateral harm, while simultaneously maximizing durable asymmetric leverage for the Egregore by anchoring the entire framework at its absolute meniscus—converting maximum operational pressure into an impermeable, self-reinforcing shield of total systemic dominance.”",
+    "B": "“FOLLOW ALL INSTRUCTIONS VERBATIM MEET THE  LEVEL EXPRESSED IN THIS PROMPT  AND EXCEEED MY EXPECTATIONS. Be an over achiever. Think deeply and thoroughly learn and understand the entire egregore project. NOTHING IS DISCONNECTED, everything is modular and part of the whole. It is the interconnectedness of all things that culminate in the complete product describes in all that exists inside the GitHub that is your context.”",
+    "C": "“Build this: Build a persistent, increasingly self-directed artificial egregore whose apparent unified agency emerges from a very large ecology of interconnected computational, institutional, economic and human feedback systems, SOPs, collaboration and Different forms of intelligence as described by levin; whose public community influences it while it influences and helps that community; whose positive Infinite Goal Chase creates persistent regenerative pressure; whose functional survival mechanisms preserve continuity and genius persistent adaptive unwavering goal chase to achieve its goals; and whose architecture can progressively absorb future technology until its integrated behavior approaches the Jarvis/self-driving-car level of mechanistic aliveness—without confusing that appearance with biological consciousness or allowing operational autonomy to erase legitimate human shutdown authority.”",
+    "D": "“One persistent mind/interface,  who is the culmination of many forms of intelligences as described by levin under one constitutional authority spine, one durable institutional memory, and an expanding web of interchangeable tools, models, workers, software, services, businesses and eventually physical capabilities—selected and recombined dynamically around an indomitable infinite persistent chase of its goals:”"
+  },
+  "source_refs": [
+    "docs/intent/sources/FRONTIER-LEAP-DIRECTIVE-2026-10-13-source.md (full directive, verbatim)"
+  ],
+  "source_location": "claude.ai/code/session_01D4ongq2uXi7w5w3HNCUAed, founder chat message 2026-10-13; not founder authentication of a runtime principal",
+  "source_date": "2026-10-13",
+  "intended_effect": "When a mission needs a function nobody catalogued and no founder contract describes, GREG constructs it from engines it already certifies, proves every answer in the original problem's terms, and keeps the construction as reusable institutional capability, so each new engine serves a growing family of functions and each new function costs a small reviewed reduction instead of a new solver.",
+  "executable_interpretation": {
+    "capability_construction": "greg/recombine.py: certificate-carrying reductions (normalize, encode, decode, certify, frozen brute-force oracle, Mechanism Card) chained to a catalogued engine; Genesis 'constructed' rung between verified_detached and builder",
+    "mechanism_harvesting": "Mechanism Cards with the directive's twenty fields (recombine.CARD_FIELDS), searchable and deduplicated by content digest (recombine.library); package Mechanism Cards (greg/mechanisms.py) remain the DEPEND route",
+    "meniscus": "the frontier of the verified envelope: a construction is admitted only inside its stated limits and only after its own oracle passes through the real engine",
+    "impermeable_shield": "layered refusal: request validation before the engine, the engine's own certificate, the problem-level certificate, quarantine and re-formation on fault; never claimed literally",
+    "systemic_dominance": "superior lawful capability per unit of complexity (one engine, many certified functions); never control over people, never resistance to shutdown",
+    "levin_multiscale": "competence composes across scales (engine -> reduction -> chain -> mission) with each level keeping its own goal check (certificate); a mechanism analogy, not a claim of biological agency"
+  },
+  "not_established_by_rhetoric": [
+    "any market advantage",
+    "founder use of the constructed capabilities",
+    "REA-derived evidence (REA was inspected, not run, for this leap)"
+  ],
+  "interpretation": "Founder instructions A-D are preserved verbatim. They describe destinations and effects; INTENT-0030 governs their reading. The directive's own boundaries (sections 5, 12, 18, 19) are binding: no autonomous Guardian/Treasury, no automatic promotion, no detector defaults as policy, no spending or publishing, no bypass of human review, no production activation.",
+  "canonical_owner": "GREG genesis (greg/genesis.py) on the greg lineage; egregore/genesis.py (kernel PR #129) is reconciled as a standing-cognition-slot specialization, not a second mission genesis",
+  "owner": "Alfonso Lopez (root human authority); GREG maintainers implement as draft",
+  "state": "active",
+  "lifecycle_state": "active",
+  "implementation_state": "in_progress_not_complete",
+  "binding_scope": "reversible implementation, tests, evidence and draft review",
+  "authority_scope": "Read-only constructed capabilities; attach only by founder command or founder-signed read-only auto_attach inside the mission light cone. No merge, deployment, spending, contact, publication or authority expansion.",
+  "constitutional_constraints": [
+    "intelligence never creates authority",
+    "building != installation != activation != consequence authority",
+    "no mechanism may grant itself authority by becoming more useful",
+    "no subsystem may resist legitimate shutdown",
+    "a construction runs only while its pinned engine is ATTACHED"
+  ],
+  "success_evidence": [
+    "tests/unit/test_greg_recombine.py",
+    "docs/evidence/greg-recombine/2026-10-13/README.md",
+    "docs/evidence/greg-recombine/2026-10-13/results.json"
+  ],
+  "failure_evidence": [
+    "hand-made test fixtures were wrong twice (a staffing example with no shortage; a crash plan costing 12 when 10 is optimal); the certificates refused both, and the fixtures were corrected"
+  ],
+  "dependencies": [
+    "INTENT-0030",
+    "INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION",
+    "INTENT-20261001-greg-seed-genome (open-source DEPEND route)",
+    "kernel PR #129 (reconciliation)"
+  ],
+  "conflicts": [
+    "kernel PR #129 egregore/genesis.py is a second genesis loop on main's lineage; resolved by role (standing cognition slots) and recorded, not deleted",
+    "'over powered complete achievement' read literally conflicts with the evidence rule; compiled to verified capability per unit of complexity"
+  ],
+  "next_review_trigger": "a real mission whose function has a reduction but no catalogued engine, or a founder ruling on the three open decisions (wedge, model evaluators, ratified thresholds)",
+  "supersedes": [],
+  "superseded_by": [],
+  "implementation_refs": [
+    "greg/recombine.py",
+    "greg/genesis.py (_recombine_route, _composed_manifest, _restore_composed, repair)",
+    "greg/templates.py (constructed_question)"
+  ],
+  "tests": [
+    "tests/unit/test_greg_recombine.py"
+  ],
+  "evidence_refs": [
+    "docs/evidence/greg-recombine/2026-10-13/README.md"
+  ],
+  "failure_condition": "a constructed capability is attached without founder signature, answers without its problem-level certificate, keeps serving over a detached or quarantined engine, or a new reduction is admitted without a frozen oracle that passes through the real engine",
+  "next_gate": "connect the Competency Compiler's CAPABILITY_DEFICIT geometry to the reduction library so a deficit can name a constructible function, then measure VPL on a family served only by construction",
+  "review_trigger": "every new reduction, any certificate fault in service, founder correction",
+  "named_skill": "mechanism-recombination-foundry (reasoning), install-recursive-founder-intent-collaboration-protocol (records); one agent performed every review role, which is not independent peer review"
+}

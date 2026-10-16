@@ -1,0 +1,32 @@
+{
+ "command": "python -m foundry.completion --run 18",
+ "name": "Knowledge graphs",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "bad_edge_refused": true,
+  "impact_of_signal": [
+   "Evidence",
+   "Assumption",
+   "Decision",
+   "Authority",
+   "Action",
+   "Receipt",
+   "Outcome",
+   "Capability",
+   "Capital"
+  ],
+  "shared_capabilities": [
+   {
+    "node": "cap:proof-verifier",
+    "ventures": [
+     "v:clinics",
+     "v:freight"
+    ]
+   }
+  ],
+  "why_capital_reaches_signal": true,
+  "why_depth": 9
+ },
+ "result_sha256": "sha256:748a8401eea7f7cdca30d6a2d1393f9e855040bcb1d7c79e9a961d4619fb3c27",
+ "system": 18
+}

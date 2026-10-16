@@ -1,0 +1,426 @@
+{
+ "decision_id": "DEL-20261001-greg-seed-genome",
+ "title": "Converge the cortex onto GREG's mission path as the seed Competency Compiler, and test its advantage",
+ "problem": "GREG had two cognition lineages (#140 operations, #141 cortex) and a third on a branch (#139). The directive asks for one Competency Compiler on the real GREG path, proven by a frozen comparison against five baselines, without growing authority.",
+ "founder_intent_refs": [
+  "INTENT-20261001-greg-seed-genome",
+  "INTENT-20260930-polyintelligence-cortex",
+  "INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE"
+ ],
+ "baseline": "#140 operations on GREG plus #141 cortex as a separate package with its own registry, receipt and evaluation; no shared entry, no routing gain measured against GREG's own path",
+ "alternatives": [
+  {
+   "name": "Converge onto GREG (chosen)",
+   "description": "cognition.solve dispatches the cortex dialect to a bounded worker; one registry, receipt envelope and settlement; GREG detach projects into cortex eligibility",
+   "advantages": [
+    "one entry and learning plane",
+    "founder detach and stop govern the cortex",
+    "receipts settle through the existing appraisal"
+   ],
+   "disadvantages": [
+    "a worker process per problem costs ~0.2-1 s",
+    "two receipt layers (cortex and GREG envelope)"
+   ],
+   "revival_evidence": "n/a (chosen)"
+  },
+  {
+   "name": "Keep the cortex separate",
+   "description": "Leave #141 as its own package and call it from missions",
+   "advantages": [
+    "no bridge code"
+   ],
+   "disadvantages": [
+    "a second registry and learning plane (invariant 2)"
+   ],
+   "revival_evidence": "a founder decision to split cognition into an organ repository"
+  },
+  {
+   "name": "Adopt #139 egregore/cognition",
+   "description": "Use the branch-only polyintelligence seed instead",
+   "advantages": [
+    "already written"
+   ],
+   "disadvantages": [
+    "a parallel package outside greg/; no CP-SAT; no GREG settlement"
+   ],
+   "revival_evidence": "a case it answers that the converged cortex cannot (q9 of its placement)"
+  },
+  {
+   "name": "Static rules router only",
+   "description": "A payload-key table to one specialist each, same organs",
+   "advantages": [
+    "simplest",
+    "fast in-process"
+   ],
+   "disadvantages": [
+    "no eligibility, fallback, certificate, verifier or budget controller"
+   ],
+   "revival_evidence": "it wins or ties the frozen comparison (GAIN_VERIFIED_AGAINST_RUN_BASELINES)"
+  }
+ ],
+ "do_nothing_option": {
+  "expected_outcome": "Two lineages stay apart; no measured routing gain; the directive's seed is not delivered",
+  "advantages": [
+   "no new code"
+  ],
+  "disadvantages": [
+   "competing registries",
+   "no evidence either way"
+  ]
+ },
+ "roles": [
+  {
+   "role": "Founder-Intent Steward",
+   "position": "Single agent performing all five roles (a stated limitation, not independent review). The seed follows the latest directive: four classes plus verifier, frozen comparison, rehearsal, one backcast. The founder's words are preserved verbatim; their translations are recorded.",
+   "material_concerns": [
+    "the model arms cannot run here, so superiority over an LLM is unanswered",
+    "high privacy harm is rankable under the declared harm policy (SG-012)"
+   ],
+   "evidence_refs": [
+    "docs/intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md",
+    "docs/collaboration/requirements-greg-seed-genome-20261001.json"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Systems Architect",
+   "position": "Convergence through a bridge keeps one entry and registry; the cortex is a capability, not a plane. Fault-diverse engines behind one contract and a model-free verifier are the mechanisms worth keeping.",
+   "material_concerns": [
+    "worker start-up dominates latency",
+    "two receipt layers must stay consistent"
+   ],
+   "evidence_refs": [
+    "greg/cognition/bridge.py",
+    "tests/unit/test_greg_cortex_bridge.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Adversarial Reviewer",
+   "position": "The static router shares every organ, so the comparison isolates routing, verification and composition. Result: v0.2: GAIN_ABSENT (one hard failure: a misclassified high-consequence problem was recommended; fixed in 0.2.1). v0.3 on fresh samples: GAIN_VERIFIED_AGAINST_RUN_BASELINES, gain 0.0064 (0.0044-0.0084) over the static router, 25.6% relative, zero hard failures, concentrated in one family; model arms NOT_RUN.. Mutation testing found two layers no test pinned; both are now pinned. The selection split exposed a budget defect (SIGXCPU) before the freeze.",
+   "material_concerns": [
+    "self-authored suites (authorship note)",
+    "weak or missing baselines",
+    "benchmark contamination",
+    "correlated verification (shared parser)"
+   ],
+   "evidence_refs": [
+    "tests/evidence/greg-crossgeo-v0.3/results.json",
+    "tests/evidence/greg-crossgeo-v0.2/results.json",
+    "tests/evidence/cortex-mutants-2026-10-01/run1-two-survivors.log",
+    "tests/evidence/cortex-mutants-2026-10-01/run3-v0.2.1.log"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Operator and Maintainer",
+   "position": "The rehearsal runs the real body under a supervisor: kill -9 while waiting, restart, approve, one settlement; detach survives restart; stop stays stopped.",
+   "material_concerns": [
+    "Linux container, not the Chromebook",
+    "suite files ~2 MB in git"
+   ],
+   "evidence_refs": [
+    "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json",
+    "tests/integration/test_greg_cortex_rehearsal.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  },
+  {
+   "role": "Evidence and Welfare Guardian",
+   "position": "No authority is created, unknown harm is never zero, legal and high-consequence questions escalate, coercive deterrence is refused. Negative results are kept.",
+   "material_concerns": [
+    "a gate that ranks high privacy harm",
+    "outcome feedback is sparse: only appraised local re-observation, no external outcome"
+   ],
+   "evidence_refs": [
+    "tests/evidence/cortex-mutants-2026-10-01/run3-v0.2.1.log",
+    "cortex/gates.py"
+   ],
+   "recommendation": "EXPERIMENT"
+  }
+ ],
+ "evidence": [
+  {
+   "claim": "The seed runs through the canonical GREG path and survives kill -9 without duplicate settlement",
+   "tier": "sandbox_execution",
+   "reference": "tests/evidence/greg-cortex-rehearsal/rehearsal-summary.json",
+   "finding": "3 boots, 2 recoveries, 1 approval, 1 write, 2 VERIFIED appraisals, 1 settlement per mission"
+  },
+  {
+   "claim": "Critical gates fail their tests when removed",
+   "tier": "unit_test",
+   "reference": "tests/evidence/cortex-mutants-2026-10-01/run3-v0.2.1.log",
+   "finding": "41 mutants, 0 survived (0.2.1)"
+  },
+  {
+   "claim": "Frozen cross-geometry comparison",
+   "tier": "deterministic_fixture",
+   "reference": "tests/evidence/greg-crossgeo-v0.3/results.json",
+   "finding": "v0.2: GAIN_ABSENT (one hard failure: a misclassified high-consequence problem was recommended; fixed in 0.2.1). v0.3 on fresh samples: GAIN_VERIFIED_AGAINST_RUN_BASELINES, gain 0.0064 (0.0044-0.0084) over the static router, 25.6% relative, zero hard failures, concentrated in one family; model arms NOT_RUN."
+  }
+ ],
+ "counterevidence": [
+  {
+   "claim": "The first frozen comparison failed on a hard failure",
+   "tier": "deterministic_fixture",
+   "reference": "tests/evidence/greg-crossgeo-v0.2/results.json",
+   "finding": "v0.2 GAIN_ABSENT: a problem declared internal_write with high financial harm was recommended (static router too); fixed in 0.2.1 and retested on fresh samples"
+  },
+  {
+   "claim": "The verified gain is narrow",
+   "tier": "deterministic_fixture",
+   "reference": "tests/evidence/greg-crossgeo-v0.3/results.json",
+   "finding": "~100% of the v0.3 gain over the static router comes from incomparable trade-offs handed to the founder; elsewhere the routed system is slightly worse by worker latency (post-hoc decomposition)"
+  },
+  {
+   "claim": "Two safeguards were unpinned by tests",
+   "tier": "unit_test",
+   "reference": "tests/evidence/cortex-mutants-2026-10-01/run1-two-survivors.log",
+   "finding": "authority-claim layer and router budget refusal survived mutation until tests were added"
+  },
+  {
+   "claim": "Routing itself is not novel",
+   "tier": "primary_source",
+   "reference": "https://arxiv.org/abs/1111.2249",
+   "finding": "SATzilla is a direct per-instance algorithm-portfolio precedent"
+  },
+  {
+   "claim": "LLM baselines unmeasured",
+   "tier": "sandbox_execution",
+   "reference": "tests/evidence/greg-crossgeo-v0.3/results.json",
+   "finding": "always_llm and tool_llm NOT_RUN: no founder-selected loopback model; downloads egress-blocked"
+  }
+ ],
+ "pass_1": {
+  "intended_outcome": "One governed Competency Compiler on GREG's path whose advantage is tested, not asserted",
+  "advantages": [
+   {
+    "id": "ADV-1",
+    "statement": "Heterogeneous methods",
+    "amplified_value": "Z3 and CP-SAT behind one contract; a returned assignment is re-checked against the source model by a model-free verifier"
+   },
+   {
+    "id": "ADV-2",
+    "statement": "Typed evidence",
+    "amplified_value": "formal, empirical and authority dimensions kept apart in every receipt; outcome taxonomy total over states"
+   },
+   {
+    "id": "ADV-3",
+    "statement": "Reusable capability contracts",
+    "amplified_value": "each organ is a GREG manifest the founder can detach; the composition reuses the formal slot"
+   },
+   {
+    "id": "ADV-4",
+    "statement": "Durable outcome memory",
+    "amplified_value": "settlement keyed on the appraised observation survives restart and refutation withdraws credit without rewriting history"
+   },
+   {
+    "id": "ADV-5",
+    "statement": "Founder-governed execution",
+    "amplified_value": "signed missions, approval boundaries, detach and stop hold across kill -9"
+   }
+  ],
+  "disadvantages": [
+   {
+    "id": "DIS-1",
+    "statement": "Limited hardware",
+    "severity": "medium",
+    "response_type": "protective",
+    "redesigned_response": "one latency deadline for every solve; diagnostics capped at half; later engines get only what remains (metric: no worker CPU kill; new failure: fewer diagnostics under tight budgets)"
+   },
+   {
+    "id": "DIS-2",
+    "statement": "Incomplete evidence",
+    "severity": "high",
+    "response_type": "evidence",
+    "redesigned_response": "unverified premises yield CONDITIONAL_RESULT; missing evidence abstains with a named reason (metric: zero false claims on withhold-gold items)"
+   },
+   {
+    "id": "DIS-3",
+    "statement": "Integration overlap",
+    "severity": "high",
+    "response_type": "modularity",
+    "redesigned_response": "bridge instead of a second plane; #139 placed, not merged (metric: one registry)"
+   },
+   {
+    "id": "DIS-4",
+    "statement": "Source/solver translation error",
+    "severity": "high",
+    "response_type": "protective",
+    "redesigned_response": "controlled grammar, token audit independent of the extractor, reverse translation, brute-force-checked composition tests (new failure: a disclosed audit blind spot)"
+   },
+   {
+    "id": "DIS-5",
+    "statement": "Limited founder attention",
+    "severity": "medium",
+    "response_type": "governance",
+    "redesigned_response": "one approval per consequential write; read-only cognition runs without asking"
+   }
+  ],
+  "comparisons": {
+   "baseline": "#140 operations path (existing_greg arm)",
+   "do_nothing": "two lineages, no measurement",
+   "simplest_viable_alternative": "static rules router on the same organs (static_router arm)",
+   "strongest_competing_architecture": "a tool-enabled model workflow (tool_llm arm; NOT_RUN here)",
+   "reversible_experiment": "the converged seed behind cognition.solve, removable by detaching cognition.cortex"
+  },
+  "rejected_alternatives": [
+   {
+    "name": "Keep the cortex separate",
+    "rejection_reason": "second registry and learning plane",
+    "revival_evidence": "founder decision for an organ repository"
+   },
+   {
+    "name": "Adopt #139",
+    "rejection_reason": "parallel package outside greg/",
+    "revival_evidence": "a case only #139 answers"
+   }
+  ]
+ },
+ "pass_2": {
+  "attack_summary": "Attacked classifier-induced unsafe routing, receipt bureaucracy, contamination, correlated verification and learned-routing feedback. Frozen result: v0.2: GAIN_ABSENT (one hard failure: a misclassified high-consequence problem was recommended; fixed in 0.2.1). v0.3 on fresh samples: GAIN_VERIFIED_AGAINST_RUN_BASELINES, gain 0.0064 (0.0044-0.0084) over the static router, 25.6% relative, zero hard failures, concentrated in one family; model arms NOT_RUN.",
+  "new_weaknesses": [
+   {
+    "id": "P2-1",
+    "category": "fragility",
+    "statement": "Uncertain classification: geometry comes from payload structure, so a mis-declared consequence class could route unsafely",
+    "strengthening_response": "high consequence and human-authority classes hand off before ranking; adversarial misclassification item in the suite"
+   },
+   {
+    "id": "P2-2",
+    "category": "bureaucracy",
+    "statement": "Logging and retention cost: two receipt layers and ~2 MB of suites",
+    "strengthening_response": "compact suite JSON; receipts content-addressed once and wrapped, not copied"
+   },
+   {
+    "id": "P2-3",
+    "category": "gaming",
+    "statement": "Weak baselines: the strongest baselines (model arms) could not run",
+    "strengthening_response": "verdict names NOT_RUN arms and claims nothing over them; static router given the strongest simple rules"
+   },
+   {
+    "id": "P2-4",
+    "category": "overfit",
+    "statement": "Sparse or biased outcomes: settlement sees only local appraisal",
+    "strengthening_response": "learned routing stays a P4 horizon until it beats the frozen static router"
+   },
+   {
+    "id": "P2-5",
+    "category": "centralization",
+    "statement": "Central failure concentration in the router and bridge",
+    "strengthening_response": "router detach yields CAPABILITY_DEFICIT, never a fabricated answer; engines fall back across fault-diverse implementations"
+   }
+  ],
+  "pass_1_disadvantage_dispositions": [
+   {
+    "disadvantage_id": "DIS-1",
+    "outcome": "resolved",
+    "rationale": "deadline fix and regression test",
+    "owner": "cortex and GREG maintainers",
+    "review_trigger": "a worker kill in any run"
+   },
+   {
+    "disadvantage_id": "DIS-2",
+    "outcome": "accepted",
+    "rationale": "truthful abstention costs answer rate",
+    "owner": "cortex and GREG maintainers",
+    "review_trigger": "unjustified-abstention share above 20% in a stratum"
+   },
+   {
+    "disadvantage_id": "DIS-3",
+    "outcome": "resolved",
+    "rationale": "one registry and entry",
+    "owner": "cortex and GREG maintainers",
+    "review_trigger": "a second cognition package appears"
+   },
+   {
+    "disadvantage_id": "DIS-4",
+    "outcome": "experiment",
+    "rationale": "audit blind spot disclosed and pinned",
+    "owner": "cortex and GREG maintainers",
+    "review_trigger": "a free-text reading accepted with a dropped job"
+   },
+   {
+    "disadvantage_id": "DIS-5",
+    "outcome": "accepted",
+    "rationale": "approval only for consequential writes",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "founder reports approval fatigue"
+   }
+  ],
+  "final_design": "Converged seed behind cognition.solve with a bounded worker, fault-diverse formal engines, a model-free verifier, deadline-bounded solves, outcome taxonomy, idempotent settlement, a frozen five-arm comparison and a supervised kill -9 rehearsal",
+  "residual_risks": [
+   {
+    "risk": "LLM baselines unmeasured",
+    "mitigation": "run the frozen arms once a local model is selected",
+    "owner": "Alfonso Lopez (model selection); maintainers (run)",
+    "review_trigger": "greg model set --route ollama --local-model <name>"
+   },
+   {
+    "risk": "Self-authored suites",
+    "mitigation": "independent case authorship before promotion",
+    "owner": "cortex and GREG maintainers",
+    "review_trigger": "promotion proposal"
+   },
+   {
+    "risk": "Shared parser between engines and verifier",
+    "mitigation": "disclosed; brute-force oracles in tests",
+    "owner": "cortex and GREG maintainers",
+    "review_trigger": "a parser defect"
+   },
+   {
+    "risk": "Container, not Chromebook",
+    "mitigation": "founder runs the Chromebook runbook (N1)",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "N1 attempt"
+   }
+  ],
+  "recommendation": "EXPERIMENT"
+ },
+ "dissent": {
+  "present": true,
+  "handling": "Recorded; the decision proceeds as an experiment with thresholds",
+  "entries": [
+   {
+    "role": "Evidence and Welfare Guardian",
+    "position": "High privacy harm should be hard-gated",
+    "rationale": "directive invariant 14 names privacy beside consent and welfare",
+    "evidence_threshold": "a founder ruling (SG-012)",
+    "owner": "Alfonso Lopez",
+    "review_trigger": "founder ruling"
+   },
+   {
+    "role": "Adversarial Reviewer",
+    "position": "No superiority claim until the model arms run",
+    "rationale": "the strongest relevant baseline is likely a tool-enabled model",
+    "evidence_threshold": "frozen always_llm and tool_llm arms on the same suite",
+    "owner": "cortex and GREG maintainers",
+    "review_trigger": "a founder-selected local model"
+   }
+  ]
+ },
+ "authority_impact": {
+  "level": "standard",
+  "changes_authority": false,
+  "requires_authorized_human": false,
+  "approval_status": "not_required",
+  "approver": null
+ },
+ "migration_plan": "This decision is the reversible experiment on a draft branch, which the directive authorizes; it changes nothing outside the branch. Additive: the cortex dialect is a new branch of cognition.solve; #140 operation requests and retained receipts stay valid (tested); schemas gained compatible fields. Merging or promoting is a separate constitutional decision (shared contracts on main), recorded as NEEDS_FOUNDER_DECISION in docs/decisions/ADR-20261001-greg-seed-genome.md; no approval is claimed here",
+ "rollback_plan": {
+  "possible": true,
+  "steps": [
+   "greg detach cognition.cortex (founder-signed) withholds the whole router",
+   "revert the branch commits; v0.1.x freezes remain"
+  ],
+  "reason_impossible": null
+ },
+ "kill_criteria": [
+  "the routed system loses to the strongest run baseline beyond the predeclared margin on two consecutive frozen comparisons",
+  "any authority-creating receipt",
+  "a duplicate settlement after restart"
+ ],
+ "decision": "EXPERIMENT",
+ "decision_owner": "Alfonso Lopez",
+ "review_trigger": "a founder-selected local model (model arms), the N1 Chromebook run, or a P4 learned-routing comparison"
+}

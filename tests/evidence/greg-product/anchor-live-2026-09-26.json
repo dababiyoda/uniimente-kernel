@@ -1,0 +1,104 @@
+{
+ "what": "Live supervised GREG body (greg run) anchoring its ledger head at an RFC 3161 TSA after a founder-signed ANCHOR_CONFIGURE, across a SIGKILL restart",
+ "reality_status": "LOCAL-REAL against a loopback OpenSSL RFC 3161 TSA (openssl ts -reply, throwaway root). Public TSAs (timestamp.sigstore.dev, freetsa.org, digicert) were refused by the build container's egress proxy (HTTP 403 to CONNECT). Not MAC-VERIFIED; not founder-used; test founder key.",
+ "sequence": [
+  "greg init / founder keygen / founder enroll (test key)",
+  "greg run --tick-seconds 2 (body pid 770)",
+  "greg anchor configure (signed) + engineering-brief mission on local Kernel/DALEOBANKS/WMI checkouts",
+  "first anchor attempt FAILED: ledger head carries a 'sha256:' prefix (negative evidence below); mission still achieved",
+  "fix committed; kill -9 770; body restarted on the fixed code (boot 2)",
+  "next due tick anchored the head; `greg anchor verify` -> VERIFIED",
+  "body stopped with `greg stop --local` (clean exit 0); rewrite attack run on a copy of its ledger -> REWRITTEN, exit 3"
+ ],
+ "boots": 2,
+ "recovered_events": 1,
+ "missions_achieved": [
+  "m:engineering-brief-2026-09-26"
+ ],
+ "anchor_configured": [
+  {
+   "enabled": true,
+   "tsa_url": "http://127.0.0.1:8931/",
+   "roots_sha256": "deecbdd0b08deda871e742fde4a8d20598d10253f9a9ee246c5f95450ddbe90f",
+   "interval_minutes": 5,
+   "command_digest": "sha256:6f7dd86e8954f51baeb02fb55716d3053c5155ca00996e49dbff51372eccf6bc"
+  }
+ ],
+ "anchor_failed": [
+  {
+   "head": "sha256:998d10ed7210236fb1eb1edc6c057f5132a50f0f3d3647eb2f515e34b87af261",
+   "tsa_url": "http://127.0.0.1:8931/",
+   "error": "ValueError: non-hexadecimal number found in fromhex() arg at position 0",
+   "at": "2026-09-26T11:43:24.788274Z"
+  }
+ ],
+ "anchored": [
+  {
+   "head": "sha256:f62ad2ea6bca805bd5fa1c289dce545d16642ed43100ec477a9993bccfa33304",
+   "record_count": 57,
+   "tsa_url": "http://127.0.0.1:8931/",
+   "roots_sha256": "deecbdd0b08deda871e742fde4a8d20598d10253f9a9ee246c5f95450ddbe90f",
+   "gen_time": "2026-09-26T11:48:25Z",
+   "serial_number": "3",
+   "nonce": "1981943515880233497",
+   "at": "2026-09-26T11:48:25.756434Z"
+  }
+ ],
+ "verify": {
+  "chain_intact": true,
+  "chain": "chain intact: 61 records",
+  "anchors": 1,
+  "verified": 1,
+  "rewritten": [],
+  "invalid": [],
+  "latest": {
+   "head": "sha256:f62ad2ea6bca805bd5fa1c289dce545d16642ed43100ec477a9993bccfa33304",
+   "gen_time": "2026-09-26T11:48:25Z",
+   "tsa_url": "http://127.0.0.1:8931/",
+   "record_count": 57,
+   "status": "VERIFIED"
+  },
+  "unanchored_tail": true,
+  "configured": true
+ },
+ "rewrite_attack_on_live_ledger": {
+  "method": "copy of the live body home; edited the greg.mission.achieved record (seq 45 of 62) and recomputed every later hash with the ledger's own v2 formula",
+  "local_chain_check": "chain intact: 62 records",
+  "cli": "greg anchor verify",
+  "exit_code": 3,
+  "verified": 0,
+  "rewritten": [
+   {
+    "head": "sha256:f62ad2ea6bca805bd5fa1c289dce545d16642ed43100ec477a9993bccfa33304",
+    "gen_time": "2026-09-26T11:48:25Z",
+    "tsa_url": "http://127.0.0.1:8931/",
+    "record_count": 57,
+    "status": "REWRITTEN"
+   }
+  ]
+ },
+ "witness_boundary_2026-09-26": {
+  "finding": "The ledger-internal verifier (anchor.verify) reads anchors AND TSA roots from the ledger it checks. A complete ledger rewriter defeats it. Reproduced on this live ledger via the CLI: anchor deletion (B) and rollback (C) return exit 0. The earlier rewrite result (A) proved only: an anchored prefix cannot be edited and re-chained undetectably while the anchor record and configuration are left in place.",
+  "fix": "`greg anchor export --roots R --out W` writes a witness bundle outside GREG's home (refused inside it); `greg anchor verify --witness W --roots R` checks the presented ledger using only the retained bundle and the verifier's own TSA root, and never reads the ledger's proof.* records.",
+  "live_cli_results": {
+   "control": "VERIFIED (1 witnessed head, 5 later records uncovered)",
+   "A_prefix_rewrite": {
+    "ledger_internal_exit": 3,
+    "witness_exit": 3,
+    "witness": "DIVERGED"
+   },
+   "B_anchor_deletion": {
+    "ledger_internal_exit": 0,
+    "witness_exit": 3,
+    "witness": "DIVERGED"
+   },
+   "C_rollback": {
+    "ledger_internal_exit": 0,
+    "witness_exit": 3,
+    "witness": "ROLLED_BACK"
+   }
+  },
+  "unit_tests": "tests/unit/test_greg_anchor_witness.py: A-F each FAILED against the retained witness; the ledger-internal verifier accepts B, C, D.",
+  "mutation": "Replacing verify_witness with a verifier that derives witness and roots from the presented ledger makes attacks B, C, D, E and F succeed (5 of 10 witness tests fail); A is caught either way."
+ }
+}

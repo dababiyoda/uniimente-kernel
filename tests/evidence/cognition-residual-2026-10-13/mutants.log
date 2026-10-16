@@ -1,0 +1,8 @@
+CAUGHT optimality not attacked by a second engine ['1 failed in 1.14s']
+CAUGHT infeasibility taken on trust ['1 failed in 1.68s']
+CAUGHT unsat core taken on trust ['1 failed in 0.60s']
+CAUGHT bare assertion permits again ['1 failed in 0.11s']
+CAUGHT context settles a gate ['1 failed in 0.07s']
+CAUGHT law without a reviewer ['1 failed in 0.08s']
+CAUGHT expired record still counts ['1 failed in 0.11s']
+7 mutants; 0 survived, stale, or invalid

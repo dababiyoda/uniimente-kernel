@@ -53,11 +53,30 @@ class LedgerRecord:
     hash_version: int = 1
 
 
+TAIL_POLICIES = ("refuse", "ignore", "quarantine")
+
+
 class EvidenceLedger:
-    """Append-only hash chain. In-memory by default; optional JSONL persistence."""
+    """Append-only hash chain. In-memory by default; optional JSONL persistence.
+
+    ``tail`` decides what to do with a final line that has no newline. ``append``
+    acknowledges a record only after the whole line and its newline are fsynced,
+    so such a line was never acknowledged: it is a write torn by power loss or a
+    crash, or a write still in progress in another process.
+
+    * ``refuse`` (default): fail closed, as before.
+    * ``ignore``: read-only observers load the complete prefix and report the tail
+      in ``unacknowledged_tail``. A reader racing the writer no longer fails.
+    * ``quarantine``: the writer copies the torn bytes to a sidecar file, truncates
+      the ledger to its last complete line and appends a ``recovery`` record. The
+      bytes are preserved, never silently discarded.
+
+    A malformed complete line is corruption under every policy and is refused.
+    """
 
     def __init__(self, constitution_hash: str, path: str | None = None,
-                 *, read_only: bool = False, expected_head: str | None = None):
+                 *, read_only: bool = False, expected_head: str | None = None,
+                 tail: str = "refuse"):
         self.path = path
         self.constitution_hash = constitution_hash
         self.read_only = read_only
@@ -66,6 +85,12 @@ class EvidenceLedger:
         self._pid = os.getpid()
         self._uncertain = False
         self._closed = False
+        self.unacknowledged_tail: dict | None = None
+        if tail not in TAIL_POLICIES:
+            raise ValueError(f'unknown tail policy {tail!r}')
+        if tail == "quarantine" and read_only:
+            raise ValueError('a read-only observer cannot quarantine history; use tail="ignore"')
+        self._tail_policy = tail
         if not isinstance(constitution_hash, str) or not constitution_hash.strip():
             raise ValueError('expected constitutional anchor is required')
         if path and not read_only:
@@ -91,9 +116,38 @@ class EvidenceLedger:
                     os.fsync(fh.fileno())
             if expected_head and self.head != expected_head:
                 raise ValueError('history differs from expected head: truncation or fork')
+            if self.unacknowledged_tail and self._tail_policy == "quarantine":
+                self._quarantine_tail()
         except Exception:
             self.close()
             raise
+
+    def _quarantine_tail(self) -> None:
+        """Move never-acknowledged bytes aside, keep them, and record the recovery."""
+        tail = self.unacknowledged_tail
+        data = tail.pop("_bytes")
+        sidecar = f"{self.path}.unacknowledged-{tail['sha256'][7:23]}"
+        try:
+            fd = os.open(sidecar, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        except FileExistsError:
+            with open(sidecar, "rb") as fh:
+                if fh.read() != data:
+                    raise ValueError('a different quarantined tail already uses this name')
+        else:
+            with os.fdopen(fd, "wb") as fh:
+                fh.write(data)
+                fh.flush()
+                os.fsync(fh.fileno())
+        with open(self.path, "r+b") as fh:
+            fh.truncate(tail["offset"])
+            fh.flush()
+            os.fsync(fh.fileno())
+        tail["sidecar"] = sidecar
+        self.append("recovery", {
+            "kind": "unacknowledged_tail_quarantined", "offset": tail["offset"], "bytes": tail["bytes"],
+            "sha256": tail["sha256"], "sidecar": os.path.basename(sidecar),
+            "meaning": "a write that was never acknowledged (torn by power loss or crash); its bytes are kept "
+                       "in the sidecar for reconciliation and were not replayed"})
 
     def close(self):
         if self._writer is not None:
@@ -198,16 +252,28 @@ class EvidenceLedger:
         # Durable history supplies transition truth only after full verification.
         # Hash consistency is not factual appraisal, permission or authentication.
         loaded = []
+        with open(path, "rb") as fh:
+            raw = fh.read()
+        complete_end = raw.rfind(b"\n") + 1
+        if complete_end < len(raw):
+            if self._tail_policy == "refuse":
+                raise ValueError('partial or blank history record')
+            torn = raw[complete_end:]
+            self.unacknowledged_tail = {"offset": complete_end, "bytes": len(torn),
+                                        "sha256": "sha256:" + hashlib.sha256(torn).hexdigest(),
+                                        "_bytes": torn}
         try:
-            with open(path, "r", encoding="utf-8") as fh:
-                for line in fh:
-                    if not line.endswith('\n') or not line.strip():
-                        raise ValueError('partial or blank history record')
-                    from adapters.contract_validation import strict_json
-                    d = strict_json(line)
-                    loaded.append(LedgerRecord(**d))
-        except (TypeError, json.JSONDecodeError) as exc:
+            from adapters.contract_validation import strict_json
+            for chunk in raw[:complete_end].split(b"\n")[:-1]:
+                line = chunk.decode("utf-8") + "\n"
+                if not line.strip():
+                    raise ValueError('partial or blank history record')
+                d = strict_json(line)
+                loaded.append(LedgerRecord(**d))
+        except (TypeError, UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise ValueError('malformed retained history') from exc
+        if self.unacknowledged_tail and self._tail_policy == "ignore":
+            self.unacknowledged_tail.pop("_bytes")
         self.records = loaded
         ok, msg = self.verify_chain()
         if not ok:

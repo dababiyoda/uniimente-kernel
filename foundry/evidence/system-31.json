@@ -1,0 +1,40 @@
+{
+ "command": "python -m foundry.completion --run 31",
+ "name": "Web servers",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "etag_is_content_hash": true,
+  "forged_body_verification": {
+   "body_matches_leaf": false,
+   "inclusion_ok": true,
+   "root_matches_signed_root": true,
+   "signature_ok": true
+  },
+  "history": [
+   "add outcome",
+   "launch"
+  ],
+  "not_modified": 304,
+  "portal": {
+   "expired": 403,
+   "forged": 403,
+   "no_token": 401,
+   "other_customer": 403,
+   "own": 200
+  },
+  "public_bind_refused": true,
+  "served": 200,
+  "site_root_pages": 3,
+  "tampered_page": 500,
+  "third_party_verification": {
+   "body_matches_leaf": true,
+   "inclusion_ok": true,
+   "root_matches_signed_root": true,
+   "signature_ok": true
+  },
+  "traversal": 400,
+  "version": "2"
+ },
+ "result_sha256": "sha256:b5790bc30e666d66a8c0738fc960251af9005f12b5abbaea9589e7ceeb45062c",
+ "system": 31
+}

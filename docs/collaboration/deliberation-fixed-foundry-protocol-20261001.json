@@ -1,0 +1,362 @@
+{
+  "decision_id": "FM-FIXED-PROTOCOL-20261001",
+  "title": "Restore independent restricted-DSL recomputation in guarded Foundry",
+  "problem": "Blanket child refusal prevents buildable system 16 from reaching its founder ratification gate.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-27-FOUNDRY-55"
+  ],
+  "baseline": "PR147 bbc0ec61ff2a00faf027733f56841b07efd70f00 integrates guarded Foundry and native media; all six CI jobs passed; child verification is refused.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "One exact reviewed restricted-DSL child protocol, preserving all other refusals; selected.",
+      "advantages": [
+        "Restores independent recomputation without granting arbitrary code execution."
+      ],
+      "disadvantages": [
+        "Relies on reviewed Python code and dependencies, not OS filesystem containment."
+      ],
+      "revival_evidence": "Changed host isolation or a stronger measured verification mechanism."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Container or microVM execution of general providers.",
+      "advantages": [
+        "Can support a broader original capability horizon under genuine confinement."
+      ],
+      "disadvantages": [
+        "Local host probes failed; no supported host facility is currently available."
+      ],
+      "revival_evidence": "Working isolation host and escape/resource/revocation tests."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Run exact-recipe verification and five hostile substitution probes through CI.",
+      "advantages": [
+        "Measures runtime reachability while retaining ratification."
+      ],
+      "disadvantages": [
+        "Fixtures do not establish live operational acceptance."
+      ],
+      "revival_evidence": "Founder-authorized real use after executable machinery is complete."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "System16 remains unnecessarily unreachable despite restricted DSL implementation.",
+    "advantages": [
+      "No new child allowance."
+    ],
+    "disadvantages": [
+      "Violates automatic continuation of buildable machine requirements."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Resume the complete machine after a passed increment; system16 remains one dependency, not a product boundary. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "The child could lose the parent's filesystem restrictions."
+      ],
+      "evidence_refs": [
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_foundry_worker.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse canonical guarded worker and existing DSL/promotion pipeline with one explicit child protocol. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Module, environment or workspace substitution could change the recipe."
+      ],
+      "evidence_refs": [
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_foundry_worker.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Exact recipe matching is necessary; this remains reviewed-code protection, not arbitrary-code containment. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "A child could outlive revocation or exceed the operation budget."
+      ],
+      "evidence_refs": [
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_foundry_worker.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Bound child resources and lifetime; preserve staged query disposal and ratification. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Simulation and verification could be mistaken for founder approval or market evidence."
+      ],
+      "evidence_refs": [
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_foundry_worker.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Independent recomputation is fixture evidence, not real-world market success or founder acceptance. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "A growing allowlist could quietly authorize unreviewed providers."
+      ],
+      "evidence_refs": [
+        "greg/foundry_protocol_worker.py",
+        "tests/unit/test_greg_foundry_worker.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Prior integrated checkpoint passes",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36927752813",
+      "finding": "All six job conclusions success at bbc0ec61; local full suite 1678 passed/10 skipped and verifier V1–V5 passed. This evidence does not validate this new delta."
+    },
+    {
+      "claim": "Exact recipe reaches ratification",
+      "tier": "sandbox_execution",
+      "reference": "tests/unit/test_greg_foundry_worker.py",
+      "finding": "Initial local version passed four focused tests, including 41-case recomputation. The strengthened environment substitution checks and final delta require fresh CI."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Local execution remains available",
+      "tier": "other",
+      "reference": "Codex exec-server error 2026-10-01",
+      "finding": "409 environment_offline: Environment is not connected. Continue through available GitHub/CI, not a project-wide stopping condition."
+    },
+    {
+      "claim": "Python guards provide arbitrary-code confinement",
+      "tier": "other",
+      "reference": "docs/collaboration/deliberation-full-machine-integration-20261001.json",
+      "finding": "They do not. Caller-source and unreviewed child execution remain refused."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Advance system16 through independent recomputation while preserving founder ratification and full-machine continuation.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Restores reachable system16",
+        "amplified_value": "Avoids treating a broad host blocker as a reason to freeze restricted, buildable machinery."
+      },
+      {
+        "id": "A2",
+        "statement": "Reuses canonical authority and staging",
+        "amplified_value": "No second kernel, secret broker or durable authority."
+      },
+      {
+        "id": "A3",
+        "statement": "Recomputes cases in a separate process",
+        "amplified_value": "Detects disagreement with the parent result while retaining evidence limitations."
+      },
+      {
+        "id": "A4",
+        "statement": "Inherits bounded process lifetime",
+        "amplified_value": "Revocation, network filter and parent wall budget remain applicable."
+      },
+      {
+        "id": "A5",
+        "statement": "Retains founder ratification",
+        "amplified_value": "A passing fixture cannot promote itself into live authority."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "The child could lose the parent's filesystem restrictions.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Install the same reviewed-code guard in the fixed child; retain the explicit absence of an OS filesystem sandbox."
+      },
+      {
+        "id": "D2",
+        "statement": "Module, environment or workspace substitution could change the recipe.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Require exact interpreter, argv, code-root cwd, PYTHONPATH and parent-installed workspace scope; reject additional environment keys."
+      },
+      {
+        "id": "D3",
+        "statement": "A child could outlive revocation or exceed the operation budget.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Inherit seccomp and the parent process group; retain group termination, wall timeout and explicit child CPU, memory and input ceilings."
+      },
+      {
+        "id": "D4",
+        "statement": "Simulation and verification could be mistaken for founder approval or market evidence.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Retain the ratification stage and emulated evidence labels; query operations discard all staged writes."
+      },
+      {
+        "id": "D5",
+        "statement": "A growing allowlist could quietly authorize unreviewed providers.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Allow only the reviewed dsl-verify recipe and require linked review plus hostile substitution tests before any expansion."
+      }
+    ],
+    "comparisons": {
+      "baseline": "PR147 bbc0ec61ff2a00faf027733f56841b07efd70f00 integrates guarded Foundry and native media; all six CI jobs passed; child verification is refused.",
+      "simplest_viable_alternative": "One exact reviewed restricted-DSL child protocol, preserving all other refusals; selected.",
+      "strongest_competing_architecture": "Container or microVM execution of general providers.",
+      "do_nothing": "System16 remains unnecessarily unreachable despite restricted DSL implementation.",
+      "reversible_experiment": "Run exact-recipe verification and five hostile substitution probes through CI."
+    }
+  },
+  "pass_2": {
+    "attack_summary": "Attack guard loss, substituted interpreter/module/scope/environment, descendant survival, approval confusion and allowlist drift. Strengthen every first-pass concern.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "dependency",
+        "statement": "The child could lose the parent's filesystem restrictions.",
+        "strengthening_response": "Install the same reviewed-code guard in the fixed child; retain the explicit absence of an OS filesystem sandbox."
+      },
+      {
+        "id": "N2",
+        "category": "gaming",
+        "statement": "Module, environment or workspace substitution could change the recipe.",
+        "strengthening_response": "Require exact interpreter, argv, code-root cwd, PYTHONPATH and parent-installed workspace scope; reject additional environment keys."
+      },
+      {
+        "id": "N3",
+        "category": "dependency",
+        "statement": "A child could outlive revocation or exceed the operation budget.",
+        "strengthening_response": "Inherit seccomp and the parent process group; retain group termination, wall timeout and explicit child CPU, memory and input ceilings."
+      },
+      {
+        "id": "N4",
+        "category": "overfit",
+        "statement": "Simulation and verification could be mistaken for founder approval or market evidence.",
+        "strengthening_response": "Retain the ratification stage and emulated evidence labels; query operations discard all staged writes."
+      },
+      {
+        "id": "N5",
+        "category": "bureaucracy",
+        "statement": "A growing allowlist could quietly authorize unreviewed providers.",
+        "strengthening_response": "Allow only the reviewed dsl-verify recipe and require linked review plus hostile substitution tests before any expansion."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "The child could lose the parent's filesystem restrictions. Install the same reviewed-code guard in the fixed child; retain the explicit absence of an OS filesystem sandbox.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any child-recipe, dependency, authority or completion claim change."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Module, environment or workspace substitution could change the recipe. Require exact interpreter, argv, code-root cwd, PYTHONPATH and parent-installed workspace scope; reject additional environment keys.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any child-recipe, dependency, authority or completion claim change."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "A child could outlive revocation or exceed the operation budget. Inherit seccomp and the parent process group; retain group termination, wall timeout and explicit child CPU, memory and input ceilings.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any child-recipe, dependency, authority or completion claim change."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Simulation and verification could be mistaken for founder approval or market evidence. Retain the ratification stage and emulated evidence labels; query operations discard all staged writes.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any child-recipe, dependency, authority or completion claim change."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "A growing allowlist could quietly authorize unreviewed providers. Allow only the reviewed dsl-verify recipe and require linked review plus hostile substitution tests before any expansion.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any child-recipe, dependency, authority or completion claim change."
+      }
+    ],
+    "final_design": "One fixed restricted-DSL recomputation child with exact scrubbed environment and scope; all other child/source execution refused; immediate continuation after CI.",
+    "residual_risks": [
+      {
+        "risk": "The child could lose the parent's filesystem restrictions.",
+        "mitigation": "Install the same reviewed-code guard in the fixed child; retain the explicit absence of an OS filesystem sandbox.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next increment or changed host/dependency."
+      },
+      {
+        "risk": "Module, environment or workspace substitution could change the recipe.",
+        "mitigation": "Require exact interpreter, argv, code-root cwd, PYTHONPATH and parent-installed workspace scope; reject additional environment keys.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next increment or changed host/dependency."
+      },
+      {
+        "risk": "A child could outlive revocation or exceed the operation budget.",
+        "mitigation": "Inherit seccomp and the parent process group; retain group termination, wall timeout and explicit child CPU, memory and input ceilings.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next increment or changed host/dependency."
+      },
+      {
+        "risk": "Simulation and verification could be mistaken for founder approval or market evidence.",
+        "mitigation": "Retain the ratification stage and emulated evidence labels; query operations discard all staged writes.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next increment or changed host/dependency."
+      },
+      {
+        "risk": "A growing allowlist could quietly authorize unreviewed providers.",
+        "mitigation": "Allow only the reviewed dsl-verify recipe and require linked review plus hostile substitution tests before any expansion.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next increment or changed host/dependency."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved rather than represented as independent consensus.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not call this an arbitrary-code sandbox or full-machine completion.",
+        "rationale": "Reviewed Python dependencies and unavailable host containment remain limits.",
+        "evidence_threshold": "Working OS containment and explicit escape tests.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any wider recipe or completion claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Add fixed child recipe on PR147; keep PR146 separate, preserve all parents, do not merge or write main.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this additive protocol commit; preserve linked decision and CI evidence.",
+      "Keep general child/source refusal and canonical ratification."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Forged recipe/environment/scope accepted.",
+    "Ratification or revocation bypassed.",
+    "Unreviewed source or provider executed."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Fresh CI, any changed recipe, and every successful increment; automatically resume parent Body + Organs + Mind objective."
+}

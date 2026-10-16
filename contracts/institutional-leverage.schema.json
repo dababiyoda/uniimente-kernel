@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Institutional leverage input",
+  "oneOf": [{"$ref": "#/$defs/request"}, {"$ref": "#/$defs/map"}],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "unit": {"type": "number", "minimum": 0, "maximum": 1},
+    "amount": {"type": "number", "minimum": 0, "maximum": 1000000000},
+    "refs": {"type": "array", "minItems": 1, "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+    "mechanism": {"enum": ["direct", "rule", "incentive", "frame", "doctrine", "coordination"]},
+    "request": {
+      "type": "object", "additionalProperties": false,
+      "required": ["objective", "outcome_node", "as_of", "max_evidence_age_seconds", "budget_usd"],
+      "properties": {
+        "objective": {"$ref": "#/$defs/text"},
+        "outcome_node": {"$ref": "#/$defs/text"},
+        "as_of": {"type": "string", "format": "date-time"},
+        "max_evidence_age_seconds": {"type": "integer", "minimum": 0, "maximum": 31536000},
+        "budget_usd": {"$ref": "#/$defs/amount"},
+        "max_hops": {"type": "integer", "minimum": 1, "maximum": 8},
+        "max_candidates": {"type": "integer", "minimum": 1, "maximum": 8}
+      }
+    },
+    "map": {
+      "type": "object", "additionalProperties": false,
+      "required": ["nodes", "links", "interventions"],
+      "properties": {
+        "nodes": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/node"}},
+        "links": {"type": "array", "maxItems": 512, "items": {"$ref": "#/$defs/link"}},
+        "interventions": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/intervention"}}
+      }
+    },
+    "node": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "label", "gap", "evidence_refs"],
+      "properties": {
+        "id": {"$ref": "#/$defs/text"},
+        "kind": {"enum": ["actor", "rule", "incentive", "idea", "resource", "process", "outcome"]},
+        "label": {"$ref": "#/$defs/text"},
+        "gap": {"$ref": "#/$defs/unit"},
+        "evidence_refs": {"$ref": "#/$defs/refs"}
+      }
+    },
+    "link": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "source", "target", "mechanism", "strength", "confidence", "evidence_refs"],
+      "properties": {
+        "id": {"$ref": "#/$defs/text"},
+        "source": {"$ref": "#/$defs/text"},
+        "target": {"$ref": "#/$defs/text"},
+        "mechanism": {"$ref": "#/$defs/mechanism"},
+        "strength": {"$ref": "#/$defs/unit"},
+        "confidence": {"$ref": "#/$defs/unit"},
+        "evidence_refs": {"$ref": "#/$defs/refs"}
+      }
+    },
+    "narrative": {
+      "type": "object", "additionalProperties": false,
+      "required": ["audience", "frame", "message", "desired_action", "claims"],
+      "properties": {
+        "audience": {"$ref": "#/$defs/text"},
+        "frame": {"$ref": "#/$defs/text"},
+        "message": {"$ref": "#/$defs/text"},
+        "desired_action": {"$ref": "#/$defs/text"},
+        "claims": {
+          "type": "array", "minItems": 1, "maxItems": 32,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["text", "evidence_refs"],
+            "properties": {"text": {"$ref": "#/$defs/text"}, "evidence_refs": {"$ref": "#/$defs/refs"}}
+          }
+        }
+      }
+    },
+    "action": {
+      "type": "object", "additionalProperties": false,
+      "required": ["action_class", "requested_capability", "target", "consequence_class", "payload"],
+      "properties": {
+        "action_class": {"$ref": "#/$defs/text"},
+        "requested_capability": {"$ref": "#/$defs/text"},
+        "target": {"$ref": "#/$defs/text"},
+        "consequence_class": {"$ref": "#/$defs/text"},
+        "payload": {"type": "object", "not": {"required": ["institutional_leverage"]}}
+      }
+    },
+    "intervention": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "node", "mechanism", "effect", "confidence", "harm", "cost_usd", "effort_hours", "delay_days", "action", "expected_outcome", "success_measure", "rollback", "counterargument", "evidence_refs"],
+      "properties": {
+        "id": {"$ref": "#/$defs/text"},
+        "node": {"$ref": "#/$defs/text"},
+        "mechanism": {"$ref": "#/$defs/mechanism"},
+        "effect": {"$ref": "#/$defs/unit"},
+        "confidence": {"$ref": "#/$defs/unit"},
+        "harm": {"$ref": "#/$defs/unit"},
+        "cost_usd": {"$ref": "#/$defs/amount"},
+        "effort_hours": {"$ref": "#/$defs/amount"},
+        "delay_days": {"$ref": "#/$defs/amount"},
+        "action": {"$ref": "#/$defs/action"},
+        "expected_outcome": {"$ref": "#/$defs/text"},
+        "success_measure": {"$ref": "#/$defs/text"},
+        "rollback": {"$ref": "#/$defs/text"},
+        "counterargument": {"$ref": "#/$defs/text"},
+        "evidence_refs": {"$ref": "#/$defs/refs"},
+        "narrative": {"$ref": "#/$defs/narrative"}
+      },
+      "allOf": [{
+        "if": {"properties": {"mechanism": {"enum": ["frame", "doctrine"]}}},
+        "then": {"required": ["narrative"]}
+      }]
+    }
+  }
+}

@@ -1,0 +1,163 @@
+FFF....FF.FF                                                             [100%]
+=================================== FAILURES ===================================
+_ test_unchanged_intake_keeps_one_question_and_exact_original_approval[id_only] _
+
+host = (<function host.<locals>.opened at 0x7fe30ec39da0>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7fe30ec35af0>, [datetime.datetime(2026, 9, 5, 12, 0, 10, tzinfo=datetime.timezone.utc)])
+change = 'id_only'
+
+    @pytest.mark.parametrize("change", ["id_only", "timestamp", "record_order"])
+    def test_unchanged_intake_keeps_one_question_and_exact_original_approval(host, change):
+        opened, founder, time = host
+        with opened() as chase:
+            start(chase, founder)
+            message = chase.pending_messages()[0]
+            original = observation(now=T0)
+            time[0] += timedelta(seconds=10)
+            repeated = observation(now=T0 if change == "id_only" else time[0], oid="sandbox:repeated")
+            if change == "record_order": repeated["payload"]["records"].reverse()
+            chase.observe(repeated)
+            chase.tick("same-facts")
+>           assert len(chase.requests) == len(chase.deliveries) == 1
+E           AssertionError: assert 2 == 1
+E            +  where 2 = len({'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:c345d53acb3c0d2e6e4b51b6b00479845cb303a54edbb3b13492644f32125015'}})
+E            +    where {'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:c345d53acb3c0d2e6e4b51b6b00479845cb303a54edbb3b13492644f32125015'}} = <egregore.goal_chase.GoalChase object at 0x7fe30ec37e30>.deliveries
+
+tests/integration/test_goal_chase_attention.py:29: AssertionError
+_ test_unchanged_intake_keeps_one_question_and_exact_original_approval[timestamp] _
+
+host = (<function host.<locals>.opened at 0x7fe30ecad300>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7fe30ecc4110>, [datetime.datetime(2026, 9, 5, 12, 0, 10, tzinfo=datetime.timezone.utc)])
+change = 'timestamp'
+
+    @pytest.mark.parametrize("change", ["id_only", "timestamp", "record_order"])
+    def test_unchanged_intake_keeps_one_question_and_exact_original_approval(host, change):
+        opened, founder, time = host
+        with opened() as chase:
+            start(chase, founder)
+            message = chase.pending_messages()[0]
+            original = observation(now=T0)
+            time[0] += timedelta(seconds=10)
+            repeated = observation(now=T0 if change == "id_only" else time[0], oid="sandbox:repeated")
+            if change == "record_order": repeated["payload"]["records"].reverse()
+            chase.observe(repeated)
+            chase.tick("same-facts")
+>           assert len(chase.requests) == len(chase.deliveries) == 1
+E           AssertionError: assert 2 == 1
+E            +  where 2 = len({'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:793ac85fb8e7e339e3f448963086396eb94cdb7269e1baf02f976acdac20814a'}})
+E            +    where {'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:793ac85fb8e7e339e3f448963086396eb94cdb7269e1baf02f976acdac20814a'}} = <egregore.goal_chase.GoalChase object at 0x7fe30ec5b9b0>.deliveries
+
+tests/integration/test_goal_chase_attention.py:29: AssertionError
+_ test_unchanged_intake_keeps_one_question_and_exact_original_approval[record_order] _
+
+host = (<function host.<locals>.opened at 0x7fe30ecad760>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7fe30ecc8080>, [datetime.datetime(2026, 9, 5, 12, 0, 10, tzinfo=datetime.timezone.utc)])
+change = 'record_order'
+
+    @pytest.mark.parametrize("change", ["id_only", "timestamp", "record_order"])
+    def test_unchanged_intake_keeps_one_question_and_exact_original_approval(host, change):
+        opened, founder, time = host
+        with opened() as chase:
+            start(chase, founder)
+            message = chase.pending_messages()[0]
+            original = observation(now=T0)
+            time[0] += timedelta(seconds=10)
+            repeated = observation(now=T0 if change == "id_only" else time[0], oid="sandbox:repeated")
+            if change == "record_order": repeated["payload"]["records"].reverse()
+            chase.observe(repeated)
+            chase.tick("same-facts")
+>           assert len(chase.requests) == len(chase.deliveries) == 1
+E           AssertionError: assert 2 == 1
+E            +  where 2 = len({'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:993eca25d69caeda388c4d77d01bcbefc632551e04602866cb8fcc5e6c40163a'}})
+E            +    where {'sha256:ec5c53d1657269cb52670b478809e86560d65a6d9471caf81dcd7eaa9dd97113': {'channel': 'in_memory', 'message_id': 'sh...reality_status': 'SIMULATED', 'receipt_id': 'sha256:993eca25d69caeda388c4d77d01bcbefc632551e04602866cb8fcc5e6c40163a'}} = <egregore.goal_chase.GoalChase object at 0x7fe30ecc86b0>.deliveries
+
+tests/integration/test_goal_chase_attention.py:29: AssertionError
+___________ test_reconfirmation_cannot_extend_freshness_or_authority ___________
+
+host = (<function host.<locals>.opened at 0x7fe30ec3a7a0>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7fe30ecc9a90>, [datetime.datetime(2026, 9, 5, 12, 0, 30, tzinfo=datetime.timezone.utc)])
+
+    def test_reconfirmation_cannot_extend_freshness_or_authority(host):
+        opened, founder, time = host
+        with opened() as chase:
+            spec = goal(now=T0)
+            spec["evidence_requirements"]["max_age_seconds"] = 60
+            start(chase, founder, spec=spec)
+            old = chase.pending_messages()[0]
+            time[0] += timedelta(seconds=30)
+            chase.observe(observation(now=time[0], oid="sandbox:repeat-before-expiry"))
+            chase.tick("still-the-same-question")
+>           assert chase.pending_messages() == [old]
+E           AssertionError: assert [{'alternativ...ontact', ...}] == [{'alternativ...ontact', ...}]
+E             
+E             At index 0 diff: {'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'authority_requested': {'action': {'action_class': 'spending_above_predefined_thresholds', 'action_id': 'sandbox:prototype', 'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'bottleneck': 'Bounded prototype decision', 'capability': 'prototype.simulate', 'consequence_class': 'financial', 'cost_cents': 43000, 'expected_outcome': 'SIMULATED: prototype completed', 'observation_key': 'sources', 'rationale': 'Use the smallest reversi...
+E             
+E             ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/integration/test_goal_chase_attention.py:75: AssertionError
+_______ test_restart_preserves_question_and_observation_high_water_mark ________
+
+host = (<function host.<locals>.opened at 0x7fe30ecae520>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7fe30ec82c90>, [datetime.datetime(2026, 9, 5, 12, 0, 20, tzinfo=datetime.timezone.utc)])
+
+    def test_restart_preserves_question_and_observation_high_water_mark(host):
+        opened, founder, time = host
+        with opened() as chase:
+            start(chase, founder)
+            original = chase.pending_messages()[0]
+            time[0] += timedelta(seconds=20)
+            chase.observe(observation(now=time[0], oid="sandbox:repeat-newer"))
+            chase.tick("reconfirmed")
+            before = chase.snapshot()
+        with opened() as chase:
+            assert chase.snapshot() == before
+            chase.tick("restart-quiet")
+>           assert chase.pending_messages() == [original]
+E           AssertionError: assert [{'alternativ...ontact', ...}] == [{'alternativ...ontact', ...}]
+E             
+E             At index 0 diff: {'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'authority_requested': {'action': {'action_class': 'spending_above_predefined_thresholds', 'action_id': 'sandbox:prototype', 'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'bottleneck': 'Bounded prototype decision', 'capability': 'prototype.simulate', 'consequence_class': 'financial', 'cost_cents': 43000, 'expected_outcome': 'SIMULATED: prototype completed', 'observation_key': 'sources', 'rationale': 'Use the smallest reversi...
+E             
+E             ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/integration/test_goal_chase_attention.py:106: AssertionError
+_______________ test_replayed_false_reconfirmation_fails_closed ________________
+
+host = (<function host.<locals>.opened at 0x7fe30ecae8e0>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7fe30f199ee0>, [datetime.datetime(2026, 9, 5, 12, 0, tzinfo=datetime.timezone.utc)])
+
+    def test_replayed_false_reconfirmation_fails_closed(host):
+        opened, founder, _ = host
+        with opened() as chase:
+            start(chase, founder)
+            false = observation(now=T0, oid="sandbox:false-confirmation")
+            false["payload"]["records"][0]["cost_cents"] = 1
+>           with pytest.raises(IntegrityConflict):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE IntegrityConflict
+
+tests/integration/test_goal_chase_attention.py:139: Failed
+________ test_expired_question_is_not_delivered_when_transport_recovers ________
+
+host = (<function host.<locals>.opened at 0x7fe30ecaf060>, <egregore.goal_chase_sandbox.SyntheticFounder object at 0x7fe30ec57dd0>, [datetime.datetime(2026, 9, 5, 13, 0, 1, tzinfo=datetime.timezone.utc)])
+
+    def test_expired_question_is_not_delivered_when_transport_recovers(host):
+        opened, founder, time = host
+        channel = CommunicationRouter()
+        channel.available = False
+        with opened(router=channel) as chase:
+            spec = goal(now=T0)
+            spec["evidence_requirements"]["max_age_seconds"] = 7200
+            start(chase, founder, spec=spec)
+            assert len(chase.requests) == 1 and not chase.deliveries
+            time[0] += timedelta(hours=1, seconds=1)  # goal/request expired; evidence still fresh
+            channel.available = True
+            chase.tick("transport-restored-after-expiry")
+>           assert not chase.pending_messages()
+E           AssertionError: assert not [{'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'authority_requested': {'act..._requested_cents': 43000, 'consequence_of_approval': 'One bounded simulated action; no real spending or contact', ...}]
+E            +  where [{'alternatives': ['Defer with retained evidence', 'Use a smaller simulated experiment'], 'authority_requested': {'act..._requested_cents': 43000, 'consequence_of_approval': 'One bounded simulated action; no real spending or contact', ...}] = pending_messages()
+E            +    where pending_messages = <egregore.goal_chase.GoalChase object at 0x7fe30eaedb20>.pending_messages
+
+tests/integration/test_goal_chase_attention.py:158: AssertionError
+=========================== short test summary info ============================
+FAILED tests/integration/test_goal_chase_attention.py::test_unchanged_intake_keeps_one_question_and_exact_original_approval[id_only]
+FAILED tests/integration/test_goal_chase_attention.py::test_unchanged_intake_keeps_one_question_and_exact_original_approval[timestamp]
+FAILED tests/integration/test_goal_chase_attention.py::test_unchanged_intake_keeps_one_question_and_exact_original_approval[record_order]
+FAILED tests/integration/test_goal_chase_attention.py::test_reconfirmation_cannot_extend_freshness_or_authority
+FAILED tests/integration/test_goal_chase_attention.py::test_restart_preserves_question_and_observation_high_water_mark
+FAILED tests/integration/test_goal_chase_attention.py::test_replayed_false_reconfirmation_fails_closed
+FAILED tests/integration/test_goal_chase_attention.py::test_expired_question_is_not_delivered_when_transport_recovers
+7 failed, 5 passed in 1.24s

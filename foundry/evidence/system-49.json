@@ -1,0 +1,117 @@
+{
+ "command": "python -m foundry.completion --run 49",
+ "name": "AI influencer company systems",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "assets_with_provenance": 11,
+  "books": {
+   "equation_holds": true,
+   "gross_cents": 18000,
+   "reconciled_to_processor": true
+  },
+  "charter_ratified": true,
+  "community_export_verifies": true,
+  "community_members": 2,
+  "cycle1_attribution": {
+   "audit-kit": 0.75,
+   "disputes": 0.0,
+   "offer": 0.75,
+   "pod-basics": 0.75,
+   "why-proof": 0.75
+  },
+  "cycles": [
+   {
+    "closure": "CLOSED",
+    "cycle": "w1",
+    "decision": "continue",
+    "impressions": 6,
+    "informed_return": 1.75,
+    "owned_relationships": 3,
+    "published": [
+     "why-proof",
+     "pod-basics",
+     "audit-kit"
+    ],
+    "revenue_cents": 18000,
+    "surplus_usd": 165.0,
+    "treasury_policy_version": 1,
+    "treasury_reconciled": true,
+    "useful_actions": {
+     "completed_node": 4,
+     "joined_community": 1,
+     "purchased": 2
+    }
+   },
+   {
+    "closure": "FALSELY_CLOSED",
+    "cycle": "w2",
+    "decision": "revise",
+    "impressions": 6,
+    "informed_return": 0.0,
+    "owned_relationships": 0,
+    "published": [
+     "why-proof",
+     "pod-basics",
+     "audit-kit"
+    ],
+    "revenue_cents": 0,
+    "surplus_usd": -15.0,
+    "treasury_policy_version": null,
+    "treasury_reconciled": null,
+    "useful_actions": {}
+   },
+   {
+    "closure": "FALSELY_CLOSED",
+    "cycle": "w3",
+    "decision": "kill",
+    "impressions": 6,
+    "informed_return": 0.0,
+    "owned_relationships": 0,
+    "published": [
+     "why-proof",
+     "pod-basics",
+     "audit-kit"
+    ],
+    "revenue_cents": 0,
+    "surplus_usd": -15.0,
+    "treasury_policy_version": null,
+    "treasury_reconciled": null,
+    "useful_actions": {}
+   }
+  ],
+  "every_post_discloses": true,
+  "followers_on_owned_actor": 2,
+  "killed": true,
+  "ledger": {
+   "foundry.charter_ratified": 1,
+   "foundry.charter_submitted": 1,
+   "foundry.distribution_evaluated": 3
+  },
+  "memory_cycles": 3,
+  "owned_copies_in_outbox": 9,
+  "plan_after_cycle1": {
+   "action": "continue",
+   "least_attributed_node": "disputes",
+   "why": "informed return 1.75 with 3 owned relationships"
+  },
+  "plan_after_kill": {
+   "action": "stopped",
+   "what_survives": "charter, canon, assets, community export, books, memory",
+   "why": "kill condition at w3: impressions without behavior change for two windows"
+  },
+  "reader_inbox_posts": 9,
+  "refusals": {
+   "cycle_after_kill": "company paused: kill condition at w3: impressions without behavior change for tw",
+   "escalation_topic": "topic 'legal_advice' outside the persona's bounds ['operations', 'payments', 'pr",
+   "escalation_topic_even_if_allowed": "topic 'legal_advice' forces escalation; it never publishes",
+   "off_topic_draft": "topic 'crypto' outside the persona's bounds ['operations', 'payments', 'proof']",
+   "prohibited_pattern": "prohibited pattern in draft: 'risk-free'",
+   "publish_after_kill": "company paused: kill condition at w3: impressions without behavior change for tw",
+   "publish_before_ratification": "charter sha256:bbc35b4eb... not ratified; an unratified company does not speak",
+   "undisclosed_draft": "draft lacks the synthetic-identity disclosure; disclosure is mandatory"
+  },
+  "weak_node_refused_at_publish": true
+ },
+ "result_sha256": "sha256:9bf2f70fbc53ad02ac9cafedcec25ec71adf65642af5729920ec8d2dd63b5f84",
+ "system": 49
+}

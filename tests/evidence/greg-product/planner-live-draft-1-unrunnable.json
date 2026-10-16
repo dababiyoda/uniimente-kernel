@@ -1,0 +1,136 @@
+{
+ "status": "PROPOSED",
+ "spec": {
+  "mission_id": "m:plan-watch-uniimente-kernel-head-2026-09-26",
+  "founder_expression": "Watch my uniimente-kernel checkout and make sure its HEAD commit is recorded; tell me if it is dirty.",
+  "intended_effect": "Continuously observe the local uniimente-kernel git checkout at /home/user/uniimente-kernel: capture its current HEAD commit SHA on a recurring cadence, and detect/report whether the working tree has uncommitted changes (dirty), notifying the founder when a dirty state is observed.",
+  "closure": {
+   "kind": "infinite",
+   "cadence_seconds": 3600
+  },
+  "success_checks": [
+   {
+    "check_id": "head_commit_recorded",
+    "description": "The current HEAD commit SHA of the uniimente-kernel checkout has been captured via a read-only git inspection.",
+    "sensor": {
+     "capability": "git.inspect",
+     "target": "/home/user/uniimente-kernel",
+     "params": {
+      "command": "rev-parse HEAD"
+     }
+    },
+    "predicate": {
+     "field": "commit_sha",
+     "op": "exists"
+    }
+   },
+   {
+    "check_id": "working_tree_status_known",
+    "description": "The working tree's clean/dirty status has been observed via a read-only git status check.",
+    "sensor": {
+     "capability": "git.inspect",
+     "target": "/home/user/uniimente-kernel",
+     "params": {
+      "command": "status --porcelain"
+     }
+    },
+    "predicate": {
+     "field": "status_output",
+     "op": "exists"
+    }
+   }
+  ],
+  "strategies": [
+   {
+    "action_id": "record_head_commit",
+    "capability": "git.inspect",
+    "target": "/home/user/uniimente-kernel",
+    "params": {
+     "command": "rev-parse HEAD"
+    },
+    "advances": [
+     "head_commit_recorded"
+    ],
+    "rationale": "A read-only git rev-parse against the checkout path is the simplest, lowest-consequence mechanism to record the current HEAD commit SHA, satisfying the founder's 'make sure its HEAD commit is recorded' requirement without inventing new tooling.",
+    "expected_outcome": "The current HEAD commit SHA string is returned and recorded as evidence.",
+    "evidence_confidence": 0.95,
+    "cost_usd": 0
+   },
+   {
+    "action_id": "check_working_tree_dirty",
+    "capability": "git.inspect",
+    "target": "/home/user/uniimente-kernel",
+    "params": {
+     "command": "status --porcelain"
+    },
+    "advances": [
+     "working_tree_status_known"
+    ],
+    "rationale": "A read-only porcelain status check is the standard, lowest-consequence way to determine whether the checkout has uncommitted changes, directly answering 'tell me if it is dirty'.",
+    "expected_outcome": "Empty output indicates a clean tree; any lines indicate uncommitted changes (dirty).",
+    "evidence_confidence": 0.95,
+    "cost_usd": 0
+   },
+   {
+    "action_id": "notify_founder_if_dirty",
+    "capability": "mac.notify",
+    "target": "founder",
+    "params": {
+     "condition": "dirty",
+     "message": "uniimente-kernel checkout has uncommitted changes"
+    },
+    "advances": [
+     "working_tree_status_known"
+    ],
+    "rationale": "The founder explicitly asked to be told when the checkout is dirty; mac.notify is the registered, already-attached capability for reaching the founder directly and is reversible and low-consequence (a local notification, not an external message to a third party).",
+    "expected_outcome": "Founder receives a local notification only when the working tree is observed to be dirty; no notification is sent when clean.",
+    "evidence_confidence": 0.85,
+    "cost_usd": 0
+   }
+  ],
+  "light_cone": {
+   "capabilities": [
+    "git.inspect"
+   ],
+   "targets": [
+    "/home/user/uniimente-kernel"
+   ],
+   "max_consequence_class": "read_only",
+   "budget_usd": 0,
+   "horizon": "2026-10-03T01:51:46.448702Z"
+  },
+  "constraints": [
+   "Only read the /home/user/uniimente-kernel checkout; do not modify, commit, stage, or push anything in it.",
+   "Notification action targets only the founder himself, never a third party.",
+   "No network or external-contact actions are authorized by this mission."
+  ],
+  "unacceptable_outcomes": [
+   "Fabricating a HEAD commit SHA or dirty/clean status without an actual git.inspect invocation.",
+   "Modifying the working tree or committing changes to make it appear clean."
+  ],
+  "beneficiaries": [
+   "Alfonso Lopez"
+  ],
+  "priority": 30,
+  "value_per_check_usd": 1,
+  "provenance": {
+   "origin": "model:claude-code",
+   "planner": "greg.planner/1",
+   "model": "claude-code",
+   "prompt_sha256": "sha256:cbe12a301efd447ab67a79c0888f184bf39ae504582a4f0552490ac14a3aa0d9",
+   "clamped": [
+    "ceiling 'internal_write' -> 'read_only' (consequential steps will ask you)",
+    "cone limited to the read-only capabilities the plan uses",
+    "horizon limited to 7 days"
+   ]
+  }
+ },
+ "origin": "model:claude-code",
+ "notes": [
+  "drafted by a model; review every check and strategy before signing",
+  "ceiling 'internal_write' -> 'read_only' (consequential steps will ask you)",
+  "cone limited to the read-only capabilities the plan uses",
+  "horizon limited to 7 days"
+ ],
+ "questions": []
+}

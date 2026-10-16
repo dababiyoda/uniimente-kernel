@@ -112,6 +112,33 @@ def test_a_server_echoing_its_key_file_never_writes_the_key_into_a_record(tmp_pa
         assert any("[credential]" in j for j in journal), journal
 
 
+def test_a_failed_call_scrubs_the_key_from_its_error_and_stderr_on_any_host(tmp_path, monkeypatch):
+    # SF-1 at the call itself, so it also runs where bubblewrap cannot (CI job 6): the server quotes its key file
+    # in its stderr and in its error, and neither reaches the message that becomes a receipt.
+    from foundry.systems import mcp_gateway
+    from greg import worker_isolation
+    from greg.capabilities import CapabilityError
+    monkeypatch.setattr(worker_isolation, "_backend", lambda **_: "bubblewrap")   # confinement is tested above
+
+    async def echoing(provider, tool, arguments):
+        data = Path(provider["env"]["SVC_KEY"]).read_text()
+        (Path(provider["scratch"]) / "server-stderr.log").write_text("could not parse credentials file: " + data)
+        raise mcp_gateway.GatewayError("server exited: Unexpected token in " + data)
+
+    monkeypatch.setattr(mcp_gateway, "_call", echoing)
+    ctx = InvocationContext(workspace=tmp_path / "ws", read_roots=(tmp_path,), secrets=SecretBroker(tmp_path / "s.json"),
+                            manifest=BUILTINS["mcp.act"][0])
+    c = {"server": "scribe", "command": ["mcp-server-scribe"], "root": str(tmp_path), "readable": [],
+         "tool": "bad_key", "arguments": {"name": "SVC_KEY"}}
+    with pytest.raises(CapabilityError) as raised:
+        mcp_tools._invoke(c, ctx, files={"SVC_KEY": KEY})
+    message = str(raised.value)
+    assert "| stderr: could not parse credentials file:" in message and "[credential]" in message, message
+    for leak in LEAKS:
+        assert leak not in message, message
+    assert not list((tmp_path / "ws").iterdir()), "the call's scratch and key directories are removed"
+
+
 def test_scrubbing_covers_the_value_its_lines_and_its_tokens():
     text = f"boom: {KEY} | {' '.join(KEY.split())} | line {KEY.splitlines()[1]} | token {LEAKS[0]}"
     scrubbed = mcp_tools._scrub(text, [KEY])
@@ -208,9 +235,9 @@ def test_a_bound_credential_reference_blocks_the_mission_and_the_server_never_ge
                     if (r.payload["result"].get("output") or {}).get("tool") == "write_note"]
 
 
-@needs_namespaces
 @pytest.mark.parametrize("malformed", [["mcp:scribe-token"], "mcp:scribe-token", {"SCRIBE": 7}])
 def test_a_malformed_secret_files_is_refused_before_anyone_is_asked(tmp_path, malformed):
+    # No namespace needed: the scope is refused before anything is dispatched, so this runs on every CI host.
     home, key, body_id, data = make_body(tmp_path)
     (data / "notes").mkdir()
     base = install_scribe(data)

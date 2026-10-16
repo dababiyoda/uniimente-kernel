@@ -1,0 +1,48 @@
+{
+ "command": "python -m foundry.completion --run 1",
+ "name": "Interpreters and compilers",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "compiled_workflow_ran": "completed",
+  "deterministic": true,
+  "hashes": {
+   "business.yaml": "sha256:6ccd6b57b13ace71",
+   "charter.yaml": "sha256:5894882e0f76e615",
+   "experiment.yaml": "sha256:b484e4058107423b",
+   "policy.yaml": "sha256:76642c30c5bb3aa6",
+   "swarm.yaml": "sha256:a864ced49758b19b",
+   "workflow.yaml": "sha256:ef012d719f641c1b"
+  },
+  "kinds": [
+   "business",
+   "experiment",
+   "organ_charter",
+   "policy",
+   "swarm_contract",
+   "workflow"
+  ],
+  "located_errors": {
+   "business-bad.yaml": [
+    "business-bad.yaml:6:12: price $100 does not cover marginal cost $120: a donation with paperwork"
+   ],
+   "charter-bad.yaml": [
+    "charter-bad.yaml:6:16: untyped contract 'made-up-contract' (no contracts/made-up-contract.schema.json)"
+   ],
+   "experiment-bad.yaml": [
+    "experiment-bad.yaml:5:12: a falsifier that restates the hypothesis cannot fail"
+   ],
+   "policy-bad.yaml": [
+    "policy-bad.yaml:6:10: rule 'floor': only ['max', 'min', 'round'] may be called (col 30)"
+   ],
+   "syntax-bad.yaml": [
+    "syntax-bad.yaml:3:1: syntax: expected ',' or ']', but got '<stream end>'"
+   ],
+   "workflow-bad.yaml": [
+    "workflow-bad.yaml:6:9: step 'store' writes (put) and must declare write: true"
+   ]
+  },
+  "workflow_verified": true
+ },
+ "result_sha256": "sha256:61693c9365bacc570347993146f74660bdf64d71abef4ebb0719e5ac3dbe7c9c",
+ "system": 1
+}

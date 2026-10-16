@@ -1,0 +1,25 @@
+{
+ "command": "python -m foundry.completion --run 39",
+ "name": "Double-entry accounting",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "double_reversal_refused": true,
+  "equation_holds": true,
+  "refusals": {
+   "float_amount": true,
+   "other_currency": true,
+   "unbalanced": true,
+   "unknown_account": true
+  },
+  "tamper_detected": true,
+  "totals": {
+   "asset": 187500,
+   "equity": 100000,
+   "expense": 2500,
+   "liability": 0,
+   "revenue": 90000
+  }
+ },
+ "result_sha256": "sha256:a4e08ef07eb1574d1bd2785c482216c0fe3d6d772e6012f7a0ef7d49da6937af",
+ "system": 39
+}

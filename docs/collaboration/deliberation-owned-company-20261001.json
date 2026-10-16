@@ -1,0 +1,393 @@
+{
+  "decision_id": "FM-OWNED-COMPANY-20261001",
+  "title": "Integrate native owned-company delivery, receipt finance and performance into GREG",
+  "problem": "Systems37/49/54 lacked executable connections among buildable media, community, products and finance; reviewed operations could not read their owned canonical policy data.",
+  "founder_intent_refs": [
+    "INTENT-20261001-FULL-MACHINE-COMPLETION",
+    "INTENT-2026-09-27-FOUNDRY-55"
+  ],
+  "baseline": "PR147 578a1c2d322a1424953de0dc54d55725fb4127ed: all six CI jobs passed; 1695 tests passed/9 skipped, V1\u2013V5 passed. This validates the prior checkpoint only.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Join existing charter/media/portal/community/journeys/version/accounting stores with native signed fixture offers; selected.",
+      "advantages": [
+        "Actual bytes and receipts compose through canonical GREG staging and authority."
+      ],
+      "disadvantages": [
+        "Fixture transactions do not retire live processor or distribution requirements."
+      ],
+      "revival_evidence": "Changed contract or stronger measured native implementation."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Integrate an external commerce/community platform and actual test-mode payment APIs.",
+      "advantages": [
+        "Mature remote billing/refunds/moderation."
+      ],
+      "disadvantages": [
+        "Requires founder-selected accounts/credentials and genuine provider access; cannot fabricate activation."
+      ],
+      "revival_evidence": "Authorized credentials and actual provider evidence."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Signed GREG mission assembles, delivers, accepts, reconciles and privately serves; hostile manifest/signature/book substitutions must refute it.",
+      "advantages": [
+        "Tests executable composition and independent appraisal."
+      ],
+      "disadvantages": [
+        "Fixture peers are not real customers."
+      ],
+      "revival_evidence": "Actual founder use and authorized providers."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Retain registered-but-unimplemented37/54 and disconnected company models.",
+    "advantages": [
+      "No new composition."
+    ],
+    "disadvantages": [
+      "Leaves buildable machinery unfinished and repeats local optimization."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Full Body + Organs + Mind remains fixed; resume automatically after this proof. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Hash-valid fake media or partial manifests could satisfy delivery."
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_owned_company.py",
+        "foundry/systems/media_company.py",
+        "foundry/systems/offers.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse existing charter, graph, immutable stores, console, Gate and whole-store staging. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Changed terms, replay or foreign acknowledgements could produce false settlement."
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_owned_company.py",
+        "foundry/systems/media_company.py",
+        "foundry/systems/offers.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Hashing is insufficient; regenerate canonical assets and bind receipts to signatures. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Balanced hash-valid books could masquerade as verified receipts or real money."
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_owned_company.py",
+        "foundry/systems/media_company.py",
+        "foundry/systems/offers.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Retain idempotency, explicit revisions, query disposal, process budgets and precise limitations. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Revision, serving and metrics could manufacture identity or authority."
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_owned_company.py",
+        "foundry/systems/media_company.py",
+        "foundry/systems/offers.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Keep identity, payment, demand, rights and operational founder ratification unproven until real evidence exists. One agent applying distinct perspectives, not independent reviews.",
+      "material_concerns": [
+        "Owned source reads could expose private data or arbitrary execution."
+      ],
+      "evidence_refs": [
+        "tests/unit/test_greg_owned_company.py",
+        "foundry/systems/media_company.py",
+        "foundry/systems/offers.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Prior integrated checkpoint verified",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36936194535",
+      "finding": "PR147 578a1c2d322a1424953de0dc54d55725fb4127ed: all six CI jobs passed; 1695 tests passed/9 skipped, V1\u2013V5 passed. This validates the prior checkpoint only."
+    },
+    {
+      "claim": "Executable acceptance probes authored",
+      "tier": "other",
+      "reference": "tests/unit/test_greg_owned_company.py",
+      "finding": "New delta requires fresh CI; tests have not been represented as passed."
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Previous MCP head initially passed",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36934826793",
+      "finding": "52e head had two test failures; correction578 passed. Keep immutable negative evidence."
+    },
+    {
+      "claim": "Local execution available",
+      "tier": "other",
+      "reference": "Codex exec-server 409 environment_offline",
+      "finding": "Local runtime disconnected; available GitHub and real CI remain usable."
+    },
+    {
+      "claim": "Native company equals complete machine",
+      "tier": "other",
+      "reference": "foundry/completion.yaml",
+      "finding": "False. All55 original obligations, generic isolation, real payments, external channels and operational ratification remain active."
+    },
+    {
+      "claim": "First draft fixture setup complete",
+      "tier": "other",
+      "reference": "tests/unit/test_greg_owned_company.py",
+      "finding": "Review found make_body(live) needed its parent created before fixture initialization; fixed before claiming CI success. The actual-host facility probe must distinguish local Codex host from hosted CI."
+    },
+    {
+      "claim": "Native company first draft fully passes",
+      "tier": "sandbox_execution",
+      "reference": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36938816279",
+      "finding": "a03ac52f: 2failed1705passed9skipped. Fixture parent omission corrected6324; actual Gate source lookup additionally exposed authority YAML absent from owned packaging inventory. Add all3 existing canonical files and authority data directory; no new authority contents."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Systems37/49/54 lacked executable connections among buildable media, community, products and finance; reviewed operations could not read their owned canonical policy data.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Full Body + Organs + Mind remains fixed; resume automatically after this proof.",
+        "amplified_value": "Advance one executable machine and preserve its full destination."
+      },
+      {
+        "id": "A2",
+        "statement": "Reuse existing charter, graph, immutable stores, console, Gate and whole-store staging.",
+        "amplified_value": "Advance one executable machine and preserve its full destination."
+      },
+      {
+        "id": "A3",
+        "statement": "Hashing is insufficient; regenerate canonical assets and bind receipts to signatures.",
+        "amplified_value": "Advance one executable machine and preserve its full destination."
+      },
+      {
+        "id": "A4",
+        "statement": "Retain idempotency, explicit revisions, query disposal, process budgets and precise limitations.",
+        "amplified_value": "Advance one executable machine and preserve its full destination."
+      },
+      {
+        "id": "A5",
+        "statement": "Keep identity, payment, demand, rights and operational founder ratification unproven until real evidence exists.",
+        "amplified_value": "Advance one executable machine and preserve its full destination."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Hash-valid fake media or partial manifests could satisfy delivery.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Regenerate all five canonical assets with exact provenance and limitations; compare complete pinned receipts and delivered bytes."
+      },
+      {
+        "id": "D2",
+        "statement": "Changed terms, replay or foreign acknowledgements could produce false settlement.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Verify signatures against pinned offer/version/minor units; immutable IDs; reject changed replay, wrong buyer/hash and predating acceptance."
+      },
+      {
+        "id": "D3",
+        "statement": "Balanced hash-valid books could masquerade as verified receipts or real money.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Bind every journal entry/date/amount/currency/memo to an accepted signed delivery; isolated fixture chart; no actual payment claims."
+      },
+      {
+        "id": "D4",
+        "statement": "Revision, serving and metrics could manufacture identity or authority.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Expected prior hashes and version provenance; receipt-only existing loopback console; active signed membership; separate fixture/observed tiers; no synthesized ratification."
+      },
+      {
+        "id": "D5",
+        "statement": "Owned source reads could expose private data or arbitrary execution.",
+        "severity": "high",
+        "response_type": "modularity",
+        "redesigned_response": "Explicit published inventory, unlinked real paths, private-canary/traversal probes, network denied; general code/provider execution still refused."
+      }
+    ],
+    "comparisons": {
+      "baseline": "PR147 578a1c2d322a1424953de0dc54d55725fb4127ed: all six CI jobs passed; 1695 tests passed/9 skipped, V1\u2013V5 passed. This validates the prior checkpoint only.",
+      "simplest_viable_alternative": "Join existing charter/media/portal/community/journeys/version/accounting stores with native signed fixture offers; selected.",
+      "strongest_competing_architecture": "Integrate an external commerce/community platform and actual test-mode payment APIs.",
+      "do_nothing": "Retain registered-but-unimplemented37/54 and disconnected company models.",
+      "reversible_experiment": "Signed GREG mission assembles, delivers, accepts, reconciles and privately serves; hostile manifest/signature/book substitutions must refute it."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not selected for this bounded increment: Requires founder-selected accounts/credentials and genuine provider access; cannot fabricate activation. The intended wider capability remains binding; this disposition is not permanent removal.",
+        "revival_evidence": "Authorized credentials and actual provider evidence."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Second pass attacks empty hash-valid manifests, changed terms, replay, foreign acknowledgements, hash-valid fabricated books, revision drift, inactive members and widened source scope.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "overfit",
+        "statement": "Hash-valid fake media or partial manifests could satisfy delivery.",
+        "strengthening_response": "Regenerate all five canonical assets with exact provenance and limitations; compare complete pinned receipts and delivered bytes."
+      },
+      {
+        "id": "N2",
+        "category": "gaming",
+        "statement": "Changed terms, replay or foreign acknowledgements could produce false settlement.",
+        "strengthening_response": "Verify signatures against pinned offer/version/minor units; immutable IDs; reject changed replay, wrong buyer/hash and predating acceptance."
+      },
+      {
+        "id": "N3",
+        "category": "gaming",
+        "statement": "Balanced hash-valid books could masquerade as verified receipts or real money.",
+        "strengthening_response": "Bind every journal entry/date/amount/currency/memo to an accepted signed delivery; isolated fixture chart; no actual payment claims."
+      },
+      {
+        "id": "N4",
+        "category": "dependency",
+        "statement": "Revision, serving and metrics could manufacture identity or authority.",
+        "strengthening_response": "Expected prior hashes and version provenance; receipt-only existing loopback console; active signed membership; separate fixture/observed tiers; no synthesized ratification."
+      },
+      {
+        "id": "N5",
+        "category": "dependency",
+        "statement": "Owned source reads could expose private data or arbitrary execution.",
+        "strengthening_response": "Explicit published inventory, unlinked real paths, private-canary/traversal probes, network denied; general code/provider execution still refused."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Hash-valid fake media or partial manifests could satisfy delivery. Regenerate all five canonical assets with exact provenance and limitations; compare complete pinned receipts and delivered bytes.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed contract, dependency, authority or completion claim."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Changed terms, replay or foreign acknowledgements could produce false settlement. Verify signatures against pinned offer/version/minor units; immutable IDs; reject changed replay, wrong buyer/hash and predating acceptance.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed contract, dependency, authority or completion claim."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Balanced hash-valid books could masquerade as verified receipts or real money. Bind every journal entry/date/amount/currency/memo to an accepted signed delivery; isolated fixture chart; no actual payment claims.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed contract, dependency, authority or completion claim."
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "accepted",
+        "rationale": "Revision, serving and metrics could manufacture identity or authority. Expected prior hashes and version provenance; receipt-only existing loopback console; active signed membership; separate fixture/observed tiers; no synthesized ratification.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed contract, dependency, authority or completion claim."
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "accepted",
+        "rationale": "Owned source reads could expose private data or arbitrary execution. Explicit published inventory, unlinked real paths, private-canary/traversal probes, network denied; general code/provider execution still refused.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Changed contract, dependency, authority or completion claim."
+      }
+    ],
+    "final_design": "Signed pinned test orders, actual bytes, acceptance-bound books and memory integrate into GREG. Owned source reads are explicit; operational authority stays founder-gated.",
+    "residual_risks": [
+      {
+        "risk": "Hash-valid fake media or partial manifests could satisfy delivery.",
+        "mitigation": "Regenerate all five canonical assets with exact provenance and limitations; compare complete pinned receipts and delivered bytes.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next contract/provider/source/operational change."
+      },
+      {
+        "risk": "Changed terms, replay or foreign acknowledgements could produce false settlement.",
+        "mitigation": "Verify signatures against pinned offer/version/minor units; immutable IDs; reject changed replay, wrong buyer/hash and predating acceptance.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next contract/provider/source/operational change."
+      },
+      {
+        "risk": "Balanced hash-valid books could masquerade as verified receipts or real money.",
+        "mitigation": "Bind every journal entry/date/amount/currency/memo to an accepted signed delivery; isolated fixture chart; no actual payment claims.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next contract/provider/source/operational change."
+      },
+      {
+        "risk": "Revision, serving and metrics could manufacture identity or authority.",
+        "mitigation": "Expected prior hashes and version provenance; receipt-only existing loopback console; active signed membership; separate fixture/observed tiers; no synthesized ratification.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next contract/provider/source/operational change."
+      },
+      {
+        "risk": "Owned source reads could expose private data or arbitrary execution.",
+        "mitigation": "Explicit published inventory, unlinked real paths, private-canary/traversal probes, network denied; general code/provider execution still refused.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next contract/provider/source/operational change."
+      }
+    ],
+    "recommendation": "EXPERIMENT"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved rather than represented as independent consensus.",
+    "entries": [
+      {
+        "role": "Adversarial Reviewer",
+        "position": "Do not call fixture commerce verified market/payment or whole-machine completion.",
+        "rationale": "Operational ratification, real payment/remote channels and OS confinement remain open.",
+        "evidence_threshold": "Authorized real provider and operational/escape evidence.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Any activation or broader capability claim."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Add native modules to draft PR147, refresh owned-source inventory and preserve every original acceptance criterion; no main write or operational activation.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert this native composition delta; retain linked evidence.",
+      "Keep prior runtime, canonical authority and all remaining requirements."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Fake media accepted as canonical.",
+    "Forged terms, foreign acceptance or fabricated books accepted.",
+    "Private data/arbitrary source admitted.",
+    "Fixture proof narrows full-machine completion."
+  ],
+  "decision": "EXPERIMENT",
+  "decision_owner": "Kernel/GREG maintainers within authorized development; Alfonso owns consequential decisions",
+  "review_trigger": "Fresh CI, any changed recipe, and every successful increment; automatically resume parent Body + Organs + Mind objective."
+}

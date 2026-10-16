@@ -1,0 +1,7 @@
+CAUGHT removed permission ['1 failed in 0.92s']
+CAUGHT dropped constraint ['1 failed, 1 passed in 0.84s']
+CAUGHT UNKNOWN relabeled ['1 failed in 0.08s']
+CAUGHT replaced source ['1 failed in 0.07s']
+CAUGHT duplicate settlement guard ['1 failed in 0.77s']
+CAUGHT paid key activates unconfigured method ['1 failed in 0.08s']
+6 mutants; 0 survived, stale, or invalid

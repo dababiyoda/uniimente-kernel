@@ -1,0 +1,102 @@
+{
+  "order": {
+    "acceptance": {
+      "max_changed_files": 8,
+      "run_changed_tests": true
+    },
+    "allowed_paths": [
+      "greg/*",
+      "tests/unit/*"
+    ],
+    "authority_ref": "sha256:91747b70db60a175df3ef3d95796cb945ea14eb505d7244a1b026f5195024248",
+    "base": "HEAD",
+    "context": "",
+    "grant_id": "35e9d8a7-3dbe-4b41-be85-1eb8ced06b47",
+    "inputs": [],
+    "max_budget_usd": 3.0,
+    "mission_id": "m:work-add-a-read-only-function-compu",
+    "mode": "repository",
+    "objective": "add a read-only function computer_use_ready() to greg/computer.py that reports whether Playwright, a Chromium binary and certutil are installed, without launching a browser; add a unit test for it",
+    "order": "add-a-read-only-function-compu",
+    "provider": "claude-code",
+    "repo": "/home/user/uniimente-kernel",
+    "timeout_seconds": 1200,
+    "tools": []
+  },
+  "order_digest": "sha256:90647604a4c2aa19fbd04109e8a44dd900bb2dab0700ecc0d769ea2ae4dcf9ce",
+  "status": "COMPLETED",
+  "summary": {
+    "acceptance_owner": "worker.appraise (independent)",
+    "authority_created": false,
+    "base_commit": "aed2f83e5e352efd0504a45f67307e1366a9ab2b",
+    "branch": "greg/add-a-read-only-function-compu",
+    "changed_files": [
+      "greg/computer.py",
+      "tests/unit/test_computer_use_ready.py"
+    ],
+    "commit": "00b9fe7917116b126d87190de564565405d6d79b",
+    "evidence_path": "/tmp/greg-hands/body/workspace/m_work-add-a-read-only-function-compu/work-orders/add-a-read-only-function-compu/evidence.json",
+    "grant_id": "35e9d8a7-3dbe-4b41-be85-1eb8ced06b47",
+    "greg_tests": [
+      {
+        "argv": [
+          "/usr/local/bin/python3",
+          "-m",
+          "pytest",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "tests/unit/test_computer_use_ready.py"
+        ],
+        "network": "denied",
+        "passed": true,
+        "returncode": 0,
+        "seconds": 0.36,
+        "tail": "...                                                                      [100%]\n3 passed in 0.05s\n"
+      }
+    ],
+    "greg_tests_passed": true,
+    "mission_id": "m:work-add-a-read-only-function-compu",
+    "mode": "repository",
+    "order_digest": "sha256:90647604a4c2aa19fbd04109e8a44dd900bb2dab0700ecc0d769ea2ae4dcf9ce",
+    "output": null,
+    "patch_path": "/tmp/greg-hands/body/workspace/m_work-add-a-read-only-function-compu/work-orders/add-a-read-only-function-compu/change.patch",
+    "patch_sha256": "sha256:201fc36bb8a95f1bba273d15d43ec39a6c1a0637e9da35c25bda65900d8598a1",
+    "repo": "/home/user/uniimente-kernel",
+    "scope": {
+      "outside_allowed": [],
+      "protected_touched": [],
+      "too_many_files": false
+    },
+    "status": "COMPLETED",
+    "work_order": "add-a-read-only-function-compu",
+    "worker": {
+      "cost_usd": 0.2510754,
+      "duration_s": 18.34,
+      "error": null,
+      "exit_code": 0,
+      "identity": "claude-code",
+      "permission_denials": [
+        "{'tool_name': 'Bash', 'tool_use_id': 'toolu_01CypKHBRzukZMMBuxx4f9fR', 'tool_input': {'command': 'cd greg && wc -l computer.py && sed -n 1,60p computer.py && grep -n \"chromium\\\\|certutil\\\\|playwright\\"
+      ],
+      "provider": "claude-code",
+      "served_models": [
+        "claude-haiku-4-5-20251001",
+        "claude-sonnet-5-5"
+      ],
+      "turns": 8
+    },
+    "worker_claim": {
+      "changed": [
+        "greg/computer.py",
+        "tests/unit/test_computer_use_ready.py"
+      ],
+      "confidence": 0.95,
+      "tests_run": [
+        "python -m pytest tests/unit/test_computer_use_ready.py"
+      ],
+      "unresolved": []
+    },
+    "worker_summary_tail": "I added `computer_use_ready()` to `greg/computer.py`, and the three new unit tests pass.\n\nIt returns `{\"ready\", \"playwright\", \"chromium\", \"certutil\"}`:\n- **`playwright`:** found with `importlib.util.find_spec`, so the package is never imported.\n- **`chromium`:** the path from the existing `chromium()` helper, or `None` if no binary is found.\n- **`certutil`:** a check that `/usr/bin/certutil` is executable.\n- **`ready`:** true only when all three are present.\n\nIt never launches a browser or runs a subprocess.\n\nThe tests are in `tests/unit/test_computer_use_ready.py`:\n- all three present;\n- each missing piece individually blocks `ready`;\n- no subprocess is spawned.\n\nI only ran the new test file, not the wider suite.\n\nWORK_REPORT: {\"changed\": [\"greg/computer.py\", \"tests/unit/test_computer_use_ready.py\"], \"tests_run\": [\"python -m pytest tests/unit/test_computer_use_ready.py\"], \"unresolved\": [], \"confidence\": 0.95}"
+  }
+}

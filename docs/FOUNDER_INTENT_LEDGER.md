@@ -1,4 +1,208 @@
+> Continuity companion: `docs/PROJECT_COGNITION_CONTINUITY.md` defines continuous source ingestion, agent context checksum, propagation receipts, repository ecology, and the anti-context-loss test.
+
 # Founder Intent Ledger
+
+## Whole-machine convergence and the Founder's First Mission — 2026-10-14
+
+The founder's OPUS MAXIMUS continuation directive is implemented on draft branch `claude/greg-whole-machine-convergence`; see `collaboration/WHOLE-MACHINE-CONVERGENCE-2026-10-14.md`.
+
+- The Mind line is the canonical base. #160 and #132 are joined, and #132's Foundry modules keep the Mind-line modules as registered alternates behind one dispatch rule.
+- #159 is ported. #157's worker isolation is the named next extraction.
+- The executable Founder's First Mission and the five-question Mission Control are on the one mission path. `greg rehearse` runs both without credentials.
+- State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
+
+## CONTRADICTION-0002 Option A: historical reproducibility apart from live constitutional integrity — ruling 2026-08-23, implemented 2026-10-14
+
+Source, preserved verbatim:
+[FOUNDER-RULING-2026-08-23](deliberations/FOUNDER-RULING-2026-08-23-infinite-goal-chase.md)
+(byte-identical to the file on #87; its header and "How this ruling is
+discharged" table were written by the #87 agent and describe #87's tree). The
+file is a record of what the founder wrote. It authenticates nothing and
+carries no authority beyond its own text; in particular it is not an
+authorization for any artifact change, which only a signature by an enrolled
+founder key can be.
+
+| Required field | INTENT-CONTRADICTION-0002-A |
+| --- | --- |
+| statement | "Separate historical reproducibility from live constitutional integrity. Freeze byte-identical historical copies of the twelve continuity artifacts used by the sealed experiment. ... Create a separate live constitutional-integrity mechanism whose purpose is to detect unauthorized changes to constitutional/authority artifacts. Do not use the historical experiment as the live tripwire. ... Do not update an old historical hash merely to make current implementation pass." |
+| source_refs | FOUNDER-RULING-2026-08-23 (file above); #87 a70905c (first implementation, path-string authorization); verifier verdict on #87 (re-home governance/integrity; Ed25519 founder envelope, never a path or caller string) |
+| owner | Alfonso (ratification); Kernel evolution owners (history); Kernel governance owners (live check) |
+| state | active |
+| binding_scope | Package 3 continuity readings and the live constitutional-integrity check; no grant, policy or Gate behaviour |
+| constitutional_constraints | Only a signature by Alfonso's enrolled founder key authenticates him; no pinned historical hash is re-measured; the two mechanisms do not import each other |
+| success_evidence | `evolution/repair/continuity/` reproduces FROZEN, SR-001 and SR-002 and the sealed Package 3 evidence record; `python -m governance.integrity --check` names every unauthorized artifact; tests `test_repair_continuity_history.py`, `test_governance_integrity.py` |
+| failure_evidence | A tampered frozen copy, a forged/replayed/unsigned authorization, an unenrolled signer, a changed committed genesis or a removed/reordered committed record must fail (tested); no founder key enrolled yet, so nothing can be authorized today |
+| dependencies | Alfonso enrolls his own public key (his commit) before any authorization exists |
+| conflicts | #87's `Amendment.authorization` path string is superseded by signed envelopes; #87's per-path frozen copies would trip `check_authority_singleton`, so the store is content-addressed |
+| next_review_trigger | First founder enrollment, or the first founder-signed `INTEGRITY_AUTHORIZE` |
+| supersedes | The SR-002 subject binding as live tripwire (the 13 SR002 dependent tests now read history) |
+| superseded_by | None |
+| implementation_refs | `evolution/repair/continuity/`, `evolution/repair/subjects.py`, `evolution/repair/harness.py`, `governance/integrity/`, Canonical CI job 3 |
+
+## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
+
+`INTENT-20261013-FRONTIER-LEAP-RECOMBINE` ([record](intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json), [full directive, verbatim](intent/sources/FRONTIER-LEAP-DIRECTIVE-2026-10-13-source.md)): stop treating Capability Genesis as part replacement and make it construct new, integrated capabilities from harvested mechanisms, on GREG's one path. Founder instructions A-D are preserved verbatim in the record's `founder_quotations` and in the source file. They are read under INTENT-0030. "Meniscus", "impermeable shield" and "systemic dominance" keep the 2026-10-07 executable interpretation. They authorize no crossing of legal boundaries, no coercion and no immunity from shutdown.
+
+What was built:
+
+- **Construction route.** `greg/recombine.py` adds certificate-carrying reductions. `greg/genesis.py` gains a `constructed` rung between `verified_detached` and `builder`. A function with no catalog entry is reduced onto an engine GREG already qualifies (maximum flow, LP). The engine is itself acquired by the same ladder when missing. Every answer is re-proved in the original problem's terms.
+- **First functions.** `assignment.staffing` (with a Hall/Koenig bottleneck), `assignment.matching` (chained through staffing) and `project.crash` (time-cost LP; an impossible deadline is proved without any engine).
+- **Mechanism Cards.** Every reduction carries a card with all twenty directive fields, searchable and deduplicated by content digest.
+- **Authority.** Constructions are read-only. They attach only by founder command or a signed read-only `auto_attach`. They stop when their engine is detached or quarantined, are quarantined when their reduction code changes, and are re-formed over a different engine when the engine lies.
+
+Reconciliation: no third mission engine, router or genesis was created. Kernel PR #129's `egregore/genesis.py` is the standing-cognition-slot loop (proposer/evaluator parts). `greg/genesis.py` stays the canonical mission-capability genesis. Convergence of the two is recorded as open work, and nothing was deleted.
+
+Evidence: [README](evidence/greg-recombine/2026-10-13/README.md). State: active. Authority delta: none. VEPMC: 0.
+
+Progress 2026-10-14 ([evidence](evidence/greg-mind-constructs/2026-10-14/README.md)). The Mind and Capability Genesis now close one loop on the canonical path:
+
+1. The Competency Compiler recognizes a problem whose inputs fit a reduction. Its deficit names that constructible function, not an unbuildable geometry label.
+2. Genesis constructs it under the mission's signed scope.
+3. The Mind answers with the construction's certificate.
+4. The independent appraiser re-derives the answer through a read-only restore and returns VERIFIED.
+5. A construction that faults while the Mind uses it is repaired by the same two-strike mechanism.
+
+Unsigned missions ask first for the engine, then for the construction, and never self-attach. Authority delta: none.
+
+## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
+
+`INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.
+
+Progress 2026-10-08 (measured, frozen, negative results kept):
+
+- **P6 v2:** VPL is 3 of 4. F2R, F3 and F4 lift; the natural M4 family F5 does not (8.5% cheaper, not significant).
+- **P4 decisive retest:** REGRESSION, 160 vs 162. All discordant items used identical orders, so this is timing noise. Conditional routing is demoted and the shadow default stays.
+- **P8 cycle 1:** REJECT. The overfit was caught under a sealed evaluator.
+- **Built:**
+  - Competency Compiler with 15 typed mental-model operators, including executable sensitivity analysis;
+  - frozen-evidence routing;
+  - Lawful Leverage Foundry, hardened after an adversarial review;
+  - Goal Gravity (`greg gravity`).
+- **Backcast GPS:** nine frontier backcasts added.
+
+Progress 2026-10-13 (measured, frozen, negative results kept):
+
+- **P8 cycle 2** (negative-selection detector): REJECT on a genuine scarce-sample fragility.
+- **Genome admission** ([evidence](evidence/greg-genome-admission/2026-10-13-v1/README.md)): 31 executable genomes across L1-L4 on held-out seeds, pre-registered at `496c85b`:
+  - 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED;
+  - none attached; attaching any is the founder's decision.
+- **Admitted:** 20 of the 31 (DEFAULT or NICHE): L1 5, L2 2, L3 11, L4 2. SUPERSEDED genomes are excluded from routing, not kept as fallbacks; `collective_market` is SUPERSEDED only against an oracle competitor, which leaves the market geometry unroutable (see the evidence erratum).
+- **Verifiers hardened before the freeze:** a mutation audit (an uncommitted five-seed sweep) found over 1,000 accepted or crashing corruptions of valid answers. After the fix no non-equivalent mutant survives on dev seeds 0-9; equivalent ones (raised non-binding bounds) are accepted by design.
+- **Second Foundry/Gravity/resilience review, by the building agent:** 9 defects plus a cortex abstention crash, fixed with regression tests. They included a consent gap, a hidden-bottleneck map, a lookalike legal operator, paused-mission authority and stale asks.
+- **Independent review (2026-10-13):** five lenses by separate agents found verifier, Gravity, Foundry, resilience, community-evidence and cortex defects, each reproduced and fixed with a regression test that fails on the old code (`4d99fb0`, `ed0f00b`, `9a799ed`). The evidence lens confirmed the admission evidence and corrected its prose (erratum in the admission README).
+- **Next gate:** P6 v3, VPL re-measured with the admitted genomes on a new natural family.
+
+## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
+
+`INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT` ([record](intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json), [verbatim source](intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md)): founder review of PR #155. P4 learned routing and P6 typed composition are Layer 5 substrate, not the Polyintelligence Mind; all five layers (basal, collective, solver, developmental, meta) remain obligations. Metric: held-out problem families where geometry routing or composition beats the strongest single available intelligence, net of cost/latency, with no added false answers or unauthorized effects; 0 means "a sophisticated router". Sequence: P6 cognitive composition lift → P4 conditional competence memory (hierarchical fallback) → P8 protected evolutionary cognition → IntelligenceGenome library expansion, each family admitted only when it beats simpler baselines on its native geometry. State: active. VPL: 0. Authority delta: none.
+
+## Seed genome: the Competency Compiler on GREG's path — 2026-10-01
+
+`INTENT-20261001-greg-seed-genome` ([record](intent/INTENT-20261001-greg-seed-genome.json), [verbatim source](intent/sources/GREG-SEED-GENOME-DIRECTIVE-2026-10-01-source.md), [requirement map](collaboration/requirements-greg-seed-genome-20261001.json), [intents SG-001 to SG-012](collaboration/intents-greg-seed-genome-20261001.json), [deliberation](collaboration/deliberation-greg-seed-genome-20261001.json), [ADR](decisions/ADR-20261001-greg-seed-genome.md)): GREG recognizes a problem's geometry, recruits the smallest competent method, produces typed evidence, respects authority and settles competence from outcomes. The founder's goal-set words are kept verbatim: "meniscus" is translated as the frontier of the verified envelope, "impermeable shield" as layered prevention and verification, "systemic dominance" as superior lawful capability (SG-002). Control over people, resistance to shutdown and promises of perfection are prohibited (SG-003). State: active. The seed is implemented and integrated through `cognition.solve`, and survives `kill -9` with one settlement. The frozen comparison failed once (v0.2 GAIN_ABSENT, one hard failure, fixed in 0.2.1) and passed on fresh samples (v0.3 GAIN_VERIFIED_AGAINST_RUN_BASELINES against the static router; the gain is concentrated in one family; model arms NOT_RUN). Open founder decisions: merge, and whether high privacy harm is a hard gate (SG-012). Authority delta: none. VEPMC: 0.
+
+Correction absorbed the same day (comment on #143; draft #144, `INTENT-20261001-open-source-mechanism-harvest`): Capability Genesis forms `graph.shortest_path`, `graph.max_flow` and `lp.optimize` from installed open-source packages (NetworkX, SciPy, OR-Tools) on a Mechanism Card, accepts answers only on GREG's own certificate, and leaves attach with the founder. VEPMC stays the required device proof but no longer stops development. Evidence: `tests/evidence/greg-open-source-genesis-2026-10-01/`. Authority delta: none.
+
+Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSUE-2026-10-13-source.md)): byte-identical text with the new opening line "Build this prompt meet and exceed all in this prompt:". It is applied by closing the requirement map's section residuals on the canonical path:
+
+- **§9:** selective-disclosure evidence packages, built from retained receipts. They use the salted-hash disclosures of RFC 9901, include every same-input receipt, and append institutional responses rather than editing them in. `greg cognition package` exports one read-only; nothing is sent.
+- **§5:** a measured characterization harness covering latency, error correction against self-consistent lies, a problem-space ladder and invariance, with Wilson intervals.
+- **§13 and §15:** the verifier cross-checks and evidence-backed legitimacy in #161.
+- **§12:** wiring the budget controller into a runtime optional step is deferred until the next freeze, because the frozen evaluations pin `cortex.py`.
+
+Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
+
+## Master build directive and current gate repair — 2026-09-30
+
+The two September 30 master-directive records (this one and the next) describe complementary scopes of the same intended destination: gate-proof repairs and resource requests. Neither creates a second authority or goal owner; their original source lineages remain distinct.
+
+`INTENT-20260930-MASTER-BUILD-GATE` preserves the current session's full
+effect horizon and extends the existing convergence/inheritance records. It
+does not replace the 34 horizons in `greg/path.json`, the 55 Foundry obligations,
+or the founder's authority. [Normalized record](intent/INTENT-20260930-MASTER-BUILD-GATE.json),
+[source coverage](collaboration/SOURCE-COVERAGE-20260930-PROOF-INTEGRITY.json),
+and [build/evidence report](collaboration/GREG-GATE-REPAIR-20260930.md).
+
+The independent appraiser's earlier VERIFIED claim is falsified for a signed
+mission with no observations and a missing required file. Its intended effect
+remains active; the current repair requires complete, correctly bound closure
+evidence. The installer's earlier success claim is falsified when a public
+companion file names a different key from the actual signer. The current repair
+checks correspondence and active enrollment, including signed key rotation.
+
+These are implementation/evidence corrections, not destination changes. Exactly
+one operational node remains primary: N1, externally verified VEPMC 0 -> 1.
+The Chromebook is the candidate under the preserved September 26 hardware
+correction; actual Linux availability, founder key custody, installation and
+acceptance still require a real run. No local test increments that milestone. The latest Claude rehearsal nonetheless advanced `greg path` to N2 on a container/test-key structural closure. This implementation assumption is superseded: retain the structural candidate and all later horizons, but keep N1 primary until external exit evidence is represented through an authenticated contract. That contract is not implemented; no boolean flag or local count substitutes for it. (#138, b8a0ccd and 673726a, PR-author record.)
+
+**Port onto the installed-body line (2026-10-14).** The appraisal repair (closure-bound evidence, re-expressed for pipeline-resolved parameters) and the signer-enrollment repair are ported as #138 built them. The N1/N2 structural-candidate gate is ported onto the one founder-tier rule that already gates N3, N4, N6 and N7 (`greg/metrics.py` `founder_tier`), not as a hardcoded `met=False`: a closure signed with a test key, a fixture's key or a `--no-passphrase` rehearsal stays `STRUCTURAL_CANDIDATE` and never moves `greg path`; one signed by the enrolled founder key after it attested passphrase custody moves it. Reason: the hardcoded gate meant no evidence, not even Alfonso's genuine Body-1 run, could ever clear N1 (both #138 verifiers flagged it as a founder decision). The founder tier is not the authenticated external contract #138 asked for: trust on first use remains (whoever controls the body's filesystem enrolls the key), and the ledger still cannot prove whose machine or key it is. **Founder decision open:** whether a founder-tier closure plus Alfonso's own signed acceptance suffices for N1, or N1 waits for an external-verification contract. Authority delta: none; the tier grants nothing.
+
+## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
+
+`INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE` ([record](intent/INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE.json), [verbatim sections](intent/sources/MASTER-BUILD-DIRECTIVE-2026-09-30-source.md)): GREG may ask for resources (an account, compute, software, a build, a licensed professional, a human worker), and every ask carries evidence, alternatives, costs, expected effect, uncertainty and authority requirements, with no emotional manipulation, no manufactured urgency and no framing of denial as harm to GREG (section 60; **implemented** as the one path `greg/asks.py`). Business grows one verified loop before a second venture (61); new organizations only for recurring bottlenecks (62); regenerative advantage without dependency or exploitation (63); external reality is the final judge (64). Section 76 lets an obsolete implementation leave the active tree when a placement justifies it, with its intent kept on `greg/path.json` and its history in git; this reconciles, and is recorded against, the Final Build Order's preservation rule. State: active. Authority delta: none; asking grants nothing.
+
+## Developmental inheritance — 2026-09-30
+
+`INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE` ([record](intent/INTENT-2026-09-30-DEVELOPMENTAL-INHERITANCE.json), [verbatim source](intent/sources/DEVELOPMENTAL-INHERITANCE-2026-09-30-source.md)): corrections reroute rather than delete; identify the changed axis; place every lineage on one Backcast GPS (`greg/path.json`) with one of ten classes; keep every founder-intended capability horizon at its node, classified by present feasibility; exactly one operationally primary node; genuine obsolescence only when the effect is no longer wanted, a demonstrably stronger canonical mechanism replaced it, or continuing would violate constraints. It restates PR #68's `intent.aspirations.are_destinations` and `meta.intent_conservation_test` and corrects this day's first reconciliation record. State: active. Authority delta: none.
+
+## One GREG convergence — 2026-09-30
+
+`INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE` ([record](intent/INTENT-2026-09-30-OPUS-MAXIMUS-CONVERGENCE.json), [verbatim source](intent/sources/OPUS-MAXIMUS-CONVERGENCE-2026-09-30-source.md)) directs convergence of competing branch futures into one GREG path, verification of the designated body, truthful persistence, and growth only from measured bottlenecks with founder decision. Conflicts resolved: the 2026-09-26 Chromebook correction controls the first body over Mac-first runbooks; open-source-first controls GREG's model default; FOUNDRY-55 stays an active obligation sequenced after VEPMC (#132 stacked next). Dispositions: [`collaboration/GREG-RECONCILIATION-2026-09-30.md`](collaboration/GREG-RECONCILIATION-2026-09-30.md). State: active. Authority delta: none. VEPMC: 0.
+
+## Foundry Swiss Army knife — 55 mandatory executable systems, 2026-09-27
+
+`INTENT-2026-09-27-FOUNDRY-55` and its [verbatim source](intent/sources/FOUNDRY-55-2026-09-27-source.md) preserve Alfonso's obligation to build **all 55 numbered systems** as individually usable and composable GREG/Foundry capabilities with meaningful tests, reproducible execution evidence, limitations and recovery. Deferral retains the item; removal/substitution requires Alfonso's explicit approval. The `foundry/arsenal.py` status describes available mechanism maturity and **does not certify item-level completion**. Alfonso owns no Mac at present; first-body hardware selection remains open. No permission to deploy, spend, publish, contact third parties or change Kernel authority is granted.
+
+## Real-product repository metabolism — 2026-09-26
+
+`INTENT-2026-09-26-REAL-PRODUCT-METABOLISM` preserves Alfonso's latest explicit anti-cathedral correction with verbatim excerpts in `intent/sources/REAL-PRODUCT-METABOLISM-2026-09-26-source.md`: the project corpus is developmental substrate to be metabolized into the actual GREG product. Experiments, simulations, tests, benchmarks and architecture remain subordinate verification/evidence, not the milestone. Every substantial session must produce a truthful product delta ("what can actual GREG do now that it could not do before?") or identify a precise external blocker. Historical mechanisms may be productized, extracted, recombined, retained as evidence, archived, or removed from the active canonical path while preserving provenance. State: active. Current Single Bottleneck Metric remains VEPMC 0 -> 1.
+
+
+## Spider-Web compounding rule — 2026-09-25
+
+`INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING` (`intent/INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING.json`, verbatim source in `intent/sources/SPIDER-WEB-2026-09-25-source.md`) makes the founder-intent → verified-outcome transaction the optimization target. Every capability must strengthen at least one of seven control points (eligibility, routing, proof, settlement, reliability, capability formation, compounding), and repeated missions must yield institutional knowledge that improves the next one. Clause inserted in `CANONICAL_EXECUTION_ORDER.md`; enforced by `greg/capabilities.py` registration and `greg/routing.py`; repository dispositions proposed in `collaboration/REPOSITORY-METABOLISM-2026-09-25.json`. State: active; bottleneck VEPMC remains 0 until a Mac run with Alfonso's own key.
+
+## Egregore ecology on the first body — 2026-09-25
+
+`INTENT-2026-09-25-EGREGORE-ECOLOGY` (`intent/INTENT-2026-09-25-EGREGORE-ECOLOGY.json`, verbatim source in `intent/sources/EGREGORE-2026-09-25-source.md`) extends the 09-11 and 09-22 records: one persistent GREG mind over an ecology of governed intelligences (Levin's multiscale competency, compiled to nested light cones), community-coupled through the untrusted data plane, continuity without a survival right, shutdown always winning, and built as real running mechanisms. Implementation and two-pass decision: `collaboration/GREG-BODY-DECISION-2026-09-25.md` and `greg/`. State: active; reality: integration-tested, not Mac-verified, not founder-used.
+
+## First body and persistent GREG product — 2026-09-22
+
+`INTENT-2026-09-22-FIRST-BODY` preserves Alfonso's direct correction: the first owned computer is the practical body of a persistent, governed GREG operating layer above macOS. This is an active product requirement, not a claim of an installed service or a grant of live authority. The intent record and exactly two strengthening passes are in `docs/intent/INTENT-2026-09-22-FIRST-BODY.json` and `docs/collaboration/FIRST_BODY_DECISION_2026-09-22.md`. The date-based ID avoids the unresolved `INTENT-0029` collision in draft #86 and draft #105. Runtime ownership (#70/#87) and live founder authentication remain unresolved.
+
+## Embodied GREG and developmental trajectory — 2026-09-11
+
+[INTENT-GREG-EMBODIED-2026-09-11](intent/INTENT-GREG-EMBODIED-2026-09-11.md)
+is the current product correction, subordinate to no older metaphorical framing.
+It preserves INTENT-0030 and the full business, human-workforce and economic/
+compute horizon. GREG-001 is partial proof, not that destination. Exact selected
+source, conflicts, scope and two-pass OPUS-2026-09-11 decision are linked there.
+No new runtime authority or activation is created.
+
+## GREG bounded real mission — 2026-09-10
+
+The current chat directs one bounded real mission that continues after the
+interface closes, uses a real capability, respects approval, recovers from
+interruption and reports evidence. This advances INTENT-0030 and SR-INTENT-2;
+the hardware operating layer, capability growth, human teams/business operation
+and compounding horizon remain intended. A fixed audit is a proof dependency,
+not a redefinition of that destination. It confers no machine sovereignty.
+
+- intent_id: GREG-INTENT-1
+- statement: prove one persistent bounded mission before expanding architecture
+- source_refs: current chat, 2026-09-10 GREG core-loop direction; no cryptographic founder authentication claim
+- owner: Alfonso; existing Kernel mission, workflow, policy and appraisal owners
+- state: active; local development proof exercised, hardware mission unproven
+- binding_scope: reversible implementation, verification and draft review
+- constitutional_constraints: existing five powers, pre-existing grants, no activation or authority expansion
+- success_evidence: tests/evidence/greg-proof/ and linked GREG-001 decision
+- failure_evidence: focused-first.log; retained host/authentication/evaluator limitations
+- dependencies: adopted SR-001 package, existing DurableWorkflow/Gate/Ledger, independent hardware/authentication gate
+- conflicts: generalizing frozen synthetic Goal Chase merely for one audit adds avoidable scope
+- next_review_trigger: review executable local proof, then supply an approved hardware and authority integration route
+- supersedes: no implementation or historical alternative; prioritizes an executable proof over additional architecture
+
+Decision and two-pass dissent: [GREG-001](collaboration/GREG-ONE-MISSION-PROOF.md).
 
 ## SR-001 bounded recovery — 2026-09-08
 
@@ -26,6 +230,25 @@ documents are proposals/aspirations. Repetition creates no additional authority.
 | superseded_by | None | None | None |
 | implementation_refs | Shared events/, provenance/, adapters/, contracts/, policy/consequence_gate.py; linked organ shims | Existing anatomy retained; no new whole-machine runtime | Refusal paths and draft-only handoff |
 
+
+## INTENT-20261013-GOAL-GRAVITY — 2026-10-13
+
+Goal Gravity + Experiential Intelligence + Asymmetry Production Line. The founder's
+2026-10-13 directive (verbatim: `docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md`)
+compiles to one behavioral property of the canonical standing runtime: an authorized
+persistent goal is an attractor for relevant perception, backcasting, preparation,
+capability formation and Gate-governed action. Record: `docs/intent/INTENT-20261013-GOAL-GRAVITY.md`
+(machine-readable `.json` validates against the skill schema). State: **active**,
+`active_requirement`, consequence class `material`. Implementation: `egregore/gravity.py`
+and its sibling modules on `main`'s runtime; decision record
+`docs/decisions/ADR-GOAL-GRAVITY-001.md`; deliberation
+`docs/collaboration/deliberation-goal-gravity-2026-10-13.json`. Evidence tier at
+recording: IMPLEMENTED / UNIT-TESTED / INTEGRATION-TESTED on synthetic ledgers; not
+externally verified, not founder-accepted. The dated identifier is used because the
+numeric `INTENT-00NN` series (0029–0037) is allocated across unmerged draft branches.
+Overlapping unmerged mechanisms (#158 `greg/gravity.py`, #114/#137 `greg/missions.py`,
+#93/#97/#109 Goal Chase) are preserved as substrate; their reconciliation is a founder
+merge decision, never a silent replacement.
 
 UNIIMENTE must never silently lose a founder intention, contributor objection, negative result, or superseded design.
 
@@ -121,3 +344,16 @@ When the work originates in a metaphorical or science-fiction founder statement,
 - evidence that would falsify the claimed effect.
 
 The canonical ledger should ultimately become machine-readable. Until that implementation lands, issues and ADRs must use these fields verbatim.
+
+## Seed Genome integration — October 1, 2026
+
+[INTENT-2026-10-01-POLYINTELLIGENCE-SEED](intent/INTENT-2026-10-01-POLYINTELLIGENCE-SEED.json) remains **active**: bounded computation is integrated into the existing GREG mission, authority and journal path; the complete directive and live verification remain open. [Current scope, evidence and residual obligations](cortex/GREG_SEED_GENOME.md) govern claims. [Every supplied directive line and Appendix A item](cortex/SEED_GENOME_REQUIREMENTS.json) has retained lineage. PR137 is the runtime base; PR141 is reused and preserved; PR139's selected integration/outcome mechanisms remain linked for later extraction. The simple static policy is retained after a negative advantage comparison. No cognition result changes human sovereignty. P0–P13/C1–C8 live beneath `greg/path.json`; N1/VEPMC remains primary, and Foundry-55 is unaffected.
+
+
+## Full-machine completion — controlling correction, October 1, 2026
+
+**BODY + ORGANS + MIND = GREG / UNIIMENTE** is the fixed completion boundary. Read `intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and its verbatim source. Reconstruct the whole boundary, implement the highest-priority unfinished dependency in rigorous increments, prove and integrate each increment, then automatically resume the parent objective and the next unblocked requirement. Seeds, experiments, sandboxes, benchmarks, PRs and VEPMC are intermediate sequencing/evidence units; none may narrow the machine or stop unrelated feasible implementation. A future-family label preserves its obligation. Registered is not implemented; a tested component is not an integrated machine.
+
+Continue until the currently achievable machine is integrated and executable. A precise founder-only action, genuine external dependency or demonstrated technology limit blocks only the affected requirement; continue other buildable work, preserve the destination and implement the strongest defensible approximation/backcast. Prose and placeholders cannot replace executable machinery when feasible. Existing authority, resource, consent, refusal, pause/revocation and shutdown gates remain effective.
+
+Intent remains **active**, implementation in progress. Preserve prior Seed Genome negative evidence and N1/VEPMC authentic-use predicates; they do not gate unrelated software completion. Propagation evidence is recorded separately from intent and never inferred from a plan.

@@ -1,0 +1,52 @@
+{
+ "command": "python -m foundry.completion --run 42",
+ "name": "Digital twins",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "brier_after_drift": {
+   "adaptive": 0.245,
+   "static": 0.3279
+  },
+  "brier_without_drift": {
+   "adaptive": 0.1688,
+   "static": 0.1626
+  },
+  "cost_without_drift": 0.0062,
+  "drift_alerts": [
+   {
+    "at": "2026-09-11T00:00:00Z",
+    "capability": "wmi.assess",
+    "index": 30,
+    "longrun_brier": 0.0246,
+    "recent_brier": 0.232,
+    "refit_p_verified": 0.7
+   },
+   {
+    "at": "2026-09-13T16:00:00Z",
+    "capability": "wmi.assess",
+    "index": 38,
+    "longrun_brier": 0.0782,
+    "recent_brier": 0.2852,
+    "refit_p_verified": 0.1
+   },
+   {
+    "at": "2026-09-16T08:00:00Z",
+    "capability": "wmi.assess",
+    "index": 46,
+    "longrun_brier": 0.1206,
+    "recent_brier": 0.4383,
+    "refit_p_verified": 0.7
+   }
+  ],
+  "prediction_after_restart": {
+   "capability": "wmi.assess",
+   "expected_cost_usd": 0.05,
+   "observations": 60,
+   "p_verified": 0.5037
+  },
+  "recalibration_helps_under_drift": true,
+  "regime_change_at": 30
+ },
+ "result_sha256": "sha256:0e0adcd22fea6c7e67e3970e8ed939e2d0804c2b77dbbc6aa5540c2e4f52e174",
+ "system": 42
+}

@@ -1,0 +1,72 @@
+{
+ "reality": "TESTED: local pytest on #122 head 73355d04 plus this child fix; per-test Ed25519 key; fixture GitHub; not Mac-verified",
+ "claim": "held-out learning evidence counts distinct briefs: fitting, retention, post-retention monitoring and retry cool-down each use distinct brief sets; relabels supersede, never multiply",
+ "method": "tests/unit/test_greg_learning_heldout_independence.py run against greg/improvement.py mutated to the parent (73355d0) and with each mechanism of the fix removed individually; then with the fix restored",
+ "mutants": {
+  "parent_73355d0_label_counting": {
+   "killed": true,
+   "failing_falsifiers": [
+    "test_1_the_training_brief_relabelled_three_times_leaves_the_candidate_in_shadow",
+    "test_2_3_one_later_brief_labelled_three_times_is_one_case_three_distinct_briefs_decide",
+    "test_3_three_distinct_later_briefs_without_a_strict_gain_reject",
+    "test_4_10_a_corrected_label_controls_scoring_counts_once_and_the_original_stays_inspectable",
+    "test_5_three_labels_on_one_brief_cannot_close_a_regression",
+    "test_6_7_retention_briefs_are_not_reused_to_revert_distinct_later_briefs_can",
+    "test_8_case_identity_and_watermarks_reconstruct_after_process_death",
+    "test_9_a_replayed_signed_critique_does_not_add_a_case",
+    "test_retry_after_a_loss_needs_three_new_distinct_briefs"
+   ],
+   "summary": "9 failed in 9.79s",
+   "failure_mode": {
+    "test_1_the_training_brief_relabelled_three_times_leaves_the_candidate_in_shadow": "behaviour: candidate retained on relabels of its own training brief",
+    "test_2_3_one_later_brief_labelled_three_times_is_one_case_three_distinct_briefs_decide": "behaviour: retained on one later brief labelled three times",
+    "test_4_10_a_corrected_label_controls_scoring_counts_once_and_the_original_stays_inspectable": "behaviour: superseded label counted as a held-out case alongside its correction",
+    "test_5_three_labels_on_one_brief_cannot_close_a_regression": "behaviour: regression closed by three labels on one later brief",
+    "test_6_7_retention_briefs_are_not_reused_to_revert_distinct_later_briefs_can": "behaviour: retained policy reverted by relabels of its own retention briefs",
+    "test_8_case_identity_and_watermarks_reconstruct_after_process_death": "behaviour: retained after restart on relabelled briefs before three distinct later briefs existed",
+    "test_retry_after_a_loss_needs_three_new_distinct_briefs": "behaviour: rejected change re-proposed on relabels of its own rejection evidence",
+    "test_3_three_distinct_later_briefs_without_a_strict_gain_reject": "API only (TypeError: every_label); control case: the parent also rejects a real loss on three distinct briefs",
+    "test_9_a_replayed_signed_critique_does_not_add_a_case": "API only (TypeError: every_label); guard: on the parent a byte-identical replayed envelope is already absorbed by inbox/journal idempotency (probe: 0 command.rejected, 2 effective cases)"
+   }
+  },
+  "labels_not_collapsed_per_brief": {
+   "killed": true,
+   "failing_falsifiers": [
+    "test_2_3_one_later_brief_labelled_three_times_is_one_case_three_distinct_briefs_decide",
+    "test_4_10_a_corrected_label_controls_scoring_counts_once_and_the_original_stays_inspectable",
+    "test_5_three_labels_on_one_brief_cannot_close_a_regression",
+    "test_6_7_retention_briefs_are_not_reused_to_revert_distinct_later_briefs_can",
+    "test_8_case_identity_and_watermarks_reconstruct_after_process_death",
+    "test_retry_after_a_loss_needs_three_new_distinct_briefs"
+   ],
+   "summary": "6 failed, 3 passed in 10.16s"
+  },
+  "training_briefs_excluded_by_label_only": {
+   "killed": true,
+   "failing_falsifiers": [
+    "test_1_the_training_brief_relabelled_three_times_leaves_the_candidate_in_shadow",
+    "test_5_three_labels_on_one_brief_cannot_close_a_regression",
+    "test_8_case_identity_and_watermarks_reconstruct_after_process_death"
+   ],
+   "summary": "3 failed, 6 passed in 13.35s"
+  },
+  "retention_briefs_reused_for_reversion": {
+   "killed": true,
+   "failing_falsifiers": [
+    "test_6_7_retention_briefs_are_not_reused_to_revert_distinct_later_briefs_can"
+   ],
+   "summary": "1 failed, 8 passed in 12.49s"
+  },
+  "cooldown_counts_rejection_briefs": {
+   "killed": true,
+   "failing_falsifiers": [
+    "test_retry_after_a_loss_needs_three_new_distinct_briefs"
+   ],
+   "summary": "1 failed, 8 passed in 12.22s"
+  },
+  "fix_restored": {
+   "failing_falsifiers": [],
+   "summary": "9 passed in 13.89s"
+  }
+ }
+}

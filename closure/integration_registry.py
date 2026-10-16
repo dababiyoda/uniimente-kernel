@@ -8,6 +8,8 @@ from closure.kernel_registry import build_registry as build_kernel_registry
 from closure.commercial_registry import register_commercial_closures
 from closure.advantage_registry import register_advantage_closures
 from closure.developmental_registry import register_developmental_closures
+from closure.greg_registry import register_greg_closures
+from closure.gravity_registry import register_goal_gravity_closures
 
 
 def build_registry():
@@ -15,4 +17,6 @@ def build_registry():
     register_commercial_closures(registry)
     register_advantage_closures(registry)
     register_developmental_closures(registry)
+    register_greg_closures(registry)
+    register_goal_gravity_closures(registry)
     return registry

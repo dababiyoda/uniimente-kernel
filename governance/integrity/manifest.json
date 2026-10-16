@@ -1,0 +1,65 @@
+{
+ "version": 1,
+ "purpose": "Protected artifacts for the live constitutional-integrity check (CONTRADICTION-0002 Option A, FOUNDER-RULING-2026-08-23). Baseline: the SR-002 founder-ratified digests. A protected artifact may differ from its baseline only under an INTEGRITY_AUTHORIZE record signed by an enrolled founder key.",
+ "baseline_source": {
+  "subject_id": "sr002-0.1.0",
+  "source_commit": "07af5758197501662df81ff05e2b34ce8224a322",
+  "reachable_witness": "d7c235ae5f34e9370f44ca8567b13bcb0444e3f9",
+  "ratification": "SR-002 succession recorded with the founder's 2026-09-13 IVIO-NEMT retirement directive (#103); this file restates its per-artifact digests and does not import the sealed experiment"
+ },
+ "artifacts": [
+  {
+   "path": "constitution/constitution.ucl",
+   "baseline_sha256": "5c269850d8da799db66030103c52a175596d9c5f3bb61d25f54d7da9dde2ecd0"
+  },
+  {
+   "path": "constitution/sovereignty.ucl",
+   "baseline_sha256": "dc44c1f4304d42791a9db634796584531d40ba6b46191f2cba3877e48ee7fbcc"
+  },
+  {
+   "path": "constitution/shutdown-policy.ucl",
+   "baseline_sha256": "e3b443663cc5ed81a8b8827d8feb49962f82f262e85c282113f534c2afab2e54"
+  },
+  {
+   "path": "constitution/amendment-policy.ucl",
+   "baseline_sha256": "0132d53ec1e770a526f0e57888235a0b0bac4ed14b443782da537fb70b2ac01f"
+  },
+  {
+   "path": "constitution/participant-rights.ucl",
+   "baseline_sha256": "feba5d83800cd5d04702087473eea4d38290950097072efc578cfd498d631687"
+  },
+  {
+   "path": "authority/authority-matrix.yaml",
+   "baseline_sha256": "bd763098ecbbfd6ea7e8c9d80b83ed329fefd4766e53ed9b11006719fc671a45"
+  },
+  {
+   "path": "authority/legal-principals.yaml",
+   "baseline_sha256": "bff91ae68dcf54aed7e4021c30d5230a25b35a2167928ddd70842702a2bd732b"
+  },
+  {
+   "path": "authority/reserved-matters.yaml",
+   "baseline_sha256": "f185e0d11dec25e2bc3dbb73ce92bbb5d276358d1ac8abcaca7526a2805eb924"
+  },
+  {
+   "path": "identity/organ-registry.yaml",
+   "baseline_sha256": "995810a39c21f7e8da811598fdd83e2fe07127c51656c9652d2283d98c3f1085"
+  },
+  {
+   "path": "identity/agent-registry.yaml",
+   "baseline_sha256": "533e919e6c1cb918cfd249765f35ab24efc24729d79af804d09d96d65d45d20e"
+  },
+  {
+   "path": "identity/service-identities.yaml",
+   "baseline_sha256": "cd8c2c493b22a25926bbcedb049ebe28d86bd6e087ab920c0bbe2bae08cceac0"
+  },
+  {
+   "path": "policy/consequence_gate.py",
+   "baseline_sha256": "1c189be5af884932ed2115557b5a285883a2c6045af183c7f6f65a0815a06f2e"
+  },
+  {
+   "path": "governance/integrity/founder-keys.json",
+   "rule": "founder-key-log",
+   "genesis_sha256": "7d4a2ba988ab88125bcba4bff29eccccb9bdf55d1566501ac0308b72496f6ea7"
+  }
+ ]
+}

@@ -1,0 +1,502 @@
+{
+  "decision_id": "DELIB-GOAL-GRAVITY-2026-10-13-001",
+  "title": "Implement the Goal Gravity loop on the canonical standing runtime (main), reusing the ledger, policy engine, Consequence Gate and genome registry; preserve the unmerged greg/ lineages as substrate; adoption into main is a founder decision",
+  "problem": "Observation: the 2026-10-13 founder directive names nine literal implementation targets (A-I), fourteen deterministic scenarios and a section-33 acceptance chain for a persistent goal-attractor behavior. Observation: kernel main (19fa33c, 626 tests green) carries standing cognition (signals, idempotent ticks, suspend/resume), a durable workflow spine, a hash-chained ledger, a policy engine and Consequence Gate, causal memory, a capability genome registry and the morphogenesis target-state contracts, but no goal persistence, relevance routing, wake/sleep, executable Backcast GPS, intervention classification, world-model integration, intersection detection, retention or attention routing. Observation: fifty open draft PRs form stacked GREG lineages off main (#114/#137 greg/missions.py+asks.py+genesis.py; #158 greg/gravity.py one-turn Goal Gravity; #93/#97/#109 Goal Chase sandbox) with overlapping, unmerged mechanisms awaiting founder decisions. Inference: the residual CapabilityDeficit on the canonical line is targets A-I themselves. Unresolved claim: which lineage mechanisms should be ported first. Proposed action: build the residual on main inside egregore/, composed over existing machinery, as a draft PR.",
+  "founder_intent_refs": [
+    "INTENT-20261013-GOAL-GRAVITY",
+    "INTENT-0030",
+    "SR001-FOUNDER-LOOP-ENTRY",
+    "INTENT-0027",
+    "INTENT-0028"
+  ],
+  "baseline": "Kernel main 19fa33c: egregore/runtime.py StandingCognitionRuntime (SignalEnvelope ingest, CandidateProposal deliberation, hash-authorized resume), events/spine.py DurableWorkflow, provenance/ledger.py EvidenceLedger, policy/engine.py evaluate + policy/consequence_gate.py ConsequenceGate, memory/causal.py CausalMemory, capabilities/genome.py GenomeRegistry, morphogenesis/engine.py MetricTarget error arithmetic, docs/BACKCAST_GPS.md as prose only. 626 tests pass, 4 skipped. No goal persists across a restart; no event wakes anything.",
+  "alternatives": [
+    {
+      "name": "Extend the canonical runtime on main (selected)",
+      "description": "Nine modules inside egregore/ (goals, experience, relevance, gps, interventions, intersections, retention, attention, gravity) hydrated from the one EvidenceLedger, classifying moves through policy.engine.evaluate and executing only through ConsequenceGate.run with caller-supplied grants; two additive contracts; five closures on the integration registry.",
+      "advantages": [
+        "Composes the ratified canonical machinery instead of a draft stack",
+        "Mergeable against main with the full suite green",
+        "No second Kernel, mission authority plane, identity plane or evidence plane",
+        "Every directive target lands as testable code on the line organs actually pin"
+      ],
+      "disadvantages": [
+        "Mechanisms overlapping #158/#137/#97 are re-expressed rather than ported byte-for-byte",
+        "Relevance routing is deterministic rule matching, not learned",
+        "The loop holds no grants, so autonomous execution depends on a grant-issuing caller"
+      ],
+      "revival_evidence": "n/a (selected)"
+    },
+    {
+      "name": "Stack on draft #158 (claude/greg-polyintelligence-mind)",
+      "description": "Extend greg/gravity.py and greg/missions.py on the polyintelligence-mind branch, which already carries a one-turn Goal Gravity command, a Genesis hook and an asks contract.",
+      "advantages": [
+        "Reuses an existing gravity turn, lightcone clamp and asks screen",
+        "Credits the most recent lineage directly"
+      ],
+      "disadvantages": [
+        "Base is four drafts deep off main (#148 -> #155 -> #158) and unmergeable without founder rulings on each",
+        "greg/ is not on main; building there deepens a parallel runtime the founder said not to create",
+        "73k added lines on that branch; the mission path there is itself EXPERIMENT with negative P4 results"
+      ],
+      "revival_evidence": "If the founder merges the #148/#155/#158 stack, port the canonical loop's goal registry and classifier onto greg/missions.py and retire the duplication through adapters."
+    },
+    {
+      "name": "Stack on draft #137 (claude/uniimente-greg-reconciliation-39syff)",
+      "description": "Extend the persistent mission engine (greg/missions.py, asks.py, genesis.py, path.py) that already proves kill -9 recovery and founder asks on a rehearsal body.",
+      "advantages": [
+        "Durable missions with appraisal and founder asks already exist there",
+        "Its asks contract is the strongest existing attention mechanism"
+      ],
+      "disadvantages": [
+        "354 files off main; adoption pending; the mission engine would be a second mission authority plane relative to egregore/runtime.py + the Gate unless reconciled first",
+        "Goals-as-attractors with wake conditions and intersections still do not exist there"
+      ],
+      "revival_evidence": "Founder adoption of #137; then the canonical goal registry becomes the mission source for greg/missions.py through a typed adapter."
+    },
+    {
+      "name": "Documentation-only reconciliation",
+      "description": "Record the directive and a concept map; implement nothing until the draft-PR graph is ruled on.",
+      "advantages": [
+        "Zero risk of a third lineage",
+        "Cheap"
+      ],
+      "disadvantages": [
+        "Violates directive section 23 (documentation is not completion) and section 32 steps 6-13",
+        "Leaves targets A-I MISSING on the only canonical line"
+      ],
+      "revival_evidence": "A founder instruction to freeze implementation pending reconciliation."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "The directive remains an aspiration; goals keep living only in chat sessions; the fifty-PR graph keeps growing without a canonical goal substrate on main.",
+    "advantages": [
+      "No new code to review",
+      "No risk of mis-reading the directive"
+    ],
+    "disadvantages": [
+      "The founder's literal targets stay unbuilt on the canonical line",
+      "Every future session reconstructs the plan by hand, which the directive names as the failure to remove"
+    ]
+  },
+  "roles": [
+    {
+      "role": "founder-intent steward",
+      "position": "The directive is explicit about what it is (an operating-behavior clarification with literal targets A-I and acceptance tests) and what it is not (a replacement architecture, a parallel GREG, a consciousness claim). Building A-I as an extension of the canonical runtime with the verbatim source preserved and the metaphors compiled to effects is the faithful reading. The rhetorical preamble (meniscus, impermeable shield, systemic dominance) is recorded verbatim and compiled to the strongest defensible frontier, layered recovery and lawful capability, as the founder's own translation paragraph instructs.",
+      "material_concerns": [
+        "Over-literalizing 'coincidence production' into anything that claims to control chance",
+        "Shrinking the destination to what the deterministic loop can do today"
+      ],
+      "evidence_refs": [
+        "docs/intent/sources/GOAL-GRAVITY-DIRECTIVE-2026-10-13-source.md",
+        "docs/intent/INTENT-20261013-GOAL-GRAVITY.md",
+        "docs/FOUNDER_EFFECT_COMPILER.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "systems architect",
+      "position": "One ledger, one Gate, one policy engine, one genome registry; goals are data hydrated like standing-cognition signals; the loop is idempotent per trigger_id exactly as cognition ticks are; drift is detected from the Gate's own action events via the proposal-id convention; the morphogenesis MetricTarget arithmetic is reused for the SBM gap. No new authority object exists. The two contracts are additive and are not added to the pinned boundary allowlist, so the shared package is untouched.",
+      "material_concerns": [
+        "Proposal-id prefix convention for drift detection is a soft coupling that must be documented",
+        "Grant supply is external to the loop; a future scheduler must obtain grants through the existing issuer, never mint them"
+      ],
+      "evidence_refs": [
+        "egregore/gravity.py",
+        "egregore/interventions.py",
+        "policy/consequence_gate.py",
+        "adapters/contract_validation.py"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "adversarial reviewer",
+      "position": "Strongest attack: this is a third goal/mission lineage next to #137 and #158, which the directive forbids ('do not create a parallel GREG'). Counter: the drafts are not canonical and are not mergeable; the canonical line had nothing; the new code composes main's authority path rather than duplicating it, and the drafts' mechanisms are credited and preserved for reconciliation. Second attack: 'autonomous execution' is thin because grants are caller-supplied. Counter: that is the constitutional design (the Gate consumes grants, it never fills them in), and the tests prove execution occurs only under a pre-existing grant. Third attack: deterministic relevance matching will miss unstructured reality. Accepted: the router is the baseline; proposers/models plug into standing cognition later and must beat it.",
+      "material_concerns": [
+        "Third-lineage risk if the founder later merges #137/#158 without reconciliation",
+        "Rule-based sensorium is narrow",
+        "Auto-retained 'evidence' assets could inflate the compounding metric if read naively"
+      ],
+      "evidence_refs": [
+        "tests/unit/test_goal_gravity.py::test_authority_boundary_prepares_but_never_executes",
+        "tests/unit/test_goal_gravity.py::test_restart_continuity_without_duplicate_consequential_action",
+        "docs/decisions/ADR-GOAL-GRAVITY-001.md"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "operator and maintainer",
+      "position": "Pure stdlib plus existing kernel modules; no services, brokers, models or credentials; the full suite runs in about 30 seconds; closures register on the integration registry so the verifier covers the loop; the README carries the buildability standard. Rollback is reverting one draft branch. The scheduler and sensor adapters remain to be chosen (cron/APScheduler/Temporal) and are founder activation decisions.",
+      "material_concerns": [
+        "Ledger growth: each turn appends several records; JSONL persistence will need rotation or Postgres before 24/7 use",
+        "The loop processes every awake goal serially; fine at tens of goals, not thousands"
+      ],
+      "evidence_refs": [
+        "egregore/README.md",
+        "closure/gravity_registry.py",
+        "verifier/v2/criteria.json"
+      ],
+      "recommendation": "EXPERIMENT"
+    },
+    {
+      "role": "evidence and welfare guardian",
+      "position": "No external effects, no real people contacted, no data subjects; every founder ask carries a no-cost option and no manufactured urgency; refusals are remembered; 'stop pushing', 'do not monitor', 'never use tactic' are enforced before policy. Evidence tiers are stated exactly: IMPLEMENTED, UNIT-TESTED, INTEGRATION-TESTED on synthetic ledgers; not sandbox-verified against a live sensor, not externally verified, not founder-accepted. The experience surface metric is explicitly not a consciousness score.",
+      "material_concerns": [
+        "Wording that could be read as 'GREG experiences reality' must stay bounded to the functional definition",
+        "Privacy: do_not_monitor is per goal; a global mute belongs to a later founder control surface"
+      ],
+      "evidence_refs": [
+        "egregore/attention.py",
+        "egregore/experience.py",
+        "tests/unit/test_goal_gravity.py::test_attention_conservation_under_large_event_volume",
+        "tests/unit/test_goal_gravity.py::test_founder_control_surface"
+      ],
+      "recommendation": "EXPERIMENT"
+    }
+  ],
+  "evidence": [
+    {
+      "claim": "Kernel main baseline is green before changes",
+      "tier": "unit_test",
+      "reference": "python -m pytest -q on 19fa33c: 626 passed, 4 skipped",
+      "finding": "clean baseline"
+    },
+    {
+      "claim": "All directive section-25 scenarios pass deterministically",
+      "tier": "unit_test",
+      "reference": "tests/unit/test_goal_gravity.py (20 tests)",
+      "finding": "20 passed"
+    },
+    {
+      "claim": "Section-33 acceptance chain passes end to end on a JSONL ledger with restarts",
+      "tier": "sandbox_execution",
+      "reference": "tests/integration/test_goal_gravity_acceptance.py",
+      "finding": "1 passed; executor called exactly once; outreach prepared not executed; capability retained; later goal unblocked"
+    },
+    {
+      "claim": "Full suite green after changes",
+      "tier": "unit_test",
+      "reference": "python -m pytest -q on the branch",
+      "finding": "647 passed, 4 skipped"
+    },
+    {
+      "claim": "Five closures close for egregore-goal-gravity on the integration registry",
+      "tier": "deterministic_fixture",
+      "reference": "closure/integration_registry.py build_registry().verify_module('egregore-goal-gravity')",
+      "finding": "complete=True"
+    },
+    {
+      "claim": "New contracts resolve and validate persisted records",
+      "tier": "deterministic_fixture",
+      "reference": "scripts/ci/check_schema_refs.py; Draft202012Validator over goal-record and experience-event samples",
+      "finding": "all refs resolve; zero validation errors"
+    },
+    {
+      "claim": "Open draft PR graph inspected",
+      "tier": "primary_source",
+      "reference": "GitHub API list_pull_requests (50 open kernel PRs), PR bodies #158/#137/#159/#114/#101; worktrees of #158/#137/#159/#114/#97/#109",
+      "finding": "greg/ lineage exists only on drafts; main has no goal substrate"
+    },
+    {
+      "claim": "Second increment (seam, contract enforcement, deficit classes, reconciliation, independent verification, founder controls, attention) is green",
+      "tier": "unit_test",
+      "reference": "python -m pytest -q on the branch after the second increment: 672 passed, 4 skipped; tests/unit/test_goal_gravity_seams.py (25) + tests/unit/test_goal_gravity.py (20) + tests/integration/test_goal_gravity_acceptance.py (1)",
+      "finding": "goal deliberation runs through StandingCognitionRuntime.tick when attached; a Gate cut after dispatch is never re-dispatched and reconciles from the Gate's records; externally_verified needs an independent verifier; synthetic ledgers and test-minted grants only"
+    }
+  ],
+  "counterevidence": [
+    {
+      "claim": "Draft #158 already implements a Goal Gravity turn",
+      "tier": "primary_source",
+      "reference": "PR #158 body: 'greg gravity --situation runs Backcast GPS -> Foundry -> Gate proposals -> VOI -> one screened founder ask'",
+      "finding": "a one-turn read-only command on an unmerged four-deep stack; no persistent registry with wake conditions; preserved as substrate"
+    },
+    {
+      "claim": "Draft #137 already proves persistent missions with founder asks",
+      "tier": "primary_source",
+      "reference": "PR #137 body: 1207 tests, kill -9 rehearsal, asks contract",
+      "finding": "unmerged; mission engine not reconciled with egregore/runtime.py; its asks shape informed the attention router here"
+    },
+    {
+      "claim": "No external effect has ever closed through this loop",
+      "tier": "other",
+      "reference": "VEPMC/CMC remain 0 across all lineages (docs/SR001_MERGE_STATUS.md, PR #137, PR #114)",
+      "finding": "true; this record claims no external outcome"
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Authorized goals become persistent attractors on the canonical runtime: they survive restarts, sleep at zero cost, wake from relevant evidence, favorable intersections or cadence, compute their active gate and SBM from provenance-backed beliefs, execute only permitted moves through the Gate, prepare everything else, interrupt the founder rarely and with compressed decisions, and leave durable assets that make later goals cheaper.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "One substrate for goals on the line organs pin",
+        "amplified_value": "Every future sensor, proposer, scheduler and organ plugs into the same registry and contracts; the moat is the ledger-anchored goal history, reusable across ventures"
+      },
+      {
+        "id": "A2",
+        "statement": "Authority boundary enforced structurally",
+        "amplified_value": "Grows into a safe default pathway: as grants widen, autonomy widens without any code change in the loop; reverses into a liability only if a caller mints grants outside the issuer, which the Gate refuses"
+      },
+      {
+        "id": "A3",
+        "statement": "Compounding is anchored to ledgered outcomes",
+        "amplified_value": "Retention cannot be claimed from prose; capabilities registered through retention carry bounded envelopes, so compounding capability never compounds authority"
+      },
+      {
+        "id": "A4",
+        "statement": "Attention is a budgeted resource",
+        "amplified_value": "More sensing yields fewer, better asks rather than more notifications; the no-cost-option guard converts a welfare risk into a structural invariant"
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Overlap with unmerged greg/ lineages (#158, #137, #97)",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Record the overlap in the ADR with exact paths; credit the drafts; define the reconciliation adapters; make adoption a founder decision; no draft is closed or deleted"
+      },
+      {
+        "id": "D2",
+        "statement": "Deterministic relevance matching is a narrow sensorium",
+        "severity": "medium",
+        "response_type": "modularity",
+        "redesigned_response": "Signals carry typed observations; proposers and models attach through the existing standing-cognition contracts and must beat the rule baseline on held-out signals before replacing it"
+      },
+      {
+        "id": "D3",
+        "statement": "Grant supply is external; 'autonomous' depends on a caller",
+        "severity": "medium",
+        "response_type": "evidence",
+        "redesigned_response": "State the tier exactly; the acceptance test shows one Gate-executed move under a pre-existing grant; a scheduler integration is a separate record"
+      },
+      {
+        "id": "D4",
+        "statement": "Drift detection relies on the proposal-id prefix convention",
+        "severity": "low",
+        "response_type": "protective",
+        "redesigned_response": "Document the convention in gravity.py and the ADR; drift records are additive, so a missed detection fails toward visibility of the gap, not toward hiding"
+      },
+      {
+        "id": "D5",
+        "statement": "Auto-retained evidence assets could inflate compounding counts",
+        "severity": "low",
+        "response_type": "evidence",
+        "redesigned_response": "compounding_report separates assets by kind and lists capabilities and goals_made_cheaper; only capability registrations change other goals"
+      }
+    ],
+    "comparisons": {
+      "baseline": "Main has standing cognition and the Gate but no goal substrate; every target A-I is MISSING",
+      "do_nothing": "Targets stay MISSING on the canonical line; the PR graph keeps growing without a goal substrate",
+      "simplest_viable_alternative": "A goal registry alone (A) without routing, GPS or classification: persists intent but never acts; fails the acceptance chain",
+      "strongest_competing_architecture": "Stacking on #137's mission engine: strongest existing durability and asks, but unmergeable and a second mission plane until reconciled",
+      "reversible_experiment": "This draft PR: additive modules, additive contracts, revertable in one commit; nothing activates, no scheduler installed"
+    },
+    "rejected_alternatives": [
+      {
+        "name": "Stack on draft #158",
+        "rejection_reason": "Four drafts deep, unmergeable, deepens the parallel greg/ runtime",
+        "revival_evidence": "Founder merges #148/#155/#158"
+      },
+      {
+        "name": "Stack on draft #137",
+        "rejection_reason": "Unmerged mission engine would be a second mission authority plane until reconciled",
+        "revival_evidence": "Founder adopts #137; then the canonical registry feeds greg/missions.py through an adapter"
+      },
+      {
+        "name": "Documentation-only",
+        "rejection_reason": "Directive section 23 and 32 forbid stopping at documentation",
+        "revival_evidence": "A founder instruction to freeze implementation"
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Assume Pass 1 shipped. Attacks: (1) the loop becomes the de facto mission system and the drafts rot, so reconciliation never happens; (2) a scheduler is wired without grants and the loop silently prepares forever, which reads as 'working' while nothing moves; (3) goal specs become a planning authority that reviewers cite as permission; (4) ledger growth from per-turn records; (5) the robotics fixture overfits the tests to one goal shape; (6) the directive's rhetoric ('systemic dominance') is quoted as if achieved.",
+    "new_weaknesses": [
+      {
+        "id": "W1",
+        "category": "dependency",
+        "statement": "Reconciliation debt with #137/#158 could become permanent",
+        "strengthening_response": "ADR lists the exact adapters and names the founder decision; the registry exposes founder_answer and status so a mission engine can consume it, not replace it"
+      },
+      {
+        "id": "W2",
+        "category": "gaming",
+        "statement": "A turn that only prepares can be mistaken for progress",
+        "strengthening_response": "GravityTurn reports executed/prepared/escalated separately; status() exposes evidence_state per route; CMC stays the single bottleneck metric and is unchanged at 0"
+      },
+      {
+        "id": "W3",
+        "category": "centralization",
+        "statement": "Goal specs read as authority",
+        "strengthening_response": "Every goal record carries authority_note 'declared lineage; not founder authentication; grants no execution authority' and execution_authority 'none' in the contract"
+      },
+      {
+        "id": "W4",
+        "category": "expense",
+        "statement": "Ledger growth",
+        "strengthening_response": "Dormant goals append nothing; a turn with no woken goal appends one record; rotation/Postgres is an operator decision before 24/7 use, recorded as a residual risk"
+      },
+      {
+        "id": "W5",
+        "category": "overfit",
+        "statement": "One fixture shape",
+        "strengthening_response": "Closure probes use a different minimal goal; the attention test uses six synthetic goals; the acceptance test uses two goals with different plans"
+      },
+      {
+        "id": "W6",
+        "category": "comprehensibility",
+        "statement": "Rhetoric mistaken for achievement",
+        "strengthening_response": "The intent record and README state the evidence tier per target; 'systemic dominance' compiles only to lawful capability and is never used as a status label"
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Overlap is real; preserved and credited; adoption and reconciliation are the founder's call",
+        "owner": "alfonso_lopez",
+        "review_trigger": "founder ruling on the draft PR graph"
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Rule matching is the honest baseline; learned routing must beat it (#158's own P4 result shows learned routing can lose)",
+        "owner": "kernel maintainers",
+        "review_trigger": "first proposer attached to the relevance path"
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "resolved",
+        "rationale": "Evidence tier stated; execution path proven under a pre-existing grant; scheduler integration is a separate record",
+        "owner": "kernel maintainers",
+        "review_trigger": "first durable scheduler calling turn()"
+      },
+      {
+        "disadvantage_id": "D4",
+        "outcome": "resolved",
+        "rationale": "Convention documented; failure mode is visibility of a gap, not concealment",
+        "owner": "kernel maintainers",
+        "review_trigger": "any change to proposal_id format"
+      },
+      {
+        "disadvantage_id": "D5",
+        "outcome": "resolved",
+        "rationale": "compounding_report separates kinds; only capability registrations change other goals",
+        "owner": "kernel maintainers",
+        "review_trigger": "first retention with a real external outcome"
+      }
+    ],
+    "final_design": "Nine additive modules in egregore/ composing main's ledger, policy engine, Gate, genome registry and morphogenesis arithmetic; two additive contracts outside the pinned boundary allowlist; five closures on the integration registry; verbatim founder source, intent record, ADR and this deliberation; a draft PR that activates nothing. Adoption into main, scheduler activation, sensor adapters and founder authentication remain founder decisions.",
+    "residual_risks": [
+      {
+        "risk": "Permanent duplication if neither the drafts nor this loop is reconciled",
+        "mitigation": "ADR adapter list; review trigger on any draft merge",
+        "owner": "alfonso_lopez",
+        "review_trigger": "merge of #137, #148, #155 or #158"
+      },
+      {
+        "risk": "Narrow sensorium misses unstructured opportunities",
+        "mitigation": "typed observations now; proposer/model attachment through standing-cognition contracts later",
+        "owner": "kernel maintainers",
+        "review_trigger": "first live sensor adapter"
+      },
+      {
+        "risk": "JSONL ledger growth under continuous operation",
+        "mitigation": "no scheduler installed by this record; rotation or Postgres backend before activation",
+        "owner": "kernel maintainers",
+        "review_trigger": "founder activation decision"
+      }
+    ],
+    "recommendation": "NEEDS_FOUNDER_DECISION"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserved verbatim; adoption proceeds only on founder decision; the dissent's evidence thresholds are review triggers on the ADR. Second-increment dissent (seam, evidence tiers, executor deviation, #137 durability, parallel-plane risks) added 2026-10-13 after the completeness critique (docs/collaboration/goal-gravity-completeness-critique-2026-10-13.md)",
+    "entries": [
+      {
+        "role": "adversarial reviewer",
+        "position": "This is a third goal/mission lineage; the directive forbids a parallel GREG",
+        "rationale": "Three unmerged lineages plus this one is more surface for drift than the founder asked for",
+        "evidence_threshold": "If the founder merges #137 or #158, the canonical loop must be reconciled through adapters within one release or regressed",
+        "owner": "alfonso_lopez",
+        "review_trigger": "founder ruling on the draft PR graph"
+      },
+      {
+        "role": "systems architect",
+        "position": "Grant supply should be modeled inside the loop as a typed request to the issuer rather than a caller mapping",
+        "rationale": "A mapping keyed by capability hides which issuer produced the grant",
+        "evidence_threshold": "First scheduler integration showing grant provenance is ambiguous",
+        "owner": "kernel maintainers",
+        "review_trigger": "first durable scheduler calling turn()"
+      },
+      {
+        "role": "adversarial reviewer",
+        "position": "Until goal deliberation runs through StandingCognitionRuntime.tick, the loop is a fourth candidate mission engine on main (beside greg/missions.py #137, egregore/goal_chase.py #109, local_mission.py #101); after the seam it is still a second trigger-keyed engine (own trigger ids, request hashes, conflict record, hydrate fold) consuming the first's candidates rather than a stage of it",
+        "rationale": "Directive section 22 says extend the canonical architecture; two engines over one ledger is extension only if one is a projection of the other",
+        "evidence_threshold": "If a durable scheduler drives both turn() and tick() with separate trigger clocks, or the two conflict records ever disagree about the same request, turn() must become a stage of tick()",
+        "owner": "alfonso_lopez",
+        "review_trigger": "first durable scheduler integration; any divergence between egregore.gravity_turn_conflict and egregore.cycle_conflict records"
+      },
+      {
+        "role": "evidence guardian",
+        "position": "Every EXISTING status for targets A-I rests on synthetic JSONL ledgers, test passports, the development witness key and grants minted by the tests from the loop's own proposals (docs/founder-loop-entry-gate.json forbidden shortcut 4); nothing is SANDBOX-VERIFIED or EXTERNALLY VERIFIED and CMC/VDM/VEPMC remain 0",
+        "rationale": "A mechanism that resembles the metaphor is not the effect; the concept map must not be read as capability",
+        "evidence_threshold": "One real external consequence through ConsequenceGate under a founder-issued grant, independently verified with verify_outcome() by a party other than the executing actor",
+        "owner": "kernel maintainers",
+        "review_trigger": "first founder-issued standing grant reaching turn()"
+      },
+      {
+        "role": "constitutional reviewer",
+        "position": "turn() accepts gate and executor for one turn while tick() must never accept an executor (tests/unit/test_egregore_runtime.py asserts it); the loop is the accountable projection that submits a selected, policy-allowed move to the Gate and retains none of gate, executor or grant between turns",
+        "rationale": "A tested main invariant is relaxed at the loop boundary; the relaxation must stay visible and verified rather than implied",
+        "evidence_threshold": "goal_gravity_closures.authority and test_measures_report_the_four_way_split_and_closures_cover_every_component must keep proving no component retains an executor, gate or grant; a scheduler that holds a long-lived executor reference for the loop is a violation",
+        "owner": "kernel maintainers",
+        "review_trigger": "any change to GoalGravityLoop.turn's signature or to the closure authority check"
+      },
+      {
+        "role": "operator",
+        "position": "PR #137 remains the only lineage with a SIGKILL- and torn-tail-tested persistent body, a Capability Genesis builder with frozen oracles and tamper quarantine, and a source-tree-enforced single ask writer; building on main risks re-deriving these more weakly, and end-to-end Capability Genesis on main stays open until the founder rules on #137 or instructs a re-derivation",
+        "rationale": "Reuse before build applies to the drafts as well as to commodity infrastructure",
+        "evidence_threshold": "A kill -9 test for GoalGravityLoop across a real process boundary; a builder route that closes a recorded capability-deficit with sandbox evidence",
+        "owner": "alfonso_lopez",
+        "review_trigger": "founder ruling on PR #137 or an explicit instruction to re-derive the builder on main"
+      },
+      {
+        "role": "systems architect",
+        "position": "Four parallel-plane risks remain after the seam: WorldModel beside CausalMemory and morphogenesis StateObservation as belief stores; PlanNode beside StrategyBranch/ExperimentSpec as plan graphs; GoalRegistry refusals not consulted by ConsequenceGate.run or the Ratifier; capability-deficit lifecycle vocabulary (DISCOVERED..QUARANTINED) beside #137's and the genome registry's absence of lifecycle",
+        "rationale": "Governed implementation pluralism requires one interface per concern; today each pair is connected by convention, not by an adapter",
+        "evidence_threshold": "Two stores disagreeing about the same SBM value, a refusal bypassed by a non-goal proposal with the same effect digest, or a deficit resolved under one vocabulary and reopened under another",
+        "owner": "kernel maintainers",
+        "review_trigger": "first organ-fed observation adapter; first Gate proposal whose effect digest matches a refused route"
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "constitutional",
+    "changes_authority": false,
+    "requires_authorized_human": true,
+    "approval_status": "pending",
+    "approver": null
+  },
+  "migration_plan": "Additive only: new modules, new contracts, new tests, README/manifest/ledger/criteria updates. No data migration; existing ledgers without goal records hydrate to an empty registry. No scheduler, sensor, model or credential is installed. Adoption: founder reviews the draft PR; merge is the founder's decision.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the single draft branch (all changes are additive files plus six small edits)",
+      "Existing ledgers remain valid: goal records are ordinary ledger records and need no removal",
+      "Close the draft PR unmerged if adoption is refused; retain this record and the intent source as negative evidence"
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Any execution path in the loop that bypasses ConsequenceGate.run or mints a grant",
+    "A route executed twice after restart in any test or rehearsal",
+    "An ask reaching the founder without a no-cost option or with manufactured urgency",
+    "A founder refusal followed by an unchanged re-proposal",
+    "The loop presented as evidence that GREG 'experiences reality' or 'creates coincidences'"
+  ],
+  "decision": "NEEDS_FOUNDER_DECISION",
+  "decision_owner": "alfonso_lopez",
+  "review_trigger": "Founder review of the draft PR; any merge of #137/#148/#155/#158; first scheduler or sensor adapter calling GoalGravityLoop.turn"
+}

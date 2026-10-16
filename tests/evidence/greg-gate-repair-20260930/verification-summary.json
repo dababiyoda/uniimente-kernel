@@ -1,0 +1,108 @@
+{
+  "scope": "Linux development container; synthetic per-test keys; not Alfonso, not designated physical body",
+  "base_commit": "f617db99b74354808cfa3f5a0b26ee4a9d794c73",
+  "baseline_suite": {
+    "passed": 1115,
+    "failed": 1,
+    "skipped": 14,
+    "seconds": 310.61,
+    "failure": "HOME-relocating installer test cannot import rfc3161_client from ambient user-site; requirements declares dependency; verification venv fixes environment"
+  },
+  "full_suite": {
+    "passed": 1135,
+    "failed": 0,
+    "skipped": 14,
+    "seconds": 326.44,
+    "note": "Final projection/temporal strengthening occurred during this run; frozen final-source focused run covers those affected paths below. Exact pushed head is also subject to GitHub CI."
+  },
+  "frozen_source_focused_suite": {
+    "passed": 107,
+    "failed": 0,
+    "skipped": 1,
+    "seconds": 38.1,
+    "files": [
+      "test_greg_appraisal_closure.py",
+      "test_greg_chromebook_install.py",
+      "test_developmental_inheritance.py",
+      "test_greg_platform.py",
+      "test_greg_chromebook_doctor.py",
+      "test_greg_briefs.py",
+      "test_greg_ventures.py",
+      "test_greg_genesis_builder.py",
+      "test_greg_spiderweb.py"
+    ],
+    "skip": "optional live Claude Code builder"
+  },
+  "connected_consumer_checks": {
+    "passed": 4,
+    "failed": 0,
+    "deselected": 32,
+    "seconds": 1.26,
+    "wmi": "ec82b8027d987c865dc123215afb53d20916908f",
+    "dale": "a8341ba81622dbd1180583bc6660fa1e7ed707b8",
+    "sources": "real pinned consumer checkouts; loopback synthetic provider protocols; no business outcome"
+  },
+  "other_checks": [
+    "schema refs:17 schemas/67 refs PASS",
+    "authority singleton PASS",
+    "sealed declaration PASS (not OS-isolation proof)",
+    "TARGET_FORM_001 command exit0 (research benchmark, not product proof)",
+    "bash -n PASS",
+    "git diff --check PASS"
+  ],
+  "negative_evidence": [
+    "Empty-observation signed missing-file mission returned VERIFIED at base; reproduced separate-process appraiser; record retained",
+    "Wrong public companion key enrolled different public key, installer exited0, designation then rejected",
+    "PASS2 receiptless DONE, relabeled capability/scope, and prior-held Gate receipt attacks exposed remaining proof gaps; repaired and regression-covered",
+    "Initial lineage validation2 failures, fixed; prior labels/claims retained",
+    "Initial research-consumer checks3 failed because python-dotenv1.2.3 was not installed; separate research requirements environment4 passed",
+    "Normal git HTTPS push rejected credentials; authenticated Git Data API published exact commit/tree instead. Actions manual dispatch rejected HTTP401; no GitHub CI pass claimed."
+  ],
+  "claims": {
+    "repair": "IMPLEMENTED + UNIT/INTEGRATION-TESTED including separate processes and real temporary filesystem effects",
+    "chromebook": "UNVERIFIED",
+    "founder_used": "UNVERIFIED",
+    "reboot_verified": "UNVERIFIED",
+    "external_vepmc": 0,
+    "production_authorized": false
+  },
+  "limits": [
+    "Appraiser shares reviewed Kernel code and host; not independently written/attested verifier",
+    "Generated/non-reobservable sensors use retained receipt evaluation rather than independent world rerun",
+    "TOFU enrollment cannot establish personal identity or hardware ownership",
+    "Installer refreshes default service config; custom builder and whitespace-path handling remain follow-up constraints"
+  ],
+  "clean_committed_tree_verifier": {
+    "record": "verifier/runs/v2-2026-09-30T19-53-55.030919+00-00.json",
+    "head_commit": "b8a0ccd4534bae5635e6acec12b385463a5052bf",
+    "tracked_tree": "clean",
+    "exit_code": 0,
+    "result": "PASS V1-V5",
+    "unit_tests": "1041 passed, 14 skipped, 284.48 seconds"
+  },
+  "github": {
+    "pr": "https://github.com/dababiyoda/uniimente-kernel/pull/138",
+    "draft": true,
+    "base": "claude/uniimente-greg-reconciliation-39syff",
+    "code_commit": "b8a0ccd4534bae5635e6acec12b385463a5052bf",
+    "exact_commit_published": true,
+    "ci": "No run observed; manual Canonical CI dispatch rejected HTTP401 Bad credentials",
+    "merged": false
+  },
+  "convergence_continuation": {
+    "claude_base": "a4eeb70820117f9a0f74f1496173e3af0f770afa",
+    "measured_code_commit": "673726ae70726009435dcf364cdfb286b123cf31",
+    "tracked_tree": "clean",
+    "verifier_record": "verifier/runs/v2-2026-09-30T20-13-47.051018+00-00.json",
+    "verifier": "PASS V1-V5; 1098 unit tests passed, 14 skipped, 292.02s",
+    "integration": "102 passed, 53.96s",
+    "focused": "105 passed, 43.23s",
+    "pre_correction_combined_audit": "87 passed, 36.58s",
+    "remote_ci": {
+      "url": "https://github.com/dababiyoda/uniimente-kernel/actions/runs/36770727029",
+      "observed_at_recording": "Four jobs successful, Kernel/organ full tests+verifier in progress. Final status reported in PR body and session response."
+    },
+    "negative_evidence": "Claude rehearsal advanced N1->N2 using test key/container; preserved as useful structural evidence, now refuses external gate advancement",
+    "reality": "UNIT/INTEGRATION-TESTED; no externally verified VEPMC; no physical founder-body proof"
+  }
+}

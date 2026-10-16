@@ -1,0 +1,48 @@
+{
+  "decision": "GREG-001",
+  "base_commit": "b2f101a98d01d31e594018bc71b9d8d16e64d797",
+  "source_sha256": {
+    "egregore/local_mission.py": "1076b2e4acb1c5464f50c347e90aa0f2e25591531d5a828490c98f58f07faf1f",
+    "egregore/repository_audit.py": "89dcade3f0b0685b35fa416da4a283c2c619dcb5c408152dd728d2f8f4ebfdd5",
+    "verifier/local_repository_appraisal.py": "560a45fe3b8eef68e3be7a92f78890758ad1797f11b8f132483fd8aa533ed7c6",
+    "tests/greg_proof_driver.py": "976bbaa75baa4f6f59b6217cc38edb48c7fceeb26e747153aca5a5bdfda0142d",
+    "tests/greg_proof_observer.py": "5aa42662702145c5d9084da772f0f99d8fba51ea43463acfd1b9605c5e54f1de",
+    "tests/unit/test_greg_local_mission.py": "792aaf1d72f27c7f2c66a594184ad7a676b722ea817190bf8d09b0636616d5a5"
+  },
+  "executed": {
+    "offline_broad": {
+      "passed": 591,
+      "log": "broad-final.log",
+      "python": "3.12"
+    },
+    "new_regression_cases": 17,
+    "verifier": {
+      "V1_V5": "PASS",
+      "unit_passed": 570,
+      "log": "verifier.log"
+    },
+    "schema_refs": "PASS",
+    "authority_singleton": "PASS",
+    "sealed_declaration": "PASS (declaration only)",
+    "ruff_F_E9": "PASS (changed Python files only)",
+    "actual_cached_source_proof": "adopted-repositories/report.json"
+  },
+  "preserved": {
+    "focused-first.log": "14 passed, 1 wrong approval-state fixture expectation; canonical pending_human -> expired verified in corrected test",
+    "focused.log": "15 passed before two additional identity/host tests",
+    "broad.log": "591 passed before addition of host CPU instrumentation; superseded by broad-final.log",
+    "lint-correctness.log": "flake8 unavailable; ruff-correctness.log separately verifies changed code"
+  },
+  "ci": "Not run at local manifest creation; exact published head must be checked separately",
+  "excluded_claims": [
+    "hardware activation",
+    "24/7 service",
+    "real founder authentication",
+    "OS filesystem sandbox against arbitrary native code",
+    "container execution",
+    "capability genesis closure",
+    "commercial outcomes"
+  ],
+  "CMC": 0,
+  "VDM": 0
+}

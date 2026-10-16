@@ -1,0 +1,92 @@
+{
+ "command": "python -m foundry.completion --run 51",
+ "name": "Automated software development",
+ "note": "re-derived by `python -m foundry.completion --audit` on every CI run",
+ "result": {
+  "agent_sdk": {
+   "allowed_tools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep"
+   ],
+   "configured": true,
+   "live_route_run": false,
+   "max_budget_usd": 1.5,
+   "max_turns": 8,
+   "permission_mode": "acceptEdits"
+  },
+  "branches_kept": [
+   "commission/cone",
+   "commission/nodocs",
+   "commission/shell",
+   "commission/vat"
+  ],
+  "cone_breach": {
+   "problems": [
+    "pkg/pricing.py: outside the write cone ['README.md', 'pkg/tax.py', 'tests/test_vat.py']",
+    ".github/workflows/ci.yml: outside the write cone ['README.md', 'pkg/tax.py', 'tests/test_vat.py']"
+   ],
+   "status": "abandoned"
+  },
+  "frozen": {
+   "held_out_sha256": "sha256:ae5e9b265d5f67fa1372c873235724e56f3ddfd62df3166918d11cd86c653b03"
+  },
+  "main_tree_unchanged": true,
+  "main_untouched": true,
+  "nodocs": {
+   "docs_missing": [
+    "README.md### Tax"
+   ],
+   "status": "abandoned",
+   "tests_green": true
+  },
+  "refusals": {
+   "contract_without_held_out": "a contract needs a write cone, held-out tests and at least one CI command",
+   "refreeze": "contract vat is frozen already; a contract is never edited after freezing",
+   "run_unfrozen": "no frozen contract ghost"
+  },
+  "shell": {
+   "problems": [
+    "pkg/tax.py: names subprocess"
+   ],
+   "status": "abandoned"
+  },
+  "vat": {
+   "body_from_repo_template": true,
+   "diffstat": " 3 files changed, 18 insertions(+)",
+   "feedback_named_tests_not_bodies": [
+    "held-out or public test failed: test_half_rounds_up",
+    "held-out or public test failed: test_negative_rate_refused"
+   ],
+   "held_out_matches_contract": true,
+   "held_out_not_in_proposal": true,
+   "merged": false,
+   "proposal_files": [
+    "README.md",
+    "pkg/tax.py",
+    "tests/test_vat.py"
+   ],
+   "rounds": [
+    [
+     1,
+     "red",
+     [
+      "tests/held_out/test_vat_rounding.py::test_half_rounds_up",
+      "tests/held_out/test_vat_rounding.py::test_negative_rate_refused"
+     ]
+    ],
+    [
+     2,
+     "green",
+     []
+    ]
+   ],
+   "secret_scrubbed_from_ci": true,
+   "status": "proposed"
+  }
+ },
+ "result_sha256": "sha256:e42bf8e3751c9e3983dcd153d23285333ea2950675f3fbf393b1bf2884fcd338",
+ "system": 51
+}

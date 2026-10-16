@@ -690,8 +690,9 @@ INTELLIGENCES = [
                 "exact with its own certificate", "no 64-variable ceiling (the graph_then_allocate composition "
                 "abstains above 32 edges)", "admission v3 (2026-10-15, seeds 1200-1229): equal quality to the "
                 "graph_then_allocate twin on 30 of 30 at about a seventh of its latency (DEFAULT_FOR_GEOMETRY)",
-                "not run on F7: there, parametric min-cost flow (the same split-arc formulation, a different and "
-                "uncertified algorithm) tied the composition on 200 of 200 real-backbone items"),
+                "F7's 200 real-backbone held-out items (2026-10-16, a declared re-use of P6 v4's items, through "
+                "cortex.reason): optimal on 200 of 200, matching the composition at about a quarter of its median "
+                "latency; independently rescored (SciPy max flow, HiGHS MILP) on all 200"),
             known_failure_modes=("supplied capacities and prices may be wrong", "single commodity only",
                                  "parallel edges between one ordered pair are refused"),
             counterindications=("multi-commodity or modular (lumpy) capacity",),

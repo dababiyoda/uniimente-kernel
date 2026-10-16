@@ -19,22 +19,25 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
 | Converged GREG lineage | PR #173, `claude/greg-full-machine-convergence-20261013` | Draft. Not merged to `main`; merging is Alfonso's decision |
 | Gate hardening (#55 CASE 27, #21, #12) | Draft PR #182, `claude/greg-gate-hardening-20261015` | Waits on Alfonso's key enrollment and INTEGRITY_AUTHORIZE; CI job 3 is red by design until then |
 | Merge records | `docs/collaboration/MISSION-DEFECTS-2026-10-15.md`, `INSTALLED-BODY-CONVERGENCE-2026-10-14.md`, `SECURITY-PORTS-2026-10-15.md` | Each names its residuals |
-| Acceptance missions A–L | `acceptance/missions.json` | 85 obligations, 363 test nodes, 24 gaps closed; 16 test files registered as real Body processes |
+| Acceptance missions A–L | `acceptance/missions.json` | 85 obligations, 374 test nodes, 27 gaps closed; 21 test files registered as real Body processes |
 | Completion contract | `acceptance/completion-contract.json` | 18 functions; tiers and coverage are computed from the acceptance run; 0 rest only on requirements that cover their whole obligation |
 | Verifier | `verifier/runs/` | PASS V1–V5 at 0655f13 |
 | Acceptance run | `docs/evidence/acceptance/2026-10-15-18efa0d.json` | `acceptance-report/3` at 18efa0d: 825 cited tests passed, 4 skipped, none failed. 80/85 requirements reach their declared tier; 13 of them cover the whole obligation and 67 only part (since a48e8fa, 28 requirements went from covered to partial and none went up; G.R1, R2, R5, R6 and R11 dropped from BODY_VERIFIED to SANDBOX_VERIFIED and J.J1b lost its tier; a requirement covers its whole obligation only when it also reaches its tier). J.J1b (coverage gap) does not count, though a failing test it cites would fail the run. 9/9 trace links reach their tier; 0/18 contract functions rest only on whole-obligation requirements. Missions: K BODY_VERIFIED; A, C, D, F, H, I SANDBOX_VERIFIED; B, L UNIT_VERIFIED; E, G, J IMPLEMENTED; every mission covers only part of its obligation. The 4 short (E.R2–R4, G.R2) need the real organ checkouts, which skip here. The earlier `2026-10-15-7cfa0bc.json` (81/85) was made under rules that ignored coverage and never checked BODY_VERIFIED against the cited tests |
 
 ## Open gaps (from `acceptance/missions.json`)
 
-**Buildable now (46).** Highest leverage first:
+**Buildable now (48).** Highest leverage first:
 
 1. **I.G7:** the appraisal executes the worker's code inside the acceptance process and reads its exit code, so a
    change built to subvert the test process itself can still pass. The design is chosen and recorded in
    `docs/collaboration/IG7-ORACLE-DESIGN-2026-10-15.md`; building it needs an environment where its hostile-patch
    test corpus can be written and reviewed. GREG's own acceptance runs of a patch are already confined (fbb1a01).
    **I.G8:** held-out acceptance cases the worker never sees.
-2. **H.G7:** interrupt the separate appraiser, the console or remote service, and the Genesis builder mid-operation.
-   **H.G4:** interrupt a paid `worker.commission` inside a Body process.
+2. **H.G12, H.G14:** the separate appraiser does not re-derive an interrupted paid run's booked cap, and does not
+   check that every consequential dispatch claim in a closure is settled. **H.G7** (narrowed): interrupt the anchor
+   (TSA) call, and take a hung appraiser off the main loop. **H.G13:** a read-only recovery core for the declared
+   black-start scenario. **I.G9:** the re-delegation rule in Goal Gravity's own device map. (H.G4, H.G10 and the
+   H.G11 defect closed on 2026-10-16.)
 3. **D.G8:** run a multi-worker mission in a real Body process. **D.G4, D.G6, D.G7:** cumulative budget,
    cancellation, and lease coherence over time.
 4. **G.G1, G.G5:** drive the business loop through the Body end to end.
@@ -46,7 +49,7 @@ every test is a per-test key, so nothing is `FOUNDER_ACCEPTED`, `AUTHORIZED_LIVE
 7. **J.G1–J.G8, J.G10:** compounding learning (counterfactuals, ablations, acquired capability and SOP
    compounding), and Mission J on a real Body process (J.G10 needs no founder act: BODY_VERIFIED uses a
    per-test key).
-8. **B.G3–B.G6, B.G9, A.G3, A.G4, F.G3, H.G10, I.G5.**
+8. **B.G3–B.G6, B.G9, A.G3, A.G4 (narrowed), F.G3, I.G5.**
 
 **Blocked (23).**
 

@@ -482,8 +482,11 @@ def test_a_helper_or_configuration_change_invalidates_positive_admission():
         finally:
             mp.undo()
 
-    graph = {**evidence["operations"]["graph"], "competitor": "local Dijkstra (test fixture)"}
-    evidence["operations"]["graph"] = graph          # the closure rule alone, apart from the competitor rule
+    # the closure rule alone, apart from the competitor rule and from graph's measured status (operation admission
+    # v3 reads EXPERIMENTAL): a positive fixture record bound to the measured closure
+    graph = {**evidence["operations"]["graph"], "status": "DEFAULT_FOR_GEOMETRY",
+             "competitor": "local Dijkstra (test fixture)"}
+    evidence["operations"]["graph"] = graph
     assert C.operation_status("graph", graph) == ("DEFAULT_FOR_GEOMETRY", None)
     helper = CB.working_tree("greg/cognition/contracts.py")
     start = helper.index("def number(")
@@ -676,14 +679,16 @@ def test_the_mission_hook_never_recommends_a_composition_only_genome():
 
 
 def test_a_positive_operation_verdict_without_a_competitor_is_not_an_admission():
-    """H4: micro, exact, graph and sequential were DEFAULT against a baseline only. They route as UNEVALUATED until
-    a re-admission names a competitor; verdicts with a competitor keep their status."""
+    """H4: micro, exact and sequential are DEFAULT against a baseline only (graph was too, until operation admission
+    v3 read it EXPERIMENTAL). They route as UNEVALUATED until a re-admission names a competitor; verdicts with a
+    competitor keep their status."""
     from greg.cognition import compiler as C
     index = C.evidence_index()
-    for family in ("micro", "exact", "graph", "sequential"):
+    for family in ("micro", "exact", "sequential"):
         status, why = C.operation_status(family, index["operations"][family])
         assert status == "UNEVALUATED" and "no competitor" in why, family
-    for family in ("control", "game", "information", "probabilistic", "swarm"):
+    assert C.operation_status("graph", index["operations"]["graph"]) == ("EXPERIMENTAL", None)
+    for family in ("control", "game", "information", "probabilistic", "swarm", "robust_pattern"):
         assert C.operation_status(family, index["operations"][family]) == ("DEFAULT_FOR_GEOMETRY", None), family
 
 

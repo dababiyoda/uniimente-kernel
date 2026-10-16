@@ -134,7 +134,9 @@ def test_per_arm_median_cpu_seconds_are_reported_and_rows_from_before_read_as_no
     assert "never inputs to the admission decision" in reported["note"]
     del rows[0]["arms"]["baseline"]["cpu_seconds"]
     assert admission.diagnostics(rows)["median_cpu_seconds"]["baseline"] is None      # never a partial median
-    runs = sorted(ADMISSION_RUNS.glob("*/results.json"))
+    # genome-admission runs only: the converged tree also holds PR #155's operation-family runs in this directory
+    # (keyed "families", written by another harness), which carry no per-arm genome rows
+    runs = [p for p in sorted(ADMISSION_RUNS.glob("*/results.json")) if "genomes" in json.loads(p.read_text())]
     before = [p for p in runs if p.parent.name < "2026-10-16"]           # v1-v3, written before diagnostics
     assert len(before) == 3
     for path in runs:

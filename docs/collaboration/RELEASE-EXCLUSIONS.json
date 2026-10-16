@@ -139,6 +139,31 @@
    "path": "docs/evidence/greg-composition-lift/2026-10-14-v5/run.log",
    "source": "uber",
    "carries": "per-item values"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/freeze-v6-attempt2.json",
+   "source": "sndlib",
+   "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)"
+  },
+  {
+   "path": "cortex/evaluation/composition_lift/freeze-v6.json",
+   "source": "sndlib",
+   "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/attempt-1/run.log",
+   "source": "sndlib",
+   "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/results-v6.json",
+   "source": "sndlib",
+   "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)"
+  },
+  {
+   "path": "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/run.log",
+   "source": "sndlib",
+   "carries": "per-item network-derived values (#158's F7 re-measurement with flow_expansion_mcf)"
   }
  ]
 }

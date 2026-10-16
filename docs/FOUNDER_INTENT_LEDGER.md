@@ -121,10 +121,10 @@ Progress 2026-10-14 (measured, frozen, negative results kept):
 
 Progress 2026-10-15 (measured, frozen, negative results kept):
 
-- **P6 v5** ([evidence](evidence/greg-composition-lift/2026-10-14-v5/README.md)): the natural family F8 (real NYC 2015 pickups; basal Kalman tracker -> Erlang C staffing) **lifts** over the best single intelligence, 8.6% cheaper (1589-204 items, 120-2 days). The EWMA-ratio-plus-quantile ablation is 4.7% cheaper still, and all of that comes from the tracker's fallbacks. Natural families are now 3 of 4. The data's redistribution terms are unverified (release blocker).
+- **P6 v5** ([evidence](evidence/greg-composition-lift/2026-10-14-v5/README.md)): the natural family F8 (real NYC 2015 pickups; basal Kalman tracker -> Erlang C staffing) **lifts** over the best single intelligence, 8.6% cheaper (1589-204 items, 120-2 days). The EWMA-ratio-plus-quantile ablation is cheaper still: it costs 4.5% less than routed (routed costs 4.7% more than it), and all of that comes from the tracker's fallbacks. Natural families are now 3 of 4. The data's redistribution terms are unverified (release blocker).
 - **Genome admission v3** ([evidence](evidence/greg-genome-admission/2026-10-15-v3/README.md)), pre-registered at `878f76c` on fresh seeds 1200-1229, measured 24 families: 15 new, 5 version-bumped and the 4 Layer 2 genomes on their native regimes.
-  - `flow_expansion_mcf` is DEFAULT against the F7 composition twin, with equal quality on all 30 instances at about one seventh of the latency. On F7's geometry the single exact method is canonical, which answers the founder's audit question at an exact version.
-  - Eight DEFAULT verdicts rest on latency at equal quality.
+  - `flow_expansion_mcf` is DEFAULT against the F7 composition twin, with equal quality on all 30 instances at about one seventh of the latency. Both were measured on 30 synthetic capacity-expansion instances (seeds 1200-1229); the genome was not run on F7's SNDlib items. On that capacity-expansion geometry the single exact method is canonical, which answers the founder's audit question at an exact version.
+  - Eight DEFAULT verdicts tie their competitor on all 30 instances and rest on being no slower than 1.25x its median latency. Two of them (`game_lp_dual`, `knapsack_bnb`) also tie their baseline and pass only by being at least 1.25x cheaper than it.
   - `bootstrap_ci` is REJECTED.
   - Grid shortest paths have no admitted genome: `grid_dijkstra` is EXPERIMENTAL at 1.22x its baseline's speed, short of 1.25x.
   - `basal_bayes_filter` fell to NICHE and `develop_constraint_release` rose to DEFAULT. Both crossed a rule boundary, recorded as a replication finding.
@@ -135,11 +135,41 @@ Progress 2026-10-15 (measured, frozen, negative results kept):
   - Cycle 4 is the first cycle run under the freeze. It targeted the constraint-release search policy on a fresh split and was REJECTED at the held-out gate.
     - On train the candidate was 23.7% better and improved on both stress sets.
     - On held-out it lost 26-37 (p = 0.94) and its mean loss was 46% worse.
-    - Random restart beat both configurations on held-out.
+    - Random restart had lower loss than the incumbent on 53% of train items, beat the candidate 46-22 on held-out and had the lowest held-out mean loss (0.0045 against 0.0062 and 0.0091). The record compares it with no other searched configuration.
+    - The search did try restart: its three configurations with `p_restart` above 0 (0.064, 0.156 and 0.339) were all worse than the incumbent on train.
   - Protected evolution has still never kept an improvement: 4 cycles, 4 REJECTs.
 - **Fix rounds merged after independent verification:** packs B and C, Capability Genesis (five rounds) and the solo compiler work (three rounds).
 - **Independent review of PR #179** posted, plus a review of its closure binding. A family re-pointed to another solver keeps a positive verdict after an index rebuild (confirmed).
+- **Records corrected after the independent evidence review:** the F8 percentage base, the scope of the `flow_expansion_mcf` result, the explanation of the eight DEFAULT verdicts and the random-restart comparison above. The v3 admission, P8 cycle-4 and P6 v5 READMEs carry errata that quote the original wording. `scripts/mind_status.py` now reports a status change across a declared regime change (`collective_quorum`, `collective_immune`) apart from a rule-boundary flip, and the admission harness records `source_dirty` for future runs.
+- **Independent review of this day's work** (five lenses, each finding re-run by a second agent): 33 findings plus 9 the verifiers added, all confirmed or partly confirmed. Each was fixed with a regression test that fails on the old code and independently re-checked:
+  - **P8 integrity v2.** The freeze now covers the full import closure, and executed code is checked in both processes. A recorded cycle runs only through a clean room (a fresh checkout, a source-only entry, no bytecode, git hooks off). Held-out data is looked at once, and only by a recorded run. This took four rounds of independent checking. It defends a record against a dirty or stale tree, not against whoever controls the machine.
+  - **Competency Compiler and Genesis:** a wrapped request now gets one ask, recipe demotion is scoped to the request, and demotion labels are truthful.
+  - **Optimisation verifier:** OPTIMAL, INFEASIBLE and UNSAT claims are now certified independently by Z3 ("proven" only when certified). Objectives are compared exactly at large magnitudes, and parallel edges are refused in capacity expansion.
+  - **Records:** errata quote the original wording.
 - **Blocked by the environment:** fresh NYC TLC data for F8's next evaluation. The network policy refuses `data.cityofnewyork.us` and the TLC CDN.
+
+Progress 2026-10-16 (measured, frozen, negative results kept):
+
+- **F7 with `flow_expansion_mcf`** ([evidence](evidence/greg-composition-lift/2026-10-16-f7-mcf/README.md)): **MATCH.**
+  - It is a declared re-use of v4's 200 held-out SNDlib items, which had been looked at twice before.
+  - The admitted single genome, through `cortex.reason`, is optimal on 200/200, as is the composition, at 0.26x its median latency.
+  - The independent rescoring (SciPy max flow plus a HiGHS MILP, no code shared) agrees on every item, and the compiler selected the genome on all 200.
+  - With the genome as a constituent, F7's lift is NO_LIFT. v4's verdict is unchanged; the single exact method is canonical on F7's real geometry.
+  - Attempt 1 hung before any held-out item finished: the pool was forked after the solver threads started. No outcome was observed. It was fixed, disclosed and re-frozen at a new path.
+- **P8 cycle 5** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-5/README.md)): **REJECT at the adversarial gate.**
+  - The `cover/1` search, designed from a review-seed pilot, reached the restart anchor (`p_restart` 1.0) within 0.5% of the best train loss.
+  - The argmin of near-tied train means chose `offspring` 6, which failed the lean stress set (+27.5%).
+  - The held-out split was never evaluated, but it is spent by its committed freeze.
+  - Five cycles, five REJECTs; section 31 item 7 is unmet. Next: a pre-registered selection rule that does not rest on near-tied train means.
+- **Genome admission v4** ([evidence](evidence/greg-genome-admission/2026-10-16-v4/README.md)), seeds 1300-1329:
+  - `grid_dijkstra` 1.1.0 is **DEFAULT_FOR_GEOMETRY** at 2.60x its baseline, so the grid shortest-path geometry now has an admitted genome.
+  - `flow_reinforce_greedy` 1.0.2 (SUPERSEDED) and `flow_capacity_plan` 1.0.3 (COMPOSITION_ONLY) replicate.
+  - 35 of 47 are admitted; none is attached.
+- **Merged after independent verification:**
+  - the compiler lane (three rounds) and the optimisation-verifier lane (four rounds: deadline-bounded Z3 certificates, FEASIBLE bounds certified to rounding noise, truthful dissent);
+  - the P8 cycle-5 design;
+  - the grid genome, with version-bound compiler measurements and admission CPU and load diagnostics.
+- **CI:** job 1's limit was raised to 45 minutes; it runs the suite twice.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 

@@ -17,6 +17,15 @@ Structural priority (shown, not used as an outcome estimate): bottleneck severit
 then the number of Spider-Web control points strengthened, compounding, reversibility, buildability.
 Building the compiler authorizes nothing: every candidate keeps its consequence class and the founder
 grant it would need.
+
+Track B convergence (2026-10-15): the canonical intervention generator is #158's Lawful Leverage Foundry
+(``foundry.lawful_leverage``), which hard-filters, estimates and hands survivors to the ranker; candidates from
+``compile_map`` stay UNESTIMATED and the ranker drops them. Every operator here now has a canonical Foundry
+mechanism (``FOUNDRY_MECHANISM``): five had an equivalent and seven were ported into the Foundry library
+(``lawful_leverage.PORTED_FROM``), the accountability operator as four legal channels. ``compile_map`` is a
+historical, read-only structural view (``greg cognition advantage``): it generates nothing the Foundry lacks
+and its operator table is pinned. The destinations below remain the live buildability view of the Backcast GPS
+horizons.
 """
 from __future__ import annotations
 
@@ -172,6 +181,25 @@ OPERATORS = (
 )
 
 
+# Each operator's canonical mechanism in the Foundry library (tested both ways in test_greg_mind_convergence.py).
+FOUNDRY_MECHANISM = {"proof_substrate": ("proof.verifiable_receipts",),
+                     "eligibility_packet": ("eligibility.published_standard",),
+                     "settlement_on_proof": ("settlement.milestone_escrow",),
+                     "default_pathway": ("defaults.incumbent_integration",),
+                     "counter_position": ("incentives.counter_position",),
+                     "constraint_to_advantage": ("standards.verified_compliance",),
+                     "aggregate_fragmented": ("coordination.consented_pool",),
+                     "remove_single_point": ("dependency.second_source",),
+                     "data_flywheel": ("routing.evidence_triage",),
+                     # split by legal channel: each has its own lawful basis, access, evidence and authorization
+                     "accountable_transparency": ("proof.evidence_preservation", "proof.confidential_review",
+                                                  "proof.authority_submission", "proof.public_publication"),
+                     "regenerative_incentive": ("incentives.regenerative_benefit",),
+                     "remove_step": ("workflow.remove_step",)}
+# The operator table is historical (Track B): it no longer evolves here. Extend the Foundry library instead; a
+# test pins this digest so an edit to OPERATORS cannot quietly create a second, independently evolving generator.
+
+
 def lawful(operator: Operator) -> list[str]:
     problems = []
     for means in operator.means:
@@ -245,6 +273,7 @@ def compile_map(leverage_map: dict, request: dict, *, operators=OPERATORS) -> di
             consequence = max((CONSEQUENCE[m] for m in op.means), key=RANK.index)
             candidates.append({
                 "id": f"{op.id}@{b['node']}", "operator": op.id, "mental_model": op.model, "node": b["node"],
+                "canonical_foundry_mechanisms": list(FOUNDRY_MECHANISM[op.id]),
                 "label": label, "control_points": list(op.control_points), "mechanism": op.mechanism,
                 "means": list(op.means), "lawful": True, "buildability": level, "backcast": steps,
                 "consequence_class": consequence,
@@ -262,7 +291,10 @@ def compile_map(leverage_map: dict, request: dict, *, operators=OPERATORS) -> di
                                    -c["structural_priority"][4], c["id"]))
     return {"schema": "greg-advantage-compiler/0.1", "objective": request["objective"],
             "bottlenecks": bottlenecks, "candidates": candidates, "refused_operators": refused,
-            "baseline": "do nothing (always kept by the ranker)", "authority_created": False}
+            "baseline": "do nothing (always kept by the ranker)",
+            "canonical_generator": "foundry.lawful_leverage: the same operators, hard-filtered and estimated",
+            "historical_view": "superseded generator kept read-only; use `greg gravity` (the Foundry) to act",
+            "authority_created": False}
 
 
 def to_interventions(candidates: list[dict], estimates: dict) -> list[dict]:
@@ -297,37 +329,42 @@ class Destination:
     effect: str                      # the compiled, falsifiable effect
     capabilities: tuple[tuple[str, str], ...]
     falsifier: str
+    horizon: str                     # its horizon on the one Backcast GPS (greg/path.json)
 
 
+# The Founder Effect Compiler's six examples. Each is placed on greg/path.json (``horizon``): this table is a live
+# buildability view of those horizons from the genome inventory, not a second Backcast GPS.
 DESTINATIONS = (
     Destination("Become omniscient about my businesses", "SCIENCE_FICTION_DESCENDANT",
                 "minimise decision-relevant unknowns with authorized data, freshness and stated uncertainty",
                 (("brief.freshness", "present"), ("memory.precedents", "present"), ("cognition.evidence", "present"),
                  ("connectors.business_data", "commodity")),
-                "a founder decision made with a material fact GREG had authorized access to but did not surface"),
+                "a founder decision made with a material fact GREG had authorized access to but did not surface",
+                "decision_relevant_knowledge"),
     Destination("Make UNIIMENTE immortal", "SCIENCE_FICTION_DESCENDANT",
                 "intent and capability survive component failure: durable ledger, backups, replaceable models, succession",
                 (("artifact.store", "present"), ("cognition.cortex", "present"), ("backup.offsite", "commodity"),
                  ("succession.legal", "commodity")),
-                "a restore drill loses founder intent, ledger history or the ability to swap the model"),
+                "a restore drill loses founder intent, ledger history or the ability to swap the model", "continuity"),
     Destination("Heal yourself", "BUILDABLE_NOW",
                 "detect lost function, localise it, repair or replace it, verify restoration, resume work",
                 (("worker.appraise", "present"), ("repo.integration_audit", "present"), ("worker.commission", "present")),
-                "an injected fault is not detected, or the mission does not resume after repair"),
+                "an injected fault is not detected, or the mission does not resume after repair", "capability_genesis"),
     Destination("Grow a new organ", "BUILDABLE_NOW",
                 "a recurring deficit becomes a bounded subsystem with contracts, tests, lifecycle and shutdown",
                 (("cognition.compose", "present"), ("foundry.apply", "present")),
-                "a formed capability is used once and never again, or bypasses founder attach"),
+                "a formed capability is used once and never again, or bypasses founder attach", "persistent_organs"),
     Destination("Give UNIIMENTE an immune system", "BUILDABLE_NOW",
                 "detect, contain, recover from and learn from attacks and failures without autoimmune refusal",
                 (("cognition.robust_pattern", "present"), ("cognition.protection", "present"),
                  ("intrusion.detection", "commodity")),
-                "a replayed incident is missed, or legitimate novelty is quarantined"),
+                "a replayed incident is missed, or legitimate novelty is quarantined", "immune_function"),
     Destination("Watch over and protect me in the physical world", "SCIENCE_FICTION_DESCENDANT",
                 "lawful situational awareness from public and consented data with early warning and escalation",
                 (("http.get", "present"), ("feeds.public_safety", "commodity"), ("location.consented", "commodity"),
                  ("perception.ubiquitous", "science_fiction")),
-                "a public, available warning relevant to the founder's consented location is not surfaced"),
+                "a public, available warning relevant to the founder's consented location is not surfaced",
+                "situational_awareness"),
 )
 
 
@@ -336,7 +373,8 @@ def backcast(destination: Destination) -> dict:
     real = tuple(c for c in destination.capabilities if c[1] != "science_fiction")
     level, steps = buildability(real, present)
     _, full = buildability(destination.capabilities, present)
-    return {"expression": destination.expression, "literal": destination.literal, "effect": destination.effect,
+    return {"expression": destination.expression, "horizon": destination.horizon, "literal": destination.literal,
+            "effect": destination.effect,
             "compiled_effect_buildability": level, "backcast": full, "falsifier": destination.falsifier,
             "kept_on_horizon": [s["capability"] for s in full if "science_fiction" in s["state"]]}
 

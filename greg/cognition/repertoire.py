@@ -140,6 +140,8 @@ def crowd_label(data, geometry):
                          "dissent": [{"item_id": i, "majority": majority[i], "dawid_skene": labels[i]}
                                      for i in items if labels[i] != majority[i]] + ties,
                          "trace": {"em": trace, "classes": classes, "smoothing": smoothing},
+                         # the fitted model, so the verifier can recompute the E-step from the raw votes
+                         "model": {"prior": prior, "confusion": confusion},
                          "baseline_status": "admitted only by the frozen native benchmark against majority vote"})
 
 

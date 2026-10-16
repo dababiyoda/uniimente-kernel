@@ -106,11 +106,13 @@ def main(argv=None) -> int:
     css.add_parser("inventory")
     css.add_parser("knowledge")
     css.add_parser("genomes", help="every intelligence GREG can or intends to recruit: layer, admission, evidence")
-    ca = css.add_parser("advantage", help="lawful candidate interventions at the evidenced bottlenecks of a control map")
+    ca = css.add_parser("advantage", help="historical read-only view (#155): candidate interventions at a control map's bottlenecks; the canonical generator is the Foundry (greg gravity)")
     ca.add_argument("--map", required=True, help="institutional-leverage map JSON (nodes, links)")
     ca.add_argument("--outcome", required=True, help="outcome node id")
     ca.add_argument("--objective", required=True)
     css.add_parser("destinations", help="founder destinations compiled to effects, with buildability and backcast")
+    css.add_parser("calibration", help="read-only: forecast calibration from realized values bound to receipts, "
+                                       "and the forecast receipts still awaiting a realization")
     cm = css.add_parser("mission")
     cm.add_argument("--request", required=True, help="bounded cognition request JSON")
     cm.add_argument("--id", required=True, help="durable mission identity")
@@ -120,7 +122,7 @@ def main(argv=None) -> int:
     cm.add_argument("--print-only", action="store_true")
 
     for name in ("mission", "decide", "critique", "pause", "resume", "stop", "attach", "detach", "lifecycle",
-                 "accept"):
+                 "accept", "realize"):
         q = sub.add_parser(name)
         q.add_argument("--key")
         q.add_argument("--no-passphrase", action="store_true")
@@ -173,6 +175,13 @@ def main(argv=None) -> int:
             q.add_argument("capability_id")
         if name == "lifecycle":
             q.add_argument("mission_id"); q.add_argument("state"); q.add_argument("--reason", default="")
+        if name == "realize":
+            q.add_argument("receipt", help="ledger hash of the forecast receipt (greg cognition calibration lists them)")
+            q.add_argument("--value", type=float, action="append", required=True,
+                           help="one observed value per forecast horizon step, in order")
+            q.add_argument("--source", default="founder_reported",
+                           choices=["founder_reported", "external_record", "sensor_observation"])
+            q.add_argument("--note", default="")
 
     d = sub.add_parser("device", help="delegate a narrow, expiring key to a phone (founder-signed)")
     ds = d.add_subparsers(dest="device_cmd", required=True)
@@ -210,6 +219,11 @@ def main(argv=None) -> int:
     st.add_argument("--local", action="store_true", required=True)
     sub.add_parser("status"); sub.add_parser("decisions"); sub.add_parser("vepmc"); sub.add_parser("routing")
     sub.add_parser("path", help="where GREG stands on its developmental path: active node, gate, exit evidence, horizons")
+    sub.add_parser("resilience", help="read-only: failure/recovery episodes, antifragility evidence, common causes, "
+                                       "dependency concentration and organ-vs-system decoupling warnings")
+    gv = sub.add_parser("gravity", help="one read-only Goal Gravity turn: Backcast GPS, Lawful Leverage Foundry, "
+                                         "Gate proposals and at most one prepared founder ask")
+    gv.add_argument("--situation", required=True, help="typed situation JSON (sensing evidence, never authority)")
     pr = sub.add_parser("presence", help="was the body actually running: measured availability, absences, late work")
     pr.add_argument("--hours", type=float, default=72.0)
     doc = sub.add_parser("doctor", help="read-only first-body prerequisites; creates no key, service or body")
@@ -348,6 +362,11 @@ def main(argv=None) -> int:
             elif args.cognition_cmd == "destinations":
                 from greg.cognition.advantage import export as advantage_export
                 data = advantage_export()["destinations"]
+            elif args.cognition_cmd == "calibration":
+                from greg.cognition.settlement import awaiting_realization, outcome_calibration
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = {"calibration": outcome_calibration(journal),
+                            "awaiting_realization": awaiting_realization(journal), "authority_created": False}
             elif args.cognition_cmd == "knowledge":
                 from greg.cognition.settlement import competence
                 from greg.cognition.cells import cells
@@ -395,6 +414,27 @@ def main(argv=None) -> int:
                     data = devpath.position(journal)
             else:
                 data = devpath.position(None)
+            print(json.dumps(data, indent=1))
+        elif args.cmd == "resilience":
+            from greg import resilience
+            if Layout(home).ledger.exists():
+                with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                    data = resilience.summary(journal)
+            else:
+                data = {"reality_status": "NO_BODY_LEDGER", "note": "measure on the body"}
+            print(json.dumps(data, indent=1, default=str))
+        elif args.cmd == "gravity":
+            from foundry.lawful_leverage import LeverageRefused
+            from greg import gravity
+            situation = json.loads(Path(args.situation).read_text())
+            try:
+                if Layout(home).ledger.exists():
+                    with observe(home, actor="spiffe://uniimente.internal/greg/cli-reader") as journal:
+                        data = gravity.step(situation, journal=journal)
+                else:
+                    data = gravity.step(situation)
+            except (gravity.GravityError, LeverageRefused) as exc:     # a refusal, reported like any other
+                raise BodyError(f"gravity refused the situation: {exc}") from exc
             print(json.dumps(data, indent=1))
         elif args.cmd == "presence":
             from greg import presence
@@ -466,6 +506,9 @@ def main(argv=None) -> int:
                 print(_drop(home, "BODY_STOP", {}, args))
         elif args.cmd in ("attach", "detach"):
             print(_drop(home, "CAPABILITY_" + args.cmd.upper(), {"capability_id": args.capability_id}, args))
+        elif args.cmd == "realize":
+            print(_drop(home, "REALIZATION", {"receipt": args.receipt, "realized": args.value, "source": args.source,
+                                              "note": args.note}, args))
         elif args.cmd == "lifecycle":
             print(_drop(home, "LIFECYCLE", {"mission_id": args.mission_id, "state": args.state,
                                             "reason": args.reason}, args))

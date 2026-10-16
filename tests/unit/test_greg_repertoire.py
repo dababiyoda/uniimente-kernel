@@ -112,3 +112,90 @@ def test_new_families_are_built_not_activated_until_attached():
     assert receipt["abstention_state"] == "NONE" and receipt["method"] == "cognition.crowd"
     assert receipt["evaluator_result"]["verdict"] == "STRUCTURALLY_VERIFIED"
     assert receipt["authority_created"] is False
+
+
+# ---------------------------------------------------------------- review of PR #179, 2026-10-15 (H3, M4, M5, M6)
+def _total_flip(answer, classes):
+    forged = deepcopy(answer)
+    for item, label in forged["output"]["labels"].items():
+        if label is not None:
+            forged["output"]["labels"][item] = classes[1 - classes.index(label)]
+    forged["output"]["posteriors"] = {i: [1.0, 0.0] if forged["output"]["labels"][i] == classes[0] else [0.0, 1.0]
+                                      for i in forged["output"]["posteriors"]}
+    return forged
+
+
+@pytest.mark.parametrize("seed", range(10))
+def test_crowd_verifier_refutes_a_total_label_flip(seed):
+    """H3: the verifier checked only internal consistency, so flipping every label with one-hot posteriors verified.
+    It now recomputes the E-step from the fitted model and the raw votes."""
+    data, truth = crowd(seed=seed, items=30)
+    answer = crowd_label(data, GEOMETRY)
+    assert verify("crowd", data, answer, "collective_trace")["verdict"] == "STRUCTURALLY_VERIFIED"
+    forged = _total_flip(answer, data["classes"])
+    assert sum(forged["output"]["labels"][i] != t for i, t in truth.items()) >= 20
+    assert verify("crowd", data, forged, "collective_trace")["verdict"] == "REFUTED"
+
+
+def test_crowd_verifier_refutes_a_flip_with_a_matching_flipped_model():
+    """The forger also flips the fitted model (label switching): observers then look worse than chance."""
+    data, _ = crowd(seed=4, items=30)
+    answer = crowd_label(data, GEOMETRY)
+    forged = _total_flip(answer, data["classes"])
+    model = forged["proof"]["model"]
+    model["prior"] = model["prior"][::-1]
+    # switch the latent class only: row c of the new matrix is row 1-c of the old (observed labels keep their index)
+    model["confusion"] = {g: rows[::-1] for g, rows in model["confusion"].items()}
+    forged["output"]["posteriors"] = {i: p[::-1] for i, p in answer["output"]["posteriors"].items()}
+    result = verify("crowd", data, forged, "collective_trace")
+    assert result["verdict"] == "REFUTED"
+    assert result["checks"]["observers_better_than_chance_on_average"] is False
+
+
+def test_robust_pattern_verifier_rederives_flags_when_mad_is_zero():
+    """M4: with MAD == 0 the flag check was skipped, so an empty or wrong anomaly list verified."""
+    data = {"observations": [0] * 9 + [50, -40, 0.1]}
+    answer = robust_anomalies(data, GEOMETRY)
+    assert answer["output"]["anomalies"] == [9, 10]
+    assert verify("robust_pattern", data, answer, "pattern_evidence")["verdict"] == "STRUCTURALLY_VERIFIED"
+    for forged_flags in ([], [0]):
+        forged = deepcopy(answer)
+        forged["output"]["anomalies"] = forged_flags
+        assert verify("robust_pattern", data, forged, "pattern_evidence")["verdict"] == "REFUTED"
+
+
+def test_search_verifier_is_not_common_mode_and_checks_the_evaluation_count(monkeypatch):
+    """M5: the verifier reused the solver's objective code, so a patched objective verified its own answer;
+    an under-reported evaluation count also verified."""
+    from greg.cognition import repertoire
+    data = {"function": "sphere", "shift": [1.0, -2.0], "bounds": [[-5, 5], [-5, 5]], "budget": 400, "seed": 7}
+    honest = swarm_minimize(data, GEOMETRY)
+    assert verify("swarm", data, honest, "collective_trace")["verdict"] == "STRUCTURALLY_VERIFIED"
+    monkeypatch.setitem(repertoire.OBJECTIVES, "sphere", lambda x: 0.0)
+    patched = swarm_minimize(data, GEOMETRY)
+    assert patched["output"]["fitness"] == 0.0
+    assert verify("swarm", data, patched, "collective_trace")["verdict"] == "REFUTED"
+    monkeypatch.undo()
+    undercount = deepcopy(honest)
+    undercount["output"]["evaluations"] = 1
+    assert verify("swarm", data, undercount, "collective_trace")["verdict"] == "REFUTED"
+    for name in ("rastrigin", "ackley", "rosenbrock", "griewank"):   # the independent closed forms agree
+        d = {**data, "function": name}
+        assert verify("swarm", d, swarm_minimize(d, GEOMETRY), "collective_trace")["verdict"] == "STRUCTURALLY_VERIFIED"
+
+
+def test_optimization_verifier_requires_the_bound_to_meet_an_optimal_objective():
+    """M6: an OPTIMAL label with a suboptimal plan (proof bound 58 against objective 55) verified on feasibility."""
+    from greg.cognition.solvers import SOLVERS
+    data = {"variables": {"x": [0, 10], "y": [0, 10]},
+            "constraints": [{"coefficients": {"x": 1, "y": 1}, "op": "<=", "rhs": 12}],
+            "objective": {"sense": "max", "coefficients": {"x": 3, "y": 2}}}
+    answer = SOLVERS["optimization"](data, {"compute_limit": 10000, "latency_limit": 10.0})
+    assert answer["output"]["solver_status"] == "OPTIMAL"
+    assert verify("optimization", data, answer, "optimization_certificate")["verdict"] == "STRUCTURALLY_VERIFIED"
+    forged = deepcopy(answer)
+    forged["output"]["solution"] = {"x": 10, "y": 1}            # feasible, objective 32 < optimum 34
+    forged["proof"]["solution"] = forged["output"]["solution"]
+    forged["output"]["objective_value"] = 32.0
+    result = verify("optimization", data, forged, "optimization_certificate")
+    assert result["verdict"] == "REFUTED" and result["checks"]["optimal_objective_meets_its_bound"] is False

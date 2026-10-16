@@ -281,7 +281,8 @@
       "nearest_precursor": [
         "greg/missions.py",
         "greg/body.py",
-        "provenance/ledger.py"
+        "provenance/ledger.py",
+        "greg/gravity.py"
       ],
       "activation_evidence": "N1 exit",
       "founder_sources": [
@@ -1051,6 +1052,51 @@
         "INTENT-20261001-greg-seed-genome",
         "INTENT-2026-09-25-EGREGORE-ECOLOGY"
       ]
+    },
+    {
+      "id": "lawful_asymmetric_advantage",
+      "covers": [
+        "Lawful Asymmetric Advantage Compiler",
+        "leverage foundry",
+        "Goal Gravity",
+        "option density"
+      ],
+      "intended_effect": "GREG generates, filters, estimates and compares lawful interventions over control surfaces, prefers control points only where evidence shows they beat repeated direct labour, and asks the founder only the minimum decision",
+      "node": "N3",
+      "feasibility": "CURRENTLY_BUILDABLE",
+      "current_reality": "IMPLEMENTED, UNIT-TESTED (foundry/lawful_leverage.py, greg/gravity.py, `greg gravity`); no real mission outcome",
+      "nearest_precursor": [
+        "foundry/lawful_leverage.py",
+        "greg/gravity.py",
+        "egregore/leverage.py"
+      ],
+      "activation_evidence": "a founder-approved Foundry route closes a verified outcome on a real mission",
+      "founder_sources": [
+        "INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION"
+      ]
+    },
+    {
+      "id": "immune_function",
+      "covers": [
+        "immune system (detect, contain, recover from and learn from attacks and failures)"
+      ],
+      "intended_effect": "Attacks and failures are detected, contained, recovered from and learned from, and legitimate novelty is not quarantined (no autoimmune refusal)",
+      "node": "N2",
+      "feasibility": "BUILDABLE_AFTER_PREREQUISITE",
+      "current_reality": "IMPLEMENTED mechanisms, not one integrated function: Landlock confinement of candidates and workers (greg/isolation.py), resilience checks (greg/resilience.py), negative-selection detection (cognition.collective_immune, EXPERIMENTAL in the evidence index) and robust anomaly detection (cognition.robust_pattern, EXPERIMENTAL); no incident drill has been run on a body",
+      "nearest_precursor": [
+        "greg/isolation.py",
+        "greg/resilience.py",
+        "greg/cognition/genomes/collective.py",
+        "greg/cognition/repertoire.py"
+      ],
+      "prerequisite": "Body 1 operating (N1) and a ledgered incident record type for detection, containment and recovery",
+      "activation_evidence": "a replayed incident (an injected fault or intrusion) on the body is detected, contained and recovered, the interrupted mission resumes, and a legitimate novel request in the same drill is not quarantined",
+      "founder_sources": [
+        "INTENT-0030",
+        "docs/FOUNDER_EFFECT_COMPILER.md#give-uniimente-an-immune-system"
+      ],
+      "placement": "added by the 2026-10-14 Mind-lineage convergence: the Founder Effect Compiler's immune-system example had no horizon on the one Backcast GPS (PR #155's advantage.DESTINATIONS carried it in code only)"
     }
   ],
   "workstreams": [
@@ -1175,7 +1221,11 @@
           "id": "P4",
           "title": "Cognitive settlement and learned routing",
           "maps_to": "N4",
-          "status": "HORIZON",
+          "status": "IMPLEMENTED, INTEGRATED, TESTED; exit not met: the decisive pre-registered retest (2026-10-08, 191 held-out items, 3 repeats) is REGRESSION, 160 vs 162 (6-8, p=0.79; every discordant item used identical orders, so timing noise), and conditional formal-engine routing is DEMOTED: the shadow default stays and the competence memory is retained as evidence; PR #155's independently pre-registered decisive retest (2026-10-14, 130 held-out items) is NO_GAIN, 111 = 111 (3-3, p=0.66); as the later frozen run it is the evidence index's deciding verdict, with the REGRESSION kept in its history, and both agree the conditional route earns no gain; measured on benchmark items, not on settled real-mission outcomes (this node's review trigger, 20 settled real-mission outcomes in one geometry, has not occurred); a HORIZON placeholder here until the founder's 2026-10-07 directive activated it in polyintelligence_cortex, its current record",
+          "current_record": {
+            "workstream": "polyintelligence_cortex",
+            "node": "P4"
+          },
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P3 plus settled outcomes from real missions",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1183,13 +1233,23 @@
           "falsification": "learned routing does not beat the frozen static router",
           "smallest_next_experiment": "replay the frozen held-out suite with routing memory seeded from settled outcomes; compare to static_router",
           "exit": "learned routing beats the static baseline on held-out tasks without new authority",
-          "evidence_refs": []
+          "evidence_refs": [
+            "docs/evidence/greg-learned-routing/2026-10-07/README.md",
+            "docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
+            "docs/evidence/greg-learned-routing/2026-10-08/README.md",
+            "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json",
+            "docs/evidence/greg-learned-routing/2026-10-07/results-v3.json"
+          ]
         },
         {
           "id": "P5",
           "title": "Demand-led repertoire expansion",
           "maps_to": "N2",
-          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required",
+          "status": "IMPLEMENTED for graph.shortest_path, graph.max_flow (reserved family cortex.graph.search) and lp.optimize (continuous optimization) from installed open-source engines; VERIFIED_IN_TESTED_ENVIRONMENT; founder attach required; 2026-10-13: 31 executable genomes across L1-L4 evaluated on held-out seeds 1000-1029 (frozen 496c85b): 12 DEFAULT_FOR_GEOMETRY, 8 NICHE_CAPABILITY, 6 SUPERSEDED, 3 COMPOSITION_ONLY, 2 EXPERIMENTAL, 0 REJECTED (20 admitted); all registered VERIFIED (withheld); attaching any is the founder's decision; after admission v2 (2026-10-14, seeds 1100-1129) and v3 (2026-10-15, seeds 1200-1229, frozen 878f76c) and v4 (2026-10-16, seeds 1300-1329, frozen 3da09c0: grid_dijkstra 1.1.0 DEFAULT, two flow genomes replicate) all 47 executable genomes carry evidence at their current version: 24 DEFAULT_FOR_GEOMETRY, 11 NICHE_CAPABILITY, 8 SUPERSEDED, 3 COMPOSITION_ONLY, 0 EXPERIMENTAL, 1 REJECTED (35 admitted); none attached",
+          "current_record": {
+            "workstream": "polyintelligence_cortex",
+            "node": "P5"
+          },
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "a mission that needs a family the seed lacks",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1200,14 +1260,21 @@
           "evidence_refs": [
             "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
             "tests/unit/test_greg_open_source_genesis.py",
-            "tests/unit/test_greg_linear_genesis.py"
+            "tests/unit/test_greg_linear_genesis.py",
+            "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json",
+            "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json",
+            "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json"
           ]
         },
         {
           "id": "P6",
           "title": "Heterogeneous compositions and collective mechanisms",
           "maps_to": "N5",
-          "status": "HORIZON",
+          "status": "IMPLEMENTED, INTEGRATED, TESTED; exit partial: frozen held-out lift on four constructed families (F1, F2R, F3, F4) and on three of four natural families (F6 real bank arrivals, F7 real SNDlib backbones, F8 real NYC pickups with the Layer 1 Kalman tracker as a stage); the natural family F5 is not significant; PR #155 lineage (constructed): F2b re-measured 48 of F2R's 64 instances (same generator, seeds 25-72) and matched them item for item (11-3, p=0.029; a same-instance re-run, not a replication; F2R decides), crossgeo X1 and X2 lift as cortex organ routes, and dataflow-derived chains lift over the best single intelligence (41-0) but not over the best fixed recipe (4-2, p=0.34); the strongest practitioner or ablation pipeline measured for each lifted natural family is not beaten (F6 weekly mean, F7 parametric min-cost flow ties, F8 EWMA ratio + quantile 4.5% cheaper in total, routed 4.7% dearer, because the tracker's abstentions fall back to the standing plan); correlated-failure analysis across stages is still open; a HORIZON placeholder here until the founder's 2026-10-07 directive activated it in polyintelligence_cortex, its current record",
+          "current_record": {
+            "workstream": "polyintelligence_cortex",
+            "node": "P6"
+          },
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P4",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1215,13 +1282,36 @@
           "falsification": "no composition beats its strongest constituent, a simple pipeline and a committee after overhead",
           "smallest_next_experiment": "compare the schedule composition against extraction-free formal input on the same requests",
           "exit": "one composition with measured net lift after overhead and correlated-failure analysis",
-          "evidence_refs": []
+          "evidence_refs": [
+            "docs/evidence/greg-composition/2026-10-07/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-07/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-07/results.json",
+            "docs/evidence/greg-composition-lift/2026-10-08/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json",
+            "docs/evidence/greg-composition-lift/2026-10-14-v3/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json",
+            "docs/evidence/greg-composition-lift/2026-10-14-v4/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json",
+            "docs/evidence/greg-composition-lift/2026-10-14-accounting/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-14/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-14/results-v2.json",
+            "docs/evidence/greg-composition-lift/2026-10-14/results-v3.json",
+            "docs/evidence/greg-composition-lift/2026-10-14-v5/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json",
+            "docs/evidence/greg-composition-lift/2026-10-14-accounting/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/results-v6.json"
+          ]
         },
         {
           "id": "P7",
           "title": "Cognitive Capability Genesis",
           "maps_to": "N2",
-          "status": "VERIFIED_IN_TESTED_ENVIRONMENT on the DEPEND route: a mission closed with a capability absent at its start (installed package, Mechanism Card, frozen oracle, founder attach, certificate)",
+          "status": "VERIFIED_IN_TESTED_ENVIRONMENT on the DEPEND route: a mission closed with a capability absent at its start (installed package, Mechanism Card, frozen oracle, founder attach, certificate). Since 2026-10-09 a compile receipt with CAPABILITY_DEFICIT (no intelligence fits the residual geometry) opens the same Genesis loop for the missing function inside the mission engine, else one founder ask; only an attachment for that function clears the blocker",
+          "current_record": {
+            "workstream": "polyintelligence_cortex",
+            "node": "P7"
+          },
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P5 and GREG genesis (N2)",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1233,14 +1323,20 @@
             "tests/evidence/greg-open-source-genesis-2026-10-01/qualification.json",
             "tests/unit/test_greg_open_source_genesis.py",
             "greg/genesis.py",
-            "greg/mechanisms.py"
+            "greg/mechanisms.py",
+            "greg/missions.py",
+            "tests/integration/test_greg_cognition_mission.py"
           ]
         },
         {
           "id": "P8",
           "title": "Evolutionary cognition",
           "maps_to": "N4",
-          "status": "HORIZON",
+          "status": "IMPLEMENTED, TESTED; exit not met: five frozen cycles under a sealed evaluator, five REJECTs: cycle 1 (forecasting, 2026-10-08) REJECT at the held-out gate (overfit caught), cycle 2 (negative-selection detector, 2026-10-09) REJECT at the scarce-sample stress gate, cycle 3 (constraint-release search policy, 2026-10-14) REJECT at the stress gate, cycle 4 (constraint-release search policy on a fresh split, 2026-10-15) REJECT at the held-out gate (overfit caught), cycle 5 (search policy cover/1 reaching p_restart 1.0, 2026-10-16) REJECT at the adversarial gate (the argmin of near-tied train means chose offspring 6, lean stress +27.5%; the held-out split was never evaluated); protected evolution has never kept an improvement; a HORIZON placeholder here until the founder's 2026-10-07 directive activated it in polyintelligence_cortex, its current record",
+          "current_record": {
+            "workstream": "polyintelligence_cortex",
+            "node": "P8"
+          },
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P7 and protected evaluators",
           "budget_ceiling": "local CPU only; no paid inference, no new hardware, no unapproved download",
@@ -1248,13 +1344,24 @@
           "falsification": "gains vanish on held-out data or the evaluator is gamed",
           "smallest_next_experiment": "mutate one router policy parameter under a protected held-out evaluator",
           "exit": "repeated held-out gains without evaluator gaming or unauthorized mutation",
-          "evidence_refs": []
+          "evidence_refs": [
+            "docs/evidence/greg-protected-evolution/2026-10-08/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-08/cycle-forecast-1.json",
+            "docs/evidence/greg-protected-evolution/2026-10-09/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-09/cycle-immune-2.json",
+            "docs/evidence/greg-protected-evolution/2026-10-14/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-14/cycle-cr-3.json",
+            "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/cycle-cr-4.json",
+            "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/cycle-cr-5.json",
+            "docs/evidence/greg-protected-evolution/2026-10-16-cr-5/README.md"
+          ]
         },
         {
           "id": "P9",
           "title": "Constraint-release discovery",
           "maps_to": "N10",
-          "status": "HORIZON",
+          "status": "HORIZON; precursor measured 2026-10-13: operator-pipeline recombination with retain-or-extinct validation (develop_constraint_release) is DEFAULT_FOR_GEOMETRY on held-out scheduling instances by the admission rule but does not beat random restart (8-13, not significant); re-measured 2026-10-14 on fresh seeds at version 1.1.1: random restart is significantly better (5-15, p_worse 0.021), status NICHE_CAPABILITY; re-measured 2026-10-15 (v3, seeds 1200-1229) at version 1.2.0: DEFAULT_FOR_GEOMETRY by the rule, not significantly worse than random restart (10-13, p_worse 0.339) at 1.17x its latency, though random restart still wins more instances; the exit (an unlisted organization that beats the baseline and replicates) is not met",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P6 and P8",
           "budget_ceiling": "research budget set by Alfonso",
@@ -1262,13 +1369,18 @@
           "falsification": "nothing beats the baseline or nothing replicates",
           "smallest_next_experiment": "one alternative communication topology for the composition, replicated twice",
           "exit": "a previously unlisted organization beats the baseline and survives independent replication",
-          "evidence_refs": []
+          "evidence_refs": [
+            "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json",
+            "docs/evidence/greg-genome-admission/2026-10-14-v2/results.json",
+            "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json",
+            "docs/evidence/greg-genome-admission/2026-10-16-v4/results.json"
+          ]
         },
         {
           "id": "P10",
           "title": "Functional morphogenesis",
           "maps_to": "N2",
-          "status": "HORIZON; partial precursor only: a lying engine is quarantined and the function restored by a different qualified package (scripted candidate set, not unscripted recovery)",
+          "status": "HORIZON; partial precursor only: a lying engine is quarantined and the function restored by a different qualified package (scripted candidate set, not unscripted recovery); precursor measured 2026-10-13: sequenced local-gradient repair (develop_repair) is NICHE_CAPABILITY: it beats no repair 30-0 and is 12-18 against the centralized replanner (not significant), the baseline the exit requires beating: it loses 0-15 with a reliable controller and wins 12-3 with an unreliable one (the replanner gave 5 wrong answers, repair 0); re-measured 2026-10-14 on fresh seeds at version 1.1.1: NICHE_CAPABILITY, 7-23 against the replanner (significant), 0-15 with a reliable controller and 7-8 with an unreliable one, so the v1 unreliable-controller win did not replicate",
           "owner": "cortex and GREG maintainers implement; Alfonso decides gates",
           "dependency": "P7, P9 and developmental research (Track B)",
           "budget_ceiling": "research budget set by Alfonso",
@@ -1277,7 +1389,8 @@
           "smallest_next_experiment": "inject an unseen organ loss in a sandbox and measure Unscripted Functional Recovery Rate",
           "exit": "scoped Unscripted Functional Recovery Rate against a strong centralized adaptive baseline",
           "evidence_refs": [
-            "tests/unit/test_greg_open_source_genesis.py"
+            "tests/unit/test_greg_open_source_genesis.py",
+            "docs/evidence/greg-genome-admission/2026-10-13-v1/results.json"
           ]
         },
         {
@@ -1334,7 +1447,7 @@
         "intent_ref": "docs/intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json",
         "previous": "Verified Cross-Geometry Routing Gain"
       },
-      "current": "VPL = 5 distinct families with lift (F1; F2/F2b; X1; X2; F3 derived chain), all constructed or agent-authored, none natural; the strongest single intelligence for X2 (a local language model) NOT_RUN. P4 conditional memory: v3 NO_GAIN - not currently worth its complexity. P8: REJECT (no headroom). Admission: Dawid-Skene and PSO admitted; DE superseded by multistart L-BFGS-B. Layer 4 sweep: PARITY. Seed Genome v5: INCONCLUSIVE.",
+      "current": "VPL = 3 of 4 held-out families in P6 v2 (F2R, F3, F4 lift; natural M4 family F5 not significant); P6 v3 (2026-10-14): the natural call-centre family F6 (real bank arrivals, forecast quantile -> Erlang C) lifts, 74-16 against the best constituent, 6.1% cheaper, so natural families were then 1 of 2 (3 of 4 after F7 and F8); the lift is composition, not routing (routed = static on all 90 days), and the weekly-mean practitioner pipeline is not beaten on day count (40-50). P4 decisive retest: REGRESSION (timing noise, identical orders), conditional routing demoted, shadow default. P8 cycles 1-5: REJECT (cycle 4 at the held-out gate; cycle 5, search policy cover/1 reaching p_restart 1.0, at the adversarial gate). Genome admission v1 (31 genomes), v2 (10 re-measured on fresh seeds; forecast_quantile's seeds redrew P8 series, recorded) and v3 (2026-10-15, seeds 1200-1229: 15 new, 5 version-bumped and the 4 Layer 2 genomes on their native regimes): 34 admitted of 47 after v3; after admission v4 (2026-10-16), 35 admitted of 47, none stale. flow_expansion_mcf is DEFAULT against the F7 composition twin (equal quality on all 30, about 7x faster, both measured on 30 synthetic capacity-expansion instances, seeds 1200-1229; it was not run on F7's SNDlib items): on that capacity-expansion geometry the single exact method is canonical. Eight DEFAULT verdicts tie their competitor on all 30 instances and rest on being no slower than 1.25x the competitor's median latency (two, game_lp_dual and knapsack_bnb, also tie their baseline and pass only by being at least 1.25x cheaper than it); bootstrap_ci REJECTED; grid shortest paths had no admitted genome at v3 (grid_dijkstra 1.0.0 EXPERIMENTAL at 1.22x); admission v4 (2026-10-16, seeds 1300-1329) admits grid_dijkstra 1.1.0 DEFAULT_FOR_GEOMETRY at 2.60x its baseline, and flow_reinforce_greedy 1.0.2 (SUPERSEDED) and flow_capacity_plan 1.0.3 (COMPOSITION_ONLY) replicate. On F7's real SNDlib items flow_expansion_mcf matches the composition 200/200 at 0.26x its latency (2026-10-16). Competency Compiler, Lawful Leverage Foundry and Goal Gravity integrated; independent review defects fixed. No genome attached. N1/VEPMC remains primary.",
       "nodes": [
         {
           "id": "P0",
@@ -1408,7 +1521,7 @@
           "id": "P4",
           "title": "Cognitive settlement and learned routing",
           "requirement": "Use eligibility, routing, proof, and outcomes to earn conditional defaults. Exit: learned routing beats the static baseline on held-out tasks without new authority.",
-          "status": "active (learned mode demoted; shadow observation only)",
+          "status": "active",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P3 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1418,22 +1531,28 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "none on synthetic suites (three frozen comparisons exhausted); review when 20 settled real-mission outcomes in one geometry exist from shadow mode",
+          "smallest_next_experiment": "only after the repertoire is wider than two engines: development data large enough to separate engines inside one class, deadlines away from the solve-time edge",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:565",
-          "reality": "conditional competence memory IMPLEMENTED, INTEGRATED, TESTED; frozen v1 INCONCLUSIVE, v2 INCONCLUSIVE (57 vs 56), v3 decisive retest NO_GAIN (111 vs 111 of 130, 3/3 discordant, all split-run timing noise; class-pooled REGRESSION 109). Founder rule applied: conditional solver learning is not currently worth its complexity for this repertoire; exit not met",
+          "reality": "conditional competence memory (features + hierarchical fallback) IMPLEMENTED, INTEGRATED, TESTED; frozen v2 INCONCLUSIVE (57 vs 56 of 66); decisive v3 (2026-10-08, 191 held-out items, 3 repeats): REGRESSION 160 vs 162 (6-8, p=0.79), all 14 discordant items used identical orders (timing noise); beats each fixed order (GAIN vs Z3-first and CP-SAT-first); predeclared consequence applied: conditional formal-engine routing DEMOTED, shadow default stays, memory retained",
           "exit_met": false,
           "implementation_refs": [
             "cortex/evaluation/learned_routing/run.py",
             "cortex/evaluation/learned_routing/run_v2.py",
-            "cortex/evaluation/learned_routing/run_v3.py",
             "greg/cognition/bridge.py",
             "greg/cognition/conditional_competence.py",
             "greg/cognition/learned_routing.py",
             "greg/cognition/worker.py",
             "tests/integration/test_greg_conditional_competence.py",
-            "tests/integration/test_greg_learned_routing.py"
+            "tests/integration/test_greg_learned_routing.py",
+            "cortex/evaluation/learned_routing/run_v3.py",
+            "docs/evidence/greg-learned-routing/2026-10-08/README.md"
           ],
-          "evidence": "docs/evidence/greg-learned-routing/2026-10-07/README.md: v1 INCONCLUSIVE; v2 INCONCLUSIVE; v3 NO_GAIN (results-v3.json)"
+          "evidence": "docs/evidence/greg-learned-routing/2026-10-07/README.md: v1 INCONCLUSIVE (order = static); v2 conditional INCONCLUSIVE (57 vs 56, bin packing 9 vs 7, knapsack kept 9/9)",
+          "pr155_lineage": {
+            "reality": "PR #155 v3 decisive retest (2026-10-14, 130 items, 3 repeats): NO_GAIN 111 vs 111; class-pooled REGRESSION 109; all 6 discordant items split-run timing noise. Agrees with #158's v3 (REGRESSION 160 vs 162): demoted, shadow default.",
+            "evidence": "docs/evidence/greg-learned-routing/2026-10-07/README.md (P4 v3 section); runner and freeze archived at docs/collaboration/lineage-archive/pr155-ef5f078/cortex/evaluation/learned_routing/",
+            "status": "active (learned mode demoted; shadow observation only)"
+          }
         },
         {
           "id": "P5",
@@ -1451,16 +1570,20 @@
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:568",
-          "reality": "graph.shortest_path, graph.max_flow, lp.optimize qualified from open source (VERIFIED, not ATTACHED); other families deferred on demand; admission v1 (2026-10-14): 8 DEFAULT_FOR_GEOMETRY, 4 REJECTED; admission v2: crowd (Dawid-Skene) and swarm (PSO) DEFAULT_FOR_GEOMETRY, robust_pattern EXPERIMENTAL, blackbox (DE) SUPERSEDED by multistart L-BFGS-B (acquisition target; post hoc it also beats PSO 32/7); pr155-crowd-sparse (sparse multi-class crowds): Dawid-Skene loses to the one-step weighted vote 8/32 (p = 9e-5) - EXPERIMENTAL, attach not recommended; the one-step vote is the acquisition target",
-          "evidence": "docs/evidence/greg-genome-admission/2026-10-14/README.md; README-v2.md; docs/evidence/pr155-crowd-sparse/2026-10-14/README.md",
-          "implementation_refs": [
-            "cortex/evaluation/genome_admission/run.py",
-            "cortex/evaluation/genome_admission/run_v2.py",
-            "greg/cognition/genome_library.py",
-            "greg/cognition/repertoire.py",
-            "tests/unit/test_greg_genome_library.py",
-            "tests/unit/test_greg_repertoire.py"
-          ]
+          "reality": "graph.shortest_path, graph.max_flow, lp.optimize qualified from open source (VERIFIED, not ATTACHED); other families deferred on demand",
+          "evidence": "tests/evidence/greg-open-source-genesis-2026-10-01/README.md",
+          "pr155_lineage": {
+            "implementation_refs": [
+              "cortex/evaluation/genome_admission/run.py",
+              "cortex/evaluation/genome_admission/run_v2.py",
+              "greg/cognition/genome_library.py",
+              "greg/cognition/repertoire.py",
+              "tests/unit/test_greg_genome_library.py",
+              "tests/unit/test_greg_repertoire.py"
+            ],
+            "evidence": "docs/evidence/greg-genome-admission/2026-10-14/README.md; README-v2.md; docs/evidence/pr155-crowd-sparse/2026-10-14/README.md",
+            "reality": "graph.shortest_path, graph.max_flow, lp.optimize qualified from open source (VERIFIED, not ATTACHED); other families deferred on demand; admission v1 (2026-10-14): 8 DEFAULT_FOR_GEOMETRY, 4 REJECTED; admission v2: crowd (Dawid-Skene) and swarm (PSO) DEFAULT_FOR_GEOMETRY, robust_pattern EXPERIMENTAL, blackbox (DE) SUPERSEDED by multistart L-BFGS-B (acquisition target; post hoc it also beats PSO 32/7); pr155-crowd-sparse (sparse multi-class crowds): Dawid-Skene loses to the one-step weighted vote 8/32 (p = 9e-5) - EXPERIMENTAL, attach not recommended; the one-step vote is the acquisition target"
+          }
         },
         {
           "id": "P6",
@@ -1476,22 +1599,32 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "F2 with more held-out items or larger samples; add families (Bayesian -> value of information, graph cut -> allocation, counterexample -> verifier -> repair); correlated-failure analysis across stages",
+          "smallest_next_experiment": "a pre-registered composition family that uses an admitted Layer 1 or Layer 2 genome on natural data, and a per-stage correlated-failure analysis on the frozen v2-v4 receipts",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:571",
-          "reality": "typed receipt-to-param edges (missions) and geometry-routed cognitive composition (cognition.solve `chain`) IMPLEMENTED, INTEGRATED, TESTED; frozen held-out lift: F1 lift, F2 not lift (p=0.0625); P6 v2: F2b, X1, X2 lift; P6 v3: dataflow-derived estimate+identify->optimize (no recipe lists it) lifts over the best single intelligence 41/0 but not over the best fixed recipe (4/2, p = 0.34)",
-          "exit_met": "partial: one family with measured net lift on constructed complementary families",
+          "reality": "geometry-routed cognitive composition on cognition.reason (`chain`; recipes estimate->optimise, identify->optimise, graph->allocate, Bayes->VOI->act, forecast->allocate, forecast->staff) IMPLEMENTED, INTEGRATED, TESTED; frozen held-out lift v1: F1 lift, F2 not lift; v2 (2026-10-08): F2R, F3, F4 lift, natural M4 family F5 8.5% cheaper but NOT LIFT (17-13, p=0.29); v3 (2026-10-14): natural call-centre family F6 (real bank arrivals) LIFT 74-16, 6.1% cheaper, no infeasible plan, but 40-50 on days against the weekly-mean practitioner pipeline and the router chose the static recipe on all 90 days; v4 (2026-10-14): natural SNDlib family F7 (real backbones) LIFT 92-0 at 5.3x latency, 130-0 against the shortest-path-upgrade practitioner, tied on every item by parametric min-cost flow; v5 (frozen 202b932, run 2026-10-14): natural NYC pickup family F8 (Kalman tracker -> Erlang C) LIFT over the best constituent, 8.6% cheaper, 1589-204 items, 120-2 dates, latency 1.94x within 5x, but 4.7% dearer in total than the EWMA ratio + quantile ablation (3.5% cheaper on the 1,993 items it decides; 203 standing-plan fallbacks)",
+          "exit_met": "partial: lift on four constructed families (F1, F2R, F3, F4) and on three of four natural families (F6 real bank arrivals, F7 real SNDlib backbones, F8 real NYC pickups with the Layer 1 Kalman tracker as a stage); the natural family F5 is not significant; the strongest practitioner or ablation pipeline measured for each lifted natural family is not beaten (F6 weekly mean, F7 parametric min-cost flow ties, and with the admitted genome flow_expansion_mcf as a constituent F7's lift does not survive (2026-10-16, v4's 200 held-out items re-used: the genome MATCHES the composition 200/200 optimal at 0.26x its median latency; F7_LIFT_WITH_GENOME NO_LIFT), F8 EWMA ratio + quantile 4.5% cheaper in total, routed 4.7% dearer, because the tracker's abstentions fall back to the standing plan); correlated-failure analysis across stages is still open",
           "implementation_refs": [
             "contracts/greg-mission.schema.json",
             "cortex/evaluation/composition_lift/run.py",
-            "cortex/evaluation/composition_lift/run_v2.py",
-            "cortex/evaluation/composition_lift/run_v3.py",
             "greg/cognition/composition.py",
             "greg/missions.py",
             "greg/templates.py",
             "tests/integration/test_greg_cognitive_composition.py",
-            "tests/unit/test_greg_bindings.py"
+            "tests/unit/test_greg_bindings.py",
+            "cortex/evaluation/composition_lift/run_v2.py",
+            "docs/evidence/greg-composition-lift/2026-10-08/README.md",
+            "cortex/evaluation/composition_lift/run_v3.py",
+            "cortex/evaluation/composition_lift/run_v4.py",
+            "cortex/evaluation/composition_lift/run_v5.py",
+            "docs/evidence/greg-composition-lift/2026-10-14-v3/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-14-v4/README.md",
+            "docs/evidence/greg-composition-lift/2026-10-14-v5/README.md"
           ],
-          "evidence": "docs/evidence/greg-composition-lift/2026-10-07/README.md; docs/evidence/greg-composition-lift/2026-10-14/README.md"
+          "evidence": "docs/evidence/greg-composition/2026-10-07/README.md: one signed mission, browser -> edge -> worker -> DALEOBANKS, manual relays 1 -> 0; docs/evidence/greg-composition-lift/2026-10-07/README.md: VPL = 1 of 2; docs/evidence/greg-composition-lift/2026-10-14-v3/README.md: F6 lift (natural); docs/evidence/greg-composition-lift/2026-10-14-v4/README.md: F7 lift (natural), tied by parametric min-cost flow; docs/evidence/greg-composition-lift/2026-10-14-v5/README.md: F8 lift over the best constituent (natural, Layer 1 tracker as a stage), 4.7% dearer in total than the EWMA ratio + quantile ablation; docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/README.md: flow_expansion_mcf MATCH on F7's real items, F7 lift with the genome NO_LIFT",
+          "pr155_lineage": {
+            "reality": "PR #155: P6 v2 F2b lift (11/3, p=0.029), crossgeo X1 and X2 structural lift; P6 v3 dataflow-derived estimate+identify->optimize (composition.derive) lifts over the best single intelligence 41/0, not over the best fixed recipe (4/2, p=0.34)",
+            "evidence": "docs/evidence/greg-composition-lift/2026-10-14/README.md; runners and freezes archived at docs/collaboration/lineage-archive/pr155-ef5f078/cortex/evaluation/composition_lift/"
+          }
         },
         {
           "id": "P7",
@@ -1509,7 +1642,7 @@
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:574",
-          "reality": "exit met at test tier (operator key): a mission closed on a capability absent at its start after founder attach",
+          "reality": "exit met at test tier (operator key): a mission closed on a capability absent at its start after founder attach; a cognition compile CAPABILITY_DEFICIT now enters the same loop for the residual function (integration-tested, not founder-used)",
           "exit_met": "test_tier_only",
           "evidence": "tests/unit/test_greg_open_source_genesis.py; tests/unit/test_greg_genesis_builder.py"
         },
@@ -1517,7 +1650,7 @@
           "id": "P8",
           "title": "Evolutionary cognition",
           "requirement": "Use trustworthy machine-evaluable objectives, protected evaluators, candidate mutation/recombination, sandbox execution, selection, and lineage. Exit: repeated held-out gains without evaluator gaming or unauthorized mutation. No self-authored evaluator may be its own final judge.",
-          "status": "active (machinery IMPLEMENTED; first run REJECT)",
+          "status": "active",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P7 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1527,17 +1660,29 @@
           },
           "review_trigger": "preceding exit evidence, measured demand, or authenticated founder correction",
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
-          "smallest_next_experiment": "the same protected machinery on a search space with headroom (composition recipes or a multi-engine repertoire), pre-registered",
+          "smallest_next_experiment": "a separately pre-registered cycle whose SELECTION does not rest on near-tied train means (cycle 5, 2026-10-16, docs/evidence/greg-protected-evolution/2026-10-16-cr-5/README.md: the 15 searched configurations with p_restart above 0, at most 1.0 of the allowed 1.0, so the search reached the restart region; it reached the restart-heavy anchor p_restart 1.0 within 0.5% of the best train loss, 10 configurations tied, and the argmin chose offspring 6, which failed the lean stress set +27.5%), e.g. a train-item sign test against the incumbent or a stress-aware selection, as a pre-registered change to the trusted parent, on a fresh split (cycle 5's is spent by its committed freeze) under the unchanged frozen rule and stress tolerance; never a re-run with a relaxed tolerance",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:578",
-          "reality": "protected routing-genome evolution IMPLEMENTED, TESTED: closed data-only schema, authority-bearing keys refused, hash-pinned separate-process evaluator re-checked around every call; first frozen run (97 candidates) found no dev improvement, held-out 112 = 112, verdict REJECT; adversarial probes all refused; exit not met (no headroom in this search space)",
+          "reality": "protected evolutionary cognition IMPLEMENTED, TESTED: closed configuration space, Landlock-confined candidates, sealed evaluator (a digest of the evaluator class, the score function, the rule, outcomes and inputs; until 2026-10-15 never compared with a pre-registered value, and the candidate method's code was outside it; since then a cycle that writes a record must match a committed freeze of every trusted file, the rule, the settings, the split and both seals, re-checked before each evaluation, and the parent checks the method module each sandbox imported), protected-term guard, held-out sign test, canary and rollback; five frozen cycles, five REJECTs: cycle 1 (forecasting, 2026-10-08) REJECT at the held-out gate: train -5.2% but held-out 42 wins / 59 losses (p=0.96), overfit caught, the forecasting held-out split is spent; cycle 2 (negative-selection detector, 2026-10-09) REJECT at the scarce-sample stress gate (a false-alarm violation on 80 self samples), held-out set unspent; cycle 3 (constraint-release search policy, 2026-10-14) REJECT at the stress gate: train loss 20% lower but 6.3% worse with validation cut to four cases (frozen tolerance 5%), held-out set unspent; cycle 4 (constraint-release search policy on a fresh split, 2026-10-15, the first under a committed freeze) REJECT at the held-out gate: train loss 23.7% lower and both stress sets better, but held-out 26 wins / 37 losses (p=0.94, mean loss 46% worse), overfit caught; random restart had the lowest held-out mean loss there (0.0045 against the incumbent's 0.0062 and the candidate's 0.0091) and beat the candidate 46-22; cycle 5 (constraint-release, search policy cover/1 reaching p_restart 1.0, 2026-10-16) REJECT at the adversarial gate: the argmin of near-tied train means chose offspring 6 (train 30.4% better), lean stress +27.5% past the 5% tolerance, held-out never evaluated (spent by its committed freeze); protected evolution has never kept an improvement; integrity v2 after the independent review of 2026-10-15 (four independently checked rounds): the freeze holds the static import closure (114 files for constraint release) and every repository file either process executes must match it, compiled from source; a recorded cycle runs only through the clean room (python -m greg.cognition.evolution --freeze F --out O: a fresh detached checkout of HEAD with git hooks off, an empty bytecode prefix, the source-only entry evolution_room.py) and requires a freeze committed under docs/evidence/greg-protected-evolution/<run>/; only a recorded run looks at a held-out split, never one an earlier cycle looked at; this defends a record against a dirty or stale tree and the run's own code, not against whoever controls the machine (independent re-execution at the recorded commit is that check)",
+          "exit_met": false,
           "implementation_refs": [
-            "cortex/evaluation/evolution/evaluator.py",
-            "cortex/evaluation/evolution/run.py",
             "greg/cognition/evolution.py",
-            "tests/unit/test_greg_protected_evolution.py"
+            "greg/cognition/evolution_sandbox.py",
+            "docs/evidence/greg-protected-evolution/2026-10-08/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-09/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-14/README.md",
+            "docs/evidence/greg-protected-evolution/2026-10-15-cr-4/README.md"
           ],
-          "evidence": "docs/evidence/greg-protected-evolution/2026-10-14/README.md",
-          "exit_met": false
+          "activation_note": "activated by the founder's 2026-10-07 directive (section 32 step 5); proposals stay PROPOSED_NOT_APPLIED",
+          "pr155_lineage": {
+            "reality": "PR #155 routing-genome alternative (greg/cognition/evolution_routing.py, isolated, not a controller): closed data-only schema, hash-pinned separate-process evaluator; first frozen run (97 candidates) REJECT, held-out 112 = 112. The review of #179 (L8) found three adversarial probes ACCEPTED on this code: an edit of the imported conditional_competence.py, a mid-run edit of the development data, and a hash/exec swap (a forged 64/64); its evaluator context is unconfined, a non-string key crashes it, an empty mapping is filled from BASELINE, and any partition other than dev runs the held-out branch. These are preconditions before this alternative could ever be revived",
+            "implementation_refs": [
+              "greg/cognition/evolution_routing.py",
+              "cortex/evaluation/evolution/run.py",
+              "cortex/evaluation/evolution/evaluator.py",
+              "tests/unit/test_greg_evolution_routing.py"
+            ],
+            "evidence": "docs/collaboration/lineage-archive/pr155-ef5f078/docs/evidence/greg-protected-evolution/2026-10-14/README.md (results: docs/evidence/greg-protected-evolution/2026-10-14/results.json)"
+          }
         },
         {
           "id": "P9",
@@ -1560,7 +1705,7 @@
           "id": "P10",
           "title": "Functional morphogenesis",
           "requirement": "Inject an unseen loss. Require recovered target function through a materially different organization, bounded local information, no scripted restoration, preserved authority/identity, and independent outcome verification. Compare against a strong centralized adaptive baseline. Metric: scoped Unscripted Functional Recovery Rate.",
-          "status": "deferred (unseen-damage sweep run: PARITY)",
+          "status": "deferred",
           "owner": "Kernel/GREG maintainers; Alfonso controls activation",
           "dependency": "P9 evidence plus demand and founder-authorized envelope",
           "budget_ceiling": {
@@ -1572,11 +1717,13 @@
           "falsification": "authority widening, evaluator leakage, or no measured benefit over the strongest simpler allowed baseline",
           "smallest_next_experiment": "freeze one narrowly demanded task and compare the smallest new mechanism to the current simpler baseline",
           "source_location": "docs/intent/sources/POLYINTELLIGENCE-SEED-2026-10-01.txt:584",
-          "reality": "MICA/CDPE lab composed on unseen random damage (40 seeds, 10-40 %): PARITY with adaptive central replanning on 40/40 seeds (distributed shortest-path routing); falsifier 'beats adaptive central on unseen failures' not met",
-          "implementation_refs": [
-            "cortex/evaluation/developmental_sweep/run.py"
-          ],
-          "evidence": "docs/evidence/greg-developmental-sweep/2026-10-14/README.md"
+          "pr155_lineage": {
+            "reality": "MICA/CDPE lab composed on unseen random damage (40 seeds, 10-40 %): PARITY with adaptive central replanning on 40/40 seeds (distributed shortest-path routing); falsifier 'beats adaptive central on unseen failures' not met",
+            "implementation_refs": [
+              "cortex/evaluation/developmental_sweep/run.py"
+            ],
+            "evidence": "docs/evidence/greg-developmental-sweep/2026-10-14/README.md"
+          }
         },
         {
           "id": "P11",
@@ -1681,7 +1828,8 @@
         "P8 protected evolutionary cognition",
         "IntelligenceGenome library expansion in batches",
         "Layers 1, 2 and 4 as Cortex capabilities when they beat simpler baselines on native geometry"
-      ]
+      ],
+      "current_pr155_lineage": "PR #155 lineage (merged by the 2026-10-14 Mind-lineage convergence): VPL lift on F1, F2b (a same-instance re-run of F2R), X1 (structural, over constituents incomplete by design), X2 (strongest single NOT_RUN) and the dataflow-derived F3 chain (vs best single 41/0; vs best fixed recipe 4/2, no lift); P4 v3 NO_GAIN 111 = 111 of 130, a same-instance re-run of #158's deciding REGRESSION; P8 routing-genome first run REJECT (no headroom); admission: Dawid-Skene and PSO admitted on their v2 geometries (later: the crowd verifier EXPERIMENTAL, and L-BFGS-B beats PSO 32/7 post hoc), DE superseded by multistart L-BFGS-B, Dawid-Skene then loses to the one-step weighted vote on sparse crowds (8/32); Layer 4 unseen-damage sweep PARITY."
     }
   },
   "completion_boundary": {
@@ -1698,5 +1846,436 @@
       "demonstrated current technology limit with strongest defensible approximation/backcast"
     ],
     "authority_changed": false
-  }
+  },
+  "frontier_backcasts": [
+    {
+      "id": "generalized_morphogenetic_repair",
+      "horizon": "developmental_research",
+      "node": "N2",
+      "destination": "a function lost to unseen damage recovers through a materially different organization, across domains, without scripted restoration and under preserved authority",
+      "current_precursor": [
+        "developmental/mica.py",
+        "greg/genesis.py",
+        "greg/cognition/genomes/admission.py"
+      ],
+      "missing_capabilities": [
+        "unscripted recovery outside one fixed benchmark",
+        "generalization across domains",
+        "beating an adaptive centralized replanner when that controller is reliable"
+      ],
+      "active_gate": "P10 exit (polyintelligence_cortex)",
+      "gate_crossing_evidence": "on held-out unseen-loss seeds, local repair beats a strong adaptive centralized baseline under predeclared unreliable-controller conditions, replicated independently",
+      "dependencies": [
+        "P8 protected evaluator",
+        "P9 constraint-release discovery",
+        "sealed developmental laboratory"
+      ],
+      "single_bottleneck_metric": "scoped Unscripted Functional Recovery Rate",
+      "nearest_falsifiable_experiment": "measured twice (v1 seeds 1000-1029: 12-3 under an unreliable controller; v2 seeds 1100-1129: 7-8, not replicated); next: a predeclared unreliable-controller-only admission with a larger held-out set",
+      "buildability_status": "EXPERIMENTAL_NOW",
+      "risk": "claiming biological equivalence; repair loops that mask real failures",
+      "authority_implications": "none: repair restores function inside existing authority and never widens it",
+      "activation_condition": "P10 exit plus a founder decision to attach",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26"
+    },
+    {
+      "id": "automatic_invention_of_intelligence_families",
+      "horizon": "cognitive_ecology",
+      "node": "N5",
+      "destination": "when no registered intelligence solves a residual geometry, GREG searches, composes, mutates and generates a bounded candidate intelligence, evaluates it against a sealed held-out benchmark and registers it only if it wins",
+      "current_precursor": [
+        "greg/genesis.py",
+        "greg/cognition/compiler.py",
+        "greg/cognition/evolution.py",
+        "greg/cognition/genomes/admission.py"
+      ],
+      "missing_capabilities": [
+        "generation of new method code (not only configurations) under a sealed evaluator",
+        "geometry-keyed search of open-source mechanisms",
+        "admission of generated code without privilege"
+      ],
+      "active_gate": "P8 exit (repeated held-out gains), then P9",
+      "gate_crossing_evidence": "a generated intelligence beyond configuration search is admitted NICHE_CAPABILITY or DEFAULT_FOR_GEOMETRY on held-out seeds with the sealed evaluator digest unchanged, and independently replicated",
+      "dependencies": [
+        "P8",
+        "IntelligenceGenome admission",
+        "Landlock-confined sandbox"
+      ],
+      "single_bottleneck_metric": "admitted generated intelligences per evaluation budget",
+      "nearest_falsifiable_experiment": "a second P8 cycle on a different target with fresh held-out data",
+      "buildability_status": "EXPERIMENTAL_NOW",
+      "risk": "evaluator hacking; privileged generated code; held-out overfitting",
+      "authority_implications": "generated code never inherits authority; attaching stays the founder's decision",
+      "activation_condition": "P8 exit plus founder attach",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26"
+    },
+    {
+      "id": "substrate_adaptive_cognition",
+      "horizon": "cognitive_ecology",
+      "node": "N8",
+      "destination": "the same typed cognition contracts execute on different substrates (CPU bodies, GPU, remote solver services, and later analog or quantum devices when mature) with verified equivalence",
+      "current_precursor": [
+        "greg/cognition/worker.py",
+        "greg/compute.py",
+        "contracts/cortex-receipt.schema.json"
+      ],
+      "missing_capabilities": [
+        "a second substrate adapter",
+        "cross-substrate equivalence tests",
+        "substrate-aware cost and latency routing"
+      ],
+      "active_gate": "P12 exit (substrate-plural execution)",
+      "gate_crossing_evidence": "identical verified receipts for a frozen suite on two substrates",
+      "dependencies": [
+        "N8 multiple bodies",
+        "compute growth"
+      ],
+      "single_bottleneck_metric": "verified-equivalent families per substrate",
+      "nearest_falsifiable_experiment": "run the frozen cognition suite on a second enrolled machine and compare receipts",
+      "buildability_status": "FRONTIER_RESEARCH",
+      "risk": "silent numeric divergence between substrates",
+      "authority_implications": "none: substrates are capabilities, not authorities",
+      "activation_condition": "P12 exit",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26"
+    },
+    {
+      "id": "reliable_multi_body_agency",
+      "horizon": "multi_body",
+      "node": "N8",
+      "destination": "one GREG across several bodies with one ledger and one authority path, surviving the loss of a body",
+      "current_precursor": [
+        "greg/body.py",
+        "provenance/ledger.py"
+      ],
+      "missing_capabilities": [
+        "a second physical body",
+        "failover with one settlement",
+        "conflict resolution without split authority"
+      ],
+      "active_gate": "N8",
+      "gate_crossing_evidence": "a mission continues after one body is killed, with exactly one settlement",
+      "dependencies": [
+        "N1 VEPMC"
+      ],
+      "single_bottleneck_metric": "missions surviving body loss",
+      "nearest_falsifiable_experiment": "enroll a second body in a test environment and kill -9 the first one mid-mission",
+      "buildability_status": "BUILDABLE_NOW",
+      "risk": "split-brain authority",
+      "authority_implications": "no body may enroll itself; enrollment is founder-signed",
+      "activation_condition": "founder-signed enrollment plus the N8 exit",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26",
+      "buildability_review": {
+        "question": "2026-10-14 re-check (directive section 31 item 16): does the label describe the destination, not the precursor?",
+        "finding": "kept BUILDABLE_NOW. Section 25 classifies against current reliable technology; one GREG across several bodies with one ledger, one authority path and survival of a body's loss needs only mature technology (consensus-replicated logs, durable-execution engines, fencing and idempotent effects). The blocker is a second founder-authorized body and founder-signed enrollment, which missing_capabilities, dependencies and activation_condition carry. The destination is not built: NODE_ENROLL is a precursor, untested on a second machine",
+        "source_check": "section 26 lists 'reliable multi-body agency' among the frontier goals to backcast without classifying it; the source does not support a different label",
+        "label_changed": false
+      }
+    },
+    {
+      "id": "advanced_robotic_embodiment",
+      "horizon": "robotics",
+      "node": "N9",
+      "destination": "bounded physical actuation under the Gate, with the same receipts and refusal as digital acts",
+      "current_precursor": [
+        "greg/computer.py"
+      ],
+      "missing_capabilities": [
+        "actuator contracts",
+        "a physical safety envelope",
+        "hardware"
+      ],
+      "active_gate": "N9",
+      "gate_crossing_evidence": "one verified bounded physical effect through the Gate",
+      "dependencies": [
+        "economic scale",
+        "legal and institutional capacity"
+      ],
+      "single_bottleneck_metric": "verified bounded physical effects",
+      "nearest_falsifiable_experiment": "a simulated actuator contract whose Gate refusals are tested",
+      "buildability_status": "FRONTIER_RESEARCH",
+      "risk": "physical harm",
+      "authority_implications": "the highest consequence class; a founder decision per effect class",
+      "activation_condition": "the N9 exit",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26"
+    },
+    {
+      "id": "persistent_spatial_ecology",
+      "horizon": "situational_awareness",
+      "node": "N9",
+      "destination": "a persistent, lawful, consented model of the physical spaces that matter to missions, updated from devices and public data",
+      "current_precursor": [
+        "greg/dataplane.py"
+      ],
+      "missing_capabilities": [
+        "a typed contract to the public-data HUD",
+        "consented location context",
+        "freshness tracking"
+      ],
+      "active_gate": "N9",
+      "gate_crossing_evidence": "an escalation derived from public data that Alfonso found useful",
+      "dependencies": [
+        "founder-consented location context"
+      ],
+      "single_bottleneck_metric": "useful escalations per month",
+      "nearest_falsifiable_experiment": "a typed adapter from the HUD repository into the data plane with freshness checks",
+      "buildability_status": "EXPERIMENTAL_NOW",
+      "risk": "surveillance creep and privacy harm",
+      "authority_implications": "consent-gated; no covert surveillance and no face recognition",
+      "activation_condition": "founder consent plus the N9 exit",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26"
+    },
+    {
+      "id": "large_scale_human_machine_coordination",
+      "horizon": "human_work_fabric",
+      "node": "N6",
+      "destination": "human and AI participants coordinate through typed contracts, evidence and settlement at institutional scale",
+      "current_precursor": [
+        "greg/asks.py",
+        "foundry/company.py"
+      ],
+      "missing_capabilities": [
+        "legal operator structures",
+        "payment rails",
+        "participant consent and welfare measures"
+      ],
+      "active_gate": "N6",
+      "gate_crossing_evidence": "verified human+AI closures",
+      "dependencies": [
+        "N3 first business loop",
+        "legal and institutional capacity"
+      ],
+      "single_bottleneck_metric": "verified human+AI closures",
+      "nearest_falsifiable_experiment": "one human-work ask through greg.asks with an observed deliverable",
+      "buildability_status": "BUILDABLE_NOW",
+      "risk": "labour exploitation and dependency",
+      "authority_implications": "humans keep refusal rights; GREG contacts and pays no one without founder authority",
+      "activation_condition": "the N6 exit",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26",
+      "buildability_review": {
+        "question": "2026-10-14 re-check (directive section 31 item 16): does the label describe the destination, not the precursor?",
+        "finding": "kept BUILDABLE_NOW. Typed contracts, evidence, payment rails and consent records are current reliable technology, and platforms already coordinate human work with machine checking at scale. The blockers are legal operator structures, institutional capacity and economic scale (horizon human_work_fabric: REQUIRES_LEGAL_INSTITUTIONAL_CAPACITY), not technology. The destination is not built: greg/asks.py can ask for a human worker, and no human+AI closure exists",
+        "source_check": "section 26 lists 'large-scale human-machine institutional coordination' among the frontier goals to backcast without classifying it; the source does not support a different label",
+        "label_changed": false
+      }
+    },
+    {
+      "id": "jarvis_environmental_awareness",
+      "horizon": "jarvis_integration",
+      "node": "N4",
+      "destination": "GREG notices relevant changes early, keeps dormant goals, prepares lawful options and asks only the minimum decision",
+      "current_precursor": [
+        "greg/gravity.py",
+        "greg/presence.py",
+        "greg/console.py"
+      ],
+      "missing_capabilities": [
+        "continuous sensing adapters",
+        "relevance learning from founder feedback",
+        "evidence-backed wake conditions for dormant goals"
+      ],
+      "active_gate": "N4",
+      "gate_crossing_evidence": "declining founder interventions per verified outcome across mission classes",
+      "dependencies": [
+        "N1 VEPMC",
+        "N3 first business loop"
+      ],
+      "single_bottleneck_metric": "founder interventions per verified outcome",
+      "nearest_falsifiable_experiment": "run Goal Gravity turns on retained situations and measure founder-accepted asks per turn",
+      "buildability_status": "EXPERIMENTAL_NOW",
+      "risk": "notification fatigue and manipulation",
+      "authority_implications": "every ask passes the greg.asks screen; no urgency without evidence",
+      "activation_condition": "the N10 exit",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26"
+    },
+    {
+      "id": "self_financed_research_infrastructure",
+      "horizon": "economic_compounding",
+      "node": "N7",
+      "destination": "verified surplus funds research programs that produce verified capability",
+      "current_precursor": [
+        "foundry/advantage.py",
+        "foundry/lawful_leverage.py"
+      ],
+      "missing_capabilities": [
+        "revenue",
+        "a first business whole loop",
+        "research program contracts"
+      ],
+      "active_gate": "N7",
+      "gate_crossing_evidence": "verified surplus reinvested by founder decision into a program with a verified capability result",
+      "dependencies": [
+        "N3",
+        "N7"
+      ],
+      "single_bottleneck_metric": "verified surplus available for founder-authorized reinvestment",
+      "nearest_falsifiable_experiment": "the N3 first business whole loop",
+      "buildability_status": "FRONTIER_RESEARCH",
+      "risk": "treasury autonomy",
+      "authority_implications": "no automatic capital allocation; the founder decides",
+      "activation_condition": "the N7 exit plus a founder decision",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#25-26"
+    },
+    {
+      "id": "robust_unscripted_organ_formation",
+      "horizon": "persistent_organs",
+      "node": "N5",
+      "destination": "a recurring verified deficit yields a bounded, persistent specialist organ (contracts, state, tests, lifecycle, shutdown) assembled from validated components without a scripted blueprint, robustly across unrelated deficits, and retained only while it beats simpler baselines",
+      "current_precursor": [
+        "greg/sop.py",
+        "greg/genesis.py",
+        "greg/cognition/genomes/developmental.py"
+      ],
+      "precursor_mechanisms": [
+        "cognition.develop_repair"
+      ],
+      "missing_capabilities": [
+        "deciding that a deficit recurs enough to justify an organ (greg/sop.py counts repeated closures; it does not draw organ boundaries)",
+        "assembly of a new bounded subsystem from validated components without a scripted blueprint (greg/genesis.py acquires or builds against a frozen contract; develop_repair repairs one simulated lattice target)",
+        "robustness: formation that succeeds across unrelated deficits, not on one benchmark",
+        "a lifecycle that retires a formed organ when it stops beating simpler baselines"
+      ],
+      "active_gate": "P9 exit (constraint-release discovery), then N5 (persistent organs)",
+      "gate_crossing_evidence": "on held-out recurring deficits, an organ absent from every candidate library forms, beats the scripted Genesis route on verified closures per unit cost, and replicates independently on an unrelated deficit",
+      "dependencies": [
+        "N2 novel capability closure",
+        "N4 SOP compounding",
+        "P8 protected evaluator",
+        "P9 constraint-release discovery"
+      ],
+      "single_bottleneck_metric": "unscripted organs that beat the scripted Genesis baseline on held-out recurring deficits",
+      "nearest_falsifiable_experiment": "freeze a set of recurring deficits from the body's ledger and compare local assembly from validated capabilities (develop_repair's local rules lifted to capability topology) with greg.genesis scripted acquisition on held-out deficits",
+      "buildability_status": "EXPERIMENTAL_NOW",
+      "buildability_basis": "the founder's own classification in directive section 7 (Morphogenetic horizon), quoted verbatim in source_quote",
+      "risk": "a scripted pipeline relabelled as unscripted formation; organ sprawl that adds complexity without verified closures",
+      "authority_implications": "a formed organ is a capability, never an authority: it starts registered and withheld, and attaching it stays a founder decision",
+      "activation_condition": "P9 exit plus a founder attach of the formed organ",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#7",
+      "source_quote": [
+        "Experimental:",
+        "* robust unscripted organ formation;"
+      ]
+    },
+    {
+      "id": "cross_substrate_developmental_compilation",
+      "horizon": "developmental_research",
+      "node": "N2",
+      "destination": "one developmental specification (target function, local rules, signals, repair objective) compiles to materially different substrates and restores the same verified target function on each, with no per-substrate re-implementation",
+      "current_precursor": [
+        "developmental/mica.py",
+        "developmental/cdpe.py",
+        "greg/cognition/genomes/developmental.py"
+      ],
+      "precursor_mechanisms": [
+        "cognition.develop_repair"
+      ],
+      "missing_capabilities": [
+        "a substrate-neutral developmental specification (develop_repair's rules are written for one 4-neighbour lattice)",
+        "a compiler to a second substrate (graph diffusion or a cellular automaton beside the lattice)",
+        "an equivalence check of restored function that is independent of either substrate"
+      ],
+      "active_gate": "P10 exit (functional morphogenesis), then P12 (substrate-plural execution)",
+      "gate_crossing_evidence": "one frozen developmental specification compiled to two materially different substrates restores the same target function on the same held-out damage seeds, with receipts checked by a verifier independent of both substrates",
+      "dependencies": [
+        "P10 functional morphogenesis",
+        "sealed developmental laboratory",
+        "P12 substrate-plural execution"
+      ],
+      "single_bottleneck_metric": "substrates on which one frozen developmental specification restores verified target function",
+      "nearest_falsifiable_experiment": "state TARGET_FORM_001's transport target once, compile it to the lattice (develop_repair) and to a graph-diffusion substrate, and compare restored function on the same held-out damage seeds",
+      "buildability_status": "EXPERIMENTAL_NOW",
+      "buildability_basis": "the founder's own classification in directive section 7 (Morphogenetic horizon), quoted verbatim in source_quote",
+      "risk": "a re-implementation per substrate presented as compilation; reading simulated substrates as biological ones",
+      "authority_implications": "none: compilation yields simulations and candidate structures, never effects",
+      "activation_condition": "P10 exit plus a founder decision to admit a second substrate",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#7",
+      "source_quote": [
+        "Experimental:",
+        "* cross-substrate developmental compilation."
+      ]
+    },
+    {
+      "id": "open_ended_cognitive_organization_generation",
+      "horizon": "cognitive_ecology",
+      "node": "N5",
+      "destination": "GREG reliably and open-endedly generates entirely new cognitive organizations (topologies of methods, communication and resource rules) found in no library, each admitted only when it beats the strongest existing organization on its geometry and replicates independently",
+      "current_precursor": [
+        "greg/cognition/evolution.py",
+        "greg/cognition/composition.py",
+        "greg/cognition/genomes/developmental.py"
+      ],
+      "precursor_mechanisms": [
+        "cognition.develop_constraint_release",
+        "cognition.evolutionary"
+      ],
+      "missing_capabilities": [
+        "a P8 cycle that keeps an improvement (cycles 1-4 were rejected under the sealed evaluator)",
+        "P9 constraint-release discovery (deferred)",
+        "generation beyond a closed configuration space",
+        "sustained novelty without evaluator capture or runaway resource use"
+      ],
+      "active_gate": "P8 exit (repeated held-out gains under a sealed evaluator), then P9 exit (a previously unlisted organization beats the baseline and replicates)",
+      "gate_crossing_evidence": "generated organizations absent from every library are admitted repeatedly on held-out seeds against the strongest existing organization, with the sealed evaluator digest unchanged, and replicate independently across unrelated geometries",
+      "dependencies": [
+        "P8",
+        "P9",
+        "P11 open cognitive ecology",
+        "IntelligenceGenome admission"
+      ],
+      "single_bottleneck_metric": "generated organizations admitted per evaluation budget",
+      "nearest_falsifiable_experiment": "a first P9 cycle: recombine admitted genomes' operators under altered rules (develop_constraint_release's search) on a frozen task and compare with the best library composition on held-out seeds",
+      "buildability_status": "FRONTIER_RESEARCH",
+      "buildability_basis": "the founder's own classification in directive section 7 (Morphogenetic horizon), quoted verbatim in source_quote",
+      "risk": "evaluator capture; novelty without usefulness; runaway resource use",
+      "authority_implications": "a generated organization inherits no authority: it is registered withheld and attaching it stays a founder decision",
+      "activation_condition": "P8 and P9 exits plus a founder attach",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#7",
+      "source_quote": [
+        "Frontier:",
+        "* reliable open-ended generation of entirely new cognitive organizations."
+      ]
+    },
+    {
+      "id": "substrate_independent_developmental_intelligence",
+      "horizon": "developmental_research",
+      "node": "N2",
+      "destination": "extremely general substrate-independent developmental intelligence with the reliability, generality, embodiment flexibility, and autonomy implied by the strongest Levin-inspired vision (the founder's words); preserved as a descendant, never claimed to exist",
+      "current_precursor": [
+        "developmental/mica.py",
+        "developmental/cdpe.py",
+        "greg/cognition/genomes/developmental.py"
+      ],
+      "precursor_mechanisms": [
+        "cognition.develop_repair",
+        "cognition.develop_constraint_release"
+      ],
+      "missing_capabilities": [
+        "every preceding developmental frontier: robust unscripted organ formation, generalized repair across domains, cross-substrate developmental compilation, open-ended organization generation",
+        "a demonstrated mechanism for substrate-independent developmental competence",
+        "embodiment beyond simulation"
+      ],
+      "active_gate": "none reachable from present evidence: the preceding developmental frontiers (P10 to P13 exits) must cross first",
+      "gate_crossing_evidence": "a developmental intelligence restores and extends function on unseen substrates, damage and embodiments, generalizes across unrelated domains, and replicates independently; no present experiment can produce this evidence",
+      "dependencies": [
+        "robust_unscripted_organ_formation",
+        "generalized_morphogenetic_repair",
+        "cross_substrate_developmental_compilation",
+        "open_ended_cognitive_organization_generation",
+        "P13 poly-embodied developmental institution"
+      ],
+      "single_bottleneck_metric": "preceding developmental frontiers whose gates have crossed (0 today)",
+      "nearest_falsifiable_experiment": "none of its own; the nearest falsifiable step is cross_substrate_developmental_compilation's lattice-versus-graph experiment",
+      "buildability_status": "SCIENCE_FICTION_DESCENDANT",
+      "buildability_basis": "the founder's own classification in directive section 7 (Morphogenetic horizon), quoted verbatim in source_quote",
+      "risk": "claiming it exists; claiming biological equivalence; reading 'autonomy' as authority",
+      "authority_implications": "none: a preserved destination creates no authority, and autonomy never includes resisting pause, revocation or shutdown",
+      "activation_condition": "never by claim: only if every preceding developmental gate crosses with independent replication and the founder decides",
+      "source": "docs/intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md#7",
+      "source_quote": [
+        "Science-fiction descendant:",
+        "* extremely general substrate-independent developmental intelligence with the reliability, generality, embodiment flexibility, and autonomy implied by the strongest Levin-inspired vision.",
+        "Preserve the descendant.",
+        "Do not falsely claim it exists."
+      ]
+    }
+  ]
 }

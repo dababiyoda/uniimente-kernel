@@ -1,0 +1,26 @@
+{
+ "schema": "pr155-f7-audit-freeze/1",
+ "frozen_at": "2026-10-14T16:23:41.042779+00:00",
+ "lineage": "PR #155 session, Track B convergence; audits PR #158 a832c73 evidence without modifying it",
+ "inputs": {
+  "cortex/evaluation/pr155_f7_audit/audit.py": "sha256:955c0a90802a8e5ee735692d9af87cf1b1ce22fcf776fa162d9947945cb69a38",
+  "cortex/evaluation/data/sndlib_networks.json.gz": "sha256:f9b1d3d45ba9a70e8d2d6dc1db0a674eb21a7bb7559bb6ae7d2debcf65e7fc47",
+  "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json": "sha256:43e7469c3eb2230439979b7ef1570d29658151aa86449a60c4640240c31e545c"
+ },
+ "rule": {
+  "CONFIRMED": "every held-out item rebuilt and identity-checked; independent HiGHS optimum equals the recorded truth on every item; every arm's recorded outcome and throughput reproduce under the independent max-flow rescoring",
+  "REFUTED": "any item whose recorded truth differs from the independent optimum, or any arm whose recorded outcome or throughput does not reproduce",
+  "INCOMPLETE": "any item that cannot be rebuilt or identity-checked, or any MILP that does not reach proven optimality with an integral value"
+ },
+ "independence": [
+  "instances rebuilt by this file's own implementation of the declared rules; no function of run_v4.py or greg.cognition.genomes.flow is imported",
+  "optimum by scipy.optimize.milp (HiGHS branch and bound) at mip_rel_gap 0, not NetworkX network simplex or OR-Tools CP-SAT",
+  "rescoring by scipy.sparse.csgraph.maximum_flow, not the flow module's Edmonds-Karp",
+  "shared with F7: the bundled SNDlib data file and NetworkX's Yen k-shortest-paths enumeration (for the admissible arcs; the identity check against every recorded plan guards it)"
+ ],
+ "disclosures": [
+  "before this freeze the machinery was smoke-run on the 50 development items of development-v4.json only (all checks matched); no held-out item was evaluated by this audit before the freeze",
+  "the held-out recorded outcomes were already public in results-v4.json: this is an audit of recorded evidence, not a blind evaluation",
+  "F7's truth is a computed optimum of a declared planning model on real topology and loads, not a realised outcome; the audit cannot change that"
+ ]
+}

@@ -864,6 +864,42 @@ def test_the_version_bump_keeps_the_v3_verdict_as_negative_evidence_until_a_read
     assert "current 1.1.0" in entry["basis"] and "persists until a re-admission" in entry["basis"]
 
 
+def test_1_0s_held_out_latency_and_subregions_are_reported_as_1_0s_and_never_rank_1_1():
+    """Review of 1.1.0: the compiler attached 1.0.0's held-out median (1.328 ms) to the 1.1.0 row as 'held-out, this
+    version', a latency tie-break. On the committed index the row, the receipt, the withheld best fit and the founder's
+    attach ask now carry 1.0.0's measurements labelled with the version measured, and the row carries no
+    ``median_seconds`` or ``subregion`` to rank on."""
+    from greg import asks
+    index = json.loads((ROOT / "docs" / "evidence" / "greg-mind-evidence-index.json").read_text())
+    record = index["genomes"]["grid_dijkstra"]
+    data, _ = dev("grid_dijkstra", 1)
+    name = solvers_b.astar_subregion(data)
+    row = next(c for c in compiler.candidates(data, compiler.CompetencyGeometry.parse({"geometry": "optimization"}),
+                                              index) if c["method"] == "cognition.grid_dijkstra")
+    assert "median_seconds" not in row and "subregion" not in row
+    stale = row["stale_measurements"]
+    assert (stale["version_measured"], stale["version_current"], stale["status"]) == ("1.0.0", "1.1.0", "EXPERIMENTAL")
+    assert stale["median_seconds"] == record["median_seconds"] == 0.001328
+    assert stale["evidence"] == competitors.V3 + "#genomes.grid_dijkstra"
+    assert stale["subregion"]["name"] == name and stale["subregion"]["vs_competitor"] == \
+        record["subregions_vs_competitor"][name]
+    assert "measured at version 1.0.0, not the current 1.1.0" in stale["stale_evidence"]
+    r = reason({"problem_id": "grid-stale", "compile": {"geometry": {"geometry": "optimization"}, "data": data,
+                                                        "execute": False}}, registry=registry_view())
+    assert r["state"] == "CAPABILITY_DEFICIT"                     # 1.1.0 is registered and withheld
+    assert r["withheld_best_fit"]["method"] == "cognition.grid_dijkstra"
+    assert r["withheld_best_fit"]["stale_measurements"] == stale and "subregion" not in r["withheld_best_fit"]
+    ask = r["founder_attach_ask"]
+    assert ask["evidence"]["measured_version"] == "1.0.0" and ask["evidence"]["stale_measurements"] == stale
+    assert "subregion" not in ask["evidence"] and asks.screen(ask) == []
+    attached = registry_view()
+    attached.set_state("cognition.grid_dijkstra", "ATTACHED")     # evaluation-only founder pin, in memory
+    r = reason({"problem_id": "grid-stale", "compile": {"geometry": {"geometry": "optimization"}, "data": data,
+                                                        "execute": False}}, registry=attached)
+    assert r["method_or_composition_selected"] == "cognition.grid_dijkstra" and r["stale_measurements"] == stale
+    assert "subregion_evidence" not in r
+
+
 @pytest.mark.parametrize("scale,offset", ((1e-9, 0.0), (1e8, 0.0), (1.0, 999_999_000.0), (0.01, 1e6),
                                           (1.0, -999_999_000.0)))
 def test_game_solve_verifies_at_any_payoff_magnitude(scale, offset):

@@ -1563,8 +1563,8 @@
    "path": "tests/unit/test_genome_admission_provenance.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab. Extended in Track B: it reads only admission runs that carry a \"genomes\" key, because the converged index also holds P6 and P4 runs."
   },
   {
    "path": "tests/unit/test_genomes_basal.py",

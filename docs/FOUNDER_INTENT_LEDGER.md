@@ -53,6 +53,17 @@ Track B update, 2026-10-15 (founder review of #179 and the independent review; r
 
 Authority delta: none.
 
+Track B update, 2026-10-16 (record sections 1, 3, 7 and 8): #158 is merged at `10fdbab`.
+- **Verifier:** #158's independent Z3 certificates for OPTIMAL, FEASIBLE, INFEASIBLE and UNSAT claims.
+- **F7 with the genome:** a declared re-use of v4's exposed items. `flow_expansion_mcf` MATCHES the composition on
+  200 of 200 at about a quarter of the latency, and F7's lift is **NO_LIFT** once the genome is a constituent.
+  v4's frozen verdict is unchanged.
+- **Admission v4:** `grid_dijkstra` 1.1.0 is DEFAULT_FOR_GEOMETRY, and the flow genomes replicate.
+- **P8 cycle 5:** REJECTED. Protected evolution has still never kept an improvement.
+- **Release guard:** 26 uncleared paths, including F7 v6's SNDlib-derived files.
+
+Authority delta: none.
+
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
 
 `INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.

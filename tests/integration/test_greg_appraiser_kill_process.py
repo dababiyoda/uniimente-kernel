@@ -113,8 +113,8 @@ raw = sys.stdin.read()
 if mode == "real":
     sys.stdout.write(verdict())
     sys.exit(0)
-if mode == "unreadable":                            # exit 0: a verdict cut short, JSON that is no verdict, nothing
-    sys.stdout.write([verdict()[:-1], "null", ""][(n - 1) % 3])
+if mode == "unreadable":                 # exit 0: a verdict cut short, JSON that is no object, an object with no verdict
+    sys.stdout.write([verdict()[:-1], "null", '{"verdict": "PENDING", "findings": []}'][(n - 1) % 3])
     sys.exit(0)
 if mode in ("partial", "complete"):
     out = verdict()

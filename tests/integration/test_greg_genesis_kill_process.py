@@ -279,9 +279,9 @@ def test_builds_interrupted_every_time_stop_at_the_signed_budget_and_ask_the_fou
     try:
         boots = 0
         while True:
+            n = len(builder_calls(control)) + 1     # before the start: the body may reach the builder at once
             body = start(tmp_path, home, control)
             boots += 1
-            n = len(builder_calls(control)) + 1
             outcome = wait_for(lambda: "stopped" if (control / f"stopped-{n}").exists() else
                                [r for r in events(home, "decision.requested") if r["kind"] == "CAPABILITY_ATTACH"],
                                what=f"boot {boots}: a build or the founder ask")

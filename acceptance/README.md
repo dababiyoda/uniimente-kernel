@@ -78,13 +78,14 @@ python -m acceptance report --outcomes o.json   # report from recorded outcomes
 - Process detection is static and only partly conservative. It does not evaluate conditions other than
   constants, so a spawn in a branch counts, and so do some spawns that never run: code after a `return`,
   `raise` or `pytest.skip()`, a loop over an empty sequence, a generator or coroutine helper never
-  iterated or awaited, `greg run --help`, a `-c` driver whose `Body(...).run(` is only a comment or a
-  printed string, and a spawn patched by an autouse fixture, `usefixtures`, a conftest, a direct
+  iterated or awaited, `greg run --help`, and a spawn patched by an autouse fixture, `usefixtures`, a conftest, a direct
   assignment such as `subprocess.Popen = ...` or `mock.patch.multiple`. No registered test relies on any
   of these (each was read on 2026-10-15), and a patched test that asserts real-process effects fails when
   run; the registry and the run are the backstops. A test that starts its process through code in another module (a
   fixture from a conftest, a helper imported from elsewhere), through a method, or with an argv it
   cannot follow is not recognised, and its requirement cannot declare `BODY_VERIFIED` until the start
-  is visible in its own module.
+  is visible in its own module. A driver is recognised by parsing its source for a `Body(...).run(` call,
+  so one that only mentions the call in a comment or a printed string does not count, and neither does a
+  driver held as an indented constant or built from a `%` template (both fail closed).
 
 Recorded runs are kept under `docs/evidence/acceptance/`.

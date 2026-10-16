@@ -747,13 +747,23 @@ class Body:
         nothing, so nothing is recorded as its verdict (acceptance H.G7): the run is one unavailable attempt and
         the closure is appraised again on the next tick. After APPRAISAL_ATTEMPTS such runs the closure is recorded
         appraised UNAVAILABLE, which is final: it is never VERIFIED and the closure is not appraised again."""
+        unavailable = [e.payload for e in self.journal.replay("mission.appraisal_unavailable")
+                       if e.payload["mission_id"] == mid and e.payload.get("closure_event") == closure_event]
+        prior = [u["why"] for u in unavailable]
+        if len(prior) >= APPRAISAL_ATTEMPTS:
+            # the body died between the last unavailable run and its final record: finish it, run nothing more
+            last = unavailable[-1]
+            self.journal.record("mission.appraised", {
+                "mission_id": mid, "head": last["head"], "verdict": "UNAVAILABLE", "checks": {},
+                "findings": prior, "appraiser": "separate process", "attempts": len(prior),
+                **({"closure_event": closure_event} if closure_event else {})},
+                key=[mid, "appraised", closure_event or last["head"]])
+            return
         verdict = self.appraise(mid, closure_event=closure_event)
         key = [mid, "appraised", closure_event or verdict["head"]]
         if verdict["verdict"] in APPRAISER_VERDICTS:
             self.journal.record("mission.appraised", verdict, key=key)
             return
-        prior = [e.payload["why"] for e in self.journal.replay("mission.appraisal_unavailable")
-                 if e.payload["mission_id"] == mid and e.payload.get("closure_event") == closure_event]
         attempt, why = len(prior) + 1, verdict["findings"][0]
         self.journal.record("mission.appraisal_unavailable", {
             "mission_id": mid, **({"closure_event": closure_event} if closure_event else {}), "attempt": attempt,

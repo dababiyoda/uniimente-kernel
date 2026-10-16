@@ -1,0 +1,833 @@
+{"i": 0, "item": "F7-abilene-0", "optimum": 50, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 1.0168, "routed_composition": 3.5455, "compiled": 1.085, "parametric_min_cost_flow": 0.7738}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 0, "item": "F7-atlanta-0", "optimum": 73, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7654, "routed_composition": 3.0945, "compiled": 1.0307, "parametric_min_cost_flow": 0.6129}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 1, "item": "F7-atlanta-1", "optimum": 67, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7112, "routed_composition": 3.2559, "compiled": 1.1212, "parametric_min_cost_flow": 0.6485}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 2, "item": "F7-atlanta-2", "optimum": 72, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7872, "routed_composition": 2.9418, "compiled": 0.9362, "parametric_min_cost_flow": 0.0072}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 3, "item": "F7-atlanta-3", "optimum": 62, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.911, "routed_composition": 3.0137, "compiled": 0.7908, "parametric_min_cost_flow": 0.0078}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 4, "item": "F7-atlanta-4", "optimum": 64, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6837, "routed_composition": 3.407, "compiled": 0.8433, "parametric_min_cost_flow": 0.0041}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 5, "item": "F7-atlanta-5", "optimum": 65, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7958, "routed_composition": 2.9421, "compiled": 0.8525, "parametric_min_cost_flow": 0.0097}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 6, "item": "F7-atlanta-6", "optimum": 60, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7361, "routed_composition": 2.9541, "compiled": 0.7351, "parametric_min_cost_flow": 0.0048}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 7, "item": "F7-atlanta-7", "optimum": 48, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.904, "routed_composition": 3.2216, "compiled": 0.8401, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 8, "item": "F7-atlanta-8", "optimum": 59, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8682, "routed_composition": 3.0762, "compiled": 0.7101, "parametric_min_cost_flow": 0.0038}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 9, "item": "F7-atlanta-9", "optimum": 54, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6771, "routed_composition": 2.9622, "compiled": 0.7152, "parametric_min_cost_flow": 0.0044}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 10, "item": "F7-cost266-0", "optimum": 54, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7611, "routed_composition": 2.8001, "compiled": 0.7409, "parametric_min_cost_flow": 0.0058}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 11, "item": "F7-cost266-1", "optimum": 54, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7272, "routed_composition": 2.8672, "compiled": 0.9383, "parametric_min_cost_flow": 0.004}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 12, "item": "F7-cost266-2", "optimum": 44, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7878, "routed_composition": 2.7716, "compiled": 0.7961, "parametric_min_cost_flow": 0.0045}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 13, "item": "F7-cost266-3", "optimum": 44, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7798, "routed_composition": 2.9163, "compiled": 0.7064, "parametric_min_cost_flow": 0.0047}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 14, "item": "F7-cost266-4", "optimum": 54, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7469, "routed_composition": 3.0131, "compiled": 0.7458, "parametric_min_cost_flow": 0.0059}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 15, "item": "F7-cost266-5", "optimum": 58, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6909, "routed_composition": 2.9802, "compiled": 0.781, "parametric_min_cost_flow": 0.0044}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 16, "item": "F7-cost266-6", "optimum": 66, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7419, "routed_composition": 2.8158, "compiled": 0.6873, "parametric_min_cost_flow": 0.0034}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 17, "item": "F7-cost266-7", "optimum": 61, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7264, "routed_composition": 2.7606, "compiled": 0.694, "parametric_min_cost_flow": 0.0034}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 18, "item": "F7-cost266-8", "optimum": 38, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6833, "routed_composition": 3.1335, "compiled": 0.7102, "parametric_min_cost_flow": 0.0041}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 19, "item": "F7-cost266-9", "optimum": 38, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7486, "routed_composition": 3.0777, "compiled": 0.6839, "parametric_min_cost_flow": 0.0052}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 20, "item": "F7-dfn-bwin-0", "optimum": 60, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6597, "routed_composition": 2.9981, "compiled": 0.6855, "parametric_min_cost_flow": 0.0026}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 21, "item": "F7-dfn-bwin-1", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7278, "routed_composition": 2.93, "compiled": 0.8, "parametric_min_cost_flow": 0.0032}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 22, "item": "F7-dfn-bwin-2", "optimum": 61, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7475, "routed_composition": 2.7949, "compiled": 0.7957, "parametric_min_cost_flow": 0.003}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 23, "item": "F7-dfn-bwin-3", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7128, "routed_composition": 2.7372, "compiled": 0.7729, "parametric_min_cost_flow": 0.003}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 24, "item": "F7-dfn-bwin-4", "optimum": 60, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7335, "routed_composition": 3.1528, "compiled": 0.7461, "parametric_min_cost_flow": 0.0025}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 25, "item": "F7-dfn-bwin-5", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7924, "routed_composition": 3.1938, "compiled": 0.7603, "parametric_min_cost_flow": 0.0028}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 26, "item": "F7-dfn-bwin-6", "optimum": 60, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7659, "routed_composition": 3.0254, "compiled": 0.7675, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 27, "item": "F7-dfn-bwin-7", "optimum": 61, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7937, "routed_composition": 2.7517, "compiled": 0.6762, "parametric_min_cost_flow": 0.0042}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 28, "item": "F7-dfn-bwin-8", "optimum": 60, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7378, "routed_composition": 2.8593, "compiled": 0.7418, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 29, "item": "F7-dfn-bwin-9", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6975, "routed_composition": 2.8062, "compiled": 0.708, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 30, "item": "F7-dfn-gwin-0", "optimum": 57, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7668, "routed_composition": 2.8829, "compiled": 0.7726, "parametric_min_cost_flow": 0.0051}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 31, "item": "F7-dfn-gwin-1", "optimum": 54, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7466, "routed_composition": 2.8627, "compiled": 0.7723, "parametric_min_cost_flow": 0.0029}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 33, "item": "F7-dfn-gwin-3", "optimum": 52, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.9477, "routed_composition": 2.8464, "compiled": 0.8461, "parametric_min_cost_flow": 0.0053}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 32, "item": "F7-dfn-gwin-2", "optimum": 52, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7782, "routed_composition": 3.188, "compiled": 0.8389, "parametric_min_cost_flow": 0.0033}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 34, "item": "F7-dfn-gwin-4", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7813, "routed_composition": 2.8022, "compiled": 0.7162, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 35, "item": "F7-dfn-gwin-5", "optimum": 58, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7362, "routed_composition": 2.8105, "compiled": 0.7605, "parametric_min_cost_flow": 0.0042}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 36, "item": "F7-dfn-gwin-6", "optimum": 61, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7423, "routed_composition": 2.9045, "compiled": 0.8915, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 37, "item": "F7-dfn-gwin-7", "optimum": 55, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.772, "routed_composition": 3.0201, "compiled": 0.7857, "parametric_min_cost_flow": 0.0039}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 38, "item": "F7-dfn-gwin-8", "optimum": 54, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7142, "routed_composition": 2.7309, "compiled": 0.7919, "parametric_min_cost_flow": 0.003}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 39, "item": "F7-dfn-gwin-9", "optimum": 45, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8575, "routed_composition": 2.788, "compiled": 0.7469, "parametric_min_cost_flow": 0.0042}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 40, "item": "F7-france-0", "optimum": 68, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7069, "routed_composition": 2.6696, "compiled": 0.7747, "parametric_min_cost_flow": 0.0051}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 41, "item": "F7-france-1", "optimum": 82, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7806, "routed_composition": 2.8099, "compiled": 0.7326, "parametric_min_cost_flow": 0.0042}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 42, "item": "F7-france-2", "optimum": 78, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7293, "routed_composition": 2.9753, "compiled": 0.7772, "parametric_min_cost_flow": 0.0031}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 43, "item": "F7-france-3", "optimum": 65, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7524, "routed_composition": 2.9501, "compiled": 0.6863, "parametric_min_cost_flow": 0.0039}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 44, "item": "F7-france-4", "optimum": 80, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8296, "routed_composition": 2.8103, "compiled": 0.7731, "parametric_min_cost_flow": 0.004}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 45, "item": "F7-france-5", "optimum": 68, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.9005, "routed_composition": 2.7485, "compiled": 0.7912, "parametric_min_cost_flow": 0.005}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 46, "item": "F7-france-6", "optimum": 60, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.9932, "routed_composition": 3.0639, "compiled": 0.7741, "parametric_min_cost_flow": 0.0054}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 47, "item": "F7-france-7", "optimum": 67, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8816, "routed_composition": 2.8916, "compiled": 0.844, "parametric_min_cost_flow": 0.0057}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 48, "item": "F7-france-8", "optimum": 66, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8024, "routed_composition": 2.8703, "compiled": 0.8362, "parametric_min_cost_flow": 0.0038}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 49, "item": "F7-france-9", "optimum": 68, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8382, "routed_composition": 2.7574, "compiled": 0.7228, "parametric_min_cost_flow": 0.0037}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 50, "item": "F7-geant-0", "optimum": 58, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7462, "routed_composition": 2.9336, "compiled": 0.786, "parametric_min_cost_flow": 0.0037}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 51, "item": "F7-geant-1", "optimum": 76, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8003, "routed_composition": 2.9147, "compiled": 0.8142, "parametric_min_cost_flow": 0.0063}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 52, "item": "F7-geant-2", "optimum": 52, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7435, "routed_composition": 2.9763, "compiled": 0.828, "parametric_min_cost_flow": 0.0045}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 53, "item": "F7-geant-3", "optimum": 29, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7476, "routed_composition": 2.8629, "compiled": 0.8734, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 54, "item": "F7-geant-4", "optimum": 58, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7964, "routed_composition": 2.972, "compiled": 0.7713, "parametric_min_cost_flow": 0.0039}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 55, "item": "F7-geant-5", "optimum": 53, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.698, "routed_composition": 2.9035, "compiled": 0.9516, "parametric_min_cost_flow": 0.0046}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 56, "item": "F7-geant-6", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7155, "routed_composition": 2.8675, "compiled": 0.8382, "parametric_min_cost_flow": 0.004}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 57, "item": "F7-geant-7", "optimum": 50, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.666, "routed_composition": 2.9211, "compiled": 0.7934, "parametric_min_cost_flow": 0.0041}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 58, "item": "F7-geant-8", "optimum": 38, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6523, "routed_composition": 2.8822, "compiled": 0.695, "parametric_min_cost_flow": 0.0028}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 59, "item": "F7-geant-9", "optimum": 43, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7305, "routed_composition": 2.9859, "compiled": 0.7602, "parametric_min_cost_flow": 0.0045}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 60, "item": "F7-germany50-0", "optimum": 65, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7172, "routed_composition": 2.8481, "compiled": 0.7213, "parametric_min_cost_flow": 0.0041}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 61, "item": "F7-germany50-1", "optimum": 64, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7913, "routed_composition": 2.8835, "compiled": 0.8264, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 62, "item": "F7-germany50-2", "optimum": 71, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7483, "routed_composition": 2.687, "compiled": 0.8673, "parametric_min_cost_flow": 0.0059}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 63, "item": "F7-germany50-3", "optimum": 41, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6822, "routed_composition": 2.999, "compiled": 0.6845, "parametric_min_cost_flow": 0.0037}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 64, "item": "F7-germany50-4", "optimum": 59, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7423, "routed_composition": 2.7787, "compiled": 0.6919, "parametric_min_cost_flow": 0.006}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 65, "item": "F7-germany50-5", "optimum": 48, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7028, "routed_composition": 2.89, "compiled": 0.8226, "parametric_min_cost_flow": 0.0053}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 66, "item": "F7-germany50-6", "optimum": 65, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6718, "routed_composition": 2.6614, "compiled": 0.8104, "parametric_min_cost_flow": 0.0052}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 67, "item": "F7-germany50-7", "optimum": 55, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8214, "routed_composition": 2.9068, "compiled": 0.7527, "parametric_min_cost_flow": 0.0047}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 68, "item": "F7-germany50-8", "optimum": 57, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7843, "routed_composition": 2.7973, "compiled": 0.7193, "parametric_min_cost_flow": 0.0038}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 69, "item": "F7-germany50-9", "optimum": 61, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7268, "routed_composition": 2.8585, "compiled": 0.7333, "parametric_min_cost_flow": 0.0055}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 70, "item": "F7-giul39-0", "optimum": 55, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.743, "routed_composition": 2.9305, "compiled": 0.7514, "parametric_min_cost_flow": 0.0035}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 71, "item": "F7-giul39-1", "optimum": 59, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7481, "routed_composition": 3.0389, "compiled": 0.7643, "parametric_min_cost_flow": 0.0056}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 72, "item": "F7-giul39-2", "optimum": 55, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7713, "routed_composition": 3.0407, "compiled": 0.7269, "parametric_min_cost_flow": 0.008}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 73, "item": "F7-giul39-3", "optimum": 66, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8045, "routed_composition": 3.0689, "compiled": 0.8413, "parametric_min_cost_flow": 0.0066}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 74, "item": "F7-giul39-4", "optimum": 68, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8295, "routed_composition": 3.0866, "compiled": 0.8163, "parametric_min_cost_flow": 0.0051}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 75, "item": "F7-giul39-5", "optimum": 62, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8413, "routed_composition": 2.9858, "compiled": 0.7427, "parametric_min_cost_flow": 0.0053}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 76, "item": "F7-giul39-6", "optimum": 56, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7157, "routed_composition": 2.9022, "compiled": 0.811, "parametric_min_cost_flow": 0.0053}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 77, "item": "F7-giul39-7", "optimum": 57, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8755, "routed_composition": 3.0373, "compiled": 0.7145, "parametric_min_cost_flow": 0.0041}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 78, "item": "F7-giul39-8", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.848, "routed_composition": 2.8842, "compiled": 0.8814, "parametric_min_cost_flow": 0.0055}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 79, "item": "F7-giul39-9", "optimum": 64, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7953, "routed_composition": 2.8039, "compiled": 1.0225, "parametric_min_cost_flow": 0.0049}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 80, "item": "F7-janos-us-0", "optimum": 59, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7295, "routed_composition": 3.0888, "compiled": 0.7664, "parametric_min_cost_flow": 0.0053}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 81, "item": "F7-janos-us-1", "optimum": 59, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7085, "routed_composition": 3.0505, "compiled": 0.779, "parametric_min_cost_flow": 0.0045}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 82, "item": "F7-janos-us-2", "optimum": 29, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8576, "routed_composition": 3.0891, "compiled": 0.844, "parametric_min_cost_flow": 0.0057}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 83, "item": "F7-janos-us-3", "optimum": 29, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7523, "routed_composition": 2.7246, "compiled": 0.7435, "parametric_min_cost_flow": 0.0047}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 84, "item": "F7-janos-us-4", "optimum": 34, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7754, "routed_composition": 3.0155, "compiled": 0.7812, "parametric_min_cost_flow": 0.0051}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 85, "item": "F7-janos-us-5", "optimum": 33, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8269, "routed_composition": 3.1535, "compiled": 0.8634, "parametric_min_cost_flow": 0.0034}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 86, "item": "F7-janos-us-6", "optimum": 60, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8072, "routed_composition": 3.3458, "compiled": 0.8758, "parametric_min_cost_flow": 0.0052}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 87, "item": "F7-janos-us-7", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7491, "routed_composition": 3.349, "compiled": 0.8163, "parametric_min_cost_flow": 0.0045}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 88, "item": "F7-janos-us-8", "optimum": 49, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7713, "routed_composition": 2.9385, "compiled": 0.8654, "parametric_min_cost_flow": 0.0045}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 89, "item": "F7-janos-us-9", "optimum": 49, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7329, "routed_composition": 3.2048, "compiled": 0.7572, "parametric_min_cost_flow": 0.004}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 90, "item": "F7-janos-us-ca-0", "optimum": 55, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8247, "routed_composition": 2.7033, "compiled": 0.7424, "parametric_min_cost_flow": 0.0038}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 91, "item": "F7-janos-us-ca-1", "optimum": 55, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7396, "routed_composition": 2.7623, "compiled": 0.7083, "parametric_min_cost_flow": 0.0046}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 92, "item": "F7-janos-us-ca-2", "optimum": 48, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.783, "routed_composition": 2.514, "compiled": 0.71, "parametric_min_cost_flow": 0.0038}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 93, "item": "F7-janos-us-ca-3", "optimum": 48, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.711, "routed_composition": 2.7629, "compiled": 0.7214, "parametric_min_cost_flow": 0.0043}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 94, "item": "F7-janos-us-ca-4", "optimum": 43, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7212, "routed_composition": 2.6378, "compiled": 0.7145, "parametric_min_cost_flow": 0.0039}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 95, "item": "F7-janos-us-ca-5", "optimum": 38, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6974, "routed_composition": 2.7362, "compiled": 0.7383, "parametric_min_cost_flow": 0.0039}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 96, "item": "F7-janos-us-ca-6", "optimum": 32, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7208, "routed_composition": 2.627, "compiled": 0.6586, "parametric_min_cost_flow": 0.0027}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 97, "item": "F7-janos-us-ca-7", "optimum": 32, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7625, "routed_composition": 2.7957, "compiled": 0.6908, "parametric_min_cost_flow": 0.0035}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 98, "item": "F7-janos-us-ca-8", "optimum": 44, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7299, "routed_composition": 3.1403, "compiled": 0.6978, "parametric_min_cost_flow": 0.0035}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 99, "item": "F7-janos-us-ca-9", "optimum": 43, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7907, "routed_composition": 3.5012, "compiled": 0.8985, "parametric_min_cost_flow": 0.0044}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 100, "item": "F7-newyork-0", "optimum": 66, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8421, "routed_composition": 3.4342, "compiled": 0.7754, "parametric_min_cost_flow": 0.005}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 101, "item": "F7-newyork-1", "optimum": 70, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7126, "routed_composition": 3.1226, "compiled": 0.7558, "parametric_min_cost_flow": 0.0037}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 102, "item": "F7-newyork-2", "optimum": 61, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7251, "routed_composition": 2.801, "compiled": 0.7706, "parametric_min_cost_flow": 0.003}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 103, "item": "F7-newyork-3", "optimum": 78, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7773, "routed_composition": 2.9412, "compiled": 0.8772, "parametric_min_cost_flow": 0.0031}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 104, "item": "F7-newyork-4", "optimum": 78, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7895, "routed_composition": 2.9628, "compiled": 0.7985, "parametric_min_cost_flow": 0.0055}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 105, "item": "F7-newyork-5", "optimum": 74, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7433, "routed_composition": 2.9222, "compiled": 0.6849, "parametric_min_cost_flow": 0.0035}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 106, "item": "F7-newyork-6", "optimum": 66, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7275, "routed_composition": 2.7268, "compiled": 0.7341, "parametric_min_cost_flow": 0.0037}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 107, "item": "F7-newyork-7", "optimum": 74, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8663, "routed_composition": 2.9493, "compiled": 0.7313, "parametric_min_cost_flow": 0.0035}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 108, "item": "F7-newyork-8", "optimum": 73, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6688, "routed_composition": 2.7412, "compiled": 0.8093, "parametric_min_cost_flow": 0.0028}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 109, "item": "F7-newyork-9", "optimum": 64, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.771, "routed_composition": 2.9061, "compiled": 0.7753, "parametric_min_cost_flow": 0.0051}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 110, "item": "F7-nobel-eu-0", "optimum": 46, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6947, "routed_composition": 2.9624, "compiled": 0.7212, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 111, "item": "F7-nobel-eu-1", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6993, "routed_composition": 2.9833, "compiled": 0.8975, "parametric_min_cost_flow": 0.0045}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 112, "item": "F7-nobel-eu-2", "optimum": 45, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7562, "routed_composition": 3.111, "compiled": 0.7997, "parametric_min_cost_flow": 0.0047}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 113, "item": "F7-nobel-eu-3", "optimum": 79, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8921, "routed_composition": 3.0757, "compiled": 0.789, "parametric_min_cost_flow": 0.0055}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 114, "item": "F7-nobel-eu-4", "optimum": 65, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8206, "routed_composition": 2.7276, "compiled": 0.821, "parametric_min_cost_flow": 0.0037}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 115, "item": "F7-nobel-eu-5", "optimum": 71, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7996, "routed_composition": 2.9427, "compiled": 0.7297, "parametric_min_cost_flow": 0.0061}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 116, "item": "F7-nobel-eu-6", "optimum": 76, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7958, "routed_composition": 2.7765, "compiled": 0.7675, "parametric_min_cost_flow": 0.0048}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 117, "item": "F7-nobel-eu-7", "optimum": 48, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7818, "routed_composition": 2.8421, "compiled": 0.6894, "parametric_min_cost_flow": 0.0028}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 118, "item": "F7-nobel-eu-8", "optimum": 55, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7767, "routed_composition": 2.797, "compiled": 0.7133, "parametric_min_cost_flow": 0.0062}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 119, "item": "F7-nobel-eu-9", "optimum": 66, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7529, "routed_composition": 2.9887, "compiled": 0.7514, "parametric_min_cost_flow": 0.0049}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 120, "item": "F7-nobel-us-0", "optimum": 81, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7597, "routed_composition": 2.6927, "compiled": 0.6691, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 121, "item": "F7-nobel-us-1", "optimum": 75, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6796, "routed_composition": 2.6773, "compiled": 0.7334, "parametric_min_cost_flow": 0.0038}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 122, "item": "F7-nobel-us-2", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.783, "routed_composition": 2.7234, "compiled": 0.746, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 123, "item": "F7-nobel-us-3", "optimum": 70, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7338, "routed_composition": 2.9388, "compiled": 0.7781, "parametric_min_cost_flow": 0.0038}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 124, "item": "F7-nobel-us-4", "optimum": 65, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7648, "routed_composition": 2.8369, "compiled": 0.7531, "parametric_min_cost_flow": 0.0041}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 125, "item": "F7-nobel-us-5", "optimum": 79, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8097, "routed_composition": 3.066, "compiled": 0.8336, "parametric_min_cost_flow": 0.0061}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 126, "item": "F7-nobel-us-6", "optimum": 73, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7255, "routed_composition": 2.8263, "compiled": 0.6749, "parametric_min_cost_flow": 0.0033}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 127, "item": "F7-nobel-us-7", "optimum": 57, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7489, "routed_composition": 2.7812, "compiled": 0.7333, "parametric_min_cost_flow": 0.005}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 128, "item": "F7-nobel-us-8", "optimum": 65, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7145, "routed_composition": 2.7736, "compiled": 0.7688, "parametric_min_cost_flow": 0.0041}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 129, "item": "F7-nobel-us-9", "optimum": 47, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7167, "routed_composition": 2.6739, "compiled": 0.7338, "parametric_min_cost_flow": 0.005}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 130, "item": "F7-norway-0", "optimum": 38, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7158, "routed_composition": 2.6666, "compiled": 0.7552, "parametric_min_cost_flow": 0.0065}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 131, "item": "F7-norway-1", "optimum": 57, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7899, "routed_composition": 2.7164, "compiled": 0.8361, "parametric_min_cost_flow": 0.004}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 132, "item": "F7-norway-2", "optimum": 56, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.797, "routed_composition": 2.6432, "compiled": 0.8002, "parametric_min_cost_flow": 0.0052}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 133, "item": "F7-norway-3", "optimum": 32, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7681, "routed_composition": 2.751, "compiled": 0.8017, "parametric_min_cost_flow": 0.0026}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 134, "item": "F7-norway-4", "optimum": 50, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8008, "routed_composition": 2.7354, "compiled": 0.708, "parametric_min_cost_flow": 0.0045}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 135, "item": "F7-norway-5", "optimum": 44, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7729, "routed_composition": 2.7115, "compiled": 0.722, "parametric_min_cost_flow": 0.0091}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 136, "item": "F7-norway-6", "optimum": 60, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7024, "routed_composition": 2.8983, "compiled": 0.7925, "parametric_min_cost_flow": 0.0044}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 137, "item": "F7-norway-7", "optimum": 37, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.722, "routed_composition": 2.8854, "compiled": 0.7137, "parametric_min_cost_flow": 0.0046}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 138, "item": "F7-norway-8", "optimum": 51, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7466, "routed_composition": 2.9829, "compiled": 0.7655, "parametric_min_cost_flow": 0.0037}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 139, "item": "F7-norway-9", "optimum": 52, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7731, "routed_composition": 2.7729, "compiled": 0.8314, "parametric_min_cost_flow": 0.0035}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 140, "item": "F7-pdh-0", "optimum": 84, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7922, "routed_composition": 2.8275, "compiled": 0.669, "parametric_min_cost_flow": 0.003}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 141, "item": "F7-pdh-1", "optimum": 87, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8527, "routed_composition": 2.7718, "compiled": 0.7469, "parametric_min_cost_flow": 0.0048}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 142, "item": "F7-pdh-2", "optimum": 85, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7126, "routed_composition": 3.0219, "compiled": 0.8373, "parametric_min_cost_flow": 0.0039}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 143, "item": "F7-pdh-3", "optimum": 77, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.752, "routed_composition": 2.8702, "compiled": 0.709, "parametric_min_cost_flow": 0.0034}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 144, "item": "F7-pdh-4", "optimum": 80, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7157, "routed_composition": 2.8664, "compiled": 0.7216, "parametric_min_cost_flow": 0.0033}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 145, "item": "F7-pdh-5", "optimum": 76, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7281, "routed_composition": 2.6289, "compiled": 0.7431, "parametric_min_cost_flow": 0.0053}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 146, "item": "F7-pdh-6", "optimum": 76, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7058, "routed_composition": 2.8321, "compiled": 0.7458, "parametric_min_cost_flow": 0.0029}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 147, "item": "F7-pdh-7", "optimum": 68, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7477, "routed_composition": 2.965, "compiled": 0.7766, "parametric_min_cost_flow": 0.0032}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 148, "item": "F7-pdh-8", "optimum": 58, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7525, "routed_composition": 2.8582, "compiled": 0.7804, "parametric_min_cost_flow": 0.0025}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 149, "item": "F7-pdh-9", "optimum": 74, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6942, "routed_composition": 2.6082, "compiled": 0.7237, "parametric_min_cost_flow": 0.0031}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 150, "item": "F7-pioro40-0", "optimum": 57, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7987, "routed_composition": 2.6973, "compiled": 0.7879, "parametric_min_cost_flow": 0.0074}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 151, "item": "F7-pioro40-1", "optimum": 47, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7215, "routed_composition": 2.7826, "compiled": 0.7754, "parametric_min_cost_flow": 0.0063}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 152, "item": "F7-pioro40-2", "optimum": 37, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7089, "routed_composition": 2.8799, "compiled": 0.7603, "parametric_min_cost_flow": 0.004}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 153, "item": "F7-pioro40-3", "optimum": 27, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8625, "routed_composition": 2.8401, "compiled": 0.8355, "parametric_min_cost_flow": 0.0038}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 154, "item": "F7-pioro40-4", "optimum": 54, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8349, "routed_composition": 2.8392, "compiled": 0.7832, "parametric_min_cost_flow": 0.0061}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 155, "item": "F7-pioro40-5", "optimum": 52, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7528, "routed_composition": 2.7311, "compiled": 0.674, "parametric_min_cost_flow": 0.0049}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 156, "item": "F7-pioro40-6", "optimum": 45, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7902, "routed_composition": 2.8542, "compiled": 0.8793, "parametric_min_cost_flow": 0.0075}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 157, "item": "F7-pioro40-7", "optimum": 47, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7372, "routed_composition": 3.1236, "compiled": 0.7564, "parametric_min_cost_flow": 0.0034}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 158, "item": "F7-pioro40-8", "optimum": 30, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7138, "routed_composition": 2.8885, "compiled": 0.783, "parametric_min_cost_flow": 0.0058}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 159, "item": "F7-pioro40-9", "optimum": 37, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8238, "routed_composition": 2.6292, "compiled": 0.7749, "parametric_min_cost_flow": 0.0059}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 160, "item": "F7-sun-0", "optimum": 45, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7647, "routed_composition": 2.749, "compiled": 0.6775, "parametric_min_cost_flow": 0.0049}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 161, "item": "F7-sun-1", "optimum": 57, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7378, "routed_composition": 2.5895, "compiled": 0.7078, "parametric_min_cost_flow": 0.0058}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 162, "item": "F7-sun-2", "optimum": 54, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6883, "routed_composition": 2.681, "compiled": 0.6664, "parametric_min_cost_flow": 0.0047}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 163, "item": "F7-sun-3", "optimum": 52, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7428, "routed_composition": 2.812, "compiled": 0.72, "parametric_min_cost_flow": 0.0032}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 164, "item": "F7-sun-4", "optimum": 43, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8703, "routed_composition": 2.7067, "compiled": 0.7205, "parametric_min_cost_flow": 0.0028}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 165, "item": "F7-sun-5", "optimum": 64, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8281, "routed_composition": 2.7912, "compiled": 0.8064, "parametric_min_cost_flow": 0.0051}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 166, "item": "F7-sun-6", "optimum": 50, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.791, "routed_composition": 3.1022, "compiled": 0.9146, "parametric_min_cost_flow": 0.0123}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 167, "item": "F7-sun-7", "optimum": 24, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7666, "routed_composition": 3.1502, "compiled": 0.7316, "parametric_min_cost_flow": 0.0039}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 168, "item": "F7-sun-8", "optimum": 47, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8732, "routed_composition": 2.7406, "compiled": 0.6849, "parametric_min_cost_flow": 0.0039}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 169, "item": "F7-sun-9", "optimum": 41, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7615, "routed_composition": 2.7404, "compiled": 0.7468, "parametric_min_cost_flow": 0.0076}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 170, "item": "F7-ta1-0", "optimum": 57, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7438, "routed_composition": 3.2194, "compiled": 0.7864, "parametric_min_cost_flow": 0.0037}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 171, "item": "F7-ta1-1", "optimum": 66, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8899, "routed_composition": 2.6945, "compiled": 0.6725, "parametric_min_cost_flow": 0.0032}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 172, "item": "F7-ta1-2", "optimum": 64, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7187, "routed_composition": 2.8563, "compiled": 0.7503, "parametric_min_cost_flow": 0.0044}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 173, "item": "F7-ta1-3", "optimum": 61, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7585, "routed_composition": 2.6842, "compiled": 0.8205, "parametric_min_cost_flow": 0.0029}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 174, "item": "F7-ta1-4", "optimum": 68, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8482, "routed_composition": 2.6912, "compiled": 0.733, "parametric_min_cost_flow": 0.0028}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 175, "item": "F7-ta1-5", "optimum": 61, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7321, "routed_composition": 2.8523, "compiled": 0.709, "parametric_min_cost_flow": 0.0043}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 176, "item": "F7-ta1-6", "optimum": 69, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8073, "routed_composition": 2.6106, "compiled": 0.651, "parametric_min_cost_flow": 0.0031}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 177, "item": "F7-ta1-7", "optimum": 63, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7699, "routed_composition": 2.4872, "compiled": 0.7783, "parametric_min_cost_flow": 0.0056}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 178, "item": "F7-ta1-8", "optimum": 72, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7671, "routed_composition": 2.9082, "compiled": 0.6624, "parametric_min_cost_flow": 0.0033}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 179, "item": "F7-ta1-9", "optimum": 73, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7786, "routed_composition": 2.8291, "compiled": 0.743, "parametric_min_cost_flow": 0.0033}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 180, "item": "F7-ta2-0", "optimum": 72, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7831, "routed_composition": 2.8933, "compiled": 0.8592, "parametric_min_cost_flow": 0.0054}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 181, "item": "F7-ta2-1", "optimum": 73, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.754, "routed_composition": 3.0192, "compiled": 0.9063, "parametric_min_cost_flow": 0.0049}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 182, "item": "F7-ta2-2", "optimum": 57, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.736, "routed_composition": 2.7738, "compiled": 0.9024, "parametric_min_cost_flow": 0.0031}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 183, "item": "F7-ta2-3", "optimum": 56, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7581, "routed_composition": 2.7442, "compiled": 0.7126, "parametric_min_cost_flow": 0.0026}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 184, "item": "F7-ta2-4", "optimum": 53, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7354, "routed_composition": 2.7845, "compiled": 0.7047, "parametric_min_cost_flow": 0.0035}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 185, "item": "F7-ta2-5", "optimum": 46, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7839, "routed_composition": 2.7282, "compiled": 0.7002, "parametric_min_cost_flow": 0.0056}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 186, "item": "F7-ta2-6", "optimum": 59, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7406, "routed_composition": 2.8663, "compiled": 0.6906, "parametric_min_cost_flow": 0.0052}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 187, "item": "F7-ta2-7", "optimum": 41, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7578, "routed_composition": 2.9872, "compiled": 0.7515, "parametric_min_cost_flow": 0.0036}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 188, "item": "F7-ta2-8", "optimum": 47, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7879, "routed_composition": 2.9341, "compiled": 0.8243, "parametric_min_cost_flow": 0.0057}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 189, "item": "F7-ta2-9", "optimum": 46, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8036, "routed_composition": 2.9624, "compiled": 0.7178, "parametric_min_cost_flow": 0.0043}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 190, "item": "F7-zib54-0", "optimum": 73, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7137, "routed_composition": 2.9537, "compiled": 0.86, "parametric_min_cost_flow": 0.0061}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 191, "item": "F7-zib54-1", "optimum": 72, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7041, "routed_composition": 2.6492, "compiled": 0.7004, "parametric_min_cost_flow": 0.0038}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 192, "item": "F7-zib54-2", "optimum": 53, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7481, "routed_composition": 2.656, "compiled": 0.8002, "parametric_min_cost_flow": 0.005}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 193, "item": "F7-zib54-3", "optimum": 36, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.8341, "routed_composition": 2.8659, "compiled": 0.9196, "parametric_min_cost_flow": 0.0048}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 194, "item": "F7-zib54-4", "optimum": 60, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7764, "routed_composition": 2.7774, "compiled": 0.9452, "parametric_min_cost_flow": 0.0038}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 195, "item": "F7-zib54-5", "optimum": 52, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6835, "routed_composition": 2.8597, "compiled": 0.7862, "parametric_min_cost_flow": 0.0077}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 196, "item": "F7-zib54-6", "optimum": 53, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.764, "routed_composition": 2.9104, "compiled": 0.7535, "parametric_min_cost_flow": 0.0059}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 197, "item": "F7-zib54-7", "optimum": 42, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6849, "routed_composition": 3.0407, "compiled": 0.7707, "parametric_min_cost_flow": 0.0052}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 198, "item": "F7-zib54-8", "optimum": 34, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.7062, "routed_composition": 2.7307, "compiled": 0.7592, "parametric_min_cost_flow": 0.0048}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{"i": 199, "item": "F7-zib54-9", "optimum": 34, "result": {"flow_expansion_mcf": "optimal", "routed_composition": "optimal", "compiled": "optimal", "parametric_min_cost_flow": "optimal"}, "seconds": {"flow_expansion_mcf": 0.6902, "routed_composition": 2.7898, "compiled": 0.6864, "parametric_min_cost_flow": 0.0048}, "compiler_selected": "cognition.flow_expansion_mcf", "independent_agrees": true}
+{
+ "n": 200,
+ "networks": 20,
+ "rule": {
+  "outcome": "MATCH",
+  "failed": [],
+  "conditions": {
+   "NO_WRONG_ANSWER": true,
+   "GENOME_DECIDES_EVERY_ITEM": true,
+   "NOT_SIGNIFICANTLY_WORSE": true,
+   "LATENCY_WITHIN_RATIO": true
+  },
+  "why": [],
+  "n": 200,
+  "counts": {
+   "flow_expansion_mcf": {
+    "optimal": 200,
+    "suboptimal": 0,
+    "wrong": 0,
+    "no_decision": 0
+   },
+   "routed_composition": {
+    "optimal": 200,
+    "suboptimal": 0,
+    "wrong": 0,
+    "no_decision": 0
+   }
+  },
+  "states": {
+   "flow_expansion_mcf": {
+    "NONE": 200
+   },
+   "routed_composition": {
+    "ANSWERED": 200
+   }
+  },
+  "genome_wrong": 0,
+  "genome_no_decision": 0,
+  "genome_refuted": 0,
+  "wins": 0,
+  "losses": 0,
+  "p_worse_one_sided": 1.0,
+  "p_better_one_sided": 1.0,
+  "median_seconds": {
+   "flow_expansion_mcf": 0.7529,
+   "routed_composition": 2.8663
+  },
+  "latency_ratio": 0.2627,
+  "alpha": 0.05,
+  "latency_ratio_limit": 1.25,
+  "comparator_replicated": true,
+  "rescoring_disagreements_on_rule_arms": 0,
+  "refuted_plan_rescoring_disagreements": 0,
+  "rescoring_disagreements_on_secondary_arms": {},
+  "informative": false,
+  "reading": "MATCH, uninformative beyond replication: both arms optimal on every item, no abstention, refutation or wrong answer; the independent rescoring agrees with the primary scoring on the genome's and the routed composition's plans and on every item's truth, and no secondary arm's rescoring disagrees; the expected tie, which replicates admission v3's DEFAULT verdict on real items and is not a new capability",
+  "rule": "flow_expansion_mcf MATCHES the routed composition on F7's held-out items when all four conditions hold and the comparator replicates v4. (1) NO_WRONG_ANSWER: no held-out item is scored wrong for flow_expansion_mcf; wrong is run_v4.f7_score's 'wrong' (over budget, out of bounds or a flow claim the recomputation contradicts) or a receipt the independent verifier REFUTED, which is scored wrong whatever its plan, as admission v3 scores a refuted answer. (2) GENOME_DECIDES_EVERY_ITEM: no held-out item is scored no_decision for the genome (an abstention of any kind, or an output f7_score cannot read as a plan). (3) NOT_SIGNIFICANTLY_WORSE: the one-sided exact sign test over discordant items gives p >= 0.05 for 'the genome is worse'. A loss is an item where routed is optimal and the genome is not, or where the genome is scored no_decision and routed is not (routed returned a plan, even a wrong one); a win is an item where the genome is optimal and routed is not; every other item is a tie, so the count is asymmetric against the genome. (4) LATENCY_WITHIN_RATIO: the genome's median latency over the held-out items is at most 1.25x the routed composition's, both end to end through greg.cognition.cortex.reason on this machine. Outcome: INCONCLUSIVE when the independent rescoring disagrees with the primary scoring on any genome or routed plan or on any item's truth, except on the plan of a genome receipt the verifier REFUTED (the refutation scores that row wrong whatever its plan scores, so it decides NO_WRONG_ANSWER); a disagreement on a secondary arm (compiled, PMCF) is reported, makes the run informative and does not change the outcome; otherwise NO_MATCH, naming every failed condition, when a condition fails, except that a failure of LATENCY_WITHIN_RATIO alone is INCONCLUSIVE when the comparator did not replicate; otherwise INCONCLUSIVE when the comparator did not replicate v4 (routed optimal on every held-out item); otherwise MATCH. INVALID_RUN replaces the outcome when an integrity check fails; the measured outcome is kept beside it. The thresholds are admission v3's DEFAULT rule's (alpha 0.05, 1.25x); the rule deviates from that rule in the ways DEVIATIONS lists."
+ },
+ "f7_lift_with_genome": {
+  "outcome": "NO_LIFT",
+  "failed": [
+   "ROUTED_MORE_OPTIMAL",
+   "SIGN_TEST_P_BELOW_ALPHA"
+  ],
+  "conditions": {
+   "ROUTED_MORE_OPTIMAL": false,
+   "ROUTED_NO_MORE_WRONG": true,
+   "SIGN_TEST_P_BELOW_ALPHA": false,
+   "ROUTED_MEDIAN_WITHIN_CHAIN_BUDGET": true,
+   "ROUTED_MEDIAN_WITHIN_MULTIPLIER": true
+  },
+  "why": [],
+  "secondary": true,
+  "v4_verdict": "LIFT (frozen; unchanged by this reading)",
+  "counts_source": "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json",
+  "expected": "NO_LIFT (the expectation given admission v3, not a result)",
+  "rule": "F7_LIFT_WITH_GENOME (secondary; it does not change v4's frozen verdict, LIFT): v4's F7 rule, verbatim 'F7 (natural instances, exact truth): routed optimal > best constituent optimal, routed wrong <= best constituent wrong, one-sided exact sign test over discordant held-out items p < 0.05, routed median latency <= 60 s and <= 10x the best constituent's median. Best constituent chosen on held-out results (most optimal, then fewest wrong). Practitioner, compiled-arm and per-network comparisons reported, not part of the rule. VPL = families meeting their rule.', re-evaluated with the constituent set v4's two constituents (graph_alone_greedy, optimize_flow_blind: their optimal and wrong counts on the same items, as v4's frozen evidence records them, which do not depend on the machine) plus flow_expansion_mcf from this run, with routed being this run's routed_composition. The best constituent is chosen as v4 chooses it (most optimal, then fewest wrong; a full tie keeps v4's order, so a v4 constituent precedes the genome). When the genome is the best constituent, five conditions are read from this run's genome and routed rows (one machine): (1) ROUTED_MORE_OPTIMAL: routed optimal > the genome's optimal; (2) ROUTED_NO_MORE_WRONG: routed wrong <= the genome's wrong; (3) SIGN_TEST_P_BELOW_ALPHA: over the discordant items (routed optimal and the genome not is a routed win, the reverse a routed loss) the one-sided exact sign test for 'routed is better' gives p < 0.05; (4) ROUTED_MEDIAN_WITHIN_CHAIN_BUDGET: routed median latency <= 60 s; (5) ROUTED_MEDIAN_WITHIN_MULTIPLIER: routed median latency <= 10x the genome's median (medians of the recorded seconds rounded to 4 decimals, as run_v4 rounds them). LIFT when all five hold, otherwise NO_LIFT naming every failed condition. INCONCLUSIVE instead when the rows are not exactly the items v4's counts cover; when the independent rescoring disagrees with the primary scoring on a genome or routed plan or a truth (with the primary rule's exception for a refuted genome receipt); or when a v4 constituent is the best constituent: its paired rows and latencies are v4's, from another run on another machine, so the sign test and the latency conditions cannot be computed from this run's rows, and v4's verdict against it stands. A REFUTED genome receipt counts as wrong here, as in the primary rule; v4 scored its constituents through run_v4.op(), which counted a receipt in any state but NONE as no decision, so a refutation weighs against the genome in ROUTED_NO_MORE_WRONG and in the wrong-count tie-break where v4's scoring would not (v4's held-out constituent counts hold no such receipt). INVALID_RUN replaces the outcome when an integrity check fails.",
+  "constituents": {
+   "graph_alone_greedy": {
+    "optimal": 108,
+    "wrong": 0,
+    "from": "v4"
+   },
+   "optimize_flow_blind": {
+    "optimal": 19,
+    "wrong": 0,
+    "from": "v4"
+   },
+   "flow_expansion_mcf": {
+    "optimal": 200,
+    "wrong": 0,
+    "from": "this run"
+   }
+  },
+  "best_constituent": "flow_expansion_mcf",
+  "routed": {
+   "optimal": 200,
+   "wrong": 0
+  },
+  "routed_wins": 0,
+  "routed_losses": 0,
+  "sign_test_p_one_sided": 1.0,
+  "median_seconds": {
+   "flow_expansion_mcf": 0.7529,
+   "routed_composition": 2.8663
+  },
+  "latency_ratio_routed_over_best": 3.807
+ },
+ "arm_exceptions": {
+  "count": {},
+  "items": []
+ },
+ "outcomes": {
+  "flow_expansion_mcf": {
+   "optimal": 200,
+   "suboptimal": 0,
+   "wrong": 0,
+   "no_decision": 0
+  },
+  "routed_composition": {
+   "optimal": 200,
+   "suboptimal": 0,
+   "wrong": 0,
+   "no_decision": 0
+  },
+  "compiled": {
+   "optimal": 200,
+   "suboptimal": 0,
+   "wrong": 0,
+   "no_decision": 0
+  },
+  "parametric_min_cost_flow": {
+   "optimal": 200,
+   "suboptimal": 0,
+   "wrong": 0,
+   "no_decision": 0
+  }
+ },
+ "median_seconds": {
+  "flow_expansion_mcf": 0.7529,
+  "routed_composition": 2.8663,
+  "compiled": 0.7624,
+  "parametric_min_cost_flow": 0.0042
+ },
+ "latency_ratios": {
+  "genome_over_routed": 0.2627,
+  "compiled_over_routed": 0.266,
+  "compiled_over_genome": 1.0126,
+  "genome_over_pmcf_in_process_not_comparable": 179.2619
+ },
+ "versus_optimal_vs_not": {
+  "flow_expansion_mcf_vs_routed_composition": {
+   "wins": 0,
+   "losses": 0,
+   "p_one_sided_better": 1.0,
+   "p_one_sided_worse": 1.0
+  },
+  "flow_expansion_mcf_vs_parametric_min_cost_flow": {
+   "wins": 0,
+   "losses": 0,
+   "p_one_sided_better": 1.0,
+   "p_one_sided_worse": 1.0
+  },
+  "routed_composition_vs_parametric_min_cost_flow": {
+   "wins": 0,
+   "losses": 0,
+   "p_one_sided_better": 1.0,
+   "p_one_sided_worse": 1.0
+  },
+  "compiled_vs_flow_expansion_mcf": {
+   "wins": 0,
+   "losses": 0,
+   "p_one_sided_better": 1.0,
+   "p_one_sided_worse": 1.0
+  }
+ },
+ "compiler": {
+  "selected": {
+   "cognition.flow_expansion_mcf": 200
+  },
+  "selected_genome_on_every_item": true,
+  "same_outcome_and_throughput_as_genome": 200,
+  "identical_increments_to_genome": 200
+ },
+ "genome_receipts": {
+  "method": {
+   "cognition.flow_expansion_mcf": 200
+  },
+  "method_version_capability_manifest": {
+   "0.2.0": 200
+  },
+  "proof_intelligence_id": {
+   "solver.graph.capacity_expansion_mcf": 200
+  },
+  "proof_version": {
+   "1.0.0": 200
+  },
+  "verifier": {
+   "STRUCTURALLY_VERIFIED": 200
+  },
+  "state": {
+   "NONE": 200
+  },
+  "result_by_state": {
+   "NONE": {
+    "optimal": 200
+   }
+  }
+ },
+ "routed_receipts": {
+  "recipe": {
+   "graph_then_allocate": 200
+  },
+  "state": {
+   "ANSWERED": 200
+  }
+ },
+ "independent_rescoring": {
+  "n": 200,
+  "truth_agreement": 200,
+  "milp_status": {
+   "OPTIMAL": 200
+  },
+  "agreement": {
+   "flow_expansion_mcf": 200,
+   "routed_composition": 200,
+   "compiled": 200,
+   "parametric_min_cost_flow": 200
+  },
+  "spent_claim_false": {
+   "flow_expansion_mcf": 0,
+   "routed_composition": 0,
+   "compiled": 0,
+   "parametric_min_cost_flow": 0
+  },
+  "disagreements": [],
+  "disagreement_count": 0,
+  "secondary_inconclusive": []
+ },
+ "pmcf_equals_suite_truth": 200,
+ "throughput_shortfall_vs_optimum": {
+  "flow_expansion_mcf": 0,
+  "routed_composition": 0,
+  "compiled": 0,
+  "parametric_min_cost_flow": 0
+ },
+ "per_network": {
+  "atlanta": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7763
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 3.045
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.8417
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.006
+   }
+  },
+  "cost266": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7444
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.8918
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7256
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0044
+   }
+  },
+  "dfn-bwin": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7357
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.8947
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7532
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0031
+   }
+  },
+  "dfn-gwin": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7694
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.8545
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7792
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0037
+   }
+  },
+  "france": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.816
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.8403
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7744
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0041
+   }
+  },
+  "geant": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.737
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.9179
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.8038
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.004
+   }
+  },
+  "germany50": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7346
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.8533
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.743
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0049
+   }
+  },
+  "giul39": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7999
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 3.0115
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7876
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0053
+   }
+  },
+  "janos-us": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7618
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 3.089
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7988
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0046
+   }
+  },
+  "janos-us-ca": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7348
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.7492
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7123
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0039
+   }
+  },
+  "newyork": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7571
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.9317
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.773
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0036
+   }
+  },
+  "nobel-eu": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7792
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.9526
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7594
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0047
+   }
+  },
+  "nobel-us": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7413
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.7774
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7399
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.004
+   }
+  },
+  "norway": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7705
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.7432
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.779
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0044
+   }
+  },
+  "pdh": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7379
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.8452
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7445
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0033
+   }
+  },
+  "pioro40": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7715
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.8396
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7792
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0058
+   }
+  },
+  "sun": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7656
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.7448
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7203
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0048
+   }
+  },
+  "ta1": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.7685
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.7618
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.738
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0033
+   }
+  },
+  "ta2": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.758
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.8798
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7347
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0046
+   }
+  },
+  "zib54": {
+   "n": 10,
+   "flow_expansion_mcf": {
+    "optimal": 10,
+    "median_s": 0.71
+   },
+   "routed_composition": {
+    "optimal": 10,
+    "median_s": 2.8247
+   },
+   "compiled": {
+    "optimal": 10,
+    "median_s": 0.7785
+   },
+   "parametric_min_cost_flow": {
+    "optimal": 10,
+    "median_s": 0.0049
+   }
+  }
+ },
+ "model_calls": 0,
+ "money_usd": 0.0
+}
+exit 0

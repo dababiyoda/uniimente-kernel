@@ -83,3 +83,143 @@ def test_console_exposes_scoped_cognitive_result_from_retained_receipt(tmp_path)
     response=remote.handle(home,'GET','/api/status',headers,b'',now=now)
     data=json.loads(response[2])['data']
     assert data['cognitive'][0]['receipt_id']==snapshot['cognitive'][0]['receipt_id']
+
+
+def test_a_cognition_deficit_opens_capability_genesis_then_asks_the_founder_once(tmp_path):
+    """Directive 2026-10-07 section 24: no fitting intelligence -> Genesis search -> one founder ask."""
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "real:residual", "compile": {"geometry": {"geometry": "optimization",
+                                                                      "subgeometry": "unseen_structure"},
+                                                         "data": {"mystery_field": 1}}}
+    spec = mission("m:residual", checks=[{
+        "check_id": "answered", "description": "a competent method answered",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:residual", "params": params},
+        "predicate": {"op": "equals", "field": "state", "value": "ANSWERED"}}],
+        strategies=[{"action_id": "compile", "capability": "cognition.solve", "target": "cognition:residual",
+                     "params": params, "advances": ["answered"], "rationale": "compile the residual geometry"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        for _ in range(3):
+            body.tick()
+        state = body.engine.book.missions["m:residual"]
+        asks = [e.payload for e in body.journal.replay("decision.requested") if e.payload["mission_id"] == "m:residual"]
+        assert state.blocker and state.blocker["type"] == "capability"
+        assert state.blocker["function"] == "cognition.optimization:unseen_structure"
+        assert [a["kind"] for a in asks] == ["CAPABILITY_ATTACH"]
+        done = [e.payload for e in body.journal.replay("mission.action") if e.payload["mission_id"] == "m:residual"]
+        assert len(done) == 1 and done[0]["status"] == "DONE"
+
+
+def test_a_compiled_request_settles_the_method_it_executed_and_links_the_compile_receipt(tmp_path):
+    """Audit 31.12/31.13: compile receipts never settled, so Layer 5 decisions never fed competence and
+    outcome_link stayed empty. The compiler now carries the executed method's own receipt; settlement credits that
+    method (never the compiler's label) and the link projection names the outcome for both receipts."""
+    from greg.cognition.settlement import receipt_links
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "real:compiled", "compile": {"geometry": {"consequence_class": "read_only"},
+                                                         "data": {"expression": "0.1+0.2"}}}
+    spec = mission("m:compiled", checks=[{
+        "check_id": "exact", "description": "the compiled method's exact answer",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:compiled", "params": params},
+        "predicate": {"op": "equals", "field": "result.exact", "value": "3/10"}}],
+        strategies=[{"action_id": "compile", "capability": "cognition.solve", "target": "cognition:compiled",
+                     "params": params, "advances": ["exact"], "rationale": "compile and answer"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        assert body.tick()["missions"][0]["state"] == "ACHIEVED"
+        compiled = next(r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
+                        if (r.payload["result"].get("output") or {}).get("problem_id") == "real:compiled")
+        assert compiled["schema"].startswith("greg-competency-compilation/")
+        assert compiled["method_or_composition_selected"] == "cognition.exact"
+        assert compiled["outcome_link"] is None                         # immutable as issued; the link is projected
+        settled = [e.payload for e in body.journal.replay("cognition.settled")]
+        assert len(settled) == 1 and settled[0]["method"] == "cognition.exact"
+        assert settled[0]["compile_receipt"] == compiled["receipt_id"]
+        assert settled[0]["cognitive_receipt"] == compiled["selected_receipt"]["receipt_id"]
+        rows = competence(body.journal)
+        assert [k[0] for k in rows] == ["cognition.exact"] and next(iter(rows.values()))["correct"] == 1
+        links = receipt_links(body.journal)
+        assert links[compiled["receipt_id"]]["outcome_link"] == body.journal.replay("cognition.settled")[0].event_id
+        assert links[compiled["receipt_id"]]["later_appraisal"] == settled[0]["appraisal_event"]
+        assert links[compiled["receipt_id"]] == links[compiled["selected_receipt"]["receipt_id"]]
+    with Body(home) as body:
+        body.boot()
+        body.tick()
+        assert len(body.journal.replay("cognition.settled")) == 1          # restart re-settles nothing
+        body.journal.record("mission.appraised", {"mission_id": "m:compiled", "verdict": "REFUTED", "checks": {}},
+                            key="later-refutation")
+        from greg.cognition.settlement import reconcile
+        reconcile(body.journal)
+        assert competence(body.journal) == {}
+        assert receipt_links(body.journal)[compiled["receipt_id"]]["invalidated"] is True
+
+
+def test_a_forged_compile_receipt_settles_nothing():
+    from greg.cognition.settlement import _compiled
+    from greg.cognition.cortex import reason, registry_view
+    r = reason({"problem_id": "forge", "compile": {"geometry": {}, "data": {"expression": "1+1"}}},
+               registry=registry_view())
+    assert _compiled(r) is r
+    assert _compiled({**r, "method_or_composition_selected": "cognition.optimization"}) is None   # digest breaks
+    swapped = {**r, "selected_receipt": {**r["selected_receipt"], "receipt_id": "sha256:" + "0" * 64}}
+    assert _compiled(swapped) is None
+    assert _compiled({**r, "authority_created": True}) is None
+
+
+def test_a_re_digested_compile_receipt_must_list_its_selected_receipt():
+    """Review 2026-10-14: no test pinned the 'selected receipt is one of intermediate_receipts' check (the swapped
+    case above is caught by the digest). A compile receipt re-digested after its intermediate receipts were
+    rewritten keeps a valid identity and still names a selected receipt it never ran: it settles nothing."""
+    from greg.cognition.contracts import digest
+    from greg.cognition.settlement import _compiled
+    from greg.cognition.cortex import reason, registry_view
+    r = reason({"problem_id": "listed", "compile": {"geometry": {}, "data": {"expression": "1+1"}}},
+               registry=registry_view())
+    body = {k: v for k, v in r.items() if k != "receipt_id"}
+    body["intermediate_receipts"] = ["sha256:" + "1" * 64]
+    unlisted = {**body, "receipt_id": digest(body)}
+    assert _compiled(unlisted) is None
+    body["intermediate_receipts"] = list(r["intermediate_receipts"])     # control: listed again, it settles
+    assert _compiled({**body, "receipt_id": digest(body)}) is not None
+
+
+def test_a_world_unverified_compile_settles_no_competence_although_its_organ_answered(tmp_path):
+    """Review 2026-10-14: a high-consequence compile that runs a cortex organ ends WORLD_UNVERIFIED while the
+    organ's own receipt answered NONE and verified. Only the compile-state check keeps that conditional result out
+    of settlement, and no test pinned it. The mission is achieved and appraised; nothing is credited."""
+    from greg.cognition.contracts import digest
+    from greg.cognition.settlement import _compiled, measured_outcomes
+    saas = {"target": {"name": "spend", "unit": "USD/year"},
+            "variables": [{"name": "seats", "unit": "count", "low": 40, "high": 80},
+                          {"name": "price", "unit": "USD/count/month", "low": 20, "high": 35}],
+            "expression": ["*", "seats", "price"]}
+    home, key, body_id, _ = make_body(tmp_path)
+    params = {"problem_id": "real:conditional", "compile": {"geometry": {"consequence_class": "financial"},
+                                                            "data": {"estimation_model": saas}}}
+    spec = mission("m:conditional", checks=[{
+        "check_id": "conditional", "description": "the compiled estimate is a conditional result",
+        "sensor": {"capability": "cognition.solve", "target": "cognition:conditional", "params": params},
+        "predicate": {"op": "equals", "field": "state", "value": "WORLD_UNVERIFIED"}}],
+        strategies=[{"action_id": "compile", "capability": "cognition.solve", "target": "cognition:conditional",
+                     "params": params, "advances": ["conditional"], "rationale": "compile the estimate"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        assert body.tick()["missions"][0]["state"] == "ACHIEVED"
+        compiled = next(r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
+                        if (r.payload["result"].get("output") or {}).get("problem_id") == "real:conditional")
+        selected = compiled["selected_receipt"]
+        assert compiled["state"] == "WORLD_UNVERIFIED" and selected["method"] == "cognition.cortex.estimation.fermi"
+        assert selected["abstention_state"] == "NONE"
+        assert selected["evaluator_result"]["verdict"] == "STRUCTURALLY_VERIFIED"
+        assert body.journal.replay("mission.appraised")[-1].payload["verdict"] == "VERIFIED"
+        assert body.journal.replay("cognition.settled") == [] and competence(body.journal) == {}
+        assert measured_outcomes(body.journal) == [] and _compiled(compiled) is None
+        relabelled = {k: v for k, v in compiled.items() if k != "receipt_id"}
+        relabelled["state"] = "ANSWERED"                                  # control: only the state differs
+        assert _compiled({**relabelled, "receipt_id": digest(relabelled)}) is not None

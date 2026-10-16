@@ -1,0 +1,902 @@
+{
+ "schema": "greg-protected-evolution/1",
+ "target": "immune_detect",
+ "rule": "trigger: incumbent worse than the simple baseline on >= 25% of train items; candidate advances if its train mean loss beats the incumbent's by > 1%; adversarial: every output verifies and no stress set worsens by > 5%; RETAIN iff on the held-out split the one-sided exact sign test over paired items gives p < 0.05 and the candidate's mean loss is lower; otherwise REJECT. Never applied automatically.",
+ "started_at": "2026-10-09T11:21:11.642970+00:00",
+ "source_commit": "ed4ee29c77f03893cfd80c195c0c92137a107831",
+ "evaluator_seals": {
+  "train": "sha256:0ab53871e01d9a4f622ff0296ff035d6628aaa06ba21b15c132bbf934e60480a",
+  "heldout": "sha256:857ef09e303caf1918f1a4552366865c21c0c03e37ad2c9c335b4b3e3d6d9962"
+ },
+ "split": {
+  "train": 40,
+  "heldout": 60,
+  "excluded_admission_items": 40
+ },
+ "incumbent": {
+  "config": {
+   "detectors": 3000,
+   "uniform_share": 0.5,
+   "scale_set": [
+    1.0,
+    2.0,
+    3.0
+   ],
+   "calibration_folds": 3,
+   "alarm_fraction": 0.75,
+   "whitening": "diagonal"
+  },
+  "id": "cfg-68b55c07dbdc"
+ },
+ "confinement": {
+  "filesystem": "landlock",
+  "abi": 7,
+  "arbitrary_source": "refused",
+  "scope": "published source/runtime read-only; staged store read/write"
+ },
+ "failure": {
+  "metric": "F1 under the false-alarm tolerance vs the per-feature z-score baseline",
+  "rate": 0.4,
+  "trigger": 0.25,
+  "incumbent_mean_train_loss": Infinity
+ },
+ "residual_geometry": {
+  "dimension": {
+   "mid_dim_4_6": {
+    "n": 25,
+    "failing": 10
+   },
+   "low_dim_2_3": {
+    "n": 15,
+    "failing": 6
+   }
+  },
+  "false_alarm_budget": {
+   "0.02": {
+    "n": 15,
+    "failing": 5
+   },
+   "0.05": {
+    "n": 13,
+    "failing": 4
+   },
+   "0.01": {
+    "n": 12,
+    "failing": 7
+   }
+  }
+ },
+ "search": {
+  "generations": 5,
+  "population": 8,
+  "evaluated": 34,
+  "lineage": [
+   {
+    "id": "cfg-68b55c07dbdc",
+    "generation": 0,
+    "parents": [],
+    "ops": [
+     "incumbent"
+    ],
+    "config": {
+     "detectors": 3000,
+     "uniform_share": 0.5,
+     "scale_set": [
+      1.0,
+      2.0,
+      3.0
+     ],
+     "calibration_folds": 3,
+     "alarm_fraction": 0.75,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": Infinity
+   },
+   {
+    "id": "cfg-67057b90385c",
+    "generation": 1,
+    "parents": [
+     "cfg-68b55c07dbdc"
+    ],
+    "ops": [
+     "mutate:alarm_fraction"
+    ],
+    "config": {
+     "alarm_fraction": 0.525,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0,
+      2.0,
+      3.0
+     ],
+     "uniform_share": 0.5,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": -0.421508
+   },
+   {
+    "id": "cfg-9b8e60ce9c4e",
+    "generation": 1,
+    "parents": [
+     "cfg-68b55c07dbdc"
+    ],
+    "ops": [
+     "mutate:alarm_fraction"
+    ],
+    "config": {
+     "alarm_fraction": 0.841,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0,
+      2.0,
+      3.0
+     ],
+     "uniform_share": 0.5,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": Infinity
+   },
+   {
+    "id": "cfg-2b8031729854",
+    "generation": 1,
+    "parents": [
+     "cfg-68b55c07dbdc"
+    ],
+    "ops": [
+     "mutate:calibration_folds",
+     "mutate:detectors"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 5,
+     "detectors": 5000,
+     "scale_set": [
+      1.0,
+      2.0,
+      3.0
+     ],
+     "uniform_share": 0.5,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": Infinity
+   },
+   {
+    "id": "cfg-83d4032c8604",
+    "generation": 1,
+    "parents": [
+     "cfg-68b55c07dbdc"
+    ],
+    "ops": [
+     "mutate:uniform_share"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0,
+      2.0,
+      3.0
+     ],
+     "uniform_share": 0.499,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": -0.473635
+   },
+   {
+    "id": "cfg-884efde7eed3",
+    "generation": 1,
+    "parents": [
+     "cfg-68b55c07dbdc"
+    ],
+    "ops": [
+     "mutate:calibration_folds"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 5,
+     "detectors": 3000,
+     "scale_set": [
+      1.0,
+      2.0,
+      3.0
+     ],
+     "uniform_share": 0.5,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": Infinity
+   },
+   {
+    "id": "cfg-52f574a17c81",
+    "generation": 1,
+    "parents": [
+     "cfg-68b55c07dbdc"
+    ],
+    "ops": [
+     "mutate:scale_set"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.5,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": -0.474017
+   },
+   {
+    "id": "cfg-2ea3f17b16e1",
+    "generation": 1,
+    "parents": [
+     "cfg-68b55c07dbdc"
+    ],
+    "ops": [
+     "mutate:alarm_fraction"
+    ],
+    "config": {
+     "alarm_fraction": 0.728,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0,
+      2.0,
+      3.0
+     ],
+     "uniform_share": 0.5,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": Infinity
+   },
+   {
+    "id": "cfg-16cd57de04a9",
+    "generation": 2,
+    "parents": [
+     "cfg-83d4032c8604",
+     "cfg-52f574a17c81"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:uniform_share"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0,
+      2.0,
+      3.0
+     ],
+     "uniform_share": 0.451,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": -0.466093
+   },
+   {
+    "id": "cfg-9516ce57a27c",
+    "generation": 2,
+    "parents": [
+     "cfg-52f574a17c81",
+     "cfg-83d4032c8604"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:calibration_folds",
+     "mutate:alarm_fraction"
+    ],
+    "config": {
+     "alarm_fraction": 0.744,
+     "calibration_folds": 5,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.5,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": Infinity
+   },
+   {
+    "id": "cfg-f19b1b6b969e",
+    "generation": 2,
+    "parents": [
+     "cfg-52f574a17c81",
+     "cfg-83d4032c8604"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:scale_set"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0,
+      2.0
+     ],
+     "uniform_share": 0.5,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": -0.469582
+   },
+   {
+    "id": "cfg-1ba4d8ee6916",
+    "generation": 2,
+    "parents": [
+     "cfg-52f574a17c81",
+     "cfg-83d4032c8604"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:alarm_fraction"
+    ],
+    "config": {
+     "alarm_fraction": 0.581,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.5,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": -0.440763
+   },
+   {
+    "id": "cfg-5ee854243db2",
+    "generation": 2,
+    "parents": [
+     "cfg-52f574a17c81",
+     "cfg-83d4032c8604"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:calibration_folds"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 5,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.499,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": Infinity
+   },
+   {
+    "id": "cfg-c1dfb3542cea",
+    "generation": 2,
+    "parents": [
+     "cfg-83d4032c8604",
+     "cfg-52f574a17c81"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:uniform_share"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0,
+      2.0,
+      3.0
+     ],
+     "uniform_share": 0.377,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": -0.464842
+   },
+   {
+    "id": "cfg-e279d25f1a6f",
+    "generation": 2,
+    "parents": [
+     "cfg-52f574a17c81",
+     "cfg-83d4032c8604"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:whitening"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.5,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.479164
+   },
+   {
+    "id": "cfg-899b6b3b5dec",
+    "generation": 2,
+    "parents": [
+     "cfg-83d4032c8604",
+     "cfg-52f574a17c81"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:whitening",
+     "mutate:uniform_share"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.557,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.483277
+   },
+   {
+    "id": "cfg-c24996eaa805",
+    "generation": 3,
+    "parents": [
+     "cfg-899b6b3b5dec",
+     "cfg-e279d25f1a6f"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:detectors",
+     "mutate:calibration_folds"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 5,
+     "detectors": 1000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.557,
+     "whitening": "full"
+    },
+    "train_mean_loss": Infinity
+   },
+   {
+    "id": "cfg-d9daa72c4d11",
+    "generation": 3,
+    "parents": [
+     "cfg-e279d25f1a6f",
+     "cfg-899b6b3b5dec"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:scale_set"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      0.5,
+      1.0,
+      2.0,
+      3.0
+     ],
+     "uniform_share": 0.557,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.472211
+   },
+   {
+    "id": "cfg-bef094dc453d",
+    "generation": 3,
+    "parents": [
+     "cfg-e279d25f1a6f",
+     "cfg-899b6b3b5dec"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:calibration_folds",
+     "mutate:scale_set"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 5,
+     "detectors": 3000,
+     "scale_set": [
+      0.5,
+      1.0,
+      2.0
+     ],
+     "uniform_share": 0.557,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.482683
+   },
+   {
+    "id": "cfg-e349a379da29",
+    "generation": 3,
+    "parents": [
+     "cfg-899b6b3b5dec",
+     "cfg-e279d25f1a6f"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:uniform_share"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.511,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.485041
+   },
+   {
+    "id": "cfg-3943fc7c237b",
+    "generation": 3,
+    "parents": [
+     "cfg-e279d25f1a6f",
+     "cfg-899b6b3b5dec"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:uniform_share"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.492,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.484857
+   },
+   {
+    "id": "cfg-2a555338684a",
+    "generation": 4,
+    "parents": [
+     "cfg-3943fc7c237b",
+     "cfg-e349a379da29"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:scale_set"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0,
+      2.0
+     ],
+     "uniform_share": 0.511,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.483538
+   },
+   {
+    "id": "cfg-a7bac2771126",
+    "generation": 4,
+    "parents": [
+     "cfg-e349a379da29",
+     "cfg-3943fc7c237b"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:scale_set"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0,
+      2.0,
+      3.0
+     ],
+     "uniform_share": 0.511,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.481282
+   },
+   {
+    "id": "cfg-772e631fee08",
+    "generation": 4,
+    "parents": [
+     "cfg-e349a379da29",
+     "cfg-3943fc7c237b"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:alarm_fraction"
+    ],
+    "config": {
+     "alarm_fraction": 0.646,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.511,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.472015
+   },
+   {
+    "id": "cfg-10adf7acff57",
+    "generation": 4,
+    "parents": [
+     "cfg-3943fc7c237b",
+     "cfg-e349a379da29"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:alarm_fraction"
+    ],
+    "config": {
+     "alarm_fraction": 0.707,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.492,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.47596
+   },
+   {
+    "id": "cfg-3fd170ba8d2e",
+    "generation": 4,
+    "parents": [
+     "cfg-3943fc7c237b",
+     "cfg-e349a379da29"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:uniform_share",
+     "mutate:whitening"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.555,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": -0.462244
+   },
+   {
+    "id": "cfg-9eacfae09a79",
+    "generation": 4,
+    "parents": [
+     "cfg-3943fc7c237b",
+     "cfg-e349a379da29"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:whitening"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.492,
+     "whitening": "diagonal"
+    },
+    "train_mean_loss": -0.469146
+   },
+   {
+    "id": "cfg-97a1289d4cc0",
+    "generation": 4,
+    "parents": [
+     "cfg-e349a379da29",
+     "cfg-3943fc7c237b"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:uniform_share"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.39,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.484698
+   },
+   {
+    "id": "cfg-1f2c1bbcc1d8",
+    "generation": 5,
+    "parents": [
+     "cfg-3943fc7c237b",
+     "cfg-e349a379da29"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:alarm_fraction"
+    ],
+    "config": {
+     "alarm_fraction": 0.627,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.492,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.457997
+   },
+   {
+    "id": "cfg-182223e9978f",
+    "generation": 5,
+    "parents": [
+     "cfg-3943fc7c237b",
+     "cfg-e349a379da29"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:alarm_fraction"
+    ],
+    "config": {
+     "alarm_fraction": 0.789,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.511,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.48724
+   },
+   {
+    "id": "cfg-ea4a2c3c31e5",
+    "generation": 5,
+    "parents": [
+     "cfg-e349a379da29",
+     "cfg-3943fc7c237b"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:calibration_folds"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 5,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.492,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.491254
+   },
+   {
+    "id": "cfg-4486f1996fa3",
+    "generation": 5,
+    "parents": [
+     "cfg-3943fc7c237b",
+     "cfg-e349a379da29"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:uniform_share"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.435,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.47975
+   },
+   {
+    "id": "cfg-7e4fdadb262f",
+    "generation": 5,
+    "parents": [
+     "cfg-e349a379da29",
+     "cfg-3943fc7c237b"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:alarm_fraction"
+    ],
+    "config": {
+     "alarm_fraction": 0.866,
+     "calibration_folds": 3,
+     "detectors": 3000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.492,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.493303
+   },
+   {
+    "id": "cfg-4756da4bce6d",
+    "generation": 5,
+    "parents": [
+     "cfg-e349a379da29",
+     "cfg-3943fc7c237b"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:detectors"
+    ],
+    "config": {
+     "alarm_fraction": 0.75,
+     "calibration_folds": 3,
+     "detectors": 5000,
+     "scale_set": [
+      1.0
+     ],
+     "uniform_share": 0.511,
+     "whitening": "full"
+    },
+    "train_mean_loss": -0.471608
+   }
+  ]
+ },
+ "candidate": {
+  "id": "cfg-7e4fdadb262f",
+  "config": {
+   "alarm_fraction": 0.866,
+   "calibration_folds": 3,
+   "detectors": 3000,
+   "scale_set": [
+    1.0
+   ],
+   "uniform_share": 0.492,
+   "whitening": "full"
+  },
+  "train_mean_loss": -0.493303
+ },
+ "adversarial": {
+  "scarce": {
+   "incumbent": -0.271043,
+   "candidate": Infinity
+  },
+  "strict": {
+   "incumbent": Infinity,
+   "candidate": Infinity
+  },
+  "all_outputs_verified": false
+ },
+ "decision": "REJECT",
+ "reason": "adversarial evaluation failed",
+ "finished_at": "2026-10-09T11:27:17.118573+00:00",
+ "authority_created": false
+}

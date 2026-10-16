@@ -1,0 +1,951 @@
+{
+ "schema": "greg-protected-evolution/1",
+ "target": "forecast_quantile",
+ "rule": "trigger: incumbent worse than the simple baseline on >= 25% of train items; candidate advances if its train mean loss beats the incumbent's by > 1%; adversarial: every output verifies and no stress set worsens by > 5%; RETAIN iff on the held-out split the one-sided exact sign test over paired items gives p < 0.05 and the candidate's mean loss is lower; otherwise REJECT. Never applied automatically.",
+ "started_at": "2026-10-08T01:07:33.738056+00:00",
+ "source_commit": "fe222f44f8ba362f18d885ab91d037d3dc5041bf",
+ "evaluator_seals": {
+  "train": "sha256:7e3928acfba20c6c0259cdaab38b0a6ad2cbb3684e4f0e683d4fa02265c5d12d",
+  "heldout": "sha256:d820fb711421379b6c4321a9ecd976617e57ea513d8c3be03f294ff4ee06b3d9"
+ },
+ "split": {
+  "train": 100,
+  "heldout": 101,
+  "excluded_admission_series": 40
+ },
+ "incumbent": {
+  "config": {
+   "fit_window": 260,
+   "origins": 104,
+   "beta_set": [
+    0.0,
+    0.05,
+    0.1,
+    0.2
+   ],
+   "phi_set": [
+    0.8,
+    0.9,
+    0.98
+   ],
+   "error_model": "log_ratio",
+   "interval_scale": 1.0
+  },
+  "id": "cfg-1214fa9e37a4"
+ },
+ "confinement": {
+  "filesystem": "landlock",
+  "abi": 7,
+  "arbitrary_source": "refused",
+  "scope": "published source/runtime read-only; staged store read/write"
+ },
+ "failure": {
+  "metric": "scaled pinball loss vs naive Gaussian baseline",
+  "rate": 0.45,
+  "trigger": 0.25,
+  "incumbent_mean_train_loss": 0.779078
+ },
+ "residual_geometry": {
+  "category": {
+   "Macro": {
+    "n": 21,
+    "failing": 14
+   },
+   "Finance": {
+    "n": 65,
+    "failing": 25
+   },
+   "Demographic": {
+    "n": 8,
+    "failing": 4
+   },
+   "Other": {
+    "n": 6,
+    "failing": 2
+   }
+  },
+  "history_length": {
+   "long>1000": {
+    "n": 62,
+    "failing": 29
+   },
+   "medium<=1000": {
+    "n": 35,
+    "failing": 13
+   },
+   "short<=300": {
+    "n": 3,
+    "failing": 3
+   }
+  }
+ },
+ "search": {
+  "generations": 5,
+  "population": 8,
+  "evaluated": 28,
+  "lineage": [
+   {
+    "id": "cfg-1214fa9e37a4",
+    "generation": 0,
+    "parents": [],
+    "ops": [
+     "incumbent"
+    ],
+    "config": {
+     "fit_window": 260,
+     "origins": 104,
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ],
+     "error_model": "log_ratio",
+     "interval_scale": 1.0
+    },
+    "train_mean_loss": 0.779078
+   },
+   {
+    "id": "cfg-098672de10db",
+    "generation": 1,
+    "parents": [
+     "cfg-1214fa9e37a4"
+    ],
+    "ops": [
+     "mutate:beta_set"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.02,
+      0.05
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 1.0,
+     "origins": 104,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.791817
+   },
+   {
+    "id": "cfg-06644cac78dd",
+    "generation": 1,
+    "parents": [
+     "cfg-1214fa9e37a4"
+    ],
+    "ops": [
+     "mutate:error_model"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "additive_scaled",
+     "fit_window": 260,
+     "interval_scale": 1.0,
+     "origins": 104,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.780948
+   },
+   {
+    "id": "cfg-b1602d51b80a",
+    "generation": 1,
+    "parents": [
+     "cfg-1214fa9e37a4"
+    ],
+    "ops": [
+     "mutate:phi_set"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 1.0,
+     "origins": 104,
+     "phi_set": [
+      0.9,
+      0.98,
+      1.0
+     ]
+    },
+    "train_mean_loss": 0.816846
+   },
+   {
+    "id": "cfg-330769d8a655",
+    "generation": 1,
+    "parents": [
+     "cfg-1214fa9e37a4"
+    ],
+    "ops": [
+     "mutate:interval_scale"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 0.943,
+     "origins": 104,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.777986
+   },
+   {
+    "id": "cfg-b993870a2258",
+    "generation": 1,
+    "parents": [
+     "cfg-1214fa9e37a4"
+    ],
+    "ops": [
+     "mutate:beta_set"
+    ],
+    "config": {
+     "beta_set": [
+      0.0
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 1.0,
+     "origins": 104,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.785762
+   },
+   {
+    "id": "cfg-fbcf321c5161",
+    "generation": 2,
+    "parents": [
+     "cfg-330769d8a655",
+     "cfg-1214fa9e37a4"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:beta_set"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.02,
+      0.05
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 0.943,
+     "origins": 104,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.792157
+   },
+   {
+    "id": "cfg-ad6ef5e51633",
+    "generation": 2,
+    "parents": [
+     "cfg-330769d8a655",
+     "cfg-1214fa9e37a4"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:phi_set"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 0.943,
+     "origins": 104,
+     "phi_set": [
+      0.9,
+      0.98,
+      1.0
+     ]
+    },
+    "train_mean_loss": 0.812977
+   },
+   {
+    "id": "cfg-64edea043423",
+    "generation": 2,
+    "parents": [
+     "cfg-330769d8a655",
+     "cfg-1214fa9e37a4"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:beta_set",
+     "mutate:interval_scale"
+    ],
+    "config": {
+     "beta_set": [
+      0.0
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 1.008,
+     "origins": 104,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.786311
+   },
+   {
+    "id": "cfg-b33af44b3ecb",
+    "generation": 2,
+    "parents": [
+     "cfg-1214fa9e37a4",
+     "cfg-330769d8a655"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:origins"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 0.943,
+     "origins": 52,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.753371
+   },
+   {
+    "id": "cfg-21b28e11eb18",
+    "generation": 2,
+    "parents": [
+     "cfg-1214fa9e37a4",
+     "cfg-330769d8a655"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:phi_set",
+     "mutate:origins"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 1.0,
+     "origins": 208,
+     "phi_set": [
+      0.9,
+      0.98,
+      1.0
+     ]
+    },
+    "train_mean_loss": 0.843494
+   },
+   {
+    "id": "cfg-3beab54d00ce",
+    "generation": 3,
+    "parents": [
+     "cfg-330769d8a655",
+     "cfg-b33af44b3ecb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:phi_set",
+     "mutate:error_model"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "additive_scaled",
+     "fit_window": 260,
+     "interval_scale": 0.943,
+     "origins": 52,
+     "phi_set": [
+      0.98,
+      1.0
+     ]
+    },
+    "train_mean_loss": 0.90113
+   },
+   {
+    "id": "cfg-447f947e8c09",
+    "generation": 3,
+    "parents": [
+     "cfg-330769d8a655",
+     "cfg-b33af44b3ecb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:interval_scale"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 0.929,
+     "origins": 104,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.778126
+   },
+   {
+    "id": "cfg-26124f2417b6",
+    "generation": 3,
+    "parents": [
+     "cfg-330769d8a655",
+     "cfg-b33af44b3ecb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:error_model",
+     "mutate:interval_scale"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "additive_scaled",
+     "fit_window": 260,
+     "interval_scale": 0.713,
+     "origins": 52,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.794064
+   },
+   {
+    "id": "cfg-68b994fec179",
+    "generation": 3,
+    "parents": [
+     "cfg-330769d8a655",
+     "cfg-b33af44b3ecb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:beta_set",
+     "mutate:origins"
+    ],
+    "config": {
+     "beta_set": [
+      0.0
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 0.943,
+     "origins": 208,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.85458
+   },
+   {
+    "id": "cfg-201c1be4b3b6",
+    "generation": 3,
+    "parents": [
+     "cfg-330769d8a655",
+     "cfg-b33af44b3ecb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:interval_scale"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 0.794,
+     "origins": 104,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.79023
+   },
+   {
+    "id": "cfg-7a845995e588",
+    "generation": 3,
+    "parents": [
+     "cfg-330769d8a655",
+     "cfg-b33af44b3ecb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:origins",
+     "mutate:fit_window"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 156,
+     "interval_scale": 0.943,
+     "origins": 156,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.738269
+   },
+   {
+    "id": "cfg-b7a011b1f3fb",
+    "generation": 4,
+    "parents": [
+     "cfg-b33af44b3ecb",
+     "cfg-7a845995e588"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:fit_window",
+     "mutate:phi_set"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 156,
+     "interval_scale": 0.943,
+     "origins": 52,
+     "phi_set": [
+      0.98,
+      1.0
+     ]
+    },
+    "train_mean_loss": 0.859914
+   },
+   {
+    "id": "cfg-608efe9c26d6",
+    "generation": 4,
+    "parents": [
+     "cfg-7a845995e588",
+     "cfg-b33af44b3ecb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:interval_scale"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 156,
+     "interval_scale": 0.844,
+     "origins": 52,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.746898
+   },
+   {
+    "id": "cfg-c494ef7cbbf9",
+    "generation": 4,
+    "parents": [
+     "cfg-b33af44b3ecb",
+     "cfg-7a845995e588"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:error_model"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "additive_scaled",
+     "fit_window": 260,
+     "interval_scale": 0.943,
+     "origins": 52,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.7541
+   },
+   {
+    "id": "cfg-35d2815d57a8",
+    "generation": 4,
+    "parents": [
+     "cfg-7a845995e588",
+     "cfg-b33af44b3ecb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:error_model"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "additive_scaled",
+     "fit_window": 156,
+     "interval_scale": 0.943,
+     "origins": 156,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.739922
+   },
+   {
+    "id": "cfg-9ed812d4b2bd",
+    "generation": 4,
+    "parents": [
+     "cfg-b33af44b3ecb",
+     "cfg-7a845995e588"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:phi_set",
+     "mutate:interval_scale"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 260,
+     "interval_scale": 1.093,
+     "origins": 156,
+     "phi_set": [
+      0.9,
+      0.98,
+      1.0
+     ]
+    },
+    "train_mean_loss": 0.820798
+   },
+   {
+    "id": "cfg-9d362cfca19f",
+    "generation": 4,
+    "parents": [
+     "cfg-b33af44b3ecb",
+     "cfg-7a845995e588"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:error_model",
+     "mutate:phi_set"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "additive_scaled",
+     "fit_window": 260,
+     "interval_scale": 0.943,
+     "origins": 156,
+     "phi_set": [
+      0.9,
+      0.98,
+      1.0
+     ]
+    },
+    "train_mean_loss": 0.798047
+   },
+   {
+    "id": "cfg-f649becbd7a4",
+    "generation": 4,
+    "parents": [
+     "cfg-7a845995e588",
+     "cfg-b33af44b3ecb"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:fit_window"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 104,
+     "interval_scale": 0.943,
+     "origins": 156,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.749026
+   },
+   {
+    "id": "cfg-0b72987c1ccd",
+    "generation": 5,
+    "parents": [
+     "cfg-35d2815d57a8",
+     "cfg-7a845995e588"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:beta_set"
+    ],
+    "config": {
+     "beta_set": [
+      0.0
+     ],
+     "error_model": "log_ratio",
+     "fit_window": 156,
+     "interval_scale": 0.943,
+     "origins": 156,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.790454
+   },
+   {
+    "id": "cfg-1124ceadaaa0",
+    "generation": 5,
+    "parents": [
+     "cfg-35d2815d57a8",
+     "cfg-7a845995e588"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:origins"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "additive_scaled",
+     "fit_window": 156,
+     "interval_scale": 0.943,
+     "origins": 208,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.779396
+   },
+   {
+    "id": "cfg-3ace2d36d744",
+    "generation": 5,
+    "parents": [
+     "cfg-7a845995e588",
+     "cfg-35d2815d57a8"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:beta_set"
+    ],
+    "config": {
+     "beta_set": [
+      0.0
+     ],
+     "error_model": "additive_scaled",
+     "fit_window": 156,
+     "interval_scale": 0.943,
+     "origins": 156,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.79145
+   },
+   {
+    "id": "cfg-8d4dd808fdd5",
+    "generation": 5,
+    "parents": [
+     "cfg-35d2815d57a8",
+     "cfg-7a845995e588"
+    ],
+    "ops": [
+     "crossover",
+     "mutate:fit_window",
+     "mutate:origins"
+    ],
+    "config": {
+     "beta_set": [
+      0.0,
+      0.05,
+      0.1,
+      0.2
+     ],
+     "error_model": "additive_scaled",
+     "fit_window": 260,
+     "interval_scale": 0.943,
+     "origins": 208,
+     "phi_set": [
+      0.8,
+      0.9,
+      0.98
+     ]
+    },
+    "train_mean_loss": 0.790982
+   }
+  ]
+ },
+ "candidate": {
+  "id": "cfg-7a845995e588",
+  "config": {
+   "beta_set": [
+    0.0,
+    0.05,
+    0.1,
+    0.2
+   ],
+   "error_model": "log_ratio",
+   "fit_window": 156,
+   "interval_scale": 0.943,
+   "origins": 156,
+   "phi_set": [
+    0.8,
+    0.9,
+    0.98
+   ]
+  },
+  "train_mean_loss": 0.738269
+ },
+ "adversarial": {
+  "short": {
+   "incumbent": 0.934593,
+   "candidate": 0.948784
+  },
+  "shift": {
+   "incumbent": 1.657236,
+   "candidate": 1.447427
+  },
+  "all_outputs_verified": true
+ },
+ "heldout": {
+  "n": 101,
+  "candidate_wins": 42,
+  "candidate_losses": 59,
+  "sign_test_p_one_sided": 0.963621,
+  "incumbent_mean_loss": 0.753682,
+  "candidate_mean_loss": 0.777903,
+  "relative_improvement": -0.0321
+ },
+ "decision": "REJECT",
+ "proposal": null,
+ "finished_at": "2026-10-08T01:08:11.728220+00:00",
+ "authority_created": false
+}

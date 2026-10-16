@@ -963,3 +963,179 @@ def test_a_confined_process_in_a_virtualenv_can_start_its_interpreter(tmp_path):
     proc = subprocess.run([str(tmp_path / "v" / "bin" / "python"), "-I", "-c", code], capture_output=True, text=True,
                           timeout=120)
     assert proc.stdout.strip() == "0", proc.stdout + proc.stderr
+
+
+# ------------------------------------------------------------------ cycle 5 design (2026-10-16): a frozen search policy
+# Recorded cycles ran the search with seed 20261008 (cycle 4's freeze names it; cycles 1-3 used the default).
+RECORDED_CYCLES = ("2026-10-08/cycle-forecast-1.json", "2026-10-09/cycle-immune-2.json",
+                   "2026-10-14/cycle-cr-3.json", "2026-10-15-cr-4/cycle-cr-4.json")
+
+
+@pytest.mark.parametrize("path", RECORDED_CYCLES)
+def test_every_recorded_cycles_search_replays_from_its_record_through_run_search(path):
+    """The search left cycle() for run_search(); the default policy is the same search draw for draw: replayed
+    with each recorded configuration's recorded train loss, it visits the recorded lineage in order and selects the
+    recorded candidate. No instance of any split is generated."""
+    record = json.loads((E.EVIDENCE / path).read_text())
+    target = E.TARGET_SPECS[record["target"]]().target()
+    assert target.incumbent == record["incumbent"]["config"]
+    recorded = {step["id"]: step["train_mean_loss"] for step in record["search"]["lineage"]}
+    setting = E.search_setting(target, seed=20261008)
+    assert setting == {"policy": "mutate-incumbent/1"}
+    found = E.run_search(target, lambda config: {"x": recorded[E.config_id(config)]},
+                         generations=record["search"]["generations"], population=record["search"]["population"],
+                         seed=20261008, incumbent_loss=record["failure"]["incumbent_mean_train_loss"],
+                         initial=setting.get("initial", ()))
+    assert [s["id"] for s in found["lineage"]] == [s["id"] for s in record["search"]["lineage"]]
+    assert [s["ops"] for s in found["lineage"]] == [s["ops"] for s in record["search"]["lineage"]]
+    assert found["evaluated"] == record["search"]["evaluated"] and found["candidate"]["id"] == record["candidate"]["id"]
+
+
+def test_the_cover_policy_declares_axis_extremes_and_a_latin_hypercube_inside_the_closed_space():
+    target = E.cr_target()
+    setting = E.search_setting(target, "cover/1", seed=20261016, lhs=16)
+    assert setting["policy"] == "cover/1" and setting["lhs"] == 16
+    initial = setting["initial"]
+    ids = [E.config_id(c) for c in initial]
+    assert len(ids) == len(set(ids)) and E.config_id(target.incumbent) not in ids
+    assert all(target.validate(c) == c for c in initial)
+    axis = E._axis_cover(target)
+    # every axis extreme that differs from the incumbent, p_restart = 1.0 among them; then exactly lhs points
+    expected_axis = [c for c in axis if E.config_id(c) != E.config_id(target.incumbent)]
+    assert initial[:len(expected_axis)] == expected_axis and len(initial) == len(expected_axis) + 16
+    assert {**target.incumbent, "p_restart": 1.0} in initial
+    lhs = initial[len(expected_axis):]
+    for key, (kind, values) in target.space.items():
+        column = [c[key] for c in lhs]
+        if kind == "float":                       # one point in each of 16 equal strata
+            lo, hi = values
+            strata = sorted(min(15, int((v - lo) / (hi - lo) * 16)) for v in column)
+            assert strata == list(range(16)), (key, column)
+        else:                                     # each choice used, counts differ by at most one
+            counts = [column.count(v) for v in values]
+            assert max(counts) - min(counts) <= 1 and min(counts) >= 1, (key, counts)
+    assert E.search_setting(target, "cover/1", seed=20261016, lhs=16) == setting           # deterministic
+    assert E.search_setting(target, "cover/1", seed=1, lhs=16)["initial"][len(expected_axis):] != lhs
+    assert E.search_setting(target, "cover/1", seed=1, lhs=0)["initial"] == expected_axis
+
+
+@pytest.mark.parametrize("policy,lhs,why", [("mutate-incumbent/1", 4, "declares no cover"),
+                                            ("cover/1", 65, "lhs is an integer"), ("cover/1", True, "lhs is an integer"),
+                                            ("cover/1", 2.0, "lhs is an integer"), ("anneal/1", 0, "unknown search")])
+def test_a_search_setting_outside_its_declared_policies_is_refused(policy, lhs, why):
+    with pytest.raises(E.EvolutionError, match=why):
+        E.search_setting(E.cr_target(), policy, seed=1, lhs=lhs)
+
+
+def test_a_cover_search_reaches_the_declared_region_and_keeps_the_default_stream():
+    """Generation 1 evaluates the incumbent's mutants (the same draws as the default policy), then the declared
+    cover; a region far from the incumbent becomes a candidate when it scores best."""
+    target = E.cr_target()
+
+    def evaluate(config):                          # a loss that favours restart-heavy search policies
+        return {"x": 1.0 - config["p_restart"] + 0.001 * config["mu"]}
+    incumbent_loss = round(1.0 + 0.001 * target.incumbent["mu"], 6)
+    default = E.run_search(target, evaluate, generations=3, population=4, seed=7, incumbent_loss=incumbent_loss)
+    cover = E.search_setting(target, "cover/1", seed=7, lhs=8)
+    found = E.run_search(target, evaluate, generations=3, population=4, seed=7, incumbent_loss=incumbent_loss,
+                         initial=cover["initial"])
+    first = [s for s in found["lineage"] if s["generation"] == 1]
+    mutants = [s["id"] for s in default["lineage"] if s["generation"] == 1]
+    assert [s["id"] for s in first[:len(mutants)]] == mutants
+    assert {op for s in first[len(mutants):] for op in s["ops"]} == {"cover:axis", "cover:lhs"}
+    assert all(s["parents"] == [] for s in first[len(mutants):])
+    assert found["candidate"]["config"]["p_restart"] == 1.0
+    assert max(s["config"]["p_restart"] for s in default["lineage"]) < 1.0
+
+
+def _cr_dev_split(monkeypatch):
+    from greg.cognition.genomes import developmental as D
+
+    def dev(seeds):
+        return {f"s{s}": {"data": D.constraint_release_instance(s)[0], "truth": D.constraint_release_instance(s)[1],
+                          "category": D.constraint_release_subregion(D.constraint_release_instance(s)[0])}
+                for s in seeds}
+    monkeypatch.setattr(E, "cr_split", lambda name=E.CR_CURRENT_SPLIT: (dev((1, 2)), dev((4, 5)), []))
+
+
+def test_the_search_setting_is_frozen_with_every_configuration_and_re_derived_by_the_cycle(monkeypatch, tmp_path):
+    """The freeze records the policy and the configurations it declares; a cycle re-derives them and refuses a
+    frozen list, policy or seed that differs, and a run whose own setting differs from the freeze."""
+    monkeypatch.setattr(E, "_dirty", lambda paths: [])
+    monkeypatch.setattr(E, "_spent_heldout", lambda *a, **k: {})
+    monkeypatch.setattr(E, "FAILURE_RATE_TRIGGER", 1.01)              # stop after the incumbent's train evaluation
+    _cr_dev_split(monkeypatch)
+    path = tmp_path / "freeze.json"
+    manifest = E.freeze("constraint_release", path, generations=2, population=2, seed=11, search="cover/1", lhs=4)
+    settings = manifest["inputs"]["settings"]
+    assert manifest["inputs"]["schema"] == E.FREEZE_SCHEMA == "greg-protected-evolution-freeze/3"
+    assert settings["search"] == E.search_setting(E.cr_target(), "cover/1", seed=11, lhs=4)
+    assert json.loads(path.read_text())["inputs"]["settings"] == settings
+    confine = isolation.available()["available"]
+    frozen = json.loads(path.read_text())["inputs"]["settings"]
+    record = E.cycle(target_name="constraint_release", freeze=path, require_confinement=confine, **frozen)  # as __main__
+    assert record["decision"] == "NO_RECURRING_FAILURE"
+    edited = json.loads(json.dumps(frozen["search"]))
+    edited["initial"][0]["p_restart"] = 0.5
+    with pytest.raises(E.EvolutionError, match="not what its declared policy produces"):
+        E.cycle(target_name="constraint_release", freeze=path, require_confinement=confine,
+                **{**frozen, "search": edited})
+    with pytest.raises(E.EvolutionError, match="FROZEN_INPUT_CHANGED: the search settings differ"):
+        E.cycle(target_name="constraint_release", freeze=path, require_confinement=confine,
+                **{**frozen, "search": None})                   # the default policy, not the frozen cover
+    with pytest.raises(E.EvolutionError, match="not what its declared policy produces"):
+        E.cycle(target_name="constraint_release", freeze=path, require_confinement=confine,
+                **{**frozen, "seed": 12})                       # another seed draws another hypercube
+    with pytest.raises(E.EvolutionError, match="a search setting is"):
+        E.cycle(target_name="constraint_release", freeze=path, require_confinement=confine,
+                **{**frozen, "search": {**frozen["search"], "evaluator": "x"}})
+    with pytest.raises(E.EvolutionError, match="population is an integer"):
+        E.freeze("constraint_release", tmp_path / "g.json", population=True)
+
+
+def test_the_cycle_5_split_is_fresh_and_checked_without_generating_an_instance(monkeypatch):
+    from greg.cognition.genomes import admission, developmental as D
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(D, "constraint_release_instance", refuse)
+    assert E.CR_CURRENT_SPLIT == "cycle-5"
+    train, held, reserved = E.cr_split_seeds("cycle-5")
+    assert (train, held) == (tuple(range(7600, 7660)), tuple(range(7700, 7880)))     # the pre-registered split
+    earlier = {s for name in ("cycle-3", "cycle-4") for part in E.CR_SPLITS[name] for s in part}
+    others = earlier | set(E.IMMUNE_TRAIN_SEEDS) | set(E.IMMUNE_HELDOUT_SEEDS) | set(admission.DEV_SEEDS) | \
+        set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
+    assert others <= reserved and not (set(train) | set(held)) & others
+    assert set(train) | set(held) <= set(admission.P8_RESERVED)
+    assert not any({f"s{s}" for s in held} & ids for ids in E._spent_heldout("constraint_release").values())
+    assert {f"s{s}" for s in held} <= E._registered_heldout("constraint_release")   # a test run never looks at it
+    for bad in ({"cycle-x": (tuple(range(7450, 7470)), tuple(range(7800, 7810)))},     # overlaps cycle 4's train
+                {"cycle-x": (tuple(range(3000, 3010)), tuple(range(7800, 7810)))},     # outside P8's range
+                {"cycle-x": (tuple(range(7800, 7810)), tuple(range(7805, 7815)))},     # train meets held-out
+                {"cycle-x": ((7800, 7800), tuple(range(7805, 7815)))}):                # a repeated seed
+        monkeypatch.setattr(E, "CR_SPLITS", {**E.CR_SPLITS, **bad})
+        with pytest.raises(E.EvolutionError, match="overlap"):
+            E.cr_split_seeds("cycle-x")
+        with pytest.raises(E.EvolutionError, match="overlap"):
+            E.cr_split("cycle-x")                               # the guard runs before any instance
+    with pytest.raises(E.EvolutionError, match="unknown"):
+        E.cr_split_seeds("cycle-9")
+
+
+def test_earlier_constraint_release_splits_and_the_seal_code_are_unchanged():
+    """Cycles 3 and 4 re-seal at HEAD only if their seeds and the seal's code (SealedEvaluator, the target's score
+    and RULE) are unchanged. Checked here without generating their instances; the re-seal of cycle 3 from its
+    instances is test_an_earlier_cycles_split_reproduces_its_frozen_evaluator_seals."""
+    import hashlib
+    import inspect
+    from greg.cognition.genomes import developmental as D
+    freeze4 = json.loads((E.EVIDENCE / "2026-10-15-cr-4/freeze.json").read_text())["inputs"]
+    train4, held4 = E.CR_SPLITS["cycle-4"]
+    assert sorted(f"s{s}" for s in train4) == freeze4["split"]["train"]
+    assert sorted(f"s{s}" for s in held4) == freeze4["split"]["heldout"]
+    assert E.CR_SPLITS["cycle-3"] == (tuple(range(7200, 7260)), tuple(range(7300, 7390)))
+    assert freeze4["rule"] == E.RULE
+    code = inspect.getsource(E.SealedEvaluator) + inspect.getsource(D.constraint_release_score) + E.RULE
+    # computed at c8d1fd3, where the seal code is byte-identical to cycle 4's commit 2cbb43d
+    assert hashlib.sha256(code.encode()).hexdigest() == \
+        "98c39cdd809f3509140dc2d23ce0c70301d5b3e3eb34e91b847b4e2bbfc08b3d"

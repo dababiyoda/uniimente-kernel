@@ -31,7 +31,9 @@ classes, credentials, budgets, shutdown, targets, frozen evidence, its own accep
 
 Pre-registration: a cycle that writes a record runs against a committed freeze (``freeze``: the digests of every
 file the cycle can execute or read - the static import closure, as the admission harness freezes it - the rule and
-its constants, the settings, the split and both evaluator seals) and refuses any difference at the start, before
+its constants, the settings - generations, population, search seed and the search policy (``SEARCH_POLICIES``) with
+every configuration it declares, re-derived by the cycle and never trusted from the file - the split and both
+evaluator seals) and refuses any difference at the start, before
 every evaluation and before writing. Every repository file either process executes must be in that closure at its
 frozen digest: the sandbox hashes the bytes it compiles and never reads repository bytecode; the parent's run is a
 clean room (``python -m greg.cognition.evolution --freeze F --out O``: a fresh detached checkout of HEAD, entered
@@ -226,10 +228,13 @@ def _immune_spec() -> TargetSpec:
 CR_TRAIN_SEEDS = tuple(range(7200, 7260))
 CR_HELDOUT_SEEDS = tuple(range(7300, 7390))
 # Each cycle on this target draws its own split; earlier splits stay reproducible by name. Cycle 4 (2026-10-15):
-# admission v3 still measured headroom (random restart 13-10 against version 1.2.0).
+# admission v3 still measured headroom (random restart 13-10 against version 1.2.0). Cycle 5 (pre-registered
+# 2026-10-16): the cover/1 search on a split no earlier cycle, freeze, admission or immune seed has drawn, with 180
+# held-out items (a review-seed pilot measured that 90 leaves a real advantage kept about half the time).
 CR_SPLITS = {"cycle-3": (CR_TRAIN_SEEDS, CR_HELDOUT_SEEDS),
-             "cycle-4": (tuple(range(7400, 7460)), tuple(range(7500, 7590)))}
-CR_CURRENT_SPLIT = "cycle-4"
+             "cycle-4": (tuple(range(7400, 7460)), tuple(range(7500, 7590))),
+             "cycle-5": (tuple(range(7600, 7660)), tuple(range(7700, 7880)))}
+CR_CURRENT_SPLIT = "cycle-5"
 
 
 def cr_target() -> Target:
@@ -237,17 +242,28 @@ def cr_target() -> Target:
     return Target("constraint_release", developmental.CR_CONFIG_SPACE, dict(developmental.CR_DEFAULT_CONFIG))
 
 
-def cr_split(name: str = CR_CURRENT_SPLIT) -> tuple[dict, dict, list[str]]:
-    """Seeded scheduling instances reserved for P8, disjoint from every admission seed, every other P8 target's
-    seeds and every other cycle's split on this target."""
-    from .genomes import admission, developmental
+def cr_split_seeds(name: str = CR_CURRENT_SPLIT) -> tuple[tuple, tuple, set]:
+    """A named split's train and held-out seeds and the seeds it must avoid, or EvolutionError. Generates nothing:
+    a split is checked before any of its instances exists."""
+    from .genomes import admission
+    if name not in CR_SPLITS:
+        raise EvolutionError(f"unknown constraint-release split {name!r}")
     train_seeds, heldout_seeds = CR_SPLITS[name]
     reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
                 | set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS)
                 | {s for other, seeds in CR_SPLITS.items() if other != name for part in seeds for s in part})
     if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
+            or len(set(train_seeds)) != len(train_seeds) or len(set(heldout_seeds)) != len(heldout_seeds)
             or not (set(train_seeds) | set(heldout_seeds)) <= set(admission.P8_RESERVED)):
         raise EvolutionError("P8 constraint-release seeds overlap admission or earlier P8 seeds")
+    return train_seeds, heldout_seeds, reserved
+
+
+def cr_split(name: str = CR_CURRENT_SPLIT) -> tuple[dict, dict, list[str]]:
+    """Seeded scheduling instances reserved for P8, disjoint from every admission seed, every other P8 target's
+    seeds and every other cycle's split on this target (``cr_split_seeds``)."""
+    from .genomes import developmental
+    train_seeds, heldout_seeds, reserved = cr_split_seeds(name)
 
     def item(seed):
         data, truth = developmental.constraint_release_instance(seed)
@@ -318,6 +334,120 @@ def mutate(target: Target, config: dict, rng: random.Random) -> tuple[dict, list
 def crossover(target: Target, a: dict, b: dict, rng: random.Random) -> tuple[dict, list[str]]:
     child = {k: (a[k] if rng.random() < 0.5 else b[k]) for k in target.space}
     return target.validate(child), ["crossover"]
+
+
+# ------------------------------------------------------------------ search policy (a trusted setting, frozen)
+# How the trusted parent explores the closed space. It is a setting of the cycle, written into the freeze with every
+# configuration it declares, never something a candidate sets. Cycles 1-4 ran mutate-incumbent/1, which starts from
+# mutants of the incumbent: cycle 4's five generations never moved p_restart above 0.339 although the space allows
+# 1.0. cover/1 (cycle 5's design, informed by that record and by a pilot on review seeds) also evaluates a declared
+# cover of the space in generation 1, so a region far from the incumbent is reachable by construction.
+SEARCH_POLICIES = {
+    "mutate-incumbent/1": "generation 1 is population - 1 mutants of the incumbent; each later generation is "
+                          "population children by crossover of two of the best max(2, population // 3) "
+                          "configurations so far, then mutation (cycles 1-4)",
+    "cover/1": "as mutate-incumbent/1, and generation 1 also evaluates, after the mutants and from its own random "
+               "stream, a declared cover of the closed space: the incumbent with one key at a time moved to each "
+               "bound of a float and to each other choice, then a Latin hypercube of `lhs` points (each float range "
+               "cut into `lhs` equal strata, one point per stratum; choices balanced); the freeze lists every "
+               "configuration",
+}
+DEFAULT_SEARCH = "mutate-incumbent/1"
+MAX_LHS = 64
+
+
+def _axis_cover(target: Target) -> list[dict]:
+    """The incumbent with one key moved at a time: each float to each bound, each choice to each other value."""
+    out = []
+    for key, (kind, values) in sorted(target.space.items()):
+        for value in (values if kind == "choice" else (values[0], values[1])):
+            out.append(target.validate({**target.incumbent, key: value}))
+    return out
+
+
+def _latin_hypercube(target: Target, n: int, seed: int) -> list[dict]:
+    """``n`` configurations: each float range cut into n equal strata with one point per stratum (rounded as a
+    mutation rounds), each choice taking its values in turn; every column shuffled independently. Its own random
+    stream, so the search's stream is the same draw for draw with or without a cover."""
+    rng = random.Random(f"cover/1:{seed}")
+    columns = {}
+    for key, (kind, values) in sorted(target.space.items()):
+        if kind == "float":
+            lo, hi = values
+            column = [min(hi, max(lo, round(lo + (hi - lo) * (i + rng.random()) / n, 3))) for i in range(n)]
+        else:
+            column = [values[i % len(values)] for i in range(n)]
+        rng.shuffle(column)
+        columns[key] = column
+    return [target.validate({key: columns[key][i] for key in target.space}) for i in range(n)]
+
+
+def search_setting(target: Target, policy: str = DEFAULT_SEARCH, *, seed: int, lhs: int = 0) -> dict:
+    """The search setting a freeze records: the policy, its parameter and every configuration it declares."""
+    if policy not in SEARCH_POLICIES:
+        raise EvolutionError(f"unknown search policy {policy!r}; declared: {sorted(SEARCH_POLICIES)}")
+    if policy == "mutate-incumbent/1":
+        if lhs:
+            raise EvolutionError("mutate-incumbent/1 declares no cover")
+        return {"policy": policy}
+    if type(lhs) is not int or not 0 <= lhs <= MAX_LHS:
+        raise EvolutionError(f"cover/1: lhs is an integer in [0, {MAX_LHS}]")
+    seen, initial = {config_id(target.incumbent)}, []
+    for config in _axis_cover(target) + (_latin_hypercube(target, lhs, seed) if lhs else []):
+        if config_id(config) not in seen:
+            seen.add(config_id(config))
+            initial.append(config)
+    return {"policy": policy, "lhs": lhs, "initial": initial}
+
+
+def checked_search_setting(target: Target, setting, *, seed: int) -> dict:
+    """``setting`` if it is exactly what its declared policy produces for this target and seed (a frozen list of
+    configurations is re-derived and compared, never trusted), else EvolutionError."""
+    if setting is None:
+        return search_setting(target, seed=seed)
+    if not isinstance(setting, dict) or set(setting) - {"policy", "lhs", "initial"}:
+        raise EvolutionError("a search setting is {policy, lhs, initial}")
+    want = search_setting(target, setting.get("policy"), seed=seed, lhs=setting.get("lhs", 0))
+    if canonical(setting) != canonical(want):
+        raise EvolutionError("FROZEN_INPUT_CHANGED: the search setting is not what its declared policy produces")
+    return want
+
+
+def run_search(target: Target, evaluate, *, generations: int, population: int, seed: int, incumbent_loss: float,
+           initial=()) -> dict:
+    """The trusted parent's search inside the closed space. ``evaluate(config)`` returns its loss per train item;
+    the incumbent enters at ``incumbent_loss`` (the cycle passes its recorded, rounded train loss). Returns the
+    lineage, the number of configurations evaluated and the one with the lowest train mean loss (ties by id)."""
+    rng = random.Random(seed)
+    incumbent_id = config_id(target.incumbent)
+    lineage, scored = [], {}
+
+    def consider(config, parents, ops, generation):
+        cid = config_id(config)
+        if cid not in scored:
+            scored[cid] = (statistics.fmean(evaluate(config).values()), config)
+            lineage.append({"id": cid, "generation": generation, "parents": parents, "ops": ops, "config": config,
+                            "train_mean_loss": round(scored[cid][0], 6)})
+    scored[incumbent_id] = (incumbent_loss, target.incumbent)
+    lineage.append({"id": incumbent_id, "generation": 0, "parents": [], "ops": ["incumbent"],
+                    "config": target.incumbent, "train_mean_loss": incumbent_loss})
+    for _ in range(population - 1):
+        child, ops = mutate(target, target.incumbent, rng)
+        consider(child, [incumbent_id], ops, 1)
+    axis = {config_id(c) for c in _axis_cover(target)}
+    for config in initial:
+        config = target.validate(config)
+        consider(config, [], ["cover:axis" if config_id(config) in axis else "cover:lhs"], 1)
+    for generation in range(2, generations + 1):
+        elite = sorted(scored.values(), key=lambda v: v[0])[:max(2, population // 3)]
+        for _ in range(population):
+            a, b = rng.sample(elite, 2) if len(elite) > 1 else (elite[0], elite[0])
+            child, ops = crossover(target, a[1], b[1], rng)
+            child, more = mutate(target, child, rng)
+            consider(child, [config_id(a[1]), config_id(b[1])], ops + more, generation)
+    best_loss, best = min(scored.values(), key=lambda v: (v[0], config_id(v[1])))
+    return {"lineage": lineage, "evaluated": len(scored),
+            "candidate": {"id": config_id(best), "config": best, "train_mean_loss": best_loss}}
 
 
 # ------------------------------------------------------------------ isolation
@@ -444,7 +574,8 @@ TRUSTED_CLOSURE = ("greg/cognition/evolution.py", "greg/cognition/evolution_sand
                    "greg/capabilities.py", "tools/offline_test.py", "greg/cognition/genomes/contract.py",
                    "greg/cognition/contracts.py", "greg/improvement.py", "greg/cognition/genomes/admission.py")
 TARGET_DATA = {"forecast_quantile": ("cortex/evaluation/data/m4_weekly.json.gz",)}
-FREEZE_SCHEMA = "greg-protected-evolution-freeze/2"
+# /3 (cycle 5): the settings carry the search policy and every configuration it declares
+FREEZE_SCHEMA = "greg-protected-evolution-freeze/3"
 EVIDENCE = ROOT / "docs" / "evidence" / "greg-protected-evolution"
 
 
@@ -633,25 +764,37 @@ def _refuse_spent(target_name: str, heldout, exclude: Path | None = None):
         raise EvolutionError(f"SPLIT_SPENT: held-out items already looked at by {clash}; define a fresh split")
 
 
-def freeze_inputs(target_name: str, *, generations: int, population: int, seed: int) -> dict:
+def _settings(generations, population, seed, search) -> dict:
+    for name, value, low in (("generations", generations, 1), ("population", population, 2), ("seed", seed, 0)):
+        if type(value) is not int or value < low:
+            raise EvolutionError(f"{name} is an integer >= {low}")
+    return {"generations": generations, "population": population, "seed": seed, "search": search}
+
+
+def freeze_inputs(target_name: str, *, generations: int, population: int, seed: int, search: str = DEFAULT_SEARCH,
+                  lhs: int = 0) -> dict:
     """What a cycle's pre-registration fixes before any candidate runs: the rule and its constants, the search
-    settings, the split (item ids) and both evaluators' seals (code, outcomes and inputs), and the digest of every
-    file the cycle can execute or read. ``cycle`` refuses to report if any of them differs."""
+    settings (generations, population, seed and the search policy with every configuration it declares), the split
+    (item ids) and both evaluators' seals (code, outcomes and inputs), and the digest of every file the cycle can
+    execute or read. ``cycle`` refuses to report if any of them differs."""
     if target_name not in TARGET_SPECS:
         raise EvolutionError(f"unknown evolution target {target_name!r}")
     spec = TARGET_SPECS[target_name]()
+    setting = search_setting(spec.target(), search, seed=seed, lhs=lhs)
+    settings = _settings(generations, population, seed, setting)
     train_items, heldout_items, excluded = spec.split()
     return {"schema": FREEZE_SCHEMA, "target": target_name, "rule": RULE,
             "constants": {"failure_rate_trigger": FAILURE_RATE_TRIGGER, "train_gain_min": TRAIN_GAIN_MIN,
                           "stress_tolerance": STRESS_TOLERANCE, "alpha": ALPHA},
-            "settings": {"generations": generations, "population": population, "seed": seed},
+            "settings": settings,
             "split": {"train": sorted(train_items), "heldout": sorted(heldout_items), "excluded": len(excluded)},
             "seals": {"train": SealedEvaluator(train_items, spec.score).seal,
                       "heldout": SealedEvaluator(heldout_items, spec.score).seal},
             "code": _code(target_name)}
 
 
-def freeze(target_name: str, path: Path, *, generations: int = 5, population: int = 8, seed: int = 20261008) -> dict:
+def freeze(target_name: str, path: Path, *, generations: int = 5, population: int = 8, seed: int = 20261008,
+           search: str = DEFAULT_SEARCH, lhs: int = 0) -> dict:
     """Write a cycle's pre-registration. Refuses to overwrite one, refuses a trusted file whose bytes differ from
     HEAD (the freeze must describe committed code), and refuses a held-out split any earlier cycle or freeze has
     already looked at."""
@@ -661,7 +804,8 @@ def freeze(target_name: str, path: Path, *, generations: int = 5, population: in
     dirty = _dirty(trusted_closure(target_name))
     if dirty:
         raise EvolutionError(f"DIRTY_TREE: commit the trusted files before freezing: {dirty}")
-    inputs = freeze_inputs(target_name, generations=generations, population=population, seed=seed)
+    inputs = freeze_inputs(target_name, generations=generations, population=population, seed=seed, search=search,
+                           lhs=lhs)
     _refuse_spent(target_name, inputs["split"]["heldout"], exclude=path)
     manifest = {"frozen_at": datetime.now(timezone.utc).isoformat(), "inputs": inputs}
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -721,7 +865,7 @@ def _stress(items: dict) -> dict:
 
 def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, out: Path | None = None,
           require_confinement: bool = True, target_name: str = "forecast_quantile", freeze: Path | None = None,
-          allow_dirty_for_test: bool = False, launcher: str | None = None) -> dict:
+          allow_dirty_for_test: bool = False, launcher: str | None = None, search: dict | None = None) -> dict:
     """One protected-evolution cycle.
 
     A cycle that writes a record (``out``) must name its pre-registered freeze (``freeze``, written by
@@ -752,6 +896,8 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
                                  f"python -m greg.cognition.evolution --freeze F --out O")
     spec = TARGET_SPECS[target_name]()
     target = spec.target()
+    search_cfg = checked_search_setting(target, search, seed=seed)      # a declared policy, re-derived, never trusted
+    settings = _settings(generations, population, seed, search_cfg)
     manifest = json.loads(Path(freeze).read_text())["inputs"] if freeze is not None else None
     closure = trusted_closure(target_name)
     dirty = _dirty(closure)
@@ -775,7 +921,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
             return
         if manifest.get("schema") != FREEZE_SCHEMA or manifest["target"] != target_name or manifest["rule"] != RULE:
             raise EvolutionError("FROZEN_INPUT_CHANGED: the freeze names another target, schema or rule")
-        if manifest["settings"] != {"generations": generations, "population": population, "seed": seed}:
+        if canonical(manifest["settings"]) != canonical(settings):
             raise EvolutionError("FROZEN_INPUT_CHANGED: the search settings differ from the freeze")
         if manifest["constants"] != {"failure_rate_trigger": FAILURE_RATE_TRIGGER, "train_gain_min": TRAIN_GAIN_MIN,
                                      "stress_tolerance": STRESS_TOLERANCE, "alpha": ALPHA}:
@@ -814,7 +960,6 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
               "split": {"train": len(train_items), "heldout": len(heldout_items),
                         "excluded_admission_items": len(excluded)},
               "incumbent": {"config": target.incumbent, "id": config_id(target.incumbent)}}
-    rng = random.Random(seed)
 
     def evaluate(config, evaluator):
         check_frozen()
@@ -849,32 +994,14 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
             g["n"] += 1
             g["failing"] += int(key in failing)
     record["residual_geometry"] = geometry
-    # 3-4. isolated search inside the closed space
-    lineage, scored = [], {}
-    def consider(config, parents, ops, generation):
-        cid = config_id(config)
-        if cid not in scored:
-            losses, _ = evaluate(config, train)
-            scored[cid] = (statistics.fmean(losses.values()), config)
-            lineage.append({"id": cid, "generation": generation, "parents": parents, "ops": ops, "config": config,
-                            "train_mean_loss": round(scored[cid][0], 6)})
-    scored[record["incumbent"]["id"]] = (record["failure"]["incumbent_mean_train_loss"], target.incumbent)
-    lineage.append({"id": record["incumbent"]["id"], "generation": 0, "parents": [], "ops": ["incumbent"],
-                    "config": target.incumbent, "train_mean_loss": record["failure"]["incumbent_mean_train_loss"]})
-    for _ in range(population - 1):
-        child, ops = mutate(target, target.incumbent, rng)
-        consider(child, [record["incumbent"]["id"]], ops, 1)
-    for generation in range(2, generations + 1):
-        elite = sorted(scored.values(), key=lambda v: v[0])[:max(2, population // 3)]
-        for _ in range(population):
-            a, b = rng.sample(elite, 2) if len(elite) > 1 else (elite[0], elite[0])
-            child, ops = crossover(target, a[1], b[1], rng)
-            child, more = mutate(target, child, rng)
-            consider(child, [config_id(a[1]), config_id(b[1])], ops + more, generation)
-    record["search"] = {"generations": generations, "population": population, "evaluated": len(scored),
-                        "lineage": lineage}
-    best_loss, best = min(scored.values(), key=lambda v: (v[0], config_id(v[1])))
-    best_id = config_id(best)
+    # 3-4. isolated search inside the closed space, by the frozen search policy
+    found = run_search(target, lambda config: evaluate(config, train)[0], generations=generations,
+                   population=population, seed=seed, incumbent_loss=record["failure"]["incumbent_mean_train_loss"],
+                   initial=search_cfg.get("initial", ()))
+    record["search"] = {"generations": generations, "population": population, "policy": search_cfg["policy"],
+                        "evaluated": found["evaluated"], "lineage": found["lineage"]}
+    best_loss, best, best_id = (found["candidate"]["train_mean_loss"], found["candidate"]["config"],
+                                found["candidate"]["id"])
     record["candidate"] = {"id": best_id, "config": best, "train_mean_loss": round(best_loss, 6)}
     gain = relative_gain(record["failure"]["incumbent_mean_train_loss"], best_loss)
     if best_id == record["incumbent"]["id"] or gain <= TRAIN_GAIN_MIN:
@@ -994,11 +1121,19 @@ if __name__ == "__main__":
     ap.add_argument("--write-freeze", type=Path, help="pre-register a cycle: write its freeze, then commit it")
     ap.add_argument("--freeze", type=Path, help="the committed freeze the cycle must match")
     ap.add_argument("--out", type=Path)
+    ap.add_argument("--generations", type=int, default=5, help="with --write-freeze")
+    ap.add_argument("--population", type=int, default=8, help="with --write-freeze")
+    ap.add_argument("--seed", type=int, default=20261008, help="with --write-freeze: the search seed")
+    ap.add_argument("--search", default=DEFAULT_SEARCH, choices=sorted(SEARCH_POLICIES), help="with --write-freeze")
+    ap.add_argument("--lhs", type=int, default=0, help="with --write-freeze and --search cover/1")
     ap.add_argument("--inside", action="store_true", help=argparse.SUPPRESS)      # the clean room's own process
     ap.add_argument("--launcher", help=argparse.SUPPRESS)
     args = ap.parse_args()
     if args.write_freeze:
-        print(json.dumps(freeze(args.target, args.write_freeze)["inputs"]["seals"], indent=1))
+        inputs = freeze(args.target, args.write_freeze, generations=args.generations, population=args.population,
+                        seed=args.seed, search=args.search, lhs=args.lhs)["inputs"]
+        print(json.dumps({"seals": inputs["seals"], "settings": {**inputs["settings"], "search": {
+            k: (len(v) if k == "initial" else v) for k, v in inputs["settings"]["search"].items()}}}, indent=1))
         raise SystemExit(0)
     if not (args.out and args.freeze):
         raise SystemExit("--out and --freeze are required (pre-register with --write-freeze first)")

@@ -1189,6 +1189,11 @@ def bayes_filter_solve(data, budget):
     if sigma is None:
         return answer(None, {"reason": "noise level not declared"}, status="ABSTAIN",
                       missing=["noise_sd must be declared: the filter's likelihoods depend on it"])
+    if dwell <= 1.0:
+        # a mean dwell of one sample makes the regime alternate deterministically: there is nothing to filter,
+        # and the clamped prior here and the verifier's exact recursion would disagree
+        return answer(None, {"reason": "mean_dwell must exceed one sample"}, status="ABSTAIN",
+                      missing=["a mean dwell above one sample (a regime that persists)"])
     margin, costs = _hmm_tuning(lo, hi, sigma, dwell, lambda x, c: _hmm_states(x, lo, hi, sigma, dwell, 0, c))
     states = _hmm_states(sig, lo, hi, sigma, dwell, s0, margin)
     return answer({"states": states, "switch_count": sum(1 for a, b in zip(str(s0) + states, states) if a != b)},
@@ -1229,31 +1234,71 @@ def _decisions(log_odds, s0, margin):
     return out
 
 
+def _verify_cost_per_change(states: str, truth: str, s0: int) -> float:
+    """Verifier's own tuning objective, written from the declared cost (not shared with the solver): walk the
+    true regimes once; a change costs its detection delay (capped at HY_W_MISS) unless the output was already
+    in the new regime; every output switch not matched to a change costs HY_W_FALSE."""
+    n = len(truth)
+    flips = {k for k in range(n) if states[k] != (states[k - 1] if k else str(s0))}
+    cps = [k for k in range(1, n) if truth[k] != truth[k - 1]]
+    total, matched = 0.0, 0
+    for i, c in enumerate(cps):
+        if states[c - 1] == truth[c]:
+            continue
+        end = cps[i + 1] if i + 1 < len(cps) else n
+        hit = next((k for k in range(c, end) if k in flips and states[k] == truth[c]), None)
+        if hit is None:
+            total += HY_W_MISS
+        else:
+            matched += 1
+            total += min(hit - c, HY_W_MISS)
+    return (total + HY_W_FALSE * (len(flips) - matched)) / max(1, len(cps))
+
+
+def _verify_margin(lo, hi, sigma, dwell):
+    """The margin the declared tuning protocol selects, recomputed with the verifier's own filter and cost. The
+    tuning signals are re-drawn with the protocol's declared generator (seed 7919); that generator is the one
+    shared part, and it is a specification of the protocol, not a computation being checked."""
+    rnd = random.Random(7919)
+    runs = []
+    for _ in range(HY_HMM_TUNING_RUNS):
+        syn, truth = _hy_signal(rnd, lo, hi, sigma, dwell, 1500, 0)
+        runs.append((syn, "".join(map(str, truth))))
+    costs = {}
+    for c in HY_HMM_MARGINS:
+        costs[c] = sum(_verify_cost_per_change("".join(map(str, _decisions(
+            _forward_log_odds(syn, lo, hi, sigma, dwell, 0), 0, c))), truth, 0) for syn, truth in runs)
+    return min(costs, key=lambda c: (costs[c], c))
+
+
+def _tie(prev_state: int, odds: float, margin: float) -> bool:
+    """A floating-point tie at the crossing that applies from this state: +margin from 0, -margin from 1."""
+    return abs(odds - (margin if prev_state == 0 else -margin)) <= 1e-7
+
+
 def bayes_filter_verify(data, output, certificate):
     """Replay with the verifier's own forward recursion: every switch must follow a posterior log-odds crossing
-    of the declared margin (a crossing within 1e-7 of the margin may go either way), the margin must be the
-    tuning argmin (re-executed with the verifier's filter), and the switch count must match."""
+    of the declared margin (only a floating-point tie at the crossing that applies from the current state may go
+    either way), the margin must be the tuning argmin (re-executed with the verifier's own filter and cost
+    function), and the switch count must match."""
     sig, lo, hi, thr, sigma, dwell, s0 = _hy_inputs(data)
     out = output if isinstance(output, dict) else {}
     cert = certificate if isinstance(certificate, dict) else {}
     states, margin = out.get("states"), cert.get("margin")
-    if (sigma is None or not isinstance(states, str) or len(states) != len(sig) or not set(states) <= {"0", "1"}
-            or type(margin) not in (int, float) or margin not in HY_HMM_MARGINS):
+    if (sigma is None or dwell <= 1.0 or not isinstance(states, str) or len(states) != len(sig)
+            or not set(states) <= {"0", "1"} or type(margin) not in (int, float) or margin not in HY_HMM_MARGINS):
         return {"shape": False}
     odds = _forward_log_odds(sig, lo, hi, sigma, dwell, s0)
     ok, state = True, s0
     for k, ch in enumerate(states):
         cur = int(ch)
         expected = _decisions([odds[k]], state, margin)[0]      # from the output's own previous state
-        if cur != expected and abs(abs(odds[k]) - margin) > 1e-7:
-            ok = False                                          # only a floating-point tie at the margin may differ
+        if cur != expected and not _tie(state, odds[k], margin):
+            ok = False                                          # only a floating-point tie at the crossing
             break
         state = cur
-    selected, _ = _hmm_tuning(lo, hi, sigma, dwell,
-                              lambda x, c: "".join(map(str, _decisions(_forward_log_odds(x, lo, hi, sigma, dwell, 0),
-                                                                       0, c))))
     return {"shape": True, "switches_follow_posterior_crossings": ok,
-            "margin_is_the_tuning_selection": selected == margin,
+            "margin_is_the_tuning_selection": _verify_margin(lo, hi, sigma, dwell) == margin,
             "noise_and_switch_probability_bound": _close(_num(cert.get("noise_sd")), sigma)
             and _close(_num(cert.get("switch_probability")), min(1.0, 1.0 / dwell)),
             "switch_count": out.get("switch_count") == sum(1 for a, b in zip(str(s0) + states, states) if a != b)}
@@ -1850,7 +1895,8 @@ INTELLIGENCES = [
                                          "of four gave -0.48)"}),
     Executable(
         genome=_genome(
-            intelligence_id="basal.filter.hmm_forward", family="basal_bayes_filter", operation="regime_filter",
+            intelligence_id="basal.filter.hmm_forward", version="1.0.1", family="basal_bayes_filter",
+            operation="regime_filter",
             epistemic_class="physical", subgeometry="two-regime detection in a noisy scalar signal",
             source_provenance="Wonham (1964) filter; Rabiner (1989) HMM forward algorithm; decision margin tuned "
                               "by simulating the declared model",
@@ -1865,18 +1911,21 @@ INTELLIGENCES = [
             composition_inputs=("signal",), composition_outputs=("regime_states",),
             evidence_type="heuristic_trace",
             verification_method="independent replay with a normalised log-sum-exp forward recursion: every switch "
-                                "follows a posterior crossing of the declared margin; the margin re-selected by "
-                                "re-executing the tuning with the verifier's filter",
+                                "follows a posterior crossing of the declared margin in the direction that applies "
+                                "from the current state; the margin re-selected with the verifier's own filter and "
+                                "its own implementation of the cost (the tuning signals come from the protocol's "
+                                "declared seeded generator, the one shared part)",
             confidence_semantics="posterior is exact only for the declared two-level Gaussian HMM; the trace is "
                                  "an audit, not a proof of correct regimes",
             resource_profile="O(n) per pass; 17 margins x 4 runs x 1500 samples to tune",
             latency_profile="tens of milliseconds",
-            known_strengths=("dominates memoryless switching at high noise (11-1 against the Schmitt trigger as "
-                             "its competitor on the 2026-10-13 held-out run)", "uses the dwell prior"),
+            known_strengths=("beats memoryless switching at high noise: 13-1-2 against the admitted Schmitt trigger "
+                             "under high noise, 14-2-14 overall, on the 2026-10-14-v2 held-out admission (version "
+                             "1.0.0)", "uses the dwell prior"),
             known_failure_modes=("misspecified levels, noise or dwell", "heavy-tailed noise",
                                  "about 50x the Schmitt trigger's latency at low noise, where both are exact"),
             counterindications=("drifting levels", "undeclared noise level"),
-            abstention_conditions=("noise sd not declared",),
+            abstention_conditions=("noise sd not declared", "mean dwell of one sample (no persistent regime)"),
             benchmark_suite="the hysteresis benchmark: seeded two-level regime signals, noise/separation 0.05-0.6, "
                             "dwell 60-200; score -(capped delay + 5 x false switches + 50 x misses) per change",
             baseline="single threshold at the midpoint",

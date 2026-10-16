@@ -31,6 +31,8 @@ def registry_view(journal=None):
     for manifest, adapter in BUILTINS.values():
         registry.register(manifest, adapter, state=initial_state(manifest.capability_id))
     if journal is not None:
+        from greg.genesis import project_formed
+        project_formed(registry, journal)          # mechanisms Capability Genesis formed on this body
         for event in journal.replay("capability.state"):
             if event.payload["capability_id"] in registry.manifests:
                 registry.set_state(event.payload["capability_id"], event.payload["state"])
@@ -68,6 +70,24 @@ def compile_problem(params):
         if datetime.fromisoformat(expiry.replace("Z", "+00:00")).tzinfo is None:
             raise CognitionError("evidence expiry requires an offset-aware timestamp")
     return geometry, consequence
+
+
+def _cpu_seconds():
+    """CPU seconds of this thread plus every child process the body has waited for (directive section 12: count
+    local compute even when it costs no tokens). ``None`` where the platform offers no resource accounting; peak
+    memory cannot be split per call this way and stays unmeasured."""
+    try:
+        import resource
+    except ImportError:
+        return None
+    own = resource.getrusage(getattr(resource, "RUSAGE_THREAD", resource.RUSAGE_SELF))
+    kids = resource.getrusage(resource.RUSAGE_CHILDREN)
+    return own.ru_utime + own.ru_stime + kids.ru_utime + kids.ru_stime
+
+
+def _cpu_delta(started):
+    now = _cpu_seconds()
+    return round(now - started, 4) if started is not None and now is not None else "unmeasured"
 
 
 def geometry_key(geometry):
@@ -172,7 +192,7 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         return reason_cortex(params, registry=registry, journal=journal, model_config=model_config,
                              forced=forced_family, caller_window=caller_window,
                              shared_deadline=shared_deadline, shared_compute_limit=shared_compute_limit)
-    started = time.monotonic()
+    started, cpu_started = time.monotonic(), _cpu_seconds()
     geometry, consequences = compile_problem(params)
     rows = candidates(params, geometry, registry, journal)
     eligible = [r for r in rows if r["eligible"] and (forced_family is None or r["family"] == forced_family)]
@@ -274,7 +294,11 @@ def reason(params, *, registry, journal=None, model_config=None, forced_family=N
         abstention_state=state, missing_information=missing,
         compute_cost={"operation_ceiling": geometry.compute_limit, "memory_ceiling_bytes": 2 * 1024**3,
                       "model_calls": budget_plan["model_calls_attempted"], "energy": "unmeasured",
-                      "actual_compute_operations": None, "budget_plan": budget_plan},
+                      "actual_compute_operations": None, "budget_plan": budget_plan,
+                      "cpu_seconds": _cpu_delta(cpu_started),
+                      "cpu_scope": ("this thread plus child processes waited for during the call: the solver and "
+                                    "verifier, and any child another thread reaped meanwhile"),
+                      "peak_memory": "unmeasured"},
         money_cost=0.0, latency=time.monotonic() - started,
         evaluator="greg.cognition.verification/" +
             ("0.3.0" if chosen and chosen["family"] in NATIVE_QUALIFIED else "0.1.0"),

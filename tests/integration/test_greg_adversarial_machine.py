@@ -203,12 +203,12 @@ def test_an_interrupted_capability_construction_resumes_once_and_serves_nothing_
                                                                     params=STAFFING, auto_attach=True)))
     real = genesis_mod.Genesis._attach
 
-    def dying(self, mission, manifest, deficit_id, now):
+    def dying(self, mission, manifest, deficit_id, now, *offered):    # Track B's routes also pass ``offered``
         if not manifest.capability_id.startswith("composed."):
-            return real(self, mission, manifest, deficit_id, now)
+            return real(self, mission, manifest, deficit_id, now, *offered)
         if kill == "before_attach":
             raise ProcessDeath()
-        real(self, mission, manifest, deficit_id, now)
+        real(self, mission, manifest, deficit_id, now, *offered)
         raise ProcessDeath()
     monkeypatch.setattr(genesis_mod.Genesis, "_attach", dying)
     clock = Clock()

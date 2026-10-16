@@ -16,6 +16,8 @@ import textwrap
 import pytest
 
 from greg import ventures
+from types import SimpleNamespace
+
 from greg.body import Body, Layout
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext, SecretBroker
 from greg.templates import venture_assessment
@@ -400,3 +402,179 @@ def test_real_organs_assess_unchanged_with_no_network(tmp_path):
     assert confined["inputs"]["railscout"] == free["inputs"]["railscout"]
     ok, detail = ventures.verify_delivery(confined, ctx.deliver_root, confined=True)
     assert ok, detail
+
+
+# -- the Mind inside the memo: a revenue figure may not outrun its causal support (directive section 16) ----
+
+ECONOMICS = {"revenue": {"factors": [{"name": "brokers", "low": 20, "central": 60, "high": 150, "units": {"broker": 1}},
+                                     {"name": "fee_per_broker_year", "low": 1200, "central": 2400, "high": 4800,
+                                      "units": {"USD": 1, "broker": -1, "year": -1}}],
+                         "expected_units": {"USD": 1, "year": -1},
+                         "assumptions": ["one verifier seat per broker"], "next_measurement": "price three brokers"},
+             "causal_support": {"design": "observational", "treated": [9, 11], "control": [4, 6]}}
+RANDOMIZED = {**ECONOMICS, "causal_support": {"design": "randomized", "treated": [9, 11], "control": [4, 6],
+                                              "dag": [["verifier", "paid_on_time"]]}}
+
+
+def _tick_until(body, clock, state, limit=8):
+    states = []
+    for _ in range(limit):
+        clock.advance(30)
+        states.append(body.tick()["missions"][0]["state"])
+        if states[-1] == state:
+            return states
+    raise AssertionError(f"never reached {state}: {states}")
+
+
+def test_a_revenue_figure_never_outruns_its_causal_support():
+    estimate = {"abstention_state": "NONE", "output": {"low": 1, "central": 2, "high": 3}}
+    identified = {"abstention_state": "NONE", "output": {"identified_conditionally": True, "effect": 3}}
+    unidentified = {"abstention_state": "UNIDENTIFIED", "output": {"identified_conditionally": False}}
+    assert ventures.revenue_conclusion(None, identified)["kind"] == "none"
+    assert ventures.revenue_conclusion({"abstention_state": "ABSTAIN"}, identified)["kind"] == "none"
+    assert ventures.revenue_conclusion(estimate, None)["kind"] == "conditional"
+    assert ventures.revenue_conclusion(estimate, unidentified)["kind"] == "conditional"
+    assert ventures.revenue_conclusion(estimate, identified)["kind"] == "stated"
+    assert ventures.revenue_conclusion(estimate, {"abstention_state": "NONE", "output": {}})["kind"] == "conditional"
+
+
+def test_without_economics_the_memo_states_no_revenue_figure_and_the_mission_is_unchanged(organs):
+    spec = venture_assessment(**organs)
+    assert [s["action_id"] for s in spec["strategies"]] == ["assess-venture"]
+    assert "cognition.solve" not in spec["light_cone"]["capabilities"] and "cognition" not in spec["strategies"][0]["params"]
+    assert ventures.render({**_minimal_inputs(), "cognition": None,
+                            "revenue": ventures.revenue_conclusion(None, None)}).count("no revenue figure is stated") == 1
+
+
+def _minimal_inputs():
+    appraisal = {"question": "q", "status": "NEEDS_EVIDENCE", "next_action": "n", "transaction": "t",
+                 "failure": {"layer": "proof", "description": "d"}, "claims": [], "missing": [], "sources": []}
+    return {"renderer": ventures.RENDERER, "manifest_sha256": "0" * 64,
+            "railscout": {"appraisal": appraisal, "receipt_sha256": "ab" * 32},
+            "packet": {"id": "p"}, "assessment": {"go_no_go": "go", "opportunity_score": 0.5, "market_alignment": 0.5,
+                                                  "risk_level": "low", "reasons": [], "cases": [], "validation_plan": []},
+            "canonical": {"packet_unresolved": [], "assessment_execution_authority": False},
+            "binding": {"verdict": "needs_more_evidence", "why": "w"}, "flip": "f",
+            "organs": {"railscout_head": None, "wmi_head": None}}
+
+
+def test_the_mission_asks_gregs_own_cognition_first_and_the_memo_draws_no_revenue_conclusion_without_identification(
+        tmp_path, organs):
+    _write(Path(organs["manifest"]).with_name("economics.json"), json.dumps(ECONOMICS))
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = venture_assessment(**organs)
+    assert [s["action_id"] for s in spec["strategies"]] == ["revenue-receipt", "causal-receipt", "assess-venture"]
+    assert spec["strategies"][2]["requires"] == ["revenue_estimated", "causal_checked"]
+    assert spec["light_cone"]["max_consequence_class"] == "read_only" and "cognition:*" in spec["light_cone"]["targets"]
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        _tick_until(body, clock, "WAITING")                      # cognition ran inside the cone; delivery waits
+        receipts = [r.payload["result"]["output"] for r in body.ledger.by_type("receipt")
+                    if isinstance(r.payload["result"].get("output"), dict)
+                    and r.payload["result"]["output"].get("problem_id", "").startswith("venture-")]
+        assert {r["problem_id"].split("-")[1] for r in receipts} == {"revenue", "causal"}
+        assert all(r["authority_created"] is False for r in receipts)
+        body.engine.book.rebuild()
+        request = body.engine.book.open_requests()[0]
+        assert request["authority_requested"]["capability"] == "venture.assess"
+        assert not (Layout(home).home / "deliveries" / "ventures").exists(), "no organ ran before approval"
+    drop(home, signed(key, body_id, "DECISION", {"request_id": request["request_id"], "answer": "approve"}))
+    with Body(home, clock=clock) as body:
+        _tick_until(body, clock, "ACHIEVED")
+        appraisal = body.journal.replay("mission.appraised")[-1].payload
+        assert appraisal["verdict"] == "VERIFIED", appraisal["findings"]
+        memo = next((Layout(home).home / "deliveries" / "ventures").glob("venture-*.md"))
+        text = memo.read_text()
+        assert "**conditional**" in text and "no revenue conclusion is drawn" in text
+        assert "Estimate: 24000 to 720000 USD year^-1 (central 144000)" in text
+        assert "Dominant uncertainty: brokers" in text and "Causal support: not identified (UNIDENTIFIED)" in text
+        memo.write_text(text.replace("**conditional**", "**stated**"))
+        verdict = body.appraise(spec["mission_id"])
+        assert verdict["verdict"] == "REFUTED" and any("differs from the render" in f for f in verdict["findings"])
+
+
+def test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forged_receipt_is_refuted(tmp_path, organs):
+    _write(Path(organs["manifest"]).with_name("economics.json"), json.dumps(RANDOMIZED))
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = venture_assessment(**organs, preauthorize_delivery=True)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        _tick_until(body, clock, "ACHIEVED")
+        memo = next((Layout(home).home / "deliveries" / "ventures").glob("venture-*.md"))
+        text = memo.read_text()
+        # the converged causal family names this identification assumption "random assignment"
+        assert "**stated**" in text and "randomized difference in means 5" in text and "random assignment" in text
+        receipt = [r for r in body.ledger.by_type("receipt")
+                   if "inputs" in ((r.payload["result"].get("output") or {}) if isinstance(r.payload["result"].get("output"), dict) else {})][-1]
+        output = json.loads(json.dumps(receipt.payload["result"]["output"]))
+        ok, _ = ventures.verify_delivery(output, Layout(home).home / "deliveries", ledger=body.ledger)
+        assert ok
+        forged = json.loads(json.dumps(output))
+        forged["inputs"]["cognition"]["causal"]["output"]["effect"] = 50       # digest no longer matches
+        ok, why = ventures.verify_delivery(forged, Layout(home).home / "deliveries", ledger=body.ledger)
+        assert not ok and "digest" in why
+        offledger = json.loads(json.dumps(output))
+        from greg.cognition.contracts import digest as receipt_digest
+        causal = offledger["inputs"]["cognition"]["causal"]
+        causal["output"]["effect"] = 50
+        causal.pop("receipt_id")
+        causal["receipt_id"] = receipt_digest(causal)
+        # the converged receipt contract also binds the proof artifact to the output: this forgery is not even valid
+        from greg.cognition.settlement import _valid_receipt
+        assert not _valid_receipt(causal)
+        causal.pop("receipt_id")
+        causal["proof_artifact"]["estimate"] = 50
+        causal["receipt_id"] = receipt_digest(causal)                           # self-consistent, never on the ledger
+        assert _valid_receipt(causal)
+        offledger["inputs"]["revenue"] = ventures.revenue_conclusion(offledger["inputs"]["cognition"]["revenue"], causal)
+        offledger["inputs_digest"] = ventures.inputs_digest(offledger["inputs"])
+        rendered = ventures.render(offledger["inputs"]).encode()
+        memo.write_bytes(rendered)
+        offledger["sha256"] = hashlib.sha256(rendered).hexdigest()
+        ok, why = ventures.verify_delivery(offledger, Layout(home).home / "deliveries", ledger=body.ledger)
+        assert not ok and "not on the canonical ledger" in why
+
+
+def test_the_organ_bridge_reads_receipts_through_a_handle_with_no_write_method(tmp_path):
+    # The bridge only reads the Mind's receipts. It is handed the ledger's by_type and nothing else: no journal
+    # record, no replay, no append. In-process Python cannot be sandboxed, so this removes every write path from
+    # the handle; it is not a security boundary against code that deliberately introspects.
+    home, _, _, _ = make_body(tmp_path)
+    with Body(home, clock=Clock()) as body:
+        body.boot()
+        ctx = body.engine._context(SimpleNamespace(mission_id="m:reader"), BUILTINS["venture.assess"][0])
+        assert isinstance(ctx.journal, ventures.LedgerReader)
+        assert [a for a in dir(ctx.journal) if not a.startswith("_")] == ["ledger"]
+        assert [a for a in dir(ctx.journal.ledger) if not a.startswith("_")] == ["by_type"]
+        assert list(ctx.journal.ledger.by_type("receipt")) == list(body.ledger.by_type("receipt"))
+        with pytest.raises(AttributeError):
+            ctx.journal.ledger.append = body.ledger.append
+        cognition = body.engine._context(SimpleNamespace(mission_id="m:c"), BUILTINS["cognition.solve"][0])
+        assert cognition.journal is body.journal            # other grants are unchanged
+
+
+@pytest.mark.skipif(not (os.environ.get("GREG_TEST_RAILSCOUT") and os.environ.get("GREG_TEST_WMI")),
+                    reason="set GREG_TEST_RAILSCOUT and GREG_TEST_WMI to real organ checkouts")
+def test_real_organs_consume_the_minds_receipts_on_a_signed_mission(tmp_path):
+    # Directive section 16 on the real organs: the RailScout and WealthMachine checkouts, one signed body mission,
+    # and GREG's own revenue and causal receipts. Observational support yields an estimate and no revenue conclusion.
+    rs, wmi = Path(os.environ["GREG_TEST_RAILSCOUT"]), Path(os.environ["GREG_TEST_WMI"])
+    signal = rs / "examples" / "project-source-packet"
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[rs, wmi])
+    spec = venture_assessment(railscout_root=str(rs), wmi_root=str(wmi), manifest=str(signal / "manifest.json"),
+                              source_root=str(signal), economics=ECONOMICS, preauthorize_delivery=True)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        _tick_until(body, clock, "ACHIEVED")
+        appraisal = body.journal.replay("mission.appraised")[-1].payload
+        assert appraisal["verdict"] == "VERIFIED", appraisal["findings"]
+        memo = next((Layout(home).home / "deliveries" / "ventures").glob("venture-*.md")).read_text()
+    assert "**Binding verdict: needs_more_evidence**" in memo
+    assert "**conditional**" in memo and "no revenue conclusion is drawn" in memo
+    assert "Causal support: not identified (UNIDENTIFIED)" in memo

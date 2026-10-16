@@ -355,7 +355,7 @@ def test_one_machine_ten_steps_on_one_body_with_real_processes(tmp_path):
                                                   objective="staff the docks and the line"), "compiled")
         appraisal = ep.run_to_closure(compiled_id)
         assert appraisal["verdict"] == "VERIFIED", appraisal["findings"]
-        compiled = ep.receipt_outputs(lambda o: o.get("schema") == "greg-competency-compilation/0.1")
+        compiled = ep.receipt_outputs(lambda o: str(o.get("schema", "")).startswith("greg-competency-compilation/"))
         assert compiled[0]["state"] == "CAPABILITY_DEFICIT" and compiled[0]["capability_deficit"]["function"] == "assignment.staffing"
         assert compiled[-1]["state"] == "ANSWERED" and compiled[-1]["method_or_composition_selected"].startswith("composed.assignment.staffing.")
         assert compiled[-1]["result"]["staffed"] == 8 and compiled[-1]["authority_created"] is False

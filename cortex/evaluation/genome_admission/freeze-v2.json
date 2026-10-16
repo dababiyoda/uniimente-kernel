@@ -1,0 +1,22 @@
+{
+  "frozen_at": "2026-10-14T12:13:23.871076+00:00",
+  "inputs": {
+    "code": {
+      "cortex/evaluation/genome_admission/run_v2.py": "sha256:53aa25ec0a2be0582f25401889ab6f3365fb85525fc7bb6ea32ea9e003e828d5",
+      "cortex/evaluation/genome_admission/run.py": "sha256:1ddc445e357f21b34e8a660ea05089937a58f3ea07fc1e2b1ac4981f9a01a2f3",
+      "greg/cognition/repertoire.py": "sha256:126b74a1604e4271136dd934c8c2c33be8e21a2c4e8bd0aac6ae9e9f498ae557",
+      "greg/cognition/solvers.py": "sha256:11447b687856960009bdd33d40182a3e30cc57c0c739ae8e35bb7628467a8ffc"
+    },
+    "seeds": [
+      2001,
+      2040
+    ],
+    "families": [
+      "blackbox",
+      "crowd",
+      "robust_pattern",
+      "swarm"
+    ],
+    "budget": 2000
+  }
+}

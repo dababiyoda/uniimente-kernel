@@ -563,9 +563,10 @@ def brief_freshness(params, ctx: InvocationContext) -> dict:
             "sha256": hashlib.sha256(latest.read_bytes()).hexdigest()}
 
 
-def verify_delivery(output: dict, deliver_root: Path | None, *, confined: bool = False) -> tuple[bool, str]:
+def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, confined: bool = False) -> tuple[bool, str]:
     """Appraiser check: the delivered file is exactly the render of the receipted inputs. It re-renders from the
-    receipt and opens no network, so ``confined`` (#26, shared with the venture check) changes nothing here."""
+    receipt and opens no network, so ``confined`` (#26, shared with the venture check) changes nothing here; nor
+    does ``ledger`` (shared with the venture check, which binds its cognition receipts to the canonical ledger)."""
     if not isinstance(output, dict) or "inputs" not in output:
         return False, "receipt does not retain the brief inputs"
     if inputs_digest(output["inputs"]) != output.get("inputs_digest"):

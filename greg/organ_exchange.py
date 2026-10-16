@@ -457,7 +457,7 @@ def status(params: dict, ctx: InvocationContext) -> dict:
     return {"exchanged": False, "verdict": None, "path": None, "signal_sha256": digest}
 
 
-def verify_delivery(output: dict, deliver_root: Path | None, *, confined: bool = False) -> tuple[bool, str]:
+def verify_delivery(output: dict, deliver_root: Path | None, ledger=None, *, confined: bool = False) -> tuple[bool, str]:
     """Appraiser (separate process, no key): the memo is the render of its receipt; both bodies satisfy the
     Kernel contracts; the envelopes name the parties and digests they claim; the venture engine reproduces the
     assessment; DALEOBANKS reproduces the packet's content from the same signal. On a confined body (#26) the

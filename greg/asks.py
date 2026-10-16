@@ -303,6 +303,8 @@ ANSWER_ONLY_RECORDS = {
                       "GREG a credential.",
     "COMPENSATION": "Your answer is only recorded; GREG reverses, contacts and pays no one for this effect. Undo it "
                     "yourself if it should not stand.",
+    "HUMAN_JUDGMENT": "Your answer is recorded as the decision on this one question; it acts on nothing by itself. "
+                      "Any consequence still crosses the Gate under its own authority.",
     "CAPABILITY_ATTACH": "Approve or Reject only records your answer. Attaching is its own signed command: the "
                          "Attach button beside a verified candidate, or `greg attach <capability_id>`.",
 }

@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 TESTS = 'tests/unit/test_cognition_residual_safeguards.py'
 DISCLOSURE = 'tests/unit/test_cognition_disclosure.py'
 CHARACTERIZE = 'tests/unit/test_cognition_characterize.py'
+BUDGET = 'tests/unit/test_cognition_thinking_budget.py'
+VENTURES = 'tests/unit/test_greg_ventures.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -57,10 +59,58 @@ MUTANTS = [
  ('a dispute recorded without grounds', 'greg/cognition/disclosure.py',
   'if response in ("disputed", "declined", "partially_accepted") and not grounds and not note:', 'if False:',
   'test_an_institutional_response_is_appended_never_edited_in_and_grants_nothing', DISCLOSURE),
+ ('a package shortens the limits the recipient is told', 'greg/cognition/disclosure.py',
+  '            "does_not_prove": list(LIMITATIONS)}', '            "does_not_prove": list(package.get("limitations", []))}',
+  'test_an_unsigned_package_reports_the_verifiers_own_limits', DISCLOSURE),
  # Characterization harness (directive section 5): the measurement must notice a weakened verifier.
  ('error correction counted without the verifier', 'greg/cognition/characterize.py',
   'corrections.append(verdict == "REFUTED")', 'corrections.append(True)',
   'test_a_verifier_that_accepts_everything_shows_up_as_zero_error_correction', CHARACTERIZE),
+ # Thinking budget (directive section 12): one budget per decision; required steps kept, optional ones priced.
+ ('an optional step starts without room to finish', 'greg/cognition/budget.py',
+  'elif not required and cost is not None and cost[1] > remaining:', 'elif False:',
+  'test_required_steps_are_never_priced_away_and_optional_ones_must_fit_their_measured_tail', BUDGET),
+ ('a step runs below the minimum that can still verify', 'greg/cognition/budget.py',
+  'if remaining < MIN_STEP_SECONDS:', 'if False:',
+  'test_a_spent_budget_narrows_the_result_instead_of_skipping_required_evidence', BUDGET),
+ ('an optional re-run is treated as required', 'greg/cognition/compiler.py',
+  'limit = budget.allot(f"sensitivity:{key}", required=False)', 'limit = budget.allot(f"sensitivity:{key}", required=True)',
+  'test_one_budget_covers_the_whole_compiled_decision', BUDGET),
+ ('every re-run gets the whole budget again', 'greg/cognition/compiler.py',
+  '                      "geometry": {**hint, "latency_limit": limit}, **extra}, registry=registry, journal=journal,',
+  '                      "geometry": hint, **extra}, registry=registry, journal=journal,',
+  'test_one_budget_covers_the_whole_compiled_decision', BUDGET),
+ ('local compute recorded as free', 'greg/cognition/cortex.py',
+  '"cpu_seconds": _cpu_delta(cpu_started),', '"cpu_seconds": 0.0,',
+  'test_local_compute_is_measured_not_assumed_free', BUDGET),
+ # The Capability Genesis route on the convergence branch: a formed engine is a required step on the same budget.
+ ('a formed engine starts on a spent budget', 'greg/cognition/compiler.py',
+  '            receipt["method_or_composition_selected"] = receipt["selection_level"] = None\n'
+  '            return "ABSTAIN", None',
+  '            limit, budget._open = 0.0, {"step": step, "required": True, "decision": "RUN", "_at": budget.clock()}',
+  'test_a_formed_mechanism_is_a_required_step_on_the_same_budget', BUDGET),
+ ('a formed engine\'s spend goes unrecorded', 'greg/cognition/compiler.py',
+  '            budget.done(step)\n            spent = budget.ledger[-1]["spent_s"]',
+  '            budget._open = None\n            spent = 0.0',
+  'test_a_formed_mechanism_is_a_required_step_on_the_same_budget', BUDGET),
+ ('a formed engine\'s overrun is hidden', 'greg/cognition/compiler.py',
+  '            if spent > limit:', '            if False:',
+  'test_a_formed_mechanism_is_a_required_step_on_the_same_budget', BUDGET),
+ # Section 16 venture case (carried from #143): a revenue figure may not outrun its causal support.
+ ('a revenue conclusion drawn from any causal receipt', 'greg/ventures.py',
+  '    identified = bool(causal and causal.get("abstention_state") == "NONE"',
+  '    identified = bool(causal or causal.get("abstention_state") == "NONE"',
+  'test_a_revenue_figure_never_outruns_its_causal_support', VENTURES),
+ ('an estimate the Mind abstained on is still shown', 'greg/ventures.py',
+  '    if revenue is None or revenue.get("abstention_state") != "NONE":', '    if revenue is None:',
+  'test_a_revenue_figure_never_outruns_its_causal_support', VENTURES),
+ ('an off-ledger receipt is accepted in a memo', 'greg/ventures.py',
+  'if ledger is not None and not any(', 'if False and not any(',
+  'test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forged_receipt_is_refuted', VENTURES),
+ ('the organ bridge is handed the writable journal', 'greg/missions.py',
+  'journal=self._ledger_reader() if manifest.capability_id == "venture.assess"',
+  'journal=self.journal if manifest.capability_id == "venture.assess"',
+  'test_the_organ_bridge_reads_receipts_through_a_handle_with_no_write_method', VENTURES),
 ]
 
 

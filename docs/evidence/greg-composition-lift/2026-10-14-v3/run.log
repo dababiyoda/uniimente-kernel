@@ -1,0 +1,235 @@
+{"recipe_dev_cost": {"bayes_then_voi": null, "estimate_then_optimize": null, "forecast_then_allocate": null, "forecast_then_staff": 76392.0, "graph_then_allocate": null, "identify_then_optimize": null}, "static_recipe": "forecast_then_staff"}
+{"i": 2, "item": "F6-76", "cost": {"erlang_alone": 6412.0, "forecast_alone": 5763.0, "median_forecast_then_staff": 6608.0, "weekly_mean_then_staff": 5086.0, "static_composition": 5185.0, "routed_composition": 5185.0}}
+{"i": 1, "item": "F6-75", "cost": {"erlang_alone": 4617.0, "forecast_alone": 5082.0, "median_forecast_then_staff": 4601.0, "weekly_mean_then_staff": 4589.0, "static_composition": 4642.0, "routed_composition": 4642.0}}
+{"i": 0, "item": "F6-74", "cost": {"erlang_alone": 5570.0, "forecast_alone": 6266.0, "median_forecast_then_staff": 5699.0, "weekly_mean_then_staff": 5781.0, "static_composition": 5567.0, "routed_composition": 5567.0}}
+{"i": 3, "item": "F6-77", "cost": {"erlang_alone": 14778.0, "forecast_alone": 6153.0, "median_forecast_then_staff": 16756.0, "weekly_mean_then_staff": 12212.0, "static_composition": 5476.0, "routed_composition": 5476.0}}
+{"i": 4, "item": "F6-78", "cost": {"erlang_alone": 4808.0, "forecast_alone": 5369.0, "median_forecast_then_staff": 4556.0, "weekly_mean_then_staff": 4465.0, "static_composition": 4794.0, "routed_composition": 4794.0}}
+{"i": 5, "item": "F6-79", "cost": {"erlang_alone": 4492.0, "forecast_alone": 5729.0, "median_forecast_then_staff": 4341.0, "weekly_mean_then_staff": 4444.0, "static_composition": 5106.0, "routed_composition": 5106.0}}
+{"i": 6, "item": "F6-80", "cost": {"erlang_alone": 5495.0, "forecast_alone": 5755.0, "median_forecast_then_staff": 4812.0, "weekly_mean_then_staff": 4483.0, "static_composition": 5131.0, "routed_composition": 5131.0}}
+{"i": 7, "item": "F6-81", "cost": {"erlang_alone": 4877.0, "forecast_alone": 4695.0, "median_forecast_then_staff": 4881.0, "weekly_mean_then_staff": 4486.0, "static_composition": 4565.0, "routed_composition": 4565.0}}
+{"i": 8, "item": "F6-82", "cost": {"erlang_alone": 17346.0, "forecast_alone": 7484.0, "median_forecast_then_staff": 18605.0, "weekly_mean_then_staff": 17496.0, "static_composition": 11822.0, "routed_composition": 11822.0}}
+{"i": 9, "item": "F6-83", "cost": {"erlang_alone": 7263.0, "forecast_alone": 6874.0, "median_forecast_then_staff": 8784.0, "weekly_mean_then_staff": 16660.0, "static_composition": 6306.0, "routed_composition": 6306.0}}
+{"i": 10, "item": "F6-84", "cost": {"erlang_alone": 4913.0, "forecast_alone": 5586.0, "median_forecast_then_staff": 4869.0, "weekly_mean_then_staff": 4779.0, "static_composition": 5033.0, "routed_composition": 5033.0}}
+{"i": 11, "item": "F6-85", "cost": {"erlang_alone": 7711.0, "forecast_alone": 6158.0, "median_forecast_then_staff": 7317.0, "weekly_mean_then_staff": 6810.0, "static_composition": 5618.0, "routed_composition": 5618.0}}
+{"i": 12, "item": "F6-86", "cost": {"erlang_alone": 26397.0, "forecast_alone": 6667.0, "median_forecast_then_staff": 27730.0, "weekly_mean_then_staff": 23918.0, "static_composition": 5915.0, "routed_composition": 5915.0}}
+{"i": 13, "item": "F6-87", "cost": {"erlang_alone": 5563.0, "forecast_alone": 5883.0, "median_forecast_then_staff": 5376.0, "weekly_mean_then_staff": 5235.0, "static_composition": 5371.0, "routed_composition": 5371.0}}
+{"i": 14, "item": "F6-88", "cost": {"erlang_alone": 5037.0, "forecast_alone": 6659.0, "median_forecast_then_staff": 4943.0, "weekly_mean_then_staff": 4911.0, "static_composition": 5912.0, "routed_composition": 5912.0}}
+{"i": 15, "item": "F6-89", "cost": {"erlang_alone": 5070.0, "forecast_alone": 6552.0, "median_forecast_then_staff": 4592.0, "weekly_mean_then_staff": 4827.0, "static_composition": 5815.0, "routed_composition": 5815.0}}
+{"i": 16, "item": "F6-90", "cost": {"erlang_alone": 5024.0, "forecast_alone": 5129.0, "median_forecast_then_staff": 4844.0, "weekly_mean_then_staff": 4755.0, "static_composition": 4720.0, "routed_composition": 4720.0}}
+{"i": 17, "item": "F6-91", "cost": {"erlang_alone": 10717.0, "forecast_alone": 5900.0, "median_forecast_then_staff": 11290.0, "weekly_mean_then_staff": 8893.0, "static_composition": 5363.0, "routed_composition": 5363.0}}
+{"i": 19, "item": "F6-93", "cost": {"erlang_alone": 4775.0, "forecast_alone": 5402.0, "median_forecast_then_staff": 4671.0, "weekly_mean_then_staff": 4622.0, "static_composition": 4848.0, "routed_composition": 4848.0}}
+{"i": 18, "item": "F6-92", "cost": {"erlang_alone": 7342.0, "forecast_alone": 6587.0, "median_forecast_then_staff": 6615.0, "weekly_mean_then_staff": 6522.0, "static_composition": 5848.0, "routed_composition": 5848.0}}
+{"i": 20, "item": "F6-94", "cost": {"erlang_alone": 5395.0, "forecast_alone": 5962.0, "median_forecast_then_staff": 5171.0, "weekly_mean_then_staff": 4949.0, "static_composition": 5310.0, "routed_composition": 5310.0}}
+{"i": 22, "item": "F6-96", "cost": {"erlang_alone": 6471.0, "forecast_alone": 5500.0, "median_forecast_then_staff": 6526.0, "weekly_mean_then_staff": 6234.0, "static_composition": 6181.0, "routed_composition": 6181.0}}
+{"i": 21, "item": "F6-95", "cost": {"erlang_alone": 9732.0, "forecast_alone": 6267.0, "median_forecast_then_staff": 10513.0, "weekly_mean_then_staff": 7516.0, "static_composition": 5571.0, "routed_composition": 5571.0}}
+{"i": 23, "item": "F6-97", "cost": {"erlang_alone": 5264.0, "forecast_alone": 6291.0, "median_forecast_then_staff": 4836.0, "weekly_mean_then_staff": 4932.0, "static_composition": 5585.0, "routed_composition": 5585.0}}
+{"i": 25, "item": "F6-99", "cost": {"erlang_alone": 4771.0, "forecast_alone": 5195.0, "median_forecast_then_staff": 4734.0, "weekly_mean_then_staff": 4700.0, "static_composition": 4697.0, "routed_composition": 4697.0}}
+{"i": 24, "item": "F6-98", "cost": {"erlang_alone": 8073.0, "forecast_alone": 6437.0, "median_forecast_then_staff": 5943.0, "weekly_mean_then_staff": 5553.0, "static_composition": 5716.0, "routed_composition": 5716.0}}
+{"i": 26, "item": "F6-100", "cost": {"erlang_alone": 5842.0, "forecast_alone": 5919.0, "median_forecast_then_staff": 5983.0, "weekly_mean_then_staff": 5111.0, "static_composition": 5368.0, "routed_composition": 5368.0}}
+{"i": 27, "item": "F6-101", "cost": {"erlang_alone": 35153.0, "forecast_alone": 7346.0, "median_forecast_then_staff": 35137.0, "weekly_mean_then_staff": 31332.0, "static_composition": 9525.0, "routed_composition": 9525.0}}
+{"i": 28, "item": "F6-102", "cost": {"erlang_alone": 5531.0, "forecast_alone": 5743.0, "median_forecast_then_staff": 4948.0, "weekly_mean_then_staff": 4877.0, "static_composition": 5124.0, "routed_composition": 5124.0}}
+{"i": 29, "item": "F6-103", "cost": {"erlang_alone": 5176.0, "forecast_alone": 6360.0, "median_forecast_then_staff": 5184.0, "weekly_mean_then_staff": 5205.0, "static_composition": 5650.0, "routed_composition": 5650.0}}
+{"i": 30, "item": "F6-104", "cost": {"erlang_alone": 15725.0, "forecast_alone": 6523.0, "median_forecast_then_staff": 13677.0, "weekly_mean_then_staff": 11186.0, "static_composition": 6060.0, "routed_composition": 6060.0}}
+{"i": 31, "item": "F6-105", "cost": {"erlang_alone": 6190.0, "forecast_alone": 5639.0, "median_forecast_then_staff": 6387.0, "weekly_mean_then_staff": 6185.0, "static_composition": 6033.0, "routed_composition": 6033.0}}
+{"i": 32, "item": "F6-106", "cost": {"erlang_alone": 9948.0, "forecast_alone": 6627.0, "median_forecast_then_staff": 12113.0, "weekly_mean_then_staff": 11420.0, "static_composition": 6217.0, "routed_composition": 6217.0}}
+{"i": 33, "item": "F6-107", "cost": {"erlang_alone": 6303.0, "forecast_alone": 7314.0, "median_forecast_then_staff": 6131.0, "weekly_mean_then_staff": 6458.0, "static_composition": 6470.0, "routed_composition": 6470.0}}
+{"i": 34, "item": "F6-108", "cost": {"erlang_alone": 4953.0, "forecast_alone": 5906.0, "median_forecast_then_staff": 5023.0, "weekly_mean_then_staff": 5040.0, "static_composition": 5257.0, "routed_composition": 5257.0}}
+{"i": 35, "item": "F6-109", "cost": {"erlang_alone": 4927.0, "forecast_alone": 6421.0, "median_forecast_then_staff": 4818.0, "weekly_mean_then_staff": 5040.0, "static_composition": 5701.0, "routed_composition": 5701.0}}
+{"i": 36, "item": "F6-110", "cost": {"erlang_alone": 10153.0, "forecast_alone": 6480.0, "median_forecast_then_staff": 5423.0, "weekly_mean_then_staff": 4922.0, "static_composition": 5753.0, "routed_composition": 5753.0}}
+{"i": 37, "item": "F6-111", "cost": {"erlang_alone": 6403.0, "forecast_alone": 5365.0, "median_forecast_then_staff": 6299.0, "weekly_mean_then_staff": 5794.0, "static_composition": 5934.0, "routed_composition": 5934.0}}
+{"i": 38, "item": "F6-112", "cost": {"erlang_alone": 5397.0, "forecast_alone": 6294.0, "median_forecast_then_staff": 5598.0, "weekly_mean_then_staff": 5750.0, "static_composition": 5623.0, "routed_composition": 5623.0}}
+{"i": 39, "item": "F6-113", "cost": {"erlang_alone": 5086.0, "forecast_alone": 6560.0, "median_forecast_then_staff": 4714.0, "weekly_mean_then_staff": 4639.0, "static_composition": 5823.0, "routed_composition": 5823.0}}
+{"i": 40, "item": "F6-114", "cost": {"erlang_alone": 4558.0, "forecast_alone": 5252.0, "median_forecast_then_staff": 4632.0, "weekly_mean_then_staff": 4663.0, "static_composition": 4770.0, "routed_composition": 4770.0}}
+{"i": 41, "item": "F6-115", "cost": {"erlang_alone": 6942.0, "forecast_alone": 5811.0, "median_forecast_then_staff": 5242.0, "weekly_mean_then_staff": 5107.0, "static_composition": 5245.0, "routed_composition": 5245.0}}
+{"i": 42, "item": "F6-116", "cost": {"erlang_alone": 30010.0, "forecast_alone": 6092.0, "median_forecast_then_staff": 30482.0, "weekly_mean_then_staff": 24730.0, "static_composition": 6140.0, "routed_composition": 6140.0}}
+{"i": 43, "item": "F6-117", "cost": {"erlang_alone": 5207.0, "forecast_alone": 5394.0, "median_forecast_then_staff": 4624.0, "weekly_mean_then_staff": 4603.0, "static_composition": 4817.0, "routed_composition": 4817.0}}
+{"i": 44, "item": "F6-118", "cost": {"erlang_alone": 4676.0, "forecast_alone": 6033.0, "median_forecast_then_staff": 4645.0, "weekly_mean_then_staff": 4750.0, "static_composition": 5370.0, "routed_composition": 5370.0}}
+{"i": 46, "item": "F6-120", "cost": {"erlang_alone": 4948.0, "forecast_alone": 5055.0, "median_forecast_then_staff": 4923.0, "weekly_mean_then_staff": 4682.0, "static_composition": 4689.0, "routed_composition": 4689.0}}
+{"i": 45, "item": "F6-119", "cost": {"erlang_alone": 7201.0, "forecast_alone": 6185.0, "median_forecast_then_staff": 5711.0, "weekly_mean_then_staff": 5921.0, "static_composition": 5504.0, "routed_composition": 5504.0}}
+{"i": 47, "item": "F6-121", "cost": {"erlang_alone": 10460.0, "forecast_alone": 5818.0, "median_forecast_then_staff": 11225.0, "weekly_mean_then_staff": 9654.0, "static_composition": 5435.0, "routed_composition": 5435.0}}
+{"i": 48, "item": "F6-122", "cost": {"erlang_alone": 6118.0, "forecast_alone": 6408.0, "median_forecast_then_staff": 5847.0, "weekly_mean_then_staff": 6011.0, "static_composition": 5690.0, "routed_composition": 5690.0}}
+{"i": 49, "item": "F6-123", "cost": {"erlang_alone": 4563.0, "forecast_alone": 5261.0, "median_forecast_then_staff": 4530.0, "weekly_mean_then_staff": 4536.0, "static_composition": 4702.0, "routed_composition": 4702.0}}
+{"i": 50, "item": "F6-124", "cost": {"erlang_alone": 6183.0, "forecast_alone": 5886.0, "median_forecast_then_staff": 5606.0, "weekly_mean_then_staff": 5284.0, "static_composition": 5249.0, "routed_composition": 5249.0}}
+{"i": 51, "item": "F6-125", "cost": {"erlang_alone": 20654.0, "forecast_alone": 6267.0, "median_forecast_then_staff": 22011.0, "weekly_mean_then_staff": 17754.0, "static_composition": 6812.0, "routed_composition": 6812.0}}
+{"i": 52, "item": "F6-126", "cost": {"erlang_alone": 8123.0, "forecast_alone": 7233.0, "median_forecast_then_staff": 8671.0, "weekly_mean_then_staff": 8600.0, "static_composition": 8267.0, "routed_composition": 8267.0}}
+{"i": 53, "item": "F6-127", "cost": {"erlang_alone": 6214.0, "forecast_alone": 6855.0, "median_forecast_then_staff": 6255.0, "weekly_mean_then_staff": 7113.0, "static_composition": 6078.0, "routed_composition": 6078.0}}
+{"i": 54, "item": "F6-128", "cost": {"erlang_alone": 5949.0, "forecast_alone": 7168.0, "median_forecast_then_staff": 5708.0, "weekly_mean_then_staff": 5463.0, "static_composition": 6342.0, "routed_composition": 6342.0}}
+{"i": 55, "item": "F6-129", "cost": {"erlang_alone": 4918.0, "forecast_alone": 5709.0, "median_forecast_then_staff": 4950.0, "weekly_mean_then_staff": 5068.0, "static_composition": 5092.0, "routed_composition": 5092.0}}
+{"i": 56, "item": "F6-130", "cost": {"erlang_alone": 8434.0, "forecast_alone": 6407.0, "median_forecast_then_staff": 7018.0, "weekly_mean_then_staff": 5643.0, "static_composition": 5701.0, "routed_composition": 5701.0}}
+{"i": 57, "item": "F6-131", "cost": {"erlang_alone": 5552.0, "forecast_alone": 6816.0, "median_forecast_then_staff": 4817.0, "weekly_mean_then_staff": 5060.0, "static_composition": 6048.0, "routed_composition": 6048.0}}
+{"i": 58, "item": "F6-132", "cost": {"erlang_alone": 4470.0, "forecast_alone": 5350.0, "median_forecast_then_staff": 4580.0, "weekly_mean_then_staff": 4736.0, "static_composition": 4787.0, "routed_composition": 4787.0}}
+{"i": 59, "item": "F6-133", "cost": {"erlang_alone": 5534.0, "forecast_alone": 5873.0, "median_forecast_then_staff": 4884.0, "weekly_mean_then_staff": 4702.0, "static_composition": 5231.0, "routed_composition": 5231.0}}
+{"i": 60, "item": "F6-134", "cost": {"erlang_alone": 12722.0, "forecast_alone": 6135.0, "median_forecast_then_staff": 12082.0, "weekly_mean_then_staff": 8187.0, "static_composition": 5458.0, "routed_composition": 5458.0}}
+{"i": 61, "item": "F6-135", "cost": {"erlang_alone": 6302.0, "forecast_alone": 5360.0, "median_forecast_then_staff": 6447.0, "weekly_mean_then_staff": 6301.0, "static_composition": 6079.0, "routed_composition": 6079.0}}
+{"i": 62, "item": "F6-136", "cost": {"erlang_alone": 5169.0, "forecast_alone": 6178.0, "median_forecast_then_staff": 4679.0, "weekly_mean_then_staff": 4751.0, "static_composition": 5494.0, "routed_composition": 5494.0}}
+{"i": 63, "item": "F6-137", "cost": {"erlang_alone": 5386.0, "forecast_alone": 6353.0, "median_forecast_then_staff": 4863.0, "weekly_mean_then_staff": 4904.0, "static_composition": 5646.0, "routed_composition": 5646.0}}
+{"i": 64, "item": "F6-138", "cost": {"erlang_alone": 4248.0, "forecast_alone": 5025.0, "median_forecast_then_staff": 4327.0, "weekly_mean_then_staff": 4494.0, "static_composition": 4504.0, "routed_composition": 4504.0}}
+{"i": 65, "item": "F6-139", "cost": {"erlang_alone": 8577.0, "forecast_alone": 5566.0, "median_forecast_then_staff": 7607.0, "weekly_mean_then_staff": 5532.0, "static_composition": 4996.0, "routed_composition": 4996.0}}
+{"i": 66, "item": "F6-140", "cost": {"erlang_alone": 23460.0, "forecast_alone": 6058.0, "median_forecast_then_staff": 28908.0, "weekly_mean_then_staff": 24637.0, "static_composition": 6470.0, "routed_composition": 6470.0}}
+{"i": 67, "item": "F6-141", "cost": {"erlang_alone": 5128.0, "forecast_alone": 5300.0, "median_forecast_then_staff": 4541.0, "weekly_mean_then_staff": 4458.0, "static_composition": 4737.0, "routed_composition": 4737.0}}
+{"i": 68, "item": "F6-142", "cost": {"erlang_alone": 4417.0, "forecast_alone": 5881.0, "median_forecast_then_staff": 4461.0, "weekly_mean_then_staff": 4433.0, "static_composition": 5238.0, "routed_composition": 5238.0}}
+{"i": 69, "item": "F6-143", "cost": {"erlang_alone": 6865.0, "forecast_alone": 6006.0, "median_forecast_then_staff": 4531.0, "weekly_mean_then_staff": 4555.0, "static_composition": 5347.0, "routed_composition": 5347.0}}
+{"i": 70, "item": "F6-144", "cost": {"erlang_alone": 5666.0, "forecast_alone": 5192.0, "median_forecast_then_staff": 5563.0, "weekly_mean_then_staff": 5188.0, "static_composition": 5280.0, "routed_composition": 5280.0}}
+{"i": 71, "item": "F6-145", "cost": {"erlang_alone": 10528.0, "forecast_alone": 6005.0, "median_forecast_then_staff": 11383.0, "weekly_mean_then_staff": 10156.0, "static_composition": 5913.0, "routed_composition": 5913.0}}
+{"i": 72, "item": "F6-146", "cost": {"erlang_alone": 6770.0, "forecast_alone": 6338.0, "median_forecast_then_staff": 9133.0, "weekly_mean_then_staff": 10573.0, "static_composition": 5630.0, "routed_composition": 5630.0}}
+{"i": 73, "item": "F6-147", "cost": {"erlang_alone": 4801.0, "forecast_alone": 5235.0, "median_forecast_then_staff": 4807.0, "weekly_mean_then_staff": 4824.0, "static_composition": 4756.0, "routed_composition": 4756.0}}
+{"i": 75, "item": "F6-149", "cost": {"erlang_alone": 16689.0, "forecast_alone": 6231.0, "median_forecast_then_staff": 17485.0, "weekly_mean_then_staff": 11815.0, "static_composition": 5688.0, "routed_composition": 5688.0}}
+{"i": 74, "item": "F6-148", "cost": {"erlang_alone": 5032.0, "forecast_alone": 5957.0, "median_forecast_then_staff": 5117.0, "weekly_mean_then_staff": 4909.0, "static_composition": 5300.0, "routed_composition": 5300.0}}
+{"i": 76, "item": "F6-150", "cost": {"erlang_alone": 5458.0, "forecast_alone": 5299.0, "median_forecast_then_staff": 5718.0, "weekly_mean_then_staff": 5427.0, "static_composition": 5434.0, "routed_composition": 5434.0}}
+{"i": 77, "item": "F6-151", "cost": {"erlang_alone": 4960.0, "forecast_alone": 6161.0, "median_forecast_then_staff": 4755.0, "weekly_mean_then_staff": 4683.0, "static_composition": 5479.0, "routed_composition": 5479.0}}
+{"i": 79, "item": "F6-153", "cost": {"erlang_alone": 4317.0, "forecast_alone": 4970.0, "median_forecast_then_staff": 4319.0, "weekly_mean_then_staff": 4466.0, "static_composition": 4462.0, "routed_composition": 4462.0}}
+{"i": 78, "item": "F6-152", "cost": {"erlang_alone": 5678.0, "forecast_alone": 6293.0, "median_forecast_then_staff": 4479.0, "weekly_mean_then_staff": 4555.0, "static_composition": 5594.0, "routed_composition": 5594.0}}
+{"i": 80, "item": "F6-154", "cost": {"erlang_alone": 5789.0, "forecast_alone": 5559.0, "median_forecast_then_staff": 5369.0, "weekly_mean_then_staff": 4599.0, "static_composition": 4962.0, "routed_composition": 4962.0}}
+{"i": 81, "item": "F6-155", "cost": {"erlang_alone": 27090.0, "forecast_alone": 5918.0, "median_forecast_then_staff": 28102.0, "weekly_mean_then_staff": 24411.0, "static_composition": 6291.0, "routed_composition": 6291.0}}
+{"i": 82, "item": "F6-156", "cost": {"erlang_alone": 5284.0, "forecast_alone": 5258.0, "median_forecast_then_staff": 5724.0, "weekly_mean_then_staff": 5908.0, "static_composition": 5427.0, "routed_composition": 5427.0}}
+{"i": 83, "item": "F6-157", "cost": {"erlang_alone": 5248.0, "forecast_alone": 6077.0, "median_forecast_then_staff": 5170.0, "weekly_mean_then_staff": 5492.0, "static_composition": 5403.0, "routed_composition": 5403.0}}
+{"i": 84, "item": "F6-158", "cost": {"erlang_alone": 10012.0, "forecast_alone": 6376.0, "median_forecast_then_staff": 9203.0, "weekly_mean_then_staff": 9093.0, "static_composition": 5663.0, "routed_composition": 5663.0}}
+{"i": 85, "item": "F6-159", "cost": {"erlang_alone": 5796.0, "forecast_alone": 5363.0, "median_forecast_then_staff": 5756.0, "weekly_mean_then_staff": 5479.0, "static_composition": 5456.0, "routed_composition": 5456.0}}
+{"i": 86, "item": "F6-160", "cost": {"erlang_alone": 7824.0, "forecast_alone": 7201.0, "median_forecast_then_staff": 8614.0, "weekly_mean_then_staff": 8286.0, "static_composition": 7516.0, "routed_composition": 7516.0}}
+{"i": 87, "item": "F6-161", "cost": {"erlang_alone": 5048.0, "forecast_alone": 6482.0, "median_forecast_then_staff": 4546.0, "weekly_mean_then_staff": 4683.0, "static_composition": 5755.0, "routed_composition": 5755.0}}
+{"i": 88, "item": "F6-162", "cost": {"erlang_alone": 4409.0, "forecast_alone": 5149.0, "median_forecast_then_staff": 4456.0, "weekly_mean_then_staff": 4562.0, "static_composition": 4609.0, "routed_composition": 4609.0}}
+{"i": 89, "item": "F6-163", "cost": {"erlang_alone": 6239.0, "forecast_alone": 5699.0, "median_forecast_then_staff": 5672.0, "weekly_mean_then_staff": 4831.0, "static_composition": 5110.0, "routed_composition": 5110.0}}
+{
+ "development": {
+  "recipe_dev_cost": {
+   "bayes_then_voi": null,
+   "estimate_then_optimize": null,
+   "forecast_then_allocate": null,
+   "forecast_then_staff": 76392.0,
+   "graph_then_allocate": null,
+   "identify_then_optimize": null
+  },
+  "static_recipe": "forecast_then_staff"
+ },
+ "summary": {
+  "F6": {
+   "n": 90,
+   "total_realised_cost": {
+    "erlang_alone": 720326.0,
+    "forecast_alone": 539340.0,
+    "median_forecast_then_staff": 715226.0,
+    "weekly_mean_then_staff": 662089.0,
+    "static_composition": 506301.0,
+    "routed_composition": 506301.0
+   },
+   "infeasible": {
+    "erlang_alone": 0,
+    "forecast_alone": 0,
+    "median_forecast_then_staff": 0,
+    "weekly_mean_then_staff": 0,
+    "static_composition": 0,
+    "routed_composition": 0
+   },
+   "no_decision": {
+    "erlang_alone": 0,
+    "forecast_alone": 0,
+    "median_forecast_then_staff": 0,
+    "weekly_mean_then_staff": 0,
+    "static_composition": 0,
+    "routed_composition": 0
+   },
+   "hindsight_optimal_cost": 412595.0,
+   "shortage": {
+    "erlang_alone": {
+     "short_blocks": 1223,
+     "agents_short": 20569,
+     "agents_paid": 412742
+    },
+    "forecast_alone": {
+     "short_blocks": 105,
+     "agents_short": 1424,
+     "agents_paid": 531649
+    },
+    "median_forecast_then_staff": {
+     "short_blocks": 1192,
+     "agents_short": 21236,
+     "agents_paid": 405719
+    },
+    "weekly_mean_then_staff": {
+     "short_blocks": 1058,
+     "agents_short": 16591,
+     "agents_paid": 413205
+    },
+    "static_composition": {
+     "short_blocks": 377,
+     "agents_short": 5786,
+     "agents_paid": 473393
+    },
+    "routed_composition": {
+     "short_blocks": 377,
+     "agents_short": 5786,
+     "agents_paid": 473393
+    }
+   },
+   "best_constituent": "forecast_alone",
+   "routed_wins": 74,
+   "routed_losses": 16,
+   "sign_test_p_one_sided": 0.0,
+   "wilcoxon_p_one_sided_vs_best": 5.304698219922528e-10,
+   "versus": {
+    "erlang_alone": {
+     "wins": 58,
+     "losses": 32,
+     "sign_test_p_one_sided": 0.004023,
+     "wilcoxon_p_one_sided": 2.518766604775788e-05,
+     "cost_reduction": 0.2971
+    },
+    "forecast_alone": {
+     "wins": 74,
+     "losses": 16,
+     "sign_test_p_one_sided": 0.0,
+     "wilcoxon_p_one_sided": 5.304698219922528e-10,
+     "cost_reduction": 0.0613
+    },
+    "median_forecast_then_staff": {
+     "wins": 49,
+     "losses": 41,
+     "sign_test_p_one_sided": 0.230396,
+     "wilcoxon_p_one_sided": 0.009041077478827816,
+     "cost_reduction": 0.2921
+    },
+    "weekly_mean_then_staff": {
+     "wins": 40,
+     "losses": 50,
+     "sign_test_p_one_sided": 0.876947,
+     "wilcoxon_p_one_sided": 0.27373848270717827,
+     "cost_reduction": 0.2353
+    },
+    "static_composition": {
+     "wins": 0,
+     "losses": 0,
+     "sign_test_p_one_sided": 1.0,
+     "wilcoxon_p_one_sided": null,
+     "cost_reduction": 0.0
+    }
+   },
+   "median_seconds": {
+    "erlang_alone": 6.842,
+    "forecast_alone": 6.997,
+    "median_forecast_then_staff": 13.841,
+    "weekly_mean_then_staff": 6.839,
+    "static_composition": 13.938,
+    "routed_composition": 13.914
+   },
+   "median_stages": {
+    "erlang_alone": 28.0,
+    "forecast_alone": 28.0,
+    "median_forecast_then_staff": 56.0,
+    "weekly_mean_then_staff": 28.0,
+    "static_composition": 56.0,
+    "routed_composition": 56.0
+   },
+   "translation_failure_rate": 0.0,
+   "composition_failure_rate": 0.0,
+   "model_calls": 0,
+   "money_usd": 0.0,
+   "lift": true
+  },
+  "VPL_v3": {
+   "families_with_lift": 1,
+   "families": 1,
+   "rule": "F6 (natural, continuous cost): routed no-decision = 0, routed total realised cost < best constituent total, routed infeasible <= best constituent infeasible, one-sided exact sign test over held-out days p < 0.05, routed median latency <= 120 s. Best constituent chosen on held-out results (fewest wrong + no-decision, then lowest total). Wilcoxon and ablation comparisons reported, not part of the rule. VPL = families meeting their rule."
+  }
+ }
+}
+exit=0

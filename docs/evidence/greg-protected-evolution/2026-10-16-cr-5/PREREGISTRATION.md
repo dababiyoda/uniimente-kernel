@@ -218,10 +218,16 @@ This is the third pre-registered cycle on `constraint_release`, after cycles 3 a
 - **The frozen rule decides with alpha 0.05.** The rule is unchanged.
 - **The README will report the held-out p-value beside the three-attempt Bonferroni threshold, 0.05/3 = 0.0167.** This continues cycle 4's pre-registration, which reported its p-value beside the two-attempt threshold 0.025 "for reading only".
 - **A RETAIN with 0.0167 ≤ p < 0.05 will be reported as a RETAIN that does not survive the three-attempt correction.**
+- **The README will also report the programme-wide threshold, 0.05/5 = 0.01.** This is the fifth P8 cycle overall, and section 31 item 7 concerns protected evolution as a whole. A RETAIN with p ≥ 0.01 will be reported as not surviving that correction either.
 - **The pilot's resampled RETAIN rates at the corrected threshold are lower.** They are the second number in each cell of §2.
 
 ## Prediction (from the pilot; not part of the rule)
 
+- **These predictions are optimistic, for three reasons** (independent critique, 2026-10-16):
+  - the six simulation train sets overlap: 3000-3119 is the union of two of the others, and 3000-3059 is pilot-train, which shaped the grid;
+  - the policy (`cover/1`, lhs 0) was chosen as the best of four on the same pool, 3200-3499, that measured its RETAIN rate;
+  - the resampling treats the 300-item pool as the population.
+- **The support for `p_restart` = 1.0 rests on the pool, not on both pilot halves.** On pilot-test, `p_restart` = 1.0 has a higher mean loss than the incumbent (0.009761 against 0.007752; wins 27-16, p = 0.063). None of the nine configurations that pass both halves has `p_restart` above 0.75. The "lower mean" condition is tail-sensitive: on the pool, the top 5 of 300 items carry 36% of the incumbent-minus-1.0 loss difference.
 - **The trigger fires.** The incumbent lost to random restart on 36.7-56.7% of the items of each of the six review train sets; the threshold is 25%.
 - **The candidate has `p_restart` ≥ 0.75.** Four of the six simulated cycles of this policy selected one.
 - **P(RETAIN) is about 0.65** under the frozen rule (alpha 0.05), and about 0.49 at the reading-only threshold 0.0167. This is the mean over the six simulated cycles of this policy of the selected candidate's resampled rate at n = 180 on the fresh pool; the six ranged from 0.21 to 0.81.

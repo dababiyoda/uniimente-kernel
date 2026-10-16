@@ -1122,6 +1122,10 @@ def test_the_cycle_5_split_is_fresh_and_checked_without_generating_an_instance(m
         E.cr_split_seeds("cycle-9")
 
 
+# instance generation, truths, stress sets and method, byte-identical at cycle 4's commit 2cbb43d and at c8d1fd3
+GENERATION_CODE_SHA256 = "e3c174b08e368a831f5c13f7ffc1e7ba3bc7e14862443b699e0822aa99b7cb41"
+
+
 def test_earlier_constraint_release_splits_and_the_seal_code_are_unchanged():
     """Cycles 3 and 4 re-seal at HEAD only if their seeds and the seal's code (SealedEvaluator, the target's score
     and RULE) are unchanged. Checked here without generating their instances; the re-seal of cycle 3 from its
@@ -1139,3 +1143,8 @@ def test_earlier_constraint_release_splits_and_the_seal_code_are_unchanged():
     # computed at c8d1fd3, where the seal code is byte-identical to cycle 4's commit 2cbb43d
     assert hashlib.sha256(code.encode()).hexdigest() == \
         "98c39cdd809f3509140dc2d23ce0c70301d5b3e3eb34e91b847b4e2bbfc08b3d"
+    # what generates the instances, their truths, the stress sets and the method also fixes the seals and the replay
+    generated = "".join(inspect.getsource(f) for f in (
+        D.constraint_release_instance, D._twt_optimum, D._cr_inputs, D.constraint_release_solve_with,
+        D.constraint_release_random_restart, D.constraint_release_subregion, E._cr_stress))
+    assert hashlib.sha256(generated.encode()).hexdigest() == GENERATION_CODE_SHA256

@@ -2,6 +2,7 @@
 
 Read and obey, in this order:
 
+- @docs/intent/INTENT-20261019-UPWARD-ASCENT.md
 - @docs/FOUNDER_EFFECT_COMPILER.md
 - @docs/FOUNDER_INTENT_LEDGER.md
 - @docs/RECURSIVE_COLLABORATION_PROTOCOL.md

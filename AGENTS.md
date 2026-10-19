@@ -2,6 +2,8 @@
 
 This repository is the canonical institutional control plane for **UNIIMENTE: Artificial Egregore**.
 
+**Latest founder correction (2026-10-19):** Read [Universal Substrate Elevation](docs/intent/INTENT-20261019-UPWARD-ASCENT.md). Convergence must produce a demonstrated capability dividend, not stop at consolidation or archival. Apply Mechanism Recombination Foundry to material duplication and not-yet-elevated substrate; preserve the complete founder vision as the acceptance floor. This changes development requirements, not runtime authority.
+
 Before substantive work, read:
 
 1. `docs/FOUNDER_EFFECT_COMPILER.md`

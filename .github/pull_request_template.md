@@ -9,6 +9,19 @@ Describe the problem, affected system boundary, and why this belongs in this rep
 - Conflicts with:
 - Defers or supersedes:
 
+## Upward recombination and full-vision completion
+
+For material convergence, duplication or not-yet-elevated substrate, apply `docs/intent/INTENT-20261019-UPWARD-ASCENT.md` using Mechanism Recombination Foundry. Record the source-to-function transformation in the existing reconciliation record, not another parallel ledger.
+
+- Source revisions and useful behaviors preserved:
+- Material mutations and resulting emergent capability:
+- Actual GREG caller, receiving consumer and integration trace:
+- Strongest simple baseline, measurable capability dividend and subtraction/ablation test:
+- Evidence tier attained, negative results and remaining full-vision obligations:
+- Unconverted substrate, next mutation/build step, owner and precise blocker or revisit trigger:
+
+Preservation, renaming, file consolidation, green CI and documentation alone do not prove a new runtime capability. Preparatory work must name the product blocker it removes. Open or blocked obligations never count as full completion. No runtime or merge authority is added.
+
 ## Effect compilation / anti-literalization
 
 Required for any founder metaphor, science-fiction aspiration, morphogenesis/developmental work, or materially new capability.

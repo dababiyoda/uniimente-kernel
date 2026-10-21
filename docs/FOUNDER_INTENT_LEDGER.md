@@ -142,6 +142,10 @@ Progress 2026-10-21 (measured, frozen, negative results kept):
 - **Design pilots before the freeze** (review seeds 3500-3999; [pilots](evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/README.md)):
   - The planned selection-rule change was refuted: no declared rule beat the lowest train mean, and the sign-test rule coded beforehand did worst (0.20 against 0.55). It is kept in git history and reverted.
   - What changed was power: 120 train and 240 held-out items. To make room, P8's reserved seeds were extended to 7000-8599.
+- **Cycle-6 canary** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-6/canary/README.md)): CANARY_PASSES. It was pre-registered before any instance existed and run on 240 fresh seeds (8300-8539).
+  - The proposal beats the incumbent 107-74, p = 0.0086, with a 33.9% lower mean loss.
+  - Random restart has the lowest mean loss overall and in both subregions. Against the proposal it wins 95-79 (p = 0.128), which is not significant.
+  - On the evidence so far, the options rank random restart, then the proposal, then the incumbent. Nothing is applied.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 

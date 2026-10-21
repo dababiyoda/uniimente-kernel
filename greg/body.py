@@ -117,12 +117,12 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
 # A founder-signed GOAL or GOAL_CONTROL the body verified and then rejected (it would widen authority, it
 # duplicates a goal, ...) consumes its nonce: re-dropping the retained file later, after the state that
 # refused it changed (a revoke, a supersede), must not apply it without a new signature.
-NONCE_CONSUMED_ON_REJECT = ("GOAL", "GOAL_CONTROL", "DECISION")
+NONCE_CONSUMED_ON_REJECT = ("GOAL", "GOAL_CONTROL")
 
 
 def consumed_nonces(journal: Journal) -> set[str]:
     """Nonces a command may not reuse: every accepted command's, and every verified-then-rejected
-    GOAL / GOAL_CONTROL / DECISION's (``command.rejected`` carrying ``consumed``). ``spent_nonce`` is the per-record
+    GOAL / GOAL_CONTROL's (``command.rejected`` carrying ``consumed``). ``spent_nonce`` is the per-record
     rule, shared with the goal tick's re-derivation (greg/goal_gravity.py ``founder_facts``)."""
     out = set()
     for e in journal.replay("command.accepted") + journal.replay("command.rejected"):
@@ -381,6 +381,13 @@ class Body:
                  and isinstance(e.payload.get("envelope"), dict) and sha256_json(e.payload["envelope"]) == digest
                  and e.payload.get("nonce") == envelope.get("nonce")]
         if prior:
+            if envelope.get("kind") == "DECISION":
+                self.engine.book.rebuild()
+                if not any(a.get("command_digest") == digest for a in self.engine.book.answers.values()):
+                    # an acceptance someone else wrote for this very envelope, with no answer the book counts: its
+                    # nonce is spent there, so re-applying cannot help; say so instead of dropping it silently
+                    raise MissionError("this signed decision is already recorded as accepted, but no answer counts "
+                                       "for it; sign your answer again")
             return {"status": "ALREADY_APPLIED", "digest": digest}
         now = self.clock()
         verifier = self.verifier()

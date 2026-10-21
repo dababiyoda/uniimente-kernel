@@ -37,7 +37,7 @@ import re
 import unicodedata
 
 from greg.dataplane import INVISIBLE
-from greg.journal import Journal
+from greg.journal import Journal, fact_id
 from provenance.ledger import sha256_json
 
 RESOURCES = {
@@ -335,7 +335,11 @@ def open_requests(events, *, counted=None, uncounted=None, pending=()) -> list[d
     for e in events:
         kind, p = e.type[len("greg."):], e.payload
         if kind == "decision.requested":
-            requested.append(p)
+            # only the ask record() wrote (keyed on its request id): a row under another identity is not shown,
+            # so the founder answers the ask the mission book applies the answer to
+            event_id = getattr(e, "event_id", None)
+            if event_id is None or event_id == fact_id("decision.requested", p.get("request_id")):
+                requested.append(p)
         elif kind == "decision.answered":
             answers[p["request_id"]] = p.get("answer")
             rows[p["request_id"]] = p

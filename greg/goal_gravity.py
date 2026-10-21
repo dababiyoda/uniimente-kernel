@@ -210,6 +210,7 @@ class FounderFacts:
     specs: dict = field(default_factory=dict)           # goal_id -> GoalSpec of an admitted goal
     refused: dict = field(default_factory=dict)         # digest -> why a signed GOAL / GOAL_CONTROL does not count
     refused_at: dict = field(default_factory=dict)      # digest -> latest body time the body refused that command
+    clock_floor: Any = None                             # latest body-clock time an earlier non-acceptance record states
     closed: dict = field(default_factory=dict)          # goal_id -> {status, by, issued_at[, superseded_by]}
     closed_intents: dict = field(default_factory=dict)  # goal intent digest -> issued_at of the signed closure
     stop: dict = field(default_factory=dict)            # goal_id -> last signed stop / resume / change
@@ -267,6 +268,11 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
         kind, p = rec.payload.get("type", ""), rec.payload.get("payload") or {}
         if not kind.startswith("greg."):
             continue
+        if kind != "greg.command.accepted":     # the latest body-clock time an earlier record states
+            for field_ in ("at", "created_at", "accepted_at"):
+                stated = _when(p.get(field_)) if isinstance(p, dict) else None
+                if stated is not None and (facts.clock_floor is None or stated > facts.clock_floor):
+                    facts.clock_floor = stated
         if kind == "greg.founder.enrolled":
             if not rooted:                     # only the first enrollment is the root; later ones are data
                 founders[p["key_id"]] = p["public_key"]
@@ -396,6 +402,14 @@ def _founder_fact(facts: FounderFacts, p: dict, env: dict, ckind: str, digest_: 
     stale = _fresh(env, accepted_at)
     if stale is None and accepted_at is None and ckind in ("GOAL", "GOAL_CONTROL"):
         stale = "no acceptance time on the ledger"
+    if stale is None and accepted_at is None and ckind in ("MISSION", "DECISION") and facts.clock_floor is not None:
+        # no acceptance time recorded (bodies before accepted_at): it happened no earlier than the latest time an
+        # earlier record states, so a floor already past the signed expiry proves it was accepted after it
+        try:
+            if facts.clock_floor >= instant(env["expires_at"]):
+                stale = "no acceptance time, and an earlier record is already later than its signed expiry"
+        except (KeyError, TypeError, ValueError):
+            stale = "unreadable expires_at"
     refused = facts.refused_at.get(digest_)
     if stale is None and refused is not None and (accepted_at is None or accepted_at < refused):
         # the body already refused this very command at ``refused`` (by its own clock); an acceptance claiming an

@@ -58,11 +58,10 @@ class AuthorityOffice:
 
     def _prior(self, proposal_id: str):
         """Retained dispatch/receipt for this exact proposal, if any (crash recovery)."""
-        claims = [r for r in self.ledger.by_type("grant_dispatch") if r.payload.get("proposal_id") == proposal_id]
+        claims = self.ledger.select("grant_dispatch", proposal_id=proposal_id)
         if not claims:
             return None, None
-        receipts = [r for r in self.ledger.by_type("receipt")
-                    if r.payload.get("grant_id") == claims[-1].payload.get("grant_id")]
+        receipts = self.ledger.select("receipt", grant_id=claims[-1].payload.get("grant_id"))
         return claims[-1], (receipts[-1] if receipts else None)
 
     def act(self, *, mission_id: str, cone: LightCone, command_digest: str, manifest: CapabilityManifest,

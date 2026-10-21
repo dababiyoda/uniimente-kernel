@@ -228,3 +228,35 @@ def test_a_journal_that_can_only_replay_is_folded_whole_every_time(tmp_path):
         body.tick()
         book.rebuild()
         assert view(book) == view(from_the_beginning(body.journal))
+
+
+def test_each_check_is_numbered_by_the_observations_the_journal_retains(tmp_path, monkeypatch):
+    """A sensor read's attempt number (part of its proposal identity) counts this check's retained
+    observations. The engine now counts only new ones; every count must equal a replay of them all."""
+    from greg.missions import MissionEngine
+    counted = MissionEngine._observations_retained
+    seen = []
+
+    def checked(self, mission_id, check_id):
+        n = counted(self, mission_id, check_id)
+        assert n == sum(1 for e in self.journal.replay("mission.observed")
+                        if e.payload.get("mission_id") == mission_id and e.payload.get("check_id") == check_id)
+        seen.append(n)
+        return n
+
+    monkeypatch.setattr(MissionEngine, "_observations_retained", checked)
+    home, clock, founder = body_with_history(tmp_path, ticks=8)
+    ws = workspace(home, "m:two")                          # two checks of one mission are counted apart
+    drop(home, signed(*founder, "MISSION", mission(
+        "m:two", checks=[note_check("a", ws / "a.txt", "one"), note_check("b", ws / "b.txt", "two")],
+        strategies=[write_strategy("wa", "a.txt", "one", ["a"]), write_strategy("wb", "b.txt", "two", ["b"])],
+        capabilities=["fs.read", "fs.write"], closure={"kind": "infinite", "cadence_seconds": 60})))
+    with Body(home, clock=clock) as body:                  # a new process: counted again from the start
+        for _ in range(6):
+            clock.advance(61)
+            body.tick()
+        records = list(body.journal.ledger.records)
+        body.journal.ledger.records = records[:len(records) // 2]   # replaced history is counted again
+        for mid, check in (("m:hold", "n"), ("m:two", "a"), ("m:two", "b")):
+            body.engine._observations_retained(mid, check)
+    assert len(seen) > 8 and max(seen) >= 8

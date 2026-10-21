@@ -714,6 +714,18 @@ class MissionEngine:
             return {"state": "BLOCKED", "blocker": m.blocker}
         return None
 
+    def _observations_retained(self, mission_id: str, check_id: str) -> int:
+        """How many observations of this check the journal retains, counting only events new since the
+        last call (the count a replay of every mission.observed event gives)."""
+        events, self._observed_cursor, restarted = self.journal.since(getattr(self, "_observed_cursor", None),
+                                                                       "mission.observed")
+        if restarted:
+            self._observed_counts = {}
+        for e in events:
+            key = (e.payload.get("mission_id"), e.payload.get("check_id"))
+            self._observed_counts[key] = self._observed_counts.get(key, 0) + 1
+        return self._observed_counts.get((mission_id, check_id), 0)
+
     def _observe(self, m: MissionState, now: datetime):
         failing, evidence = set(), []
         sensor_errors = self.sensor_errors = set()
@@ -731,9 +743,7 @@ class MissionEngine:
             # because the wall clock repeated its timestamp (clock freeze/NTP).
             # The journal survives process death; count only this check's
             # retained observations so each completed read gets a new attempt.
-            attempt = sum(1 for e in self.journal.replay("mission.observed")
-                          if e.payload.get("mission_id") == m.mission_id
-                          and e.payload.get("check_id") == check["check_id"])
+            attempt = self._observations_retained(m.mission_id, check["check_id"])
             outcome = self.office.act(
                 mission_id=m.mission_id, cone=m.cone, command_digest=m.command_digest, manifest=manifest,
                 adapter=adapter, ctx=self._context(m, manifest), params=sensor.get("params", {}),

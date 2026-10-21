@@ -17,7 +17,7 @@ capability.
 |---|---|---|
 | common base | `92bc6e31e0baa8fd507833e0f272b4a5e532e4d3` | P4 v2 result |
 | PR #155 head | `ef5f078013b549a51458dc9f6b5f34b324ea70b0` | 60 files changed since the base |
-| PR #158 head | `10fdbab83054027c5b782a87dd24c997b2d2fed9` (merged in this PR); earlier merges at `77b61a1`, `047549f`, `202b932`, `41a8538` and `f8e8fd2` (review of #179 M18) | changed files classified in section 3 |
+| PR #158 head | `050c1b2` (merged in this PR); earlier merges at `77b61a1`, `047549f`, `202b932`, `41a8538`, `f8e8fd2` (review of #179 M18), `10fdbab` and `463a9d0` | changed files classified in section 3 |
 | shared paths | 22 | 8 are frozen-path collisions |
 
 Convergence commits:
@@ -60,7 +60,15 @@ Convergence commits:
     and measurements block, with this branch's derived rows, stale-measurement fields and code-drift check
     re-applied. `greg/path.json` takes #158's status line and re-inserts #155's lineage segment.
   - **Release exclusions:** the five new F7 files that carry SNDlib-derived data are added (26 paths).
-  - **Map:** the map pins `10fdbab`, and a test asserts it is an ancestor of this branch.
+  - **Map:** the map pinned `10fdbab` at that merge, and a test asserts it is an ancestor of this branch.
+- Later merges bring #158 to `463a9d0` (`0e30b59`; manifest post-decision block, `known_strengths` cite F7) and to
+  `050c1b2` (`020be11`), both clean:
+  - **P8 cycle 6:** RETAIN on held-out data (105-73, p = 0.00995). Random restart is at least as good, and the
+    canary passes (CANARY_PASSES). The proposal stays PROPOSED_NOT_APPLIED; who adopts it is the founder decision
+    already escalated in section 9, and it is now live.
+  - **Seed reservations:** `P8_RESERVED` is now 7000-8599, and `CR_CANARY_SEEDS` excludes the canary range.
+    Operation admission v3's seeds 5001-5040 are spent and never overlap that reservation (test).
+  - **Map:** the map pins `050c1b2`, and a test asserts it is an ancestor of this branch.
 
 The eight collided frozen files are byte-identical at `a832c73`, `77b61a1` and `047549f`.
 
@@ -748,3 +756,34 @@ defect was reproduced, then fixed with a regression test that fails on the old c
 | L1, L8 (manifest, P8 backcast) | #158's own fixes (`ba1863d`, `463a9d0`), merged here at `463a9d0`. |
 | L3 (seed registry), L5 (generator seed in sandbox data, latent for data-only candidates), L20 (no independent Systems Architect) | Open, as before. L5's channel is #158's P8 code and stays a precondition before any code-level candidate space. |
 | M17 | Fixed (section 18). |
+
+## 20. Round-3 re-verification of #179 (from the #158 session, at `65e20fa`): dispositions
+
+The re-verification found N1-N7, L14, M5, L9 and M17 fixed and L7 fixed for the reported form. None of its
+five new findings routes wrongly today. Each was reproduced and fixed with a regression test, or its limit is
+stated.
+
+| item | disposition |
+|---|---|
+| 1 (medium, latent): a recipe binding does not cover its stage genomes | Fixed. `recipe_code` now also binds `stage_closures`: the solve closure of every genome that can serve one of the recipe's stage operations, in the measured tree. An edit inside `erlang_solve` stales `track_then_staff` (test). All 7 recipe verdicts already route UNEVALUATED. |
+| 2 (low, latent): a disagreeing runtime dispatch is ignored; several table mutations are read as resolved | Fixed. A runtime record that disagrees with the static dispatch binds nothing (`runtime_disagrees`). Any other module-level touch of the table counts as unresolved: a loop, an `if`-block, `\|=`, `pop`/`setdefault`, `__setitem__`, `del`, or a helper function that mutates it. Six forms are tests. |
+| 3 (low): transformed copies pass the release check | Fixed for recompression and reformatting. Members are decompressed through gzip, xz and bz2, and JSON is compared by canonical digest under any extension. Markers are scanned in every member, so a minified copy under `.dat` and an xz or bz2 copy are blocked (tests). **Stated limit:** values re-encoded into another format (a Python literal, a CSV re-export, a subset of rows) are out of scope for an automatic check and need human review of what a release contains. |
+| 4 (low): the crowd verifier accepts a total abstention | Fixed. An abstention is accepted only where the declared `min_posterior` threshold abstains; an honest thresholded abstention still verifies (tests on 10 dev seeds). |
+| 5 (low, L3): operation-admission seeds are not spent | Fixed for the converged harness. `spent_seeds()` reads `freeze-ops-v*.json`, so 5001-5040 are refused by later admissions and P8 splits. #155's earlier operation ranges (1001-1040, 2001-2040, 3001-3040) are not registered. They used other generators, so no instance was reused, but registering them would contradict #158's existing genome and pilot seeds; the overlap stays recorded under L3. `admission.py` is #158's file, and this extension is proposed to #158 for adoption. |
+| L7 residual (variables, `%`, slicing) | Stated as a limit of a static scan in the test. The guarantee checked is that no runtime module imports `evolution_routing` in any form that folds to a constant. |
+| L9 weak (candidate equals incumbent) | Strengthened. The synthetic RETAIN now proposes a real configuration change (`p_restart`). |
+| M17 note: the index binds closures recomputed at `dfdcfe9` with the current resolver, not the freeze's digests | Accepted and stated here. The freeze bound the closures under the resolver of that day; the index recomputes them under today's stricter resolver at the same commit. This is stricter than the pre-registration says. A verdict whose closure would differ under the old resolver is not admitted by this rule, never the reverse. |
+| `swarm` vs competitor 17-21 recorded, 17-20 from 9-decimal `per_item` | A rounding near-tie in the recomputation; the frozen result is unchanged and the status does not depend on it. |
+
+## 21. Round-4 re-verification of #179 (from the #158 session, at `0067be6`): dispositions
+
+The re-verification found round 3's findings 2a, 4, 5, L7 and L9 fixed, and 2b and 3 fixed as reported. It found
+finding 1 partly fixed. None of its new findings routes wrongly today.
+
+| item | disposition |
+|---|---|
+| A (medium, latent; finding 1's residual): operation-family and organ stages outside the recipe binding | Fixed. `stage_closures` now also binds every `SOLVERS`-served family whose catalog operations a recipe stage uses (dispatched at the measured tree): `bayes_then_voi`'s `probabilistic` and `information`, and the `optimization` family under `graph_then_allocate` and `forecast_then_allocate`. It also binds the cortex organs that serve the template recipes' stage classes (`STAGE_ORGANS`). An unmapped class binds None, which fails closed. Every recipe's stages are bound and non-empty (test). An edit to `solvers.py::information` stales `bayes_then_voi` (test). Record section 20's earlier "fixed" covered genome stages only. |
+| B (low, latent): further `dispatch()` mutation forms read as resolved | Fixed by failing closed. Any module-level statement outside the recognised literal forms that names the table counts as unresolved, except a plain read (`T[k]` in load context, the read-only methods, `k in T`, iteration). That covers the table as a name, an argument, an alias, `dict.update(T, ...)`, a string reaching `globals()`, a class body, a lambda and a list display. Twelve forms are tests. A positive binding then needs the run's recorded runtime dispatch to agree. |
+| C (low): lzma-alone, zlib, base64 and UTF-16 copies pass the release check | Fixed. Up to six decoding layers are tried: gzip, xz, lzma-alone, bz2, zlib, base64 and UTF-16 (four tests). The stated limit now names every encoding not decoded. |
+| D (low, regression, fails closed): the marker scan flags ordinary source | Fixed. Python source is exempt from the marker rule; a renamed data copy is still caught by digest. A tar of every tracked `.py` file passes (test). |
+| #158 merge | #158 is merged at `050c1b2`: P8 cycle 6 RETAIN (PROPOSED_NOT_APPLIED) and its canary (section 1). |

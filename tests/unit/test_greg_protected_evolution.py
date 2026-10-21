@@ -1143,8 +1143,10 @@ def test_the_cycle_6_split_is_fresh_and_checked_without_generating_an_instance(m
         set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
     assert others <= reserved and not (set(train) | set(held)) & others
     assert set(train) | set(held) <= set(admission.P8_RESERVED) and not set(held) & set(range(3000, 4000))
-    spent = set().union(*E._spent_heldout("constraint_release").values())
-    assert not {f"s{s}" for s in held} & spent                       # no committed freeze or record has used it
+    # its freeze (2026-10-16-cr-6) is committed and the cycle looked once, so the split is spent
+    spent = E._spent_heldout("constraint_release")
+    assert any("2026-10-16-cr-6" in key for key, ids in spent.items() if {f"s{s}" for s in held} <= set(ids))
+    assert {f"s{s}" for s in held} <= E._registered_heldout("constraint_release")
 
 
 def test_earlier_constraint_release_splits_and_the_seal_code_are_unchanged():

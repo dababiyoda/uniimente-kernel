@@ -1,0 +1,414 @@
+{
+ "region": {
+  "trigger": {
+   "T1": {
+    "rule_no_repair": 0.0,
+    "diagnostic_replanner": 0.6667,
+    "fires": false
+   },
+   "T2": {
+    "rule_no_repair": 0.0,
+    "diagnostic_replanner": 0.75,
+    "fires": false
+   },
+   "T3": {
+    "rule_no_repair": 0.0,
+    "diagnostic_replanner": 0.7333,
+    "fires": false
+   }
+  },
+  "incumbent_pool": {
+   "mean_loss": -0.952899,
+   "wrong": 0,
+   "abstain": 0,
+   "n": 640,
+   "mean_loss_without_wrong": -0.952899,
+   "errors": {
+    "wrong": 0,
+    "n": 640,
+    "rate": 0.0,
+    "upper_95": 0.00467
+   },
+   "vs_baselines": {
+    "no_repair": {
+     "wins": 640,
+     "losses": 0,
+     "ties": 0,
+     "sign_test_p_one_sided": 0.0
+    },
+    "replanner": {
+     "wins": 173,
+     "losses": 467,
+     "ties": 0,
+     "sign_test_p_one_sided": 1.0
+    }
+   },
+   "vs_replanner_by_controller": {
+    "reliable_controller": {
+     "wins": 0,
+     "losses": 320,
+     "ties": 0,
+     "sign_test_p_one_sided": 1.0
+    },
+    "unreliable_controller": {
+     "wins": 173,
+     "losses": 147,
+     "ties": 0,
+     "sign_test_p_one_sided": 0.081073
+    }
+   }
+  },
+  "baselines": {
+   "no_repair": {
+    "what": "D.repair_no_repair (the rule's trigger baseline: keep the pre-damage field, claim nothing)",
+    "mean_loss": -0.073932,
+    "wrong": 0,
+    "abstain": 344,
+    "n": 640,
+    "mean_loss_without_wrong": -0.073932,
+    "errors": {
+     "wrong": 0,
+     "n": 640,
+     "rate": 0.0,
+     "upper_95": 0.00467
+    },
+    "vs_incumbent": {
+     "wins": 0,
+     "losses": 640,
+     "ties": 0,
+     "sign_test_p_one_sided": 1.0
+    }
+   },
+   "replanner": {
+    "what": "D.repair_central_replanner (the strongest competitor: adaptive centralized replanner, reliable on even seeds, crash or stale view on odd ones; reported, never in the rule)",
+    "mean_loss": Infinity,
+    "wrong": 50,
+    "abstain": 0,
+    "n": 640,
+    "mean_loss_without_wrong": -0.838426,
+    "errors": {
+     "wrong": 50,
+     "n": 640,
+     "rate": 0.078125,
+     "upper_95": 0.097847
+    },
+    "vs_incumbent": {
+     "wins": 467,
+     "losses": 173,
+     "ties": 0,
+     "sign_test_p_one_sided": 0.0
+    }
+   }
+  },
+  "informed": [
+   {
+    "label": "informed:slow-waves (wave_period 12)",
+    "id": "cfg-b2162b2ff085",
+    "pool_errors": {
+     "wrong": 0,
+     "n": 640,
+     "rate": 0.0,
+     "upper_95": 0.00467
+    },
+    "vs_incumbent": {
+     "wins": 582,
+     "losses": 58,
+     "ties": 0,
+     "sign_test_p_one_sided": 0.0
+    },
+    "gate": {
+     "T1": false,
+     "T2": false,
+     "T3": false
+    },
+    "fixed_protocol_retain": [
+     {
+      "n": 120,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 240,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 360,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 480,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     }
+    ]
+   },
+   {
+    "label": "informed:short-expiry (expiry_waves 1)",
+    "id": "cfg-9558af130012",
+    "pool_errors": {
+     "wrong": 0,
+     "n": 640,
+     "rate": 0.0,
+     "upper_95": 0.00467
+    },
+    "vs_incumbent": {
+     "wins": 0,
+     "losses": 0,
+     "ties": 640,
+     "sign_test_p_one_sided": 1.0
+    },
+    "gate": {
+     "T1": true,
+     "T2": false,
+     "T3": false
+    },
+    "fixed_protocol_retain": [
+     {
+      "n": 120,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 240,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 360,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 480,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     }
+    ]
+   },
+   {
+    "label": "informed:slow-waves-short-expiry (12, 1)",
+    "id": "cfg-1ae30a4d942c",
+    "pool_errors": {
+     "wrong": 0,
+     "n": 640,
+     "rate": 0.0,
+     "upper_95": 0.00467
+    },
+    "vs_incumbent": {
+     "wins": 582,
+     "losses": 58,
+     "ties": 0,
+     "sign_test_p_one_sided": 0.0
+    },
+    "gate": {
+     "T1": false,
+     "T2": false,
+     "T3": false
+    },
+    "fixed_protocol_retain": [
+     {
+      "n": 120,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 240,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 360,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 480,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     }
+    ]
+   },
+   {
+    "label": "informed:more-repeats (repeats 8, retract 5)",
+    "id": "cfg-0cdf994c848e",
+    "pool_errors": {
+     "wrong": 0,
+     "n": 640,
+     "rate": 0.0,
+     "upper_95": 0.00467
+    },
+    "vs_incumbent": {
+     "wins": 103,
+     "losses": 537,
+     "ties": 0,
+     "sign_test_p_one_sided": 1.0
+    },
+    "gate": {
+     "T1": false,
+     "T2": true,
+     "T3": false
+    },
+    "fixed_protocol_retain": [
+     {
+      "n": 120,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 240,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 360,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     },
+     {
+      "n": 480,
+      "retain_rate_alpha": 0.0,
+      "retain_rate_programme_7": 0.0
+     }
+    ]
+   }
+  ]
+ },
+ "decision": {
+  "complete": true,
+  "triggered_by_train_set": {
+   "T1": false,
+   "T2": false,
+   "T3": false
+  },
+  "best_mean_retain_alpha": 0.0,
+  "viable_min": 0.3,
+  "verdict": "NOT_VIABLE",
+  "table": [
+   {
+    "search": "cover/1",
+    "heldout_size": 120,
+    "runs": 3,
+    "mean_retain_rate_alpha": 0.0,
+    "mean_retain_rate_programme_7": 0.0
+   },
+   {
+    "search": "cover/1",
+    "heldout_size": 240,
+    "runs": 3,
+    "mean_retain_rate_alpha": 0.0,
+    "mean_retain_rate_programme_7": 0.0
+   },
+   {
+    "search": "cover/1",
+    "heldout_size": 360,
+    "runs": 3,
+    "mean_retain_rate_alpha": 0.0,
+    "mean_retain_rate_programme_7": 0.0
+   },
+   {
+    "search": "cover/1",
+    "heldout_size": 480,
+    "runs": 3,
+    "mean_retain_rate_alpha": 0.0,
+    "mean_retain_rate_programme_7": 0.0
+   },
+   {
+    "search": "mutate-incumbent/1",
+    "heldout_size": 120,
+    "runs": 3,
+    "mean_retain_rate_alpha": 0.0,
+    "mean_retain_rate_programme_7": 0.0
+   },
+   {
+    "search": "mutate-incumbent/1",
+    "heldout_size": 240,
+    "runs": 3,
+    "mean_retain_rate_alpha": 0.0,
+    "mean_retain_rate_programme_7": 0.0
+   },
+   {
+    "search": "mutate-incumbent/1",
+    "heldout_size": 360,
+    "runs": 3,
+    "mean_retain_rate_alpha": 0.0,
+    "mean_retain_rate_programme_7": 0.0
+   },
+   {
+    "search": "mutate-incumbent/1",
+    "heldout_size": 480,
+    "runs": 3,
+    "mean_retain_rate_alpha": 0.0,
+    "mean_retain_rate_programme_7": 0.0
+   }
+  ],
+  "choice": null
+ },
+ "diagnostic_without_trigger_stage": [
+  {
+   "search": "cover/1",
+   "heldout_size": 120,
+   "runs": 3,
+   "role": "diagnostic; not the verdict",
+   "mean_retain_rate_alpha": 0.3333,
+   "mean_retain_rate_programme_7": 0.3333
+  },
+  {
+   "search": "cover/1",
+   "heldout_size": 240,
+   "runs": 3,
+   "role": "diagnostic; not the verdict",
+   "mean_retain_rate_alpha": 0.3333,
+   "mean_retain_rate_programme_7": 0.3333
+  },
+  {
+   "search": "cover/1",
+   "heldout_size": 360,
+   "runs": 3,
+   "role": "diagnostic; not the verdict",
+   "mean_retain_rate_alpha": 0.3333,
+   "mean_retain_rate_programme_7": 0.3333
+  },
+  {
+   "search": "cover/1",
+   "heldout_size": 480,
+   "runs": 3,
+   "role": "diagnostic; not the verdict",
+   "mean_retain_rate_alpha": 0.3333,
+   "mean_retain_rate_programme_7": 0.3333
+  },
+  {
+   "search": "mutate-incumbent/1",
+   "heldout_size": 120,
+   "runs": 3,
+   "role": "diagnostic; not the verdict",
+   "mean_retain_rate_alpha": 0.3333,
+   "mean_retain_rate_programme_7": 0.3333
+  },
+  {
+   "search": "mutate-incumbent/1",
+   "heldout_size": 240,
+   "runs": 3,
+   "role": "diagnostic; not the verdict",
+   "mean_retain_rate_alpha": 0.3333,
+   "mean_retain_rate_programme_7": 0.3333
+  },
+  {
+   "search": "mutate-incumbent/1",
+   "heldout_size": 360,
+   "runs": 3,
+   "role": "diagnostic; not the verdict",
+   "mean_retain_rate_alpha": 0.3333,
+   "mean_retain_rate_programme_7": 0.3333
+  },
+  {
+   "search": "mutate-incumbent/1",
+   "heldout_size": 480,
+   "runs": 3,
+   "role": "diagnostic; not the verdict",
+   "mean_retain_rate_alpha": 0.3333,
+   "mean_retain_rate_programme_7": 0.3333
+  }
+ ]
+}

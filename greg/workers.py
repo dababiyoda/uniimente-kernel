@@ -451,21 +451,27 @@ def collect_changes(clone: Path, base_commit: str) -> tuple[list[str], str]:
 
 
 def run_tests(tests: list, cwd: Path, *, timeout: int) -> list[dict]:
-    """GREG runs acceptance itself: scrubbed env, no network (seccomp / sandbox-exec), timeout."""
+    """GREG runs acceptance itself: scrubbed env, no network (seccomp / sandbox-exec), timeout.
+
+    The commands execute the worker's patch, so they are confined as the worker was (``confine_to``): the
+    patch's code reads only the host runtime and writes only its clone. Unconfined, a patch's test could
+    read the Body's witness key into the retained output tail, or write into the Body home."""
     results = []
     python_dir = str(Path(sys.executable).parent)
     for argv in tests:
         argv = [sys.executable if a in ("python", "python3") else a for a in argv]
         started = time.monotonic()
+        confinement = None
         try:
-            proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout,
+            proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, confine_to=cwd,
                                 extra_env={"PATH": f"{python_dir}:/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1"})
             code, out = proc.returncode, (proc.stdout + proc.stderr).decode("utf-8", "replace")
+            confinement = getattr(proc, "confinement", None)
         except subprocess.TimeoutExpired:
             code, out = -1, f"timed out after {timeout}s"
         results.append({"argv": argv, "returncode": code, "passed": code == 0,
                         "seconds": round(time.monotonic() - started, 2), "tail": out[-MAX_TAIL:],
-                        "network": "denied"})
+                        "network": "denied", "confinement": confinement})
     return results
 
 
@@ -529,11 +535,11 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
         raise WorkerError(why)
     root = _order_dir(ctx, order.order)
     evidence_path = root / "evidence.json"
-    if evidence_path.is_file():                       # reconciliation said "not executed" but it had finished
-        prior = json.loads(evidence_path.read_text())
-        if prior.get("order_digest") == order.digest() and prior.get("status") in ("COMPLETED", "NO_CHANGE"):
-            return {**prior["summary"], "reused": True}
-    if root.exists():                                 # a partial, interrupted run: discard it, keep a note
+    # Every grant runs its own worker in a fresh clone. Evidence an earlier grant left (a body stopped after
+    # writing it but before the Gate's receipt, then reconciled "not executed") is never returned as this grant's
+    # result: its grant has no receipt, so the bound appraisal rejects it, and this grant's receipt would record a
+    # run that did not happen under it (acceptance H.G11). The earlier grant's receipt, if any, keeps its summary.
+    if root.exists():                                 # an earlier or interrupted run: discard it
         (ctx.workspace / "work-orders").mkdir(parents=True, exist_ok=True)
         shutil.rmtree(root)
     root.mkdir(parents=True)

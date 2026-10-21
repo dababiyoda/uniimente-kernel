@@ -776,7 +776,7 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                              retry_safe=True), git_inspect),
     "http.get": (_builtin("http.get", "web.fetch", "HTTPS GET from an explicit egress allowlist", "api",
                           "read_only", "https:", {"url": "str"},
-                          {"url": "str", "final_url": "str", "status": "int", "sha256": "str", "text": "str",
+                          {"url": "str", "final_url": "str", "status": "int", "sha256": "str", "text": "str", "egress": "str",
                            "trust": "str"},
                           network="egress-allowlist", egress_allowlist=("example.com",),
                           data_classes=("public_web",), retry_safe=True), http_get),

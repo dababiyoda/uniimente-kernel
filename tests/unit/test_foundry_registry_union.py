@@ -59,4 +59,4 @@ def test_single_module_systems_and_unknown_ops_behave_as_before():
         operation(31, "QUERY_OPS", "no_such_op")
     assert issubclass(OperationError, KeyError)
     with pytest.raises(KeyError):
-        module(26)
+        module(10)            # System 10 has no module yet; System 26 (confined egress) does on this trunk

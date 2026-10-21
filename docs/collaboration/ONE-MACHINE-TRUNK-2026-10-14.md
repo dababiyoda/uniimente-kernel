@@ -187,6 +187,22 @@ A workflow then reviewed the joined system. Five lenses (projection, asks, sensi
 
 The three rejected findings were real behaviour but not defects of the join (two are the `bind` gap above, now closed with it).
 
+### 6f. The base moved again: Missions A–L and worker confinement (2026-10-21)
+
+`1e55bbd` merges base `834701e` (81 commits, #173 head `a48e8fa`). Thirteen files conflicted; both sides are kept. Where the two lineages solved the same problem, the base's mechanism is canonical and this branch's residual behaviour is kept on top of it.
+
+| Area | Canonical (base) | Kept from this branch |
+|---|---|---|
+| Reconciliation | Each request names its dispatch (attempt, proposal, grant); the reserved signed cap is booked | One recorder for live and ended missions; the dispatch's own capability on the record; a re-ask when a retained blocker's answer predates the latest dispatch |
+| Appraisal | Per-receipt binding window | Compensation uniqueness; reconciled steps count only behind the founder's answer; the appraiser re-derives check-sourced bindings |
+| Inputs | Appraised handoffs; inline resolution | `MissionEngine._inputs` is the one hold rule for the loop and for asking ahead |
+| Workers | Landlock confinement (I.G6) | #157 supervision. The merge exposed one defect: a provider declared as `[interpreter, script]` could not read its own script and never started. The scripts its argv names are now granted read-only, with a regression test |
+| Metrics | Founder tier (#138) | Fixture exclusion and device class; the nine conditions unchanged |
+
+Two base tests were updated to this trunk. The http.get manifest now declares the `egress` route field. Foundry System 26 has a module here (confined egress), so the "no module" example became System 10.
+
+The one-machine worker double now writes nothing outside its clone, because confinement forbids it. The tests observe it from outside: in `/proc`, and through GREG's dispatch records.
+
 ## 7. Gap map (seven investigators and a critic) and what was closed
 
 | Rank | Gap | Status on this trunk |

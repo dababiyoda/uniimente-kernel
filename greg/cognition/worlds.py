@@ -89,9 +89,9 @@ P6_FAMILIES = {
                        "re-run, not fresh seeds); truth is the generator's hidden effects"),
     "F3": (MATHEMATICAL, "constructed to need two intelligences; truth is the exact optimum"),
     "F4": (SIMULATED, "constructed to need two intelligences; truth is the Bayes-optimal action under the declared "
-                      "Beta(1,1) posterior, not the hidden parameter (review of #179, M13). The best constituent "
-                      "was denied the observed evidence (an uninformed prior), and under the hidden parameter the "
-                      "composition realises less value (mean -55.4 against -20.3)"),
+                      "Beta(1,1) prior, not the hidden parameter: in realised value the composition is worse (-55.4 "
+                      "against the uninformed constituent's -20.3), and the constituent was denied the observed "
+                      "evidence"),
     "F5": (NATURAL, "real M4 data and real outcomes; the newsvendor decision layer is declared"),
     "F6": (NATURAL, "real bank call arrivals and real outcomes; the staffing decision layer is declared"),
     "F7": (NATURAL, "real SNDlib topologies, lengths, demands and loads; truth is the exact optimum of the declared "

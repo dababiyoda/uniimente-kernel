@@ -307,6 +307,11 @@ def _expansion(data):
         unit[(u, v)] = bounded_int(costs.get(f"{u}->{v}"), low=0, high=10_000, name="unit cost")
     inc = bounded_int(data.get("max_increment"), low=0, high=1000, name="max_increment")
     budget = bounded_int(data.get("budget"), low=0, high=1_000_000, name="budget")
+    if len(pairs) != len(edges):
+        # parallel edges share their name too: the compiled model bought each its own increment, the decoded plan kept
+        # one of them and charged it once per edge, and graph_then_allocate answered an over-budget plan as optimal
+        # (review 2026-10-15). Checked last, where flow_expansion_mcf 1.0.0 checked it, so mcf's errors keep their order
+        raise GenomeError("parallel edges between one ordered pair are not supported; merge them first")
     return edges, s, t, unit, inc, budget
 
 
@@ -487,13 +492,6 @@ def compile_verify(data, output, certificate):
 
 
 # ------------------------------------------------------------------ exact expansion by min-cost flow
-def _simple_expansion(data):
-    edges, s, t, unit, inc, budget = _expansion(data)
-    if len({(u, v) for u, v, _ in edges}) != len(edges):
-        raise GenomeError("parallel edges between one ordered pair are not supported; merge them first")
-    return edges, s, t, unit, inc, budget
-
-
 def _arcs(edges, unit, inc):
     """Expanded arcs: per edge a free arc at its capacity and a priced arc up to ``inc`` (index, tail, head,
     capacity, cost, edge index, priced)."""
@@ -525,7 +523,7 @@ def mcf_expansion_solve(data, budget):
     """Successive shortest paths: the cheapest way to carry each next unit is a shortest residual path, and its
     price never falls (convexity of min-cost flow in the volume). Push while the budget allows, then certify
     that one unit more is impossible within budget (dual potentials) or at all (a cut)."""
-    edges, s, t, unit, inc, money = _simple_expansion(data)
+    edges, s, t, unit, inc, money = _expansion(data)
     nodes = sorted({n for u, v, _ in edges for n in (u, v)})
     arcs = _arcs(edges, unit, inc)
     flow, volume, spent = [0] * len(arcs), 0, 0
@@ -577,7 +575,7 @@ def mcf_expansion_verify(data, output, certificate):
     """Independent of the solver: the plan by budget/bounds arithmetic and an Edmonds-Karp max flow of the
     reinforced network; optimality by the certificate alone (a cut capacity, or a dual lower bound computed in
     exact integers from the potentials)."""
-    edges, s, t, unit, inc, budget = _simple_expansion(data)
+    edges, s, t, unit, inc, budget = _expansion(data)
     if not isinstance(output, dict) or not isinstance(output.get("increments"), dict):
         return {"output_well_formed": False}
     increments = output["increments"]
@@ -654,7 +652,7 @@ INTELLIGENCES = [
         baseline=maxflow_trivial_cut, competitor=maxflow_lp),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.graph.reinforce_min_cut", version="1.0.1", family="flow_reinforce_greedy",
+            intelligence_id="solver.graph.reinforce_min_cut", version="1.0.2", family="flow_reinforce_greedy",
             layer=3, operation="reinforce_min_cut", epistemic_class="optimization",
             subgeometry="budgeted capacity expansion (heuristic)", native_representation="graph + unit costs + budget",
             required_inputs=("edges", "source", "sink", "unit_cost", "max_increment", "budget"),
@@ -665,12 +663,14 @@ INTELLIGENCES = [
             verification_method="budget/bounds check and max-flow recomputation of the reinforced network",
             latency_profile="O(budget) max-flow solves", known_strengths=("fast", "uses control-point structure"),
             known_failure_modes=("wastes budget when several minimum cuts tie", "myopic one-unit steps"),
-            counterindications=("problems needing a certified optimum",), abstention_conditions=("invalid input",),
+            counterindications=("problems needing a certified optimum",),
+            abstention_conditions=("invalid input", "parallel edges"),
             benchmark_suite="layered relay networks with unit costs, seeds 0-9 dev / 1000-1029 held out",
             baseline="round-robin spread over source and sink edges",
             competitor="exact optimum via graph_then_allocate composition (compile + CP-SAT)", **_common()),
         solve=greedy_solve, verify=greedy_verify, instance=expansion_instance, score=expansion_score,
-        baseline=uniform_spread, competitor=lambda data: _composed_expansion(data)),
+        baseline=uniform_spread, competitor=lambda data: _composed_expansion(data),
+        competitor_recipe="graph_then_allocate"),
     Executable(
         genome=IntelligenceGenome(
             intelligence_id="solver.graph.capacity_expansion_mcf", version="1.0.0", family="flow_expansion_mcf",
@@ -688,8 +688,10 @@ INTELLIGENCES = [
                                 "potentials whose min-cost-flow dual bound for one more unit exceeds the budget",
             latency_profile="one Bellman-Ford per augmenting path", known_strengths=(
                 "exact with its own certificate", "no 64-variable ceiling (the graph_then_allocate composition "
-                "abstains above 32 edges)", "not yet measured on F7: P6 v4's tie on 200 of 200 items was parametric "
-                "min-cost flow (the same split-arc formulation, a different and uncertified algorithm)"),
+                "abstains above 32 edges)", "admission v3 (2026-10-15, seeds 1200-1229): equal quality to the "
+                "graph_then_allocate twin on 30 of 30 at about a seventh of its latency (DEFAULT_FOR_GEOMETRY)",
+                "not run on F7: there, parametric min-cost flow (the same split-arc formulation, a different and "
+                "uncertified algorithm) tied the composition on 200 of 200 real-backbone items"),
             known_failure_modes=("supplied capacities and prices may be wrong", "single commodity only",
                                  "parallel edges between one ordered pair are refused"),
             counterindications=("multi-commodity or modular (lumpy) capacity",),
@@ -699,10 +701,11 @@ INTELLIGENCES = [
             baseline="greedy min-cut reinforcement (flow_reinforce_greedy's solve)",
             competitor="graph_then_allocate composition twin (compile + CP-SAT), deployable", **_common()),
         solve=mcf_expansion_solve, verify=mcf_expansion_verify, instance=expansion_instance, score=expansion_score,
-        baseline=lambda data: greedy_solve(data, None)["output"], competitor=lambda data: _composed_expansion(data)),
+        baseline=lambda data: greedy_solve(data, None)["output"], competitor=lambda data: _composed_expansion(data),
+        competitor_recipe="graph_then_allocate"),
     Executable(
         genome=IntelligenceGenome(
-            intelligence_id="solver.graph.capacity_expansion_compiler", version="1.0.2", family="flow_capacity_plan",
+            intelligence_id="solver.graph.capacity_expansion_compiler", version="1.0.3", family="flow_capacity_plan",
             layer=3, operation="compile_capacity_expansion", epistemic_class="optimization",
             subgeometry="graph -> integer program translation", native_representation="graph + unit costs + budget",
             required_inputs=("edges", "source", "sink", "unit_cost", "max_increment", "budget"),
@@ -713,7 +716,8 @@ INTELLIGENCES = [
             verification_method="structural re-derivation: one capacity row per edge, one conservation row per relay",
             latency_profile="microseconds", known_strengths=("lossless translation", "typed slots"),
             known_failure_modes=("networks above the optimiser's 64-variable ceiling abstain",),
-            counterindications=("multi-commodity networks",), abstention_conditions=("> 64 model variables",),
+            counterindications=("multi-commodity networks",),
+            abstention_conditions=("> 64 model variables", "parallel edges"),
             benchmark_suite="structural translation checks on the same networks",
             baseline="none (no standalone decision)", competitor="none (no standalone decision)",
             standalone_decision=False, **_common()),

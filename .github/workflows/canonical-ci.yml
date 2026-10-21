@@ -34,10 +34,10 @@ jobs:
   tests:
     name: "1 · Kernel and organ tests"
     runs-on: ubuntu-latest
-    # The unit suite runs twice here: the full suite, then verifier V2 (tests/unit). At #179 c6c4d74 that took 24
-    # of 30 minutes, and on 2026-10-15 four stacked heads run at once were cancelled inside the verifier with the
-    # suite itself green (17-19 minutes under load). The limit bounds a hung run; it is not a speed target.
-    timeout-minutes: 45
+    # The suite runs twice here (the full suite, then the institutional verifier's V2 re-run of tests/unit): about
+    # 15 + 12 minutes at c360103, 28 of the 30 then allowed, so a few minutes of added tests cancelled the job.
+    # On 2026-10-15 a stacked head took 40 of 45 minutes while six stacked PRs ran at once; 60 leaves room for that.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:

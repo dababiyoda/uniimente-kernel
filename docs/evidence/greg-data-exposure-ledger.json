@@ -15391,10 +15391,10 @@
    "family": null,
    "generator": {
     "commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",
-    "key": "_random_instance",
-    "kind": "code",
-    "resolved": false,
-    "why": "receiver not resolved statically"
+    "key": "tests/unit/test_natural_ops_family.py:_random_instance",
+    "kind": "test-local",
+    "resolved": true,
+    "why": "a helper defined in the test file itself; it is no genome or admission generator"
    },
    "id": "#158|tests/unit/test_natural_ops_family.py|dev|-|?:_random_instance:102",
    "lineages": [
@@ -15432,10 +15432,10 @@
    "family": null,
    "generator": {
     "commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",
-    "key": "_random_instance",
-    "kind": "code",
-    "resolved": false,
-    "why": "receiver not resolved statically"
+    "key": "tests/unit/test_natural_ops_family.py:_random_instance",
+    "kind": "test-local",
+    "resolved": true,
+    "why": "a helper defined in the test file itself; it is no genome or admission generator"
    },
    "id": "#158|tests/unit/test_natural_ops_family.py|dev|-|?:_random_instance:146",
    "lineages": [

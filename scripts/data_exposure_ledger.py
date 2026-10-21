@@ -61,6 +61,8 @@ SAMPLE_SEEDS = tuple(range(10))
 HELDOUT_ROLES = ("held-out", "admission held-out", "P8 held-out", "canary")
 ROLES = ("dev", "review-pilot", "train", "held-out", "canary", "admission held-out", "P8 held-out")
 REVIEW_RANGE = (3000, 3999)              # the repository's review-seed convention (pilots, review tests)
+# development ranges a lane declared in committed evidence before using them (seeds outside 0-9 a test may draw)
+DECLARED_DEV_RANGES = {(9300, 9339): "docs/evidence/greg-genome-l3-absent-2026-10-21/README.md"}
 GENOMES_DIR = "greg/cognition/genomes/"
 RESULT_NAME = re.compile(r"(result|cycle-|canary|heldout|summary)[^/]*\.json$")
 HEX64 = re.compile(r"[0-9a-f]{64}")
@@ -951,7 +953,10 @@ def test_fixtures(src: Source, skip_shared: set) -> list[dict]:
         line_set = sorted(entry.get("lines") or {entry["line"]})
         commits = sorted({lines_c for ln in line_set if (lines_c := blame(src.commit, path).get(ln))})
         commit = commits[-1] if commits else src.added(path)
+        local = module == "?" and function in _module_functions(src.commit, path)
         gen = function_identity(commit, module, function) if module != "?" else {
+            "kind": "test-local", "key": f"{path}:{function}", "resolved": True, "commit": commit,
+            "why": "a helper defined in the test file itself; it is no genome or admission generator"} if local else {
             "kind": "code", "key": function, "resolved": False, "commit": commit,
             "why": "receiver not resolved statically"}
         seeds = sorted(entry["seeds"])
@@ -963,6 +968,15 @@ def test_fixtures(src: Source, skip_shared: set) -> list[dict]:
                            seeds=seeds, looked_at=True, basis="a test asserts on these instances",
                            extra={"part": f"{module}:{function}:{line_set[0]}"}))
     return out
+
+
+def _module_functions(commit, path) -> set:
+    """Names of the functions defined at module level in ``path`` at ``commit``."""
+    try:
+        tree = ast.parse((blob(commit, path) or b"").decode())
+    except (SyntaxError, ValueError, UnicodeDecodeError):
+        return set()
+    return {n.name for n in tree.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
 
 
 # ---------------------------------------------------------------- aliasing (development seeds only)

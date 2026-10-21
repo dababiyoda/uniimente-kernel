@@ -150,8 +150,13 @@ def test_no_test_fixture_or_pilot_touches_a_held_out_seed_of_the_same_generator(
     for o in LEDGER["overlaps"]["same_generator"]:
         assert not o["involves_heldout"], o
     unresolved = [r for r in LEDGER["exposures"] if not r["generator"].get("resolved")]
-    assert all(L.expand(r.get("seeds") or []) <= set(range(10)) for r in unresolved
-               if r["program"] == "test fixture"), "an unresolved test generator outside the dev seeds"
+    declared = set(range(10)) | {s for lo, hi in L.DECLARED_DEV_RANGES for s in range(lo, hi + 1)}
+    assert all((ROOT / ref).is_file() for ref in L.DECLARED_DEV_RANGES.values())
+    assert all(L.expand(r.get("seeds") or []) <= declared for r in unresolved
+               if r["program"] == "test fixture"), "an unresolved test generator outside the declared dev seeds"
+    held = {s for r in LEDGER["exposures"] if "held-out" in r["role"] or r["role"] in ("train", "canary")
+            for s in L.expand(r.get("seeds") or [])}
+    assert not held & (declared - set(range(10))), "a declared development range overlaps held-out data"
 
 
 def test_counts_add_up_and_every_role_is_known():

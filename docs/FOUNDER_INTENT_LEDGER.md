@@ -130,6 +130,19 @@ Progress 2026-10-16 (measured, frozen, negative results kept):
   - the grid genome, with version-bound compiler measurements and admission CPU and load diagnostics.
 - **CI:** job 1's limit was raised to 45 minutes; it runs the suite twice.
 
+Progress 2026-10-21 (measured, frozen, negative results kept):
+
+- **P8 cycle 6** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-6/README.md)): **RETAIN**, the first improvement protected evolution has kept.
+  - The candidate raises `p_restart` from 0 to 0.807. It was 48.4% better on train and better on both stress sets.
+  - On held-out (240 fresh items, one look) it won 105-73, p = 0.00995, with 29.6% lower mean loss.
+  - It survives the four-attempt threshold on this target (0.0125), not the programme-wide one (0.05/6 = 0.00833).
+  - Random restart, reported outside the rule, is at least as good: the candidate goes 80-89 against it, and random restart's mean loss is lower.
+  - The proposal is PROPOSED_NOT_APPLIED. Adoption and its canary (re-admission on fresh seeds) are the founder's decision.
+  - Section 31 item 7 is met at the proposal level. P8's exit (repeated held-out gains) is not.
+- **Design pilots before the freeze** (review seeds 3500-3999; [pilots](evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/README.md)):
+  - The planned selection-rule change was refuted: no declared rule beat the lowest train mean, and the sign-test rule coded beforehand did worst (0.20 against 0.55). It is kept in git history and reverted.
+  - What changed was power: 120 train and 240 held-out items. To make room, P8's reserved seeds were extended to 7000-8599.
+
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 
 `INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT` ([record](intent/INTENT-20261007-VERIFIED-POLYINTELLIGENCE-LIFT.json), [verbatim source](intent/sources/POLYINTELLIGENCE-LIFT-REVIEW-2026-10-07-source.md)): founder review of PR #155. P4 learned routing and P6 typed composition are Layer 5 substrate, not the Polyintelligence Mind; all five layers (basal, collective, solver, developmental, meta) remain obligations. Metric: held-out problem families where geometry routing or composition beats the strongest single available intelligence, net of cost/latency, with no added false answers or unauthorized effects; 0 means "a sophisticated router". Sequence: P6 cognitive composition lift → P4 conditional competence memory (hierarchical fallback) → P8 protected evolutionary cognition → IntelligenceGenome library expansion, each family admitted only when it beats simpler baselines on its native geometry. State: active. VPL: 0. Authority delta: none.

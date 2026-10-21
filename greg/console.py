@@ -303,8 +303,18 @@ def _ask_details(r: dict) -> str:
         parts.append(f"<br><b>You answered {_e(r['answered'])}; that is only recorded.</b> "
                      "The mission still waits for the file above.")
     if r.get("unsigned_answer_recorded") is not None:
-        parts.append(f"<br><b>The ledger holds an answer ({_e(r['unsigned_answer_recorded'])}) with no signed "
-                     "decision of yours behind it.</b> GREG does not act on it; this ask waits for your answer.")
+        answer, cause = _e(r["unsigned_answer_recorded"]), r.get("unsigned_answer_cause")
+        why = f" ({_e(r['unsigned_answer_why'])})" if r.get("unsigned_answer_why") else ""
+        parts.append({
+            "pending": f"<br><b>Your signed answer ({answer}) is being applied.</b>",
+            "refused_by_body": f"<br><b>Your signed answer ({answer}) was refused when GREG applied it{why}.</b> "
+                               "GREG does not act on it; sign your answer again.",
+            "unverifiable_acceptance": f"<br><b>An answer ({answer}) is recorded as accepted, but no signed copy of it "
+                                       "verifies.</b> GREG does not act on it; answer again to confirm.",
+            "refused_at_acceptance": f"<br><b>Your signed answer ({answer}) does not apply to this ask{why}.</b> "
+                                     "GREG does not act on it; this ask waits for your answer.",
+        }.get(cause, f"<br><b>The ledger holds an answer ({answer}) with no signed decision of yours behind "
+                     "it.</b> GREG does not act on it; this ask waits for your answer."))
     if r.get("answer_effect"):
         parts.append("<br><b>What your answer does:</b> " + _e(r["answer_effect"]))
     if r.get("expected_effect"):

@@ -38,7 +38,8 @@ def _window(journal: Journal):
     return (events[ids.index(start) + 1:] if start in ids else events), start
 
 
-def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict | None = None) -> dict:
+def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict | None = None,
+                   pending=()) -> dict:
     events, previous = _window(journal)
     by = lambda kind: [e.payload for e in events if e.type == "greg." + kind]
     all_events = journal.replay()
@@ -80,8 +81,8 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
                            "next_observe_at": m.next_observe_at, "spent_usd": m.spent_usd}
     from greg.missions import MissionBook
     # an answer row the mission book does not count (no founder-signed DECISION behind it) leaves its ask open
-    open_requests = asks.open_requests(all_events, counted=(engine.book if engine is not None
-                                                            else MissionBook(journal)).answers)
+    book = engine.book if engine is not None else MissionBook(journal)
+    open_requests = asks.open_requests(all_events, counted=book.answers, uncounted=book.unverified, pending=pending)
     from greg import presence
     reviews = [e.payload for e in all_events if e.type == "greg.tribunal.reported"]
     since = presence._t(reviews[-1]["at"]) if reviews and reviews[-1].get("at") else None

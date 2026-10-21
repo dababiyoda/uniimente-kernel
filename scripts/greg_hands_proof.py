@@ -126,7 +126,7 @@ def cmd_answer(args):
     with Body(home) as body:
         requests = [e.payload for e in body.journal.replay("decision.requested")
                     if e.payload["kind"] == args.kind]
-        answered = {e.payload["request_id"] for e in body.journal.replay("decision.answered")}
+        answered = set(body.engine.book.answers)    # counted answers: an uncounted row leaves the ask open
     pending = [r for r in requests if r["request_id"] not in answered]
     if not pending:
         raise SystemExit(f"no open {args.kind} request")

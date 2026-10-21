@@ -308,6 +308,38 @@ What remains (preserved dissent, owner Alfonso):
   collision under the new key). None of the four retained evidence ledgers is affected (test), and no founder body
   exists yet.
 
+### Review of item 7 (2026-10-21)
+
+An independent review in three lenses (authority, regression, acceptance) reproduced seven defects in the change
+above; each is fixed here with a test that fails on the pre-fix merge (`68f6ab2`) and passes after. Four of them
+narrow residuals the list above accepted.
+
+| Finding (lens) | Fix | Test (`tests/unit/test_greg_answer_reverification.py`) |
+|---|---|---|
+| A refused or expired DECISION revived by a backdated `command.accepted` beats the founder's newer answer, and the appraiser verifies the closure (authority, medium) | A verified-then-refused DECISION now spends its nonce (`NONCE_CONSUMED_ON_REJECT`); `command.rejected` records which command and when, by the body's clock (once, so a crash retry is idempotent), and `founder_facts` refuses an acceptance of that command that claims an earlier time | `..._revived_with_a_backdated_acceptance_never_beats_the_later_answer`; the answer-kind and withdrawn tests now cover both layers |
+| An unsigned `decision.requested` under another identity redirects the founder's approve to another mission's scope; pre-existing (authority, medium) | A request counts only at the identity `greg.asks.record` gives every ask (keyed on its request id, `journal.fact_id`); any other row is `unverified_requests` | `..._ask_recorded_under_another_identity_cannot_redirect_the_founders_approval` |
+| A row squatting `[request_id, command_digest]` refuses the founder's DECISION (authority, low) | The answer row's identity is its own content | `..._row_squatting_the_answer_identity_cannot_refuse_the_founders_decision` |
+| A bare `command.accepted` naming the digest makes `Body.apply` drop the founder's command silently; pre-existing (authority, low) | Only a record carrying this very envelope and its nonce makes a replay a no-op; a squat of the acceptance's identity is now a visible refusal | `..._bare_digest_acceptance_cannot_silently_drop_the_founders_decision` |
+| A byte-identical copy of an acceptance admits a row recorded after the first (authority, low) | Each DECISION's acceptance is admitted once | `..._byte_identical_copy_of_an_acceptance_admits_nothing_recorded_after_the_first` |
+| A crash between the answer row and the acceptance, with a restart after the phone's 600-second envelope expired, labels the founder's real answer "no signed decision of yours"; mid-apply reads show the same label (regression, medium) | Each uncounted row carries a cause: `pending` (its command is still in the inbox), `refused_by_body` (with the body's reason), `unverifiable_acceptance`, `refused_at_acceptance`, `no_signed_decision`; status, the phone, the morning report and the console word each truthfully and ask for a new signature where one is needed. The answer is still not applied: the body never accepted it | `..._still_in_the_inbox_is_shown_as_being_applied`, `..._expired_before_the_restart_says_so_and_asks_to_sign_again`, `..._console_words_each_uncounted_answer_by_its_cause` |
+| `scripts/greg_hands_proof.py` refuses to answer the ask a mission waits on, and `scripts/mission_trace.py` reports an uncounted row as the founder's answer (regression, low); a legacy acceptance without an envelope is labelled with the wrong reason (regression, low) | Both scripts read `MissionBook.answers`; the trace lists uncounted rows apart with their reason; the legacy case is `unverifiable_acceptance` | `..._operator_scripts_read_counted_answers`, `..._acceptance_record_without_a_signed_envelope_is_named_as_unverifiable` |
+
+Residuals after this review (owner Alfonso):
+
+- **Smuggling a genuine DECISION before the body sees it.** An inbox reader can still pair a never-applied, unexpired
+  envelope with a row and an in-window acceptance before the body ingests the file; the body then treats the file as
+  applied. Bounded to exactly what the founder signed, for a request still open, unwithdrawn and unanswered there.
+  A DECISION the body has refused can no longer be revived.
+- **Squatting an ask's identity before it is recorded.** A writer that predicts a request id and records a different
+  ask under that exact identity first makes the body's own ask fail visibly; the founder is then shown the forged
+  ask, and an approve answers what was shown.
+- **A forged `command.rejected` naming a future time** can make `founder_facts` refuse the founder's later acceptance
+  of that command (availability; the ask stays open and visible).
+- **Acceptance times are body-clock claims** compared with the body's own refusals, not with the ledger's wall-clock
+  stamp: tests run bodies on fixed past clocks, and a wall-clock bound would refuse every acceptance there.
+- `mission.registered` still folds unverified; `presence.py`, `path.py` and `resilience.py` still read raw rows and
+  decide no mission.
+
 ## Alternatives
 
 - **Do nothing.** Persistent goals stay off the only authenticated body. Rejected: Mission F cannot run.

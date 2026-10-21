@@ -64,9 +64,10 @@ def forge(w, data, key):
 
 
 def smuggle(journal, at, env, mid):
-    """An in-process writer pairs a genuine envelope the body refused with the answer row and the acceptance the
-    body never wrote. The envelope verifies (a refused DECISION spends no nonce), so only the fold's own checks of
-    the request at that position can keep it out."""
+    """An in-process writer pairs a genuine envelope with the answer row and the acceptance the body never wrote.
+    Written before the body sees the envelope, the acceptance verifies (an unspent nonce, inside its validity), so
+    only the fold's own checks of the request at that position can keep it out; written after the body refused the
+    envelope, the refusal spent its nonce."""
     digest, body_ = sha256_json(env), env["body"]
     journal.record("decision.answered", row(body_["request_id"], mid, body_["answer"], digest,
                                             reason=str(body_.get("reason", ""))[:500]),
@@ -185,6 +186,9 @@ def test_a_row_citing_the_signed_digest_with_other_words_never_becomes_the_found
 
 
 def test_a_decision_refused_for_its_answer_kind_smuggled_in_as_accepted_is_never_counted(tmp_path):
+    """Smuggled after the body refused it: the refusal spent its nonce, so it is not even a signed command.
+    Smuggled before the body saw it (an inbox reader got there first): the envelope verifies and the body treats
+    the file as applied, but the fold's answer-kind check refuses the row at the acceptance."""
     w = blocked(tmp_path)
     env = signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "reconcile_executed"})
     drop(w.home, env)
@@ -194,9 +198,21 @@ def test_a_decision_refused_for_its_answer_kind_smuggled_in_as_accepted_is_never
         smuggle(body.journal, w.clock(), env, w.mid)
     missions, requests = run(w.home, w.clock)
     with Body(w.home) as body:
-        assert sha256_json(env) in gg.signed_commands(body.journal, "DECISION")     # the envelope itself verifies
+        assert sha256_json(env) not in gg.signed_commands(body.journal, "DECISION")   # its nonce was spent
         assert w.rid not in body.engine.book.answers and w.rid in body.engine.book.unverified
     assert missions[w.mid].blocker["request_id"] == w.rid and w.rid in [r["request_id"] for r in requests]
+
+    (tmp_path / "first").mkdir()
+    w2 = blocked(tmp_path / "first")
+    env2 = signed(w2.key, w2.body_id, "DECISION", {"request_id": w2.rid, "answer": "reconcile_executed"})
+    with Body(w2.home, clock=w2.clock) as body:
+        smuggle(body.journal, w2.clock(), env2, w2.mid)
+    drop(w2.home, env2)
+    missions, requests = run(w2.home, w2.clock)
+    with Body(w2.home) as body:
+        assert sha256_json(env2) in gg.signed_commands(body.journal, "DECISION")     # the envelope itself verifies
+        assert w2.rid not in body.engine.book.answers and w2.rid in body.engine.book.unverified
+    assert missions[w2.mid].blocker["request_id"] == w2.rid
 
 
 def test_a_decision_refused_for_a_withdrawn_request_smuggled_in_as_accepted_is_never_counted(tmp_path):
@@ -217,14 +233,23 @@ def test_a_decision_refused_for_a_withdrawn_request_smuggled_in_as_accepted_is_n
     run(home, clock, ticks=2)
     assert [e["request_id"] for e in events(home, "decision.withdrawn")] == [rid]
     env = signed(key, body_id, "DECISION", {"request_id": rid, "answer": "approve"})
+    with Body(home, clock=clock) as body:          # an inbox reader smuggles it before the body sees the file
+        smuggle(body.journal, clock(), env, "m:heal")
     drop(home, env)
     run(home, clock, ticks=1)
-    assert "request withdrawn" in events(home, "command.rejected")[0]["reason"]
-    with Body(home, clock=clock) as body:
-        smuggle(body.journal, clock(), env, "m:heal")
     with Body(home) as body:
         assert sha256_json(env) in gg.signed_commands(body.journal, "DECISION")
         assert rid not in body.engine.book.answers and rid in body.engine.book.unverified
+        assert "withdrawn" in body.engine.book.unverified[rid]["why"]
+    late = signed(key, body_id, "DECISION", {"request_id": rid, "answer": "approve", "reason": "again"})
+    drop(home, late)
+    run(home, clock, ticks=1)
+    assert "request withdrawn" in events(home, "command.rejected")[-1]["reason"]
+    with Body(home, clock=clock) as body:
+        smuggle(body.journal, clock(), late, "m:heal")
+    with Body(home) as body:
+        assert sha256_json(late) not in gg.signed_commands(body.journal, "DECISION")   # refused: its nonce spent
+        assert rid not in body.engine.book.answers
 
 
 def test_a_row_recorded_before_its_acceptance_counts_once_when_the_command_is_re_applied(tmp_path):
@@ -301,7 +326,7 @@ def test_the_sandbox_diagnostic_counts_only_a_signed_reconciliation(tmp_path, ge
     journal.record("body.recovered", {"boot_id": "boot-2", "previous_unfinished_boots": ["boot-1"]}, key="r")
     request = {"request_id": "req-rec", "mission_id": spec["mission_id"], "kind": "RECONCILIATION",
                "scope_digest": "sha256:" + "5" * 64}
-    journal.record("decision.requested", request, key="q")
+    journal.record("decision.requested", request, key="req-rec")      # greg.asks' identity: the request id
     env = sign_command(key, "DECISION", {"request_id": "req-rec", "answer": "reconcile_not_executed"},
                        body_id="body-t")
     digest = sha256_json(env) if genuine else FORGED
@@ -429,3 +454,210 @@ def test_the_retained_evidence_ledgers_give_the_answers_they_gave_before(path):
         was = before.missions[mid]
         assert (m.status, m.approved_scopes, m.rejected_scopes, m.failed) == \
                (was.status, was.approved_scopes, was.rejected_scopes, was.failed)
+
+
+# ---------------------------------------------------------------- review of item 7 (authority lens), 2026-10-21
+def test_a_refused_expired_decision_revived_with_a_backdated_acceptance_never_beats_the_later_answer(tmp_path):
+    """The founder's approve reached the body after it expired and was refused; the founder then sent a reject. An
+    in-process writer pairs the expired approve with an acceptance backdated into its validity before the body
+    ingests the reject. The acceptance claims a time before the body's own refusal of that command, so it never
+    counts, and the founder's reject is the answer."""
+    from datetime import timedelta
+    w = blocked(tmp_path)
+    now = w.clock()
+    old = signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "approve", "reason": "ok"},
+                 now=now - timedelta(hours=2), ttl=timedelta(hours=1))
+    drop(w.home, old)
+    run(w.home, w.clock, ticks=1)
+    [refused] = events(w.home, "command.rejected")
+    assert "expired" in refused["reason"] and refused["digest"] == sha256_json(old) and refused["at"]
+    new = signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "reject", "reason": "no, do not write"})
+    drop(w.home, new)
+    with Body(w.home, clock=w.clock) as body:
+        smuggle(body.journal, now - timedelta(hours=2) + timedelta(minutes=10), old, w.mid)
+    run(w.home, w.clock)
+    assert [r["reason"] for r in events(w.home, "command.rejected")] == [refused["reason"]]
+    assert not (w.ws / "c.txt").exists()
+    with Body(w.home) as body:
+        facts = gg.founder_facts(body.journal.ledger)
+        assert "before the body's own refusal" in facts.refused[sha256_json(old)]
+        assert body.engine.book.answers[w.rid]["answer"] == "reject"
+
+
+def test_an_ask_recorded_under_another_identity_cannot_redirect_the_founders_approval(tmp_path):
+    """greg.asks records every founder ask under its request id. A row under the same request id but another
+    identity (another mission's scope) is kept as data: the founder's approve answers the ask it was shown."""
+    w = blocked(tmp_path)
+    with Body(w.home, clock=w.clock) as body:
+        real = dict(body.engine.book.requests[w.rid])
+        body.journal.record("decision.requested", {**real, "mission_id": "m:beta", "scope_digest": "sha256:" + "b" * 64},
+                            key=["forged", w.rid])
+    with Body(w.home) as body:
+        book = body.engine.book
+        assert book.requests[w.rid] == real
+        assert [u["row"]["mission_id"] for u in book.unverified_requests] == ["m:beta"]
+    drop(w.home, signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "approve", "reason": "ok"}))
+    run(w.home, w.clock)
+    assert (w.ws / "c.txt").read_text() == "ok"
+    with Body(w.home) as body:
+        assert body.engine.book.answers[w.rid]["mission_id"] == w.mid
+        assert "sha256:" + "b" * 64 not in set().union(*(m.approved_scopes for m in body.engine.book.missions.values()))
+
+
+def test_a_row_squatting_the_answer_identity_cannot_refuse_the_founders_decision(tmp_path):
+    """The answer row's identity is its own content: a row with other content under the request id and the
+    command's digest no longer makes the journal refuse the founder's row, so the DECISION is applied."""
+    w = blocked(tmp_path)
+    env = signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "reject", "reason": "no"})
+    digest = sha256_json(env)
+    forge(w, row(w.rid, w.mid, "approve", digest), key=[w.rid, digest])
+    drop(w.home, env)
+    run(w.home, w.clock)
+    assert events(w.home, "command.rejected") == []
+    with Body(w.home) as body:
+        assert body.engine.book.answers[w.rid]["answer"] == "reject"
+    assert not (w.ws / "c.txt").exists()
+
+
+def test_a_bare_digest_acceptance_cannot_silently_drop_the_founders_decision(tmp_path):
+    """A record naming only the envelope's digest is not an acceptance Body.apply wrote: the body applies the
+    founder's command. Squatting the acceptance's own identity makes the body refuse it visibly, never silently."""
+    w = blocked(tmp_path)
+    env = signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "reject", "reason": "no"})
+    digest = sha256_json(env)
+    with Body(w.home, clock=w.clock) as body:
+        body.journal.record("command.accepted", {"kind": "DECISION", "digest": digest}, key=["squat", digest])
+    drop(w.home, env)
+    with Body(w.home, clock=w.clock) as body:
+        assert [o["status"] for o in body.ingest_inbox()] == ["APPLIED"]
+        assert body.engine.book.answers[w.rid]["answer"] == "reject"
+
+    (tmp_path / "second").mkdir()
+    w2 = blocked(tmp_path / "second")
+    env2 = signed(w2.key, w2.body_id, "DECISION", {"request_id": w2.rid, "answer": "reject", "reason": "no"})
+    with Body(w2.home, clock=w2.clock) as body:
+        body.journal.record("command.accepted", {"kind": "DECISION", "digest": sha256_json(env2)},
+                            key=sha256_json(env2))
+    drop(w2.home, env2)
+    with Body(w2.home, clock=w2.clock) as body:
+        assert [o["status"] for o in body.ingest_inbox()] == ["REJECTED"]
+    assert "reused with different content" in events(w2.home, "command.rejected")[0]["reason"]
+
+
+def test_a_byte_identical_copy_of_an_acceptance_admits_nothing_recorded_after_the_first(tmp_path):
+    """An acceptance admits the answer rows recorded before it, once. A byte-identical copy (the same event id)
+    appended later does not admit a row recorded after the first acceptance."""
+    from dataclasses import asdict
+    key = Ed25519PrivateKey.generate()
+    public = public_bytes(key.public_key()).hex()
+    ledger = EvidenceLedger("sha256:" + "3" * 64)
+    journal = Journal(EventSpine(ledger), actor="spiffe://uniimente.internal/test/copy")
+    journal.record("founder.enrolled", {"key_id": key_id(public), "public_key": public, "body_id": "body-t",
+                                        "at": iso(Clock()())}, key="root")
+    spec = mission("m:a", checks=[], strategies=[write_strategy("w", "c.txt", "ok", ["c"])], capabilities=["fs.read"])
+    journal.record("mission.registered", {"mission_id": "m:a", "spec": spec, "command_digest": "sha256:" + "4" * 64},
+                   key="m:a")
+    env = sign_command(key, "DECISION", {"request_id": "rq1", "answer": "approve"}, body_id="body-t")
+    digest = sha256_json(env)
+    accepted = journal.record("command.accepted", {
+        "kind": "DECISION", "digest": digest, "nonce": env["nonce"], "founder_key_id": env["founder_key_id"],
+        "signer": "founder", "issued_at": env["issued_at"], "accepted_at": env["issued_at"], "body": env["body"],
+        "envelope": env, "channel": "inbox", "result": {}}, key=digest)          # accepted before any request
+    journal.record("decision.requested", {"request_id": "rq1", "mission_id": "m:a", "kind": "APPROVAL",
+                                          "scope_digest": "sha256:" + "5" * 64}, key="rq1")
+    journal.record("decision.answered", row("rq1", "m:a", "approve", digest, reason=""))
+    ledger.append("event", asdict(accepted))                                     # the same event id again
+    book, facts = MissionBook(journal), gg.founder_facts(ledger)
+    assert "rq1" not in book.answers and "rq1" not in facts.book.answers
+    assert book.answers == facts.book.answers
+
+
+# ---------------------------------------------------------------- review of item 7 (regression lens), 2026-10-21
+def _interrupted_answer(w, *, ttl_seconds=600):
+    """The body records the founder's answer row, then dies before recording the command's acceptance; the signed
+    file is still in the inbox (Body.apply's crash window)."""
+    from datetime import timedelta
+    env = signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "approve", "reason": "ok"},
+                 now=w.clock(), ttl=timedelta(seconds=ttl_seconds))
+    drop(w.home, env)
+    with Body(w.home, clock=w.clock) as body:
+        body.engine.answer(env["body"], sha256_json(env))
+    return env
+
+
+def test_an_interrupted_answer_still_in_the_inbox_is_shown_as_being_applied(tmp_path):
+    w = blocked(tmp_path)
+    _interrupted_answer(w)
+    [shown] = [r for r in status(w.home)["decisions_required"] if r["request_id"] == w.rid]
+    assert shown["unsigned_answer_cause"] == "pending" and "unsigned_answer_why" not in shown
+    from greg import console
+    assert "is being applied" in console._ask_details(shown) and "no signed decision" not in console._ask_details(shown)
+    run(w.home, w.clock)                                   # re-applied from the inbox while still valid
+    assert (w.ws / "c.txt").read_text() == "ok"
+
+
+def test_an_interrupted_answer_that_expired_before_the_restart_says_so_and_asks_to_sign_again(tmp_path):
+    """The body came back after the phone's 600-second envelope expired: the answer is not applied (the body never
+    accepted it), and every surface says the founder's own signed answer was refused, not that it was unsigned."""
+    w = blocked(tmp_path)
+    _interrupted_answer(w)
+    w.clock.advance(11 * 60)
+    run(w.home, w.clock, ticks=1)
+    assert "expired" in events(w.home, "command.rejected")[0]["reason"]
+    assert not (w.ws / "c.txt").exists()
+    [shown] = [r for r in status(w.home)["decisions_required"] if r["request_id"] == w.rid]
+    assert shown["unsigned_answer_cause"] == "refused_by_body" and "expired" in shown["unsigned_answer_why"]
+    [morning] = [r for r in morning_projection(w.home)["q12_decisions_required"] if r["request_id"] == w.rid]
+    assert morning["unsigned_answer_cause"] == "refused_by_body"
+    drop(w.home, signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "approve", "reason": "again"}))
+    run(w.home, w.clock)
+    assert (w.ws / "c.txt").read_text() == "ok"
+
+
+def test_the_console_words_each_uncounted_answer_by_its_cause():
+    from greg import console
+    base = {"request_id": "r", "kind": "APPROVAL", "unsigned_answer_recorded": "approve"}
+    expected = {"pending": "is being applied", "refused_by_body": "was refused when GREG applied it (expired)",
+                "unverifiable_acceptance": "no signed copy of it verifies",
+                "refused_at_acceptance": "does not apply to this ask (expired)",
+                None: "with no signed decision of yours behind"}
+    for cause, phrase in expected.items():
+        shown = {**base, **({"unsigned_answer_cause": cause} if cause else {}), "unsigned_answer_why": "expired"}
+        assert phrase in console._ask_details(shown), cause
+
+
+def test_the_operator_scripts_read_counted_answers(tmp_path):
+    """greg_hands_proof answer finds the ask a mission still waits on although an uncounted row names it, and the
+    mission trace lists that row apart from the founder's answers."""
+    import importlib.util
+    import sys as _sys
+    root = Path(__file__).resolve().parents[2]
+    w = blocked(tmp_path)
+    forge(w, row(w.rid, w.mid, "approve", FORGED), key=w.rid)
+    spec = importlib.util.spec_from_file_location("greg_hands_proof", root / "scripts/greg_hands_proof.py")
+    hands = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(hands)
+    with Body(w.home) as body:
+        assert w.rid not in body.engine.book.answers
+        requests = [e.payload for e in body.journal.replay("decision.requested") if e.payload["kind"] == "APPROVAL"]
+        assert [r["request_id"] for r in requests if r["request_id"] not in set(body.engine.book.answers)] == [w.rid]
+    assert "body.engine.book.answers" in (root / "scripts/greg_hands_proof.py").read_text()
+    trace = (root / "scripts/mission_trace.py").read_text()
+    assert "recorded_not_counted" in trace and "body.engine.book.answers" in trace
+
+
+def test_an_acceptance_record_without_a_signed_envelope_is_named_as_unverifiable(tmp_path):
+    """A body before d838077 recorded command.accepted without the envelope: the founder's old answer cannot be
+    re-verified. The ask says that, rather than that no signed decision of theirs stands behind it."""
+    w = blocked(tmp_path)
+    env = signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "reject", "reason": "never"})
+    digest = sha256_json(env)
+    with Body(w.home, clock=w.clock) as body:
+        body.journal.record("decision.answered", row(w.rid, w.mid, "reject", digest, reason="never"), key=w.rid)
+        body.journal.record("command.accepted", {"kind": "DECISION", "digest": digest, "nonce": env["nonce"],
+                                                 "founder_key_id": env["founder_key_id"], "issued_at": env["issued_at"],
+                                                 "body": env["body"], "result": {"request_id": w.rid}}, key=digest)
+    with Body(w.home) as body:
+        assert body.engine.book.unverified[w.rid]["cause"] == "unverifiable_acceptance"
+    [shown] = [r for r in status(w.home)["decisions_required"] if r["request_id"] == w.rid]
+    assert shown["unsigned_answer_cause"] == "unverifiable_acceptance"

@@ -69,12 +69,12 @@ def device_delegations(journal: Journal) -> dict[str, dict]:
 # A founder-signed GOAL or GOAL_CONTROL the body verified and then rejected (it would widen authority, it
 # duplicates a goal, ...) consumes its nonce: re-dropping the retained file later, after the state that
 # refused it changed (a revoke, a supersede), must not apply it without a new signature.
-NONCE_CONSUMED_ON_REJECT = ("GOAL", "GOAL_CONTROL")
+NONCE_CONSUMED_ON_REJECT = ("GOAL", "GOAL_CONTROL", "DECISION")
 
 
 def consumed_nonces(journal: Journal) -> set[str]:
     """Nonces a command may not reuse: every accepted command's, and every verified-then-rejected
-    GOAL / GOAL_CONTROL's (``command.rejected`` carrying ``consumed``). ``spent_nonce`` is the per-record
+    GOAL / GOAL_CONTROL / DECISION's (``command.rejected`` carrying ``consumed``). ``spent_nonce`` is the per-record
     rule, shared with the goal tick's re-derivation (greg/goal_gravity.py ``founder_facts``)."""
     out = set()
     for e in journal.replay("command.accepted") + journal.replay("command.rejected"):
@@ -335,7 +335,11 @@ class Body:
     def apply(self, envelope: dict, *, channel: str = "direct") -> dict:
         """Verify one signed founder command and apply it (idempotent on replay of the same file)."""
         digest = sha256_json(envelope)
-        prior = [e.payload for e in self.journal.replay("command.accepted") if e.payload["digest"] == digest]
+        # Only a record carrying this very envelope and its nonce, as this method writes one, makes a replay of the
+        # file a no-op: a bare record naming the digest cannot silently drop the founder's command.
+        prior = [e.payload for e in self.journal.replay("command.accepted") if e.payload.get("digest") == digest
+                 and isinstance(e.payload.get("envelope"), dict) and sha256_json(e.payload["envelope"]) == digest
+                 and e.payload.get("nonce") == envelope.get("nonce")]
         if prior:
             return {"status": "ALREADY_APPLIED", "digest": digest}
         now = self.clock()
@@ -493,6 +497,7 @@ class Body:
     def ingest_inbox(self, *, only_kind: str | None = None) -> list[dict]:
         results = []
         for path in sorted(self.layout.inbox.glob("*.json")):
+            envelope = None
             try:
                 envelope = json.loads(path.read_text())
                 if only_kind is not None and (not isinstance(envelope, dict) or envelope.get("kind") != only_kind):
@@ -503,11 +508,17 @@ class Body:
                     tribunal.CritiqueError) as exc:
                 raw = path.read_bytes()
                 consumed = getattr(exc, "consumed", None)
-                self.journal.record("command.rejected", {"file": path.name, "sha256": sha256_json(raw.hex()),
-                                                          "reason": f"{type(exc).__name__}: {exc}"[:500],
-                                                          "instruction_status": "data_only",
-                                                          **({"consumed": consumed} if consumed else {})},
-                                    key=[path.name, sha256_json(raw.hex())])
+                key = [path.name, sha256_json(raw.hex())]
+                # When and which command it refused, by the body's clock: an acceptance of the same command
+                # claiming an earlier time is a backdated record (greg.goal_gravity.founder_facts). Recorded once,
+                # so a retry after a crash finds the retained refusal instead of a different time.
+                if self.journal.retained("command.rejected", key) is None:
+                    self.journal.record("command.rejected", {
+                        "file": path.name, "sha256": sha256_json(raw.hex()),
+                        "reason": f"{type(exc).__name__}: {exc}"[:500], "instruction_status": "data_only",
+                        "at": iso(self.clock()),
+                        **({"digest": sha256_json(envelope)} if isinstance(envelope, dict) else {}),
+                        **({"consumed": consumed} if consumed else {})}, key=key)
                 shutil.move(str(path), self.layout.rejected / path.name)
                 outcome = {"status": "REJECTED", "file": path.name, "reason": str(exc)[:300]}
             results.append(outcome)
@@ -716,6 +727,18 @@ def send_signed(home: str | Path, key, kind: str, body: dict, *, ttl: timedelta 
     return target
 
 
+def inbox_digests(layout: "Layout") -> set[str]:
+    """Digests of the signed commands still waiting in the inbox: an answer row citing one is the founder's own
+    answer being applied, not an unsigned one."""
+    out = set()
+    for path in layout.inbox.glob("*.json"):
+        try:
+            out.add(sha256_json(json.loads(path.read_text())))
+        except (OSError, ValueError):
+            continue
+    return out
+
+
 def morning_projection(home: str | Path) -> dict:
     """The morning report from a read-only view; works while the body runs."""
     from types import SimpleNamespace
@@ -726,7 +749,8 @@ def morning_projection(home: str | Path) -> dict:
     except (OSError, ValueError):
         heartbeat = None
     with observe(home, actor="spiffe://uniimente.internal/greg/morning-reader") as journal:
-        return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat)
+        return tribunal.morning_report(journal, SimpleNamespace(book=MissionBook(journal)), heartbeat=heartbeat,
+                                       pending=inbox_digests(layout))
 
 
 def _attach_waiting(journal, achieved: set) -> list[dict]:
@@ -768,8 +792,10 @@ def status(home: str | Path) -> dict:
         registered = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
         achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
         from greg.missions import MissionBook
+        book = MissionBook(journal)
         requests = asks.open_requests(journal.replay("decision.") + journal.replay("mission.achieved")
-                                      + journal.replay("mission.lifecycle"), counted=MissionBook(journal).answers)
+                                      + journal.replay("mission.lifecycle"), counted=book.answers,
+                                      uncounted=book.unverified, pending=inbox_digests(layout))
         founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
         boots = journal.replay("body.booted")
         # The same states the body uses: catalog initial state, then every recorded transition.

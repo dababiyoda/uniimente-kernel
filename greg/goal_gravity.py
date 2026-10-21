@@ -209,6 +209,7 @@ class FounderFacts:
     admitted: dict = field(default_factory=dict)        # goal_id -> the GOAL digest that admitted it
     specs: dict = field(default_factory=dict)           # goal_id -> GoalSpec of an admitted goal
     refused: dict = field(default_factory=dict)         # digest -> why a signed GOAL / GOAL_CONTROL does not count
+    refused_at: dict = field(default_factory=dict)      # digest -> latest body time the body refused that command
     closed: dict = field(default_factory=dict)          # goal_id -> {status, by, issued_at[, superseded_by]}
     closed_intents: dict = field(default_factory=dict)  # goal intent digest -> issued_at of the signed closure
     stop: dict = field(default_factory=dict)            # goal_id -> last signed stop / resume / change
@@ -277,6 +278,10 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
             nonce = spent_nonce(kind, p)          # the body's rule exactly (it refused the command there)
             if nonce is not None:
                 seen_nonces.add(nonce)
+            refused_at = _when(p.get("at"))
+            if isinstance(p.get("digest"), str) and refused_at is not None:
+                facts.refused_at[p["digest"]] = max(refused_at, facts.refused_at.get(p["digest"], refused_at))
+            book.fold("command.rejected", p, event_id=rec.payload["event_id"])
             continue
         if kind == "greg.capability.registered":
             try:
@@ -286,7 +291,7 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
             except (KeyError, TypeError, ValueError):
                 pass
         if kind != "greg.command.accepted":
-            book.fold(kind[len("greg."):], p)
+            book.fold(kind[len("greg."):], p, event_id=rec.payload["event_id"])
             continue
         # Only a record that verified at its position, carrying its own envelope's nonce, spends that nonce
         # here (``spent_nonce``, the body's per-record rule); an unverified record spends nothing, so it can
@@ -391,6 +396,11 @@ def _founder_fact(facts: FounderFacts, p: dict, env: dict, ckind: str, digest_: 
     stale = _fresh(env, accepted_at)
     if stale is None and accepted_at is None and ckind in ("GOAL", "GOAL_CONTROL"):
         stale = "no acceptance time on the ledger"
+    refused = facts.refused_at.get(digest_)
+    if stale is None and refused is not None and (accepted_at is None or accepted_at < refused):
+        # the body already refused this very command at ``refused`` (by its own clock); an acceptance claiming an
+        # earlier time is a backdated record, never a later re-send the body applied
+        stale = "accepted at a time before the body's own refusal of this command"
     if stale is not None:
         facts.refused[digest_] = stale
         return

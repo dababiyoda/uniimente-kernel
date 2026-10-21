@@ -18,6 +18,12 @@ PRINCIPAL = "alfonso_lopez"
 NAMESPACE = uuid.UUID("9d5c0c4e-2f1b-4a55-9c63-8f2b7a4e0b11")
 
 
+def fact_id(kind: str, key: object) -> str:
+    """The event id ``Journal.record`` gives a fact of this kind under this identity key (its payload when no
+    key is given): a reader can check that a retained fact was recorded under the identity its one writer uses."""
+    return str(uuid.uuid5(NAMESPACE, sha256_json({"kind": kind, "key": key})))
+
+
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -43,8 +49,7 @@ class Journal:
         re-recording a retained fact returns it, even from a new process. The
         same identity with a different payload is still refused.
         """
-        identity = sha256_json({"kind": kind, "key": key if key is not None else data})
-        event_id = str(uuid.uuid5(NAMESPACE, identity))
+        event_id = fact_id(kind, key if key is not None else data)
         snapshot = json.loads(json.dumps(data, allow_nan=False))  # what the ledger would retain
         retained = self._retained(event_id)
         if retained is not None:
@@ -60,7 +65,7 @@ class Journal:
 
     def retained(self, kind: str, key: object) -> Event | None:
         """The fact already recorded under this kind and identity key, if any (a re-entry after a crash)."""
-        return self._retained(str(uuid.uuid5(NAMESPACE, sha256_json({"kind": kind, "key": key}))))
+        return self._retained(fact_id(kind, key))
 
     def _retained(self, event_id: str) -> Event | None:
         for record in reversed(self.ledger.records):

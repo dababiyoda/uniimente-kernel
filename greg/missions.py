@@ -36,7 +36,7 @@ from greg.authority import AuthorityOffice
 from greg.capabilities import CapabilityError, InvocationContext, ROUTES
 from greg.genesis import is_capability_fault
 from greg import asks, improvement, routing
-from greg.journal import Journal, iso
+from greg.journal import Journal, fact_id, iso
 from greg.lightcone import LightCone
 from provenance.ledger import sha256_json
 
@@ -513,6 +513,10 @@ class MissionBook:
         self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened
         self._deficit_of = {}              # deficit_id -> the mission whose light cone pays for its builds
         self.unverified: dict[str, dict] = {}   # request_id -> {row, why}: an answer row kept as data, never applied
+        self.unverified_requests: list[dict] = []  # decision.requested rows not recorded the way greg.asks records one
+        self._admitted: set[str] = set()   # DECISION digests whose acceptance has been admitted (once each)
+        self._refused_commands: dict[str, str] = {}   # digest -> why the body refused that command (command.rejected)
+        self._unverifiable: set[str] = set()   # DECISION digests with an acceptance record that does not verify
         self._pending: dict = {}           # cited digest -> answer rows awaiting that DECISION's signed acceptance
         self._signed, self._signed_at = {}, {}   # verified DECISIONs; digest -> the acceptance event each verified at
         if self.verify_answers and getattr(self.journal, "ledger", None) is not None:
@@ -524,11 +528,21 @@ class MissionBook:
         self.finish()
 
     def finish(self) -> None:
-        """End of the replay: an answer row no signed DECISION it cites was accepted after is kept as data."""
-        for rows in self._pending.values():
+        """End of the replay: an answer row no signed DECISION it cites was accepted after is kept as data, with the
+        reason the founder is shown: the body refused the very command it cites (sign again), an acceptance record
+        exists that cannot be verified, or no signed decision stands behind it at all."""
+        for digest, rows in self._pending.items():
+            if digest in self._refused_commands:
+                cause, why = "refused_by_body", ("the body refused the signed decision it cites: "
+                                                 + self._refused_commands[digest])[:300]
+            elif digest in self._unverifiable:
+                cause, why = "unverifiable_acceptance", ("a record says the body accepted the decision it cites, but "
+                                                         "it carries no signed envelope that verifies (bodies before "
+                                                         "2026-09-26 kept none)")
+            else:
+                cause, why = "no_signed_decision", "no founder-signed DECISION it cites was accepted after it was recorded"
             for data in rows:
-                self.unverified[str(data.get("request_id"))] = {
-                    "row": data, "why": "no founder-signed DECISION it cites was accepted after it was recorded"}
+                self.unverified[str(data.get("request_id"))] = {"row": data, "why": why, "cause": cause}
         self._pending = {}
 
     def fold(self, kind: str, data: dict, *, event_id: str | None = None) -> None:
@@ -540,6 +554,10 @@ class MissionBook:
         if kind == "command.accepted":
             if self.verify_answers:
                 self._admit(data, event_id)
+            return
+        if kind == "command.rejected":
+            if isinstance(data.get("digest"), str):
+                self._refused_commands[data["digest"]] = str(data.get("reason", ""))
             return
         mid = data.get("mission_id")
         m = self.missions.get(mid)
@@ -557,7 +575,7 @@ class MissionBook:
                                               cone=LightCone.from_dict(data["spec"]["light_cone"]))
         elif m is None:
             if kind == "decision.requested":
-                self.requests[data["request_id"]] = data
+                self._requested(data, event_id)
             elif kind == "decision.answered":
                 self._answered(data)
             elif kind == "decision.withdrawn":
@@ -661,11 +679,23 @@ class MissionBook:
         elif kind == "mission.strategy_excluded":
             m.excluded[data["action_id"]] = data["reason"]
         elif kind == "decision.requested":
-            self.requests[data["request_id"]] = data
+            self._requested(data, event_id)
         elif kind == "decision.withdrawn":
             self.withdrawn[data["request_id"]] = data
         elif kind == "decision.answered":
             self._answered(data)
+
+    def _requested(self, data: dict, event_id: str | None) -> None:
+        """A founder ask. ``greg.asks.record`` is its one writer and keys it on its request id, so on a verifying
+        book a row under any other identity (another key under the same id) is kept as data: it cannot replace the
+        ask a signed DECISION answers, nor send that answer to another mission's scope. A fold given no event id
+        (a test stand-in replaying payloads) cannot tell and takes the row as before."""
+        rid = data.get("request_id")
+        if self.verify_answers and event_id is not None and event_id != fact_id("decision.requested", rid):
+            self.unverified_requests.append({"row": data, "why": "not recorded under its request id, the identity "
+                                                                 "greg.asks records every founder ask under"})
+            return
+        self.requests[rid] = data
 
     def _answered(self, data: dict) -> None:
         if not self.verify_answers:
@@ -692,9 +722,12 @@ class MissionBook:
         checks (``MissionEngine.answer``) hold here. Only at the one ``command.accepted`` record ``founder_facts``
         counts it signed at; rows recorded later, or citing anything else, never count."""
         digest = accepted.get("digest")
+        if accepted.get("kind") == "DECISION" and isinstance(digest, str) and digest not in self._signed:
+            self._unverifiable.add(digest)
         if accepted.get("kind") != "DECISION" or not isinstance(digest, str) or digest not in self._signed_at \
-                or self._signed_at[digest] != event_id:
+                or self._signed_at[digest] != event_id or digest in self._admitted:
             return
+        self._admitted.add(digest)     # once: a byte-identical copy of the acceptance carries the same event id
         cmd = self._signed[digest]
         for data in self._pending.pop(digest, []):
             rid = data.get("request_id")
@@ -703,7 +736,7 @@ class MissionBook:
             if why is None:
                 self._apply_answer(answer_record(request, cmd["envelope"]["body"], digest))
             else:
-                self.unverified[str(rid)] = {"row": data, "why": why}
+                self.unverified[str(rid)] = {"row": data, "why": why, "cause": "refused_at_acceptance"}
 
     def _refusal(self, data: dict, request: dict | None, cmd: dict) -> str | None:
         """Why a row citing a signed DECISION does not count at its acceptance (None: it counts)."""
@@ -806,13 +839,14 @@ class MissionEngine:
         if request["kind"] != "RECONCILIATION" and answer.startswith("reconcile_"):
             raise MissionError("reconcile answers apply only to reconciliation requests")
         # The row counts once Body.apply records this command's acceptance (MissionBook re-derives it from the
-        # signature). Keyed on the command too, so a row anyone else put under the request id cannot refuse the
-        # founder's answer; a row an interrupted apply already wrote under it (bodies before fold-time
-        # re-verification) is this same record and is not written twice.
+        # signature). Its identity is its own content, so the only row that can hold it is this exact record: a row
+        # anyone else wrote under the request id or the command's digest cannot refuse the founder's answer. A row
+        # an interrupted apply already wrote under the request id (bodies before fold-time re-verification) is this
+        # same record and is not written twice.
         record = answer_record(request, body, command_digest)
         retained = self.journal.retained("decision.answered", rid)
         if retained is None or retained.payload != record:
-            self.journal.record("decision.answered", record, key=[rid, command_digest])
+            self.journal.record("decision.answered", record)
         self.book.rebuild()
 
     def exclude_strategy(self, mission_id: str, action_id: str, reason: str, critique_ref: str):

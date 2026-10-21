@@ -316,7 +316,7 @@ ANSWER_ONLY_RECORDS = {
 OPEN_UNTIL_OBSERVED = ("HUMAN_WORK",)
 
 
-def open_requests(events, *, counted=None) -> list[dict]:
+def open_requests(events, *, counted=None, uncounted=None, pending=()) -> list[dict]:
     """Asks still waiting on the founder, in request order, from decision.* and mission events.
 
     An answer or a withdrawal closes an ask, except that an answered ask in OPEN_UNTIL_OBSERVED stays
@@ -325,14 +325,18 @@ def open_requests(events, *, counted=None) -> list[dict]:
     ``counted`` is the mission book's counted answers (``MissionBook.answers``: request id -> the record a
     founder-signed DECISION stands behind). A row it does not count closes nothing: the ask stays open,
     marked ``unsigned_answer_recorded``, because the mission still waits on it. None counts every row.
+    ``uncounted`` (``MissionBook.unverified``) gives that row's cause and reason, and ``pending`` the digests of
+    signed commands still waiting in the body's inbox: a row citing one is the founder's own answer being applied.
     """
     requested, answers, withdrawn, ended = [], {}, set(), set()
+    rows = {}
     for e in events:
         kind, p = e.type[len("greg."):], e.payload
         if kind == "decision.requested":
             requested.append(p)
         elif kind == "decision.answered":
             answers[p["request_id"]] = p.get("answer")
+            rows[p["request_id"]] = p
         elif kind == "decision.withdrawn":
             withdrawn.add(p["request_id"])
         elif kind == "mission.achieved" or (kind == "mission.lifecycle"
@@ -345,7 +349,11 @@ def open_requests(events, *, counted=None) -> list[dict]:
             continue
         if rid in answers:
             if counted is not None and rid not in counted:
-                r = {**r, "unsigned_answer_recorded": answers[rid]}
+                why = (uncounted or {}).get(rid) or {}
+                cause = "pending" if rows[rid].get("command_digest") in set(pending) else why.get("cause")
+                r = {**r, "unsigned_answer_recorded": answers[rid],
+                     **({"unsigned_answer_cause": cause} if cause else {}),
+                     **({"unsigned_answer_why": why["why"]} if why.get("why") and cause != "pending" else {})}
             elif r.get("kind") not in OPEN_UNTIL_OBSERVED or r.get("mission_id") in ended:
                 continue
             else:
@@ -359,7 +367,7 @@ def surface(request: dict) -> dict:
     keys = ("request_id", "kind", "mission_id", "resource", "why_now", "recommendation", "expected_effect",
             "options", "alternatives", "uncertainty", "authority_requested", "evidence",
             "consequence_of_no_response", "deadline", "deadline_evidence", "wording_withheld", "answered",
-            "unsigned_answer_recorded")
+            "unsigned_answer_recorded", "unsigned_answer_cause", "unsigned_answer_why")
     shown = {k: request[k] for k in keys if k in request}
     if request.get("kind") in ANSWER_ONLY_RECORDS:
         shown["answer_effect"] = ANSWER_ONLY_RECORDS[request["kind"]]

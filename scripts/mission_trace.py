@@ -33,8 +33,10 @@ def trace(home: Path, mission_id: str) -> dict:
         chain_ok, chain_detail = body.ledger.verify_chain()
         attaches = [e.payload for e in journal.replay("capability.state")]
         decisions = [e.payload for e in journal.replay("decision.requested") if e.payload.get("mission_id") == mission_id]
-        answers = [e.payload for e in journal.replay("decision.answered")
-                   if e.payload.get("request_id") in {d["request_id"] for d in decisions}]
+        asked = {d["request_id"] for d in decisions}
+        # the founder's answers are the ones the mission book counts; a row it does not count is listed apart
+        answers = [a for rid, a in body.engine.book.answers.items() if rid in asked]
+        uncounted = [{**u["row"], "why": u["why"]} for rid, u in body.engine.book.unverified.items() if rid in asked]
         appraised = mine("mission.appraised")
         achieved = mine("mission.achieved")
         observed = mine("mission.observed")
@@ -62,7 +64,8 @@ def trace(home: Path, mission_id: str) -> dict:
                                                           for a in attaches],
                                "founder_decisions_requested": [{k: d.get(k) for k in ("kind", "why_now")}
                                                                for d in decisions],
-                               "founder_answers": [{k: a.get(k) for k in ("answer",)} for a in answers]},
+                               "founder_answers": [{k: a.get(k) for k in ("answer",)} for a in answers],
+                               "recorded_not_counted": [{k: u.get(k) for k in ("answer", "why")} for u in uncounted]},
         "executed_steps": [{k: a.get(k) for k in ("action_id", "attempt", "status", "capability", "receipt",
                                                   "cost_usd", "at")} for a in actions],
         "correlated_trace": spans,

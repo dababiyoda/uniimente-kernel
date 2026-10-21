@@ -77,6 +77,17 @@ Track B update, 2026-10-21 (round-2 re-verification by the #158 session; record 
 
 Authority delta: none.
 
+Track B update, 2026-10-21 (round-3 re-verification; record sections 1 and 20):
+- **Recipe binding:** recipe verdicts also bind their stage genomes.
+- **Runtime dispatch:** a disagreeing runtime dispatch binds nothing.
+- **Release check:** it blocks recompressed and reformatted copies. Re-encoded copies are a stated limit.
+- **Crowd verifier:** abstentions must match the declared threshold.
+- **Seeds:** operation admission seeds 5001-5040 are spent.
+- **Merge:** #158 is merged at `050c1b2`. P8 cycle 6 RETAINed on held-out data, and random restart is at least as
+  good. It is PROPOSED_NOT_APPLIED, and who adopts it is a live founder decision.
+
+Authority delta: none.
+
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
 
 `INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.
@@ -194,6 +205,23 @@ Progress 2026-10-16 (measured, frozen, negative results kept):
   - the P8 cycle-5 design;
   - the grid genome, with version-bound compiler measurements and admission CPU and load diagnostics.
 - **CI:** job 1's limit was raised to 45 minutes; it runs the suite twice.
+
+Progress 2026-10-21 (measured, frozen, negative results kept):
+
+- **P8 cycle 6** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-6/README.md)): **RETAIN**, the first improvement protected evolution has kept.
+  - The candidate raises `p_restart` from 0 to 0.807. It was 48.4% better on train and better on both stress sets.
+  - On held-out (240 fresh items, one look) it won 105-73, p = 0.00995, with 29.6% lower mean loss.
+  - It survives the four-attempt threshold on this target (0.0125), not the programme-wide one (0.05/6 = 0.00833).
+  - Random restart, reported outside the rule, is at least as good: the candidate goes 80-89 against it, and random restart's mean loss is lower.
+  - The proposal is PROPOSED_NOT_APPLIED. Adoption and its canary (re-admission on fresh seeds) are the founder's decision.
+  - Section 31 item 7 is met at the proposal level. P8's exit (repeated held-out gains) is not.
+- **Design pilots before the freeze** (review seeds 3500-3999; [pilots](evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/README.md)):
+  - The planned selection-rule change was refuted: no declared rule beat the lowest train mean, and the sign-test rule coded beforehand did worst (0.20 against 0.55). It is kept in git history and reverted.
+  - What changed was power: 120 train and 240 held-out items. To make room, P8's reserved seeds were extended to 7000-8599.
+- **Cycle-6 canary** ([evidence](evidence/greg-protected-evolution/2026-10-16-cr-6/canary/README.md)): CANARY_PASSES. It was pre-registered before any instance existed and run on 240 fresh seeds (8300-8539).
+  - The proposal beats the incumbent 107-74, p = 0.0086, with a 33.9% lower mean loss.
+  - Random restart has the lowest mean loss overall and in both subregions. Against the proposal it wins 95-79 (p = 0.128), which is not significant.
+  - On the evidence so far, the options rank random restart, then the proposal, then the incumbent. Nothing is applied.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 

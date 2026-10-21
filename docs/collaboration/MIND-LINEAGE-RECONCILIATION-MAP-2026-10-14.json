@@ -2,7 +2,7 @@
  "schema": "mind-lineage-reconciliation-map/1",
  "base": "92bc6e31e0baa8fd507833e0f272b4a5e532e4d3",
  "pr155": "ef5f078013b549a51458dc9f6b5f34b324ea70b0",
- "pr158": "463a9d0883c9dfa45979f8f2c47e657b0a0ec20d",
+ "pr158": "050c1b2b6a009b633ce35b6d4ec8043ce9e4c05a",
  "vocabulary": [
   "complementary",
   "interchangeable",
@@ -1021,6 +1021,132 @@
    "note": "present in one lineage only (pr158); arrived with #158 after f8e8fd2, merged at its head 10fdbab"
   },
   {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/canary/PREREGISTRATION.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/canary/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/canary/canary.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/canary/canary.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/cycle-cr-6.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/cycle-cr-6.log",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/freeze.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/README.md",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-T1.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-T2.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-T3.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-U1.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/lineages-U2.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/pool-configs.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/summary-2.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot/summary.json",
+   "lineage": "pr158",
+   "classification": "historical evidence",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
    "path": "docs/evidence/pr155-crowd-sparse/2026-10-14/README.md",
    "lineage": "pr155",
    "classification": "historical evidence",
@@ -1213,8 +1339,8 @@
    "path": "greg/cognition/genomes/admission.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158). Extended in Track B (round-3 review of #179, finding 5): spent_seeds() also reads the converged tree's operation-admission freezes (5001-5040 so far); proposed to #158 for adoption."
   },
   {
    "path": "greg/cognition/genomes/basal.py",
@@ -1453,6 +1579,20 @@
    "classification": "complementary",
    "disposition": "extended",
    "note": "NO_GAIN labels as a demotion like REGRESSION"
+  },
+  {
+   "path": "scripts/p8_cr6_canary.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
+  },
+  {
+   "path": "scripts/p8_cr6_selection_pilot.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
   },
   {
    "path": "scripts/p8_cr_pilot.py",
@@ -1775,6 +1915,13 @@
    "classification": "complementary",
    "disposition": "extended",
    "note": "#158 tests updated for recipe code binding (review H5)"
+  },
+  {
+   "path": "tests/unit/test_p8_cr6_canary.py",
+   "lineage": "pr158",
+   "classification": "complementary",
+   "disposition": "kept",
+   "note": "present in one lineage only (pr158); arrived with #158 after 463a9d0 (P8 cycle 6 and its canary), merged at 050c1b2"
   },
   {
    "path": "tests/unit/test_p8_cr_pilot.py",

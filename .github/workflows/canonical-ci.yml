@@ -36,8 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     # The suite runs twice here (the full suite, then the institutional verifier's V2 re-run of tests/unit): about
     # 15 + 12 minutes at c360103, 28 of the 30 then allowed, so a few minutes of added tests cancelled the job.
-    # On 2026-10-15 a stacked head took 40 of 45 minutes while six stacked PRs ran at once; 60 leaves room for that.
-    timeout-minutes: 60
+    # At 0067be6 the full suite took 25 minutes and the V2 re-run was cancelled 20 minutes in at the 45-minute
+    # limit (run 39614663399): growth from the review rounds' regression tests, not a hang. 75 leaves headroom.
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
         with:

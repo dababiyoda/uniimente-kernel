@@ -46,8 +46,8 @@ No change reaches the candidate side, the sandbox, the evaluator, the seal code 
 | Split | `cycle-6` in `CR_SPLITS`: train seeds 7880-7999 (120), held-out seeds 8060-8299 (240) |
 | Settings | generations 5, population 8, search seed 20261021, `cover/1` with `lhs` 0. No selection key: the default, lowest train mean, ties by id |
 | Rule | `evolution.RULE`, unchanged, verbatim in `freeze.json` |
-| Seals | SEALS |
-| Trusted code | TRUSTED |
+| Seals | train `sha256:b8c00aed3043b6c86727af4f331eec1b98d78d51b3d138d107f4b2233fdeca26`, held-out `sha256:dd0176912db1d6002582abd0fef2f810166dd37e4121d8a5ed5cd8c55836bdbb` (from `freeze.json`) |
+| Trusted code | the static import closure frozen by `freeze()`: 115 files (schema `greg-protected-evolution-freeze/3`); freeze file `sha256:9378b56e91ba266fffc37d04097a122e653e8e63f7a86a3eb4daa0095dd70d27` |
 | Run | once, by `python -m greg.cognition.evolution --freeze F --out O` (the clean room), at the commit that adds `freeze.json`, pinned to one CPU core |
 
 ## Multiple attempts

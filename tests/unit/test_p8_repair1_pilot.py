@@ -106,9 +106,14 @@ def test_the_exposure_ledger_shows_the_review_seeds_unused_for_the_repair_genera
         others = [r for r in L.exposed(generator, range(3000, 4000), ledger) if pilot not in r["id"]]
         assert others == []                     # the pilot's own record is the only exposure of 3000-3999
     hybrid = "docs/evidence/greg-repair-hybrid/2026-10-21-exploratory/review.json"   # a later, disjoint lane
+    v6 = "docs/evidence/greg-genome-admission/2026-10-21-v6/freeze.json"                # a later admission
     used = {s for rec in L.exposed("develop_repair", range(0, 100_000), ledger)
-            if pilot not in rec["id"] and hybrid not in rec["id"] for lo, hi in rec["seeds"] for s in range(lo, hi + 1)}
+            if pilot not in rec["id"] and hybrid not in rec["id"] and v6 not in rec["id"]
+            for lo, hi in rec["seeds"] for s in range(lo, hi + 1)}
     assert used == set(range(10)) | set(range(1000, 1030)) | set(range(1100, 1130))
+    admitted = [r for r in L.exposed("develop_repair", range(0, 100_000), ledger) if v6 in r["id"]]
+    assert {(r["role"], tuple(map(tuple, r["seeds"]))) for r in admitted} == {
+        ("admission held-out", ((1500, 1529),)), ("dev", ((0, 9),))}
     later = [r for r in L.exposed("develop_repair", range(0, 100_000), ledger) if hybrid in r["id"]]
     assert all(r["role"] == "review-pilot" and r["seeds"] == [[4000, 4639]] for r in later)
     (own,) = [r for r in L.exposed("develop_repair", range(3000, 4000), ledger) if pilot in r["id"]] or [None]

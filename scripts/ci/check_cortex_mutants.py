@@ -378,6 +378,25 @@ PORTFOLIO_WORDS_MUTANTS = [
      "if PORTFOLIO.search(text) and PORTFOLIO_NEEDS.search(text):", "if False:"),
 ]
 
+BUDGETED_TESTS = ["tests/unit/test_greg_budgeted_selection.py"]
+BUDGETED_MUTANTS = [
+    ("a head that searches in rounds is run as a single call", "greg/recombine.py",
+     "        if path[0].rounds:\n            return in_rounds(", "        if False:\n            return in_rounds("),
+    ("the proof tree need not partition the plans", "greg/recombine.py",
+     'if sorted(node.get("in", [])) != sorted(fix_in) or sorted(node.get("out", [])) != sorted(fix_out):',
+     'if False:'),
+    ("a branch closed by its bound is not checked against the answer", "greg/recombine.py",
+     "            if bound > profit:\n                raise ReductionError(\"a branch closed by its bound",
+     "            if False:\n                raise ReductionError(\"a branch closed by its bound"),
+    ("a node's funding certificate is not re-proved", "greg/recombine.py",
+     "node_answer = certify_selection(normalize_selection(sub), {",
+     "node_answer = (lambda q, a: a)(normalize_selection(sub), {"),
+    ("a rounds reduction may sit inside a chain", "greg/recombine.py",
+     "    if any(r.rounds for r in path[1:]):", "    if False:"),
+    ("a stated budget is ignored", "greg/templates.py",
+     'function = "selection.budgeted" if "budget" in params else "selection.closure"', 'function = "selection.closure"'),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
@@ -388,7 +407,8 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),
           ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS),
           ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),
-          ("portfolio words", PORTFOLIO_WORDS_TESTS, PORTFOLIO_WORDS_MUTANTS)]
+          ("portfolio words", PORTFOLIO_WORDS_TESTS, PORTFOLIO_WORDS_MUTANTS),
+          ("budgeted selection", BUDGETED_TESTS, BUDGETED_MUTANTS)]
 
 
 def main() -> int:

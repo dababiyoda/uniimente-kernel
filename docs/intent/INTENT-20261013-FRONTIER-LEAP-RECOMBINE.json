@@ -84,14 +84,18 @@
     "docs/evidence/greg-goal-formation/2026-10-15/README.md",
     "greg/templates.py (read_portfolio_words, portfolio_in_words)",
     "greg/planner.py (portfolio template route)",
-    "docs/evidence/greg-portfolio-words/2026-10-21/README.md"
+    "docs/evidence/greg-portfolio-words/2026-10-21/README.md",
+    "greg/recombine.py (budgeted-selection-via-closure: selection.budgeted; Reduction.rounds; composed_adapter.in_rounds)",
+    "greg/templates.py (portfolio budget sentence)",
+    "docs/evidence/greg-budgeted-selection/2026-10-21/README.md"
   ],
   "tests": [
     "tests/unit/test_greg_recombine.py",
     "tests/integration/test_greg_mind_constructs_capability.py",
     "tests/integration/test_greg_capability_recovery.py",
     "tests/integration/test_greg_goal_requests_formation.py",
-    "tests/unit/test_greg_portfolio_words.py"
+    "tests/unit/test_greg_portfolio_words.py",
+    "tests/unit/test_greg_budgeted_selection.py"
   ],
   "evidence_refs": [
     "docs/evidence/greg-recombine/2026-10-13/README.md",

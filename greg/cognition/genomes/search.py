@@ -1411,7 +1411,9 @@ INTELLIGENCES = [
             parameters={"exploration": HX_UCT_C, "verify_exact_empties": HX_VERIFY_EMPTIES},
             composition_inputs=("a game or sequential decision with a simulator",),
             composition_outputs=("move", "playout statistics"),
-            evidence_type="simulation",
+            # playouts are a sampling heuristic over a fully declared game; the instance is the whole problem and its
+            # truth is exact, so the benchmark world is mathematical (the "simulation" token marks simulated worlds)
+            evidence_type="heuristic_trace",
             verification_method="the move must be legal; the reported root statistics must be consistent (distinct "
                                 "legal children, visits summing to the iterations, placements = iterations x empty "
                                 "cells within the budget, the move a most-visited child with the stated visits and "

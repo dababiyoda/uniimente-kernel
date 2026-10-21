@@ -23,7 +23,7 @@ FAMILIES = tuple(sorted(ITEMS))
 SPEC = {  # family: (layer, operation, epistemic class, evidence type, dependency)
     "search_ida_star": (3, "sliding_puzzle_optimal", "optimization", "exact_calculation", None),
     "search_beam": (3, "flowshop_sequence", "optimization", "heuristic_trace", None),
-    "search_mcts": (3, "hex_move_select", "strategic", "simulation", None),
+    "search_mcts": (3, "hex_move_select", "strategic", "heuristic_trace", None),
 }
 # development seeds whose instances are cheap to build and solve (the 4x4 IDA* seeds with plans in the forties and
 # the Hex positions that need many rejected draws are left to ``admission --dev``)

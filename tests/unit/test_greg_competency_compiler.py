@@ -535,6 +535,36 @@ def test_settled_failures_on_the_body_demote_a_method_and_a_few_do_not(registry,
     assert compiler._settled_inhibition(12, 8) is None
 
 
+def test_settled_outcomes_alone_change_the_choice_between_two_eligible_fits(registry, no_index, monkeypatch):
+    """Whole-machine trace gap (#158, 2026-10-21): settled competence only ordered fits within one admission status,
+    so retained outcomes never changed a decision by themselves. A one-sided Fisher exact test, Holm-adjusted, with
+    at least SETTLED_MIN_N outcomes on both sides, now prefers the fit the body's outcomes favour."""
+    both = {**R.f3(3)["payload"], **maxflow_instance(3)[0]}
+    no_index.write_text(json.dumps({"genomes": {"flow_maxflow": {"status": "DEFAULT_FOR_GEOMETRY"},
+                                                "flow_reinforce_greedy": {"status": "SUPERSEDED"}},
+                                    "recipes": {}, "routing": {}}))
+    geometry = {"geometry": "optimization"}
+    recipe = "composition:graph_then_allocate"
+    assert compile_(registry, geometry, both, execute=False)["method_or_composition_selected"] == \
+        "cognition.flow_maxflow"                                     # frozen evidence decides without outcomes
+    monkeypatch.setattr(compiler, "_settled_counts",
+                        lambda journal: {"cognition.flow_maxflow": (12, 6), recipe: (12, 12)})
+    r = compile_(registry, geometry, both, execute=False)
+    assert r["method_or_composition_selected"] == recipe
+    assert r["selection_level"] == "preferred_by_settled_outcomes"
+    assert r["settled_preference"]["preferred"] == recipe and r["settled_preference"]["tests"][0]["p_holm"] < 0.05
+    assert any("settled outcomes on this body prefer" in d for d in r["dissent"])
+    assert not r["methods_demoted"] or all(d["method"] != "cognition.flow_maxflow" for d in r["methods_demoted"])
+    # too few outcomes on one side, or a difference the test cannot separate from noise: nothing moves
+    for counts in ({"cognition.flow_maxflow": (12, 6), recipe: (9, 9)},
+                   {"cognition.flow_maxflow": (12, 11), recipe: (12, 12)}):
+        monkeypatch.setattr(compiler, "_settled_counts", lambda journal, c=counts: c)
+        r = compile_(registry, geometry, both, execute=False)
+        assert r["method_or_composition_selected"] == "cognition.flow_maxflow"
+        assert r["selection_level"] != "preferred_by_settled_outcomes"
+    assert compiler.SETTLED_MIN_N == 10 and compiler.SETTLED_ALPHA == 0.05
+
+
 def test_an_executed_composition_keeps_each_stages_counterargument_as_dissent(registry, no_index):
     """Audit 2026-10-14 (section 12): the composition branch dropped every stage's strongest counterargument."""
     no_index.write_text(json.dumps({"genomes": {"flow_reinforce_greedy": {"status": "SUPERSEDED"}}, "routing": {},

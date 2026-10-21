@@ -24,6 +24,8 @@ SECRET_FILES = 'tests/integration/test_greg_mcp_secret_files_review.py'
 MEDIA = 'tests/unit/test_greg_media_case.py'
 FABRIC = 'tests/unit/test_greg_task_fabric.py'
 RESTORE = 'tests/unit/test_greg_restore.py'
+FAILURES = 'tests/unit/test_greg_failure_closure.py'
+ADVERSARIAL = 'tests/integration/test_greg_adversarial_machine.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
@@ -284,6 +286,30 @@ MUTANTS = [
  ('a goal reads a voided approval as the founder\'s answer', 'greg/goal_gravity.py',
   '            if rid in book.withdrawn:\n', '            if False:\n',
   'test_an_approval_the_restore_voided_does_not_answer_a_goal', RESTORE),
+ # Sections 11 and 14: the outcome plane hears failures, each independently appraised, each once.
+ ('a failed mission never closes', 'greg/missions.py',
+  '            if m.actions_done and not held and not split:', '            if False:',
+  'test_a_failed_mission_closes_unmet_and_is_appraised_as_a_verified_failure', FAILURES),
+ ('a contested mission closes as a failure', 'greg/missions.py',
+  '            if m.actions_done and not held and not split:', '            if m.actions_done and not held:',
+  'test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_voted', ADVERSARIAL),
+ ('settlement hears successes only', 'greg/cognition/settlement.py',
+  'if (data.get("verdict") in ("VERIFIED", "VERIFIED_UNMET")', 'if (data.get("verdict") == "VERIFIED"',
+  'test_settlement_hears_each_failure_once_and_reconciles_idempotently', FAILURES),
+ ('a re-observed failure settles again', 'greg/cognition/settlement.py',
+  '"input_digest": digest(check["sensor"].get("params", {})), "problem_id": receipt["problem_id"]}',
+  '"input_digest": receipt["input_digest"], "problem_id": receipt["problem_id"]}',
+  'test_settlement_hears_each_failure_once_and_reconciles_idempotently', FAILURES),
+ ('a forged failure is taken on its word', 'greg/appraisal.py',
+  '            if passed == unmet:', '            if not passed and not unmet:',
+  'test_a_forged_failure_closure_on_a_passing_mission_is_refuted', FAILURES),
+ ('a failure the world no longer shows is accepted', 'greg/appraisal.py',
+  '                if now_ok is None or now_ok == unmet:', '                if now_ok is None or (now_ok is False and not unmet):',
+  'test_a_failure_the_world_no_longer_shows_is_refuted', FAILURES),
+ ('a verified failure reads as a success', 'greg/appraisal.py',
+  '"verdict": ("VERIFIED_UNMET" if unmet else "VERIFIED") if verified else "REFUTED",',
+  '"verdict": "VERIFIED" if verified else "REFUTED",',
+  'test_a_verified_failure_is_never_read_as_a_success', FAILURES),
 ]
 
 

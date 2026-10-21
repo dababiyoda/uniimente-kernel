@@ -174,7 +174,10 @@ def test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_
         states = [body.tick()["missions"][0]["state"] for _ in range(5)]
         asked = [e.payload for e in body.journal.replay("decision.requested")]
         observed = [e.payload["detail"] for e in body.journal.replay("mission.observed")]
+        unmet = body.journal.replay("mission.unmet")
     assert "ACHIEVED" not in states and states[-1] in ("BLOCKED", "WAITING")
+    # Nor does it close as a failure (#189's mission.unmet): that would settle one view against the other.
+    assert unmet == []
     assert observed and all("CONFLICT" in d for d in observed)          # the conflict was measured, not averaged
     assert len(asked) == 1 and "disagree" in asked[0]["why_now"] and "does not vote" in asked[0]["why_now"]
     split = asked[0]["evidence"]["disagreement"]["agreed"]

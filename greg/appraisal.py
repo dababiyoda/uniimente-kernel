@@ -76,9 +76,14 @@ def appraise(request: dict) -> dict:
         mid = request["mission_id"]
         seq = {r.payload.get("event_id"): r.seq for r in ledger.by_type("event")}
         registered = [e for e in journal.replay("mission.registered") if e.payload["mission_id"] == mid]
-        if request.get("closure_event"):  # a standing mission's hold after new action
+        unmet = False
+        if request.get("closure_event"):  # a standing mission's hold after new action, or a failure closure
             achieved = [e for e in journal.replay("mission.held")
                         if e.event_id == request["closure_event"] and e.payload["mission_id"] == mid]
+            if not achieved:
+                achieved = [e for e in journal.replay("mission.unmet")
+                            if e.event_id == request["closure_event"] and e.payload["mission_id"] == mid]
+                unmet = bool(achieved)
         else:
             achieved = [e for e in journal.replay("mission.achieved") if e.payload["mission_id"] == mid]
         checks["registered_once"] = len(registered) == 1
@@ -111,9 +116,20 @@ def appraise(request: dict) -> dict:
         observations = [e for e in journal.replay("mission.observed")
                         if e.payload["mission_id"] == mid and seq[e.event_id] < achieved_seq]
         rederived, reobserved = True, True
+        # A failure closure is verified the same way, in reverse: each check it names must fail on its receipt's
+        # bytes and still fail when the world is re-read; checks it does not name are not part of the claim.
+        failing = set(achieved[0].payload.get("failing_checks") or []) if unmet else set()
+        if unmet and not failing:
+            rederived = False
+            findings.append("a failure closure names no failing check")
         for check in spec["success_checks"]:
+            if unmet and check["check_id"] not in failing:
+                continue
             latest = [o.payload for o in observations if o.payload["check_id"] == check["check_id"]]
             if not latest:
+                if unmet:
+                    rederived = False
+                    findings.append(f"{check['check_id']}: no observation of the claimed failure")
                 continue  # checks outside the achieved rung are not required for this closure
             last = latest[-1]
             receipt = ledger.find(last["receipt"]) if last.get("receipt") else None
@@ -122,9 +138,11 @@ def appraise(request: dict) -> dict:
                 findings.append(f"{check['check_id']}: no retained receipt")
                 continue
             passed, detail = evaluate_predicate(check["predicate"], receipt.payload["result"].get("output"))
-            if not passed:
+            if passed == unmet:
                 rederived = False
-                findings.append(f"{check['check_id']}: receipt bytes do not satisfy predicate ({detail})")
+                findings.append(f"{check['check_id']}: receipt bytes " + (
+                    f"satisfy the predicate the closure says fails ({detail})" if unmet
+                    else f"do not satisfy predicate ({detail})"))
             # 3. re-observe the world now where a reviewed read-only sensor exists
             cap = check["sensor"].get("capability")
             if cap in REOBSERVABLE:
@@ -153,9 +171,9 @@ def appraise(request: dict) -> dict:
                         # Say why, in the capability's own words: a forged acceptance and a host that cannot
                         # re-run the acceptance envelope must not read the same on the Proof view.
                         now_detail += "; because: " + "; ".join(str(r)[:200] for r in reasons[:3])
-                except Exception as exc:  # the world could not be re-read: not verified
-                    now_ok, now_detail = False, type(exc).__name__
-                if not now_ok:
+                except Exception as exc:  # the world could not be re-read: not verified, either way
+                    now_ok, now_detail = None, type(exc).__name__
+                if now_ok is None or now_ok == unmet:
                     reobserved = False
                     findings.append(f"{check['check_id']}: world no longer matches ({now_detail})")
         checks["checks_rederived_from_receipts"] = rederived
@@ -251,15 +269,18 @@ def appraise(request: dict) -> dict:
         required = ("chain_intact", "founder_signature_verified", "checks_rederived_from_receipts",
                     "world_reobserved", "exactly_once", "deliveries_bound_to_evidence",
                     "approval_boundaries_honored", "preconditions_honored")
-        return _verdict(request, checks, findings, required=required)
+        return _verdict(request, checks, findings, required=required, unmet=unmet)
     finally:
         ledger.close()
 
 
-def _verdict(request, checks, findings, required=()):
+def _verdict(request, checks, findings, required=(), unmet=False):
+    """VERIFIED is a verified success. A verified failure closure is VERIFIED_UNMET, so no reader of VERIFIED can
+    take it for a success; settlement reads both, to hear failures as well as successes."""
     verified = bool(required) and all(checks.get(k) for k in required)
     return {"mission_id": request["mission_id"], "head": request["head"],
-            "verdict": "VERIFIED" if verified else "REFUTED", "checks": checks, "findings": findings,
+            "verdict": ("VERIFIED_UNMET" if unmet else "VERIFIED") if verified else "REFUTED",
+            **({"closure": "unmet"} if unmet else {}), "checks": checks, "findings": findings,
             "appraiser": "separate process over read-only head-pinned ledger; re-derivation + re-observation",
             "limits": "shares reviewed Kernel code; not an independent implementation",
             **({"closure_event": request["closure_event"]} if request.get("closure_event") else {})}

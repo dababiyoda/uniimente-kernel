@@ -623,7 +623,7 @@ class Body:
                 verdict = self.appraise(mid)
                 self.journal.record("mission.appraised", verdict, key=[mid, "appraised", verdict["head"]])
         judged = {e.payload.get("closure_event") for e in self.journal.replay("mission.appraised")}
-        for event in self.journal.replay("mission.held"):
+        for event in self.journal.replay("mission.held") + self.journal.replay("mission.unmet"):
             if event.event_id not in judged:
                 mid = event.payload["mission_id"]
                 verdict = self.appraise(mid, closure_event=event.event_id)

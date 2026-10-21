@@ -186,9 +186,9 @@ def test_a_row_citing_the_signed_digest_with_other_words_never_becomes_the_found
 
 
 def test_a_decision_refused_for_its_answer_kind_smuggled_in_as_accepted_is_never_counted(tmp_path):
-    """Smuggled after the body refused it: the refusal spent its nonce, so it is not even a signed command.
-    Smuggled before the body saw it (an inbox reader got there first): the envelope verifies and the body treats
-    the file as applied, but the fold's answer-kind check refuses the row at the acceptance."""
+    """Smuggled after the body refused it, at a later time: the envelope verifies (a re-send the body applied later
+    would), so the fold's answer-kind check is what refuses the row. Smuggled before the body saw it (an inbox reader
+    got there first): the same check refuses it."""
     w = blocked(tmp_path)
     env = signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "reconcile_executed"})
     drop(w.home, env)
@@ -198,7 +198,7 @@ def test_a_decision_refused_for_its_answer_kind_smuggled_in_as_accepted_is_never
         smuggle(body.journal, w.clock(), env, w.mid)
     missions, requests = run(w.home, w.clock)
     with Body(w.home) as body:
-        assert sha256_json(env) not in gg.signed_commands(body.journal, "DECISION")   # its nonce was spent
+        assert sha256_json(env) in gg.signed_commands(body.journal, "DECISION")       # the envelope itself verifies
         assert w.rid not in body.engine.book.answers and w.rid in body.engine.book.unverified
     assert missions[w.mid].blocker["request_id"] == w.rid and w.rid in [r["request_id"] for r in requests]
 
@@ -248,8 +248,8 @@ def test_a_decision_refused_for_a_withdrawn_request_smuggled_in_as_accepted_is_n
     with Body(home, clock=clock) as body:
         smuggle(body.journal, clock(), late, "m:heal")
     with Body(home) as body:
-        assert sha256_json(late) not in gg.signed_commands(body.journal, "DECISION")   # refused: its nonce spent
-        assert rid not in body.engine.book.answers
+        assert sha256_json(late) in gg.signed_commands(body.journal, "DECISION")
+        assert rid not in body.engine.book.answers and "withdrawn" in body.engine.book.unverified[rid]["why"]
 
 
 def test_a_row_recorded_before_its_acceptance_counts_once_when_the_command_is_re_applied(tmp_path):
@@ -840,3 +840,61 @@ def test_a_legacy_answer_without_an_envelope_reblocks_and_a_fresh_decision_answe
     assert (w.ws / "c.txt").read_text() == "ok"
     with Body(w.home) as body:
         assert body.engine.book.answers[w.rid]["command_digest"] == sha256_json(fresh)
+
+
+# ---------------------------------------------------------------- skeptic verification of the authority lens, 2026-10-21
+def test_an_expired_decision_smuggled_with_no_acceptance_time_never_counts(tmp_path):
+    """Leaving accepted_at out does not skip the validity check. After the body refused the expired approve, its
+    refusal bounds any acceptance of it; for an expired approve the body never saw, an earlier record already later
+    than its expiry proves the acceptance came after it. Either way the founder's later reject is the answer."""
+    from datetime import timedelta
+    for refused_first in (True, False):
+        home = tmp_path / str(refused_first)
+        home.mkdir()
+        w = blocked(home)
+        now = w.clock()
+        old = signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "approve", "reason": "ok"},
+                     now=now - timedelta(hours=2), ttl=timedelta(hours=1))
+        if refused_first:
+            drop(w.home, old)
+            run(w.home, w.clock, ticks=1)
+            assert "expired" in events(w.home, "command.rejected")[0]["reason"]
+        with Body(w.home, clock=w.clock) as body:
+            digest = sha256_json(old)
+            body.journal.record("decision.answered", row(w.rid, w.mid, "approve", digest, reason="ok"))
+            body.journal.record("command.accepted", {"kind": "DECISION", "digest": digest, "nonce": old["nonce"],
+                                                     "founder_key_id": old["founder_key_id"], "signer": "founder",
+                                                     "issued_at": old["issued_at"], "body": old["body"],
+                                                     "envelope": old, "channel": "inbox",
+                                                     "result": {"request_id": w.rid}}, key=[digest, "smuggled"])
+        drop(w.home, signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "reject", "reason": "no"}))
+        run(w.home, w.clock)
+        assert not (w.ws / "c.txt").exists(), refused_first
+        with Body(w.home) as body:
+            assert body.engine.book.answers[w.rid]["answer"] == "reject", refused_first
+
+
+def test_a_well_formed_acceptance_with_no_answer_is_refused_visibly_not_dropped(tmp_path):
+    """An inbox reader writes a full acceptance (envelope, nonce, an in-window time) for the founder's DECISION and
+    no answer row. The prior verifies, so the nonce is spent and re-applying cannot count; the body says so in a
+    visible refusal instead of answering ALREADY_APPLIED and dropping the founder's answer."""
+    w = blocked(tmp_path)
+    env = signed(w.key, w.body_id, "DECISION", {"request_id": w.rid, "answer": "reject", "reason": "no"})
+    drop(w.home, env)
+    with Body(w.home, clock=w.clock) as body:
+        _accept_copy(body.journal, w.clock(), env, key=sha256_json(env))
+    with Body(w.home, clock=w.clock) as body:
+        assert [o["status"] for o in body.ingest_inbox()] == ["REJECTED"]
+    assert "sign your answer again" in events(w.home, "command.rejected")[0]["reason"]
+    assert w.rid in [r["request_id"] for r in status(w.home)["decisions_required"]]
+
+
+def test_the_founder_is_shown_only_the_ask_greg_recorded(tmp_path):
+    """An ask written under another identity with the same request id is not listed on any founder surface."""
+    w = blocked(tmp_path)
+    with Body(w.home, clock=w.clock) as body:
+        real = dict(body.engine.book.requests[w.rid])
+        body.journal.record("decision.requested", {**real, "mission_id": "m:beta", "why_now": "forged"},
+                            key=["forged", w.rid])
+    shown = [r for r in status(w.home)["decisions_required"] if r["request_id"] == w.rid]
+    assert len(shown) == 1 and shown[0]["mission_id"] == w.mid and shown[0].get("why_now") != "forged"

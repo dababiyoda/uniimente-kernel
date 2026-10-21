@@ -1278,16 +1278,51 @@ def test_the_stress_gate_counts_wrong_answers_when_both_means_are_infinite():
         not E.stress_worsened({"incumbent": 0.010, "candidate": 0.0104})   # finite sets: unchanged
 
 
-def test_every_recorded_stress_decision_is_unchanged_by_the_wrong_answer_rule():
-    for path in sorted(E.EVIDENCE.glob("*/cycle-*.json")):
-        record = json.loads(path.read_text())
-        adv = record.get("adversarial")
-        if not adv:
-            continue
-        kinds = [v for v in adv.values() if isinstance(v, dict)]
-        old = any(E.worsened(v["incumbent"], v["candidate"]) for v in kinds)
-        new = any(E.stress_worsened({k: v[k] for k in ("incumbent", "candidate")}) for v in kinds)
-        assert old == new, path
+AUDIT = E.EVIDENCE / "2026-10-21-stress-gate-audit"
+AUDITED_RECORDS = ("2026-10-08/cycle-forecast-1.json", "2026-10-09/cycle-immune-2.json", "2026-10-14/cycle-cr-3.json",
+                   "2026-10-15-cr-4/cycle-cr-4.json", "2026-10-16-cr-5/cycle-cr-5.json",
+                   "2026-10-16-cr-6/cycle-cr-6.json")
+
+
+def test_every_recorded_stress_decision_is_unchanged_on_reproduced_item_level_losses():
+    """Replaces the 32246ee test, which passed only the two recorded means and so reached the old comparison through
+    the ``wrong is None`` fallback. Here the gate runs on per-item stress losses reproduced from each record's TRAIN
+    items at its source commit (independent audit, 2026-10-21; no held-out item was built). The reproduced means must
+    equal the frozen record's, which ties the item data to the record; then every adversarial verdict must be the
+    recorded one, and the item-level wrong-answer branch must actually run somewhere."""
+    items = json.loads((AUDIT / "item_losses.json").read_text())["cycles"]
+    reanalysis = json.loads((AUDIT / "reanalysis.json").read_text())["cycles"]
+    assert sorted(c["record"] for c in items.values()) == sorted(AUDITED_RECORDS)
+    item_level = 0
+    for name, cycle in items.items():
+        record = json.loads((E.EVIDENCE / cycle["record"]).read_text())
+        assert record["source_commit"] == cycle["source_commit"] and record["evaluator_seals"]["train"] == \
+            cycle["train_seal"]
+        summary = E.stress_summary(cycle["losses"]["incumbent"], cycle["losses"]["candidate"])
+        assert set(summary) == {k for k, v in record["adversarial"].items() if isinstance(v, dict)}
+        for kind, v in summary.items():
+            assert (v["incumbent"], v["candidate"]) == (record["adversarial"][kind]["incumbent"],
+                                                       record["adversarial"][kind]["candidate"]), (name, kind)
+            item_level += "wrong" in v
+        rejected = (not record["adversarial"]["all_outputs_verified"]
+                    or any(E.stress_worsened(v) for v in summary.values()))
+        assert rejected == (record.get("reason") == "adversarial evaluation failed"), name
+        assert reanalysis[name]["status"] == "RESOLVED"
+        assert reanalysis[name]["original"]["decision"] == reanalysis[name]["reanalysed"]["decision"] == \
+            record["decision"]
+    assert item_level >= 2           # cycle 2: scarce (0 vs 1 wrong) and strict (1 vs 1 wrong, both-answered means)
+    strict = E.stress_summary(*(({k: v for k, v in items["cycle-immune-2"]["losses"][r].items()
+                                  if k.startswith("strict:")}) for r in ("incumbent", "candidate")))["strict"]
+    assert strict["wrong"]["incumbent"] == strict["wrong"]["candidate"] == 1 and not E.stress_worsened(strict)
+
+
+def test_the_means_only_form_never_reaches_the_wrong_answer_branch():
+    """Why the 32246ee historical test proved nothing about the new branch: given only the two means it falls back."""
+    inf = math.inf
+    assert E.stress_worsened({"incumbent": inf, "candidate": inf}) is False
+    assert E.stress_worsened({"incumbent": inf, "candidate": inf, "wrong": {
+        "incumbent": 1, "candidate": 2, "both_answered": 3, "incumbent_answered_mean": 0.1,
+        "candidate_answered_mean": 0.1}}) is True
 
 
 # ------------------------------------------------------------------ independent stress-gate audit (2026-10-21)

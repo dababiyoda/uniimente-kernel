@@ -1,0 +1,426 @@
+{
+ "schema": "seed-cortex-port/0.1",
+ "cortex_version": "0.2.2",
+ "base": "b9150857 (PR #184 head; every finding and fail-before test was reproduced on 900c6ae1, and the two later commits change no file a seal here hashes)",
+ "source": "PR #167 dba14ac8 (Seed Cortex 0.1.6)",
+ "founder_correction": "INTENT-20261019-UPWARD-ASCENT (on #190's branch)",
+ "ported": [
+  {
+   "id": "D1",
+   "defect": "settlement accepted any version of a selected method name",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_d1_settlement_requires_the_exact_method_and_version_that_ran"
+  },
+  {
+   "id": "PRR-13",
+   "defect": "a selected route that never ran could settle competence (attempts-aware on this line)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_settlement_refuses_a_route_that_was_selected_but_never_ran"
+  },
+  {
+   "id": "PRR-14",
+   "defect": "a tampered receipt could settle",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_settlement_refuses_a_receipt_whose_content_address_does_not_match"
+  },
+  {
+   "id": "PRR-15",
+   "defect": "one receipt could settle a method many times (callers rewritten to one decision per observation)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_one_receipt_settles_a_method_once"
+  },
+  {
+   "id": "D2",
+   "defect": "composed routes settled and reordered under the whole problem's class",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_d2_composed_routes_settle_under_the_geometry_of_their_own_part"
+  },
+  {
+   "id": "D3",
+   "defect": "a route the composition cap dropped was called 'not required'",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_d3_a_route_dropped_by_the_composition_cap_is_disclosed_not_denied"
+  },
+  {
+   "id": "PRR-02/FD",
+   "defect": "a part with no eligible route was recommended around",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_part_with_no_eligible_route_is_unanswered_never_recommended_around"
+  },
+  {
+   "id": "PRR-05",
+   "defect": "options and records were parsed after the organs spent; a late rejection reported no spend",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_malformed_option_is_rejected_before_any_organ_runs"
+  },
+  {
+   "id": "PRR-00",
+   "defect": "an eligible route without its input was called a capability gap (narrowed on the compiler to an empty request)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_known_class_without_its_input_is_missing_input_not_a_capability_gap"
+  },
+  {
+   "id": "PRR-01",
+   "defect": "no typed, unverified CapabilityDeficit on the cortex receipt",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_unknown_geometry_abstains_with_a_typed_unverified_deficit"
+  },
+  {
+   "id": "D4",
+   "defect": "an expiring mandate passed founder scope when the problem had no as_of",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_d4_an_expiring_mandate_without_an_as_of_does_not_pass_founder_scope"
+  },
+  {
+   "id": "PRR-11",
+   "defect": "a caller-declared as_of decided a forwarded mandate's expiry on the signed-mission path",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_declared_past_instant_cannot_keep_an_expired_mandate_alive_on_the_greg_path"
+  },
+  {
+   "id": "PRR-16",
+   "defect": "a worker could report more model calls than the serving ceiling",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_check_receipt_refuses_more_model_calls_than_the_serving_ceiling"
+  },
+  {
+   "id": "PRR-06",
+   "defect": "an errored declared baseline counted as run",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_declared_baseline_with_errored_items_is_not_a_run_baseline"
+  },
+  {
+   "id": "PRR-07",
+   "defect": "the held-out freeze hashed 19 files while a scored run loads 53",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_every_in_repo_module_a_scored_run_loads_is_frozen"
+  },
+  {
+   "id": "PRR-09",
+   "defect": "crossgeo re-read its manifest after the partitions ran",
+   "regression_test": null
+  },
+  {
+   "id": "PRR-10",
+   "defect": "a repeated arm ran twice and overwrote its result",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_repeated_arm_runs_once_or_not_at_all"
+  }
+ ],
+ "found_while_porting": [
+  {
+   "id": "withheld-reader",
+   "statement": "a payload part whose only reader is withheld was reported as 'the payload carries none of their inputs' (present in the 0.1.6 source too)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_part_whose_only_reader_is_withheld_is_a_capability_gap_not_missing_input"
+  }
+ ],
+ "not_ported": [
+  {
+   "id": "RULE-misdeclaration-is-not-a-gap",
+   "why": "this line deliberately keeps a declaration its inputs contradict, and inputs no method reads, as Genesis deficits with dissent (audit 2026-10-14; 16 tests encode it); the 0.1.6 rule would turn them into abstentions. Recorded as a lineage conflict for the founder, measured by the capability dividend."
+  },
+  {
+   "id": "RULE-one-receipt-never-verifies-a-deficit",
+   "why": "this line's compiler marks a deficit verified within one observation (three facts); 0.1.6 requires recurrence. The cortex's own deficit here is unverified; the compiler's is unchanged. Founder decision."
+  },
+  {
+   "id": "D5",
+   "why": "already present on this line since cortex 0.2.1"
+  }
+ ],
+ "verified_findings": [
+  {
+   "index": 0,
+   "cluster": "settlement",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "Confirmed on TARGET 900c6ae1. greg/cognition/seed_path.py:217-221 builds the settled outcome's 'methods' list from every claim in receipt.payload['claims']. It does not filter on claim outcome or on verification. greg/routing.py:114-128 (cognitive_knowledge) then counts one observation and the outcome's score for every listed method. Result: a method whose claim never ran is reported with observations 1 and scores [1.0]. Example: ollama-grounded/1, ABSTAIN/CAPABILITY_UNAVAILABLE, verification None. The projection is surfaced to the founder at greg/body.py:852, not 823 as originally cited. It i",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_settled_outcome_never_credits_a_method_whose_claim_never_ran"
+  },
+  {
+   "index": 1,
+   "cluster": "coverage",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "Confirmed exactly as stated, on TARGET head 900c6ae1. In cortex/routing.py, Cortex.run builds `alternatives` at :347-348 from the routes selected before execution. On a schedule_request payload, the schedule composition path (:369-374, _compose_schedule) then adds the formal engine it actually ran to `selected` at :372, and `alternatives` is never recomputed.",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_an_engine_the_schedule_composition_ran_is_never_listed_as_not_required"
+  },
+  {
+   "index": 2,
+   "cluster": "coverage",
+   "verdict": "PARTIAL",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "yes",
+   "statement": "On TARGET 900c6ae1 the composition-cap defect reproduces, and in a stronger form than stated.",
+   "disposition": "fixed (both lineages)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_cap_dropped_part_is_never_recommended_around"
+  },
+  {
+   "index": 3,
+   "cluster": "coverage",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "yes",
+   "statement": "The finding is confirmed as stated on both trees, and the defect is wider than reported. When options are present, Cortex.run parses authority records and options in one try block (TARGET cortex/routing.py:394-398; SOURCE cortex/routing.py:435-439). A record missing 'kind' or 'origin' therefore produces \"malformed input: option rejected: 'kind'\" (or 'origin'). If both a record and an option are malformed, only the record's KeyError is reported, under the option label. Worse, AuthorityRecord.from_dict (cortex/gates.py:78-81, both trees) does not validate its input at all. A record whose body is",
+   "disposition": "fixed (both lineages)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_malformed_record_is_a_malformed_record_receipt_never_an_exception"
+  },
+  {
+   "index": 4,
+   "cluster": "coverage",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "no",
+   "statement": "The finding holds on TARGET 900c6ae1 as stated.",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_schedule_optimize_lead_is_keyed_and_settled_under_its_own_class"
+  },
+  {
+   "index": 5,
+   "cluster": "coverage",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "The claim holds as stated on 900c6ae1, and the problem is wider than the label. When a compile request's payload has more than one cortex organ part (formal_model, estimation_model, deterrence_model, claim, sources), the compiler does two things:",
+   "disposition": "fixed: the compiler sends the cortex only the selected organ's part",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_an_organ_frozen_evidence_rejected_never_runs_under_another_organs_label"
+  },
+  {
+   "index": 6,
+   "cluster": "deficit",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "Confirmed as stated, on TARGET 900c6ae1. In Cortex._dispose (cortex/routing.py:654-658), the no-route branch counts a family as \"enabled\" if none of its eligibility reasons contains the substring \"disabled\". It does not check the geometry. So a resolved class such as prediction comes back as UNSUPPORTED_GEOMETRY whenever every solver profile is enabled=False. cortex/outcomes.py:42 maps that state to UNKNOWN_GEOMETRY. The same problem gives NO_ELIGIBLE_METHOD when any unrelated family is enabled. The substring test also counts a withheld family as disabled if the withhold reason happens to cont",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_resolved_class_with_no_runnable_route_is_never_an_unknown_geometry"
+  },
+  {
+   "index": 7,
+   "cluster": "deficit",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "The claim holds as stated on TARGET; only the line numbers moved. MissionEngine._cognition_ask (greg/missions.py:2287-2295 at 900c6ae1) never raises a CAPABILITY_ATTACH ask for a cortex-contract receipt.",
+   "disposition": "deferred to the capability dividend (abstention-to-resolution routing): the consumer of cortex rows is that PR's subject",
+   "regression_test": null
+  },
+  {
+   "index": 8,
+   "cluster": "deficit",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "The finding holds as stated on 900c6ae1, with one sharper detail. A founder-signed mission can compile a declared geometry (\"estimate\") with no inputs, or with inputs no method reads. The compiler (greg/cognition/compiler.py:1670-1671) then reports CAPABILITY_DEFICIT for the made-up function cognition.estimate:unspecified. Genesis._search_cognition looks that name up with registry.by_function (greg/genesis.py:1157-1161) and always gets \"none\".",
+   "disposition": "partly fixed (an empty compile request asks for inputs); the founder-ask wording is deferred to the capability dividend",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_compile_request_with_no_inputs_asks_for_them_and_forms_nothing"
+  },
+  {
+   "index": 9,
+   "cluster": "deficit",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "Confirmed as stated. greg/gravity.py:258-261 (target 900c6ae1) gives every CAPABILITY_DEFICIT compile receipt the fixed text \"registered but not attached on this body; attaching it is the founder's decision\". The VOI block it returns (gravity.py:240-262) drops the receipt's capability_deficit, cause, route and attach ask. Because of that, the text is the only explanation shown, and it can contradict the receipt it cites.",
+   "disposition": "deferred: reporting text on a read-only CLI, not reachable with today's evidence index; fix sketch recorded",
+   "regression_test": null
+  },
+  {
+   "index": 10,
+   "cluster": "deficit",
+   "verdict": "PARTIAL",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "no",
+   "statement": "The finding reproduces on TARGET 900c6ae1, with three corrections.",
+   "disposition": "fixed on the cortex (typed deficit, withheld routes named, attach as next step); GREG ask deferred with item 7",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_class_whose_only_route_is_withheld_names_the_founder_attach_not_registration"
+  },
+  {
+   "index": 11,
+   "cluster": "deficit",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "no",
+   "statement": "Confirmed on TARGET 900c6ae1 as stated, with these line numbers.",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_protection_matter_takes_the_human_route_before_any_deficit"
+  },
+  {
+   "index": 12,
+   "cluster": "mandate-time",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "yes",
+   "statement": "The finding holds as stated on TARGET, and the problem is broader than expiry. At TARGET cortex/routing.py:406-407 (SOURCE cortex/routing.py:460-461), the ranking weights come from the first founder_mandate in the caller's record list that is permission-bearing and has weights. That mandate never has to be in the founder_scope basis that cortex/gates.py:243-254 (_in_scope, gates.py:188-202) accepted at as_of.",
+   "disposition": "fixed (both lineages)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_ranking_weights_come_only_from_a_mandate_founder_scope_accepted"
+  },
+  {
+   "index": 13,
+   "cluster": "mandate-time",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "Confirmed, and wider than reported. It has nothing to do with as_of or mandate expiry. Neither CognitiveReceipt constructor in greg/cognition/bridge.py passes outcome_state: not to_cognitive_receipt (bridge.py:245) and not _failure (bridge.py:280). So every cortex-contract receipt falls back to the dataclass default outcome_state=\"ANSWERED_WITHIN_SCOPE\" (greg/cognition/contracts.py:416), whatever its abstention_state. Affected cases:",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_cortex_receipts_outcome_label_follows_its_abstention_state"
+  },
+  {
+   "index": 14,
+   "cluster": "mandate-time",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "no",
+   "statement": "Confirmed on 900c6ae1, with one strengthening. On the cortex contract path (greg/cognition/cortex.py:192-197 reason -> bridge.reason_cortex -> worker.py:65,70 -> cortex/routing.py:401-402 -> cortex/gates.py:198-201), expiry of a founder_mandate or capability_grant is decided by the request-supplied payload.as_of. It is not decided by the trusted instant the body already passes as the cortex clock (bridge.py:333 created_at -> worker.py:65).",
+   "disposition": "fixed: expiry judged at the body clock on the signed-mission path; direct callers keep their declared instant",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_declared_past_instant_cannot_keep_an_expired_mandate_alive_on_the_greg_path"
+  },
+  {
+   "index": 15,
+   "cluster": "harm-consequence",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "yes",
+   "statement": "The defect holds as stated in both TARGET 900c6ae1 and SOURCE dba14ac8. The D5 harm-implies-class raise exists only at problem level (cortex/routing.py:182-190). Option.from_dict takes the option's consequence_class verbatim (cortex/gates.py:116). Financial is not a hard harm dimension (cortex/contracts.py:139), so the harm gate passes (gates.py:286-295), and consequence_boundary reads only option.consequence_class (gates.py:306; SOURCE :309). An option that declares internal_write while its own harm is financial=high therefore passes every gate. It is recommended: Cortex disposition \"recommen",
+   "disposition": "fixed (both lineages)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_an_options_own_harm_raises_its_class_never_lowers_it"
+  },
+  {
+   "index": 16,
+   "cluster": "harm-consequence",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "The claim holds as stated on TARGET 900c6ae1. In the composition branch of greg/cognition/compiler.py:1819-1844, line 1844 `return finish(\"ANSWERED\", inner[\"answer\"])` returns ANSWERED whatever `high` is (`high` is set at compiler.py:1645). That breaks the invariant stated at compiler.py:1873. It is reachable without a hand-built object: every recipe with no \"optimize\" stage (track_then_staff, forecast_then_staff, bayes_then_voi) gives ANSWERED under consequence_class financial, irreversible or external_contact, and under a ConsequenceVector with a harm level of 0.9 (vector.high).",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_high_consequence_composition_is_a_conditional_result_never_answered"
+  },
+  {
+   "index": 17,
+   "cluster": "harm-consequence",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "The defect holds as stated, and it is broader than reported.",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_complete_high_consequence_formal_request_reaches_the_organ_and_is_escalated"
+  },
+  {
+   "index": 18,
+   "cluster": "harm-consequence",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "yes",
+   "statement": "The claim holds on TARGET 900c6ae1 exactly as stated. At cortex/gates.py:198-201, `_in_scope` reads `expires = scope.get(\"expires_at\")` and then `if expires and as_of:`. When the problem payload has no as_of, the expiry check is skipped and founder_scope PASSes \"within founder-authorized scope\". This happens even for a mandate that expired in 2020 while the Cortex's own trusted clock reads 2026-10-21. Cortex.run therefore returns disposition \"recommend\". The same happens through GREG's cognition.solve entry, which records outcome_state ANSWERED_WITHIN_SCOPE with chosen_option O2.",
+   "disposition": "fixed (D4)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_d4_an_expiring_mandate_without_an_as_of_does_not_pass_founder_scope"
+  },
+  {
+   "index": 19,
+   "cluster": "harm-consequence",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "Confirmed as stated on TARGET 900c6ae1. The cause is greg/cognition/compiler.py:1796, where `payload = data`, followed by the reason(...) call at 1801.",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_the_compiles_consequence_reaches_the_organ_it_selects"
+  },
+  {
+   "index": 20,
+   "cluster": "receipt-guard",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "no",
+   "statement": "The finding holds on TARGET 900c6ae1, with one correction. Nothing on the signed-mission path sets problem.payload.as_of from a trusted clock:",
+   "disposition": "fixed (with 14 and 18)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_the_signed_mission_adapter_decides_at_the_body_clock"
+  },
+  {
+   "index": 21,
+   "cluster": "receipt-guard",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "no",
+   "statement": "The claim holds on TARGET as stated. No tick-context path exists. Authority records reach the cortex only as params['records'] of a cognition.solve request. They pass through unchanged (greg/cognition/bridge.py:111-115, 152; greg/cognition/worker.py:70), and cortex/gates.py:73-75 grants permission purely on the self-declared origin string. A policy_decision whose text says origin 'kernel_policy_engine' therefore makes the law gate PASS (\"policy engine allowed\", gates.py:213-229), and the disposition becomes recommend. The Kernel policy engine never evaluated that option: on the real body path ",
+   "disposition": "deferred to the integration owner: records reach the cortex inside founder-signed params, but a signed bind or $from_action edge can fill them from a prior action's output; the fix belongs in mission binding validation (greg/missions.py, greg/pipeline.py)",
+   "regression_test": null
+  },
+  {
+   "index": 22,
+   "cluster": "evaluation-integrity",
+   "verdict": "CONFIRMED",
+   "severity": "medium",
+   "can_manufacture_false_gain": true,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "The finding holds as stated, and the real conditions make it more likely than the finding suggests.",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_model_that_never_answers_an_item_is_not_a_run_baseline"
+  },
+  {
+   "index": 23,
+   "cluster": "evaluation-integrity",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": true,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "The finding holds on 900c6ae1 as stated. Line numbers on target:",
+   "disposition": "fixed",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_an_unconfigured_model_baseline_books_no_call_and_is_never_called_measured"
+  },
+  {
+   "index": 24,
+   "cluster": "evaluation-integrity",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "The claim holds as stated on 900c6ae1. `cortex/evaluation/seed_genome/run.py:58` in `loss()` raises `AttributeError: 'NoneType' object has no attribute 'get'` whenever a suite item labelled with a native status (formal SAT/UNSAT, optimization OPTIMAL/INFEASIBLE; 40 of the 100 quality items) receives an ABSTAIN claim. That happens on TIMEOUT, worker failure (CAPABILITY_UNAVAILABLE) or a verifier CONTRADICTION, because `cortex/seed/methods.py:13` `artifact()` stores `'result': None` and `.get('result', {})` returns that None. Such an abstention should be scored as error=1 and unjustified_abstent",
+   "disposition": "deferred: the crash is inside the sealed v3 loss(); changing a pre-registered loss needs its own re-seal decision (fail-closed today: no report is written)",
+   "regression_test": null
+  },
+  {
+   "index": 25,
+   "cluster": "evaluation-integrity",
+   "verdict": "CONFIRMED",
+   "severity": "high",
+   "can_manufacture_false_gain": true,
+   "in_source_0.1.6": "yes",
+   "statement": "The claim holds exactly on target 900c6ae1.",
+   "disposition": "fixed (PRR-07)",
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_every_in_repo_module_a_scored_run_loads_is_frozen"
+  },
+  {
+   "index": 26,
+   "cluster": "evaluation-integrity",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "On TARGET 900c6ae1 the claim holds as stated, with one detail corrected.",
+   "disposition": "gates are correct; the adjacent overwrite hole is fixed; freeze provenance (source commits, reproducible_at) recorded as a follow-up",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_an_observed_freeze_is_never_overwritten"
+  },
+  {
+   "index": 27,
+   "cluster": "evaluation-integrity",
+   "verdict": "CONFIRMED",
+   "severity": "low",
+   "can_manufacture_false_gain": false,
+   "in_source_0.1.6": "not_applicable",
+   "statement": "The claim holds on TARGET 900c6ae1. cortex/evaluation/run.py:137-166 does not deduplicate arm_names. A repeated arm runs every item again (smoke: 9 client calls against 5), and results['arms'][name] is overwritten by the last pass. The reported per-arm summary.model_calls stays 4 and no field records that a pass was discarded. cortex/evaluation/crossgeo.py:101-136 behaves the same way (dev: 48 routed_greg executions against 24; rows and arms overwritten). Crossgeo's summary has no model_calls field, so there the defect is undisclosed re-execution rather than an understated count. One precision",
+   "disposition": "fixed (PRR-10), with unknown arm names refused",
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_repeated_arm_runs_once_or_not_at_all"
+  }
+ ],
+ "verification_workflow": "one independent skeptic per finding, reproducing on 900c6ae1 (and on dba14ac8 where the finding claimed both lineages); 28 agents; 26 CONFIRMED, 2 PARTIAL (confirmed in a different or stronger form), 0 refuted"
+}

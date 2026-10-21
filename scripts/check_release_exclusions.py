@@ -13,12 +13,16 @@ A file is blocked when any of these holds, at any depth of nested archives:
 * it parses as JSON whose canonical form (sorted keys, compact) equals a listed file's parsed content (a minified or
   reformatted copy, under any extension);
 * its path ends with a listed path (any prefix, any depth);
-* its text, after decoding, carries a listed data marker - except Python source (``.py``), which names the
-  families and suites legitimately; a renamed data copy is caught by digest instead (round-4 review, finding D).
+* its text, after decoding, carries a listed data marker - except a ``.py`` member byte-identical to a tracked Python
+  source file (a ``.py`` name, or parsing as Python, is not enough: JSON parses as Python, so an edited data copy
+  renamed ``x.py`` is still scanned; round-5 review, N1), and except the exclusion list itself, byte for byte,
+  which carries the markers it defines (N2). Edited source is scanned, which fails closed.
 
-Out of scope, stated rather than hidden (round-3 and round-4 reviews of #179): values re-encoded into another
-format (a Python literal, a CSV re-export, a subset of rows), and any encoding not decoded above. Those need human
-review of what a release contains.
+Out of scope, stated rather than hidden (round-3, round-4 and round-5 reviews of #179): values re-encoded into
+another format (a Python literal, a CSV re-export, a subset of rows); encodings not decoded above (UTF-16-BE or
+UTF-32 without a byte-order mark, raw deflate or zlib with other window sizes, raw lzma, hex, base32, base85,
+base64 with stray bytes, a compressed stream with a leading byte); and more than six nested decoding layers. Those
+need human review of what a release contains.
 
 Exit 1 names every finding. It never edits, moves or deletes a file.
 """
@@ -165,6 +169,15 @@ def members(archive: Path) -> set[str]:
     return {path for path, _ in _entries("", archive.read_bytes())}
 
 
+@functools.lru_cache(maxsize=None)
+def _tracked_source() -> frozenset:
+    """Digests of the repository's tracked Python source files. Parsing as Python is not enough: a JSON document
+    is a valid Python expression, so an edited data copy renamed ``x.py`` parses (round-5 review of #179, N1)."""
+    import subprocess
+    names = subprocess.run(["git", "ls-files", "-z", "*.py"], cwd=ROOT, capture_output=True, check=True).stdout
+    return frozenset(_digest((ROOT / n).read_bytes()) for n in names.decode().split("\0") if n and (ROOT / n).is_file())
+
+
 def _findings(path: str, data: bytes, listed: dict) -> list[str]:
     digests, paths, markers = listed["digests"], listed["paths"], listed["markers"]
     found = []
@@ -181,7 +194,8 @@ def _findings(path: str, data: bytes, listed: dict) -> list[str]:
     for listed_path in paths:
         if leaf == listed_path or leaf.endswith("/" + listed_path):
             found.append(f"{path}: path {listed_path}")
-    hits = [] if leaf.endswith(".py") else sorted({m for m in markers for v in variants if m.encode() in v})
+    exempt = _digest(data) == listed["list_digest"] or (leaf.endswith(".py") and _digest(data) in _tracked_source())
+    hits = [] if exempt else sorted({m for m in markers for v in variants if m.encode() in v})
     if hits:
         found.append(f"{path}: data markers {', '.join(hits)}")
     return found
@@ -200,7 +214,7 @@ def _listed() -> dict:
             if (canonical := _canonical(variant)) is not None:
                 digests.setdefault(canonical, e["path"])
     markers = {m for ms in record.get("markers", {}).values() for m in ms}
-    return {"digests": digests, "paths": sorted(excluded()), "markers": markers}
+    return {"digests": digests, "paths": sorted(excluded()), "markers": markers, "list_digest": _digest(LIST.read_bytes())}
 
 
 def scan_archive(archive: Path) -> list[str]:

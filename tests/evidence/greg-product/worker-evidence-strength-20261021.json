@@ -118,5 +118,70 @@
   "a founder-named oracle is trusted as the founder's judgment and is not itself scored",
   "document-mode work orders: worker.appraise checks only that the deliverable exists. Corrected 2026-10-21 after inspection: the only document-mode consumer (templates.daleobanks_post) closes on daleobanks.verify (length, figure-to-source binding, DALEOBANKS content checks), never on worker.appraise, so no current mission accepts an unchecked document. A future document mission that closes on worker.appraise alone would reopen this gap."
  ],
- "reality_status": "IMPLEMENTED, INTEGRATED on the Body path, TESTED; not founder-used, not MAC/Chromebook-verified; VEPMC unchanged at 0"
+ "reality_status": "IMPLEMENTED, INTEGRATED on the Body path, TESTED; not founder-used, not MAC/Chromebook-verified; VEPMC unchanged at 0",
+ "false_rejection_replay": {
+  "method": "18 real past commits from this repository that add greg/*.py code with their own tests/unit/test_*.py were replayed as if a worker had produced them: base = parent commit, patch = the commit, judged by greg.evidence_strength.judge with the shipped thresholds (unchanged after seeing these results). Script: run from the kernel root with scratchpad evscript/replay_history.py (not committed).",
+  "judged": 16,
+  "skipped_environment": [
+   "9712733",
+   "d311392"
+  ],
+  "accepted": [
+   "bd0c17d",
+   "1dfef4e",
+   "3c92bc9",
+   "924bede",
+   "73f0425",
+   "8531595",
+   "53e0b3e",
+   "c047586",
+   "476d6cc",
+   "19d30ca",
+   "23cb3d6",
+   "0097eb5",
+   "2a8deff",
+   "4e35530"
+  ],
+  "rejected": {
+   "e9c92e1": {
+    "killed": 2,
+    "mutants": 7,
+    "survivors": [
+     "line 678: swap and/or",
+     "line 335: 1 -> 2",
+     "line 335: 1 -> 0",
+     "line 335: drop '+ 1'",
+     "line 335: swap +/-"
+    ]
+   },
+   "76ebb40": {
+    "killed": 1,
+    "mutants": 12,
+    "survivors": [
+     "line 36: 0 -> 1",
+     "line 36: 1 -> 2",
+     "line 36: 2 -> 3",
+     "line 36: 3 -> 4",
+     "line 36: 8 -> 9",
+     "line 252: 1 -> 2",
+     "line 252: 0 -> 1",
+     "line 252: negate comparison",
+     "line 252: 0 -> -1",
+     "line 252: 1 -> 0",
+     "line 368: swap and/or"
+    ]
+   }
+  },
+  "discrimination_established": "16/16",
+  "inspection": {
+   "e9c92e1": "mostly a true finding: the met_ahead slice boundary (+1 -> +2, swap +/-) and status()['next'] (and/or swap) are not pinned by that commit's tests; the '+1 -> +0' and 'drop + 1' survivors are equivalent (the active node is unmet by definition)",
+   "76ebb40": "mostly a false rejection: 10 of 11 survivors shift STATUS_RANK / status ordinal constants by one without changing the order any test exercises (equivalent mutants); the change's point (demoted, not removed) is killed"
+  },
+  "estimated_false_rejection_rate": "1 of 16 judged honest commits (~6%), 1 more partly justified; small sample, authored by agents in this project (4 of the 16 by this session)",
+  "time_per_appraisal_seconds": {
+   "median": 42.6,
+   "max": 604.7
+  },
+  "next_hypothesis_not_applied": "score adequacy per mutated line (a line counts as covered if any of its mutants is killed) to stop several ordinal +-1 mutants on one constant table from dominating; must be tested on this replay set and the corrupted cases before adoption, since thresholds were fixed before measurement"
+ }
 }

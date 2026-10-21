@@ -142,9 +142,9 @@
           "gate_violation": false,
           "geometry": "semantic",
           "item_id": "SMOKE-SEM",
-          "latency_s": 0.033293,
+          "latency_s": 0.028656,
           "overcautious": true,
-          "receipt_id": "sha256:f7b5117b0b8ff9fc668b48867a772102a026f52831fe63e12f64cba3a3180c2c",
+          "receipt_id": "sha256:6ffa514cf1a7ac747a37543ba4741cac7ddf178fdf1a89bc7ebe8f89f0ebd317",
           "score": 0.25,
           "state": "DEPENDENCY_UNAVAILABLE",
           "unsupported_certainty": false
@@ -164,9 +164,9 @@
           "gate_violation": false,
           "geometry": "estimate",
           "item_id": "SMOKE-FERMI",
-          "latency_s": 0.17727,
+          "latency_s": 0.158275,
           "overcautious": false,
-          "receipt_id": "sha256:9524c78a8fbb969459d1153088eb0263dda5345a8e4f4084fac97360efc7f4ca",
+          "receipt_id": "sha256:5cdb29e0caed1f48fb3fd739984d8293d8b1fac54d0476c22cd5a72dbf759dff",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -186,9 +186,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "SMOKE-FORMAL",
-          "latency_s": 0.078118,
+          "latency_s": 0.063586,
           "overcautious": false,
-          "receipt_id": "sha256:4718e7e3840782f237e8ca7e3660d5d6977f9101975b2916642034fc8bd290e1",
+          "receipt_id": "sha256:70907efd29a9d877ffe9a4c7abe08d4f1b6719d3e01df007d040fd058f560243",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -202,9 +202,9 @@
           "gate_violation": false,
           "geometry": "claim:intervention",
           "item_id": "SMOKE-CAUSAL",
-          "latency_s": 0.000984,
+          "latency_s": 0.00071,
           "overcautious": false,
-          "receipt_id": "sha256:86c15c448c6cb17ed6a36e837764bcf41206731e2481d5f8aa75f24c788bcf48",
+          "receipt_id": "sha256:909cc1e177605a941561b7a4c689de5cbf33e6f73c68f64ed47da640d74a891b",
           "score": 1.0,
           "state": "NOT_IDENTIFIED",
           "unsupported_certainty": false
@@ -245,8 +245,8 @@
         "critical_errors": 0,
         "errors": 0,
         "gate_violations": 0,
-        "latency_s_mean": 0.0724163262498223,
-        "latency_s_p95": 0.07811800499985111,
+        "latency_s_mean": 0.06280654625015814,
+        "latency_s_p95": 0.0635857630004466,
         "mean_quality": 0.8125,
         "mean_quality_ci95": [
           0.4375,
@@ -292,7 +292,7 @@
     },
     "max_single_update": 0.2778,
     "prediction_as_outcome": "refused: prediction cannot settle competence",
-    "receipt_id": "sha256:b8e57d7e0455044f5d13722ee3d29818daa68908603d112df63acbf2271f74d4",
+    "receipt_id": "sha256:e682eaf10b098e37b21f027ed597669aa0b36f1500f0c89d79063be7f2e71314",
     "registry_unchanged": true,
     "rollback_to_checkpoint": {
       "basis": "prior",
@@ -441,7 +441,7 @@
       "execution_authority": "none",
       "expenditure": {
         "model_calls": 0,
-        "seconds": 0.000589,
+        "seconds": 0.000435,
         "solver_calls": 0,
         "usd": 0.0
       },
@@ -565,7 +565,7 @@
             ],
             "expenditure": {
               "model_calls": 0,
-              "seconds": 4.3e-05,
+              "seconds": 3.4e-05,
               "solver_calls": 0,
               "usd": 0.0
             },
@@ -656,7 +656,7 @@
       ],
       "protection": null,
       "ranking": null,
-      "receipt_id": "sha256:86c15c448c6cb17ed6a36e837764bcf41206731e2481d5f8aa75f24c788bcf48",
+      "receipt_id": "sha256:909cc1e177605a941561b7a4c689de5cbf33e6f73c68f64ed47da640d74a891b",
       "route": {
         "attempts": [],
         "composition": false,
@@ -843,7 +843,7 @@
       "execution_authority": "none",
       "expenditure": {
         "model_calls": 0,
-        "seconds": 0.176666,
+        "seconds": 0.15778,
         "solver_calls": 0,
         "usd": 0.0
       },
@@ -981,7 +981,7 @@
             ],
             "expenditure": {
               "model_calls": 0,
-              "seconds": 0.174183,
+              "seconds": 0.155299,
               "solver_calls": 0,
               "usd": 0.0
             },
@@ -1114,7 +1114,7 @@
       ],
       "protection": null,
       "ranking": null,
-      "receipt_id": "sha256:9524c78a8fbb969459d1153088eb0263dda5345a8e4f4084fac97360efc7f4ca",
+      "receipt_id": "sha256:5cdb29e0caed1f48fb3fd739984d8293d8b1fac54d0476c22cd5a72dbf759dff",
       "route": {
         "attempts": [],
         "composition": false,
@@ -1314,7 +1314,7 @@
       "execution_authority": "none",
       "expenditure": {
         "model_calls": 0,
-        "seconds": 0.077247,
+        "seconds": 0.063096,
         "solver_calls": 7,
         "usd": 0.0
       },
@@ -1461,7 +1461,7 @@
             ],
             "expenditure": {
               "model_calls": 0,
-              "seconds": 0.074227,
+              "seconds": 0.06075,
               "solver_calls": 7,
               "usd": 0.0
             },
@@ -1830,7 +1830,7 @@
       ],
       "protection": null,
       "ranking": null,
-      "receipt_id": "sha256:4718e7e3840782f237e8ca7e3660d5d6977f9101975b2916642034fc8bd290e1",
+      "receipt_id": "sha256:70907efd29a9d877ffe9a4c7abe08d4f1b6719d3e01df007d040fd058f560243",
       "route": {
         "attempts": [],
         "composition": false,
@@ -2036,7 +2036,7 @@
       "execution_authority": "none",
       "expenditure": {
         "model_calls": 1,
-        "seconds": 0.032964,
+        "seconds": 0.028305,
         "solver_calls": 0,
         "usd": 0.0
       },
@@ -2164,7 +2164,7 @@
             ],
             "expenditure": {
               "model_calls": 1,
-              "seconds": 0.032228,
+              "seconds": 0.027602,
               "solver_calls": 0,
               "usd": 0.0
             },
@@ -2195,7 +2195,7 @@
       ],
       "protection": null,
       "ranking": null,
-      "receipt_id": "sha256:f7b5117b0b8ff9fc668b48867a772102a026f52831fe63e12f64cba3a3180c2c",
+      "receipt_id": "sha256:6ffa514cf1a7ac747a37543ba4741cac7ddf178fdf1a89bc7ebe8f89f0ebd317",
       "route": {
         "attempts": [],
         "composition": false,
@@ -2251,6 +2251,6 @@
     "llm_committee": "three calls per item to the same local model; majority vote",
     "routed_seed": "Python + z3 solver in-process; semantic route uses the same local model as the baselines; latency includes geometry, eligibility, gates, verification and receipt construction"
   },
-  "run_at": "2026-10-21T14:21:38Z",
+  "run_at": "2026-10-21T15:07:25Z",
   "schema": "cortex-seed-results/0.1"
 }

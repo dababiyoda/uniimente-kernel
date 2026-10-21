@@ -298,9 +298,22 @@ def test_the_compiles_consequence_reaches_the_organ_it_selects(geometry, consequ
     item, data = _h_e02_without_declared()
     c = compile_(registry_view(), geometry, data, **({"consequence": consequence} if consequence else {}))
     inner = c["selected_receipt"]["proof_artifact"]
-    assert inner["geometry"]["consequence_class"] == "financial"
+    assert inner["geometry"]["consequence_class"] == "financial"      # the cortex decides from what reached it
     assert inner["disposition"]["kind"] != "recommend"
-    assert c["consequence_forwarded"]["to"] == "financial" and c["consequence_class"] == "financial"
+    forwarded = c["consequence_forwarded"]
+    assert forwarded.get("to") == "financial" if consequence is None else forwarded["harm"] == {"financial": "critical"}
+
+
+@pytest.mark.parametrize("dimension,value", [("reputation", 0.5), ("privacy", 0.6), ("financial", 0.5)])
+def test_a_compile_harm_reaches_the_organ_as_the_cortexs_own_harm_level_never_as_a_class(dimension, value):
+    """Review of the port: any harm >= 0.5 was forwarded as consequence class "financial", stricter than the cortex's
+    own rule (it raises the class only for a high or critical financial harm). The harm now reaches it as a level."""
+    item, data = _h_e02_without_declared()
+    c = compile_(registry_view(), {"geometry": "estimate"}, data, consequence={dimension: value})
+    inner = c["selected_receipt"]["proof_artifact"]
+    assert inner["geometry"]["consequence_class"] != "financial"
+    assert inner["disposition"]["kind"] == "recommend" and c["result"] is not None
+    assert c["consequence_class"] != "financial" and "to" not in c["consequence_forwarded"]
 
 
 def test_a_lower_compile_consequence_never_lowers_the_payloads_own():
@@ -355,3 +368,136 @@ def test_crossgeo_hashes_the_manifest_bytes_it_checked_and_reports_their_plannin
     monkeypatch.setattr(C, "load", lambda partition: [])
     assert C.report(heldout, {"arms": {}, "rows": {}})["planning"] == {"planned_heldout_n": 7}
     assert seen["planning"] == {"planned_heldout_n": 7}    # the verdict's power rule read the checked planning
+
+
+# ------------------------------------------------------------------ adversarial review of the port (2026-10-21)
+SR = {"text": "Shift: 10 hours. Job A takes 3 hours. Job B takes 4 hours. Job C takes 2 hours. A before C. "
+              "One machine; one job at a time. Minimize total completion time."}
+
+
+@pytest.mark.parametrize("geometry", [{"consequence_class": "financial"}, {"geometry": "estimate"}])
+def test_a_part_another_part_masked_is_withheld_too_so_only_the_selected_organ_runs(geometry):
+    c = compile_(registry_view(), geometry, {"formal_model": FM, "estimation_model": EM, "schedule_request": SR})
+    assert c["method_or_composition_selected"] == "cognition.cortex.estimation.fermi"
+    inner = c["selected_receipt"]["proof_artifact"]
+    assert _executed(c) == ["cortex.estimation.fermi@0.1.0"] and inner["route"]["attempts"] == []
+    withheld = [t["transformation"] for t in c["transformations"] if t.get("operator_id") == "single_organ_payload"]
+    assert "schedule_request" in withheld[0] and "formal_model" in withheld[0]
+
+
+ALLOW_O1 = {"record_id": "p-O1", "kind": "policy_decision", "origin": "kernel_policy_engine",
+            "body": {"subject": "O1", "verdict": "allow"}}
+
+
+def _scoped(expires):
+    return {"record_id": "m-x", "kind": "founder_mandate", "origin": "founder_signed", "body": {"scope": {
+        "action_classes": ["draft.*"], "targets": ["internal://*"], "max_consequence_class": "internal_write",
+        "expires_at": expires}}}
+
+
+def _ctx(capability_id):
+    from types import SimpleNamespace
+    return SimpleNamespace(manifest=SimpleNamespace(capability_id=capability_id), target="cognition:x",
+                           capability_registry=registry_view(), journal=None, cognition_model=None,
+                           cognition_budget=None)
+
+
+@pytest.mark.parametrize("payload_as_of,expires,expected", [({"as_of": "2019-06-01T00:00:00Z"}, "2020-01-01T00:00:00Z",
+                                                              "FAIL"),
+                                                             ({}, "2099-01-01T00:00:00Z", "PASS")])
+def test_composition_on_a_signed_mission_judges_authority_at_the_body_clock_like_solve(payload_as_of, expires,
+                                                                                         expected):
+    from greg.cognition.cortex import compose, solve
+    request = {"problem_id": "t:clock", "problem": {"question": "q", "payload": {"declared": DECL, "options": [OPT],
+                                                                                 **payload_as_of}},
+               "records": [ALLOW_O1, _scoped(expires)]}
+    solved = solve(request, _ctx("cognition.solve"))
+    composed = compose({"requests": [request]}, _ctx("cognition.compose"))["receipts"][0]
+    for r in (solved, composed):
+        assert r["proof_artifact"]["gates"]["O1"]["gates"]["founder_scope"]["status"] == expected
+        assert r["proof_artifact"]["authority_as_of"]
+
+
+def test_a_signed_missions_evidence_answer_is_dated_by_its_own_as_of_not_the_body_clock():
+    """Only authority expiry is judged at the body clock; evidence fresh at the question's declared as_of is not
+    made stale by the clock (review of the port: the override had replaced the payload's as_of)."""
+    from greg.cognition.cortex import solve
+    evidence = [{"id": "E1", "kind": "measurement", "validation_status": "externally_verified",
+                 "observed_at": "2026-09-01", "max_age_days": 30, "stance": "supports",
+                 "observation": "direct_observation", "source": "dock log"}]
+    payload = {"declared": DECL, "options": [OPT], "as_of": "2026-09-15T00:00:00Z", "evidence": evidence,
+               "claim": {"id": "C1", "type": "factual_support", "statement": "the shipment arrived"}}
+    request = {"problem_id": "t:evidence", "problem": {"question": "q", "payload": payload},
+               "records": [ALLOW_O1, _scoped("2099-01-01T00:00:00Z")]}
+    direct = reason(request, registry=registry_view())
+    signed = solve(request, _ctx("cognition.solve"))
+    assert signed["proof_artifact"]["authority_as_of"] != payload["as_of"]
+    assert signed["abstention_state"] == direct["abstention_state"] == "NONE"
+    assert signed["proof_artifact"]["output"]["answer"] == direct["proof_artifact"]["output"]["answer"]
+
+
+def test_two_checks_sharing_one_sensor_settle_once_and_the_body_keeps_reasoning(tmp_path):
+    """Review of the port (high): two success checks with the identical cortex sensor share one Gate receipt, so two
+    claims settled one receipt twice; the once-per-receipt guard then raised inside every ledger rebuild, and every
+    later cortex request on that body abstained. One receipt is one observation: the claims collapse to one."""
+    from cortex.evaluation.build_suites import schedule
+    from greg.body import Body
+    from greg.cognition import learned_routing
+    from tests.greg_fixtures import drop, make_body, mission, signed
+    model, _, _ = schedule([("A", 3), ("B", 4), ("C", 2)], 10,
+                           query={"kind": "optimize", "sense": "minimize", "objective": ["+", "s_A", "s_B", "s_C"]})
+    problem = {"question": "Earliest start times for jobs A, B, C on one machine within a 10h shift",
+               "payload": {"formal_model": model, "declared": DECL}}
+    step = {"capability": "cognition.solve", "target": "cognition:schedule",
+            "params": {"problem_id": "cortex:schedule", "problem": problem}}
+    spec = mission("m:two-checks", checks=[
+        {"check_id": "objective-7", "description": "objective 7", "sensor": step,
+         "predicate": {"op": "equals", "field": "output.answer.objective", "value": 7}},
+        {"check_id": "solved", "description": "the router answered", "sensor": step,
+         "predicate": {"op": "equals", "field": "output.state", "value": "OK"}}],
+        strategies=[{"action_id": "solve", **step, "advances": ["objective-7", "solved"], "rationale": "solve"}],
+        capabilities=["cognition.solve"], targets=("cognition:*",), ceiling="read_only")
+    home, key, body_id, _ = make_body(tmp_path)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    with Body(home) as body:
+        body.boot()
+        assert body.tick()["missions"][0]["state"] == "ACHIEVED"
+        receipts = {e.payload["receipt"] for e in body.journal.replay("mission.observed")}
+        assert len(receipts) == 1                      # both checks observed through the one receipt
+        claims = learned_routing.settled_claims(body.journal)
+        assert len(claims) == 1 and claims[0]["status"] == "verified_success"
+        assert len(learned_routing.ledger(body.journal).records()) == 1
+        later = reason({"problem_id": "later", "problem": problem, "records": []}, registry=body.registry,
+                       journal=body.journal)
+        assert later["abstention_state"] == "NONE"
+
+
+def test_a_pinned_organ_answers_its_own_part_and_discloses_the_rest_never_a_capability_gap():
+    """Review of the port: a signed mission pinning one organ withheld the others, and their parts became a false
+    CAPABILITY_DEFICIT. The parts outside the pin's signed scope are not sent, and the receipt says so."""
+    import copy
+    from cortex.evaluation.run import load_items
+    from greg.cognition.cortex import solve
+    payload = copy.deepcopy(next(i for i in load_items("heldout") if i["item_id"] == "H-F01")["problem"]["payload"])
+    payload["sources"] = [{"id": "s1", "text": "The roster rule: at least 7 shift units must be covered."}]
+    ctx = _ctx("cognition.cortex.formal.z3")
+    ctx.manifest = ctx.capability_registry.manifests["cognition.cortex.formal.z3"]
+    r = solve({"problem_id": "pin", "problem": {"question": "Is the roster feasible?", "payload": payload},
+               "records": []}, ctx)
+    assert r["abstention_state"] == "NONE" and r["proof_artifact"]["capability_deficit"] is None
+    assert r["proof_artifact"]["coverage"] == "complete"
+    assert any("pinned cognition.cortex.formal.z3" in a and "sources" in a for a in r["assumptions"])
+
+
+def test_a_claim_the_ledger_refuses_is_skipped_never_raised_inside_the_rebuild(monkeypatch):
+    from cortex.routing import Cortex
+    from greg.cognition import learned_routing
+    receipt = Cortex(clock=lambda: "2026-10-21T00:00:00Z").run({"problem_id": "dup", "question": "q", "payload": {
+        "formal_model": FM, "declared": DECL}})
+    lead = receipt["route"]["selected"][0]
+    claim = {"position": 0, "claim": "c", "lead": lead, "status": "verified_success", "receipt": receipt,
+             "provenance": {"kind": "external_observation", "validation_status": "externally_verified"},
+             "attribution": [{"method": lead.split("@")[0], "role": "final_answer", "uncertainty": "low"}],
+             "conditions": ()}
+    monkeypatch.setattr(learned_routing, "settled_claims", lambda journal: [claim, {**claim, "position": 1}])
+    assert len(learned_routing.ledger(object()).records()) == 1

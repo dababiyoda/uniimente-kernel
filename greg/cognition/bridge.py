@@ -51,6 +51,8 @@ Compatibility membrane: cortex receipt -> CognitiveReceipt (Final Build Order se
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+import contextvars
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -132,6 +134,26 @@ def withheld(registry, *, forced: str | None = None) -> dict:
     return out
 
 
+def _pinned_payload(payload: dict, forced: str | None) -> tuple[dict, list]:
+    """A signed mission that pins one organ asks that organ's part only (review of the 0.2.2 port): the parts that
+    would route another organ are outside its signed scope, so they are not sent (and disclosed), never reported as
+    a capability gap. The formal slot is one scope: pinning Z3 or CP-SAT keeps the formal model for either."""
+    if forced is None or forced not in ORGAN_OF:
+        return payload, []
+    from cortex.routing import FORMAL_ENGINES, _route_parts
+    pinned = ORGAN_OF[forced]
+    allowed = set(FORMAL_ENGINES) if pinned in FORMAL_ENGINES else {pinned}
+    dropped: list = []
+    while extra := [k for k, _ in _route_parts(payload) if k not in allowed]:
+        triggers = {p for p in payload for k in extra
+                    if k not in {x for x, _ in _route_parts({q: v for q, v in payload.items() if q != p})}}
+        if not triggers:
+            break       # left for the cortex to report: a part no single key decides
+        dropped += sorted(triggers)
+        payload = {k: v for k, v in payload.items() if k not in triggers}
+    return payload, dropped
+
+
 def _semantic_model(model_config, problem) -> dict | None:
     """Only a founder-selected local Ollama model, and only when the problem has sources or a
     free-text schedule request the controlled grammar may not cover."""
@@ -144,14 +166,15 @@ def _semantic_model(model_config, problem) -> dict | None:
 
 def run_worker(problem: dict, records: list, *, withheld_organs: dict, semantic_model: dict | None,
                cpu_seconds: float, created_at: str, memory_records: list | None = None,
-               timeout_seconds: float | None = None) -> dict:
+               timeout_seconds: float | None = None, authority_as_of: str | None = None) -> dict:
     """``memory_records`` (signed learned mode only) travel on stdin: content-addressed
     routing-memory records the worker rebuilds and checks before the router may use them.
     ``timeout_seconds`` is the enclosing thinking-budget deadline (#156/#159)."""
     from greg.capabilities import CapabilityError, run_isolated
     request = {"problem": problem, "records": records, "withheld": withheld_organs,
                "semantic_model": semantic_model, "cpu_seconds": cpu_seconds, "created_at": created_at,
-               "learned_memory": memory_records is not None}
+               "learned_memory": memory_records is not None,
+               **({"authority_as_of": authority_as_of} if authority_as_of else {})}
     try:
         proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), "__cortex__",
                              canonical(request)], cwd=ROOT, isolate_network=semantic_model is None,
@@ -187,6 +210,21 @@ def check_receipt(receipt: dict, *, max_model_calls: int | None = None) -> dict:
     if max_model_calls is not None and (type(calls) is not int or calls > max_model_calls):
         raise CognitionError(f"cortex receipt used {calls!r} model calls; serving ceiling is {max_model_calls}")
     return receipt
+
+
+_SIGNED_PATH = contextvars.ContextVar("greg_cognition_signed_path", default=False)
+
+
+@contextmanager
+def signed_path():
+    """Inside, every cortex call decides now (0.2.2): set by ``cognition.solve`` and ``cognition.compose`` for a
+    signed mission, so a compile request, a chain or a composition reaching the cortex is judged like a direct
+    problem. Direct callers (frozen evaluation runners) never set it and keep the declared instant."""
+    token = _SIGNED_PATH.set(True)
+    try:
+        yield
+    finally:
+        _SIGNED_PATH.reset(token)
 
 
 def _decision_instant(payload: dict, records: list, now: datetime) -> str | None:
@@ -351,10 +389,14 @@ def reason_cortex(params, *, registry, journal=None, model_config=None, forced=N
                      "max_solver_calls": min(integer(limits.get("max_solver_calls", 64), high=100000), budget.compute_limit),
                      "max_model_calls": min(integer(limits.get("max_model_calls", 4), high=100000), 1)}
         now = datetime.now(timezone.utc)
-        instant = _decision_instant(problem["payload"], records, now) if trusted_clock else None
-        serving = {**problem, "payload": {**problem["payload"], "resources": resources,
-                                          **({"as_of": instant} if instant else {})}}
-        model = _semantic_model(model_config, problem)
+        # A signed mission decides now, whichever route reached here (a problem, a compile request, a chain, a
+        # composition): its forwarded authority's expiry is judged at the body clock. The payload's as_of still
+        # dates the question itself (review of the 0.2.2 port).
+        instant = _decision_instant(problem["payload"], records, now) \
+            if trusted_clock or _SIGNED_PATH.get() else None
+        pinned_payload, outside_pin = _pinned_payload(problem["payload"], forced)
+        serving = {**problem, "payload": {**pinned_payload, "resources": resources}}
+        model = _semantic_model(model_config, {**problem, "payload": pinned_payload})
         if model:
             model = {**model, "timeout_seconds": seconds, "max_tokens": min(model["max_tokens"], budget.compute_limit)}
         # Competence is recomputed from GREG's own settled claims for every request (P4 learned routing).
@@ -366,7 +408,7 @@ def reason_cortex(params, *, registry, journal=None, model_config=None, forced=N
         wall = max(.01, min(budget.remaining(), cpu + 20.0))
         receipt = run_worker(serving, records, withheld_organs=withheld(registry, forced=forced),
                              semantic_model=model, cpu_seconds=cpu, timeout_seconds=wall,
-                             created_at=now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                             created_at=now.strftime("%Y-%m-%dT%H:%M:%SZ"), authority_as_of=instant,
                              memory_records=[r.to_dict() for r in memory.records()] if mode == "learned" else None)
         budget.before_verification()
         check_receipt(receipt, max_model_calls=resources["max_model_calls"])
@@ -374,9 +416,13 @@ def reason_cortex(params, *, registry, journal=None, model_config=None, forced=N
             raise CognitionError(f"worker ran cortex {receipt['versions']['cortex']}, body expects {CORTEX_VERSION}")
         out = to_cognitive_receipt(params, receipt, started,
                                    learned_routing.summary(mode, memory, receipt, problem["payload"]))
+        if outside_pin:
+            out["assumptions"].append(f"the signed mission pinned {forced}: payload parts {outside_pin} route other "
+                                      f"organs and were not sent; only the pinned organ's part was asked")
         if instant is not None and instant != problem["payload"].get("as_of"):
             out["assumptions"].append(f"authority expiry judged at the body clock {instant}; the declared as_of "
-                                      f"{problem['payload'].get('as_of')!r} did not decide it")
+                                      f"{problem['payload'].get('as_of')!r} did not decide it, and still dates the "
+                                      f"question's evidence")
         if budget.remaining() <= 0:
             raise CognitionError("BUDGET_EXHAUSTED: enclosing Cortex deadline exceeded")
         plan = budget.snapshot(registry)

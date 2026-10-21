@@ -144,12 +144,18 @@ class CompetenceLedger:
         geometry = receipt["geometry"]["epistemic_class"] or "unresolved"
         selected = receipt["route"]["selected"]
         key = f"{method}@{method_version}"
-        if key not in selected:
-            raise CortexError(f"a receipt can only settle a method and version it actually selected; "
-                              f"{key!r} is not among {list(selected)}")
-        if outcome_status in SETTLING and key not in _ran(receipt):
+        ran = _ran(receipt)
+        if key not in selected and key not in ran:
+            raise CortexError(f"a receipt can only settle a method and version it actually selected or ran; "
+                              f"{key!r} is not among {sorted(set(selected) | set(ran))}")
+        if outcome_status in SETTLING and key not in ran:
             raise CortexError(f"a receipt can only settle a method and version that actually ran; {key!r} "
                               f"produced no result ({receipt.get('coverage')})")
+        if outcome_status == "verified_success" and key not in _ran(receipt, answered=True):
+            # A lead that ran and failed (a timeout superseded by a fallback) may settle its failure, never the
+            # success of the engine that answered (review of the 0.2.2 port).
+            raise CortexError(f"{key!r} ran but produced no answer in this receipt; only an observed failure "
+                              f"can settle it")
         if outcome_status in SETTLING and any(
                 r.receipt_id == receipt["receipt_id"] and r.method == method and r.method_version == method_version
                 and r.outcome_status in SETTLING for r in self._records):
@@ -216,12 +222,14 @@ class CompetenceLedger:
         return list(eligible_keys)
 
 
-def _ran(receipt: Mapping[str, Any]) -> set[str]:
-    """Route keys that produced a result: the final per-route results and every engine attempt
-    the formal slot ran before a fallback or as a cross-check (route.attempts)."""
+def _ran(receipt: Mapping[str, Any], *, answered: bool = False) -> set[str]:
+    """Route keys that ran: the final per-route results and every engine attempt the formal slot ran before a
+    fallback or as a cross-check (route.attempts). ``answered``: only rows that produced an answer."""
     rows = list((receipt.get("output") or {}).get("per_route") or []) + list(receipt["route"].get("attempts") or [])
     out = set()
     for r in rows:
+        if answered and r.get("answer") is None:
+            continue
         organ = str(r.get("organ_id"))
         out.add(organ if "@" in organ else f"{organ}@{r.get('organ_version')}")
     return out

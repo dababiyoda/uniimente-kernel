@@ -35,7 +35,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from cortex.contracts import digest as cortex_digest
+from cortex.contracts import CortexError, digest as cortex_digest
 from cortex.memory import CompetenceLedger, RoutingMemoryRecord
 
 from .conditional_competence import ConditionalCompetence, conditions, features
@@ -149,7 +149,16 @@ def settled_claims(journal) -> list[dict]:
                                                                 "appraisal_event": appraisal,
                                                                 "gate_receipt": data["receipt"]},
                             "attribution": attribution, "conditions": conds}
-    return sorted(claims.values(), key=lambda c: c["position"])
+    # One receipt is one observation of its lead (cortex 0.2.2): checks that share one sensor share one Gate receipt,
+    # so their claims collapse to one decision, and a failure on any of them is the decision (review of the port).
+    decided: dict[tuple, dict] = {}
+    for claim in sorted(claims.values(), key=lambda c: c["position"]):
+        key = (claim["receipt"]["receipt_id"], claim["lead"])
+        prior = decided.pop(key, None)
+        if prior is not None and prior["status"] == "observed_failure" and claim["status"] != "observed_failure":
+            claim = {**prior, "position": claim["position"]}
+        decided[key] = claim
+    return sorted(decided.values(), key=lambda c: c["position"])
 
 
 def ledger(journal) -> CompetenceLedger:
@@ -157,9 +166,14 @@ def ledger(journal) -> CompetenceLedger:
     out = CompetenceLedger()
     for claim in settled_claims(journal)[-MAX_RECORDS:]:
         method, _, version = claim["lead"].partition("@")
-        out.settle(receipt=claim["receipt"], method=method, method_version=version,
-                   outcome_status=claim["status"], provenance=claim["provenance"],
-                   attribution=claim["attribution"], conditions=claim["conditions"])
+        try:
+            out.settle(receipt=claim["receipt"], method=method, method_version=version,
+                       outcome_status=claim["status"], provenance=claim["provenance"],
+                       attribution=claim["attribution"], conditions=claim["conditions"])
+        except CortexError:
+            # A claim the ledger refuses (a receipt already settled, a content address that no longer holds) is
+            # evidence that does not count; it never stops every later request on this body from reasoning.
+            continue
     return out
 
 

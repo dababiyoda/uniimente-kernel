@@ -15,6 +15,7 @@ import copy
 import hashlib
 import json
 import sys
+import sysconfig
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -176,8 +177,11 @@ def run(partition: str, arm_names: list[str], *, client_factory=None) -> dict:
                     d = A.always_abstain(item)
                 else:
                     raise SystemExit(f"unknown arm {name}")
-            except (ValueError, OSError, KeyError, TypeError) as exc:
+            except (A.Unreached, ValueError, OSError, KeyError, TypeError) as exc:
+                # an unreached model item is an error (the baseline did not run there); a malformed reply the
+                # model returned is scored by the arm as a task failure and never lands here (0.2.2)
                 d = {"disposition": "error", "answer": None, "error": f"{type(exc).__name__}: {exc}",
+                     "unreached": isinstance(exc, A.Unreached),
                      "latency_s": 0.0, "cost_usd": 0.0, "model_calls": 0, "solver_calls": 0}
             decisions.append(d)
         scored = [S.score_item(i, d) for i, d in zip(items, decisions)]
@@ -202,22 +206,35 @@ def run(partition: str, arm_names: list[str], *, client_factory=None) -> dict:
     unfrozen = unfrozen_code_loaded()
     if manifest is not None and unfrozen:
         results["unfrozen_code_loaded"] = unfrozen
+        before = results["exit"]
         results["exit"] = {"verdict": "INCONCLUSIVE", "promote": False,
-                           "reasons": [f"the run loaded repository code the freeze does not hash: {unfrozen}"]}
+                           "reasons": [f"the run loaded repository code the freeze does not hash: {unfrozen}",
+                                       *before.get("reasons", [])],
+                           "before_unfrozen_guard": before}
     return results
 
 
 def unfrozen_code_loaded() -> list[str]:
-    """Repository modules this process has loaded that the freeze does not hash."""
+    """Repository modules this process has loaded that the freeze does not hash. Installed dependencies are not
+    repository code, even when the interpreter's environment lives inside the checkout (``python3 -m venv .venv``,
+    as docs/GREG_LOCAL_START.md prescribes): paths under the interpreter's prefixes and any site-packages or
+    dist-packages directory are skipped (review of the 0.2.2 port)."""
     root = ROOT.resolve()
+    installed = {Path(p).resolve() for p in (sys.prefix, sys.base_prefix, sys.exec_prefix,
+                                             *sysconfig.get_paths().values()) if p}
     loaded = set()
     for module in list(sys.modules.values()):
         path = getattr(module, "__file__", None)
         if not path:
             continue
         path = Path(path).resolve()
-        if root in path.parents and "tests" not in path.relative_to(root).parts[:1]:
-            loaded.add(path.relative_to(root).as_posix())
+        if root not in path.parents:
+            continue
+        rel = path.relative_to(root).parts
+        if rel[:1] == ("tests",) or {"site-packages", "dist-packages"} & set(rel) \
+                or any(p == path or p in path.parents for p in installed if p != root and root in p.parents):
+            continue
+        loaded.add("/".join(rel))
     return sorted(loaded - set(FROZEN_CODE))
 
 

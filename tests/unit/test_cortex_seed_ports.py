@@ -18,11 +18,14 @@ from cortex.memory import MIN_OUTCOME_EVIDENCE, CompetenceLedger
 from cortex.routing import CPSAT, FERMI, FORMAL, MAX_COMPOSITION, SEMANTIC, Cortex, derive_geometry
 from cortex.contracts import Problem
 from cortex.schemas import validate
+from cortex import routing as cortex_routing
 
 pytest.importorskip("z3")
 pytest.importorskip("ortools")
 
 CLOCK = "2026-10-21T00:00:00Z"
+SCHEDULE_FEASIBLE = ("Shift: 10 hours. Job A takes 3 hours. Job B takes 4 hours. Job C takes 2 hours. A before C. "
+                     "One machine; one job at a time.")
 DECL = {"consequence_class": "internal_write", "reversibility": "reversible"}
 FORMAL_MODEL = {"requirement": "x + y <= 4",
                 "variables": [{"name": "x", "sort": "int", "lo": 0, "hi": 4},
@@ -88,23 +91,44 @@ class _TimedOut:
                            notes=("stub timeout",))
 
 
-def test_a_superseded_lead_ran_and_may_settle_its_own_failure():
-    """Adapted to this line: _run_formal moves a lead that failed into route.attempts, so 'ran' reads
-    per_route and attempts. The engine that answered was not selected, so it cannot settle."""
+def test_a_superseded_lead_settles_only_its_failure_and_the_engine_that_answered_settles_its_answer():
+    """Adapted to this line: _run_formal moves a lead that failed into route.attempts, so 'ran' reads per_route and
+    attempts. Review of the port (2026-10-21): the fallback that answered is the real observation and may settle; a
+    lead that timed out with no answer may settle only its failure, never verified_success."""
     cortex = Cortex(clock=lambda: CLOCK)
     cortex.organs[FORMAL] = _TimedOut()
     receipt = run({"formal_model": FORMAL_MODEL, "declared": DECL}, "fallback", cortex=cortex)
     assert receipt["route"]["selected"] == [FORMAL]
     assert [a["organ_id"] for a in receipt["route"]["attempts"]] == [FORMAL]
     assert receipt["output"]["per_route"][0]["organ_id"] == CPSAT
+    assert receipt["route"]["part_geometries"][CPSAT] == "constraint_feasibility"
+    assert f"{CPSAT}|constraint_feasibility" in receipt["outcome_link"]["memory_keys"]
     ledger = CompetenceLedger()
+    with pytest.raises(ValueError, match="produced no answer"):
+        ledger.settle(receipt=receipt, method="cortex.formal.z3", method_version="0.2.0",
+                      outcome_status="verified_success", provenance=OK_PROV, attribution=attr("cortex.formal.z3"))
     rec = ledger.settle(receipt=receipt, method="cortex.formal.z3", method_version="0.2.0",
                         outcome_status="observed_failure", provenance=OK_PROV, attribution=attr("cortex.formal.z3"))
     assert rec.competence_update["weight"] > 0
-    with pytest.raises(ValueError, match="actually selected"):
-        ledger.settle(receipt=receipt, method="cortex.optimization.cpsat", method_version="0.2.0",
-                      outcome_status="verified_success", provenance=OK_PROV,
-                      attribution=attr("cortex.optimization.cpsat"))
+    rec = ledger.settle(receipt=receipt, method="cortex.optimization.cpsat", method_version="0.2.0",
+                        outcome_status="verified_success", provenance=OK_PROV,
+                        attribution=attr("cortex.optimization.cpsat"))
+    assert rec.geometry == "constraint_feasibility" and rec.competence_update["weight"] > 0
+    alternatives = {a["route"]: a["why_not"] for a in receipt["alternatives"]}
+    assert all("not required" not in w for w in alternatives.get(FORMAL, []))
+
+
+def test_a_superseded_schedule_lead_may_settle_its_failure_on_the_schedule_path_too():
+    cortex = Cortex(clock=lambda: CLOCK)
+    cortex.organs[FORMAL] = _TimedOut()
+    receipt = run({"schedule_request": {"text": SCHEDULE_FEASIBLE}, "declared": DECL}, "sched-fallback", cortex=cortex)
+    assert [a["organ_id"] for a in receipt["route"]["attempts"]] == [FORMAL]
+    rec = CompetenceLedger().settle(receipt=receipt, method="cortex.formal.z3", method_version="0.2.0",
+                                    outcome_status="observed_failure", provenance=OK_PROV,
+                                    attribution=attr("cortex.formal.z3"))
+    assert rec.geometry == "constraint_feasibility"
+    assert [w for a in receipt["alternatives"] if a["route"] == FORMAL for w in a["why_not"]] == \
+        ["ran (superseded by fallback); not the route that answered"]
 
 
 def test_settlement_refuses_a_receipt_whose_content_address_does_not_match():
@@ -404,13 +428,13 @@ def test_a_direct_caller_keeps_its_declared_instant_so_frozen_evaluations_never_
 
 def test_the_signed_mission_adapter_decides_at_the_body_clock(monkeypatch):
     from types import SimpleNamespace
-    from greg.cognition import cortex
-    seen = {}
-    monkeypatch.setattr(cortex, "reason", lambda params, **kw: seen.update(kw) or {"ok": True})
+    from greg.cognition import bridge, cortex
+    seen = []
+    monkeypatch.setattr(cortex, "reason", lambda params, **kw: seen.append(bridge._SIGNED_PATH.get()) or {"ok": True})
     ctx = SimpleNamespace(manifest=SimpleNamespace(capability_id="cognition.solve"), target="cognition:x",
                           capability_registry=object(), journal=None, cognition_model=None, cognition_budget=None)
     cortex.solve(_greg_request({"options": [_option()]}), ctx)
-    assert seen["trusted_clock"] is True
+    assert seen == [True] and bridge._SIGNED_PATH.get() is False      # scoped to the signed call only
 
 
 # ------------------------------------------------------------------ the Competency Compiler (PRR-00, narrowed)
@@ -627,3 +651,201 @@ def test_a_reported_run_that_loads_unfrozen_code_cannot_report_a_verdict(monkeyp
     assert out["unfrozen_code_loaded"] == ["egregore/local_model.py"]
     assert out["exit"]["verdict"] == "INCONCLUSIVE" and out["exit"]["promote"] is False
 
+
+
+# ------------------------------------------------------------------ adversarial review of the port (2026-10-21)
+@pytest.mark.parametrize("body,rid", [({"weights": [1, 2]}, None), ({"weights": 5}, None), ({"weights": "speed"}, None),
+                                      ({"weights": {"speed": "fast"}}, None), ({"weights": {"speed": True}}, None),
+                                      ({}, ["m-1"]), ({}, {"id": "m-1"})])
+def test_a_mandate_with_malformed_weights_or_id_is_a_rejected_record_never_an_exception(body, rid):
+    mandate = {"kind": "founder_mandate", "origin": "founder_signed",
+               "body": {"scope": {**MANDATE_SCOPE, "expires_at": "2030-01-01T00:00:00Z"}, **body}}
+    if rid is not None:
+        mandate["record_id"] = rid
+    r = _rank([mandate])
+    assert r["output"]["state"] == "MALFORMED_INPUT"
+    assert r["disposition"]["reason"].startswith("malformed input: authority record rejected")
+
+
+@pytest.mark.parametrize("body", [{"scope": None}, {"scope": ["internal://*"]}, {"purposes": None},
+                                  {"purposes": "draft.*"}])
+def test_a_record_with_a_malformed_scope_or_purposes_is_rejected_as_a_record(body):
+    r = _rank([{"kind": "founder_mandate", "origin": "founder_signed", "body": body}])
+    assert r["output"]["state"] == "MALFORMED_INPUT"
+
+
+def test_a_dominated_option_under_another_authority_does_not_remove_the_founders_weights():
+    def plan(oid, target, advantage):
+        return {"option_id": oid, "action_class": "draft.plan", "target": target, "consequence_class": "internal_write",
+                "reversibility": "reversible", "cost_usd": 0, "evidence_statuses": ["externally_verified"],
+                "advantage": advantage}
+    founder = {"record_id": "m-founder", "kind": "founder_mandate", "origin": "founder_signed",
+               "body": {"scope": {**MANDATE_SCOPE, "targets": ["internal://plans/*"]},
+                        "weights": {"speed": 1.0, "safety": 0.2}}}
+    grant = {"record_id": "g-ops", "kind": "capability_grant", "origin": "kernel_grant_issuer",
+             "body": {"scope": {**MANDATE_SCOPE, "targets": ["internal://ops/*"]}}}
+    fast, safe = plan("FAST", "internal://plans/fast", {"speed": 0.9, "safety": 0.2}), \
+        plan("SAFE", "internal://plans/safe", {"speed": 0.2, "safety": 0.9})
+    slow = plan("SLOW", "internal://ops/slow", {"speed": 0.1, "safety": 0.1})     # dominated, never choosable
+    policy = [{"record_id": f"pol-{o}", "kind": "policy_decision", "origin": "kernel_policy_engine",
+               "body": {"subject": o, "verdict": "allow"}} for o in ("FAST", "SAFE", "SLOW")]
+    for opts, recs in (([fast, safe], [founder]), ([fast, safe, slow], [founder, grant])):
+        r = Cortex(clock=lambda: CLOCK).run({"problem_id": "iia", "question": "Which plan?", "payload": {
+            "options": opts, "as_of": CLOCK, "declared": DECL}}, records=recs + policy)
+        assert r["ranking"]["front"] == ["FAST", "SAFE"]
+        assert r["ranking"]["chosen"] == "FAST" and r["disposition"]["kind"] == "recommend", r["ranking"]
+
+
+def _withheld(*keys):
+    registry = seed_registry()
+    for key in keys:
+        registry.withhold(key, "founder detach")
+    return registry
+
+
+def test_a_schedule_whose_formal_engines_are_all_withheld_is_unanswered_not_recommended():
+    r = run({"schedule_request": {"text": SCHEDULE_FEASIBLE + " Minimize total completion time.",
+                                  "availability_evidence": "roster"}, "declared": DECL},
+            "sched-withheld", registry=_withheld(FORMAL, CPSAT))
+    assert r["disposition"]["kind"] == "abstain" and r["output"]["state"] == "NO_ELIGIBLE_METHOD"
+    assert r["output"]["answer"] is None and r["coverage"].startswith("incomplete")
+    assert {FORMAL, CPSAT} <= set(r["capability_deficit"]["withheld_by_host"])
+    assert r["outcome"]["outcome"] != "ANSWERED_WITHIN_SCOPE"
+
+
+def test_a_deficit_over_several_unanswered_parts_names_every_parts_withheld_family():
+    r = run({"formal_model": FORMAL_MODEL, "sources": SOURCES, "declared": DECL}, "multi",
+            registry=_withheld(FORMAL, CPSAT, SEMANTIC))
+    deficit = r["capability_deficit"]
+    assert deficit["unanswered_parts"] == {FORMAL: "constraint_feasibility", SEMANTIC: "semantic"}
+    assert {FORMAL, CPSAT, SEMANTIC} <= set(deficit["withheld_by_host"])
+    assert "semantic" in r["disposition"]["reason"]
+
+
+class _Model:
+    def __init__(self):
+        self.calls = 0
+
+    def complete(self, system, user):
+        self.calls += 1
+        raise OSError("no server")
+
+
+def test_the_extractors_model_call_is_planned_before_any_organ_spends():
+    from cortex.organs.schedule_extraction import ScheduleExtractionOrgan
+    from cortex.organs.semantic import SemanticOrgan
+    model = _Model()
+    cortex = Cortex(clock=lambda: CLOCK)
+    cortex.organs[cortex_routing.EXTRACT] = ScheduleExtractionOrgan(client=model)
+    cortex.organs[SEMANTIC] = SemanticOrgan(client=model)
+    free = {"schedule_request": {"text": "Please fit the welding and the painting into tomorrow, painting after "
+                                         "welding."}, "sources": SOURCES, "declared": DECL,
+            "resources": {"max_model_calls": 1}}
+    r = run(free, "plan-calls", cortex=cortex)
+    assert r["output"]["state"] == "BUDGET_EXHAUSTED" and model.calls == 0
+    assert r["expenditure"]["model_calls"] == 0
+    controlled = {**free, "schedule_request": {"text": SCHEDULE_FEASIBLE}}
+    assert run(controlled, "plan-ok", cortex=cortex)["output"]["state"] != "BUDGET_EXHAUSTED"
+
+
+def test_the_authority_instant_judges_expiry_and_the_payload_as_of_still_dates_the_question():
+    allow = {**ALLOW}
+    current = _weighted("m-cur", "2027-01-01T00:00:00Z")
+    payload = {"options": [_option()], "as_of": "2026-09-15T00:00:00Z", "declared": DECL,
+               "claim": {"id": "C", "type": "factual_support", "statement": "the shipment arrived"},
+               "evidence": [{"id": "E1", "kind": "measurement", "validation_status": "externally_verified",
+                             "observed_at": "2026-09-01", "max_age_days": 30, "stance": "supports",
+                             "observation": "direct_observation", "source": "dock log"}]}
+    direct = Cortex(clock=lambda: CLOCK).run({"problem_id": "inst", "question": "q", "payload": payload},
+                                             records=[allow, current])
+    signed = Cortex(clock=lambda: CLOCK).run({"problem_id": "inst", "question": "q", "payload": payload},
+                                             records=[allow, current], authority_as_of="2026-10-21T00:00:00Z")
+    assert signed["authority_as_of"] == "2026-10-21T00:00:00Z" and "authority_as_of" not in direct
+    validate(signed, "cortex-receipt")
+    # the question is unchanged: evidence fresh at the declared as_of stays fresh (it is stale at the body clock)
+    assert signed["output"]["answer"] == direct["output"]["answer"]
+    assert [(r["state"], r["answer"]) for r in signed["output"]["per_route"]] == \
+        [(r["state"], r["answer"]) for r in direct["output"]["per_route"]]
+    assert direct["output"]["per_route"][0]["answer"]["verdict"] == "supported"
+    expired = _weighted("m-old", "2026-10-01T00:00:00Z")
+    late = Cortex(clock=lambda: CLOCK).run({"problem_id": "inst", "question": "q", "payload": payload},
+                                           records=[allow, expired], authority_as_of="2026-10-21T00:00:00Z")
+    assert late["gates"]["O1"]["gates"]["founder_scope"]["status"] == "FAIL"
+    early = Cortex(clock=lambda: CLOCK).run({"problem_id": "inst", "question": "q", "payload": payload},
+                                            records=[allow, expired])
+    assert early["gates"]["O1"]["gates"]["founder_scope"]["status"] == "PASS"
+
+
+def test_unfrozen_code_ignores_dependencies_installed_inside_the_checkout(monkeypatch):
+    import sys
+    import types
+    from cortex.evaluation import run as R
+    fake = types.ModuleType("z3_in_venv")
+    fake.__file__ = str(R.ROOT / ".venv" / "lib" / "python3.13" / "site-packages" / "z3" / "__init__.py")
+    own = types.ModuleType("unfrozen_probe")
+    own.__file__ = str(R.ROOT / "cortex" / "unfrozen_probe.py")
+    monkeypatch.setitem(sys.modules, "z3_in_venv", fake)
+    monkeypatch.setitem(sys.modules, "unfrozen_probe", own)
+    loaded = R.unfrozen_code_loaded()
+    assert "cortex/unfrozen_probe.py" in loaded
+    assert not any(".venv" in p or "site-packages" in p for p in loaded)
+
+
+def test_the_unfrozen_guard_keeps_the_verdict_it_replaced(monkeypatch, tmp_path):
+    import json
+    from cortex.evaluation import run as R
+    manifest = tmp_path / "freeze.json"
+    manifest.write_text(json.dumps({"inputs": R.freeze_inputs(), "frozen_at": "2026-10-21T00:00:00Z"}))
+    monkeypatch.setattr(R, "MANIFEST", manifest)
+    monkeypatch.setattr(R, "unfrozen_code_loaded", lambda: ["egregore/local_model.py"])
+    out = R.run("heldout", ["routed_seed", "always_abstain", "always_llm"])
+    before = out["exit"]["before_unfrozen_guard"]
+    assert any("always_llm not run" in r for r in before["reasons"])       # the real reasons are kept
+    assert set(before["reasons"]) <= set(out["exit"]["reasons"]) and out["exit"]["verdict"] == "INCONCLUSIVE"
+
+
+class _Garbled:
+    """A model that answers every item; its first reply is not JSON."""
+    def __init__(self):
+        self.n = 0
+
+    def complete(self, system, user):
+        import json
+        if user == "{}":
+            return json.dumps({"ok": True})
+        self.n += 1
+        return "Sure! {disposition: recommend}" if self.n == 1 else json.dumps({"disposition": "abstain",
+                                                                                  "answer": None})
+
+
+def test_a_malformed_reply_is_a_scored_failure_not_an_unrun_baseline():
+    from cortex.evaluation import run as R
+    out = R.run("smoke", ["routed_seed", "always_llm"], client_factory=_Garbled)
+    arm = out["arms"]["always_llm"]
+    assert arm["status"] == "RUN" and arm["summary"]["errors"] == 0
+    assert not any("always_llm not run" in r for r in out["exit"]["reasons"])
+    assert any(i["disposition"] == "malformed" and i["score"] == 0.0 for i in arm["items"])
+
+
+class _DiesMidReply:
+    """Answers the probe, then the server dies inside every call (a truncated body raises a non-OSError)."""
+    def complete(self, system, user):
+        import json
+        from egregore.contracts import ContractError
+        if user == "{}":
+            return json.dumps({"ok": True})
+        raise ContractError("invalid local model completion")
+
+
+def test_a_model_that_dies_inside_the_call_is_unreached_in_both_runners(monkeypatch):
+    from cortex.evaluation import crossgeo, crossgeo_arms
+    from cortex.evaluation import run as R
+    out = R.run("smoke", ["routed_seed", "always_llm"], client_factory=_DiesMidReply)
+    assert out["arms"]["always_llm"]["summary"]["errors"] == out["arms"]["always_llm"]["summary"]["n"]
+    assert any("always_llm not run" in r for r in out["exit"]["reasons"])
+    monkeypatch.setattr(crossgeo_arms, "model_probe", lambda: (_DiesMidReply(), None))
+    part = crossgeo.run_partition("dev", ("routed_greg", "always_llm"))
+    assert part["arms"]["always_llm"]["status"] == "INCOMPLETE"
+    assert "always_llm" not in part["rows"] and part["incomplete_rows"]["always_llm"]
+    reported = crossgeo.report(part, part)
+    assert reported["heldout"]["incomplete_rows"]["always_llm"] == part["incomplete_rows"]["always_llm"]

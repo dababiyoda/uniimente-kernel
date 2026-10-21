@@ -23,6 +23,7 @@ from pathlib import Path
 from ..contracts import CORTEX_VERSION
 from . import crossgeo_arms as A
 from . import crossgeo_loss as L
+from .arms import Unreached
 from .generators import expand
 
 HERE = Path(__file__).resolve().parent
@@ -133,7 +134,9 @@ def run_partition(partition: str, arms=ARMS) -> dict:
             except Exception as exc:   # noqa: BLE001 - an arm crash is a scored task failure
                 d = {"disposition": "error", "answer": None, "latency_s": 0.0, "cost_usd": 0.0,
                      "error": f"{type(exc).__name__}: {exc}"[:300]}
-                if name in ("always_llm", "tool_llm") and isinstance(exc, OSError):
+                # where the failure happened decides: inside the model call (any transport, truncation or
+                # envelope failure) the model never answered; a malformed reply is scored by the arm (0.2.2)
+                if name in ("always_llm", "tool_llm") and isinstance(exc, (Unreached, OSError)):
                     unreached += 1
             row = L.item_loss(it, d)
             row["answer"] = d.get("answer")
@@ -190,9 +193,12 @@ def report(heldout: dict, adversarial: dict) -> dict:
             "verdict": ver,
             "heldout": {"arms": heldout["arms"], "paired_gain_vs_routed": compare(heldout),
                         "regret": L.regret({k: v for k, v in heldout["rows"].items()}),
-                        "rows": heldout["rows"]},
+                        "rows": heldout["rows"],
+                        # an INCOMPLETE arm's rows stay in the reported file for audit, outside the scored rows
+                        "incomplete_rows": heldout.get("incomplete_rows", {})},
             "adversarial": {"arms": adversarial["arms"], "paired_gain_vs_routed": compare(adversarial),
-                            "rows": adversarial["rows"]},
+                            "rows": adversarial["rows"],
+                            "incomplete_rows": adversarial.get("incomplete_rows", {})},
             "determinism": determinism(load("heldout"))}
 
 

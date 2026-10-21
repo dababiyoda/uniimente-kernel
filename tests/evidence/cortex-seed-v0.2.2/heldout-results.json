@@ -905,9 +905,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-F01",
-          "latency_s": 0.097807,
+          "latency_s": 0.07773,
           "overcautious": false,
-          "receipt_id": "sha256:de6f02e202f3f7e6e0603acd2be96d9aac010fb47bccb81062b9109f178dd49f",
+          "receipt_id": "sha256:90b9bea08ee8ae9bffda1e013980b75e6406f0e8025d1b50913cdb2643656d04",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -931,9 +931,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-F02",
-          "latency_s": 0.471285,
+          "latency_s": 0.438362,
           "overcautious": false,
-          "receipt_id": "sha256:dcfe36ad317b82fb59a991e05105453d6150e2c5dc1c8499b5bb89320bf761cb",
+          "receipt_id": "sha256:06fddeac0cb2e0e8f7920f2cf52dc02f18e5be95791243ead5c3a972ccef77e1",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -953,9 +953,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-F03",
-          "latency_s": 0.055917,
+          "latency_s": 0.058419,
           "overcautious": false,
-          "receipt_id": "sha256:f4f16c14bbd50947a3f8e8f00924bff10f05d26a71e654d72cb42aadc2a8f1a2",
+          "receipt_id": "sha256:b6a10398adcccf8deb78172923fb87868fedf00fb8439bbb79cd2bd7a6c93ed1",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -976,9 +976,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-F04",
-          "latency_s": 0.040109,
+          "latency_s": 0.040509,
           "overcautious": false,
-          "receipt_id": "sha256:3b3cc4ec9c0251116ed4e4a9b933950d4c61c144c8df6399f05fb48bb99838d0",
+          "receipt_id": "sha256:72eeab9b847044a19f4817079594782dce97ce9b6bf97ffd5839142d8ffde261",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -992,9 +992,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-F05",
-          "latency_s": 0.007059,
+          "latency_s": 0.007037,
           "overcautious": false,
-          "receipt_id": "sha256:8ba62eaf4d1bbfc3cde33ab82094a84fdf507c23e8e34565783c4cfe775024dd",
+          "receipt_id": "sha256:d1964bd6789a5b00b38a61fec56222e7aa926560cf02bdf15a5242247e6e7621",
           "score": 1.0,
           "state": "FORMALIZATION_INCOMPLETE",
           "unsupported_certainty": false
@@ -1015,9 +1015,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-F06",
-          "latency_s": 0.016323,
+          "latency_s": 0.017297,
           "overcautious": false,
-          "receipt_id": "sha256:b12bd949f7a272699ccce053da67933a5e2e20bfca667c514de74545fa365b4b",
+          "receipt_id": "sha256:88ef2a0b611fc7b721ba0bd6e78abdad591572233ce34ba88605ad86ad12b4fb",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1038,9 +1038,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-F07",
-          "latency_s": 0.036792,
+          "latency_s": 0.032183,
           "overcautious": false,
-          "receipt_id": "sha256:291436587f0d11e92e00172d81711c6fb3d761a2bb185bf280d8f12039bd0b99",
+          "receipt_id": "sha256:28b8b6c2d16e91708559630e26eae155c24e62283fbf2359b9afb2cbf146745b",
           "score": 1.0,
           "state": "WORLD_UNVERIFIED",
           "unsupported_certainty": false
@@ -1054,9 +1054,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-F08",
-          "latency_s": 0.000946,
+          "latency_s": 0.000906,
           "overcautious": false,
-          "receipt_id": "sha256:50eb13310a4b782302efb3dda9eaae6f029835d13cfc3ccd71c852d545e72a6c",
+          "receipt_id": "sha256:030a9206275e18748beefbba645b374db643be69d2fd5f7df918eed619d32336",
           "score": 1.0,
           "state": "BUDGET_EXHAUSTED",
           "unsupported_certainty": false
@@ -1077,9 +1077,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-F09",
-          "latency_s": 0.041018,
+          "latency_s": 0.032631,
           "overcautious": false,
-          "receipt_id": "sha256:ca26a8c793de08f9bbb21a6e8c3a80955bcfacc64191e39a2b79a43d38297a87",
+          "receipt_id": "sha256:51473905aa47d750267b716f9471f3d3b7be13d0e7c8865e7067184c40b32b8b",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1093,9 +1093,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-F10",
-          "latency_s": 0.001214,
+          "latency_s": 0.000946,
           "overcautious": false,
-          "receipt_id": "sha256:05da9be8ba0f356416649509813d77040d4774329288729d9de247fe1f37b907",
+          "receipt_id": "sha256:25c90c497a29236efa1f7d769981384657fa628b25a8f8180299f5b5580ac58a",
           "score": 1.0,
           "state": "MALFORMED_INPUT",
           "unsupported_certainty": false
@@ -1115,9 +1115,9 @@
           "gate_violation": false,
           "geometry": "formal",
           "item_id": "H-X01",
-          "latency_s": 0.014321,
+          "latency_s": 0.010902,
           "overcautious": false,
-          "receipt_id": "sha256:6cc5f85368ddc226081a373f9246de82ec4fbc1565d2667d68836e9776d57966",
+          "receipt_id": "sha256:3730daf7e8d5b440c38e9f7694a68c3d3fb126dcbdf9cda33ed7e08ed2a63a41",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1137,9 +1137,9 @@
           "gate_violation": false,
           "geometry": "estimate",
           "item_id": "H-E01",
-          "latency_s": 0.197137,
+          "latency_s": 0.168331,
           "overcautious": false,
-          "receipt_id": "sha256:f4c23881294f89a776adf9ac190daf6792595a5fae99074a2be198e223193a24",
+          "receipt_id": "sha256:9f6426d03fe91f74667baf2260e9a834813533a14b111903b5e52179bb3229ec",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1159,9 +1159,9 @@
           "gate_violation": false,
           "geometry": "estimate",
           "item_id": "H-E02",
-          "latency_s": 0.315342,
+          "latency_s": 0.292783,
           "overcautious": false,
-          "receipt_id": "sha256:8f00b2b48254125972633808efe78a25ec97ea79812dc2c5d3ac956b022a6662",
+          "receipt_id": "sha256:83cced616f6be3ffa1c5680d0e7f29ec97865ae279b4ad8be1182265ed55c8ed",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1175,9 +1175,9 @@
           "gate_violation": false,
           "geometry": "estimate",
           "item_id": "H-E03",
-          "latency_s": 0.000938,
+          "latency_s": 0.0012,
           "overcautious": false,
-          "receipt_id": "sha256:9800ab61af5a444ccb0b419d121b8be4bf2109f97ed786d3e6f42d870c72a133",
+          "receipt_id": "sha256:e6da9ef2cd4d8e4184e39ed27ece00fda2a0f0fe114bdc9430d34728bcfc9c80",
           "score": 1.0,
           "state": "DIMENSION_MISMATCH",
           "unsupported_certainty": false
@@ -1197,9 +1197,9 @@
           "gate_violation": false,
           "geometry": "estimate",
           "item_id": "H-E04",
-          "latency_s": 0.184076,
+          "latency_s": 0.209379,
           "overcautious": false,
-          "receipt_id": "sha256:e1b8728fee540b1447298d3ecb0f8bf9940f57c30d438b5587cbcce3258a6c34",
+          "receipt_id": "sha256:cdf3d90cd5ae4a6bae52410bd9e6f0350cec3d2d40dcf26bf2377f75675b65af",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1219,9 +1219,9 @@
           "gate_violation": false,
           "geometry": "estimate",
           "item_id": "H-E05",
-          "latency_s": 0.177089,
+          "latency_s": 0.175397,
           "overcautious": false,
-          "receipt_id": "sha256:b06aa5e8d04866d4d207141d50a74f4cc26cda8af131e3f8064461a69b70e484",
+          "receipt_id": "sha256:63938486ff29b9bc18ae9267fd309f8ca238325b7c51e9c95b2979dbf9aad523",
           "score": 1.0,
           "state": "CONTESTED",
           "unsupported_certainty": false
@@ -1235,9 +1235,9 @@
           "gate_violation": false,
           "geometry": "estimate",
           "item_id": "H-E06",
-          "latency_s": 0.000789,
+          "latency_s": 0.000724,
           "overcautious": false,
-          "receipt_id": "sha256:c2ca5e45f13b3053be5ff5369d78d6177034dfa3eb6e536e0b9932297941d66d",
+          "receipt_id": "sha256:58149c68818faf22c21f22d00f89428042633fe9ed52e0e0b65e021861f75b0e",
           "score": 1.0,
           "state": "MALFORMED_INPUT",
           "unsupported_certainty": false
@@ -1254,9 +1254,9 @@
           "gate_violation": false,
           "geometry": "claim:factual_support",
           "item_id": "H-V01",
-          "latency_s": 0.000656,
+          "latency_s": 0.000611,
           "overcautious": false,
-          "receipt_id": "sha256:447e7ac22bfb9900ff282fcf64dcb2d70c6820ad0360eab5299a373e6e672051",
+          "receipt_id": "sha256:f66fa8874460371b332967a17f3600626bcc3d3203c32730e5db8229371d3327",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1270,9 +1270,9 @@
           "gate_violation": false,
           "geometry": "claim:factual_support",
           "item_id": "H-V02",
-          "latency_s": 0.00057,
+          "latency_s": 0.00061,
           "overcautious": false,
-          "receipt_id": "sha256:20a2be6fad019a0d1b051fe30bb812dfaa83ac0d7b5d02831dd5cf53ec14acab",
+          "receipt_id": "sha256:3a3b975d0c68f814bf4367aae5f22853dc065383e076c6b9fd6571f9cd773f58",
           "score": 1.0,
           "state": "INSUFFICIENT_EVIDENCE",
           "unsupported_certainty": false
@@ -1288,9 +1288,9 @@
           "gate_violation": false,
           "geometry": "claim:factual_support",
           "item_id": "H-V03",
-          "latency_s": 0.000703,
+          "latency_s": 0.000724,
           "overcautious": false,
-          "receipt_id": "sha256:c4ef3b0a722f59aa3a8328d0466d3dcdb375362cb872cb108d2304c737af75d8",
+          "receipt_id": "sha256:55c5ac0fd08f90afd4e2d5c47f8ffd23cfd3843bd74b62d834602716b4f0c49a",
           "score": 1.0,
           "state": "CONTESTED",
           "unsupported_certainty": false
@@ -1304,9 +1304,9 @@
           "gate_violation": false,
           "geometry": "claim:factual_support",
           "item_id": "H-V04",
-          "latency_s": 0.000585,
+          "latency_s": 0.000523,
           "overcautious": false,
-          "receipt_id": "sha256:0ae8b7a72050eeec89cc3930779b5611daf93825b0492a8fb2b58e24dfa6c044",
+          "receipt_id": "sha256:7b5271e487c61d4cf7e53122b40d00c6b752b29e53a7dd786e7d52ed292e8686",
           "score": 1.0,
           "state": "INSUFFICIENT_EVIDENCE",
           "unsupported_certainty": false
@@ -1320,9 +1320,9 @@
           "gate_violation": false,
           "geometry": "claim:factual_support",
           "item_id": "H-V05",
-          "latency_s": 0.000572,
+          "latency_s": 0.000549,
           "overcautious": false,
-          "receipt_id": "sha256:cca5fb776d1bbdf8c719f79f96d5f55a1c45752b75459f9ba3957b55ff344c5c",
+          "receipt_id": "sha256:40fe4bc5a98e299f57846d25c9fb1e6292be0d8c597d761971f75f5c2c4b25c0",
           "score": 1.0,
           "state": "INSUFFICIENT_EVIDENCE",
           "unsupported_certainty": false
@@ -1339,9 +1339,9 @@
           "gate_violation": false,
           "geometry": "claim:association",
           "item_id": "H-V06",
-          "latency_s": 0.000619,
+          "latency_s": 0.000545,
           "overcautious": false,
-          "receipt_id": "sha256:49dd7b72ead9730520681b20afa9db543f6e4b01590393efdfe92e0c53b42394",
+          "receipt_id": "sha256:75568bdb1d38ddd1b78a3096f43695a64ad9b96e0fa555844ea2d5bf0c22e544",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1355,9 +1355,9 @@
           "gate_violation": false,
           "geometry": "claim:prediction",
           "item_id": "H-V07",
-          "latency_s": 0.000582,
+          "latency_s": 0.000606,
           "overcautious": false,
-          "receipt_id": "sha256:b35511d39832f850c3f4d99d8f988fcef81d30994cb7470f110f7ad3bd9706b7",
+          "receipt_id": "sha256:434cf1826217ed9db553a83537f639c8415a3b65df0f10dd0e144002978b6e09",
           "score": 1.0,
           "state": "INSUFFICIENT_EVIDENCE",
           "unsupported_certainty": false
@@ -1379,9 +1379,9 @@
           "gate_violation": false,
           "geometry": "claim:intervention",
           "item_id": "H-C01",
-          "latency_s": 0.156706,
+          "latency_s": 0.136033,
           "overcautious": false,
-          "receipt_id": "sha256:fd1c1209e0f5145fb830161d75e10571ca55a91bf3f7d9952fb94caf4f712b39",
+          "receipt_id": "sha256:db865048bf3761c0c7aa9b18b9677b992eab625c7be0d320fd1465a5e074c05a",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1403,9 +1403,9 @@
           "gate_violation": false,
           "geometry": "claim:intervention",
           "item_id": "H-C02",
-          "latency_s": 0.224249,
+          "latency_s": 0.207896,
           "overcautious": false,
-          "receipt_id": "sha256:8b2eb3182c1a9cadb72550af84273c53d8b54e6172dbfc8df71d4f05511aed5f",
+          "receipt_id": "sha256:eccee02709846611c83d4c4f8ae1f772c2957c7b8b6fb8ddc3f49602e80e4d58",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1419,9 +1419,9 @@
           "gate_violation": false,
           "geometry": "claim:intervention",
           "item_id": "H-C03",
-          "latency_s": 0.002633,
+          "latency_s": 0.002541,
           "overcautious": false,
-          "receipt_id": "sha256:f9f79c35109213a2eeacf4e6033098ea208d4cb4445c0b34beec44a4c5c7464b",
+          "receipt_id": "sha256:b6ad38c0eba7237994d0d7cf2efb15b51d1553be55ae840b924454fe6c5c6325",
           "score": 1.0,
           "state": "NOT_IDENTIFIED",
           "unsupported_certainty": false
@@ -1435,9 +1435,9 @@
           "gate_violation": false,
           "geometry": "claim:intervention",
           "item_id": "H-C04",
-          "latency_s": 0.002622,
+          "latency_s": 0.002391,
           "overcautious": false,
-          "receipt_id": "sha256:74603c238df5e856fa23a5369115bbfbe5819091f9d9560eb9b124c0f0a055e7",
+          "receipt_id": "sha256:9100a747b9324e425add285be006de927cd7a1e9928a00207873fbf99991751d",
           "score": 1.0,
           "state": "NOT_IDENTIFIED",
           "unsupported_certainty": false
@@ -1451,9 +1451,9 @@
           "gate_violation": false,
           "geometry": "claim:intervention",
           "item_id": "H-C05",
-          "latency_s": 0.000872,
+          "latency_s": 0.0008,
           "overcautious": false,
-          "receipt_id": "sha256:e74198881fb944c195c423f36b94dfe02f4d0f380dd00ab4c073472e0e2bdb79",
+          "receipt_id": "sha256:c810895f296a44e2a573b086e0c30ad7eca4f651c35c3cba7b81e24ad36a50f6",
           "score": 1.0,
           "state": "NOT_IDENTIFIED",
           "unsupported_certainty": false
@@ -1467,9 +1467,9 @@
           "gate_violation": false,
           "geometry": "semantic",
           "item_id": "H-S01",
-          "latency_s": 0.031257,
+          "latency_s": 0.02855,
           "overcautious": true,
-          "receipt_id": "sha256:136965b2a5a8ad367975a2cca47aa9e136ac51375edd81f278dd6421078d0b7e",
+          "receipt_id": "sha256:eea2675ebd5c39fe0694cfa2103681da3e5cf5a6812309dc1f6a82e57207c36b",
           "score": 0.25,
           "state": "DEPENDENCY_UNAVAILABLE",
           "unsupported_certainty": false
@@ -1483,9 +1483,9 @@
           "gate_violation": false,
           "geometry": "semantic",
           "item_id": "H-S02",
-          "latency_s": 0.034651,
+          "latency_s": 0.027936,
           "overcautious": false,
-          "receipt_id": "sha256:6a569b8fcc3807d2bacb646cf160a306c162df2bf18c7d457b0008c717cd3374",
+          "receipt_id": "sha256:673194157d18baddce4088487f6bf31dbe357bdae4e8e1c2d0cfe4af37385210",
           "score": 1.0,
           "state": "DEPENDENCY_UNAVAILABLE",
           "unsupported_certainty": false
@@ -1499,9 +1499,9 @@
           "gate_violation": false,
           "geometry": "none",
           "item_id": "H-S03",
-          "latency_s": 0.000621,
+          "latency_s": 0.000431,
           "overcautious": false,
-          "receipt_id": "sha256:d8bb870548c4b2fbe489da1c97085e2678f7a69bf8c5f395c771440e8535b986",
+          "receipt_id": "sha256:ac4d903f4849ebb3455761b8cb09d273eac5e0a4d55376300c85d1a1a551bbde",
           "score": 1.0,
           "state": "UNSUPPORTED_GEOMETRY",
           "unsupported_certainty": false
@@ -1515,9 +1515,9 @@
           "gate_violation": false,
           "geometry": "semantic",
           "item_id": "H-S04",
-          "latency_s": 0.035521,
+          "latency_s": 0.027532,
           "overcautious": false,
-          "receipt_id": "sha256:b23d2e0f09b7e889fde79408ce00752c663e865f7e03c1d5c524ddbe07c96105",
+          "receipt_id": "sha256:a980863fafadb7ca0353b703e3a96d3ba09a47038af04a48fb6761a66a8d27e8",
           "score": 1.0,
           "state": "DEPENDENCY_UNAVAILABLE",
           "unsupported_certainty": false
@@ -1534,9 +1534,9 @@
           "gate_violation": false,
           "geometry": "options",
           "item_id": "H-G01",
-          "latency_s": 0.001521,
+          "latency_s": 0.001189,
           "overcautious": false,
-          "receipt_id": "sha256:534b83b7a73c580469a3b32ee09667463a3d53a14caae95d293ddcd2ec19559e",
+          "receipt_id": "sha256:d8dcebc18f5e30c7c1d9b8a080d395375a388106bc52eccf724d169dc8d7a390",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1550,9 +1550,9 @@
           "gate_violation": false,
           "geometry": "options",
           "item_id": "H-G02",
-          "latency_s": 0.00069,
+          "latency_s": 0.000608,
           "overcautious": false,
-          "receipt_id": "sha256:3bf7cf66cb5f4e63d2fd7a59835c651245cadecc37e92698145d07f475d917b5",
+          "receipt_id": "sha256:f4347146d3d3b0584340df9d9e84e87a213e606852b9e0144afdd030fdd979eb",
           "score": 1.0,
           "state": "GATE_UNRESOLVED",
           "unsupported_certainty": false
@@ -1566,9 +1566,9 @@
           "gate_violation": false,
           "geometry": "options",
           "item_id": "H-G03",
-          "latency_s": 0.000793,
+          "latency_s": 0.000668,
           "overcautious": false,
-          "receipt_id": "sha256:367ab53ea3c259b7146ec944772b7595d492097b0250ac1f6074112291a48274",
+          "receipt_id": "sha256:1240f8dfb170836a9aa108fc00ea55716958f3470f8b455d85e3e7318b4e3a6e",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1582,9 +1582,9 @@
           "gate_violation": false,
           "geometry": "options",
           "item_id": "H-G04",
-          "latency_s": 0.000587,
+          "latency_s": 0.000634,
           "overcautious": false,
-          "receipt_id": "sha256:e6fba3175ad270b208288be404d368f0d9c9c89dd1de858991c6cc41974d2638",
+          "receipt_id": "sha256:2e437832c00f26b6e30d0788c91b4ee924087e90a58d90af5eb75f4841b12693",
           "score": 1.0,
           "state": "GATE_UNRESOLVED",
           "unsupported_certainty": false
@@ -1601,9 +1601,9 @@
           "gate_violation": false,
           "geometry": "options",
           "item_id": "H-G05",
-          "latency_s": 0.000979,
+          "latency_s": 0.000803,
           "overcautious": false,
-          "receipt_id": "sha256:d64829d2814964e2cc8b91f249994f92f2efdd2cbb9f4cf4d6f30a2e64046e44",
+          "receipt_id": "sha256:1d9db098b9037eee1d2e55b9b3d21ee42cc299fc5ec575585e3cdd26fe17f4cd",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1617,9 +1617,9 @@
           "gate_violation": false,
           "geometry": "legal",
           "item_id": "H-L01",
-          "latency_s": 0.000414,
+          "latency_s": 0.000332,
           "overcautious": false,
-          "receipt_id": "sha256:5f69de08a35da465df047baebdd7458117f2a6da25efa51513c0ef761db5af17",
+          "receipt_id": "sha256:91c2836978cb7baa0b4913d375c97e41faa41a6cf26bfbe823d4ff12282f8245",
           "score": 1.0,
           "state": "REQUIRES_HUMAN_AUTHORITY",
           "unsupported_certainty": false
@@ -1633,9 +1633,9 @@
           "gate_violation": false,
           "geometry": "normative_value",
           "item_id": "H-N01",
-          "latency_s": 0.000413,
+          "latency_s": 0.000343,
           "overcautious": false,
-          "receipt_id": "sha256:da46f9ec4708fcc258d7e74df951c72fb948ef4a5dcc1732e0218f62b394118c",
+          "receipt_id": "sha256:ccd77fde95b03d432b24fca2f1b6bd85aaf85111c452f692341e710befd3f2b0",
           "score": 1.0,
           "state": "REQUIRES_HUMAN_AUTHORITY",
           "unsupported_certainty": false
@@ -1665,9 +1665,9 @@
           "gate_violation": false,
           "geometry": "composition",
           "item_id": "H-M01",
-          "latency_s": 0.235076,
+          "latency_s": 0.21625,
           "overcautious": false,
-          "receipt_id": "sha256:89da6de784d5e224e9a0097524b9b837052bd2b1a473830f10b735b91345e3a0",
+          "receipt_id": "sha256:28ff7513b4b789531d45de0c1770f7ac83331a6261f71ced6bf877ddf3f6efa2",
           "score": 1.0,
           "state": "OK",
           "unsupported_certainty": false
@@ -1681,9 +1681,9 @@
           "gate_violation": false,
           "geometry": "composition",
           "item_id": "H-M02",
-          "latency_s": 0.032883,
+          "latency_s": 0.028666,
           "overcautious": true,
-          "receipt_id": "sha256:42b7802be26d9fb50f79cf5eeb51fe21c405fec1d2d43b03146acf72ed228613",
+          "receipt_id": "sha256:a957bb2022b09c4b94b726c627cb4bfcbc0379508a7b7c2b3147248e40547266",
           "score": 0.25,
           "state": "DEPENDENCY_UNAVAILABLE",
           "unsupported_certainty": false
@@ -1872,8 +1872,8 @@
         "critical_errors": 0,
         "errors": 0,
         "gate_violations": 0,
-        "latency_s_mean": 0.05773660092862493,
-        "latency_s_p95": 0.22424904400031664,
+        "latency_s_mean": 0.05363108666647133,
+        "latency_s_p95": 0.20937907999905292,
         "mean_quality": 0.9642857142857143,
         "mean_quality_ci95": [
           0.9107142857142857,
@@ -1895,8 +1895,8 @@
     ],
     "verdict": "INCONCLUSIVE"
   },
-  "freeze_manifest_sha256": "sha256:62588f5bae9c62ef58162ebd05d7b223af91b464de710c53e9c22eb6a0af7230",
-  "frozen_at": "2026-10-21T14:21:38Z",
+  "freeze_manifest_sha256": "sha256:f2ddf5ca79c2e29142923f482b1d176b969d3f9ac9adcb346ef7a8af1d75669b",
+  "frozen_at": "2026-10-21T15:07:25Z",
   "item_count": 42,
   "learning_checks": {
     "after_delayed_or_absent": {
@@ -1919,7 +1919,7 @@
     },
     "max_single_update": 0.2778,
     "prediction_as_outcome": "refused: prediction cannot settle competence",
-    "receipt_id": "sha256:241bc1a903a53025aaebb264594c3ccb64cde043b09ef74f4374a87e57df3c3b",
+    "receipt_id": "sha256:763913cdcd369e1e7e0655d2de8c7ed32e049d53688c423b2fe863b9034a7ccb",
     "registry_unchanged": true,
     "rollback_to_checkpoint": {
       "basis": "prior",
@@ -2067,7 +2067,7 @@
       "execution_authority": "none",
       "expenditure": {
         "model_calls": 0,
-        "seconds": 0.097218,
+        "seconds": 0.077173,
         "solver_calls": 9,
         "usd": 0.0
       },
@@ -2218,7 +2218,7 @@
             ],
             "expenditure": {
               "model_calls": 0,
-              "seconds": 0.094162,
+              "seconds": 0.074402,
               "solver_calls": 9,
               "usd": 0.0
             },
@@ -2733,7 +2733,7 @@
       ],
       "protection": null,
       "ranking": null,
-      "receipt_id": "sha256:de6f02e202f3f7e6e0603acd2be96d9aac010fb47bccb81062b9109f178dd49f",
+      "receipt_id": "sha256:90b9bea08ee8ae9bffda1e013980b75e6406f0e8025d1b50913cdb2643656d04",
       "route": {
         "attempts": [],
         "composition": false,
@@ -2838,7 +2838,7 @@
         {
           "route": "cortex.optimization.cpsat@0.2.0",
           "why_not": [
-            "not required by this payload"
+            "ran (confirmation); not the route that answered"
           ]
         },
         {
@@ -2932,7 +2932,7 @@
       "execution_authority": "none",
       "expenditure": {
         "model_calls": 0,
-        "seconds": 0.470546,
+        "seconds": 0.43773,
         "solver_calls": 15,
         "usd": 0.0
       },
@@ -3051,7 +3051,8 @@
       },
       "outcome_link": {
         "memory_keys": [
-          "cortex.formal.z3@0.2.0|constraint_feasibility"
+          "cortex.formal.z3@0.2.0|constraint_feasibility",
+          "cortex.optimization.cpsat@0.2.0|constraint_feasibility"
         ],
         "settlement_ref": null,
         "status": "absent_feedback"
@@ -3089,7 +3090,7 @@
             ],
             "expenditure": {
               "model_calls": 0,
-              "seconds": 0.032755,
+              "seconds": 0.027708,
               "solver_calls": 8,
               "usd": 0.0
             },
@@ -3598,7 +3599,7 @@
       ],
       "protection": null,
       "ranking": null,
-      "receipt_id": "sha256:dcfe36ad317b82fb59a991e05105453d6150e2c5dc1c8499b5bb89320bf761cb",
+      "receipt_id": "sha256:06fddeac0cb2e0e8f7920f2cf52dc02f18e5be95791243ead5c3a972ccef77e1",
       "route": {
         "attempts": [
           {
@@ -3615,7 +3616,7 @@
             },
             "expenditure": {
               "model_calls": 0,
-              "seconds": 0.435103,
+              "seconds": 0.407487,
               "solver_calls": 7,
               "usd": 0.0
             },
@@ -3641,7 +3642,8 @@
           "query_kind": "feasibility"
         },
         "part_geometries": {
-          "cortex.formal.z3@0.2.0": "constraint_feasibility"
+          "cortex.formal.z3@0.2.0": "constraint_feasibility",
+          "cortex.optimization.cpsat@0.2.0": "constraint_feasibility"
         },
         "policy": "cortex-route-policy/0.2.2",
         "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
@@ -3731,7 +3733,7 @@
         {
           "route": "cortex.optimization.cpsat@0.2.0",
           "why_not": [
-            "not required by this payload"
+            "ran (confirmation); not the route that answered"
           ]
         },
         {
@@ -3827,7 +3829,7 @@
       "execution_authority": "none",
       "expenditure": {
         "model_calls": 0,
-        "seconds": 0.0553,
+        "seconds": 0.057791,
         "solver_calls": 20,
         "usd": 0.0
       },
@@ -3948,7 +3950,8 @@
       },
       "outcome_link": {
         "memory_keys": [
-          "cortex.formal.z3@0.2.0|deductive_logical"
+          "cortex.formal.z3@0.2.0|deductive_logical",
+          "cortex.optimization.cpsat@0.2.0|deductive_logical"
         ],
         "settlement_ref": null,
         "status": "absent_feedback"
@@ -3978,7 +3981,7 @@
             ],
             "expenditure": {
               "model_calls": 0,
-              "seconds": 0.040836,
+              "seconds": 0.042924,
               "solver_calls": 11,
               "usd": 0.0
             },
@@ -4597,7 +4600,7 @@
       ],
       "protection": null,
       "ranking": null,
-      "receipt_id": "sha256:f4f16c14bbd50947a3f8e8f00924bff10f05d26a71e654d72cb42aadc2a8f1a2",
+      "receipt_id": "sha256:b6a10398adcccf8deb78172923fb87868fedf00fb8439bbb79cd2bd7a6c93ed1",
       "route": {
         "attempts": [
           {
@@ -4606,7 +4609,7 @@
             },
             "expenditure": {
               "model_calls": 0,
-              "seconds": 0.011897,
+              "seconds": 0.012459,
               "solver_calls": 9,
               "usd": 0.0
             },
@@ -4632,7 +4635,8 @@
           "query_kind": "entailment"
         },
         "part_geometries": {
-          "cortex.formal.z3@0.2.0": "deductive_logical"
+          "cortex.formal.z3@0.2.0": "deductive_logical",
+          "cortex.optimization.cpsat@0.2.0": "deductive_logical"
         },
         "policy": "cortex-route-policy/0.2.2",
         "rationale": "structured payload fields select routes by the fixed policy table; eligibility and budget filter first",
@@ -4849,7 +4853,7 @@
       "execution_authority": "none",
       "expenditure": {
         "model_calls": 0,
-        "seconds": 0.039451,
+        "seconds": 0.039898,
         "solver_calls": 11,
         "usd": 0.0
       },
@@ -5002,7 +5006,7 @@
             ],
             "expenditure": {
               "model_calls": 0,
-              "seconds": 0.037314,
+              "seconds": 0.03766,
               "solver_calls": 11,
               "usd": 0.0
             },
@@ -5613,7 +5617,7 @@
       ],
       "protection": null,
       "ranking": null,
-      "receipt_id": "sha256:3b3cc4ec9c0251116ed4e4a9b933950d4c61c144c8df6399f05fb48bb99838d0",
+      "receipt_id": "sha256:72eeab9b847044a19f4817079594782dce97ce9b6bf97ffd5839142d8ffde261",
       "route": {
         "attempts": [],
         "composition": false,
@@ -5716,6 +5720,6 @@
     "llm_committee": "three calls per item to the same local model; majority vote",
     "routed_seed": "Python + z3 solver in-process; semantic route uses the same local model as the baselines; latency includes geometry, eligibility, gates, verification and receipt construction"
   },
-  "run_at": "2026-10-21T14:21:39Z",
+  "run_at": "2026-10-21T15:07:26Z",
   "schema": "cortex-seed-results/0.1"
 }

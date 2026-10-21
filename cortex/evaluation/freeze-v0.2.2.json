@@ -1,5 +1,5 @@
 {
-  "frozen_at": "2026-10-21T14:21:38Z",
+  "frozen_at": "2026-10-21T15:07:25Z",
   "inputs": {
     "arms": {
       "baseline_system_prompt_sha256": "sha256:e5ffbe9451a88600a36e2133ce48f2660f8483b9332fcad5e76017b73694b4d2",
@@ -32,13 +32,13 @@
       "cortex/__init__.py": "sha256:ebe9b6518faec1417b2344fc1c0e31931f04bc3bf1c2ab9aa96bbf0281ebb362",
       "cortex/contracts.py": "sha256:29b020c398b2f4b26614e804dfa34f73cb44a11bdcc7892688a75ca45c586f98",
       "cortex/evaluation/__init__.py": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "cortex/evaluation/arms.py": "sha256:b19b37d0d8d4a25235386d23fb333ca305aca81751a09feb23457548f3d8edab",
+      "cortex/evaluation/arms.py": "sha256:3142bff2aa8d5f316ea419e42afe5077e365a5c6939885454b3c080d2fbe614f",
       "cortex/evaluation/generators.py": "sha256:2b302d0d01b8051eae604dec7214726c53fe6bce7deb90d4e55b5cdcc544c362",
-      "cortex/evaluation/run.py": "sha256:0ee53ed2cbbb612701dcb6b3daaabd600797041c27c899f79bfd5ad856290c1e",
+      "cortex/evaluation/run.py": "sha256:42460d4f95ab8c86f3be6081ba2fc8555c8a319ceebfa2d02b34bd3e88a82cdc",
       "cortex/evaluation/scoring.py": "sha256:8cbb90aade8d73da67d3c14d673408edaf45cbc65ddf6ebe7a27bea7ed6610d7",
-      "cortex/gates.py": "sha256:d0131346e9c1d691adc7b6bc5e7fd209a6cce70feeacb374bc3f81eca6514e74",
+      "cortex/gates.py": "sha256:f89d4124925d311aaf0fe0f3437dbaa18edd095141aabb591db2cb3047293279",
       "cortex/genome.py": "sha256:e6aa73cd9e20bb3e8d7d8fef2ce15ba5e26a7ea902d0dc0f8dbda815a4d701c0",
-      "cortex/memory.py": "sha256:c741446680053100f579b0c6081fcf4326a13132ae0c5e24553de989bd57797a",
+      "cortex/memory.py": "sha256:97d371d5e4e6cb156f83aefbeb904324867d0a31301f4860d0650092727ee7fc",
       "cortex/organs/__init__.py": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "cortex/organs/adversarial.py": "sha256:2f24abb4e155f640adea05bfb3be0a88d9cd64af2b6447d923de05fa54d1450f",
       "cortex/organs/cpsat.py": "sha256:192d2508f1e464cbfb4c5192df8207f17c6cb543e7282ef34a1059ab2b735162",
@@ -50,7 +50,7 @@
       "cortex/organs/schedule_extraction.py": "sha256:bb440433915e003344ed2c82f8c0c87d40ee11cdeb8f766f254e74ac6718b047",
       "cortex/organs/semantic.py": "sha256:20f1eaec8108f0ec650cf64069d6ba4e25819f1fe546afdb8907b5d4cb4db0d3",
       "cortex/outcomes.py": "sha256:9d2c6120d22d97cc2198c5e480e2d5e03ed95c87f284016f24ecb0c037263d72",
-      "cortex/routing.py": "sha256:f1b9a72e1e65eafec0850ecae66326483f79881cc38be92ce1bda2e31fbf10c3",
+      "cortex/routing.py": "sha256:c7df74f21654768d5b24f3791aa4c80290eb971ece7669083885edfb60182d1f",
       "egregore/__init__.py": "sha256:57b4bb29c14f51522661372a85387f083693df153288ca59e3f9d309b0651040",
       "egregore/attention.py": "sha256:1bbef5f9aaa3e62e5c6aba024dc1d56e558cc0a2cbb496e6062e9cd659333b17",
       "egregore/cognition_seam.py": "sha256:be5928f1f74b3af825f8186af3d12d98f276bb990db0d8238cab8bad76c463d3",

@@ -329,10 +329,13 @@ def solve(params, ctx):
     if family.startswith("cortex.") and isinstance(params, dict) and "problem" in params:
         forced = ctx.manifest.capability_id   # a signed mission may pin one cortex organ
     try:
-        # A signed mission decides now: a forwarded mandate's expiry is judged at the body clock (cortex 0.2.2).
-        return reason(params, registry=ctx.capability_registry or registry_view(ctx.journal), journal=ctx.journal,
-                      model_config=ctx.cognition_model, forced_family=forced, caller_window=ctx.cognition_budget,
-                      trusted_clock=True)
+        # A signed mission decides now: a forwarded mandate's expiry is judged at the body clock (cortex 0.2.2),
+        # on every route the request takes to the cortex.
+        from .bridge import signed_path
+        with signed_path():
+            return reason(params, registry=ctx.capability_registry or registry_view(ctx.journal),
+                          journal=ctx.journal, model_config=ctx.cognition_model, forced_family=forced,
+                          caller_window=ctx.cognition_budget)
     except (CognitionError, TypeError, ValueError, KeyError) as exc:
         raise CapabilityError(f"invalid cognitive request: {exc}") from exc
 
@@ -349,13 +352,15 @@ def compose(params, ctx):
     registry = ctx.capability_registry or registry_view(ctx.journal)
     shared_deadline = time.monotonic() + min(30, ctx.cognition_budget.latency_ceiling_seconds if ctx.cognition_budget else 30)
     remaining_compute = min(100000, ctx.cognition_budget.compute_ceiling_operations if ctx.cognition_budget else 100000)
+    from .bridge import signed_path
     try:
         receipts = []
         for request in params["requests"]:
             allocated = min(remaining_compute, request.get("geometry", {}).get("compute_limit", 10000))
-            child = reason(request, registry=registry, journal=ctx.journal, model_config=ctx.cognition_model,
-                           caller_window=ctx.cognition_budget, shared_deadline=shared_deadline,
-                           shared_compute_limit=allocated)
+            with signed_path():   # a signed mission decides now, through composition too (cortex 0.2.2)
+                child = reason(request, registry=registry, journal=ctx.journal, model_config=ctx.cognition_model,
+                               caller_window=ctx.cognition_budget, shared_deadline=shared_deadline,
+                               shared_compute_limit=allocated)
             receipts.append(child)
             if child.get("compute_cost", {}).get("budget_plan", {}).get("seed_attempted"):
                 remaining_compute -= allocated  # reserve ceiling; actual operations remain unknown

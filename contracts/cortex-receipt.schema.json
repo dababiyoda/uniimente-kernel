@@ -723,6 +723,10 @@
           }
         }
       ]
+    },
+    "authority_as_of": {
+      "description": "0.2.2: the instant a forwarded mandate's or grant's expiry was judged at, when the host decided now (GREG's signed missions: the body clock). Absent when the payload's as_of decided it.",
+      "type": "string"
     }
   },
   "allOf": [

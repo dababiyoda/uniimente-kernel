@@ -24,7 +24,7 @@ from .contracts import (CLAIM_TYPE_TO_EPISTEMIC, CORTEX_VERSION, EPISTEMIC_CLASS
                         HUMAN_AUTHORITY_CLASSES, ConsequenceVector, CortexError, Expenditure,
                         OrganResult, Problem, ProblemGeometry, ResourceLimits, VictimProtection,
                         consequence_rank, digest)
-from .gates import AuthorityRecord, Option, evaluate_gates, rank_after_gates
+from .gates import AuthorityRecord, Option, evaluate_gates, pareto_front, rank_after_gates
 from .genome import IntelligenceRegistry, seed_registry
 from . import outcomes
 from .organs import adversarial, cpsat
@@ -307,7 +307,10 @@ class Cortex:
 
     # ------------------------------------------------------------------ pipeline
     def run(self, problem: Problem | Mapping[str, Any], *, records: list | None = None,
-            proposer: Callable[[Problem], Mapping] | None = None) -> dict:
+            proposer: Callable[[Problem], Mapping] | None = None, authority_as_of: str | None = None) -> dict:
+        """``authority_as_of`` (0.2.2): the instant a forwarded mandate's or grant's expiry is judged at, when the
+        host decides now (GREG's signed missions pass the body clock). The payload's ``as_of`` still dates the
+        question itself (evidence freshness); without this argument it dates both, as before."""
         started = time.perf_counter()
         if not isinstance(problem, Problem):
             try:
@@ -356,6 +359,8 @@ class Cortex:
         profiles = self.registry.profiles()
         planned_cost = sum(profiles[k].cost_usd_per_call for k in selected)
         planned_model_calls = sum(1 for k in selected if k == SEMANTIC)
+        if EXTRACT in selected and self._extraction_needs_model(problem.payload):
+            planned_model_calls += 1     # free text the controlled grammar cannot read goes to the model (0.2.2)
         budget_problem = None
         if planned_cost > limits.max_cost_usd:
             budget_problem = f"planned cost {planned_cost} exceeds {limits.max_cost_usd}"
@@ -379,6 +384,7 @@ class Cortex:
         results: list[OrganResult] = []
         attempts: list[dict] = []
         decisions: list[dict] = []
+        stage_why: dict = {}          # a part a composition stage could not answer -> why
         source_problem = problem
         if budget_problem is None:
             for key in list(selected):
@@ -390,6 +396,11 @@ class Cortex:
                     part_geometries.update({k: _formal_class({"query": {"kind": plan["query_kind"]}})
                                             for k in executed if plan})
                     formal_plan = plan
+                    if plan is not None and not executed:
+                        # The compiled model has no eligible formal engine: the schedule is unanswered, and the
+                        # extractor's translation is never recommended as if it were a schedule (0.2.2).
+                        unanswered.append((FORMAL, _formal_class({"query": {"kind": plan["query_kind"]}})))
+                        stage_why[FORMAL] = [f"{k}: {r}" for k, rs in plan["excluded"].items() for r in rs]
                     continue
                 if key in FORMAL_ENGINES and formal_plan is not None:
                     result, tried, decided = self._run_formal(problem, geometry, limits, formal_plan, started)
@@ -398,12 +409,24 @@ class Cortex:
                     decisions += decided
                 else:
                     results.append(self.organs[key].run(problem, geometry, limits))
+        # Every formal-slot engine that ran (a fallback that answered, a superseded lead, a cross-check) served the
+        # slot's part, so it settles and is keyed under that part's class (review of the 0.2.2 port).
+        slot_class = next((c for k, c in part_geometries.items() if k in FORMAL_ENGINES), None)
+        for k in [r.organ_id for r in results] + [a["organ_id"] for a in attempts]:
+            if k in FORMAL_ENGINES and slot_class is not None:
+                part_geometries.setdefault(k, slot_class)
         # Built after execution (0.2.2; verified 2026-10-21): the schedule composition adds the engine it ran to
         # `selected`, which must never also be listed as "not required by this payload".
+        # An engine that ran without giving the final answer (a superseded lead, a cross-check) says so; it is never
+        # "not required by this payload" (review of the 0.2.2 port).
+        ran_as = {}
+        for a in attempts:
+            ran_as.setdefault(a["organ_id"], []).append(f"ran ({a['why']}); not the route that answered")
         alternatives = [{"route": e.key,
-                         "why_not": ([f"eligible for this payload but not run: composition is capped at "
-                                      f"{MAX_COMPOSITION} routes in cortex {CORTEX_VERSION}; its part of the "
-                                      f"question is unanswered"] if e.key in dropped_by_cap
+                         "why_not": (ran_as[e.key] if e.key in ran_as
+                                     else [f"eligible for this payload but not run: composition is capped at "
+                                           f"{MAX_COMPOSITION} routes in cortex {CORTEX_VERSION}; its part of the "
+                                           f"question is unanswered"] if e.key in dropped_by_cap
                                      else list(e.reasons) or ["not required by this payload"])}
                         for e in eligibility if e.key not in selected]
         l1 = _l1_checks(problem, geometry, formal_plan)
@@ -420,13 +443,13 @@ class Cortex:
             remaining = limits.max_cost_usd - spent.usd
             try:
                 gate_reports = {o.option_id: evaluate_gates(o, recs, remaining_budget_usd=remaining,
-                                                            as_of=problem.payload.get("as_of"))
+                                                            as_of=authority_as_of or problem.payload.get("as_of"))
                                 for o in options}
             except (CortexError, ValueError, TypeError) as exc:
                 # Organs already ran: the receipt reports what they spent and which ran (0.2.2).
                 return self._malformed(problem.to_dict(), f"authority record rejected: {exc}", started, geometry,
                                        spent=spent, ran=[r.organ_id for r in results] + [a["organ_id"] for a in attempts])
-            weights = _founder_weights(recs, gate_reports)
+            weights = _founder_weights(recs, gate_reports, pareto_front(options, gate_reports))
             ranking = rank_after_gates(options, gate_reports, founder_weights=weights)
 
         state, disposition, reason, next_step = self._dispose(
@@ -435,7 +458,8 @@ class Cortex:
         extra_reasons = []
         if unanswered and disposition in ("recommend", "bounded_test"):
             # The most cautious state across parts decides: an unanswered part is never recommended around.
-            why = {k: list(part_eligibility[k].reasons) if k in part_eligibility else ["no eligibility row"]
+            why = {k: stage_why.get(k) or (list(part_eligibility[k].reasons) if k in part_eligibility
+                                           else ["no eligibility row"])
                    for k, _ in unanswered}
             state, disposition = "NO_ELIGIBLE_METHOD", "abstain"
             reason = f"payload part(s) with no eligible route: {why}; the answered parts are in per_route"
@@ -482,7 +506,7 @@ class Cortex:
                              gate_reports, ranking, state, disposition, reason, next_step, spent, protection,
                              formal_plan=formal_plan, attempts=attempts, decisions=decisions, l1=l1,
                              extra_reasons=extra_reasons, part_geometries=part_geometries,
-                             dropped_by_cap=dropped_by_cap, unanswered=unanswered,
+                             dropped_by_cap=dropped_by_cap, unanswered=unanswered, authority_as_of=authority_as_of,
                              deficit=(_capability_deficit(
                                  (unanswered[0][1] if unanswered and state == "NO_ELIGIBLE_METHOD" and results
                                   else geometry.epistemic_class),
@@ -491,6 +515,19 @@ class Cortex:
                                  if disposition == "abstain" else None))
 
 
+
+    def _extraction_needs_model(self, payload: Mapping[str, Any]) -> bool:
+        """Whether the schedule extractor would spend a model call: text outside the controlled grammar, with a
+        founder-selected model to read it. Planned before any organ runs, so the model-call budget covers it."""
+        req = payload.get("schedule_request")
+        text = req.get("text") if isinstance(req, Mapping) else None
+        if not isinstance(text, str) or getattr(self.organs.get(EXTRACT), "_client", None) is None:
+            return False
+        try:
+            schedule_extraction.parse_controlled(text)
+        except schedule_extraction.ExtractionError:
+            return True
+        return False
 
     # ------------------------------------------------------------------ seed composition
     def _compose_schedule(self, problem, geometry, limits, started, results, attempts, decisions):
@@ -717,8 +754,8 @@ class Cortex:
                     "the founder attaches a withheld route, or the question is asked another way"
             if unanswered:
                 # The payload carries a part whose only reader is withheld, disabled or out of scope (0.2.2).
-                return state, "abstain", (f"payload part(s) {[k for k, _ in unanswered]} have no eligible route "
-                                          f"for {geometry.epistemic_class}"), \
+                return state, "abstain", (f"payload part(s) have no eligible route for their class: "
+                                          f"{dict(unanswered)}"), \
                     "enable, attach or form a capability for the unanswered part"
             return state, "abstain", f"no enabled route supports {geometry.epistemic_class}", \
                 "register and validate a capability for this geometry"
@@ -795,8 +832,12 @@ class Cortex:
     def _receipt(self, problem, geometry, eligibility, selected, alternatives, results, verifier, gate_reports,
                  ranking, state, disposition, reason, next_step, spent, protection=None, *, formal_plan=None,
                  attempts=(), decisions=(), l1=(), extra_reasons=(), part_geometries=None, dropped_by_cap=(),
-                 unanswered=(), deficit=None) -> dict:
+                 unanswered=(), deficit=None, authority_as_of=None) -> dict:
         payload = problem.payload
+        # every route the receipt can settle: the selected ones, then any engine that ran without being selected
+        # (a formal-slot fallback or cross-check), under its part's class (review of the 0.2.2 port)
+        keyed = [*selected, *sorted(({r.organ_id for r in results} | {a["organ_id"] for a in attempts})
+                                    - set(selected))]
         refs = sorted({s.get("id") for s in payload.get("sources", []) if s.get("id")} |
                       {e.get("id") for e in payload.get("evidence", []) if e.get("id")})
         answer = None
@@ -832,13 +873,14 @@ class Cortex:
                                    "eligibility and budget filter first",
                       "formal_plan": formal_plan, "attempts": list(attempts),
                       "part_geometries": {k: (part_geometries or {}).get(k) or geometry.epistemic_class
-                                          for k in selected},
+                                          for k in keyed},
                       "dropped_by_cap": list(dropped_by_cap)},
             "alternatives": alternatives,
             "assumptions": [a for r in results for a in r.assumptions],
             "output": {"state": state, "answer": answer, "per_route": [r.to_dict() for r in results]},
             "coverage": _coverage(selected, results, dropped_by_cap, unanswered, attempts),
             "capability_deficit": deficit,
+            **({"authority_as_of": authority_as_of} if authority_as_of else {}),
             "uncertainty": "; ".join(r.uncertainty for r in results) or "no route executed",
             "proof_artifacts": [dict(r.proof) for r in results],
             "verifier": verifier,
@@ -855,7 +897,7 @@ class Cortex:
             "accountability": _accountability(geometry, results, verifier, gate_reports, protection),
             "outcome_link": {"status": "absent_feedback", "settlement_ref": None,
                              "memory_keys": [f"{k}|{(part_geometries or {}).get(k) or geometry.epistemic_class}"
-                                             for k in selected]},
+                                             for k in keyed]},
             "l1_checks": list(l1),
             "budget_controller": {"policy": BUDGET_POLICY, "decisions": list(decisions),
                                   "mandatory": ["eligibility gates", "adversarial verifier",
@@ -923,11 +965,13 @@ class Cortex:
         return body
 
 
-def _founder_weights(recs, gate_reports):
+def _founder_weights(recs, gate_reports, front):
     """Ranking weights (0.2.2) come only from a founder mandate that founder_scope accepted, at the same instant,
-    for every option that passed all gates. An expired, out-of-scope or merely first-listed mandate never decides,
-    and accepted mandates that disagree leave the options incomparable instead of letting list order choose."""
-    passing = [rep for rep in gate_reports.values() if rep.all_pass]
+    for every option the weights score (the Pareto front; a dominated option under another authority is never
+    scored, so it cannot remove the founder's weights). An expired, out-of-scope or merely first-listed mandate
+    never decides, and accepted mandates that disagree leave the options incomparable instead of letting list
+    order choose."""
+    passing = [rep for oid, rep in gate_reports.items() if rep.all_pass and oid in set(front)]
     if not passing:
         return None
     accepted = set.intersection(*(set(rep.gates["founder_scope"].basis) for rep in passing))
@@ -945,9 +989,11 @@ def _capability_deficit(epistemic_class, registry, state, reason, *, unanswered=
         return None
     # Registered families that would serve this class if enabled or released by the host: the cheapest leads.
     profiles = registry.profiles()
-    disabled = sorted(k for k, p in profiles.items() if not p.enabled and epistemic_class in p.supported_geometries)
+    # every unanswered part's class, not only the first part's (0.2.2; review of the port)
+    classes = {epistemic_class, *dict(unanswered or {}).values()}
+    disabled = sorted(k for k, p in profiles.items() if not p.enabled and classes & set(p.supported_geometries))
     withheld = sorted(k for k in getattr(registry, "_withheld", {})
-                      if k in profiles and epistemic_class in profiles[k].supported_geometries)
+                      if k in profiles and classes & set(profiles[k].supported_geometries))
     deficit = {"kind": "CapabilityDeficit", "state": state, "geometry": epistemic_class,
                "registered_but_disabled": disabled, "withheld_by_host": withheld, "why": reason,
                "verified": False,

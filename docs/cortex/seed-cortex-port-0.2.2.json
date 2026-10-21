@@ -83,7 +83,7 @@
   {
    "id": "PRR-09",
    "defect": "crossgeo re-read its manifest after the partitions ran",
-   "regression_test": null
+   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_crossgeo_hashes_the_manifest_bytes_it_checked_and_reports_their_planning"
   },
   {
    "id": "PRR-10",
@@ -143,7 +143,7 @@
    "can_manufacture_false_gain": false,
    "in_source_0.1.6": "yes",
    "statement": "On TARGET 900c6ae1 the composition-cap defect reproduces, and in a stronger form than stated.",
-   "disposition": "fixed (both lineages)",
+   "disposition": "fixed here; present on #167 too and recorded there, not fixed (its frozen 0.1.6 result is bound to its own code)",
    "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_cap_dropped_part_is_never_recommended_around"
   },
   {
@@ -154,7 +154,7 @@
    "can_manufacture_false_gain": false,
    "in_source_0.1.6": "yes",
    "statement": "The finding is confirmed as stated on both trees, and the defect is wider than reported. When options are present, Cortex.run parses authority records and options in one try block (TARGET cortex/routing.py:394-398; SOURCE cortex/routing.py:435-439). A record missing 'kind' or 'origin' therefore produces \"malformed input: option rejected: 'kind'\" (or 'origin'). If both a record and an option are malformed, only the record's KeyError is reported, under the option label. Worse, AuthorityRecord.from_dict (cortex/gates.py:78-81, both trees) does not validate its input at all. A record whose body is",
-   "disposition": "fixed (both lineages)",
+   "disposition": "fixed here; present on #167 too and recorded there, not fixed (its frozen 0.1.6 result is bound to its own code)",
    "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_malformed_record_is_a_malformed_record_receipt_never_an_exception"
   },
   {
@@ -210,7 +210,7 @@
    "in_source_0.1.6": "not_applicable",
    "statement": "The finding holds as stated on 900c6ae1, with one sharper detail. A founder-signed mission can compile a declared geometry (\"estimate\") with no inputs, or with inputs no method reads. The compiler (greg/cognition/compiler.py:1670-1671) then reports CAPABILITY_DEFICIT for the made-up function cognition.estimate:unspecified. Genesis._search_cognition looks that name up with registry.by_function (greg/genesis.py:1157-1161) and always gets \"none\".",
    "disposition": "partly fixed (an empty compile request asks for inputs); the founder-ask wording is deferred to the capability dividend",
-   "regression_test": "tests/unit/test_greg_seed_port_paths.py::test_a_compile_request_with_no_inputs_asks_for_them_and_forms_nothing"
+   "regression_test": "tests/unit/test_cortex_seed_ports.py::test_a_compile_request_with_no_inputs_asks_for_them_and_forms_nothing"
   },
   {
    "index": 9,
@@ -253,7 +253,7 @@
    "can_manufacture_false_gain": false,
    "in_source_0.1.6": "yes",
    "statement": "The finding holds as stated on TARGET, and the problem is broader than expiry. At TARGET cortex/routing.py:406-407 (SOURCE cortex/routing.py:460-461), the ranking weights come from the first founder_mandate in the caller's record list that is permission-bearing and has weights. That mandate never has to be in the founder_scope basis that cortex/gates.py:243-254 (_in_scope, gates.py:188-202) accepted at as_of.",
-   "disposition": "fixed (both lineages)",
+   "disposition": "fixed here; present on #167 too and recorded there, not fixed (its frozen 0.1.6 result is bound to its own code)",
    "regression_test": "tests/unit/test_cortex_seed_ports.py::test_ranking_weights_come_only_from_a_mandate_founder_scope_accepted"
   },
   {
@@ -286,7 +286,7 @@
    "can_manufacture_false_gain": false,
    "in_source_0.1.6": "yes",
    "statement": "The defect holds as stated in both TARGET 900c6ae1 and SOURCE dba14ac8. The D5 harm-implies-class raise exists only at problem level (cortex/routing.py:182-190). Option.from_dict takes the option's consequence_class verbatim (cortex/gates.py:116). Financial is not a hard harm dimension (cortex/contracts.py:139), so the harm gate passes (gates.py:286-295), and consequence_boundary reads only option.consequence_class (gates.py:306; SOURCE :309). An option that declares internal_write while its own harm is financial=high therefore passes every gate. It is recommended: Cortex disposition \"recommen",
-   "disposition": "fixed (both lineages)",
+   "disposition": "fixed here; present on #167 too and recorded there, not fixed (its frozen 0.1.6 result is bound to its own code)",
    "regression_test": "tests/unit/test_cortex_seed_ports.py::test_an_options_own_harm_raises_its_class_never_lowers_it"
   },
   {

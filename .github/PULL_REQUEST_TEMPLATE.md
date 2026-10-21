@@ -1,3 +1,14 @@
+## Parent machine continuation
+
+- Fixed completion boundary: BODY + ORGANS + MIND = GREG / UNIIMENTE.
+- Parent founder objective and unfinished dependency advanced:
+- Integration evidence (component proof alone is insufficient):
+- Next unblocked requirement to resume automatically after this increment:
+- Item-specific founder/external/technology blocker and evidence, if any:
+- Achievable work continued while that item is blocked:
+
+A narrow PR is a sequencing unit. It never narrows the project or terminates the parent objective. See `INTENT-20261001-FULL-MACHINE-COMPLETION`.
+
 > Continuity companion: `docs/PROJECT_COGNITION_CONTINUITY.md` defines continuous source ingestion, agent context checksum, propagation receipts, repository ecology, and the anti-context-loss test.
 
 # UNIIMENTE pull request

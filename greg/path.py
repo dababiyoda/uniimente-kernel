@@ -21,7 +21,7 @@ import json
 from pathlib import Path
 import re
 
-from greg import metrics
+from greg import asks, metrics
 from greg.journal import Journal
 
 PATH_FILE = Path(__file__).with_name("path.json")
@@ -30,6 +30,11 @@ FEASIBILITY = ("CURRENTLY_BUILDABLE", "BUILDABLE_AFTER_PREREQUISITE", "REQUIRES_
                "FRONTIER", "CURRENTLY_SCIENCE_FICTION")
 EVIDENCE_STATUS = ("verified_by_execution", "verified_by_inspection", "asserted", "unresolved")
 EVIDENCE_SOURCES = ("repository", "ledger", "external")
+# Directive 2026-10-07 sections 25-26: every frontier capability keeps its backcast; none disappears.
+BUILDABILITY = ("BUILDABLE_NOW", "EXPERIMENTAL_NOW", "FRONTIER_RESEARCH", "SCIENCE_FICTION_DESCENDANT")
+BACKCAST_FIELDS = ("destination", "current_precursor", "missing_capabilities", "active_gate", "gate_crossing_evidence",
+                   "dependencies", "single_bottleneck_metric", "nearest_falsifiable_experiment", "buildability_status",
+                   "risk", "authority_implications", "activation_condition")
 
 
 class PathError(ValueError):
@@ -77,6 +82,15 @@ def validate(data: dict) -> None:
         if horizon["feasibility"] != "CURRENTLY_BUILDABLE" and not horizon.get("prerequisite") \
                 and horizon["feasibility"] not in ("FRONTIER",):
             raise PathError(f"horizon {horizon['id']}: a later capability names its prerequisite")
+    horizon_ids = {h["id"] for h in data.get("horizons") or []}
+    for item in data.get("frontier_backcasts") or []:
+        missing = [f for f in BACKCAST_FIELDS if not item.get(f)]
+        if missing:
+            raise PathError(f"frontier {item.get('id')}: missing {missing}")
+        if item["buildability_status"] not in BUILDABILITY:
+            raise PathError(f"frontier {item['id']}: unknown buildability {item['buildability_status']}")
+        if item.get("node") not in ids or item.get("horizon") not in horizon_ids:
+            raise PathError(f"frontier {item['id']}: unknown node or horizon")
 
 
 # -- ledger predicates: exit evidence the body itself holds --------------------------------
@@ -315,12 +329,15 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
     ids = [n["id"] for n in data["nodes"]]
     following = data["nodes"][ids.index(active["id"]) + 1] if active and ids.index(active["id"]) + 1 < len(ids) \
         else None
+    # Later nodes this ledger already meets: reported as measured, never as achieved, because the
+    # path's order is the dependency order. Without this a founder who closed N6 or N7 while an
+    # earlier node had no predicate saw his own verified work nowhere.
+    met_ahead = [{"id": n["id"], "title": n["title"]} for n in data["nodes"][ids.index(active["id"]) + 1:]
+                 if measurements[n["id"]].get("met")] if active else []
     open_kinds = set()
     if journal is not None:
-        answered = {e.payload["request_id"] for e in journal.replay("decision.")
-                    if e.type in ("greg.decision.answered", "greg.decision.withdrawn")}
-        open_kinds = {e.payload.get("kind") for e in journal.replay("decision.requested")
-                      if e.payload["request_id"] not in answered}
+        open_kinds = {r.get("kind") for r in asks.open_requests(
+            journal.replay("decision.") + journal.replay("mission.achieved") + journal.replay("mission.lifecycle"))}
     pull_forward = [{"node": n["id"], "title": n["title"], "triggered_by": sorted(open_kinds & set(n["may_be_pulled_forward_by"]))}
                     for n in data["nodes"] if open_kinds & set(n.get("may_be_pulled_forward_by", []))]
     horizons = data.get("horizons", [])
@@ -335,6 +352,7 @@ def position(journal: Journal | None, data: dict | None = None) -> dict:
         "next": None if following is None else {"id": following["id"], "title": following["title"],
                                                   "gate": following["gate"]},
         "pull_forward_seams": pull_forward,
+        "met_ahead": met_ahead,
         "horizons": {"total": len(horizons),
                      "at_active_node": [h["id"] for h in horizons if active and h["node"] == active["id"]],
                      "by_feasibility": {f: sorted(h["id"] for h in horizons if h["feasibility"] == f)

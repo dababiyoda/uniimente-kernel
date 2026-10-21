@@ -21,6 +21,30 @@ def is_crostini(markers=CROSTINI_MARKERS) -> bool:
     return any(Path(marker).exists() for marker in markers)
 
 
+# Engines are not prerequisites for N1: a missing one makes its functions abstain and GREG asks.
+ENGINE_USES = {
+    "z3-solver": ["cognition.solve: cortex formal engine and schedules", "#140 formal operations"],
+    "ortools": ["cognition.solve: cortex CP-SAT engine and schedules", "lp.optimize (GLOP)"],
+    "scipy": ["graph.shortest_path", "graph.max_flow", "lp.optimize (HiGHS)", "#140 game and evolutionary"],
+    "networkx": ["graph.shortest_path", "graph.max_flow", "#140 graph operations"],
+    "sympy": ["#140 exact arithmetic and polynomials"],
+}
+
+
+def engines() -> dict:
+    """Which open-source reasoning engines this interpreter carries, read from installed metadata only."""
+    from greg import mechanisms
+    rows = []
+    for name, uses in ENGINE_USES.items():
+        dist = mechanisms.installed(name)
+        rows.append({"distribution": name, "installed": dist is not None, "version": dist.version if dist else None,
+                     "license": mechanisms.license_of(dist) if dist else None, "serves": uses})
+    missing = [r["distribution"] for r in rows if not r["installed"]]
+    return {"present": len(rows) - len(missing), "total": len(rows), "missing": missing, "engines": rows,
+            "note": "not prerequisites: a missing engine makes its functions abstain and GREG asks; GREG never "
+                    "installs one (the founder-run installer does, unless --no-engines)"}
+
+
 def chromebook() -> dict:
     checks = {
         "python_3_11": sys.version_info >= (3, 11),
@@ -43,6 +67,7 @@ def chromebook() -> dict:
             "ready_for_linux_service": not missing,
             "checks": checks, "missing": missing,
             "crostini_detected": is_crostini(),
+            "engines": engines(),
             **({"fix": {"python_venv_available": "sudo apt install python3-venv"}}
                if "python_venv_available" in missing else {}),
             "not_verified": ["ChromeOS host identity and ownership", "VM restart at login", "sleep continuity",

@@ -1,5 +1,10 @@
 # UNIIMENTE FINAL BUILD ORDER
 
+## Controlling founder correction — complete machine, 2026-10-01
+
+**Body + Organs + Mind is the fixed completion boundary.** Apply `docs/intent/INTENT-20261001-FULL-MACHINE-COMPLETION.json` and the current `AGENTS.md` execution rule: prove and integrate each increment, then automatically continue the parent machine objective. Seed/PR/VEPMC gates never stop unrelated achievable implementation; specific live authority and real-use evidence remain separate.
+
+
 ## Preservation correction — 2026-09-30
 
 `INTENT-2026-09-30-MASTER-BUILD-DIRECTIVE` (section 76): "Do not keep obsolete implementations

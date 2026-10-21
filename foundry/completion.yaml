@@ -1,13 +1,4 @@
-# Foundry completion contract: 55 mandatory systems (founder directive 2026-09-27).
-#
-# COMPLETE      working implementation + GREG-integrated interface + tests + an evidence
-#               record whose result hash the audit re-derives by RE-RUNNING the system.
-# PARTIAL       real fragments exist; the named gap is an open obligation.
-# OUTSTANDING   not built; the acceptance criteria are the open obligation.
-#
-# No id may be removed or substituted without Alfonso's explicit approval.
-# Acceptance criteria are a DRAFT for founder ratification.
-# `python -m foundry.completion --audit` fails CI on any unsupported claim.
+# All 55 obligations remain active; COMPLETE is bounded local contract evidence, never full-machine completion.
 1:
   acceptance:
   - Compiles policy, workflow, experiment and business-genome source into executable objects
@@ -183,6 +174,7 @@
   existing:
   - foundry/systems/sandbox.py
   - foundry/systems/containers.py
+  - greg/isolation.py
   gap: 'Implementation exists (gVisor runsc, read-only image root, no network, no capabilities, non-root, clean
     env, wall-clock kill, hash-chained journal, SIEM-shaped denials). In-session run on 2026-09-30 before the pause:
     7 of 7 escape probes denied inside gVisor. Negative evidence: that run''s host control attempted a direct connection
@@ -191,7 +183,9 @@
     resources; network probe targets RFC 5737 TEST-NET) and has not been re-run. Execution paused 2026-09-30: running
     privileged OCI runtimes (runc/runsc as root) and sandbox escape probes in the development container was denied
     by the session''s safety classifier (containment escape). Resuming needs Alfonso''s explicit authorization for
-    where these may run (e.g. CI only, or a dedicated VM).'
+    where these may run (e.g. CI only, or a dedicated VM). Separately, reviewed GREG workers now attempt kernel-enforced Landlock
+    filesystem confinement (greg/isolation.py) on Linux ABI >=3 hosts, with raw native escape probes; generated-source
+    admission and microVM/gVisor-class isolation remain unfinished.'
   state: PARTIAL
 11:
   acceptance:
@@ -498,7 +492,7 @@
   - An MCP server's tools are reachable from GREG only through Kernel identity, authority and the Consequence Gate
   - Tool providers are swappable
   evidence: foundry/evidence/system-28.json
-  implementation:
+  implementation: &id001
   - foundry/systems/mcp_gateway.py
   - foundry/mcp/foundry_server.py
   - foundry/mcp/ecosystem_server.py
@@ -510,9 +504,13 @@
     a local stand-in. Uses the official MCP Python SDK 2.x.
   recovery: Provider failure fails over to the next listed provider; disagreement under cross-check is refused;
     ungranted consequential calls never reach a provider (gate refuses first).
-  state: COMPLETE
+  state: PARTIAL
   tests:
   - tests/unit/test_foundry_systems.py
+  - tests/unit/test_greg_mcp_worker.py
+  existing: *id001
+  gap: The exact reviewed first-party MCP now runs through official SDK/stdio against canonical staged Foundry stores. General external providers and remote transport still require stronger OS filesystem confinement; original failover and authority component evidence is retained.
+
 29:
   acceptance:
   - External agents discover, negotiate and perform bounded work through an embassy
@@ -553,7 +551,10 @@
   - provenance/proof.py
   - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  interface: foundry.query site_root|provenance|render; foundry.apply publish|issue_portal_token (system 31)
+  - foundry/systems/portal.py
+  - greg/console.py
+  interface: foundry.query site_root|provenance|render; foundry.apply publish|issue_portal_token (webserver); foundry.apply build, foundry.query inspect|retrieve
+    (portal, served privately at the GREG console /owned) (system 31)
   limitations: Stdlib ThreadingHTTPServer on loopback; no TLS termination, CDN or public DNS. Binding a public interface
     is publication and is refused without a recorded Consequence Gate decision.
   recovery: Pages are content-addressed and versioned; a page whose bytes no longer match their address is refused
@@ -561,14 +562,21 @@
   state: COMPLETE
   tests:
   - tests/unit/test_foundry_systems.py
+  - tests/unit/test_greg_owned_portal.py
 32:
   acceptance:
   - Owned community with member identity, posts and interaction history exportable by UNIIMENTE
   adopt:
   - Discourse
   - Ghost memberships
-  gap: No owned or federated community; DALEOBANKS distributes through rented platforms.
-  state: OUTSTANDING
+  existing:
+  - foundry/systems/community.py
+  - greg/foundry_bridge.py
+  - tests/unit/test_greg_community_journeys.py
+  interface: foundry.apply ingest; foundry.query export, summary, view, render (system 32)
+  gap: Portable signed member identities, posts, edits, reactions, departures and paginated complete history export/import are implemented through GREG. Network enrollment, moderation operations, serving and real member use remain unfinished.
+  limitations: Private local community records; member keys confer no kernel authority. Signatures prove key possession, not real-world identity. No external contact or publication.
+  state: PARTIAL
 33:
   acceptance:
   - Publishes and reads through a federated protocol (ActivityPub/AT) with portable identity
@@ -589,7 +597,9 @@
   - foundry/systems/rabbit_hole.py
   - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  interface: foundry.query report|report_territory (system 34)
+  - foundry/systems/journeys.py
+  interface: foundry.query report|report_territory (attribution); foundry.apply ingest of source-declared
+    events into the journey store (journeys) (system 34)
   limitations: 'Measures only recorded journeys (the #50 log or any log of the same shape); platform-side recommendation
     graphs are not observable from here and are not claimed. First-order Markov removal effect; higher-order paths
     are reported exactly but attributed first-order. Samples under 5 are labelled small and carry Wilson lower bounds.'
@@ -597,6 +607,7 @@
   state: COMPLETE
   tests:
   - tests/unit/test_foundry_systems.py
+  - tests/unit/test_greg_community_journeys.py
 35:
   acceptance:
   - Generates media assets (image/audio/video/interactive) from the canon through an integrated engine
@@ -605,8 +616,19 @@
   - FFmpeg
   - Remotion
   - Godot
-  gap: No graphics, audio, video or game production pipeline.
-  state: OUTSTANDING
+  gap: Deterministic image, tone audio, AVI motion graphics and interactive card production is implemented with
+    immutable provenance. Synthesized narration, cinematic/game generation and broader media-quality integration
+    remain open; no publication or rights verification is claimed.
+  state: PARTIAL
+  existing:
+  - foundry/systems/media.py
+  - greg/artifacts.py
+  - greg/foundry_bridge.py
+  interface: foundry.apply produce; foundry.query inspect (system 35)
+  limitations: Local deterministic graphic compositions and tone cues only. Declared canon source/rights are not
+    independently verified.
+  tests:
+  - tests/unit/test_greg_media.py
 36:
   acceptance:
   - Artifacts are addressed by SHA-256 of content; writes are atomic and deduplicated
@@ -628,8 +650,16 @@
   - Market rules are enforced, not advisory
   adopt:
   - Stripe Connect when real supply exists
-  gap: No independent supply or demand; a marketplace would be premature.
-  state: OUTSTANDING
+
+  state: PARTIAL
+  gap: Native pinned media offers, signed peer orders, verified byte delivery and signed acceptance are executable in the shared system-54 store. Independent supply/demand matching, policy-enforced market settlement and a real processor remain active requirements.
+  interface: foundry.query discover/history/reputation; foundry.apply publish/fulfill/accept (system37 aliases canonical system54)
+  implementation:
+  - foundry/systems/offers.py
+  - greg/foundry_bridge.py
+  limitations: Fixture consideration only; signed keys are not independently verified buyer identity, payment or real market demand.
+  tests:
+  - tests/unit/test_greg_owned_company.py
 38:
   acceptance:
   - Billing, metering, refunds and reserves integrated with a real payment rail in test mode
@@ -838,8 +868,22 @@
   - tests/unit/test_foundry.py
   - DALEOBANKS:services/x_client.py
   - DALEOBANKS:persona.json
-  gap: Charter and distribution loop are modeled; no products, community or finance attached to a persona.
+
   state: PARTIAL
+  gap: Native charter/canon/media/private portal/offers/signed community/performance/delivery/fixture books now operate in an integrated GREG loop, with receipt-bound independent appraisal. Operational founder ratification, public distribution, real subscription/payment rails, treasury effect execution and live evidence remain unfinished.
+  interface: foundry.apply assemble/ingest/reconcile; foundry.query inspect (system49)
+  implementation:
+  - foundry/systems/media_company.py
+  - foundry/systems/offers.py
+  - foundry/systems/media.py
+  - foundry/systems/portal.py
+  - foundry/systems/community.py
+  - foundry/systems/journeys.py
+  - foundry/systems/accounting.py
+  - greg/console.py
+  limitations: Private synthetic fixture loop; no public activation, operational ratification, money movement or invented users/outcomes.
+  tests:
+  - tests/unit/test_greg_owned_company.py
 50:
   acceptance:
   - Territory graph routes a person from curiosity to deeper content and offers based on observed behavior
@@ -849,7 +893,9 @@
   - foundry/territory.py
   - foundry/systems/__init__.py
   - greg/foundry_bridge.py
-  interface: foundry.query recommend|validate|doors; foundry.apply add_node|retire|observe (system 50)
+  - foundry/systems/journeys.py
+  interface: foundry.query recommend|validate|doors; foundry.apply add_node|retire|observe (rabbit_hole); foundry.query route over
+    the #34 journey store (journeys) (system 50)
   limitations: Routing uses first-order door statistics (from-node, door) over recorded sessions; no visitor profiling
     or cross-session identity. Node evidence levels and expiry are declared by the author, as in foundry/territory.py.
     WMI's rabbit_hole.py is the mechanism source for earned progression and the exit ramp; it is not imported.
@@ -858,6 +904,7 @@
   state: COMPLETE
   tests:
   - tests/unit/test_foundry_systems.py
+  - tests/unit/test_greg_community_journeys.py
 51:
   acceptance:
   - Agents write code, tests and docs in isolated branches; changes pass CI before proposal
@@ -876,7 +923,7 @@
   - A failure yields diagnosis, competing patches, regression test and updated recovery procedure
   - The regression test fails before and passes after
   evidence: foundry/evidence/system-52.json
-  implementation:
+  implementation: &id002
   - foundry/systems/repair.py
   - foundry/systems/versions.py
   - foundry/systems/__init__.py
@@ -887,9 +934,11 @@
     at 8 lines). A pytest collection error is not accepted as failing-before evidence.'
   recovery: Original source is never modified; the chosen patch, regression test and rejected candidates are a versioned
     recovery procedure.
-  state: COMPLETE
+  state: PARTIAL
   tests:
   - tests/unit/test_foundry_systems.py
+  existing: *id002
+  gap: Component repair fixtures execute; GREG source admission remains refused pending a reviewed isolated source recipe and complete escape/resource/verification evidence. Actual CI provides Landlock ABI7 for reviewed workers; local host unsupported probes do not define a project-wide blocker. Preserve general repair capability.
 53:
   acceptance:
   - Critical compilers, schemas, registries and proof systems build from UNIIMENTE-owned source with pinned toolchains
@@ -914,8 +963,19 @@
   - x402
   - A2A Agent Cards
   - MCP
-  gap: No machine-readable offers or agent payments.
-  state: OUTSTANDING
+
+  state: PARTIAL
+  gap: Versioned machine-readable offers can be discovered, ordered, actually delivered, and accepted by signed peers in local fixture mode. Receipts feed deduplicated fixture reputation and canonical performance memory. Real processor test-mode billing/refund/reserve integration and remote authenticated discovery/purchasing remain open.
+  interface: foundry.apply publish/fulfill/accept; foundry.query discover/inspect/history/reputation (system54)
+  implementation:
+  - foundry/systems/offers.py
+  - foundry/systems/versions.py
+  - foundry/systems/reputation.py
+  - foundry/systems/journeys.py
+  - greg/artifacts.py
+  limitations: No payment rail or verified real-market demand; all consideration is explicitly fixture-only.
+  tests:
+  - tests/unit/test_greg_owned_company.py
 55:
   acceptance:
   - Treasury routes surplus through obligations, reserves, reinvestment, productive assets, public benefit and owner

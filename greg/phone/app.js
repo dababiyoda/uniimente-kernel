@@ -78,6 +78,24 @@ async function refresh() {
     const hb = status.background || {};
     $("state").textContent = `${hb.state || "unknown"} · boots ${status.boots} · chain ${status.security.chain_verified ? "verified" : "BROKEN"}`;
     $("goals").replaceChildren(...status.goals.map((g) => el("li", `${g.mission_id}: ${g.achieved ? "achieved" : g.closure}`)));
+    $("cognition").replaceChildren(...(status.cognition?.receipts || []).map((r) => {
+      const item = el("li", `${r.problem_id}: ${r.answered ? "checked conditional result" : "needs evidence or review"}. ${r.next_step}`);
+      const detail = el("details", "");
+      detail.append(el("summary", "Evidence and limits"), el("pre", JSON.stringify(r.claims, null, 2)),
+        el("p", `${r.elapsed_ms} ms. ${r.cost_limits}`));
+      item.append(detail);
+      return item;
+    }));
+    $("cognitive").replaceChildren(...(status.cognitive || []).map((r) => {
+      const card = el("article", null, "card");
+      card.append(el("h3", r.problem_id), el("p", `Method: ${r.method} · ${r.outcome_state}`),
+        el("p", r.selection_rationale), el("p", JSON.stringify(r.output)),
+        el("p", `Evidence: ${r.proof_class} · Receipt: ${r.receipt_id}`, "muted"),
+        el("p", "Uncertainty: " + JSON.stringify(r.uncertainty)),
+        el("p", `Time: ${r.latency} seconds · Cost: $${r.money_cost}`),
+        el("p", "Next permitted step: " + ((r.missing_information || []).join("; ") || "Review the scoped result; effects still require existing authority.")));
+      return card;
+    }));
     renderDecisions((await api("/api/decisions")).data);
     const v = await api("/api/vepmc");
     $("vepmc").textContent = `VEPMC ${v.VEPMC}` + v.missions.map((m) => ` · ${m.mission_id} missing ${m.missing.join(", ") || "nothing"}`).join("");

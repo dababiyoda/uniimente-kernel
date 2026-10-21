@@ -19,7 +19,7 @@ import sys
 import pytest
 
 from greg import path as devpath, planner, sop, templates
-from greg.body import Body
+from greg.body import Body, status
 from greg.missions import validate_mission
 from greg.tribunal import morning_report
 from tests.greg_fixtures import Clock, drop, make_body, mission, note_check, signed, workspace, write_strategy
@@ -262,6 +262,10 @@ def test_a_ratified_procedure_runs_without_a_model_or_an_approval_stop_and_close
         assert len(body.journal.replay("sop.proposed")) == 1
         where = devpath.position(body.journal)      # N4 measured does not skip the path: N1 stays primary
         assert where["active"]["id"] == "N1" and "N4" not in where["achieved"]
+        # but the founder sees that it is met: measured ahead, not achieved
+        assert where["met_ahead"] == [{"id": "N4", "title": next(n["title"] for n in devpath.load()["nodes"]
+                                                                  if n["id"] == "N4")}]
+        assert status(home)["developmental_position"]["met_ahead"] == ["N4"]
     finally:
         body.close()
 

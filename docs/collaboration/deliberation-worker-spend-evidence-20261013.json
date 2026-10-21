@@ -1,0 +1,260 @@
+{
+  "decision_id": "FM-WORKER-SPEND-EVIDENCE-20261013",
+  "title": "Retain finite provider spend and unknown reservations",
+  "problem": "Worker reports may contain invalid amounts; appraisal comparison alone treats NaN as not over cap.",
+  "founder_intent_refs": [
+    "Full-machine directive sections 42,43,46,77",
+    "FM-WORKER-APPRAISAL-BINDING-20261013",
+    "PR157 f66f860a1932f5047d2c35bf765376efea8fcc17 worker_spend"
+  ],
+  "baseline": "#156 stores raw worker cost and compares float(cost) to cap; mission accounting conservatively consumes the authorized cap.",
+  "alternatives": [
+    {
+      "name": "simplest_viable_alternative",
+      "description": "Reuse #157 worker_spend normalization and reserve unknowns; retain current full-cap mission accounting.",
+      "advantages": [
+        "No new evaluator, ledger or authority."
+      ],
+      "disadvantages": [
+        "Historical standalone appraisals cannot establish canonical binding."
+      ],
+      "revival_evidence": "Selected after two passes."
+    },
+    {
+      "name": "strongest_competing_architecture",
+      "description": "Reconcile all mission/authority spend changes from #157 at once.",
+      "advantages": [
+        "Includes confinement and cognitive evidence adapters."
+      ],
+      "disadvantages": [
+        "Settlement and interruption semantics need separate canonical integration evidence."
+      ],
+      "revival_evidence": "Independent cross-lineage parity and regression evidence."
+    },
+    {
+      "name": "reversible_experiment",
+      "description": "Dedicated branch with tamper tests and signed test-key Body missions.",
+      "advantages": [
+        "No main merge or deployment."
+      ],
+      "disadvantages": [
+        "Does not qualify a real frontier provider."
+      ],
+      "revival_evidence": "Current development scope."
+    }
+  ],
+  "do_nothing_option": {
+    "expected_outcome": "Invalid worker amounts can be mistaken for acceptable spend; unknown cost has no explicit reservation evidence.",
+    "advantages": [
+      "No migration."
+    ],
+    "disadvantages": [
+      "Independent appraisal is not bound to the work authorized."
+    ]
+  },
+  "roles": [
+    {
+      "role": "Founder-Intent Steward",
+      "position": "Protect governed self-development before expanding worker selection. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Provider claims are not audited billing or treasury settlement."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Systems Architect",
+      "position": "Reuse #157 within one existing ledger and appraiser. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Provider claims are not audited billing or treasury settlement."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Adversarial Reviewer",
+      "position": "Challenge local rehashing and canonical receipt substitution. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Provider claims are not audited billing or treasury settlement."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Operator and Maintainer",
+      "position": "Preserve standalone inspection while disclosing absent binding. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Provider claims are not audited billing or treasury settlement."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "RETAIN"
+    },
+    {
+      "role": "Evidence and Welfare Guardian",
+      "position": "Passing patch tests are not approval under the original specification. All five roles performed by one agent; not independent review.",
+      "material_concerns": [
+        "Provider claims are not audited billing or treasury settlement."
+      ],
+      "evidence_refs": [
+        "greg/workers.py",
+        "tests/unit/test_greg_workers.py"
+      ],
+      "recommendation": "RETAIN"
+    }
+  ],
+  "evidence": [],
+  "counterevidence": [
+    {
+      "claim": "Float comparison rejects invalid costs",
+      "tier": "primary_source",
+      "reference": "greg/workers.py appraise",
+      "finding": "NaN > cap is false; a finite normalization is needed before appraisal."
+    }
+  ],
+  "pass_1": {
+    "intended_outcome": "Provider spend is finite reported evidence or explicit unknown reservation, never assumed zero.",
+    "advantages": [
+      {
+        "id": "A1",
+        "statement": "Existing canonical receipts provide a binding anchor.",
+        "amplified_value": "Stronger proof and safer recursive engineering without another authority."
+      }
+    ],
+    "disadvantages": [
+      {
+        "id": "D1",
+        "statement": "Reported spend is not independently audited.",
+        "severity": "high",
+        "response_type": "evidence",
+        "redesigned_response": "Label source provider_report; retain reported amount and separate reserved amount."
+      },
+      {
+        "id": "D2",
+        "statement": "Unknown interrupted cost could appear zero.",
+        "severity": "high",
+        "response_type": "protective",
+        "redesigned_response": "Reserve the full authorized cap while keeping reported amount null."
+      },
+      {
+        "id": "D3",
+        "statement": "Normalization can silently widen authority or free budgets early.",
+        "severity": "high",
+        "response_type": "governance",
+        "redesigned_response": "Retain current conservative cap accounting; no refunds, rail action or authority change."
+      }
+    ],
+    "comparisons": {
+      "baseline": "#156 stores raw worker cost and compares float(cost) to cap; mission accounting conservatively consumes the authorized cap.",
+      "do_nothing": "Invalid worker amounts can be mistaken for acceptable spend; unknown cost has no explicit reservation evidence.",
+      "simplest_viable_alternative": "Reuse #157 worker_spend normalization and reserve unknowns; retain current full-cap mission accounting.",
+      "strongest_competing_architecture": "Reconcile all mission/authority spend changes from #157 at once.",
+      "reversible_experiment": "Fixture provider reports under signed test-key WorkOrders; no live money."
+    },
+    "rejected_alternatives": [
+      {
+        "name": "strongest_competing_architecture",
+        "rejection_reason": "Not needed to close this specific integrity defect.",
+        "revival_evidence": "Cross-contract regression results and material dependency need."
+      }
+    ]
+  },
+  "pass_2": {
+    "attack_summary": "Attack malformed costs, NaN/Infinity, boolean values, cap expansion, forged normalized records and false billing claims.",
+    "new_weaknesses": [
+      {
+        "id": "N1",
+        "category": "gaming",
+        "statement": "A forged normalized record might hide invalid provider evidence.",
+        "strengthening_response": "Appraiser recomputes normalization and compares canonical receipt metadata."
+      },
+      {
+        "id": "N2",
+        "category": "comprehensibility",
+        "statement": "Reservation could be called payment.",
+        "strengthening_response": "Explicitly disclose budget accounting only; no money rail and no independently audited bill."
+      }
+    ],
+    "pass_1_disadvantage_dispositions": [
+      {
+        "disadvantage_id": "D1",
+        "outcome": "accepted",
+        "rationale": "Bound through canonical history and checked by adversarial regression.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      },
+      {
+        "disadvantage_id": "D2",
+        "outcome": "accepted",
+        "rationale": "Bound through canonical history and checked by adversarial regression.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      },
+      {
+        "disadvantage_id": "D3",
+        "outcome": "accepted",
+        "rationale": "Bound through canonical history and checked by adversarial regression.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Regression or promotion."
+      }
+    ],
+    "final_design": "Reuse #157 worker_spend normalization and reserve unknowns; retain current full-cap mission accounting.",
+    "residual_risks": [
+      {
+        "risk": "Actual charges and verification compute remain unmeasured or unaudited.",
+        "mitigation": "No zero or settlement claim; retain cap reservation and exact unknown fields.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Live provider billing integration."
+      }
+    ],
+    "recommendation": "RETAIN"
+  },
+  "dissent": {
+    "present": true,
+    "handling": "Preserve scope limitations and unfinished full-machine obligations.",
+    "entries": [
+      {
+        "role": "Founder-Intent Steward",
+        "position": "This does not complete provider billing reconciliation.",
+        "rationale": "No external invoice or settlement evidence.",
+        "evidence_threshold": "Dynamic capability selection and original mission resumption.",
+        "owner": "GREG maintainers",
+        "review_trigger": "Next unblocked build."
+      }
+    ]
+  },
+  "authority_impact": {
+    "level": "standard",
+    "changes_authority": false,
+    "requires_authorized_human": false,
+    "approval_status": "not_required",
+    "approver": null
+  },
+  "migration_plan": "Additive spend metadata only; original cost field becomes normalized finite or null; existing mission cap accounting unchanged.",
+  "rollback_plan": {
+    "possible": true,
+    "steps": [
+      "Revert the binding repair; preserve tests and negative evidence."
+    ],
+    "reason_impossible": null
+  },
+  "kill_criteria": [
+    "Invalid amounts are accepted.",
+    "Unknown reporting becomes a zero billing claim.",
+    "Any delegated budget increases."
+  ],
+  "decision": "RETAIN",
+  "decision_owner": "GREG maintainers for development; Alfonso for reserved promotion",
+  "review_trigger": "Live billing evidence or future budget reconciliation."
+}

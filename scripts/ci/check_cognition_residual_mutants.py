@@ -14,10 +14,10 @@ ROOT = Path(__file__).resolve().parents[2]
 TESTS = 'tests/unit/test_cognition_residual_safeguards.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
-  'checks["optimality_cross_engine"] = better == "unsat"', 'checks["optimality_cross_engine"] = True',
+  'certificate["status"] != "REFUTED")', 'True)',
   'test_a_feasible_but_not_optimal_claim_is_refuted_by_a_second_engine'),
  ('infeasibility taken on trust', 'greg/cognition/verification.py',
-  'checks["infeasibility_cross_engine"] = verdict == "unsat"', 'checks["infeasibility_cross_engine"] = True',
+  'certificate["status"] != "REFUTED")', 'True)',
   'test_an_infeasibility_claim_about_a_feasible_model_is_refuted'),
  ('unsat core taken on trust', 'greg/cognition/verification.py',
   'checks["unsat_core_recheck"] = cross["unsat_core"]["core_unsat"]', 'checks["unsat_core_recheck"] = True',

@@ -31,6 +31,9 @@ P6_RUNS = (
     ("docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json", {"F6": "forecast_then_staff"}),
     ("docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json", {"F7": "graph_then_allocate"}),
     ("docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json", {"F8": "track_then_staff"}),
+    # F7 with flow_expansion_mcf (2026-10-16): the admitted single genome against the recipe on v4's held-out
+    # items, a declared re-use. It measures no recipe lift, so it replaces no recipe verdict; it is a listed source.
+    ("docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/results-v6.json", {}),
 )
 P4_RUNS = ("docs/evidence/greg-learned-routing/2026-10-07/results-v2.json",
            "docs/evidence/greg-learned-routing/2026-10-08/results-v3.json")

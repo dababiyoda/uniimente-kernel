@@ -208,6 +208,7 @@ def test_a_version_bump_makes_positive_evidence_stale_while_negative_evidence_pe
     def bump(index):
         for family in ("basal_kalman", "flow_maxflow", "grid_dijkstra", "flow_reinforce_greedy"):
             index["genomes"][family]["version"] = "0.0.0-old"
+        index["genomes"]["grid_dijkstra"]["status"] = "EXPERIMENTAL"   # as v3 left it; v4 re-admitted 1.1.0
     fixture = _fixture(tmp_path, bump)
     rows = _rows(M.status(index_path=fixture))
     for family in ("basal_kalman", "flow_maxflow"):        # positive -> stale -> BUILT, version kept on the row
@@ -392,7 +393,7 @@ def test_every_executor_the_reserved_record_names_is_labelled_and_p8_carries_its
     cycles = sorted(ROOT.glob("docs/evidence/greg-protected-evolution/*/cycle-*.json"))
     decisions = [json.loads(p.read_text())["decision"] for p in cycles]
     p8 = rows["greg.cognition.evolution:cycle"]
-    assert len(p8["evidence_outside_index"]) == len(cycles) == 4
+    assert len(p8["evidence_outside_index"]) == len(cycles) == 5
     assert sorted(c["decision"] for c in p8["evidence_outside_index"]) == sorted(decisions)
     assert ("never kept an improvement" in p8["basis"]) == all(d == "REJECT" for d in decisions)
 
@@ -415,6 +416,66 @@ def test_a_verdict_for_a_genome_no_longer_in_the_library_is_unresolved_not_dropp
         index["genomes"]["retired_probe"] = {"status": "DEFAULT_FOR_GEOMETRY", "version": "1.0.0", "history": []}
     row = _rows(M.status(index_path=_fixture(tmp_path, change)))["cognition.retired_probe"]
     assert row["label"] == "UNRESOLVED" and row["heldout"]["status"] == "DEFAULT_FOR_GEOMETRY"
+
+
+def test_a_declared_regime_change_is_not_reported_as_a_rule_boundary_sample(monkeypatch):
+    """Found by the 2026-10-15 independent review: collective_quorum and collective_immune changed status between
+    v1 and v3 at the same version because v3's pre-registration declared new evaluation regimes for the four Layer 2
+    genomes (new instance generators; for immune also a new competitor), not because they sit near a rule boundary.
+    A flip within one regime stays flagged, and a declaration whose pre-registration changed declares nothing."""
+    run = "2026-10-15-v3"
+    rows = _rows(M.status())
+    for family in ("collective_quorum", "collective_immune"):
+        held = rows[f"cognition.{family}"]["heldout"]
+        assert [(h["run"], h["version"]) for h in held["history"]] == [
+            ("2026-10-13-v1", held["version_measured"]), (run, held["version_measured"])], family
+        assert held["history"][0]["status"] != held["status"], family
+        assert held["status_changed_at_same_version"] is False, family
+        assert held["status_changed_with_declared_regime_change"] is True, family
+        assert [h["regime"] for h in held["history"]] == ["2026-10-13-v1", run], family
+        assert [c["declared_in"] for c in held["regime_changes"]] == [M.DECLARED_REGIMES[run]["declared_in"]]
+    # the declaration is the pre-registration's own: it names every declared genome, and the run measured each
+    declared = M.DECLARED_REGIMES[run]
+    text = (ROOT / declared["declared_in"]).read_text()
+    frozen = json.loads((ROOT / declared["declared_in"]).with_name("freeze.json").read_text())["inputs"]["families"]
+    for family in declared["families"]:
+        assert f"`{family}`" in text and family in frozen, family
+    # collective_market's v1 -> v2 flip at 1.1.0 crossed no declared regime change (the rule was amended): flagged
+    market = rows["cognition.collective_market"]["heldout"]
+    assert market["status_changed_at_same_version"] is True
+    assert market["status_changed_with_declared_regime_change"] is False
+    # a declaration whose pre-registration no longer matches its bound digest declares nothing
+    monkeypatch.setitem(M.DECLARED_REGIMES, run, {**declared, "sha256": "sha256:" + "0" * 64})
+    held = _rows(M.status())["cognition.collective_quorum"]["heldout"]
+    assert held["status_changed_at_same_version"] is True
+    assert held["status_changed_with_declared_regime_change"] is False
+    assert "regime_changes" not in held and held["regime_declarations_unresolved"]
+
+
+@pytest.mark.parametrize("statuses, within, across", [
+    # flipped inside regime v1 (v1 -> v2), then held across v3's declared change: a rule-boundary flip only
+    (("EXPERIMENTAL", "NICHE_CAPABILITY", "NICHE_CAPABILITY"), True, False),
+    # held inside v1, then changed across the declared change: a regime change only
+    (("EXPERIMENTAL", "EXPERIMENTAL", "NICHE_CAPABILITY"), False, True),
+    # both
+    (("EXPERIMENTAL", "NICHE_CAPABILITY", "EXPERIMENTAL"), True, True),
+    (("NICHE_CAPABILITY",) * 3, False, False)])
+def test_a_flip_inside_an_older_regime_is_not_hidden_by_a_later_declared_regime_change(tmp_path, statuses, within,
+                                                                                         across):
+    """Found by the fix verifier (2026-10-15): the regime split compared each run only with the latest status, so a
+    flip between two runs of an older regime, followed by a declared regime change across which the status held,
+    was reported as a regime change and not as a flip at the same version."""
+    runs = ("2026-10-13-v1", "2026-10-14-v2", "2026-10-15-v3")
+
+    def change(index):
+        record = index["genomes"]["collective_quorum"]
+        record["history"] = [{"run": r, "status": s, "version": record["version"]} for r, s in zip(runs, statuses)]
+        record["status"] = statuses[-1]
+
+    held = _rows(M.status(index_path=_fixture(tmp_path, change)))["cognition.collective_quorum"]["heldout"]
+    assert [h["regime"] for h in held["history"]] == [runs[0], runs[0], runs[2]]
+    assert held["status_changed_at_same_version"] is within
+    assert held["status_changed_with_declared_regime_change"] is across
 
 
 def test_a_catalog_family_without_an_executor_is_unresolved(monkeypatch):

@@ -378,16 +378,6 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
             row["status"] = "NO_LIFT"
             row["demoted"] = (f"frozen VPL verdict ({verdict.get('evidence', 'evidence index')}): no lift over "
                               f"{verdict.get('prefer') or 'its best constituent'}; ranked after every other fit")
-        matched = _matched_by_single_genome(recipe, evidence)
-        if matched and not row["rejected"]:
-            # a single genome admitted DEFAULT against this recipe's twin, at its current version: equal quality at
-            # no more than 1.25x the recipe's latency on this geometry. The recipe's lift was measured over a
-            # repertoire without it; demoted, not deleted, it still serves when the genome cannot run
-            row["matched_by"] = matched
-            row["demoted"] = "; ".join(filter(None, [row.get("demoted"), (
-                f"admitted single genome {', '.join(m['method'] for m in matched)} matched this recipe's twin "
-                f"({', '.join(m['evidence'] for m in matched)}); the single method is canonical for this geometry "
-                f"and the recipe ranks after it")]))
         lacking = None if row["rejected"] else _stage_lacks(data, recipe, g, evidence)
         if lacking:
             # the stage that reads the part would abstain on it: the recipe is not a fit. When the part carries
@@ -405,6 +395,17 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
         rows.append(row)
         if parts:
             rows += _part_rows(data, g, evidence)
+        # a single genome admitted DEFAULT against this recipe's twin, at its current version, that fits this request
+        # (a row no rule rejected, flat or in the part): equal quality at no more than 1.25x the recipe's latency on
+        # this geometry. The recipe's lift was measured over a repertoire without it. Decided after the stage rule and
+        # the part rows: a genome with no row here answers another question, and a rejected recipe is not demoted.
+        # Demoted, not deleted, the recipe still serves while the genome is withheld. It is no fallback for an input
+        # the attached genome refuses: parallel edges end in the genome's abstention
+        fits = {r["method"] for r in rows if not r["rejected"]}
+        matched = [m for m in _matched_by_single_genome(recipe, evidence) if m["method"] in fits]
+        if matched and not row["rejected"]:
+            row["matched_by"] = matched
+            row["demoted"] = "; ".join(filter(None, [row.get("demoted"), _matched_reason(matched)]))
     return rows
 
 
@@ -437,6 +438,8 @@ def _family_rows(keys: set, g: CompetencyGeometry, evidence: dict, data: dict | 
         for op in ops:
             stale = None
             outputs = None
+            record = {}
+            other_version = False             # the family's evidence was measured at another version of its code
             if family in genomes:
                 need = genomes[family].genome.required_inputs
                 outputs = sorted(genomes[family].genome.output_contract)
@@ -444,7 +447,8 @@ def _family_rows(keys: set, g: CompetencyGeometry, evidence: dict, data: dict | 
                 status = record.get("status", "UNEVALUATED")
                 standalone = genomes[family].genome.standalone_decision
                 measured, current = record.get("version"), genomes[family].genome.version
-                if measured and measured != current and status not in NOT_POSITIVE:
+                other_version = bool(measured) and measured != current
+                if other_version and status not in NOT_POSITIVE:
                     # positive evidence binds the version measured; negative evidence persists until a
                     # re-admission replaces it
                     stale = f"{status} was measured at version {measured}; version {current} needs re-admission"
@@ -465,17 +469,24 @@ def _family_rows(keys: set, g: CompetencyGeometry, evidence: dict, data: dict | 
             elif not standalone:
                 reason = "composition stage only (no standalone decision)"
             elif status in EXCLUDED:
-                reason = f"frozen admission status {status}"
+                reason = f"frozen admission status {status}" + (
+                    f", measured at version {measured} (it persists until a re-admission at {current})"
+                    if other_version else "")
             row = {"method": f"cognition.{family}", "operation": op, "kind": "operation", "status": status,
                    "epistemic_classes": list(classes), "rejected": reason, "inputs": sorted(need), "outputs": outputs,
                    **({"stale_evidence": stale} if stale else {})}
-            if family in genomes and not stale and evidence["genomes"].get(family, {}).get("median_seconds") is not None:
-                row["median_seconds"] = evidence["genomes"][family]["median_seconds"]   # held-out, this version
-            if family in genomes and not stale and data is not None:
-                # subregion verdicts bind the version they were measured at, like the status they refine
-                measured = _subregion_evidence(genomes[family], data, evidence["genomes"].get(family, {}))
-                if measured:
-                    row["subregion"] = measured
+            # Held-out measurements (median latency, subregion verdicts) bind the version they were measured at.
+            # Measured at another version, they never rank, order fits or name acquisitions, whatever the status:
+            # a negative status persists, but the latency and verdicts it came with describe other code. They
+            # are reported under ``stale_measurements``, labelled with the version measured.
+            if family in genomes and not other_version and record.get("median_seconds") is not None:
+                row["median_seconds"] = record["median_seconds"]          # held-out, measured at this version
+            if family in genomes and not other_version and data is not None:
+                placed = _subregion_evidence(genomes[family], data, record)
+                if placed:
+                    row["subregion"] = placed
+            if other_version:
+                row["stale_measurements"] = _stale_measurements(genomes[family], record, data)
             if family in genomes and status == "SUPERSEDED":
                 item = genomes[family]
                 row["superseded_by"] = {"mechanism": item.genome.competitor,
@@ -498,9 +509,28 @@ def _settle_promotions(pending: list, rows: list[dict]) -> None:
             # govern it, and attaching it is the founder's decision (never a Genesis acquisition)
             row["superseded_by"]["promoted_as"] = method
         elif method in why:
-            # its promoted genome cannot answer this request (its own frozen status, the declared geometry, a
-            # relaxation): the superseding mechanism stays an acquisition candidate, and the reason is kept
+            # its promoted genome cannot answer this request (its own frozen status, a relaxation): the superseding
+            # mechanism stays an acquisition candidate, and the reason is kept. A declared geometry that excludes the
+            # promoted genome excludes this row too (promotion keeps the class), and run names no candidate for it
             row["superseded_by"]["promoted_rejected"] = {"method": method, "why": why[method]}
+
+
+def _matched_reason(matched: list[dict], inhibited=frozenset()) -> str:
+    """Why a recipe is demoted by the single genomes that matched its twin. The recipe ranks after each matched genome
+    that is not demoted. One that settled outcomes on this body demote (``inhibited``) is a demoted fit too, so the
+    recipe need not rank after it: the demoted fits are ordered among themselves by the other rank keys."""
+    def them(methods):
+        return "it" if len(methods) == 1 else "them"
+    text = (f"admitted single genome {', '.join(m['method'] for m in matched)} matched this recipe's twin "
+            f"({', '.join(m['evidence'] for m in matched)}); the single method is canonical for this geometry")
+    ahead = [m["method"] for m in matched if m["method"] not in inhibited]
+    demoted = [m["method"] for m in matched if m["method"] in inhibited]
+    if not demoted:
+        return text + f" and the recipe ranks after {them(ahead)}"
+    if ahead:
+        text += f" and the recipe ranks after {', '.join(ahead)}"
+    return text + (f", but settled outcomes on this body demote {', '.join(demoted)} too, so the recipe is ordered "
+                   f"with {them(demoted)} among the demoted fits by the other rank keys")
 
 
 def _matched_by_single_genome(recipe: str, evidence: dict) -> list[dict]:
@@ -819,6 +849,25 @@ def _subregion_evidence(item, data: dict, record: dict) -> dict | None:
             "competitor_deployable": item.competitor_deployable, "evidence": record.get("evidence")}
 
 
+def _stale_measurements(item, record: dict, data: dict | None) -> dict:
+    """A genome's frozen held-out evidence measured at another version of its code, labelled with that version.
+
+    Reported in rows, receipts and attach asks, and never used to rank, order fits or name acquisitions: the median
+    latency and subregion verdicts describe the code that was measured. Its status is handled by the status rule
+    (positive evidence counts as UNEVALUATED; negative evidence persists until a re-admission replaces it)."""
+    measured, current, status = record.get("version"), item.genome.version, record.get("status")
+    persists = status in NOT_POSITIVE
+    region = _subregion_evidence(item, data, record) if data is not None else None
+    return {k: v for k, v in {
+        "version_measured": measured, "version_current": current, "status": status,
+        "evidence": record.get("evidence"), "median_seconds": record.get("median_seconds"), "subregion": region,
+        "stale_evidence": (f"measured at version {measured}, not the current {current}: reported, never used to rank, "
+                           f"order fits or name acquisitions; "
+                           + (f"the {status} status persists until a re-admission at {current} replaces it"
+                              if persists else f"the {status} status counts as UNEVALUATED until a re-admission"))
+    }.items() if v is not None}
+
+
 def _rank(row: dict, prefer: list, competence: dict) -> tuple:
     status = 0 if row["status"] == "VPL_LIFT" else STATUS_RANK.get(row["status"], 5)
     preferred = 0 if (row["operation"] in prefer or row["method"] in prefer) else 1
@@ -827,7 +876,8 @@ def _rank(row: dict, prefer: list, competence: dict) -> tuple:
     latency = row.get("median_seconds")
     # Frozen negative evidence outranks an operator's preference: evidence over heuristics. Within one status,
     # the measured subregion verdict orders fits before settled competence, then measured held-out latency
-    # (unmeasured last), then operations before compositions and organs.
+    # (unmeasured last), then operations before compositions and organs. Both measurements count only at the
+    # version they were measured at (_family_rows reports another version's under stale_measurements).
     return (1 if row.get("demoted") else 0, preferred, status, region, settled,
             latency if latency is not None else float("inf"), 0 if row["kind"] == "operation" else 1, row["method"])
 
@@ -1050,7 +1100,8 @@ def attach_ask(pid: str, best: dict, fallback: dict | None, evidence: dict) -> d
     record = evidence.get("genomes", {}).get(family, {})
     measured = {k: v for k, v in {"admission_status": best["status"], "admission_evidence": record.get("evidence"),
                                   "measured_version": record.get("version"),
-                                  "subregion": best.get("subregion"), "current_state": best["usable_why"]}.items()
+                                  "subregion": best.get("subregion"), "current_state": best["usable_why"],
+                                  "stale_measurements": best.get("stale_measurements")}.items()
                 if v is not None}
     if best.get("promotes"):
         # the frozen evidence that made this mechanism worth promoting, labelled for what it measured
@@ -1282,6 +1333,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     receipt["methods_rejected"] = [{"method": r["method"], "why": r["rejected"]} for r in rows if r["rejected"]]
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible = [r for r in rows if not r["rejected"]]
+    # a superseded row the declaration excludes names nothing: promotion keeps the epistemic class, so the
+    # superseding mechanism (promoted or not) has the geometry the declaration excludes
     superseding = [{"mechanism": r["superseded_by"]["mechanism"], "supersedes": r["method"],
                     "evidence": r["superseded_by"]["evidence"],
                     "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority",
@@ -1289,7 +1342,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                     **({"promoted_genome_rejected": r["superseded_by"]["promoted_rejected"]}
                        if r["superseded_by"].get("promoted_rejected") else {})}
                    for r in rows if r.get("superseded_by", {}).get("deployable")
-                   and not r["superseded_by"].get("promoted_as")]
+                   and not r["superseded_by"].get("promoted_as")
+                   and not (g.geometry and g.geometry not in r["epistemic_classes"])]
     high = g.consequence_class in HIGH_CONSEQUENCE or vector.high
     if not eligible:
         formed = _formed(registry, data, g, body, high, receipt, pid=pid, vector=vector, journal=journal)
@@ -1339,6 +1393,14 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         inhibited = _settled_inhibition(*settled.get(r["method"], (0, 0)))
         if inhibited and not r.get("demoted"):
             r["demoted"] = inhibited                    # live negative evidence changes routing
+            r["settled_inhibition"] = True
+    by_outcomes = {r["method"] for r in eligible if r.get("settled_inhibition")}
+    for r in eligible:
+        if r.get("matched_by") and by_outcomes & {m["method"] for m in r["matched_by"]}:
+            # a matched genome is a demoted fit too: the recipe need not rank after it. candidates composed the
+            # reason from this same list after any earlier one (a lift verdict), and a demoted row is not rewritten
+            r["demoted"] = r["demoted"].replace(_matched_reason(r["matched_by"]),
+                                                _matched_reason(r["matched_by"], by_outcomes))
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
     for r in eligible:
@@ -1352,6 +1414,8 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                         "status": best["status"], "served_by": runnable[0]["method"] if runnable
                                         else None, **({"subregion": best["subregion"]} if best.get("subregion")
                                                       else {}),
+                                        **({"stale_measurements": best["stale_measurements"]}
+                                           if best.get("stale_measurements") else {}),
                                         **({"promotes": best["promotes"]} if best.get("promotes") else {})}
         state = _state(registry, best["method"])
         if best["kind"] == "composition" or state != "VERIFIED":
@@ -1383,7 +1447,7 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         return finish("CAPABILITY_DEFICIT")
     chosen = runnable[0]
     receipt["method_or_composition_selected"] = chosen["method"]
-    receipt["selection_level"] = ("only_fit_despite_no_lift" if chosen.get("demoted")
+    receipt["selection_level"] = (_demoted_level(chosen, best) if chosen.get("demoted")
                                   else "preferred_by_operator" if chosen["operation"] in plan["prefer"]
                                   or chosen["method"] in plan["prefer"] else "admission_status")
     if chosen.get("demoted"):
@@ -1391,6 +1455,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     if chosen.get("stale_evidence"):
         receipt["selection_level"] = "unevaluated_at_current_version"
         receipt["dissent"].append(f"stale admission evidence: {chosen['stale_evidence']}")
+    if chosen.get("stale_measurements"):
+        # held-out evidence of another version of this method's code, labelled with that version (never ranked)
+        receipt["stale_measurements"] = chosen["stale_measurements"]
     region = chosen.get("subregion")
     if region:
         receipt["subregion_evidence"] = region
@@ -1491,6 +1558,20 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
         receipt["sensitivity"] = _sensitivity_runs(pid, chosen["operation"], data, inner["output"], geometry_hint,
                                                    registry, journal, model_config, receipt, extra)
     return finish(done, inner["output"])
+
+
+def _demoted_level(chosen: dict, best: dict) -> str:
+    """Why a demoted fit serves. A demoted row ranks after every fit that is not, so either a better-ranked fit cannot
+    run (the receipt names it in ``withheld_best_fit``) or every fit is demoted and this one ranks first, labelled by
+    what demoted it: no verified lift, settled outcomes on this body, or else best of the demoted fits (a recipe
+    matched by a single genome that settled outcomes on this body demote too)."""
+    if chosen is not best:
+        return "serves_while_best_fit_withheld"
+    if chosen["status"] == "NO_LIFT":
+        return "only_fit_despite_no_lift"
+    if chosen.get("settled_inhibition"):
+        return "demoted_by_settled_outcomes"
+    return "best_of_demoted_fits"
 
 
 def _has_answer(inner: dict) -> bool:

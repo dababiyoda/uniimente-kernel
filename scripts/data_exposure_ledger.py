@@ -62,7 +62,8 @@ HELDOUT_ROLES = ("held-out", "admission held-out", "P8 held-out", "canary")
 ROLES = ("dev", "review-pilot", "train", "held-out", "canary", "admission held-out", "P8 held-out")
 REVIEW_RANGE = (3000, 3999)              # the repository's review-seed convention (pilots, review tests)
 # development ranges a lane declared in committed evidence before using them (seeds outside 0-9 a test may draw)
-DECLARED_DEV_RANGES = {(9300, 9339): "docs/evidence/greg-genome-l3-absent-2026-10-21/README.md"}
+DECLARED_DEV_RANGES = {(9300, 9339): "docs/evidence/greg-genome-l3-absent-2026-10-21/README.md",
+                       (9400, 9439): "docs/evidence/greg-genome-l124-absent-2026-10-21/README.md"}
 GENOMES_DIR = "greg/cognition/genomes/"
 RESULT_NAME = re.compile(r"(result|cycle-|canary|heldout|summary)[^/]*\.json$")
 HEX64 = re.compile(r"[0-9a-f]{64}")

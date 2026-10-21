@@ -32,6 +32,12 @@ GENOMES = {
     # simulated worlds: truth is a hidden state, parameter or outcome of a seeded generator
     "basal_bandit": (SIMULATED, "seeded Bernoulli reward processes; truth is the generator's hidden arm means"),
     "basal_bayes_filter": (SIMULATED, "seeded two-level regime signals; truth is the hidden regime tape"),
+    "basal_nlms": (SIMULATED, "seeded linear streams (stationary, drifting, switching, heavy-tailed noise, correlated "
+                              "features); truth is the generator's realised targets"),
+    "basal_token_bucket": (SIMULATED, "seeded arrival processes (Poisson, bursty, diurnal) with sampled request "
+                                      "values; truth is the offline optimum of the generated stream"),
+    "develop_diffusion": (SIMULATED, "planted-partition graphs with seeded labels; truth is the generator's hidden "
+                                     "classes"),
     "basal_breaker": (SIMULATED, "seeded up/outage dependency processes; truth is the hidden outage tape"),
     "basal_hysteresis": (SIMULATED, "seeded two-level regime signals; truth is the hidden regime tape"),
     "basal_kalman": (SIMULATED, "seeded DWNA target tracks; truth is the hidden true track"),
@@ -55,6 +61,8 @@ GENOMES = {
     "binpack_cpsat": (MATHEMATICAL, "planted bin-packing instances; optimum known by construction"),
     "blackbox_multistart_lbfgsb": (MATHEMATICAL, "declared shifted test objectives; known minimum"),
     "collective_aco": (MATHEMATICAL, "generated TSP instances; Held-Karp or reference tours"),
+    "collective_auction": (MATHEMATICAL, "generated task-agent value matrices; exact optimum by the transportation "
+                                         "LP"),
     "community_louvain": (MATHEMATICAL, "planted stochastic block models; quality is the recomputed modularity"),
     "collective_physarum": (MATHEMATICAL, "generated Steiner network instances; reference heuristics"),
     "critical_path": (MATHEMATICAL, "generated project networks; exact longest path"),

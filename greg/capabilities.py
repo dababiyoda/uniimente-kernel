@@ -30,7 +30,7 @@ import urllib.parse
 import urllib.request
 
 from capabilities.genome import AuthorityEnvelope, CapabilityGenome, GenomeRegistry, CONSEQUENCE_CLASSES
-from greg import egress
+from greg import egress, isolation
 
 ROUTES = ("api", "app_integration", "cli", "browser", "os_automation", "visual", "internal")
 # Spider-Web Compounding Rule (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING): every
@@ -325,26 +325,57 @@ MACOS_NO_NETWORK = "(version 1)(allow default)(deny network*)"
 
 
 def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout: int = 30,
-                 extra_env: dict | None = None, input_bytes: bytes | None = None) -> subprocess.CompletedProcess:
+                 extra_env: dict | None = None, input_bytes: bytes | None = None,
+                 confine_to: Path | None = None) -> subprocess.CompletedProcess:
     """Run one command with a scrubbed environment and, by default, no network.
 
     Linux: the Kernel's seccomp filter (tools/offline_test.py). macOS: the system
     sandbox-exec profile denying network. No isolation available -> refusal.
+
+    ``confine_to``: for code GREG runs on a worker's behalf (its patch's tests). On Linux with Landlock
+    (ABI >= 3) the command and everything it starts read only the host runtime and write only that
+    directory (``greg.isolation.worker_grants``; TMPDIR is a directory inside it), so the patch cannot read
+    the Body home into its output or write outside it, as the worker itself cannot. Where Landlock is absent
+    it runs as before. The returned process carries ``confinement`` either way.
     """
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": str(cwd), **(extra_env or {})}
-    preexec = None
+    network = None
     if isolate_network:
         if sys.platform == "darwin":
             if not Path("/usr/bin/sandbox-exec").exists():
                 raise CapabilityError("network isolation unavailable; command refused")
             argv = ["/usr/bin/sandbox-exec", "-p", MACOS_NO_NETWORK, *argv]
         else:
-            preexec = _no_network_preexec
+            network = _no_network_preexec
+    confinement, grants, libc = None, None, None
+    if confine_to is not None:
+        status = isolation.available()
+        if status.get("available"):
+            try:
+                grants, libc = isolation.worker_grants(confine_to), isolation._libc()
+            except isolation.IsolationError as exc:
+                raise CapabilityError(f"the command cannot be confined, so it is refused: {exc}") from None
+            scratch = Path(confine_to) / ".greg-tmp"
+            scratch.mkdir(exist_ok=True)
+            env["TMPDIR"] = str(scratch)
+            confinement = {"filesystem": "landlock", "abi": status["abi"],
+                           "writable": [str(Path(confine_to).resolve())]}
+        else:
+            confinement = {"filesystem": "none",
+                           "reason": status.get("reason") or f"Landlock ABI {status.get('abi')} below 3"}
+
+    def preexec():
+        if network is not None:
+            network()                      # first: it reads the Kernel's filter, which Landlock does not grant
+        if grants is not None:
+            isolation.restrict(grants, libc)
+
     stdin = {"stdin": subprocess.DEVNULL} if input_bytes is None else {"input": input_bytes}
     proc = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, timeout=timeout,
-                          preexec_fn=preexec, **stdin)
-    if isolate_network and preexec is not None and proc.returncode == 97:
+                          preexec_fn=preexec if network is not None or grants is not None else None, **stdin)
+    if network is not None and proc.returncode == 97:
         raise CapabilityError("network isolation unavailable; command refused")
+    proc.confinement = confinement
     return proc
 
 

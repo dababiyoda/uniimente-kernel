@@ -372,6 +372,30 @@ def test_the_planner_records_model_calls_and_cost_and_the_morning_report_counts_
     assert metrics["model_cost_known"] is False                    # the legacy draft's cost is unknown, not zero
 
 
+def test_a_build_the_body_died_inside_is_measured_at_its_reservation_with_its_cost_unknown(tmp_path):
+    # Genesis records each builder call's start with the ceiling it was given, and settles it with its reported cost
+    # (genesis.built) or its failure (genesis.build_failed). A call the body died inside is never settled: the build
+    # budget charges it at its reservation (acceptance H.G7), and so does the mission's cost measurement.
+    home, *_ = make_body(tmp_path)
+    with Body(home) as body:
+        j = body.journal
+        j.record("deficit.opened", {"deficit_id": "d-1", "mission_id": "m:built", "function": "f"}, key="d-1")
+        for build, end in ((1, None), (2, "built"), (3, "build_failed")):
+            j.record("genesis.build_started", {"deficit_id": "d-1", "build": build, "attempt": 1,
+                                               "builder": "test-agent", "reserved_usd": 0.60 if build == 1 else 0.40},
+                     key=["d-1", "build_started", build])
+            if end == "built":
+                j.record("genesis.built", {"deficit_id": "d-1", "build": build, "attempt": 1,
+                                           "builder": "test-agent", "cost_usd": 0.32}, key=["d-1", "built", build])
+            elif end:
+                j.record("genesis.build_failed", {"deficit_id": "d-1", "build": build, "attempt": 1,
+                                                  "error": "RuntimeError: agent crashed"}, key=["d-1", "failed", build])
+        usage = sop.model_usage(j)
+        metrics = morning_report(j)["metrics"]
+    assert usage["model_calls"] == 2 and usage["model_cost_usd"] == pytest.approx(0.92)   # interrupted + reported
+    assert usage["cost_known"] is False and metrics["model_cost_known"] is False
+
+
 def test_the_cli_shows_ratifies_and_runs_a_procedure(tmp_path):
     home, key, body_id, _ = make_body(tmp_path)
     with Body(home) as body:

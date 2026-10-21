@@ -191,14 +191,20 @@ def _manifest_before(journal: Journal, seq: dict, cid, before: int):
 
 
 def _devices_before(journal: Journal, seq: dict, before: int) -> dict:
-    devices = {}
+    """Device delegations as the ledger stood at ``before``, under the body's rule (greg.body.device_delegations):
+    a key delegated again after a revocation carries ``signed_not_before``, the recorded time of that re-delegation,
+    and nothing it signed before then verifies (an old token never reactivates)."""
+    devices, revoked = {}, set()
     for event in journal.replay("device."):
         if seq.get(event.event_id, 1 << 60) > before:
             continue
+        kid = event.payload.get("device_key_id")
         if event.type == "greg.device.enrolled":
-            devices[event.payload["device_key_id"]] = event.payload
+            devices[kid] = ({**event.payload, "signed_not_before": event.payload.get("at")} if kid in revoked
+                            else event.payload)
         elif event.type == "greg.device.revoked":
-            devices.pop(event.payload["device_key_id"], None)
+            revoked.add(kid)
+            devices.pop(kid, None)
     return devices
 
 
@@ -224,6 +230,10 @@ def _decision_signed(journal: Journal, ledger, seq: dict, answer: dict, answer_s
         if (device is None or "DECISION" not in device.get("kinds", []) or issued is None or expires is None
                 or not issued < expires):
             return False
+        if "signed_not_before" in device:    # re-delegated: unbounded (no recorded time) refuses, as old tokens do
+            not_before = _instant_or_none(device["signed_not_before"])
+            if not_before is None or issued < not_before:
+                return False
         public = device["public_key"]
     try:
         Ed25519PublicKey.from_public_bytes(bytes.fromhex(public)).verify(bytes.fromhex(env["signature"]),
@@ -387,10 +397,27 @@ def appraise(request: dict) -> dict:
         actions = [e.payload for e in action_events]
         receipts = [a["receipt"] for a in actions if a.get("receipt")]
         once = len(receipts) == len(actions) == len(set(receipts))
+        # The Gate keeps one durable dispatch claim per proposal and per grant (policy/consequence_gate.py refuses
+        # a second). A second claim in this window naming a completed action's proposal or grant is reported as
+        # the duplicate it is; it also unbinds that action's receipt, so exactly_once fails.
+        window_claims = [r.payload for r in ledger.by_type("grant_dispatch") if registered_seq < r.seq < achieved_seq]
         for event in action_events:
             action = event.payload
             receipt = ledger.find(action["receipt"]) if action.get("receipt") else None
             strategy = next((s for s in spec["strategies"] if s["action_id"] == action["action_id"]), None)
+            settled = action.get("reconciles") or {}
+            proposal = settled.get("proposal_id") or (AuthorityOffice.proposal_id(action["scope_digest"],
+                                                                                  action.get("attempt"))
+                                                      if action.get("scope_digest") else None)
+            grant_id = (receipt.payload.get("grant_id") if receipt is not None and receipt.record_type == "receipt"
+                        else settled.get("grant_id"))
+            claimed = [c for c in window_claims if (proposal and c.get("proposal_id") == proposal)
+                       or (grant_id and c.get("grant_id") == grant_id)]
+            if len(claimed) > 1:
+                once = False
+                findings.append(f"{action['action_id']}: {len(claimed)} Gate dispatch claims name its proposal or "
+                                "grant (duplicate dispatch claim; the Gate records exactly one)")
+                continue
             if (receipt is None or receipt.record_type != "receipt" or strategy is None
                     or action.get("scope_digest") is None or action.get("capability") is None
                     or not registered_seq < receipt.seq < seq[event.event_id]
@@ -401,10 +428,14 @@ def appraise(request: dict) -> dict:
                                                     observation=False, claimed_scope=action["scope_digest"],
                                                     claimed_capability=action["capability"])):
                 once = False
-                findings.append(f"{action['action_id']}: completed action lacks its signed strategy's Gate receipt")
+                findings.append(
+                    f"{action['action_id']}: recorded as settled by a founder reconciliation answer, with no Gate "
+                    "receipt; exactly-once cannot be re-derived from receipts"
+                    if receipt is None and action.get("reconciles") else
+                    f"{action['action_id']}: completed action lacks its signed strategy's Gate receipt")
         checks["exactly_once"] = once
-        if not checks["exactly_once"]:
-            findings.append("duplicate receipt or dispatch claim")
+        if len(receipts) != len(set(receipts)):   # only a real duplicate is reported as one
+            findings.append("duplicate receipt: one Gate receipt is cited by more than one completed action")
 
         # 4b. deliverables: the delivered file must be exactly the render of the receipted inputs
         # A standing mission's closure covers only the actions since its previous closure:

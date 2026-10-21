@@ -106,7 +106,7 @@
     ]
    }
   ],
-  "equality_digest": "sha256:ba309b18996903df1b05fc4ec433eed409c8db35584fe146c10b5d3e293f07d8",
+  "equality_digest": "sha256:3712a7bb014ed9d4f148ba957f417322954682d446f29262a497a8508fccb1d1",
   "equivalences": [
    {
     "a": "greg.cognition.genomes.collective:flock_dropout_instance",
@@ -199,7 +199,7 @@
     ]
    }
   ],
-  "generators_sampled": 56,
+  "generators_sampled": 57,
   "sample_seeds": [
    0,
    1,
@@ -216,7 +216,7 @@
  },
  "counts": {
   "by_lineage": {
-   "#158": 270,
+   "#158": 274,
    "#179": 40,
    "both": 42
   },
@@ -224,7 +224,7 @@
    "P8 held-out": 7,
    "admission held-out": 101,
    "canary": 1,
-   "dev": 190,
+   "dev": 194,
    "held-out": 38,
    "review-pilot": 9,
    "train": 6
@@ -235,7 +235,7 @@
    "admission held-out / #158": 68,
    "admission held-out / #179": 33,
    "canary / #158": 1,
-   "dev / #158": 167,
+   "dev / #158": 171,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 6,
@@ -243,7 +243,7 @@
    "review-pilot / #158": 9,
    "train / #158": 6
   },
-  "exposures": 352,
+  "exposures": 356,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -14252,6 +14252,176 @@
     [
      3000,
      3019
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+    "line_commits": [
+     "6bb4eb5a47745040c229cb7d6e257c85b32536d6"
+    ],
+    "lines": [
+     152
+    ],
+    "path": "tests/unit/test_graph_node_cut_genome.py",
+    "sha256": "sha256:2da1ee4499f7993ecdb22258acc288b6b27fdf0d393fdfe5246121c526c21fa6"
+   },
+   "exposure_commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+   "family": null,
+   "generator": {
+    "commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+    "key": "item.instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_graph_node_cut_genome.py|dev|-|?:item.instance:152",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "?:item.instance:152",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+    "line_commits": [
+     "6bb4eb5a47745040c229cb7d6e257c85b32536d6"
+    ],
+    "lines": [
+     213
+    ],
+    "path": "tests/unit/test_graph_node_cut_genome.py",
+    "sha256": "sha256:2da1ee4499f7993ecdb22258acc288b6b27fdf0d393fdfe5246121c526c21fa6"
+   },
+   "exposure_commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+   "family": null,
+   "generator": {
+    "commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+    "key": "item.instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_graph_node_cut_genome.py|dev|-|?:item.instance:213",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "?:item.instance:213",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+    "line_commits": [
+     "6bb4eb5a47745040c229cb7d6e257c85b32536d6"
+    ],
+    "lines": [
+     57
+    ],
+    "path": "tests/unit/test_graph_node_cut_genome.py",
+    "sha256": "sha256:2da1ee4499f7993ecdb22258acc288b6b27fdf0d393fdfe5246121c526c21fa6"
+   },
+   "exposure_commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+   "family": null,
+   "generator": {
+    "commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+    "key": "item.instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_graph_node_cut_genome.py|dev|-|?:item.instance:57",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "?:item.instance:57",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+    "line_commits": [
+     "6bb4eb5a47745040c229cb7d6e257c85b32536d6"
+    ],
+    "lines": [
+     175,
+     186,
+     197
+    ],
+    "path": "tests/unit/test_graph_node_cut_genome.py",
+    "sha256": "sha256:2da1ee4499f7993ecdb22258acc288b6b27fdf0d393fdfe5246121c526c21fa6"
+   },
+   "exposure_commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+   "family": null,
+   "generator": {
+    "commit": "6bb4eb5a47745040c229cb7d6e257c85b32536d6",
+    "key": "library.executables()[FAMILY].instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_graph_node_cut_genome.py|dev|-|?:library.executables()[FAMILY].instance:175",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 3,
+   "part": "?:library.executables()[FAMILY].instance:175",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     0
+    ],
+    [
+     3,
+     4
     ]
    ]
   },

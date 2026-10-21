@@ -38,4 +38,64 @@ def test_the_package_ships_none_and_an_archive_that_carries_one_is_blocked(tmp_p
     archive = tmp_path / "release.tar"
     with tarfile.open(archive, "w") as t:
         t.add(ROOT / path, arcname=f"release/{path}")
-    assert C.check(C.members(archive)) == [path] and C.main(["--archive", str(archive)]) == 1
+    assert any(f.startswith(f"release/{path}: ") for f in C.scan_archive(archive))
+    assert C.main(["--archive", str(archive)]) == 1
+
+
+def test_every_listed_file_carries_its_current_digest():
+    import hashlib
+    for entry in LIST["paths"]:
+        assert entry["sha256"] == "sha256:" + hashlib.sha256((ROOT / entry["path"]).read_bytes()).hexdigest(), entry
+
+
+def _excluded():
+    entry = next(e for e in LIST["paths"] if e["path"].endswith(".json") and not e["path"].endswith(".json.gz"))
+    return entry["path"], (ROOT / entry["path"]).read_bytes()
+
+
+def _tar(path, members, mode="w"):
+    with tarfile.open(path, mode) as t:
+        for name, data in members:
+            import io
+            info = tarfile.TarInfo(name)
+            info.size = len(data)
+            t.addfile(info, io.BytesIO(data))
+
+
+def test_renamed_nested_deep_and_wheel_copies_are_blocked(tmp_path):
+    """Round-2 review of #179 (N3): exact-path matching let a renamed member, a nested .tar.gz, a two-level prefix and
+    a wheel through. Digest, path-suffix and marker rules now apply at every depth."""
+    import zipfile
+    path, data = _excluded()
+    renamed = tmp_path / "renamed.tar"
+    _tar(renamed, [("release/notes/benign-name.bin", data)])
+    inner = tmp_path / "inner.tar.gz"
+    _tar(inner, [(path, data)], mode="w:gz")
+    nested = tmp_path / "nested.tar"
+    _tar(nested, [("bundle/inner.tar.gz", inner.read_bytes())])
+    deep = tmp_path / "deep.tar"
+    _tar(deep, [(f"a/b/{path}", data)])
+    wheel = tmp_path / "pkg-0.1-py3-none-any.whl"
+    with zipfile.ZipFile(wheel, "w") as z:
+        z.writestr(f"pkg/data/{Path(path).name}", data)
+    for archive in (renamed, nested, deep, wheel):
+        assert C.scan_archive(archive), archive.name
+        assert C.main(["--archive", str(archive)]) == 1, archive.name
+
+
+def test_a_reformatted_copy_is_blocked_by_its_data_markers(tmp_path):
+    """A re-serialised extract has a new digest and a new name; the listed data markers still catch it."""
+    import zipfile
+    path, data = _excluded()
+    reformatted = json.dumps(json.loads(data), indent=4).encode()
+    archive = tmp_path / "r.zip"
+    with zipfile.ZipFile(archive, "w") as z:
+        z.writestr("x/y/results.json", reformatted)
+    assert any("data markers" in f for f in C.scan_archive(archive))
+
+
+def test_a_clean_archive_passes(tmp_path):
+    archive = tmp_path / "clean.tar.gz"
+    _tar(archive, [("pkg/module.py", b"print('ok')\n"), ("pkg/data.json", b'{"a": 1}')], mode="w:gz")
+    assert C.scan_archive(archive) == [] and C.main(["--archive", str(archive)]) == 0
+

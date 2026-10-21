@@ -8,6 +8,7 @@ import pytest
 from events.spine import EventSpine, WorkflowStep, DurableWorkflow, WorkflowKilled, EventError
 from evolution.migration.migrate import to_current_checkpoint
 from evolution.repair.harness import ReplacementExperiment
+from evolution.repair.continuity import materialize
 from evolution.repair.subjects import FROZEN, SR001, SR002
 from provenance.ledger import EvidenceLedger
 
@@ -25,10 +26,17 @@ def harmless(calls):
                          retry_safe=True) for name in ("first", "second")]
 
 
-def test_current_binding_does_not_revalidate_the_old_subject():
-    assert SR002.matches(ROOT)
-    assert not SR001.matches(ROOT)
-    assert not FROZEN.matches(ROOT)
+# CONTRADICTION-0002 Option A: both tests below read the SR002 subject from its
+# frozen history (evolution/repair/continuity), not from the live tree. The live
+# tree may lawfully move; whether it moved with authorisation is
+# governance.integrity's question.
+
+def test_current_binding_does_not_revalidate_the_old_subject(tmp_path):
+    subject_tree = materialize(SR002.artifacts, tmp_path)
+    assert SR002.matches()
+    assert SR002.matches(subject_tree)
+    assert not SR001.matches(subject_tree)
+    assert not FROZEN.matches(subject_tree)
     with pytest.raises(ValueError, match="unreviewed"):
         ReplacementExperiment(subject=replace(SR002, source_commit="invented"))
 
@@ -37,7 +45,7 @@ def test_changed_source_fails_instead_of_learning_a_new_fingerprint(tmp_path):
     for relative, _ in SR002.artifacts:
         target = tmp_path / relative
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes((ROOT / relative).read_bytes())
+        target.write_bytes(SR002.frozen_bytes(relative))
     assert SR002.matches(tmp_path)
     with (tmp_path / "policy/consequence_gate.py").open("a") as handle:
         handle.write("\n# source changed after review\n")

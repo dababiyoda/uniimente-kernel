@@ -53,7 +53,15 @@ COMMAND_KINDS = (
     "GOAL",               # authorize (or supersede) a persistent Goal Gravity goal bound to signed missions
     "GOAL_CONTROL",       # stop/resume/lower/never/mute/ask-before/forget/revoke one admitted goal
     "REALIZATION",        # bind observed values to one retained forecast receipt: evidence only, no consequence
+    "TREASURY_REQUIREMENTS",  # per-tier obligation and reserve amounts for one venture's books; moves no money
+    "FOUNDER_TIER",       # the signing key attests passphrase custody; grants nothing (greg/metrics.py founder_tier)
 )
+# FOUNDER_TIER's only body. The CLI signs it only from a passphrase-encrypted key file (``greg founder attest``,
+# and ``greg body designate`` when the key is protected), so the supported tools never sign it for a
+# --no-passphrase key, a test fixture's key or the ``greg rehearse`` throwaway key. It is the key holder's claim,
+# not verified custody: the body cannot see how a key is stored, and any holder of an enrolled key, protected or
+# not, can sign this body directly (greg/metrics.py founder_tier states the residual).
+FOUNDER_TIER_BODY = {"key_custody": "passphrase"}
 MAX_TTL = timedelta(days=7)
 # A device key (e.g. Alfonso's phone) is a delegation, never a second founder: it may only
 # answer, criticize, pause, resume or stop. Missions, goals, capabilities, key rotation and
@@ -277,6 +285,14 @@ class FounderVerifier:
             raise FounderAuthError("command lifetime invalid")
         if not issued - CLOCK_SKEW <= now < expires:
             raise FounderAuthError("command expired or issued in the future")
+        device = self.devices.get(envelope["founder_key_id"]) if envelope["founder_key_id"] not in self.enrolled \
+            else None
+        if device and device.get("signed_not_before") and issued < instant(device["signed_not_before"]):
+            # An old token never reactivates: a key delegated again after a revocation verifies only what it
+            # signed after the body recorded the new delegation (greg.body.device_delegations).
+            raise FounderAuthError("signed before this device key's current delegation: nothing the key signed "
+                                   "before it was delegated again (under the revoked delegation, or while revoked) "
+                                   "ever verifies")
         if not isinstance(envelope["body"], dict):
             raise FounderAuthError("command body must be an object")
         try:

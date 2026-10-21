@@ -552,6 +552,7 @@ def qualify_package(function: str, candidate: PackageCandidate, card: dict, seed
 
 
 FORMED = ("built:", "installed:", "composed:")   # providers Genesis formed, and therefore can re-form
+AUTO_ATTACH = "founder-signed mission auto_attach (read_only)"   # Genesis._attach, the one attach it records itself
 FAULT_MARKERS = ("capability refused: built capability", "capability refused: installed binary changed",
                  "capability refused: package", "capability refused: composed")
 
@@ -675,6 +676,27 @@ class Genesis:
                 self._restore_note({"capability_id": cid, "state": "QUARANTINED",
                                                          "why": "binary missing or changed since verification"},
                                     key=[cid, "quarantine", manifest.provenance.get("binary_sha256")])
+        if record:
+            self._finish_attaches()
+
+    def _finish_attaches(self):
+        """Resolve the deficit of an auto-attach the body died inside (acceptance H.G7).
+
+        ``_attach`` records two facts in turn: the capability ATTACHED, then its deficit resolved. A body killed
+        between them restarts with the capability serving the mission and its deficit open for good, since a
+        function with an attached capability is never resolved again (and the closure would not count as formed
+        by genesis, greg/path.py). The second fact is completed from the first, dated when the attach happened."""
+        resolved = {e.payload["deficit_id"] for e in self.journal.replay("deficit.resolved")}
+        for event in self.journal.replay("capability.state"):
+            data = event.payload
+            if data.get("state") == "ATTACHED" and data.get("by") == AUTO_ATTACH and data.get("deficit_id") \
+                    and data["deficit_id"] not in resolved:
+                self.journal.record("deficit.resolved", {
+                    "deficit_id": data["deficit_id"], "capability_id": data["capability_id"],
+                    "mission_id": data["mission_id"], "resume": "original mission", "at": event.occurred_at,
+                    "completed_at_restart": "the body stopped between the attach and this record"},
+                    key=[data["deficit_id"], "resolved"])
+                resolved.add(data["deficit_id"])
 
     def _restore_note(self, payload, key):
         if getattr(self, "_recording", True):
@@ -785,11 +807,13 @@ class Genesis:
         engines are probed before the constructions that depend on them. Identity-changing quarantines
         (pins, code, missing source) are never probed: the same identity cannot be re-earned."""
         results = []
+        formed = [m for m in self.registry.manifests.values()
+                  if is_formed(m) and self.registry.state.get(m.capability_id) == "QUARANTINED"]
+        if not formed:                                     # every replay re-verifies the whole ledger chain:
+            return results                                 # a healthy body pays nothing for recovery each tick
         probes = [e.payload for e in self.journal.replay("capability.probe")]
         stopped = {(e.payload["capability_id"], e.payload["incident"])
                    for e in self.journal.replay("capability.recovery_stopped")}
-        formed = [m for m in self.registry.manifests.values()
-                  if is_formed(m) and self.registry.state.get(m.capability_id) == "QUARANTINED"]
         for manifest in sorted(formed, key=lambda m: (m.provider.startswith("composed:"), m.capability_id)):
             cid = manifest.capability_id
             if self.registry.state.get(cid) != "QUARANTINED":
@@ -890,6 +914,8 @@ class Genesis:
         engine = self.construction_engine(function)
         if engine:
             targets |= {m.capability_id for m in self.registry.by_function(engine)}
+        if not any(self.registry.state.get(cid) == "VERIFIED" for cid in targets):
+            return []                                      # nothing re-admittable; skip the full-ledger replay
         return [f"{e.payload['capability_id']}@{e.payload['incident']}" for e in self.journal.replay("capability.state")
                 if e.payload["capability_id"] in targets and e.payload.get("by") == RECOVERED_BY
                 and self.registry.state.get(e.payload["capability_id"]) == "VERIFIED"]
@@ -1484,19 +1510,19 @@ class Genesis:
         # generation: a capability that keeps breaking cannot spend past what the founder signed.
         generations = {e.payload["deficit_id"] for e in self.journal.replay("deficit.opened")
                        if e.payload["mission_id"] == mission.mission_id and e.payload["function"] == function}
-        # Spend is every billed attempt: built candidates and attempts that produced none (genesis.unbuilt).
-        spent = sum(e.payload.get("cost_usd") or 0.0 for kind in ("genesis.built", "genesis.unbuilt")
-                    for e in self.journal.replay(kind) if e.payload["deficit_id"] in generations | {deficit_id})
+        # Spend: every reported bill (a candidate or none) and every build that started and never settled.
+        spent = self._build_spend(generations | {deficit_id})
         # A paid candidate an outage left unjudged is judged first and never paid for again; judging costs
         # nothing, so it is judged even when its own bill used up the budget.
         pending = self._unjudged_builds(deficit_id)
-        if not pending and (contract["build_budget_usd"] <= 0 or spent >= contract["build_budget_usd"]):
+        if not pending and (contract["build_budget_usd"] <= 0 or round(contract["build_budget_usd"] - spent, 6) <= 0):
             self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
             self._route(deficit_id, "founder", "escalated", None)
             return None
         # The build budget is carved from the light cone, which actions spend too: a build never takes more
-        # than the cone has left (MissionBook books every build on it).
-        cone_left = mission.cone.budget_usd - getattr(mission, "spent_usd", 0.0)
+        # than the cone has left (MissionBook books every build on it). What is left excludes every open
+        # reservation too: an uncertain dispatch at its worst case and a build the body died inside.
+        cone_left = mission.cone.budget_usd - getattr(mission, "committed_usd", getattr(mission, "spent_usd", 0.0))
         spent_at_entry = spent
         if not pending and cone_left <= 0:
             self._route(deficit_id, "builder", "the mission's light cone has no budget left for a build", None)
@@ -1514,7 +1540,7 @@ class Genesis:
         except CapabilityError as exc:
             self._route(deficit_id, "builder", f"not attempted: host outage ({str(exc)[:200]})", None)
             raise
-        used = max([e.payload.get("attempt") or 0 for kind in ("genesis.built", "genesis.unbuilt")
+        used = max([e.payload.get("attempt") or 0 for kind in ("genesis.built", "genesis.unbuilt", "genesis.build_failed")
                     for e in self.journal.replay(kind) if e.payload["deficit_id"] == deficit_id], default=0)
         slots = [a for _, a in pending] + list(range(used + 1, 3))   # never more than two attempts per deficit
         for attempt in slots:
@@ -1524,34 +1550,52 @@ class Genesis:
                 source = built["source"]
                 digest = hashlib.sha256(source.encode()).hexdigest()
             else:
-                remaining = min(contract["build_budget_usd"] - spent, cone_left - (spent - spent_at_entry))
+                remaining = round(min(contract["build_budget_usd"] - spent, cone_left - (spent - spent_at_entry)), 6)
                 if remaining <= 0:   # re-checked per attempt: every attempt is spend
                     self._route(deficit_id, "builder", "no founder-signed build budget remains", None)
                     break
                 if self.builder_cap is not None:   # per attempt: this function's remaining signed budget
                     self.builder.max_budget_usd = min(self.builder_cap, remaining)
+                # Each builder call is its own fact, numbered per deficit, so a call made again after a restart is
+                # charged again and never collides with the call before it. Its start is recorded first, with the
+                # most it may spend: a call interrupted inside the builder never reports its cost, and _build_spend
+                # charges it at that ceiling instead of at zero (acceptance H.G7).
+                build = 1 + sum(1 for e in self.journal.replay("genesis.build_started")
+                                if e.payload["deficit_id"] == deficit_id)
+                self.journal.record("genesis.build_started", {
+                    "deficit_id": deficit_id, "build": build, "attempt": attempt,
+                    "builder": getattr(self.builder, "identity", type(self.builder).__name__),
+                    "reserved_usd": min(self.builder_cap, remaining) if self.builder_cap is not None else remaining,
+                    "reserved_as": "the builder's per-call ceiling" if self.builder_cap is not None
+                                   else "what remains of the signed build budget (the builder declares no ceiling)"},
+                    key=[deficit_id, "build_started", build])
                 try:
                     built = self.builder.build(request, feedback)
                 except Exception as exc:  # the builder is untrusted; its failure is evidence
                     why = f"attempt {attempt} failed: {type(exc).__name__}: {exc}"[:300]
+                    self.journal.record("genesis.build_failed", {"deficit_id": deficit_id, "build": build,
+                                                                 "attempt": attempt,
+                                                                 "error": f"{type(exc).__name__}: {exc}"[:300]},
+                                        key=[deficit_id, "build_failed", build])
                     cost = getattr(exc, "cost_usd", None)
                     if cost:   # billed although no candidate came back (e.g. a withheld substituted answer)
-                        self.journal.record("genesis.unbuilt", {"deficit_id": deficit_id, "attempt": attempt,
-                                                                "cost_usd": cost, "why": why, "at": iso(now)})
+                        self.journal.record("genesis.unbuilt", {"deficit_id": deficit_id, "build": build,
+                                                                "attempt": attempt, "cost_usd": cost, "why": why,
+                                                                "at": iso(now)})
                     self._route(deficit_id, "builder", why, None)
                     break
                 spent += float(built.get("cost_usd") or 0.0)
                 source = built["source"]
                 digest = hashlib.sha256(source.encode()).hexdigest()
                 self.journal.record("genesis.built", {
-                    "deficit_id": deficit_id, "attempt": attempt, "builder": built["builder"],
+                    "deficit_id": deficit_id, "build": build, "attempt": attempt, "builder": built["builder"],
                     "prompt_sha256": built.get("prompt_sha256"), "source_sha256": digest,
                     "cost_usd": built.get("cost_usd"), "sees": "description, signature, public examples only",
                     "served_model": built.get("served_model"), "routes_tried": built.get("routes_tried"),
                     **({"model_digest": built["model_digest"]} if built.get("model_digest") else {}),
                     # the model identity evidence: what was asked for and whether another model answered
                     **{k: built[k] for k in ("requested_model", "substituted") if built.get(k) is not None}},
-                    key=[deficit_id, attempt, digest])
+                    key=[deficit_id, "built", build])
             problems = builders.screen(source)
             path = self.objects.path("sha256:" + digest)
             if not problems:
@@ -1647,6 +1691,18 @@ class Genesis:
             out.append(({**p, "source": data.decode("utf-8", errors="replace")}, p["attempt"]))
         return out
 
+    def _build_spend(self, deficits: set) -> float:
+        """What builds charged against the signed build budget of these deficits: each reported cost, and each
+        build that started and never settled (the body died inside the builder's call) at its reserved ceiling."""
+        settled = {(e.payload["deficit_id"], e.payload.get("build"))
+                   for kind in ("genesis.built", "genesis.build_failed") for e in self.journal.replay(kind)}
+        # Reported: every billed call, a candidate (genesis.built) or none (genesis.unbuilt: billed and failed).
+        reported = sum(e.payload.get("cost_usd") or 0.0 for kind in ("genesis.built", "genesis.unbuilt")
+                       for e in self.journal.replay(kind) if e.payload["deficit_id"] in deficits)
+        return reported + sum(e.payload["reserved_usd"] for e in self.journal.replay("genesis.build_started")
+                              if e.payload["deficit_id"] in deficits
+                              and (e.payload["deficit_id"], e.payload["build"]) not in settled)
+
     def _built_manifest(self, function, contract, built, digest, deficit_id, report) -> CapabilityManifest:
         return CapabilityManifest(
             capability_id=f"built.{function}.{digest[:12]}", version="1.0.0", provider=f"built:{built['builder']}",
@@ -1722,7 +1778,7 @@ class Genesis:
             return None
         self.registry.set_state(manifest.capability_id, "ATTACHED")
         self.journal.record("capability.state", {"capability_id": manifest.capability_id, "state": "ATTACHED",
-                                                 "by": "founder-signed mission auto_attach (read_only)",
+                                                 "by": AUTO_ATTACH,
                                                  "mission_id": mission.mission_id, "deficit_id": deficit_id},
                             key=[manifest.capability_id, "attached", mission.mission_id, deficit_id])
         self.journal.record("deficit.resolved", {"deficit_id": deficit_id, "capability_id": manifest.capability_id,

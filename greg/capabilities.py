@@ -26,10 +26,12 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 import urllib.parse
 import urllib.request
 
 from capabilities.genome import AuthorityEnvelope, CapabilityGenome, GenomeRegistry, CONSEQUENCE_CLASSES
+from greg import egress, isolation
 
 ROUTES = ("api", "app_integration", "cli", "browser", "os_automation", "visual", "internal")
 # Spider-Web Compounding Rule (INTENT-2026-09-25-SPIDER-WEB-COMPOUNDING): every
@@ -307,8 +309,18 @@ def fs_list(params, ctx: InvocationContext) -> dict:
 
 
 def fs_write(params, ctx: InvocationContext) -> dict:
+    """Write one text file in the mission workspace, and only the file the signed target names.
+
+    The founder-signed target (``workspace:<relative path>``) binds the file: a parameter value that
+    a typed handoff supplied (greg/pipeline.py, a strategy's ``bind``) can change what is written,
+    never where. Without this, a document's text could pick which workspace file is overwritten,
+    including the evidence a person's work is measured by (review of 2026-10-14; artifact.materialize
+    already binds its path the same way)."""
     ctx.workspace.mkdir(parents=True, exist_ok=True)
     path = _inside(ctx.workspace / params["relative_path"], (ctx.workspace,))
+    named = "workspace:" + path.relative_to(Path(ctx.workspace).resolve()).as_posix()
+    if ctx.target != named:
+        raise CapabilityError(f"write path {named!r} does not match the signed target {ctx.target!r}")
     content = params["content"]
     if not isinstance(content, str) or len(content.encode()) > MAX_READ_BYTES:
         raise CapabilityError("content must be text under the write ceiling")
@@ -353,16 +365,21 @@ REFUSALS = {b"F": "filesystem confinement unavailable; command refused",
             b"N": "network isolation unavailable; command refused"}
 
 
-def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int):
+def _isolating_preexec(install_filter, confine: dict | None, refused_fd: int, *, grants=None, libc=None):
     """Fail closed without an exit status: a command's own exit 97 or 98 must never read as a refusal
     (nor a refusal as a command that ran). The child writes why to a close-on-exec pipe only the body
     holds, then raises, so the command never executes and Popen reports the failure to the parent."""
     from greg.isolation import confine_paths      # resolved here, in the parent: the child imports nothing
 
+    from greg.isolation import restrict
+
     def preexec():
-        if confine is not None:
+        if confine is not None or grants is not None:
             try:
-                confine_paths(**confine)
+                if confine is not None:
+                    confine_paths(**confine)
+                if grants is not None:
+                    restrict(grants, libc)         # precomputed in the body: the child only makes syscalls
             except Exception:
                 os.write(refused_fd, b"F")         # never run a confined command unconfined
                 raise
@@ -379,7 +396,8 @@ MACOS_NO_NETWORK = "(version 1)(allow default)(deny network*)"
 
 def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout: int = 30,
                  extra_env: dict | None = None, input_bytes: bytes | None = None,
-                 confine: dict | None = None, stop_check=None) -> subprocess.CompletedProcess:
+                 confine: dict | None = None, stop_check=None,
+                 confine_to: Path | None = None) -> subprocess.CompletedProcess:
     """Run one command with a scrubbed environment and, by default, no network.
 
     Linux: the Kernel's seccomp filter (tools/offline_test.py, held in memory). macOS: the system
@@ -389,28 +407,58 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
     ``stop_check`` runs the command supervised (``workers.supervised_run``): founder STOP is polled,
     the process group is killed, and on Linux the child dies with the body; a stop raises
     ``workers.WorkerInterrupted``.
+
+    ``confine_to``: for code GREG runs on a worker's behalf (its patch's tests). On Linux with Landlock
+    (ABI >= 3) the command and everything it starts read only the host runtime and write only that
+    directory (``greg.isolation.worker_grants``; TMPDIR is a directory inside it), so the patch cannot read
+    the Body home into its output or write outside it, as the worker itself cannot. Where Landlock is absent
+    it runs as before. The returned process carries ``confinement`` either way.
     """
     env = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "HOME": str(cwd), **(extra_env or {})}
-    preexec = None
+    confinement, grants, libc = None, None, None
+    if confine_to is not None:
+        # Code GREG runs on a worker's behalf (its patch's tests): confined like the worker itself.
+        status = isolation.available()
+        if status.get("available"):
+            try:
+                grants, libc = isolation.worker_grants(confine_to), isolation._libc()
+            except isolation.IsolationError as exc:
+                raise CapabilityError(f"the command cannot be confined, so it is refused: {exc}") from None
+            # A fresh name per run: a fixed one could be planted by the worker (a file, a symlink) and make
+            # GREG's own acceptance run fail before the command starts.
+            scratch = Path(tempfile.mkdtemp(prefix=".greg-tmp-", dir=confine_to))
+            env["TMPDIR"] = str(scratch)
+            confinement = {"filesystem": "landlock", "abi": status["abi"],
+                           "writable": [str(Path(confine_to).resolve())]}
+        else:
+            confinement = {"filesystem": "none",
+                           "reason": status.get("reason") or f"Landlock ABI {status.get('abi')} below 3"}
     if confine is not None and sys.platform == "darwin":
         raise CapabilityError("filesystem confinement unavailable on this host; command refused")
+    proc = None
     if isolate_network and sys.platform == "darwin":
         if not Path("/usr/bin/sandbox-exec").exists():
             raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
         argv = ["/usr/bin/sandbox-exec", "-p", MACOS_NO_NETWORK, *argv]
-    elif isolate_network or confine is not None:
+    elif isolate_network or confine is not None or grants is not None:
         install_filter = _network_filter() if isolate_network else (lambda: None)
         if install_filter is None:
             raise CapabilityError("network isolation unavailable; command refused", failure_class="transient")
         refused_r, refused_w = os.pipe()          # close-on-exec: the command itself never holds it
         try:
-            return _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
-                          preexec=_isolating_preexec(install_filter, confine, refused_w), refused=refused_r)
+            proc = _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
+                          preexec=_isolating_preexec(install_filter, confine, refused_w, grants=grants, libc=libc),
+                          refused=refused_r)
         finally:
             os.close(refused_r)
             os.close(refused_w)
-    return _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
-                  preexec=None, refused=None)
+    if proc is None:
+        proc = _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
+                      preexec=None, refused=None)
+    proc.confinement = confinement
+    if confinement and confinement.get("filesystem") == "landlock":
+        shutil.rmtree(env["TMPDIR"], ignore_errors=True)
+    return proc
 
 
 def _spawn(argv, *, cwd, env, timeout, input_bytes, stop_check, preexec, refused):
@@ -513,15 +561,21 @@ def http_get(params, ctx: InvocationContext) -> dict:
         except (SegmentationError, PermissionError) as exc:
             raise CapabilityError(f"confined egress refused: {exc}") from None
         status, body, route = out["status"], out["body"], "confined-relay"
+        final_url = out.get("final_url", url)
     else:
         request = urllib.request.Request(url, headers={"User-Agent": "uniimente-greg/0.1"})
-        with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - allowlisted https only
-            body = response.read(MAX_READ_BYTES + 1)
-            status = response.status
+        try:
+            # Every redirect hop is re-checked against this capability's allowlist.
+            with egress.open_checked(request, allowlist=ctx.manifest.egress_allowlist, timeout=20) as response:
+                body = response.read(MAX_READ_BYTES + 1)
+                status = response.status
+                final_url = response.geturl()
+        except egress.EgressRefused as exc:
+            raise CapabilityError(str(exc)) from None
         route = "body-process"
     if len(body) > MAX_READ_BYTES:
         raise CapabilityError("response exceeds read ceiling")
-    return {"url": url, "status": status, "sha256": hashlib.sha256(body).hexdigest(),
+    return {"url": url, "final_url": final_url, "status": status, "sha256": hashlib.sha256(body).hexdigest(),
             "text": body.decode("utf-8", errors="replace"), "trust": "untrusted-external-data", "egress": route}
 
 
@@ -727,6 +781,7 @@ STRENGTHENS = {
     "venture.status": ("proof",),
     "organs.exchange": ("routing", "proof", "eligibility", "settlement"),
     "organs.exchange_status": ("proof",),
+    "business.reconcile": ("proof", "settlement"),
     "worker.commission": ("capability_formation", "routing", "settlement", "compounding"),
     "worker.appraise": ("proof", "eligibility", "reliability"),
     "browser.session": ("proof", "capability_formation", "settlement"),
@@ -815,7 +870,8 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                              retry_safe=True), git_inspect),
     "http.get": (_builtin("http.get", "web.fetch", "HTTPS GET from an explicit egress allowlist", "api",
                           "read_only", "https:", {"url": "str"},
-                          {"url": "str", "status": "int", "sha256": "str", "text": "str", "trust": "str"},
+                          {"url": "str", "final_url": "str", "status": "int", "sha256": "str", "text": "str", "egress": "str",
+                           "trust": "str"},
                           network="egress-allowlist", egress_allowlist=("example.com",),
                           data_classes=("public_web",), retry_safe=True), http_get),
     "browser.render": (_builtin("browser.render", "web.render",
@@ -905,6 +961,21 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                                               "adapters/daleobanks_opportunity + "
                                                               "wealthmachine_assessment (Bridge A)"}),
                        _lazy("greg.ventures", "assess")),
+    "business.reconcile": (_builtin("business.reconcile", "business.reconcile",
+                                    "Match exactly one exported statement row to a signed price, currency and "
+                                    "case reference (to the cent; ambiguous or near matches never count)", "api",
+                                    "read_only", "fs:", {"path": "str", "amount": "number", "currency": "str",
+                                                         "reference": "str", "columns": "dict?",
+                                                         "minor_units": "bool?"},
+                                    {"matched": "bool", "matches": "int", "rows_read": "int", "row": "int?",
+                                     "sha256": "str?", "detail": "str"},
+                                    filesystem="read-scoped", retry_safe=True,
+                                    tests=("tests/unit/test_greg_business_case.py",),
+                                    provenance={"source": "uniimente-kernel/greg/business_loop.py",
+                                                "mechanism_from": "business/commercial_loop.py stage order; "
+                                                                  "beancount/hledger exact single-posting "
+                                                                  "matching (DISCOVER, no code copied)"}),
+                           _lazy("greg.business_loop", "reconcile")),
     "venture.status": (_builtin("venture.status", "venture.assessment_status",
                                 "Has a decision memo been delivered for this signal manifest, and with what "
                                 "binding verdict", "api", "read_only", "deliver:", {"manifest": "path"},
@@ -1049,8 +1120,10 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                     "Request one publish through DALEOBANKS's own gate (decision ledger, LIVE kill "
                                     "switch, rate governor); a dry-run is reported as a block, never as a post",
                                     "cli", "external_contact", "daleobanks:",
-                                    {"daleobanks_root": "path", "draft": "path", "python": "path?"},
-                                    {"status": "str", "why": "str", "published": "dict", "daleobanks_ledger": "dict"},
+                                    {"daleobanks_root": "path", "draft": "path", "python": "path?",
+                                     "daleobanks_grant": "str?", "draft_id": "str?"},
+                                    {"status": "str", "why": "str", "published": "dict", "daleobanks_ledger": "dict",
+                                     "publish_gated": "list"},
                                     filesystem="workspace-write", binaries=(sys.executable,),
                                     # DALEOBANKS's X client (tweepy): the API and media-upload hosts. A confined
                                     # body's relay allows exactly these; nothing is reachable unless LIVE is armed.

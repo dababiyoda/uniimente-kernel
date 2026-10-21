@@ -14,6 +14,7 @@ import sys
 
 import pytest
 
+from greg import isolation as landlock
 from greg import templates, workers
 from greg import worker_isolation as isolation
 from greg.body import Body, Layout, init_body
@@ -21,7 +22,10 @@ from tests.greg_fixtures import Clock, drop, make_body, signed
 
 AGENT = '''import sys
 from pathlib import Path
-Path(sys.argv[1]).write_text("ran with the body's reach")     # outside the clone: only an unconfined worker can
+try:
+    Path(sys.argv[1]).write_text("ran with the body's reach")  # outside the clone: only an unconfined worker can
+except OSError:
+    pass                                                       # #178's Landlock floor under supervision refused it
 sys.stdin.read()
 Path("pkg/calc.py").write_text("def add(a, b):\\n    return a + b\\n\\n\\ndef sub(a, b):\\n    return a - b\\n")
 Path("tests").mkdir(exist_ok=True)
@@ -132,10 +136,16 @@ def test_supervised_runs_the_worker_and_says_exactly_what_was_not_confined(tmp_p
     summary = json.loads(evidence.read_text())["summary"]
     assert summary["status"] == "COMPLETED" and summary["commit"]
     iso = summary["worker"]["isolation"]
-    assert iso["mode"] == "supervised" and iso["filesystem"].startswith("NOT OS-confined")
+    assert iso["mode"] == "supervised"
     assert iso["network"].startswith("NOT isolated") and "unreviewed" in iso["envelope_refused"]
-    # The evidence is true: the worker did reach outside its clone.
-    assert marker.exists()
+    # The evidence is true for whichever floor ran (#178 I.G6 under #184's setting): with Landlock the worker could
+    # not reach outside its clone and the report says Landlock; without it the worker did, and the report says so.
+    if landlock.available().get("available"):
+        assert iso["filesystem"].startswith("Landlock") and iso["confinement"]["filesystem"] == "landlock"
+        assert not marker.exists()
+    else:
+        assert iso["filesystem"].startswith("NOT OS-confined") and iso["confinement"]["filesystem"] == "none"
+        assert marker.exists()
     # Acceptance still ran in the envelope, because this host provides it.
     assert summary["greg_tests_passed"]
     assert all(t["confinement"].startswith("envelope") for t in summary["greg_tests"])
@@ -177,7 +187,8 @@ def test_acceptance_without_an_envelope_follows_the_setting_and_never_opens_the_
     elif result["confinement"] == "refused":          # this host has no network filter either: refused, not run
         assert "network isolation unavailable" in result["tail"]
     else:
-        assert result["confinement"].startswith("supervised") and "NOT confined" in result["confinement"]
+        floor = "confined by Landlock" if landlock.available().get("available") else "NOT confined"
+        assert result["confinement"].startswith("supervised") and floor in result["confinement"], result
         assert result["passed"], result["tail"]        # the socket was refused: the network stayed closed
 
 

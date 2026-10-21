@@ -28,8 +28,10 @@ Limits (stated, not hidden): reviewed worker processes require OS filesystem con
 a private HOME and a scrubbed environment (``greg/worker_isolation.py``, extracted from #157);
 unsupported hosts refuse dispatch, unless the founder initialized the body with
 ``worker_confinement: supervised``, in which case a worker the envelope cannot confine runs under
-#178's process supervision and its report says the filesystem and network were not confined
-(``SUPERVISION``). Provider network access remains available and is
+#178's process supervision with #178's Landlock filesystem floor where the host has Landlock ABI >= 3
+(it reads only the host runtime and the files it is handed, and writes only its work directory;
+``greg.isolation.worker_grants``). Its report says which (``SUPERVISION``, ``confinement``); network
+is never confined on that path. Provider network access remains available and is
 explicitly reported, so this is not a network isolation claim. GREG's acceptance tests run in
 private filesystem, PID and network namespaces. Spend uses finite provider reports or a
 conservative full-cap reservation when unknown.
@@ -52,6 +54,7 @@ import sys
 import tempfile
 import time
 
+from greg import isolation
 from greg.capabilities import CapabilityError, InvocationContext, _inside
 from greg.worker_isolation import WorkerIsolationError, envelope_cannot_confine, prepare_worker
 
@@ -299,6 +302,14 @@ class WorkerReport:
     error: str | None = None
     isolation: dict = field(default_factory=dict)
     interrupted: bool = False
+    confinement: dict | None = None   # what the OS enforced on the worker's filesystem (#178 I.G6)
+
+    def __post_init__(self):
+        # One statement of filesystem enforcement whichever path ran: the Landlock floor under supervision records
+        # its own; the bubblewrap envelope's evidence already says "os-confined" and by which mechanism.
+        if self.confinement is None and self.isolation:
+            self.confinement = self.isolation.get("confinement") or {
+                k: self.isolation[k] for k in ("filesystem", "mechanism") if k in self.isolation} or None
 
 
 def worker_spend(raw, cap: float) -> dict:
@@ -391,6 +402,31 @@ def _die_with_body():
         ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, 9)   # PR_SET_PDEATHSIG = 1, SIGKILL = 9
 
 
+def _confined(cwd: Path, binary, read_files=()) -> tuple:
+    """The ``preexec_fn`` that confines one worker process, and the record of what it enforces.
+
+    The grants are computed here, in the Body, so the child after fork only makes syscalls. A policy that
+    cannot be built safely (a runtime root containing the workspace) refuses the worker; a host with no
+    usable Landlock runs it as before and says so.
+    """
+    status = isolation.available()
+    if not status.get("available"):
+        reason = status.get("reason") or f"Landlock ABI {status.get('abi')} below 3"
+        return _die_with_body, {"filesystem": "none", "reason": reason}
+    try:
+        grants = isolation.worker_grants(cwd, binaries=[binary], read_files=read_files)
+        libc = isolation._libc()
+    except isolation.IsolationError as exc:
+        raise WorkerError(f"the worker cannot be confined, so it is refused: {exc}") from None
+
+    def preexec():
+        _die_with_body()
+        isolation.restrict(grants, libc)
+
+    return preexec, {"filesystem": "landlock", "abi": status["abi"], "writable": [str(cwd)],
+                     "readable": sorted(str(p) for p in grants if p != cwd.resolve())}
+
+
 def _worker_env(workspace: Path) -> dict:
     """No ambient keys, home, proxy, SDK configuration or unrelated environment.
 
@@ -457,7 +493,24 @@ def _confined_or_supervised(prepare, argv: list[str], cwd: Path, *, confinement:
         runtime = cwd.parent / "supervised-runtime"
         runtime.mkdir(mode=0o700, exist_ok=True)
         return {"argv": list(argv), "env": _worker_env(cwd), "preexec_fn": _die_with_body, "pass_fds": [],
-                "runtime_root": runtime, "evidence": {**SUPERVISION, "envelope_refused": str(exc)[:300]}}
+                "runtime_root": runtime, "landlock_floor": True,
+                "evidence": {**SUPERVISION, "envelope_refused": str(exc)[:300]}}
+
+
+def _landlock_floor(envelope: dict, cwd: Path, binary, read_files=()) -> dict:
+    """Under supervision only: #178's Landlock confinement (I.G6) as the floor beneath the refused envelope.
+
+    The worker then reads only the host runtime and ``read_files`` and writes only ``cwd``. Where the host has no
+    usable Landlock it runs as supervision always did, and its evidence says so; a policy that cannot be built
+    safely (a runtime root containing the workspace) refuses the worker. The bubblewrap envelope is untouched."""
+    if not envelope.get("landlock_floor"):
+        return envelope
+    preexec, floor = _confined(cwd, binary, read_files=read_files)
+    evidence = {**envelope["evidence"], "confinement": floor}
+    if floor.get("filesystem") == "landlock":
+        evidence["filesystem"] = ("Landlock: reads only the host runtime and the files named for this order; "
+                                  "writes only the work directory (same UID as the body)")
+    return {**envelope, "preexec_fn": preexec, "evidence": evidence}
 
 
 class ClaudeCodeWorker:
@@ -505,6 +558,7 @@ class ClaudeCodeWorker:
                                                      Path.home() / ".claude" / ".credentials.json"},
                                        **({"door": door} if door is not None else {})),
                 argv, cwd, confinement=confinement, door=door)
+            envelope = _landlock_floor(envelope, cwd, self.binary)
             with _evidence_of(envelope):
                 return self._run(order, cwd, envelope, stop_check)
 
@@ -585,7 +639,11 @@ class CliAgentWorker:
         prompt = worker_prompt(order)
         prompt_file = envelope["runtime_root"] / f"{order.order}.prompt.txt"
         prompt_file.write_text(prompt)
+        # The resolved binary (envelope argv[0]); a declared argv may name the program's own script
+        # (``python worker.py``): on the Landlock floor it must stay readable, or the worker cannot even start (#178).
         argv = [a.replace("{prompt_file}", str(prompt_file)) for a in envelope["argv"]]
+        scripts = [Path(a) for a in self.template[1:] if "{" not in a and Path(a).is_absolute() and Path(a).is_file()]
+        envelope = _landlock_floor(envelope, cwd, self.binary, read_files=[prompt_file, *scripts])
         started = time.monotonic()
         try:
             proc = self.runner(argv, input=prompt if self.stdin else None, capture_output=True, text=True,
@@ -783,15 +841,17 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
 
     Worker-written tests are untrusted code. On a host that cannot provide the envelope (no usable
     bubblewrap), the command is refused and recorded as failed; it never runs with GREG's own reach.
-    The one exception is the founder's ``supervised`` body setting: there the command runs as #178 ran
-    it, scrubbed and with the network denied (seccomp / sandbox-exec), and its result says the filesystem
-    was not confined. Without network denial it is refused in every mode."""
+    The one exception is the founder's ``supervised`` body setting: there the command runs as #178 runs
+    it, scrubbed, with the network denied (seccomp / sandbox-exec) and, where the kernel has Landlock,
+    confined as the worker was (``confine_to``: it reads only the host runtime and writes only its clone);
+    its result says which. Without network denial it is refused in every mode."""
     from greg.capabilities import run_isolated
     results = []
     for argv in tests:
         argv = [sys.executable if a in ("python", "python3") else a for a in argv]
         started = time.monotonic()
         mode = "envelope: private filesystem, PID and network namespaces"
+        filesystem = {"filesystem": "os-confined", "mechanism": "bubblewrap"}
         try:
             try:
                 envelope = prepare_worker(argv, cwd, timeout_seconds=timeout, provider="acceptance-tests",
@@ -801,10 +861,14 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
                 # Acceptance the envelope cannot host is only acceptance on a host without it.
                 if confinement_mode(confinement) != "supervised" or not envelope_cannot_confine(exc):
                     raise
-                mode = "supervised: network denied, environment scrubbed, filesystem NOT confined"
                 proc = run_isolated(argv, cwd=cwd, isolate_network=True, timeout=timeout, stop_check=stop_check,
+                                    confine_to=cwd,
                                     extra_env={"PATH": f"{Path(sys.executable).parent}:/usr/bin:/bin",
                                                "PYTHONDONTWRITEBYTECODE": "1"})
+                floor = filesystem = getattr(proc, "confinement", None)
+                mode = ("supervised: network denied, environment scrubbed, filesystem confined by Landlock "
+                        "(reads the runtime, writes only the clone)" if floor else
+                        "supervised: network denied, environment scrubbed, filesystem NOT confined")
             else:
                 envelope["env"]["PYTHONDONTWRITEBYTECODE"] = "1"
                 proc = supervised_run(envelope["argv"], cwd=cwd, timeout=timeout, capture_output=True,
@@ -813,11 +877,17 @@ def run_tests(tests: list, cwd: Path, *, timeout: int, stop_check=None, confinem
             code, out = proc.returncode, (proc.stdout + proc.stderr).decode("utf-8", "replace")
         except subprocess.TimeoutExpired:
             code, out = -1, f"timed out after {timeout}s"
-        except (CapabilityError, WorkerIsolationError, OSError, subprocess.SubprocessError) as exc:
-            code, out, mode = -1, "acceptance confinement refused: " + str(exc)[:300], "refused"
+        except (CapabilityError, WorkerIsolationError, subprocess.SubprocessError) as exc:
+            code, out, mode, filesystem = -1, "acceptance confinement refused: " + str(exc)[:300], "refused", None
+        except OSError as exc:
+            # The worker's clone could not host the run (e.g. it made the clone unwritable): the patch fails
+            # acceptance (#178). Nothing outside the clone ran, so this is never an outcome GREG cannot know.
+            code, out = -1, f"acceptance could not run in the worker's clone: {type(exc).__name__}: {exc}"
+        # ``confinement`` states the mode in words; ``filesystem`` is what the OS enforced (#178's Landlock grants, or
+        # the envelope), None when nothing confined the filesystem or the run was refused.
         results.append({"argv": argv, "returncode": code, "passed": code == 0,
                         "seconds": round(time.monotonic() - started, 2), "tail": out[-MAX_TAIL:],
-                        "network": "denied", "confinement": mode})
+                        "network": "denied", "confinement": mode, "filesystem": filesystem})
     return results
 
 
@@ -829,6 +899,35 @@ def acceptance_commands(acceptance: dict, names: list[str]) -> list[list[str]]:
         commands.append(["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", *changed] if changed else
                         ["false", "acceptance requires the worker to add or change at least one test"])
     return commands
+
+
+# The evaluator a repository order is judged by: the files its explicit acceptance commands name, as they stood at
+# the recorded base, and the files that configure the test runner. A worker that edits a named test (weakening
+# it to ``assert True``) or adds a conftest.py has replaced its own judge; the patched tree would then "pass".
+EVALUATOR_CONFIG = ("conftest.py", "*/conftest.py", "pytest.ini", "tox.ini")
+EVALUATOR_SHARED = ("pyproject.toml", "setup.cfg")   # may configure pytest, but also carry legitimate changes
+
+
+def evaluator_findings(name_status: str, acceptance: dict) -> dict:
+    """From ``git diff --name-status`` against the base: frozen evaluator files the patch replaced or configured.
+
+    ``replaced``: a file named by an explicit acceptance command (or inside a named directory) that existed at the
+    base and was modified or deleted, or any added/changed runner configuration. New test files under a named
+    directory extend the suite and are allowed. ``shared``: project files that may also configure the runner.
+    """
+    named = {arg.split("::", 1)[0].rstrip("/") for argv in acceptance.get("tests", []) for arg in argv[1:]
+             if arg and not arg.startswith("-")}
+    replaced, shared = [], []
+    for line in name_status.splitlines():
+        status, _, path = line.partition("\t")
+        if not path:
+            continue
+        in_named = path in named or any(path.startswith(d + "/") for d in named)
+        if allowed(path, EVALUATOR_CONFIG) or (in_named and status[:1] in ("M", "D", "T")):
+            replaced.append(path)
+        elif allowed(path, EVALUATOR_SHARED):
+            shared.append(path)
+    return {"replaced": sorted(replaced), "shared": sorted(shared)}
 
 
 def scope_findings(names: list[str], order_allowed: tuple, max_files: int | None) -> dict:
@@ -852,11 +951,11 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
         raise WorkerError(why)
     root = _order_dir(ctx, order.order)
     evidence_path = root / "evidence.json"
-    if evidence_path.is_file():                       # reconciliation said "not executed" but it had finished
-        prior = json.loads(evidence_path.read_text())
-        if prior.get("order_digest") == order.digest() and prior.get("status") in ("COMPLETED", "NO_CHANGE"):
-            return {**prior["summary"], "reused": True}
-    if root.exists():                                 # a partial, interrupted run: discard it, keep a note
+    # Every grant runs its own worker in a fresh clone. Evidence an earlier grant left (a body stopped after
+    # writing it but before the Gate's receipt, then reconciled "not executed") is never returned as this grant's
+    # result: its grant has no receipt, so the bound appraisal rejects it, and this grant's receipt would record a
+    # run that did not happen under it (acceptance H.G11). The earlier grant's receipt, if any, keeps its summary.
+    if root.exists():                                 # an earlier or interrupted run: discard it
         (ctx.workspace / "work-orders").mkdir(parents=True, exist_ok=True)
         shutil.rmtree(root)
     root.mkdir(parents=True)
@@ -898,10 +997,14 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
         # Confinement was refused before a provider process was launched; no spend occurred.
         raise WorkerError(str(exc)) from exc
     except Exception as exc:
-        # Once dispatch began, an exception does not establish that no paid work happened.
+        # Once dispatch began, an exception does not establish that no paid work happened. A governed worker (its
+        # own process under GREG's runner) reports a lost run itself as interrupted, so an exception from it is a
+        # failure to launch or run and stays FAILED with its cap booked. An opaque provider's exception says nothing
+        # about what its run already did: that run is interrupted (#178), reconciled and never re-run blind.
+        governed = isinstance(provider, (ClaudeCodeWorker, CliAgentWorker, ScriptWorker))
         report = WorkerReport(order.provider, order.provider, -1, 0.0, None,
                               error=f"worker failed with {type(exc).__name__}: {str(exc)[:300]}",
-                              isolation=getattr(exc, "isolation", None) or {})
+                              isolation=getattr(exc, "isolation", None) or {}, interrupted=not governed)
     spend = worker_spend(report.cost_usd, order.max_budget_usd)
     (root / "worker-report.json").write_text(json.dumps({**asdict(report), "cost_usd": spend["reported_usd"],
                                                          "spend": spend}, indent=2, sort_keys=True, default=str))
@@ -988,7 +1091,8 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
                    "permission_denials": report.permission_denials, "isolation": report.isolation,
                    # #178's statement of what supervision leaves unconfined, only where it is true (see below).
                    "supervision": _supervision(ctx, provider, report),
-                   "interrupted": report.interrupted},
+                   "interrupted": report.interrupted,
+                   "confinement": report.confinement or {"filesystem": "not reported by the provider"}},
         "cost_usd": spend["charge_usd"], "spend": spend, "collection_error": collection_error,
         "worker_claim": report.claim, "worker_summary_tail": report.summary[-1500:],
         "evidence_path": str(evidence_path), "acceptance_owner": "worker.appraise (independent)",
@@ -1099,6 +1203,13 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         if scope["too_many_files"]:
             findings.append("more files changed than the order allows")
             verdict = "REJECTED"
+        evaluator = {"replaced": [], "shared": []}
+        if order["mode"] == "repository":
+            evaluator = evaluator_findings(
+                _git(fresh, "diff", "--cached", "--name-status", "--no-renames", base).stdout, order["acceptance"])
+            if evaluator["replaced"]:
+                findings.append(f"the worker changed the frozen evaluator it is judged by: {evaluator['replaced']}")
+                verdict = "REJECTED"
         if order["mode"] == "repository":
             with_tests = run_tests(acceptance_commands(order["acceptance"], names), fresh,
                                    timeout=min(int(order["timeout_seconds"]), 1200), stop_check=ctx.stop_check,
@@ -1125,6 +1236,10 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
                 verdict = "REJECTED"
         if scope["protected_touched"] and verdict == "ACCEPTED":
             findings.append(f"protected surfaces changed: {scope['protected_touched']}; founder decision required")
+            verdict = "NEEDS_FOUNDER_DECISION"
+        if evaluator["shared"] and verdict == "ACCEPTED":
+            findings.append(f"project files that can configure the test runner changed: {evaluator['shared']}; "
+                            "founder decision required")
             verdict = "NEEDS_FOUNDER_DECISION"
     if summary.get("worker_claim") is not None:
         findings.append("worker self-report retained as claim only; not used for this verdict")

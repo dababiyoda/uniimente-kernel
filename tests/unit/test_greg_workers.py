@@ -302,7 +302,7 @@ def test_the_mission_books_the_provider_reported_spend_under_the_signed_cap(tmp_
     ({"worker": {"cost_usd": 0.3}}, 0.3, "provider_reported"),
     ({"worker": {"cost_usd": None}}, 2.0, "signed_cap: provider spend not reported"),
     ({"worker": {}}, 2.0, "signed_cap: provider spend not reported"),
-    ({"worker": {"cost_usd": 9.0}}, 2.0, "signed_cap: provider report outside [0, cap]"),
+    ({"worker": {"cost_usd": 9.0}}, 9.0, "provider_reported: over the signed cap"),   # actual spend, not the cap
     ({"worker": {"cost_usd": -1}}, 2.0, "signed_cap: provider report outside [0, cap]"),
     ({"worker": {"cost_usd": True}}, 2.0, "signed_cap: provider spend not reported"),
     (None, 2.0, "signed_cap: provider spend not reported"),
@@ -476,8 +476,9 @@ def test_stop_cancels_provider_namespace_and_preserves_uncertain_work_with_no_bl
     with Body(home) as body:
         body.tick()
         action = body.journal.replay("mission.action")[-1].payload
-        assert action["status"] == "UNCERTAIN" and action["cost_usd"] == 1.0, action["reasons"]
-        assert action["cost_reserved"]
+        # The signed cap is held, not booked (#178's reservation model): nothing spent, $1 reserved until reconciled.
+        assert action["status"] == "UNCERTAIN" and action["cost_usd"] == 0.0, action["reasons"]
+        assert action["reserved_usd"] == 1.0
     watcher.join(timeout=1)
     assert marker.exists() and time.monotonic() - started < 10
     summary = json.loads((root / "evidence.json").read_text())["summary"]

@@ -27,8 +27,10 @@ Nothing in the chain is a function emitting a success message; every stage is th
 
 The worker is a deterministic local CLI test double (``tests/one_machine_worker.py``), declared as
 such and unreviewed, so the body is initialized with the founder's ``worker_confinement: supervised``
-setting: the worker runs under process supervision and its retained evidence says its filesystem and
-network were not confined. A default body refuses it. The organs are real. Requires the four UNIIMENTE_* organ variables (see test_greg_organs.py).
+setting: the worker runs under process supervision with Landlock as its floor where the kernel has it (only
+reads of the runtime and its named files, writes to its work directory), and its retained evidence says
+exactly which floor ran; without Landlock it says the filesystem and network were not confined. A default
+body refuses it. The organs are real. Requires the four UNIIMENTE_* organ variables (see test_greg_organs.py).
 """
 from __future__ import annotations
 
@@ -48,7 +50,7 @@ pytest.importorskip("scipy")
 if not sys.platform.startswith("linux"):
     pytest.skip("the interruption stage relies on Linux PR_SET_PDEATHSIG", allow_module_level=True)
 
-from greg import metrics, templates  # noqa: E402
+from greg import isolation as landlock, metrics, templates  # noqa: E402
 from greg.body import Layout, observe  # noqa: E402
 from tests.greg_fixtures import make_body  # noqa: E402
 from tests.integration.test_greg_mind_constructs_capability import STAFFING  # noqa: E402
@@ -119,6 +121,27 @@ def done(rows, action_id):
     return [a for a in rows if a["action_id"] == action_id and a["status"] == "DONE"]
 
 
+def worker_processes(worker: Path) -> list[int]:
+    """Live processes running ``worker``, read from /proc: the test observes the confined worker from outside
+    (where Landlock confines workers, the worker can write nothing but its own clone)."""
+    found = []
+    for proc in Path("/proc").iterdir():
+        if proc.name.isdigit():
+            try:
+                argv = (proc / "cmdline").read_bytes().split(b"\0")
+            except OSError:
+                continue
+            if str(worker).encode() in argv[:2]:      # executing the script (the body only names it later)
+                found.append(int(proc.name))
+    return found
+
+
+def dispatches(home: Path, mid: str, action_id: str) -> list[str]:
+    """GREG's own record of each dispatch of one strategy (a founder reconciliation is not a dispatch)."""
+    return [a["status"] for a in facts(home, mid)["actions"] if a["action_id"] == action_id
+            and a.get("route") != "founder_reconciliation" and "reconciles" not in a]
+
+
 def alive(pid: int) -> bool:
     try:
         os.kill(pid, 0)
@@ -139,7 +162,6 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     tools.mkdir()
     worker = tools / "worker.py"
     shutil.copy(KERNEL / "tests" / "one_machine_worker.py", worker)
-    runs = tools / "runs.log"
     home, _, _, _ = make_body(tmp_path, read_roots=[data, *organ_roots(organs)], worker_confinement="supervised")
     key = tmp_path / "founder.pem"
     log = tmp_path / "body.log"
@@ -156,8 +178,8 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     # 2-5. A body process runs Mind, Genesis and Organs, then commissions the worker, which holds.
     (tools / "HOLD").touch()
     body = start_body(home, worker, log)
-    started = wait_for(lambda: (tools / "started").exists() and (tools / "started").read_text(), timeout=300,
-                       what="the worker to start", body=body, log=log)
+    started = wait_for(lambda: worker_processes(worker), timeout=300, what="the worker to start", body=body,
+                       log=log)
     seen = facts(home, mid)
     assert done(seen["actions"], "organs") and done(seen["actions"], "compile")
     assert {d["function"] for d in seen["deficits"]} == {"assignment.staffing", "graph.max_flow"}
@@ -168,23 +190,43 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     assert not done(seen["actions"], "commission")
 
     # 6. Kill the body mid-work. The worker dies with it (PR_SET_PDEATHSIG), leaving no receipt.
-    worker_pid = int(started)
+    [worker_pid] = started
     os.kill(body.pid, signal.SIGKILL)
     body.wait(timeout=30)
     wait_for(lambda: not alive(worker_pid), timeout=30, what="the worker to die with the body")
-    assert len(runs.read_text().splitlines()) == 1
+    # Killed mid-dispatch: no outcome is recorded yet (the restart finds the open dispatch and records it UNCERTAIN).
+    assert dispatches(home, mid, "commission") == [] and not worker_processes(worker)
     (tools / "HOLD").unlink()
 
     body = start_body(home, worker, log)
     request = wait_for(lambda: [r for r in facts(home, mid)["requests"] if r["kind"] == "RECONCILIATION"],
                        timeout=180, what="a reconciliation request", body=body, log=log)[-1]
     time.sleep(2)                                               # the body keeps ticking; it must not retry blind
-    assert len(runs.read_text().splitlines()) == 1, "an uncertain commission was retried without the founder"
+    assert dispatches(home, mid, "commission") == ["UNCERTAIN"] and not worker_processes(worker), \
+        "an uncertain commission was retried without the founder"
     order = spec["strategies"][2]["params"]["order"]
     order_dir = Layout(home).workspace / mid.replace(":", "_") / "work-orders" / order
     assert not (order_dir / "evidence.json").exists()          # the founder's evidence: it never completed
     answer = greg(home, "decide", request["request_id"], "reconcile_not_executed", "--key", str(key),
                   "--no-passphrase", "--reason", "no evidence.json or patch was retained for the order")
+    assert answer.returncode == 0, answer.stderr
+    # Not executed settles the effect, not the spend: the metered dispatch's signed cap stays booked (H.G4), so the
+    # rerun exceeds the signed budget and GREG asks the founder for exactly that spend instead of widening it.
+    spend = wait_for(lambda: [r for r in facts(home, mid)["requests"] if r["kind"] == "APPROVAL"],
+                     timeout=180, what="a spend approval for the rerun", body=body, log=log)[-1]
+    assert spend["action_id"] == "commission" and "exceeds budget" in spend["why_now"], spend
+    assert dispatches(home, mid, "commission") == ["UNCERTAIN"], "the rerun spent past the budget without the founder"
+    answer = greg(home, "decide", spend["request_id"], "approve", "--key", str(key), "--no-passphrase",
+                  "--reason", "rerun the order once; the interrupted attempt produced nothing")
+    assert answer.returncode == 0, answer.stderr
+    # The cone is now overspent, and only a free read-only observation passes an overspent cone (greg/lightcone.py):
+    # the free handoff write is asked for too, by exact scope.
+    handoff = wait_for(lambda: [r for r in facts(home, mid)["requests"]
+                                if r["kind"] == "APPROVAL" and r["action_id"] == "handoff"],
+                       timeout=180, what="the handoff approval", body=body, log=log)[-1]
+    assert "cost 0.0 " in handoff["why_now"], handoff
+    answer = greg(home, "decide", handoff["request_id"], "approve", "--key", str(key), "--no-passphrase",
+                  "--reason", "record the handoff")
     assert answer.returncode == 0, answer.stderr
     wait_for(lambda: facts(home, mid)["appraised"], timeout=300, what="closure and appraisal", body=body, log=log)
     assert greg(home, "stop", "--local").returncode == 0
@@ -196,11 +238,14 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     assert len(done(closed["actions"], "commission")) == 1
     assert [a["status"] for a in closed["actions"] if a["action_id"] == "commission"].count(
         "RECONCILED_NOT_EXECUTED") == 1
-    assert len(runs.read_text().splitlines()) == 2              # once interrupted, once after reconciliation
+    assert dispatches(home, mid, "commission") == ["UNCERTAIN", "DONE"]   # interrupted, then once after reconciling
     assert closed["recovered"], "the restart was recorded as a recovery"
     [commission] = done(closed["actions"], "commission")
     supervision = json.loads((order_dir / "evidence.json").read_text())["summary"]["worker"]["isolation"]
-    assert supervision["mode"] == "supervised" and supervision["filesystem"].startswith("NOT OS-confined")
+    # Supervised keeps Landlock as its floor where the kernel has it (CI requires it); only without it is the
+    # worker not OS-confined, and then the evidence says exactly that.
+    floor = "Landlock" if landlock.available() else "NOT OS-confined"
+    assert supervision["mode"] == "supervised" and supervision["filesystem"].startswith(floor), supervision
     assert commission["bindings"][0]["from_check"] == "answered"
 
     # 7. Independent verification in separate processes.
@@ -279,8 +324,9 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
                                                          indent=1, default=str) + "\n")
             (out / "mission.json").write_text(json.dumps(spec, indent=1) + "\n")
             (out / "run.json").write_text(json.dumps({
-                "mission_id": mid, "ledger_head": journal.ledger.head, "worker_runs": runs.read_text().splitlines(),
-                "reconciliation_request": request["request_id"], "boots": len(journal.replay("body.booted")),
+                "mission_id": mid, "ledger_head": journal.ledger.head, "worker_dispatches": dispatches(home, mid, "commission"),
+                "reconciliation_request": request["request_id"],
+                "spend_approvals": [spend["request_id"], handoff["request_id"]], "boots": len(journal.replay("body.booted")),
                 "recoveries": len(journal.replay("body.recovered")), "later_mission": second["mission_id"],
                 "later_method": receipts[-1]["method_or_composition_selected"], "formed": formed,
                 "organ_heads": [o.get("organ") for o in closed["organs"]],

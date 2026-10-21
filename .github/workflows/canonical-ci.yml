@@ -38,12 +38,12 @@ jobs:
   tests:
     name: "1 · Kernel and organ tests"
     runs-on: ubuntu-latest
-    # The limit bounds a hung run; it is not a speed target. Track B (#180 e4674f9) raised it from 30 when the unit
-    # suite ran twice here (full suite, then verifier V2): 24 of 30 minutes at #179 c6c4d74, and four stacked heads
-    # cancelled inside the verifier on 2026-10-15 with the suite green (17-19 minutes under load). Verifier V2 now
-    # runs once, in job 9 (44f7c35); this job still carries the full suite, the worker-isolation regressions and the
-    # mutation checks, so the 45-minute bound is kept.
-    timeout-minutes: 45
+    # The limit bounds a hung run; it is not a speed target. Verifier V2 now runs once, in job 9 (44f7c35); this
+    # job still carries the full suite, the worker-isolation regressions and the mutation checks. Hosted runners
+    # differ in speed: on 2026-10-15 the suite took 11 min on one (a48e8fa) and 17.5 min on another (349e732), and
+    # whole jobs took 34.5 and 38.5 min on slow runners. 60 leaves room for the suite to keep growing on a slow
+    # runner without hiding a hang for long (#178).
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -160,11 +160,20 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The integrity check reads every committed version of its record files:
+          # a genesis key never changes and no signed record is removed.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: No second Constitution, Gate, identity or authority registry
         run: python scripts/ci/check_authority_singleton.py
+      - run: pip install "cryptography>=41"
+      - name: Live constitutional integrity (CONTRADICTION-0002 Option A; only founder-signed authorizations count)
+        # Fails, naming each artifact and the founder's exact steps, when a protected
+        # artifact differs from what an enrolled founder key authorized.
+        run: python -m governance.integrity --check
 
   sealed:
     name: "4 · Developmental work stays sealed"
@@ -305,6 +314,14 @@ jobs:
           organs/daleobanks-venv/bin/pip install -q -r organs/daleobanks/requirements.txt
           python -m venv organs/wealthmachine-venv
           organs/wealthmachine-venv/bin/pip install -q -r organs/wealthmachine/requirements.txt
+      - name: Provision worker namespace isolation (bubblewrap) for the ten-step proof's Hands step
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bubblewrap
+          if bwrap --unshare-user --unshare-pid --unshare-net --die-with-parent --ro-bind / / -- /usr/bin/true; then
+            echo "bubblewrap namespaces: usable"
+          else
+            echo "bubblewrap namespaces: NOT usable on this runner; the ten-step proof skips and says why"
+          fi
       - name: Whole-machine mission, organ capabilities and hostile cases (organs required, no skips)
         working-directory: kernel
         env:
@@ -315,7 +332,11 @@ jobs:
           UNIIMENTE_WEALTHMACHINE_ROOT: "${{ github.workspace }}/organs/wealthmachine"
           UNIIMENTE_WEALTHMACHINE_PYTHON: "${{ github.workspace }}/organs/wealthmachine-venv/bin/python"
           UNIIMENTE_ONE_MACHINE_EVIDENCE: "${{ github.workspace }}/one-machine-evidence"
-        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
+          # The ten-step proof uses the real organ checkouts only when these name them (else stand-ins).
+          GREG_TEST_DALEOBANKS: "${{ github.workspace }}/organs/daleobanks"
+          GREG_TEST_WMI: "${{ github.workspace }}/organs/wealthmachine"
+          GREG_ONE_MACHINE_EVIDENCE: "${{ github.workspace }}/one-machine-evidence/ten-steps"
+        run: python -m pytest -q -rs tests/integration/test_one_machine.py tests/integration/test_one_machine_ten_steps.py tests/integration/test_one_machine_attacks.py tests/unit/test_greg_organs.py tests/unit/test_greg_organ_bridge.py tests/unit/test_greg_daleobanks_bridge.py tests/unit/test_greg_bind_from_check.py tests/unit/test_greg_model_identity_policy.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

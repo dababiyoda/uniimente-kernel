@@ -37,6 +37,8 @@ from cryptography import x509
 from rfc3161_client import (HashAlgorithm, TimestampRequestBuilder, VerifierBuilder, VerificationError,
                             decode_timestamp_response)
 
+from greg import egress
+
 DEFAULT_INTERVAL_MINUTES = 60
 MIN_INTERVAL_MINUTES = 5
 TIMEOUT_SECONDS = 10
@@ -93,9 +95,11 @@ def current_config(journal) -> dict | None:
 
 
 def _post(url: str, request: bytes) -> bytes:
+    """POST to the founder-configured TSA only: a redirect is surfaced as an error, never
+    followed, so the request is not re-sent (or turned into a GET) elsewhere."""
     req = urllib.request.Request(url, data=request, method="POST",
                                  headers={"Content-Type": "application/timestamp-query"})
-    with urllib.request.urlopen(req, timeout=TIMEOUT_SECONDS) as response:
+    with egress.send(req, TIMEOUT_SECONDS) as response:
         body = response.read(MAX_RESPONSE_BYTES + 1)
     if len(body) > MAX_RESPONSE_BYTES:
         raise AnchorError("TSA response too large")

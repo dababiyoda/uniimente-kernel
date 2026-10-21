@@ -118,6 +118,34 @@ The founder's OPUS MAXIMUS continuation directive is implemented on draft branch
 - Increment 30 serves MCP servers that read their credential from a file (a service-account key, a kubeconfig): `greg secret set mcp:<name> --from-file <path>` keeps the whole file in the secret broker, and an approved `mcp.act` naming it in `secret_files` gives the server a private 0600 file, shown read-only, at the path in the named variable, removed when the call ends. The approval names it as a file.
 - State: active. Reality: integration-tested and browser-tested locally. VEPMC remains 0. No authority, spending, publication or merge.
 
+## CONTRADICTION-0002 Option A: historical reproducibility apart from live constitutional integrity — ruling 2026-08-23, implemented 2026-10-14
+
+Source, preserved verbatim:
+[FOUNDER-RULING-2026-08-23](deliberations/FOUNDER-RULING-2026-08-23-infinite-goal-chase.md)
+(byte-identical to the file on #87; its header and "How this ruling is
+discharged" table were written by the #87 agent and describe #87's tree). The
+file is a record of what the founder wrote. It authenticates nothing and
+carries no authority beyond its own text; in particular it is not an
+authorization for any artifact change, which only a signature by an enrolled
+founder key can be.
+
+| Required field | INTENT-CONTRADICTION-0002-A |
+| --- | --- |
+| statement | "Separate historical reproducibility from live constitutional integrity. Freeze byte-identical historical copies of the twelve continuity artifacts used by the sealed experiment. ... Create a separate live constitutional-integrity mechanism whose purpose is to detect unauthorized changes to constitutional/authority artifacts. Do not use the historical experiment as the live tripwire. ... Do not update an old historical hash merely to make current implementation pass." |
+| source_refs | FOUNDER-RULING-2026-08-23 (file above); #87 a70905c (first implementation, path-string authorization); verifier verdict on #87 (re-home governance/integrity; Ed25519 founder envelope, never a path or caller string) |
+| owner | Alfonso (ratification); Kernel evolution owners (history); Kernel governance owners (live check) |
+| state | active |
+| binding_scope | Package 3 continuity readings and the live constitutional-integrity check; no grant, policy or Gate behaviour |
+| constitutional_constraints | Only a signature by Alfonso's enrolled founder key authenticates him; no pinned historical hash is re-measured; the two mechanisms do not import each other |
+| success_evidence | `evolution/repair/continuity/` reproduces FROZEN, SR-001 and SR-002 and the sealed Package 3 evidence record; `python -m governance.integrity --check` names every unauthorized artifact; tests `test_repair_continuity_history.py`, `test_governance_integrity.py` |
+| failure_evidence | A tampered frozen copy, a forged/replayed/unsigned authorization, an unenrolled signer, a changed committed genesis or a removed/reordered committed record must fail (tested); no founder key enrolled yet, so nothing can be authorized today |
+| dependencies | Alfonso enrolls his own public key (his commit) before any authorization exists |
+| conflicts | #87's `Amendment.authorization` path string is superseded by signed envelopes; #87's per-path frozen copies would trip `check_authority_singleton`, so the store is content-addressed |
+| next_review_trigger | First founder enrollment, or the first founder-signed `INTEGRITY_AUTHORIZE` |
+| supersedes | The SR-002 subject binding as live tripwire (the 13 SR002 dependent tests now read history) |
+| superseded_by | None |
+| implementation_refs | `evolution/repair/continuity/`, `evolution/repair/subjects.py`, `evolution/repair/harness.py`, `governance/integrity/`, Canonical CI job 3 |
+
 ## Frontier leap: Capability Genesis constructs new capabilities (RECOMBINE) — 2026-10-13
 
 `INTENT-20261013-FRONTIER-LEAP-RECOMBINE` ([record](intent/INTENT-20261013-FRONTIER-LEAP-RECOMBINE.json), [full directive, verbatim](intent/sources/FRONTIER-LEAP-DIRECTIVE-2026-10-13-source.md)): stop treating Capability Genesis as part replacement and make it construct new, integrated capabilities from harvested mechanisms, on GREG's one path. Founder instructions A-D are preserved verbatim in the record's `founder_quotations` and in the source file. They are read under INTENT-0030. "Meniscus", "impermeable shield" and "systemic dominance" keep the 2026-10-07 executable interpretation. They authorize no crossing of legal boundaries, no coercion and no immunity from shutdown.
@@ -269,6 +297,32 @@ Re-issued 2026-10-13 ([lineage](intent/sources/GREG-SEED-GENOME-DIRECTIVE-REISSU
 Repeated byte-identically 2026-10-14T04:59:45Z (same whole-message SHA-256, `ee71d7de…`). Repetition adds no authority; it was applied by closing §12.
 
 Evidence: `tests/evidence/seed-genome-residuals-2026-10-13/`. Authority delta: none. VEPMC: 0.
+
+## Master build directive and current gate repair — 2026-09-30
+
+The two September 30 master-directive records (this one and the next) describe complementary scopes of the same intended destination: gate-proof repairs and resource requests. Neither creates a second authority or goal owner; their original source lineages remain distinct.
+
+`INTENT-20260930-MASTER-BUILD-GATE` preserves the current session's full
+effect horizon and extends the existing convergence/inheritance records. It
+does not replace the 34 horizons in `greg/path.json`, the 55 Foundry obligations,
+or the founder's authority. [Normalized record](intent/INTENT-20260930-MASTER-BUILD-GATE.json),
+[source coverage](collaboration/SOURCE-COVERAGE-20260930-PROOF-INTEGRITY.json),
+and [build/evidence report](collaboration/GREG-GATE-REPAIR-20260930.md).
+
+The independent appraiser's earlier VERIFIED claim is falsified for a signed
+mission with no observations and a missing required file. Its intended effect
+remains active; the current repair requires complete, correctly bound closure
+evidence. The installer's earlier success claim is falsified when a public
+companion file names a different key from the actual signer. The current repair
+checks correspondence and active enrollment, including signed key rotation.
+
+These are implementation/evidence corrections, not destination changes. Exactly
+one operational node remains primary: N1, externally verified VEPMC 0 -> 1.
+The Chromebook is the candidate under the preserved September 26 hardware
+correction; actual Linux availability, founder key custody, installation and
+acceptance still require a real run. No local test increments that milestone. The latest Claude rehearsal nonetheless advanced `greg path` to N2 on a container/test-key structural closure. This implementation assumption is superseded: retain the structural candidate and all later horizons, but keep N1 primary until external exit evidence is represented through an authenticated contract. That contract is not implemented; no boolean flag or local count substitutes for it. (#138, b8a0ccd and 673726a, PR-author record.)
+
+**Port onto the installed-body line (2026-10-14).** The appraisal repair (closure-bound evidence, re-expressed for pipeline-resolved parameters) and the signer-enrollment repair are ported as #138 built them. The N1/N2 structural-candidate gate is ported onto the one founder-tier rule that already gates N3, N4, N6 and N7 (`greg/metrics.py` `founder_tier`), not as a hardcoded `met=False`: a closure signed with a test key, a fixture's key or a `--no-passphrase` rehearsal stays `STRUCTURAL_CANDIDATE` and never moves `greg path`; one signed by the enrolled founder key after it attested passphrase custody moves it. Reason: the hardcoded gate meant no evidence, not even Alfonso's genuine Body-1 run, could ever clear N1 (both #138 verifiers flagged it as a founder decision). The founder tier is not the authenticated external contract #138 asked for: trust on first use remains (whoever controls the body's filesystem enrolls the key), and the ledger still cannot prove whose machine or key it is. **Founder decision open:** whether a founder-tier closure plus Alfonso's own signed acceptance suffices for N1, or N1 waits for an external-verification contract. Authority delta: none; the tier grants nothing.
 
 ## Master build directive: asks, business sequence, reality, obsolete code — 2026-09-30
 

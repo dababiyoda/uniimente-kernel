@@ -79,6 +79,7 @@
    "rules_under_open_requests": "rules cannot change under open requests; close them first",
    "self_dealing": "a buyer cannot bid on its own request (self-dealing)",
    "settle_before_verification": "match:r-big is not verified; settlement refused (status awarded)",
+   "settle_forged_grant": "grant not honoured: not a grant the governing Consequence Gate issued (unregiste",
    "settle_grant_for_other_match": "a charge needs a Consequence Gate grant issued for this exact case",
    "settle_refuted": "match:r-gamma-3 is not verified; settlement refused (status refuted)",
    "settle_twice": "match:r-big is not verified; settlement refused (status settled)",
@@ -91,9 +92,11 @@
   },
   "refuted_never_charged": true,
   "settlement": {
+   "money": "synthetic",
    "processor_fee_cents": 2785,
    "status": "settled",
    "supplier_payable_cents": 90250,
+   "synthetic": true,
    "take_cents": 4750
   },
   "sole_eligible_bidder_paid_ceiling": true,
@@ -122,8 +125,19 @@
    "price_cents": 50000,
    "winner": "party:alpha"
   },
+  "synthetic_labels": {
+   "matches": [
+    true
+   ],
+   "parties": [
+    "synthetic"
+   ],
+   "rail_charges": [
+    "synthetic"
+   ]
+  },
   "truthful_bidding_dominant": true
  },
- "result_sha256": "sha256:7c2bf2293293e3b26f13928329dca28e6256f9375755935c73dcd39831e5af20",
+ "result_sha256": "sha256:5c262a3f06da426abc867755950e633c7ac57f33d307f2369f75c8bb79328853",
  "system": 37
 }

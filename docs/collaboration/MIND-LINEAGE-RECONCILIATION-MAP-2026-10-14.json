@@ -1157,8 +1157,8 @@
    "path": "greg/path.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); the 2026-10-21 integration of #178 into #184 takes #178's file, which keeps #158's predicates (vepmc_at_least_one, genesis_closure) and extends them with the #137/#168/#138 path work: founder-tier counting, N1-N7 nodes, path measures, greg path --node"
   },
   {
    "path": "greg/resilience.py",
@@ -1437,8 +1437,8 @@
    "path": "tests/unit/test_greg_resilience.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); the 2026-10-21 integration takes #178's file at 12f6aea5, which keeps #158's tests and adds #178's (5e05ce10, 28566a15): an interruption counted once"
   },
   {
    "path": "tests/unit/test_lawful_leverage.py",

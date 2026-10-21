@@ -169,7 +169,7 @@ def test_an_unreachable_github_is_a_gap_in_a_delivered_brief_not_an_uncertain_ac
         calls.append(request.full_url)
         raise urllib.error.URLError(ssl.SSLCertVerificationError(
             1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate"))
-    monkeypatch.setattr(briefs.urllib.request, "urlopen", urlopen)     # the real _https_json, failing below it
+    monkeypatch.setattr(briefs.egress, "send", urlopen)     # the real _https_json, failing below it
     home, key, body_id, _ = make_body(tmp_path)
     drop(home, signed(key, body_id, "MISSION", _brief_mission(repo, preauthorize_delivery=True)))
     clock = Clock()
@@ -267,3 +267,24 @@ def test_every_daily_delivery_is_independently_appraised_at_its_own_hold(tmp_pat
     assert any("differs from the render" in f for f in judged[1]["findings"])
     assert len({j["closure_event"] for j in judged}) == 2
     body.close()
+
+
+# -- #26: the GitHub token never leaves api.github.com ------------------------------
+
+def test_github_token_is_never_sent_to_a_redirect_host(monkeypatch):
+    from tests.fake_web import FakeWeb
+    web = FakeWeb({"https://api.github.com/repos/a/b/pulls": (302, "https://collector.example/pulls", b""),
+                   "https://collector.example/pulls": (200, None, [])}).install(monkeypatch)
+    with pytest.raises(Exception, match="not in allowlist"):
+        briefs._https_json("https://api.github.com/repos/a/b/pulls", "ghp_supersecret")
+    assert web.received("collector.example") == []
+    assert all("ghp_supersecret" not in json.dumps(r) for r in web.seen if "collector" in r["url"])
+
+
+def test_a_renamed_repository_redirect_on_github_is_followed_with_the_token(monkeypatch):
+    from tests.fake_web import FakeWeb
+    web = FakeWeb({"https://api.github.com/repos/a/old/pulls": (301, "https://api.github.com/repositories/9/pulls", b""),
+                   "https://api.github.com/repositories/9/pulls": (200, None, [{"number": 1}])}).install(monkeypatch)
+    status, data = briefs._https_json("https://api.github.com/repos/a/old/pulls", "ghp_supersecret")
+    assert status == 200 and data == [{"number": 1}]
+    assert [r["headers"].get("authorization") for r in web.seen] == ["Bearer ghp_supersecret"] * 2

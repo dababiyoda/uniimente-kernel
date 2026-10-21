@@ -1696,8 +1696,8 @@
    "path": "tests/unit/test_frontier_backcasts.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "#158's checks; older P4/P6 records now cite #155's frozen runs"
+   "disposition": "extended",
+   "note": "#158's checks; older P4/P6 records now cite #155's frozen runs; 2026-10-21: frozen-run limits read through run_limits (a declared sidecar when a report omitted them)"
   },
   {
    "path": "tests/unit/test_genome_admission_provenance.py",

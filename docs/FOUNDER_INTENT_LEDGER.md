@@ -86,6 +86,20 @@ Track B update, 2026-10-21 (round-3 re-verification; record sections 1 and 20):
 - **Merge:** #158 is merged at `050c1b2`. P8 cycle 6 RETAINed on held-out data, and random restart is at least as
   good. It is PROPOSED_NOT_APPLIED, and who adopts it is a live founder decision.
 
+Track B update, 2026-10-21 (composition and metacognition lane; record section 22):
+- **Converged recipe lifts** ([evidence](evidence/greg-composition-lift/2026-10-21-converged/README.md)): P6
+  converged v1 was pre-registered, frozen and run once on fresh seeds, against the strongest single available.
+  **Converged VPL is 2 of 4 synthetic families.**
+  - F2R lifts 16-2; F4 lifts 15-0.
+  - F1 is NO_LIFT: 35-0 on correctness, but one false answer that the conservative single does not make.
+  - F3 is NO_LIFT: tied by `flow_expansion_mcf` at about a fifth of the latency.
+  - The natural-family recipes stay UNEVALUATED on the converged code.
+- **Compiler:**
+  - an organ answering a relaxation of a routed recipe is rejected (found by the development check, fixed
+    before the freeze);
+  - settled outcomes alone can change the choice between eligible fits (Fisher exact test, Holm, n >= 10);
+  - a formed mechanism's compile receipt carries its competence basis and dissent.
+
 Authority delta: none.
 
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07

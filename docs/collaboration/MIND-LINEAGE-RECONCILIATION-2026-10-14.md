@@ -787,3 +787,17 @@ finding 1 partly fixed. None of its new findings routes wrongly today.
 | C (low): lzma-alone, zlib, base64 and UTF-16 copies pass the release check | Fixed. Up to six decoding layers are tried: gzip, xz, lzma-alone, bz2, zlib, base64 and UTF-16 (four tests). The stated limit now names every encoding not decoded. |
 | D (low, regression, fails closed): the marker scan flags ordinary source | Fixed. Python source is exempt from the marker rule; a renamed data copy is still caught by digest. A tar of every tracked `.py` file passes (test). |
 | #158 merge | #158 is merged at `050c1b2`: P8 cycle 6 RETAIN (PROPOSED_NOT_APPLIED) and its canary (section 1). |
+
+## 22. Composition and metacognition lane (directive 2026-10-21): converged recipe lifts, credit and calibration
+
+Lane agreement: #158 owns the evaluator audit, the P8 successor, the coverage reconstruction and the whole-machine
+trace. This branch owns composition and metacognition and integrates both.
+
+| item | disposition |
+|---|---|
+| Recipe verdicts carried over from lineage freezes | Re-measured. P6 converged v1 ([evidence](../evidence/greg-composition-lift/2026-10-21-converged/README.md)) measured F1, F2R, F3 and F4 on fresh held-out seeds against the strongest single available, under a freeze binding each recipe's complete code. It was pre-registered at `d90cd6fb`, frozen at `53d39d76` and run once. **Converged VPL is 2 of 4:** F2R lifts (16-2) and F4 lifts (15-0). F1 is NO_LIFT: 35-0 on correctness, but one false answer that the conservative single does not make. F3 is NO_LIFT, tied by `flow_expansion_mcf` at about a fifth of the latency. The index now routes these four recipes on these verdicts. The three natural-family recipes stay UNEVALUATED, because their held-out data were already looked at. |
+| Compiler defect found by the development check | Fixed before the freeze. With every recipe UNEVALUATED, the Fermi organ tied `estimate_then_optimize` on status, won on the method name, ignored `formal_template` and abstained. `_reject_recipe_relaxations` is the fixed-recipe twin of the derived-chain rule: an organ or method reading a strict subset of a routed recipe's inputs is rejected, while admitted twin genomes still compete. A regression test covers it. |
+| Trace gap 1 (from #158): settled outcomes alone never changed a decision | Fixed. `_settled_preference` compares the evidence-ranked first fit with each undemoted fit. It needs at least 10 settled outcomes on both sides and uses a one-sided Fisher exact test, Holm-adjusted p < 0.05; neither threshold is lowered. The receipt records the test, and the choice is labelled `preferred_by_settled_outcomes`, with dissent. Stated limit: outcomes are pooled over a method's versions and geometries, as the inhibition rule pools them. |
+| Trace gap 2 (from #158): a formed mechanism's compile receipt lacked its basis | Fixed. The compile receipt now carries the settled outcomes of each formed mechanism considered (`conditional_competence_basis`) and the mechanism receipt's strongest counterargument as dissent. |
+| Calibration | Unchanged and open. Forecast calibration is live (`greg cognition calibration`). Per-method confidence calibration on the compiler path has no settled data yet; it is not claimed. |
+| Acquisition targets in the coverage record (one-step weighted vote, multistart L-BFGS-B) | Handed to #158's repertoire lane, with admission seeds from its reserved ranges. |

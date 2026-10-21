@@ -791,9 +791,15 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
     assert all("code" in row for row in index["recipes"].values())
     # with the complete closure (review B2), every lift measured on a lineage's freeze commit is stale on the
     # converged tree: the compiler, composition and genesis it reaches have changed since. It routes as UNEVALUATED
-    # until a fresh pre-registered run measures the converged Mind (record section 8)
-    assert all(C.recipe_stale(r, v) for r, v in index["recipes"].items() if v.get("lift")), \
+    # until a fresh pre-registered run measures the converged Mind (record section 8). P6 converged v1 is that run
+    # (record section 22): a live lift is one it measured, on the recipe code it measured
+    converged = "docs/evidence/greg-composition-lift/2026-10-21-converged/"
+    live = {r for r, v in index["recipes"].items() if v.get("lift") and not C.recipe_stale(r, v)}
+    assert live == {"identify_then_optimize", "bayes_then_voi"}
+    assert all(index["recipes"][r]["evidence"].startswith(converged) for r in live), \
         "a lift routes on code that differs from what it measured"
+    assert all(C.recipe_stale(r, v) for r, v in index["recipes"].items()
+               if v.get("lift") and not v["evidence"].startswith(converged))
     honest = copy.deepcopy(index["recipes"]["track_then_staff"])
     honest["code"] = C.recipe_code("track_then_staff")                 # as if measured on today's code
     assert C.recipe_stale("track_then_staff", honest) is None
@@ -805,6 +811,16 @@ def test_recipe_lifts_bind_the_recipe_code_they_measured():
     rows = {r["method"]: r for r in C.candidates({"capacity_network": {"edges": [], "source": "s", "sink": "t",
                                                                         "budget": 1, "costs": {}}},
                                                   C.CompetencyGeometry(), index)}
+    # graph_then_allocate's deciding verdict (P6 converged v1, F3) measured today's recipe code: it binds, and it is
+    # no lift, so the recipe routes NO_LIFT and is demoted, never stale
+    row = rows["composition:graph_then_allocate"]
+    assert row["status"] == "NO_LIFT" and "stale_evidence" not in row and row["demoted"]
+    stale = copy.deepcopy(index)
+    stale["recipes"]["graph_then_allocate"]["code"]["closure_sha256"] = "sha256:" + "3" * 64
+    stale["recipes"]["graph_then_allocate"].update(lift=True, status="VPL_LIFT")
+    rows = {r["method"]: r for r in C.candidates({"capacity_network": {"edges": [], "source": "s", "sink": "t",
+                                                                        "budget": 1, "costs": {}}},
+                                                  C.CompetencyGeometry(), stale)}
     row = rows["composition:graph_then_allocate"]
     assert row["status"] == "UNEVALUATED" and "re-measurement" in row["stale_evidence"]
 
@@ -825,10 +841,14 @@ def test_admitted_labels_are_reported_by_provenance_and_practitioner_ties_are_vi
                        and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR) for r in e.evidence_refs), e
         if e.source in ("composition_recipe", "cortex_organ"):
             assert kind in ("recipe_lift", "organ_label")
-    f7 = evidence_index()["recipes"]["graph_then_allocate"]
+    row = evidence_index()["recipes"]["graph_then_allocate"]
+    # P6 converged v1 decides (record section 22): no lift, the exact single genome ties it; F7's practitioner
+    # tie stays in the recipe's history
+    assert row["family"] == "F3" and row["status"] == "NO_LIFT" and row["prefer"] == "exact_single"
+    f7 = next(v for v in row["history"] if v["family"] == "F7")
     assert f7["tied_by"] == ["parametric_min_cost_flow"]
     entry = next(e for e in entries if e.genome_id == "composition.graph_then_allocate")
-    assert "tied on every item by parametric_min_cost_flow" in entry.detail
+    assert "exact_single" in entry.detail
 
 
 def test_a_historical_result_that_its_runner_could_rewrite_is_pinned():

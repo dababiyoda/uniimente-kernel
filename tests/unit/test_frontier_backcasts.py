@@ -85,7 +85,8 @@ def _natural_recipe_families() -> dict:
     out = {}
     for row in index["recipes"].values():
         for verdict in [row, *row.get("history", [])]:
-            limits = json.loads((ROOT / verdict["evidence"].partition("#")[0]).read_text())["limits"]
+            from scripts.build_mind_evidence_index import run_limits
+            limits = run_limits(verdict["evidence"].partition("#")[0])
             named = [x for x in limits if verdict["family"] in re.findall(r"\bF\d+R?\b", x)]
             text = " ".join(named or [x for x in limits if not re.findall(r"\bF\d+R?\b", x)])
             if re.search(r"\breal\b", text) and "constructed" not in text:

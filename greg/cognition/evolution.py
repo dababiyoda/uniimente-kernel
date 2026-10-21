@@ -238,6 +238,8 @@ CR_SPLITS = {"cycle-3": (CR_TRAIN_SEEDS, CR_HELDOUT_SEEDS),
              # chose by rules declared before each ran (docs/evidence/greg-protected-evolution/2026-10-16-cr-6/pilot)
              "cycle-6": (tuple(range(7880, 8000)), tuple(range(8060, 8300)))}
 CR_CURRENT_SPLIT = "cycle-6"
+# Seeds a kept proposal's canary measures (scripts/p8_cr6_canary.py), never a later cycle's split.
+CR_CANARY_SEEDS = {"cycle-6": tuple(range(8300, 8540))}
 
 
 def cr_target() -> Target:
@@ -254,7 +256,8 @@ def cr_split_seeds(name: str = CR_CURRENT_SPLIT) -> tuple[tuple, tuple, set]:
     train_seeds, heldout_seeds = CR_SPLITS[name]
     reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
                 | set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS)
-                | {s for other, seeds in CR_SPLITS.items() if other != name for part in seeds for s in part})
+                | {s for other, seeds in CR_SPLITS.items() if other != name for part in seeds for s in part}
+                | {s for seeds in CR_CANARY_SEEDS.values() for s in seeds})
     if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
             or len(set(train_seeds)) != len(train_seeds) or len(set(heldout_seeds)) != len(heldout_seeds)
             or not (set(train_seeds) | set(heldout_seeds)) <= set(admission.P8_RESERVED)):

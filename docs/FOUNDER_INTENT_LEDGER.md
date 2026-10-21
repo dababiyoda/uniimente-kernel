@@ -56,6 +56,20 @@ Progress 2026-10-21 (measured; negative results kept):
     - not DEFAULT because it is about 92x slower than the replanner;
     - the stale-controller weakness replicates (3-7).
   - 45 of 59 genomes are admitted, every one with current-version evidence. None is attached.
+- **Genome admission v7** ([evidence](evidence/greg-genome-admission/2026-10-21-v7/README.md)): nine new genomes from three parallel lanes, each built for an ABSENT coverage item. Pre-registered at `b1ee3f97`, frozen at `568c4b7b`, run once on seeds 1600-1629.
+  - **DEFAULT (5):**
+    - IDA\* (under a declared memory budget);
+    - NEH-insertion beam search (beats warm-started CP-SAT 14-3; Iterated Greedy was not compared);
+    - MAP-Elites (against a competitor weak by construction);
+    - exact top-k betweenness (ties NetworkX, faster);
+    - local-rule CA regeneration (0-2 against Z3 entailment, not significant, at 1/40 the latency).
+  - **EXPERIMENTAL (2):**
+    - the GA: 19-10 against hill climbing, not significant. It wins rugged NK 15-0 and loses deceptive traps 0-15 against CP-SAT.
+    - MCTS: it ties flat Monte Carlo 28 of 30.
+  - **SUPERSEDED (2):**
+    - property-based search: Z3 finds every counterexample;
+    - Hopfield recall: exact nearest neighbour is the ceiling.
+  - 50 of 68 genomes are admitted. None is attached.
 
 ## Convergence of the two Mind lineages — 2026-10-14
 

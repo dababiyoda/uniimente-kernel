@@ -106,7 +106,7 @@
     ]
    }
   ],
-  "digest": "sha256:a24d3f1f401524a379393ba4cd65ca19939afc659b117f9550f5cbbc2bf42823",
+  "digest": "sha256:f82cd2c57c638b746cbdbe0d566722c5e7a046c859e95f57d0bb4e48e9f1ac96",
   "equivalences": [
    {
     "a": "greg.cognition.genomes.collective:flock_dropout_instance",
@@ -199,7 +199,7 @@
     ]
    }
   ],
-  "generators_sampled": 50,
+  "generators_sampled": 56,
   "sample_seeds": [
    0,
    1,
@@ -216,7 +216,7 @@
  },
  "counts": {
   "by_lineage": {
-   "#158": 265,
+   "#158": 270,
    "#179": 40,
    "both": 42
   },
@@ -224,9 +224,9 @@
    "P8 held-out": 7,
    "admission held-out": 101,
    "canary": 1,
-   "dev": 186,
+   "dev": 190,
    "held-out": 38,
-   "review-pilot": 8,
+   "review-pilot": 9,
    "train": 6
   },
   "by_role_and_lineage": {
@@ -235,15 +235,15 @@
    "admission held-out / #158": 68,
    "admission held-out / #179": 33,
    "canary / #158": 1,
-   "dev / #158": 163,
+   "dev / #158": 167,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 6,
    "held-out / both": 19,
-   "review-pilot / #158": 8,
+   "review-pilot / #158": 9,
    "train / #158": 6
   },
-  "exposures": 347,
+  "exposures": 352,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -289,10 +289,10 @@
   "P8 pilot files": {
    "#158": {
     "glob": "docs/evidence/greg-protected-evolution/[^/]+/pilot/[^/]+\\.json",
-    "matched": 28,
+    "matched": 31,
     "missing": [],
     "no_declaration": [],
-    "parsed": 28
+    "parsed": 31
    },
    "#179": {
     "glob": "docs/evidence/greg-protected-evolution/[^/]+/pilot/[^/]+\\.json",
@@ -305,10 +305,10 @@
   "PREREGISTRATION.md": {
    "#158": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
-    "matched": 7,
+    "matched": 8,
     "missing": [],
     "no_declaration": [],
-    "parsed": 7
+    "parsed": 8
    },
    "#179": {
     "glob": "docs/evidence/.*/PREREGISTRATION\\.md",
@@ -11580,6 +11580,115 @@
   },
   {
    "artifact": {
+    "commit": "8ad96b38490ab8b5b26d39b3c059500af88e0932",
+    "files": [
+     {
+      "commit": "8ad96b38490ab8b5b26d39b3c059500af88e0932",
+      "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/pilot/region.json",
+      "sha256": "sha256:a7169776aee6c6ce726e564f79013402d8790a56b67c28f2cb0089c35022da2f"
+     },
+     {
+      "commit": "8ad96b38490ab8b5b26d39b3c059500af88e0932",
+      "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/pilot/simulate.json",
+      "sha256": "sha256:67b7eb2afacd6cb2ceb0d494a5d66b24371e7f7ff430a973aa4e44245813fe9e"
+     },
+     {
+      "commit": "8ad96b38490ab8b5b26d39b3c059500af88e0932",
+      "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/pilot/summary.json",
+      "sha256": "sha256:90b770152f4955cb7d247fb353505a878a0e6e243597533601381b84ed7ef0b1"
+     }
+    ],
+    "path": "docs/evidence/greg-protected-evolution/2026-10-21-immune-8/pilot/",
+    "read_at": "HEAD"
+   },
+   "declared": {
+    "region/seeds/pool": [
+     [
+      4360,
+      4999
+     ]
+    ],
+    "region/seeds/train/T1": [
+     [
+      4000,
+      4119
+     ]
+    ],
+    "region/seeds/train/T2": [
+     [
+      4120,
+      4239
+     ]
+    ],
+    "region/seeds/train/T3": [
+     [
+      4240,
+      4359
+     ]
+    ],
+    "seeds/pool": [
+     [
+      4360,
+      4999
+     ]
+    ],
+    "seeds/train/T1": [
+     [
+      4000,
+      4119
+     ]
+    ],
+    "seeds/train/T2": [
+     [
+      4120,
+      4239
+     ]
+    ],
+    "seeds/train/T3": [
+     [
+      4240,
+      4359
+     ]
+    ]
+   },
+   "exposure_commit": "8ad96b38490ab8b5b26d39b3c059500af88e0932",
+   "family": "immune_detect",
+   "generator": {
+    "code_sha256": "sha256:d8f076b1df59f3a954f12e0afa8b205978c4f1c4fb8be3846677c95cceedb621",
+    "commit": "8ad96b38490ab8b5b26d39b3c059500af88e0932",
+    "delegates": [],
+    "function": "immune_gaussian_instance",
+    "key": "greg.cognition.genomes.collective:immune_gaussian_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.collective",
+    "module_file_sha256": "sha256:96707c27263f393460483aad5ee39c5efac214c23de0e9498741f0bc3cff3fbb",
+    "prng": [
+     "Random(7400000 + seed)",
+     "default_rng(7400000 + seed)"
+    ],
+    "resolved": true
+   },
+   "id": "#158|docs/evidence/greg-protected-evolution/2026-10-21-immune-8/pilot/|review-pilot|immune_detect|-",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "pilot outcomes are recorded in these files",
+   "n": 1000,
+   "present_in": [
+    "#158"
+   ],
+   "program": "P8 immune_detect pilot",
+   "role": "review-pilot",
+   "seeds": [
+    [
+     4000,
+     4999
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "HEAD",
     "line_commits": [
      "4d99fb024239fbb219667bda98842e1ea40d84fc"
@@ -13468,6 +13577,96 @@
   },
   {
    "artifact": {
+    "commit": "9fe1c86e70f211ae4d3f6dd109297cef477164db",
+    "line_commits": [
+     "9fe1c86e70f211ae4d3f6dd109297cef477164db"
+    ],
+    "lines": [
+     370,
+     371
+    ],
+    "path": "tests/unit/test_genomes_solvers_d.py",
+    "sha256": "sha256:0707ffe66d96e105a05b5ee2ea9910258c5d1068b80d3cc7d769b5d73bdaf749"
+   },
+   "exposure_commit": "9fe1c86e70f211ae4d3f6dd109297cef477164db",
+   "family": null,
+   "generator": {
+    "commit": "9fe1c86e70f211ae4d3f6dd109297cef477164db",
+    "key": "ITEMS[family].instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_genomes_solvers_d.py|dev|-|?:ITEMS[family].instance:370",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:ITEMS[family].instance:370",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     9301,
+     9301
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "9fe1c86e70f211ae4d3f6dd109297cef477164db",
+    "line_commits": [
+     "9fe1c86e70f211ae4d3f6dd109297cef477164db"
+    ],
+    "lines": [
+     249
+    ],
+    "path": "tests/unit/test_genomes_solvers_d.py",
+    "sha256": "sha256:0707ffe66d96e105a05b5ee2ea9910258c5d1068b80d3cc7d769b5d73bdaf749"
+   },
+   "exposure_commit": "9fe1c86e70f211ae4d3f6dd109297cef477164db",
+   "family": "reconcile_qp",
+   "generator": {
+    "code_sha256": "sha256:89a9e92316cf53bab793a4a65cb8b1644b8364441a52f12752733d3203f91730",
+    "commit": "9fe1c86e70f211ae4d3f6dd109297cef477164db",
+    "delegates": [],
+    "function": "reconcile_instance",
+    "key": "greg.cognition.genomes.solvers_d:reconcile_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.solvers_d",
+    "module_file_sha256": "sha256:d3b3394a48048347082e245b6663e64aca8dbfc71f798f7e0d0bab5cf85dc9ae",
+    "prng": [
+     "Random(f'genome:reconcile_qp:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_solvers_d.py|dev|reconcile_qp|greg.cognition.genomes.solvers_d:reconcile_instance:249",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 40,
+   "part": "greg.cognition.genomes.solvers_d:reconcile_instance:249",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     9300,
+     9339
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "e968b32516ba13dc89ce1020d1da325add21fe10",
     "line_commits": [
      "e968b32516ba13dc89ce1020d1da325add21fe10"
@@ -15173,6 +15372,88 @@
     [
      3,
      4
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",
+    "line_commits": [
+     "29ea4ffcd380abfa7e99249bff50d56029f8994b"
+    ],
+    "lines": [
+     102
+    ],
+    "path": "tests/unit/test_natural_ops_family.py",
+    "sha256": "sha256:a68fed1194221c86afeb2e3f7227890961efc15eb34a2c741fd05b31878c6993"
+   },
+   "exposure_commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",
+   "family": null,
+   "generator": {
+    "commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",
+    "key": "_random_instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_natural_ops_family.py|dev|-|?:_random_instance:102",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 200,
+   "part": "?:_random_instance:102",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     199
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",
+    "line_commits": [
+     "29ea4ffcd380abfa7e99249bff50d56029f8994b"
+    ],
+    "lines": [
+     146
+    ],
+    "path": "tests/unit/test_natural_ops_family.py",
+    "sha256": "sha256:a68fed1194221c86afeb2e3f7227890961efc15eb34a2c741fd05b31878c6993"
+   },
+   "exposure_commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",
+   "family": null,
+   "generator": {
+    "commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",
+    "key": "_random_instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_natural_ops_family.py|dev|-|?:_random_instance:146",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 60,
+   "part": "?:_random_instance:146",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     59
     ]
    ]
   },
@@ -18130,6 +18411,14 @@
    "not_in_any_exposure": [],
    "path": "docs/evidence/greg-genome-admission/2026-10-16-v4/PREREGISTRATION.md",
    "sha256": "sha256:1ddea9949cefa57e844034409af6a3686be48f090d960451315b5a4999681a9b"
+  },
+  {
+   "commit": "29ea4ffcd380abfa7e99249bff50d56029f8994b",
+   "declared_ranges": [],
+   "lineage": "#158",
+   "not_in_any_exposure": [],
+   "path": "docs/evidence/greg-natural-ops-2026-10-21/PREREGISTRATION.md",
+   "sha256": "sha256:b64aaaee21d9e1742499a849a5af6d7dfa276a6af26bb6af38e1c4db60e71419"
   },
   {
    "commit": "2cbb43dc5519e827e814b002b2c75e773c2e297a",

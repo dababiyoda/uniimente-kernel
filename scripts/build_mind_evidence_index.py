@@ -311,7 +311,8 @@ def build() -> dict:
             index["missing_sources"].append(rel)
             continue
         data = json.loads(path.read_text())
-        index["sources"].append({"path": rel, "sha256": _sha(path), "source_commit": data.get("source_commit")})
+        if all(s["path"] != rel for s in index["sources"]):      # one file may hold several row sets
+            index["sources"].append({"path": rel, "sha256": _sha(path), "source_commit": data.get("source_commit")})
         for family, row in ({single: data[key]} if single else data[key]).items():
             raw = row.get("status")
             if not raw:

@@ -1011,19 +1011,26 @@ def _organ_rows(data: dict, g: CompetencyGeometry, evidence: dict) -> list[dict]
         if cid is None:
             continue
         klass = _CLASS.get(cls, cls)
-        record = (evidence.get("organs") or {}).get(cid, {})
-        status = record.get("status", "UNEVALUATED")
-        measured, current = record.get("version"), CORTEX_ENTRIES.get(cid, (None,))[0]
-        stale = None
-        if measured and current and measured != current and status not in NOT_POSITIVE:
-            stale = f"{status} was measured at version {measured}; version {current} needs re-admission"
-            status = "UNEVALUATED"
+        status, stale = organ_status(cid, evidence)
         reason = (f"native geometry {klass} does not include {g.geometry}" if g.geometry and g.geometry != klass
                   else f"frozen status {status}" if status in EXCLUDED else None)
         rows.append({"method": cid, "operation": "problem", "kind": "problem", "status": status, "organ": key,
                      "epistemic_classes": [klass], "inputs": sorted(k for k in data if key not in without[k]),
                      "outputs": None, "rejected": reason, **({"stale_evidence": stale} if stale else {})})
     return rows
+
+
+def organ_status(cid: str, evidence: dict) -> tuple[str, str | None]:
+    """(routing status, stale reason) of a cortex organ, from the evidence index's ``organs`` section: UNEVALUATED
+    without a row; positive evidence binds the version measured (CORTEX_ENTRIES), negative evidence persists. The
+    compiler and the genome inventory both read it (round-2 review of #179, N2)."""
+    from .catalog import CORTEX_ENTRIES
+    record = (evidence.get("organs") or {}).get(cid, {})
+    status = record.get("status", "UNEVALUATED")
+    measured, current = record.get("version"), CORTEX_ENTRIES.get(cid, (None,))[0]
+    if measured and current and measured != current and status not in NOT_POSITIVE:
+        return "UNEVALUATED", f"{status} was measured at version {measured}; version {current} needs re-admission"
+    return status, None
 
 
 SUBREGION_RANK = {"FAVOURED": 0, "NEUTRAL": 1, "DOMINATED": 2}

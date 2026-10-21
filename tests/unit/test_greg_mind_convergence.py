@@ -642,7 +642,8 @@ def test_every_admission_surface_agrees_for_every_catalog_family():
         if status["stale"] or status["raw"] is None:
             assert directive == "EXPERIMENTAL", family
         elif status["kind"] == "operation":
-            assert directive == lib.STRUCTURAL.get(status["raw"], status["raw"]), family
+            # the routed status, never the raw label (round-2 review of #179, N2: collective's erratum)
+            assert directive == lib.STRUCTURAL.get(status["status"], status["status"]), family
         if f"cognition.{family}" in entries:
             assert entries[f"cognition.{family}"].admission == directive, family
         row = catalog_rows.get(f"cognition.{family}")
@@ -663,7 +664,8 @@ def test_operation_attach_asks_cite_their_frozen_evidence_and_superseded_rows_na
     best = {**rows["cognition.swarm"], "usable_why": "VERIFIED (registered, withheld)"}
     ask = C.attach_ask("review-ask", best, None, index)
     evidence = ask["evidence"]
-    assert evidence["admission_evidence"].startswith("docs/evidence/greg-genome-admission/")
+    assert evidence["admission_evidence"].startswith(("docs/evidence/greg-genome-admission/",
+                                                      "docs/evidence/greg-operation-admission/"))
     assert evidence["raw_status"] == "DEFAULT_FOR_GEOMETRY" and evidence["admission_history"]
     assert evidence["measured_code_closure"].startswith("sha256:") and "L-BFGS-B" in evidence["caveat"]
 
@@ -780,9 +782,9 @@ def test_admitted_labels_are_reported_by_provenance_and_practitioner_ties_are_vi
     assert sum(split.values()) == len(labelled)
     for e in labelled:
         kind = genome_library.provenance(e)
-        if kind == "rule_admitted":           # only #158's pre-registered genome admissions count as admissions
-            assert all("greg-genome-admission/2026-10-1" in r and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR)
-                       for r in e.evidence_refs), e
+        if kind == "rule_admitted":           # only pre-registered admissions (genome or operation v3) count
+            assert all(("greg-genome-admission/2026-10-1" in r or "greg-operation-admission/" in r)
+                       and not r.startswith(genome_library.LINEAGE_ADMISSION_DIR) for r in e.evidence_refs), e
         if e.source in ("composition_recipe", "cortex_organ"):
             assert kind in ("recipe_lift", "organ_label")
     f7 = evidence_index()["recipes"]["graph_then_allocate"]
@@ -871,3 +873,33 @@ def test_the_dispatch_of_every_positive_operation_verdict_resolves_to_the_functi
             now = C.solver_code(family)
             assert row["code"]["dispatched"]["function"] == row["code"]["function"] == now["function"], family
             assert dispatch("greg/cognition/solvers.py", "SOLVERS", family)["function"] == now["function"], family
+
+
+def test_collective_organs_and_derived_chains_read_one_status_on_every_surface():
+    """Round-2 review of #179 (N2): collective read EXPERIMENTAL in the compiler and Genesis but REJECTED in the
+    inventory, ``greg genomes`` and the mission hook; the hand-coded organ labels (z3 DEFAULT, fermi COMPOSITION_ONLY)
+    and composition.derived (NICHE) disagreed with the compiler's UNEVALUATED. Every surface now reads the
+    compiler's status, with the frozen or lineage label kept beside it."""
+    from greg.cognition import compiler as C
+    from greg.cognition import genome_library as lib
+    index = C.evidence_index()
+    entries = {e.genome_id: e for e in lib.inventory()}
+    import copy
+    lineage = copy.deepcopy(index)            # the lineage row as it stood: raw REJECTED, routed EXPERIMENTAL (erratum)
+    row = lineage["operations"]["collective"]
+    row.update(raw_status="REJECTED", status="EXPERIMENTAL")
+    status = C.family_status("collective", lineage)
+    assert status["raw"] == "REJECTED" and status["status"] == "EXPERIMENTAL"
+    assert lib.admission_of("collective", lineage)[:2] == ("EXPERIMENTAL", "REJECTED")
+    assert [h["status"] for h in index["operations"]["collective"]["history"]][:1] == ["REJECTED"]
+    assert entries["cognition.collective"].admission == "EXPERIMENTAL"
+    for name in lib.ORGAN_ADMISSION:
+        key = next(k for k in entries if k.split("@")[0] == name and entries[k].source == "cortex_organ"
+                   and entries[k].admission != "SUPERSEDED")
+        routed, _ = C.organ_status(f"cognition.{name}", index)
+        assert entries[key].admission == lib.STRUCTURAL.get(routed, routed), name
+        assert "(not an admission)" in entries[key].detail, name
+    assert entries["composition.derived"].admission == "EXPERIMENTAL"
+    assert "routes UNEVALUATED" in entries["composition.derived"].detail
+    assert lib.admitted_by_provenance()["counts"]["organ_label"] == 0
+

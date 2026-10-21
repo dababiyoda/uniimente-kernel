@@ -6337,11 +6337,6 @@
    "path": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json",
    "sha256": "sha256:bd217350b651b26203fb7bafa331bd172398402bcea39116dafa53d9290bc632",
    "source_commit": "dfdcfe92f00449039686c922623a925910aeb8a2"
-  },
-  {
-   "path": "docs/evidence/greg-operation-admission/2026-10-16-v3/results-ops-v3.json",
-   "sha256": "sha256:bd217350b651b26203fb7bafa331bd172398402bcea39116dafa53d9290bc632",
-   "source_commit": "dfdcfe92f00449039686c922623a925910aeb8a2"
   }
  ]
 }

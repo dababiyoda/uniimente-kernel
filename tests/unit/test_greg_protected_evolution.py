@@ -1288,3 +1288,58 @@ def test_every_recorded_stress_decision_is_unchanged_by_the_wrong_answer_rule():
         old = any(E.worsened(v["incumbent"], v["candidate"]) for v in kinds)
         new = any(E.stress_worsened({k: v[k] for k in ("incumbent", "candidate")}) for v in kinds)
         assert old == new, path
+
+
+# ------------------------------------------------------------------ independent stress-gate audit (2026-10-21)
+def _inline_239a87f(inc_s, cand_s):
+    """cycle()'s adversarial aggregation as it stood at 239a87f, verbatim, as the reference for well-formed input."""
+    import statistics
+    adversarial = {}
+    for kind in sorted({k.split(":")[0] for k in inc_s}):
+        ki = [inc_s[k] for k in inc_s if k.startswith(kind)]
+        kc = [cand_s[k] for k in cand_s if k.startswith(kind)]
+        adversarial[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
+        if any(math.isinf(v) for v in ki + kc):
+            finite = [(a, b) for a, b in zip(ki, kc) if not (math.isinf(a) or math.isinf(b))]
+            adversarial[kind]["wrong"] = {"incumbent": sum(map(math.isinf, ki)), "candidate": sum(map(math.isinf, kc)),
+                                          "both_answered": len(finite),
+                                          "incumbent_answered_mean": round(statistics.fmean(a for a, _ in finite), 6)
+                                          if finite else None,
+                                          "candidate_answered_mean": round(statistics.fmean(b for _, b in finite), 6)
+                                          if finite else None}
+    return adversarial
+
+
+def test_stress_items_group_by_exact_kind_so_a_prefix_kind_cannot_mask_a_worse_set():
+    """At 239a87f ``k.startswith(kind)`` put ``leaner:*`` items into ``lean``: a 50-fold worse ``lean`` set passed."""
+    inc, cand = {"lean:a": 0.01, "leaner:a": 10.0}, {"lean:a": 0.5, "leaner:a": 0.0}
+    summary = E.stress_summary(inc, cand)
+    assert summary["lean"] == {"incumbent": 0.01, "candidate": 0.5}
+    assert E.stress_worsened(summary["lean"])
+
+
+def test_stress_items_pair_by_key_not_by_position():
+    """At 239a87f ``zip(ki, kc)`` paired by position: loss maps in different key orders compared the wrong items."""
+    inf = math.inf
+    inc, cand = {"k:a": inf, "k:b": 0.01, "k:c": 0.01}, {"k:c": 0.5, "k:b": 0.01, "k:a": inf}
+    wrong = E.stress_summary(inc, cand)["k"]["wrong"]
+    assert wrong["both_answered"] == 2 and wrong["candidate_answered_mean"] == 0.255
+    assert E.stress_worsened(E.stress_summary(inc, cand)["k"])
+    with pytest.raises(E.EvolutionError, match="STRESS_UNPAIRED"):
+        E.stress_summary(inc, {"k:a": inf, "k:b": 0.01})                # zip would silently drop k:c
+
+
+def test_stress_summary_equals_the_239a87f_aggregation_on_well_formed_aligned_losses():
+    rng = random.Random(7)
+    for _ in range(3000):
+        kinds = rng.sample(["lean", "fewval", "scarce", "strict"], rng.randint(1, 3))
+        keys = [f"{k}:s{i}" for k in kinds for i in range(rng.randint(1, 5))]
+        draw = lambda: math.inf if rng.random() < 0.2 else rng.choice([-0.9, -0.2, 0.0, 0.01, 0.0105, 1.0])  # noqa
+        inc, cand = {k: draw() for k in keys}, {k: draw() for k in keys}
+        assert E.stress_summary(inc, cand) == _inline_239a87f(inc, cand)
+
+
+def test_the_cycle_aggregates_its_stress_sets_through_stress_summary():
+    import inspect
+    source = inspect.getsource(E.cycle)
+    assert "stress_summary(inc_s, cand_s)" in source and "startswith(kind)" not in source

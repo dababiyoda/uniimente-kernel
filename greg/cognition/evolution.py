@@ -600,6 +600,31 @@ def stress_worsened(kind: dict) -> bool:
     return wrong["both_answered"] > 0 and worsened(wrong["incumbent_answered_mean"], wrong["candidate_answered_mean"])
 
 
+def stress_summary(incumbent: dict, candidate: dict) -> dict:
+    """Per stress kind (item keys ``"<kind>:<train key>"``): both mean losses and, when any loss is infinite, the
+    wrong-answer counts and the means over the items both answered. Items are grouped by their exact kind and paired
+    by key, never by position: a kind that prefixes another (``lean`` and ``leaner``) or two loss maps in different
+    orders cannot mix or misalign items (independent stress-gate audit, 2026-10-21). Both maps must score the same
+    items."""
+    if set(incumbent) != set(candidate):
+        raise EvolutionError(f"STRESS_UNPAIRED: the incumbent and candidate stress losses cover different items: "
+                             f"{sorted(set(incumbent) ^ set(candidate))[:10]}")
+    out = {}
+    for kind in sorted({k.split(":")[0] for k in incumbent}):
+        keys = [k for k in incumbent if k.split(":")[0] == kind]
+        ki, kc = [incumbent[k] for k in keys], [candidate[k] for k in keys]
+        out[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
+        if any(math.isinf(v) for v in ki + kc):        # wrong answers: the means alone cannot rank them
+            finite = [(a, b) for a, b in zip(ki, kc) if not (math.isinf(a) or math.isinf(b))]
+            out[kind]["wrong"] = {"incumbent": sum(map(math.isinf, ki)), "candidate": sum(map(math.isinf, kc)),
+                                  "both_answered": len(finite),
+                                  "incumbent_answered_mean": round(statistics.fmean(a for a, _ in finite), 6)
+                                  if finite else None,
+                                  "candidate_answered_mean": round(statistics.fmean(b for _, b in finite), 6)
+                                  if finite else None}
+    return out
+
+
 def outputs_verified(verify, items: dict, outputs: dict) -> bool:
     """Every ANSWER verifies independently. An abstention (output None) is not an answer and is not verified;
     the sealed score already rates it below a correct answer."""
@@ -1063,19 +1088,7 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     inc_s, _ = evaluate(target.incumbent, stress)
     cand_s, cand_run = evaluate(best, stress)
     verified = outputs_verified(spec.verify, stress._items, cand_run["outputs"])
-    adversarial = {}
-    for kind in sorted({k.split(":")[0] for k in stress._items}):
-        ki = [inc_s[k] for k in inc_s if k.startswith(kind)]
-        kc = [cand_s[k] for k in cand_s if k.startswith(kind)]
-        adversarial[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
-        if any(math.isinf(v) for v in ki + kc):        # wrong answers: the means alone cannot rank them
-            finite = [(a, b) for a, b in zip(ki, kc) if not (math.isinf(a) or math.isinf(b))]
-            adversarial[kind]["wrong"] = {"incumbent": sum(map(math.isinf, ki)), "candidate": sum(map(math.isinf, kc)),
-                                          "both_answered": len(finite),
-                                          "incumbent_answered_mean": round(statistics.fmean(a for a, _ in finite), 6)
-                                          if finite else None,
-                                          "candidate_answered_mean": round(statistics.fmean(b for _, b in finite), 6)
-                                          if finite else None}
+    adversarial = stress_summary(inc_s, cand_s)
     adversarial["all_outputs_verified"] = verified
     record["adversarial"] = adversarial
     if not verified or any(stress_worsened(v) for k, v in adversarial.items() if isinstance(v, dict)):

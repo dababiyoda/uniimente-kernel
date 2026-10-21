@@ -1343,3 +1343,44 @@ def test_the_cycle_aggregates_its_stress_sets_through_stress_summary():
     import inspect
     source = inspect.getsource(E.cycle)
     assert "stress_summary(inc_s, cand_s)" in source and "startswith(kind)" not in source
+
+
+@pytest.mark.parametrize("kind", [
+    {"incumbent": 0.01, "candidate": math.nan},                          # NaN compares False: passed at 239a87f
+    {"incumbent": math.nan, "candidate": 9.0},
+    {"incumbent": -math.inf, "candidate": 5.0},                          # -inf + 0.05 * inf is NaN: passed
+    {"incumbent": None, "candidate": 0.01},
+    {"incumbent": True, "candidate": 0.01},
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1, "candidate": 1, "both_answered": 3,
+     "incumbent_answered_mean": 0.1, "candidate_answered_mean": math.nan}},          # passed
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1, "candidate": -5, "both_answered": 3,
+     "incumbent_answered_mean": 0.1, "candidate_answered_mean": 0.1}},               # negative count: passed
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1.0, "candidate": 1.0, "both_answered": 3,
+     "incumbent_answered_mean": 0.1, "candidate_answered_mean": 0.1}},
+    {"incumbent": math.inf, "candidate": math.inf, "wrong": {"incumbent": 1, "candidate": 1, "both_answered": 3,
+     "incumbent_answered_mean": None, "candidate_answered_mean": None}},             # TypeError at 239a87f
+    {"incumbent": None, "candidate": None, "malformed": {"incumbent": 1, "candidate": 0}},
+])
+def test_the_stress_gate_fails_closed_on_values_it_cannot_rank(kind):
+    assert E.stress_worsened(kind) is True
+
+
+@pytest.mark.parametrize("inc, cand", [
+    ({"k:a": 0.01, "k:b": 0.01}, {"k:a": math.nan, "k:b": 0.01}),        # inline: no wrong block, NaN mean, PASS
+    ({"k:a": math.nan, "k:b": 0.01}, {"k:a": 9.0, "k:b": 9.0}),            # a NaN incumbent disarmed the set: PASS
+    ({"k:a": -math.inf, "k:b": 0.01}, {"k:a": 0.5, "k:b": 0.5}),          # -inf counted as a wrong answer: PASS
+    ({"k:a": math.inf, "k:b": -math.inf}, {"k:a": 0.5, "k:b": 0.5}),      # inline raised ValueError in fsum
+])
+def test_a_stress_set_with_a_nan_or_negative_infinite_loss_is_malformed_and_fails(inc, cand):
+    summary = E.stress_summary(inc, cand)["k"]
+    assert summary["malformed"] and summary["incumbent"] is None and E.stress_worsened(summary)
+
+
+def test_well_formed_wrong_answer_semantics_are_unchanged_by_failing_closed():
+    inf = math.inf
+    s = lambda inc, cand: E.stress_worsened(E.stress_summary(inc, cand)["k"])     # noqa: E731
+    assert s({"k:a": inf, "k:b": 0.01}, {"k:a": 1.0, "k:b": 1.0}) is False          # fewer wrong: passes (policy)
+    assert s({"k:a": inf, "k:b": 0.1}, {"k:a": inf, "k:b": inf}) is True            # more wrong
+    assert s({"k:a": inf, "k:b": 0.01}, {"k:a": inf, "k:b": 0.1}) is True           # equal, answered worse
+    assert s({"k:a": inf, "k:b": 0.01}, {"k:a": 5.0, "k:b": inf}) is False          # equal, none both answered
+    assert s({"k:a": 0.010}, {"k:a": 0.0106}) is True and s({"k:a": 0.010}, {"k:a": 0.0104}) is False

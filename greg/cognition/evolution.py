@@ -586,18 +586,41 @@ def worsened(incumbent: float, candidate: float, tolerance: float = STRESS_TOLER
     return candidate > incumbent + tolerance * abs(incumbent)
 
 
+def _loss_number(value) -> bool:
+    """A loss the gate can rank: a real number that is finite or +inf (a wrong answer). NaN, -inf, bools, None
+    and strings are malformed."""
+    return type(value) in (int, float) and not math.isnan(value) and value != -math.inf
+
+
 def stress_worsened(kind: dict) -> bool:
     """One stress set's verdict. More wrong answers (infinite losses) than the incumbent is worse. With equal wrong
     answers the means are both infinite, so ``worsened`` alone never fired (found by the cycle-7 design pilot,
     2026-10-21: a candidate with 3 wrong answers against the incumbent's 2 passed). Fewer wrong answers is better;
-    equal counts compare the items both answered under the same 5% tolerance."""
+    equal counts compare the items both answered under the same 5% tolerance.
+
+    Fails closed (worsened) on anything it cannot rank: a set ``stress_summary`` marked malformed, a NaN or -inf
+    mean, a wrong-answer block with non-integer or negative counts, or non-finite answered means where items were
+    both answered. NaN compares False and -inf + inf is NaN, so at 239a87f each of these PASSED the gate
+    (independent stress-gate audit, 2026-10-21)."""
+    if kind.get("malformed"):
+        return True
+    if not (_loss_number(kind.get("incumbent")) and _loss_number(kind.get("candidate"))):
+        return True
     wrong = kind.get("wrong")
     if wrong is None:
         return worsened(kind["incumbent"], kind["candidate"])
+    counts = [wrong.get(k) for k in ("incumbent", "candidate", "both_answered")] if isinstance(wrong, dict) else [None]
+    if not all(type(c) is int and c >= 0 for c in counts):
+        return True
     if wrong["candidate"] != wrong["incumbent"]:
         return wrong["candidate"] > wrong["incumbent"]
+    if wrong["both_answered"] == 0:
+        return False
+    means = (wrong.get("incumbent_answered_mean"), wrong.get("candidate_answered_mean"))
+    if not all(type(m) in (int, float) and math.isfinite(m) for m in means):
+        return True
     # equal wrong answers: compare the items both answered, under the same tolerance
-    return wrong["both_answered"] > 0 and worsened(wrong["incumbent_answered_mean"], wrong["candidate_answered_mean"])
+    return worsened(*means)
 
 
 def stress_summary(incumbent: dict, candidate: dict) -> dict:
@@ -605,7 +628,8 @@ def stress_summary(incumbent: dict, candidate: dict) -> dict:
     wrong-answer counts and the means over the items both answered. Items are grouped by their exact kind and paired
     by key, never by position: a kind that prefixes another (``lean`` and ``leaner``) or two loss maps in different
     orders cannot mix or misalign items (independent stress-gate audit, 2026-10-21). Both maps must score the same
-    items."""
+    items. A set holding a loss that is NaN, -inf or not a number is reported as ``malformed`` with no means, and
+    ``stress_worsened`` fails it; only +inf counts as a wrong answer."""
     if set(incumbent) != set(candidate):
         raise EvolutionError(f"STRESS_UNPAIRED: the incumbent and candidate stress losses cover different items: "
                              f"{sorted(set(incumbent) ^ set(candidate))[:10]}")
@@ -613,6 +637,10 @@ def stress_summary(incumbent: dict, candidate: dict) -> dict:
     for kind in sorted({k.split(":")[0] for k in incumbent}):
         keys = [k for k in incumbent if k.split(":")[0] == kind]
         ki, kc = [incumbent[k] for k in keys], [candidate[k] for k in keys]
+        bad = {"incumbent": sum(not _loss_number(v) for v in ki), "candidate": sum(not _loss_number(v) for v in kc)}
+        if bad["incumbent"] or bad["candidate"]:       # NaN, -inf or not a number: unrankable, so the gate fails
+            out[kind] = {"incumbent": None, "candidate": None, "malformed": bad}
+            continue
         out[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
         if any(math.isinf(v) for v in ki + kc):        # wrong answers: the means alone cannot rank them
             finite = [(a, b) for a, b in zip(ki, kc) if not (math.isinf(a) or math.isinf(b))]

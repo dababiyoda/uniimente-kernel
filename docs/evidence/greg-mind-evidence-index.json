@@ -3937,7 +3937,10 @@
     "function": "greg/cognition/composition.py::_bayes_then_voi",
     "recipe_entry_sha256": "sha256:634e882fdcaddeb52715ba60992227ac4932ab2cd1e920bd20dc4968e2670487",
     "stage_closures": {
+     "adapter:_genome_solver": "sha256:d71d0b29fc9cc647f95bfb31eada920d2acdf7842a455a1557735f426959f6c8",
+     "adapter:run": "sha256:8aed6431c88c9f1ddf2cbd94f962c7ba02bda5f36d32c765d79ccaf72466d236",
      "decision_preposterior": "sha256:30bdb5dfd71430da041ca8a390ae0e2df7836722fb92da8a978ac3fb1f82e09b",
+     "dispatch:SOLVERS": "sha256:c23c4382b10824f20a42dff821493fc5d24b63767185d26dcaacf5ed6f7d8b4c",
      "solvers:information": "sha256:2ddbb1d9f941abbbbd626e003ceb053d2660c44bb894d25b86c92c0dbe1a66b3",
      "solvers:probabilistic": "sha256:1a1662833a2302616498d68bd844a4070f99256b8af59c6c88a78010e8430818"
     }
@@ -3966,7 +3969,10 @@
       "function": "greg/cognition/composition.py::_bayes_then_voi",
       "recipe_entry_sha256": "sha256:2001ccba65e7926dc90ef73bef3b502f9d2a5fef0023f826d19db4ad6b5cd904",
       "stage_closures": {
+       "adapter:_genome_solver": "sha256:a72bcac959d16d00b6b38902cb2b2f0af0492e99e60c4225291d48a2b9f29211",
+       "adapter:run": "sha256:ff4ab29289f9afdf030c7a35c56338cdc892c3cd115131679a66db89c5fcdabb",
        "decision_preposterior": "sha256:97de5f508dd92d7876cbea6b22420a66cd1121fa5ae5d4c5430159cc89122f62",
+       "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
        "solvers:information": "sha256:2ddbb1d9f941abbbbd626e003ceb053d2660c44bb894d25b86c92c0dbe1a66b3",
        "solvers:probabilistic": "sha256:1a1662833a2302616498d68bd844a4070f99256b8af59c6c88a78010e8430818"
       }
@@ -4062,7 +4068,15 @@
     "stage_closures": {
      "organ:estimate:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
      "organ:optimization:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
-     "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2"
+     "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+     "route:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+     "route:DeterrenceOrgan": "sha256:6ad068dd9f12e914790902fe5fa72d8a063dee792276c003e656fa11067384cf",
+     "route:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+     "route:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+     "route:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+     "route:ScheduleExtractionOrgan": "sha256:d4b9dadef56ae45585733c957c028ca7ae5657ed31a26aea8b4a635c9fff9e25",
+     "route:SemanticOrgan": "sha256:82a01912cf908d923137f6a707e6ae1a374e787683052c9ea8b77ddf7eae6e35",
+     "route:_route_parts": "sha256:fdab04e2c86abbe1c8a9a1df939891f01e14c7c154adb43147cba7a28fc852b4"
     }
    },
    "evidence": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json#summary.F1",
@@ -4119,6 +4133,9 @@
     "function": "greg/cognition/composition.py::_forecast_then_allocate",
     "recipe_entry_sha256": "sha256:31e561336955e7212ba82541728f08a420d3e9c181fbc9b6479fae510731f462",
     "stage_closures": {
+     "adapter:_genome_solver": "sha256:a72bcac959d16d00b6b38902cb2b2f0af0492e99e60c4225291d48a2b9f29211",
+     "adapter:run": "sha256:ff4ab29289f9afdf030c7a35c56338cdc892c3cd115131679a66db89c5fcdabb",
+     "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
      "forecast_quantile": "sha256:94345eac805ad59a35e4a9adc5cea5c221484386a75eba39ca91a5b46b801d89",
      "newsvendor_compile": "sha256:5e75aebfc39f4249f28e9a54495dcbb32676f3c844e87929cd562bd9737e8a7e",
      "solvers:optimization": "sha256:a7251ba2863978b0043298e0384385d0fa4eaa49281d708819bac117f1d3a47e"
@@ -4161,6 +4178,9 @@
     "function": "greg/cognition/composition.py::_forecast_then_staff",
     "recipe_entry_sha256": "sha256:f48cad7075c61806b180c249be613326abb85f0d2e177fad8145695ea46c69cd",
     "stage_closures": {
+     "adapter:_genome_solver": "sha256:a72bcac959d16d00b6b38902cb2b2f0af0492e99e60c4225291d48a2b9f29211",
+     "adapter:run": "sha256:ff4ab29289f9afdf030c7a35c56338cdc892c3cd115131679a66db89c5fcdabb",
+     "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
      "forecast_quantile": "sha256:e43c24f06353fb719aebc10e4ecf5aec208819691ca822dd26c7c3ce5547eb9a",
      "queue_erlang": "sha256:d727c33ac9f0a9fa1bf204458d6430b5b67d744bdc6bd2371d04bd7e64b960ce"
     }
@@ -4205,6 +4225,9 @@
     "function": "greg/cognition/composition.py::_graph_then_allocate",
     "recipe_entry_sha256": "sha256:8dec62ed97e2b286504f92a47b2a803660f378d13896f2b6885b723860e2346f",
     "stage_closures": {
+     "adapter:_genome_solver": "sha256:d71d0b29fc9cc647f95bfb31eada920d2acdf7842a455a1557735f426959f6c8",
+     "adapter:run": "sha256:8aed6431c88c9f1ddf2cbd94f962c7ba02bda5f36d32c765d79ccaf72466d236",
+     "dispatch:SOLVERS": "sha256:c23c4382b10824f20a42dff821493fc5d24b63767185d26dcaacf5ed6f7d8b4c",
      "flow_capacity_plan": "sha256:f99e90914ef86e571897407fa08e0173e5bc121989d8258f582a4fd9e093edcb",
      "flow_maxflow": "sha256:e2df9a6ebbbbbaf400421698e973ee9f767f663ddc4b96cb5077bc044205b3b9",
      "solvers:optimization": "sha256:55393a60242a113613869e9ff464e88e1cc03230fd174276f766935a77a07401"
@@ -4233,6 +4256,9 @@
       "function": "greg/cognition/composition.py::_graph_then_allocate",
       "recipe_entry_sha256": "sha256:587151f8a1d054a471ca1f40ed894f16eed1d8291fe4fe5ae404b1eb7e0e5494",
       "stage_closures": {
+       "adapter:_genome_solver": "sha256:a72bcac959d16d00b6b38902cb2b2f0af0492e99e60c4225291d48a2b9f29211",
+       "adapter:run": "sha256:ff4ab29289f9afdf030c7a35c56338cdc892c3cd115131679a66db89c5fcdabb",
+       "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
        "flow_capacity_plan": "sha256:f044fbe25dd7e45514859e5a6b95d3563eb178434cc846e21588ffe8176e332a",
        "flow_maxflow": "sha256:05634f1e0a8f859f8bc7da21bf13ab5b28411d9145c24d32cd023c1d933738ab",
        "solvers:optimization": "sha256:a7251ba2863978b0043298e0384385d0fa4eaa49281d708819bac117f1d3a47e"
@@ -4272,6 +4298,9 @@
       "function": "greg/cognition/composition.py::_graph_then_allocate",
       "recipe_entry_sha256": "sha256:8dec62ed97e2b286504f92a47b2a803660f378d13896f2b6885b723860e2346f",
       "stage_closures": {
+       "adapter:_genome_solver": "sha256:a72bcac959d16d00b6b38902cb2b2f0af0492e99e60c4225291d48a2b9f29211",
+       "adapter:run": "sha256:ff4ab29289f9afdf030c7a35c56338cdc892c3cd115131679a66db89c5fcdabb",
+       "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
        "flow_capacity_plan": "sha256:4774d7f44098bd931395d0270d5ad10dd5f17c6b821e0128f562e6452b40c5a7",
        "flow_maxflow": "sha256:e2df9a6ebbbbbaf400421698e973ee9f767f663ddc4b96cb5077bc044205b3b9",
        "solvers:optimization": "sha256:00e41e657b10abd4550ab9e9e4af19c0c921ccde5fd4341aa53d82623d0510f5"
@@ -4372,7 +4401,15 @@
     "stage_closures": {
      "organ:causal:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
      "organ:optimization:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
-     "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2"
+     "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+     "route:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+     "route:DeterrenceOrgan": "sha256:6ad068dd9f12e914790902fe5fa72d8a063dee792276c003e656fa11067384cf",
+     "route:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+     "route:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+     "route:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+     "route:ScheduleExtractionOrgan": "sha256:d4b9dadef56ae45585733c957c028ca7ae5657ed31a26aea8b4a635c9fff9e25",
+     "route:SemanticOrgan": "sha256:82a01912cf908d923137f6a707e6ae1a374e787683052c9ea8b77ddf7eae6e35",
+     "route:_route_parts": "sha256:fdab04e2c86abbe1c8a9a1df939891f01e14c7c154adb43147cba7a28fc852b4"
     }
    },
    "evidence": "docs/evidence/greg-composition-lift/2026-10-21-converged/results-converged-v1.json#summary.F2R",
@@ -4424,7 +4461,15 @@
       "stage_closures": {
        "organ:causal:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
        "organ:optimization:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
-       "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2"
+       "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+       "route:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+       "route:DeterrenceOrgan": "sha256:6ad068dd9f12e914790902fe5fa72d8a063dee792276c003e656fa11067384cf",
+       "route:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+       "route:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+       "route:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+       "route:ScheduleExtractionOrgan": "sha256:d4b9dadef56ae45585733c957c028ca7ae5657ed31a26aea8b4a635c9fff9e25",
+       "route:SemanticOrgan": "sha256:82a01912cf908d923137f6a707e6ae1a374e787683052c9ea8b77ddf7eae6e35",
+       "route:_route_parts": "sha256:fdab04e2c86abbe1c8a9a1df939891f01e14c7c154adb43147cba7a28fc852b4"
       }
      },
      "evidence": "docs/evidence/greg-composition-lift/2026-10-14/results-v2.json#summary.F2b",
@@ -4482,7 +4527,15 @@
       "stage_closures": {
        "organ:causal:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
        "organ:optimization:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
-       "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2"
+       "organ:optimization:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+       "route:CpSatOrgan": "sha256:93391fad974cfb4922841b8bf4d565c1cc003c34c4aa8357e66cc93318bd83e7",
+       "route:DeterrenceOrgan": "sha256:6ad068dd9f12e914790902fe5fa72d8a063dee792276c003e656fa11067384cf",
+       "route:EstimationOrgan": "sha256:e2efcc2b1fa5cce72ed9009784d61b5265f6c67719b3096273fc2a2afc22bc5b",
+       "route:EvidenceCausalOrgan": "sha256:139bc0a18e65564c91e6c54de0ed9f06e655a2da5ebe9ba24a9ac0d64a8fe3a4",
+       "route:FormalOrgan": "sha256:5fd130bd1561986556280f6549cc5c7b61891c64fc6486ac07be8be8371188a2",
+       "route:ScheduleExtractionOrgan": "sha256:d4b9dadef56ae45585733c957c028ca7ae5657ed31a26aea8b4a635c9fff9e25",
+       "route:SemanticOrgan": "sha256:82a01912cf908d923137f6a707e6ae1a374e787683052c9ea8b77ddf7eae6e35",
+       "route:_route_parts": "sha256:fdab04e2c86abbe1c8a9a1df939891f01e14c7c154adb43147cba7a28fc852b4"
       }
      },
      "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F2R",
@@ -4548,7 +4601,10 @@
     "function": "greg/cognition/composition.py::_track_then_staff",
     "recipe_entry_sha256": "sha256:62c8d18f116b5210c3ccb9d14e545f54faee78ffc23d1a448cbc8a8f0507cef9",
     "stage_closures": {
+     "adapter:_genome_solver": "sha256:c6d2a3d3eb185db2c7f7aea6e5160737db8bd5ea83b92a30ee4a7e09bfc75929",
+     "adapter:run": "sha256:eb8498e420442fd76989bfb4b2524a2776e7c0f9aaeb854f9878ce4b4ca3fbc1",
      "basal_kalman": "sha256:c0a79d1fdde3805035cd65547056584b35e07e97303f1d890275a45a0249ab53",
+     "dispatch:SOLVERS": "sha256:87fd5beabec36f929914f47d738b76b56a26aae4d2dcc72522d4c2d232afdab4",
      "queue_erlang": "sha256:d727c33ac9f0a9fa1bf204458d6430b5b67d744bdc6bd2371d04bd7e64b960ce"
     }
    },

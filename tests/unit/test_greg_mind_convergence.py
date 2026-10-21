@@ -1215,3 +1215,79 @@ def test_any_other_statement_naming_a_dispatch_table_is_unresolved(case):
                                                   "T = {'control': a}\nT['other'] = b\n"}.get)
     assert clean["unresolved_updates"] == 0 and clean["function"] == "a"
 
+
+
+ROUND5_DISPATCH = {
+    "update keywords": "T.update({}, control=b)\n", "update double star": "T.update({}, **{'control': b})\n",
+    "pop inside a literal assignment": "T['j'] = T.pop('control') and b\n",
+    "setitem inside a literal assignment": "T['j'] = (T.__setitem__('control', b), a)[1]\n",
+    "helper inside a literal assignment": "def h(t):\n    t['control'] = b\n\nT['j'] = h(T)\n",
+    "globals keyword": "globals().update(T={'control': b})\n",
+    "module attribute": "import sys\nsys.modules[__name__].T['control'] = b\n",
+    "entry attribute": "T['control'].__code__ = b.__code__\n",
+}
+
+
+@pytest.mark.parametrize("case", sorted(ROUND5_DISPATCH))
+def test_round5_dispatch_forms_are_unresolved(case):
+    """Round-5 review of #179 (N5): these forms still read unresolved_updates 0 with the stale function."""
+    from greg.cognition.code_binding import dispatch
+    text = "def a():\n    return 1\n\ndef b():\n    return 2\n\nT = {'control': a}\n" + ROUND5_DISPATCH[case]
+    got = dispatch("pkg/s.py", "T", "control", {"pkg/__init__.py": "", "pkg/s.py": text}.get)
+    assert got["unresolved_updates"] >= 1, (case, got)
+
+
+def test_recipe_bindings_cover_the_runtime_adapter_every_solvers_statement_and_the_route_policy():
+    """Round-5 review of #179 (N4): stages run through solvers._genome_solver and library.run, not the bound solve;
+    a comprehension appended to SOLVERS rerouted a stage without changing any bound closure; the route policy and
+    the organ set were unbound or a hand copy. Each edit below now stales the recipe."""
+    from greg.cognition import code_binding as CB
+    from greg.cognition import compiler as C
+
+    def edit(target, needle, insert):
+        def read(path):
+            text = CB.working_tree(path)
+            if path == target:
+                at = text.index("\n", text.index(needle)) + 1
+                text = text[:at] + insert + text[at:]
+            return text
+        return read
+
+    def stale(recipe, read):
+        changed = C.recipe_code(recipe, read)
+        verdict = {"code": {k: changed[k] for k in ("closure_sha256", "recipe_entry_sha256", "stage_closures")}}
+        return C.recipe_stale(recipe, verdict)
+
+    assert stale("track_then_staff", edit("greg/cognition/genomes/library.py", "def run(", "    _edit = 1\n"))
+    def appended(p):
+        text = CB.working_tree(p)
+        if p == "greg/cognition/solvers.py":
+            text += "\nSOLVERS.update({k: v for k, v in [('information', SOLVERS['bayesian'])]})\n"
+        return text
+    assert stale("bayes_then_voi", appended)
+    assert stale("identify_then_optimize", edit("cortex/routing.py", "def _route_parts(", "    _edit = 1\n"))
+    for organ in ("cortex/organs/semantic.py", "cortex/organs/schedule_extraction.py"):
+        def read(p, o=organ):
+            return _edit_first_method(CB.working_tree(p)) if p == o else CB.working_tree(p)
+        assert stale("estimate_then_optimize", read), organ
+
+
+def _edit_first_method(text: str) -> str:
+    import re
+    m = re.search(r"\n    def [^\n]*:\n", text)
+    return text[:m.end()] + "        _edit = 1\n" + text[m.end():]
+
+
+def test_the_committed_evidence_index_is_what_the_builder_produces(tmp_path, monkeypatch):
+    """Round-5 review of #179 (N3): the committed index was not byte-reproducible (stale unresolved_updates) and no
+    test checked it. Rebuilding into a temporary path must reproduce the committed bytes."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("bmei", ROOT / "scripts/build_mind_evidence_index.py")
+    builder = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(builder)
+    out = tmp_path / "index.json"
+    monkeypatch.setattr(builder, "OUT", out)
+    monkeypatch.setattr("sys.argv", ["build_mind_evidence_index.py"])
+    builder.main()
+    assert out.read_bytes() == (ROOT / "docs/evidence/greg-mind-evidence-index.json").read_bytes(), \
+        "the committed evidence index is stale: run PYTHONPATH=. python scripts/build_mind_evidence_index.py"

@@ -801,3 +801,17 @@ trace. This branch owns composition and metacognition and integrates both.
 | Trace gap 2 (from #158): a formed mechanism's compile receipt lacked its basis | Fixed. The compile receipt now carries the settled outcomes of each formed mechanism considered (`conditional_competence_basis`) and the mechanism receipt's strongest counterargument as dissent. |
 | Calibration | Unchanged and open. Forecast calibration is live (`greg cognition calibration`). Per-method confidence calibration on the compiler path has no settled data yet; it is not claimed. |
 | Acquisition targets in the coverage record (one-step weighted vote, multistart L-BFGS-B) | Handed to #158's repertoire lane, with admission seeds from its reserved ranges. |
+
+## 23. Round-5 re-verification of #179 (from the #158 session, at `a3106f6`): dispositions
+
+The re-check found round 4's A, B and C fixed as reported and D partly fixed, with one regression. None of its new
+findings routes wrongly today.
+
+| item | disposition |
+|---|---|
+| N1 (low, regression): the `.py` exemption lets an edited data copy through | Fixed. Only a `.py` member byte-identical to a tracked Python source file is exempt from the marker rule. Parsing as Python was rejected as a test, because JSON parses as Python. The reviewer's repro (`suite-v4.json` plus one key, as `x.py`) is blocked again (test). |
+| N2 (low): a data-free tag archive is blocked by the exclusion list's own markers | Fixed. The list itself, byte for byte, is exempt from the marker rule; an edited copy is still scanned. A tar of every tracked file minus the listed ones passes (test). |
+| N3 (low): the committed index was not byte-reproducible, and nothing checked it | The index was rebuilt in `d873b64f` and again here. A test now rebuilds it into a temporary path and requires the committed bytes. |
+| N4 (low, latent): variants of A | Fixed. Recipe bindings now also cover the genome-stage runtime adapter (`solvers._genome_solver`, `library.run`) and a digest of every module-level statement naming `SOLVERS` (`code_binding.table_statements`), so an appended comprehension stales the recipe. For template recipes, they cover the route policy (`cortex.routing._route_parts`) and every organ class `cortex.routing` imports, derived rather than hand-copied. Each named edit stales its recipe (test). The four P6 converged v1 verdicts still bind: the newly bound code is unchanged since their freeze. |
+| N5 (low, latent): variants of B | Fixed. `dispatch()` counts as unresolved: `update` with keywords or extra arguments; a literal `T[k] = ...` whose value names the table or whose target reaches into an entry; a keyword or attribute named like the table (`globals().update(T=...)`, `sys.modules[__name__].T`); and any assignment or deletion whose target is rooted at the table outside the literal form (`T['k'].__code__ = ...`). Eight forms are tests. |
+| N6 (informational): further encodings pass | Stated. The module docstring now names each encoding not decoded, and the six-layer cap. |

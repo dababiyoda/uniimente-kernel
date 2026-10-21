@@ -182,19 +182,49 @@ def immune_target() -> Target:
     return Target("immune_detect", collective.IMMUNE_CONFIG_SPACE, dict(collective.IMMUNE_DEFAULT_CONFIG))
 
 
-def immune_split() -> tuple[dict, dict, list[str]]:
-    """Seeded negative-selection instances reserved for P8, disjoint from every admission seed. They come from the
+# Each cycle on this target draws its own split; earlier splits stay reproducible by name. Cycle 2 (2026-10-09) stopped
+# at the stress gate, so its held-out seeds 8000-8059 were never looked at; they stay registered to it.
+# Cycle 7 (designed 2026-10-21, NOT current): 120 train and 120 held-out seeds in the 8600-9199 extension, the sizes
+# the review-seed pilot scored best (docs/evidence/greg-protected-evolution/2026-10-21-immune-7). That pilot judged the
+# target NOT_VIABLE under the frozen rule by its declared threshold, so the split is registered (its seeds are reserved
+# and checked) but IMMUNE_CURRENT_SPLIT stays "cycle-2"; making "cycle-7" current is the session owner's decision.
+IMMUNE_SPLITS = {"cycle-2": (IMMUNE_TRAIN_SEEDS, IMMUNE_HELDOUT_SEEDS),
+                 "cycle-7": (tuple(range(8600, 8720)), tuple(range(8720, 8840)))}
+IMMUNE_CURRENT_SPLIT = "cycle-2"
+
+
+def immune_split_seeds(name: str = IMMUNE_CURRENT_SPLIT) -> tuple[tuple, tuple, set]:
+    """A named immune split's train and held-out seeds and the seeds it must avoid, or EvolutionError. Generates
+    nothing: a split is checked before any of its instances exists."""
+    from .genomes import admission
+    if name not in IMMUNE_SPLITS:
+        raise EvolutionError(f"unknown immune split {name!r}")
+    train_seeds, heldout_seeds = IMMUNE_SPLITS[name]
+    reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
+                | {s for other, seeds in IMMUNE_SPLITS.items() if other != name for part in seeds for s in part}
+                | {s for seeds in CR_SPLITS.values() for part in seeds for s in part}
+                | {s for seeds in CR_CANARY_SEEDS.values() for s in seeds})
+    if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
+            or len(set(train_seeds)) != len(train_seeds) or len(set(heldout_seeds)) != len(heldout_seeds)
+            or not (set(train_seeds) | set(heldout_seeds)) <= set(admission.P8_RESERVED)):
+        raise EvolutionError("P8 immune seeds overlap the admission seeds or another P8 split")
+    return train_seeds, heldout_seeds, reserved
+
+
+def immune_split(name: str = IMMUNE_CURRENT_SPLIT) -> tuple[dict, dict, list[str]]:
+    """Seeded negative-selection instances reserved for P8, disjoint from every admission seed, every other P8
+    target's seeds and every other cycle's split on this target (``immune_split_seeds``). They come from the
     Gaussian generator that cycle 2 (2026-10-09) sampled, kept byte-identical when the admission generator gained
-    native regimes (collective.BENCHMARK_REVISION), with that cycle's dimension buckets."""
+    native regimes (collective.BENCHMARK_REVISION), with that cycle's dimension buckets. The excluded list names the
+    admission seeds only, as cycle 2 recorded it."""
     from .genomes import admission, collective
+    train_seeds, heldout_seeds, _ = immune_split_seeds(name)
     reserved = set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS)
-    if reserved & (set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS)):
-        raise EvolutionError("P8 immune seeds overlap the admission seeds")
 
     def item(seed):
         data, truth = collective.immune_gaussian_instance(seed)
         return f"s{seed}", {"data": data, "truth": truth, "category": collective.immune_dimension_band(data)}
-    return (dict(item(s) for s in IMMUNE_TRAIN_SEEDS), dict(item(s) for s in IMMUNE_HELDOUT_SEEDS),
+    return (dict(item(s) for s in train_seeds), dict(item(s) for s in heldout_seeds),
             sorted(f"s{s}" for s in reserved))
 
 
@@ -255,7 +285,7 @@ def cr_split_seeds(name: str = CR_CURRENT_SPLIT) -> tuple[tuple, tuple, set]:
         raise EvolutionError(f"unknown constraint-release split {name!r}")
     train_seeds, heldout_seeds = CR_SPLITS[name]
     reserved = (set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS) | admission.spent_seeds()
-                | set(IMMUNE_TRAIN_SEEDS) | set(IMMUNE_HELDOUT_SEEDS)
+                | {s for seeds in IMMUNE_SPLITS.values() for part in seeds for s in part}
                 | {s for other, seeds in CR_SPLITS.items() if other != name for part in seeds for s in part}
                 | {s for seeds in CR_CANARY_SEEDS.values() for s in seeds})
     if (reserved & (set(train_seeds) | set(heldout_seeds)) or set(train_seeds) & set(heldout_seeds)
@@ -556,6 +586,73 @@ def worsened(incumbent: float, candidate: float, tolerance: float = STRESS_TOLER
     return candidate > incumbent + tolerance * abs(incumbent)
 
 
+def _loss_number(value) -> bool:
+    """A loss the gate can rank: a real number that is finite or +inf (a wrong answer). NaN, -inf, bools, None
+    and strings are malformed."""
+    return type(value) in (int, float) and not math.isnan(value) and value != -math.inf
+
+
+def stress_worsened(kind: dict) -> bool:
+    """One stress set's verdict. More wrong answers (infinite losses) than the incumbent is worse. With equal wrong
+    answers the means are both infinite, so ``worsened`` alone never fired (found by the cycle-7 design pilot,
+    2026-10-21: a candidate with 3 wrong answers against the incumbent's 2 passed). Fewer wrong answers is better;
+    equal counts compare the items both answered under the same 5% tolerance.
+
+    Fails closed (worsened) on anything it cannot rank: a set ``stress_summary`` marked malformed, a NaN or -inf
+    mean, a wrong-answer block with non-integer or negative counts, or non-finite answered means where items were
+    both answered. NaN compares False and -inf + inf is NaN, so at 239a87f each of these PASSED the gate
+    (independent stress-gate audit, 2026-10-21)."""
+    if kind.get("malformed"):
+        return True
+    if not (_loss_number(kind.get("incumbent")) and _loss_number(kind.get("candidate"))):
+        return True
+    wrong = kind.get("wrong")
+    if wrong is None:
+        return worsened(kind["incumbent"], kind["candidate"])
+    counts = [wrong.get(k) for k in ("incumbent", "candidate", "both_answered")] if isinstance(wrong, dict) else [None]
+    if not all(type(c) is int and c >= 0 for c in counts):
+        return True
+    if wrong["candidate"] != wrong["incumbent"]:
+        return wrong["candidate"] > wrong["incumbent"]
+    if wrong["both_answered"] == 0:
+        return False
+    means = (wrong.get("incumbent_answered_mean"), wrong.get("candidate_answered_mean"))
+    if not all(type(m) in (int, float) and math.isfinite(m) for m in means):
+        return True
+    # equal wrong answers: compare the items both answered, under the same tolerance
+    return worsened(*means)
+
+
+def stress_summary(incumbent: dict, candidate: dict) -> dict:
+    """Per stress kind (item keys ``"<kind>:<train key>"``): both mean losses and, when any loss is infinite, the
+    wrong-answer counts and the means over the items both answered. Items are grouped by their exact kind and paired
+    by key, never by position: a kind that prefixes another (``lean`` and ``leaner``) or two loss maps in different
+    orders cannot mix or misalign items (independent stress-gate audit, 2026-10-21). Both maps must score the same
+    items. A set holding a loss that is NaN, -inf or not a number is reported as ``malformed`` with no means, and
+    ``stress_worsened`` fails it; only +inf counts as a wrong answer."""
+    if set(incumbent) != set(candidate):
+        raise EvolutionError(f"STRESS_UNPAIRED: the incumbent and candidate stress losses cover different items: "
+                             f"{sorted(set(incumbent) ^ set(candidate))[:10]}")
+    out = {}
+    for kind in sorted({k.split(":")[0] for k in incumbent}):
+        keys = [k for k in incumbent if k.split(":")[0] == kind]
+        ki, kc = [incumbent[k] for k in keys], [candidate[k] for k in keys]
+        bad = {"incumbent": sum(not _loss_number(v) for v in ki), "candidate": sum(not _loss_number(v) for v in kc)}
+        if bad["incumbent"] or bad["candidate"]:       # NaN, -inf or not a number: unrankable, so the gate fails
+            out[kind] = {"incumbent": None, "candidate": None, "malformed": bad}
+            continue
+        out[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
+        if any(math.isinf(v) for v in ki + kc):        # wrong answers: the means alone cannot rank them
+            finite = [(a, b) for a, b in zip(ki, kc) if not (math.isinf(a) or math.isinf(b))]
+            out[kind]["wrong"] = {"incumbent": sum(map(math.isinf, ki)), "candidate": sum(map(math.isinf, kc)),
+                                  "both_answered": len(finite),
+                                  "incumbent_answered_mean": round(statistics.fmean(a for a, _ in finite), 6)
+                                  if finite else None,
+                                  "candidate_answered_mean": round(statistics.fmean(b for _, b in finite), 6)
+                                  if finite else None}
+    return out
+
+
 def outputs_verified(verify, items: dict, outputs: dict) -> bool:
     """Every ANSWER verifies independently. An abstention (output None) is not an answer and is not verified;
     the sealed score already rates it below a correct answer."""
@@ -695,7 +792,7 @@ PRE_FREEZE_HELDOUT = {
     "2026-10-08/cycle-forecast-1": ("forecast_quantile", lambda: set(_FORECASTING_SPLIT(
         COMPLETED_FORECAST_CYCLES["2026-10-08/cycle-forecast-1"]["seed"],
         COMPLETED_FORECAST_CYCLES["2026-10-08/cycle-forecast-1"]["excluded_seeds"])[1])),
-    "2026-10-09/cycle-immune-2": ("immune_detect", lambda: {f"s{s}" for s in IMMUNE_HELDOUT_SEEDS}),
+    "2026-10-09/cycle-immune-2": ("immune_detect", lambda: {f"s{s}" for s in IMMUNE_SPLITS["cycle-2"][1]}),
     "2026-10-14/cycle-cr-3": ("constraint_release", lambda: {f"s{s}" for s in CR_SPLITS["cycle-3"][1]})}
 
 
@@ -741,7 +838,7 @@ def _registered_heldout(target_name: str) -> set:
     if target_name == "constraint_release":
         return {f"s{s}" for _, held in CR_SPLITS.values() for s in held}
     if target_name == "immune_detect":
-        return {f"s{s}" for s in IMMUNE_HELDOUT_SEEDS}
+        return {f"s{s}" for _, held in IMMUNE_SPLITS.values() for s in held}
     return set(_FORECASTING_SPLIT()[1]) | PRE_FREEZE_HELDOUT["2026-10-08/cycle-forecast-1"][1]()
 
 
@@ -1019,15 +1116,10 @@ def cycle(*, generations: int = 5, population: int = 8, seed: int = 20261008, ou
     inc_s, _ = evaluate(target.incumbent, stress)
     cand_s, cand_run = evaluate(best, stress)
     verified = outputs_verified(spec.verify, stress._items, cand_run["outputs"])
-    adversarial = {}
-    for kind in sorted({k.split(":")[0] for k in stress._items}):
-        ki = [inc_s[k] for k in inc_s if k.startswith(kind)]
-        kc = [cand_s[k] for k in cand_s if k.startswith(kind)]
-        adversarial[kind] = {"incumbent": round(statistics.fmean(ki), 6), "candidate": round(statistics.fmean(kc), 6)}
+    adversarial = stress_summary(inc_s, cand_s)
     adversarial["all_outputs_verified"] = verified
     record["adversarial"] = adversarial
-    if not verified or any(worsened(v["incumbent"], v["candidate"])
-                           for k, v in adversarial.items() if isinstance(v, dict)):
+    if not verified or any(stress_worsened(v) for k, v in adversarial.items() if isinstance(v, dict)):
         record["decision"] = "REJECT"
         record["reason"] = "adversarial evaluation failed"
         return finish()

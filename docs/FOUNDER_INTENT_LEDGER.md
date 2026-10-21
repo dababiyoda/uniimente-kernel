@@ -2,6 +2,24 @@
 
 # Founder Intent Ledger
 
+## Mind to its maximum: successor pilot, evaluator audit, five layers — 2026-10-21
+
+`INTENT-20261021-MIND-MAXIMUM-CONTINUATION` ([record](intent/INTENT-20261021-MIND-MAXIMUM-CONTINUATION.json), [verbatim source](intent/sources/MIND-MAXIMUM-CONTINUATION-2026-10-21-source.md)): continue the complete five-layer Mind to its maximum defensible capability. "Do not stop at P8."
+
+**Kept as recorded:** the NOT_VIABLE immune cycle-7 verdict, its draft and its seeds.
+
+**Authorized:**
+- a successor pilot on a narrower immune space, under its own identity and with declared bounds, an exposure audit and stopping rules;
+- a survey of second targets among licensed targets already available;
+- an independent audit of the 32246ee stress-gate repair and its claim that historical decisions are unchanged;
+- a reconstruction of five-layer and section-31 coverage;
+- composition, metacognition and Genesis work;
+- organ integration through canonical contracts.
+
+**Kept separate, for the founder:** the shared RULE, adoption of cycle 6, genome attachment, data rights, protected merges, spending and live activation.
+
+State: active. Authority delta: none.
+
 ## Convergence of the two Mind lineages — 2026-10-14
 
 `INTENT-20261014-MIND-LINEAGE-CONVERGENCE` ([record](intent/INTENT-20261014-MIND-LINEAGE-CONVERGENCE.json), [verbatim source](intent/sources/MIND-LINEAGE-CONVERGENCE-2026-10-14-source.md), [source-location manifest](collaboration/MIND-LINEAGE-SOURCE-MANIFEST-2026-10-14.json)): two sessions implemented the 2026-10-07 directive in parallel (PR #158 and PR #155) and froze different evaluations at eight identical paths. Neither session is the winner; both contribute to one GREG Mind.
@@ -146,6 +164,10 @@ Progress 2026-10-21 (measured, frozen, negative results kept):
   - The proposal beats the incumbent 107-74, p = 0.0086, with a 33.9% lower mean loss.
   - Random restart has the lowest mean loss overall and in both subregions. Against the proposal it wins 95-79 (p = 0.128), which is not significant.
   - On the evidence so far, the options rank random restart, then the proposal, then the incumbent. Nothing is applied.
+- **A second P8 target** ([decision](evidence/greg-protected-evolution/2026-10-21-immune-7/DECISION.md)): `immune_detect` was judged NOT_VIABLE by its pilot's rule, declared before the pilot ran: best simulated P(RETAIN) 0.216, threshold 0.30. Cycle 7 is not run.
+  - Under the frozen rule one wrong answer makes a held-out mean infinite, so P(RETAIN) falls as the split grows.
+  - The pilot found that the adversarial gate missed added wrong answers when the incumbent already had one. This is fixed with a regression test (`stress_worsened`), and no recorded decision changes.
+  - How `RULE` should treat wrong answers is an open founder decision.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 

@@ -75,7 +75,10 @@
     "greg/genesis.py (recover, _probe, _ProbeView, _recorded_qualification)",
     "greg/missions.py (generation-keyed blocks, recovery re-admission)",
     "greg/body.py (recover each tick)",
-    "docs/mechanisms/MC-0002-governed-half-open-recovery.json"
+    "docs/mechanisms/MC-0002-governed-half-open-recovery.json",
+    "greg/recombine.py (selection-via-maxflow: selection.closure)",
+    "greg/goal_gravity.py (_sense capability perception, _blocked_on)",
+    "docs/evidence/greg-selection/2026-10-15/README.md"
   ],
   "tests": [
     "tests/unit/test_greg_recombine.py",

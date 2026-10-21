@@ -499,7 +499,7 @@ def _stage_closures(recipe: str, read) -> dict:
         # genome stages run through the runtime adapter, not the bound solve (round-5 review of #179, N4)
         for path, name in (("greg/cognition/solvers.py", "_genome_solver"), ("greg/cognition/genomes/library.py", "run")):
             bound = code_binding.closure(path, name, read)
-            out[f"adapter:{name}"] = None if bound is None else bound["sha256"]
+            out[f"adapter:{name}"] = None if bound is None else _digest_members(bound["members"], ADAPTER_REGISTRY)
     if out:
         # every statement that can rebind a SOLVERS key, the forms dispatch() cannot resolve included (N4)
         out["dispatch:SOLVERS"] = code_binding.table_statements("greg/cognition/solvers.py", "SOLVERS", read)
@@ -515,6 +515,19 @@ def _stage_closures(recipe: str, read) -> dict:
             bound = code_binding.closure(path, name, read)
             out[f"route:{name}"] = None if bound is None else bound["sha256"]
     return out
+
+
+# The genome registry tuple decides only which genome serves a family. Each stage family is bound by its own solve
+# closure above, so a registry change that reached a stage would stale the recipe there; adding unrelated genome
+# modules must not (merge of #158 fa0d92a0 added two modules and staled every genome-stage recipe through it).
+ADAPTER_REGISTRY = frozenset({"greg/cognition/genomes/library.py::MODULES"})
+
+
+def _digest_members(members: dict, exclude: frozenset) -> str:
+    import hashlib
+    import json as _json
+    kept = {k: v for k, v in members.items() if k not in exclude}
+    return "sha256:" + hashlib.sha256(_json.dumps(kept, sort_keys=True).encode()).hexdigest()
 
 
 def _router_organs() -> list[tuple[str, str]]:

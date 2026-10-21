@@ -15,6 +15,7 @@ TESTS = 'tests/unit/test_cognition_residual_safeguards.py'
 DISCLOSURE = 'tests/unit/test_cognition_disclosure.py'
 CHARACTERIZE = 'tests/unit/test_cognition_characterize.py'
 BUDGET = 'tests/unit/test_cognition_thinking_budget.py'
+VENTURES = 'tests/unit/test_greg_ventures.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'certificate["status"] != "REFUTED")', 'True)',
@@ -101,6 +102,21 @@ MUTANTS = [
  ('a formed engine\'s overrun is hidden', 'greg/cognition/compiler.py',
   '            if spent > limit:', '            if False:',
   'test_a_formed_mechanism_is_a_required_step_on_the_same_budget', BUDGET),
+ # Section 16 venture case (carried from #143): a revenue figure may not outrun its causal support.
+ ('a revenue conclusion drawn from any causal receipt', 'greg/ventures.py',
+  '    identified = bool(causal and causal.get("abstention_state") == "NONE"',
+  '    identified = bool(causal or causal.get("abstention_state") == "NONE"',
+  'test_a_revenue_figure_never_outruns_its_causal_support', VENTURES),
+ ('an estimate the Mind abstained on is still shown', 'greg/ventures.py',
+  '    if revenue is None or revenue.get("abstention_state") != "NONE":', '    if revenue is None:',
+  'test_a_revenue_figure_never_outruns_its_causal_support', VENTURES),
+ ('an off-ledger receipt is accepted in a memo', 'greg/ventures.py',
+  'if ledger is not None and not any(', 'if False and not any(',
+  'test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forged_receipt_is_refuted', VENTURES),
+ ('the organ bridge is handed the writable journal', 'greg/missions.py',
+  'journal=self._ledger_reader() if manifest.capability_id == "venture.assess"',
+  'journal=self.journal if manifest.capability_id == "venture.assess"',
+  'test_the_organ_bridge_reads_receipts_through_a_handle_with_no_write_method', VENTURES),
 ]
 
 

@@ -283,7 +283,7 @@ Regression tests: `tests/unit/test_greg_answer_reverification.py`. Run against `
 squat refuses the founder's reject; the altered words become the record; two smuggled refused DECISIONs count; the
 forged row decides the judgment; the appraiser verifies a closure approved by a forged row; the sandbox diagnostic
 counts a forged reconciliation; status hides the ask; the three parity seeds need the new verifier) and the 8 guards
-pass (both crash windows, the signed reconciliation, the ledgerless stand-in, the four retained evidence ledgers
+pass (both crash windows, re-applied while the envelope is still valid; a restart after it expired is covered by the review below; the signed reconciliation, the ledgerless stand-in, the four retained evidence ledgers
 giving the same answers as before).
 `test_greg_goal_gravity_authority.py` passes with its assertions unchanged; the forged-approve test gains one
 (`answer_counted` is False) and its comment was corrected (the mission no longer executes on the row).

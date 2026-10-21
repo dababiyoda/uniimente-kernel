@@ -33,6 +33,16 @@ Progress 2026-10-21 (measured; negative results kept):
 - **Data-exposure ledger across both lineages** ([ledger](evidence/greg-data-exposure-ledger.json)): 352 exposure records at this head.
 - **Six new withheld genomes**, with development numbers only.
 - **Founder decisions prepared:** [D1-D5](collaboration/FOUNDER-DECISIONS-2026-10-21.md).
+- **Genome admission v5** ([evidence](evidence/greg-genome-admission/2026-10-21-v5/README.md)): 11 new families on fresh seeds 1400-1429. It was pre-registered at `2046b744`, frozen at `b8061a21` and run once on a quiet machine.
+  - **DEFAULT (7):** MaxSAT, bin packing, Louvain communities, multistart L-BFGS-B, weighted-vote crowd, exact node cut, token-bucket admission.
+  - **NICHE (2):** QP reconciliation, NLMS.
+  - **SUPERSEDED:** the auction.
+  - **REJECTED:** graph diffusion.
+  - **Caveats:**
+    - Differential evolution wins 15-7 against the DEFAULT multistart genome, not significant under the rule. The proposed routing for multimodal objectives is DE.
+    - The node-cut genome's wins are bounds coverage only.
+  - 44 of 58 genomes are admitted; none is attached.
+- **`develop_repair` as a second P8 target:** a declared pilot was NOT_VIABLE because the trigger can never fire (the genome beats its no-repair baseline on 640 of 640). The measured deficit against the replanner is a mechanism, a hybrid of central plan and local fallback, not a configuration.
 
 ## Convergence of the two Mind lineages — 2026-10-14
 

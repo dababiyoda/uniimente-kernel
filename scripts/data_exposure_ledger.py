@@ -508,7 +508,7 @@ def admission_179(src: Source, results: dict) -> list[dict]:
 
 
 P8_TARGETS = {"constraint_release": ("cr_split", "CR_SPLITS"), "immune_detect": ("immune_split", "IMMUNE_SPLITS"),
-              "forecast_quantile": ("forecasting_split", None)}
+              "forecast_quantile": ("forecasting_split", None), "develop_repair": ("repair_item", "REPAIR_SPLITS")}
 
 
 def _p8_generator(commit: str, target: str) -> dict:
@@ -616,7 +616,8 @@ def p8_pilots(src: Source) -> list[dict]:
     for path in src.paths(r"docs/evidence/greg-protected-evolution/[^/]+/pilot/[^/]+\.json"):
         dirs.setdefault(path.rsplit("/", 1)[0], []).append(path)
     for directory, files in sorted(dirs.items()):
-        target = "immune_detect" if "immune" in directory else "constraint_release"
+        target = ("immune_detect" if "immune" in directory else "develop_repair" if "repair" in directory
+                  else "constraint_release")
         declared, union = {}, set()
         for path in files:
             for key, seeds in _walk_ranges(load_json(src.commit, path)):

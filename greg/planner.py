@@ -471,9 +471,13 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
     prompt = _prompt(text, ctx)
     origin = f"model:{transport.name}"
     attempts = []
+    calls, spent = 0, 0.0           # every round costs, including drafts that are then repaired
     for round_number in range(repair_rounds + 1):
         try:
+            calls += 1
             reply, author, tried, identity = _complete(transport, SYSTEM, prompt)
+            cost = (getattr(transport, "last", None) or {}).get("cost_usd")
+            spent = None if cost is None or spent is None else spent + float(cost)
             draft = _first_json_object(reply)
         except models.Refusal as exc:   # a decline is final; the router never re-asks another vendor
             return {"status": "REFUSED", "origin": origin, "why": str(exc)[:400], "refusal_class": exc.kind,
@@ -482,8 +486,10 @@ def model_route(text: str, ctx: PlannerContext, transport, *, repair_rounds: int
             return {"status": "FAILED", "origin": origin, "why": f"{type(exc).__name__}: {exc}"[:400],
                     "attempts": attempts}
         origin = f"model:{author}"   # the route that actually wrote this draft
-        extra = {"model": author, "rounds": round_number + 1,
+        extra = {"model": author, "rounds": round_number + 1, "model_calls": calls,
                  "prompt_sha256": "sha256:" + hashlib.sha256((SYSTEM + "\n" + prompt).encode()).hexdigest()}
+        if spent is not None:       # absent, not zero, when a route did not report its cost
+            extra["model_cost_usd"] = round(spent, 6)
         if tried:
             extra["routes_tried"] = tried
         extra.update(identity)
@@ -545,7 +551,12 @@ def authority_summary(spec: dict, capabilities: list[dict]) -> dict:
         within = (cid and any(fnmatchcase(cid, p) for p in cone["capabilities"])
                   and ["read_only", "internal_write", "external_contact"].index(cap.get("consequence_class", "read_only"))
                   <= ["read_only", "internal_write", "external_contact"].index(cone["max_consequence_class"]))
-        (inside if within else ask).append(words)
+        signed = any(p["action_id"] == strategy["action_id"] and p["capability"] == cid
+                     and p["target"] == strategy["target"] and p["consequence_class"] == cap.get("consequence_class")
+                     for p in spec.get("pre_approved_steps", []))
+        if signed and not within:            # this one step only (greg/sop.py); the cone itself is unchanged
+            words += " (pre-approved by this signature)"
+        (inside if within or signed else ask).append(words)
     return {"may_do_without_asking": ["observe: " + ", ".join(sorted({c["sensor"].get("capability") or
                                                                       c["sensor"].get("function") for c in
                                                                       spec["success_checks"]}))] + inside,

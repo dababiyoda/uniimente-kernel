@@ -25,7 +25,8 @@ from greg.body import Body, Layout
 from greg.capabilities import BUILTINS, CapabilityError, InvocationContext
 from tests.greg_fixtures import Clock, drop, make_body, signed
 from tests.integration.test_greg_mind_constructs_capability import STAFFING
-from tests.integration.test_one_machine import ENV, KERNEL, alive, facts, greg, sandbox_repo, start_body, wait_for
+from tests.integration.test_one_machine import ENV, KERNEL, alive, dispatches, facts, greg, sandbox_repo, start_body, \
+    wait_for, worker_processes
 
 MATRIX = KERNEL / "tests" / "evidence" / "one-machine-20261014" / "adversarial-matrix.json"
 
@@ -270,8 +271,7 @@ def test_attack_founder_stop_during_ongoing_work_ends_the_worker_now(tmp_path):
     assert greg(home, "mission", "submit", str(tmp_path / "m.json"), "--key", str(key),
                 "--no-passphrase").returncode == 0
     body = start_body(home, worker, log)
-    pid = int(wait_for(lambda: (tools / "started").exists() and (tools / "started").read_text(), timeout=120,
-                       what="the worker to start", body=body, log=log))
+    [pid] = wait_for(lambda: worker_processes(worker), timeout=120, what="the worker to start", body=body, log=log)
     stopped_at = time.monotonic()
     assert greg(home, "stop", "--local").returncode == 0
     assert body.wait(timeout=30) == 0
@@ -286,7 +286,8 @@ def test_attack_founder_stop_during_ongoing_work_ends_the_worker_now(tmp_path):
     wait_for(lambda: [r for r in facts(home, spec["mission_id"])["requests"] if r["kind"] == "RECONCILIATION"],
              timeout=60, what="a reconciliation request after restart", body=body, log=log)
     time.sleep(1.5)
-    assert len((tools / "runs.log").read_text().splitlines()) == 1, "retried without the founder"
+    assert dispatches(home, spec["mission_id"], "commission-worker") == ["UNCERTAIN"] \
+        and not worker_processes(worker), "retried without the founder"
     body.send_signal(signal.SIGTERM)
     assert body.wait(timeout=30) == 0
 

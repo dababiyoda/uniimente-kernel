@@ -25,7 +25,7 @@ def event():
 
 def test_genesis_hash_is_recomputed():
     ledger = EvidenceLedger(ANCHOR)
-    ledger.records[0].payload['constitution_hash'] = 'foreign'
+    ledger._records[0].payload['constitution_hash'] = 'foreign'
     assert not ledger.verify_chain()[0]
 
 
@@ -131,5 +131,5 @@ def test_malformed_signature_refuses_without_type_error(monkeypatch, signature):
 
 def test_boolean_is_not_a_hash_version():
     ledger = EvidenceLedger(ANCHOR)
-    ledger.records[0].hash_version = True
+    ledger._records[0].hash_version = True
     assert not ledger.verify_chain()[0]

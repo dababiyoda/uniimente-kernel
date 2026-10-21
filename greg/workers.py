@@ -24,10 +24,19 @@ Providers are interchangeable (``PROVIDERS``): the Claude Code CLI, any other he
 agent declared by argv template (Codex, Aider, ...), or a future human worker. The worker's
 own report is retained as ``worker_claim`` and is never used as acceptance.
 
-Limits (stated, not hidden): the worker process is confined by its own tool permissions and
-working directory, not by an OS sandbox; it needs its provider's network to think. GREG's
-acceptance tests do run with no network (``run_isolated``). Spend is capped by the
-provider's own budget flag and by the founder-signed strategy cost.
+Filesystem confinement: on Linux with Landlock (ABI >= 3) the worker process and everything it
+starts can read and execute only the host runtime (``greg.isolation.worker_grants``) and can
+write only its own work directory, so it cannot read the Body home (ledger, witness key, device
+key, inbox), another mission's workspace, another work order, the source checkout or another
+process's environment. Where Landlock is absent (macOS, older kernels) the worker runs as
+before, confined only by its tool permissions and working directory, and the evidence says so
+(``worker.confinement``).
+
+Limits (stated, not hidden): the worker needs its provider's network to think, so network is
+not confined. A process the worker starts cannot open its own ``/proc/self`` (only the
+worker's own pid directory is granted). GREG's acceptance tests do run with no network
+(``run_isolated``). Spend is capped by the provider's own budget flag and by the
+founder-signed strategy cost.
 """
 from __future__ import annotations
 
@@ -46,6 +55,7 @@ import sys
 import tempfile
 import time
 
+from greg import isolation
 from greg.capabilities import CapabilityError, InvocationContext, _inside, run_isolated
 
 # Surfaces a worker may never change on its own: authority, permission semantics, approval
@@ -76,7 +86,7 @@ SUPERVISION = {"process": "own session; parent-death SIGKILL (Linux); process gr
                "cancellation": "founder STOP / SIGTERM stops the worker mid-run (polled every 50 ms)",
                "output": f"stdout/stderr file-backed and capped at {1024 * 1024} bytes",
                "environment": "scrubbed: no ambient keys, home, proxies or SDK configuration",
-               "filesystem": "NOT OS-confined: same UID as the body (see #157 worker_isolation)",
+               "filesystem": "Landlock where the host supports it, else none; each receipt's 'confinement' records which (same UID as the body either way)",
                "network": "NOT isolated for the worker process (a remote provider needs it)",
                "git_metadata": "restored from a trusted copy (digest held in memory, re-checked after the restore "
                                "and after GREG's acceptance run; any change refuses the commit). GREG's git runs "
@@ -256,6 +266,7 @@ class WorkerReport:
     summary: str = ""
     permission_denials: list = field(default_factory=list)
     error: str | None = None
+    confinement: dict | None = None   # what the OS enforced on the worker process (None: the provider did not say)
 
 
 def worker_spend(raw, cap: float) -> dict:
@@ -345,6 +356,31 @@ def _die_with_body():
         ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, 9)   # PR_SET_PDEATHSIG = 1, SIGKILL = 9
 
 
+def _confined(cwd: Path, binary, read_files=()) -> tuple:
+    """The ``preexec_fn`` that confines one worker process, and the record of what it enforces.
+
+    The grants are computed here, in the Body, so the child after fork only makes syscalls. A policy that
+    cannot be built safely (a runtime root containing the workspace) refuses the worker; a host with no
+    usable Landlock runs it as before and says so.
+    """
+    status = isolation.available()
+    if not status.get("available"):
+        reason = status.get("reason") or f"Landlock ABI {status.get('abi')} below 3"
+        return _die_with_body, {"filesystem": "none", "reason": reason}
+    try:
+        grants = isolation.worker_grants(cwd, binaries=[binary], read_files=read_files)
+        libc = isolation._libc()
+    except isolation.IsolationError as exc:
+        raise WorkerError(f"the worker cannot be confined, so it is refused: {exc}") from None
+
+    def preexec():
+        _die_with_body()
+        isolation.restrict(grants, libc)
+
+    return preexec, {"filesystem": "landlock", "abi": status["abi"], "writable": [str(cwd)],
+                     "readable": sorted(str(p) for p in grants if p != cwd.resolve())}
+
+
 def _worker_env(workspace: Path) -> dict:
     """No ambient keys, home, proxy, SDK configuration or unrelated environment.
 
@@ -406,20 +442,23 @@ class ClaudeCodeWorker:
     def run(self, order: WorkOrder, cwd: Path, *, stop_check=None) -> WorkerReport:
         if not self.binary:
             raise WorkerError("Claude Code CLI is not installed on this body")
+        preexec, confinement = _confined(cwd, self.binary)
         started = time.monotonic()
         try:
             proc = self.runner(self.argv(order), input=worker_prompt(order), capture_output=True, text=True,
                                timeout=order.timeout_seconds, cwd=cwd, env=_worker_env(cwd),
-                               preexec_fn=_die_with_body, **_stop_kw(self.runner, stop_check))
+                               preexec_fn=preexec, **_stop_kw(self.runner, stop_check))
         except subprocess.TimeoutExpired:
             return WorkerReport(self.name, "claude-code", -1, time.monotonic() - started, None,
-                                error=f"worker exceeded {order.timeout_seconds}s and was stopped")
+                                error=f"worker exceeded {order.timeout_seconds}s and was stopped",
+                                confinement=confinement)
         duration = time.monotonic() - started
         try:
             result = json.loads(proc.stdout)
         except json.JSONDecodeError:
             return WorkerReport(self.name, "claude-code", proc.returncode, duration, None,
-                                error="unreadable worker output: " + (proc.stderr or proc.stdout)[-300:])
+                                error="unreadable worker output: " + (proc.stderr or proc.stdout)[-300:],
+                                confinement=confinement)
         text = str(result.get("result", ""))
         return WorkerReport(
             provider=self.name, identity="claude-code" + (f":{self.model}" if self.model else ""),
@@ -427,7 +466,7 @@ class ClaudeCodeWorker:
             served_models=sorted((result.get("modelUsage") or {}).keys()), turns=result.get("num_turns"),
             claim=_parse_claim(text), summary=text[-MAX_TAIL:],
             permission_denials=[str(d)[:200] for d in result.get("permission_denials", [])][:50],
-            error=str(result.get("result"))[:300] if result.get("is_error") else None)
+            error=str(result.get("result"))[:300] if result.get("is_error") else None, confinement=confinement)
 
 
 class CliAgentWorker:
@@ -451,19 +490,27 @@ class CliAgentWorker:
         prompt = worker_prompt(order)
         prompt_file = cwd.parent / f"{order.order}.prompt.txt"
         prompt_file.write_text(prompt)
-        argv = [a.replace("{prompt_file}", str(prompt_file)) for a in self.template]
+        # The resolved binary, not the template's bare name: the worker runs under the scrubbed PATH
+        # (``_worker_env``), which does not contain where the host found it (e.g. /usr/local/bin).
+        argv = [self.binary] + [a.replace("{prompt_file}", str(prompt_file)) for a in self.template[1:]]
+        # A declared argv may name the program's own script (``python worker.py``): it must be readable, or a
+        # confined worker cannot even start. Only regular files the template names, read-only.
+        scripts = [Path(a) for a in self.template[1:] if "{" not in a and Path(a).is_absolute() and Path(a).is_file()]
+        preexec, confinement = _confined(cwd, self.binary, read_files=[prompt_file, *scripts])
         started = time.monotonic()
         try:
             proc = self.runner(argv, input=prompt if self.stdin else None, capture_output=True, text=True,
-                               timeout=order.timeout_seconds, cwd=cwd, env=_worker_env(cwd), preexec_fn=_die_with_body,
+                               timeout=order.timeout_seconds, cwd=cwd, env=_worker_env(cwd), preexec_fn=preexec,
                                **_stop_kw(self.runner, stop_check))
         except subprocess.TimeoutExpired:
             return WorkerReport(self.name, self.name, -1, time.monotonic() - started, None,
-                                error=f"worker exceeded {order.timeout_seconds}s and was stopped")
+                                error=f"worker exceeded {order.timeout_seconds}s and was stopped",
+                                confinement=confinement)
         out = proc.stdout or ""
         return WorkerReport(self.name, self.name, proc.returncode, round(time.monotonic() - started, 2), None,
                             claim=_parse_claim(out), summary=out[-MAX_TAIL:],
-                            error=None if proc.returncode == 0 else (proc.stderr or out)[-300:])
+                            error=None if proc.returncode == 0 else (proc.stderr or out)[-300:],
+                            confinement=confinement)
 
 
 PROVIDERS: dict[str, object] = {
@@ -558,6 +605,35 @@ def acceptance_commands(acceptance: dict, names: list[str]) -> list[list[str]]:
         commands.append(["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", *changed] if changed else
                         ["false", "acceptance requires the worker to add or change at least one test"])
     return commands
+
+
+# The evaluator a repository order is judged by: the files its explicit acceptance commands name, as they stood at
+# the recorded base, and the files that configure the test runner. A worker that edits a named test (weakening
+# it to ``assert True``) or adds a conftest.py has replaced its own judge; the patched tree would then "pass".
+EVALUATOR_CONFIG = ("conftest.py", "*/conftest.py", "pytest.ini", "tox.ini")
+EVALUATOR_SHARED = ("pyproject.toml", "setup.cfg")   # may configure pytest, but also carry legitimate changes
+
+
+def evaluator_findings(name_status: str, acceptance: dict) -> dict:
+    """From ``git diff --name-status`` against the base: frozen evaluator files the patch replaced or configured.
+
+    ``replaced``: a file named by an explicit acceptance command (or inside a named directory) that existed at the
+    base and was modified or deleted, or any added/changed runner configuration. New test files under a named
+    directory extend the suite and are allowed. ``shared``: project files that may also configure the runner.
+    """
+    named = {arg.split("::", 1)[0].rstrip("/") for argv in acceptance.get("tests", []) for arg in argv[1:]
+             if arg and not arg.startswith("-")}
+    replaced, shared = [], []
+    for line in name_status.splitlines():
+        status, _, path = line.partition("\t")
+        if not path:
+            continue
+        in_named = path in named or any(path.startswith(d + "/") for d in named)
+        if allowed(path, EVALUATOR_CONFIG) or (in_named and status[:1] in ("M", "D", "T")):
+            replaced.append(path)
+        elif allowed(path, EVALUATOR_SHARED):
+            shared.append(path)
+    return {"replaced": sorted(replaced), "shared": sorted(shared)}
 
 
 def scope_findings(names: list[str], order_allowed: tuple, max_files: int | None) -> dict:
@@ -682,7 +758,8 @@ def commission(params: dict, ctx: InvocationContext) -> dict:
                    "cost_usd": spend["reported_usd"], "provider_cost_raw": spend["raw_provider_value"],
                    "duration_s": report.duration_s, "turns": report.turns,
                    "exit_code": report.exit_code, "error": report.error,
-                   "permission_denials": report.permission_denials, "supervision": SUPERVISION},
+                   "permission_denials": report.permission_denials, "supervision": SUPERVISION,
+                   "confinement": report.confinement or {"filesystem": "not reported by the provider"}},
         "spend": spend,
         "worker_claim": report.claim, "worker_summary_tail": report.summary[-1500:],
         "evidence_path": str(evidence_path), "acceptance_owner": "worker.appraise (independent)",
@@ -797,6 +874,13 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         if scope["too_many_files"]:
             findings.append("more files changed than the order allows")
             verdict = "REJECTED"
+        evaluator = {"replaced": [], "shared": []}
+        if order["mode"] == "repository":
+            evaluator = evaluator_findings(
+                _git(fresh, "diff", "--cached", "--name-status", "--no-renames", base).stdout, order["acceptance"])
+            if evaluator["replaced"]:
+                findings.append(f"the worker changed the frozen evaluator it is judged by: {evaluator['replaced']}")
+                verdict = "REJECTED"
         if order["mode"] == "repository":
             with_tests = run_tests(acceptance_commands(order["acceptance"], names), fresh,
                                    timeout=min(int(order["timeout_seconds"]), 1200))
@@ -811,6 +895,10 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
                 verdict = "REJECTED"
         if scope["protected_touched"] and verdict == "ACCEPTED":
             findings.append(f"protected surfaces changed: {scope['protected_touched']}; founder decision required")
+            verdict = "NEEDS_FOUNDER_DECISION"
+        if evaluator["shared"] and verdict == "ACCEPTED":
+            findings.append(f"project files that can configure the test runner changed: {evaluator['shared']}; "
+                            "founder decision required")
             verdict = "NEEDS_FOUNDER_DECISION"
     if summary.get("worker_claim") is not None:
         findings.append("worker self-report retained as claim only; not used for this verdict")

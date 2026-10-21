@@ -56,10 +56,10 @@ that changed: [`DEVELOPMENTAL-INHERITANCE-2026-09-30.json`](DEVELOPMENTAL-INHERI
 `tests/unit/test_developmental_inheritance.py`. The first pass of this record (commit `2d602bf`) used terminal labels
 such as "superseded" and "archive"; the founder's 2026-09-30 correction replaced them.
 
-- **ALREADY_ACHIEVED_NODE (N0):** #101 #102 #108 #109 #110 #111 #113 #114 #118 #120 #122 #125 #126 #127 #128 #130 #131 #133 #134, #115's anchor, #95.
+- **ALREADY_ACHIEVED_NODE (N0):** #101 #102 #108 #109 #110 #111 #113 #114 #118 #120 #122 #125 #126 #127 #128 #130 #131 #133 #134, #115's anchor.
 - **NEXT_NODE_INPUT (N2/N3):** #132 Foundry-55 (stacks next), #94 protected evaluation, WMI.
 - **PORTABLE_MECHANISM:** #85 run-record binding (ported now), #129 shadow trial, #122's Mac runbook repairs (ported into the Chromebook installer), build-your-own-x.
-- **REQUIRES_ADAPTATION:** mac.notify to Body 1, Body 1 credential store, #105, #124, #86's 198-item backlog, #79/#81, `egregore/local_model.py`.
+- **REQUIRES_ADAPTATION:** #95 work-start/receipt bootstrap (N0; current SOP is partial, receipt workflow/test absent), mac.notify to Body 1, Body 1 credential store, #105, #124, #86's 198-item backlog, #79/#81, `egregore/local_model.py`.
 - **TEMPORARILY_DEFERRED:** #121 until N1 exits.
 - **FUTURE_NODE_CAPABILITY:** Mac body mechanisms and multi-body (N8), #71's canary (N3), RailScout/DALEOBANKS/RESEARCH-IN (N3), PumpStation (N7), gods-eye-view (N9), #73 (N2), #78 (N8), #88–#92 mechanisms (N5).
 - **SUPERSEDED_IMPLEMENTATION_ASSUMPTION** (with the nine-question test): the first-Mac assumption (hardware, sequence), #63/#64/#66 and #88/#90/#92 literal framing, #68's node order, #70's runtime ownership, the synthetic local console.
@@ -102,3 +102,13 @@ non-gameable by agent activity. Every remaining VEPMC condition requires Alfonso
    PRs listed above may be closed as merged-into-this-branch.
 3. **Next agent:** stack #132 on this branch (union-resolve `greg/capabilities.py` and `greg/cli.py`); port #129's
    shadow trial into Genesis replacement; converge `egregore/local_model.py` transport onto `greg/models.OllamaRoute`.
+
+## Source and lineage correction — proof-integrity audit, 2026-09-30
+
+The earlier 49/50-open-PR coverage assertion was a partial snapshot. Live enumeration now finds **81 open Kernel PRs and 135 branches**. All are recorded with exact heads and ancestry in [`LINEAGE-AUDIT-20260930.json`](LINEAGE-AUDIT-20260930.json); every open PR now has an effect-preserving provisional placement. This is metadata coverage with selected code inspection, not a complete audit of every diff, review or test. The earlier claim remains in the JSON correction record and git history. The [current source manifest](SOURCE-COVERAGE-20260930-PROOF-INTEGRITY.json) and [gate repair report](GREG-GATE-REPAIR-20260930.md) state the remaining limits.
+
+**#95 is not fully achieved.** Its head is not an ancestor of main or f617db9, and `docs/collaboration/START_HERE.md`, `.github/workflows/collaboration-receipt.yml`, and `tests/unit/test_collaboration_receipt.py` are absent from both. The current cognition SOP preserves part of the effect; the missing receipt/entry mechanism is **REQUIRES_ADAPTATION at N0**, to be ported only when actual context-continuity demand justifies it. No worker-context intention was removed.
+
+**#115 is mechanism-level inheritance.** `greg/anchor.py` and `tests/unit/test_greg_anchor.py` are byte-identical on its head and f617db9 even though its whole head is not an ancestor. N0 achieved means the extracted anchor mechanism exists on the candidate branch, not that every #115 scope was merged or that an external TSA/founder-body run occurred.
+
+The organ map now records seven exact default-branch commits and 71 open organ PRs at metadata scope. RAILSCOUT main has no research runtime (appraiser is draft #9); PumpStation main is wallet-connect only; RESEARCH-IN's ingest route returns an acknowledgement without fetching/indexing. Their research, funded-work and collaborative capability effects remain active at their future nodes. No PR was closed, retargeted or merged; no founder-owned hardware proof is claimed.

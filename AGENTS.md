@@ -2,6 +2,14 @@
 
 # UNIIMENTE Agent Entry Contract
 
+Current gate repair and source-coverage correction: read
+`docs/collaboration/GREG-GATE-REPAIR-20260930.md` and
+`docs/intent/INTENT-20260930-MASTER-BUILD-GATE.json` before claiming independent
+closure verification or a successful first-body install. The 81-open-PR snapshot
+is partial source coverage, and VEPMC remains externally unverified at zero.
+A structurally complete VEPMC row moves `greg path` only at the founder tier
+(`greg/metrics.py` `founder_tier`); that tier is not external verification.
+
 **Foundry delivery scope (2026-09-27):** Read `docs/intent/INTENT-2026-09-27-FOUNDRY-55.json`. All 55 numbered systems remain binding build obligations, each with integrated executable behavior, meaningful tests and reproducible evidence. `foundry/arsenal.py` is a selection catalog, not completion proof. Bounded sequencing does not delete an item; removal/substitution needs Alfonso's explicit approval. Alfonso currently owns no Mac, so body hardware is undecided. No new deployment or consequence authority follows from this build order.
 
 ## Controlling founder correction — complete machine, 2026-10-01

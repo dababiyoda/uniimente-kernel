@@ -1,0 +1,41 @@
+// Constitutional amendment ceremony. Human-only. Versioned. Never silent.
+// UCL v0.1. Part of the UNIIMENTE Constitution.
+
+amendment_rule "constitutional_amendment" {
+    may_propose   = ["alfonso", "adversarial_intelligence_organ"]
+    may_ratify    = ["alfonso"]
+    may_never     = ["any_agent", "any_venture_cell", "any_workflow", "uniimente_itself"]
+
+    ceremony {
+        step "proposal" {
+            record = "amendment proposal with rationale, affected clauses, expected effects, and dissenting analysis"
+        }
+        step "adversarial_review" {
+            record = "Adversarial Intelligence organ attacks the proposal; its dissent is preserved even when overruled"
+            minimum_wait = "72 hours"
+        }
+        step "ratification" {
+            by     = "alfonso"
+            record = "signed decision record with constitution hash before and after"
+        }
+        step "propagation" {
+            record = "version bump; every organ receives policy.changed event; dependent policies recompiled and retested"
+        }
+        step "regression_test" {
+            record = "full governance laboratory suite must pass on the amended constitution before the amendment activates"
+        }
+    }
+
+    hard_rules {
+        no_silent_amendment      = true
+        no_agent_amendment       = true
+        no_retroactive_amendment = true   // prior actions are judged by the constitution active at their commit time
+        amendment_is_public_to_organs = true
+    }
+}
+
+amendment_rule "non_constitutional_policy_change" {
+    applies_to = ["portfolio_policies", "venture_cell_charters", "capital_policies", "affect_policy"]
+    may_ratify = ["alfonso"]
+    ceremony   = "same steps, minimum_wait reduced to 24 hours, adversarial review still mandatory"
+}

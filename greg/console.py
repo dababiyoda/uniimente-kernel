@@ -179,9 +179,12 @@ class Console:
         return pid
 
     def attach(self, request_id: str, capability_id: str) -> Path:
-        """Sign CAPABILITY_ATTACH only for a verified candidate that an open capability ask names."""
-        open_asks = {r["request_id"]: r for r in status(self.home)["decisions_required"]}
-        if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))}:
+        """Sign CAPABILITY_ATTACH only for a verified candidate an open capability ask names, or one a
+        blocked mission is still waiting on after its ask was answered (``status()["attach_waiting"]``)."""
+        st = status(self.home)
+        open_asks = {r["request_id"]: r for r in st["decisions_required"]}
+        waiting = {w["capability_id"] for w in st.get("attach_waiting", [])}
+        if capability_id not in {c["capability_id"] for c in _attachable(open_asks.get(request_id, {}))} | waiting:
             raise ValueError("that capability is not a verified candidate of an open capability ask")
         return self.sign("CAPABILITY_ATTACH", {"capability_id": capability_id})
 
@@ -411,12 +414,17 @@ def home_parts(console: Console) -> dict:
     can = console.key is not None
     add("header", f"<h1>GREG</h1><p class=muted>Body {_e(st['body_id'])} · {body_state} · {signer} · "
            f"chain {'verified' if st['security']['chain_verified'] else '<b class=warn>FAILED</b>'}</p>")
+    tier = st.get("founder_tier") or {}
+    if tier and not tier.get("enrolled_key_attested"):
+        add("founder_tier", "<section class=warn><b>Founder tier: not attested.</b> " + _e(tier.get("consequence", ""))
+            + ". Run <code>" + _e(tier.get("how", "")) + "</code> once.</section>")
     for message in console.flash[-3:]:
         add("flash", f"<section class=ok>{_e(message)}</section>")
     console.flash.clear()
     vepmc = snap["vepmc"]
     add("stats", "<section><div class=grid>"
-               f"<div class=stat><b>{vepmc['VEPMC']}</b>verified persistent closures</div>"
+               f"<div class=stat><b>{vepmc['VEPMC']}</b>structural candidates (VEPMC; ledger checks only)</div>"
+               f"<div class=stat><b>{vepmc.get('founder_tier_count', 0)}</b>at the founder tier</div>"
                f"<div class=stat><b>{len(snap['missions'])}</b>missions</div>"
                f"<div class=stat><b>{len(st['decisions_required'])}</b>decisions waiting</div>"
                f"<div class=stat><b>{len(snap['deliveries'])}</b>recent deliveries</div></div></section>")
@@ -428,8 +436,12 @@ def home_parts(console: Console) -> dict:
     if st["decisions_required"]:
         rows = []
         for r in st["decisions_required"]:
-            actions = (_form(console, "/decide", {"request_id": r["request_id"], "answer": "approve"}, "Approve",
-                             disabled=not can) + " " +
+            # On a capability ask Approve would only record an answer, never attach (greg/asks.py), and
+            # answering removes the ask; offer Attach and Reject instead.
+            approve = "" if _attachable(r) else _form(console, "/decide", {"request_id": r["request_id"],
+                                                                           "answer": "approve"}, "Approve",
+                                                      disabled=not can) + " "
+            actions = "" if r.get("answerable") is False else (approve +
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reject"}, "Reject",
                              cls="secondary", disabled=not can)) if r["kind"] != "RECONCILIATION" else (
                        _form(console, "/decide", {"request_id": r["request_id"], "answer": "reconcile_executed"},
@@ -445,6 +457,20 @@ def home_parts(console: Console) -> dict:
                         f"<span class=muted>{_e(r['recommendation'])}</span>{_ask_details(r)}</td>"
                         f"<td>{actions}</td></tr>")
         add("decisions", "<section><h2>Decisions waiting for you</h2><table>" + "".join(rows) + "</table></section>")
+    # A capability ask answered without an attach (e.g. approved from the phone, which can never attach)
+    # leaves its mission blocked; keep the one signed way forward in the same "decisions" part, so the
+    # classic page and Mission Control both show it (#168, 8531595).
+    asked = {c["capability_id"] for r in st["decisions_required"] for c in _attachable(r)}
+    waiting = [w for w in st.get("attach_waiting", []) if w["capability_id"] not in asked]
+    if waiting:
+        rows = [f"<tr><td><span class=pill>ATTACH</span></td><td>{_e(w['mission_id'] or '')} is waiting for "
+                f"{_e(w['capability_id'])}<br><span class=muted>Verified by Genesis; your earlier answer did not "
+                "attach it. Attaching is a signed command.</span></td><td>"
+                + _form(console, "/attach", {"request_id": "", "capability_id": w["capability_id"]},
+                        f"Attach {w['capability_id']}", disabled=not can,
+                        confirm=f"Sign CAPABILITY_ATTACH for {w['capability_id']}?") + "</td></tr>"
+                for w in waiting]
+        add("decisions", "<section><h2>Waiting for an attach</h2><table>" + "".join(rows) + "</table></section>")
     closures = [r for r in vepmc["missions"]]
     if closures:
         rows = []
@@ -528,7 +554,7 @@ def render_mission_control(console: Console, view: str = "overview", query: str 
         raise FileNotFoundError(view)
     parts = home_parts(console)
     parts["_query"] = query[:200]
-    body = parts.get("flash", "") + mission_control.render_view(console, view, parts)
+    body = parts.get("flash", "") + parts.get("founder_tier", "") + mission_control.render_view(console, view, parts)
     body += "<p class=muted><a href=/classic>Classic page</a> · <a href=/morning>Morning report</a> · <a href=/api/mc>JSON</a></p>"
     return _page("GREG Mission Control", f"<style>{mission_control.STYLE_EXTRA}</style>" + body,
                  refresh=view == "overview")
@@ -598,7 +624,7 @@ def render_delivery(console: Console, name: str) -> bytes:
 def render_morning(console: Console) -> bytes:
     report = morning_projection(console.home)
     keep = {k: report[k] for k in ("q1_goals_worked_on", "q3_what_i_did", "q6_what_failed", "q7_surprises",
-                                   "q12_decisions_required", "q13_tonight", "goal_gravity", "metrics",
+                                   "q9_learned", "q12_decisions_required", "q13_tonight", "goal_gravity", "metrics",
                                    "claims_not_made")}
     return _page("GREG morning", "<p><a href=/>Back</a></p><section><h2>Morning report</h2><pre>"
                  + _e(json.dumps(keep, indent=1, default=str)) + "</pre></section>")

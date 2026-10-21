@@ -128,7 +128,7 @@ def test_a_paid_action_reconciled_as_executed_books_its_signed_cap_against_the_b
         assert m.spent_usd == pytest.approx(0.6) and m.status == "ACTIVE" and not note.exists()
         [reconciled] = [a for a in actions(body) if a.get("route") == "founder_reconciliation"]
         assert reconciled["cost_usd"] == reconciled["cost_cap_usd"] == 0.6
-        assert reconciled["spend_basis"] == "signed_cap: founder reconciled executed; provider spend unknown"
+        assert reconciled["spend_basis"] == "signed_cap: founder reconciled the dispatch as executed; its spend was never measured"
         from greg.mission_control import cost_rows
         [row] = cost_rows(actions(body), [{"mission_id": "m:reconcile-paid", "cone": spec["light_cone"]}], [])
         assert row["booked_usd"] == row["unknown_at_cap_usd"] == 0.6 and row["measured_usd"] == 0.0

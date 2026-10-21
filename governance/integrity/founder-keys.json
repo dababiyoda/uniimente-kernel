@@ -1,0 +1,6 @@
+{
+ "version": 1,
+ "purpose": "Founder public keys for governance.integrity. Starts empty: no key is invented and no test key is committed. Initial enrollment is Alfonso's own commit of his public key into genesis (trust on first use; python -m governance.integrity enroll). After that the key set changes only by an INTEGRITY_KEYS record signed by a key already listed (python -m governance.integrity keys).",
+ "genesis": [],
+ "changes": []
+}

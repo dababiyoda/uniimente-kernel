@@ -45,7 +45,11 @@ FOUNDER_HORIZONS = [
 # Every kernel PR open on 2026-09-30 except this one (#137), read from the GitHub API with pagination.
 # Negative evidence: the first pass read one page and missed the 30 July PRs (#11-#62); they were
 # found and placed later the same day (placements kernel_sdk_extraction_11_16 ... pr58_62_developmental_substrate).
-OPEN_KERNEL_PRS = {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 35, 44, 46, 51,
+# #138 (b8a0ccd) independently derived the open set from its API snapshot, LINEAGE-AUDIT-20260930 (81 PRs,
+# #137 included); it is snapshot coverage, not a live API claim. Both enumerations are kept: the union.
+LINEAGE_AUDIT = ROOT / "docs/collaboration/LINEAGE-AUDIT-20260930.json"
+AUDITED_OPEN_KERNEL_PRS = {pr["number"] for pr in json.loads(LINEAGE_AUDIT.read_text())["prs"]}
+OPEN_KERNEL_PRS = AUDITED_OPEN_KERNEL_PRS | {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 35, 44, 46, 51,
                    52, 53, 54, 55, 56, 57, 58, 59, 60, 62, 63, 64, 66, 68, 70, 71, 72, 73, 76, 77,
                    78, 79, 81, 83, 85, 86, 87, 88, 90, 92, 93, 94, 95, 97, 101, 102, 105, 108, 109, 110,
                    111, 113, 114, 115, 118, 119, 120, 121, 122, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134}
@@ -194,7 +198,7 @@ def test_an_archive_without_its_lineage_is_refused(mutate, message):
 def test_evidence_without_refs_is_unresolved_and_later_horizons_name_prerequisites():
     data = devpath.load()
     bad = copy.deepcopy(data)
-    bad["nodes"][3]["evidence_status"] = "verified_by_execution"          # N3 has no refs
+    bad["nodes"][3]["evidence_refs"] = []                                  # verified N3 stripped of its refs
     with pytest.raises(devpath.PathError, match="unresolved"):
         devpath.validate(bad)
     bad = copy.deepcopy(data)
@@ -202,6 +206,11 @@ def test_evidence_without_refs_is_unresolved_and_later_horizons_name_prerequisit
     later.pop("prerequisite")
     with pytest.raises(devpath.PathError, match="prerequisite"):
         devpath.validate(bad)
+
+
+def at_founder_tier(*missions):
+    """metrics.founder_tier as it reads when each mission was signed by an attested founder key."""
+    return lambda journal: {m: {"tier": metrics.FOUNDER_TIER, "key_id": "ed25519:founder"} for m in missions}
 
 
 def test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence(tmp_path, monkeypatch):
@@ -215,6 +224,9 @@ def test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence(tmp_path,
         counted = {"VEPMC": 1, "external_confirmation_required": "x",
                    "missions": [{"mission_id": "m:brief", "counts": True, "missing": []}]}
         monkeypatch.setattr(metrics, "vepmc", lambda j: counted)
+        # The path moves on ledger evidence only at the founder tier (#138 port; the structural case, where it
+        # does not move, is test_structural_closures_cannot_advance_the_external_primary_gate below).
+        monkeypatch.setattr(metrics, "founder_tier", at_founder_tier("m:brief", "m:genesis"))
         where = devpath.position(journal)
         assert where["active"]["id"] == "N2" and where["achieved"] == ["N0", "N1"]
 
@@ -235,7 +247,59 @@ def test_exactly_one_primary_node_and_it_moves_only_on_ledger_evidence(tmp_path,
         journal.record("mission.achieved", {"mission_id": "m:genesis"}, key=["m:genesis", "achieved"])
         where = devpath.position(journal)
         assert where["achieved"] == ["N0", "N1", "N2"] and where["active"]["id"] == "N3"
-        assert where["active"]["measurement"]["not_yet_measurable"]          # never counted as passed
+        assert where["active"]["measurement"]["met"] is False                # N3 now measured: no case closed yet
+    assert where["active"]["measurement"]["value"] == 0
+
+
+def test_structural_closures_cannot_advance_the_external_primary_gate(tmp_path, monkeypatch):
+    """#138 (673726a), on the one founder-tier rule: nine ledger conditions signed with a key that never
+    attested passphrase custody (a fixture's, a test key, a --no-passphrase rehearsal) are a structural
+    candidate. N1's kill condition: "A closure counted with a test key". The tier is read from the ledger,
+    never from the metric's own labels, so neither an erased warning nor a model-supplied verification
+    flag supplies it."""
+    home, *_ = make_body(tmp_path)
+    with Body(home) as body:
+        journal = body.journal
+        counted = {"VEPMC": 1, "external_confirmation_required": "x",
+                   "missions": [{"mission_id": "m:brief", "counts": True, "missing": []}]}
+        monkeypatch.setattr(metrics, "vepmc", lambda j: counted)
+        where = devpath.position(journal)
+        assert where["active"]["id"] == "N1" and where["achieved"] == ["N0"]
+        n1 = where["active"]["measurement"]
+        assert n1["structurally_met"] and not n1["met"]
+        assert n1["evidence_level"] == metrics.STRUCTURAL_CANDIDATE and n1["value"] == 0 and n1["structural_value"] == 1
+        assert n1["blocker"] == devpath.FOUNDER_TIER_RULE and set(n1["not_founder_tier"]) == {"m:brief"}
+
+        # A deficit resolved by a BUILTIN, or after the closure, is not a novel-capability closure.
+        journal.record("deficit.opened", {"deficit_id": "d1", "mission_id": "m:brief", "function": "f"}, key="d1")
+        journal.record("deficit.resolved", {"deficit_id": "d1", "capability_id": "fs.read", "mission_id": "m:brief"},
+                       key=["d1", "resolved"])
+        journal.record("mission.achieved", {"mission_id": "m:brief"}, key=["m:brief", "achieved"])
+        journal.record("deficit.opened", {"deficit_id": "d2", "mission_id": "m:brief", "function": "g"}, key="d2")
+        journal.record("deficit.resolved", {"deficit_id": "d2", "capability_id": "built:late", "mission_id": "m:brief"},
+                       key=["d2", "resolved"])
+        assert devpath.position(journal)["active"]["id"] == "N1"
+        assert not devpath.genesis_closure(journal)["structurally_met"]
+
+        counted["missions"].append({"mission_id": "m:genesis", "counts": True, "missing": []})
+        journal.record("deficit.opened", {"deficit_id": "d3", "mission_id": "m:genesis", "function": "h"}, key="d3")
+        journal.record("deficit.resolved", {"deficit_id": "d3", "capability_id": "built:abc", "mission_id": "m:genesis"},
+                       key=["d3", "resolved"])
+        journal.record("mission.achieved", {"mission_id": "m:genesis"}, key=["m:genesis", "achieved"])
+        where = devpath.position(journal)
+        assert where["achieved"] == ["N0"] and where["active"]["id"] == "N1"
+        novel = devpath.genesis_closure(journal)
+        assert novel["structurally_met"] and not novel["met"] and novel["evidence_level"] == metrics.STRUCTURAL_CANDIDATE
+        assert novel["closures"] == [{"mission_id": "m:genesis", "capability_id": "built:abc"}]
+        assert novel["value"] == 0 and novel["structural_value"] == 1 and novel["structural_distinct_capabilities"] == 1
+        # Neither an erased warning nor a model-supplied verification flag supplies external evidence.
+        counted["external_confirmation_required"] = ""
+        counted["externally_verified"] = True
+        for row in counted["missions"]:                       # nor a row that labels itself founder-tier
+            row.update(externally_verified=True, evidence_level=metrics.FOUNDER_TIER)
+        counted.update(founder_tier_count=2, evidence_level=metrics.FOUNDER_TIER)
+        assert devpath.position(journal)["active"]["id"] == "N1"
+        assert not devpath.genesis_closure(journal)["met"]
 
 
 def test_an_availability_decision_opens_a_pull_forward_seam_without_changing_the_primary_node(tmp_path):

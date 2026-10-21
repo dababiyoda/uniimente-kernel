@@ -106,7 +106,7 @@
     ]
    }
   ],
-  "digest": "sha256:f82cd2c57c638b746cbdbe0d566722c5e7a046c859e95f57d0bb4e48e9f1ac96",
+  "equality_digest": "sha256:ba309b18996903df1b05fc4ec433eed409c8db35584fe146c10b5d3e293f07d8",
   "equivalences": [
    {
     "a": "greg.cognition.genomes.collective:flock_dropout_instance",

@@ -1056,7 +1056,19 @@ def aliasing(seeds=SAMPLE_SEEDS) -> dict:
                                                   f"seeds {list(seeds)} only"})
     return {"sample_seeds": list(seeds), "generators_sampled": len(digests), "within_generator_duplicates": within,
             "cross_generator_identical": cross, "equivalences": equivalences,
-            "digest": sha(json.dumps(digests, sort_keys=True).encode())}
+            # a digest of which sampled instances are equal, not of their bytes: generator outputs carry platform
+            # numerics (CI and local differ), while the equalities the conclusions rest on do not
+            "equality_digest": sha(json.dumps(_equality_classes(digests), sort_keys=True).encode())}
+
+
+def _equality_classes(digests: dict) -> dict:
+    """Each (generator, seed) mapped to the index of its equal-instance class, numbered in sorted order."""
+    index: dict[str, int] = {}
+    out = {}
+    for key in sorted(digests):
+        for s in sorted(digests[key]):
+            out[f"{key}|{s}"] = index.setdefault(digests[key][s], len(index))
+    return out
 
 
 # ---------------------------------------------------------------- overlaps

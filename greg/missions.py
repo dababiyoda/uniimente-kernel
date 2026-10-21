@@ -284,91 +284,134 @@ class MissionState:
         return [c for c in self.spec["success_checks"] if c["check_id"] in wanted]
 
 
+def _own(value):
+    """A copy the caller owns of a mission field: dicts, lists and sets are copied all the way down.
+    Strings, numbers and the frozen LightCone are immutable and shared."""
+    if type(value) is dict:
+        return {k: _own(v) for k, v in value.items()}
+    if type(value) in (list, set):
+        return type(value)(_own(v) for v in value)
+    return value
+
+
 class MissionBook:
-    """Projection of mission truth from retained greg.* events."""
+    """Projection of mission truth from retained greg.* events.
+
+    ``rebuild`` folds only the events retained since its previous call into the book's own state,
+    then hands out copies, so callers see exactly what a fold from the first event gives (tests pin
+    that) at a cost that follows new events and the number of missions, not the whole history.
+    Replaced history, or a fold that stopped part-way, is folded again from the beginning on the
+    next call.
+
+    Missions are copied afresh on every call. A decision record is copied once, when it is folded:
+    copying every decision ever made on every call would grow with history again. Either way the
+    fold reads only its own copies, so nothing a caller changes reaches a mission's state.
+    """
 
     def __init__(self, journal: Journal):
         self.journal = journal
         self.missions: dict[str, MissionState] = {}
         self.requests: dict[str, dict] = {}
         self.answers: dict[str, dict] = {}
+        self._cursor = None
         self.rebuild()
 
     def rebuild(self):
-        self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
-        for event in self.journal.replay():
-            kind, data = event.type[len("greg."):], event.payload
-            mid = data.get("mission_id")
-            m = self.missions.get(mid)
-            if kind == "mission.registered":
-                self.missions[mid] = MissionState(spec=data["spec"], command_digest=data["command_digest"],
-                                                  cone=LightCone.from_dict(data["spec"]["light_cone"]))
-            elif m is None:
-                if kind == "decision.requested":
-                    self.requests[data["request_id"]] = data
-                elif kind == "decision.answered":
-                    self.answers[data["request_id"]] = data
-                elif kind == "decision.withdrawn":
-                    self.withdrawn[data["request_id"]] = data
-                continue
-            elif kind == "mission.lifecycle":
-                m.paused = data["state"] == "PAUSED"
-                if data["state"] in ("ABANDONED", "SUPERSEDED"):
-                    m.status = data["state"]
-            elif kind == "mission.observed":
-                m.observations[data["check_id"]] = data
-                if data["passed"]:  # drift later -> previously ineffective strategies may be tried again
-                    for aid in [a for a, r in m.failed.items() if r.startswith(f"executed but {data['check_id']} ")]:
-                        m.failed.pop(aid)
-                for aid, checks in list(m.pending_effect.items()):
-                    if data["check_id"] not in checks:
-                        continue
-                    if data["passed"]:
-                        checks.discard(data["check_id"])
-                    else:
-                        # Surprise: executed, yet the world did not change. Replan
-                        # instead of repeating; eligible again after a later pass.
-                        m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
-                    if not checks:
-                        m.pending_effect.pop(aid, None)
-            elif kind == "mission.action":
-                aid = data["action_id"]
-                m.attempts[aid] = data["attempt"] + 1
-                if data["status"] == "DONE":
-                    m.actions_done += 1
-                    m.spent_usd += data.get("cost_usd", 0.0)
-                    m.failed.pop(aid, None)
-                    strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
-                    if strategy:
-                        m.pending_effect[aid] = set(strategy["advances"])
-                elif data["status"] in ("REFUSED", "UNAVAILABLE"):
-                    m.failed[aid] = "; ".join(data["reasons"])[:300]
-            elif kind == "mission.blocked":
-                m.blocker = data["blocker"]
-            elif kind == "mission.unblocked":
-                m.blocker = None
-            elif kind == "mission.setpoint":
-                m.setpoints_reached += 1
-                m.rung = data["next_rung"]
-            elif kind == "mission.achieved":
-                m.status = "ACHIEVED"
-            elif kind == "mission.schedule":
-                m.next_observe_at = data["next_observe_at"]
-            elif kind == "mission.strategy_excluded":
-                m.excluded[data["action_id"]] = data["reason"]
-            elif kind == "decision.requested":
-                self.requests[data["request_id"]] = data
-            elif kind == "decision.withdrawn":
-                self.withdrawn[data["request_id"]] = data
+        from dataclasses import fields, replace
+        since = getattr(self.journal, "since", None)
+        if since is None:            # a journal that can only replay: fold all of it, every time
+            events, cursor, restarted = self.journal.replay(), None, True
+        else:
+            events, cursor, restarted = since(self._cursor)
+        if restarted:
+            self._missions, self._requests, self._answers, self._withdrawn = {}, {}, {}, {}
+            self._shown = {"requests": {}, "answers": {}, "withdrawn": {}}
+        self._cursor = None          # if a fold below raises, the next call starts over
+        for event in events:
+            self._apply(event)
+        self._cursor = cursor
+        self.missions = {mid: replace(m, **{f.name: _own(getattr(m, f.name)) for f in fields(m)})
+                         for mid, m in self._missions.items()}
+        self.requests, self.answers, self.withdrawn = (dict(self._shown[t])
+                                                       for t in ("requests", "answers", "withdrawn"))
+
+    def _keep(self, table: str, data: dict):
+        """Retain a decision event: the fold reads its own copy, callers get another."""
+        getattr(self, "_" + table)[data["request_id"]] = data
+        self._shown[table][data["request_id"]] = _own(data)
+
+    def _apply(self, event):
+        kind, data = event.type[len("greg."):], event.payload
+        mid = data.get("mission_id")
+        m = self._missions.get(mid)
+        if kind == "mission.registered":
+            self._missions[mid] = MissionState(spec=data["spec"], command_digest=data["command_digest"],
+                                               cone=LightCone.from_dict(data["spec"]["light_cone"]))
+        elif m is None:
+            if kind == "decision.requested":
+                self._keep("requests", data)
             elif kind == "decision.answered":
-                self.answers[data["request_id"]] = data
-                request = self.requests.get(data["request_id"])
-                if request and data["answer"] == "approve":
-                    m.approved_scopes.add(request["scope_digest"])
-                elif request and data["answer"] == "reject":
-                    m.rejected_scopes.add(request["scope_digest"])
-                    if request.get("action_id"):
-                        m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
+                self._keep("answers", data)
+            elif kind == "decision.withdrawn":
+                self._keep("withdrawn", data)
+        elif kind == "mission.lifecycle":
+            m.paused = data["state"] == "PAUSED"
+            if data["state"] in ("ABANDONED", "SUPERSEDED"):
+                m.status = data["state"]
+        elif kind == "mission.observed":
+            m.observations[data["check_id"]] = data
+            if data["passed"]:  # drift later -> previously ineffective strategies may be tried again
+                for aid in [a for a, r in m.failed.items() if r.startswith(f"executed but {data['check_id']} ")]:
+                    m.failed.pop(aid)
+            for aid, checks in list(m.pending_effect.items()):
+                if data["check_id"] not in checks:
+                    continue
+                if data["passed"]:
+                    checks.discard(data["check_id"])
+                else:
+                    # Surprise: executed, yet the world did not change. Replan
+                    # instead of repeating; eligible again after a later pass.
+                    m.failed[aid] = f"executed but {data['check_id']} still failing: {data['detail']}"[:300]
+                if not checks:
+                    m.pending_effect.pop(aid, None)
+        elif kind == "mission.action":
+            aid = data["action_id"]
+            m.attempts[aid] = data["attempt"] + 1
+            if data["status"] == "DONE":
+                m.actions_done += 1
+                m.spent_usd += data.get("cost_usd", 0.0)
+                m.failed.pop(aid, None)
+                strategy = next((s for s in m.spec["strategies"] if s["action_id"] == aid), None)
+                if strategy:
+                    m.pending_effect[aid] = set(strategy["advances"])
+            elif data["status"] in ("REFUSED", "UNAVAILABLE"):
+                m.failed[aid] = "; ".join(data["reasons"])[:300]
+        elif kind == "mission.blocked":
+            m.blocker = data["blocker"]
+        elif kind == "mission.unblocked":
+            m.blocker = None
+        elif kind == "mission.setpoint":
+            m.setpoints_reached += 1
+            m.rung = data["next_rung"]
+        elif kind == "mission.achieved":
+            m.status = "ACHIEVED"
+        elif kind == "mission.schedule":
+            m.next_observe_at = data["next_observe_at"]
+        elif kind == "mission.strategy_excluded":
+            m.excluded[data["action_id"]] = data["reason"]
+        elif kind == "decision.requested":
+            self._keep("requests", data)
+        elif kind == "decision.withdrawn":
+            self._keep("withdrawn", data)
+        elif kind == "decision.answered":
+            self._keep("answers", data)
+            request = self._requests.get(data["request_id"])
+            if request and data["answer"] == "approve":
+                m.approved_scopes.add(request["scope_digest"])
+            elif request and data["answer"] == "reject":
+                m.rejected_scopes.add(request["scope_digest"])
+                if request.get("action_id"):
+                    m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
 
     def open_requests(self) -> list[dict]:
         return [r for rid, r in self.requests.items() if rid not in self.answers and rid not in self.withdrawn]

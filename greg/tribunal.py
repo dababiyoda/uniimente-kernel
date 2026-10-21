@@ -131,7 +131,10 @@ def morning_report(journal: Journal, engine=None, *, now=None, heartbeat: dict |
                     "model_cost_known": usage["cost_known"],
                     "model_route_attempts_recorded": usage["model_route_attempts_recorded"],
                     "verified_mission_closures": len(by("mission.achieved")),
-                    "spend_usd": round(sum(a.get("cost_usd", 0.0) for a in done), 6)},
+                    # booked spend: every completed action, and a metered dispatch the founder reconciled as not
+                    # executed, which keeps its signed cap (H.G4)
+                    "spend_usd": round(sum(a.get("cost_usd") or 0.0 for a in actions
+                                           if a["status"] in ("DONE", "RECONCILED_NOT_EXECUTED")), 6)},
         "claims_not_made": ["no external business outcome", "no Mac verification unless recorded by the Mac package",
                             "no model output treated as evidence",
                             "no continuous operation beyond the presence measured in q0"],

@@ -26,6 +26,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 import urllib.parse
 import urllib.request
 
@@ -421,8 +422,9 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
                 grants, libc = isolation.worker_grants(confine_to), isolation._libc()
             except isolation.IsolationError as exc:
                 raise CapabilityError(f"the command cannot be confined, so it is refused: {exc}") from None
-            scratch = Path(confine_to) / ".greg-tmp"
-            scratch.mkdir(exist_ok=True)
+            # A fresh name per run: a fixed one could be planted by the worker (a file, a symlink) and make
+            # GREG's own acceptance run fail before the command starts.
+            scratch = Path(tempfile.mkdtemp(prefix=".greg-tmp-", dir=confine_to))
             env["TMPDIR"] = str(scratch)
             confinement = {"filesystem": "landlock", "abi": status["abi"],
                            "writable": [str(Path(confine_to).resolve())]}
@@ -452,6 +454,8 @@ def run_isolated(argv: list, *, cwd: Path, isolate_network: bool = True, timeout
         proc = _spawn(argv, cwd=cwd, env=env, timeout=timeout, input_bytes=input_bytes, stop_check=stop_check,
                       preexec=None, refused=None)
     proc.confinement = confinement
+    if confinement and confinement.get("filesystem") == "landlock":
+        shutil.rmtree(env["TMPDIR"], ignore_errors=True)
     return proc
 
 

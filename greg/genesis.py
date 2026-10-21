@@ -1062,8 +1062,9 @@ class Genesis:
             self._route(deficit_id, "founder", "escalated", None)
             return None
         # The build budget is carved from the light cone, which actions spend too: a build never takes more
-        # than the cone has left (MissionBook books every build on it).
-        cone_left = mission.cone.budget_usd - getattr(mission, "spent_usd", 0.0)
+        # than the cone has left (MissionBook books every build on it). What is left excludes every open
+        # reservation too: an uncertain dispatch at its worst case and a build the body died inside.
+        cone_left = mission.cone.budget_usd - getattr(mission, "committed_usd", getattr(mission, "spent_usd", 0.0))
         spent_at_entry = spent
         if not pending and cone_left <= 0:
             self._route(deficit_id, "builder", "the mission's light cone has no budget left for a build", None)

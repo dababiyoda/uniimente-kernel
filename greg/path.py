@@ -212,6 +212,8 @@ def business_loop_closed(journal: Journal) -> dict:
         if not paid or mid not in rows:
             continue
         missing = [c for c in N3_CONDITIONS if not rows[mid][c]]
+        if rows[mid].get("fixture_evidence"):       # simulated evidence never moves the path (FOUNDER_TIER_RULE)
+            missing.append("no_fixture_evidence")
         observed = [e.payload for e in journal.replay("mission.observed")
                     if e.payload["mission_id"] == mid and e.payload["check_id"] in paid]
         if not (observed and observed[-1]["passed"]):
@@ -307,6 +309,9 @@ def sop_compounding(journal: Journal) -> dict:
         runs = [r["mission_id"] for r in p.get("sop_runs", {}).get("missions", [])]
         off_body = sorted({c for mid in runs for c in N4_CONDITIONS if not rows.get(mid, {}).get(c)})
         missing = list(p.get("why_not", [])) + [f"sop_run_not_{c}" for c in off_body]
+        # Simulated evidence never moves the path: not in a run, nor in a closure the procedure learned from.
+        learned = [r["mission_id"] for r in p["baseline"].get("missions", [])]
+        missing += [f"fixture_evidence:{m}" for m in learned + runs if rows.get(m, {}).get("fixture_evidence")]
         summary = {"procedure_id": p["procedure_id"], "state": p["state"],
                    "before": {k: v for k, v in p["baseline"].items() if k != "missions"},
                    **({"after": {k: v for k, v in p["sop_runs"].items() if k != "missions"}}
@@ -347,6 +352,8 @@ def human_work_shared(journal: Journal) -> dict:
         if not person:
             continue
         missing = [c for c in N3_CONDITIONS if not rows.get(mid, {}).get(c)]
+        if rows.get(mid, {}).get("fixture_evidence"):  # simulated evidence never moves the path
+            missing.append("no_fixture_evidence")
         asked = [e for e in journal.replay("decision.requested")
                  if e.payload["mission_id"] == mid and e.payload["kind"] == "HUMAN_WORK"]
         by_step = {}

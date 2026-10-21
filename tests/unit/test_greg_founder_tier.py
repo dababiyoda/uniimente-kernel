@@ -125,3 +125,50 @@ def test_n6_and_n7_gates_stay_external_and_every_later_predicate_reports_its_str
     vepmc = metrics.vepmc(empty)
     assert vepmc["VEPMC"] == vepmc["structural_candidate_count"] == vepmc["founder_tier_count"] == 0
     assert vepmc["evidence_level"] == "NONE"
+
+
+class _Event:
+    def __init__(self, payload, event_id):
+        self.payload, self.event_id = payload, event_id
+
+
+class _Journal:
+    """Just enough of a journal for the path predicates: registered specs, nothing else retained."""
+    def __init__(self, specs):
+        self.events = {"mission.registered": [_Event({"mission_id": m, "spec": s}, f"e{i}")
+                                              for i, (m, s) in enumerate(specs.items())]}
+
+        self.ledger = type("Ledger", (), {"by_type": staticmethod(lambda record_type: [])})()
+
+    def replay(self, kind=None):
+        return list(self.events.get(kind, []))
+
+
+def _fixture_rows(monkeypatch, mids):
+    rows = [{"mission_id": m, **{c: True for c in metrics.CONDITIONS}, "fixture_evidence": True, "counts": False,
+             "missing": ["no_fixture_evidence"]} for m in mids]
+    monkeypatch.setattr(metrics, "vepmc", lambda journal: {"missions": rows, "VEPMC": 0})
+    monkeypatch.setattr(metrics, "founder_tier", lambda journal: {m: {"tier": metrics.FOUNDER_TIER} for m in mids})
+
+
+def test_fixture_closures_never_move_the_path_in_any_predicate(monkeypatch):
+    """Merge review of 1e55bbd: VEPMC (this trunk) refuses a closure carrying fixture evidence, but the base's
+    path predicates N3, N4 and N6 read the nine conditions directly, so fixture closures at the founder tier
+    moved the founder's path. Each predicate now names the fixture evidence as missing."""
+    from greg import path as devpath, sop
+    mids = ["m:a", "m:b", "m:c", "m:r1", "m:r2", "m:r3"]
+    _fixture_rows(monkeypatch, mids)
+    monkeypatch.setattr(sop, "trend", lambda journal: {"procedures": [{
+        "procedure_id": "sop-x", "state": "RATIFIED", "compounding": True,
+        "baseline": {"missions": [{"mission_id": m} for m in mids[:3]]},
+        "sop_runs": {"missions": [{"mission_id": m} for m in mids[3:]]}}]})
+    n4 = devpath.sop_compounding(None)
+    assert not n4["met"] and "fixture_evidence:m:r1" in n4["incomplete"][0]["missing"]
+
+    paid = {"check_id": "paid", "sensor": {"capability": "business.reconcile"}}
+    person = {"action_id": "ask", "declined_if": "no", "capability": "human.task"}
+    journal = _Journal({"m:a": {"success_checks": [paid], "strategies": []},
+                        "m:b": {"success_checks": [], "strategies": [person]}})
+    for predicate, mid in ((devpath.business_loop_closed, "m:a"), (devpath.human_work_shared, "m:b")):
+        [row] = [r for r in predicate(journal)["incomplete"] if r["mission_id"] == mid]
+        assert "no_fixture_evidence" in row["missing"], (predicate.__name__, row)

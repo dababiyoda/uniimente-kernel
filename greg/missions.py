@@ -314,6 +314,18 @@ def bound_value(edge: dict, output):
 METERED_SPEND = {"worker.commission": "worker.cost_usd"}
 
 
+def reconciliation_terms(capability: str | None, reserved: float) -> tuple[str, dict]:
+    """What every RECONCILIATION ask tells the founder before they answer: what to do, and what each answer books.
+    A metered capability's provider may have spent while it ran, so "not executed" does not release its cap."""
+    metered = capability in METERED_SPEND
+    recommendation = "inspect the retained evidence, then state whether it executed"
+    if metered:
+        recommendation += (f". {capability} is metered: its provider may have spent while it ran, so either answer "
+                           f"books ${reserved:.2f}, its signed cap, as spent; 'not executed' settles only whether its "
+                           "effect happened, and a new run spends again")
+    return recommendation, {"reconcile_executed": reserved, "reconcile_not_executed": reserved if metered else 0.0}
+
+
 def metered_spend(capability_id: str, output, cap_usd: float) -> dict:
     """What a DONE action books against the mission budget.
 
@@ -638,6 +650,20 @@ class MissionBook:
             payer = self.missions.get(self._deficit_of.get(data.get("deficit_id")))
             if payer is not None:
                 payer.spent_usd += float(data.get("cost_usd") or 0.0)
+                if kind == "genesis.built":
+                    payer.reserved.pop(("genesis", data["deficit_id"], data.get("build")), None)
+            return
+        if kind in ("genesis.build_started", "genesis.build_failed"):
+            # A builder call is reserved on the cone at the ceiling it was given until it settles (built, or
+            # failed with any bill booked by genesis.unbuilt): a call the body died inside never reports its
+            # cost and Genesis._build_spend charges it at that ceiling, so the cone counts it too.
+            payer = self.missions.get(self._deficit_of.get(data.get("deficit_id")))
+            if payer is not None:
+                slot = ("genesis", data["deficit_id"], data.get("build"))
+                if kind == "genesis.build_started":
+                    payer.reserved[slot] = float(data.get("reserved_usd") or 0.0)
+                else:
+                    payer.reserved.pop(slot, None)
             return
         if kind == "deficit.opened" and mid is not None:
             self._deficit_of[data["deficit_id"]] = mid
@@ -1756,13 +1782,16 @@ class MissionEngine:
                 m = self.book.missions[m.mission_id]
                 dispatch = {"attempt": latest["attempt"], "proposal_id": latest.get("proposal_id"),
                             "grant_id": latest.get("grant_id")}
+                reserved = m.reserved.get((aid, latest["attempt"]), signed_cost(m.spec, aid))
+                recommendation, booked_by_answer = reconciliation_terms(latest.get("capability"), reserved)
                 again = self._request(m, kind="RECONCILIATION", scope_digest=latest.get("scope_digest") or "",
                                       action_id=aid,
                                       why="an action may or may not have executed before an interruption",
-                                      recommendation="inspect the retained evidence, then state whether it executed",
+                                      recommendation=recommendation,
                                       alternatives=["reconcile_executed", "reconcile_not_executed"],
                                       requested={"action_id": aid, **dispatch}, now=now, instance=dispatch,
-                                      evidence={"dispatch": dispatch, "reasons": list(latest.get("reasons", []))[:3]})
+                                      evidence={"dispatch": dispatch, "reasons": list(latest.get("reasons", []))[:3],
+                                                "reserved_usd": reserved, "booked_usd_by_answer": booked_by_answer})
                 self._block(m, {"type": "reconciliation", "request_id": again, "action_id": aid, **dispatch,
                                 "scope_digest": latest.get("scope_digest"), "capability": latest.get("capability"),
                                 "why": "uncertain completion; no blind retry",
@@ -2410,13 +2439,7 @@ class MissionEngine:
             # settles exactly this dispatch and a later uncertain dispatch opens its own request.
             dispatch = {"attempt": attempt, "proposal_id": outcome.proposal_id, "grant_id": outcome.grant_id}
             reserved = record["reserved_usd"]
-            metered = manifest.capability_id in METERED_SPEND
-            recommendation = "inspect the retained evidence, then state whether it executed"
-            if metered:   # the founder learns before answering that "not executed" does not release the money
-                recommendation += (f". {manifest.capability_id} is metered: its provider may have spent while it "
-                                   f"ran, so either answer books ${reserved:.2f}, its signed cap, as spent; "
-                                   "'not executed' settles only whether its effect happened, and a new run "
-                                   "spends again")
+            recommendation, booked_by_answer = reconciliation_terms(manifest.capability_id, reserved)
             rid = self._request(m, kind="RECONCILIATION", scope_digest=outcome.scope_digest, action_id=aid,
                                 why="an action may or may not have executed before an interruption",
                                 recommendation=recommendation,
@@ -2424,9 +2447,7 @@ class MissionEngine:
                                 requested={"action_id": aid, **dispatch}, now=now, instance=dispatch,
                                 evidence={"dispatch": dispatch, "reasons": record["reasons"][:3],
                                           "reserved_usd": reserved,
-                                          "booked_usd_by_answer": {"reconcile_executed": reserved,
-                                                                   "reconcile_not_executed": reserved if metered
-                                                                   else 0.0},
+                                          "booked_usd_by_answer": booked_by_answer,
                                           "budget": {"spent_usd": m.spent_usd, "budget_usd": m.cone.budget_usd}})
             self._block(m, {"type": "reconciliation", "request_id": rid, "action_id": aid, **dispatch,
                             "scope_digest": outcome.scope_digest, "capability": manifest.capability_id,

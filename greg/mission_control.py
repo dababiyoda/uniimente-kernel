@@ -117,9 +117,12 @@ def cost_rows(actions: list[dict], missions: list[dict], fixtures: list[dict], b
         if row is not None:
             row["build_usd"] += float(b.get("cost_usd") or 0.0)
             row["booked_usd"] += float(b.get("cost_usd") or 0.0)
+            if b.get("at_cap"):
+                row["unknown_at_cap_usd"] += float(b.get("cost_usd") or 0.0)
     for a in actions:
         row = rows.get(a.get("mission_id"))
-        if row is None or a.get("status") != "DONE":
+        # A metered dispatch the founder reconciled as not executed keeps its signed cap booked (H.G4).
+        if row is None or a.get("status") not in ("DONE", "RECONCILED_NOT_EXECUTED"):
             continue
         cost = float(a.get("cost_usd") or 0.0)
         row["booked_usd"] += cost
@@ -192,6 +195,12 @@ def projection(console) -> dict:
         payer = {e.payload["deficit_id"]: e.payload.get("mission_id") for e in journal.replay("deficit.opened")}
         build_rows = [{"mission_id": payer.get(e.payload.get("deficit_id")), "cost_usd": e.payload.get("cost_usd")}
                       for kind in ("genesis.built", "genesis.unbuilt") for e in journal.replay(kind)]
+        # A builder call the body died inside is charged at the ceiling it was given (Genesis._build_spend).
+        settled = {(e.payload["deficit_id"], e.payload.get("build"))
+                   for kind in ("genesis.built", "genesis.build_failed") for e in journal.replay(kind)}
+        build_rows += [{"mission_id": payer.get(e.payload["deficit_id"]), "cost_usd": e.payload.get("reserved_usd"),
+                        "at_cap": True} for e in journal.replay("genesis.build_started")
+                       if (e.payload["deficit_id"], e.payload.get("build")) not in settled]
         toggles = [e.type for e in journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
         signed_pause = bool(toggles) and toggles[-1] == "greg.body.paused"
         from greg.body import crash_loop_hold

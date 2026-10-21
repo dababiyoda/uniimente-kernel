@@ -597,6 +597,10 @@ def run_tests(tests: list, cwd: Path, *, timeout: int) -> list[dict]:
             confinement = getattr(proc, "confinement", None)
         except subprocess.TimeoutExpired:
             code, out = -1, f"timed out after {timeout}s"
+        except OSError as exc:
+            # The worker's clone could not host the run (e.g. it made the clone unwritable): the patch fails
+            # acceptance. Nothing outside the clone ran, so this is never an outcome GREG cannot know.
+            code, out = -1, f"acceptance could not run in the worker's clone: {type(exc).__name__}: {exc}"
         results.append({"argv": argv, "returncode": code, "passed": code == 0,
                         "seconds": round(time.monotonic() - started, 2), "tail": out[-MAX_TAIL:],
                         "network": "denied", "confinement": confinement})

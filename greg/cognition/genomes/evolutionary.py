@@ -10,9 +10,9 @@ deployable method installed:
   crossover, bit-flip mutation, one elite) under a hard evaluation budget, on a pseudo-Boolean objective given as
   a sum of factor tables (NK landscapes with random or adjacent neighbourhoods, and concatenated deceptive traps
   with tight or loose linkage). Baseline: random-restart first-improvement bit-flip hill climbing on the same
-  budget. Competitor: OR-Tools CP-SAT on the exact factor model (one worker, fixed deterministic time), the
-  strongest installed exact engine on dev seeds (SciPy HiGHS on the marginal-polytope MILP was weaker within the
-  same time on 7 of 10 dev seeds). Verified by an independent pure-Python recomputation of the fitness and the
+  budget. Competitor: OR-Tools CP-SAT on the exact factor model (table constraints, one worker, fixed
+  deterministic time), the strongest of three installed exact models compared on dev seeds (CP-SAT element
+  constraints and SciPy HiGHS on the marginal-polytope MILP found worse incumbents more often). Verified by an independent pure-Python recomputation of the fitness and the
   upper bound; global optimality is never claimed.
 * ``evo_map_elites`` (``quality_diversity_archive``): MAP-Elites with iso+line (Vassiliades and Mouret 2018)
   variation on the redundant planar arm benchmark (Cully et al. 2015): genotype = joint angles, behaviour = end
@@ -312,8 +312,8 @@ def ga_hill_climb(data):
 
 
 def ga_cpsat(data):
-    """Competitor: OR-Tools CP-SAT on the exact factor model (an element constraint per factor), one worker, fixed
-    seed and a fixed deterministic time; its best incumbent, or None when it finds none."""
+    """Competitor: OR-Tools CP-SAT on the exact factor model (a table constraint per factor over its bits and its
+    value), one worker, fixed seed and a fixed deterministic time; its best incumbent, or None when it finds none."""
     from ortools.sat.python import cp_model
     n, factors, evals, seed = _factored(data)
     m = cp_model.CpModel()
@@ -321,10 +321,9 @@ def ga_cpsat(data):
     terms = []
     for fi, (v, t) in enumerate(factors):
         a = len(v)
-        index = m.NewIntVar(0, 2 ** a - 1, f"i{fi}")
-        m.Add(index == sum((1 << (a - 1 - p)) * x[i] for p, i in enumerate(v)))
         value = m.NewIntVar(min(t), max(t), f"v{fi}")
-        m.AddElement(index, list(t), value)
+        m.AddAllowedAssignments([x[i] for i in v] + [value],
+                                [[(row >> (a - 1 - p)) & 1 for p in range(a)] + [t[row]] for row in range(2 ** a)])
         terms.append(value)
     m.Maximize(sum(terms))
     solver = cp_model.CpSolver()
@@ -611,12 +610,13 @@ INTELLIGENCES = [
                             "dynamic programming) or over the sum of table maxima (random NK); seeds 0-9 dev, "
                             "held-out seeds fixed by the admission freeze",
             baseline="random-restart first-improvement single-bit-flip hill climbing on the same evaluation budget",
-            competitor=f"OR-Tools CP-SAT on the exact factor model (element constraints, one worker, deterministic "
+            competitor=f"OR-Tools CP-SAT on the exact factor model (table constraints, one worker, deterministic "
                        f"time {CP_DETERMINISTIC_TIME}), its best incumbent", dependency=None, **_common()),
         solve=ga_solve, verify=ga_verify, instance=ga_instance, score=ga_score, baseline=ga_hill_climb,
         competitor=ga_cpsat, subregion=ga_subregion, tolerance=1e-12,
-        notes={"competitor_choice": "CP-SAT (element model) beat SciPy HiGHS on the marginal-polytope MILP within "
-                                    "2 s on 7 of 10 dev seeds; both measured on dev seeds 0-9 only"}),
+        notes={"competitor_choice": "of three exact models compared on dev seeds 0-9 at the same budget (CP-SAT table "
+                                    "constraints, CP-SAT element constraints, SciPy HiGHS marginal-polytope MILP) "
+                                    "the table model found the best incumbents most often"}),
     Executable(
         genome=IntelligenceGenome(
             intelligence_id="solver.evolutionary.map_elites", version="1.0.0", family="evo_map_elites", layer=3,

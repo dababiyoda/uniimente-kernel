@@ -1277,7 +1277,7 @@
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "extended",
-   "note": "canonical Layer 5 entry; now applies #155's operation-family verdicts from the index; re-merged with #158 at 10fdbab (certified bounds, part-row demotion and stale_measurements, thread refusal and venv grant, wording), this branch's additions kept"
+   "note": "canonical Layer 5 entry; now applies #155's operation-family verdicts from the index; re-merged with #158 at 10fdbab (certified bounds, part-row demotion and stale_measurements, thread refusal and venv grant, wording), this branch's additions kept; 2026-10-21: a routed recipe rejects organs answering its relaxation, settled outcomes alone can change the choice between eligible fits, a formed mechanism's compile receipt carries its basis and dissent"
   },
   {
    "path": "greg/cognition/composition.py",
@@ -1801,8 +1801,8 @@
    "path": "tests/unit/test_greg_cognition_genesis.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); extended 2026-10-21 with the compile receipt's competence basis and dissent for a formed mechanism (whole-machine trace gap)"
   },
   {
    "path": "tests/unit/test_greg_community_evidence.py",
@@ -1816,7 +1816,7 @@
    "lineage": "pr158",
    "classification": "complementary",
    "disposition": "extended",
-   "note": "#158 tests plus evidence-index and relaxation tests from the convergence"
+   "note": "#158 tests plus evidence-index and relaxation tests from the convergence; settled-preference test (2026-10-21)"
   },
   {
    "path": "tests/unit/test_greg_genome_library.py",

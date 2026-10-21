@@ -1343,6 +1343,16 @@ def _formed(registry, data: dict, g: CompetencyGeometry, body: dict, high: bool,
                                 [m.capability_id for m, _ in formed])
         if inhibited[cid]:
             receipt["dissent"].append(f"{cid}: {inhibited[cid]}")
+        # the compile receipt carries the evidence the formed mechanism was chosen on, not only its own receipt
+        # (whole-machine trace gap, #158, 2026-10-21): settled outcomes per formed mechanism considered, and the
+        # mechanism receipt's strongest counterargument as dissent
+        receipt["conditional_competence_basis"] = {
+            m.capability_id: ({"settled": settled[m.capability_id][0], "correct": settled[m.capability_id][1],
+                               "laplace": round((settled[m.capability_id][1] + 1) / (settled[m.capability_id][0] + 2),
+                                                4)}
+                              if m.capability_id in settled else "no settled outcomes in this journal")
+            for m, _ in formed}
+        receipt["dissent"].append(inner["strongest_counterargument"])
         receipt.update(proof_artifacts=[{"type": "genesis_mechanism_certificate",
                                          "evidence_type": spec["evidence_type"]}],
                        verification_method=f"GREG-owned certificate sharing no code with {answer.get('engine')}: "
@@ -1505,6 +1515,58 @@ def _settled_counts(journal) -> dict:
 def _settled_competence(journal, geometry_class) -> dict:
     """Mean settled correctness per method (Laplace), from the canonical journal (existing settlement)."""
     return {m: (k + 1) / (n + 2) for m, (n, k) in _settled_counts(journal).items()}
+
+
+SETTLED_ALPHA = 0.05            # family-wise, Holm over the challengers tested against the evidence-ranked first fit
+
+
+def _settled_preference(eligible: list[dict], settled: dict) -> dict | None:
+    """Retained settled outcomes alone can change the choice between two eligible fits (whole-machine trace gap,
+    #158, 2026-10-21). The evidence-ranked first fit A is compared with every other undemoted fit B that, like A,
+    has at least SETTLED_MIN_N settled outcomes on this body; B is preferred when a one-sided Fisher exact test
+    says B's correct rate exceeds A's at Holm-adjusted p < SETTLED_ALPHA. The threshold is the inhibition rule's
+    and is not lowered here. Without enough outcomes on both sides nothing moves and frozen evidence decides.
+
+    Stated limitation: outcomes are pooled over a method's versions and geometries, as the inhibition rule pools
+    them (``_settled_counts``). Reorders ``eligible`` in place; returns the test record, or None."""
+    if len(eligible) < 2:
+        return None
+    first = eligible[0]
+    n_a, k_a = settled.get(first["method"], (0, 0))
+    if n_a < SETTLED_MIN_N:
+        return None
+    from scipy.stats import fisher_exact
+    tests = []
+    for row in eligible[1:]:
+        n_b, k_b = settled.get(row["method"], (0, 0))
+        if row.get("demoted") or n_b < SETTLED_MIN_N:
+            continue
+        p = float(fisher_exact([[k_b, n_b - k_b], [k_a, n_a - k_a]], alternative="greater")[1])
+        tests.append({"method": row["method"], "settled": [k_b, n_b], "p_one_sided": p})
+    if not tests:
+        return None
+    m, adjusted, running = len(tests), {}, 0.0
+    for i, t in enumerate(sorted(tests, key=lambda t: t["p_one_sided"])):
+        running = max(running, min(1.0, (m - i) * t["p_one_sided"]))
+        adjusted[t["method"]] = running
+    for t in tests:
+        t["p_holm"] = round(adjusted[t["method"]], 6)
+        t["p_one_sided"] = round(t["p_one_sided"], 6)
+    winners = [t for t in tests if adjusted[t["method"]] < SETTLED_ALPHA]
+    record = {"against": first["method"], "against_settled": [k_a, n_a], "min_n": SETTLED_MIN_N,
+              "alpha": SETTLED_ALPHA, "test": "one-sided Fisher exact, Holm over the challengers", "tests": tests,
+              "preferred": None}
+    if winners:
+        win = min(winners, key=lambda t: (t["p_holm"], t["method"]))
+        row = next(r for r in eligible if r["method"] == win["method"])
+        row["settled_preferred"] = {
+            **win, "why": (f"settled outcomes on this body prefer {row['method']} ({win['settled'][0]} of "
+                           f"{win['settled'][1]} correct) over the evidence-ranked {first['method']} ({k_a} of "
+                           f"{n_a}); one-sided Fisher exact, Holm-adjusted p = {win['p_holm']}")}
+        eligible.remove(row)
+        eligible.insert(0, row)
+        record["preferred"] = row["method"]
+    return record
 
 
 def _settled_inhibition(n: int, k: int) -> str | None:
@@ -1723,6 +1785,9 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
                                                 _matched_reason(r["matched_by"], by_outcomes))
     receipt["methods_demoted"] = [{"method": r["method"], "why": r["demoted"]} for r in rows if r.get("demoted")]
     eligible.sort(key=lambda r: _rank(r, plan["prefer"], competence))
+    preference = _settled_preference(eligible, settled)
+    if preference:
+        receipt["settled_preference"] = preference
     for r in eligible:
         r["usable"], r["usable_why"] = _usable(registry, r)
     best = eligible[0]
@@ -1768,8 +1833,11 @@ def run(params, *, registry, journal=None, model_config=None) -> dict:
     chosen = runnable[0]
     receipt["method_or_composition_selected"] = chosen["method"]
     receipt["selection_level"] = (_demoted_level(chosen, best) if chosen.get("demoted")
+                                  else "preferred_by_settled_outcomes" if chosen.get("settled_preferred")
                                   else "preferred_by_operator" if chosen["operation"] in plan["prefer"]
                                   or chosen["method"] in plan["prefer"] else "admission_status")
+    if chosen.get("settled_preferred"):
+        receipt["dissent"].append(chosen["settled_preferred"]["why"])
     if chosen.get("demoted"):
         receipt["dissent"].append(chosen["demoted"])
     if chosen.get("stale_evidence"):

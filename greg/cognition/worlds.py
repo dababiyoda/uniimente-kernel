@@ -53,6 +53,8 @@ GENOMES = {
     "control_mpc": (SIMULATED, "simulated double-integrator plant"),
     "crowd_weighted_vote": (SIMULATED, "simulated crowds of seeded worker types; truth is the hidden item labels"),
     "develop_repair": (SIMULATED, "simulated TARGET_FORM_001 lattices with seeded damage and controller failures"),
+    "develop_repair_hybrid": (SIMULATED, "develop_repair's simulated TARGET_FORM_001 lattices (same generator) with "
+                                         "seeded damage and controller failures"),
     "mech_vcg": (SIMULATED, "synthetic bidder values and simulated bidding behaviour"),
     "pid_simopt": (SIMULATED, "seeded FOPDT plant simulations"),
     # mathematical instances: the instance is the problem; truth is computed from it independently

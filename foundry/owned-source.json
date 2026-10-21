@@ -362,6 +362,7 @@
     "greg/cognition/genomes/decision.py",
     "greg/cognition/genomes/developmental.py",
     "greg/cognition/genomes/developmental_b.py",
+    "greg/cognition/genomes/developmental_hybrid.py",
     "greg/cognition/genomes/flow.py",
     "greg/cognition/genomes/forecasting.py",
     "greg/cognition/genomes/graph_or.py",

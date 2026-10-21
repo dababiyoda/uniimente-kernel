@@ -1171,3 +1171,120 @@ def test_earlier_constraint_release_splits_and_the_seal_code_are_unchanged():
         D.constraint_release_instance, D._twt_optimum, D._cr_inputs, D.constraint_release_solve_with,
         D.constraint_release_random_restart, D.constraint_release_subregion, E._cr_stress))
     assert hashlib.sha256(generated.encode()).hexdigest() == GENERATION_CODE_SHA256
+
+
+# ------------------------------------------------------------------ named immune splits (cycle 7 design)
+def test_cycle_2s_immune_split_keeps_its_name_and_seeds_and_is_checked_without_generating(monkeypatch):
+    from greg.cognition.genomes import admission, collective
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(collective, "immune_gaussian_instance", refuse)
+    train, held, reserved = E.immune_split_seeds("cycle-2")
+    assert (train, held) == (tuple(range(7000, 7040)), tuple(range(8000, 8060)))
+    assert E.IMMUNE_SPLITS["cycle-2"] == (E.IMMUNE_TRAIN_SEEDS, E.IMMUNE_HELDOUT_SEEDS)
+    cr = {s for seeds in E.CR_SPLITS.values() for part in seeds for s in part}
+    assert cr <= reserved and set(admission.HELDOUT_SEEDS) <= reserved and not (set(train) | set(held)) & reserved
+    # cycle 2 never looked at its held-out split, and the pre-freeze ledger names it by the named split
+    assert E._spent_heldout("immune_detect") == {}
+    assert E.PRE_FREEZE_HELDOUT["2026-10-09/cycle-immune-2"][1]() == {f"s{s}" for s in held}
+    assert {f"s{s}" for s in held} <= E._registered_heldout("immune_detect")
+    for bad in ({"cycle-x": (tuple(range(7020, 7030)), tuple(range(8540, 8550)))},     # overlaps cycle 2's train
+                {"cycle-x": (tuple(range(7880, 7890)), tuple(range(8540, 8550)))},     # a constraint-release split
+                {"cycle-x": (tuple(range(3100, 3110)), tuple(range(8540, 8550)))},     # outside P8's range
+                {"cycle-x": (tuple(range(8540, 8550)), tuple(range(8545, 8555)))}):    # train meets held-out
+        monkeypatch.setattr(E, "IMMUNE_SPLITS", {**E.IMMUNE_SPLITS, **bad})
+        with pytest.raises(E.EvolutionError, match="overlap"):
+            E.immune_split_seeds("cycle-x")
+        with pytest.raises(E.EvolutionError, match="overlap"):
+            E.immune_split("cycle-x")                           # the guard runs before any instance
+    with pytest.raises(E.EvolutionError, match="unknown"):
+        E.immune_split_seeds("cycle-9")
+
+
+# the immune method, score, stress sets and baseline, byte-identical at cycle 2's commit ed4ee29 and at 050c1b2
+# (the generator was then named differently; test_genomes_collective_native pins the split it produces)
+IMMUNE_CYCLE_CODE_SHA256 = "77b51d45108def343693c123a6c58d1e2e9357b403dbc9fcc493904af468e36a"
+
+
+def test_the_immune_cycle_code_is_unchanged_since_cycle_2():
+    import hashlib
+    import inspect
+    from greg.cognition.genomes import collective as C
+    code = "".join(inspect.getsource(f) for f in (C.immune_solve_with, C.immune_score, C.immune_zscore,
+                                                   C._binom_upper, C._immune_inputs, C._standardiser,
+                                                   C._immune_config, E._immune_stress))
+    assert hashlib.sha256(code.encode()).hexdigest() == IMMUNE_CYCLE_CODE_SHA256
+    seal = inspect.getsource(E.SealedEvaluator) + inspect.getsource(C.immune_score) + E.RULE
+    assert hashlib.sha256(seal.encode()).hexdigest().startswith("8126e28e9f1c")
+
+
+def test_p8_reserves_8600_to_9199_which_no_admission_freeze_or_p8_split_had_used():
+    """Added for cycle 7's design (2026-10-21) before any instance of these seeds was generated: an admission run
+    can no longer choose them, and every earlier P8 split, canary and admission freeze stays outside them."""
+    from greg.cognition.genomes import admission
+    extension = set(range(8600, 9200))
+    assert admission.P8_RESERVED == range(7000, 9200) and extension <= set(admission.P8_RESERVED)
+    used = admission.spent_seeds() | set(admission.DEV_SEEDS) | set(admission.HELDOUT_SEEDS)
+    used |= {s for name, seeds in (*E.CR_SPLITS.items(), *E.IMMUNE_SPLITS.items()) if name != "cycle-7"
+             for part in seeds for s in part}                           # cycle 7's immune split is what it is for
+    used |= {s for seeds in E.CR_CANARY_SEEDS.values() for s in seeds}
+    assert not used & extension and max(used & set(admission.P8_RESERVED)) < 8600
+    for manifest in E.EVIDENCE.rglob("freeze.json"):
+        split = json.loads(manifest.read_text()).get("inputs", {}).get("split", {})
+        ids = {int(k[1:]) for k in (*split.get("train", []), *split.get("heldout", [])) if k[1:].isdigit()}
+        assert not ids & extension, manifest
+
+
+def test_the_cycle_7_immune_split_is_registered_fresh_and_not_current(monkeypatch):
+    from greg.cognition.genomes import admission, collective
+
+    def refuse(seed):
+        raise AssertionError(f"generated instance {seed}")
+    monkeypatch.setattr(collective, "immune_gaussian_instance", refuse)
+    train, held, reserved = E.immune_split_seeds("cycle-7")
+    assert (train, held) == (tuple(range(8600, 8720)), tuple(range(8720, 8840)))
+    assert set(E.IMMUNE_SPLITS["cycle-2"][0]) | set(E.IMMUNE_SPLITS["cycle-2"][1]) <= reserved
+    assert set(train) | set(held) <= set(admission.P8_RESERVED) and not (set(train) | set(held)) & reserved
+    assert not (set(train) | set(held)) & set(range(3000, 4000))       # no review seed of any pilot
+    assert E.IMMUNE_CURRENT_SPLIT == "cycle-2"                          # the pilot judged it NOT_VIABLE
+    assert {f"s{s}" for s in held} <= E._registered_heldout("immune_detect")   # a test run never looks at it
+    assert not {f"s{s}" for s in held} & set().union(*E._spent_heldout("immune_detect").values(), set())
+    # the constraint-release splits now avoid it too
+    assert set(train) | set(held) <= E.cr_split_seeds("cycle-6")[2]
+
+
+# ------------------------------------------------------------------ stress gate with wrong answers (2026-10-21)
+def test_the_stress_gate_counts_wrong_answers_when_both_means_are_infinite():
+    """Found by the cycle-7 design pilot: ``worsened(inf, inf)`` is False, so a candidate with more wrong answers
+    than an incumbent that already had one passed the adversarial gate."""
+    inf = float("inf")
+    assert E.worsened(inf, inf) is False                                  # the blind spot itself
+    more = {"incumbent": inf, "candidate": inf, "wrong": {"incumbent": 2, "candidate": 3, "both_answered": 10,
+                                                          "incumbent_answered_mean": -0.9,
+                                                          "candidate_answered_mean": -0.95}}
+    assert E.stress_worsened(more)
+    fewer = {**more, "wrong": {**more["wrong"], "incumbent": 3, "candidate": 2}}
+    assert not E.stress_worsened(fewer)
+    equal_worse = {**more, "wrong": {**more["wrong"], "candidate": 2, "candidate_answered_mean": -0.5}}
+    assert E.stress_worsened(equal_worse)                                 # -0.5 vs -0.9: worse by > 5%
+    equal_same = {**more, "wrong": {**more["wrong"], "candidate": 2, "candidate_answered_mean": -0.9}}
+    assert not E.stress_worsened(equal_same)
+    new_wrong = {"incumbent": -0.9, "candidate": inf, "wrong": {"incumbent": 0, "candidate": 1, "both_answered": 9,
+                                                                "incumbent_answered_mean": -0.9,
+                                                                "candidate_answered_mean": -0.9}}
+    assert E.stress_worsened(new_wrong)
+    assert E.stress_worsened({"incumbent": 0.010, "candidate": 0.0106}) and \
+        not E.stress_worsened({"incumbent": 0.010, "candidate": 0.0104})   # finite sets: unchanged
+
+
+def test_every_recorded_stress_decision_is_unchanged_by_the_wrong_answer_rule():
+    for path in sorted(E.EVIDENCE.glob("*/cycle-*.json")):
+        record = json.loads(path.read_text())
+        adv = record.get("adversarial")
+        if not adv:
+            continue
+        kinds = [v for v in adv.values() if isinstance(v, dict)]
+        old = any(E.worsened(v["incumbent"], v["candidate"]) for v in kinds)
+        new = any(E.stress_worsened({k: v[k] for k in ("incumbent", "candidate")}) for v in kinds)
+        assert old == new, path

@@ -146,6 +146,10 @@ Progress 2026-10-21 (measured, frozen, negative results kept):
   - The proposal beats the incumbent 107-74, p = 0.0086, with a 33.9% lower mean loss.
   - Random restart has the lowest mean loss overall and in both subregions. Against the proposal it wins 95-79 (p = 0.128), which is not significant.
   - On the evidence so far, the options rank random restart, then the proposal, then the incumbent. Nothing is applied.
+- **A second P8 target** ([decision](evidence/greg-protected-evolution/2026-10-21-immune-7/DECISION.md)): `immune_detect` was judged NOT_VIABLE by its pilot's rule, declared before the pilot ran: best simulated P(RETAIN) 0.216, threshold 0.30. Cycle 7 is not run.
+  - Under the frozen rule one wrong answer makes a held-out mean infinite, so P(RETAIN) falls as the split grows.
+  - The pilot found that the adversarial gate missed added wrong answers when the incumbent already had one. This is fixed with a regression test (`stress_worsened`), and no recorded decision changes.
+  - How `RULE` should treat wrong answers is an open founder decision.
 
 ## Verified Polyintelligence Lift is the Mind's bottleneck metric — 2026-10-07
 

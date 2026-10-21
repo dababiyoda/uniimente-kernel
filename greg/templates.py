@@ -1016,6 +1016,8 @@ PORTFOLIO_AMOUNT = r"\$?(?P<n>\d{1,3}(?:,\d{3})+|\d+)(?P<fraction>\.\d+)?"
 PORTFOLIO_VALUE = re.compile(rf"^(?P<name>{PORTFOLIO_NAME})\s+(?P<verb>earns|pays|returns|makes|brings in|is worth|"
                              rf"costs)\s+{PORTFOLIO_AMOUNT}(?:\s+[A-Za-z$€£/ ]{{1,24}})?$", re.I)
 PORTFOLIO_NEEDS = re.compile(rf"^(?P<name>{PORTFOLIO_NAME})\s+(?:needs|requires|depends on)\s+(?P<rest>.+)$", re.I)
+PORTFOLIO_BUDGET = re.compile(rf"^(?:spend at most|(?:the |my )?budget(?: is|:)?|i can spend(?: at most)?)\s+"
+                              rf"{PORTFOLIO_AMOUNT}(?:\s+[A-Za-z$€£/ ]{{1,24}})?$", re.I)
 PORTFOLIO_QUESTION = re.compile(r"^(?:which|what|should|choose|pick|decide)\b", re.I)
 
 
@@ -1024,12 +1026,19 @@ def read_portfolio_words(text: str) -> dict:
 
     ``Offer1 earns 5.`` or ``Platform costs 6.`` (whole amounts, an optional $, thousands commas and a
     trailing unit word); ``Offer1 needs Platform and Audit.`` (also "requires", "depends on"); at most
-    one question such as ``Which should I build?``. Amounts are taken in one unit you choose."""
+    one question such as ``Which should I build?``; optionally one cap on what the costs may total:
+    ``Spend at most 10.`` (also "Budget: 10.", "I can spend 10."). Amounts are taken in one unit you choose."""
     sentences = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
-    value, needs, unread, questions = {}, [], [], 0
+    value, needs, unread, questions, budget = {}, [], [], 0, None
     for sentence in sentences:
         if PORTFOLIO_QUESTION.match(sentence):
             questions += 1
+        elif m := PORTFOLIO_BUDGET.match(sentence):
+            if m["fraction"]:
+                raise ValueError(f"{sentence!r}: the budget must be a whole number in the same unit as the values")
+            if budget is not None:
+                raise ValueError("state the budget once")
+            budget = int(m["n"].replace(",", ""))
         elif m := PORTFOLIO_VALUE.match(sentence):
             if m["fraction"]:
                 raise ValueError(f"{sentence!r}: amounts must be whole numbers in one unit (say 1250, not 1.25k)")
@@ -1057,7 +1066,8 @@ def read_portfolio_words(text: str) -> dict:
     if unknown:
         raise ValueError(f"{', '.join(unknown)} {'is' if len(unknown) == 1 else 'are'} needed but never given a "
                          f"value: add '{unknown[0]} costs N.' (or 'earns N.', or 'costs 0.')")
-    return {"items": [{"id": n, "value": v} for n, v in value.items()], "requires": needs}
+    params = {"items": [{"id": n, "value": v} for n, v in value.items()], "requires": needs}
+    return params if budget is None else {**params, "budget": budget}
 
 
 def portfolio_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = False) -> dict:
@@ -1072,14 +1082,16 @@ def portfolio_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool 
         raise ValueError("a portfolio question of 1-4000 characters is required")
     from greg.recombine import REDUCTIONS
     params = read_portfolio_words(text)
-    REDUCTIONS["selection.closure"].normalize(params)          # refuse a malformed question before it is signed
-    spec = constructed_question(function="selection.closure", params=params, horizon_days=horizon_days,
+    function = "selection.budgeted" if "budget" in params else "selection.closure"
+    REDUCTIONS[function].normalize(params)                     # refuse a malformed question before it is signed
+    spec = constructed_question(function=function, params=params, horizon_days=horizon_days,
                                 auto_attach=auto_attach)
     digest = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:10]
     return {**spec, "mission_id": f"m:portfolio-{digest}", "founder_expression": text,
-            "intended_effect": "which items to take when some need others first: the most profitable set that "
-                               "includes every prerequisite, with what was left out and why, proved by GREG's own "
-                               "certificate"}
+            "intended_effect": "which items to take when some need others first"
+                               + (f", spending at most {params['budget']} on costs" if "budget" in params else "")
+                               + ": the most profitable set that includes every prerequisite, with what was left "
+                                 "out and why, proved by GREG's own certificate"}
 
 
 TEMPLATES["portfolio-in-words"] = portfolio_in_words

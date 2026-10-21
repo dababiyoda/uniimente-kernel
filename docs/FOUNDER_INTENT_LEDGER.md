@@ -39,6 +39,14 @@ founder key can be.
 | superseded_by | None |
 | implementation_refs | `evolution/repair/continuity/`, `evolution/repair/subjects.py`, `evolution/repair/harness.py`, `governance/integrity/`, Canonical CI job 3 |
 
+## Frontier leap, continued: portfolio under a spending cap — 2026-10-21
+
+Same intent. "Spend at most N." now turns a portfolio question into `selection.budgeted`. GREG solves it with a branch-and-bound whose every node is a `selection.closure` problem answered by the qualified max-flow engine. It accepts the plan only when its own check of the whole search tree, from the original items, proves that no plan within the cap earns more.
+
+Matched baseline: trimming the uncapped plan is wrong in 11.9% of 2,000 capped shared-cost portfolios and leaves 8.6% of the profit behind.
+
+Evidence: [README](evidence/greg-budgeted-selection/2026-10-21/README.md). State: active. Authority delta: none. VEPMC: 0.
+
 ## Frontier leap, continued: portfolio questions in plain words — 2026-10-21
 
 Same intent, read against `INTENT-20261019-UPWARD-ASCENT`. The founder types which offers earn what, which cost what, and which need which. GREG reads it without a model, constructs `selection.closure` over a max-flow engine the founder attaches, and answers with what to take, the profit, and what was left out and why, under its own certificate.

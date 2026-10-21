@@ -359,6 +359,8 @@ class Body:
                                                   "issued_at": env["issued_at"], "accepted_at": iso(now),
                                                   "body": body, "envelope": env, "channel": channel,
                                                   "result": result}, key=digest)
+        if kind == "DECISION":   # the answer counts from its acceptance (MissionBook): Goal Gravity reads it this tick
+            self.engine.book.rebuild()
         return {"status": "APPLIED", "digest": digest, "result": result}
 
     def _dispatch(self, kind: str, body: dict, digest: str, *, principal: str = "founder",
@@ -765,8 +767,9 @@ def status(home: str | Path) -> dict:
         journal = Journal(spine, actor="spiffe://uniimente.internal/greg/status-reader")
         registered = {e.payload["mission_id"]: e.payload["spec"] for e in journal.replay("mission.registered")}
         achieved = {e.payload["mission_id"] for e in journal.replay("mission.achieved")}
+        from greg.missions import MissionBook
         requests = asks.open_requests(journal.replay("decision.") + journal.replay("mission.achieved")
-                                      + journal.replay("mission.lifecycle"))
+                                      + journal.replay("mission.lifecycle"), counted=MissionBook(journal).answers)
         founder = [e.payload["key_id"] for e in journal.replay("founder.enrolled")]
         boots = journal.replay("body.booted")
         # The same states the body uses: catalog initial state, then every recorded transition.

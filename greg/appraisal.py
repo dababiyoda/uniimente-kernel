@@ -207,8 +207,11 @@ def appraise(request: dict) -> dict:
                 findings.append(f"{action['action_id']}: {detail}")
         checks["deliveries_bound_to_evidence"] = delivered_ok
 
-        # 5. approval boundaries honored
-        answered = {e.payload["request_id"]: (e.payload, seq[e.event_id]) for e in journal.replay("decision.answered")}
+        # 5. approval boundaries honored: an approval counts only as the mission fold counts it (the record re-derived
+        # from a founder-signed DECISION verified at its own ledger position), from that DECISION's acceptance on
+        from greg.goal_gravity import founder_facts
+        facts = founder_facts(ledger)
+        answered = {rid: (a, seq[facts.signed_at[a["command_digest"]]]) for rid, a in facts.book.answers.items()}
         approvals_ok, approvals_seen = True, 0
         for req in journal.replay("decision.requested"):
             data = req.payload

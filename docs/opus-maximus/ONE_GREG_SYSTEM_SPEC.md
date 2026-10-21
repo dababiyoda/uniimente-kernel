@@ -118,4 +118,4 @@ The Golden 5 are domain evaluations, not a second Kernel: Performance (checks cl
 - Real external transactions: none. The venture loop is a FIXTURE.
 - Per-organ keys are not in the organs' pin.
 - `browser.session`, paid model routes, anchoring and the DALEOBANKS bridge remain outside the #26 relay; confinement of egress is opt-in.
-- `MissionBook` still folds an unsigned `decision.answered` (#175's ADR, known limitation); the goal side never vouches for it and `ledger_closure` reports it.
+- `MissionBook` still folds an unsigned `mission.registered` (#175's ADR, P2 second half). The `decision.answered` half closed in next-wave item 7 (2026-10-16): an answer counts only as the record re-derived from a founder-signed DECISION at its own acceptance; any other row stays in `MissionBook.unverified`, moves nothing, and `ledger_closure` reports it. Residuals: a genuine never-applied DECISION smuggled for a request still open, and unsigned `decision.requested`.

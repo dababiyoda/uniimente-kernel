@@ -135,6 +135,10 @@ def sandbox_whole_machine(journal: Journal) -> dict:
                        if e.payload.get("kind") == "RECONCILIATION"}
     answered = {e.payload["request_id"] for e in journal.replay("decision.answered")
                 if e.payload.get("answer", "").startswith("reconcile_")}
+    if answered:   # only answers the mission fold counts: a founder-signed DECISION behind each
+        from greg.missions import MissionBook
+        answered = {rid for rid, a in MissionBook(journal).answers.items()
+                    if str(a.get("answer", "")).startswith("reconcile_")}
     requested_for = {e.payload["request_id"]: e.payload.get("mission_id") for e in journal.replay("decision.requested")}
     rows = []
     sensors = {}

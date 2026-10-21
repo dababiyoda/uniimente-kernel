@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
+from typing import Any
 
 from jsonschema import Draft202012Validator, FormatChecker
 
@@ -461,11 +462,47 @@ def strategy_scope(m: "MissionState | None", manifests: dict, action_id: str, *,
             "scope_digest": scope, "move_digest": move, "outside_cone": outside, "strategy": s}
 
 
-class MissionBook:
-    """Projection of mission truth from retained greg.* events."""
+def signed_answer(signed: dict, request_id: str, answer: Any) -> dict | None:
+    """The signature-verified DECISION behind one recorded ``decision.answered``, or None.
 
-    def __init__(self, journal: Journal):
+    It counts only when the cited digest is a verified DECISION (not a MISSION, GOAL or GOAL_CONTROL),
+    for exactly this request, with exactly the recorded answer. Every reader uses this one predicate: the
+    mission fold, the mirrored refusal, the attention store, the evidence view and the ledger closure."""
+    if not isinstance(answer, dict) or not isinstance(answer.get("command_digest"), str):
+        return None
+    cmd = signed.get(answer["command_digest"])
+    body = ((cmd or {}).get("envelope") or {}).get("body")
+    if cmd is None or cmd.get("kind") != "DECISION" or not isinstance(body, dict):
+        return None
+    if body.get("request_id") != request_id or body.get("answer") != answer.get("answer"):
+        return None
+    return cmd
+
+
+def answer_record(request: dict, body: dict, command_digest: str) -> dict:
+    """The one shape of a ``decision.answered`` row: what ``MissionEngine.answer`` records for the signed DECISION
+    ``body`` answering ``request``, and the only record the mission fold applies (re-derived from the signature,
+    never read from the row)."""
+    return {"request_id": body.get("request_id"), "mission_id": request.get("mission_id"),
+            "answer": body.get("answer"), "reason": str(body.get("reason", ""))[:500],
+            "command_digest": command_digest}
+
+
+class MissionBook:
+    """Projection of mission truth from retained greg.* events.
+
+    A ``decision.answered`` row is not the founder's answer by being on the ledger, whose hash chain is unkeyed: on
+    a journal with a ledger it counts only as ``answer_record`` re-derives it from a founder-signed DECISION that
+    ``goal_gravity.founder_facts`` counts as signed at its ``command.accepted`` position (a key valid there, this
+    body, an unspent nonce, accepted inside its signed validity), and only if the command path's checks hold there.
+    It takes effect at that acceptance. Any other row is kept in ``unverified`` and never moves a mission."""
+
+    def __init__(self, journal: Journal, *, verify_answers: bool | None = None):
         self.journal = journal
+        # None: verify exactly when there is a ledger to verify against (every body journal and the gravity prefix);
+        # a replay-only test stand-in folds recorded rows as they are.
+        self.verify_answers = getattr(journal, "ledger", None) is not None if verify_answers is None \
+            else verify_answers
         self.missions: dict[str, MissionState] = {}
         self.requests: dict[str, dict] = {}
         self.answers: dict[str, dict] = {}
@@ -475,14 +512,35 @@ class MissionBook:
         self.missions, self.requests, self.answers, self.withdrawn = {}, {}, {}, {}
         self.consumed: set[str] = set()    # answered paid APPROVALs whose one funded run has happened
         self._deficit_of = {}              # deficit_id -> the mission whose light cone pays for its builds
+        self.unverified: dict[str, dict] = {}   # request_id -> {row, why}: an answer row kept as data, never applied
+        self._pending: dict = {}           # cited digest -> answer rows awaiting that DECISION's signed acceptance
+        self._signed, self._signed_at = {}, {}   # verified DECISIONs; digest -> the acceptance event each verified at
+        if self.verify_answers and getattr(self.journal, "ledger", None) is not None:
+            from greg import goal_gravity  # goal_gravity imports this module
+            self._signed = goal_gravity.verified_decisions(self.journal.ledger)
+            self._signed_at = goal_gravity.decision_positions(self.journal.ledger)
         for event in self.journal.replay():
-            self.fold(event.type[len("greg."):], event.payload)
+            self.fold(event.type[len("greg."):], event.payload, event_id=getattr(event, "event_id", None))
+        self.finish()
 
-    def fold(self, kind: str, data: dict) -> None:
+    def finish(self) -> None:
+        """End of the replay: an answer row no signed DECISION it cites was accepted after is kept as data."""
+        for rows in self._pending.values():
+            for data in rows:
+                self.unverified[str(data.get("request_id"))] = {
+                    "row": data, "why": "no founder-signed DECISION it cites was accepted after it was recorded"}
+        self._pending = {}
+
+    def fold(self, kind: str, data: dict, *, event_id: str | None = None) -> None:
         """Fold one retained greg.* fact (``kind`` without the ``greg.`` prefix), in ledger order.
 
         ``rebuild`` is this fold over the whole journal; greg/goal_gravity.py folds the same facts one at a
-        time to judge a founder command against the mission state at its own ledger position."""
+        time to judge a founder command against the mission state at its own ledger position. ``event_id``
+        identifies a ``command.accepted`` record, where a signed DECISION's answer takes effect."""
+        if kind == "command.accepted":
+            if self.verify_answers:
+                self._admit(data, event_id)
+            return
         mid = data.get("mission_id")
         m = self.missions.get(mid)
         if kind in ("genesis.built", "genesis.unbuilt"):
@@ -501,7 +559,7 @@ class MissionBook:
             if kind == "decision.requested":
                 self.requests[data["request_id"]] = data
             elif kind == "decision.answered":
-                self.answers[data["request_id"]] = data
+                self._answered(data)
             elif kind == "decision.withdrawn":
                 self.withdrawn[data["request_id"]] = data
             return
@@ -607,14 +665,63 @@ class MissionBook:
         elif kind == "decision.withdrawn":
             self.withdrawn[data["request_id"]] = data
         elif kind == "decision.answered":
-            self.answers[data["request_id"]] = data
-            request = self.requests.get(data["request_id"])
-            if request and data["answer"] == "approve":
-                m.approved_scopes.add(request["scope_digest"])
-            elif request and data["answer"] == "reject":
-                m.rejected_scopes.add(request["scope_digest"])
-                if request.get("action_id"):
-                    m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
+            self._answered(data)
+
+    def _answered(self, data: dict) -> None:
+        if not self.verify_answers:
+            self._apply_answer(data)
+            return
+        digest = data.get("command_digest")
+        self._pending.setdefault(digest if isinstance(digest, str) else None, []).append(data)
+
+    def _apply_answer(self, data: dict) -> None:
+        self.answers[data["request_id"]] = data
+        m = self.missions.get(data.get("mission_id"))
+        request = self.requests.get(data["request_id"])
+        if m is None or request is None:
+            return
+        if data["answer"] == "approve":
+            m.approved_scopes.add(request["scope_digest"])
+        elif data["answer"] == "reject":
+            m.rejected_scopes.add(request["scope_digest"])
+            if request.get("action_id"):
+                m.failed[request["action_id"]] = "founder rejected: " + data.get("reason", "")[:200]
+
+    def _admit(self, accepted: dict, event_id: str | None) -> None:
+        """A signed DECISION's acceptance: the answer rows citing it count, re-derived, if the command path's own
+        checks (``MissionEngine.answer``) hold here. Only at the one ``command.accepted`` record ``founder_facts``
+        counts it signed at; rows recorded later, or citing anything else, never count."""
+        digest = accepted.get("digest")
+        if accepted.get("kind") != "DECISION" or not isinstance(digest, str) or digest not in self._signed_at \
+                or self._signed_at[digest] != event_id:
+            return
+        cmd = self._signed[digest]
+        for data in self._pending.pop(digest, []):
+            rid = data.get("request_id")
+            request = self.requests.get(rid) if isinstance(rid, str) else None
+            why = self._refusal(data, request, cmd)
+            if why is None:
+                self._apply_answer(answer_record(request, cmd["envelope"]["body"], digest))
+            else:
+                self.unverified[str(rid)] = {"row": data, "why": why}
+
+    def _refusal(self, data: dict, request: dict | None, cmd: dict) -> str | None:
+        """Why a row citing a signed DECISION does not count at its acceptance (None: it counts)."""
+        rid = data.get("request_id")
+        if signed_answer(self._signed, rid, data) is None:
+            return "the signed DECISION it cites answers another request or gives another answer"
+        if request is None:
+            return "no such request was recorded before the DECISION's acceptance"
+        if rid in self.withdrawn:
+            return "the request was withdrawn before the DECISION's acceptance: the command path refuses it"
+        if rid in self.answers:
+            return "the request was already answered before this DECISION's acceptance"
+        reconcile = str(data.get("answer")).startswith("reconcile_")
+        if data.get("answer") not in DECISION_ANSWERS or reconcile != (request.get("kind") == "RECONCILIATION"):
+            return "the answer does not fit the request's kind: the command path refuses it"
+        if data != answer_record(request, cmd["envelope"]["body"], cmd["digest"]):
+            return "not the record MissionEngine.answer writes for the signed DECISION (its words or mission differ)"
+        return None
 
     def open_requests(self) -> list[dict]:
         return [r for rid, r in self.requests.items() if rid not in self.answers and rid not in self.withdrawn]
@@ -698,9 +805,14 @@ class MissionEngine:
             raise MissionError("reconciliation requests take reconcile_* answers")
         if request["kind"] != "RECONCILIATION" and answer.startswith("reconcile_"):
             raise MissionError("reconcile answers apply only to reconciliation requests")
-        self.journal.record("decision.answered", {"request_id": rid, "mission_id": request["mission_id"],
-                                                  "answer": answer, "reason": str(body.get("reason", ""))[:500],
-                                                  "command_digest": command_digest}, key=rid)
+        # The row counts once Body.apply records this command's acceptance (MissionBook re-derives it from the
+        # signature). Keyed on the command too, so a row anyone else put under the request id cannot refuse the
+        # founder's answer; a row an interrupted apply already wrote under it (bodies before fold-time
+        # re-verification) is this same record and is not written twice.
+        record = answer_record(request, body, command_digest)
+        retained = self.journal.retained("decision.answered", rid)
+        if retained is None or retained.payload != record:
+            self.journal.record("decision.answered", record, key=[rid, command_digest])
         self.book.rebuild()
 
     def exclude_strategy(self, mission_id: str, action_id: str, reason: str, critique_ref: str):

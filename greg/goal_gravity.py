@@ -32,6 +32,7 @@ import json
 import re
 from types import SimpleNamespace
 from typing import Any
+import weakref
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -51,7 +52,7 @@ from greg.capabilities import BUILTINS, CapabilityManifest
 from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes, spent_nonce
 from greg.journal import SOURCE, iso
 from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, measured, \
-    pursued_checks, strategy_scope
+    pursued_checks, signed_answer, strategy_scope
 from provenance.ledger import sha256_json
 
 SCHEMA = "greg-goal-gravity-binding/1"
@@ -204,6 +205,7 @@ class FounderFacts:
     un-mute, re-prioritize nor resume a goal."""
     body_id: str
     signed: dict = field(default_factory=dict)          # digest -> verified, fresh command (+ principal)
+    signed_at: dict = field(default_factory=dict)       # digest -> event id of the command.accepted it verified at
     admitted: dict = field(default_factory=dict)        # goal_id -> the GOAL digest that admitted it
     specs: dict = field(default_factory=dict)           # goal_id -> GoalSpec of an admitted goal
     refused: dict = field(default_factory=dict)         # digest -> why a signed GOAL / GOAL_CONTROL does not count
@@ -214,7 +216,8 @@ class FounderFacts:
     floor: dict = field(default_factory=dict)           # goal_id -> lowest priority signed (never above the spec's)
     controlled_at: dict = field(default_factory=dict)   # goal_id -> issued_at (instant) of its latest counted control
     authorizations: dict = field(default_factory=dict)  # goal_id -> first egregore.goal_authorized payload
-    book: Any = None                                    # MissionBook folded to the end of the ledger
+    book: Any = None                                    # MissionBook folded to the end of the ledger (answers
+                                                        # counted at their signed DECISION's acceptance)
     manifests: dict = field(default_factory=dict)       # capability id -> manifest, at the end of the ledger
 
     def open_goals(self) -> dict:
@@ -246,10 +249,11 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
     founders: dict[str, str] = {}
     devices: dict[str, dict] = {}
     seen_nonces: set[str] = set()
-    book = MissionBook(_NoEvents())
+    book = MissionBook(_NoEvents(), verify_answers=True)
     manifests = _manifests_builtin()
     builtin = set(manifests)
     facts = FounderFacts(body_id=body_id or "", book=book, manifests=manifests)
+    book._signed, book._signed_at = facts.signed, facts.signed_at   # grown in this pass, as each command verifies
     rooted = False
     for rec in ledger.records:
         if rec.record_type == GoalRegistry.AUTHORIZED_RECORD:
@@ -287,9 +291,62 @@ def founder_facts(ledger, *, body_id: str | None = None) -> FounderFacts:
         # Only a record that verified at its position, carrying its own envelope's nonce, spends that nonce
         # here (``spent_nonce``, the body's per-record rule); an unverified record spends nothing, so it can
         # never hide a later signed command the body applied (it can only make the body refuse one).
+        digest_ = p.get("digest")
+        known = isinstance(digest_, str) and digest_ in facts.signed
         if _accepted(facts, p, founders, devices, seen_nonces) is not None:
             seen_nonces.add(spent_nonce(kind, p))
+        if not known and isinstance(digest_, str) and digest_ in facts.signed:
+            facts.signed_at[digest_] = rec.payload["event_id"]
+        book.fold("command.accepted", p, event_id=rec.payload["event_id"])   # a signed DECISION's answer counts here
+    book.finish()
     return facts
+
+
+# verified_decisions memo: ledger -> (records seen, hash of the last one, verified DECISIONs, their acceptance events)
+_VERIFIED: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+# The only records a DECISION's verification reads: the key root, key changes, nonces and acceptance times.
+FOUNDER_RECORDS = ("greg.command.accepted", "greg.command.rejected", "greg.founder.enrolled")
+
+
+def _founder_record(rec) -> bool:
+    return rec.record_type == "event" and isinstance(rec.payload, dict) and rec.payload.get("type") in FOUNDER_RECORDS
+
+
+def _decisions(ledger) -> tuple[dict, dict]:
+    """(verified DECISIONs, digest -> the command.accepted event each verified at), from one ``founder_facts`` pass.
+
+    Memoized per ledger and keyed on its last founder record (command.accepted, command.rejected, founder.enrolled):
+    while no such record lands, the prefix that decides every DECISION is unchanged (the remembered tail hash chains
+    it), so the pass reruns only when a command does. Finding that out reads only the records appended since."""
+    records = ledger.records
+    cached = _VERIFIED.get(ledger)
+    if cached is not None:
+        seen, tail, decisions, positions = cached
+        if 0 < seen <= len(records) and records[seen - 1].hash == tail \
+                and not any(_founder_record(r) for r in records[seen:]):
+            _VERIFIED[ledger] = (len(records), records[-1].hash, decisions, positions)
+            return decisions, positions
+    seen, tail = len(records), records[-1].hash        # before the pass: a record landing during it is re-read next
+    facts = founder_facts(ledger)
+    decisions = {d: c for d, c in facts.signed.items() if c["kind"] == "DECISION"}
+    positions = {d: facts.signed_at[d] for d in decisions}
+    _VERIFIED[ledger] = (seen, tail, decisions, positions)
+    return decisions, positions
+
+
+def verified_decisions(ledger) -> dict[str, dict]:
+    """digest -> founder-signed DECISION that ``founder_facts`` counts as signed at its own ledger position.
+
+    The one verifier every reader that decides on a founder answer shares: the mission fold (``MissionBook``, with
+    ``signed_answer``) and, through the book, the human-judgment return path, the founder surfaces and the sandbox
+    diagnostic; the goal lineage reads the same ``founder_facts`` pass. Read-only: the dict is the memo's."""
+    return _decisions(ledger)[0]
+
+
+def decision_positions(ledger) -> dict[str, str]:
+    """digest -> event id of the ``command.accepted`` record each verified DECISION counts at: where its answer
+    takes effect."""
+    return _decisions(ledger)[1]
 
 
 def _accepted(facts: FounderFacts, p: dict, founders: dict, devices: dict, seen_nonces: set) -> str | None:
@@ -420,23 +477,6 @@ def signed_commands(journal, *kinds: str, body_id: str | None = None) -> dict[st
     agree that a command the same key signed for another body authenticates nothing here. A replayed
     nonce, or an acceptance outside the envelope's signed validity, authenticates nothing either."""
     return {d: c for d, c in founder_facts(journal.ledger, body_id=body_id).signed.items() if c["kind"] in kinds}
-
-
-def signed_answer(signed: dict, request_id: str, answer: Any) -> dict | None:
-    """The signature-verified DECISION behind one recorded ``decision.answered``, or None.
-
-    It counts only when the cited digest is a verified DECISION (not a MISSION, GOAL or GOAL_CONTROL),
-    for exactly this request, with exactly the recorded answer. Every goal-side reader uses this one
-    predicate: the mirrored refusal, the attention store, the evidence view and the ledger closure."""
-    if not isinstance(answer, dict):
-        return None
-    cmd = signed.get(answer.get("command_digest"))
-    body = ((cmd or {}).get("envelope") or {}).get("body")
-    if cmd is None or cmd.get("kind") != "DECISION" or not isinstance(body, dict):
-        return None
-    if body.get("request_id") != request_id or body.get("answer") != answer.get("answer"):
-        return None
-    return cmd
 
 
 def _spec(payload: Any, digest_: str) -> GoalSpec:
@@ -1387,9 +1427,11 @@ def evidence(journal, goal_id: str) -> dict:
         "turns": [r.hash for r in ledger.by_type(GoalGravityLoop.TURN_RECORD)
                   if any(p["goal_id"] == gid for p in r.payload["turn"]["processed"])],
         "experiences": WorldModel(ledger=ledger).evidence_for_goal(gid)[0],
-        "asks": [{"request_id": rid, "answer": (book.answers.get(rid) or {}).get("answer"),
-                  "answer_command": (book.answers.get(rid) or {}).get("command_digest"),
-                  "answer_signature_verified": signed_answer(signed, rid, book.answers.get(rid)) is not None,
+        # an answer row the mission book does not count is shown too, labelled: answer_counted is False
+        "asks": [{"request_id": rid, "answer": (_answer_row(book, rid) or {}).get("answer"),
+                  "answer_command": (_answer_row(book, rid) or {}).get("command_digest"),
+                  "answer_signature_verified": signed_answer(signed, rid, _answer_row(book, rid)) is not None,
+                  "answer_counted": rid in book.answers,
                   "approve_means": _approve_means_of(book.requests[rid])}
                  for rid in requests],
         "mission_receipts": sorted({e.payload["receipt"] for e in journal.replay("mission.")
@@ -1401,14 +1443,21 @@ def evidence(journal, goal_id: str) -> dict:
     }
 
 
+def _answer_row(book: MissionBook, rid: str) -> dict | None:
+    """The answer the mission book counts for a request, else the row it keeps unverified (never applied)."""
+    return book.answers.get(rid) or (book.unverified.get(rid) or {}).get("row")
+
+
 def ledger_closure(journal, *, signed: dict | None = None) -> dict:
     """Detective closure over the body ledger.
 
     Every Gate dispatch traces to a ``greg.authority.grant_issued`` whose authority_ref is a founder MISSION
     command digest that still verifies for this body; no ``egregore.founder_answer`` exists at all (the
     hosted store writes none: founder answers on a body are signed DECISION commands); and every
-    ``greg.decision.answered`` carries a signature-verified DECISION for exactly that request and answer
-    (the mission fold still trusts the record itself, ADR-GOAL-GRAVITY-002 P2: this closure detects it)."""
+    ``greg.decision.answered`` carries a signature-verified DECISION for exactly that request and answer.
+    The mission fold no longer trusts such a row (it counts only the record re-derived from a signed DECISION
+    at its acceptance, ADR-GOAL-GRAVITY-002 P2), so a row reported here moved nothing; the closure still names it,
+    because the ledger holds an answer no signed DECISION stands behind."""
     ledger = journal.ledger
     signed = signed if signed is not None else signed_commands(journal, *VERIFIED_KINDS)
     missions = {d: c["envelope"]["body"] for d, c in signed.items()

@@ -302,6 +302,9 @@ def _ask_details(r: dict) -> str:
     if r.get("answered") is not None:
         parts.append(f"<br><b>You answered {_e(r['answered'])}; that is only recorded.</b> "
                      "The mission still waits for the file above.")
+    if r.get("unsigned_answer_recorded") is not None:
+        parts.append(f"<br><b>The ledger holds an answer ({_e(r['unsigned_answer_recorded'])}) with no signed "
+                     "decision of yours behind it.</b> GREG does not act on it; this ask waits for your answer.")
     if r.get("answer_effect"):
         parts.append("<br><b>What your answer does:</b> " + _e(r["answer_effect"]))
     if r.get("expected_effect"):

@@ -64,6 +64,15 @@ Progress 2026-10-14 ([evidence](evidence/greg-mind-constructs/2026-10-14/README.
 
 Unsigned missions ask first for the engine, then for the construction, and never self-attach. Authority delta: none.
 
+Progress 2026-10-14, second entry ([evidence](evidence/greg-recovery/2026-10-14/README.md), [card](mechanisms/MC-0002-governed-half-open-recovery.md)): governed recovery. A real REA run on opossum 10.0.0 (Apache-2.0) extracted the circuit breaker's half-open re-admission. It was mutated so that:
+
+- the probe runs in the sandbox on a fresh frozen-oracle seed;
+- success restores eligibility, never authority;
+- the wait backs off exponentially, and flapping stops recovery;
+- engines are probed before the constructions built on them.
+
+A function lost to transient faults now returns, and its mission closes without founder attention. The same work fixed a pre-existing crash, reproduced on #173: a de-duplicated re-escalation, then a repeated qualification fact, crashed every later tick. Authority delta: none.
+
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
 
 `INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.

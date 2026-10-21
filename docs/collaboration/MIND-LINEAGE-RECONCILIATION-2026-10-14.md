@@ -17,7 +17,7 @@ capability.
 |---|---|---|
 | common base | `92bc6e31e0baa8fd507833e0f272b4a5e532e4d3` | P4 v2 result |
 | PR #155 head | `ef5f078013b549a51458dc9f6b5f34b324ea70b0` | 60 files changed since the base |
-| PR #158 head | `10fdbab83054027c5b782a87dd24c997b2d2fed9` (merged in this PR); earlier merges at `77b61a1`, `047549f`, `202b932`, `41a8538` and `f8e8fd2` (review of #179 M18) | changed files classified in section 3 |
+| PR #158 head | `050c1b2` (merged in this PR); earlier merges at `77b61a1`, `047549f`, `202b932`, `41a8538`, `f8e8fd2` (review of #179 M18), `10fdbab` and `463a9d0` | changed files classified in section 3 |
 | shared paths | 22 | 8 are frozen-path collisions |
 
 Convergence commits:
@@ -60,7 +60,15 @@ Convergence commits:
     and measurements block, with this branch's derived rows, stale-measurement fields and code-drift check
     re-applied. `greg/path.json` takes #158's status line and re-inserts #155's lineage segment.
   - **Release exclusions:** the five new F7 files that carry SNDlib-derived data are added (26 paths).
-  - **Map:** the map pins `10fdbab`, and a test asserts it is an ancestor of this branch.
+  - **Map:** the map pinned `10fdbab` at that merge, and a test asserts it is an ancestor of this branch.
+- Later merges bring #158 to `463a9d0` (`0e30b59`; manifest post-decision block, `known_strengths` cite F7) and to
+  `050c1b2` (`020be11`), both clean:
+  - **P8 cycle 6:** RETAIN on held-out data (105-73, p = 0.00995). Random restart is at least as good, and the
+    canary passes (CANARY_PASSES). The proposal stays PROPOSED_NOT_APPLIED; who adopts it is the founder decision
+    already escalated in section 9, and it is now live.
+  - **Seed reservations:** `P8_RESERVED` is now 7000-8599, and `CR_CANARY_SEEDS` excludes the canary range.
+    Operation admission v3's seeds 5001-5040 are spent and never overlap that reservation (test).
+  - **Map:** the map pins `050c1b2`, and a test asserts it is an ancestor of this branch.
 
 The eight collided frozen files are byte-identical at `a832c73`, `77b61a1` and `047549f`.
 

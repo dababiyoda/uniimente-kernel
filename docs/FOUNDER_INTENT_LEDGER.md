@@ -77,6 +77,17 @@ Track B update, 2026-10-21 (round-2 re-verification by the #158 session; record 
 
 Authority delta: none.
 
+Track B update, 2026-10-21 (round-3 re-verification; record sections 1 and 20):
+- **Recipe binding:** recipe verdicts also bind their stage genomes.
+- **Runtime dispatch:** a disagreeing runtime dispatch binds nothing.
+- **Release check:** it blocks recompressed and reformatted copies. Re-encoded copies are a stated limit.
+- **Crowd verifier:** abstentions must match the declared threshold.
+- **Seeds:** operation admission seeds 5001-5040 are spent.
+- **Merge:** #158 is merged at `050c1b2`. P8 cycle 6 RETAINed on held-out data, and random restart is at least as
+  good. It is PROPOSED_NOT_APPLIED, and who adopts it is a live founder decision.
+
+Authority delta: none.
+
 ## Full Polyintelligence Mind + lawful asymmetric advantage continuation — 2026-10-07
 
 `INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION` ([record](intent/INTENT-20261007-POLYINTELLIGENCE-MIND-CONTINUATION.json), [verbatim source](intent/sources/POLYINTELLIGENCE-MIND-CONTINUATION-DIRECTIVE-2026-10-07-source.md)): continue past P4/P6/P8 to the complete currently achievable five-layer Mind on GREG's one cognition path. Order: falsify or close the P6 lift gate (including one natural family), one pre-registered decisive P4 retest (demote if the static policy wins), P8 protected evolution against a sealed evaluator, an executable IntelligenceGenome library with an admission rule across Layers 1-4, the Layer 5 Competency Compiler, a lawful intervention search above the repertoire, and the Goal Gravity connection. Four earlier founder quotations are preserved verbatim with an executable interpretation: "meniscus" is the frontier of the verified envelope with explicit margins, "impermeable shield" is layered prevention and recovery (never claimed literally), "systemic dominance" is superior lawful capability and never control over people, deterrence is lawful only, victim protection is first-class, and collateral harm stays a vector. High consequence raises proof and authority requirements; it does not route the world to SMT. State: active. Authority delta: none. VEPMC: 0.

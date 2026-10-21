@@ -106,7 +106,7 @@
     ]
    }
   ],
-  "equality_digest": "sha256:531b9cd33b2330463049bd961350ad1e54573ca6c1846edbe4cf77bac2400327",
+  "equality_digest": "sha256:a938c90361cb4ec04c9b5c5c20af76d168088e1453261440d419f8f49a8cb870",
   "equivalences": [
    {
     "a": "greg.cognition.genomes.collective:flock_dropout_instance",
@@ -199,7 +199,7 @@
     ]
    }
   ],
-  "generators_sampled": 61,
+  "generators_sampled": 64,
   "sample_seeds": [
    0,
    1,
@@ -216,7 +216,7 @@
  },
  "counts": {
   "by_lineage": {
-   "#158": 306,
+   "#158": 309,
    "#179": 40,
    "both": 42
   },
@@ -224,7 +224,7 @@
    "P8 held-out": 7,
    "admission held-out": 114,
    "canary": 1,
-   "dev": 211,
+   "dev": 214,
    "held-out": 38,
    "review-pilot": 11,
    "train": 6
@@ -235,7 +235,7 @@
    "admission held-out / #158": 81,
    "admission held-out / #179": 33,
    "canary / #158": 1,
-   "dev / #158": 188,
+   "dev / #158": 191,
    "dev / both": 23,
    "held-out / #158": 13,
    "held-out / #179": 6,
@@ -243,7 +243,7 @@
    "review-pilot / #158": 11,
    "train / #158": 6
   },
-  "exposures": 388,
+  "exposures": 391,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -13871,6 +13871,143 @@
     [
      0,
      9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "ad1ce5d09a7841fd5716e9d4d05ca6891920b462",
+    "line_commits": [
+     "ad1ce5d09a7841fd5716e9d4d05ca6891920b462"
+    ],
+    "lines": [
+     294
+    ],
+    "path": "tests/unit/test_genomes_evo_centrality.py",
+    "sha256": "sha256:59b1e594fae2d4a408e1e3830f7ca6d0dc546022616d70aee5374875807feb15"
+   },
+   "exposure_commit": "ad1ce5d09a7841fd5716e9d4d05ca6891920b462",
+   "family": null,
+   "generator": {
+    "commit": "ad1ce5d09a7841fd5716e9d4d05ca6891920b462",
+    "key": "ITEMS[family].instance",
+    "kind": "code",
+    "resolved": false,
+    "why": "receiver not resolved statically"
+   },
+   "id": "#158|tests/unit/test_genomes_evo_centrality.py|dev|-|?:ITEMS[family].instance:294",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 1,
+   "part": "?:ITEMS[family].instance:294",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     4,
+     4
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "ad1ce5d09a7841fd5716e9d4d05ca6891920b462",
+    "line_commits": [
+     "ad1ce5d09a7841fd5716e9d4d05ca6891920b462"
+    ],
+    "lines": [
+     204
+    ],
+    "path": "tests/unit/test_genomes_evo_centrality.py",
+    "sha256": "sha256:59b1e594fae2d4a408e1e3830f7ca6d0dc546022616d70aee5374875807feb15"
+   },
+   "exposure_commit": "ad1ce5d09a7841fd5716e9d4d05ca6891920b462",
+   "family": "evo_map_elites",
+   "generator": {
+    "code_sha256": "sha256:4d63f598b8149a71f3e7974750f8fe2595c66a5f3024f40a5d2dd6e4341d6f20",
+    "commit": "ad1ce5d09a7841fd5716e9d4d05ca6891920b462",
+    "delegates": [],
+    "function": "qd_instance",
+    "key": "greg.cognition.genomes.evolutionary:qd_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.evolutionary",
+    "module_file_sha256": "sha256:84afc46f9f5d0dcfba4be6ab0e07a9d7c7865cedda4c2807e820fbd3fadc9ce7",
+    "prng": [
+     "Random(f'genome:evo_map_elites:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_evo_centrality.py|dev|evo_map_elites|greg.cognition.genomes.evolutionary:qd_instance:204",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 10,
+   "part": "greg.cognition.genomes.evolutionary:qd_instance:204",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     9
+    ]
+   ]
+  },
+  {
+   "artifact": {
+    "commit": "ad1ce5d09a7841fd5716e9d4d05ca6891920b462",
+    "line_commits": [
+     "ad1ce5d09a7841fd5716e9d4d05ca6891920b462"
+    ],
+    "lines": [
+     221
+    ],
+    "path": "tests/unit/test_genomes_evo_centrality.py",
+    "sha256": "sha256:59b1e594fae2d4a408e1e3830f7ca6d0dc546022616d70aee5374875807feb15"
+   },
+   "exposure_commit": "ad1ce5d09a7841fd5716e9d4d05ca6891920b462",
+   "family": "graph_betweenness_topk",
+   "generator": {
+    "code_sha256": "sha256:86464d4fef770bc37507cc83cf2c84c3413d244ef1b4b1b47f650a734e5ccaed",
+    "commit": "ad1ce5d09a7841fd5716e9d4d05ca6891920b462",
+    "delegates": [],
+    "function": "bc_instance",
+    "key": "greg.cognition.genomes.centrality:bc_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.centrality",
+    "module_file_sha256": "sha256:88defa994eaee3e7f0feb4294cc5cf8f0605935095854cf0f97043a4ff0a2b01",
+    "prng": [
+     "Random(f'genome:graph_betweenness_topk:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|tests/unit/test_genomes_evo_centrality.py|dev|graph_betweenness_topk|greg.cognition.genomes.centrality:bc_instance:221",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "a test asserts on these instances",
+   "n": 4,
+   "part": "greg.cognition.genomes.centrality:bc_instance:221",
+   "present_in": [
+    "#158"
+   ],
+   "program": "test fixture",
+   "role": "dev",
+   "seeds": [
+    [
+     0,
+     3
     ]
    ]
   },

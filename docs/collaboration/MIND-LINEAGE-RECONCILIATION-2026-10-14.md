@@ -105,7 +105,7 @@ system and one evolution controller, with every useful capability retained and e
 | file | 253 files changed by either lineage (#158 at `10fdbab`). Classified: 111 complementary, 127 historical evidence, 8 semantic incompatibility (the frozen-path collisions), 4 interchangeable, 2 duplicate, 1 unresolved (`advantage.py`, review L19). Each disposition is checked against git: "kept" and "selected" mean the lineage's bytes, while "extended", "merged" and "modified" mean they differ (review M20). |
 | interface | One cognition entry: `greg.cognition.cortex.reason` / `solve` -> catalog -> `SOLVERS` -> isolated worker -> independent verifier -> receipt. One Layer 5 entry above it: the Competency Compiler (`greg/cognition/compiler.py`). Both lineages' families run through it. |
 | contract | One catalog projection (`catalog.FAMILIES`, 72 families). The genome contract is `greg/cognition/genomes/contract.py`. Proof classes: #155's family checks plus #158's `genome_certificate`, on one verifier. |
-| genome | 127 inventoried; 98 implemented; 94 integrated; 28 labelled DEFAULT_FOR_GEOMETRY (19) or NICHE_CAPABILITY (9); 7 COMPOSITION_ONLY; 8 SUPERSEDED; 4 REJECTED; 53 EXPERIMENTAL or unevaluated; 27 FRONTIER_HORIZON. The 28 labels are not one admitted repertoire (review of #179, H4); by provenance: **19 rule-admitted** under #158's pre-registered rule at the current version, 5 #155 operation-family verdicts (held-out, not pre-registered in git), 2 recipe lifts (not admissions), 2 hand-coded organ labels (not admissions). `genome_library.admitted_by_provenance()` reports this split. 8 of the 72 catalog families are attached by default, and 0 are attached by any evaluation. Counting every cognition capability, 22 are attached by default (review L4). One of them, `cognition.seed.solve` (#142), runs `cortex.seed` methods on its own worker, with its own verifier and receipts, outside the compiler's evidence routing. It is a registered alternative entry, not a second canonical Mind entry; it stays attached because a shipped mission template (`greg/templates.py`) names it as its compute strategy, and `greg/capabilities.py` registers it as the benchmark twin and fallback, never as a second authority. Withholding it by default would break that template; that change is left for a decision. On a body, actually exercised is 0 (VEPMC 0); exercised in tests and frozen evaluations only. |
+| genome | 127 inventoried; 98 implemented; 94 integrated; 41 labelled DEFAULT_FOR_GEOMETRY (30) or NICHE_CAPABILITY (11); 4 COMPOSITION_ONLY; 10 SUPERSEDED; 4 REJECTED; 41 EXPERIMENTAL or unevaluated; 27 FRONTIER_HORIZON (measured 2026-10-21 on the tree that merges #158 at `463a9d0`). Every surface reads the compiler's routed status (round-2 review, N2), so all 41 labels are **rule-admitted**: #158's pre-registered genome admissions at the current version, plus the six operation families that operation admission v3 (pre-registered, section 18) admitted against a competitor. #155's lineage operation verdicts, recipe lifts and hand-coded organ labels are reported beside an entry as notes and no longer appear as admissions (0 each). `genome_library.admitted_by_provenance()` reports this split. 8 of the 72 catalog families are attached by default, and 0 are attached by any evaluation. Counting every cognition capability, 22 are attached by default (review L4). One of them, `cognition.seed.solve` (#142), runs `cortex.seed` methods on its own worker, with its own verifier and receipts, outside the compiler's evidence routing. It is a registered alternative entry, not a second canonical Mind entry; it stays attached because a shipped mission template (`greg/templates.py`) names it as its compute strategy, and `greg/capabilities.py` registers it as the benchmark twin and fallback, never as a second authority. Withholding it by default would break that template; that change is left for a decision. On a body, actually exercised is 0 (VEPMC 0); exercised in tests and frozen evaluations only. |
 | evaluation | One evidence index (`docs/evidence/greg-mind-evidence-index.json`) carries every frozen admission, P6 and P4 run of both lineages. `tests/unit/test_mind_evidence_sources.py` re-derives every row from the file it cites. |
 | behaviour | Measured on one request per input signature. The compiler now refuses methods that lost on held-out data in either lineage (section 5); every other top choice is unchanged. |
 
@@ -245,9 +245,10 @@ How the two generators were reconciled (2026-10-15, revised after the founder's 
 
 **Routing deltas the convergence makes** (one request per input signature):
 
-- A request carrying only observations used to reach `cognition.collective`, a quorum vote that was REJECTED
-  7-11 against simple majority on held-out seeds. That answered an anomaly question with a vote. It now
-  reaches no operation fit and ends in an honest deficit. The anomaly families share one input signature and
+- A request carrying only observations used to reach `cognition.collective`, a quorum vote. Its frozen
+  REJECTED reading came from a loss to an oracle baseline (review M3); against deployable majority it tied
+  7-11, and operation admission v3 reads it EXPERIMENTAL (section 18). It routes as EXPERIMENTAL on every surface
+  (round-2 review, N2); this delta is no longer a refusal and was corrected after that review. The anomaly families share one input signature and
   one epistemic class, so the request cannot say which question it asks.
 - `simulate`: `cognition.simulation` is excluded (REJECTED 0-40 against the exact analytic baseline on its
   benchmark geometry).
@@ -325,7 +326,8 @@ intelligence: several constituents are deliberately incomplete, as the founder w
 single method should be, conditionally. PMCF (the same split-arc formulation, a different algorithm, uncertified)
 tied the composition on all 200 audited items and never spends more at equal throughput. #158's
 `flow_expansion_mcf` 1.0.0 shares the formulation, not the algorithm (successive shortest paths with its own
-dual or cut certificate), and has development evidence only (review L10).
+dual or cut certificate). It had development evidence only when this audit ran (review L10); #158's admission
+v3 and F7 v6 measured it since (below).
 
 Latency (review M12, corrected): the earlier "about 300 times faster" divided PMCF run in process by the
 composition through three isolated workers; the frozen v4 README says those figures are not comparable. Like for
@@ -566,7 +568,7 @@ What an agent can do without those decisions:
 | no rejected P8 configuration promoted | met | nothing attached; P8 `exit_met` false (`test_frontier_backcasts.py`) |
 | no NO_GAIN presented as positive lift | met | P4 row and status label; `forecast_then_allocate` NO_LIFT demoted |
 | strong standalone and practitioner baselines included | met where measured | F7 PMCF and SP-upgrade; F6 weekly mean; crowd-sparse one-step vote; F7 audit |
-| genome admission bound to the exact tested version | met | genomes: compiler stale guard on the genome version. #155's operation families: each positive verdict is bound to the solver's static dependency closure at the run's source commit (`greg/cognition/code_binding.py`). The closure covers the function, the repository helpers, classes and module constants it reaches, repository names imported inside a function body, names declared `global`, dotted module chains, and every top-level statement that binds or mutates a name (so an edited literal that a later statement mutates still counts). Locals are computed per method. The bound function is the one `SOLVERS` dispatched the family to at the run's commit, resolved statically, never today's target (review of #179 closure-binding findings B1, B2). A changed member routes the family as UNEVALUATED and names the member; a verdict bound to the entry function only is not trusted; negative verdicts keep their scope. Helper and constant mutations are tested, and the closures are re-derived from git. Not covered: third-party package versions, dynamic dispatch by string, data files opened by path. All 11 current positive verdicts match their measured closures. |
+| genome admission bound to the exact tested version | met | genomes: compiler stale guard on the genome version. #155's operation families: each positive verdict is bound to the solver's static dependency closure at the run's source commit (`greg/cognition/code_binding.py`). The closure covers the function, the repository helpers, classes and module constants it reaches, repository names imported inside a function body, names declared `global`, dotted module chains, and every top-level statement that binds or mutates a name (so an edited literal that a later statement mutates still counts). Locals are computed per method. The bound function is the one `SOLVERS` dispatched the family to at the run's commit, resolved statically, never today's target (review of #179 closure-binding findings B1, B2). A changed member routes the family as UNEVALUATED and names the member; a verdict bound to the entry function only is not trusted; negative verdicts keep their scope. Helper and constant mutations are tested, and the closures are re-derived from git. Not covered: third-party package versions, dynamic dispatch by string, data files opened by path. Round-2 review (N4): locals are per scope (nested functions, lambdas, comprehensions), top-level compound statements (try/if/for/with/del) are hashed, star imports and constant `import_module` are followed, and a non-constant dynamic import or a non-literal update of the dispatch table binds nothing positive unless the run recorded its runtime dispatch and it agrees. Six operation verdicts route positive on this tree (control, game, information, probabilistic, robust_pattern, swarm), each bound to operation admission v3's closure at `dfdcfe9`. |
 | interruption and restart do not duplicate consequential actions | met in tests | `test_greg_cognition_process.py::test_cli_composition_survives_sigkill_without_duplicate_computation`, `test_greg_cognition_mission.py::test_detachment_survives_restart...` |
 | Kernel, event spine, authority, shutdown and founder boundaries preserved | met | no change to `policy/`, `provenance/`, `authority/`, `greg/founder.py` or the Gate |
 | no live deployment or external consequence | met | draft PR only |
@@ -579,9 +581,12 @@ What an agent can do without those decisions:
   #155's head and re-apply only what is wanted.
 
   ```sh
-  git switch -c trackb-rollback ef5f078            # PR #155's head, the PR's base
-  git merge --no-ff 10fdbab                        # optional: #158's lineage alone, without Track B's work
+  git switch -c trackb-rollback ef5f078            # PR #155's head, the PR's base: #155's lineage alone
+  git switch -c pr158-alone 463a9d0                # #158's lineage alone (its own branch head)
   ```
+
+  Merging #158 onto #155's head is the convergence itself and conflicts on 21 paths (round-2 review, L18); it is
+  not a rollback step.
 
   Track B's own commits, oldest first: `2d1ddd3` (first merge), `49b2d58`, `8bbd3b8`, `6e62b59`, `e21bb5b`
   (merge), `8a43e70`, `4b445db`, `c7a7ad5`, `d3a5abd`, `1346376`, and the review-of-#179 commits after them (see
@@ -599,9 +604,6 @@ What an agent can do without those decisions:
 - the SNDlib, M4, fpp3 and NYC TLC data terms (section 12).
 
 **Not done here:**
-- a live harness that can re-admit #155's operation families. #155's runners refuse at this head
-  (`FROZEN_INPUT_CHANGED`), and #158's harness enumerates genome executables only. Until those families are
-  wrapped as versioned genomes, their routes are lineage verdicts bound to code closures (review M17);
 - an `independently_verified` field in the inventory, backed by verifier-mutation evidence (review L21);
 - a cross-lineage seed and data-identity registry that the freeze tools consult (review L3). Known overlap:
   #155's crowd-sparse seeds 3001-3040 and P6 v3's 3101-3148 sit inside the 3000-3999 range used for review and
@@ -665,13 +667,13 @@ the row says otherwise.
 | H1 | A same-instance re-run never decides and is labelled as one: F2R decides identify_then_optimize, and #158's REGRESSION decides P4. |
 | H2, M1, M2, M16 | One status function (`compiler.family_status`) serves the compiler, Genesis, the inventory and `mind_status`. Attach asks cite evidence, SUPERSEDED operations name their competitor, and the mission hook drops COMPOSITION_ONLY. M2's second fix (cortex.reason refusing COMPOSITION_ONLY) is not taken: an explicit operation request asks for that output, and geometry routing already refuses it. |
 | H3, M4, M5, M6, L12 | Verifiers recompute instead of trusting the answer. L12 is covered by #158's next harness version. |
-| H4, M3 | Admitted labels are reported by provenance (19 rule-admitted). DEFAULTs without a competitor route as UNEVALUATED. collective is EXPERIMENTAL by erratum. |
+| H4, M3 | Admitted labels are reported by provenance (41 rule-admitted after round 2). DEFAULTs without a competitor route as UNEVALUATED. collective is EXPERIMENTAL by erratum and by operation admission v3. |
 | H5, M15 | Recipe lifts and genome configurations bind the code they measured. A test shows no rejected P8 configuration ships. |
 | M7, M8, M9, M10 | Derived chains are reachable from Layer 5, only when unambiguous. M10 is resolved by #158's part rows, and admission v3 decides the canonical genome. |
 | M11, M12, M13, L2, L10, L11, L13, L15 | Spend diagnostic; like-for-like latency in an erratum beside the frozen audit; F4, F3 and F7 caveats; practitioner ties in the index; ledger erratum. |
 | M14, L5, L6 | #158's `af258bf` is selected (section 9). This branch's parallel fix is history only. |
 | L7, L8, L9 | The single-controller test covers every tree and dynamic import by string. The path.json and ledger overclaims are corrected. The adopting decider is escalated. |
-| M17 | Not fixed: no live harness can re-admit #155's operation families (section 15). |
+| M17 | Fixed: `cortex/evaluation/genome_admission/run_ops_v3.py` re-admits #155's operation families on this tree under a pre-registration and a freeze that binds each solver closure. Its first run, on fresh seeds 5001-5040, replicates 14 of 17 rows and disagrees on `graph`, `robust_pattern` and `collective` (section 18). |
 | M18 | #158 is merged at `f8e8fd2` and later at `10fdbab`. The map pins `10fdbab`, and a test asserts it is an ancestor. |
 | M19 | Release-exclusion list, CI check and test (section 12). |
 | M20 | The original runner is archived; dispositions are checked against git. |
@@ -700,3 +702,49 @@ and `mind_status` reports them as BUILT, until a fresh pre-registered run measur
 positive operation verdicts keep their status: their dispatch and closures are unchanged since their run.
 Non-literal table updates (the genome comprehension) are counted, not resolved. They cannot rebind a literal key
 they do not name.
+
+## 18. Operation-family re-admission on the converged tree (review M17)
+
+- **Harness:** `cortex/evaluation/genome_admission/run_ops_v3.py`. It imports v1's, v2's and the sparse-crowd
+  benchmarks and v1's frozen status rule unchanged, and its freeze binds the static dependency closure of every
+  family's dispatched solver. It refuses on a dirty tree or on any changed input.
+- **Pre-registration and freeze:** `prereg-ops-v3.json` at `1213394`; `freeze-ops-v3.json` at `dfdcfe9`. It ran
+  once, in a clean detached worktree at the freeze commit, under `python -I`, on seeds 5001-5040.
+- **Evidence:** `docs/evidence/greg-operation-admission/2026-10-16-v3/`.
+- **Result:** 14 of 17 rows replicate #155's statuses. Three disagree, and both readings are kept in history:
+  - `graph`: DEFAULT became EXPERIMENTAL. Only 4 items are discordant, 4-0, p = 0.0625.
+  - `robust_pattern`: EXPERIMENTAL became DEFAULT. It beats the baseline 14-5 and ties Rosner's ESD.
+  - `collective`: EXPERIMENTAL, against the baseline that knows hidden accuracies. This agrees with the M3
+    erratum.
+- **Observation outside the rule:** on sparse crowds the one-step weighted vote beats Dawid-Skene 27-12
+  (p = 0.012).
+- **Routing:** the index appends the run after #155's three runs, so the latest reading routes. `graph` now
+  routes as EXPERIMENTAL and `robust_pattern` as DEFAULT. Every positive reading is bound to the closure measured
+  at `dfdcfe9`.
+- **What it closes:** a drifted operation family can now be re-admitted, not only demoted. Re-running under a new
+  freeze path is the procedure; nothing attaches.
+
+
+## 19. Round-2 re-verification of #179 (from the #158 session, at `e413cae`): dispositions
+
+The re-verification found the re-merge of #158 clean and all 333 frozen files byte-identical. Every new
+defect was reproduced, then fixed with a regression test that fails on the old code, or answered.
+
+| item | disposition |
+|---|---|
+| N1 (high) crowd verifier bypass by claiming non-convergence | Fixed. The verifier re-runs EM from the soft-majority start and compares iterations, posteriors and the fitted model. The forgery verified on 10 of 10 dev seeds before and is refuted on all now. |
+| N2 (medium) collective, organ and derived-chain status differed by surface | Fixed. `admission_of`, the inventory, `greg genomes` and the mission hook read the compiler's routed status. Organ labels and `composition.derived` take the compiler's status and keep their lineage reading as a note. |
+| N3 (medium) release check bypassed by renamed, nested, deep or wheel members | Fixed. Every listed file carries its sha256. A member is blocked by digest (also after gunzip), by path suffix or by a data marker, at any archive depth. Each bypass is a test. |
+| N4 (low) closure gaps | Fixed. See section 13 (G11 row): per-scope locals, module-level compound statements, star imports and constant `import_module` are followed. Unresolved code binds nothing positive unless a recorded runtime dispatch confirms it. Eight regressions. |
+| N5 (low) recipe binding too broad and repeating B1 | Fixed. `recipe_code` resolves `OPERATION_RECIPES` at the measured tree and stops at `cortex.reason` and `reason_cortex`. `track_then_staff` binds 20 members, not 568, and a docstring edit in `code_binding` no longer stales it. |
+| N6 (low) "every frozen runner refuses" | Corrected in the three `LINEAGE-POINTER.md` files: `developmental_sweep/run.py` would run, and its result is pinned by sha256 (L22). |
+| N7 (low) stale counts | Corrected (section 3, genome row; section 13, G11 row; section 17, H4 row). |
+| L14 regressed in `6eaccfa` | Restored on `greg/cognition/genomes/flow.py`'s map entry, now citing F7 v6. |
+| M5 residual: blackbox under-reported count | Fixed. The verifier re-runs the declared differential evolution from its seed on its own objective and compares count and fitness. |
+| L7 residual: split string literal | Fixed. Constant-folded strings are scanned; three split forms are a test. |
+| L9: cited test missing | Fixed. `test_a_synthetic_retain_record_changes_no_shipped_configuration` now exists. |
+| L18: rollback merge conflicts | Corrected (section 14). |
+| L10: "development evidence only" | Corrected (section 8). |
+| L1, L8 (manifest, P8 backcast) | #158's own fixes (`ba1863d`, `463a9d0`), merged here at `463a9d0`. |
+| L3 (seed registry), L5 (generator seed in sandbox data, latent for data-only candidates), L20 (no independent Systems Architect) | Open, as before. L5's channel is #158's P8 code and stays a precondition before any code-level candidate space. |
+| M17 | Fixed (section 18). |

@@ -604,8 +604,8 @@
    "path": "docs/evidence/greg-data-exposure-ledger.json",
    "lineage": "pr158",
    "classification": "historical evidence",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); regenerated on the converged tree by its tool"
   },
   {
    "path": "docs/evidence/greg-developmental-sweep/2026-10-14/README.md",
@@ -1962,8 +1962,8 @@
    "path": "scripts/data_exposure_ledger.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); merged at fa0d92a0 (natural-ops family, L3 batch D and crowd genomes, node cut, immune-8, exposure ledger, founder decision packet); 2026-10-21 on #179: tree-aware (#158's tree is the map's pinned commit, #179's is HEAD)"
   },
   {
    "path": "scripts/greg_whole_machine_trace.py",

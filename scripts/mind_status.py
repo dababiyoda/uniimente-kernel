@@ -713,6 +713,18 @@ def _lineage_179(rows: list[dict]) -> dict:
         return {**pin, "available": False,
                 "why": f"commit {pin['commit']} is not in this clone; fetch {pin['branch']} to read it", "rows": []}
     data = json.loads(raw)
+    # On a tree whose own evidence index lists this run (the converged #179 tree), its verdicts already route here
+    # through the operation rows: the lineage view would duplicate them and its "raises no label here" would be
+    # false, so it reports that and adds no rows (merge of #158 fa0d92a0 into #179)
+    try:
+        listed = {s.get("path") for s in json.loads(INDEX.read_text()).get("sources", [])}
+    except (OSError, ValueError):
+        listed = set()
+    if pin["results"] in listed:
+        return {**pin, "available": True, "in_this_index": True, "source_commit": data.get("source_commit"),
+                "seeds": data.get("seeds"), "rows": [], "families_only_on_179": [],
+                "why": "this tree's evidence index lists this run, so its verdicts route here through the operation "
+                       "rows; no separate lineage rows"}
     freeze = json.loads(_git_show(pin["commit"], pin["freeze"]) or b"{}")
     frozen_solvers = ((freeze.get("inputs") or {}).get("files") or {}).get(pin["solvers"])
     here_solvers = _sha(ROOT / pin["solvers"]) if (ROOT / pin["solvers"]).exists() else None

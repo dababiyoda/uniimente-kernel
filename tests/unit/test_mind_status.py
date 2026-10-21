@@ -606,6 +606,11 @@ def test_179_operation_admissions_appear_as_lineage_rows_that_raise_no_label(mon
     lin = status["lineage_179"]
     assert lin["available"] and lin["commit"].startswith("0067be6")
     assert lin["source_commit"] == "dfdcfe92f00449039686c922623a925910aeb8a2" and lin["seeds"] == [5001, 5040]
+    if lin.get("in_this_index"):
+        # the converged #179 tree routes on this run itself: no duplicate lineage rows, no false "no label here"
+        sources = {s["path"] for s in json.loads(M.INDEX.read_text())["sources"]}
+        assert lin["results"] in sources and lin["rows"] == [] and lin["families_only_on_179"] == []
+        return
     rows = {r["family"]: r for r in lin["rows"]}
     assert rows["control"]["status"] == "DEFAULT_FOR_GEOMETRY" and rows["control"]["counts_here"] is False
     assert {"robust_pattern", "crowd", "swarm", "blackbox", "crowd_sparse"} <= set(lin["families_only_on_179"])

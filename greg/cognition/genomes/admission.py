@@ -69,7 +69,9 @@ from greg.cognition.genomes.contract import CATEGORIES, GenomeError  # noqa: E40
 
 DEV_SEEDS = tuple(range(0, 10))
 HELDOUT_SEEDS = tuple(range(1000, 1030))
-P8_RESERVED = range(7000, 8060)          # protected-evolution partitions (greg/cognition/evolution.py)
+# protected-evolution partitions (greg/cognition/evolution.py); 8060-8599 were added on 2026-10-21 for cycle 6 and
+# no earlier freeze, admission run or pilot used them
+P8_RESERVED = range(7000, 8600)
 COST_RATIO = 1.25
 ALPHA = 0.05
 RULE = ("COMPOSITION_ONLY if no standalone decision; REJECTED if more wrong than baseline or significantly worse "

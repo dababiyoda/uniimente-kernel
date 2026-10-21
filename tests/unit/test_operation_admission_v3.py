@@ -78,3 +78,11 @@ def test_operation_admission_seeds_are_registered_as_spent():
     or P8 split could draw operation admission v3's held-out seeds without a refusal."""
     from greg.cognition.genomes.admission import spent_seeds
     assert set(range(5001, 5041)) <= spent_seeds()
+
+
+def test_operation_admission_seeds_stay_outside_p8s_reserved_range():
+    """#158's request (round 3): 5001-5040 are spent, and the spent registry never overlaps P8_RESERVED."""
+    from greg.cognition.genomes.admission import P8_RESERVED, spent_seeds
+    spent = spent_seeds()
+    assert set(range(5001, 5041)) <= spent
+    assert not spent & set(P8_RESERVED)

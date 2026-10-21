@@ -177,9 +177,27 @@ IMMUNE_TRAIN_SEEDS = tuple(range(7000, 7040))      # fresh for P8: admission use
 IMMUNE_HELDOUT_SEEDS = tuple(range(8000, 8060))
 
 
-def immune_target() -> Target:
+# Named search spaces for immune_detect. "full/1" is the genome's shipped IMMUNE_CONFIG_SPACE (cycles 2 and 7).
+# "immune-8/alarm-cap/1" (declared 2026-10-21 by the immune-8 design pilot, before any of its instances existed;
+# docs/evidence/greg-protected-evolution/2026-10-21-immune-8) narrows one axis only: alarm_fraction is capped at the
+# incumbent's own 0.75, so a candidate cannot buy F1 by spending more of the false-alarm budget than the shipped
+# detector spends. The genome's IMMUNE_CONFIG_SPACE and IMMUNE_DEFAULT_CONFIG are unchanged; no spec uses this space
+# until a pre-registration names it.
+IMMUNE_SEARCH_SPACES = ("full/1", "immune-8/alarm-cap/1")
+
+
+def immune_search_space(name: str = "full/1") -> dict:
     from .genomes import collective
-    return Target("immune_detect", collective.IMMUNE_CONFIG_SPACE, dict(collective.IMMUNE_DEFAULT_CONFIG))
+    if name == "full/1":
+        return collective.IMMUNE_CONFIG_SPACE
+    if name == "immune-8/alarm-cap/1":
+        return {**collective.IMMUNE_CONFIG_SPACE, "alarm_fraction": ("float", [0.4, 0.75])}
+    raise EvolutionError(f"unknown immune search space {name!r}; declared: {IMMUNE_SEARCH_SPACES}")
+
+
+def immune_target(space: str = "full/1") -> Target:
+    from .genomes import collective
+    return Target("immune_detect", immune_search_space(space), dict(collective.IMMUNE_DEFAULT_CONFIG))
 
 
 # Each cycle on this target draws its own split; earlier splits stay reproducible by name. Cycle 2 (2026-10-09) stopped

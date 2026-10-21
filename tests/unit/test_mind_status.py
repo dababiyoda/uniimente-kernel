@@ -505,3 +505,109 @@ def test_the_cli_prints_the_same_json_and_writes_nothing():
     assert json.loads(out.stdout) == json.loads(json.dumps(M.status()))
     assert [hashlib.sha256(p.read_bytes()).hexdigest() for p in watched] == before
     assert M.status() == copy.deepcopy(M.status())                      # deterministic: no clock, no randomness
+
+
+# ---------------------------------------------------------------- EXERCISED projection and #179 lineage rows
+
+REHEARSAL = "tests/evidence/greg-cortex-rehearsal/rehearsal-ledger.jsonl"
+
+
+def test_exercised_reports_the_rehearsal_organs_with_the_ledger_and_a_non_founder_key():
+    ex = M.status()["exercised"]
+    mechs = ex["mechanisms"]
+    for organ in ("cognition.cortex", "cognition.cortex.extraction.schedule", "cognition.cortex.optimization.cpsat"):
+        assert f"{REHEARSAL}#m:cortex-rehearsal" in mechs[organ]["missions"], organ
+        assert mechs[organ]["key_classes"] == ["test_key"] and mechs[organ]["founder_use"] is False
+        assert mechs[organ]["row"] == organ
+    # the scan also finds the second rehearsal mission, which the coverage record did not name
+    assert f"{REHEARSAL}#m:after-detach" in mechs["cognition.cortex.formal.z3"]["missions"]
+    sources = {s["path"]: s for s in ex["sources"]}
+    assert sources[REHEARSAL]["ledger_retained"] and sources[REHEARSAL]["sandbox"]
+    assert sources[REHEARSAL]["enrolled_key_ids"] and not set(sources[REHEARSAL]["enrolled_key_ids"]) & set(
+        M.FOUNDER_KEY_IDS)
+    assert ex["founder_use"] == [] and M.FOUNDER_KEY_IDS == ()
+    rows = _rows(M.status())
+    assert rows["cognition.cortex.optimization.cpsat"]["exercised"]["key_classes"] == ["test_key"]
+
+
+def test_the_exercised_scan_misses_no_retained_settlement():
+    """Falsifier for the projection: every committed file that records a settlement is a source."""
+    tracked = subprocess.run(["git", "ls-files", *M.EXERCISED_ROOTS], cwd=ROOT, capture_output=True, text=True,
+                             check=True).stdout.split()
+    holding = sorted(p for p in tracked if p.endswith((".json", ".jsonl"))
+                     and M.SETTLED in (ROOT / p).read_text(errors="replace"))
+    ex = M.status()["exercised"]
+    assert holding and sorted(s["path"] for s in ex["sources"]) == holding
+    in_files = sum((ROOT / p).read_text().count(f'"type": "{M.SETTLED}"') for p in holding if p.endswith(".jsonl"))
+    assert sum(1 for s in ex["settlements"] if s["source"].endswith(".jsonl")) == in_files
+
+
+def test_trace_settlements_without_a_ledger_position_are_flagged_not_dropped():
+    ex = M.status()["exercised"]
+    trace = [s for s in ex["settlements"] if s["source"].endswith("trace.json")]
+    assert {s["method"] for s in trace} == {"cognition.optimization",
+                                            "acquired.cognition.mechanism:linear_assignment.scipy"}
+    assert any(s.get("flag") for s in trace) and any(s.get("ledger_seq") is not None for s in trace)
+    src = next(s for s in ex["sources"] if s["path"].endswith("trace.json"))
+    assert src["ledger_retained"] is False and src["key_class"] == "test_key"
+    assert "acquired.cognition.mechanism:linear_assignment.scipy" in ex["without_row"]
+
+
+def test_the_exercised_projection_changes_no_label(monkeypatch):
+    with_projection = M.status()
+    monkeypatch.setattr(M, "_exercised", lambda rows: {"mechanisms": {}})
+    without = M.status()
+    assert with_projection["counts"] == without["counts"]
+    assert {r["id"]: r["label"] for r in with_projection["mechanisms"]} == {
+        r["id"]: r["label"] for r in without["mechanisms"]}
+
+
+def test_founder_use_is_claimed_only_for_a_key_in_the_founder_registry(monkeypatch, tmp_path):
+    ledger = tmp_path / "evidence" / "m" / "ledger.jsonl"
+    ledger.parent.mkdir(parents=True)
+    events = [{"seq": 0, "record_type": "event", "payload": {"type": "greg.founder.enrolled",
+                                                              "payload": {"key_id": "ed25519:feedface"}}},
+              {"seq": 1, "hash": "sha256:" + "0" * 64, "record_type": "event",
+               "payload": {"type": M.SETTLED, "payload": {"mission_id": "m:x", "method": "cognition.exact",
+                                                          "method_version": "0.2.0", "causal_credit": []}}}]
+    ledger.write_text("".join(json.dumps(e) + "\n" for e in events))
+    monkeypatch.setattr(M, "EXERCISED_ROOTS", (str(tmp_path / "evidence"),))
+    unlabelled = M.status()["exercised"]
+    assert unlabelled["mechanisms"]["cognition.exact"]["key_classes"] == [
+        "unverified_key (not shown to be the founder's)"]
+    assert unlabelled["founder_use"] == []
+    monkeypatch.setattr(M, "FOUNDER_KEY_IDS", ("ed25519:feedface",))
+    assert M.status()["exercised"]["founder_use"] == ["cognition.exact"]
+
+
+LINEAGE_AVAILABLE = subprocess.run(["git", "cat-file", "-e", f"{M.LINEAGE_179['commit']}^{{commit}}"], cwd=ROOT,
+                                   capture_output=True, check=False).returncode == 0
+
+
+@pytest.mark.skipif(not LINEAGE_AVAILABLE, reason="PR #179's pinned commit is not in this clone")
+def test_179_operation_admissions_appear_as_lineage_rows_that_raise_no_label(monkeypatch):
+    status = M.status()
+    lin = status["lineage_179"]
+    assert lin["available"] and lin["commit"].startswith("0067be6")
+    assert lin["source_commit"] == "dfdcfe92f00449039686c922623a925910aeb8a2" and lin["seeds"] == [5001, 5040]
+    rows = {r["family"]: r for r in lin["rows"]}
+    assert rows["control"]["status"] == "DEFAULT_FOR_GEOMETRY" and rows["control"]["counts_here"] is False
+    assert {"robust_pattern", "crowd", "swarm", "blackbox", "crowd_sparse"} <= set(lin["families_only_on_179"])
+    mechs = _rows(status)
+    for family in rows:
+        here = mechs.get(f"cognition.{family}")
+        if here is not None and here["kind"] == "catalog_family":
+            assert here["label"] == "BUILT" and "#179" in here["basis"], family
+            assert here["lineage_179"]["pinned_commit"] == M.LINEAGE_179["commit"]
+    monkeypatch.setattr(M, "_lineage_179", lambda rows: {"available": False, "rows": []})
+    assert M.status()["counts"] == status["counts"]
+    assert not _agreement(compiler.evidence_index(), mechs)
+
+
+def test_an_unreachable_179_commit_is_reported_and_changes_nothing(monkeypatch):
+    before = M.status()
+    monkeypatch.setattr(M, "LINEAGE_179", {**M.LINEAGE_179, "commit": "0" * 40})
+    after = M.status()
+    assert after["lineage_179"]["available"] is False and after["lineage_179"]["rows"] == []
+    assert after["counts"] == before["counts"]
+    assert not any("lineage_179" in r for r in after["mechanisms"])

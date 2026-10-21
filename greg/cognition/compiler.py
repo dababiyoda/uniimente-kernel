@@ -642,6 +642,8 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
                 row["missing_inputs"] = [{"method": row["method"], "part": lacking["part"],
                                           "missing_inputs": lacking["missing_inputs"]}]
         rows.append(row)
+        if not row["rejected"]:
+            _reject_recipe_relaxations(row, recipe, rows, keys, evidence)
         if parts:
             rows += _part_rows(data, g, evidence)
         # a single genome admitted DEFAULT against this recipe's twin, at its current version, that fits this request
@@ -658,6 +660,25 @@ def candidates(data: dict, g: CompetencyGeometry, evidence: dict, *, parts: bool
     else:
         rows += _derived_rows(data, rows)
     return rows
+
+
+def _reject_recipe_relaxations(row: dict, recipe: str, rows: list[dict], keys: set, evidence: dict) -> None:
+    """The fixed recipe's twin of the derived-chain rule below. A single method or organ reading a strict subset of
+    the inputs a routed recipe consumes answers a relaxation of the recipe's question and is rejected; a genome
+    admitted DEFAULT against the recipe's twin decides the same question and still competes. Without this rule an
+    unevaluated recipe tied an unevaluated organ on status and lost on the method name: on the converged tree the
+    Fermi organ answered F1's estimate-then-optimize requests, ignored ``formal_template`` and abstained
+    (development check of the converged recipe-lift re-measurement, 2026-10-21)."""
+    from .composition import RECIPES
+    consumed = set(RECIPES[recipe]["requires"]) & keys
+    twins = {m["method"] for m in _matched_by_single_genome(recipe, evidence)}
+    for other in rows:
+        if (other is row or other["kind"] == "composition" or other["rejected"] or other.get("part")
+                or other["method"] in twins):
+            continue
+        if set(other.get("inputs") or ()) < consumed:
+            other["rejected"] = (f"answers a relaxation: ignores declared inputs "
+                                 f"{sorted(consumed - set(other['inputs']))} that {row['method']} consumes")
 
 
 def _derived_rows(data: dict, rows: list[dict]) -> list[dict]:

@@ -2421,10 +2421,16 @@ class MissionEngine:
                 # separate process appraises it as it does an achievement, so settlement hears failures too.
                 # Not while qualified intelligences disagree on a failing check: GREG does not vote, so it closes
                 # on neither view, as a success or as a failure.
-                self.journal.record("mission.unmet", {
-                    "mission_id": m.mission_id, "failing_checks": sorted(failing), "actions_done": m.actions_done,
-                    "closure_rule": "every admissible strategy ran; these signed checks re-observed failing",
-                    "at": iso(now)}, key=[m.mission_id, "unmet", m.actions_done])
+                # A closure is identified by the actions it closes over: after the founder answers the ask with
+                # nothing new run, the mission re-closes over the same actions, which is the closure already
+                # recorded and appraised, not a second one (and not the same identity with a later time).
+                closure = [m.mission_id, "unmet", m.actions_done]
+                if self.journal.retained("mission.unmet", closure) is None:
+                    self.journal.record("mission.unmet", {
+                        "mission_id": m.mission_id, "failing_checks": sorted(failing),
+                        "actions_done": m.actions_done,
+                        "closure_rule": "every admissible strategy ran; these signed checks re-observed failing",
+                        "at": iso(now)}, key=closure)
             self._block(m, {"type": "decision", "request_id": rid, "why": "no admissible strategy",
                             "failing_checks": sorted(failing), "reconsider": "founder revises mission"})
             return {"state": "BLOCKED", "blocker": m.blocker}

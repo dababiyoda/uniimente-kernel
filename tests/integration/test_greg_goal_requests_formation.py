@@ -202,3 +202,94 @@ def test_a_goals_formation_request_never_commissions_a_builder_or_spends_a_build
             "build budget"]
         assert body.journal.replay("genesis.built") == []
         assert body.genesis._form_only is None                     # restored for the mission's own deficits
+
+
+def test_two_goals_bound_to_one_mission_that_need_one_function_share_its_formation_and_never_fault(tmp_path):
+    """Deficits are per (mission, function), so a second goal over the same mission meets the formation the first one
+    asked for: the engine still waits for one signed attach, and Goal Gravity never faults on the repeat."""
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = note_mission(home)
+    mid = spec["mission_id"]
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        settle(body, clock, 1)
+    second = goal_for(mid)
+    second["goal"]["founder_intent"] = "a second goal over the same mission"
+    drop(home, signed(key, body_id, "GOAL", goal_for(mid)), "g1.json")
+    drop(home, signed(key, body_id, "GOAL", second), "g2.json")
+    with Body(home, clock=clock) as body:
+        body.boot()
+        ticks = settle(body, clock, 4)
+        assert [t["gravity"]["state"] for t in ticks if t["gravity"]["state"] == "FAULT"] == []
+        assert body.journal.replay("goal_gravity.fault") == []
+        asked = {f["goal_id"] for t in ticks for f in t["gravity"].get("formation_requested", [])}
+        assert len(asked) == 2                                          # both goals asked; neither was dropped
+        assert [e.payload["capability_id"] for e in body.journal.replay("deficit.awaiting_attach")] == [ENGINE]
+        # and a third request over the same deficit, directly, is the same await
+        body.genesis.form_for_goal(goal_id="sha256:" + "2" * 64, mission=body.engine.book.missions[mid],
+                                   function="selection.closure", purpose="third goal requires it", now=clock())
+        assert [e.payload["capability_id"] for e in body.journal.replay("deficit.awaiting_attach")] == [ENGINE]
+        assert body.registry.state[ENGINE] == "VERIFIED"
+
+
+def test_a_host_outage_while_a_goal_asks_for_formation_never_stops_the_missions(tmp_path, monkeypatch):
+    """A transient host failure while qualifying is no evidence about any candidate. A mission's own formation waits it
+    out on an outage blocker; a goal's request records the outage and retries on a later wake. Either way the body's
+    tick goes on and its missions keep observing."""
+    from greg import genesis as genesis_mod
+    from greg.capabilities import CapabilityError
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = note_mission(home)
+    mid = spec["mission_id"]
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        settle(body, clock, 1)
+    drop(home, signed(key, body_id, "GOAL", goal_for(mid)))
+
+    def outage(*a, **k):
+        raise CapabilityError("isolation unavailable", failure_class="transient")
+    monkeypatch.setattr(genesis_mod, "qualify_package", outage)
+    with Body(home, clock=clock) as body:
+        body.boot()
+        before = len(body.journal.replay("mission.observed"))
+        ticks = settle(body, clock, 3)                                  # raised out of body.tick before the fix
+        assert all(t["missions"] for t in ticks)
+        assert len(body.journal.replay("mission.observed")) > before
+        outages = [e.payload for e in body.journal.replay("goal_gravity.formation_outage")]
+        assert outages and {o["function"] for o in outages} <= {"selection.closure"}
+        assert all(o["mission_id"] == mid and "isolation unavailable" in o["why"] for o in outages)
+        asked = [f for t in ticks for f in (t["gravity"] or {}).get("formation_requested", [])]
+        assert asked and all(f["serving"] is None and "isolation unavailable" in f["outage"] for f in asked)
+        assert body.registry.state.get(ENGINE) != "ATTACHED"
+
+
+def test_a_goals_request_never_attaches_a_constructions_engine_that_fell_back_to_verified(tmp_path):
+    """The construction is VERIFIED and its engine has fallen back to VERIFIED (quarantined, then recovered). A goal's
+    request must not attach the engine under the mission's auto_attach: formation only, the attach stays yours."""
+    home, key, body_id, _ = make_body(tmp_path)
+    spec = note_mission(home)
+    mid = spec["mission_id"]
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        body.boot()
+        settle(body, clock, 1)
+    drop(home, signed(key, body_id, "GOAL", goal_for(mid)))
+    with Body(home, clock=clock) as body:
+        body.boot()
+        settle(body, clock, 3)
+    drop(home, signed(key, body_id, "CAPABILITY_ATTACH", {"capability_id": ENGINE}))
+    with Body(home, clock=clock) as body:
+        body.boot()
+        settle(body, clock, 1)
+        [construction] = composed(body)
+        body.registry.set_state(ENGINE, "VERIFIED")
+        body.genesis.form_for_goal(goal_id="sha256:" + "1" * 64, mission=body.engine.book.missions[mid],
+                                   function="selection.closure", purpose="goal requires it", now=clock())
+        assert body.registry.state[ENGINE] == "VERIFIED" and body.registry.state[construction] == "VERIFIED"
+        assert not [e for e in body.journal.replay("capability.state")
+                    if e.payload["capability_id"] == ENGINE and "engine of" in e.payload.get("by", "")]

@@ -48,7 +48,7 @@ from egregore.resources import ResourceGovernor
 from events.spine import EventError
 from greg import asks, dataplane, path as devpath
 from greg.authority import PRINCIPAL, AuthorityOffice
-from greg.capabilities import BUILTINS, CapabilityManifest
+from greg.capabilities import BUILTINS, CapabilityError, CapabilityManifest
 from greg.founder import CLOCK_SKEW, MAX_TTL, instant, key_id, signing_bytes, spent_nonce
 from greg.journal import SOURCE, iso
 from greg.missions import TERMINAL, MissionBook, MissionError, evaluate_predicate, first_choice, measured, \
@@ -1252,9 +1252,25 @@ def _form_requested(body, reg: GoalRegistry, facts: FounderFacts, woken, at: dat
                             and not m.paused), None)
             if mission is None:
                 continue
-            found = genesis.form_for_goal(goal_id=gid, mission=mission, function=function, now=at,
-                                          purpose=f"goal {gid[:23]} plan node {state.active_node_id} requires "
-                                                  f"{function}")
+            try:
+                found = genesis.form_for_goal(goal_id=gid, mission=mission, function=function, now=at,
+                                              purpose=f"goal {gid[:23]} plan node {state.active_node_id} requires "
+                                                      f"{function}")
+            except CapabilityError as exc:
+                # A host outage while qualifying (a runner timeout, isolation unavailable) is no evidence about any
+                # candidate: nothing was qualified, failed or built. It is recorded once per reason and the request
+                # re-runs on the goal's next wake; it never stops this turn's missions (a mission's own formation
+                # waits it out on an outage blocker, MissionEngine._form).
+                if exc.failure_class != "transient":
+                    raise
+                why = str(exc)[:200]
+                body.journal.record("goal_gravity.formation_outage", {
+                    "goal_id": gid, "function": function, "mission_id": mission.mission_id, "why": why,
+                    "reconsider": "re-runs when the goal next wakes; nothing was qualified, failed or built"},
+                    key=[gid, function, mission.mission_id, why])
+                out.append({"goal_id": gid, "function": function, "mission_id": mission.mission_id,
+                            "serving": None, "outage": why})
+                continue
             out.append({"goal_id": gid, "function": function, "mission_id": mission.mission_id,
                         "serving": found.capability_id if found is not None else None})
     return out

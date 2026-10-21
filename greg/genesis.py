@@ -1731,16 +1731,24 @@ class Genesis:
         return (not failures, {"cases": len(vectors), "failures": failures, "isolation": "no-network subprocess",
                                "platform": sys.platform})
 
+    def _await_attach(self, deficit_id: str, capability_id: str, why: str) -> None:
+        """One await per (deficit, capability): deficits are per (mission, function), so a second goal bound to the
+        same mission, or the mission's own resolve after a goal's, meets the await already recorded, whatever its
+        reason. The first reason stands; the capability still waits for one signed attach."""
+        key = [deficit_id, "await", capability_id]
+        if self.journal.retained("deficit.awaiting_attach", key) is None:
+            self.journal.record("deficit.awaiting_attach", {"deficit_id": deficit_id, "capability_id": capability_id,
+                                                            "why": why}, key=key)
+
     def _attach(self, mission, manifest: CapabilityManifest, deficit_id: str, now, offered: list | None = None):
         # Founder-signed pre-authorization only: read-only, and inside the cone. A capability formed for cognition
         # (directive section 24) is attached only by the founder's own command, never under a mission scope.
         # ``offered`` collects what a cognition search pass found for the founder.
         # Never for a goal's request (formation only).
         if self._form_only:
-            self.journal.record("deficit.awaiting_attach", {
-                "deficit_id": deficit_id, "capability_id": manifest.capability_id,
-                "why": f"formed because goal {self._form_only[:23]} requires {manifest.function}; attaching is "
-                       "your signed CAPABILITY_ATTACH"}, key=[deficit_id, "await", manifest.capability_id])
+            self._await_attach(deficit_id, manifest.capability_id,
+                               f"formed because goal {self._form_only[:23]} requires {manifest.function}; attaching "
+                               "is your signed CAPABILITY_ATTACH")
             if offered is not None:
                 offered.append(manifest.capability_id)
             return None
@@ -1751,9 +1759,7 @@ class Genesis:
         if not allowed:
             why = ("a capability formed for cognition is attached only by the founder's own command" if cognition
                    else "mission scope does not pre-authorize this attach")
-            self.journal.record("deficit.awaiting_attach", {"deficit_id": deficit_id,
-                                                            "capability_id": manifest.capability_id, "why": why},
-                                key=[deficit_id, "await", manifest.capability_id])
+            self._await_attach(deficit_id, manifest.capability_id, why)
             if offered is not None:
                 offered.append(manifest.capability_id)
             return None

@@ -144,9 +144,8 @@ def test_duplicate_fixture_order_does_not_double_book(tmp_path):
         assert body.appraise(spec["mission_id"])["verdict"] == "VERIFIED"
 
 
-def test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_voted(tmp_path, monkeypatch):
-    """Directive section 13: conflicting outputs from two qualified intelligences. The second mind answers the same
-    question differently. GREG keeps both receipts, takes no vote, cannot close, and asks once with both views."""
+def two_minds(tmp_path, monkeypatch):
+    """A mission whose one check asks two qualified intelligences the same question; the second always disagrees."""
     from greg.cognition import cortex
     home, key, body_id, _ = make_body(tmp_path)
     real, calls = cortex.reason, {"n": 0}
@@ -169,6 +168,13 @@ def test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_
                                 "target": "cognition:answer", "advances": ["agreed"], "rationale": "two minds"}],
                    capabilities=["cognition.compose"], targets=("cognition:*",), ceiling="read_only")
     drop(home, signed(key, body_id, "MISSION", spec))
+    return home
+
+
+def test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_voted(tmp_path, monkeypatch):
+    """Directive section 13: conflicting outputs from two qualified intelligences. The second mind answers the same
+    question differently. GREG keeps both receipts, takes no vote, cannot close, and asks once with both views."""
+    home = two_minds(tmp_path, monkeypatch)
     with Body(home) as body:
         body.boot()
         states = [body.tick()["missions"][0]["state"] for _ in range(5)]
@@ -183,6 +189,26 @@ def test_two_qualified_intelligences_that_disagree_are_shown_side_by_side_never_
     split = asked[0]["evidence"]["disagreement"]["agreed"]
     assert split["vote_taken"] is False and len(split["views"]) == 2
     assert len({v["output_digest"] for v in split["views"]}) == 2      # both answers shown, neither discarded
+
+
+def test_a_failure_closure_on_a_contested_check_is_refuted_by_the_appraiser(tmp_path, monkeypatch):
+    """The no-vote rule holds in the separate appraiser too, not only in the engine: a mission.unmet that names a check
+    whose receipt shows qualified intelligences disagreeing (from any route) settles neither view against the other."""
+    home = two_minds(tmp_path, monkeypatch)
+    with Body(home) as body:
+        body.boot()
+        for _ in range(5):
+            body.tick()
+        assert body.journal.replay("mission.unmet") == []                      # the engine guard holds
+        forged = body.journal.record("mission.unmet", {"mission_id": "m:two-minds", "failing_checks": ["agreed"],
+                                                        "actions_done": 1, "closure_rule": "forged", "at": "x"},
+                                     key=["m:two-minds", "unmet", "forged"])
+        verdict = body.appraise("m:two-minds", closure_event=forged.event_id)
+        assert verdict["verdict"] == "REFUTED"
+        assert any("qualified intelligences disagree" in f for f in verdict["findings"]), verdict["findings"]
+        body.tick()
+        assert [e.payload["verdict"] for e in body.journal.replay("mission.appraised")
+                if e.payload.get("closure_event") == forged.event_id] == ["REFUTED"]
 
 
 class ProcessDeath(BaseException):

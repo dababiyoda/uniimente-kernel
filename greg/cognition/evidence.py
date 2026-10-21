@@ -63,6 +63,40 @@ def _figures(text: str) -> set[str]:
     return {f.replace(",", "").rstrip(".") for f in _FIGURE.findall(text)}
 
 
+# Auxiliaries carry no subject matter: two clauses sharing only "did" do not restate each other.
+_AUXILIARIES = frozenset({"did", "does", "do", "was", "were", "is", "are", "has", "have", "had", "been", "be", "will",
+                          "would", "can", "could", "may", "might", "should", "shall", "must", "also", "else"})
+_CLAUSE = re.compile(r"[.;:!?](?=\s|$)|,(?=\s)")
+
+
+def _content(words) -> set[str]:
+    return {w for w in words if len(w) > 2 and w not in NEGATORS and w not in _OPENERS and w not in _AUXILIARIES}
+
+
+def _polarity_change(claim: str, support: list[str]) -> str | None:
+    """"negation added"/"negation removed" when a claim clause's polarity differs from the span clause it restates.
+
+    Polarity is compared per clause, never over the whole text: a negator in another span clause ("nothing else
+    changed", "not costs") must not mask a negated claim, nor a negated clause beside a faithful one flag it. A claim
+    clause is set against the span clauses sharing most of its subject words; it is flagged only when it differs from
+    every one of them. One that shares none is set against the spans as a whole, as before."""
+    spans = [c for text in support for c in _CLAUSE.split(text) if c.strip()]
+    whole = " ".join(support)
+    for clause in (c for c in _CLAUSE.split(claim) if c.strip()):
+        words = _words(clause)
+        mine = _content(words)
+        if not mine:
+            continue
+        negated = _negated(words, clause)
+        overlap = [len(mine & _content(_words(s))) for s in spans]
+        best = max(overlap, default=0)
+        against = ([_negated(_words(s), s) for s, n in zip(spans, overlap) if n == best] if best
+                   else [_negated(_words(whole), whole)])
+        if all(n != negated for n in against):
+            return "negation added" if negated else "negation removed"
+    return None
+
+
 def _directions(words) -> set[str]:
     return ({"up"} if UP.intersection(words) else set()) | ({"down"} if DOWN.intersection(words) else set())
 
@@ -86,8 +120,9 @@ def distortions(claim: str, support: list[str]) -> list[dict]:
     missing = sorted(_figures(claim) - _figures(joined))
     if missing:
         found.append({"class": "figure", "detail": f"figures not in the supporting spans: {missing}"})
-    if _negated(cw, claim) != _negated(sw, joined):
-        found.append({"class": "negation", "detail": "negation added" if _negated(cw, claim) else "negation removed"})
+    polarity = _polarity_change(claim, support)
+    if polarity:
+        found.append({"class": "negation", "detail": polarity})
     hedged_claim, hedged_support = bool(HEDGES.intersection(cw)), bool(HEDGES.intersection(sw))
     stronger = sorted(set(cw) & STRONG - set(sw))
     if (hedged_support and not hedged_claim) or stronger:

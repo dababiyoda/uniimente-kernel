@@ -125,6 +125,47 @@ def test_the_verifier_refutes_an_answer_that_hides_a_change(claim, quote):
     assert result["verdict"] == "REFUTED" and result["checks"]["restatement_rechecked"] is False
 
 
+@pytest.mark.parametrize("claim,quote", [
+    ("Revenue did not rise in 2024.", "Revenue rose in 2024; nothing else changed."),
+    ("The pilot did not reduce delays.", "The pilot reduced delays, not costs."),
+], ids=["nothing_else_changed", "not_costs"])
+def test_a_negator_elsewhere_in_a_span_does_not_mask_a_negated_claim(claim, quote):
+    """Polarity is compared per clause: the claim against the span clause it restates, not against the whole span, so
+    "nothing else changed" or "not costs" cannot hide that the claim denies what its clause asserts."""
+    data = {"claim": claim, "sources": [src(quote)],
+            "bindings": [{"source_id": "s1", "quote": quote, "relationship": "supports"}]}
+    answer = assess(data, asdict(ProblemGeometry()))
+    assert "negation" in {c["class"] for c in answer["output"]["distortions"]}
+    assert answer["status"] != "ANSWER"
+    answer["output"]["distortions"] = answer["proof"]["distortions"] = []     # self-consistent, and false
+    answer["status"], answer["missing_information"] = "ANSWER", []
+    result = verify("evidence", data, answer, "evidence_binding")              # the verifier's own clause recheck
+    assert result["verdict"] == "REFUTED" and result["checks"]["restatement_rechecked"] is False
+
+
+@pytest.mark.parametrize("claim,quotes", [
+    ("Revenue rose in 2024.", ["Revenue rose in 2024; nothing else changed."]),
+    ("The pilot reduced delays.", ["The pilot reduced delays, not costs."]),
+    ("Costs did not fall, and revenue rose.", ["Costs did not fall.", "Revenue rose."]),
+])
+def test_a_faithful_clause_beside_a_negated_one_is_not_flagged(claim, quotes):
+    assert "negation" not in {c["class"] for c in distortions(claim, quotes)}
+
+
+def test_the_verifier_rechecks_figures_when_a_span_spells_a_number():
+    """A span that spells any number ("two divisions") no longer switches the verifier's figure recheck off: it reads
+    spelled numbers as figures, as the solver does, so a hidden 12% to 15% change is still refuted."""
+    claim, quote = "Revenue rose 15% in 2024.", "Revenue at the two divisions rose 12% in 2024."
+    data = {"claim": claim, "sources": [src(quote)],
+            "bindings": [{"source_id": "s1", "quote": quote, "relationship": "supports"}]}
+    answer = assess(data, asdict(ProblemGeometry()))
+    assert "figure" in {c["class"] for c in answer["output"]["distortions"]}
+    answer["output"]["distortions"] = answer["proof"]["distortions"] = []
+    answer["status"], answer["missing_information"] = "ANSWER", []
+    result = verify("evidence", data, answer, "evidence_binding")
+    assert result["verdict"] == "REFUTED" and result["checks"]["restatement_rechecked"] is False
+
+
 # -- the organ: DALEOBANKS consumes the Mind's receipts through a signed, consequence-inert mission -------------
 
 STUB = {

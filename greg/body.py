@@ -609,7 +609,10 @@ class Body:
     def _close_out(self, now):
         """Record where each closure happened and have it appraised by a separate process."""
         contexts = {e.payload["mission_id"] for e in self.journal.replay("mission.closure_context")}
-        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")}
+        # An achievement's appraisal names no closure event; a hold's or a failure closure's names its own. A mission
+        # whose failure closure was appraised and that later achieves still has its success appraised.
+        appraised = {e.payload["mission_id"] for e in self.journal.replay("mission.appraised")
+                     if not e.payload.get("closure_event")}
         for event in self.journal.replay("mission.achieved"):
             mid = event.payload["mission_id"]
             if mid not in contexts:

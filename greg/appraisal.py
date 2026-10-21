@@ -28,7 +28,7 @@ from events.spine import EventSpine
 from greg.capabilities import BUILTINS, InvocationContext
 from greg.founder import _signing_bytes
 from greg.journal import Journal
-from greg.missions import evaluate_predicate
+from greg.missions import disagreement, evaluate_predicate
 from provenance.ledger import EvidenceLedger, sha256_json
 
 REOBSERVABLE = {"fs.read", "fs.list", "git.inspect", "repo.pin_audit", "repo.integration_audit", "brief.freshness",
@@ -138,6 +138,12 @@ def appraise(request: dict) -> dict:
                 findings.append(f"{check['check_id']}: no retained receipt")
                 continue
             passed, detail = evaluate_predicate(check["predicate"], receipt.payload["result"].get("output"))
+            if unmet and disagreement(receipt.payload["result"].get("output")):
+                # GREG does not vote: a check two qualified intelligences disagree on closes on neither view, so a
+                # failure closure naming it would settle one view against the other, whichever route wrote it.
+                rederived = False
+                findings.append(f"{check['check_id']}: qualified intelligences disagree on this check; GREG keeps "
+                                "every view and does not vote, so it cannot close on it as a failure")
             if passed == unmet:
                 rederived = False
                 findings.append(f"{check['check_id']}: receipt bytes " + (

@@ -163,3 +163,59 @@ def test_real_failed_missions_now_demote_the_method_that_failed(tmp_path):
         assert r["method_or_composition_selected"] == "cognition.swarm"
     finally:
         body.close()
+
+
+def note_fails(body, key, body_id, clock):
+    """A note mission whose only strategy writes the wrong content: it closes unmet within four ticks."""
+    note = workspace(body.layout.home, "m:note") / "n.txt"
+    body.apply(signed(key, body_id, "MISSION", mission(
+        "m:note", checks=[note_check("n", note, "wanted")],
+        strategies=[write_strategy("w", "n.txt", "something else", ["n"])], capabilities=["fs.read", "fs.write"])))
+    for _ in range(4):
+        body.tick()
+        clock.advance(31)
+    return note
+
+
+def test_a_failure_closure_that_recurs_after_the_founder_answers_is_the_same_closure(tmp_path):
+    """The founder answers the no-strategy ask without changing anything: the mission re-closes over the same actions.
+    That is the closure already recorded and appraised, not a new one, and the body keeps ticking."""
+    body, key, body_id, clock = run(tmp_path, [], ticks=0)
+    try:
+        note_fails(body, key, body_id, clock)
+        [first] = body.journal.replay("mission.unmet")
+        blocker = body.engine.book.missions["m:note"].blocker
+        assert blocker["why"] == "no admissible strategy"
+        body.apply(signed(key, body_id, "DECISION", {"request_id": blocker["request_id"], "answer": "approve",
+                                                     "reason": "try again"}))
+        states = []
+        for _ in range(4):
+            clock.advance(4000)
+            states.append([m["state"] for m in body.tick()["missions"]])
+        assert states[-1] == ["BLOCKED"]
+        assert [e.event_id for e in body.journal.replay("mission.unmet")] == [first.event_id]
+        assert [a["verdict"] for a in appraisals_of(body, "m:note")] == ["VERIFIED_UNMET"]
+    finally:
+        body.close()
+
+
+def appraisals_of(body, mid):
+    return [e.payload for e in body.journal.replay("mission.appraised") if e.payload["mission_id"] == mid]
+
+
+def test_an_achievement_after_a_verified_failure_is_appraised_on_its_own(tmp_path):
+    """The world heals after a verified failure and the mission achieves: that success is a claim of its own, and the
+    separate process appraises it, so no proof view reads the earlier failure verdict for an achieved mission."""
+    body, key, body_id, clock = run(tmp_path, [], ticks=0)
+    try:
+        note = note_fails(body, key, body_id, clock)
+        assert [a["verdict"] for a in appraisals_of(body, "m:note")] == ["VERIFIED_UNMET"]
+        note.write_text("wanted")
+        for _ in range(4):
+            clock.advance(4000)
+            body.tick()
+        assert body.engine.book.missions["m:note"].status == "ACHIEVED"
+        achievement = [a for a in appraisals_of(body, "m:note") if "closure_event" not in a]
+        assert [a["verdict"] for a in achievement] == ["VERIFIED"], appraisals_of(body, "m:note")
+    finally:
+        body.close()

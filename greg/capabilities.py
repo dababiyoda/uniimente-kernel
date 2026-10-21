@@ -1083,8 +1083,10 @@ BUILTINS: dict[str, tuple[CapabilityManifest, object]] = {
                                     "Request one publish through DALEOBANKS's own gate (decision ledger, LIVE kill "
                                     "switch, rate governor); a dry-run is reported as a block, never as a post",
                                     "cli", "external_contact", "daleobanks:",
-                                    {"daleobanks_root": "path", "draft": "path", "python": "path?"},
-                                    {"status": "str", "why": "str", "published": "dict", "daleobanks_ledger": "dict"},
+                                    {"daleobanks_root": "path", "draft": "path", "python": "path?",
+                                     "daleobanks_grant": "str?", "draft_id": "str?"},
+                                    {"status": "str", "why": "str", "published": "dict", "daleobanks_ledger": "dict",
+                                     "publish_gated": "list"},
                                     filesystem="workspace-write", binaries=(sys.executable,),
                                     # DALEOBANKS's X client (tweepy): the API and media-upload hosts. A confined
                                     # body's relay allows exactly these; nothing is reachable unless LIVE is armed.

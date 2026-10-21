@@ -53,15 +53,39 @@ if request["action"] == "publish":
     out["kill_switch_armed"] = bool(get_kill_switch().armed)
     mux = SocialMultiplexer()
     out["platforms"] = sorted(mux.enabled_platforms())
-    results = asyncio.run(mux.publish(draft, kind="post", metadata={"greg_mission": request["mission_id"],
-                                                                     "greg_grant": request["grant_id"]}))
-    out["results"] = {k: {"post_id": v.post_id, "dry_run": v.dry_run} for k, v in results.items()}
     ledger = DecisionLedger()
+    before = len(ledger.replay())
+    metadata = {"greg_mission": request["mission_id"], "greg_grant": request["grant_id"]}
+    if request.get("daleobanks_grant"):
+        metadata.update(capability_grant_id=request["daleobanks_grant"], draft_id=request["draft_id"])
+    results = asyncio.run(mux.publish(draft, kind="post", metadata=metadata))
+    out["results"] = {k: {"post_id": v.post_id, "dry_run": v.dry_run} for k, v in results.items()}
+    out["publish_gated"] = [{"platform": (e.get("payload") or {}).get("platform"),
+                             "reason": (e.get("payload") or {}).get("reason"),
+                             "capability_grant_id": (e.get("payload") or {}).get("capability_grant_id")}
+                            for e in ledger.replay()[before:] if e.get("event") == "publish_gated"]
     ok = ledger.verify_chain()
     out["ledger"] = {"path": ledger.path, "chain_ok": ok if isinstance(ok, bool) else ok[0],
                      "tail": [{k: e.get(k) for k in ("seq", "event", "payload", "hash")} for e in ledger.replay()[-6:]]}
 print(json.dumps(out, default=str))
 '''
+
+
+_GRANT_REF = re.compile(r"[A-Za-z0-9_.:-]{1,128}")
+
+
+def _daleobanks_grant(params: dict) -> dict:
+    """The DALEOBANKS CapabilityGrant a human approved in DALEOBANKS, and the draft it names, as the founder signed
+    them in the mission's params. GREG forwards the reference only; DALEOBANKS validates and consumes it at its own
+    gate. GREG never mints, widens or stores a DALEOBANKS grant. Both or neither."""
+    grant, draft = params.get("daleobanks_grant"), params.get("draft_id")
+    if grant is None and draft is None:
+        return {}
+    if not (isinstance(grant, str) and isinstance(draft, str) and _GRANT_REF.fullmatch(grant)
+            and _GRANT_REF.fullmatch(draft)):
+        raise CapabilityError("daleobanks_grant and draft_id go together, as DALEOBANKS identifiers "
+                              "(letters, digits and . _ : -, at most 128)")
+    return {"daleobanks_grant": grant, "draft_id": draft}
 
 
 def _draft(params: dict, ctx: InvocationContext) -> Path:
@@ -81,7 +105,7 @@ def _run(params: dict, ctx: InvocationContext, action: str) -> dict:
            "LEDGER_PATH": str(ledger), "PYTHONPATH": str(root)}
     # LIVE and platform credentials are DALEOBANKS's own arming; GREG never sets or forwards them.
     request = {"draft": str(draft), "action": action, "mission_id": ctx.mission_id, "grant_id": ctx.grant_id,
-               "content_type": params.get("content_type", "reply")}
+               "content_type": params.get("content_type", "reply"), **_daleobanks_grant(params)}
     argv = [str(python), "-c", SCRIPT]
     if ctx.egress is None:
         proc = subprocess.run(argv, input=json.dumps(request), capture_output=True, text=True, cwd=root, env=env,
@@ -157,14 +181,25 @@ def publish(params: dict, ctx: InvocationContext) -> dict:
     """``daleobanks.publish``: one publish request through DALEOBANKS's own gate; truthful outcome."""
     result = _run(params, ctx, "publish")
     posted = {k: v for k, v in result.get("results", {}).items() if not v["dry_run"]}
+    gated = [g for g in result.get("publish_gated", []) or [] if isinstance(g, dict)]
     if posted:
         status, why = "PUBLISHED", "DALEOBANKS reported live platform identifiers"
     elif not result.get("kill_switch_armed"):
         status, why = "BLOCKED_BY_DALEOBANKS", ("DALEOBANKS kill switch is disarmed (LIVE=false): the request "
                                                 "was ledgered and dry-run; nothing was posted")
+    elif gated:
+        # DALEOBANKS's own publish authority (or its rate governor) refused, and ledgered why: report exactly that.
+        reasons = sorted({str(g.get("reason")) for g in gated})
+        why = "DALEOBANKS gated the publish (" + ", ".join(reasons) + "); it was dry-run and nothing was posted"
+        if "no_capability_grant" in reasons:
+            why += (": no DALEOBANKS grant reached its gate. A live post needs a grant a human approved in DALEOBANKS "
+                    "for this exact draft, named in the founder-signed mission as daleobanks_grant and draft_id")
+        status = "BLOCKED_BY_DALEOBANKS"
     else:
-        status, why = "BLOCKED_BY_DALEOBANKS", "armed, but rate governor or credentials kept every platform in dry-run"
+        status, why = "BLOCKED_BY_DALEOBANKS", ("armed and no gate recorded a refusal, yet every platform stayed in "
+                                                "dry-run (no platform credentials or client): nothing was posted")
     return {"status": status, "why": why, "published": posted, "dry_run": result.get("results", {}),
+            "publish_gated": gated,
             "platforms": result.get("platforms", []), "kill_switch_armed": result.get("kill_switch_armed"),
             "daleobanks_ledger": result.get("ledger"), "checks": {k: result[k] for k in ("ethics", "critic")},
             "authority_created": False}

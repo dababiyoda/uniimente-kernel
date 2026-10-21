@@ -1011,6 +1011,80 @@ def constructed_question(*, function: str, params: dict, horizon_days: float = 2
 TEMPLATES["constructed-question"] = constructed_question
 
 
+PORTFOLIO_NAME = r"[A-Za-z0-9][A-Za-z0-9_.-]{0,39}"
+PORTFOLIO_AMOUNT = r"\$?(?P<n>\d{1,3}(?:,\d{3})+|\d+)(?P<fraction>\.\d+)?"
+PORTFOLIO_VALUE = re.compile(rf"^(?P<name>{PORTFOLIO_NAME})\s+(?P<verb>earns|pays|returns|makes|brings in|is worth|"
+                             rf"costs)\s+{PORTFOLIO_AMOUNT}(?:\s+[A-Za-z$€£/ ]{{1,24}})?$", re.I)
+PORTFOLIO_NEEDS = re.compile(rf"^(?P<name>{PORTFOLIO_NAME})\s+(?:needs|requires|depends on)\s+(?P<rest>.+)$", re.I)
+PORTFOLIO_QUESTION = re.compile(r"^(?:which|what|should|choose|pick|decide)\b", re.I)
+
+
+def read_portfolio_words(text: str) -> dict:
+    """The controlled portfolio language, read without a model. Unread sentences stop the plan.
+
+    ``Offer1 earns 5.`` or ``Platform costs 6.`` (whole amounts, an optional $, thousands commas and a
+    trailing unit word); ``Offer1 needs Platform and Audit.`` (also "requires", "depends on"); at most
+    one question such as ``Which should I build?``. Amounts are taken in one unit you choose."""
+    sentences = [s.strip() for s in re.split(r"\.(?=\s|$)|[!?;\n]+", text) if s.strip()]
+    value, needs, unread, questions = {}, [], [], 0
+    for sentence in sentences:
+        if PORTFOLIO_QUESTION.match(sentence):
+            questions += 1
+        elif m := PORTFOLIO_VALUE.match(sentence):
+            if m["fraction"]:
+                raise ValueError(f"{sentence!r}: amounts must be whole numbers in one unit (say 1250, not 1.25k)")
+            if m["name"] in value:
+                raise ValueError(f"{m['name']} is given a value twice; state each item's value once")
+            amount = int(m["n"].replace(",", ""))
+            value[m["name"]] = -amount if m["verb"].lower() == "costs" else amount
+        elif m := PORTFOLIO_NEEDS.match(sentence):
+            names = [n.strip() for n in re.split(r",\s*(?:and\s+)?|\s+and\s+", m["rest"]) if n.strip()]
+            bad = [n for n in names if not re.fullmatch(PORTFOLIO_NAME, n)]
+            if bad or not names:
+                unread.append(sentence)
+                continue
+            needs += [[m["name"], n] for n in names]
+        else:
+            unread.append(sentence)
+    if unread:
+        raise ValueError("GREG could not read: " + "; ".join(repr(u[:80]) for u in unread[:5])
+                         + ". Write 'Offer1 earns 5.', 'Platform costs 6.' and 'Offer1 needs Platform.'")
+    if questions > 1:
+        raise ValueError("ask one portfolio question at a time")
+    if not any(v > 0 for v in value.values()):
+        raise ValueError("state at least one item that earns something ('Offer1 earns 5.')")
+    unknown = sorted({n for pair in needs for n in pair if n not in value})
+    if unknown:
+        raise ValueError(f"{', '.join(unknown)} {'is' if len(unknown) == 1 else 'are'} needed but never given a "
+                         f"value: add '{unknown[0]} costs N.' (or 'earns N.', or 'costs 0.')")
+    return {"items": [{"id": n, "value": v} for n, v in value.items()], "requires": needs}
+
+
+def portfolio_in_words(*, text: str, horizon_days: float = 2, auto_attach: bool = False) -> dict:
+    """Which offers, projects or investments to take when some need others first, in plain controlled words.
+
+    GREG has no portfolio engine: Genesis constructs ``selection.closure`` by Picard's reduction onto a
+    maximum-flow engine it qualifies (acquiring that engine first if needed, which you attach). The
+    answer names what to take, the profit, what was left out and why, and counts only on GREG's own
+    funding certificate, checked against your items alone. Read-only: nothing is bought or started.
+    """
+    if not text.strip() or len(text) > 4000:
+        raise ValueError("a portfolio question of 1-4000 characters is required")
+    from greg.recombine import REDUCTIONS
+    params = read_portfolio_words(text)
+    REDUCTIONS["selection.closure"].normalize(params)          # refuse a malformed question before it is signed
+    spec = constructed_question(function="selection.closure", params=params, horizon_days=horizon_days,
+                                auto_attach=auto_attach)
+    digest = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:10]
+    return {**spec, "mission_id": f"m:portfolio-{digest}", "founder_expression": text,
+            "intended_effect": "which items to take when some need others first: the most profitable set that "
+                               "includes every prerequisite, with what was left out and why, proved by GREG's own "
+                               "certificate"}
+
+
+TEMPLATES["portfolio-in-words"] = portfolio_in_words
+
+
 FIRST_MISSION_WORDS = re.compile(r"\b(first mission|where (?:am i|i am) (?:trying to go|going)|highest[- ]value "
                                  r"(?:work|opportunit)|what should (?:greg|you) (?:work on|do) next)\b", re.I)
 

@@ -363,6 +363,21 @@ GOAL_FORMATION_MUTANTS = [
      "        if gid not in facts.admitted:\n            continue\n        state"),
 ]
 
+PORTFOLIO_WORDS_TESTS = ["tests/unit/test_greg_portfolio_words.py"]
+PORTFOLIO_WORDS_MUTANTS = [
+    ("a cost is read as earnings", "greg/templates.py",
+     'value[m["name"]] = -amount if m["verb"].lower() == "costs" else amount', 'value[m["name"]] = amount'),
+    ("an unread portfolio sentence is silently dropped", "greg/templates.py",
+     "    if unread:\n        raise ValueError(\"GREG could not read: \" + \"; \".join(repr(u[:80]) for u in unread[:5])"
+     "\n                         + \". Write 'Offer1",
+     "    if False:\n        raise ValueError(\"GREG could not read: \" + \"; \".join(repr(u[:80]) for u in unread[:5])"
+     "\n                         + \". Write 'Offer1"),
+    ("a prerequisite with no value is accepted", "greg/templates.py",
+     "    if unknown:\n        raise ValueError(f\"{', '.join(unknown)}", "    if False:\n        raise ValueError(f\"{', '.join(unknown)}"),
+    ("the planner never reads a portfolio", "greg/planner.py",
+     "if PORTFOLIO.search(text) and PORTFOLIO_NEEDS.search(text):", "if False:"),
+]
+
 GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("open-source genesis", OSS_TESTS, OSS_MUTANTS), ("recombine", RECOMBINE_TESTS, RECOMBINE_MUTANTS),
           ("mind construction", MIND_CONSTRUCTION_TESTS, MIND_CONSTRUCTION_MUTANTS),
@@ -372,7 +387,8 @@ GROUPS = [("cortex", TESTS, MUTANTS), ("greg path", GREG_TESTS, GREG_MUTANTS),
           ("founder tier (body)", FOUNDER_TIER_BODY_TESTS, FOUNDER_TIER_BODY_MUTANTS),
           ("closure integrity", CLOSURE_INTEGRITY_TESTS, CLOSURE_INTEGRITY_MUTANTS),
           ("capability perception", CAPABILITY_PERCEPTION_TESTS, CAPABILITY_PERCEPTION_MUTANTS),
-          ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS)]
+          ("goal-requested formation", GOAL_FORMATION_TESTS, GOAL_FORMATION_MUTANTS),
+          ("portfolio words", PORTFOLIO_WORDS_TESTS, PORTFOLIO_WORDS_MUTANTS)]
 
 
 def main() -> int:

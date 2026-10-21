@@ -148,22 +148,22 @@ def test_a_spent_budget_narrows_the_result_instead_of_skipping_required_evidence
 
 
 def test_local_compute_is_measured_not_assumed_free(registry, monkeypatch):
-    roomy = {"latency_limit": 30}
-    r = cortex.reason({"problem_id": "cpu", "operation": "optimize", "data": dict(MODEL), "geometry": roomy},
-                      registry=registry)
-    assert r["output"] is not None
-    cost = r["compute_cost"]
-    assert cost["cpu_seconds"] > 0 and cost["peak_memory"] == "unmeasured" and cost["energy"] == "unmeasured"
-    # where a platform offers no resource accounting, the receipt says unmeasured instead of crashing or saying 0
-    with monkeypatch.context() as m:
-        m.setattr(cortex, "_cpu_seconds", lambda: None)
-        blind = cortex.reason({"problem_id": "cpu2", "operation": "optimize", "data": dict(MODEL), "geometry": roomy},
-                              registry=registry)
-    assert blind["compute_cost"]["cpu_seconds"] == "unmeasured" and blind["output"] == r["output"]
+    # The compiler measures each inner run around its call to reason, never inside it: a measured recipe lift binds
+    # the code closure of reason, so counting CPU there would leave every measured lift stale (test_greg_mind_
+    # convergence: test_recipe_lifts_bind_the_recipe_code_they_measured).
     compiled = compile_(registry, {"geometry": "optimization", "consequence_class": "internal_write"}, MODEL)
+    assert compiled["state"] == "ANSWERED"
     budget = compiled["resource_use"]["budget"]
     assert budget["total_source"].startswith("default") and budget["total_s"] == compiler.DEFAULT_BUDGET_S
     assert budget["cpu_s"] > 0 and budget["measured_step_s"]["count"] == compiled["resource_use"]["stages"] == 1
+    [step] = [s for s in budget["steps"] if s["step"] == "answer"]
+    assert step["cpu_s"] > 0 and "peak memory per run" in budget["unmeasured"] and "energy" in budget["unmeasured"]
+    # where a platform offers no resource accounting, the budget says unmeasured instead of crashing or saying 0
+    with monkeypatch.context() as m:
+        m.setattr(cortex, "_cpu_seconds", lambda: None)
+        blind = compile_(registry, {"geometry": "optimization", "consequence_class": "internal_write"}, MODEL)
+    assert blind["resource_use"]["budget"]["cpu_s"] is None and blind["result"] == compiled["result"]
+    assert all("cpu_s" not in s for s in blind["resource_use"]["budget"]["steps"])
 
 
 def test_a_formed_mechanism_is_a_required_step_on_the_same_budget(tmp_path, monkeypatch):

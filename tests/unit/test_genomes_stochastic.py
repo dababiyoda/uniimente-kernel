@@ -1101,7 +1101,7 @@ if mode == "__probe__":
     request = {"data": {}, "geometry": {"latency_limit": 10}}
 elif mode == "verify":
     import greg.cognition.verification as verification
-    verification.verify = lambda *a: (stray(), {"verdict": "STRUCTURALLY_VERIFIED"})[1]
+    verification.verify = lambda *a, **k: (stray(), {"verdict": "STRUCTURALLY_VERIFIED"})[1]   # k: the deadline
     request = {"family": "x", "data": {}, "answer": {}, "proof_class": "x", "geometry": {"latency_limit": 10}}
 else:
     import cortex.routing

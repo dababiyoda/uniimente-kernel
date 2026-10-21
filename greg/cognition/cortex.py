@@ -158,8 +158,10 @@ def _semantic(data, geometry, model_config):
 
 def independent_verify(family, data, answer, proof_class, geometry):
     from greg.capabilities import run_isolated
-    payload = canonical({"family": family, "data": data, "answer": answer,
-                         "proof_class": proof_class, "geometry": asdict(geometry)})
+    # the deadline is the caller's (wall clock, which the worker shares): its certificate spends only what is left of
+    # this budget after the worker's own start-up, which the worker cannot time
+    payload = canonical({"family": family, "data": data, "answer": answer, "proof_class": proof_class,
+                         "geometry": asdict(geometry), "deadline": time.time() + geometry.latency_limit})
     proc = run_isolated([sys.executable, "-I", str(Path(__file__).with_name("worker.py")), "verify", payload],
                         cwd=ROOT, timeout=geometry.latency_limit)
     if proc.returncode or len(proc.stdout) > 256 * 1024:

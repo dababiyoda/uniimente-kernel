@@ -17,7 +17,7 @@ capability.
 |---|---|---|
 | common base | `92bc6e31e0baa8fd507833e0f272b4a5e532e4d3` | P4 v2 result |
 | PR #155 head | `ef5f078013b549a51458dc9f6b5f34b324ea70b0` | 60 files changed since the base |
-| PR #158 head | `f8e8fd2d294f9d79dbd623c065feb17fd1744a18` (merged in this PR, review of #179 M18); earlier merges at `77b61a1`, `047549f`, `202b932` and `41a8538` | 167 files changed since the base |
+| PR #158 head | `10fdbab83054027c5b782a87dd24c997b2d2fed9` (merged in this PR); earlier merges at `77b61a1`, `047549f`, `202b932`, `41a8538` and `f8e8fd2` (review of #179 M18) | changed files classified in section 3 |
 | shared paths | 22 | 8 are frozen-path collisions |
 
 Convergence commits:
@@ -40,7 +40,27 @@ Convergence commits:
   - **Compiler:** #158's part rows replace this branch's wrapped-key matching for M10. The one status function
     over the index (#155's operation verdicts, code binding), the derived chains and the practitioner-tie fields
     are re-applied on top.
-  - **Map:** the map pins `f8e8fd2`, and a test asserts it is an ancestor of this branch.
+  - **Map:** the map pinned `f8e8fd2` at that merge.
+- The latest merge (`6eaccfa`) brings #158 to `10fdbab`. It adds:
+  - #158's verifier with an independent Z3 certificate for OPTIMAL, FEASIBLE, INFEASIBLE and UNSAT claims
+    (its check key `optimal_objective_meets_its_bound` replaces this branch's `optimality_bound_met`; one test
+    follows the new name);
+  - `grid_dijkstra` 1.1.0 and genome admission v4, pre-registered on fresh seeds 1300-1329 (1.1.0 is
+    DEFAULT_FOR_GEOMETRY; the flow genomes replicate);
+  - P8 cycle 5 (search policy `cover/1`), REJECTED at the adversarial gate; its held-out split was never
+    evaluated;
+  - F7 with `flow_expansion_mcf`, a declared re-use of v4's 200 held-out items: the genome MATCHES the truth
+    algorithm on every item, and F7 with the genome as a constituent is NO_LIFT. Section 8's recommendation
+    is therefore measured, not projected; it is still diagnostic for generalization because the items were
+    already exposed;
+  - version-bound compiler measurements, which this branch combines with its own code-drift check (section 5).
+  - **Resolved conflicts:** `composition.py`, `flow.py` and `worlds.py` take #158's bytes. `verification.py`
+    takes #158's certified-bound hunk and keeps both import sets. `isolation.py` keeps this branch's one grant
+    path, plus #158's venv grant and thread refusal. `compiler.py` keeps #158's demotion block, family status
+    and measurements block, with this branch's derived rows, stale-measurement fields and code-drift check
+    re-applied. `greg/path.json` takes #158's status line and re-inserts #155's lineage segment.
+  - **Release exclusions:** the five new F7 files that carry SNDlib-derived data are added (26 paths).
+  - **Map:** the map pins `10fdbab`, and a test asserts it is an ancestor of this branch.
 
 The eight collided frozen files are byte-identical at `a832c73`, `77b61a1` and `047549f`.
 
@@ -82,7 +102,7 @@ system and one evolution controller, with every useful capability retained and e
 
 | level | finding |
 |---|---|
-| file | 209 files changed by either lineage (#158 at `f8e8fd2`). Classified: 99 complementary, 95 historical evidence, 8 semantic incompatibility (the frozen-path collisions), 4 interchangeable, 2 duplicate, 1 unresolved (`advantage.py`, review L19). Each disposition is checked against git: "kept" and "selected" mean the lineage's bytes, while "extended", "merged" and "modified" mean they differ (review M20). |
+| file | 253 files changed by either lineage (#158 at `10fdbab`). Classified: 111 complementary, 127 historical evidence, 8 semantic incompatibility (the frozen-path collisions), 4 interchangeable, 2 duplicate, 1 unresolved (`advantage.py`, review L19). Each disposition is checked against git: "kept" and "selected" mean the lineage's bytes, while "extended", "merged" and "modified" mean they differ (review M20). |
 | interface | One cognition entry: `greg.cognition.cortex.reason` / `solve` -> catalog -> `SOLVERS` -> isolated worker -> independent verifier -> receipt. One Layer 5 entry above it: the Competency Compiler (`greg/cognition/compiler.py`). Both lineages' families run through it. |
 | contract | One catalog projection (`catalog.FAMILIES`, 72 families). The genome contract is `greg/cognition/genomes/contract.py`. Proof classes: #155's family checks plus #158's `genome_certificate`, on one verifier. |
 | genome | 127 inventoried; 98 implemented; 94 integrated; 28 labelled DEFAULT_FOR_GEOMETRY (19) or NICHE_CAPABILITY (9); 7 COMPOSITION_ONLY; 8 SUPERSEDED; 4 REJECTED; 53 EXPERIMENTAL or unevaluated; 27 FRONTIER_HORIZON. The 28 labels are not one admitted repertoire (review of #179, H4); by provenance: **19 rule-admitted** under #158's pre-registered rule at the current version, 5 #155 operation-family verdicts (held-out, not pre-registered in git), 2 recipe lifts (not admissions), 2 hand-coded organ labels (not admissions). `genome_library.admitted_by_provenance()` reports this split. 8 of the 72 catalog families are attached by default, and 0 are attached by any evaluation. Counting every cognition capability, 22 are attached by default (review L4). One of them, `cognition.seed.solve` (#142), runs `cortex.seed` methods on its own worker, with its own verifier and receipts, outside the compiler's evidence routing. It is a registered alternative entry, not a second canonical Mind entry; it stays attached because a shipped mission template (`greg/templates.py`) names it as its compute strategy, and `greg/capabilities.py` registers it as the benchmark twin and fallback, never as a second authority. Withholding it by default would break that template; that change is left for a decision. On a body, actually exercised is 0 (VEPMC 0); exercised in tests and frozen evaluations only. |
@@ -272,8 +292,10 @@ How the two generators were reconciled (2026-10-15, revised after the founder's 
 **Count under the founder's definition** (review of #179, L2). The VPL metric counts held-out families where
 composition beats the strongest single available intelligence, net of cost and latency, with no added false
 answers. Under that definition no family is settled:
-- **pending, a stronger single exists or was not run:** F7 (PMCF ties it and spends less), F3 (the exact genome
-  ties it on development data), X2 (strongest single NOT_RUN);
+- **no lift against the strongest single:** F7 (NO_LIFT once the exact genome is a constituent, 2026-10-16,
+  section 8);
+- **pending, a stronger single exists or was not run:** F3 (the exact genome ties it on development data), X2
+  (strongest single NOT_RUN);
 - **lift over a constituent denied information or incomplete by design:** F4 (uninformed prior), X1 (structural,
   cortex multi-organ route);
 - **added wrong answers or abstentions where a single was right:** F2R-27, -37, -41, -87 (two wrong, two no
@@ -321,13 +343,15 @@ On this tree, with the composition's stages attached and the genome withheld, a 
 `flow_expansion_mcf` as the withheld best fit and records an attach ask, and the composition serves meanwhile.
 Once the genome is attached, the compiler selects it. Both cases are tested.
 
-Still open:
-- **F7's VPL lift.** The founder's VPL definition says "beats the strongest single available intelligence", and
-  that single intelligence now exists. F7 needs a re-measurement with `flow_expansion_mcf` as a constituent, on
-  a fresh pre-registration owned by #158. A tie at higher latency would remove F7's lift; that is an
-  expectation, not evidence.
-- **Spend as a secondary measure.** That re-measurement should pre-register spend at equal throughput as a
-  declared secondary measure (review M11).
+**F7 with the genome, measured (#158, `docs/evidence/greg-composition-lift/2026-10-16-f7-mcf/`, freeze `91b826c`).**
+This is a declared re-use of v4's 200 already-exposed held-out items, so it is a replication, not a new
+generalization claim.
+- **Rule:** MATCH. `flow_expansion_mcf` is optimal on 200 of 200 through `cortex.reason`, at a median 0.753 s
+  against the composition's 2.866 s. The compiler selected the genome on all 200 items.
+- **Secondary:** F7_LIFT_WITH_GENOME is **NO_LIFT**. With the exact single genome in the repertoire, F7's
+  composition lift does not survive. v4's frozen verdict, over a repertoire that lacked the genome, is unchanged.
+- **Spend:** not pre-registered as a secondary measure in v6. The development-data spend diagnostic in
+  `docs/evidence/pr155-f7-spend-diagnostic/2026-10-15/` stays diagnostic.
 
 **F8 and the converged tree.** F8's frozen harness, `run_v5.py`, refuses to report from this tree by design
 (`FROZEN_INPUT_CHANGED`). Twelve files in its frozen code closure differ here, including the converged compiler,
@@ -556,7 +580,7 @@ What an agent can do without those decisions:
 
   ```sh
   git switch -c trackb-rollback ef5f078            # PR #155's head, the PR's base
-  git merge --no-ff f8e8fd2                        # optional: #158's lineage alone, without Track B's work
+  git merge --no-ff 10fdbab                        # optional: #158's lineage alone, without Track B's work
   ```
 
   Track B's own commits, oldest first: `2d1ddd3` (first merge), `49b2d58`, `8bbd3b8`, `6e62b59`, `e21bb5b`
@@ -575,7 +599,6 @@ What an agent can do without those decisions:
 - the SNDlib, M4, fpp3 and NYC TLC data terms (section 12).
 
 **Not done here:**
-- F7 re-measured with `flow_expansion_mcf` as a constituent (#158 owns it; section 8);
 - a live harness that can re-admit #155's operation families. #155's runners refuse at this head
   (`FROZEN_INPUT_CHANGED`), and #158's harness enumerates genome executables only. Until those families are
   wrapped as versioned genomes, their routes are lineage verdicts bound to code closures (review M17);
@@ -649,7 +672,7 @@ the row says otherwise.
 | M14, L5, L6 | #158's `af258bf` is selected (section 9). This branch's parallel fix is history only. |
 | L7, L8, L9 | The single-controller test covers every tree and dynamic import by string. The path.json and ledger overclaims are corrected. The adopting decider is escalated. |
 | M17 | Not fixed: no live harness can re-admit #155's operation families (section 15). |
-| M18 | #158 is merged at `f8e8fd2`. The map pins it, and a test asserts it is an ancestor. |
+| M18 | #158 is merged at `f8e8fd2` and later at `10fdbab`. The map pins `10fdbab`, and a test asserts it is an ancestor. |
 | M19 | Release-exclusion list, CI check and test (section 12). |
 | M20 | The original runner is archived; dispositions are checked against git. |
 | L1 | Pointer files in the three #155 evidence directories, and an archive README. The source manifest's #155 head and `evidence_directories` are not edited (#158 owns that file). |

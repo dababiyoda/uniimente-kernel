@@ -1,0 +1,1631 @@
+{
+ "schema": "greg-whole-machine-trace/1.0",
+ "generated_at": "2026-10-21T15:08:03.266530Z",
+ "source_commit": "605c11ef37b690f42b283eef372d0f914cd74d61",
+ "source_dirty": false,
+ "environment": {
+  "python": "3.13.16",
+  "platform": "Linux-6.18.44-fc-v140-x86_64-with-glibc2.39",
+  "scipy": "1.18.1",
+  "networkx": "3.7",
+  "ortools": "9.15.6755",
+  "z3-solver": "5.1.0.0",
+  "jsonschema": "4.26.0",
+  "cryptography": "50.0.1"
+ },
+ "labels": {
+  "founder_key": "per-run test Ed25519 key, NOT Alfonso; no founder use is claimed",
+  "effects": "none external; temporary state directory only; read-only consequence ceiling",
+  "VEPMC": 0,
+  "revenue": null,
+  "external_validation": null,
+  "state_dir": "temporary (deleted unless --keep-state)",
+  "clock": "accelerated: +31s per tick, persisted across worker processes; otherwise the canonical Body.boot/Body.tick loop"
+ },
+ "natural_data": {
+  "m1": {
+   "package": "greg.cognition",
+   "modules": 29,
+   "edges": 27,
+   "source_digest": "sha256:246ce1eb56ebe6ab35d0fa3fc6005264c9eaf89b950e054bac6243c6e1262ad4",
+   "groups": [
+    {
+     "group": "greg-cognition-unit",
+     "patterns": [
+      "tests/unit/test_greg_cognition*.py",
+      "tests/unit/test_greg_competency_compiler.py"
+     ],
+     "files": 4,
+     "test_lines": 3056,
+     "needs": [
+      "requirements-cognition"
+     ],
+     "proxy_minutes": 8
+    },
+    {
+     "group": "cortex-unit",
+     "patterns": [
+      "tests/unit/test_cortex_*.py"
+     ],
+     "files": 9,
+     "test_lines": 2663,
+     "needs": [
+      "requirements-cognition",
+      "requirements-cortex"
+     ],
+     "proxy_minutes": 7
+    },
+    {
+     "group": "greg-integration",
+     "patterns": [
+      "tests/integration/test_greg_*.py"
+     ],
+     "files": 19,
+     "test_lines": 2982,
+     "needs": [
+      "requirements-cognition"
+     ],
+     "proxy_minutes": 8
+    },
+    {
+     "group": "contracts-adapters",
+     "patterns": [
+      "tests/unit/test_required_schema_formats.py",
+      "tests/integration/test_phase_zero_connection.py",
+      "tests/unit/test_shared_durable_boundary.py"
+     ],
+     "files": 3,
+     "test_lines": 583,
+     "needs": [
+      "requirements-dev"
+     ],
+     "proxy_minutes": 2
+    }
+   ],
+   "jobs": [
+    {
+     "job": "canonical-ci.yml:tests",
+     "timeout_minutes": 45,
+     "installs": [
+      "requirements-cognition",
+      "requirements-dev"
+     ],
+     "workflow_sha256": "318fb34be949c2ddb4dbd7762e675b299163ad5e2216e1db2055736d0a3e8e88"
+    },
+    {
+     "job": "canonical-ci.yml:contracts",
+     "timeout_minutes": 10,
+     "installs": [
+      "requirements-dev"
+     ],
+     "workflow_sha256": "318fb34be949c2ddb4dbd7762e675b299163ad5e2216e1db2055736d0a3e8e88"
+    },
+    {
+     "job": "canonical-ci.yml:sealed",
+     "timeout_minutes": 30,
+     "installs": [
+      "requirements-dev"
+     ],
+     "workflow_sha256": "318fb34be949c2ddb4dbd7762e675b299163ad5e2216e1db2055736d0a3e8e88"
+    },
+    {
+     "job": "canonical-ci.yml:cortex_seed",
+     "timeout_minutes": 20,
+     "installs": [
+      "requirements-cognition",
+      "requirements-cortex",
+      "requirements-dev"
+     ],
+     "workflow_sha256": "318fb34be949c2ddb4dbd7762e675b299163ad5e2216e1db2055736d0a3e8e88"
+    },
+    {
+     "job": "canonical-ci.yml:research_line",
+     "timeout_minutes": 10,
+     "installs": [],
+     "workflow_sha256": "318fb34be949c2ddb4dbd7762e675b299163ad5e2216e1db2055736d0a3e8e88"
+    }
+   ],
+   "costs": [
+    [
+     18,
+     1080,
+     1027,
+     40,
+     1080
+    ],
+    [
+     1016,
+     1070,
+     1024,
+     35,
+     1070
+    ],
+    [
+     18,
+     1080,
+     1027,
+     40,
+     1080
+    ],
+    [
+     5,
+     20,
+     7,
+     10,
+     1020
+    ]
+   ]
+  },
+  "m2": {
+   "package": "greg",
+   "modules": 47,
+   "edges": 53,
+   "source_digest": "sha256:6e11a527308d96bf98b5cba50af7f6d1fc8754ea257bffc4168741c18e506e07",
+   "groups": [
+    {
+     "group": "greg-unit-body",
+     "patterns": [
+      "tests/unit/test_greg_[!c]*.py"
+     ],
+     "files": 49,
+     "test_lines": 10402,
+     "needs": [
+      "requirements-dev"
+     ],
+     "proxy_minutes": 27
+    },
+    {
+     "group": "kernel-unit",
+     "patterns": [
+      "tests/unit/test_[!cg]*.py"
+     ],
+     "files": 61,
+     "test_lines": 12338,
+     "needs": [
+      "requirements-dev"
+     ],
+     "proxy_minutes": 31
+    },
+    {
+     "group": "integration-other",
+     "patterns": [
+      "tests/integration/test_[!g]*.py"
+     ],
+     "files": 2,
+     "test_lines": 473,
+     "needs": [
+      "requirements-dev"
+     ],
+     "proxy_minutes": 2
+    }
+   ],
+   "jobs": [
+    {
+     "job": "canonical-ci.yml:tests",
+     "timeout_minutes": 45,
+     "installs": [
+      "requirements-cognition",
+      "requirements-dev"
+     ],
+     "workflow_sha256": "318fb34be949c2ddb4dbd7762e675b299163ad5e2216e1db2055736d0a3e8e88"
+    },
+    {
+     "job": "canonical-ci.yml:sealed",
+     "timeout_minutes": 30,
+     "installs": [
+      "requirements-dev"
+     ],
+     "workflow_sha256": "318fb34be949c2ddb4dbd7762e675b299163ad5e2216e1db2055736d0a3e8e88"
+    },
+    {
+     "job": "canonical-ci.yml:cortex_seed",
+     "timeout_minutes": 20,
+     "installs": [
+      "requirements-cognition",
+      "requirements-cortex",
+      "requirements-dev"
+     ],
+     "workflow_sha256": "318fb34be949c2ddb4dbd7762e675b299163ad5e2216e1db2055736d0a3e8e88"
+    },
+    {
+     "job": "ade1-standing-cognition.yml:verify",
+     "timeout_minutes": 10,
+     "installs": [],
+     "workflow_sha256": "3060f55838081a4a7d56ce78ce07529a2572035205993321e79211090e3e00f8"
+    }
+   ],
+   "costs": [
+    [
+     60,
+     90,
+     135,
+     1270
+    ],
+    [
+     69,
+     104,
+     155,
+     1310
+    ],
+    [
+     5,
+     7,
+     10,
+     1020
+    ]
+   ]
+  },
+  "synthetic": [
+   "duration proxy ceil(lines/100)",
+   "400 test lines per CI minute",
+   "+1000 missing-requirement penalty",
+   "organ wire fixtures"
+  ]
+ },
+ "answers": {
+  "m1_critical_path": {
+   "makespan": 22.0,
+   "independent": {
+    "acyclic": true,
+    "makespan": 22,
+    "chain": [
+     "contracts",
+     "compiler"
+    ],
+    "engine": "networkx 3.7"
+   }
+  },
+  "m1_assignment": {
+   "total": 1100,
+   "pairs": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     3
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     1
+    ]
+   ],
+   "rows": [
+    "greg-cognition-unit",
+    "cortex-unit",
+    "greg-integration",
+    "contracts-adapters"
+   ],
+   "columns": [
+    "canonical-ci.yml:tests",
+    "canonical-ci.yml:contracts",
+    "canonical-ci.yml:sealed",
+    "canonical-ci.yml:cortex_seed",
+    "canonical-ci.yml:research_line"
+   ],
+   "independent": {
+    "total": 1100,
+    "pairs": [
+     [
+      0,
+      0
+     ],
+     [
+      1,
+      3
+     ],
+     [
+      2,
+      2
+     ],
+     [
+      3,
+      1
+     ]
+    ],
+    "maps_enumerated": 120,
+    "engine": "itertools.permutations (exhaustive)"
+   }
+  }
+ },
+ "ledger": {
+  "head": "sha256:6153796cc7e3ce8a917bc2e6648ba7e89dd43a929f94d66f98401a9f9c3075e1",
+  "records": 182,
+  "chain_verified": true
+ },
+ "steps": [
+  {
+   "demonstration": 1,
+   "name": "goal persistence",
+   "claim": "a durable mission created from a founder-signed MISSION command in a temp state dir survives two SIGKILLs and closes in a third process",
+   "status": "DEMONSTRATED",
+   "tier": "INTEGRATED (local process; test founder key)",
+   "evidence": {
+    "mission_registered": [
+     {
+      "event_id": "f9ef01d0-314e-5048-8028-758453961a04",
+      "seq": 3,
+      "hash": "sha256:e9c8c1b9a7f5a242e37199b21bbb1df85555e9bba7a25eccaba2efad586e4358",
+      "type": "greg.mission.registered"
+     }
+    ],
+    "schema": "contracts/greg-mission.schema.json",
+    "schema_errors": [],
+    "boots": [
+     {
+      "boot_number": 1,
+      "pid": 7632,
+      "event_id": "b17f4b2e-cc0d-5bd9-a099-ae2512d8a29e",
+      "seq": 2,
+      "hash": "sha256:a17dfad5d52ba8a98dc3d9929a28346bb94729b643834485c21a7e075d2c0dd3",
+      "type": "greg.body.booted"
+     },
+     {
+      "boot_number": 2,
+      "pid": 7654,
+      "event_id": "db0066bb-2c31-559b-9358-e8d04274ee82",
+      "seq": 54,
+      "hash": "sha256:77516e31abcb246820a435edb6c4c31f653b70b6d9e7384f65f2026077152767",
+      "type": "greg.body.booted"
+     },
+     {
+      "boot_number": 3,
+      "pid": 7681,
+      "event_id": "bf125949-56ca-57e4-a0b1-cb9e28f6d23b",
+      "seq": 87,
+      "hash": "sha256:65f944770d38c15a17ee99ca046f56cc2e6fee0b593f71a2597ad6a422d659de",
+      "type": "greg.body.booted"
+     },
+     {
+      "boot_number": 4,
+      "pid": 7627,
+      "event_id": "94c5033f-3758-5dc5-ae95-54bb92ec0015",
+      "seq": 92,
+      "hash": "sha256:c56e7ab7d4e4a0ba23c76d9321073f6cf28e2f08ac8e5677db0fc764ac46cb73",
+      "type": "greg.body.booted"
+     },
+     {
+      "boot_number": 5,
+      "pid": 7627,
+      "event_id": "ece64113-1a19-5579-b48e-fba803f2d528",
+      "seq": 125,
+      "hash": "sha256:b6b027f49ca293d15234fa427b9d37b75619025d18d73ba3d7ccbbdedfb2c7f6",
+      "type": "greg.body.booted"
+     }
+    ],
+    "recovered": [
+     {
+      "event_id": "e53e226f-15dd-5bc9-a6a8-df8e1bde455f",
+      "seq": 55,
+      "hash": "sha256:e55cdba8f615f6963e36366d8791bbe212ff2627cf2adca527848072162a6061",
+      "type": "greg.body.recovered"
+     },
+     {
+      "event_id": "2ab8a405-d77f-5a35-a760-eeb390f5022b",
+      "seq": 88,
+      "hash": "sha256:e3657a8018390fedba5b3bfdc633acaf582524a1b7378a9be046ad4d4e76c9b1",
+      "type": "greg.body.recovered"
+     },
+     {
+      "event_id": "a3b96caa-7823-5f2e-8841-e941ac0c7678",
+      "seq": 93,
+      "hash": "sha256:186542b030c2aa056545399a341f92f31924fe42753b50309a83e55d754439a4",
+      "type": "greg.body.recovered"
+     },
+     {
+      "event_id": "28ec5af1-81e1-5870-ab9a-89c0794e2b37",
+      "seq": 126,
+      "hash": "sha256:853da7d79487855f72663a8e47ee586943154a0522ecf608fb9acdc552e51ec3",
+      "type": "greg.body.recovered"
+     }
+    ],
+    "achieved": [
+     {
+      "event_id": "37701f17-6c7d-508f-8ddd-e8cf42a52af8",
+      "seq": 85,
+      "hash": "sha256:3bc7f67a3456e4cf7e29a51c0fbe51a811bc61ea6cf304ba113629670be4ac6d",
+      "type": "greg.mission.achieved"
+     }
+    ]
+   },
+   "prev_step_hash": null,
+   "step_hash": "sha256:ea953cba6d41e819dd7d73093a1d6ce1fb0c97e20f22fe796b06aa8510cf8ff3"
+  },
+  {
+   "demonstration": 2,
+   "name": "method selection by frozen evidence",
+   "claim": "the Competency Compiler characterised the critical-path sub-problem (real import graph of greg.cognition: 29 modules, 27 edges) and selected a method, recording rejected alternatives and why",
+   "status": "DEMONSTRATED",
+   "tier": "INTEGRATED",
+   "evidence": {
+    "compile_receipt": {
+     "ledger_seq": 69,
+     "ledger_hash": "sha256:24f85d1a278641a91e838d99c0f79dd382cb23b7e354dfc45232b6a2609ae171",
+     "state": "ANSWERED",
+     "method_selected": "cognition.optimization",
+     "selection_level": "admission_status",
+     "methods_considered": [
+      "cognition.formal",
+      "cognition.optimization",
+      "cognition.milp_optimize"
+     ],
+     "methods_rejected": [
+      {
+       "method": "cognition.formal",
+       "why": "native geometry ('deductive', 'constraint_feasibility') does not include optimization"
+      },
+      {
+       "method": "cognition.milp_optimize",
+       "why": "frozen admission status SUPERSEDED"
+      }
+     ],
+     "methods_demoted": [],
+     "conditional_competence_basis": "no settled outcomes in this journal; admission evidence and cost decide",
+     "derived_geometry": {
+      "declared": "optimization",
+      "fits_by_inputs": [
+       "constraint_feasibility",
+       "deductive",
+       "optimization"
+      ],
+      "agrees": true
+     },
+     "capability_deficit": null,
+     "verification_method": "separate verification functions in reviewed Kernel code; no independent external evaluator",
+     "confidence_type": "optimization_certificate",
+     "uncertainty": {
+      "conditional_on_input": true,
+      "world_confidence": null
+     },
+     "dissent": [
+      "Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding.; OPTIMAL independently certified: Z3, a different engine from CP-SAT, finds no assignment within the bounds and constraints with objective < 22."
+     ],
+     "abstentions": [],
+     "authority_state": "EXISTING_KERNEL_GATE_REQUIRED",
+     "authority_created": false,
+     "result": {
+      "objective_value": 22.0,
+      "solution": {
+       "makespan": 22,
+       "s_assignment": 0,
+       "s_benchmark": 21,
+       "s_bridge": 18,
+       "s_budget": 21,
+       "s_catalog": 8,
+       "s_cells": 21,
+       "s_compiler": 5,
+       "s_composition": 16,
+       "s_conditional_competence": 0,
+       "s_contracts": 0,
+       "s_cortex": 16,
+       "s_evidence": 21,
+       "s_evolution": 9,
+       "s_evolution_room": 0,
+       "s_evolution_sandbox": 0,
+       "s_human": 20,
+       "s_learned_routing": 19,
+       "s_linear": 0,
+       "s_network": 0,
+       "s_protection": 5,
+       "s_reserved": 0,
+       "s_seed_evaluation": 20,
+       "s_seed_path": 0,
+       "s_semantic": 21,
+       "s_settlement": 5,
+       "s_solvers": 15,
+       "s_verification": 5,
+       "s_worker": 20,
+       "s_worlds": 0
+      },
+      "solver_status": "OPTIMAL"
+     },
+     "receipt_id": "sha256:890fb2ddf4b94e89209c1383610071732d938aaa2f779df1081ad429def8ceb5"
+    },
+    "frozen_evidence_index": "docs/evidence/greg-mind-evidence-index.json",
+    "frozen_entries_of_rejected_methods": {
+     "cognition.milp_optimize": {
+      "status": "SUPERSEDED",
+      "version": "1.0.0",
+      "evidence": "docs/evidence/greg-genome-admission/2026-10-15-v3/results.json#genomes.milp_optimize",
+      "competitor": "OR-Tools CP-SAT on the same integer model (one worker, fixed seed); exhaustive enumeration of a small box if OR-Tools is absent",
+      "median_seconds": 0.026606
+     }
+    },
+    "independent_check": {
+     "acyclic": true,
+     "makespan": 22,
+     "chain": [
+      "contracts",
+      "compiler"
+     ],
+     "engine": "networkx 3.7"
+    }
+   },
+   "prev_step_hash": "sha256:ea953cba6d41e819dd7d73093a1d6ce1fb0c97e20f22fe796b06aa8510cf8ff3",
+   "step_hash": "sha256:8437d7c93d4872257863aa31899f20db6f3c5b429f1a776deb97a450d0c3b6cb"
+  },
+  {
+   "demonstration": 3,
+   "name": "missing-capability resolution",
+   "claim": "the assignment sub-problem had no method; a verified CapabilityDeficit opened the one Genesis loop; an installed open-source engine (SciPy) was qualified on GREG's frozen oracle with no network; the founder attach came through the signed inbox; the ORIGINAL mission resumed and its answer was certified and independently re-checked",
+   "status": "DEMONSTRATED",
+   "tier": "INTEGRATED (installed package; nothing downloaded or installed)",
+   "evidence": {
+    "first_compile": {
+     "ledger_seq": 25,
+     "state": "CAPABILITY_DEFICIT",
+     "capability_deficit": {
+      "function": "cognition.optimization:assignment",
+      "purpose": "cognitive request",
+      "required_inputs": [
+       "costs"
+      ],
+      "geometry": {
+       "geometry": "optimization",
+       "subgeometry": "assignment",
+       "consequence_class": "read_only",
+       "reversibility": "reversible"
+      },
+      "verification": {
+       "failed": "the request's shape (keys ['costs']) matches no catalogued method's native inputs, and no catalogued method or recipe reads any of them",
+       "unserviceable": "no catalogued method or recipe reads any of these inputs",
+       "verified": true
+      },
+      "fitting": [],
+      "search_order": [
+       "attached",
+       "verified_detached",
+       "genome_library",
+       "installed_package",
+       "builder",
+       "founder"
+      ],
+      "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority"
+     }
+    },
+    "deficit_opened": [
+     {
+      "event_id": "af0a070f-3d61-575e-bb1e-7feb9deedfc3",
+      "seq": 41,
+      "hash": "sha256:60ca01a55d0c870f4758e612e303b11bad73389b0cb467a1480db2438b1dd529",
+      "type": "greg.deficit.opened"
+     }
+    ],
+    "genesis_routes": [
+     {
+      "route": "verified_detached",
+      "result": "none",
+      "capability_id": null,
+      "event_id": "ffeda2b8-3e04-5c9a-9350-03eeeff03ed9",
+      "seq": 42,
+      "hash": "sha256:d7f897dda628a445a36169effc55e402d3e5e78529df21776b532015c2b6d0bd",
+      "type": "greg.genesis.route"
+     },
+     {
+      "route": "genome_library",
+      "result": "no registered intelligence fits: none of geometry optimization takes its native inputs from ['costs']",
+      "capability_id": null,
+      "event_id": "b93a2eda-e413-56c5-b777-dfc9eb406782",
+      "seq": 43,
+      "hash": "sha256:baadae81a31c5ee8af0cfcde9dd650f1ac20a79ac488e900e4a73eb730a74308",
+      "type": "greg.genesis.route"
+     },
+     {
+      "route": "existing_project",
+      "result": "cognition.optimization: integer CP-SAT models: an assignment must first be written as a formal model, and no dual certificate is returned",
+      "capability_id": "cognition.optimization",
+      "event_id": "7affe505-611f-5f1d-ae98-01b6d9d1a6a3",
+      "seq": 44,
+      "hash": "sha256:cd74cda8e1966c7ac59e8b569fa1bc5d884143a422170e4ac261062d51a94f68",
+      "type": "greg.genesis.route"
+     },
+     {
+      "route": "existing_project",
+      "result": "cognition.assignment_lsa: a genome in the registered repertoire on the same engine (scipy.optimize.linear_sum_assignment) with its own certificate; it reads cost_matrix (integer costs, rows <= columns, minimisation only), so a request carrying costs does not fit it, and a request carrying cost_matrix is routed to it once the founder attaches it",
+      "capability_id": "cognition.assignment_lsa",
+      "event_id": "7a68d96f-2143-530f-aac1-09c981c52530",
+      "seq": 45,
+      "hash": "sha256:9d70ad8a1989e9670ff41b827e8c925548b02930fdb1ce920e3319847cc592fb",
+      "type": "greg.genesis.route"
+     },
+     {
+      "route": "installed_package",
+      "result": "networkx: bipartite.minimum_weight_full_matching defers to SciPy's linear_sum_assignment: the same engine, not an alternative",
+      "capability_id": null,
+      "event_id": "d8a47fd0-c4ed-569d-962a-ec518e71d00f",
+      "seq": 46,
+      "hash": "sha256:f29b9b60629abeb25d30ea3458cf5f402628385a20d2f68e4bfb3bf8e315e359",
+      "type": "greg.genesis.route"
+     },
+     {
+      "route": "installed_package",
+      "result": "acquired",
+      "capability_id": "acquired.cognition.mechanism:linear_assignment.scipy",
+      "event_id": "76c28688-135f-5b43-9e2f-3e2f754e6e80",
+      "seq": 49,
+      "hash": "sha256:3d2ab5bb533a7e9f1fc8d6ae89cfc35fefe084353c72b8e37db81f289abaa462",
+      "type": "greg.genesis.route"
+     }
+    ],
+    "genesis_verified": [
+     {
+      "capability_id": "acquired.cognition.mechanism:linear_assignment.scipy",
+      "passed": true,
+      "cases": 19,
+      "failures": [],
+      "isolation": "no-network interpreter",
+      "mechanism": {
+       "distribution": "scipy",
+       "version": "1.18.1",
+       "license": "BSD License (trove classifier)",
+       "mode": "DEPEND",
+       "package_digest": "ea7237b7e2cd0c688ff89767de52c61eff59dcc5f023cdaa7a91c465c01e06c6",
+       "acquisition": "already installed on this body; GREG did not download or install it"
+      },
+      "event_id": "c9bb2fdd-3450-5194-8ef7-d5f2e8a4a1b3",
+      "seq": 47,
+      "hash": "sha256:0faa05578c711a682b0112316ed75a0c5374e495bf2fcfa4f9307def6411d6ff",
+      "type": "greg.genesis.verified"
+     }
+    ],
+    "founder_attach_ask": [
+     {
+      "event_id": "4f530210-37b4-5de7-908b-897b2e1db51c",
+      "seq": 52,
+      "hash": "sha256:08ddae0b5c000fc60b3b45307bf715f659479fc62d2b4890494b0d75c8ae6e42",
+      "type": "greg.decision.requested"
+     }
+    ],
+    "blocked": {
+     "blocker": {
+      "type": "capability",
+      "function": "cognition.optimization:assignment",
+      "capability_id": null,
+      "request_id": "req-bba24918adb1a3f92431d252",
+      "why": "no attached capability for cognition.optimization:assignment",
+      "reconsider": "a verified capability for this function is attached",
+      "attach_candidates": [
+       "acquired.cognition.mechanism:linear_assignment.scipy"
+      ]
+     },
+     "event_id": "9daeeaeb-21a3-54c9-ae57-8ac37d58bae4",
+     "seq": 53,
+     "hash": "sha256:6fa1fe3d32b2d010d9fe51852a6c3b9054872a3442a448edbc427beea08a5ed4",
+     "type": "greg.mission.blocked"
+    },
+    "attach": [
+     {
+      "state": "ATTACHED",
+      "by": "founder command",
+      "event_id": "1fa76c5c-16c9-5b55-a3d7-64faee7f5a9b",
+      "seq": 57,
+      "hash": "sha256:ecffda57627896df4036a566adc4b18388c3a7dfc4747f686d8eafca6dd88cd3",
+      "type": "greg.capability.state"
+     }
+    ],
+    "resumed": [
+     {
+      "event_id": "0c260137-c6fa-5319-bf8d-d13af9c6e290",
+      "seq": 60,
+      "hash": "sha256:a60609ea206703d7810c042752529965c843216ba600e6cf05d2f59bebb7b56c",
+      "type": "greg.mission.unblocked"
+     }
+    ],
+    "answer": {
+     "ledger_seq": 81,
+     "ledger_hash": "sha256:ab7a890eacb06e55cedba2c979d23d942e4b11a06b2b6a37a997b22d4996a1f3",
+     "state": "ANSWERED",
+     "method_selected": "acquired.cognition.mechanism:linear_assignment.scipy",
+     "selection_level": "formed_by_capability_genesis",
+     "methods_considered": [
+      "acquired.cognition.mechanism:linear_assignment.scipy"
+     ],
+     "methods_rejected": [],
+     "methods_demoted": [],
+     "conditional_competence_basis": null,
+     "derived_geometry": {
+      "declared": "optimization",
+      "fits_by_inputs": [],
+      "agrees": true
+     },
+     "capability_deficit": null,
+     "verification_method": "GREG-owned certificate sharing no code with scipy 1.18.1: linear-programming dual: u_i + v_j <= c_ij on every pair, equality on the assignment, v <= 0 and zero on unassigned columns, equal objectives",
+     "confidence_type": "optimality_certificate",
+     "uncertainty": "exact for the declared inputs; whether they describe the world is not verified",
+     "dissent": [],
+     "abstentions": [],
+     "authority_state": "EXISTING_KERNEL_GATE_REQUIRED",
+     "authority_created": false,
+     "result": {
+      "certified": true,
+      "pairs": [
+       [
+        0,
+        0
+       ],
+       [
+        1,
+        3
+       ],
+       [
+        2,
+        2
+       ],
+       [
+        3,
+        1
+       ]
+      ],
+      "total": 1100,
+      "objective": "minimize",
+      "shape": [
+       4,
+       5
+      ],
+      "certificate": {
+       "kind": "linear-programming dual: u_i + v_j <= c_ij on every pair, equality on the assignment, v <= 0 and zero on unassigned columns, equal objectives",
+       "pairs_checked": 20,
+       "arithmetic": "exact integers (costs times their common denominator)"
+      },
+      "engine": "scipy 1.18.1",
+      "license": "BSD License (trove classifier)",
+      "authority_created": false
+     },
+     "receipt_id": "sha256:74629eeb402a939825a371f73683f8552f70fd45ec44b03c4e63f030a0e566b4"
+    },
+    "independent_check": {
+     "total": 1100,
+     "pairs": [
+      [
+       0,
+       0
+      ],
+      [
+       1,
+       3
+      ],
+      [
+       2,
+       2
+      ],
+      [
+       3,
+       1
+      ]
+     ],
+     "maps_enumerated": 120,
+     "engine": "itertools.permutations (exhaustive)"
+    },
+    "ledger_order": {
+     "deficit_opened": 41,
+     "genesis_verified": 47,
+     "founder_ask": 52,
+     "founder_attach": 57,
+     "mission_resumed": 60,
+     "answered_compile_receipt": 81,
+     "mission_achieved": 85
+    },
+    "ledger_order_strictly_increasing": true,
+    "building_the_tool_did_not_close_the_mission": "genesis.verified < founder ask < founder attach < resume < answered compile of the ORIGINAL check < mission.achieved, by ledger sequence"
+   },
+   "prev_step_hash": "sha256:8437d7c93d4872257863aa31899f20db6f3c5b429f1a776deb97a450d0c3b6cb",
+   "step_hash": "sha256:667056dbc52b72510544258beff843962fafb5aa810cd13273d977c635a7c271"
+  },
+  {
+   "demonstration": 4,
+   "name": "governed execution",
+   "claim": "every invocation crossed the Kernel Consequence Gate (proposal, identity evaluation, grant, witness with policy version, dispatch, receipt); ceilings stayed read_only; no target outside cognition:*; a forged founder command was refused",
+   "status": "DEMONSTRATED",
+   "tier": "INTEGRATED (no external effect exists to govern; sandbox/local only)",
+   "evidence": {
+    "gate_receipts": 11,
+    "receipts_without_grant_and_witness": [],
+    "witnessed_action_classes": [
+     "greg.cognition.solve"
+    ],
+    "witnessed_targets": [
+     "cognition:critical-path",
+     "cognition:policy",
+     "cognition:shard-assignment"
+    ],
+    "policy_versions": [
+     "1.0.0"
+    ],
+    "grant_ceilings": [
+     "read_only"
+    ],
+    "external_targets": [],
+    "forged_attach_refused": [
+     {
+      "reason": "FounderAuthError: founder key not enrolled or revoked",
+      "event_id": "03d50d43-a35b-5d9e-ac7b-7d2c6147a70b",
+      "seq": 56,
+      "hash": "sha256:07322b113436869ca0337dd960ceae3a45c0f9e6a759c018a71f96ea19833ed2",
+      "type": "greg.command.rejected"
+     }
+    ]
+   },
+   "prev_step_hash": "sha256:667056dbc52b72510544258beff843962fafb5aa810cd13273d977c635a7c271",
+   "step_hash": "sha256:24d7dc7a079d18b35b90f7058c937a79397c937bc48865d0a678592b8a22c926"
+  },
+  {
+   "demonstration": 5,
+   "name": "interruption recovery",
+   "claim": "SIGKILL #1 while the mission waited on the founder; SIGKILL #2 between closure and appraisal; after restarts exactly one qualification, one ask, one settlement per check, no duplicate action",
+   "status": "DEMONSTRATED",
+   "tier": "INTEGRATED (real SIGKILL of the body process on Linux; not the founder's device)",
+   "evidence": {
+    "kill_1": {
+     "point": "mission blocked on the founder attach ask",
+     "at_kill": {
+      "body.booted": 1,
+      "body.recovered": 0,
+      "deficit.opened": 1,
+      "genesis.verified": 1,
+      "decision.requested": 1,
+      "mission.action.DONE": 1,
+      "mission.achieved": 0,
+      "mission.appraised": 0,
+      "cognition.settled": 0,
+      "gate_receipts": 3
+     },
+     "after_restart_before_attach": {
+      "body.booted": 2,
+      "body.recovered": 1,
+      "deficit.opened": 1,
+      "genesis.verified": 1,
+      "decision.requested": 1,
+      "mission.action.DONE": 1,
+      "mission.achieved": 0,
+      "mission.appraised": 0,
+      "cognition.settled": 0,
+      "gate_receipts": 3
+     }
+    },
+    "kill_2": {
+     "attempted": true,
+     "point": "after mission.achieved, before mission.appraised and cognition.settled",
+     "hit": true,
+     "at_kill": {
+      "body.booted": 2,
+      "body.recovered": 1,
+      "deficit.opened": 1,
+      "genesis.verified": 1,
+      "decision.requested": 1,
+      "mission.action.DONE": 1,
+      "mission.achieved": 1,
+      "mission.appraised": 0,
+      "cognition.settled": 0,
+      "gate_receipts": 5
+     }
+    },
+    "final": {
+     "body.booted": 3,
+     "body.recovered": 2,
+     "deficit.opened": 1,
+     "genesis.verified": 1,
+     "decision.requested": 1,
+     "mission.action.DONE": 1,
+     "mission.achieved": 1,
+     "mission.appraised": 1,
+     "cognition.settled": 2,
+     "gate_receipts": 5
+    },
+    "worker_processes": 3,
+    "settled": [
+     {
+      "event_id": "debe4b09-35e5-59b6-90c0-7e5382a65530",
+      "seq": 90,
+      "hash": "sha256:4fca94ece15cdc97559dc8ccd98cdc6a000e4096fcec6388dc1a258672814ec9",
+      "type": "greg.cognition.settled"
+     },
+     {
+      "event_id": "afd92227-0b76-5fa2-bd13-0bb1a3adac5f",
+      "seq": 91,
+      "hash": "sha256:8dcbaf23fb7a416e98dbf3b9f67e254741f20979736b2355e95fcce7d9988a30",
+      "type": "greg.cognition.settled"
+     }
+    ]
+   },
+   "prev_step_hash": "sha256:24d7dc7a079d18b35b90f7058c937a79397c937bc48865d0a678592b8a22c926",
+   "step_hash": "sha256:31d9ba48d363250b2594fc2150eb577e197a6759ae9e39c52a45ba134cb8ec99"
+  },
+  {
+   "demonstration": 6,
+   "name": "appraisal and settlement",
+   "claim": "a separate-process appraiser re-derived the checks from receipt bytes and re-observed the world (VERIFIED); each answer settled once against its method and version; competence and routing knowledge are projected from the journal",
+   "status": "DEMONSTRATED",
+   "tier": "INTEGRATED (appraiser shares reviewed Kernel code; not an independent implementation)",
+   "evidence": {
+    "appraisal": {
+     "verdict": "VERIFIED",
+     "checks": {
+      "achieved_claimed": true,
+      "approval_boundaries_honored": true,
+      "approval_boundary_encountered": false,
+      "arrived_via_inbox": true,
+      "chain_intact": true,
+      "checks_rederived_from_receipts": true,
+      "deliveries_bound_to_evidence": true,
+      "exactly_once": true,
+      "founder_signature_verified": true,
+      "preconditions_honored": true,
+      "registered_once": true,
+      "world_reobserved": true
+     },
+     "limits": "shares reviewed Kernel code; not an independent implementation",
+     "event_id": "9ea4b4a0-6d0f-51fc-8cb3-e9d36a01ddb6",
+     "seq": 89,
+     "hash": "sha256:840f19b665c36d30d524a0ba6a04db599773ec91ba592f9b39273d1248c82f8d",
+     "type": "greg.mission.appraised"
+    },
+    "settlements": [
+     {
+      "check_id": "critical-path",
+      "method": "cognition.optimization",
+      "method_version": "0.2.0",
+      "correct": true,
+      "event_id": "debe4b09-35e5-59b6-90c0-7e5382a65530",
+      "seq": 90,
+      "hash": "sha256:4fca94ece15cdc97559dc8ccd98cdc6a000e4096fcec6388dc1a258672814ec9",
+      "type": "greg.cognition.settled"
+     },
+     {
+      "check_id": "shard-assignment",
+      "method": "acquired.cognition.mechanism:linear_assignment.scipy",
+      "method_version": "1.18.1",
+      "correct": true,
+      "event_id": "afd92227-0b76-5fa2-bd13-0bb1a3adac5f",
+      "seq": 91,
+      "hash": "sha256:8dcbaf23fb7a416e98dbf3b9f67e254741f20979736b2355e95fcce7d9988a30",
+      "type": "greg.cognition.settled"
+     }
+    ],
+    "competence_after": {
+     "cognition.optimization@0.2.0": {
+      "count": 2,
+      "correct": 2
+     },
+     "acquired.cognition.mechanism:linear_assignment.scipy@1.18.1": {
+      "count": 2,
+      "correct": 2
+     }
+    },
+    "routing_knowledge": [
+     {
+      "capability": "cognition.solve",
+      "done": 2,
+      "failed": 0,
+      "ineffective": 1,
+      "refuted": 0,
+      "verified": 1,
+      "reliability": 0.5
+     }
+    ]
+   },
+   "prev_step_hash": "sha256:31d9ba48d363250b2594fc2150eb577e197a6759ae9e39c52a45ba134cb8ec99",
+   "step_hash": "sha256:87b1596b2109ec633b41bef1eebc61d90a10d8877ab6e1bcc3004493511c8c58"
+  },
+  {
+   "demonstration": 7,
+   "name": "a later decision changed by retained evidence",
+   "claim": "a second CI-plan mission (new natural data) was routed straight to the formed SciPy mechanism with no deficit, Genesis search or founder ask; the identical mission on a fresh control body opened a deficit. Cause: mission 1's retained qualification and the founder's attach. Mission 1's settled outcomes enter mission 2's compiler competence basis (critical-path receipt) but did not themselves change a choice",
+   "status": "DEMONSTRATED",
+   "tier": "INTEGRATED",
+   "evidence": {
+    "before_mission_1_first_compile": {
+     "ledger_seq": 25,
+     "state": "CAPABILITY_DEFICIT",
+     "method_selected": null,
+     "capability_deficit": {
+      "function": "cognition.optimization:assignment",
+      "purpose": "cognitive request",
+      "required_inputs": [
+       "costs"
+      ],
+      "geometry": {
+       "geometry": "optimization",
+       "subgeometry": "assignment",
+       "consequence_class": "read_only",
+       "reversibility": "reversible"
+      },
+      "verification": {
+       "failed": "the request's shape (keys ['costs']) matches no catalogued method's native inputs, and no catalogued method or recipe reads any of them",
+       "unserviceable": "no catalogued method or recipe reads any of these inputs",
+       "verified": true
+      },
+      "fitting": [],
+      "search_order": [
+       "attached",
+       "verified_detached",
+       "genome_library",
+       "installed_package",
+       "builder",
+       "founder"
+      ],
+      "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority"
+     }
+    },
+    "after_mission_2_first_compile": {
+     "ledger_seq": 116,
+     "ledger_hash": "sha256:5ade9297ac1c5de187dae72c381d5caad3d55f96058f57fe3b6ba83b2f26f4bf",
+     "state": "ANSWERED",
+     "method_selected": "acquired.cognition.mechanism:linear_assignment.scipy",
+     "selection_level": "formed_by_capability_genesis",
+     "methods_considered": [
+      "acquired.cognition.mechanism:linear_assignment.scipy"
+     ],
+     "methods_rejected": [],
+     "methods_demoted": [],
+     "conditional_competence_basis": null,
+     "derived_geometry": {
+      "declared": "optimization",
+      "fits_by_inputs": [],
+      "agrees": true
+     },
+     "capability_deficit": null,
+     "verification_method": "GREG-owned certificate sharing no code with scipy 1.18.1: linear-programming dual: u_i + v_j <= c_ij on every pair, equality on the assignment, v <= 0 and zero on unassigned columns, equal objectives",
+     "confidence_type": "optimality_certificate",
+     "uncertainty": "exact for the declared inputs; whether they describe the world is not verified",
+     "dissent": [],
+     "abstentions": [],
+     "authority_state": "EXISTING_KERNEL_GATE_REQUIRED",
+     "authority_created": false,
+     "result": {
+      "certified": true,
+      "pairs": [
+       [
+        0,
+        1
+       ],
+       [
+        1,
+        0
+       ],
+       [
+        2,
+        2
+       ]
+      ],
+      "total": 169,
+      "objective": "minimize",
+      "shape": [
+       3,
+       4
+      ],
+      "certificate": {
+       "kind": "linear-programming dual: u_i + v_j <= c_ij on every pair, equality on the assignment, v <= 0 and zero on unassigned columns, equal objectives",
+       "pairs_checked": 12,
+       "arithmetic": "exact integers (costs times their common denominator)"
+      },
+      "engine": "scipy 1.18.1",
+      "license": "BSD License (trove classifier)",
+      "authority_created": false
+     },
+     "receipt_id": "sha256:59c94b1b041ca394f6ff458a744952bd57c351e191ccb07d663d4d4256cefd3e"
+    },
+    "control_fresh_body_first_compile": {
+     "state": "CAPABILITY_DEFICIT",
+     "method_selected": null,
+     "capability_deficit": {
+      "function": "cognition.optimization:assignment",
+      "purpose": "cognitive request",
+      "required_inputs": [
+       "costs"
+      ],
+      "geometry": {
+       "geometry": "optimization",
+       "subgeometry": "assignment",
+       "consequence_class": "read_only",
+       "reversibility": "reversible"
+      },
+      "verification": {
+       "failed": "the request's shape (keys ['costs']) matches no catalogued method's native inputs, and no catalogued method or recipe reads any of them",
+       "unserviceable": "no catalogued method or recipe reads any of these inputs",
+       "verified": true
+      },
+      "fitting": [],
+      "search_order": [
+       "attached",
+       "verified_detached",
+       "genome_library",
+       "installed_package",
+       "builder",
+       "founder"
+      ],
+      "route": "greg.genesis (Capability Genesis) under the enclosing mission's authority"
+     }
+    },
+    "control_counts": {
+     "body.booted": 1,
+     "body.recovered": 0,
+     "deficit.opened": 1,
+     "genesis.verified": 1,
+     "decision.requested": 1,
+     "mission.action.DONE": 1,
+     "mission.achieved": 0,
+     "mission.appraised": 0,
+     "cognition.settled": 0,
+     "gate_receipts": 3
+    },
+    "mission_2_counts": {
+     "body.booted": 4,
+     "body.recovered": 3,
+     "deficit.opened": 0,
+     "genesis.verified": 1,
+     "decision.requested": 0,
+     "mission.action.DONE": 0,
+     "mission.achieved": 1,
+     "mission.appraised": 1,
+     "cognition.settled": 2,
+     "gate_receipts": 7
+    },
+    "mission_2_critical_path": {
+     "ledger_seq": 104,
+     "ledger_hash": "sha256:2d8029c6ee4b0b4d75665aea30c0ed34d1312e00948eb156fd6dfc447e3ba970",
+     "state": "ANSWERED",
+     "method_selected": "cognition.optimization",
+     "selection_level": "admission_status",
+     "methods_considered": [
+      "cognition.formal",
+      "cognition.optimization",
+      "cognition.milp_optimize"
+     ],
+     "methods_rejected": [
+      {
+       "method": "cognition.formal",
+       "why": "native geometry ('deductive', 'constraint_feasibility') does not include optimization"
+      },
+      {
+       "method": "cognition.milp_optimize",
+       "why": "frozen admission status SUPERSEDED"
+      }
+     ],
+     "methods_demoted": [],
+     "conditional_competence_basis": {
+      "cognition.optimization": 0.6667,
+      "acquired.cognition.mechanism:linear_assignment.scipy": 0.6667
+     },
+     "derived_geometry": {
+      "declared": "optimization",
+      "fits_by_inputs": [
+       "constraint_feasibility",
+       "deductive",
+       "optimization"
+      ],
+      "agrees": true
+     },
+     "capability_deficit": null,
+     "verification_method": "separate verification functions in reviewed Kernel code; no independent external evaluator",
+     "confidence_type": "optimization_certificate",
+     "uncertainty": {
+      "conditional_on_input": true,
+      "world_confidence": null
+     },
+     "dissent": [
+      "Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding.; OPTIMAL independently certified: Z3, a different engine from CP-SAT, finds no assignment within the bounds and constraints with objective < 53."
+     ],
+     "abstentions": [],
+     "authority_state": "EXISTING_KERNEL_GATE_REQUIRED",
+     "authority_created": false,
+     "result": {
+      "objective_value": 53.0,
+      "solution": {
+       "makespan": 53,
+       "s___main__": 52,
+       "s_anchor": 0,
+       "s_appraisal": 50,
+       "s_artifacts": 9,
+       "s_asks": 49,
+       "s_authority": 23,
+       "s_body": 38,
+       "s_briefs": 47,
+       "s_builders": 50,
+       "s_capabilities": 0,
+       "s_cli": 45,
+       "s_cognitive_worker": 0,
+       "s_compute": 51,
+       "s_computer": 50,
+       "s_console": 47,
+       "s_daleobanks_bridge": 51,
+       "s_dataplane": 51,
+       "s_doctor": 0,
+       "s_founder": 0,
+       "s_foundry_bridge": 51,
+       "s_foundry_protocol_worker": 0,
+       "s_foundry_state": 52,
+       "s_foundry_worker": 0,
+       "s_genesis": 12,
+       "s_gravity": 0,
+       "s_improvement": 46,
+       "s_isolation": 0,
+       "s_journal": 0,
+       "s_lightcone": 0,
+       "s_mechanisms": 10,
+       "s_metrics": 52,
+       "s_missions": 25,
+       "s_models": 0,
+       "s_path": 50,
+       "s_planner": 47,
+       "s_precedents": 52,
+       "s_presence": 50,
+       "s_presentation": 0,
+       "s_remote": 51,
+       "s_resilience": 0,
+       "s_routing": 51,
+       "s_service": 0,
+       "s_sop": 8,
+       "s_templates": 0,
+       "s_tribunal": 42,
+       "s_ventures": 49,
+       "s_workers": 47
+      },
+      "solver_status": "OPTIMAL"
+     },
+     "receipt_id": "sha256:724f3c8c6af907ddc65f5e240fc980e27063ef56da566cc9501fda0420bc4206"
+    },
+    "mission_2_independent": {
+     "critical_path": {
+      "acyclic": true,
+      "makespan": 53,
+      "chain": [
+       "capabilities",
+       "artifacts",
+       "genesis",
+       "missions",
+       "body",
+       "cli",
+       "__main__"
+      ],
+      "engine": "networkx 3.7"
+     },
+     "assignment": {
+      "total": 169,
+      "pairs": [
+       [
+        0,
+        1
+       ],
+       [
+        1,
+        0
+       ],
+       [
+        2,
+        2
+       ]
+      ],
+      "maps_enumerated": 24,
+      "engine": "itertools.permutations (exhaustive)"
+     }
+    },
+    "mission_2_appraisal": [
+     {
+      "verdict": "VERIFIED",
+      "event_id": "fcc3648d-c44e-512c-8a02-eb8fddcb7792",
+      "seq": 122,
+      "hash": "sha256:1e2fb45542b1d9b402f8caa5774e7d0811e90e27c294c77d19df537f4ce5f941",
+      "type": "greg.mission.appraised"
+     }
+    ],
+    "mission_2_settlements": [
+     {
+      "method": "cognition.optimization",
+      "correct": true
+     },
+     {
+      "method": "acquired.cognition.mechanism:linear_assignment.scipy",
+      "correct": true
+     }
+    ],
+    "causes": {
+     "genesis_verified": [
+      {
+       "event_id": "c9bb2fdd-3450-5194-8ef7-d5f2e8a4a1b3",
+       "seq": 47,
+       "hash": "sha256:0faa05578c711a682b0112316ed75a0c5374e495bf2fcfa4f9307def6411d6ff",
+       "type": "greg.genesis.verified"
+      }
+     ],
+     "founder_attach": [
+      {
+       "event_id": "1fa76c5c-16c9-5b55-a3d7-64faee7f5a9b",
+       "seq": 57,
+       "hash": "sha256:ecffda57627896df4036a566adc4b18388c3a7dfc4747f686d8eafca6dd88cd3",
+       "type": "greg.capability.state"
+      }
+     ],
+     "mission_1_settlement": [
+      {
+       "event_id": "afd92227-0b76-5fa2-bd13-0bb1a3adac5f",
+       "seq": 91,
+       "hash": "sha256:8dcbaf23fb7a416e98dbf3b9f67e254741f20979736b2355e95fcce7d9988a30",
+       "type": "greg.cognition.settled"
+      }
+     ]
+    },
+    "competence_basis_in_mission_2": {
+     "cognition.optimization": 0.6667,
+     "acquired.cognition.mechanism:linear_assignment.scipy": 0.6667
+    },
+    "limit": "settled outcomes alone did not change the choice here: only one method fits each geometry, settled competence only orders fits within one admission status, and the compiler demotes on settled outcomes only after >= 10 (greg/cognition/compiler.py SETTLED_MIN_N); the formed-mechanism route's receipt reports no conditional_competence_basis"
+   },
+   "prev_step_hash": "sha256:87b1596b2109ec633b41bef1eebc61d90a10d8877ab6e1bcc3004493511c8c58",
+   "step_hash": "sha256:4172f654619172dd5e8127859e5daeba340f328060b90b7bc1bc665f8b317302"
+  },
+  {
+   "demonstration": 8,
+   "name": "organ coordination through canonical contracts",
+   "claim": "a DALEOBANKS wire OpportunityPacket was validated, HMAC-verified on the canonical transport, adapted with declared information lost/added and unresolved fields; a WealthMachine wire assessment was adapted to the canonical VentureAssessment",
+   "status": "DEMONSTRATED",
+   "tier": "IMPLEMENTED (contract + adapter only; SYNTHETIC fixtures; no organ process)",
+   "evidence": {
+    "reality": "CONTRACT+ADAPTER ONLY: DALEOBANKS and WealthMachine code is not in this repository; no organ process ran; wire payloads are SYNTHETIC fixtures; transport key is a per-run test key",
+    "linker_edges": [
+     [
+      "spiffe://uniimente.internal/organ/daleobanks",
+      "wire-opportunity-packet",
+      "spiffe://uniimente.internal/organ/constitutional-controller"
+     ],
+     [
+      "spiffe://uniimente.internal/organ/daleobanks",
+      "wire-opportunity-packet",
+      "spiffe://uniimente.internal/organ/wealthmachine"
+     ],
+     [
+      "spiffe://uniimente.internal/organ/wealthmachine",
+      "wire-venture-assessment",
+      "spiffe://uniimente.internal/organ/constitutional-controller"
+     ],
+     [
+      "spiffe://uniimente.internal/organ/wealthmachine",
+      "wire-venture-assessment",
+      "spiffe://uniimente.internal/organ/daleobanks"
+     ]
+    ],
+    "bridge_a_edge_present": true,
+    "wire_packet": {
+     "schema": "contracts/wire-opportunity-packet.schema.json",
+     "validated": true,
+     "digest": "sha256:d8ba6a8a2fab5769564f81a6a70437a20da14df682e5df84cacde465bb8969f5"
+    },
+    "transport": {
+     "verified_identity": "daleobanks",
+     "signed": "true",
+     "protocol": "2",
+     "hostile_controls": {
+      "replayed_nonce": "refused: nonce replay refused",
+      "tampered_body": "refused: signature verification failed",
+      "forged_identity": "refused: unknown sender or recipient"
+     }
+    },
+    "packet_adapter": {
+     "module": "adapters/daleobanks_opportunity.py",
+     "created_by": "spiffe://uniimente.internal/organ/daleobanks",
+     "unresolved": [
+      "budget_owner",
+      "governing_bottleneck"
+     ],
+     "resolved": false,
+     "information_lost": [
+      "source",
+      "source_ref",
+      "signal_type",
+      "cultural_context",
+      "language",
+      "urgency",
+      "monetization_paths",
+      "confidence",
+      "status"
+     ],
+     "information_added": [
+      "created_by (from verified transport identity)",
+      "evidence_refs hashes (content-addressed form of wire evidence strings)"
+     ],
+     "assumptions": [
+      "pain_owner == wire audience",
+      "budget_owner/payer == wire buyer_type when stated"
+     ],
+     "anonymous_resolution": "refused: resolution requires an institutional identity"
+    },
+    "assessment_adapter": {
+     "module": "adapters/wealthmachine_assessment.py",
+     "canonical_schema": "contracts/venture-assessment.schema.json",
+     "validated": true,
+     "information_lost": [
+      "market_alignment",
+      "expected_roi",
+      "risk_level",
+      "legal_readiness",
+      "product_hypothesis",
+      "pricing_hypothesis",
+      "validation_plan",
+      "monetization_paths",
+      "recommended_next_action"
+     ],
+     "field_mapping": {
+      "assessment_id": "id (required; deterministic namespace UUIDv5 if not already a UUID)",
+      "packet_id": "opportunity_packet_id (UUIDv5-normalized with the packet adapter's rule)",
+      "schema_version": "schema_version (pass-through; 1.1 default)",
+      "assessed_by": "TRANSPORT identity -> spiffe id (never from payload)",
+      "assessed_at": "created_at (original assessment time required; never translation time)",
+      "verdict": "go_no_go",
+      "opportunity_score": "opportunity_score (pass-through)",
+      "adversarial_cases": "cases[] arguments keyed by case name; capping_cases = severe unresolved against-cases",
+      "structured_reasons": "reasons (pass-through)",
+      "evidence_state.confidence": "market_alignment is NOT confidence; omitted unless caller supplies evidence",
+      "requires_human_approval": "const true (asserted, not negotiated)",
+      "execution_authority": "const false (asserted, not negotiated)"
+     },
+     "information_added": "NOT DECLARED: the module has no INFORMATION_ADDED tuple; its additions (assessed_by from transport, constant requires_human_approval/execution_authority) appear only in FIELD_MAPPING (gap)",
+     "requires_human_approval": true,
+     "execution_authority": false,
+     "digest": "sha256:66e6255be7329c5c0ad878e21422eaf1e7928a4522e8225a5b3df96ef94c08b4"
+    },
+    "kernel_consumer_edge_present": true
+   },
+   "prev_step_hash": "sha256:4172f654619172dd5e8127859e5daeba340f328060b90b7bc1bc665f8b317302",
+   "step_hash": "sha256:e607ce5791e8dbb9f0a2cc82e9b3065c0922d465576bc3d38b027284dac0fd15"
+  },
+  {
+   "demonstration": 9,
+   "name": "dissent and uncertainty preserved",
+   "claim": "the compiler's strongest counterargument, the conditional (WORLD-unverified) uncertainty, the appraiser's stated limits and a HUMAN_JUDGMENT_REQUIRED abstention on a normative question are kept in the trace; the abstaining mission never closed",
+   "status": "DEMONSTRATED",
+   "tier": "INTEGRATED",
+   "evidence": {
+    "critical_path_compiler_dissent": [
+     "Formal encoding may omit a material condition. Satisfiability/optimality is conditional on that encoding.; OPTIMAL independently certified: Z3, a different engine from CP-SAT, finds no assignment within the bounds and constraints with objective < 22."
+    ],
+    "assignment_compiler_dissent": [],
+    "uncertainty": {
+     "critical_path": {
+      "conditional_on_input": true,
+      "world_confidence": null
+     },
+     "assignment": "exact for the declared inputs; whether they describe the world is not verified"
+    },
+    "appraiser_limits": "shares reviewed Kernel code; not an independent implementation",
+    "abstention": {
+     "mission_id": "m:ci-policy-question",
+     "compile": {
+      "ledger_seq": 177,
+      "ledger_hash": "sha256:f6f114a1a72511c7a27813822b616d950e047e112914fc8f1e3d13c57c0c38e5",
+      "state": "HUMAN_JUDGMENT_REQUIRED",
+      "method_selected": "human:qualified_judgment",
+      "selection_level": "constitutional_route",
+      "methods_considered": [],
+      "methods_rejected": [],
+      "methods_demoted": [],
+      "conditional_competence_basis": null,
+      "derived_geometry": null,
+      "capability_deficit": null,
+      "verification_method": null,
+      "confidence_type": null,
+      "uncertainty": null,
+      "dissent": [],
+      "abstentions": [],
+      "authority_state": "EXISTING_KERNEL_GATE_REQUIRED",
+      "authority_created": false,
+      "result": {
+       "state": "HUMAN_JUDGMENT_REQUIRED",
+       "roles": [
+        "founder",
+        "operator"
+       ],
+       "competence_domain": "CI coverage policy for this repository",
+       "decision_authority": "the role the Constitution names for this decision; never a majority of opinions",
+       "disagreement": "every view and its rationale is preserved; no aggregation into a vote",
+       "refusal_rights": "any participant may refuse; refusal is recorded, never overridden by cognition",
+       "provenance_required": [
+        "identity",
+        "expertise basis",
+        "conflicts of interest"
+       ],
+       "machine_role": "prepare evidence and alternatives only",
+       "request_id": "judgment-9c0e6b289272299d",
+       "scope_digest": "sha256:9c0e6b289272299dd13064a648fb48b0d86cbc386203a08c5bce835b535da494",
+       "judgments_received": 0,
+       "awaiting": "the founder's signed answer to judgment-9c0e6b289272299d",
+       "founder_ask": {
+        "request_id": "judgment-9c0e6b289272299d",
+        "kind": "HUMAN_JUDGMENT",
+        "state": "RECORDED",
+        "scope_digest": "sha256:9c0e6b289272299dd13064a648fb48b0d86cbc386203a08c5bce835b535da494"
+       }
+      },
+      "receipt_id": "sha256:fd2ab0fb39d5f42bd7816cd0ed995562bc6d6d0093510626b8f0819fab253ff8"
+     },
+     "counts": {
+      "body.booted": 5,
+      "body.recovered": 4,
+      "deficit.opened": 0,
+      "genesis.verified": 1,
+      "decision.requested": 1,
+      "mission.action.DONE": 1,
+      "mission.achieved": 0,
+      "mission.appraised": 0,
+      "cognition.settled": 0,
+      "gate_receipts": 11
+     },
+     "judgment_asks": [
+      {
+       "event_id": "086b38bd-847b-5c54-8d59-fdd0e30dc7d2",
+       "seq": 136,
+       "hash": "sha256:07d33a9fba02323c20999d4d4afe050f0916f5ad8fd3506cc7d861f00e5abbb6",
+       "type": "greg.decision.requested"
+      },
+      {
+       "event_id": "e4a85a7c-7622-5950-a9ed-73dc4ead01d6",
+       "seq": 167,
+       "hash": "sha256:46de5146a36a8a26a91ebe7e5391066d979306ba2504708f913b7491432eca64",
+       "type": "greg.decision.requested"
+      }
+     ]
+    },
+    "independent_rescoring": {
+     "critical_path_agrees": true,
+     "assignment_agrees": true
+    }
+   },
+   "prev_step_hash": "sha256:e607ce5791e8dbb9f0a2cc82e9b3065c0922d465576bc3d38b027284dac0fd15",
+   "step_hash": "sha256:6261f6af737716c1d2417781ea1b68f6e813932b7b867d8fd11072050414453f"
+  }
+ ],
+ "trace_head": "sha256:6261f6af737716c1d2417781ea1b68f6e813932b7b867d8fd11072050414453f",
+ "reproducible_facts": {
+  "mission_1": {
+   "critical_path": 22.0,
+   "assignment_total": 1100,
+   "assignment_pairs": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     3
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     1
+    ]
+   ],
+   "methods": [
+    "cognition.optimization",
+    "acquired.cognition.mechanism:linear_assignment.scipy"
+   ]
+  },
+  "mission_2": {
+   "critical_path": 53.0,
+   "assignment_first_state": "ANSWERED",
+   "control_first_state": "CAPABILITY_DEFICIT"
+  },
+  "statuses": [
+   "DEMONSTRATED",
+   "DEMONSTRATED",
+   "DEMONSTRATED",
+   "DEMONSTRATED",
+   "DEMONSTRATED",
+   "DEMONSTRATED",
+   "DEMONSTRATED",
+   "DEMONSTRATED",
+   "DEMONSTRATED"
+  ],
+  "inputs": {
+   "m1": "sha256:134de6b55b376228730fddb23569c04ef497fb8981a6c896607addf430feae4d",
+   "m2": "sha256:9a0cd46f75cc526bc7f7151ba7eb87d9addd0d15486a0f2b8903afc609811429"
+  }
+ },
+ "reproducible_digest": "sha256:7cedf0ca01b48b5e0405785f1752558f60d64d4ecab7af8c371399af9b52addf",
+ "seconds": 25.48
+}

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from greg.body import Body
 from greg.capabilities import CapabilityManifest
-from tests.greg_fixtures import Clock, drop, make_body, mission, signed, workspace
+from tests.greg_fixtures import Clock, drop, make_body, mission, signed, workspace, host_worker_confinement
 
 
 def _capability(body, effects: list, *, retry_safe: bool):
@@ -68,7 +68,7 @@ def _actions(body):
 
 
 def test_one_reconciliation_answer_settles_exactly_one_dispatch(tmp_path):
-    home, key, body_id, data = make_body(tmp_path)
+    home, key, body_id, data = make_body(tmp_path, worker_confinement=host_worker_confinement())
     drop(home, signed(key, body_id, "MISSION", _spec(data, retry_safe=False, cost=0.4, budget=1.0)))
     clock, effects = Clock(), []
     body = _open(home, clock, effects, retry_safe=False)
@@ -127,7 +127,7 @@ def test_one_reconciliation_answer_settles_exactly_one_dispatch(tmp_path):
 def test_unknown_spend_is_reserved_at_its_worst_case_and_bounds_dispatch(tmp_path):
     """A retry-safe dispatch is re-attempted, but each unknown outcome may have spent its cap: two reserved
     $0.40 dispatches leave $0.20 of a signed $1.00, so a third is not dispatched; the mission asks instead."""
-    home, key, body_id, data = make_body(tmp_path)
+    home, key, body_id, data = make_body(tmp_path, worker_confinement=host_worker_confinement())
     drop(home, signed(key, body_id, "MISSION", _spec(data, retry_safe=True, cost=0.4, budget=1.0)))
     clock, effects = Clock(), []
     body = _open(home, clock, effects, retry_safe=True)
@@ -215,7 +215,7 @@ def test_an_interrupted_paid_worker_reconciled_not_executed_books_its_cap_and_th
     data, repo = _work_repo(tmp_path)
     worker = _InterruptedOnceWorker()
     monkeypatch.setitem(workers.PROVIDERS, "interrupted-once", worker)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=host_worker_confinement())
     drop(home, signed(key, body_id, "MISSION", _paid_mission(repo, "interrupted-once", budget=0.5)))
     clock = Clock()
     body = Body(home, clock=clock).open()
@@ -272,7 +272,7 @@ def _lost_after_evidence(tmp_path, monkeypatch):
             raise RuntimeError("body lost after the work order evidence, before the receipt")
         return collected[-1]
     monkeypatch.setattr(workers, "commission", stops_after_evidence)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=host_worker_confinement())
     drop(home, signed(key, body_id, "MISSION", _paid_mission(repo, "finishing", budget=1.0)))
     evidence_path = workspace(home, "m:paid") / "work-orders" / "add-sub" / "evidence.json"
     clock = Clock()

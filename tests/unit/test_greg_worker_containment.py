@@ -34,7 +34,7 @@ import pytest
 from greg import isolation, workers
 from greg.worker_isolation import WorkerIsolationError, _backend as envelope_backend
 from greg.body import Body
-from tests.greg_fixtures import Clock, drop, horizon, make_body, signed
+from tests.greg_fixtures import Clock, drop, horizon, make_body, signed, host_worker_confinement
 
 LANDLOCK = isolation.available().get("available")
 
@@ -211,7 +211,7 @@ def test_a_worker_that_replaces_its_evaluator_never_closes_its_mission(tmp_path,
     data = tmp_path / "data"
     data.mkdir()
     repo = _repo(data)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=host_worker_confinement())
     monkeypatch.setitem(workers.PROVIDERS, "scripted", Substitute(how))
     strategy = {"action_id": "sub", "capability": "worker.commission", "target": "work:sub", "cost_usd": 0.5,
                 "params": {"order": "sub", "mode": "repository", "repo": str(repo), "objective": "add sub()",

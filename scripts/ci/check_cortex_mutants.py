@@ -296,6 +296,9 @@ CLOSURE_INTEGRITY_MUTANTS = [
     ("the appraiser accepts an approval no founder DECISION carries", "greg/appraisal.py",
      '                and _decision_signed(journal, ledger, seq, answer[0], answer[1], data["request_id"], at_seq)):',
      "                and True):"),
+    ("the appraiser counts an answer row the mission fold does not", "greg/appraisal.py",
+     '                if held is None or held.get("command_digest") != e.payload.get("command_digest"):',
+     "                if False:"),
     ("a signed pre-approval admits every strategy of its capability and class", "greg/missions.py",
      '        p["action_id"] == strategy["action_id"] and p["capability"] == manifest.capability_id\n'
      '        and p["target"] == strategy["target"] and p["consequence_class"] == manifest.consequence_class\n',

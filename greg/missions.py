@@ -1496,7 +1496,9 @@ class MissionEngine:
         if resumed is not None:
             return resumed
         m = self._withdraw_spent_paid_asks(m, now)   # a paid ask the mission's spend has made unfundable
-        if m.blocker and m.blocker.get("request_id") in self.book.withdrawn:
+        # A shared body-level ask is not this mission's to finish: when it lapses, _shared_ask_lapsed asks about the
+        # rest of the need with every candidate kept (#184).
+        if m.blocker and m.blocker.get("request_id") in self.book.withdrawn and not m.blocker.get("shared_ask"):
             m = self._finish_withdrawal(m)
         # An open reconciliation stays the blocker past the horizon: its answer is recorded first, then renewal.
         if datetime.fromisoformat(m.cone.horizon.replace("Z", "+00:00")) <= now and \

@@ -35,7 +35,7 @@ import pytest
 from greg import isolation
 from greg.body import Body, Layout, observe
 from greg.missions import MissionBook
-from tests.greg_fixtures import drop, make_body, mission, signed, workspace
+from tests.greg_fixtures import drop, make_body, mission, signed, workspace, host_worker_confinement
 
 ROOT = Path(__file__).resolve().parents[2]
 # Cert-bundle variables a host may point outside the system certificate roots: the worker envelope refuses those by
@@ -242,7 +242,7 @@ def test_a_worker_killed_with_its_body_is_reconciled_then_recommissioned_exactly
     data = tmp_path / "data"
     data.mkdir()
     repo = make_repo(data)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=host_worker_confinement())
     drop(home, signed(key, body_id, "MISSION", spec(repo)))
     calls = tmp_path / "calls"
     order_dir = workspace(home, MID) / "work-orders" / ORDER
@@ -364,7 +364,7 @@ def test_a_body_killed_after_the_work_order_evidence_and_before_its_receipt_is_r
     data = tmp_path / "data"
     data.mkdir()
     repo = make_repo(data)
-    home, key, body_id, _ = make_body(tmp_path, read_roots=[data])
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=host_worker_confinement())
     drop(home, signed(key, body_id, "MISSION", spec(repo)))
     calls = tmp_path / "calls"
     order_dir = workspace(home, MID) / "work-orders" / ORDER

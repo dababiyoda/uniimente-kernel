@@ -24,6 +24,19 @@ class Clock:
         self.now += timedelta(seconds=seconds)
 
 
+def host_worker_confinement() -> str:
+    """The founder's worker setting a test body takes to run the real worker path on this host: the default
+    (``required``) where the bubblewrap envelope works, else ``supervised``, under which a worker the envelope cannot
+    host runs with #178's Landlock grants as its floor, the choice a founder makes on such a host (CI runners, where
+    bwrap's network namespace is refused). Tests about the setting itself pass it explicitly."""
+    from greg.worker_isolation import WorkerIsolationError, _backend
+    try:
+        _backend(require_bubblewrap=True)
+    except WorkerIsolationError:
+        return "supervised"
+    return "required"
+
+
 def make_body(tmp: Path, *, read_roots=None, worker_confinement: str = "required", passphrase: bytes | None = None):
     tmp = Path(tmp)
     data = tmp / "data"

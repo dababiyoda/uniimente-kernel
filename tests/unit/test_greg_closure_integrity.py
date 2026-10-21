@@ -114,6 +114,49 @@ def test_appraiser_refutes_an_approval_no_founder_command_carries(tmp_path):
     assert result["verdict"] == "REFUTED" and result["checks"]["approval_boundaries_honored"] is False
 
 
+def test_each_appraiser_guard_alone_refutes_an_approval_no_founder_command_carries(tmp_path, monkeypatch):
+    """The appraiser holds two guards in series (integration of #178 into #184): the answer row must be one the
+    mission fold counts (re-derived from a founder-signed DECISION, #184), and that DECISION's envelope is verified
+    again at the action's position (#178 ``_decision_signed``). Each is pinned on its own, in process, with the
+    other disabled, so neither can silently become the only one."""
+    import types
+    from greg import appraisal, goal_gravity
+    home, key, body_id, _ = make_body(tmp_path)
+    clock = Clock()
+    mid = "m:one-note"
+    ws = workspace(home, mid)
+    spec = mission(mid, checks=[note_check("n", ws / "n.txt", "x")], strategies=[write_strategy("w", "n.txt", "x", ["n"])],
+                   capabilities=["fs.read"], ceiling="read_only")
+    with Body(home, clock=clock) as body:
+        body.boot()
+        drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
+        for _ in range(8):
+            tick(body, clock, 1)
+            for ask in open_asks(body, mid):
+                body.journal.record("decision.answered", {"request_id": ask["request_id"], "mission_id": mid,
+                                                          "answer": "approve", "reason": "",
+                                                          "command_digest": "sha256:" + "0" * 64},
+                                    key=ask["request_id"])
+        body.engine.book.verify_answers = False          # an engine defect: the closure happens
+        body.engine.book.rebuild()
+        for _ in range(8):
+            tick(body, clock, 1)
+        assert done_actions(body, mid) == ["w"]
+        request = body.appraisal_request(mid)
+        forged = {e.payload["request_id"]: e.payload for e in body.journal.replay("decision.answered")}
+
+        with monkeypatch.context() as patch:              # the fold filter alone
+            patch.setattr(appraisal, "_decision_signed", lambda *args, **kwargs: True)
+            alone = appraisal.appraise(request)
+        assert alone["verdict"] == "REFUTED" and alone["checks"]["approval_boundaries_honored"] is False
+
+        with monkeypatch.context() as patch:              # the envelope check alone: the fold "counts" the row
+            patch.setattr(goal_gravity, "founder_facts",
+                          lambda ledger: types.SimpleNamespace(book=types.SimpleNamespace(answers=forged)))
+            alone = appraisal.appraise(request)
+        assert alone["verdict"] == "REFUTED" and alone["checks"]["approval_boundaries_honored"] is False
+
+
 def test_appraiser_verifies_an_approval_the_founder_signed(tmp_path):
     """Positive control for the two refutations above: the honest path still verifies."""
     home, key, body_id, _ = make_body(tmp_path)

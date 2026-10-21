@@ -1157,8 +1157,8 @@
    "path": "greg/path.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158); the 2026-10-21 integration of #178 into #184 takes #178's file, which keeps #158's predicates (vepmc_at_least_one, genesis_closure) and extends them with the #137/#168/#138 path work: founder-tier counting, N1-N7 nodes, path measures, greg path --node"
   },
   {
    "path": "greg/resilience.py",

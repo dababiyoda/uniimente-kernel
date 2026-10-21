@@ -789,9 +789,11 @@ class MissionBook:
             m.attempts[aid] = data["attempt"] + 1
             slot = (aid, data["attempt"])
             if data["status"] == "UNCERTAIN":
-                # The dispatch may have taken effect: its signed cap is reserved until reconciled. Records written
-                # before the reservation existed carry no ``reserved_usd``; their worst case is the signed cost.
-                m.reserved[slot] = float(data.get("reserved_usd", signed_cost(m.spec, aid)))
+                # The dispatch may have taken effect: its signed cap is reserved until reconciled. #184-era records
+                # held it as ``cost_reserved`` + ``cost_usd`` (the figure recorded then); older records carry
+                # neither, and their worst case is the signed cost.
+                legacy = float(data.get("cost_usd", 0.0)) if data.get("cost_reserved") else signed_cost(m.spec, aid)
+                m.reserved[slot] = float(data.get("reserved_usd", legacy))
                 streak = m.uncertain_streak[aid] = m.uncertain_streak.get(aid, 0) + 1
                 if streak >= RETRY_LIMIT:   # bounded: no further blind re-attempt; the mission replans or asks
                     m.failed[aid] = (f"completion unknown on {streak} consecutive dispatches (retry limit "

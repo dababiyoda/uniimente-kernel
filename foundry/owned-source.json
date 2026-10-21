@@ -142,6 +142,7 @@
     "cortex/evaluation/genome_admission/freeze-v1.json",
     "cortex/evaluation/genome_admission/freeze-v2.json",
     "cortex/evaluation/genome_admission/run.py",
+    "cortex/evaluation/genome_admission/run_operations.py",
     "cortex/evaluation/genome_admission/run_v2.py",
     "cortex/evaluation/learned_routing/__init__.py",
     "cortex/evaluation/learned_routing/freeze-v1.json",

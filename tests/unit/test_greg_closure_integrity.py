@@ -85,17 +85,29 @@ def test_appraiser_refutes_an_approval_no_founder_command_carries(tmp_path):
     ws = workspace(home, mid)
     spec = mission(mid, checks=[note_check("n", ws / "n.txt", "x")], strategies=[write_strategy("w", "n.txt", "x", ["n"])],
                    capabilities=["fs.read"], ceiling="read_only")
+    def forge(body):
+        for ask in open_asks(body, mid):                      # an ask-path defect: no founder command at all
+            body.journal.record("decision.answered", {"request_id": ask["request_id"], "mission_id": mid,
+                                                      "answer": "approve", "reason": "",
+                                                      "command_digest": "sha256:" + "0" * 64},
+                                key=ask["request_id"])
+            body.engine.book.rebuild()
+
     with Body(home, clock=clock) as body:
         body.boot()
         drop(home, signed(key, body_id, "MISSION", spec, now=clock.now))
         for _ in range(8):
             tick(body, clock, 1)
-            for ask in open_asks(body, mid):                  # an ask-path defect: no founder command at all
-                body.journal.record("decision.answered", {"request_id": ask["request_id"], "mission_id": mid,
-                                                          "answer": "approve", "reason": "",
-                                                          "command_digest": "sha256:" + "0" * 64},
-                                    key=ask["request_id"])
-                body.engine.book.rebuild()
+            forge(body)
+        # First line: the engine's fold admits an answer only from a founder-signed DECISION, so the forged row
+        # moves nothing and the ask stays open.
+        assert done_actions(body, mid) == [] and body.engine.book.missions[mid].blocker["type"] == "decision"
+        # Second line: were the engine's fold defective (it honours any recorded answer), the appraiser, in its own
+        # process and unpatched, still refutes the closure.
+        body.engine.book.verify_answers = False
+        body.engine.book.rebuild()
+        for _ in range(8):
+            tick(body, clock, 1)
         assert [e.payload["kind"] for e in body.journal.replay("command.accepted")] == ["MISSION"]
         result = appraisal(body, mid)
     assert done_actions(body, mid) == ["w"]
@@ -385,12 +397,25 @@ def test_a_legacy_answered_scope_renewal_reopens_one_ask(tmp_path):
         body.journal.record("decision.answered", {"request_id": old["request_id"], "mission_id": mid,
                                                   "answer": "approve", "reason": "", "command_digest": "sha256:old"},
                             key=old["request_id"])
-        for _ in range(3):
-            body.tick()
-            clock.advance(60)
-        renewals = [r.payload["request_id"] for r in body.journal.replay("decision.requested")
+
+        def renewals():
+            for _ in range(3):
+                body.tick()
+                clock.advance(60)
+            return [r.payload["request_id"] for r in body.journal.replay("decision.requested")
                     if r.payload["kind"] == "SCOPE_RENEWAL"]
-        assert len(renewals) == 2 and body.engine.book.missions[mid].blocker["request_id"] == renewals[1]
+        # A verifying fold (#184): the row cites no founder-signed DECISION, so it closes nothing. The one renewal
+        # stays open and is still what the mission waits on: neither stranded behind a closed ask nor duplicated.
+        assert renewals() == [old["request_id"]]
+        book = body.engine.book
+        assert book.missions[mid].blocker["request_id"] == old["request_id"]
+        assert old["request_id"] in {r["request_id"] for r in book.open_requests()}
+        # A fold that takes recorded rows as they are (#178's, before answers were verified) treats the renewal as
+        # answered: the mission gets exactly one new ask.
+        book.verify_answers = False
+        book.rebuild()
+        reopened = renewals()
+        assert len(reopened) == 2 and book.missions[mid].blocker["request_id"] == reopened[1]
 
 
 # -- findings 3 and 10: the founder tier is a claim, and every surface says so ----------------------

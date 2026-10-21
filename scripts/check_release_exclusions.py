@@ -16,7 +16,9 @@ A file is blocked when any of these holds, at any depth of nested archives:
 * its text, after decoding, carries a listed data marker - except a ``.py`` member byte-identical to a tracked Python
   source file (a ``.py`` name, or parsing as Python, is not enough: JSON parses as Python, so an edited data copy
   renamed ``x.py`` is still scanned; round-5 review, N1), and except the exclusion list itself, byte for byte,
-  which carries the markers it defines (N2). Edited source is scanned, which fails closed.
+  which carries the markers it defines (N2), and except a record the list declares ``provenance_only`` (the
+  data-exposure ledger cites instance names), byte-identical to its tracked file. Edited copies are scanned, which
+  fails closed.
 
 Out of scope, stated rather than hidden (round-3, round-4 and round-5 reviews of #179): values re-encoded into
 another format (a Python literal, a CSV re-export, a subset of rows); encodings not decoded above (UTF-16-BE or
@@ -194,7 +196,8 @@ def _findings(path: str, data: bytes, listed: dict) -> list[str]:
     for listed_path in paths:
         if leaf == listed_path or leaf.endswith("/" + listed_path):
             found.append(f"{path}: path {listed_path}")
-    exempt = _digest(data) == listed["list_digest"] or (leaf.endswith(".py") and _digest(data) in _tracked_source())
+    exempt = (_digest(data) in listed["provenance_digests"]
+              or (leaf.endswith(".py") and _digest(data) in _tracked_source()))
     hits = [] if exempt else sorted({m for m in markers for v in variants if m.encode() in v})
     if hits:
         found.append(f"{path}: data markers {', '.join(hits)}")
@@ -214,7 +217,11 @@ def _listed() -> dict:
             if (canonical := _canonical(variant)) is not None:
                 digests.setdefault(canonical, e["path"])
     markers = {m for ms in record.get("markers", {}).values() for m in ms}
-    return {"digests": digests, "paths": sorted(excluded()), "markers": markers, "list_digest": _digest(LIST.read_bytes())}
+    # the list itself and its declared provenance-only records, byte for byte, carry markers they cite, not data
+    provenance = {_digest(LIST.read_bytes())} | {
+        _digest((ROOT / p).read_bytes()) for p in (record.get("provenance_only") or {}).get("paths", [])
+        if (ROOT / p).is_file()}
+    return {"digests": digests, "paths": sorted(excluded()), "markers": markers, "provenance_digests": provenance}
 
 
 def scan_archive(archive: Path) -> list[str]:

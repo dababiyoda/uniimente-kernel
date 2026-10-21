@@ -105,9 +105,12 @@ def test_the_exposure_ledger_shows_the_review_seeds_unused_for_the_repair_genera
     for generator in ("develop_repair", "greg.cognition.genomes.developmental:repair_instance"):
         others = [r for r in L.exposed(generator, range(3000, 4000), ledger) if pilot not in r["id"]]
         assert others == []                     # the pilot's own record is the only exposure of 3000-3999
-    used = {s for rec in L.exposed("develop_repair", range(0, 100_000), ledger) if pilot not in rec["id"]
-            for lo, hi in rec["seeds"] for s in range(lo, hi + 1)}
+    hybrid = "docs/evidence/greg-repair-hybrid/2026-10-21-exploratory/review.json"   # a later, disjoint lane
+    used = {s for rec in L.exposed("develop_repair", range(0, 100_000), ledger)
+            if pilot not in rec["id"] and hybrid not in rec["id"] for lo, hi in rec["seeds"] for s in range(lo, hi + 1)}
     assert used == set(range(10)) | set(range(1000, 1030)) | set(range(1100, 1130))
+    later = [r for r in L.exposed("develop_repair", range(0, 100_000), ledger) if hybrid in r["id"]]
+    assert all(r["role"] == "review-pilot" and r["seeds"] == [[4000, 4639]] for r in later)
     (own,) = [r for r in L.exposed("develop_repair", range(3000, 4000), ledger) if pilot in r["id"]] or [None]
     assert own is None or (own["role"] == "review-pilot" and own["seeds"] == [[3000, 3999]])
 

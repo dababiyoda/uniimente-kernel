@@ -821,7 +821,10 @@ def test_a_flat_request_that_lacks_an_input_no_fitting_method_reads_asks_for_it(
     repair = {**grid, "sources": [[0, 0]], "sinks": [[2, 3]], "removed": [], "blocked": [], "events": [], "steps": 3}
     r = compile_on(mcf, {"treated": [1.0, 2.0], **repair})
     assert r["missing_information"] == [{"method": "cognition.develop_repair", "missing_inputs": ["message_loss",
-                                                                                                  "seed"]}]
+                                                                                                  "seed"]},
+                                        # the recombined hybrid also needs the controller it audits
+                                        {"method": "cognition.develop_repair_hybrid",
+                                         "missing_inputs": ["controller", "message_loss", "seed"]}]
     # a request-level flag and a key no mechanism requires change nothing
     r = compile_on(mcf, {"treated": [1.0, 2.0], "note": "pilot", "formalization_complete": True})
     assert r["missing_information"] == [{"method": "cognition.causal", "missing_inputs": ["control"]}]

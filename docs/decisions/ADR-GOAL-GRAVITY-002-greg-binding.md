@@ -118,7 +118,7 @@ quarantined and labelled, never trusted. Each fix has a regression test that fai
   open.** When this fix stage landed, `MissionBook` folded an unsigned `decision.answered` and executed on an approve.
   It now counts an answer only as the record `MissionEngine.answer` writes for a founder-signed DECISION that
   `founder_facts` counts as signed at its own `command.accepted` position, with the command path's checks holding
-  there; any other row stays in `MissionBook.unverified`, moves nothing, and `ledger_closure` still reports it
+  there; the last such row per request stays in `MissionBook.unverified` (with its cause), moves nothing, and `ledger_closure` reports every one
   (`unsigned_answers`). What remains is listed under "Next-wave item 7" below. Owner: Alfonso; trigger: the
   `mission.registered` re-verification change.
 - **Function sensors and bound params.** For a sensor named by function (capability resolved at run time) or with
@@ -262,7 +262,8 @@ by its cited digest and counts only at the one `command.accepted` record that DE
 its kind, and the row equals `answer_record(request, signed body, digest)`; the applied record is that re-derived
 record. `founder_facts` folds `command.accepted` into its own book as each command verifies, so its book and the live
 book agree by construction (parity test after every append of a randomized sequence). `Body.apply` rebuilds the book
-after a DECISION's acceptance, so Goal Gravity reads the answer in the same tick. Every reader that decides on an
+after a DECISION's acceptance, so a direct caller of `Body.apply` reads the answer at once (corrected after the
+review of 2026-10-21: Goal Gravity's tick rebuilds the book itself, so it never depended on this). Every reader that decides on an
 answer reads the counted answers (`MissionBook.answers`, or the equal book of the same `founder_facts` pass):
 `AuthorityOffice` approvals, reconciliation, attach and compensation asks,
 rejected scopes, `founder_words`, `check_goal`, the human-judgment return path (`cognition/human.py`), the appraiser's
@@ -323,6 +324,13 @@ narrow residuals the list above accepted.
 | A byte-identical copy of an acceptance admits a row recorded after the first (authority, low) | Each DECISION's acceptance is admitted once | `..._byte_identical_copy_of_an_acceptance_admits_nothing_recorded_after_the_first` |
 | A crash between the answer row and the acceptance, with a restart after the phone's 600-second envelope expired, labels the founder's real answer "no signed decision of yours"; mid-apply reads show the same label (regression, medium) | Each uncounted row carries a cause: `pending` (its command is still in the inbox), `refused_by_body` (with the body's reason), `unverifiable_acceptance`, `refused_at_acceptance`, `no_signed_decision`; status, the phone, the morning report and the console word each truthfully and ask for a new signature where one is needed. The answer is still not applied: the body never accepted it | `..._still_in_the_inbox_is_shown_as_being_applied`, `..._expired_before_the_restart_says_so_and_asks_to_sign_again`, `..._console_words_each_uncounted_answer_by_its_cause` |
 | `scripts/greg_hands_proof.py` refuses to answer the ask a mission waits on, and `scripts/mission_trace.py` reports an uncounted row as the founder's answer (regression, low); a legacy acceptance without an envelope is labelled with the wrong reason (regression, low) | Both scripts read `MissionBook.answers`; the trace lists uncounted rows apart with their reason; the legacy case is `unverifiable_acceptance` | `..._operator_scripts_read_counted_answers`, `..._acceptance_record_without_a_signed_envelope_is_named_as_unverifiable` |
+
+The acceptance lens also found guards no test protected (mutants that survived the file and 313 related tests):
+the already-answered check, the reverse direction of the kind check, the answer-set check, the first-acceptance
+position in both the fold and `founder_facts`, check 5's acceptance position, the non-text digest guard, the rebuild
+after `Body.apply`, and which row the exact-record check keeps. Each now has a test (`test_gap_*`), with the
+DECISION smuggled in before the body sees the file where the fold's own check is the only defence, plus the legacy
+re-block case.
 
 Residuals after this review (owner Alfonso):
 

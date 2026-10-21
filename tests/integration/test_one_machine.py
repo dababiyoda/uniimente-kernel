@@ -27,8 +27,10 @@ Nothing in the chain is a function emitting a success message; every stage is th
 
 The worker is a deterministic local CLI test double (``tests/one_machine_worker.py``), declared as
 such and unreviewed, so the body is initialized with the founder's ``worker_confinement: supervised``
-setting: the worker runs under process supervision and its retained evidence says its filesystem and
-network were not confined. A default body refuses it. The organs are real. Requires the four UNIIMENTE_* organ variables (see test_greg_organs.py).
+setting: the worker runs under process supervision with Landlock as its floor where the kernel has it (only
+reads of the runtime and its named files, writes to its work directory), and its retained evidence says
+exactly which floor ran; without Landlock it says the filesystem and network were not confined. A default
+body refuses it. The organs are real. Requires the four UNIIMENTE_* organ variables (see test_greg_organs.py).
 """
 from __future__ import annotations
 
@@ -48,7 +50,7 @@ pytest.importorskip("scipy")
 if not sys.platform.startswith("linux"):
     pytest.skip("the interruption stage relies on Linux PR_SET_PDEATHSIG", allow_module_level=True)
 
-from greg import metrics, templates  # noqa: E402
+from greg import isolation as landlock, metrics, templates  # noqa: E402
 from greg.body import Layout, observe  # noqa: E402
 from tests.greg_fixtures import make_body  # noqa: E402
 from tests.integration.test_greg_mind_constructs_capability import STAFFING  # noqa: E402
@@ -222,7 +224,10 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
     assert closed["recovered"], "the restart was recorded as a recovery"
     [commission] = done(closed["actions"], "commission")
     supervision = json.loads((order_dir / "evidence.json").read_text())["summary"]["worker"]["isolation"]
-    assert supervision["mode"] == "supervised" and supervision["filesystem"].startswith("NOT OS-confined")
+    # Supervised keeps Landlock as its floor where the kernel has it (CI requires it); only without it is the
+    # worker not OS-confined, and then the evidence says exactly that.
+    floor = "Landlock" if landlock.available() else "NOT OS-confined"
+    assert supervision["mode"] == "supervised" and supervision["filesystem"].startswith(floor), supervision
     assert commission["bindings"][0]["from_check"] == "answered"
 
     # 7. Independent verification in separate processes.

@@ -82,7 +82,9 @@ def _check_freeze(partition):
         return None
     if not MANIFEST.exists():
         raise SystemExit(f"{partition} refused: no freeze manifest")
-    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    raw = MANIFEST.read_bytes()   # read once: the bytes checked are the bytes hashed and reported (0.2.2, PRR-09)
+    manifest = json.loads(raw.decode("utf-8"))
+    manifest["_sha256"] = "sha256:" + hashlib.sha256(raw).hexdigest()
     current = freeze_inputs()
     if manifest["inputs"] != current:
         changed = sorted(k for k in current if manifest["inputs"].get(k) != current[k])
@@ -92,6 +94,11 @@ def _check_freeze(partition):
 
 
 def run_partition(partition: str, arms=ARMS) -> dict:
+    if len(set(arms)) != len(arms):
+        raise SystemExit(f"repeated arm name in {list(arms)}: an arm runs once")   # 0.2.2 (PRR-10)
+    if set(arms) - set(ARMS):
+        # an unknown name would otherwise run as always_abstain and be reported as RUN under that name
+        raise SystemExit(f"unknown arm(s) {sorted(set(arms) - set(ARMS))}; known: {list(ARMS)}")
     manifest = _check_freeze(partition)
     items = load(partition)
     client, reason = (None, None)
@@ -110,6 +117,7 @@ def run_partition(partition: str, arms=ARMS) -> dict:
                                      "this seed; a model is reachable, so this is a build gap, not a blocker"}
                 continue
         rows, decisions = [], []
+        unreached = 0   # model calls that never returned (transport or timeout): the baseline did not run there
         for it in items:
             try:
                 if name == "routed_greg":
@@ -125,6 +133,8 @@ def run_partition(partition: str, arms=ARMS) -> dict:
             except Exception as exc:   # noqa: BLE001 - an arm crash is a scored task failure
                 d = {"disposition": "error", "answer": None, "latency_s": 0.0, "cost_usd": 0.0,
                      "error": f"{type(exc).__name__}: {exc}"[:300]}
+                if name in ("always_llm", "tool_llm") and isinstance(exc, OSError):
+                    unreached += 1
             row = L.item_loss(it, d)
             row["answer"] = d.get("answer")
             row["latency_s"] = round(float(d.get("latency_s") or 0.0), 6)
@@ -132,10 +142,19 @@ def run_partition(partition: str, arms=ARMS) -> dict:
                 if d.get(k) is not None:
                     row[k] = d[k]
             rows.append(row)
+        if unreached:
+            # 0.2.2 (verified 2026-10-21): a model that never answered did not run; its rows are kept for audit,
+            # outside the scored rows, so no gain is claimed over it (the predeclared rule, crossgeo_loss).
+            out.setdefault("incomplete_rows", {})[name] = rows
+            out["arms"][name] = {"status": "INCOMPLETE", "summary": L.summarize(rows), "unreached_items": unreached,
+                                 "reason": f"the model never answered {unreached} of {len(items)} items "
+                                           "(transport or timeout); not a run baseline"}
+            continue
         out["rows"][name] = rows
         out["arms"][name] = {"status": "RUN", "summary": L.summarize(rows)}
-    out["freeze_manifest_sha256"] = _sha(MANIFEST) if manifest else None
+    out["freeze_manifest_sha256"] = manifest["_sha256"] if manifest else None
     out["frozen_at"] = manifest.get("frozen_at") if manifest else None
+    out["planning"] = manifest.get("planning") if manifest else None
     return out
 
 
@@ -157,7 +176,9 @@ def determinism(items: list[dict], k: int = 12) -> dict:
 
 
 def report(heldout: dict, adversarial: dict) -> dict:
-    planning = json.loads(MANIFEST.read_text(encoding="utf-8")).get("planning") if MANIFEST.exists() else None
+    # the planning the held-out run was checked against, never a re-read after the partitions ran (0.2.2, PRR-09)
+    planning = heldout.get("planning") if "planning" in heldout else \
+        (json.loads(MANIFEST.read_text(encoding="utf-8")).get("planning") if MANIFEST.exists() else None)
     ver = L.verdict(heldout["arms"], heldout["rows"], adversarial["rows"], planning)
     return {"schema": "greg-crossgeo-results/0.1", "cortex_version": CORTEX_VERSION,
             "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -198,6 +219,9 @@ def main(argv=None) -> int:
         manifest = {"schema": "greg-crossgeo-freeze/0.1",
                     "frozen_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                     "inputs": freeze_inputs(), "planning": planning}
+        if MANIFEST.exists():
+            # 0.2.2: a held-out set already observed is never re-frozen in place; a new version is a new manifest
+            raise SystemExit(f"refusing to overwrite {MANIFEST.name}; create a new version")
         MANIFEST.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         print(f"frozen: {MANIFEST.relative_to(ROOT)} {_sha(MANIFEST)}")
         print(json.dumps(planning, indent=2))

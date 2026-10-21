@@ -62,7 +62,7 @@ from cortex.contracts import CORTEX_VERSION, digest as cortex_digest
 from cortex.schemas import validate as validate_cortex
 
 from .contracts import (CognitionError, CognitiveReceipt, ConsequenceVector, ProblemGeometry, canonical, digest,
-                        retained_data, strict_data, number, integer)
+                        retained_data, strict_data, number, integer, outcome_state_for)
 from .budget import ThinkingBudget
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -171,8 +171,9 @@ def run_worker(problem: dict, records: list, *, withheld_organs: dict, semantic_
     return answer
 
 
-def check_receipt(receipt: dict) -> dict:
-    """The body accepts worker output only if it satisfies the contract and its own address."""
+def check_receipt(receipt: dict, *, max_model_calls: int | None = None) -> dict:
+    """The body accepts worker output only if it satisfies the contract and its own address, and spent no more
+    model calls than the serving ceiling allowed (0.2.2)."""
     validate_cortex(receipt, "cortex-receipt")
     body = dict(receipt)
     identity = body.pop("receipt_id")
@@ -182,7 +183,35 @@ def check_receipt(receipt: dict) -> dict:
         raise CognitionError("cortex receipt claims authority")
     if receipt["expenditure"]["usd"] != 0:
         raise CognitionError("GREG cognition never purchases inference")
+    calls = receipt["expenditure"].get("model_calls")
+    if max_model_calls is not None and (type(calls) is not int or calls > max_model_calls):
+        raise CognitionError(f"cortex receipt used {calls!r} model calls; serving ceiling is {max_model_calls}")
     return receipt
+
+
+def _decision_instant(payload: dict, records: list, now: datetime) -> str | None:
+    """The instant a forwarded mandate's or grant's expiry is judged at (0.2.2, from seed 0.1.6).
+
+    The body's own clock decides whether authority is still in force; a caller-declared earlier ``as_of``
+    cannot keep an expired mandate alive. A declared instant later than the clock is kept (it can only expire
+    more), and an unparseable one is left for the cortex to reject. ``None`` when no record carries an expiry."""
+    expiring = any(isinstance(r, dict) and r.get("kind") in ("founder_mandate", "capability_grant")
+                   and isinstance(r.get("body"), dict) and isinstance(r["body"].get("scope"), dict)
+                   and r["body"]["scope"].get("expires_at") for r in records)
+    if not expiring:
+        return None
+    stamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    declared = payload.get("as_of")
+    if declared is None:
+        return stamp
+    try:
+        text = str(declared) + ("T00:00:00+00:00" if len(str(declared)) == 10 else "")
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            return None
+    except ValueError:
+        return None
+    return str(declared) if parsed > now else stamp
 
 
 def _geometry(g: dict | None) -> dict:
@@ -269,7 +298,7 @@ def to_cognitive_receipt(params: dict, receipt: dict, started: float, routing: d
         formal_validity=_FORMAL.get(receipt["truth"]["formal_validity"], "UNKNOWN"),
         causal_credit=[{"method": CAPABILITY_OF.get(k, k), "role": "solver"} for k in executed]
         + [{"method": VERIFIER, "role": "falsifier"}],
-        outcome=receipt["outcome"], routing=routing)
+        outcome=receipt["outcome"], outcome_state=outcome_state_for(state), routing=routing)
     return out.to_dict()
 
 
@@ -289,11 +318,14 @@ def _failure(params: dict, why: str, started: float, *, state: str = "ABSTAIN") 
         abstention_state=state, missing_information=[why[:500]],
         compute_cost={"solver_calls": 0, "model_calls": 0, "energy": "unmeasured"}, money_cost=0.0,
         latency=time.monotonic() - started, evaluator=VERIFIER, evaluator_result={"verdict": "NOT_RUN"},
-        outcome=classify_greg(state, has_output=False)).to_dict()
+        outcome=classify_greg(state, has_output=False), outcome_state=outcome_state_for(state)).to_dict()
 
 
 def reason_cortex(params, *, registry, journal=None, model_config=None, forced=None,
-                  caller_window=None, shared_deadline=None, shared_compute_limit=None) -> dict:
+                  caller_window=None, shared_deadline=None, shared_compute_limit=None, trusted_clock=False) -> dict:
+    """``trusted_clock``: the caller decides now (a signed mission through ``cognition.solve``), so a forwarded
+    mandate's or grant's expiry is judged at the body clock. Direct callers (evaluation runners) keep the problem's
+    declared instant, so frozen results never depend on the wall clock."""
     started = time.monotonic()
     pid, problem, records = _validate(params)
     ok, why = registry.usable(ROUTER) if ROUTER in registry.manifests else (False, "not registered")
@@ -318,7 +350,10 @@ def reason_cortex(params, *, registry, journal=None, model_config=None, forced=N
         resources = {**limits, "max_latency_s": seconds, "max_cost_usd": 0.0,
                      "max_solver_calls": min(integer(limits.get("max_solver_calls", 64), high=100000), budget.compute_limit),
                      "max_model_calls": min(integer(limits.get("max_model_calls", 4), high=100000), 1)}
-        serving = {**problem, "payload": {**problem["payload"], "resources": resources}}
+        now = datetime.now(timezone.utc)
+        instant = _decision_instant(problem["payload"], records, now) if trusted_clock else None
+        serving = {**problem, "payload": {**problem["payload"], "resources": resources,
+                                          **({"as_of": instant} if instant else {})}}
         model = _semantic_model(model_config, problem)
         if model:
             model = {**model, "timeout_seconds": seconds, "max_tokens": min(model["max_tokens"], budget.compute_limit)}
@@ -331,14 +366,17 @@ def reason_cortex(params, *, registry, journal=None, model_config=None, forced=N
         wall = max(.01, min(budget.remaining(), cpu + 20.0))
         receipt = run_worker(serving, records, withheld_organs=withheld(registry, forced=forced),
                              semantic_model=model, cpu_seconds=cpu, timeout_seconds=wall,
-                             created_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                             created_at=now.strftime("%Y-%m-%dT%H:%M:%SZ"),
                              memory_records=[r.to_dict() for r in memory.records()] if mode == "learned" else None)
         budget.before_verification()
-        check_receipt(receipt)
+        check_receipt(receipt, max_model_calls=resources["max_model_calls"])
         if receipt["versions"]["cortex"] != CORTEX_VERSION:
             raise CognitionError(f"worker ran cortex {receipt['versions']['cortex']}, body expects {CORTEX_VERSION}")
         out = to_cognitive_receipt(params, receipt, started,
                                    learned_routing.summary(mode, memory, receipt, problem["payload"]))
+        if instant is not None and instant != problem["payload"].get("as_of"):
+            out["assumptions"].append(f"authority expiry judged at the body clock {instant}; the declared as_of "
+                                      f"{problem['payload'].get('as_of')!r} did not decide it")
         if budget.remaining() <= 0:
             raise CognitionError("BUDGET_EXHAUSTED: enclosing Cortex deadline exceeded")
         plan = budget.snapshot(registry)

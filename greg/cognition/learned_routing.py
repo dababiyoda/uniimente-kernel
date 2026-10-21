@@ -197,7 +197,9 @@ def summary(mode: str, memory: CompetenceLedger, artifact: dict | None, payload:
                 "changed_execution": False, "would_change": False, "estimates": []}
     executed = list(plan["order"])
     static = [k for k in plan["policy_order"] if k in executed] + [k for k in executed if k not in plan["policy_order"]]
-    geometry = SimpleNamespace(epistemic_class=(artifact.get("geometry") or {}).get("epistemic_class"))
+    # the class the lead is settled under (cortex 0.2.2 route.part_geometries), so shadow and settlement agree
+    geometry = SimpleNamespace(epistemic_class=((artifact.get("route") or {}).get("part_geometries") or {}).get(
+        executed[0]) or (artifact.get("geometry") or {}).get("epistemic_class"))
     bound = conditional(memory, payload)
     memory_order = bound.reorder(list(static), geometry)
     return {**base, "applies": True, "static_order": static, "memory_order": memory_order,

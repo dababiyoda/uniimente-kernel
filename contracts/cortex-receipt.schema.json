@@ -660,6 +660,69 @@
           "type": "string"
         }
       }
+    },
+    "coverage": {
+      "description": "0.2.2 (from seed 0.1.6): whether every eligible route for the payload ran; names routes the composition cap dropped and payload parts with no eligible route. Optional so earlier 0.2 receipts still validate.",
+      "type": "string"
+    },
+    "capability_deficit": {
+      "description": "0.2.2 (from seed 0.1.6): typed request for capability formation when the repertoire cannot answer; never an authorization. Optional so earlier 0.2 receipts still validate.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "state",
+            "geometry",
+            "registered_but_disabled",
+            "withheld_by_host",
+            "verified",
+            "verification",
+            "why",
+            "resolution_order",
+            "authority"
+          ],
+          "properties": {
+            "kind": {
+              "const": "CapabilityDeficit"
+            },
+            "state": {
+              "enum": [
+                "NO_ELIGIBLE_METHOD",
+                "UNSUPPORTED_GEOMETRY"
+              ]
+            },
+            "registered_but_disabled": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "withheld_by_host": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "verified": {
+              "const": false,
+              "description": "a single receipt never verifies a deficit; recurrence across recorded cycles does"
+            },
+            "unanswered_parts": {
+              "type": "object",
+              "additionalProperties": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      ]
     }
   },
   "allOf": [

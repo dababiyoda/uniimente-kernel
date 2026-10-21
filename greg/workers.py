@@ -50,6 +50,7 @@ import json
 import math
 import os
 from pathlib import Path
+import posixpath
 import re
 import shutil
 import signal
@@ -948,29 +949,214 @@ def acceptance_commands(acceptance: dict, names: list[str]) -> list[list[str]]:
     return commands
 
 
-# The evaluator a repository order is judged by: the files its explicit acceptance commands name, as they stood at
-# the recorded base, and the files that configure the test runner. A worker that edits a named test (weakening
-# it to ``assert True``) or adds a conftest.py has replaced its own judge; the patched tree would then "pass".
+# The evaluator a repository order is judged by (from #173 a48e8fa, widened by the PR #184 port's review 0afd309):
+# what the explicit acceptance commands run and name, as it stood at the recorded base, and every file that can
+# change how the runner behaves. A worker that edits a named test (weakening it to ``assert True``), a helper module
+# or data file beside it, adds a conftest.py, or plants a module the runner imports before the code under test has
+# replaced its own judge; the patched tree would then "pass".
 EVALUATOR_CONFIG = ("conftest.py", "*/conftest.py", "pytest.ini", "tox.ini")
+# Files the interpreter itself loads before any test: site hooks, path files, and installed-distribution metadata
+# whose entry points pytest autoloads as plugins. Any depth, any change.
+EVALUATOR_RUNTIME = ("sitecustomize.py", "*/sitecustomize.py", "usercustomize.py", "*/usercustomize.py", "*.pth",
+                     "*.dist-info/*", "*.egg-info/*")
+# What ``python -m pytest`` imports from ``sys.path``, whose first entry is the clone itself.
+RUNNER_MODULES = frozenset({"pytest", "_pytest", "py", "pluggy", "iniconfig", "packaging",
+                            "sitecustomize", "usercustomize"})
+# A new top-level module with one of these names, on a directory Python or pytest puts on ``sys.path``, shadows the
+# real one. The standard library's own regression suite (``test``) is never imported by the interpreter or by pytest,
+# and ``test/`` is a common repository test directory.
+SHADOWED_MODULES = (frozenset(getattr(sys, "stdlib_module_names", ())) - {"test"}) | RUNNER_MODULES
 EVALUATOR_SHARED = ("pyproject.toml", "setup.cfg")   # may configure pytest, but also carry legitimate changes
+TEST_FILES = ("test_*.py", "*_test.py")             # pytest's default python_files
+TEST_DIRS = ("test", "tests", "testing")
+_INTERPRETER = re.compile(r"(?:python|pypy)[\d.]*|bash|sh|dash|zsh|node|perl|ruby")
+_SHELL = re.compile(r"bash|sh|dash|zsh")
+_WRAPPER = ("env", "timeout", "nice", "nohup", "stdbuf", "time")
 
 
-def evaluator_findings(name_status: str, acceptance: dict) -> dict:
-    """From ``git diff --name-status`` against the base: frozen evaluator files the patch replaced or configured.
+def _module_name(component: str, last: bool) -> str:
+    """The import name a path component provides on ``sys.path`` (a directory, or a module file by suffix)."""
+    if not last:
+        return component
+    from importlib.machinery import all_suffixes
+    return component.split(".", 1)[0] if any(component.endswith(s) for s in all_suffixes()) else ""
 
-    ``replaced``: a file named by an explicit acceptance command (or inside a named directory) that existed at the
-    base and was modified or deleted, or any added/changed runner configuration. New test files under a named
-    directory extend the suite and are allowed. ``shared``: project files that may also configure the runner.
+
+def _acceptance_targets(argv: list[str], out: dict) -> None:
+    """What one acceptance argv runs and names: ``scripts`` (files it executes), ``paths`` (files or directories it
+    names), ``config`` (runner configuration it names), ``modules`` (run with ``-m`` or loaded with ``-p``)."""
+    argv = [str(a) for a in argv]
+    while argv and posixpath.basename(argv[0]) in _WRAPPER:      # env A=1 cmd ..., timeout 60 cmd ...
+        timeout = posixpath.basename(argv[0]) == "timeout"
+        argv = argv[1:]
+        while argv and (argv[0].startswith("-") or "=" in argv[0]):
+            argv = argv[1:]
+        if timeout and argv:
+            argv = argv[1:]
+    if not argv:
+        return
+    head, rest = posixpath.basename(argv[0]), argv[1:]
+    if "/" in argv[0]:
+        out["scripts"].add(argv[0])
+    if _INTERPRETER.fullmatch(head):
+        while rest and rest[0].startswith("-"):
+            flag, rest = rest[0], rest[1:]
+            if flag == "-c" and rest:
+                if _SHELL.fullmatch(head):                          # sh -c "python -m pytest tests/x.py && ..."
+                    import shlex
+                    try:
+                        lexer = shlex.shlex(rest[0], posix=True, punctuation_chars=True)
+                        lexer.whitespace_split = True
+                        words = list(lexer)
+                    except ValueError:
+                        words = []
+                    command = []
+                    for word in words + [";"]:
+                        if word and set(word) <= set(";&|()"):
+                            _acceptance_targets(command, out)
+                            command = []
+                        else:
+                            command.append(word)
+                return
+            if flag == "-m" and rest:
+                out["modules"].add(rest[0])
+                if rest[0] in ("pytest", "py.test"):
+                    _runner_targets(rest[1:], out)
+                else:
+                    out["paths"].update(a for a in rest[1:] if not a.startswith("-"))
+                return
+            if flag in ("-W", "-X", "-o", "-O") and rest:
+                rest = rest[1:]
+        if rest:
+            out["scripts"].add(rest[0])
+            out["paths"].update(a for a in rest[1:] if not a.startswith("-"))
+    elif head in ("pytest", "py.test"):
+        _runner_targets(rest, out)
+    else:
+        out["paths"].update(a for a in rest if not a.startswith("-"))
+
+
+def _runner_targets(args: list[str], out: dict) -> None:
+    """pytest's own arguments: ``-p plugin`` and ``-c file`` are part of the evaluator; positionals are test paths."""
+    args = list(args)
+    while args:
+        arg, args = args[0], args[1:]
+        flag, eq, value = arg.partition("=")
+        if flag in ("-p", "-c", "--config-file") and not eq and args:
+            value, args = args[0], args[1:]
+        elif not (flag in ("-p", "-c", "--config-file") and eq):
+            if not arg.startswith("-"):
+                out["paths"].add(arg)
+            continue
+        if flag == "-p" and not value.startswith("no:"):
+            out["modules"].add(value)
+        elif flag != "-p":
+            out["config"].add(value)
+
+
+def evaluator_findings(name_status: str, acceptance: dict, base_files=None, files=None) -> dict:
+    """From ``git diff --name-status --no-renames`` against the base: the frozen evaluator files the patch changed.
+
+    ``base_files``/``files`` are the tracked files at the base and after the patch (inferred from ``name_status``
+    alone when not given). ``replaced`` lists, for any change: runner configuration and interpreter hooks
+    (``EVALUATOR_CONFIG``, ``EVALUATOR_RUNTIME``); the runner's own modules and any module an acceptance command runs
+    with ``-m`` or loads with ``-p``; and a new module that shadows the standard library or the runner on the
+    repository root, or also a top-level module of the repository on a directory pytest prepends to ``sys.path`` for
+    a test. It also lists every file that existed at the base and was modified, deleted or changed type when it is: a
+    script an acceptance command executes; a named file that is not Python (configuration, data, doctest text); a
+    named test file, a test file inside a named directory, or any file in a named directory called ``test``,
+    ``tests`` or ``testing``; or any file in such a test's directory (its helpers and data). A named Python file that
+    is not a test is code under test and stays writable; new test files extend the suite. ``shared``: project files
+    that may also configure the runner.
     """
-    named = {arg.split("::", 1)[0].rstrip("/") for argv in acceptance.get("tests", []) for arg in argv[1:]
-             if arg and not arg.startswith("-")}
-    replaced, shared = [], []
+    changes = []
     for line in name_status.splitlines():
         status, _, path = line.partition("\t")
-        if not path:
-            continue
-        in_named = path in named or any(path.startswith(d + "/") for d in named)
-        if allowed(path, EVALUATOR_CONFIG) or (in_named and status[:1] in ("M", "D", "T")):
+        if path:
+            changes.append((status[:1], path))
+    base = set(base_files) if base_files is not None else {p for s, p in changes if s != "A"}
+    after = set(files) if files is not None else (base - {p for s, p in changes if s == "D"}) | {
+        p for s, p in changes if s != "D"}
+
+    def under(path, tree):
+        return any(f.startswith(path + "/") for f in tree)
+
+    def is_test(path):
+        return any(fnmatchcase(posixpath.basename(path), p) for p in TEST_FILES)
+
+    def basedirs(path):
+        """pytest's prepend import mode puts the first directory above a test without ``__init__.py`` on sys.path."""
+        found = set()
+        for tree in (base, after):
+            d = posixpath.dirname(path)
+            while d and d + "/__init__.py" in tree:
+                d = posixpath.dirname(d)
+            found.add(d)
+        return found
+
+    def norm(path):
+        path = posixpath.normpath(path.split("::", 1)[0])
+        return "" if path in (".", "..") or path.startswith(("/", "../")) else path
+
+    targets = {"scripts": set(), "paths": set(), "config": set(), "modules": set()}
+    for argv in acceptance.get("tests", []):
+        _acceptance_targets(list(argv), targets)
+    frozen = {p for p in map(norm, targets["scripts"] | targets["config"]) if p}
+    tests, helper_dirs = set(), set()
+    for path in filter(None, map(norm, targets["paths"])):
+        if under(path, base) or under(path, after):
+            tests.update(f for f in base if f.startswith(path + "/") and is_test(f))
+            if set(path.split("/")) & set(TEST_DIRS):       # a named test directory is frozen whole
+                helper_dirs.add(path)
+        elif is_test(path):
+            tests.add(path)
+        elif not path.endswith(".py"):
+            frozen.add(path)
+    for test in tests:
+        frozen.add(test)
+        for d in basedirs(test):
+            if not d:                                       # a test inside packages: its nearest test directory
+                parts = test.split("/")[:-1]
+                d = next(("/".join(parts[:i + 1]) for i, part in enumerate(parts) if part in TEST_DIRS), "")
+            if d:
+                helper_dirs.add(d)
+    modules = {m.replace(".", "/") for m in targets["modules"] | RUNNER_MODULES}
+    # Directories Python or pytest puts on sys.path: the clone root, and each test's prepend directory.
+    roots = {""} | {d for tree in (base, after) for f in tree
+                    if is_test(f) or posixpath.basename(f) == "conftest.py" for d in basedirs(f)}
+    namespace = {f.split("/", 1)[0] for f in base if "/" in f and _module_name(f.rsplit("/", 1)[1], True)}
+    top = ({_module_name(f, True) for f in base if "/" not in f} | namespace) - {""}
+    namespace -= {f.split("/", 1)[0] for f in base if f.count("/") == 1 and f.endswith("/__init__.py")}
+    shadowing = SHADOWED_MODULES | {m.split(".", 1)[0] for m in targets["modules"]}
+
+    def module(path):
+        """A frozen module's file or package, at the place ``sys.path`` would find it."""
+        return any(path.startswith(m + "/") or posixpath.dirname(path) == posixpath.dirname(m)
+                   and _module_name(posixpath.basename(path), True) == posixpath.basename(m) for m in modules)
+
+    def shadows(path):
+        """A new module on a ``sys.path`` directory whose name hides one the runner or the tests import."""
+        for root in roots:
+            if root and not path.startswith(root + "/"):
+                continue
+            parts = path[len(root) + 1 if root else 0:].split("/")
+            entry = (root + "/" if root else "") + parts[0]
+            if len(parts) == 1:
+                name = _module_name(parts[0], True)
+            elif entry + "/__init__.py" in after or parts[0] in namespace and root:
+                name = parts[0]                             # a regular package, or a portion of a namespace one
+            else:
+                continue
+            if name and name in (shadowing | top if root else shadowing) and entry not in base and not under(
+                    entry, base):
+                return True
+        return False
+
+    replaced, shared = [], []
+    for status, path in changes:
+        existing = status in ("M", "D", "T")
+        if (allowed(path, EVALUATOR_CONFIG) or allowed(path, EVALUATOR_RUNTIME) or module(path) or shadows(path)
+                or existing and (path in frozen or any(path.startswith(d + "/") for d in helper_dirs))):
             replaced.append(path)
         elif allowed(path, EVALUATOR_SHARED):
             shared.append(path)
@@ -1199,8 +1385,11 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
     Fresh clone of the ORIGINAL repository at the recorded base -> apply the retained patch
     (digest-checked) -> recompute the changed-file set from the patch itself -> scope and
     protected-surface checks -> rerun acceptance with no network -> budget check. The worker's
-    claim and GREG's first test run are ignored. Verdicts: ABSENT, ACCEPTED, REJECTED,
-    NEEDS_FOUNDER_DECISION (protected surface touched: capability may grow, authority may not).
+    claim and GREG's first test run are ignored. Verdicts: ABSENT, ACCEPTED, REJECTED (including a patch
+    that replaced its own evaluator: a named acceptance test, its helpers, an executed script, pytest
+    configuration, interpreter hooks or a module shadowing the runner or the code under test,
+    ``evaluator_findings``), NEEDS_FOUNDER_DECISION (protected surface, or a project file that can configure
+    the runner, touched: capability may grow, authority may not; never overriding a rejection).
 
     A document order with ``bound_claims`` is accepted only if every sentence of the deliverable is a claim the Mind
     answered as written against GREG's copies of the inputs. A mission may sign that contract into this sensor's
@@ -1311,7 +1500,9 @@ def appraise(params: dict, ctx: InvocationContext) -> dict:
         evaluator = {"replaced": [], "shared": []}
         if order["mode"] == "repository":
             evaluator = evaluator_findings(
-                _git(fresh, "diff", "--cached", "--name-status", "--no-renames", base).stdout, order["acceptance"])
+                _git(fresh, "diff", "--cached", "--name-status", "--no-renames", base).stdout, order["acceptance"],
+                base_files=_git(fresh, "ls-tree", "-r", "-z", "--name-only", base).stdout.split("\0")[:-1],
+                files=_git(fresh, "ls-files", "-z").stdout.split("\0")[:-1])
             if evaluator["replaced"]:
                 findings.append(f"the worker changed the frozen evaluator it is judged by: {evaluator['replaced']}")
                 verdict = "REJECTED"

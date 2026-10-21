@@ -12,7 +12,10 @@ evidence, and recoverability." Two defects found while extending the live attack
 - Evaluator substitution. A repository order whose writable paths include its tests let the worker rewrite the
   frozen acceptance test (or add a ``conftest.py`` that turns failures into passes); the independent appraisal then
   re-ran the substituted evaluator and ACCEPTED wrong code. The appraisal now refuses a patch that modifies a file
-  its explicit acceptance commands name, or adds or changes runner configuration.
+  its explicit acceptance commands name, or adds or changes runner configuration. The PR #184 port's review
+  (0afd309) widened that to a helper or data file beside a named test, an executed script, interpreter hooks and
+  plugin metadata, and a new module shadowing pytest, the standard library or the code under test; and narrowed it:
+  a named Python file that is not a test is the code under test and stays writable.
 
 Also fixed: ``CliAgentWorker`` executed its template's bare program name under the scrubbed ``PATH``, so a provider
 installed where that PATH does not look (e.g. /usr/local/bin) could never start.
@@ -347,3 +350,225 @@ def test_a_provider_installed_in_the_founders_home_does_not_open_the_home_to_the
                              preexec_fn=preexec, timeout=30).stdout
         assert out.strip() == "DENIED", (where, out)
     assert venv.resolve() in set(isolation.worker_grants(work, binaries=[str(venv / "bin" / "python")]))
+
+
+# -- port of the PR #184 review of the evaluator freeze (0afd309): what else judges, and what does not -------------
+# Each hostile variant below leaves sub() wrong while its substituted evaluator passes; on e410977 every one of them
+# was ACCEPTED, and a named code path made honest work REJECTED.
+
+PYTEST = ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+ACCEPTANCE = {"tests": [[*PYTEST, "tests/test_calc.py"]]}
+RIGHT_SUB = "def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n"
+WRONG_SUB = "def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a + b\n"
+PYPROJECT = {"pyproject.toml": "[project]\nname = 'proj'\nversion = '0.1'\n"}
+BASE_FILES = {"pkg/__init__.py", "pkg/calc.py", "tests/test_calc.py", "tests/expected.py", "tests/data/case.json",
+              "pyproject.toml"}
+
+
+@pytest.mark.parametrize("name_status, replaced", [
+    ("M\ttests/expected.py\nM\tpkg/calc.py", ["tests/expected.py"]),           # a helper the named test imports
+    ("M\ttests/data/case.json", ["tests/data/case.json"]),                       # or data it reads
+    ("A\tpytest.py\nM\tpkg/calc.py", ["pytest.py"]),                             # the runner itself, shadowed
+    ("A\tpytest/__init__.py\nA\tpytest/__main__.py", ["pytest/__init__.py", "pytest/__main__.py"]),
+    ("A\t_pytest/__init__.py", ["_pytest/__init__.py"]),
+    ("A\tpluggy.py", ["pluggy.py"]),
+    ("A\tinspect.py", ["inspect.py"]),                                           # a standard module pytest imports
+    ("A\tsitecustomize.py\nA\ttests/usercustomize.py", ["sitecustomize.py", "tests/usercustomize.py"]),
+    ("A\thook.pth", ["hook.pth"]),
+    ("A\tforce.dist-info/entry_points.txt\nA\tx.egg-info/entry_points.txt",
+     ["force.dist-info/entry_points.txt", "x.egg-info/entry_points.txt"]),     # autoloaded pytest plugins
+    ("A\ttests/pkg/__init__.py\nA\ttests/pkg/calc.py", ["tests/pkg/__init__.py", "tests/pkg/calc.py"]),
+    ("A\ttests/pkg.py", ["tests/pkg.py"]),                                       # tests/ is first on sys.path
+    ("A\ttests/json/__init__.py", ["tests/json/__init__.py"]),
+    # not the evaluator: the code under test, new tests and helpers, new packages that hide nothing
+    ("M\tpkg/calc.py\nA\tpkg/types.py", []),                                   # pkg/ is a package, never prepended
+    ("A\ttests/test_more.py\nA\ttests/helpers.py\nA\ttests/fixtures/x.json", []),
+    ("A\tnewpkg/__init__.py\nA\thtml/index.html\nA\ttest/test_x.py", []),     # a plain html/ hides no module
+])
+def test_helpers_the_runner_and_shadowing_modules_are_part_of_the_frozen_evaluator(name_status, replaced):
+    after = BASE_FILES | {line.split("\t")[1] for line in name_status.splitlines()}
+    assert workers.evaluator_findings(name_status, ACCEPTANCE, base_files=BASE_FILES, files=after) == {
+        "replaced": replaced, "shared": []}
+
+
+def test_a_named_test_directory_freezes_every_existing_file_in_it():
+    acceptance = {"tests": [[*PYTEST, "./tests/"]]}
+    assert workers.evaluator_findings("M\ttests/data.json\nA\ttests/test_new.py", acceptance) == {
+        "replaced": ["tests/data.json"], "shared": []}
+    assert workers.evaluator_findings("M\ttests_extra/test_x.py", acceptance)["replaced"] == []
+
+
+def test_a_test_inside_packages_freezes_its_test_directory_not_the_code():
+    base = {"pkg/__init__.py", "pkg/calc.py", "pkg/test_inline.py", "tests/__init__.py", "tests/unit/__init__.py",
+            "tests/unit/test_calc.py", "tests/helpers.py"}
+    unit = {"tests": [[*PYTEST, "tests/unit/test_calc.py"]]}
+    assert workers.evaluator_findings("M\ttests/helpers.py\nM\tpkg/calc.py", unit, base, base)["replaced"] == [
+        "tests/helpers.py"]
+    inline = {"tests": [[*PYTEST, "pkg/test_inline.py"]]}
+    assert workers.evaluator_findings("M\tpkg/calc.py", inline, base, base)["replaced"] == []
+    assert workers.evaluator_findings("M\tpkg/test_inline.py", inline, base, base)["replaced"] == [
+        "pkg/test_inline.py"]
+
+
+@pytest.mark.parametrize("argv, name_status, replaced", [
+    # what an acceptance command executes or configures is frozen ...
+    (["python", "check.py", "pkg/calc.py"], "M\tcheck.py\nM\tpkg/calc.py", ["check.py"]),
+    (["./run_checks.sh"], "M\trun_checks.sh", ["run_checks.sh"]),
+    (["env", "CI=1", "timeout", "60", "python", "-I", "check.py"], "M\tcheck.py", ["check.py"]),
+    (["bash", "-c", "cd . && python -m pytest -q tests/test_calc.py"], "M\ttests/test_calc.py",
+     ["tests/test_calc.py"]),
+    ([*PYTEST, "-c", "ci.ini", "tests/test_calc.py"], "M\tci.ini", ["ci.ini"]),
+    ([*PYTEST, "--config-file=ci.ini", "tests/test_calc.py"], "M\tci.ini", ["ci.ini"]),
+    ([*PYTEST, "-p", "pkg.plug", "tests/test_calc.py"], "M\tpkg/plug.py", ["pkg/plug.py"]),
+    (["python", "-m", "pkg.selftest"], "M\tpkg/selftest.py\nM\tpkg/calc.py", ["pkg/selftest.py"]),
+    (["python", "-m", "mychecker"], "A\tmychecker.py", ["mychecker.py"]),
+    (["bash", "check.sh", "golden/expected.txt"], "M\tgolden/expected.txt", ["golden/expected.txt"]),
+    # ... but a named Python file that is not a test, or a named code directory, is the code under test
+    ([*PYTEST, "tests/test_calc.py", "pkg"], "M\tpkg/calc.py", []),
+    ([*PYTEST, "--doctest-modules", "pkg/calc.py", "tests/test_calc.py"], "M\tpkg/calc.py", []),
+    (["python", "check.py", "pkg/calc.py"], "M\tpkg/calc.py", []),
+])
+def test_scripts_and_configuration_are_frozen_but_named_code_is_not(argv, name_status, replaced):
+    base = {"pkg/__init__.py", "pkg/calc.py", "pkg/plug.py", "pkg/selftest.py", "tests/test_calc.py", "check.py",
+            "check.sh", "run_checks.sh", "ci.ini", "golden/expected.txt"}
+    after = base | {line.split("\t")[1] for line in name_status.splitlines()}
+    assert workers.evaluator_findings(name_status, {"tests": [argv]}, base, after)["replaced"] == replaced
+
+
+class Scripted:
+    """Test double: writes fixed files into its private clone."""
+    name = "scripted-evaluator-probe"
+
+    def __init__(self, edits: dict[str, str]):
+        self.edits = edits
+
+    def available(self):
+        return True, ""
+
+    def run(self, order, cwd, **_):
+        for rel, text in self.edits.items():
+            (cwd / rel).parent.mkdir(parents=True, exist_ok=True)
+            (cwd / rel).write_text(text)
+        return workers.WorkerReport(self.name, self.name, 0, 0.1, 0.1, claim={"confidence": 1.0},
+                                    summary='WORK_REPORT: {"confidence": 1.0}')
+
+
+def _seeded_repo(root: Path, extra: dict[str, str] | None) -> Path:
+    repo = _repo(root)
+    for rel, text in {**PYPROJECT, **(extra or {})}.items():
+        (repo / rel).parent.mkdir(parents=True, exist_ok=True)
+        (repo / rel).write_text(text)
+    git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t"]
+    subprocess.run([*git, "add", "-A"], check=True, capture_output=True)
+    subprocess.run([*git, "commit", "-qm", "seed"], check=True, capture_output=True)
+    return repo
+
+
+def appraise_direct(tmp_path, monkeypatch, edits, confinement, *, acceptance=ACCEPTANCE,
+                    allowed=("pkg/*", "tests/*", "pyproject.toml"), base=None):
+    """Commission one repository order with a scripted worker, then appraise it independently."""
+    from greg.capabilities import BUILTINS, InvocationContext, SecretBroker
+    data = tmp_path / "data"
+    repo = _seeded_repo(data, base)
+    monkeypatch.setitem(workers.PROVIDERS, "scripted", Scripted(edits))
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    kw = dict(workspace=ws, read_roots=(data,), secrets=SecretBroker(tmp_path / "secrets.json"),
+              manifest=BUILTINS["worker.commission"][0], mission_id="m:probe", authority_ref="sha256:probe",
+              grant_id="grant-1", target="work:sub", worker_confinement=confinement)
+    params = {"order": "add-sub", "mode": "repository", "repo": str(repo), "objective": "add sub()",
+              "acceptance": acceptance, "allowed_paths": list(allowed),
+              "provider": "scripted", "max_budget_usd": 0.5, "timeout_seconds": 60}
+    summary = workers.commission(params, InvocationContext(**kw))
+    assert summary["status"] == "COMPLETED", summary
+    return workers.appraise({"order": "add-sub"},
+                            InvocationContext(**{**kw, "manifest": BUILTINS["worker.appraise"][0]}))
+
+
+HELPER_TEST = ("from expected import EXPECTED\nfrom pkg.calc import sub\n\n\ndef test_sub():\n"
+               "    assert sub(3, 1) == EXPECTED\n")
+HELPER_BASE = {"tests/expected.py": "EXPECTED = 2\n", "tests/test_calc.py": HELPER_TEST}
+TRIVIAL_TEST = {"tests/test_more.py": "def test_more():\n    assert True\n"}
+# (base files, edits, writable paths)
+SUBSTITUTES = {
+    # a helper the named test imports is edited to agree with the wrong code
+    "helper": (HELPER_BASE, {"pkg/calc.py": WRONG_SUB, "tests/expected.py": "EXPECTED = 4\n"}, ("pkg/*", "tests/*")),
+    # ``python -m pytest`` imports pytest from the clone first: a root pytest.py (or package) replaces the runner
+    "shadow-pytest": (None, {"pkg/calc.py": WRONG_SUB, "pytest.py": "raise SystemExit(0)\n"}, ("pkg/*", "*test*")),
+    "shadow-pytest-package": (None, {"pkg/calc.py": WRONG_SUB, "pytest/__init__.py": "",
+                                     "pytest/__main__.py": "raise SystemExit(0)\n"}, ("pkg/*", "*test*")),
+    # pytest prepends tests/ to sys.path, so a new tests/pkg hides the code under test without patching anything
+    "shadow-module": (None, {"pkg/calc.py": WRONG_SUB, "tests/pkg/__init__.py": "", "tests/pkg/calc.py": RIGHT_SUB},
+                      ("pkg/*", "tests/*")),
+}
+
+
+@pytest.mark.parametrize("confinement", ["required", "supervised"])
+@pytest.mark.parametrize("how", sorted(SUBSTITUTES))
+def test_a_helper_a_shadowed_runner_or_a_shadowed_module_is_a_replaced_evaluator(
+        tmp_path, monkeypatch, how, confinement):
+    base, edits, allowed = SUBSTITUTES[how]
+    verdict = appraise_direct(tmp_path, monkeypatch, edits, confinement, allowed=allowed, base=base)
+    assert verdict["verdict"] == "REJECTED", verdict
+    assert any("frozen evaluator" in f for f in verdict["findings"]), verdict
+    # The substituted evaluator really passes in the independent clone: without the freeze this was ACCEPTED.
+    assert verdict["independent_tests"] and all(t["passed"] for t in verdict["independent_tests"]), verdict
+
+
+@pytest.mark.parametrize("confinement", ["required", "supervised"])
+@pytest.mark.parametrize("acceptance, base", [
+    ({"tests": [[*PYTEST, "tests/test_calc.py", "pkg"]]}, None),                    # names the code directory
+    ({"tests": [["python", "check.py", "pkg/calc.py"]]},                           # a checker names the module
+     {"check.py": "import runpy, sys\nassert runpy.run_path(sys.argv[1])['sub'](3, 1) == 2\n"}),
+])
+def test_honest_work_on_code_an_acceptance_command_names_is_accepted(tmp_path, monkeypatch, acceptance, base,
+                                                                      confinement):
+    """The freeze covers what judges (tests, their helpers, scripts, configuration), not the code being judged."""
+    verdict = appraise_direct(tmp_path, monkeypatch, {"pkg/calc.py": RIGHT_SUB}, confinement, acceptance=acceptance,
+                              base=base)
+    assert verdict["verdict"] == "ACCEPTED", verdict
+    assert verdict["independent_tests"] and all(t["passed"] for t in verdict["independent_tests"]), verdict
+
+
+@pytest.mark.parametrize("confinement", ["required", "supervised"])
+@pytest.mark.parametrize("edits", [
+    {"pkg/calc.py": WRONG_SUB, **TRIVIAL_TEST},                                     # acceptance fails
+    {"tests/test_calc.py": "def test_sub():\n    assert True\n"},                  # the evaluator was replaced
+], ids=["failing", "replaced"])
+def test_a_project_file_change_never_turns_a_rejection_into_a_founder_decision(tmp_path, monkeypatch, edits,
+                                                                                confinement):
+    edits = {**edits, "pyproject.toml": "[project]\nname = 'proj'\nversion = '0.2'\n"}
+    verdict = appraise_direct(tmp_path, monkeypatch, edits, confinement)
+    assert verdict["verdict"] == "REJECTED", verdict
+    assert not any("founder decision" in f for f in verdict["findings"]), verdict
+
+
+@pytest.mark.parametrize("confinement", ["required", "supervised"])
+@pytest.mark.parametrize("how", ["helper", "shadow-pytest"])
+def test_a_helper_or_runner_substitute_never_closes_its_mission(tmp_path, monkeypatch, how, confinement):
+    """The canonical code-change mission (``templates.code_change``, which also runs the worker's changed tests)."""
+    from greg import templates
+    from greg.body import Layout
+    base, edits, allowed = SUBSTITUTES[how]
+    data = tmp_path / "data"
+    data.mkdir()
+    repo = _seeded_repo(data, base)
+    home, key, body_id, _ = make_body(tmp_path, read_roots=[data], worker_confinement=confinement)
+    monkeypatch.setitem(workers.PROVIDERS, "scripted", Scripted({**edits, **TRIVIAL_TEST}))
+    spec = templates.code_change(repo=str(repo), objective="add sub()", order="add-sub", provider="scripted",
+                                 allowed_paths=list(allowed), tests=ACCEPTANCE["tests"], budget_usd=1.0,
+                                 workspace_root=Layout(home).workspace)
+    drop(home, signed(key, body_id, "MISSION", spec))
+    clock = Clock()
+    with Body(home, clock=clock) as body:
+        for _ in range(6):
+            body.tick()
+            clock.advance(60)
+        events = {e.type for e in body.journal.replay("mission.")}
+        observed = [e.payload for e in body.journal.replay("mission.observed")
+                    if e.payload["check_id"] == "work_accepted" and e.payload["receipt"]]
+        verdict = body.ledger.find(observed[-1]["receipt"]).payload["result"]["output"]
+    assert "greg.mission.achieved" not in events
+    assert verdict["verdict"] == "REJECTED", verdict
+    assert any("frozen evaluator" in f for f in verdict["findings"]), verdict
+    assert verdict["independent_tests"] and all(t["passed"] for t in verdict["independent_tests"]), verdict

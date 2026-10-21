@@ -37,7 +37,7 @@ from events.spine import EventSpine
 from greg import anchor, asks, compute, dataplane, doctor, improvement, metrics, models, presence, sop, tribunal
 from greg.authority import AuthorityOffice
 from greg.capabilities import BUILTINS, CapabilityRegistry, SecretBroker
-from greg.founder import FounderAuthError, FounderVerifier, key_id, validate_device_grant
+from greg.founder import FounderAuthError, FounderVerifier, instant, key_id, validate_device_grant
 from greg.genesis import Genesis
 from greg.journal import Journal, iso, utcnow
 from greg.missions import MissionEngine, MissionError
@@ -253,6 +253,7 @@ class Body:
         env = verifier.verify(envelope, now=self.clock())
         principal = verifier.principal(env, now=self.clock())
         kind, body = env["kind"], env["body"]
+        self._after_restore(env, kind, principal)
         # Commands are applied before the next tick's rebuild; a request raised during the
         # previous tick must already be visible, or a fast approval is refused as "unknown".
         self.engine.book.rebuild()
@@ -263,6 +264,24 @@ class Body:
                                                   "envelope": env, "channel": channel,
                                                   "result": result}, key=digest)
         return {"status": "APPLIED", "digest": digest, "result": result}
+
+    def _after_restore(self, env: dict, kind: str, principal: str) -> None:
+        """A body restored from a backup (greg/recovery.py) knows nothing after its recovery point: it refuses any
+        command issued before the restore, which the original may already have applied, and only the founder key
+        releases the restore hold."""
+        restores = self.journal.replay("body.restored")
+        if not restores:
+            return
+        restore = restores[-1].payload
+        if instant(env["issued_at"]) < instant(restore["restored_at"]):
+            raise FounderAuthError(f"issued before this body was restored from a backup at {restore['restored_at']}: "
+                                   "the original may already have applied it; sign it again if it is still wanted")
+        if kind == "BODY_RESUME" and principal != "founder" and self._restore_hold():
+            raise FounderAuthError("only the founder key releases a restore hold")
+
+    def _restore_hold(self) -> bool:
+        state = [e for e in self.journal.replay("body.") if e.type in ("greg.body.paused", "greg.body.resumed")]
+        return bool(state) and state[-1].type == "greg.body.paused" and "restore_id" in state[-1].payload
 
     def _dispatch(self, kind: str, body: dict, digest: str):
         if kind == "MISSION":

@@ -116,7 +116,7 @@
   "equivalent mutants count as survivors, so a correct change with mostly equivalent mutation sites can be refused (false rejection risk, not measured on real worker output)",
   "Python sources only; non-Python changes get discrimination but no mutation score",
   "a founder-named oracle is trusted as the founder's judgment and is not itself scored",
-  "document-mode work orders: free-text acceptance.criteria are still not mechanically checked (open obligation)"
+  "document-mode work orders: worker.appraise checks only that the deliverable exists. Corrected 2026-10-21 after inspection: the only document-mode consumer (templates.daleobanks_post) closes on daleobanks.verify (length, figure-to-source binding, DALEOBANKS content checks), never on worker.appraise, so no current mission accepts an unchecked document. A future document mission that closes on worker.appraise alone would reopen this gap."
  ],
  "reality_status": "IMPLEMENTED, INTEGRATED on the Body path, TESTED; not founder-used, not MAC/Chromebook-verified; VEPMC unchanged at 0"
 }

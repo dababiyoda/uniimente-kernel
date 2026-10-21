@@ -316,7 +316,8 @@ def test_one_signed_mission_runs_the_whole_machine_across_processes(tmp_path):
             (out / "mission.json").write_text(json.dumps(spec, indent=1) + "\n")
             (out / "run.json").write_text(json.dumps({
                 "mission_id": mid, "ledger_head": journal.ledger.head, "worker_dispatches": dispatches(home, mid, "commission"),
-                "reconciliation_request": request["request_id"], "boots": len(journal.replay("body.booted")),
+                "reconciliation_request": request["request_id"],
+                "spend_approvals": [spend["request_id"], handoff["request_id"]], "boots": len(journal.replay("body.booted")),
                 "recoveries": len(journal.replay("body.recovered")), "later_mission": second["mission_id"],
                 "later_method": receipts[-1]["method_or_composition_selected"], "formed": formed,
                 "organ_heads": [o.get("organ") for o in closed["organs"]],

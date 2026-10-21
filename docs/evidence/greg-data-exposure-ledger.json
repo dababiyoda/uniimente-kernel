@@ -216,7 +216,7 @@
  },
  "counts": {
   "by_lineage": {
-   "#158": 270,
+   "#158": 271,
    "#179": 40,
    "both": 42
   },
@@ -226,7 +226,7 @@
    "canary": 1,
    "dev": 190,
    "held-out": 38,
-   "review-pilot": 9,
+   "review-pilot": 10,
    "train": 6
   },
   "by_role_and_lineage": {
@@ -240,10 +240,10 @@
    "held-out / #158": 13,
    "held-out / #179": 6,
    "held-out / both": 19,
-   "review-pilot / #158": 9,
+   "review-pilot / #158": 10,
    "train / #158": 6
   },
-  "exposures": 352,
+  "exposures": 353,
   "overlaps": {
    "identical_suite_items": 1,
    "same_data_items": 2,
@@ -289,10 +289,10 @@
   "P8 pilot files": {
    "#158": {
     "glob": "docs/evidence/greg-protected-evolution/[^/]+/pilot/[^/]+\\.json",
-    "matched": 31,
+    "matched": 34,
     "missing": [],
     "no_declaration": [],
-    "parsed": 31
+    "parsed": 34
    },
    "#179": {
     "glob": "docs/evidence/greg-protected-evolution/[^/]+/pilot/[^/]+\\.json",
@@ -11689,6 +11689,90 @@
   },
   {
    "artifact": {
+    "commit": "6301b8c4a3f0b65bde76ec8a63967ba713d8a6ac",
+    "files": [
+     {
+      "commit": "6301b8c4a3f0b65bde76ec8a63967ba713d8a6ac",
+      "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/pilot/region.json",
+      "sha256": "sha256:23a1baad6d410104a2ca1d126e44d3ef356033389a431329f261329aeaf80172"
+     },
+     {
+      "commit": "6301b8c4a3f0b65bde76ec8a63967ba713d8a6ac",
+      "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/pilot/simulate.json",
+      "sha256": "sha256:0348a543522e2ff06b98db92939b0d6010748309f24f1da1ae40a5e60408db7c"
+     },
+     {
+      "commit": "6301b8c4a3f0b65bde76ec8a63967ba713d8a6ac",
+      "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/pilot/summary.json",
+      "sha256": "sha256:fcc477d6c0952e1c8126f39945535271393d5528e09906e024ecc1c6de7deea0"
+     }
+    ],
+    "path": "docs/evidence/greg-protected-evolution/2026-10-21-repair-1/pilot/",
+    "read_at": "HEAD"
+   },
+   "declared": {
+    "seeds/pool": [
+     [
+      3360,
+      3999
+     ]
+    ],
+    "seeds/train/T1": [
+     [
+      3000,
+      3119
+     ]
+    ],
+    "seeds/train/T2": [
+     [
+      3120,
+      3239
+     ]
+    ],
+    "seeds/train/T3": [
+     [
+      3240,
+      3359
+     ]
+    ]
+   },
+   "exposure_commit": "6301b8c4a3f0b65bde76ec8a63967ba713d8a6ac",
+   "family": "develop_repair",
+   "generator": {
+    "code_sha256": "sha256:7ea2eba38cdbb527337e2949a7d8844c4b8d5400f371fb6058c400a48bdd4496",
+    "commit": "6301b8c4a3f0b65bde76ec8a63967ba713d8a6ac",
+    "delegates": [],
+    "function": "repair_instance",
+    "key": "greg.cognition.genomes.developmental:repair_instance",
+    "kind": "code",
+    "module": "greg.cognition.genomes.developmental",
+    "module_file_sha256": "sha256:8931548d13775e92d591b439bd9d4423465ec193daa8cdbd372b2acb7018e388",
+    "prng": [
+     "Random(f'genome:develop_repair:{seed}')"
+    ],
+    "resolved": true
+   },
+   "id": "#158|docs/evidence/greg-protected-evolution/2026-10-21-repair-1/pilot/|review-pilot|develop_repair|-",
+   "lineages": [
+    "#158"
+   ],
+   "looked_at": true,
+   "looked_at_basis": "pilot outcomes are recorded in these files",
+   "n": 1000,
+   "present_in": [
+    "#158"
+   ],
+   "program": "P8 develop_repair pilot",
+   "role": "review-pilot",
+   "seeds": [
+    [
+     3000,
+     3999
+    ]
+   ]
+  },
+  {
+   "artifact": {
     "commit": "HEAD",
     "line_commits": [
      "4d99fb024239fbb219667bda98842e1ea40d84fc"
@@ -15238,7 +15322,7 @@
      372
     ],
     "path": "tests/unit/test_greg_protected_evolution.py",
-    "sha256": "sha256:66ca5ccb8e1fcf08a48cd66c2b83f783b912b505e6f987e58ba21d83ac20f2b3"
+    "sha256": "sha256:5a5d61060d798c1e3399d3469f83ae3277c2a8eb00533cc05d897083b52e637f"
    },
    "exposure_commit": "9df3e69d0732950bc0ad50186f01984aedb9ac6f",
    "family": null,
@@ -15281,7 +15365,7 @@
      161
     ],
     "path": "tests/unit/test_greg_protected_evolution.py",
-    "sha256": "sha256:66ca5ccb8e1fcf08a48cd66c2b83f783b912b505e6f987e58ba21d83ac20f2b3"
+    "sha256": "sha256:5a5d61060d798c1e3399d3469f83ae3277c2a8eb00533cc05d897083b52e637f"
    },
    "exposure_commit": "da0ad870e5dc8a00833a3b514ea83475b43d0f1e",
    "family": null,
@@ -15334,10 +15418,10 @@
     "lines": [
      203,
      213,
-     600
+     608
     ],
     "path": "tests/unit/test_greg_protected_evolution.py",
-    "sha256": "sha256:66ca5ccb8e1fcf08a48cd66c2b83f783b912b505e6f987e58ba21d83ac20f2b3"
+    "sha256": "sha256:5a5d61060d798c1e3399d3469f83ae3277c2a8eb00533cc05d897083b52e637f"
    },
    "exposure_commit": "9df3e69d0732950bc0ad50186f01984aedb9ac6f",
    "family": null,

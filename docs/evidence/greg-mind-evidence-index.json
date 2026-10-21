@@ -3935,7 +3935,10 @@
      "unresolved_updates": 0
     },
     "function": "greg/cognition/composition.py::_bayes_then_voi",
-    "recipe_entry_sha256": "sha256:2001ccba65e7926dc90ef73bef3b502f9d2a5fef0023f826d19db4ad6b5cd904"
+    "recipe_entry_sha256": "sha256:2001ccba65e7926dc90ef73bef3b502f9d2a5fef0023f826d19db4ad6b5cd904",
+    "stage_closures": {
+     "decision_preposterior": "sha256:97de5f508dd92d7876cbea6b22420a66cd1121fa5ae5d4c5430159cc89122f62"
+    }
    },
    "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F4",
    "family": "F4",
@@ -3986,7 +3989,11 @@
      "unresolved_updates": 0
     },
     "function": "greg/cognition/composition.py::_forecast_then_allocate",
-    "recipe_entry_sha256": "sha256:31e561336955e7212ba82541728f08a420d3e9c181fbc9b6479fae510731f462"
+    "recipe_entry_sha256": "sha256:31e561336955e7212ba82541728f08a420d3e9c181fbc9b6479fae510731f462",
+    "stage_closures": {
+     "forecast_quantile": "sha256:94345eac805ad59a35e4a9adc5cea5c221484386a75eba39ca91a5b46b801d89",
+     "newsvendor_compile": "sha256:5e75aebfc39f4249f28e9a54495dcbb32676f3c844e87929cd562bd9737e8a7e"
+    }
    },
    "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F5",
    "family": "F5",
@@ -4023,7 +4030,11 @@
      "unresolved_updates": 0
     },
     "function": "greg/cognition/composition.py::_forecast_then_staff",
-    "recipe_entry_sha256": "sha256:f48cad7075c61806b180c249be613326abb85f0d2e177fad8145695ea46c69cd"
+    "recipe_entry_sha256": "sha256:f48cad7075c61806b180c249be613326abb85f0d2e177fad8145695ea46c69cd",
+    "stage_closures": {
+     "forecast_quantile": "sha256:e43c24f06353fb719aebc10e4ecf5aec208819691ca822dd26c7c3ce5547eb9a",
+     "queue_erlang": "sha256:d727c33ac9f0a9fa1bf204458d6430b5b67d744bdc6bd2371d04bd7e64b960ce"
+    }
    },
    "evidence": "docs/evidence/greg-composition-lift/2026-10-14-v3/results-v3.json#summary.F6",
    "family": "F6",
@@ -4060,7 +4071,11 @@
      "unresolved_updates": 0
     },
     "function": "greg/cognition/composition.py::_graph_then_allocate",
-    "recipe_entry_sha256": "sha256:8dec62ed97e2b286504f92a47b2a803660f378d13896f2b6885b723860e2346f"
+    "recipe_entry_sha256": "sha256:8dec62ed97e2b286504f92a47b2a803660f378d13896f2b6885b723860e2346f",
+    "stage_closures": {
+     "flow_capacity_plan": "sha256:4774d7f44098bd931395d0270d5ad10dd5f17c6b821e0128f562e6452b40c5a7",
+     "flow_maxflow": "sha256:e2df9a6ebbbbbaf400421698e973ee9f767f663ddc4b96cb5077bc044205b3b9"
+    }
    },
    "evidence": "docs/evidence/greg-composition-lift/2026-10-14-v4/results-v4.json#summary.F7",
    "family": "F7",
@@ -4083,7 +4098,11 @@
        "unresolved_updates": 0
       },
       "function": "greg/cognition/composition.py::_graph_then_allocate",
-      "recipe_entry_sha256": "sha256:587151f8a1d054a471ca1f40ed894f16eed1d8291fe4fe5ae404b1eb7e0e5494"
+      "recipe_entry_sha256": "sha256:587151f8a1d054a471ca1f40ed894f16eed1d8291fe4fe5ae404b1eb7e0e5494",
+      "stage_closures": {
+       "flow_capacity_plan": "sha256:f044fbe25dd7e45514859e5a6b95d3563eb178434cc846e21588ffe8176e332a",
+       "flow_maxflow": "sha256:05634f1e0a8f859f8bc7da21bf13ab5b28411d9145c24d32cd023c1d933738ab"
+      }
      },
      "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F3",
      "family": "F3",
@@ -4150,7 +4169,8 @@
     "closure_unresolved": [],
     "dispatched": null,
     "function": "greg/cognition/composition.py::run",
-    "recipe_entry_sha256": "sha256:6d08832000d03116adc3669d76e2c2f9faf92fd10773898355d0c3d502857f81"
+    "recipe_entry_sha256": "sha256:6d08832000d03116adc3669d76e2c2f9faf92fd10773898355d0c3d502857f81",
+    "stage_closures": {}
    },
    "evidence": "docs/evidence/greg-composition-lift/2026-10-08/results-v2.json#summary.F2R",
    "family": "F2R",
@@ -4197,7 +4217,8 @@
       "closure_unresolved": [],
       "dispatched": null,
       "function": "greg/cognition/composition.py::run",
-      "recipe_entry_sha256": "sha256:6d08832000d03116adc3669d76e2c2f9faf92fd10773898355d0c3d502857f81"
+      "recipe_entry_sha256": "sha256:6d08832000d03116adc3669d76e2c2f9faf92fd10773898355d0c3d502857f81",
+      "stage_closures": {}
      },
      "evidence": "docs/evidence/greg-composition-lift/2026-10-14/results-v2.json#summary.F2b",
      "family": "F2b",
@@ -4262,7 +4283,11 @@
      "unresolved_updates": 0
     },
     "function": "greg/cognition/composition.py::_track_then_staff",
-    "recipe_entry_sha256": "sha256:62c8d18f116b5210c3ccb9d14e545f54faee78ffc23d1a448cbc8a8f0507cef9"
+    "recipe_entry_sha256": "sha256:62c8d18f116b5210c3ccb9d14e545f54faee78ffc23d1a448cbc8a8f0507cef9",
+    "stage_closures": {
+     "basal_kalman": "sha256:c0a79d1fdde3805035cd65547056584b35e07e97303f1d890275a45a0249ab53",
+     "queue_erlang": "sha256:d727c33ac9f0a9fa1bf204458d6430b5b67d744bdc6bd2371d04bd7e64b960ce"
+    }
    },
    "evidence": "docs/evidence/greg-composition-lift/2026-10-14-v5/results-v5.json#summary.F8",
    "family": "F8",

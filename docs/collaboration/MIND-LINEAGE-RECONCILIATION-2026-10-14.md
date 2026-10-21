@@ -748,3 +748,21 @@ defect was reproduced, then fixed with a regression test that fails on the old c
 | L1, L8 (manifest, P8 backcast) | #158's own fixes (`ba1863d`, `463a9d0`), merged here at `463a9d0`. |
 | L3 (seed registry), L5 (generator seed in sandbox data, latent for data-only candidates), L20 (no independent Systems Architect) | Open, as before. L5's channel is #158's P8 code and stays a precondition before any code-level candidate space. |
 | M17 | Fixed (section 18). |
+
+## 20. Round-3 re-verification of #179 (from the #158 session, at `65e20fa`): dispositions
+
+The re-verification found N1-N7, L14, M5, L9 and M17 fixed and L7 fixed for the reported form. None of its
+five new findings routes wrongly today. Each was reproduced and fixed with a regression test, or its limit is
+stated.
+
+| item | disposition |
+|---|---|
+| 1 (medium, latent): a recipe binding does not cover its stage genomes | Fixed. `recipe_code` now also binds `stage_closures`: the solve closure of every genome that can serve one of the recipe's stage operations, in the measured tree. An edit inside `erlang_solve` stales `track_then_staff` (test). All 7 recipe verdicts already route UNEVALUATED. |
+| 2 (low, latent): a disagreeing runtime dispatch is ignored; several table mutations are read as resolved | Fixed. A runtime record that disagrees with the static dispatch binds nothing (`runtime_disagrees`). Any other module-level touch of the table counts as unresolved: a loop, an `if`-block, `\|=`, `pop`/`setdefault`, `__setitem__`, `del`, or a helper function that mutates it. Six forms are tests. |
+| 3 (low): transformed copies pass the release check | Fixed for recompression and reformatting. Members are decompressed through gzip, xz and bz2, and JSON is compared by canonical digest under any extension. Markers are scanned in every member, so a minified copy under `.dat` and an xz or bz2 copy are blocked (tests). **Stated limit:** values re-encoded into another format (a Python literal, a CSV re-export, a subset of rows) are out of scope for an automatic check and need human review of what a release contains. |
+| 4 (low): the crowd verifier accepts a total abstention | Fixed. An abstention is accepted only where the declared `min_posterior` threshold abstains; an honest thresholded abstention still verifies (tests on 10 dev seeds). |
+| 5 (low, L3): operation-admission seeds are not spent | Fixed for the converged harness. `spent_seeds()` reads `freeze-ops-v*.json`, so 5001-5040 are refused by later admissions and P8 splits. #155's earlier operation ranges (1001-1040, 2001-2040, 3001-3040) are not registered. They used other generators, so no instance was reused, but registering them would contradict #158's existing genome and pilot seeds; the overlap stays recorded under L3. `admission.py` is #158's file, and this extension is proposed to #158 for adoption. |
+| L7 residual (variables, `%`, slicing) | Stated as a limit of a static scan in the test. The guarantee checked is that no runtime module imports `evolution_routing` in any form that folds to a constant. |
+| L9 weak (candidate equals incumbent) | Strengthened. The synthetic RETAIN now proposes a real configuration change (`p_restart`). |
+| M17 note: the index binds closures recomputed at `dfdcfe9` with the current resolver, not the freeze's digests | Accepted and stated here. The freeze bound the closures under the resolver of that day; the index recomputes them under today's stricter resolver at the same commit. This is stricter than the pre-registration says. A verdict whose closure would differ under the old resolver is not admitted by this rule, never the reverse. |
+| `swarm` vs competitor 17-21 recorded, 17-20 from 9-decimal `per_item` | A rounding near-tie in the recomputation; the frozen result is unchanged and the status does not depend on it. |

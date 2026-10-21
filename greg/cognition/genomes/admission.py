@@ -269,13 +269,25 @@ def host_load(proc: Path = Path("/proc")) -> dict:
     return out
 
 
+# The converged tree's operation-family admission freezes (v3 on): each declares an inclusive held-out seed range
+# under inputs.seeds (round-3 review of #179, finding 5). #155's earlier operation runs (1001-1040, 2001-2040,
+# 3001-3040) used other generators than the genome harness; their overlap with genome and pilot ranges is recorded
+# under review L3 and not registered here, so no instance was reused.
+OPERATION_FREEZES = ("cortex/evaluation/genome_admission/freeze-ops-v*.json",)
+
+
 def spent_seeds(exclude: Path | None = None) -> set[int]:
-    """Held-out seeds already used by any admission freeze in the evidence tree."""
+    """Held-out seeds already used by any admission freeze in the evidence tree, genome or operation family."""
     out = set()
     for manifest in EVIDENCE.glob("*/freeze.json") if EVIDENCE.exists() else []:
         if exclude is not None and manifest.parent == exclude:
             continue
         out |= set(json.loads(manifest.read_text())["inputs"].get("heldout_seeds", []))
+    for pattern in OPERATION_FREEZES:
+        for manifest in ROOT.glob(pattern):
+            seeds = json.loads(manifest.read_text()).get("inputs", {}).get("seeds")
+            if isinstance(seeds, list) and len(seeds) == 2 and all(isinstance(x, int) for x in seeds):
+                out |= set(range(seeds[0], seeds[1] + 1))
     return out
 
 

@@ -99,3 +99,27 @@ def test_a_clean_archive_passes(tmp_path):
     _tar(archive, [("pkg/module.py", b"print('ok')\n"), ("pkg/data.json", b'{"a": 1}')], mode="w:gz")
     assert C.scan_archive(archive) == [] and C.main(["--archive", str(archive)]) == 0
 
+
+def test_recompressed_and_minified_copies_are_blocked(tmp_path):
+    """Round-3 review of #179 (finding 3): an xz- or bz2-compressed listed file and minified JSON under a .dat
+    extension passed. Members are decompressed (gzip, xz, bz2) and JSON is compared in canonical form."""
+    import bz2
+    import lzma
+    path, data = _excluded()
+    gz = next(e["path"] for e in LIST["paths"] if e["path"].endswith(".json.gz"))
+    raw = (ROOT / gz).read_bytes()
+    import gzip
+    extract = gzip.decompress(raw)
+    members = [("a/data.xz", lzma.compress(data)), ("b/data.bz2", bz2.compress(data)),
+               ("c/extract.bin.xz", lzma.compress(extract)),
+               ("d/blob.dat", json.dumps(json.loads(data), separators=(",", ":")).encode())]
+    for name, content in members:
+        archive = tmp_path / (name.replace("/", "_") + ".tar")
+        _tar(archive, [(name, content)])
+        assert C.scan_archive(archive), name
+        assert C.main(["--archive", str(archive)]) == 1, name
+
+
+def test_the_check_states_what_it_cannot_catch():
+    assert "Out of scope" in (ROOT / "scripts/check_release_exclusions.py").read_text()
+

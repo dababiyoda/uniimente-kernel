@@ -415,6 +415,11 @@ def operation_status(family: str, record: dict) -> tuple[str, str | None]:
         return "UNEVALUATED", (f"{status} was measured on {code.get('path')}::{code.get('function')}; the family now "
                                f"dispatches to {now.get('path')}::{now.get('function')}; needs re-admission")
     dispatched = code.get("dispatched") or {}
+    if dispatched.get("runtime_disagrees"):
+        seen = dispatched["runtime_disagrees"]
+        return "UNEVALUATED", (f"{status}: the run recorded {seen.get('path')}::{seen.get('function')} at runtime, "
+                               f"not the statically bound {dispatched.get('path')}::{dispatched.get('function')}; "
+                               "nothing is bound; needs re-admission")
     unbound = [*([f"{dispatched['unresolved_updates']} non-literal update(s) of the dispatch table at the run's "
                   "commit, and the run recorded no runtime dispatch that confirms it"]
                  if dispatched.get("unresolved_updates") and not dispatched.get("verified_at_runtime") else []),
@@ -457,13 +462,39 @@ def recipe_code(recipe: str, read=None) -> dict | None:
         return None
     entry = "sha256:" + hashlib.sha256(_json.dumps(RECIPES.get(recipe), sort_keys=True).encode()).hexdigest()
     return {"function": bound["entry"], "closure_sha256": bound["sha256"], "closure_members": bound["members"],
-            "closure_unresolved": bound["unresolved"], "dispatched": then, "recipe_entry_sha256": entry}
+            "closure_unresolved": bound["unresolved"], "dispatched": then, "recipe_entry_sha256": entry,
+            "stage_closures": _stage_closures(recipe, read)}
+
+
+def _stage_closures(recipe: str, read) -> dict:
+    """Each genome that can serve one of the recipe's stage operations -> its solve closure digest in that tree
+    (None when absent). The recipe's own closure stops at cortex.reason, so a behaviour change in a stage solver
+    must still stale the recipe's verdict (round-3 review of #179, finding 1)."""
+    import inspect
+    from . import code_binding
+    from .composition import RECIPES
+    from .genomes import library
+    operations = set((RECIPES.get(recipe) or {}).get("operations") or ())
+    out = {}
+    for family, item in sorted(library.executables().items()):
+        if getattr(item.genome, "operation", None) not in operations:
+            continue
+        path = Path(inspect.getsourcefile(item.solve)).resolve().relative_to(ROOT).as_posix()
+        bound = code_binding.closure(path, item.solve.__name__, read)
+        out[family] = None if bound is None else bound["sha256"]
+    return out
 
 
 @lru_cache(maxsize=None)
 def _recipe_code_now(recipe: str) -> str | None:
     now = recipe_code(recipe)
-    return None if now is None else now["closure_sha256"] + "|" + now["recipe_entry_sha256"]
+    return None if now is None else (now["closure_sha256"] + "|" + now["recipe_entry_sha256"] + "|" +
+                                     _json_stages(now.get("stage_closures")))
+
+
+def _json_stages(stages) -> str:
+    import json as _json
+    return _json.dumps(stages or {}, sort_keys=True)
 
 
 def recipe_stale(recipe: str, verdict: dict) -> str | None:
@@ -479,7 +510,8 @@ def recipe_stale(recipe: str, verdict: dict) -> str | None:
                  if (code.get("dispatched") or {}).get("unresolved_updates") else [])]
     if unbound:
         return f"the recipe code it measured cannot be bound: {'; '.join(unbound)}; needs re-measurement"
-    if code["closure_sha256"] + "|" + code.get("recipe_entry_sha256", "") != _recipe_code_now(recipe):
+    if code["closure_sha256"] + "|" + code.get("recipe_entry_sha256", "") + "|" + _json_stages(
+            code.get("stage_closures")) != _recipe_code_now(recipe):
         return f"measured on recipe code {code['closure_sha256']}; the recipe code has changed; needs re-measurement"
     return None
 

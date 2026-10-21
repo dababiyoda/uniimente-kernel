@@ -1213,8 +1213,8 @@
    "path": "greg/cognition/genomes/admission.py",
    "lineage": "pr158",
    "classification": "complementary",
-   "disposition": "kept",
-   "note": "present in one lineage only (pr158)"
+   "disposition": "extended",
+   "note": "present in one lineage only (pr158). Extended in Track B (round-3 review of #179, finding 5): spent_seeds() also reads the converged tree's operation-admission freezes (5001-5040 so far); proposed to #158 for adoption."
   },
   {
    "path": "greg/cognition/genomes/basal.py",

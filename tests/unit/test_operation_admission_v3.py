@@ -71,3 +71,10 @@ def test_measure_reports_every_family_and_the_sparse_geometry_on_development_see
         row = measured["families"][family]
         assert row["n"] == 2 and row["status"] in ("REJECTED", "SUPERSEDED", "DEFAULT_FOR_GEOMETRY", "EXPERIMENTAL")
     assert measured["crowd_sparse"]["n"] == 2 and measured["crowd_sparse"]["candidate"].startswith("Dawid-Skene")
+
+
+def test_operation_admission_seeds_are_registered_as_spent():
+    """Round-3 review of #179 (finding 5): spent_seeds() scanned genome admissions only, so a later genome admission
+    or P8 split could draw operation admission v3's held-out seeds without a refusal."""
+    from greg.cognition.genomes.admission import spent_seeds
+    assert set(range(5001, 5041)) <= spent_seeds()

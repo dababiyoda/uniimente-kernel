@@ -348,8 +348,25 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
         return None
 
     defs = _definitions(tree)
+
+    def mutates(fn) -> bool:
+        """A function body that rebinds or mutates the table (a helper called at import time could)."""
+        for sub in ast.walk(fn):
+            if isinstance(sub, (ast.Subscript, ast.Attribute)) and isinstance(sub.ctx, (ast.Store, ast.Del)) \
+                    and _base(sub) == table:
+                return True
+            if isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute) and _base(sub.func) == table \
+                    and sub.func.attr not in ("get", "items", "keys", "values", "copy", "__getitem__", "__contains__"):
+                return True
+            if isinstance(sub, ast.Global) and table in sub.names:
+                return True
+        return False
+
     for node in tree.body:
         found = None
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and mutates(node):
+            unresolved += 1                       # round-3 review of #179, finding 2: a mutating helper
+            continue
         if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == table for t in node.targets):
             bound = from_literal(node.value, path, names, defs) if isinstance(node.value, ast.Dict) else None
             continue
@@ -376,6 +393,12 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
                     unresolved += 1
             else:
                 unresolved += 1
+        elif table in _bindings(node) and not (
+                isinstance(node, ast.Assign) and all(isinstance(t, ast.Subscript) and _base(t) == table
+                                                     and isinstance(t.slice, ast.Constant) for t in node.targets)):
+            # any other module-level touch of the table: a loop, if-block or with-block rebind, ``|=``,
+            # ``pop``/``setdefault``/``__setitem__``, ``del`` (round-3 review of #179, finding 2)
+            unresolved += 1
         if found is not None:
             bound = found
     if bound is None:

@@ -16,6 +16,7 @@ DISCLOSURE = 'tests/unit/test_cognition_disclosure.py'
 CHARACTERIZE = 'tests/unit/test_cognition_characterize.py'
 BUDGET = 'tests/unit/test_cognition_thinking_budget.py'
 VENTURES = 'tests/unit/test_greg_ventures.py'
+MEDIA = 'tests/unit/test_greg_media_case.py'
 MUTANTS = [
  ('optimality not attacked by a second engine', 'greg/cognition/verification.py',
   'certificate["status"] != "REFUTED")', 'True)',
@@ -114,9 +115,32 @@ MUTANTS = [
   'if ledger is not None and not any(', 'if False and not any(',
   'test_identified_randomized_support_is_stated_with_its_assumptions_and_a_forged_receipt_is_refuted', VENTURES),
  ('the organ bridge is handed the writable journal', 'greg/missions.py',
-  'journal=self._ledger_reader() if manifest.capability_id == "venture.assess"',
-  'journal=self.journal if manifest.capability_id == "venture.assess"',
+  'journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",',
+  'journal=self.journal if manifest.capability_id in ("venture.assess",',
   'test_the_organ_bridge_reads_receipts_through_a_handle_with_no_write_method', VENTURES),
+ # Section 16 media case: a restatement may not change what its supporting spans say.
+ ('a supporting span is accepted without comparing the claim', 'greg/cognition/evidence.py',
+  'changed = distortions(claim, support) if support else []', 'changed = []',
+  'test_each_kind_of_change_is_refuted_and_the_claim_is_not_answered', MEDIA),
+ ('a dropped hedge goes unnoticed', 'greg/cognition/evidence.py',
+  'if (hedged_support and not hedged_claim) or stronger:', 'if stronger:',
+  'test_a_paraphrase_that_drops_a_hedge_is_held_back_with_the_minds_reason', MEDIA),
+ ('negation polarity is not compared', 'greg/cognition/evidence.py',
+  'if _negated(cw, claim) != _negated(sw, joined):', 'if False:',
+  'test_each_kind_of_change_is_refuted_and_the_claim_is_not_answered', MEDIA),
+ ('the verifier trusts the reported changes', 'greg/cognition/verification.py',
+  'checks["restatement_rechecked"] = (not figure_gap', 'checks["restatement_rechecked"] = True or (not figure_gap',
+  'test_the_verifier_refutes_an_answer_that_hides_a_change', MEDIA),
+ ("DALEOBANKS ignores the Mind's answer", 'greg/daleobanks_bridge.py',
+  '        if receipt.get("abstention_state") != "NONE":', '        if False:',
+  'test_a_paraphrase_that_drops_a_hedge_is_held_back_with_the_minds_reason', MEDIA),
+ ('a sentence no receipt covers passes', 'greg/daleobanks_bridge.py',
+  'if any(ch.isalnum() for ch in uncovered):', 'if False:',
+  'test_a_sentence_no_receipt_covers_is_held_back', MEDIA),
+ ('DALEOBANKS is handed the writable journal', 'greg/missions.py',
+  'journal=self._ledger_reader() if manifest.capability_id in ("venture.assess",',
+  'journal=self.journal if manifest.capability_id in ("venture.assess",',
+  'test_a_faithful_paraphrase_is_verified_claim_by_claim', MEDIA),
 ]
 
 

@@ -123,3 +123,28 @@ def test_recompressed_and_minified_copies_are_blocked(tmp_path):
 def test_the_check_states_what_it_cannot_catch():
     assert "Out of scope" in (ROOT / "scripts/check_release_exclusions.py").read_text()
 
+
+def test_lzma_alone_zlib_base64_and_utf16_copies_are_blocked(tmp_path):
+    """Round-4 review of #179 (finding C): these four encodings of a listed file passed."""
+    import base64
+    import lzma
+    import zlib
+    path, data = _excluded()
+    encodings = {"alone.lzma": lzma.compress(data, format=lzma.FORMAT_ALONE), "z.zlib": zlib.compress(data),
+                 "b64.txt": base64.b64encode(data), "u16.txt": data.decode("utf-8").encode("utf-16")}
+    for name, content in encodings.items():
+        archive = tmp_path / f"{name}.tar"
+        _tar(archive, [(f"x/{name}", content)])
+        assert C.scan_archive(archive), name
+
+
+def test_python_source_alone_never_blocks_a_release(tmp_path):
+    """Round-4 review of #179 (finding D): the marker scan flagged ordinary source naming the suites, so a tag
+    archive without any listed data file was still blocked. Python source is exempt from the marker rule."""
+    tracked = subprocess.run(["git", "ls-files", "*.py"], cwd=ROOT, capture_output=True, text=True).stdout.split()
+    archive = tmp_path / "source.tar"
+    with tarfile.open(archive, "w") as t:
+        for rel in tracked:
+            t.add(ROOT / rel, arcname=f"release/{rel}")
+    assert C.scan_archive(archive) == []
+

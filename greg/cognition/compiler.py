@@ -474,7 +474,9 @@ def _stage_closures(recipe: str, read) -> dict:
     from . import code_binding
     from .composition import RECIPES
     from .genomes import library
-    operations = set((RECIPES.get(recipe) or {}).get("operations") or ())
+    from .catalog import FAMILIES
+    entry = RECIPES.get(recipe) or {}
+    operations = set(entry.get("operations") or ())
     out = {}
     for family, item in sorted(library.executables().items()):
         if getattr(item.genome, "operation", None) not in operations:
@@ -482,7 +484,26 @@ def _stage_closures(recipe: str, read) -> dict:
         path = Path(inspect.getsourcefile(item.solve)).resolve().relative_to(ROOT).as_posix()
         bound = code_binding.closure(path, item.solve.__name__, read)
         out[family] = None if bound is None else bound["sha256"]
+    # operation families served through SOLVERS, resolved at that tree (round-4 review of #179, finding A)
+    genomes = library.executables()
+    for family, spec in sorted(FAMILIES.items()):
+        if family not in genomes and operations & set(spec[1]):       # genome families are bound above
+            then = code_binding.dispatch("greg/cognition/solvers.py", "SOLVERS", family, read)
+            bound = (code_binding.closure(then["path"], then["function"], read)
+                     if then and then.get("path") and then.get("function") else None)
+            out[f"solvers:{family}"] = None if bound is None else bound["sha256"]
+    # problem-path stages served by cortex organs (template recipes); an unmapped class binds None (fails closed)
+    for klass in entry.get("stage_classes") or ():
+        for path, name in STAGE_ORGANS.get(klass, ((None, None),)):
+            bound = code_binding.closure(path, name, read) if path else None
+            out[f"organ:{klass}:{name}"] = None if bound is None else bound["sha256"]
     return out
+
+
+# The cortex organs that can serve a template recipe's problem-path stage class (cortex.routing's organ set).
+STAGE_ORGANS = {"estimate": (("cortex/organs/estimation.py", "EstimationOrgan"),),
+                "causal": (("cortex/organs/evidence_causal.py", "EvidenceCausalOrgan"),),
+                "optimization": (("cortex/organs/cpsat.py", "CpSatOrgan"), ("cortex/organs/formal.py", "FormalOrgan"))}
 
 
 @lru_cache(maxsize=None)

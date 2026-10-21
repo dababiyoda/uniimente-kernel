@@ -349,24 +349,35 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
 
     defs = _definitions(tree)
 
-    def mutates(fn) -> bool:
-        """A function body that rebinds or mutates the table (a helper called at import time could)."""
-        for sub in ast.walk(fn):
-            if isinstance(sub, (ast.Subscript, ast.Attribute)) and isinstance(sub.ctx, (ast.Store, ast.Del)) \
-                    and _base(sub) == table:
+    readonly = {"get", "items", "keys", "values", "copy", "__getitem__", "__contains__", "__len__", "__iter__"}
+
+    def names_table(node) -> bool:
+        """Whether ``node`` names the table in any way that could rebind a key. A plain read is benign:
+        ``T[k]`` in load context, ``T.get(...)`` and the other read-only methods called directly, ``k in T``, and
+        iteration over ``T``. Any other use (passed as an argument, aliased, ``dict.update(T, ...)``, a string
+        ``'T'`` reaching ``globals()``) is not."""
+        parents = {child: parent for parent in ast.walk(node) for child in ast.iter_child_nodes(parent)}
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Constant) and sub.value == table:
                 return True
-            if isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute) and _base(sub.func) == table \
-                    and sub.func.attr not in ("get", "items", "keys", "values", "copy", "__getitem__", "__contains__"):
-                return True
-            if isinstance(sub, ast.Global) and table in sub.names:
-                return True
+            if not (isinstance(sub, ast.Name) and sub.id == table):
+                continue
+            up = parents.get(sub)
+            if isinstance(up, ast.Subscript) and up.value is sub and isinstance(up.ctx, ast.Load):
+                continue
+            if isinstance(up, ast.Attribute) and up.value is sub and up.attr in readonly \
+                    and isinstance(parents.get(up), ast.Call) and parents[up].func is up:
+                continue
+            if isinstance(up, ast.Compare) and sub in up.comparators and all(
+                    isinstance(op, (ast.In, ast.NotIn)) for op in up.ops):
+                continue
+            if isinstance(up, (ast.For, ast.comprehension)) and up.iter is sub:
+                continue
+            return True
         return False
 
     for node in tree.body:
         found = None
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and mutates(node):
-            unresolved += 1                       # round-3 review of #179, finding 2: a mutating helper
-            continue
         if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == table for t in node.targets):
             bound = from_literal(node.value, path, names, defs) if isinstance(node.value, ast.Dict) else None
             continue
@@ -393,11 +404,13 @@ def dispatch(path: str, table: str, key: str, read: Reader = working_tree) -> di
                     unresolved += 1
             else:
                 unresolved += 1
-        elif table in _bindings(node) and not (
-                isinstance(node, ast.Assign) and all(isinstance(t, ast.Subscript) and _base(t) == table
-                                                     and isinstance(t.slice, ast.Constant) for t in node.targets)):
-            # any other module-level touch of the table: a loop, if-block or with-block rebind, ``|=``,
-            # ``pop``/``setdefault``/``__setitem__``, ``del`` (round-3 review of #179, finding 2)
+        elif not (isinstance(node, ast.Assign) and all(isinstance(t, ast.Subscript) and _base(t) == table
+                                                       and isinstance(t.slice, ast.Constant) for t in node.targets)) \
+                and names_table(node):
+            # fail closed (round-4 review of #179, finding B): any other module-level statement that names the
+            # table, as a name or as a string (``globals()['T']``), may rebind a key - a loop, an if-block, ``|=``,
+            # ``pop``, an alias, a helper taking the table, ``dict.update(T, ...)``, a class body, a lambda. A
+            # positive binding then needs the run's recorded runtime dispatch to agree.
             unresolved += 1
         if found is not None:
             bound = found

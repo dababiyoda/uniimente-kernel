@@ -1141,3 +1141,54 @@ def test_a_runtime_dispatch_that_disagrees_binds_nothing():
     status, why = C.operation_status("control", row)
     assert status == "UNEVALUATED" and "at runtime" in why
 
+
+# ---------------------------------------------------------------- round-4 re-verification of PR #179
+def test_operation_family_and_organ_stages_are_bound_into_their_recipes():
+    """Finding A: stages served through SOLVERS (bayes_then_voi's information and probabilistic,
+    graph_then_allocate's optimize) and the template recipes' cortex-organ stages were unbound."""
+    from greg.cognition import code_binding as CB
+    from greg.cognition import compiler as C
+    from greg.cognition.composition import RECIPES
+    for recipe in RECIPES:
+        stages = C.recipe_code(recipe)["stage_closures"]
+        assert stages and all(v is not None for v in stages.values()), (recipe, stages)
+    now = C.recipe_code("bayes_then_voi")
+    assert {"solvers:information", "solvers:probabilistic"} <= set(now["stage_closures"])
+
+    def edited(path):
+        text = CB.working_tree(path)
+        if path == "greg/cognition/solvers.py":
+            start = text.index("def information(")
+            body = text.index("\n", text.index("):", start)) + 1
+            text = text[:body] + "    _behaviour_edit = 1\n" + text[body:]
+        return text
+    changed = C.recipe_code("bayes_then_voi", edited)
+    assert changed["stage_closures"]["solvers:information"] != now["stage_closures"]["solvers:information"]
+    verdict = {"code": {k: changed[k] for k in ("closure_sha256", "recipe_entry_sha256", "stage_closures")}}
+    assert C.recipe_stale("bayes_then_voi", verdict) is not None
+    for recipe in ("estimate_then_optimize", "identify_then_optimize"):
+        assert any(k.startswith("organ:") for k in C.recipe_code(recipe)["stage_closures"]), recipe
+
+
+ROUND4_DISPATCH = {
+    "pop assigned": "_ = T.pop('control')\n", "setdefault assigned": "_ = T.setdefault('control', b)\n",
+    "alias": "_t = T\n_t['control'] = b\n", "helper taking the table": "def h(t):\n    t['control'] = b\n\nh(T)\n",
+    "dict.update": "dict.update(T, control=b)\n", "dict.__setitem__": "dict.__setitem__(T, 'control', b)\n",
+    "globals": "globals()['T']['control'] = b\n", "lambda helper": "f = lambda: T.update(control=b)\nf()\n",
+    "class body": "class C:\n    T['control'] = b\n", "list display": "[T.update(control=b)]\n",
+    "assert": "assert T.update(control=b) is None\n", "map": "list(map(T.__setitem__, ['control'], [b]))\n",
+}
+
+
+@pytest.mark.parametrize("case", sorted(ROUND4_DISPATCH))
+def test_any_other_statement_naming_a_dispatch_table_is_unresolved(case):
+    """Finding B: dispatch() fails closed: any module-level statement outside the recognised literal forms that
+    names the table, as a name or a string, counts as an unresolved update."""
+    from greg.cognition.code_binding import dispatch
+    text = "def a():\n    return 1\n\ndef b():\n    return 2\n\nT = {'control': a}\n" + ROUND4_DISPATCH[case]
+    got = dispatch("pkg/s.py", "T", "control", {"pkg/__init__.py": "", "pkg/s.py": text}.get)
+    assert got["unresolved_updates"] >= 1, (case, got)
+    clean = dispatch("pkg/s.py", "T", "control", {"pkg/__init__.py": "", "pkg/s.py": text.split("T = {")[0] +
+                                                  "T = {'control': a}\nT['other'] = b\n"}.get)
+    assert clean["unresolved_updates"] == 0 and clean["function"] == "a"
+

@@ -774,3 +774,16 @@ stated.
 | L9 weak (candidate equals incumbent) | Strengthened. The synthetic RETAIN now proposes a real configuration change (`p_restart`). |
 | M17 note: the index binds closures recomputed at `dfdcfe9` with the current resolver, not the freeze's digests | Accepted and stated here. The freeze bound the closures under the resolver of that day; the index recomputes them under today's stricter resolver at the same commit. This is stricter than the pre-registration says. A verdict whose closure would differ under the old resolver is not admitted by this rule, never the reverse. |
 | `swarm` vs competitor 17-21 recorded, 17-20 from 9-decimal `per_item` | A rounding near-tie in the recomputation; the frozen result is unchanged and the status does not depend on it. |
+
+## 21. Round-4 re-verification of #179 (from the #158 session, at `0067be6`): dispositions
+
+The re-verification found round 3's findings 2a, 4, 5, L7 and L9 fixed, and 2b and 3 fixed as reported. It found
+finding 1 partly fixed. None of its new findings routes wrongly today.
+
+| item | disposition |
+|---|---|
+| A (medium, latent; finding 1's residual): operation-family and organ stages outside the recipe binding | Fixed. `stage_closures` now also binds every `SOLVERS`-served family whose catalog operations a recipe stage uses (dispatched at the measured tree): `bayes_then_voi`'s `probabilistic` and `information`, and the `optimization` family under `graph_then_allocate` and `forecast_then_allocate`. It also binds the cortex organs that serve the template recipes' stage classes (`STAGE_ORGANS`). An unmapped class binds None, which fails closed. Every recipe's stages are bound and non-empty (test). An edit to `solvers.py::information` stales `bayes_then_voi` (test). Record section 20's earlier "fixed" covered genome stages only. |
+| B (low, latent): further `dispatch()` mutation forms read as resolved | Fixed by failing closed. Any module-level statement outside the recognised literal forms that names the table counts as unresolved, except a plain read (`T[k]` in load context, the read-only methods, `k in T`, iteration). That covers the table as a name, an argument, an alias, `dict.update(T, ...)`, a string reaching `globals()`, a class body, a lambda and a list display. Twelve forms are tests. A positive binding then needs the run's recorded runtime dispatch to agree. |
+| C (low): lzma-alone, zlib, base64 and UTF-16 copies pass the release check | Fixed. Up to six decoding layers are tried: gzip, xz, lzma-alone, bz2, zlib, base64 and UTF-16 (four tests). The stated limit now names every encoding not decoded. |
+| D (low, regression, fails closed): the marker scan flags ordinary source | Fixed. Python source is exempt from the marker rule; a renamed data copy is still caught by digest. A tar of every tracked `.py` file passes (test). |
+| #158 merge | #158 is merged at `050c1b2`: P8 cycle 6 RETAIN (PROPOSED_NOT_APPLIED) and its canary (section 1). |

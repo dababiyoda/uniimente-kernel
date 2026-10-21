@@ -8,24 +8,29 @@ this check keeps them out of what is released.
     python scripts/check_release_exclusions.py --archive A.tar    # a release artifact (tar, tar.gz, zip, whl)
 
 A file is blocked when any of these holds, at any depth of nested archives:
-* its content digest equals a listed file's sha256, before or after gzip, xz or bz2 decompression (a renamed or
-  recompressed copy);
+* its content digest equals a listed file's sha256, before or after decoding (gzip, xz, lzma-alone, bz2, zlib,
+  base64, UTF-16) - a renamed, recompressed or re-encoded copy;
 * it parses as JSON whose canonical form (sorted keys, compact) equals a listed file's parsed content (a minified or
   reformatted copy, under any extension);
 * its path ends with a listed path (any prefix, any depth);
-* its text, under any extension and after decompression, carries a listed data marker.
+* its text, after decoding, carries a listed data marker - except Python source (``.py``), which names the
+  families and suites legitimately; a renamed data copy is caught by digest instead (round-4 review, finding D).
 
-Out of scope, stated rather than hidden (round-3 review of #179, finding 3): values re-encoded into another
-format (a Python literal, a CSV re-export, a subset of rows). Those need human review of what a release contains.
+Out of scope, stated rather than hidden (round-3 and round-4 reviews of #179): values re-encoded into another
+format (a Python literal, a CSV re-export, a subset of rows), and any encoding not decoded above. Those need human
+review of what a release contains.
 
 Exit 1 names every finding. It never edits, moves or deletes a file.
 """
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import bz2
 import gzip
 import lzma
+import zlib
 import hashlib
 import io
 import json
@@ -61,24 +66,49 @@ def _gunzip(data: bytes) -> bytes | None:
         return None
 
 
+def _decode_once(data: bytes) -> bytes | None:
+    """One decoding layer: gzip, xz or lzma-alone, bz2, zlib, base64 or UTF-16; None when none applies."""
+    if data[:2] == b"\x1f\x8b":
+        return _gunzip(data)
+    if data[:6] == b"\xfd7zXZ\x00" or data[:1] == b"\x5d":
+        try:
+            return lzma.decompress(data)                  # FORMAT_AUTO reads xz and lzma-alone
+        except lzma.LZMAError:
+            pass
+    if data[:3] == b"BZh":
+        try:
+            return bz2.decompress(data)
+        except (OSError, ValueError):
+            return None
+    if data[:1] == b"\x78" and len(data) > 2 and (data[0] * 256 + data[1]) % 31 == 0:
+        try:
+            return zlib.decompress(data)
+        except zlib.error:
+            pass
+    if data[:2] in (b"\xff\xfe", b"\xfe\xff"):
+        try:
+            return data.decode("utf-16").encode("utf-8")
+        except UnicodeDecodeError:
+            return None
+    compact = b"".join(data.split())
+    alphabet = set(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=-_")
+    if len(compact) >= 16 and len(compact) % 4 == 0 and set(compact) <= alphabet:
+        try:
+            urlsafe = b"-" in compact or b"_" in compact
+            decoded = (base64.urlsafe_b64decode(compact) if urlsafe else base64.b64decode(compact, validate=True))
+            if decoded:
+                return decoded
+        except (binascii.Error, ValueError):
+            pass
+    return None
+
+
 def _decompressed(data: bytes) -> list[bytes]:
-    """``data`` and every layer of gzip, xz or bz2 decompression beneath it (at most four layers)."""
+    """``data`` and every decoding layer beneath it (at most six layers)."""
     out, current = [data], data
-    for _ in range(4):
-        nxt = None
-        if current[:2] == b"\x1f\x8b":
-            nxt = _gunzip(current)
-        elif current[:6] == b"\xfd7zXZ\x00":
-            try:
-                nxt = lzma.decompress(current)
-            except lzma.LZMAError:
-                nxt = None
-        elif current[:3] == b"BZh":
-            try:
-                nxt = bz2.decompress(current)
-            except (OSError, ValueError):
-                nxt = None
-        if nxt is None:
+    for _ in range(6):
+        nxt = _decode_once(current)
+        if nxt is None or nxt == current:
             break
         out.append(nxt)
         current = nxt
@@ -150,7 +180,7 @@ def _findings(path: str, data: bytes, listed: dict) -> list[str]:
     for listed_path in paths:
         if leaf == listed_path or leaf.endswith("/" + listed_path):
             found.append(f"{path}: path {listed_path}")
-    hits = sorted({m for m in markers for v in variants if m.encode() in v})
+    hits = [] if leaf.endswith(".py") else sorted({m for m in markers for v in variants if m.encode() in v})
     if hits:
         found.append(f"{path}: data markers {', '.join(hits)}")
     return found
